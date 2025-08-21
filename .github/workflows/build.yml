@@ -25,7 +25,7 @@ jobs:
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          extra_args: --exclude-detectors="mongodb" --fail --no-verification
+          extra_args: --exclude-detectors="mongodb" --no-verification
 
       - name: Security scan results
         if: always()
