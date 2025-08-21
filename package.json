@@ -1,0 +1,82 @@
+{
+  "name": "dculus-forms",
+  "version": "1.0.0",
+  "description": "A monorepo for Dculus Forms with Express.js + GraphQL backend and React + Material UI frontend",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm --parallel --filter backend --filter form-app --filter form-viewer run dev",
+    "build": "pnpm run --recursive build",
+    "clean": "pnpm run --recursive clean",
+    "lint": "pnpm run --recursive lint",
+    "test": "pnpm run --recursive test",
+    "type-check": "pnpm run --recursive type-check",
+    "backend:dev": "pnpm --filter backend dev",
+    "backend:build": "pnpm --filter backend build",
+    "backend:start": "pnpm --filter backend start",
+    "form-app:dev": "pnpm --filter form-app dev",
+    "form-app:build": "pnpm --filter form-app build",
+    "form-app:preview": "pnpm --filter form-app preview",
+    "form-viewer:dev": "pnpm --filter form-viewer dev",
+    "form-viewer:build": "pnpm --filter form-viewer build",
+    "form-viewer:preview": "pnpm --filter form-viewer preview",
+    "db:generate": "pnpm --filter backend db:generate",
+    "db:push": "pnpm --filter backend db:push",
+    "db:studio": "pnpm --filter backend db:studio",
+    "db:seed": "pnpm --filter backend db:seed",
+    "db:migrate-layout": "pnpm --filter backend db:migrate-layout",
+    "db:migrate-bg-images": "pnpm --filter backend db:migrate-bg-images",
+    "db:setup": "./scripts/setup-db.sh",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "test:e2e": "playwright test --config=tests/config/playwright.config.ts",
+    "test:e2e:headed": "playwright test --config=tests/config/playwright.config.ts --headed",
+    "test:e2e:debug": "playwright test --config=tests/config/playwright.config.ts --debug",
+    "test:e2e:ui": "playwright test --config=tests/config/playwright.config.ts --ui",
+    "test:auth": "playwright test --config=tests/config/playwright.config.ts tests/e2e/auth/",
+    "test:form-creation": "playwright test --config=tests/config/playwright.config.ts tests/e2e/form-creation/",
+    "test:e2e:report": "playwright show-report tests/test-results/playwright-report",
+    "test:e2e:local": "./scripts/test-e2e-local.sh",
+    "ui:storybook": "pnpm --filter @dculus/ui storybook",
+    "ui:build-storybook": "pnpm --filter @dculus/ui build-storybook"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.54.2",
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "dotenv": "17.2.1",
+    "eslint": "^8.55.0",
+    "prettier": "^3.1.0",
+    "typescript": "^5.3.0",
+    "ws": "8.18.3",
+    "yjs": "13.6.27"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "pnpm": {
+    "overrides": {
+      "@types/react": "^18.3.0",
+      "@types/react-dom": "^18.3.0",
+      "react": "^18.3.0",
+      "react-dom": "^18.3.0"
+    }
+  },
+  "dependencies": {
+    "@radix-ui/react-label": "2.1.7",
+    "@radix-ui/react-select": "2.2.5",
+    "@radix-ui/react-slot": "1.2.3",
+    "@tanstack/react-table": "8.21.3",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "lucide-react": "0.534.0",
+    "tailwind-merge": "3.3.1"
+  }
+}

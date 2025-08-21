@@ -1,0 +1,216 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// Better Auth Models
+
+model User {
+  id            String   @id @map("_id")
+  name          String
+  email         String   @unique
+  emailVerified Boolean?
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  accounts    Account[]
+  sessions    Session[]
+  members     Member[]
+  invitations Invitation[] @relation("InvitedBy")
+  forms       Form[]
+
+  @@map("user")
+}
+
+model Account {
+  id                    String    @id @map("_id")
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("account")
+}
+
+model Session {
+  id                   String   @id @map("_id")
+  expiresAt            DateTime
+  token                String   @unique
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  ipAddress            String?
+  userAgent            String?
+  userId               String
+  activeOrganizationId String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Organization {
+  id        String   @id @map("_id")
+  name      String
+  slug      String   @unique
+  logo      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  members     Member[]
+  invitations Invitation[]
+  forms       Form[]
+
+  metadata String?
+
+  @@map("organization")
+}
+
+model Member {
+  id             String   @id @map("_id")
+  organizationId String
+  userId         String
+  role           String   @default("member")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@map("member")
+}
+
+model Invitation {
+  id             String   @id @map("_id")
+  organizationId String
+  email          String
+  role           String   @default("member")
+  status         String   @default("pending")
+  expiresAt      DateTime
+  inviterId      String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  inviter      User         @relation("InvitedBy", fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, email])
+  @@map("invitation")
+}
+
+// Application Models
+
+model Form {
+  id               String   @id @map("_id")
+  title            String
+  description      String?
+  shortUrl         String   @unique
+  formSchema       Json
+  isPublished      Boolean  @default(false)
+  organizationId   String
+  createdById      String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  responses    Response[]
+  files        FormFile[]
+
+  @@map("form")
+}
+
+model Response {
+  id          String   @id @map("_id")
+  formId      String
+  data        Json
+  submittedAt DateTime @default(now())
+  form        Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@map("response")
+}
+
+model FormTemplate {
+  id         String   @id @map("_id")
+  name       String
+  description String?
+  category   String?
+  formSchema Json
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("form_template")
+}
+
+model Verification {
+  id         String    @id @map("_id")
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+// Hocuspocus Collaborative Document Model
+model CollaborativeDocument {
+  id           String   @id @map("_id")
+  documentName String   @unique
+  state        Bytes
+  updatedAt    DateTime @updatedAt
+
+  @@map("collaborative_document")
+}
+
+// Form Metadata Cache Model
+model FormMetadata {
+  id                 String   @id @map("_id")
+  formId             String   @unique
+  pageCount          Int      @default(0)
+  fieldCount         Int      @default(0)
+  backgroundImageKey String?
+  lastUpdated        DateTime @updatedAt
+
+  @@map("form_metadata")
+}
+
+// Form Files Model
+model FormFile {
+  id           String   @id @map("_id")
+  key          String   @unique
+  type         String
+  formId       String
+  originalName String
+  url          String
+  size         Int
+  mimeType     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@map("form_file")
+}

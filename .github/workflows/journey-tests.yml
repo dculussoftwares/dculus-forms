@@ -1,0 +1,562 @@
+name: Journey Tests
+
+on:
+  # Disabled - uncomment to re-enable
+  # push:
+  #   branches: [ main, develop ]
+  # pull_request:
+  #   branches: [ main, develop ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  journey-tests:
+    name: Journey Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      mongodb:
+        image: mongo:7.0
+        env:
+          MONGO_INITDB_ROOT_USERNAME: admin
+          MONGO_INITDB_ROOT_PASSWORD: password123
+          MONGO_INITDB_DATABASE: dculus_forms_test
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand(\"ping\").ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      CI: true
+      DATABASE_URL: mongodb://admin:password123@localhost:27017/dculus_forms_test?authSource=admin
+      JWT_SECRET: test-jwt-secret-for-ci-make-it-at-least-32-characters-long
+      JWT_EXPIRES_IN: 7d
+      BETTER_AUTH_SECRET: test-auth-secret-for-ci-make-it-at-least-32-characters-long
+      BETTER_AUTH_URL: http://localhost:4000
+      PORT: 4000
+      BASE_URL: http://localhost:4000
+      MONGODB_HOST: localhost
+      MONGODB_PORT: 27017
+      MONGODB_DATABASE: dculus_forms_test
+      MONGODB_USERNAME: admin
+      MONGODB_PASSWORD: password123
+      # Additional environment variables that might be needed
+      CLOUDFLARE_R2_ACCESS_KEY: test-key
+      CLOUDFLARE_R2_SECRET_KEY: test-secret
+      CLOUDFLARE_R2_ENDPOINT: https://test.r2.cloudflarestorage.com
+      CLOUDFLARE_R2_BUCKET_NAME: test-bucket
+      CLOUDFLARE_R2_PRIVATE_BUCKET_NAME: test-private-bucket
+      CLOUDFLARE_R2_PUBLIC_BUCKET_NAME: test-public-bucket
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build dependencies for testing
+        run: |
+          # Build only what's needed for tests to run
+          pnpm --filter @dculus/types build
+          pnpm --filter @dculus/ui build
+          pnpm --filter @dculus/utils build
+
+      - name: Setup database
+        run: |
+          pnpm db:generate
+          pnpm db:push
+
+      - name: Install MongoDB tools
+        run: |
+          # Install MongoDB shell
+          wget -qO - https://www.mongodb.org/static/pgp/server-7.0.asc | sudo apt-key add -
+          echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+          sudo apt-get update
+          sudo apt-get install -y mongodb-mongosh
+
+      - name: Install MongoDB tools
+        run: |
+          # Install MongoDB shell
+          wget -qO - https://www.mongodb.org/static/pgp/server-7.0.asc | sudo apt-key add -
+          echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+          sudo apt-get update
+          sudo apt-get install -y mongodb-mongosh
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Wait for MongoDB to be ready
+        run: |
+          for i in {1..30}; do
+            if mongosh --host localhost:27017 --username admin --password password123 --authenticationDatabase admin --eval "db.runCommand('ping')" >/dev/null 2>&1; then
+              echo "MongoDB is ready"
+              break
+            fi
+            echo "Waiting for MongoDB... ($i/30)"
+            sleep 2
+          done
+          
+          # Verify connection works
+          mongosh --host localhost:27017 --username admin --password password123 --authenticationDatabase admin --eval "
+            db = db.getSiblingDB('dculus_forms_test');
+            db.createCollection('test');
+            print('Test database and collection created successfully');
+          "
+
+      - name: Start Backend Server
+        run: |
+          cd apps/backend
+          nohup pnpm dev > backend.log 2>&1 &
+          echo $! > backend.pid
+        env:
+          NODE_ENV: test
+
+      - name: Start Frontend Server  
+        run: |
+          cd apps/form-app
+          nohup pnpm dev > frontend.log 2>&1 &
+          echo $! > frontend.pid
+        env:
+          NODE_ENV: test
+
+      - name: Wait for servers to be ready
+        run: |
+          # Wait for backend
+          for i in {1..60}; do
+            if curl -s http://localhost:4000/graphql >/dev/null 2>&1; then
+              echo "Backend is ready"
+              break
+            fi
+            echo "Waiting for backend... ($i/60)"
+            sleep 2
+          done
+          
+          # Wait for frontend
+          for i in {1..60}; do
+            if curl -s http://localhost:3000 >/dev/null 2>&1; then
+              echo "Frontend is ready"
+              break
+            fi
+            echo "Waiting for frontend... ($i/60)"
+            sleep 2
+          done
+          
+          # Test backend health
+          echo "Testing backend health..."
+          curl -X POST -H "Content-Type: application/json" \
+            -d '{"query":"query { __typename }"}' \
+            http://localhost:4000/graphql || echo "GraphQL health check failed"
+          
+          # Test frontend health  
+          echo "Testing frontend health..."
+          curl -I http://localhost:3000 || echo "Frontend health check failed"
+
+      - name: Run Setup Validation Tests
+        run: pnpm exec playwright test --config=tests/config/playwright.ci.config.ts tests/e2e/validate-setup.test.ts --reporter=line
+        continue-on-error: true
+
+      - name: Debug Signup API
+        run: pnpm exec playwright test --config=tests/config/playwright.ci.config.ts tests/e2e/debug-signup.test.ts --reporter=line
+        continue-on-error: true
+
+      - name: Show backend logs before tests
+        run: |
+          echo "=== Backend logs ==="
+          cat apps/backend/backend.log | tail -20 || echo "No backend logs found"
+        continue-on-error: true
+
+      - name: Run Journey Tests
+        run: pnpm exec playwright test --config=tests/config/playwright.ci.config.ts
+
+      - name: Show backend logs after tests
+        if: always()
+        run: |
+          echo "=== Backend logs after tests ==="
+          cat apps/backend/backend.log | tail -50 || echo "No backend logs found"
+        continue-on-error: true
+        env:
+          TEST_BASE_URL: http://localhost:3000
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: journey-test-results
+          path: |
+            tests/test-results/
+            tests/playwright-report/
+          retention-days: 7
+
+      - name: Upload test videos
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: journey-test-videos
+          path: tests/test-results/**/*.webm
+          retention-days: 7
+
+      - name: Comment test results on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            const reportPath = 'tests/test-results/junit-results.xml';
+            let testSummary = 'Journey Tests completed';
+            
+            if (fs.existsSync(reportPath)) {
+              const reportContent = fs.readFileSync(reportPath, 'utf8');
+              const testCount = (reportContent.match(/tests="/g) || []).length;
+              const failureCount = (reportContent.match(/failures="/g) || []).length;
+              const errorCount = (reportContent.match(/errors="/g) || []).length;
+              
+              testSummary = `🧪 Journey Tests Results:
+              - Tests: ${testCount}
+              - Failures: ${failureCount}
+              - Errors: ${errorCount}
+              
+              ${failureCount > 0 || errorCount > 0 ? '❌ Some tests failed' : '✅ All tests passed'}`;
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: testSummary
+            });
+
+  auth-tests:
+    name: Authentication Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: []
+
+    services:
+      mongodb:
+        image: mongo:7.0
+        env:
+          MONGO_INITDB_ROOT_USERNAME: admin
+          MONGO_INITDB_ROOT_PASSWORD: password123
+          MONGO_INITDB_DATABASE: dculus_forms_test
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand(\"ping\").ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      CI: true
+      DATABASE_URL: mongodb://admin:password123@localhost:27017/dculus_forms_test?authSource=admin
+      JWT_SECRET: test-jwt-secret-for-ci-make-it-at-least-32-characters-long
+      JWT_EXPIRES_IN: 7d
+      BETTER_AUTH_SECRET: test-auth-secret-for-ci-make-it-at-least-32-characters-long
+      BETTER_AUTH_URL: http://localhost:4000
+      PORT: 4000
+      BASE_URL: http://localhost:4000
+      MONGODB_HOST: localhost
+      MONGODB_PORT: 27017
+      MONGODB_DATABASE: dculus_forms_test
+      MONGODB_USERNAME: admin
+      MONGODB_PASSWORD: password123
+      # Additional environment variables that might be needed
+      CLOUDFLARE_R2_ACCESS_KEY: test-key
+      CLOUDFLARE_R2_SECRET_KEY: test-secret
+      CLOUDFLARE_R2_ENDPOINT: https://test.r2.cloudflarestorage.com
+      CLOUDFLARE_R2_BUCKET_NAME: test-bucket
+      CLOUDFLARE_R2_PRIVATE_BUCKET_NAME: test-private-bucket
+      CLOUDFLARE_R2_PUBLIC_BUCKET_NAME: test-public-bucket
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build dependencies for testing
+        run: |
+          # Build only what's needed for tests to run
+          pnpm --filter @dculus/types build
+          pnpm --filter @dculus/ui build
+          pnpm --filter @dculus/utils build
+
+      - name: Setup database
+        run: |
+          pnpm db:generate
+          pnpm db:push
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Start Backend Server
+        run: |
+          cd apps/backend
+          nohup pnpm dev > backend.log 2>&1 &
+          echo $! > backend.pid
+        env:
+          NODE_ENV: test
+
+      - name: Start Frontend Server  
+        run: |
+          cd apps/form-app
+          nohup pnpm dev > frontend.log 2>&1 &
+          echo $! > frontend.pid
+        env:
+          NODE_ENV: test
+
+      - name: Wait for servers to be ready
+        run: |
+          # Wait for backend
+          for i in {1..60}; do
+            if curl -s http://localhost:4000/graphql >/dev/null 2>&1; then
+              echo "Backend is ready"
+              break
+            fi
+            echo "Waiting for backend... ($i/60)"
+            sleep 2
+          done
+          
+          # Wait for frontend
+          for i in {1..60}; do
+            if curl -s http://localhost:3000 >/dev/null 2>&1; then
+              echo "Frontend is ready"
+              break
+            fi
+            echo "Waiting for frontend... ($i/60)"
+            sleep 2
+          done
+          
+          # Test backend health
+          echo "Testing backend health..."
+          curl -X POST -H "Content-Type: application/json" \
+            -d '{"query":"query { __typename }"}' \
+            http://localhost:4000/graphql || echo "GraphQL health check failed"
+          
+          # Test frontend health  
+          echo "Testing frontend health..."
+          curl -I http://localhost:3000 || echo "Frontend health check failed"
+
+      - name: Run Setup Validation Tests
+        run: pnpm exec playwright test --config=tests/config/playwright.ci.config.ts tests/e2e/validate-setup.test.ts --reporter=line
+        continue-on-error: true
+
+      - name: Run Authentication Tests
+        run: pnpm exec playwright test --config=tests/config/playwright.ci.config.ts tests/e2e/auth/
+
+      - name: Upload auth test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-test-results
+          path: |
+            tests/test-results/
+            tests/playwright-report/
+          retention-days: 7
+
+  form-creation-tests:
+    name: Form Creation Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: []
+
+    services:
+      mongodb:
+        image: mongo:7.0
+        env:
+          MONGO_INITDB_ROOT_USERNAME: admin
+          MONGO_INITDB_ROOT_PASSWORD: password123
+          MONGO_INITDB_DATABASE: dculus_forms_test
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand(\"ping\").ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      CI: true
+      DATABASE_URL: mongodb://admin:password123@localhost:27017/dculus_forms_test?authSource=admin
+      JWT_SECRET: test-jwt-secret-for-ci-make-it-at-least-32-characters-long
+      JWT_EXPIRES_IN: 7d
+      BETTER_AUTH_SECRET: test-auth-secret-for-ci-make-it-at-least-32-characters-long
+      BETTER_AUTH_URL: http://localhost:4000
+      PORT: 4000
+      BASE_URL: http://localhost:4000
+      MONGODB_HOST: localhost
+      MONGODB_PORT: 27017
+      MONGODB_DATABASE: dculus_forms_test
+      MONGODB_USERNAME: admin
+      MONGODB_PASSWORD: password123
+      # Additional environment variables that might be needed
+      CLOUDFLARE_R2_ACCESS_KEY: test-key
+      CLOUDFLARE_R2_SECRET_KEY: test-secret
+      CLOUDFLARE_R2_ENDPOINT: https://test.r2.cloudflarestorage.com
+      CLOUDFLARE_R2_BUCKET_NAME: test-bucket
+      CLOUDFLARE_R2_PRIVATE_BUCKET_NAME: test-private-bucket
+      CLOUDFLARE_R2_PUBLIC_BUCKET_NAME: test-public-bucket
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build dependencies for testing
+        run: |
+          # Build only what's needed for tests to run
+          pnpm --filter @dculus/types build
+          pnpm --filter @dculus/ui build
+          pnpm --filter @dculus/utils build
+
+      - name: Setup database
+        run: |
+          pnpm db:generate
+          pnpm db:push
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Start Backend Server
+        run: |
+          cd apps/backend
+          nohup pnpm dev > backend.log 2>&1 &
+          echo $! > backend.pid
+        env:
+          NODE_ENV: test
+
+      - name: Start Frontend Server  
+        run: |
+          cd apps/form-app
+          nohup pnpm dev > frontend.log 2>&1 &
+          echo $! > frontend.pid
+        env:
+          NODE_ENV: test
+
+      - name: Wait for servers to be ready
+        run: |
+          # Wait for backend
+          for i in {1..60}; do
+            if curl -s http://localhost:4000/graphql >/dev/null 2>&1; then
+              echo "Backend is ready"
+              break
+            fi
+            echo "Waiting for backend... ($i/60)"
+            sleep 2
+          done
+          
+          # Wait for frontend
+          for i in {1..60}; do
+            if curl -s http://localhost:3000 >/dev/null 2>&1; then
+              echo "Frontend is ready"
+              break
+            fi
+            echo "Waiting for frontend... ($i/60)"
+            sleep 2
+          done
+          
+          # Test backend health
+          echo "Testing backend health..."
+          curl -X POST -H "Content-Type: application/json" \
+            -d '{"query":"query { __typename }"}' \
+            http://localhost:4000/graphql || echo "GraphQL health check failed"
+          
+          # Test frontend health  
+          echo "Testing frontend health..."
+          curl -I http://localhost:3000 || echo "Frontend health check failed"
+
+      - name: Run Setup Validation Tests
+        run: pnpm exec playwright test --config=tests/config/playwright.ci.config.ts tests/e2e/validate-setup.test.ts --reporter=line
+        continue-on-error: true
+
+      - name: Run Form Creation Tests
+        run: pnpm exec playwright test --config=tests/config/playwright.ci.config.ts tests/e2e/form-creation/
+
+      - name: Upload form creation test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: form-creation-test-results
+          path: |
+            tests/test-results/
+            tests/playwright-report/
+          retention-days: 7

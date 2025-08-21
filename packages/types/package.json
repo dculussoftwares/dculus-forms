@@ -1,0 +1,20 @@
+{
+  "name": "@dculus/types",
+  "version": "1.0.0",
+  "description": "Shared types for Dculus Forms",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "dev": "tsc --watch",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "react-hook-form": "7.62.0",
+    "zod": "^3.22.0"
+  }
+}

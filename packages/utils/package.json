@@ -1,0 +1,17 @@
+{
+  "name": "@dculus/utils",
+  "version": "0.1.0",
+  "description": "Shared utilities for Dculus Forms",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "nanoid": "5.1.5"
+  }
+}

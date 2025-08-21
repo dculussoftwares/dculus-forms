@@ -1,0 +1,29 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@dculus/ui": ["../../packages/ui/src"],
+      "@dculus/ui/*": ["../../packages/ui/src/*"],
+      "@dculus/utils": ["../../packages/utils/src"],
+      "@dculus/utils/*": ["../../packages/utils/src/*"],
+      "@dculus/types": ["../../packages/types/src"],
+      "@dculus/types/*": ["../../packages/types/src/*"]
+    }
+  },
+  "include": ["src/**/*", "../../packages/ui/src/**/*", "../../packages/utils/src/**/*", "../../packages/types/src/**/*"],
+  "exclude": ["dist", "node_modules"]
+} 

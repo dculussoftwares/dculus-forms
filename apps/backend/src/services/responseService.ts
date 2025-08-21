@@ -1,0 +1,198 @@
+import { FormResponse } from '@dculus/types';
+import { prisma } from '../lib/prisma';
+
+export const getAllResponses = async (organizationId?: string): Promise<FormResponse[]> => {
+  const responses = await prisma.response.findMany({
+    where: organizationId ? {
+      form: {
+        organizationId
+      }
+    } : {},
+    orderBy: { submittedAt: 'desc' },
+    include: {
+      form: true,
+    },
+  });
+  
+  return responses.map((response: any) => ({
+    id: response.id,
+    formId: response.formId,
+    data: (response.data as Record<string, any>) || {},
+    submittedAt: response.submittedAt,
+  }));
+};
+
+export const getResponseById = async (id: string): Promise<FormResponse | null> => {
+  try {
+    const response = await prisma.response.findUnique({
+      where: { id },
+      include: {
+        form: true,
+      },
+    });
+    
+    if (!response) return null;
+    
+    return {
+      id: response.id,
+      formId: response.formId,
+      data: (response.data as Record<string, any>) || {},
+      submittedAt: response.submittedAt,
+    };
+  } catch (error) {
+    console.error('Error fetching response by ID:', error);
+    return null;
+  }
+};
+
+export const getResponsesByFormId = async (
+  formId: string, 
+  page: number = 1, 
+  limit: number = 10,
+  sortBy: string = 'submittedAt',
+  sortOrder: string = 'desc'
+): Promise<{
+  data: FormResponse[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}> => {
+  // Ensure pagination values are valid
+  const validPage = Math.max(1, page);
+  const validLimit = Math.min(Math.max(1, limit), 100); // Cap at 100 items per page
+  const skip = (validPage - 1) * validLimit;
+
+  // Validate and prepare sorting
+  const allowedSortFields = ['id', 'submittedAt'];
+  const validSortOrder = ['asc', 'desc'].includes(sortOrder.toLowerCase()) ? sortOrder.toLowerCase() : 'desc';
+  
+  // Check if sorting by a form field (starts with 'data.')
+  const isFormFieldSort = sortBy.startsWith('data.');
+  let validSortBy = sortBy;
+  
+  if (!isFormFieldSort && !allowedSortFields.includes(sortBy)) {
+    validSortBy = 'submittedAt';
+  }
+
+  // Get total count for pagination metadata
+  const total = await prisma.response.count({
+    where: { formId },
+  });
+
+  // Get paginated responses with conditional sorting
+  let responses;
+  
+  if (isFormFieldSort) {
+    // For form field sorting, get all responses and sort them in memory
+    // This is less efficient but more reliable for form field sorting
+    const allResponses = await prisma.response.findMany({
+      where: { formId },
+    });
+    
+    // Extract the field ID from 'data.fieldId'
+    const fieldId = validSortBy.replace('data.', '');
+    
+    // Sort responses by form field value
+    const sortedResponses = allResponses.sort((a, b) => {
+      const aValue = (a.data as any)?.[fieldId];
+      const bValue = (b.data as any)?.[fieldId];
+      
+      // Handle null/undefined values
+      if (aValue == null && bValue == null) return 0;
+      if (aValue == null) return validSortOrder === 'asc' ? -1 : 1;
+      if (bValue == null) return validSortOrder === 'asc' ? 1 : -1;
+      
+      // Convert to strings for comparison
+      const aStr = String(aValue).toLowerCase();
+      const bStr = String(bValue).toLowerCase();
+      
+      let comparison = 0;
+      if (aStr < bStr) comparison = -1;
+      if (aStr > bStr) comparison = 1;
+      
+      return validSortOrder === 'asc' ? comparison : -comparison;
+    });
+    
+    // Apply pagination to sorted results
+    responses = sortedResponses.slice(skip, skip + validLimit);
+  } else {
+    // For regular field sorting (id, submittedAt)
+    responses = await prisma.response.findMany({
+      where: { formId },
+      orderBy: { [validSortBy]: validSortOrder },
+      skip,
+      take: validLimit,
+    });
+  }
+  
+  const data = responses.map((response: any) => ({
+    id: response.id,
+    formId: response.formId,
+    data: (response.data as Record<string, any>) || {},
+    submittedAt: response.submittedAt,
+  }));
+
+  const totalPages = Math.ceil(total / validLimit);
+
+  return {
+    data,
+    total,
+    page: validPage,
+    limit: validLimit,
+    totalPages,
+  };
+};
+
+export const getAllResponsesByFormId = async (formId: string): Promise<FormResponse[]> => {
+  try {
+    console.log(`Fetching ALL responses for form: ${formId}`);
+    
+    const responses = await prisma.response.findMany({
+      where: { formId },
+      orderBy: { submittedAt: 'desc' },
+    });
+    
+    console.log(`Found ${responses.length} total responses for form: ${formId}`);
+    
+    return responses.map((response: any) => ({
+      id: response.id,
+      formId: response.formId,
+      data: (response.data as Record<string, any>) || {},
+      submittedAt: response.submittedAt,
+    }));
+  } catch (error) {
+    console.error('Error fetching all responses by form ID:', error);
+    throw new Error(`Failed to fetch responses: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+export const submitResponse = async (responseData: Partial<FormResponse>): Promise<FormResponse> => {
+  const { generateId } = await import('@dculus/utils');
+  const newResponse = await prisma.response.create({
+    data: {
+      id: generateId(),
+      formId: responseData.formId!,
+      data: responseData.data || {},
+    },
+  });
+
+  return {
+    id: newResponse.id,
+    formId: newResponse.formId,
+    data: (newResponse.data as Record<string, any>) || {},
+    submittedAt: newResponse.submittedAt,
+  };
+};
+
+export const deleteResponse = async (id: string): Promise<boolean> => {
+  try {
+    await prisma.response.delete({
+      where: { id },
+    });
+    return true;
+  } catch (error) {
+    console.error('Error deleting response:', error);
+    return false;
+  }
+}; 
