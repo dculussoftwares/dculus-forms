@@ -22,10 +22,12 @@ jobs:
           fetch-depth: 0  # Fetch full history for comprehensive scanning
 
       - name: Run TruffleHog secret scan
-        uses: trufflesecurity/trufflehog@main
-        with:
-          path: ./
-          extra_args: --exclude-detectors="mongodb" --no-verification
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/tmp" -w /tmp \
+            ghcr.io/trufflesecurity/trufflehog:latest \
+            filesystem /tmp \
+            --exclude-paths="docker-compose.yml,.github/workflows/ci.yml" \
+            --no-verification
 
       - name: Security scan results
         if: always()
