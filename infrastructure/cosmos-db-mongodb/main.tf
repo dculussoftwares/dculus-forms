@@ -36,11 +36,11 @@ resource "azurerm_cosmosdb_account" "mongodb_account" {
   resource_group_name       = azurerm_resource_group.cosmos_db_rg.name
   offer_type                = "Standard"
   kind                      = "MongoDB"
-  enable_free_tier          = true
+  enable_free_tier          = false
   enable_automatic_failover = false
   mongo_server_version      = "4.2"
 
-  # Single region configuration for free tier
+  # Single region configuration for minimal cost
   geo_location {
     location          = azurerm_resource_group.cosmos_db_rg.location
     failover_priority = 0
@@ -72,7 +72,7 @@ resource "azurerm_cosmosdb_mongo_database" "main_database" {
   resource_group_name = azurerm_resource_group.cosmos_db_rg.name
   account_name        = azurerm_cosmosdb_account.mongodb_account.name
   
-  # Free tier: shared throughput of 400 RU/s
+  # Minimum throughput for paid tier (400 RU/s)
   throughput = 400
 }
 
