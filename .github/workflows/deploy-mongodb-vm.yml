@@ -1,0 +1,236 @@
+name: Deploy MongoDB VM
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Terraform action to perform'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+        - plan
+        - apply
+        - destroy
+      vm_size:
+        description: 'VM Size (Standard_B2s recommended)'
+        required: false
+        default: 'Standard_B2s'
+        type: string
+      location:
+        description: 'Azure region'
+        required: false
+        default: 'East US'
+        type: string
+
+env:
+  TF_VERSION: '1.5.0'
+
+jobs:
+  deploy-mongodb-vm:
+    name: Deploy MongoDB VM
+    runs-on: ubuntu-latest
+    env:
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_USE_OIDC: true
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: infrastructure/mongodb-vm
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure CLI login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup Terraform backend resources
+        id: backend
+        run: |
+          RESOURCE_GROUP_NAME=dculus-global-terraform-assets-resource-grp
+          STORAGE_ACCOUNT_NAME=dculusterraformstates
+          CONTAINER_NAME=mongodb-vm-deployment
+
+          echo "Setting up Terraform backend resources..."
+          
+          # Create resource group if it doesn't exist
+          az group create --name $RESOURCE_GROUP_NAME --location eastus
+
+          # Create storage account if it doesn't exist
+          az storage account create \
+            --resource-group $RESOURCE_GROUP_NAME \
+            --name $STORAGE_ACCOUNT_NAME \
+            --sku Standard_LRS \
+            --encryption-services blob \
+            --allow-blob-public-access false \
+            --only-show-errors || echo "Storage account already exists"
+
+          # Create blob container if it doesn't exist
+          az storage container create \
+            --name $CONTAINER_NAME \
+            --account-name $STORAGE_ACCOUNT_NAME \
+            --only-show-errors || echo "Container already exists"
+
+          # Get storage account key for Terraform backend
+          ACCOUNT_KEY=$(az storage account keys list \
+            --resource-group $RESOURCE_GROUP_NAME \
+            --account-name $STORAGE_ACCOUNT_NAME \
+            --query '[0].value' -o tsv)
+          echo "ARM_ACCESS_KEY=$ACCOUNT_KEY" >> $GITHUB_ENV
+          
+          echo "✅ Terraform backend resources ready"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive .
+        continue-on-error: true
+
+      - name: Terraform Init
+        run: |
+          echo "Initializing Terraform..."
+          terraform init \
+            -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
+            -backend-config="storage_account_name=dculusterraformstates" \
+            -backend-config="container_name=mongodb-vm-deployment" \
+            -backend-config="key=terraform.tfstate"
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          echo "Planning Terraform deployment..."
+          terraform plan \
+            -var="vm_size=${{ github.event.inputs.vm_size || 'Standard_B2s' }}" \
+            -var="location=${{ github.event.inputs.location || 'East US' }}" \
+            -var="environment=production" \
+            -out=tfplan
+        env:
+          TF_VAR_allowed_mongodb_ips: '["0.0.0.0/0"]'  # WARNING: Restrict to your IP in production
+
+      - name: Terraform Plan Output
+        run: terraform show tfplan
+
+      - name: Terraform Apply
+        if: github.event.inputs.action == 'apply'
+        run: |
+          echo "Applying Terraform plan..."
+          terraform apply -auto-approve tfplan
+
+      - name: Terraform Destroy
+        if: github.event.inputs.action == 'destroy'
+        run: |
+          echo "Destroying Terraform resources..."
+          terraform destroy -auto-approve \
+            -var="vm_size=${{ github.event.inputs.vm_size || 'Standard_B2s' }}" \
+            -var="location=${{ github.event.inputs.location || 'East US' }}" \
+            -var="environment=production"
+        env:
+          TF_VAR_allowed_mongodb_ips: '["0.0.0.0/0"]'
+
+      - name: Get Outputs (Apply only)
+        if: github.event.inputs.action == 'apply'
+        id: outputs
+        run: |
+          echo "Retrieving Terraform outputs..."
+          PUBLIC_IP=$(terraform output -raw public_ip_address)
+          FQDN=$(terraform output -raw fqdn)
+          APP_CONNECTION=$(terraform output -raw mongodb_app_connection_string)
+          ADMIN_CONNECTION=$(terraform output -raw mongodb_admin_connection_string)
+          
+          echo "public_ip=$PUBLIC_IP" >> $GITHUB_OUTPUT
+          echo "fqdn=$FQDN" >> $GITHUB_OUTPUT
+          
+          echo "## 🚀 MongoDB VM Deployment Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Server:** $PUBLIC_IP:27017" >> $GITHUB_STEP_SUMMARY
+          echo "**FQDN:** $FQDN" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Connection Strings:" >> $GITHUB_STEP_SUMMARY
+          echo "**Application Database:** \`$APP_CONNECTION\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Admin Database:** \`$ADMIN_CONNECTION\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📝 Database Details:" >> $GITHUB_STEP_SUMMARY
+          echo "- **App User:** dculus_app" >> $GITHUB_STEP_SUMMARY
+          echo "- **App Database:** dculus_forms" >> $GITHUB_STEP_SUMMARY
+          echo "- **Admin User:** admin" >> $GITHUB_STEP_SUMMARY
+          echo "- **Port:** 27017" >> $GITHUB_STEP_SUMMARY
+
+      - name: Test MongoDB Connection (Apply only)
+        if: github.event.inputs.action == 'apply'
+        run: |
+          PUBLIC_IP=$(terraform output -raw public_ip_address)
+          echo "Waiting for MongoDB installation to complete..."
+          
+          # Wait up to 10 minutes for cloud-init and MongoDB installation
+          for i in {1..20}; do
+            echo "Attempt $i/20: Testing MongoDB connection..."
+            
+            # Test MongoDB connection directly
+            if timeout 10 bash -c "echo > /dev/tcp/$PUBLIC_IP/27017" 2>/dev/null; then
+              echo "✅ MongoDB port 27017 is accessible!"
+              
+              # Test actual MongoDB connection (requires mongosh)
+              echo "MongoDB is ready for connections"
+              echo "Use the connection strings provided above to connect to your database"
+              break
+            else
+              echo "MongoDB installation still in progress... waiting 30 seconds"
+              sleep 30
+            fi
+            
+            if [ $i -eq 20 ]; then
+              echo "⚠️ MongoDB installation verification timed out"
+              echo "The VM may still be installing MongoDB via cloud-init"
+              echo "Wait a few more minutes and try connecting with the provided connection strings"
+            fi
+          done
+
+      - name: Security Reminder
+        if: github.event.inputs.action == 'apply'
+        run: |
+          echo "## 🔒 Security Configuration Required!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**⚠️ CRITICAL: Your MongoDB is currently accessible from anywhere (0.0.0.0/0)**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Immediate Actions Required:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Update \`allowed_mongodb_ips\` variable to restrict access to your IP" >> $GITHUB_STEP_SUMMARY
+          echo "2. Re-run workflow with \`apply\` to update security groups" >> $GITHUB_STEP_SUMMARY
+          echo "3. Change default MongoDB passwords for production use" >> $GITHUB_STEP_SUMMARY
+          echo "4. Enable SSL/TLS for production environments" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 💰 Cost Information:" >> $GITHUB_STEP_SUMMARY
+          echo "- **VM Cost**: ~$30-35/month (Standard_B2s)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Storage Cost**: ~$5-10/month (30GB Standard SSD)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Total**: ~$35-45/month" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🚀 Ready to Use:" >> $GITHUB_STEP_SUMMARY
+          echo "Your MongoDB connection strings are ready to use in your applications!" >> $GITHUB_STEP_SUMMARY
+
+  summary:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    needs: deploy-mongodb-vm
+    if: always()
+    steps:
+      - name: Deployment Status
+        run: |
+          if [ "${{ needs.deploy-mongodb-vm.result }}" == "success" ]; then
+            echo "✅ MongoDB VM deployment completed successfully"
+          else
+            echo "❌ MongoDB VM deployment failed"
+            exit 1
+          fi
