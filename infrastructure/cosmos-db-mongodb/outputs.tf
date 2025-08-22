@@ -14,16 +14,16 @@ output "cosmosdb_endpoint" {
   description = "The endpoint URL for the Cosmos DB account"
 }
 
-# MongoDB connection strings
-output "mongodb_connection_string_primary" {
-  value       = azurerm_cosmosdb_account.mongodb_account.connection_strings[0]
+# MongoDB connection strings (using primary_key instead of deprecated connection_strings)
+output "mongodb_connection_string" {
+  value       = "mongodb://${azurerm_cosmosdb_account.mongodb_account.name}:${azurerm_cosmosdb_account.mongodb_account.primary_key}@${azurerm_cosmosdb_account.mongodb_account.name}.mongo.cosmos.azure.com:10255/${azurerm_cosmosdb_mongo_database.main_database.name}?ssl=true&retrywrites=false&maxIdleTimeMS=120000&appName=@${azurerm_cosmosdb_account.mongodb_account.name}@"
   description = "Primary MongoDB connection string"
   sensitive   = true
 }
 
-output "mongodb_connection_string_secondary" {
-  value       = azurerm_cosmosdb_account.mongodb_account.connection_strings[1]
-  description = "Secondary MongoDB connection string"
+output "mongodb_connection_string_readonly" {
+  value       = "mongodb://${azurerm_cosmosdb_account.mongodb_account.name}:${azurerm_cosmosdb_account.mongodb_account.secondary_key}@${azurerm_cosmosdb_account.mongodb_account.name}.mongo.cosmos.azure.com:10255/${azurerm_cosmosdb_mongo_database.main_database.name}?ssl=true&retrywrites=false&maxIdleTimeMS=120000&appName=@${azurerm_cosmosdb_account.mongodb_account.name}@"
+  description = "Secondary (readonly) MongoDB connection string"
   sensitive   = true
 }
 
