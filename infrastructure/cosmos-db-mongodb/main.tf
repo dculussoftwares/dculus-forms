@@ -36,7 +36,7 @@ resource "azurerm_cosmosdb_account" "mongodb_account" {
   resource_group_name       = azurerm_resource_group.cosmos_db_rg.name
   offer_type                = "Standard"
   kind                      = "MongoDB"
-  enable_free_tier          = false
+  enable_free_tier          = true
   enable_automatic_failover = false
   mongo_server_version      = "4.2"
 
