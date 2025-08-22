@@ -57,7 +57,7 @@ resource "azurerm_cosmosdb_account" "mongodb_account" {
   public_network_access_enabled     = true
   
   # Allow access from all IP addresses for development
-  ip_range_filter = "0.0.0.0/0"
+  ip_range_filter = "0.0.0.0-255.255.255.255"
 
   tags = {
     Environment = var.environment
