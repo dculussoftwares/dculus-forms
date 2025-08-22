@@ -1,6 +1,6 @@
 variable "location" {
   type        = string
-  default     = "eastus"
+  default     = "westus2"
   description = "Azure region for the Cosmos DB deployment"
 }
 
