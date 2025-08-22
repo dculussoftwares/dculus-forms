@@ -6,8 +6,8 @@
 set -e  # Exit on any error
 
 # Variables from Terraform template
-MONGODB_VERSION="${mongodb_version}"
-MONGODB_PORT="${mongodb_port}"
+MONGODB_VERSION="${MONGODB_VERSION}"
+MONGODB_PORT="${MONGODB_PORT}"
 
 # Log all output for debugging
 exec > >(tee -a /var/log/mongodb-install.log)

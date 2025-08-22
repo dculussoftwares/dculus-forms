@@ -135,8 +135,8 @@ resource "azurerm_network_interface_security_group_association" "mongodb_nsg_ass
 # Cloud-init script for MongoDB installation
 locals {
   cloud_init_script = base64encode(templatefile("${path.module}/scripts/install-mongodb.sh", {
-    mongodb_version = var.mongodb_version
-    mongodb_port    = var.mongodb_port
+    MONGODB_VERSION = var.mongodb_version
+    MONGODB_PORT    = var.mongodb_port
   }))
 }
 
