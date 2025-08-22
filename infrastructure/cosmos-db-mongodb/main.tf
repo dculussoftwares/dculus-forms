@@ -168,6 +168,6 @@ resource "azurerm_cosmosdb_mongo_collection" "users" {
 
   index {
     keys   = ["email"]
-    unique = true
+    unique = false
   }
 }
