@@ -1,4 +1,7 @@
 # Multi-stage Dockerfile for Dculus Forms Backend
+# This Dockerfile should be built from the repository root
+# docker build -f apps/backend/Dockerfile .
+
 # Stage 1: Build stage
 FROM --platform=$BUILDPLATFORM node:18-alpine AS builder
 
@@ -8,15 +11,20 @@ RUN npm install -g pnpm
 # Set working directory
 WORKDIR /app
 
-# Copy all source files from repository root
-COPY . .
+# Copy package files first for better layer caching
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY packages/ ./packages/
+COPY apps/backend/package.json ./apps/backend/
 
 # Install all dependencies
 RUN pnpm install --frozen-lockfile
 
+# Copy source code
+COPY . .
+
 # Build shared packages first
-RUN pnpm --filter @dculus/types build || echo "types build failed, continuing"
-RUN pnpm --filter @dculus/utils build || echo "utils build failed, continuing"
+RUN pnpm --filter @dculus/types build
+RUN pnpm --filter @dculus/utils build
 
 # Generate Prisma client and build backend
 WORKDIR /app/apps/backend
