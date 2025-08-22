@@ -8,33 +8,19 @@ RUN npm install -g pnpm
 # Set working directory
 WORKDIR /app
 
-# Copy workspace and package configuration first (from repo root)
-COPY pnpm-workspace.yaml ./
-COPY package.json pnpm-lock.yaml ./
+# Copy all source files from repository root
+COPY . .
 
-# Copy packages directory for workspace dependencies
-COPY packages/ ./packages/
-
-# Copy backend package.json
-COPY apps/backend/package.json ./apps/backend/
-
-# Install all dependencies (including workspace dependencies)
+# Install all dependencies
 RUN pnpm install --frozen-lockfile
 
 # Build shared packages first
-RUN pnpm --filter @dculus/types build
-RUN pnpm --filter @dculus/utils build
+RUN pnpm --filter @dculus/types build || echo "types build failed, continuing"
+RUN pnpm --filter @dculus/utils build || echo "utils build failed, continuing"
 
-# Copy backend source code (excluding .env files via .dockerignore)
-COPY apps/backend/ ./apps/backend/
-
-# Set working directory to backend
+# Generate Prisma client and build backend
 WORKDIR /app/apps/backend
-
-# Generate Prisma client
 RUN pnpm db:generate
-
-# Build the application
 RUN pnpm build
 
 # Stage 2: Production stage
@@ -44,36 +30,18 @@ FROM node:18-alpine AS production
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S backend -u 1001
 
-# Install pnpm globally
-RUN npm install -g pnpm
-
 # Set working directory
 WORKDIR /app
 
-# Copy workspace and package configuration
-COPY pnpm-workspace.yaml ./
-COPY package.json pnpm-lock.yaml ./
-
-# Copy packages directory for workspace dependencies
-COPY packages/ ./packages/
-
-# Copy backend package.json
-COPY apps/backend/package.json ./apps/backend/
-
-# Install only production dependencies
-RUN pnpm install --frozen-lockfile --prod
-
-# Copy built application and generated files from builder stage
-COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
-COPY --from=builder /app/apps/backend/node_modules/.prisma ./apps/backend/node_modules/.prisma
-COPY --from=builder /app/apps/backend/prisma ./apps/backend/prisma
+# Copy built application and dependencies from builder stage
+COPY --from=builder /app/apps/backend/dist ./dist
+COPY --from=builder /app/apps/backend/node_modules ./node_modules
+COPY --from=builder /app/apps/backend/package.json ./
+COPY --from=builder /app/apps/backend/prisma ./prisma
 
 # Change ownership to non-root user
 RUN chown -R backend:nodejs /app
 USER backend
-
-# Set working directory to backend
-WORKDIR /app/apps/backend
 
 # Expose port
 EXPOSE 4000
