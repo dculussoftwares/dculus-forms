@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      # Database
+      - DATABASE_URL=${DATABASE_URL:-mongodb://mongodb:27017/dculus_forms?replicaSet=rs0&retryWrites=true&w=majority}
+      
+      # JWT Authentication
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      
+      # Better Auth
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL:-http://localhost:4000}
+      
+      # Server
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-4000}
+      - BASE_URL=${BASE_URL:-http://localhost:4000}
+      
+      # MongoDB Settings
+      - MONGODB_HOST=${MONGODB_HOST:-mongodb}
+      - MONGODB_PORT=${MONGODB_PORT:-27017}
+      - MONGODB_DATABASE=${MONGODB_DATABASE:-dculus_forms}
+      - MONGODB_USERNAME=${MONGODB_USERNAME}
+      - MONGODB_PASSWORD=${MONGODB_PASSWORD}
+      
+      # Cloudflare R2 Storage
+      - CLOUDFLARE_R2_ACCESS_KEY=${CLOUDFLARE_R2_ACCESS_KEY}
+      - CLOUDFLARE_R2_SECRET_KEY=${CLOUDFLARE_R2_SECRET_KEY}
+      - CLOUDFLARE_R2_ENDPOINT=${CLOUDFLARE_R2_ENDPOINT}
+      - CLOUDFLARE_R2_PRIVATE_BUCKET_NAME=${CLOUDFLARE_R2_PRIVATE_BUCKET_NAME}
+      - CLOUDFLARE_R2_PUBLIC_BUCKET_NAME=${CLOUDFLARE_R2_PUBLIC_BUCKET_NAME}
+    env_file:
+      - .env
+    depends_on:
+      - mongodb
+    networks:
+      - dculus-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => { process.exit(1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  mongodb:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGODB_USERNAME:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD:-password123}
+      - MONGO_INITDB_DATABASE=${MONGODB_DATABASE:-dculus_forms}
+    volumes:
+      - mongodb_data:/data/db
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - dculus-network
+    restart: unless-stopped
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # MongoDB replica set initialization
+  mongo-setup:
+    image: mongo:7.0
+    depends_on:
+      - mongodb
+    networks:
+      - dculus-network
+    restart: "no"
+    entrypoint: [
+      "bash", "-c",
+      "sleep 10 && mongosh --host mongodb:27017 --eval 'rs.initiate({_id: \"rs0\", members: [{_id: 0, host: \"mongodb:27017\"}]})' && echo 'Replica set initialized'"
+    ]
+
+volumes:
+  mongodb_data:
+
+networks:
+  dculus-network:
+    driver: bridge
