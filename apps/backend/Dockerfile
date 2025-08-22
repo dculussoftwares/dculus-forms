@@ -8,7 +8,7 @@ RUN npm install -g pnpm
 # Set working directory
 WORKDIR /app
 
-# Copy workspace and package configuration first
+# Copy workspace and package configuration first (from repo root)
 COPY pnpm-workspace.yaml ./
 COPY package.json pnpm-lock.yaml ./
 
@@ -20,6 +20,10 @@ COPY apps/backend/package.json ./apps/backend/
 
 # Install all dependencies (including workspace dependencies)
 RUN pnpm install --frozen-lockfile
+
+# Build shared packages first
+RUN pnpm --filter @dculus/types build
+RUN pnpm --filter @dculus/utils build
 
 # Copy backend source code (excluding .env files via .dockerignore)
 COPY apps/backend/ ./apps/backend/
