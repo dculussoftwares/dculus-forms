@@ -18,9 +18,16 @@ resource "random_integer" "suffix" {
   max = 9999
 }
 
+# Timestamp for additional uniqueness
+resource "time_static" "deployment_time" {}
+
+locals {
+  timestamp_suffix = substr(replace(time_static.deployment_time.unix, ".", ""), -4, -1)
+}
+
 # Azure Cosmos DB Account for MongoDB
 resource "azurerm_cosmosdb_account" "mongodb_account" {
-  name                      = "${var.application_name}-cosmos-${random_integer.suffix.result}"
+  name                      = "${var.application_name}-cosmos-${random_integer.suffix.result}${local.timestamp_suffix}"
   location                  = azurerm_resource_group.cosmos_db_rg.location
   resource_group_name       = azurerm_resource_group.cosmos_db_rg.name
   offer_type                = "Standard"
