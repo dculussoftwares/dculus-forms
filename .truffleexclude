@@ -1,0 +1,28 @@
+# TruffleHog exclude paths
+# Example files and demo data
+.env.example
+**/example/**
+**/demo/**
+**/test/**
+**/tests/**
+
+# Documentation
+*.md
+*.txt
+
+# Configuration files (reviewed manually)
+docker-compose.yml
+.github/workflows/
+
+# Package manager files
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Build outputs
+dist/
+build/
+node_modules/
+
+# Log files
+*.log
