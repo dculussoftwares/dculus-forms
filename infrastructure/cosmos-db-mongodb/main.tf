@@ -56,8 +56,8 @@ resource "azurerm_cosmosdb_account" "mongodb_account" {
   is_virtual_network_filter_enabled = false
   public_network_access_enabled     = true
   
-  # Allow access from Azure services and development machine
-  ip_range_filter = "0.0.0.0,49.206.9.4,104.42.195.92,40.76.54.131,52.176.6.30,52.169.50.45,52.187.184.26"
+  # Allow access from all IP addresses for development
+  ip_range_filter = "0.0.0.0/0"
 
   tags = {
     Environment = var.environment
