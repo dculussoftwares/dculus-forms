@@ -1,9 +1,8 @@
-# Multi-stage Dockerfile for Dculus Forms Backend
+# Single-stage Dockerfile for Dculus Forms Backend
 # This Dockerfile should be built from the repository root
 # docker build -f apps/backend/Dockerfile .
 
-# Stage 1: Build stage
-FROM --platform=$BUILDPLATFORM node:18-alpine AS builder
+FROM --platform=$BUILDPLATFORM node:18-alpine
 
 # Install pnpm globally
 RUN npm install -g pnpm
@@ -31,25 +30,19 @@ WORKDIR /app/apps/backend
 RUN pnpm db:generate
 RUN pnpm build
 
-# Stage 2: Production stage
-FROM node:18-alpine AS production
+# For now, use single-stage build to avoid copy issues
+# TODO: Optimize with multi-stage build once working
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S backend -u 1001
 
-# Set working directory
-WORKDIR /app
-
-# Copy built application and dependencies from builder stage
-COPY --from=builder /app/apps/backend/dist ./dist
-COPY --from=builder /app/apps/backend/node_modules ./node_modules
-COPY --from=builder /app/apps/backend/package.json ./
-COPY --from=builder /app/apps/backend/prisma ./prisma
-
-# Change ownership to non-root user
+# Change ownership to non-root user and switch to backend user
 RUN chown -R backend:nodejs /app
 USER backend
+
+# Set final working directory
+WORKDIR /app/apps/backend
 
 # Expose port
 EXPOSE 4000
