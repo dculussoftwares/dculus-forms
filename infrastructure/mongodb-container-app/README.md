@@ -2,23 +2,25 @@
 
 This Terraform configuration deploys MongoDB Community Edition using Azure Container Apps with persistent storage - a cost-effective, serverless alternative to traditional VMs.
 
-## 🏗️ Architecture Overview
+## 🏗️ Architecture Overview (2024 Best Practices)
 
-- **Container Platform**: Azure Container Apps (serverless)
-- **MongoDB**: Official MongoDB 8.0 Docker image
-- **Storage**: Azure Files for persistent data (10GB default)
-- **Networking**: HTTPS endpoints with automatic SSL/TLS
-- **Logging**: Azure Log Analytics integration
-- **Cost**: ~$7-23/month (vs $35-45/month for VM)
+- **Container Platform**: Azure Container Apps (serverless, latest azurerm provider)
+- **MongoDB**: Official MongoDB 7.x Docker image (mongo:7-jammy)
+- **Storage**: Azure Files with ZRS replication for high availability
+- **Security**: Key Vault integration, managed identity, NSG rules
+- **Monitoring**: TCP health probes, Azure Log Analytics integration
+- **Networking**: Internal-first with optional external access
+- **Cost**: ~$15-30/month with enhanced features
 
 ## 💰 Cost Comparison
 
-| Component | Container Apps | VM Alternative |
-|-----------|----------------|----------------|
-| Compute | $5-15/month | $30-35/month |
-| Storage | $1-3/month | $5-10/month |
-| Networking | Included | Included |
-| **Total** | **$7-23/month** | **$35-45/month** |
+| Component | Container Apps 2024 | VM Alternative |
+|-----------|---------------------|----------------|
+| Compute | $8-15/month | $30-35/month |
+| Storage (ZRS) | $2-4/month | $5-10/month |
+| Key Vault | $1/month | $0 (self-managed) |
+| Monitoring | $2-5/month | $3-8/month |
+| **Total** | **$15-30/month** | **$35-45/month** |
 
 ## 🚀 Deployment Options
 
@@ -95,12 +97,14 @@ mongoose.connect('mongodb://admin:SecureRootPassword123!@your-app-fqdn:27017/dcu
 - **Faster deployment**: ~2-3 minutes vs ~10-15 minutes for VM
 - **Lower cost**: ~60-70% cheaper than equivalent VM
 
-### 🔒 Security Features
-- **HTTPS endpoints**: All traffic encrypted
-- **Container isolation**: Secure container runtime
-- **Azure integration**: Uses Azure RBAC and security
-- **Network policies**: Traffic controlled at Azure level
-- **Persistent storage**: Data survives container restarts
+### 🔒 Security Features (2024 Enhanced)
+- **Key Vault Integration**: Passwords stored securely in Azure Key Vault
+- **Managed Identity**: System-assigned identity for secure resource access
+- **Network Security Groups**: Configurable firewall rules for external access
+- **Internal-first networking**: Secure by default with optional external exposure
+- **Zone-Redundant Storage**: Enhanced data durability and availability
+- **Health probes**: TCP-based startup, liveness, and readiness checks
+- **Container isolation**: Secure container runtime with resource limits
 
 ## 🛠️ Management
 

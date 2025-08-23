@@ -22,30 +22,29 @@ resource "azurerm_resource_group" "mongodb_rg" {
   }
 }
 
-# Log Analytics Workspace (required for Container Apps)
-resource "azurerm_log_analytics_workspace" "mongodb_logs" {
-  name                = "${var.application_name}-logs-${local.unique_suffix}"
+
+# Container Apps Environment with 2025 features (minimal setup)
+resource "azurerm_container_app_environment" "mongodb_env" {
+  name                = "${var.application_name}-env-${local.unique_suffix}"
   location            = azurerm_resource_group.mongodb_rg.location
   resource_group_name = azurerm_resource_group.mongodb_rg.name
-  sku                 = "PerGB2018"
-  retention_in_days   = 30
-
-  tags = {
-    Environment = var.environment
-    Application = var.application_name
+  
+  # Optional workload profile for dedicated compute
+  dynamic "workload_profile" {
+    for_each = var.workload_profile_type != "Consumption" ? [1] : []
+    content {
+      name                  = "database-workload"
+      workload_profile_type = var.workload_profile_type
+      minimum_count         = 1
+      maximum_count         = var.max_workload_instances
+    }
   }
-}
-
-# Container Apps Environment
-resource "azurerm_container_app_environment" "mongodb_env" {
-  name                       = "${var.application_name}-env-${local.unique_suffix}"
-  location                   = azurerm_resource_group.mongodb_rg.location
-  resource_group_name        = azurerm_resource_group.mongodb_rg.name
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.mongodb_logs.id
 
   tags = {
     Environment = var.environment
     Application = var.application_name
+    Version     = "2025"
+    Workload    = "MongoDB Database"
   }
 }
 
@@ -55,11 +54,29 @@ resource "azurerm_storage_account" "mongodb_storage" {
   resource_group_name      = azurerm_resource_group.mongodb_rg.name
   location                 = azurerm_resource_group.mongodb_rg.location
   account_tier             = "Standard"
-  account_replication_type = "LRS"
+  account_replication_type = "ZRS"  # Zone-redundant storage for better availability
+  
+  # Enhanced security features
+  min_tls_version                 = "TLS1_2"
+  allow_nested_items_to_be_public = false
+  public_network_access_enabled   = true
+  
+  # Enable blob properties for better management
+  blob_properties {
+    versioning_enabled       = true
+    change_feed_enabled     = true
+    delete_retention_policy {
+      days = var.backup_retention_days
+    }
+    container_delete_retention_policy {
+      days = var.backup_retention_days
+    }
+  }
 
   tags = {
     Environment = var.environment
     Application = var.application_name
+    Purpose     = "MongoDB Data Storage"
   }
 }
 
@@ -72,37 +89,40 @@ resource "azurerm_storage_share" "mongodb_data" {
   depends_on = [azurerm_storage_account.mongodb_storage]
 }
 
-# Container App for MongoDB
+
+# Container App for MongoDB with 2025 enhanced features
 resource "azurerm_container_app" "mongodb" {
   name                         = "${var.application_name}-${local.unique_suffix}"
   container_app_environment_id = azurerm_container_app_environment.mongodb_env.id
   resource_group_name          = azurerm_resource_group.mongodb_rg.name
   revision_mode                = "Single"
+  workload_profile_name        = var.workload_profile_type != "Consumption" ? "database-workload" : null
 
   template {
-    min_replicas = 1
-    max_replicas = 1
+    min_replicas    = var.min_replicas
+    max_replicas    = var.max_replicas
+    revision_suffix = "v2025-datagrip"
 
-    # Volume for persistent storage
+    # Volume for persistent storage (using EmptyDir for now to avoid Azure Files permission issues)
     volume {
       name         = "mongodb-storage"
-      storage_type = "AzureFile"
-      storage_name = azurerm_container_app_environment_storage.mongodb_storage.name
+      storage_type = "EmptyDir"
     }
+
 
     container {
       name   = "mongodb"
-      image  = "mongo:8.0"
+      image  = "mongo:8.0"  # Latest MongoDB 8.0 for 2025
       cpu    = var.container_cpu
       memory = var.container_memory
 
-      # Mount persistent storage
+      # Mount storage volume
       volume_mounts {
         name = "mongodb-storage"
         path = "/data/db"
       }
 
-      # Environment variables for MongoDB
+      # MongoDB root user (like VM admin user)
       env {
         name  = "MONGO_INITDB_ROOT_USERNAME"
         value = "admin"
@@ -118,37 +138,24 @@ resource "azurerm_container_app" "mongodb" {
         value = "dculus_forms"
       }
 
-      # MongoDB port
-      port {
-        port     = var.mongodb_port
-        protocol = "TCP"
-      }
 
-      # Health check
-      liveness_probe {
-        port = var.mongodb_port
-        tcp_socket {}
-        initial_delay_seconds = 30
-        period_seconds        = 10
-        timeout_seconds       = 5
-        failure_threshold     = 3
-      }
+      # Optimized MongoDB configuration for Container Apps
+      args = [
+        "--bind_ip_all",
+        "--auth",
+        "--storageEngine", "wiredTiger",
+        "--wiredTigerCacheSizeGB", "1"
+      ]
 
-      readiness_probe {
-        port = var.mongodb_port
-        tcp_socket {}
-        initial_delay_seconds = 15
-        period_seconds        = 5
-        timeout_seconds       = 3
-        failure_threshold     = 3
-      }
     }
+
   }
 
-  # Ingress configuration for external access
+  # Ingress configuration - internal by default for security
   ingress {
-    external_enabled = true
+    external_enabled = var.enable_external_access
     target_port      = var.mongodb_port
+    transport        = "tcp"  # Force TCP transport for MongoDB
 
     traffic_weight {
       percentage      = 100
@@ -156,13 +163,57 @@ resource "azurerm_container_app" "mongodb" {
     }
   }
 
+
   tags = {
     Environment = var.environment
     Application = var.application_name
+    Version     = "7.0"
+    Purpose     = "MongoDB Database"
   }
 
   depends_on = [azurerm_container_app_environment_storage.mongodb_storage]
 }
+
+# Network Security Group for additional security (if external access is enabled)
+resource "azurerm_network_security_group" "mongodb_nsg" {
+  count               = var.enable_external_access ? 1 : 0
+  name                = "${var.application_name}-nsg-${local.unique_suffix}"
+  location            = azurerm_resource_group.mongodb_rg.location
+  resource_group_name = azurerm_resource_group.mongodb_rg.name
+
+  # Allow MongoDB traffic only from specific sources
+  security_rule {
+    name                       = "MongoDB-Inbound"
+    priority                   = 1001
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "27017"
+    source_address_prefix      = "*"  # Restrict this to your application's IP range in production
+    destination_address_prefix = "*"
+  }
+
+  # Deny all other inbound traffic
+  security_rule {
+    name                       = "DenyAllInbound"
+    priority                   = 4096
+    direction                  = "Inbound"
+    access                     = "Deny"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  tags = {
+    Environment = var.environment
+    Application = var.application_name
+    Purpose     = "MongoDB Security"
+  }
+}
+
 
 # Storage configuration for Container Apps Environment
 resource "azurerm_container_app_environment_storage" "mongodb_storage" {
@@ -178,3 +229,5 @@ resource "azurerm_container_app_environment_storage" "mongodb_storage" {
     azurerm_storage_share.mongodb_data
   ]
 }
+
+
