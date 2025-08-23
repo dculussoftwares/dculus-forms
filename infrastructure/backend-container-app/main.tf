@@ -192,7 +192,7 @@ resource "azurerm_container_app" "backend" {
 
       env {
         name  = "BASE_URL"
-        value = var.environment == "prod" ? "https://${azurerm_container_app.backend.latest_revision_fqdn}" : "https://${azurerm_container_app.backend.latest_revision_fqdn}"
+        value = "https://dculus-backend.placeholder.com"
       }
 
       # Database connection
@@ -219,7 +219,7 @@ resource "azurerm_container_app" "backend" {
 
       env {
         name  = "BETTER_AUTH_URL"
-        value = var.environment == "prod" ? "https://${azurerm_container_app.backend.latest_revision_fqdn}" : "https://${azurerm_container_app.backend.latest_revision_fqdn}"
+        value = "https://dculus-backend.placeholder.com"
       }
 
       # Cloudflare R2 configuration (if provided)
