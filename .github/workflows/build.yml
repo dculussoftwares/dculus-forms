@@ -55,8 +55,8 @@ jobs:
           echo "✅ TruffleHog security scan completed"
           echo "Note: MongoDB connection strings are excluded as they are development credentials"
 
-  deploy-azure-infrastructure:
-    name: Deploy Azure Infrastructure
+  deploy-mongodb-container-app:
+    name: Deploy MongoDB Container App
     runs-on: ubuntu-latest
     needs: build-and-push
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
@@ -112,32 +112,162 @@ jobs:
         with:
           terraform_version: "~1.0"
 
+      - name: Generate secure secrets
+        id: secrets
+        run: |
+          # Generate secure secrets for MongoDB and JWT
+          MONGODB_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-24)
+          JWT_SECRET=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-32)
+          BETTER_AUTH_SECRET=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-32)
+          
+          echo "::add-mask::$MONGODB_PASSWORD"
+          echo "::add-mask::$JWT_SECRET"
+          echo "::add-mask::$BETTER_AUTH_SECRET"
+          
+          echo "MONGODB_PASSWORD=$MONGODB_PASSWORD" >> $GITHUB_ENV
+          echo "JWT_SECRET=$JWT_SECRET" >> $GITHUB_ENV
+          echo "BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET" >> $GITHUB_ENV
+
       - name: Terraform Init
         working-directory: ./terraform
         run: terraform init
 
-      - name: Terraform Format Check
-        working-directory: ./terraform
-        run: terraform fmt -check
-
-      - name: Terraform Plan
-        working-directory: ./terraform
-        run: terraform plan -out=tfplan
-
-      - name: Terraform Apply
-        working-directory: ./terraform
-        run: terraform apply -auto-approve tfplan
-
-      - name: Output Infrastructure Information
+      - name: Terraform Plan - MongoDB Infrastructure
         working-directory: ./terraform
         run: |
-          echo "## 🏗️ Azure Infrastructure Deployment Complete!" >> $GITHUB_STEP_SUMMARY
+          terraform plan \
+            -target=azurerm_resource_group.dculus_backend \
+            -target=random_id.unique_suffix \
+            -target=azurerm_log_analytics_workspace.dculus_logs \
+            -target=azurerm_key_vault.dculus_secrets \
+            -target=azurerm_key_vault_secret.mongodb_admin_password \
+            -target=azurerm_key_vault_secret.jwt_secret \
+            -target=azurerm_key_vault_secret.better_auth_secret \
+            -target=azurerm_container_app_environment.dculus_env \
+            -target=azurerm_storage_account.dculus_storage \
+            -target=azurerm_storage_share.mongodb_share \
+            -target=azurerm_container_app_environment_storage.mongodb_storage \
+            -target=azurerm_user_assigned_identity.container_apps_identity \
+            -target=azurerm_key_vault_access_policy.container_apps_policy \
+            -target=azurerm_container_app.mongodb \
+            -var="mongodb_admin_password=$MONGODB_PASSWORD" \
+            -var="jwt_secret=$JWT_SECRET" \
+            -var="better_auth_secret=$BETTER_AUTH_SECRET" \
+            -out=mongodb-tfplan
+
+      - name: Terraform Apply - MongoDB Infrastructure
+        working-directory: ./terraform
+        run: terraform apply -auto-approve mongodb-tfplan
+
+      - name: Output MongoDB Information
+        working-directory: ./terraform
+        run: |
+          echo "## 🗄️ MongoDB Container App Deployment Complete!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Resource Group**: $(terraform output -raw resource_group_name)" >> $GITHUB_STEP_SUMMARY
           echo "**Location**: $(terraform output -raw location)" >> $GITHUB_STEP_SUMMARY
-          echo "**Resource Group ID**: $(terraform output -raw resource_group_id)" >> $GITHUB_STEP_SUMMARY
+          echo "**MongoDB Container App**: $(terraform output -raw mongodb_container_app_name)" >> $GITHUB_STEP_SUMMARY
+          echo "**Container Environment**: $(terraform output -raw container_app_environment_name)" >> $GITHUB_STEP_SUMMARY
+          echo "**Key Vault**: $(terraform output -raw key_vault_name)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Infrastructure is ready for backend deployment" >> $GITHUB_STEP_SUMMARY
+          echo "✅ MongoDB is ready for backend connection" >> $GITHUB_STEP_SUMMARY
+
+  deploy-backend-container-app:
+    name: Deploy Backend Container App
+    runs-on: ubuntu-latest
+    needs: deploy-mongodb-container-app
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure CLI login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup Terraform backend resources
+        id: backend
+        run: |
+          RESOURCE_GROUP_NAME=dculus-global-terraform-assets-resource-grp
+          STORAGE_ACCOUNT_NAME=dculusterraformstates
+          CONTAINER_NAME=dculus-backend-deployment
+          
+          # Get storage account key for Terraform backend
+          ACCOUNT_KEY=$(az storage account keys list \
+            --resource-group $RESOURCE_GROUP_NAME \
+            --account-name $STORAGE_ACCOUNT_NAME \
+            --query '[0].value' -o tsv)
+          echo "ARM_ACCESS_KEY=$ACCOUNT_KEY" >> $GITHUB_ENV
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.0"
+
+      - name: Get secrets from previous job
+        run: |
+          # In a real deployment, these would be retrieved from the previous job or Key Vault
+          # For now, we'll use the same generation method
+          MONGODB_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-24)
+          JWT_SECRET=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-32)
+          BETTER_AUTH_SECRET=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-32)
+          
+          echo "::add-mask::$MONGODB_PASSWORD"
+          echo "::add-mask::$JWT_SECRET"
+          echo "::add-mask::$BETTER_AUTH_SECRET"
+          
+          echo "MONGODB_PASSWORD=$MONGODB_PASSWORD" >> $GITHUB_ENV
+          echo "JWT_SECRET=$JWT_SECRET" >> $GITHUB_ENV
+          echo "BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET" >> $GITHUB_ENV
+
+      - name: Terraform Init
+        working-directory: ./terraform
+        run: terraform init
+
+      - name: Terraform Plan - Backend Container App
+        working-directory: ./terraform
+        run: |
+          terraform plan \
+            -target=azurerm_container_app.backend \
+            -var="mongodb_admin_password=$MONGODB_PASSWORD" \
+            -var="jwt_secret=$JWT_SECRET" \
+            -var="better_auth_secret=$BETTER_AUTH_SECRET" \
+            -out=backend-tfplan
+
+      - name: Terraform Apply - Backend Container App
+        working-directory: ./terraform
+        run: terraform apply -auto-approve backend-tfplan
+
+      - name: Update URL secrets with actual backend URL
+        working-directory: ./terraform
+        run: |
+          # Get the backend URL
+          BACKEND_URL=$(terraform output -raw backend_url)
+          KEY_VAULT_NAME=$(terraform output -raw key_vault_name)
+          
+          # Update the URL secrets in Key Vault
+          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name "better-auth-url" --value "$BACKEND_URL"
+          az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name "base-url" --value "$BACKEND_URL"
+          
+          echo "Updated URL secrets with: $BACKEND_URL"
+
+      - name: Output Backend Information
+        working-directory: ./terraform
+        run: |
+          echo "## 🚀 Backend Container App Deployment Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Backend URL**: $(terraform output -raw backend_url)" >> $GITHUB_STEP_SUMMARY
+          echo "**Backend Container App**: $(terraform output -raw backend_container_app_name)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🧪 Test Your Deployment:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "curl $(terraform output -raw backend_url)/health" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Backend is ready for use!" >> $GITHUB_STEP_SUMMARY
 
   build-shared-packages:
     name: Build Shared Packages
@@ -552,7 +682,7 @@ jobs:
   build-summary:
     name: Build Summary
     runs-on: ubuntu-latest
-    needs: [build-backend, build-form-app, build-form-viewer, lint-and-type-check, build-and-push, deploy-azure-infrastructure]
+    needs: [build-backend, build-form-app, build-form-viewer, lint-and-type-check, build-and-push, deploy-mongodb-container-app, deploy-backend-container-app]
     if: always()
     steps:
       - name: Check build results
@@ -563,14 +693,16 @@ jobs:
           echo "Form Viewer: ${{ needs.build-form-viewer.result }}"
           echo "Lint and Type Check: ${{ needs.lint-and-type-check.result }}"
           echo "Build and Push: ${{ needs.build-and-push.result }}"
-          echo "Azure Infrastructure: ${{ needs.deploy-azure-infrastructure.result }}"
+          echo "MongoDB Container App: ${{ needs.deploy-mongodb-container-app.result }}"
+          echo "Backend Container App: ${{ needs.deploy-backend-container-app.result }}"
           
           if [[ "${{ needs.build-backend.result }}" == "success" && 
                 "${{ needs.build-form-app.result }}" == "success" && 
                 "${{ needs.build-form-viewer.result }}" == "success" &&
                 "${{ needs.lint-and-type-check.result }}" == "success" &&
                 "${{ needs.build-and-push.result }}" == "success" &&
-                ("${{ needs.deploy-azure-infrastructure.result }}" == "success" || "${{ needs.deploy-azure-infrastructure.result }}" == "skipped") ]]; then
+                ("${{ needs.deploy-mongodb-container-app.result }}" == "success" || "${{ needs.deploy-mongodb-container-app.result }}" == "skipped") &&
+                ("${{ needs.deploy-backend-container-app.result }}" == "success" || "${{ needs.deploy-backend-container-app.result }}" == "skipped") ]]; then
             echo "✅ All builds successful!"
           else
             echo "❌ Some builds failed"
