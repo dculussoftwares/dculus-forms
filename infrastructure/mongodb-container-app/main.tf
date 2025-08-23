@@ -58,6 +58,16 @@ resource "azurerm_container_app_environment" "mongodb" {
   tags = var.common_tags
 }
 
+# Container App Environment Storage for MongoDB data
+resource "azurerm_container_app_environment_storage" "mongodb_data" {
+  name                         = "mongodb-data"
+  container_app_environment_id = azurerm_container_app_environment.mongodb.id
+  account_name                 = azurerm_storage_account.mongodb_data.name
+  share_name                   = azurerm_storage_share.mongodb_data.name
+  access_key                   = azurerm_storage_account.mongodb_data.primary_access_key
+  access_mode                  = "ReadWrite"
+}
+
 # Storage Account for MongoDB data persistence
 resource "azurerm_storage_account" "mongodb_data" {
   name                     = "${var.prefix}mongodbdata"
@@ -91,12 +101,12 @@ resource "azurerm_container_app" "mongodb" {
     min_replicas = 1
     max_replicas = 1
 
-    # Volume for persistent data
-    volume {
-      name         = "mongodb-data"
-      storage_type = "AzureFile"
-      storage_name = azurerm_storage_share.mongodb_data.name
-    }
+    # Commenting out volume temporarily to test without Azure Files
+    # volume {
+    #   name         = "mongodb-data"
+    #   storage_type = "AzureFile"
+    #   storage_name = azurerm_storage_share.mongodb_data.name
+    # }
 
     container {
       name   = "mongodb"
@@ -120,11 +130,17 @@ resource "azurerm_container_app" "mongodb" {
         value = var.mongodb_init_database
       }
 
-      # Volume mount for data persistence
-      volume_mounts {
-        name = "mongodb-data"
-        path = "/data/db"
+      # Ensure MongoDB doesn't use strict file system requirements
+      env {
+        name  = "WIREDTIGER_FILESYSTEM_CHECK"
+        value = "false"
       }
+
+      # Commenting out volume mount temporarily to test without Azure Files
+      # volume_mounts {
+      #   name = "mongodb-data"
+      #   path = "/data/db"
+      # }
     }
   }
 
