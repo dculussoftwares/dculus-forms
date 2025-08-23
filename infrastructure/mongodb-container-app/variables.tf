@@ -52,9 +52,9 @@ variable "mongodb_init_database" {
 }
 
 variable "mongodb_external_access" {
-  description = "Enable external access to MongoDB"
+  description = "Enable external access to MongoDB (requires custom VNET for TCP ingress). For security, MongoDB should typically be internal-only."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "environment" {

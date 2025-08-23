@@ -81,7 +81,7 @@ Push changes to the `main` branch to trigger automatic deployment via GitHub Act
 | `mongodb_memory` | Memory allocation | `2Gi` | No |
 | `mongodb_root_username` | Root username | `root` | No |
 | `mongodb_init_database` | Initial database | `dculus_forms` | No |
-| `mongodb_external_access` | Enable external access | `true` | No |
+| `mongodb_external_access` | Enable external access | `false` | No |
 | `environment` | Environment name | `dev` | No |
 
 ### Outputs
@@ -92,6 +92,81 @@ The configuration provides the following outputs:
 - `mongodb_connection_string`: Full connection string (sensitive)
 - `mongodb_root_password`: Root password (sensitive)
 - `key_vault_name`: Key Vault name for credential retrieval
+
+## Connecting to MongoDB
+
+### Internal Access (Recommended)
+
+By default, MongoDB is configured with internal-only access for security. This means:
+
+- **Within Container Apps Environment**: Applications deployed in the same Container Apps Environment can connect directly using the FQDN
+- **Connection String**: Use the `mongodb_connection_string` output for applications in the same environment
+- **Security**: MongoDB is not exposed to the internet, reducing security risks
+
+```bash
+# Get connection details
+terraform output mongodb_fqdn
+terraform output -raw mongodb_connection_string
+```
+
+### External Access (Advanced)
+
+⚠️ **Security Warning**: External access exposes MongoDB to the internet and requires additional security measures.
+
+If you need external access, you must:
+
+1. **Create a Custom VNET**: Azure Container Apps with TCP ingress require a custom VNET for external access
+2. **Update Configuration**: Set `mongodb_external_access = true` in your `terraform.tfvars`
+3. **Add VNET Resources**: Extend the Terraform configuration to include VNET, subnets, and NSG rules
+4. **Implement Security**: Add IP restrictions, VPN access, or private endpoints
+
+Example VNET configuration needed:
+
+```terraform
+# This would need to be added to main.tf for external access
+resource "azurerm_virtual_network" "mongodb" {
+  name                = "${var.prefix}-mongodb-vnet"
+  location            = azurerm_resource_group.mongodb.location
+  resource_group_name = azurerm_resource_group.mongodb.name
+  address_space       = ["10.0.0.0/16"]
+}
+
+resource "azurerm_subnet" "mongodb_subnet" {
+  name                 = "${var.prefix}-mongodb-subnet"
+  resource_group_name  = azurerm_resource_group.mongodb.name
+  virtual_network_name = azurerm_virtual_network.mongodb.name
+  address_prefixes     = ["10.0.1.0/24"]
+  
+  delegation {
+    name = "containerapp_delegation"
+    service_delegation {
+      name = "Microsoft.App/environments"
+    }
+  }
+}
+```
+
+### For Development/Testing
+
+If you need to access MongoDB externally for development:
+
+1. **Use Azure Container Apps Exec**: Connect directly to the container
+   ```bash
+   az containerapp exec \
+     --name dculus-mongodb \
+     --resource-group dculus-mongodb-rg \
+     --command "mongosh"
+   ```
+
+2. **Port Forwarding**: Use Azure CLI to create a temporary tunnel
+   ```bash
+   # Note: This requires the container to be running
+   az containerapp logs show \
+     --name dculus-mongodb \
+     --resource-group dculus-mongodb-rg
+   ```
+
+3. **Deploy Test Client**: Deploy a temporary container in the same environment for testing
 
 ## Security Considerations
 

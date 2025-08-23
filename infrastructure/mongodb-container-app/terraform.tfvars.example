@@ -13,7 +13,7 @@ mongodb_cpu            = 1.0
 mongodb_memory         = "2Gi"
 mongodb_root_username  = "root"
 mongodb_init_database  = "dculus_forms"
-mongodb_external_access = true
+mongodb_external_access = false  # Keep MongoDB internal for security
 
 # Tags
 common_tags = {

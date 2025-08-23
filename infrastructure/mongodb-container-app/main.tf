@@ -134,9 +134,9 @@ resource "azurerm_container_app" "mongodb" {
     value = random_password.mongodb_root_password.result
   }
 
-  # Ingress configuration
+  # Ingress configuration - Internal only for security
   ingress {
-    external_enabled = var.mongodb_external_access
+    external_enabled = false # MongoDB should not be directly accessible from internet
     target_port      = 27017
     transport        = "tcp"
 
