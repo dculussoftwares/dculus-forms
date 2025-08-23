@@ -1,0 +1,25 @@
+# Example Terraform variables file
+# Copy this to terraform.tfvars and customize as needed
+
+# Basic Configuration
+resource_group_name = "dculus-mongodb-rg"
+location           = "East US"
+prefix             = "dculus"
+environment        = "dev"
+
+# MongoDB Configuration
+mongodb_image           = "mongo:7.0"
+mongodb_cpu            = 1.0
+mongodb_memory         = "2Gi"
+mongodb_root_username  = "root"
+mongodb_init_database  = "dculus_forms"
+mongodb_external_access = true
+
+# Tags
+common_tags = {
+  Project     = "Dculus Forms"
+  Environment = "dev"
+  ManagedBy   = "Terraform"
+  Owner       = "Dculus Industries"
+  Repository  = "dculus-forms"
+}
