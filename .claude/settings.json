@@ -38,7 +38,8 @@
       "WebFetch(domain:tiptap.dev)",
       "WebFetch(domain:*)",
       "Bash(gh*)",
-      "Bash(git*)"
+      "Bash(git*)",
+      "Bash(az*)"
     ],
     "deny": []
   }
