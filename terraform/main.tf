@@ -1,6 +1,6 @@
 terraform {
   required_version = ">= 1.0"
-  
+
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
@@ -26,10 +26,10 @@ resource "azurerm_resource_group" "dculus_backend" {
   location = var.location
 
   tags = {
-    Environment   = "production"
-    Project       = "dculus-forms"
-    ManagedBy     = "terraform"
-    CreatedBy     = "github-actions"
-    Purpose       = "backend-infrastructure"
+    Environment = "production"
+    Project     = "dculus-forms"
+    ManagedBy   = "terraform"
+    CreatedBy   = "github-actions"
+    Purpose     = "backend-infrastructure"
   }
 }
