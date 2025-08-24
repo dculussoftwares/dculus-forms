@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
-import { LayoutCode } from '@dculus/types';
-import { LayoutRenderer } from '@dculus/ui';
+import { type FormSchema, LayoutCode } from '@dculus/types';
+import { FormRenderer } from '@dculus/ui';
 import { LayoutSidebar } from './layout/LayoutSidebar';
 import { RendererMode } from '@dculus/utils';
 
@@ -15,18 +15,34 @@ export const LayoutTab: React.FC = () => {
     updateLayout({ code: layoutCode });
   };
 
+  const formSchema: FormSchema = useMemo(
+    () => ({
+      pages: pages || [],
+      layout: layout || {
+        code: 'L1',
+        theme: 'light' as const,
+        textColor: '#1f2937',
+        spacing: 'normal' as const,
+        content: '<h1>Form Preview</h1>',
+        customBackGroundColor: '',
+        backgroundImageKey: '',
+        pageMode: 'single_page' as const,
+      },
+      isShuffleEnabled: false,
+    }),
+    [pages, layout]
+  );
+
   return (
     <div className="h-full flex">
-      {/* Main Content Area - Layout Renderer */}
+      {/* Main Content Area - Form Renderer */}
       <div className="flex-1 overflow-hidden">
-        <LayoutRenderer 
-          layoutCode={currentLayoutCode}
-          pages={pages}
-          layout={layout}
+        <FormRenderer 
+          formSchema={formSchema}
           className="h-full"
-          onLayoutChange={updateLayout}
           cdnEndpoint={cdnEndpoint}
           mode={RendererMode.BUILDER}
+          formId={formId || ''}
         />
       </div>
 
