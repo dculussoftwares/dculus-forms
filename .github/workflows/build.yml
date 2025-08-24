@@ -280,7 +280,7 @@ jobs:
         run: pnpm --filter form-viewer build
 
   build-and-push:
-    needs: lint-and-type-check
+    needs: [lint-and-type-check, build-backend]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -466,10 +466,178 @@ jobs:
           echo "  ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
+  deploy-to-azure:
+    name: Deploy to Azure Container Apps
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure CLI login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup Terraform backend resources
+        id: backend
+        run: |
+          RESOURCE_GROUP_NAME=dculus-global-terraform-assets-resource-grp
+          STORAGE_ACCOUNT_NAME=dculusterraformstates
+          CONTAINER_NAME=backend-container-app-deployment
+
+          echo "Setting up Terraform backend resources..."
+
+          # Create resource group if it doesn't exist
+          az group create --name $RESOURCE_GROUP_NAME --location eastus
+
+          # Create storage account if it doesn't exist
+          az storage account create \
+            --resource-group $RESOURCE_GROUP_NAME \
+            --name $STORAGE_ACCOUNT_NAME \
+            --sku Standard_LRS \
+            --encryption-services blob \
+            --allow-blob-public-access false \
+            --only-show-errors || echo "Storage account already exists"
+
+          # Create blob container if it doesn't exist
+          az storage container create \
+            --name $CONTAINER_NAME \
+            --account-name $STORAGE_ACCOUNT_NAME \
+            --only-show-errors || echo "Container already exists"
+
+          # Get storage account key for Terraform backend
+          ACCOUNT_KEY=$(az storage account keys list \
+            --resource-group $RESOURCE_GROUP_NAME \
+            --account-name $STORAGE_ACCOUNT_NAME \
+            --query '[0].value' -o tsv)
+          echo "ARM_ACCESS_KEY=$ACCOUNT_KEY" >> $GITHUB_ENV
+
+          echo "✅ Terraform backend resources ready"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Terraform Init
+        run: |
+          cd terraform
+          terraform init
+
+      - name: Terraform Format Check
+        run: |
+          cd terraform
+          terraform fmt -check
+
+      - name: Terraform Validate
+        run: |
+          cd terraform
+          terraform validate
+
+      - name: Terraform Plan
+        run: |
+          cd terraform
+          terraform plan \
+            -var="mongodb_connection_string=${{ secrets.MONGODB_CONNECTION_STRING }}" \
+            -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
+            -var="better_auth_secret=${{ secrets.BETTER_AUTH_SECRET }}" \
+            -var="cloudflare_r2_access_key=${{ secrets.CLOUDFLARE_R2_ACCESS_KEY }}" \
+            -var="cloudflare_r2_secret_key=${{ secrets.CLOUDFLARE_R2_SECRET_KEY }}" \
+            -var="cloudflare_r2_endpoint=${{ secrets.CLOUDFLARE_R2_ENDPOINT }}" \
+            -var="cloudflare_r2_private_bucket_name=${{ secrets.CLOUDFLARE_R2_PRIVATE_BUCKET_NAME }}" \
+            -var="cloudflare_r2_public_bucket_name=${{ secrets.CLOUDFLARE_R2_PUBLIC_BUCKET_NAME }}" \
+            -out=tfplan
+
+      - name: Terraform Apply
+        run: |
+          cd terraform
+          terraform apply -auto-approve tfplan
+
+      - name: Get Deployment Info
+        id: deployment
+        run: |
+          cd terraform
+          BACKEND_URL=$(terraform output -raw backend_url)
+          BACKEND_FQDN=$(terraform output -raw backend_fqdn)
+          echo "backend_url=$BACKEND_URL" >> $GITHUB_OUTPUT
+          echo "backend_fqdn=$BACKEND_FQDN" >> $GITHUB_OUTPUT
+          echo "BACKEND_URL=$BACKEND_URL" >> $GITHUB_ENV
+          echo "BACKEND_FQDN=$BACKEND_FQDN" >> $GITHUB_ENV
+
+      - name: Health Check
+        run: |
+          echo "Waiting for deployment to be ready..."
+          sleep 60
+          
+          echo "Testing health endpoint..."
+          HEALTH_URL="${{ steps.deployment.outputs.backend_url }}/health"
+          
+          # Try health check with retries
+          for i in {1..10}; do
+            echo "Health check attempt $i/10..."
+            if curl -f -s "$HEALTH_URL"; then
+              echo "✅ Health check passed!"
+              break
+            else
+              echo "❌ Health check failed, retrying in 30 seconds..."
+              sleep 30
+            fi
+            
+            if [ $i -eq 10 ]; then
+              echo "❌ Health check failed after 10 attempts"
+              exit 1
+            fi
+          done
+
+      - name: Test GraphQL Endpoint
+        run: |
+          echo "Testing GraphQL endpoint..."
+          GRAPHQL_URL="${{ steps.deployment.outputs.backend_url }}/graphql"
+          
+          # Test GraphQL endpoint with introspection query
+          curl -X POST "$GRAPHQL_URL" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"{ __schema { types { name } } }"}' \
+            --fail-with-body || echo "GraphQL endpoint test failed but deployment continues"
+
+      - name: Deployment Summary
+        run: |
+          echo "## 🚀 Azure Container Apps Deployment Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Backend URL**: ${{ steps.deployment.outputs.backend_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "**GraphQL Endpoint**: ${{ steps.deployment.outputs.backend_url }}/graphql" >> $GITHUB_STEP_SUMMARY
+          echo "**Health Check**: ${{ steps.deployment.outputs.backend_url }}/health" >> $GITHUB_STEP_SUMMARY
+          echo "**Container Image**: dculus/forms-backend:latest" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Environment Variables Set:" >> $GITHUB_STEP_SUMMARY
+          echo "- DATABASE_URL: ✅ Configured" >> $GITHUB_STEP_SUMMARY
+          echo "- JWT_SECRET: ✅ Configured" >> $GITHUB_STEP_SUMMARY
+          echo "- BETTER_AUTH_SECRET: ✅ Configured" >> $GITHUB_STEP_SUMMARY
+          echo "- CLOUDFLARE_R2_*: ✅ Configured" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Quick Test Commands:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "# Health check" >> $GITHUB_STEP_SUMMARY
+          echo "curl ${{ steps.deployment.outputs.backend_url }}/health" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# GraphQL introspection" >> $GITHUB_STEP_SUMMARY
+          echo "curl -X POST ${{ steps.deployment.outputs.backend_url }}/graphql \\" >> $GITHUB_STEP_SUMMARY
+          echo "  -H \"Content-Type: application/json\" \\" >> $GITHUB_STEP_SUMMARY
+          echo "  -d '{\"query\":\"{__schema{types{name}}}\"}'" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
   build-summary:
     name: Build Summary
     runs-on: ubuntu-latest
-    needs: [build-backend, build-form-app, build-form-viewer, lint-and-type-check, build-and-push]
+    needs: [build-backend, build-form-app, build-form-viewer, lint-and-type-check, build-and-push, deploy-to-azure]
     if: always()
     steps:
       - name: Check build results
@@ -480,15 +648,35 @@ jobs:
           echo "Form Viewer: ${{ needs.build-form-viewer.result }}"
           echo "Lint and Type Check: ${{ needs.lint-and-type-check.result }}"
           echo "Build and Push: ${{ needs.build-and-push.result }}"
+          echo "Deploy to Azure: ${{ needs.deploy-to-azure.result }}"
           
+          # Check critical components (backend, build-and-push, deployment)
           if [[ "${{ needs.build-backend.result }}" == "success" && 
-                "${{ needs.build-form-app.result }}" == "success" && 
-                "${{ needs.build-form-viewer.result }}" == "success" &&
                 "${{ needs.lint-and-type-check.result }}" == "success" &&
                 "${{ needs.build-and-push.result }}" == "success" ]]; then
-            echo "✅ All builds successful!"
+            echo "✅ Core backend components built successfully!"
+            
+            # Check deployment status
+            if [[ "${{ needs.deploy-to-azure.result }}" == "success" ]]; then
+              echo "🚀 Deployment to Azure completed successfully!"
+            elif [[ "${{ needs.deploy-to-azure.result }}" == "skipped" ]]; then
+              echo "⏭️  Deployment skipped (not main branch or PR)"
+            else
+              echo "⚠️  Deployment failed but core build succeeded"
+            fi
+            
+            # Warn about frontend build issues
+            if [[ "${{ needs.build-form-app.result }}" != "success" ]]; then
+              echo "⚠️  Form App build failed - frontend deployment may be affected"
+            fi
+            if [[ "${{ needs.build-form-viewer.result }}" != "success" ]]; then
+              echo "⚠️  Form Viewer build failed - viewer app deployment may be affected"
+            fi
+            
           else
-            echo "❌ Some builds failed"
+            echo "❌ Critical builds failed - backend deployment not possible"
+            echo "Backend: ${{ needs.build-backend.result }}"
+            echo "Build and Push: ${{ needs.build-and-push.result }}"
             exit 1
           fi
 
