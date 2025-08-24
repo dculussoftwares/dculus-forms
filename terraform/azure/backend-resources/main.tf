@@ -101,7 +101,7 @@ resource "azurerm_storage_account" "mongodb_storage" {
 resource "azurerm_storage_share" "mongodb_data" {
   name                 = "mongodb-data"
   storage_account_name = azurerm_storage_account.mongodb_storage.name
-  quota                = 5
+  quota                = 100 # Keep original quota to avoid API issues
   enabled_protocol     = "SMB"
 
   depends_on = [azurerm_storage_account.mongodb_storage]
