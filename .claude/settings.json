@@ -39,7 +39,8 @@
       "WebFetch(domain:*)",
       "Bash(gh*)",
       "Bash(git*)",
-      "Bash(az*)"
+      "Bash(az*)",
+      "Bash(terra*)"
     ],
     "deny": []
   }
