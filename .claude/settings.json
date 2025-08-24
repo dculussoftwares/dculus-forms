@@ -40,7 +40,8 @@
       "Bash(gh*)",
       "Bash(git*)",
       "Bash(az*)",
-      "Bash(terra*)"
+      "Bash(terra*)",
+      "Bash(cd*)"
     ],
     "deny": []
   }

@@ -60,7 +60,7 @@ resource "azurerm_container_app_environment" "mongodb_environment" {
 }
 
 resource "azurerm_storage_account" "mongodb_storage" {
-  name                     = replace("${var.resource_group_name}storage", "-", "")
+  name                     = "dculusmongodbstorage"
   resource_group_name      = azurerm_resource_group.mongodb_backend.name
   location                 = azurerm_resource_group.mongodb_backend.location
   account_tier             = "Standard"
