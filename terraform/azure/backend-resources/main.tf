@@ -137,7 +137,7 @@ resource "azurerm_container_app" "mongodb" {
     external_enabled           = false
     target_port                = 27017
     transport                  = "tcp"
-    
+
     traffic_weight {
       percentage      = 100
       latest_revision = true
