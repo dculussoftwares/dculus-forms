@@ -79,7 +79,7 @@ resource "azurerm_subnet" "mongodb_subnet" {
   resource_group_name  = azurerm_resource_group.mongodb_backend.name
   virtual_network_name = azurerm_virtual_network.mongodb_vnet.name
   address_prefixes     = ["10.0.0.0/23"]
-  
+
   # Enable service endpoint for storage
   service_endpoints = ["Microsoft.Storage"]
 }
@@ -91,7 +91,7 @@ resource "azurerm_storage_account" "mongodb_storage" {
   account_tier             = "Premium"
   account_replication_type = "LRS"
   account_kind             = "FileStorage"
-  
+
   tags = {
     Environment = "production"
     Project     = "dculus-forms"
@@ -103,7 +103,7 @@ resource "azurerm_storage_share" "mongodb_data" {
   storage_account_name = azurerm_storage_account.mongodb_storage.name
   quota                = 5
   enabled_protocol     = "SMB"
-  
+
   depends_on = [azurerm_storage_account.mongodb_storage]
 }
 
@@ -120,15 +120,15 @@ resource "azurerm_container_app" "mongodb" {
       image  = "busybox:latest"
       cpu    = 0.25
       memory = "0.5Gi"
-      
+
       command = ["/bin/sh", "-c", "chown -R 999:999 /data/db && chmod -R 755 /data/db"]
-      
+
       volume_mounts {
         name = "mongodb-data"
         path = "/data/db"
       }
     }
-    
+
     container {
       name   = "mongodb"
       image  = "mongo:latest"
@@ -144,15 +144,15 @@ resource "azurerm_container_app" "mongodb" {
         name        = "MONGO_INITDB_ROOT_PASSWORD"
         secret_name = "mongodb-admin-password"
       }
-      
+
       # Run as MongoDB user (uid 999)
       env {
         name  = "MONGODB_USER_ID"
         value = "999"
       }
-      
+
       env {
-        name  = "MONGODB_GROUP_ID" 
+        name  = "MONGODB_GROUP_ID"
         value = "999"
       }
 
@@ -213,7 +213,7 @@ resource "azurerm_container_app_environment_storage" "mongodb_storage" {
   share_name                   = azurerm_storage_share.mongodb_data.name
   access_key                   = azurerm_storage_account.mongodb_storage.primary_access_key
   access_mode                  = "ReadWrite"
-  
+
   depends_on = [azurerm_storage_share.mongodb_data]
 }
 
