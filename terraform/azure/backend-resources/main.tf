@@ -59,24 +59,10 @@ resource "azurerm_container_app_environment" "mongodb_environment" {
   }
 }
 
-resource "azurerm_storage_account" "mongodb_storage" {
-  name                     = "dculusmongodbstorage"
-  resource_group_name      = azurerm_resource_group.mongodb_backend.name
-  location                 = azurerm_resource_group.mongodb_backend.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-
-  tags = {
-    Environment = "production"
-    Project     = "dculus-forms"
-  }
-}
-
-resource "azurerm_storage_share" "mongodb_data" {
-  name                 = "mongodb-data"
-  storage_account_name = azurerm_storage_account.mongodb_storage.name
-  quota                = 50
-}
+# Note: Using EmptyDir temporary storage instead of Azure Files
+# Azure Files is incompatible with MongoDB WiredTiger storage engine
+# This provides temporary storage that persists during replica lifetime
+# For production persistent storage, consider Azure Cosmos DB for MongoDB API
 
 resource "azurerm_container_app" "mongodb" {
   name                         = "${var.resource_group_name}-mongodb"
@@ -122,8 +108,7 @@ resource "azurerm_container_app" "mongodb" {
 
     volume {
       name         = "mongodb-data"
-      storage_type = "AzureFile"
-      storage_name = azurerm_container_app_environment_storage.mongodb_storage.name
+      storage_type = "EmptyDir"
     }
   }
 
@@ -151,11 +136,3 @@ resource "azurerm_container_app" "mongodb" {
   }
 }
 
-resource "azurerm_container_app_environment_storage" "mongodb_storage" {
-  name                         = "mongodb-storage"
-  container_app_environment_id = azurerm_container_app_environment.mongodb_environment.id
-  account_name                 = azurerm_storage_account.mongodb_storage.name
-  share_name                   = azurerm_storage_share.mongodb_data.name
-  access_key                   = azurerm_storage_account.mongodb_storage.primary_access_key
-  access_mode                  = "ReadWrite"
-}
