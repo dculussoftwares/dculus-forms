@@ -1,0 +1,83 @@
+variable "app_name" {
+  description = "Name of the application (used as prefix for resources)"
+  type        = string
+  default     = "dculus-forms"
+}
+
+variable "resource_group_name" {
+  description = "Name of the Azure Resource Group"
+  type        = string
+  default     = "dculus-forms-rg"
+}
+
+variable "location" {
+  description = "Azure region where resources will be created"
+  type        = string
+  default     = "East US"
+}
+
+variable "container_app_domain" {
+  description = "Domain for container apps (region-specific)"
+  type        = string
+  default     = "thankfulbay-2c831716.eastus.azurecontainerapps.io"
+}
+
+variable "mongodb_connection_string" {
+  description = "MongoDB connection string"
+  type        = string
+  sensitive   = true
+}
+
+variable "jwt_secret" {
+  description = "JWT secret for authentication (minimum 32 characters)"
+  type        = string
+  sensitive   = true
+}
+
+variable "better_auth_secret" {
+  description = "Better Auth secret (minimum 32 characters)"
+  type        = string
+  sensitive   = true
+}
+
+variable "cloudflare_r2_access_key" {
+  description = "Cloudflare R2 access key for file storage"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "cloudflare_r2_secret_key" {
+  description = "Cloudflare R2 secret key for file storage"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "cloudflare_r2_endpoint" {
+  description = "Cloudflare R2 endpoint URL"
+  type        = string
+  default     = ""
+}
+
+variable "cloudflare_r2_private_bucket_name" {
+  description = "Cloudflare R2 private bucket name"
+  type        = string
+  default     = ""
+}
+
+variable "cloudflare_r2_public_bucket_name" {
+  description = "Cloudflare R2 public bucket name"
+  type        = string
+  default     = ""
+}
+
+variable "tags" {
+  description = "Tags to apply to all resources"
+  type        = map(string)
+  default = {
+    Project     = "Dculus Forms"
+    Environment = "Production"
+    ManagedBy   = "Terraform"
+  }
+}
