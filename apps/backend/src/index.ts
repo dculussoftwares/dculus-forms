@@ -9,7 +9,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
 import { toNodeHandler, fromNodeHeaders } from 'better-auth/node';
-import graphqlUploadExpress from 'graphql-upload/graphqlUploadExpress.mjs';
+// graphqlUploadExpress will be dynamically imported in startServer()
 import { auth } from './lib/better-auth';
 import { typeDefs } from './graphql/schema';
 import { resolvers } from './graphql/resolvers';
@@ -113,8 +113,7 @@ app.all("/api/auth/*", toNodeHandler(auth));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Add graphql upload middleware BEFORE GraphQL middleware
-app.use('/graphql', graphqlUploadExpress({ maxFileSize: 5000000, maxFiles: 10 }));
+// graphqlUploadExpress will be added in the async startServer function
 
 // Routes
 app.use('/health', healthRouter);
@@ -161,6 +160,10 @@ const server = new ApolloServer({
 
 async function startServer() {
   await server.start();
+
+  // Dynamically import graphql-upload (ESM module)
+  const { default: graphqlUploadExpress } = await import('graphql-upload/graphqlUploadExpress.mjs');
+  app.use('/graphql', graphqlUploadExpress({ maxFileSize: 5000000, maxFiles: 10 }));
 
   // Apply Apollo Server middleware
   app.use('/graphql', expressMiddleware(server, {

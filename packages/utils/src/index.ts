@@ -1,4 +1,4 @@
-import { customAlphabet } from 'nanoid';
+// nanoid will be dynamically imported when needed
 
 export const generateId = (): string => {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -52,6 +52,8 @@ export async function generateShortUrl(length: number = 8): Promise<string> {
   // Use nanoid v5 with custom alphabet (alphanumeric only, no special characters)
   // This ensures URL-safe characters and better randomness
   try {
+    // Dynamic import for ESM nanoid v5
+    const { customAlphabet } = await import('nanoid');
     const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     const generateId = customAlphabet(alphabet, Math.min(length, 12)); // Limit to max 12 chars
     return generateId();

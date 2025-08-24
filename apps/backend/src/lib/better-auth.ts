@@ -9,7 +9,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
     provider: 'mongodb',
   }),
 
-  baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:4000',
+  baseURL: process.env.BETTER_AUTH_URL || (process.env.NODE_ENV === 'production' ? 'https://api.example.com' : 'http://localhost:3000'),
   secret:
     process.env.BETTER_AUTH_SECRET ||
     'your-super-secret-key-change-this-in-production-make-it-at-least-32-characters',
