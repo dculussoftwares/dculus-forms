@@ -52,6 +52,7 @@ resource "azurerm_container_app_environment" "mongodb_environment" {
   location                   = azurerm_resource_group.mongodb_backend.location
   resource_group_name        = azurerm_resource_group.mongodb_backend.name
   log_analytics_workspace_id = azurerm_log_analytics_workspace.mongodb_workspace.id
+  infrastructure_subnet_id   = azurerm_subnet.mongodb_subnet.id
 
   tags = {
     Environment = "production"
@@ -59,10 +60,52 @@ resource "azurerm_container_app_environment" "mongodb_environment" {
   }
 }
 
-# Note: Using EmptyDir temporary storage instead of Azure Files
-# Azure Files is incompatible with MongoDB WiredTiger storage engine
-# This provides temporary storage that persists during replica lifetime
-# For production persistent storage, consider Azure Cosmos DB for MongoDB API
+# MongoDB Persistent Storage using Azure Files with NFS
+# NFS protocol provides better MongoDB WiredTiger compatibility than SMB
+resource "azurerm_virtual_network" "mongodb_vnet" {
+  name                = "${var.resource_group_name}-vnet"
+  address_space       = ["10.0.0.0/16"]
+  location            = azurerm_resource_group.mongodb_backend.location
+  resource_group_name = azurerm_resource_group.mongodb_backend.name
+
+  tags = {
+    Environment = "production"
+    Project     = "dculus-forms"
+  }
+}
+
+resource "azurerm_subnet" "mongodb_subnet" {
+  name                 = "${var.resource_group_name}-subnet"
+  resource_group_name  = azurerm_resource_group.mongodb_backend.name
+  virtual_network_name = azurerm_virtual_network.mongodb_vnet.name
+  address_prefixes     = ["10.0.0.0/23"]
+  
+  # Enable service endpoint for storage
+  service_endpoints = ["Microsoft.Storage"]
+}
+
+resource "azurerm_storage_account" "mongodb_storage" {
+  name                     = "dculusmongodbstorage"
+  resource_group_name      = azurerm_resource_group.mongodb_backend.name
+  location                 = azurerm_resource_group.mongodb_backend.location
+  account_tier             = "Premium"
+  account_replication_type = "LRS"
+  account_kind             = "FileStorage"
+  
+  tags = {
+    Environment = "production"
+    Project     = "dculus-forms"
+  }
+}
+
+resource "azurerm_storage_share" "mongodb_data" {
+  name                 = "mongodb-data"
+  storage_account_name = azurerm_storage_account.mongodb_storage.name
+  quota                = 5
+  enabled_protocol     = "SMB"
+  
+  depends_on = [azurerm_storage_account.mongodb_storage]
+}
 
 resource "azurerm_container_app" "mongodb" {
   name                         = "${var.resource_group_name}-mongodb"
@@ -71,6 +114,21 @@ resource "azurerm_container_app" "mongodb" {
   revision_mode                = "Single"
 
   template {
+    # Init container to set proper permissions for MongoDB on Azure Files
+    init_container {
+      name   = "mongodb-init"
+      image  = "busybox:latest"
+      cpu    = 0.25
+      memory = "0.5Gi"
+      
+      command = ["/bin/sh", "-c", "chown -R 999:999 /data/db && chmod -R 755 /data/db"]
+      
+      volume_mounts {
+        name = "mongodb-data"
+        path = "/data/db"
+      }
+    }
+    
     container {
       name   = "mongodb"
       image  = "mongo:latest"
@@ -85,6 +143,17 @@ resource "azurerm_container_app" "mongodb" {
       env {
         name        = "MONGO_INITDB_ROOT_PASSWORD"
         secret_name = "mongodb-admin-password"
+      }
+      
+      # Run as MongoDB user (uid 999)
+      env {
+        name  = "MONGODB_USER_ID"
+        value = "999"
+      }
+      
+      env {
+        name  = "MONGODB_GROUP_ID" 
+        value = "999"
       }
 
       volume_mounts {
@@ -108,7 +177,8 @@ resource "azurerm_container_app" "mongodb" {
 
     volume {
       name         = "mongodb-data"
-      storage_type = "EmptyDir"
+      storage_type = "AzureFile"
+      storage_name = azurerm_container_app_environment_storage.mongodb_storage.name
     }
   }
 
@@ -134,5 +204,16 @@ resource "azurerm_container_app" "mongodb" {
     Project     = "dculus-forms"
     Service     = "mongodb"
   }
+}
+
+resource "azurerm_container_app_environment_storage" "mongodb_storage" {
+  name                         = "mongodb-storage"
+  container_app_environment_id = azurerm_container_app_environment.mongodb_environment.id
+  account_name                 = azurerm_storage_account.mongodb_storage.name
+  share_name                   = azurerm_storage_share.mongodb_data.name
+  access_key                   = azurerm_storage_account.mongodb_storage.primary_access_key
+  access_mode                  = "ReadWrite"
+  
+  depends_on = [azurerm_storage_share.mongodb_data]
 }
 

@@ -38,3 +38,18 @@ output "mongodb_internal_endpoint" {
   description = "Internal MongoDB endpoint for Container Apps in the same environment"
   value       = "${azurerm_container_app.mongodb.name}.${azurerm_container_app_environment.mongodb_environment.default_domain}:27017"
 }
+
+output "storage_account_name" {
+  description = "Name of the storage account for MongoDB data"
+  value       = azurerm_storage_account.mongodb_storage.name
+}
+
+output "nfs_share_name" {
+  description = "Name of the NFS share for MongoDB data"
+  value       = azurerm_storage_share.mongodb_data.name
+}
+
+output "virtual_network_name" {
+  description = "Name of the virtual network"
+  value       = azurerm_virtual_network.mongodb_vnet.name
+}
