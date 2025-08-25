@@ -1,13 +1,6 @@
-import { BetterAuthContext, requireAuth } from "../../middleware/better-auth-middleware.js";
-import { auth } from "../../lib/better-auth.js";
-import { prisma } from "../../lib/prisma.js";
-
-// Helper function to generate MongoDB ObjectId
-function generateObjectId(): string {
-  return Math.floor(Date.now() / 1000).toString(16) + 'xxxxxxxxxxxxxxxx'.replace(/[x]/g, () => {
-    return Math.floor(Math.random() * 16).toString(16);
-  });
-}
+import { BetterAuthContext, requireAuth, } from '../../middleware/better-auth-middleware.js';
+import { prisma } from '../../lib/prisma.js';
+import { nanoid } from 'nanoid';
 
 export const betterAuthResolvers = {
   Query: {
@@ -16,9 +9,13 @@ export const betterAuthResolvers = {
       return context.auth.user;
     },
 
-    myOrganizations: async (_: any, __: any, context: { auth: BetterAuthContext }) => {
+    myOrganizations: async (
+      _: any,
+      __: any,
+      context: { auth: BetterAuthContext }
+    ) => {
       requireAuth(context.auth);
-      
+
       // Get user's organizations through Prisma since Better Auth API might not have the exact method
       const memberships = await prisma.member.findMany({
         where: { userId: context.auth.user!.id },
@@ -38,14 +35,18 @@ export const betterAuthResolvers = {
       return memberships.map((membership: any) => membership.organization);
     },
 
-    activeOrganization: async (_: any, __: any, context: { auth: BetterAuthContext }) => {
+    activeOrganization: async (
+      _: any,
+      __: any,
+      context: { auth: BetterAuthContext }
+    ) => {
       requireAuth(context.auth);
-      
+
       if (!context.auth.session?.activeOrganizationId) {
         return null;
       }
 
-      const organization = await prisma.organization.findUnique({
+      return await prisma.organization.findUnique({
         where: { id: context.auth.session.activeOrganizationId },
         include: {
           members: {
@@ -55,8 +56,6 @@ export const betterAuthResolvers = {
           },
         },
       });
-
-      return organization;
     },
   },
 
@@ -68,15 +67,18 @@ export const betterAuthResolvers = {
     ) => {
       requireAuth(context.auth);
 
-      const organizationId = generateObjectId();
-      const memberId = generateObjectId();
+      const organizationId = nanoid();
+      const memberId = nanoid();
 
       // Create organization first
       const organization = await prisma.organization.create({
         data: {
           id: organizationId,
           name,
-          slug: name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+          slug: name
+            .toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/[^a-z0-9-]/g, ''),
           logo: null,
         },
       });
@@ -91,8 +93,8 @@ export const betterAuthResolvers = {
         },
       });
 
-      // Return organization with members
-      const organizationWithMembers = await prisma.organization.findUnique({
+
+      return await prisma.organization.findUnique({
         where: { id: organization.id },
         include: {
           members: {
@@ -102,8 +104,6 @@ export const betterAuthResolvers = {
           },
         },
       });
-
-      return organizationWithMembers;
     },
 
     setActiveOrganization: async (
@@ -115,7 +115,9 @@ export const betterAuthResolvers = {
 
       // For now, just return the organization without updating session
       // In a full implementation, you'd update the session or use a different approach
-      const organization = await prisma.organization.findUnique({
+
+
+      return await prisma.organization.findUnique({
         where: { id: organizationId },
         include: {
           members: {
@@ -125,8 +127,6 @@ export const betterAuthResolvers = {
           },
         },
       });
-
-      return organization;
     },
   },
 };
