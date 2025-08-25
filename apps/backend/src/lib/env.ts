@@ -24,12 +24,6 @@ export interface AuthConfig {
   secret: string;
 }
 
-export interface DatabaseConfig {
-  rootUsername: string;
-  rootPassword: string;
-  database: string;
-}
-
 export interface AppConfig {
   port: number;
   nodeEnv: string;
