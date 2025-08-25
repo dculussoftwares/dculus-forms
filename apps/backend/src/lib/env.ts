@@ -10,7 +10,7 @@ function optionalEnv(name: string, fallback?: string): string | undefined {
   return process.env[name] ?? fallback;
 }
 
-export interface CloudflareConfig {
+export interface S3Config {
   endpoint: string;
   accessKey: string;
   secretKey: string;
@@ -37,7 +37,7 @@ export interface AppConfig {
   isProduction: boolean;
 }
 
-export const cloudflareConfig: CloudflareConfig = {
+export const s3Config: S3Config = {
   endpoint: requireEnv('CLOUDFLARE_R2_ENDPOINT'),
   accessKey: requireEnv('CLOUDFLARE_R2_ACCESS_KEY'),
   secretKey: requireEnv('CLOUDFLARE_R2_SECRET_KEY'),

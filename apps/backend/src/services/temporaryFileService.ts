@@ -1,15 +1,15 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
-import { cloudflareConfig } from '../lib/env.js';
+import { s3Config } from '../lib/env.js';
 
 // Initialize S3 client for Cloudflare R2
 const s3Client = new S3Client({
   region: 'auto',
-  endpoint: cloudflareConfig.endpoint,
+  endpoint: s3Config.endpoint,
   credentials: {
-    accessKeyId: cloudflareConfig.accessKey,
-    secretAccessKey: cloudflareConfig.secretKey,
+    accessKeyId: s3Config.accessKey,
+    secretAccessKey: s3Config.secretKey,
   },
 });
 
@@ -33,7 +33,7 @@ export async function uploadTemporaryFile(
   try {
     // Upload file to private bucket
     const putCommand = new PutObjectCommand({
-      Bucket: cloudflareConfig.privateBucketName,
+      Bucket: s3Config.privateBucketName,
       Key: fileKey,
       Body: buffer,
       ContentType: contentType,
@@ -50,7 +50,7 @@ export async function uploadTemporaryFile(
 
     // Generate signed URL for download (valid for 5 hours)
     const getCommand = new GetObjectCommand({
-      Bucket: cloudflareConfig.privateBucketName,
+      Bucket: s3Config.privateBucketName,
       Key: fileKey,
     });
 
@@ -78,7 +78,7 @@ export async function uploadTemporaryFile(
 export async function deleteTemporaryFile(fileKey: string): Promise<boolean> {
   try {
     const deleteCommand = new DeleteObjectCommand({
-      Bucket: cloudflareConfig.privateBucketName,
+      Bucket: s3Config.privateBucketName,
       Key: fileKey,
     });
 

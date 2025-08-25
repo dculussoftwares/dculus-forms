@@ -1,7 +1,7 @@
 import { S3Client, PutObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3';
 import { randomUUID } from 'crypto';
 import path from 'path';
-import { cloudflareConfig } from '../lib/env.js';
+import { s3Config } from '../lib/env.js';
 
 export interface UploadFileResult {
   key: string;
@@ -25,10 +25,10 @@ export interface UploadFileInput {
 // Initialize S3 client for Cloudflare R2
 const s3Client = new S3Client({
   region: 'auto',
-  endpoint: cloudflareConfig.endpoint,
+  endpoint: s3Config.endpoint,
   credentials: {
-    accessKeyId: cloudflareConfig.accessKey,
-    secretAccessKey: cloudflareConfig.secretKey,
+    accessKeyId: s3Config.accessKey,
+    secretAccessKey: s3Config.secretKey,
   },
 });
 
@@ -144,7 +144,7 @@ export async function uploadFile(input: UploadFileInput): Promise<UploadFileResu
 
     // Upload to Cloudflare R2
     const putObjectCommand = new PutObjectCommand({
-      Bucket: cloudflareConfig.publicBucketName,
+      Bucket: s3Config.publicBucketName,
       Key: s3Key,
       Body: buffer,
       ContentType: finalMimetype,
@@ -156,7 +156,7 @@ export async function uploadFile(input: UploadFileInput): Promise<UploadFileResu
     await s3Client.send(putObjectCommand);
 
     // Construct CDN URL
-    const cdnUrl = `${cloudflareConfig.cdnUrl}/${s3Key}`;
+    const cdnUrl = `${s3Config.cdnUrl}/${s3Key}`;
 
     return {
       key: s3Key,
@@ -180,7 +180,7 @@ export async function deleteFile(s3Key: string): Promise<boolean> {
     const { DeleteObjectCommand } = await import('@aws-sdk/client-s3');
     
     const deleteObjectCommand = new DeleteObjectCommand({
-      Bucket: cloudflareConfig.publicBucketName,
+      Bucket: s3Config.publicBucketName,
       Key: s3Key,
     });
 
@@ -205,7 +205,7 @@ export async function copyFileForForm(sourceKey: string, formId: string): Promis
     
     // Copy the file using S3 CopyObjectCommand
     const copyObjectCommand = new CopyObjectCommand({
-      Bucket: cloudflareConfig.publicBucketName,
+      Bucket: s3Config.publicBucketName,
       CopySource: `${cloudflareConfig.publicBucketName}/${sourceKey}`,
       Key: newKey,
       ACL: 'public-read',

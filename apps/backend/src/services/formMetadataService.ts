@@ -1,6 +1,6 @@
 import * as Y from 'yjs';
 import { prisma } from '../lib/prisma.js';
-import { cloudflareConfig } from '../lib/env.js';
+import { s3Config } from '../lib/env.js';
 
 export interface FormMetadataStats {
   pageCount: number;
@@ -214,7 +214,7 @@ export const constructBackgroundImageUrl = (
 ): string | null => {
   if (!backgroundImageKey) return null;
 
-  return `${cloudflareConfig.cdnUrl}/${backgroundImageKey}`;
+  return `${s3Config.cdnUrl}/${backgroundImageKey}`;
 };
 
 /**
