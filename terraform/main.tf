@@ -81,7 +81,7 @@ resource "azurerm_container_app" "backend" {
 
       env {
         name  = "BETTER_AUTH_URL"
-        value = "https://${var.app_name}-backend.${var.container_app_domain}"
+        value = "https://${azurerm_container_app.backend.ingress[0].fqdn}"
       }
 
       env {
@@ -96,7 +96,7 @@ resource "azurerm_container_app" "backend" {
 
       env {
         name  = "BASE_URL"
-        value = "https://${var.app_name}-backend.${var.container_app_domain}"
+        value = "https://${azurerm_container_app.backend.ingress[0].fqdn}"
       }
 
       env {

@@ -15,6 +15,10 @@ build/
 .env.test.local
 .env.production.local
 
+# Scripts with credentials
+set-github-secrets.sh
+*secrets*.sh
+
 # Logs
 logs
 *.log
