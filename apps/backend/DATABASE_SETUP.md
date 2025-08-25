@@ -50,13 +50,6 @@ DATABASE_URL="mongodb://admin:password123@localhost:27017/dculus_forms?authSourc
 # Server
 NODE_ENV=development
 PORT=4000
-
-# MongoDB Settings (for reference)
-MONGODB_HOST=localhost
-MONGODB_PORT=27017
-MONGODB_DATABASE=dculus_forms
-MONGODB_USERNAME=admin
-MONGODB_PASSWORD=password123
 ```
 
 ## Database Commands
