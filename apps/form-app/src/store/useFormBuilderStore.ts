@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
 import * as Y from 'yjs';
 import { HocuspocusProvider } from '@hocuspocus/provider';
+import { getWebSocketUrl } from '../lib/config';
 import { 
   FieldType,
   FormField,
@@ -267,8 +268,10 @@ class CollaborationManager {
 
     try {
       this.ydoc = new Y.Doc();
+      const wsUrl = getWebSocketUrl();
+      
       this.provider = new HocuspocusProvider({
-        url: 'ws://localhost:4000/collaboration',
+        url: wsUrl,
         name: formId,
         document: this.ydoc,
       });

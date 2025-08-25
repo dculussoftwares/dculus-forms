@@ -1,9 +1,12 @@
 import { createAuthClient } from 'better-auth/react';
 import { organizationClient } from 'better-auth/client/plugins';
+import { getApiBaseUrl } from './config';
+
+const baseUrl = getApiBaseUrl();
 
 export const authClient = createAuthClient({
   plugins: [organizationClient()],
-  baseURL: 'http://localhost:4000', // Your backend URL
+  baseURL: baseUrl, // Your backend URL
   fetchOptions: {
     onSuccess: (ctx) => {
       // console.log('Authentication successful', ctx);

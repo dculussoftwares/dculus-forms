@@ -1,3 +1,5 @@
+import { getUploadUrl } from '../lib/config';
+
 interface UploadFileResponse {
   key: string;
   type: string;
@@ -19,7 +21,9 @@ export async function uploadFileHTTP(
     formData.append('formId', formId);
   }
 
-  const response = await fetch('http://localhost:4000/upload', {
+  const uploadUrl = getUploadUrl();
+
+  const response = await fetch(uploadUrl, {
     method: 'POST',
     body: formData,
     credentials: 'include',
