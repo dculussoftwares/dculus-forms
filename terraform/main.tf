@@ -81,7 +81,7 @@ resource "azurerm_container_app" "backend" {
 
       env {
         name  = "BETTER_AUTH_URL"
-        value = "https://${azurerm_container_app.backend.ingress[0].fqdn}"
+        value = "https://dculus-forms-backend.wittypebble-c3d47e29.eastus.azurecontainerapps.io"
       }
 
       env {
@@ -96,7 +96,7 @@ resource "azurerm_container_app" "backend" {
 
       env {
         name  = "BASE_URL"
-        value = "https://${azurerm_container_app.backend.ingress[0].fqdn}"
+        value = "https://dculus-forms-backend.wittypebble-c3d47e29.eastus.azurecontainerapps.io"
       }
 
       env {
