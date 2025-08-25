@@ -6,14 +6,14 @@ import {
   updateForm, 
   deleteForm,
   regenerateShortUrl
-} from '../../services/formService';
-import { getTemplateById } from '../../services/templateService';
-import { getFormMetadata, constructBackgroundImageUrl } from '../../services/formMetadataService';
-import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware';
+} from '../../services/formService.js';
+import { getTemplateById } from '../../services/templateService.js';
+import { getFormMetadata, constructBackgroundImageUrl } from '../../services/formMetadataService.js';
+import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
 import { generateId } from '@dculus/utils';
-import { copyFileForForm } from '../../services/fileUploadService';
-import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus';
-import { prisma } from '../../lib/prisma';
+import { copyFileForForm } from '../../services/fileUploadService.js';
+import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
+import { prisma } from '../../lib/prisma.js';
 import { randomUUID } from 'crypto';
 
 export const formsResolvers = {

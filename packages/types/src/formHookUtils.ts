@@ -1,4 +1,4 @@
-import { FormPage, FormField } from './index';
+import { FormPage, FormField } from './index.js';
 
 /**
  * Create a React Hook Form resolver for a specific form page

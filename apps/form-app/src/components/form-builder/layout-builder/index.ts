@@ -1,3 +1,3 @@
-export { LayoutBuilder } from './LayoutBuilder';
-export { LayoutPreview } from './LayoutPreview';
-export type { LayoutTemplate } from './LayoutBuilder';
+export { LayoutBuilder } from './LayoutBuilder.js';
+export { LayoutPreview } from './LayoutPreview.js';
+export type { LayoutTemplate } from './LayoutBuilder.js';

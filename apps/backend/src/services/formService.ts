@@ -1,4 +1,4 @@
-import { prisma } from '../lib/prisma';
+import { prisma } from '../lib/prisma.js';
 import { 
   Form as IForm, 
   FormSchema, 
@@ -10,7 +10,7 @@ import {
   LayoutCode,
   PageModeType
 } from '@dculus/types';
-import { initializeHocuspocusDocument } from './hocuspocus';
+import { initializeHocuspocusDocument } from './hocuspocus.js';
 import { generateShortUrl } from '@dculus/utils';
 
 export interface Form extends Omit<IForm, 'formSchema'> {

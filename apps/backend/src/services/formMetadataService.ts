@@ -1,5 +1,5 @@
 import * as Y from 'yjs';
-import { prisma } from '../lib/prisma';
+import { prisma } from '../lib/prisma.js';
 import { deserializeFormSchema, FormSchema } from '@dculus/types';
 
 export interface FormMetadataStats {

@@ -1,5 +1,5 @@
-export { TabNavigation, TabKeyboardShortcuts, type BuilderTab } from './TabNavigation';
-export { LayoutTab } from './LayoutTab';
-export { PageBuilderTab } from './PageBuilderTab';
-export { SettingsTab } from './SettingsTab';
-export { PreviewTab } from './PreviewTab';
+export { TabNavigation, TabKeyboardShortcuts, type BuilderTab } from './TabNavigation.js';
+export { LayoutTab } from './LayoutTab.js';
+export { PageBuilderTab } from './PageBuilderTab.js';
+export { SettingsTab } from './SettingsTab.js';
+export { PreviewTab } from './PreviewTab.js';

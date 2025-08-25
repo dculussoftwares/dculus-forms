@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { FieldType } from './index';
+import { FieldType } from './index.js';
 
 // Base validation schema for common field properties
 export const baseFieldValidationSchema = z.object({

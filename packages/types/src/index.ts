@@ -428,8 +428,8 @@ export interface PaginatedResponse<T> {
 }
 
 // Re-export validation schemas and types
-export * from './validation';
+export * from './validation.js';
 
 
 // Re-export React Hook Form utilities
-export * from './formHookUtils';
+export * from './formHookUtils.js';

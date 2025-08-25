@@ -1,15 +1,15 @@
-export { FormBuilderHeader } from './FormBuilderHeader';
-export { FieldItem } from './FieldItem';
-export { PageCard } from './PageCard';
-export { AddFieldPopover } from './AddFieldPopover';
-export { MissingFormId, LoadingState, EmptyFormState } from './EmptyStates';
-export { fieldTypes, fieldCategories } from './types';
-export type { FieldTypeConfig } from './types';
-export { getFieldLabel, isFieldRequired, isFillableFormField } from './utils';
+export { FormBuilderHeader } from './FormBuilderHeader.js';
+export { FieldItem } from './FieldItem.js';
+export { PageCard } from './PageCard.js';
+export { AddFieldPopover } from './AddFieldPopover.js';
+export { MissingFormId, LoadingState, EmptyFormState } from './EmptyStates.js';
+export { fieldTypes, fieldCategories } from './types.js';
+export type { FieldTypeConfig } from './types.js';
+export { getFieldLabel, isFieldRequired, isFillableFormField } from './utils.js';
 
 // New drag and drop components
-export { FieldTypesPanel } from './FieldTypesPanel';
-export { DraggableField } from './DraggableField';
-export { DroppablePage } from './DroppablePage';
-export { PagesSidebar } from './PagesSidebar';
-export { EmptyDropZone } from './EmptyDropZone';
+export { FieldTypesPanel } from './FieldTypesPanel.js';
+export { DraggableField } from './DraggableField.js';
+export { DroppablePage } from './DroppablePage.js';
+export { PagesSidebar } from './PagesSidebar.js';
+export { EmptyDropZone } from './EmptyDropZone.js';

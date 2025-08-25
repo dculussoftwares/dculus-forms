@@ -7,11 +7,11 @@ import {
   deleteTemplate,
   getTemplatesByCategory,
   getTemplateCategories,
-} from '../../services/templateService';
-import { createForm } from '../../services/formService';
+} from '../../services/templateService.js';
+import { createForm } from '../../services/formService.js';
 import { randomUUID } from 'crypto';
-import { copyFileForForm } from '../../services/fileUploadService';
-import { prisma } from '../../lib/prisma';
+import { copyFileForForm } from '../../services/fileUploadService.js';
+import { prisma } from '../../lib/prisma.js';
 
 export interface CreateTemplateArgs {
   input: {
