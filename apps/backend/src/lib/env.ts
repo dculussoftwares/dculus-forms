@@ -47,12 +47,7 @@ export const s3Config: S3Config = {
 };
 
 export const authConfig: AuthConfig = {
-  baseUrl: optionalEnv(
-    'BETTER_AUTH_URL', 
-    process.env.NODE_ENV === 'production' 
-      ? 'https://api.example.com' 
-      : 'http://localhost:3000'
-  )!,
+  baseUrl: optionalEnv('BETTER_AUTH_URL', 'http://localhost:4000')!,
   secret: requireEnv(
     'BETTER_AUTH_SECRET',
     'fallback-secret-for-development-only-do-not-use-in-production'
