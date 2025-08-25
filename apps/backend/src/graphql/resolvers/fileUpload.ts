@@ -1,6 +1,6 @@
 import { GraphQLError } from 'graphql';
-import { uploadFile, deleteFile } from '../../services/fileUploadService';
-import { prisma } from '../../lib/prisma';
+import { uploadFile, deleteFile } from '../../services/fileUploadService.js';
+import { prisma } from '../../lib/prisma.js';
 import { randomUUID } from 'crypto';
 
 interface FileUpload {

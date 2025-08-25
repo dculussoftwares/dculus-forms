@@ -1,6 +1,6 @@
-import { BetterAuthContext, requireAuth } from "../../middleware/better-auth-middleware";
-import { auth } from "../../lib/better-auth";
-import { prisma } from "../../lib/prisma";
+import { BetterAuthContext, requireAuth } from "../../middleware/better-auth-middleware.js";
+import { auth } from "../../lib/better-auth.js";
+import { prisma } from "../../lib/prisma.js";
 
 // Helper function to generate MongoDB ObjectId
 function generateObjectId(): string {

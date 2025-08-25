@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { getAllResponses, getResponseById, getResponsesByFormId, submitResponse, deleteResponse } from '../services/responseService';
-import { createError } from '../middleware/errorHandler';
+import { getAllResponses, getResponseById, getResponsesByFormId, submitResponse, deleteResponse } from '../services/responseService.js';
+import { createError } from '../middleware/errorHandler.js';
 import { HTTP_STATUS } from '@dculus/utils';
 
 const router: Router = Router();

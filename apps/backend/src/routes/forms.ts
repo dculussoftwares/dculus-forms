@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { getAllForms, getFormById, createForm, updateForm, deleteForm } from '../services/formService';
-import { createError } from '../middleware/errorHandler';
+import { getAllForms, getFormById, createForm, updateForm, deleteForm } from '../services/formService.js';
+import { createError } from '../middleware/errorHandler.js';
 import { HTTP_STATUS } from '@dculus/utils';
 
 const router: Router = Router();

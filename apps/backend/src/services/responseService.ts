@@ -1,5 +1,5 @@
 import { FormResponse } from '@dculus/types';
-import { prisma } from '../lib/prisma';
+import { prisma } from '../lib/prisma.js';
 
 export const getAllResponses = async (organizationId?: string): Promise<FormResponse[]> => {
   const responses = await prisma.response.findMany({

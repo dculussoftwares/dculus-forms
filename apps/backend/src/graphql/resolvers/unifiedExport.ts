@@ -1,10 +1,10 @@
 import { GraphQLError } from 'graphql';
-import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware';
-import { getFormById } from '../../services/formService';
-import { getAllResponsesByFormId } from '../../services/responseService';
-import { generateExportFile, ExportFormat } from '../../services/unifiedExportService';
-import { uploadTemporaryFile } from '../../services/temporaryFileService';
-import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus';
+import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
+import { getFormById } from '../../services/formService.js';
+import { getAllResponsesByFormId } from '../../services/responseService.js';
+import { generateExportFile, ExportFormat } from '../../services/unifiedExportService.js';
+import { uploadTemporaryFile } from '../../services/temporaryFileService.js';
+import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 import { deserializeFormSchema } from '@dculus/types';
 
 export const unifiedExportResolvers = {
