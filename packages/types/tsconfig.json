@@ -3,8 +3,9 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "module": "CommonJS",
+    "module": "ESNext",
     "target": "ES2022",
+    "moduleResolution": "bundler",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,

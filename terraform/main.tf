@@ -125,21 +125,21 @@ resource "azurerm_container_app" "backend" {
       }
 
       liveness_probe {
-        transport           = "HTTP"
-        port               = 4000
-        path               = "/health"
-        initial_delay      = 30
-        interval_seconds   = 30
-        timeout            = 10
+        transport               = "HTTP"
+        port                    = 4000
+        path                    = "/health"
+        initial_delay           = 30
+        interval_seconds        = 30
+        timeout                 = 10
         failure_count_threshold = 3
       }
 
       readiness_probe {
-        transport           = "HTTP"
-        port               = 4000
-        path               = "/health" 
-        interval_seconds   = 10
-        timeout            = 5
+        transport               = "HTTP"
+        port                    = 4000
+        path                    = "/health"
+        interval_seconds        = 10
+        timeout                 = 5
         failure_count_threshold = 3
         success_count_threshold = 1
       }

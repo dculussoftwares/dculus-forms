@@ -2,8 +2,15 @@
   "name": "@dculus/ui",
   "version": "0.1.0",
   "description": "UI components for Dculus Forms",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "storybook": "storybook dev -p 6006",
