@@ -8,8 +8,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
-import { toNodeHandler, fromNodeHeaders } from 'better-auth/node';
-// graphqlUploadExpress will be dynamically imported in startServer()
+import { toNodeHandler } from 'better-auth/node';
 import { auth } from './lib/better-auth.js';
 import { typeDefs } from './graphql/schema.js';
 import { resolvers } from './graphql/resolvers.js';
@@ -29,86 +28,98 @@ const httpServer = createServer(app);
 const PORT = appConfig.port;
 
 // Middleware
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-      "default-src": [
-        "'self'", 
-        "https://apollo-server-landing-page.cdn.apollographql.com", 
-        "https://embeddable-sandbox.cdn.apollographql.com",
-        "https://sandbox.embed.apollographql.com"
-      ],
-      "script-src": [
-        "'self'", 
-        "'unsafe-inline'", 
-        "https://apollo-server-landing-page.cdn.apollographql.com", 
-        "https://studio.apollographql.com",
-        "https://embeddable-sandbox.cdn.apollographql.com",
-        "https://sandbox.embed.apollographql.com"
-      ],
-      "script-src-elem": [
-        "'self'", 
-        "'unsafe-inline'", 
-        "https://apollo-server-landing-page.cdn.apollographql.com", 
-        "https://studio.apollographql.com",
-        "https://embeddable-sandbox.cdn.apollographql.com",
-        "https://sandbox.embed.apollographql.com"
-      ],
-      "style-src": [
-        "'self'", 
-        "'unsafe-inline'", 
-        "https://apollo-server-landing-page.cdn.apollographql.com", 
-        "https://studio.apollographql.com",
-        "https://fonts.googleapis.com",
-        "https://sandbox.embed.apollographql.com"
-      ],
-      "style-src-elem": [
-        "'self'", 
-        "'unsafe-inline'", 
-        "https://apollo-server-landing-page.cdn.apollographql.com", 
-        "https://studio.apollographql.com",
-        "https://fonts.googleapis.com",
-        "https://sandbox.embed.apollographql.com"
-      ],
-      "font-src": ["'self'", "https://fonts.gstatic.com"],
-      "img-src": [
-        "'self'", 
-        "data:", 
-        "https://apollo-server-landing-page.cdn.apollographql.com", 
-        "https://studio.apollographql.com",
-        "https://sandbox.embed.apollographql.com"
-      ],
-      "connect-src": [
-        "'self'", 
-        "https://apollo-server-landing-page.cdn.apollographql.com", 
-        "https://studio.apollographql.com",
-        "https://embeddable-sandbox.cdn.apollographql.com",
-        "https://sandbox.embed.apollographql.com"
-      ],
-      "frame-src": [
-        "'self'", 
-        "https://studio.apollographql.com",
-        "https://sandbox.embed.apollographql.com"
-      ],
-      "frame-ancestors": [
-        "'self'", 
-        "https://studio.apollographql.com",
-        "https://sandbox.embed.apollographql.com"
-      ],
-      "manifest-src": ["'self'", "https://apollo-server-landing-page.cdn.apollographql.com"],
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        'default-src': [
+          "'self'",
+          'https://apollo-server-landing-page.cdn.apollographql.com',
+          'https://embeddable-sandbox.cdn.apollographql.com',
+          'https://sandbox.embed.apollographql.com',
+        ],
+        'script-src': [
+          "'self'",
+          "'unsafe-inline'",
+          'https://apollo-server-landing-page.cdn.apollographql.com',
+          'https://studio.apollographql.com',
+          'https://embeddable-sandbox.cdn.apollographql.com',
+          'https://sandbox.embed.apollographql.com',
+        ],
+        'script-src-elem': [
+          "'self'",
+          "'unsafe-inline'",
+          'https://apollo-server-landing-page.cdn.apollographql.com',
+          'https://studio.apollographql.com',
+          'https://embeddable-sandbox.cdn.apollographql.com',
+          'https://sandbox.embed.apollographql.com',
+        ],
+        'style-src': [
+          "'self'",
+          "'unsafe-inline'",
+          'https://apollo-server-landing-page.cdn.apollographql.com',
+          'https://studio.apollographql.com',
+          'https://fonts.googleapis.com',
+          'https://sandbox.embed.apollographql.com',
+        ],
+        'style-src-elem': [
+          "'self'",
+          "'unsafe-inline'",
+          'https://apollo-server-landing-page.cdn.apollographql.com',
+          'https://studio.apollographql.com',
+          'https://fonts.googleapis.com',
+          'https://sandbox.embed.apollographql.com',
+        ],
+        'font-src': ["'self'", 'https://fonts.gstatic.com'],
+        'img-src': [
+          "'self'",
+          'data:',
+          'https://apollo-server-landing-page.cdn.apollographql.com',
+          'https://studio.apollographql.com',
+          'https://sandbox.embed.apollographql.com',
+        ],
+        'connect-src': [
+          "'self'",
+          'https://apollo-server-landing-page.cdn.apollographql.com',
+          'https://studio.apollographql.com',
+          'https://embeddable-sandbox.cdn.apollographql.com',
+          'https://sandbox.embed.apollographql.com',
+        ],
+        'frame-src': [
+          "'self'",
+          'https://studio.apollographql.com',
+          'https://sandbox.embed.apollographql.com',
+        ],
+        'frame-ancestors': [
+          "'self'",
+          'https://studio.apollographql.com',
+          'https://sandbox.embed.apollographql.com',
+        ],
+        'manifest-src': [
+          "'self'",
+          'https://apollo-server-landing-page.cdn.apollographql.com',
+        ],
+      },
     },
-  },
-}));
-app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:5173", "https://studio.apollographql.com", "https://sandbox.embed.apollographql.com"],
-  credentials: true,
-}));
+  })
+);
+app.use(
+  cors({
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'https://studio.apollographql.com',
+      'https://sandbox.embed.apollographql.com',
+    ],
+    credentials: true,
+  })
+);
 app.use(compression());
 app.use(morgan('combined'));
 
 // Mount Better Auth handler BEFORE other middleware
-app.all("/api/auth/*", toNodeHandler(auth));
+app.all('/api/auth/*', toNodeHandler(auth));
 
 // Apply express.json() AFTER Better Auth handler
 app.use(express.json({ limit: '10mb' }));
@@ -163,34 +174,42 @@ async function startServer() {
   await server.start();
 
   // Dynamically import graphql-upload (ESM module)
-  const { default: graphqlUploadExpress } = await import('graphql-upload/graphqlUploadExpress.mjs');
-  app.use('/graphql', graphqlUploadExpress({ maxFileSize: 5000000, maxFiles: 10 }));
+  const { default: graphqlUploadExpress } = await import(
+    'graphql-upload/graphqlUploadExpress.mjs'
+  );
+  app.use(
+    '/graphql',
+    graphqlUploadExpress({ maxFileSize: 5000000, maxFiles: 10 })
+  );
 
   // Apply Apollo Server middleware
-  app.use('/graphql', expressMiddleware(server, {
-    context: async ({ req }) => {
-      const authContext = await createBetterAuthContext(req);
-      return {
-        user: authContext.user,
-        session: authContext.session,
-        auth: authContext,
-        prisma,
-      };
-    },
-  }));
+  app.use(
+    '/graphql',
+    expressMiddleware(server, {
+      context: async ({ req }) => {
+        const authContext = await createBetterAuthContext(req);
+        return {
+          user: authContext.user,
+          session: authContext.session,
+          auth: authContext,
+          prisma,
+        };
+      },
+    })
+  );
 
   app.use(errorHandler);
 
   // Create Hocuspocus Server for collaborative editing
   const hocuspocusServer = createHocuspocusServer();
-  
+
   // Create WebSocket Server and integrate with Hocuspocus
   const { WebSocketServer } = await import('ws');
-  const wss = new WebSocketServer({ 
+  const wss = new WebSocketServer({
     server: httpServer,
-    path: '/collaboration'
+    path: '/collaboration',
   });
-  
+
   wss.on('connection', (ws, request) => {
     console.log('🔌 WebSocket connection established');
     hocuspocusServer.handleConnection(ws, request);

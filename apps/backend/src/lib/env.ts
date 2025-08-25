@@ -59,12 +59,6 @@ export const authConfig: AuthConfig = {
   ),
 };
 
-export const databaseConfig: DatabaseConfig = {
-  rootUsername: optionalEnv('MONGO_INITDB_ROOT_USERNAME', 'admin')!,
-  rootPassword: optionalEnv('MONGO_INITDB_ROOT_PASSWORD', 'password123')!,
-  database: optionalEnv('MONGO_INITDB_DATABASE', 'dculus_forms')!,
-};
-
 const nodeEnv = optionalEnv('NODE_ENV', 'development')!;
 
 export const appConfig: AppConfig = {
