@@ -125,7 +125,7 @@ export const formsResolvers = {
                 type: 'FormBackground',
                 formId: newFormId,
                 originalName: originalFileName,
-                url: constructCdnUrl(formSchema.layout.backgroundImageKey),
+                url: constructCdnUrl(formSchema.layout.backgroundImageKey) || '',
                 size: 0, // Size not available for existing images
                 mimeType: 'image/jpeg', // Default mime type
               }

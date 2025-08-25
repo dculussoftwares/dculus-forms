@@ -207,7 +207,7 @@ export async function copyFileForForm(sourceKey: string, formId: string): Promis
     // Copy the file using S3 CopyObjectCommand
     const copyObjectCommand = new CopyObjectCommand({
       Bucket: s3Config.publicBucketName,
-      CopySource: `${cloudflareConfig.publicBucketName}/${sourceKey}`,
+      CopySource: `${s3Config.publicBucketName}/${sourceKey}`,
       Key: newKey,
       ACL: 'public-read',
     });
@@ -215,7 +215,7 @@ export async function copyFileForForm(sourceKey: string, formId: string): Promis
     await s3Client.send(copyObjectCommand);
 
     // Construct CDN URL for the copied file
-    const cdnUrl = `${cloudflareConfig.cdnUrl}/${newKey}`;
+    const cdnUrl = constructCdnUrl(newKey) || '';
 
     return {
       key: newKey,
