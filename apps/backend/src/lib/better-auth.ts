@@ -3,16 +3,15 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { organization } from 'better-auth/plugins';
 import { bearer } from 'better-auth/plugins';
 import { prisma } from './prisma.js';
+import { authConfig } from './env.js';
 
 export const auth: ReturnType<typeof betterAuth> = betterAuth({
   database: prismaAdapter(prisma, {
     provider: 'mongodb',
   }),
 
-  baseURL: process.env.BETTER_AUTH_URL || (process.env.NODE_ENV === 'production' ? 'https://api.example.com' : 'http://localhost:3000'),
-  secret:
-    process.env.BETTER_AUTH_SECRET ||
-    'your-super-secret-key-change-this-in-production-make-it-at-least-32-characters',
+  baseURL: authConfig.baseUrl,
+  secret: authConfig.secret,
   trustedOrigins: [
     'http://localhost:3000', // Form app
     'http://localhost:3001', // Form viewer

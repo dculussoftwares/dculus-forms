@@ -22,10 +22,11 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { createBetterAuthContext } from './middleware/better-auth-middleware.js';
 import { prisma } from './lib/prisma.js';
 import { createHocuspocusServer } from './services/hocuspocus.js';
+import { appConfig } from './lib/env.js';
 
 const app = express();
 const httpServer = createServer(app);
-const PORT = process.env.PORT || 4000;
+const PORT = appConfig.port;
 
 // Middleware
 app.use(helmet({

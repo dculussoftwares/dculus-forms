@@ -1,6 +1,7 @@
 import { S3Client, PutObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3';
 import { randomUUID } from 'crypto';
 import path from 'path';
+import { cloudflareConfig } from '../lib/env.js';
 
 export interface UploadFileResult {
   key: string;
@@ -24,10 +25,10 @@ export interface UploadFileInput {
 // Initialize S3 client for Cloudflare R2
 const s3Client = new S3Client({
   region: 'auto',
-  endpoint: process.env.CLOUDFLARE_R2_ENDPOINT,
+  endpoint: cloudflareConfig.endpoint,
   credentials: {
-    accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY!,
-    secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_KEY!,
+    accessKeyId: cloudflareConfig.accessKey,
+    secretAccessKey: cloudflareConfig.secretKey,
   },
 });
 
@@ -143,7 +144,7 @@ export async function uploadFile(input: UploadFileInput): Promise<UploadFileResu
 
     // Upload to Cloudflare R2
     const putObjectCommand = new PutObjectCommand({
-      Bucket: process.env.CLOUDFLARE_R2_PUBLIC_BUCKET_NAME,
+      Bucket: cloudflareConfig.publicBucketName,
       Key: s3Key,
       Body: buffer,
       ContentType: finalMimetype,
@@ -155,7 +156,7 @@ export async function uploadFile(input: UploadFileInput): Promise<UploadFileResu
     await s3Client.send(putObjectCommand);
 
     // Construct CDN URL
-    const cdnUrl = `${process.env.CLOUDFLARE_R2_CDN_URL}/${s3Key}`;
+    const cdnUrl = `${cloudflareConfig.cdnUrl}/${s3Key}`;
 
     return {
       key: s3Key,
@@ -179,7 +180,7 @@ export async function deleteFile(s3Key: string): Promise<boolean> {
     const { DeleteObjectCommand } = await import('@aws-sdk/client-s3');
     
     const deleteObjectCommand = new DeleteObjectCommand({
-      Bucket: process.env.CLOUDFLARE_R2_PUBLIC_BUCKET_NAME,
+      Bucket: cloudflareConfig.publicBucketName,
       Key: s3Key,
     });
 
@@ -204,8 +205,8 @@ export async function copyFileForForm(sourceKey: string, formId: string): Promis
     
     // Copy the file using S3 CopyObjectCommand
     const copyObjectCommand = new CopyObjectCommand({
-      Bucket: process.env.CLOUDFLARE_R2_PUBLIC_BUCKET_NAME,
-      CopySource: `${process.env.CLOUDFLARE_R2_PUBLIC_BUCKET_NAME}/${sourceKey}`,
+      Bucket: cloudflareConfig.publicBucketName,
+      CopySource: `${cloudflareConfig.publicBucketName}/${sourceKey}`,
       Key: newKey,
       ACL: 'public-read',
     });
@@ -213,7 +214,7 @@ export async function copyFileForForm(sourceKey: string, formId: string): Promis
     await s3Client.send(copyObjectCommand);
 
     // Construct CDN URL for the copied file
-    const cdnUrl = `${process.env.CLOUDFLARE_R2_CDN_URL}/${newKey}`;
+    const cdnUrl = `${cloudflareConfig.cdnUrl}/${newKey}`;
 
     return {
       key: newKey,

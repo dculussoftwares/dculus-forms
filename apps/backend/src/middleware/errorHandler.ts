@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { HTTP_STATUS } from '@dculus/utils';
+import { appConfig } from '../lib/env.js';
 
 export interface AppError extends Error {
   statusCode?: number;
@@ -25,7 +26,7 @@ export const errorHandler = (
   res.status(statusCode).json({
     success: false,
     error: message,
-    ...(process.env.NODE_ENV === 'development' && { stack: error.stack }),
+    ...(appConfig.isDevelopment && { stack: error.stack }),
   });
 };
 

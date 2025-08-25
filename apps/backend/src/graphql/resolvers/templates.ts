@@ -12,6 +12,7 @@ import { createForm } from '../../services/formService.js';
 import { randomUUID } from 'crypto';
 import { copyFileForForm } from '../../services/fileUploadService.js';
 import { prisma } from '../../lib/prisma.js';
+import { cloudflareConfig } from '../../lib/env.js';
 
 export interface CreateTemplateArgs {
   input: {
@@ -244,7 +245,7 @@ export const templatesResolvers = {
                     type: 'FormBackground',
                     formId: newFormId,
                     originalName: originalFileName,
-                    url: `${process.env.CLOUDFLARE_R2_CDN_URL}/${formSchema.layout.backgroundImageKey}`,
+                    url: `${cloudflareConfig.cdnUrl}/${formSchema.layout.backgroundImageKey}`,
                     size: 0, // Size not available for existing images
                     mimeType: 'image/jpeg', // Default mime type
                   }
