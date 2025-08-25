@@ -404,7 +404,7 @@ jobs:
         run: |
           RESOURCE_GROUP_NAME=dculus-global-terraform-assets-resource-grp
           STORAGE_ACCOUNT_NAME=dculusterraformstates
-          CONTAINER_NAME=backend-container-app-deployment
+          CONTAINER_NAME=dculus-forms-backend-container-app-deployment
 
           echo "Setting up Terraform backend resources..."
 
@@ -442,22 +442,22 @@ jobs:
 
       - name: Terraform Init
         run: |
-          cd terraform
+          cd infrastructure/multi-cloud/terraform/azure
           terraform init
 
       - name: Terraform Format Check
         run: |
-          cd terraform
+          cd infrastructure/multi-cloud/terraform/azure
           terraform fmt -check
 
       - name: Terraform Validate
         run: |
-          cd terraform
+          cd infrastructure/multi-cloud/terraform/azure
           terraform validate
 
       - name: Terraform Plan
         run: |
-          cd terraform
+          cd infrastructure/multi-cloud/terraform/azure
           terraform plan \
             -var="mongodb_connection_string=${{ secrets.MONGODB_CONNECTION_STRING }}" \
             -var="better_auth_secret=${{ secrets.BETTER_AUTH_SECRET }}" \
@@ -470,13 +470,13 @@ jobs:
 
       - name: Terraform Apply
         run: |
-          cd terraform
+          cd infrastructure/multi-cloud/terraform/azure
           terraform apply -auto-approve tfplan
 
       - name: Get Deployment Info
         id: deployment
         run: |
-          cd terraform
+          cd infrastructure/multi-cloud/terraform/azure
           BACKEND_URL=$(terraform output -raw backend_url)
           BACKEND_FQDN=$(terraform output -raw backend_fqdn)
           echo "backend_url=$BACKEND_URL" >> $GITHUB_OUTPUT
