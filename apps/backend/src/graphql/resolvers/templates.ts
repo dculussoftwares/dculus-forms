@@ -12,7 +12,7 @@ import { createForm } from '../../services/formService.js';
 import { randomUUID } from 'crypto';
 import { copyFileForForm } from '../../services/fileUploadService.js';
 import { prisma } from '../../lib/prisma.js';
-import { s3Config } from '../../lib/env.js';
+import { constructCdnUrl } from '../../utils/cdn.js';
 
 export interface CreateTemplateArgs {
   input: {
@@ -245,7 +245,7 @@ export const templatesResolvers = {
                     type: 'FormBackground',
                     formId: newFormId,
                     originalName: originalFileName,
-                    url: `${s3Config.cdnUrl}/${formSchema.layout.backgroundImageKey}`,
+                    url: constructCdnUrl(formSchema.layout.backgroundImageKey),
                     size: 0, // Size not available for existing images
                     mimeType: 'image/jpeg', // Default mime type
                   }

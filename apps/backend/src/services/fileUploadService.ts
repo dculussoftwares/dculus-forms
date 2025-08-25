@@ -2,6 +2,7 @@ import { S3Client, PutObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s
 import { randomUUID } from 'crypto';
 import path from 'path';
 import { s3Config } from '../lib/env.js';
+import { constructCdnUrl } from '../utils/cdn.js';
 
 export interface UploadFileResult {
   key: string;
@@ -156,7 +157,7 @@ export async function uploadFile(input: UploadFileInput): Promise<UploadFileResu
     await s3Client.send(putObjectCommand);
 
     // Construct CDN URL
-    const cdnUrl = `${s3Config.cdnUrl}/${s3Key}`;
+    const cdnUrl = constructCdnUrl(s3Key)!;
 
     return {
       key: s3Key,

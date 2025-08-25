@@ -13,7 +13,7 @@ import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-mid
 import { generateId } from '@dculus/utils';
 import { copyFileForForm } from '../../services/fileUploadService.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
-import { s3Config } from '../../lib/env.js';
+import { constructCdnUrl } from '../../utils/cdn.js';
 import { prisma } from '../../lib/prisma.js';
 import { randomUUID } from 'crypto';
 
@@ -125,7 +125,7 @@ export const formsResolvers = {
                 type: 'FormBackground',
                 formId: newFormId,
                 originalName: originalFileName,
-                url: `${s3Config.cdnUrl}/${formSchema.layout.backgroundImageKey}`,
+                url: constructCdnUrl(formSchema.layout.backgroundImageKey),
                 size: 0, // Size not available for existing images
                 mimeType: 'image/jpeg', // Default mime type
               }
