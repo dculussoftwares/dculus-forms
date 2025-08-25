@@ -77,12 +77,17 @@ resource "azurerm_container_app" "backend" {
 
       env {
         name  = "BETTER_AUTH_URL"
-        value = "https://dculus-forms-backend.wittypebble-c3d47e29.eastus.azurecontainerapps.io"
+        value = "https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io"
+      }
+
+      env {
+        name  = "S3_CDN_URL"
+        value = "https://cdn-handler-dev.natheeshece.workers.dev"
       }
 
       env {
         name  = "NODE_ENV"
-        value = "production"
+        value = "development"
       }
 
       env {
