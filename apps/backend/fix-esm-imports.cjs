@@ -13,16 +13,23 @@ function fixESMImports(dirPath) {
     } else if (file.endsWith('.js')) {
       const content = fs.readFileSync(filePath, 'utf8');
       
-      // Fix relative imports to add .js extension
+      // Fix relative imports and exports to add .js extension
       let fixedContent = content;
       
-      // Handle both single and double quotes, and relative imports
-      const patterns = [
+      // Handle import statements with from
+      const importPatterns = [
         /import\s+([^'"]*from\s+)['"](\.[^'"]*?)['"];/g,
         /import\s+['"](\.[^'"]*?)['"];/g
       ];
       
-      patterns.forEach(pattern => {
+      // Handle export statements with from
+      const exportPatterns = [
+        /export\s+([^'"]*from\s+)['"](\.[^'"]*?)['"];/g,
+        /export\s+\*\s+from\s+['"](\.[^'"]*?)['"];/g
+      ];
+      
+      // Process import patterns
+      importPatterns.forEach(pattern => {
         fixedContent = fixedContent.replace(pattern, (match, beforeOrPath, maybePath) => {
           const importPath = maybePath || beforeOrPath;
           
@@ -43,15 +50,46 @@ function fixESMImports(dirPath) {
         });
       });
       
+      // Process export patterns
+      exportPatterns.forEach(pattern => {
+        fixedContent = fixedContent.replace(pattern, (match, ...groups) => {
+          // Handle different capture group patterns
+          const exportPath = groups.find(group => group && (group.startsWith('./') || group.startsWith('../')));
+          
+          if (exportPath) {
+            // Only process relative exports that don't already have extensions
+            if (!exportPath.includes('.js') && !exportPath.includes('.json') && !exportPath.includes('.mjs')) {
+              return match.replace(exportPath, exportPath + '.js');
+            }
+          }
+          
+          return match;
+        });
+      });
+      
       if (content !== fixedContent) {
         fs.writeFileSync(filePath, fixedContent);
-        console.log(`Fixed ESM imports in ${filePath}`);
+        console.log(`Fixed ESM imports/exports in ${filePath}`);
       }
     }
   }
 }
 
-const distPath = path.join(__dirname, 'dist/apps/backend');
-if (fs.existsSync(distPath)) {
-  fixESMImports(distPath);
+// Fix backend dist
+const backendDistPath = path.join(__dirname, 'dist/apps/backend');
+if (fs.existsSync(backendDistPath)) {
+  console.log('Fixing backend ESM imports...');
+  fixESMImports(backendDistPath);
 }
+
+// Fix shared packages dist
+const packagesPath = path.join(__dirname, '..', '..', 'packages');
+const packageDirs = ['types', 'utils'];
+
+packageDirs.forEach(packageName => {
+  const packageDistPath = path.join(packagesPath, packageName, 'dist');
+  if (fs.existsSync(packageDistPath)) {
+    console.log(`Fixing ${packageName} package ESM imports...`);
+    fixESMImports(packageDistPath);
+  }
+});
