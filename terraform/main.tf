@@ -69,10 +69,6 @@ resource "azurerm_container_app" "backend" {
         value = var.mongodb_connection_string
       }
 
-      env {
-        name  = "JWT_SECRET"
-        value = var.jwt_secret
-      }
 
       env {
         name  = "BETTER_AUTH_SECRET"
@@ -94,10 +90,6 @@ resource "azurerm_container_app" "backend" {
         value = "4000"
       }
 
-      env {
-        name  = "BASE_URL"
-        value = "https://dculus-forms-backend.wittypebble-c3d47e29.eastus.azurecontainerapps.io"
-      }
 
       env {
         name  = "S3_ACCESS_KEY"

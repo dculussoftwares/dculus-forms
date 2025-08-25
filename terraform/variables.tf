@@ -28,11 +28,6 @@ variable "mongodb_connection_string" {
   sensitive   = true
 }
 
-variable "jwt_secret" {
-  description = "JWT secret for authentication (minimum 32 characters)"
-  type        = string
-  sensitive   = true
-}
 
 variable "better_auth_secret" {
   description = "Better Auth secret (minimum 32 characters)"

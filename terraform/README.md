@@ -15,7 +15,6 @@ The following secrets must be configured in your GitHub repository:
 
 **Required:**
 - `MONGODB_CONNECTION_STRING`: MongoDB Atlas or Azure Cosmos DB connection string
-- `JWT_SECRET`: JWT signing secret (minimum 32 characters)
 - `BETTER_AUTH_SECRET`: Better Auth signing secret (minimum 32 characters)
 
 **Optional (for file uploads):**
