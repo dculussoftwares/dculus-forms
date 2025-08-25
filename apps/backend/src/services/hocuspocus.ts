@@ -1,7 +1,7 @@
 import { Hocuspocus } from '@hocuspocus/server';
 import { Database } from '@hocuspocus/extension-database';
-import { prisma } from '../lib/prisma.js';
-import { extractFormStatsFromYDoc, updateFormMetadata } from './formMetadataService.js';
+import { prisma } from '../lib/prisma';
+import { extractFormStatsFromYDoc, updateFormMetadata } from './formMetadataService';
 
 // Debounce configuration for metadata updates
 const METADATA_UPDATE_DEBOUNCE_MS = 5000; // 5 seconds

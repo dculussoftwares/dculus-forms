@@ -1,6 +1,6 @@
 import { Request } from 'express';
 import { fromNodeHeaders } from 'better-auth/node';
-import { auth } from '../lib/better-auth.js';
+import { auth } from '../lib/better-auth';
 
 export interface BetterAuthContext {
   user: any | null;

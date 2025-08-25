@@ -1,5 +1,5 @@
 import { GraphQLError } from 'graphql';
-import { prisma } from '../../lib/prisma.js';
+import { prisma } from '../../lib/prisma';
 
 export interface GetFormFilesArgs {
   formId: string;

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { uploadFile } from '../services/fileUploadService.js';
-import { prisma } from '../lib/prisma.js';
+import { uploadFile } from '../services/fileUploadService';
+import { prisma } from '../lib/prisma';
 import { randomUUID } from 'crypto';
 
 const router: Router = Router();

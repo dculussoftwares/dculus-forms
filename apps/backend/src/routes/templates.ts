@@ -7,7 +7,7 @@ import {
   deleteTemplate,
   getTemplatesByCategory,
   getTemplateCategories,
-} from '../services/templateService.js';
+} from '../services/templateService';
 
 const router: Router = Router();
 

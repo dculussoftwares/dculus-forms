@@ -4,8 +4,8 @@ import {
   getResponsesByFormId, 
   submitResponse, 
   deleteResponse 
-} from '../../services/responseService.js';
-import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
+} from '../../services/responseService';
+import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware';
 import { generateId } from '@dculus/utils';
 
 export const responsesResolvers = {

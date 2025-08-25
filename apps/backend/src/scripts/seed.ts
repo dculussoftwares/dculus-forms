@@ -1,7 +1,7 @@
 import 'dotenv/config';
-import { prisma } from '../lib/prisma.js';
+import { prisma } from '../lib/prisma';
 const { seedTemplates } = require('./seed-templates');
-import { uploadFile } from '../services/fileUploadService.js';
+import { uploadFile } from '../services/fileUploadService';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Readable } from 'stream';
