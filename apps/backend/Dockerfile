@@ -21,9 +21,10 @@ RUN pnpm install --frozen-lockfile
 # Copy source code
 COPY . .
 
-# Build shared packages first
+# Build shared packages first (now ESM)
 RUN pnpm --filter @dculus/types build
 RUN pnpm --filter @dculus/utils build
+RUN pnpm --filter @dculus/ui build
 
 # Generate Prisma client and build backend
 WORKDIR /app/apps/backend
