@@ -19,11 +19,11 @@ The following secrets must be configured in your GitHub repository:
 - `BETTER_AUTH_SECRET`: Better Auth signing secret (minimum 32 characters)
 
 **Optional (for file uploads):**
-- `CLOUDFLARE_R2_ACCESS_KEY`: Cloudflare R2 access key
-- `CLOUDFLARE_R2_SECRET_KEY`: Cloudflare R2 secret key
-- `CLOUDFLARE_R2_ENDPOINT`: Cloudflare R2 endpoint URL
-- `CLOUDFLARE_R2_PRIVATE_BUCKET_NAME`: Private bucket name
-- `CLOUDFLARE_R2_PUBLIC_BUCKET_NAME`: Public bucket name
+- `S3_ACCESS_KEY`: S3 access key
+- `S3_SECRET_KEY`: S3 secret key
+- `S3_ENDPOINT`: S3 endpoint URL
+- `S3_PRIVATE_BUCKET_NAME`: Private bucket name
+- `S3_PUBLIC_BUCKET_NAME`: Public bucket name
 
 ## Infrastructure Components
 

@@ -40,34 +40,34 @@ variable "better_auth_secret" {
   sensitive   = true
 }
 
-variable "cloudflare_r2_access_key" {
-  description = "Cloudflare R2 access key for file storage"
+variable "s3_access_key" {
+  description = "S3 access key for file storage"
   type        = string
   sensitive   = true
   default     = ""
 }
 
-variable "cloudflare_r2_secret_key" {
-  description = "Cloudflare R2 secret key for file storage"
+variable "s3_secret_key" {
+  description = "S3 secret key for file storage"
   type        = string
   sensitive   = true
   default     = ""
 }
 
-variable "cloudflare_r2_endpoint" {
-  description = "Cloudflare R2 endpoint URL"
+variable "s3_endpoint" {
+  description = "S3 endpoint URL"
   type        = string
   default     = ""
 }
 
-variable "cloudflare_r2_private_bucket_name" {
-  description = "Cloudflare R2 private bucket name"
+variable "s3_private_bucket_name" {
+  description = "S3 private bucket name"
   type        = string
   default     = ""
 }
 
-variable "cloudflare_r2_public_bucket_name" {
-  description = "Cloudflare R2 public bucket name"
+variable "s3_public_bucket_name" {
+  description = "S3 public bucket name"
   type        = string
   default     = ""
 }

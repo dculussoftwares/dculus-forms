@@ -359,11 +359,11 @@ jobs:
                 - NODE_ENV=\${NODE_ENV:-production}
                 - PORT=\${PORT:-4000}
                 - BASE_URL=\${BASE_URL:-http://localhost:4000}
-                - CLOUDFLARE_R2_ACCESS_KEY=\${CLOUDFLARE_R2_ACCESS_KEY}
-                - CLOUDFLARE_R2_SECRET_KEY=\${CLOUDFLARE_R2_SECRET_KEY}
-                - CLOUDFLARE_R2_ENDPOINT=\${CLOUDFLARE_R2_ENDPOINT}
-                - CLOUDFLARE_R2_PRIVATE_BUCKET_NAME=\${CLOUDFLARE_R2_PRIVATE_BUCKET_NAME}
-                - CLOUDFLARE_R2_PUBLIC_BUCKET_NAME=\${CLOUDFLARE_R2_PUBLIC_BUCKET_NAME}
+                - S3_ACCESS_KEY=\${S3_ACCESS_KEY}
+                - S3_SECRET_KEY=\${S3_SECRET_KEY}
+                - S3_ENDPOINT=\${S3_ENDPOINT}
+                - S3_PRIVATE_BUCKET_NAME=\${S3_PRIVATE_BUCKET_NAME}
+                - S3_PUBLIC_BUCKET_NAME=\${S3_PUBLIC_BUCKET_NAME}
               restart: unless-stopped
               healthcheck:
                 test: ["CMD", "node", "-e", "require('http').get('http://localhost:4000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => { process.exit(1) })"]
@@ -549,11 +549,11 @@ jobs:
             -var="mongodb_connection_string=${{ secrets.MONGODB_CONNECTION_STRING }}" \
             -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
             -var="better_auth_secret=${{ secrets.BETTER_AUTH_SECRET }}" \
-            -var="cloudflare_r2_access_key=${{ secrets.CLOUDFLARE_R2_ACCESS_KEY }}" \
-            -var="cloudflare_r2_secret_key=${{ secrets.CLOUDFLARE_R2_SECRET_KEY }}" \
-            -var="cloudflare_r2_endpoint=${{ secrets.CLOUDFLARE_R2_ENDPOINT }}" \
-            -var="cloudflare_r2_private_bucket_name=${{ secrets.CLOUDFLARE_R2_PRIVATE_BUCKET_NAME }}" \
-            -var="cloudflare_r2_public_bucket_name=${{ secrets.CLOUDFLARE_R2_PUBLIC_BUCKET_NAME }}" \
+            -var="s3_access_key=${{ secrets.S3_ACCESS_KEY }}" \
+            -var="s3_secret_key=${{ secrets.S3_SECRET_KEY }}" \
+            -var="s3_endpoint=${{ secrets.S3_ENDPOINT }}" \
+            -var="s3_private_bucket_name=${{ secrets.S3_PRIVATE_BUCKET_NAME }}" \
+            -var="s3_public_bucket_name=${{ secrets.S3_PUBLIC_BUCKET_NAME }}" \
             -out=tfplan
 
       - name: Terraform Apply
@@ -621,7 +621,7 @@ jobs:
           echo "- DATABASE_URL: ✅ Configured" >> $GITHUB_STEP_SUMMARY
           echo "- JWT_SECRET: ✅ Configured" >> $GITHUB_STEP_SUMMARY
           echo "- BETTER_AUTH_SECRET: ✅ Configured" >> $GITHUB_STEP_SUMMARY
-          echo "- CLOUDFLARE_R2_*: ✅ Configured" >> $GITHUB_STEP_SUMMARY
+          echo "- S3_*: ✅ Configured" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Quick Test Commands:" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY

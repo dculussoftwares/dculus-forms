@@ -100,28 +100,28 @@ resource "azurerm_container_app" "backend" {
       }
 
       env {
-        name  = "CLOUDFLARE_R2_ACCESS_KEY"
-        value = var.cloudflare_r2_access_key
+        name  = "S3_ACCESS_KEY"
+        value = var.s3_access_key
       }
 
       env {
-        name  = "CLOUDFLARE_R2_SECRET_KEY"
-        value = var.cloudflare_r2_secret_key
+        name  = "S3_SECRET_KEY"
+        value = var.s3_secret_key
       }
 
       env {
-        name  = "CLOUDFLARE_R2_ENDPOINT"
-        value = var.cloudflare_r2_endpoint
+        name  = "S3_ENDPOINT"
+        value = var.s3_endpoint
       }
 
       env {
-        name  = "CLOUDFLARE_R2_PRIVATE_BUCKET_NAME"
-        value = var.cloudflare_r2_private_bucket_name
+        name  = "S3_PRIVATE_BUCKET_NAME"
+        value = var.s3_private_bucket_name
       }
 
       env {
-        name  = "CLOUDFLARE_R2_PUBLIC_BUCKET_NAME"
-        value = var.cloudflare_r2_public_bucket_name
+        name  = "S3_PUBLIC_BUCKET_NAME"
+        value = var.s3_public_bucket_name
       }
 
       liveness_probe {

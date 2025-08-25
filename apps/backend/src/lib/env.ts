@@ -38,12 +38,12 @@ export interface AppConfig {
 }
 
 export const s3Config: S3Config = {
-  endpoint: requireEnv('CLOUDFLARE_R2_ENDPOINT'),
-  accessKey: requireEnv('CLOUDFLARE_R2_ACCESS_KEY'),
-  secretKey: requireEnv('CLOUDFLARE_R2_SECRET_KEY'),
-  publicBucketName: requireEnv('CLOUDFLARE_R2_PUBLIC_BUCKET_NAME'),
-  privateBucketName: requireEnv('CLOUDFLARE_R2_PRIVATE_BUCKET_NAME'),
-  cdnUrl: requireEnv('CLOUDFLARE_R2_CDN_URL'),
+  endpoint: requireEnv('S3_ENDPOINT'),
+  accessKey: requireEnv('S3_ACCESS_KEY'),
+  secretKey: requireEnv('S3_SECRET_KEY'),
+  publicBucketName: requireEnv('S3_PUBLIC_BUCKET_NAME'),
+  privateBucketName: requireEnv('S3_PRIVATE_BUCKET_NAME'),
+  cdnUrl: requireEnv('S3_CDN_URL'),
 };
 
 export const authConfig: AuthConfig = {
