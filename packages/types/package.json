@@ -13,7 +13,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf dist",
+    "build:cjs": "tsc -p tsconfig.cjs.json && find dist-cjs -name '*.js' -exec sh -c 'mv \"$1\" \"${1%.js}.cjs\"' _ {} \\; && node fix-cjs-imports.cjs",
+    "clean": "rm -rf dist dist-cjs",
     "dev": "tsc --watch",
     "type-check": "tsc --noEmit"
   },

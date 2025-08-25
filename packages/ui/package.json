@@ -8,11 +8,13 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist-cjs/index.js"
     }
   },
   "scripts": {
     "build": "tsc",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },

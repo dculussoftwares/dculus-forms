@@ -2,9 +2,10 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "target": "ES2022",
-    "module": "CommonJS",
+    "target": "ES2020",
+    "module": "ESNext",
     "moduleResolution": "node",
+    "lib": ["ES2020"],
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
@@ -17,14 +18,12 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
-      "@dculus/ui": ["../../packages/ui/src"],
-      "@dculus/ui/*": ["../../packages/ui/src/*"],
       "@dculus/utils": ["../../packages/utils/src"],
       "@dculus/utils/*": ["../../packages/utils/src/*"],
       "@dculus/types": ["../../packages/types/src"],
       "@dculus/types/*": ["../../packages/types/src/*"]
     }
   },
-  "include": ["src/**/*", "../../packages/ui/src/**/*", "../../packages/utils/src/**/*", "../../packages/types/src/**/*"],
+  "include": ["src/**/*", "../../packages/utils/src/**/*", "../../packages/types/src/**/*"],
   "exclude": ["dist", "node_modules"]
 } 
