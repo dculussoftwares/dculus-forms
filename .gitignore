@@ -143,4 +143,7 @@ test-temp/
 *.test.tmp
 
 # Visual regression test results
-visual-regression-results/ 
+visual-regression-results/
+
+# Cucumber test reports
+tests/integration/reports/ 
