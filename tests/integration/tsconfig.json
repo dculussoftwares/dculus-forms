@@ -1,0 +1,16 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node",
+    "module": "CommonJS",
+    "target": "ES2020",
+    "types": ["node", "@cucumber/cucumber"],
+    "strict": false
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.js"
+  ]
+}

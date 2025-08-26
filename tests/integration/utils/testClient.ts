@@ -1,6 +1,6 @@
-import request from 'supertest';
+const request = require('supertest');
 
-export class TestClient {
+class TestClient {
   private baseUrl: string;
 
   constructor(baseUrl?: string) {
@@ -60,4 +60,6 @@ export class TestClient {
 }
 
 // Export a default instance
-export const testClient = new TestClient();
+const testClient = new TestClient();
+
+module.exports = { TestClient, testClient };
