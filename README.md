@@ -161,12 +161,19 @@ pnpm form-viewer:preview
 
 ## 🌐 Access Points
 
+### Local
 - **Form App (Builder)**: http://localhost:3000
 - **Form Viewer**: http://localhost:5173
 - **Backend API**: http://localhost:4000
 - **GraphQL Playground**: http://localhost:4000/graphql
 - **Health Check**: http://localhost:4000/health
 - **Mongo Express (Database UI)**: http://localhost:8081 (admin/password123)
+
+### Development
+- **Form App (Builder)**: https://dculus-forms-app.pages.dev/
+- **Form Viewer**: https://dculus-forms-viewer-app.pages.dev/
+- **Backend API**: https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io
+- **GraphQL Playground**: https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io/graphql
 
 ## 🗄️ Database
 
