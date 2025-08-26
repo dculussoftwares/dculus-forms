@@ -326,8 +326,6 @@ jobs:
             type=ref,event=pr
             # SHA-based tags for traceability
             type=sha,prefix={{branch}}-
-            # Date-based version for main branch
-            type=raw,value={{date 'YYYYMMDD-HHmmss'}}-{{sha}},enable={{is_default_branch}}
             # Latest tag for default branch
             type=raw,value=latest,enable={{is_default_branch}}
             # Custom tag from workflow_dispatch
@@ -408,14 +406,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set image tag
+      - name: Set deployment image
         id: image
         run: |
-          # Generate timestamp-based tag for this deployment
-          IMAGE_TAG="$(date +'%Y%m%d-%H%M%S')-$(echo ${{ github.sha }} | cut -c1-7)"
+          # Use the SHA-based tag for deployment (most specific and traceable)
+          IMAGE_TAG="main-$(echo ${{ github.sha }} | cut -c1-7)"
+          FULL_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$IMAGE_TAG"
           echo "tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
-          echo "full_image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
-          echo "🐳 Using image tag: $IMAGE_TAG"
+          echo "full_image=$FULL_IMAGE" >> $GITHUB_OUTPUT
+          echo "🐳 Deploying image: $FULL_IMAGE"
 
       - name: Azure CLI login
         uses: azure/login@v2
