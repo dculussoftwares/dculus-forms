@@ -316,12 +316,20 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            # set latest tag for default branch
+            # Semantic versioning for tags
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            # Branch-based tags
             type=ref,event=branch
             type=ref,event=pr
+            # SHA-based tags for traceability
             type=sha,prefix={{branch}}-
+            # Date-based version for main branch
+            type=raw,value={{date 'YYYYMMDD-HHmmss'}}-{{sha}},enable={{is_default_branch}}
+            # Latest tag for default branch
             type=raw,value=latest,enable={{is_default_branch}}
-            # custom tag from workflow_dispatch
+            # Custom tag from workflow_dispatch
             type=raw,value=${{ github.event.inputs.tag }},enable=${{ github.event_name == 'workflow_dispatch' }}
           labels: |
             org.opencontainers.image.title=Dculus Forms Backend
@@ -399,6 +407,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set image tag
+        id: image
+        run: |
+          # Generate timestamp-based tag for this deployment
+          IMAGE_TAG="$(date +'%Y%m%d-%H%M%S')-$(echo ${{ github.sha }} | cut -c1-7)"
+          echo "tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "full_image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "🐳 Using image tag: $IMAGE_TAG"
+
       - name: Azure CLI login
         uses: azure/login@v2
         with:
@@ -474,6 +491,7 @@ jobs:
             -var="s3_private_bucket_name=${{ secrets.S3_PRIVATE_BUCKET_NAME }}" \
             -var="s3_public_bucket_name=${{ secrets.S3_PUBLIC_BUCKET_NAME }}" \
             -var="cors_origins=${{ secrets.CORS_ORIGINS }}" \
+            -var="container_image=${{ steps.image.outputs.full_image }}" \
             -out=tfplan
 
       - name: Terraform Apply
@@ -535,7 +553,8 @@ jobs:
           echo "**Backend URL**: ${{ steps.deployment.outputs.backend_url }}" >> $GITHUB_STEP_SUMMARY
           echo "**GraphQL Endpoint**: ${{ steps.deployment.outputs.backend_url }}/graphql" >> $GITHUB_STEP_SUMMARY
           echo "**Health Check**: ${{ steps.deployment.outputs.backend_url }}/health" >> $GITHUB_STEP_SUMMARY
-          echo "**Container Image**: dculus/forms-backend:latest" >> $GITHUB_STEP_SUMMARY
+          echo "**Container Image**: ${{ steps.image.outputs.full_image }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Tag**: ${{ steps.image.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Environment Variables Set:" >> $GITHUB_STEP_SUMMARY
           echo "- DATABASE_URL: ✅ Configured" >> $GITHUB_STEP_SUMMARY

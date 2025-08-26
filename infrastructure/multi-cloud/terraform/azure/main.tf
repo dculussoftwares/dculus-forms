@@ -60,7 +60,7 @@ resource "azurerm_container_app" "backend" {
 
     container {
       name   = "backend"
-      image  = "dculus/forms-backend:latest"
+      image  = var.container_image
       cpu    = 0.25
       memory = "0.5Gi"
 

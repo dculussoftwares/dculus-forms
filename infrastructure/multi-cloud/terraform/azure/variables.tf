@@ -73,6 +73,12 @@ variable "cors_origins" {
   default     = "http://localhost:3000,http://localhost:5173"
 }
 
+variable "container_image" {
+  description = "Docker container image to deploy"
+  type        = string
+  default     = "dculus/forms-backend:latest"
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)
