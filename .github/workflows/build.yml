@@ -17,6 +17,8 @@ env:
   PNPM_VERSION: '8.15.0'
   REGISTRY: docker.io
   IMAGE_NAME: dculus/forms-backend
+  # Backend URL for production builds
+  BACKEND_URL: https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io
   # Azure Configuration
   ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
   ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -235,7 +237,12 @@ jobs:
       - name: Type check form-app
         run: pnpm --filter form-app type-check
 
-      - name: Build form-app
+      - name: Build form-app with environment variables
+        env:
+          VITE_CDN_ENDPOINT: ${{ secrets.VITE_CDN_ENDPOINT }}
+          VITE_PIXABAY_API_KEY: ${{ secrets.VITE_PIXABAY_API_KEY }}
+          VITE_API_URL: ${{ env.BACKEND_URL }}
+          VITE_GRAPHQL_URL: ${{ env.BACKEND_URL }}/graphql
         run: pnpm --filter form-app build
 
   build-form-viewer:
@@ -580,7 +587,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build form-app
+      - name: Build form-app with production environment variables
+        env:
+          VITE_CDN_ENDPOINT: ${{ secrets.VITE_CDN_ENDPOINT }}
+          VITE_PIXABAY_API_KEY: ${{ secrets.VITE_PIXABAY_API_KEY }}
+          VITE_API_URL: ${{ env.BACKEND_URL }}
+          VITE_GRAPHQL_URL: ${{ env.BACKEND_URL }}/graphql
         run: pnpm --filter form-app build
 
       - name: Install wrangler globally
