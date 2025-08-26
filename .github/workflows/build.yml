@@ -443,6 +443,9 @@ jobs:
           timeout 60s bash -c 'while ! docker info > /dev/null 2>&1; do sleep 1; done'
 
       - name: Run Integration Tests
+        env:
+          # Override production backend URL with local Docker URL for integration tests
+          BACKEND_URL: http://localhost:4000
         run: |
           # Make integration test script executable
           chmod +x ./scripts/integration-test.sh
@@ -462,6 +465,7 @@ jobs:
             echo "✅ Integration test setup validated for PR"
           else
             echo "🧪 Running full Docker-based integration tests"
+            echo "Backend URL: $BACKEND_URL"
             ./scripts/integration-test.sh
           fi
         timeout-minutes: 15
