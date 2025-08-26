@@ -588,20 +588,19 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy apps/form-app/dist --project-name=dculus-form-app
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          command: pages deploy apps/form-app/dist --project-name=dculus-forms-app
 
       - name: Deployment Summary
         run: |
           echo "## 🚀 Cloudflare Pages Deployment Complete!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Form App**: Successfully deployed to Cloudflare Pages" >> $GITHUB_STEP_SUMMARY
-          echo "**Project Name**: dculus-form-app" >> $GITHUB_STEP_SUMMARY
+          echo "**Project Name**: dculus-forms-app" >> $GITHUB_STEP_SUMMARY
           echo "**Build Directory**: apps/form-app/dist" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Access URLs:" >> $GITHUB_STEP_SUMMARY
-          echo "- **Production**: https://dculus-form-app.pages.dev" >> $GITHUB_STEP_SUMMARY
-          echo "- **Branch Previews**: https://[branch].dculus-form-app.pages.dev" >> $GITHUB_STEP_SUMMARY
+          echo "- **Production**: https://dculus-forms-app.pages.dev" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch Previews**: https://[branch].dculus-forms-app.pages.dev" >> $GITHUB_STEP_SUMMARY
 
   build-summary:
     name: Build Summary
