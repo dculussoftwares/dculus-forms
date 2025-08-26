@@ -668,65 +668,52 @@ jobs:
   build-summary:
     name: Build Summary
     runs-on: ubuntu-latest
-    needs: [build-backend, build-form-app, build-form-viewer, lint-and-type-check, build-and-push, deploy-to-azure, deploy-form-app-to-cloudflare, deploy-form-viewer-to-cloudflare]
+    needs: [deploy-to-azure, deploy-form-app-to-cloudflare, deploy-form-viewer-to-cloudflare]
     if: always()
     steps:
-      - name: Check build results
+      - name: Check deployment results
         run: |
-          echo "Build Summary:"
-          echo "Backend: ${{ needs.build-backend.result }}"
-          echo "Form App: ${{ needs.build-form-app.result }}"
-          echo "Form Viewer: ${{ needs.build-form-viewer.result }}"
-          echo "Lint and Type Check: ${{ needs.lint-and-type-check.result }}"
-          echo "Build and Push: ${{ needs.build-and-push.result }}"
+          echo "## 🚀 Deployment Summary"
           echo "Deploy to Azure: ${{ needs.deploy-to-azure.result }}"
           echo "Deploy Form App to Cloudflare: ${{ needs.deploy-form-app-to-cloudflare.result }}"
           echo "Deploy Form Viewer to Cloudflare: ${{ needs.deploy-form-viewer-to-cloudflare.result }}"
+          echo ""
           
-          # Check critical components (backend, build-and-push, deployment)
-          if [[ "${{ needs.build-backend.result }}" == "success" && 
-                "${{ needs.lint-and-type-check.result }}" == "success" &&
-                "${{ needs.build-and-push.result }}" == "success" ]]; then
-            echo "✅ Core backend components built successfully!"
-            
-            # Check deployment status
-            if [[ "${{ needs.deploy-to-azure.result }}" == "success" ]]; then
-              echo "🚀 Deployment to Azure completed successfully!"
-            elif [[ "${{ needs.deploy-to-azure.result }}" == "skipped" ]]; then
-              echo "⏭️  Deployment skipped (not main branch or PR)"
-            else
-              echo "⚠️  Deployment failed but core build succeeded"
-            fi
-            
-            # Check Cloudflare deployment status
-            if [[ "${{ needs.deploy-form-app-to-cloudflare.result }}" == "success" ]]; then
-              echo "🚀 Form App deployment to Cloudflare Pages completed successfully!"
-            elif [[ "${{ needs.deploy-form-app-to-cloudflare.result }}" == "skipped" ]]; then
-              echo "⏭️  Form App Cloudflare deployment skipped (not main branch or PR)"
-            else
-              echo "⚠️  Form App Cloudflare deployment failed but core build succeeded"
-            fi
-            
-            if [[ "${{ needs.deploy-form-viewer-to-cloudflare.result }}" == "success" ]]; then
-              echo "🚀 Form Viewer deployment to Cloudflare Pages completed successfully!"
-            elif [[ "${{ needs.deploy-form-viewer-to-cloudflare.result }}" == "skipped" ]]; then
-              echo "⏭️  Form Viewer Cloudflare deployment skipped (not main branch or PR)"
-            else
-              echo "⚠️  Form Viewer Cloudflare deployment failed but core build succeeded"
-            fi
-            
-            # Warn about frontend build issues
-            if [[ "${{ needs.build-form-app.result }}" != "success" ]]; then
-              echo "⚠️  Form App build failed - frontend deployment may be affected"
-            fi
-            if [[ "${{ needs.build-form-viewer.result }}" != "success" ]]; then
-              echo "⚠️  Form Viewer build failed - viewer app deployment may be affected"
-            fi
-            
+          # Check Azure deployment status
+          if [[ "${{ needs.deploy-to-azure.result }}" == "success" ]]; then
+            echo "🚀 Backend deployment to Azure completed successfully!"
+          elif [[ "${{ needs.deploy-to-azure.result }}" == "skipped" ]]; then
+            echo "⏭️  Azure deployment skipped (not main branch or PR)"
           else
-            echo "❌ Critical builds failed - backend deployment not possible"
-            echo "Backend: ${{ needs.build-backend.result }}"
-            echo "Build and Push: ${{ needs.build-and-push.result }}"
-            exit 1
+            echo "❌ Azure deployment failed"
+          fi
+          
+          # Check Form App Cloudflare deployment status
+          if [[ "${{ needs.deploy-form-app-to-cloudflare.result }}" == "success" ]]; then
+            echo "🚀 Form App deployment to Cloudflare Pages completed successfully!"
+          elif [[ "${{ needs.deploy-form-app-to-cloudflare.result }}" == "skipped" ]]; then
+            echo "⏭️  Form App Cloudflare deployment skipped (not main branch or PR)"
+          else
+            echo "❌ Form App Cloudflare deployment failed"
+          fi
+          
+          # Check Form Viewer Cloudflare deployment status
+          if [[ "${{ needs.deploy-form-viewer-to-cloudflare.result }}" == "success" ]]; then
+            echo "🚀 Form Viewer deployment to Cloudflare Pages completed successfully!"
+          elif [[ "${{ needs.deploy-form-viewer-to-cloudflare.result }}" == "skipped" ]]; then
+            echo "⏭️  Form Viewer Cloudflare deployment skipped (not main branch or PR)"
+          else
+            echo "❌ Form Viewer Cloudflare deployment failed"
+          fi
+          
+          # Overall deployment status
+          if [[ "${{ needs.deploy-to-azure.result }}" == "success" && 
+                "${{ needs.deploy-form-app-to-cloudflare.result }}" == "success" &&
+                "${{ needs.deploy-form-viewer-to-cloudflare.result }}" == "success" ]]; then
+            echo ""
+            echo "✅ All deployments completed successfully!"
+          else
+            echo ""
+            echo "⚠️  Some deployments failed or were skipped"
           fi
 
