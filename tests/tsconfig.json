@@ -1,0 +1,13 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node",
+    "types": ["node", "jest", "@types/supertest"]
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.js"
+  ]
+}
