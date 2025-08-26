@@ -18,7 +18,7 @@ env:
   PNPM_VERSION: '8.15.0'
   REGISTRY: docker.io
   IMAGE_NAME: dculus/forms-backend
-  # Backend URL for production builds
+  # Backend URL for production builds 
   BACKEND_URL: https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io
   # Azure Configuration
   ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
