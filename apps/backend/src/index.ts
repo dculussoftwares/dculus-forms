@@ -117,6 +117,8 @@ const allOrigins = [
   'https://sandbox.embed.apollographql.com',
 ];
 
+console.log('🔧 Configured CORS origins:', allOrigins);
+
 app.use(
   cors({
     origin: allOrigins,
