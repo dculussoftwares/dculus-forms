@@ -473,6 +473,7 @@ jobs:
             -var="s3_endpoint=${{ secrets.S3_ENDPOINT }}" \
             -var="s3_private_bucket_name=${{ secrets.S3_PRIVATE_BUCKET_NAME }}" \
             -var="s3_public_bucket_name=${{ secrets.S3_PUBLIC_BUCKET_NAME }}" \
+            -var="cors_origins=${{ secrets.CORS_ORIGINS }}" \
             -out=tfplan
 
       - name: Terraform Apply

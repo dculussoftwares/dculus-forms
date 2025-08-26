@@ -95,6 +95,10 @@ resource "azurerm_container_app" "backend" {
         value = "4000"
       }
 
+      env {
+        name  = "CORS_ORIGINS"
+        value = var.cors_origins
+      }
 
       env {
         name  = "S3_ACCESS_KEY"

@@ -67,6 +67,12 @@ variable "s3_public_bucket_name" {
   default     = ""
 }
 
+variable "cors_origins" {
+  description = "CORS origins for the backend API (comma-separated)"
+  type        = string
+  default     = "http://localhost:3000,http://localhost:5173"
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)
