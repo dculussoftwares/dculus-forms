@@ -397,6 +397,10 @@ jobs:
     name: Integration Tests
     runs-on: ubuntu-latest
     needs: build-and-push
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     
     steps:
       - name: Checkout code
@@ -452,7 +456,7 @@ jobs:
             echo "✅ Integration test configuration is valid"
             
             # Validate Docker Compose configuration
-            docker-compose -f docker-compose.integration.yml config
+            docker compose -f docker-compose.integration.yml config
             echo "✅ Docker Compose configuration is valid"
             
             echo "✅ Integration test setup validated for PR"

@@ -42,11 +42,15 @@ check_docker() {
 # Function to check if Docker Compose is available
 check_docker_compose() {
     print_status "Checking Docker Compose..."
-    if ! command -v docker-compose > /dev/null 2>&1; then
+    if command -v docker-compose > /dev/null 2>&1; then
+        DOCKER_COMPOSE_CMD="docker-compose"
+    elif docker compose version > /dev/null 2>&1; then
+        DOCKER_COMPOSE_CMD="docker compose"
+    else
         print_error "Docker Compose is not installed. Please install Docker Compose and try again."
         exit 1
     fi
-    print_success "Docker Compose is available"
+    print_success "Docker Compose is available ($DOCKER_COMPOSE_CMD)"
 }
 
 # Function to wait for service to be healthy
@@ -58,7 +62,7 @@ wait_for_service() {
     print_status "Waiting for $service_name to be healthy..."
     
     while [ $attempt -le $max_attempts ]; do
-        if docker-compose -f docker-compose.integration.yml ps $service_name | grep -q "healthy"; then
+        if $DOCKER_COMPOSE_CMD -f docker-compose.integration.yml ps $service_name | grep -q "healthy"; then
             print_success "$service_name is healthy"
             return 0
         fi
@@ -106,11 +110,11 @@ setup_test_environment() {
     
     # Pull latest images
     print_status "Pulling Docker images..."
-    docker-compose -f docker-compose.integration.yml pull
+    $DOCKER_COMPOSE_CMD -f docker-compose.integration.yml pull
     
     # Start services
     print_status "Starting Docker services..."
-    docker-compose -f docker-compose.integration.yml up -d
+    $DOCKER_COMPOSE_CMD -f docker-compose.integration.yml up -d
     
     # Wait for all services to be healthy
     wait_for_service "mongodb"
@@ -141,7 +145,7 @@ cleanup_test_environment() {
     print_status "Cleaning up test environment..."
     
     # Stop and remove containers, networks, and volumes
-    docker-compose -f docker-compose.integration.yml down -v --remove-orphans
+    $DOCKER_COMPOSE_CMD -f docker-compose.integration.yml down -v --remove-orphans
     
     print_success "Test environment cleaned up!"
 }
@@ -149,7 +153,7 @@ cleanup_test_environment() {
 # Function to show logs
 show_logs() {
     print_status "Showing Docker service logs..."
-    docker-compose -f docker-compose.integration.yml logs
+    $DOCKER_COMPOSE_CMD -f docker-compose.integration.yml logs
 }
 
 # Main execution
