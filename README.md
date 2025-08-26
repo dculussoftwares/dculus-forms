@@ -2,6 +2,9 @@
 
 A modern form builder and management system built with Express.js + GraphQL backend and React + shadcn/ui frontend applications.
 
+[![Build Pipeline](https://github.com/dculussoftwares/dculus-forms/actions/workflows/build.yml/badge.svg)](https://github.com/dculussoftwares/dculus-forms/actions/workflows/build.yml)
+
+
 ## 🏗️ Architecture
 
 This is a monorepo structure with the following components:
