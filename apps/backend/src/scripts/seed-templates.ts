@@ -1,5 +1,5 @@
-const { createTemplate } = require('../services/templateService');
-const { 
+import { createTemplate } from '../services/templateService.js';
+import { 
   TextInputField, 
   EmailField, 
   TextAreaField,
@@ -11,12 +11,13 @@ const {
   FillableFormFieldValidation,
   ThemeType,
   SpacingType,
-  PageModeType
-} = require('@dculus/types');
-const { randomUUID } = require('crypto');
+  PageModeType,
+  LayoutCode
+} from '@dculus/types';
+import { randomUUID } from 'crypto';
 
 // HTML content for different template types
-const getHtmlContent = (type) => {
+const getHtmlContent = (type: string): string => {
   switch (type) {
     case 'welcome':
       return '<h1><strong>Welcome to Our Platform</strong></h1><p>We\'re excited to have you join us! Please fill out this form to get started.</p>';
@@ -47,7 +48,13 @@ const getHtmlContent = (type) => {
   }
 };
 
-const seedTemplates = async (uploadedFiles = []) => {
+interface UploadedFile {
+  key: string;
+  type: string;
+  filename?: string;
+}
+
+export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise<void> => {
   console.log('🌱 Seeding form templates...');
   
   // Get background image keys from uploaded files
@@ -62,7 +69,7 @@ const seedTemplates = async (uploadedFiles = []) => {
     : uploadedFiles.filter(file => file.type === 'OrganizationLogo');
     
   // Helper function to get an image key for a template
-  const getImageKey = (index) => {
+  const getImageKey = (index: number): string => {
     if (availableImages.length === 0) return "";
     return availableImages[index % availableImages.length].key;
   };
@@ -125,7 +132,7 @@ const seedTemplates = async (uploadedFiles = []) => {
           theme: ThemeType.LIGHT,
           textColor: "#333333",
           spacing: SpacingType.NORMAL,
-          code: "L1",
+          code: "L1" as LayoutCode,
           content: getHtmlContent('contact'),
           customBackGroundColor: "#ffffff",
           backgroundImageKey: getImageKey(0),
@@ -195,7 +202,7 @@ const seedTemplates = async (uploadedFiles = []) => {
           theme: ThemeType.LIGHT,
           textColor: "#333333",
           spacing: SpacingType.NORMAL,
-          code: "L2",
+          code: "L2" as LayoutCode,
           content: getHtmlContent('feedback'),
           customBackGroundColor: "#f8f9fa",
           backgroundImageKey: getImageKey(1),
@@ -297,7 +304,7 @@ const seedTemplates = async (uploadedFiles = []) => {
           theme: ThemeType.LIGHT,
           textColor: "#333333",
           spacing: SpacingType.NORMAL,
-          code: "L3",
+          code: "L3" as LayoutCode,
           content: getHtmlContent('registration'),
           customBackGroundColor: "#e3f2fd",
           backgroundImageKey: getImageKey(0),
@@ -398,7 +405,7 @@ const seedTemplates = async (uploadedFiles = []) => {
           theme: ThemeType.LIGHT,
           textColor: "#333333",
           spacing: SpacingType.SPACIOUS,
-          code: "L4",
+          code: "L4" as LayoutCode,
           content: getHtmlContent('job'),
           customBackGroundColor: "#fff3e0",
           backgroundImageKey: getImageKey(1),
@@ -467,7 +474,7 @@ const seedTemplates = async (uploadedFiles = []) => {
           theme: ThemeType.LIGHT,
           textColor: "#333333",
           spacing: SpacingType.NORMAL,
-          code: "L5",
+          code: "L5" as LayoutCode,
           content: getHtmlContent('survey'),
           customBackGroundColor: "#f3e5f5",
           backgroundImageKey: getImageKey(0),
@@ -534,7 +541,7 @@ const seedTemplates = async (uploadedFiles = []) => {
           theme: ThemeType.LIGHT,
           textColor: "#333333",
           spacing: SpacingType.COMPACT,
-          code: "L6",
+          code: "L6" as LayoutCode,
           content: getHtmlContent('newsletter'),
           customBackGroundColor: "#e8f5e8",
           backgroundImageKey: getImageKey(1),
@@ -558,5 +565,3 @@ const seedTemplates = async (uploadedFiles = []) => {
     throw error;
   }
 };
-
-module.exports = { seedTemplates };
