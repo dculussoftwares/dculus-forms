@@ -104,14 +104,22 @@ app.use(
     },
   })
 );
+// Parse CORS origins from environment variable
+const corsOrigins = process.env.CORS_ORIGINS?.split(',').map(origin => origin.trim()) || [
+  'http://localhost:3000',
+  'http://localhost:5173'
+];
+
+// Add Apollo Studio domains for GraphQL playground
+const allOrigins = [
+  ...corsOrigins,
+  'https://studio.apollographql.com',
+  'https://sandbox.embed.apollographql.com',
+];
+
 app.use(
   cors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'https://studio.apollographql.com',
-      'https://sandbox.embed.apollographql.com',
-    ],
+    origin: allOrigins,
     credentials: true,
   })
 );
