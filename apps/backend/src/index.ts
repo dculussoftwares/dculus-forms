@@ -119,16 +119,18 @@ const allOrigins = [
 
 console.log('🔧 Configured CORS origins:', allOrigins);
 
+// Apply CORS first - this must be before ALL other middleware
 app.use(
   cors({
     origin: allOrigins,
     credentials: true,
   })
 );
+
 app.use(compression());
 app.use(morgan('combined'));
 
-// Mount Better Auth handler BEFORE other middleware
+// Mount Better Auth handler AFTER CORS middleware
 app.all('/api/auth/*', toNodeHandler(auth));
 
 // Apply express.json() AFTER Better Auth handler
