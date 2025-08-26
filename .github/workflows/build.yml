@@ -583,13 +583,16 @@ jobs:
       - name: Build form-app
         run: pnpm --filter form-app build
 
+      - name: Install wrangler globally
+        run: npm install -g wrangler@latest
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy apps/form-app/dist --project-name=dculus-forms-app
-          packageManager: npm
+          wranglerVersion: "3.90.0"
 
       - name: Deployment Summary
         run: |
