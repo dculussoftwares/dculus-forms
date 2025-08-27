@@ -29,6 +29,12 @@ Before(async function(scenario) {
   
   // Initialize test client for this scenario
   this.testClient = testClient;
+  
+  // Clear authentication state before each scenario
+  if (this.scenarioTags.includes('@auth')) {
+    this.testClient.clearAuthTokens();
+    console.log('🔐 Authentication state cleared for auth scenario');
+  }
 });
 
 // Scenario teardown - runs after each scenario

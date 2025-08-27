@@ -43,7 +43,12 @@
     "test:cucumber:ci": "cucumber-js --config cucumber.config.js --profile ci",
     "test:cucumber:tags": "cucumber-js --config cucumber.config.js --tags",
     "test:cucumber:smoke": "cucumber-js --config cucumber.config.js --tags @smoke",
-    "test:cucumber:health": "cucumber-js --config cucumber.config.js --tags @health"
+    "test:cucumber:health": "cucumber-js --config cucumber.config.js --tags @health",
+    "test:auth": "./scripts/test-auth-integration.sh",
+    "test:auth:debug": "./scripts/test-auth-integration.sh --debug",
+    "test:auth:signup": "./scripts/test-auth-integration.sh --tags '@auth @signup'",
+    "test:auth:e2e": "./scripts/test-auth-integration.sh --tags '@e2e'",
+    "test:auth:no-cleanup": "./scripts/test-auth-integration.sh --no-cleanup --logs"
   },
   "devDependencies": {
     "@cucumber/cucumber": "12.2.0",

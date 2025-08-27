@@ -1,10 +1,7 @@
-const { Given, When, Then } = require('@cucumber/cucumber');
+const { Given, When, Then, DataTable } = require('@cucumber/cucumber');
+const { CustomWorld } = require('../support/world');
 
-// Store responses for multiple requests
-let multipleResponses = [];
-let requestStartTime;
-
-// Simple assertion helper
+// Use Node.js assert or implement basic expect
 const expect = (actual) => ({
   toBe: (expected) => {
     if (actual !== expected) {
@@ -36,6 +33,17 @@ const expect = (actual) => ({
       throw new Error(`Expected ${JSON.stringify(actual)} to have property ${prop}`);
     }
   },
+  toMatchObject: (expected) => {
+    for (const key in expected) {
+      if (typeof expected[key] === 'function') {
+        if (!expected[key](actual[key])) {
+          throw new Error(`Property ${key} did not match expected function`);
+        }
+      } else if (actual[key] !== expected[key]) {
+        throw new Error(`Property ${key}: expected ${expected[key]}, got ${actual[key]}`);
+      }
+    }
+  },
   not: {
     toBeNaN: () => {
       if (isNaN(actual)) {
@@ -44,6 +52,10 @@ const expect = (actual) => ({
     }
   }
 });
+
+// Store responses for multiple requests
+let multipleResponses = [];
+let requestStartTime;
 
 Given('the backend service is running', async function() {
   this.logScenario('Verifying backend service is running');
@@ -94,10 +106,7 @@ Then('the response should contain success status', function() {
   this.logScenario('Verifying response contains success status');
   
   expect(this.responseBody).toHaveProperty('success');
-  const actualType = typeof this.responseBody.success;
-  if (actualType !== 'boolean') {
-    throw new Error(`Expected success to be boolean but got ${actualType}`);
-  }
+  expect(typeof this.responseBody.success).toBe('boolean');
 });
 
 Then('the success status should be {word}', function(expectedValue) {
@@ -159,10 +168,7 @@ Then('the uptime should be greater than {int}', function(minUptime) {
 Then('the uptime should be a number', function() {
   this.logScenario('Verifying uptime is a number');
   
-  const actualType = typeof this.responseBody.uptime;
-  if (actualType !== 'number') {
-    throw new Error(`Expected uptime to be number but got ${actualType}`);
-  }
+  expect(typeof this.responseBody.uptime).toBe('number');
 });
 
 Then('all responses should have status {int}', function(expectedStatus) {
