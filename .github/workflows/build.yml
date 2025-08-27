@@ -448,7 +448,7 @@ jobs:
           BACKEND_URL: http://localhost:4000
         run: |
           # Make integration test script executable
-          chmod +x ./scripts/integration-test.sh
+          chmod +x ./scripts/cucumber-test.sh
           
           # Run integration tests (skip for PRs due to Docker limitations in CI)
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
@@ -466,7 +466,7 @@ jobs:
           else
             echo "🧪 Running full Docker-based integration tests"
             echo "Backend URL: $BACKEND_URL"
-            ./scripts/integration-test.sh
+            ./scripts/cucumber-test.sh --ci
           fi
         timeout-minutes: 15
 
