@@ -35,20 +35,7 @@
     "docker:logs": "docker-compose logs -f",
     "ui:storybook": "pnpm --filter @dculus/ui storybook",
     "ui:build-storybook": "pnpm --filter @dculus/ui build-storybook",
-    "test:integration": "./scripts/test-auth-integration.sh",
-    "test:integration:setup": "docker compose -f docker-compose.integration.yml up -d",
-    "test:integration:teardown": "docker compose -f docker-compose.integration.yml down -v",
-    "test:cucumber": "./scripts/cucumber-test.sh",
-    "test:cucumber:run": "cucumber-js --config cucumber.config.js",
-    "test:cucumber:ci": "cucumber-js --config cucumber.config.js --profile ci",
-    "test:cucumber:tags": "cucumber-js --config cucumber.config.js --tags",
-    "test:cucumber:smoke": "cucumber-js --config cucumber.config.js --tags @smoke",
-    "test:cucumber:health": "cucumber-js --config cucumber.config.js --tags @health",
-    "test:auth": "./scripts/test-auth-integration.sh",
-    "test:auth:debug": "./scripts/test-auth-integration.sh --debug",
-    "test:auth:signup": "./scripts/test-auth-integration.sh --tags '@auth @signup'",
-    "test:auth:e2e": "./scripts/test-auth-integration.sh --tags '@e2e'",
-    "test:auth:no-cleanup": "./scripts/test-auth-integration.sh --no-cleanup --logs"
+    "test:integration": "./scripts/cucumber-test.sh"
   },
   "devDependencies": {
     "@cucumber/cucumber": "12.2.0",
