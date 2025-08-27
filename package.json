@@ -34,14 +34,18 @@
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
     "ui:storybook": "pnpm --filter @dculus/ui storybook",
-    "ui:build-storybook": "pnpm --filter @dculus/ui build-storybook"
+    "ui:build-storybook": "pnpm --filter @dculus/ui build-storybook",
+    "test:integration": "TS_NODE_PROJECT=integration-tests/tsconfig.json cucumber-js integration-tests/features/health.feature --require-module ts-node/register --require integration-tests/support/world.ts --require integration-tests/support/hooks.ts --require integration-tests/step-definitions/health.steps.ts",
+    "test:integration:dev": "TS_NODE_PROJECT=integration-tests/tsconfig.json cucumber-js integration-tests/features/health.feature --require-module ts-node/register --require integration-tests/support/world.ts --require integration-tests/support/hooks.ts --require integration-tests/step-definitions/health.steps.ts --watch"
   },
   "devDependencies": {
+    "@cucumber/cucumber": "12.2.0",
     "@types/jest": "^29.5.8",
     "@types/node": "^20.10.0",
     "@types/supertest": "6.0.3",
     "@typescript-eslint/eslint-plugin": "^6.13.0",
     "@typescript-eslint/parser": "^6.13.0",
+    "axios": "1.11.0",
     "dotenv": "17.2.1",
     "eslint": "^8.55.0",
     "jest": "^29.7.0",
