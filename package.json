@@ -35,7 +35,7 @@
     "docker:logs": "docker-compose logs -f",
     "ui:storybook": "pnpm --filter @dculus/ui storybook",
     "ui:build-storybook": "pnpm --filter @dculus/ui build-storybook",
-    "test:integration": "./scripts/integration-test.sh",
+    "test:integration": "./scripts/test-auth-integration.sh",
     "test:integration:setup": "docker compose -f docker-compose.integration.yml up -d",
     "test:integration:teardown": "docker compose -f docker-compose.integration.yml down -v",
     "test:cucumber": "./scripts/cucumber-test.sh",
