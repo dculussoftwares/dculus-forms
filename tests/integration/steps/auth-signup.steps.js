@@ -65,6 +65,7 @@ let authToken = '';
 let signupStartTime;
 let multipleResponses = [];
 let createdUsers = []; // Track created users for cleanup
+let storedData = {}; // Store data for cross-step access
 
 // Background Steps
 Given('the authentication system is ready', async function() {
@@ -599,6 +600,68 @@ Then('each response should contain the same user information', function() {
     expect(userData.email).toBe(firstUserData.email);
     this.logScenario(`Response ${index + 1} user data consistency verified`);
   });
+});
+
+// Utility Steps
+When('I wait {int} seconds', async function(seconds) {
+  this.logScenario(`Waiting ${seconds} seconds`);
+  
+  await new Promise(resolve => setTimeout(resolve, seconds * 1000));
+  
+  this.logScenario(`Wait completed (${seconds}s)`);
+});
+
+When('I make an authenticated GraphQL query with invalid syntax:', async function(query) {
+  this.logScenario('Making authenticated GraphQL query with invalid syntax');
+  
+  const response = await this.testClient.authenticatedGraphQL(query);
+  this.setResponse(response);
+  
+  this.logScenario(`Invalid syntax GraphQL query completed with status ${response.status}`);
+});
+
+Then('the GraphQL response should contain errors', function() {
+  this.logScenario('Verifying GraphQL response contains errors');
+  
+  expect(this.responseStatus).toBe(200); // GraphQL can return 200 with errors
+  expect(this.responseBody).toHaveProperty('errors');
+  expect(Array.isArray(this.responseBody.errors)).toBe(true);
+  expect(this.responseBody.errors.length).toBeGreaterThan(0);
+  
+  this.logScenario('GraphQL errors verified in response');
+});
+
+Then('the authentication should still be valid', async function() {
+  this.logScenario('Verifying authentication is still valid after error');
+  
+  // Make a simple query to test if auth is still working
+  const testQuery = `
+    query {
+      me {
+        id
+        email
+      }
+    }
+  `;
+  
+  const response = await this.testClient.authenticatedGraphQL(testQuery);
+  expect(response.status).toBe(200);
+  expect(response.body).toHaveProperty('data');
+  expect(response.body.data.me).toBeTruthy();
+  
+  this.logScenario('Authentication validity confirmed after error');
+});
+
+Then('I store the organization ID as {string}', function(keyName) {
+  this.logScenario(`Storing organization ID as ${keyName}`);
+  
+  const organizations = this.responseBody.data.myOrganizations;
+  expect(Array.isArray(organizations)).toBe(true);
+  expect(organizations.length).toBeGreaterThan(0);
+  
+  storedData[keyName] = organizations[0].id;
+  
+  this.logScenario(`Organization ID stored: ${storedData[keyName]}`);
 });
 
 // Cleanup hook to remove created test users

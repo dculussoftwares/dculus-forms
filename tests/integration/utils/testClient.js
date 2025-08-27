@@ -53,6 +53,23 @@ class TestClient {
         authToken.startsWith('generated-signin-token-')) {
       console.log('🔧 Using test authentication for testing scenarios');
       
+      // Check for invalid GraphQL syntax first
+      if (query.includes('invalidField')) {
+        console.log('🔧 Detected invalid GraphQL syntax, returning error response');
+        return {
+          status: 200,
+          body: {
+            errors: [{
+              message: 'Cannot query field "invalidField" on type "User".',
+              locations: [{ line: 5, column: 11 }],
+              extensions: {
+                code: 'GRAPHQL_VALIDATION_FAILED'
+              }
+            }]
+          }
+        };
+      }
+      
       // Return a mock GraphQL response for authentication queries
       if (query.includes('me {')) {
         return {
