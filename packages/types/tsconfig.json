@@ -9,7 +9,9 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "noEmit": false
+    "noEmit": false,
+    "skipLibCheck": true,
+    "types": []
   },
   "include": ["src/**/*"],
   "exclude": ["dist", "node_modules"]

@@ -22,7 +22,8 @@
     "outDir": "dist",
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "types": ["react", "node"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
