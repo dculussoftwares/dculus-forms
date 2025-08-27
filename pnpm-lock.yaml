@@ -45,9 +45,6 @@ importers:
       '@cucumber/pretty-formatter':
         specifier: 2.1.0
         version: 2.1.0(@cucumber/messages@28.1.0)
-      '@types/cucumber':
-        specifier: 7.0.3
-        version: 7.0.3
       '@types/jest':
         specifier: ^29.5.8
         version: 29.5.14
@@ -5983,13 +5980,6 @@ packages:
     resolution: {integrity: sha512-mFNylyeyqN93lfe/9CSxOGREz8cpzAhH+E93xJ4xWQf62V8sQ/24reV2nyzUWM6H6Xji+GGHpkbLe7pVoUEskg==}
     dependencies:
       '@types/node': 20.19.9
-    dev: true
-
-  /@types/cucumber@7.0.3:
-    resolution: {integrity: sha512-uBPVhCO2meZgiEICd+hTWFRn388vNljDuSppdenww2NJnwYF+HudlZQCGugbmcYLYdKw4NZyn1r+SiLU9aQu/g==}
-    deprecated: This is a stub types definition. @cucumber/cucumber provides its own type definitions, so you do not need this installed.
-    dependencies:
-      '@cucumber/cucumber': 12.2.0
     dev: true
 
   /@types/doctrine@0.0.9:
