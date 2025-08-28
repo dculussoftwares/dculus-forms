@@ -1,18 +1,29 @@
 import React, { useMemo } from 'react';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
-import { type FormSchema, LayoutCode } from '@dculus/types';
+import { type FormSchema, LayoutCode, FormLayout } from '@dculus/types';
 import { FormRenderer } from '@dculus/ui';
 import { LayoutSidebar } from './layout/LayoutSidebar';
 import { RendererMode } from '@dculus/utils';
 
+interface LayoutTabProps {
+  onLayoutChange?: (updates: Partial<FormLayout>) => void;
+}
 
-export const LayoutTab: React.FC = () => {
+export const LayoutTab: React.FC<LayoutTabProps> = ({ onLayoutChange }) => {
   const { layout, updateLayout, isConnected, pages, formId } = useFormBuilderStore();
   const currentLayoutCode = layout?.code || 'L1';
   const cdnEndpoint = (import.meta as any).env?.VITE_CDN_ENDPOINT;
 
   const handleLayoutSelect = (layoutCode: LayoutCode) => {
     updateLayout({ code: layoutCode });
+  };
+
+  const handleLayoutChange = (updates: Partial<FormLayout>) => {
+    if (onLayoutChange) {
+      onLayoutChange(updates);
+    } else {
+      updateLayout(updates);
+    }
   };
 
   const formSchema: FormSchema = useMemo(
@@ -43,6 +54,7 @@ export const LayoutTab: React.FC = () => {
           cdnEndpoint={cdnEndpoint}
           mode={RendererMode.BUILDER}
           formId={formId || ''}
+          onLayoutChange={handleLayoutChange}
         />
       </div>
 

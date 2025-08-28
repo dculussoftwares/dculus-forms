@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useCallback } from 'react';
-import type { FormSchema } from '@dculus/types';
+import type { FormSchema, FormLayout } from '@dculus/types';
 import { LayoutRenderer } from './LayoutRenderer';
 import { RendererMode } from '@dculus/utils';
 import { useFormResponseStore, useFormResponseUtils } from '../stores/useFormResponseStore';
@@ -11,6 +11,7 @@ export interface FormRendererProps {
   mode: RendererMode;
   onResponseChange?: (responses: Record<string, any>) => void;
   onFormSubmit?: (formId: string, responses: Record<string, any>) => void;
+  onLayoutChange?: (updates: Partial<FormLayout>) => void;
   formId?: string;
 }
 
@@ -39,6 +40,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
   mode,
   onResponseChange,
   onFormSubmit,
+  onLayoutChange,
   formId
 }) => {
   const { getFormattedResponses } = useFormResponseUtils();
@@ -75,6 +77,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
         className={className}
         cdnEndpoint={cdnEndpoint}
         mode={mode}
+        onLayoutChange={onLayoutChange}
       />
     </FormResponseContext.Provider>
   );

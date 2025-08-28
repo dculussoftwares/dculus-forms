@@ -68,7 +68,8 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
     updateField,
     reorderFields,
     reorderPages,
-    getSelectedField
+    getSelectedField,
+    updateLayout
   } = useFormBuilderStore();
 
   const { createFieldData } = useFieldCreation();
@@ -206,7 +207,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
   const renderTabContent = useCallback(() => {
     switch (activeTab) {
       case 'layout':
-        return <LayoutTab />;
+        return <LayoutTab onLayoutChange={updateLayout} />;
       case 'page-builder':
         return (
           <PageBuilderTab
@@ -241,7 +242,8 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
     handleFieldEdit,
     handleFieldUpdate,
     handleFieldDeselect,
-    formId
+    formId,
+    updateLayout
   ]);
 
   if (!formId) {
