@@ -209,6 +209,7 @@ export class AuthUtils {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
+          'apollo-require-preflight': 'true',
         },
       }
     );

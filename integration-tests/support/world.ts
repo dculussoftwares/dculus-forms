@@ -10,6 +10,7 @@ export interface CustomWorld extends World {
   currentUser?: AuthUser;
   currentSession?: AuthSession;
   testUsers: Map<string, { user: AuthUser; token: string; organizationId?: string }>;
+  uploadedFiles: string[]; // Track uploaded files for cleanup
 }
 
 export class CustomWorldConstructor extends World implements CustomWorld {
@@ -20,12 +21,14 @@ export class CustomWorldConstructor extends World implements CustomWorld {
   public currentUser?: AuthUser;
   public currentSession?: AuthSession;
   public testUsers: Map<string, { user: AuthUser; token: string; organizationId?: string }>;
+  public uploadedFiles: string[];
 
   constructor(options: IWorldOptions) {
     super(options);
     this.baseURL = process.env.TEST_BASE_URL || 'http://localhost:4000';
     this.authUtils = new AuthUtils(this.baseURL);
     this.testUsers = new Map();
+    this.uploadedFiles = [];
   }
 
   /**
@@ -96,9 +99,44 @@ export class CustomWorldConstructor extends World implements CustomWorld {
   }
 
   /**
+   * Track uploaded file for cleanup
+   */
+  trackUploadedFile(fileKey: string): void {
+    this.uploadedFiles.push(fileKey);
+  }
+
+  /**
+   * Delete file using GraphQL deleteFile mutation
+   */
+  async deleteUploadedFile(fileKey: string): Promise<boolean> {
+    try {
+      const deleteFileMutation = `
+        mutation DeleteFile($key: String!) {
+          deleteFile(key: $key)
+        }
+      `;
+      
+      const response = await this.authenticatedGraphQLRequest(deleteFileMutation, { key: fileKey });
+      return response?.data?.data?.deleteFile === true;
+    } catch (error) {
+      console.warn(`Failed to delete uploaded file ${fileKey}:`, error);
+      return false;
+    }
+  }
+
+  /**
    * Clean up all test users created during this scenario
    */
   async cleanup(): Promise<void> {
+    // Clean up uploaded files
+    if (this.uploadedFiles.length > 0) {
+      console.log(`Cleaning up ${this.uploadedFiles.length} uploaded files...`);
+      for (const fileKey of this.uploadedFiles) {
+        await this.deleteUploadedFile(fileKey);
+      }
+      this.uploadedFiles = [];
+    }
+
     // Sign out current user if authenticated
     if (this.authToken) {
       try {
