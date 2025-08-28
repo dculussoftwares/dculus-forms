@@ -373,6 +373,7 @@ export const deserializeFormField = (data: any): FormField => {
 export const serializeFormSchema = (schema: FormSchema): any => {
   return {
     ...schema,
+    layout: schema.layout, // Explicitly preserve layout object
     pages: schema.pages.map(page => ({
       ...page,
       fields: page.fields.map(serializeFormField)
@@ -383,6 +384,7 @@ export const serializeFormSchema = (schema: FormSchema): any => {
 export const deserializeFormSchema = (data: any): FormSchema => {
   return {
     ...data,
+    layout: data.layout, // Explicitly preserve layout object
     pages: (data.pages || []).map((page: any) => ({
       ...page,
       fields: (page.fields || []).map(deserializeFormField)

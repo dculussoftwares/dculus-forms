@@ -77,62 +77,34 @@ export const formsResolvers = {
       // Clone the template schema to avoid modifying the original
       let formSchema = JSON.parse(JSON.stringify(template.formSchema));
       
-      // Check if template has a background image and copy it for the new form
+      // Always copy background images from templates to ensure unique keys for each form
       if (formSchema.layout && formSchema.layout.backgroundImageKey) {
         try {
-          console.log('Template form has background image, checking if we need to copy it:', formSchema.layout.backgroundImageKey);
+          console.log('Template has background image, copying to form-specific location:', formSchema.layout.backgroundImageKey);
           
-          // Check if this is a template directory image that needs to be copied to form-specific location
-          const isTemplateImage = formSchema.layout.backgroundImageKey.includes('templateDirectory') || 
-                                 formSchema.layout.backgroundImageKey.includes('allOrgs');
+          // Always copy the background image to create a unique key with formId
+          const copiedFile = await copyFileForForm(formSchema.layout.backgroundImageKey, newFormId);
           
-          if (isTemplateImage) {
-            console.log('Copying template background image to form-specific location');
-            
-            // Copy the template image to a form-specific location
-            const copiedFile = await copyFileForForm(formSchema.layout.backgroundImageKey, newFormId);
-            
-            // Update the form schema with the new key
-            formSchema.layout.backgroundImageKey = copiedFile.key;
-            
-            console.log('Updated form schema with new background image key:', copiedFile.key);
-            
-            // Create FormFile record for the copied image
-            await prisma.formFile.create({
-              data: {
-                id: randomUUID(),
-                key: copiedFile.key,
-                type: 'FormBackground',
-                formId: newFormId,
-                originalName: copiedFile.originalName,
-                url: copiedFile.url,
-                size: copiedFile.size,
-                mimeType: copiedFile.mimeType,
-              }
-            });
-            
-            console.log('Successfully copied template background and created FormFile record');
-          } else {
-            console.log('Background image is not from template directory, creating FormFile record for existing image');
-            
-            // Create FormFile record for non-template images
-            const originalFileName = formSchema.layout.backgroundImageKey.split('/').pop() || 'background.jpg';
-            
-            await prisma.formFile.create({
-              data: {
-                id: randomUUID(),
-                key: formSchema.layout.backgroundImageKey,
-                type: 'FormBackground',
-                formId: newFormId,
-                originalName: originalFileName,
-                url: constructCdnUrl(formSchema.layout.backgroundImageKey) || '',
-                size: 0, // Size not available for existing images
-                mimeType: 'image/jpeg', // Default mime type
-              }
-            });
-            
-            console.log('Successfully created FormFile record for existing background image');
-          }
+          // Update the form schema with the new unique key
+          formSchema.layout.backgroundImageKey = copiedFile.key;
+          
+          console.log('Updated form schema with new background image key:', copiedFile.key);
+          
+          // Create FormFile record for the copied image
+          await prisma.formFile.create({
+            data: {
+              id: randomUUID(),
+              key: copiedFile.key,
+              type: 'FormBackground',
+              formId: newFormId,
+              originalName: copiedFile.originalName,
+              url: copiedFile.url,
+              size: copiedFile.size,
+              mimeType: copiedFile.mimeType,
+            }
+          });
+          
+          console.log('Successfully copied template background and created FormFile record');
         } catch (formFileError) {
           console.error('Error handling template background image:', formFileError);
           // Continue with form creation even if FormFile creation fails

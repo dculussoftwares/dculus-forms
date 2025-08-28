@@ -46,7 +46,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 /**
  * Generate a unique S3 key for the uploaded file
  */
-function generateS3Key(originalName: string, type: string): string {
+function generateS3Key(originalName: string, type: string, formId?: string): string {
   const timestamp = Date.now();
   const uuid = randomUUID();
   const extension = path.extname(originalName).toLowerCase();
@@ -63,7 +63,8 @@ function generateS3Key(originalName: string, type: string): string {
     case 'FormTemplate':
       return `files/form-template/${uniqueFilename}`;
     case 'FormBackground':
-      return `files/form-background/${uniqueFilename}`;
+      // Include formId in the path for form-specific backgrounds
+      return formId ? `files/form-background/${formId}/${uniqueFilename}` : `files/form-background/${uniqueFilename}`;
     case 'UserAvatar':
       return `files/user-avatar/${uniqueFilename}`;
     case 'OrganizationLogo':
@@ -201,8 +202,8 @@ export async function copyFileForForm(sourceKey: string, formId: string): Promis
     // Extract original filename from source key
     const originalFilename = sourceKey.split('/').pop() || 'background-image';
     
-    // Generate new unique key for the copied file
-    const newKey = generateS3Key(originalFilename, 'FormBackground');
+    // Generate new unique key for the copied file with formId
+    const newKey = generateS3Key(originalFilename, 'FormBackground', formId);
     
     // Copy the file using S3 CopyObjectCommand
     const copyObjectCommand = new CopyObjectCommand({
