@@ -57,6 +57,10 @@ export const ADMIN_STATS_QUERY = gql`
       userCount
       formCount
       responseCount
+      storageUsed
+      fileCount
+      mongoDbSize
+      mongoCollectionCount
     }
   }
 `;

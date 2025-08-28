@@ -1,5 +1,7 @@
 import { GraphQLError } from 'graphql';
 import { prisma } from '../../lib/prisma.js';
+import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
+import { s3Config } from '../../lib/env.js';
 
 export interface AdminOrganizationsArgs {
   limit?: number;
@@ -9,6 +11,16 @@ export interface AdminOrganizationsArgs {
 export interface AdminOrganizationArgs {
   id: string;
 }
+
+// Initialize S3 client for storage stats
+const s3Client = new S3Client({
+  region: 'auto',
+  endpoint: s3Config.endpoint,
+  credentials: {
+    accessKeyId: s3Config.accessKey,
+    secretAccessKey: s3Config.secretKey,
+  },
+});
 
 // Helper function to check if user has admin privileges
 function requireAdminRole(context: any) {
@@ -22,6 +34,85 @@ function requireAdminRole(context: any) {
   }
 
   return context.user;
+}
+
+// Helper function to format bytes to human readable format
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+// Helper function to get S3 storage statistics
+async function getS3StorageStats(): Promise<{ storageUsed: string; fileCount: number }> {
+  try {
+    let totalSize = 0;
+    let totalFiles = 0;
+    let isTruncated = true;
+    let continuationToken: string | undefined;
+
+    while (isTruncated) {
+      const command = new ListObjectsV2Command({
+        Bucket: s3Config.publicBucketName,
+        ContinuationToken: continuationToken,
+      });
+
+      const response = await s3Client.send(command);
+      
+      if (response.Contents) {
+        totalFiles += response.Contents.length;
+        totalSize += response.Contents.reduce((acc, obj) => acc + (obj.Size || 0), 0);
+      }
+
+      isTruncated = response.IsTruncated || false;
+      continuationToken = response.NextContinuationToken;
+    }
+
+    return {
+      storageUsed: formatBytes(totalSize),
+      fileCount: totalFiles,
+    };
+  } catch (error) {
+    console.error('Error fetching S3 storage stats:', error);
+    return {
+      storageUsed: '0 B',
+      fileCount: 0,
+    };
+  }
+}
+
+// Helper function to get MongoDB storage statistics
+async function getMongoStorageStats(): Promise<{ mongoDbSize: string; mongoCollectionCount: number }> {
+  try {
+    // Get database stats using Prisma's raw query
+    const dbStats = await prisma.$runCommandRaw({
+      dbStats: 1,
+      scale: 1024, // Get results in KB
+    }) as any;
+
+    // Get collection names to count them
+    const collections = await prisma.$runCommandRaw({
+      listCollections: 1,
+    }) as any;
+
+    const dbSizeBytes = dbStats.dataSize || 0;
+    const collectionCount = collections.cursor?.firstBatch?.length || 0;
+
+    return {
+      mongoDbSize: formatBytes(dbSizeBytes),
+      mongoCollectionCount: collectionCount,
+    };
+  } catch (error) {
+    console.error('Error fetching MongoDB storage stats:', error);
+    return {
+      mongoDbSize: '0 B',
+      mongoCollectionCount: 0,
+    };
+  }
 }
 
 export const adminResolvers = {
@@ -125,11 +216,20 @@ export const adminResolvers = {
       requireAdminRole(context);
 
       try {
-        const [organizationCount, userCount, formCount, responseCount] = await Promise.all([
+        const [
+          organizationCount,
+          userCount,
+          formCount,
+          responseCount,
+          s3Stats,
+          mongoStats
+        ] = await Promise.all([
           prisma.organization.count(),
           prisma.user.count(),
           prisma.form.count(),
           prisma.response.count(),
+          getS3StorageStats(),
+          getMongoStorageStats(),
         ]);
 
         return {
@@ -137,6 +237,10 @@ export const adminResolvers = {
           userCount,
           formCount,
           responseCount,
+          storageUsed: s3Stats.storageUsed,
+          fileCount: s3Stats.fileCount,
+          mongoDbSize: mongoStats.mongoDbSize,
+          mongoCollectionCount: mongoStats.mongoCollectionCount,
         };
       } catch (error) {
         console.error('Error fetching admin stats:', error);

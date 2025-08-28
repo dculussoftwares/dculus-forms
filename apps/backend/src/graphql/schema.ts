@@ -206,6 +206,10 @@ export const typeDefs = gql`
     userCount: Int!
     formCount: Int!
     responseCount: Int!
+    storageUsed: String!
+    fileCount: Int!
+    mongoDbSize: String!
+    mongoCollectionCount: Int!
   }
 
   type Query {

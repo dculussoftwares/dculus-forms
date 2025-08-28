@@ -1,6 +1,6 @@
 import { useQuery } from '@apollo/client';
 import { Card, LoadingSpinner } from '@dculus/ui';
-import { Building2, Users, FileText, BarChart3 } from 'lucide-react';
+import { Building2, Users, FileText, BarChart3, HardDrive, Database } from 'lucide-react';
 import { ADMIN_STATS_QUERY } from '../graphql/organizations';
 
 export default function DashboardPage() {
@@ -30,6 +30,23 @@ export default function DashboardPage() {
       value: data?.adminStats?.responseCount?.toString() || '0',
       icon: BarChart3,
       color: 'text-purple-600 bg-purple-100',
+    },
+  ];
+
+  const storageStats = [
+    {
+      name: 'S3 Storage',
+      value: data?.adminStats?.storageUsed || '0 B',
+      subtitle: `${data?.adminStats?.fileCount || 0} files`,
+      icon: HardDrive,
+      color: 'text-indigo-600 bg-indigo-100',
+    },
+    {
+      name: 'MongoDB',
+      value: data?.adminStats?.mongoDbSize || '0 B',
+      subtitle: `${data?.adminStats?.mongoCollectionCount || 0} collections`,
+      icon: Database,
+      color: 'text-emerald-600 bg-emerald-100',
     },
   ];
 
@@ -75,6 +92,31 @@ export default function DashboardPage() {
             </div>
           </Card>
         ))}
+      </div>
+
+      {/* Storage Overview */}
+      <div className="mb-8">
+        <h2 className="text-lg font-medium text-gray-900 mb-6">Storage Overview</h2>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          {storageStats.map((stat) => (
+            <Card key={stat.name} className="p-6">
+              <div className="flex items-center">
+                <div className={`rounded-lg p-3 ${stat.color}`}>
+                  <stat.icon className="h-8 w-8" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">{stat.name}</p>
+                  <div className="text-3xl font-semibold text-gray-900">
+                    {loading ? <LoadingSpinner className="min-h-8" /> : stat.value}
+                  </div>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {loading ? '...' : stat.subtitle}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
       </div>
 
       {/* Recent Activity */}
