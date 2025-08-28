@@ -78,8 +78,6 @@ class AuthService {
         method: 'POST',
         credentials: 'include',
       });
-      // Clear any local storage
-      localStorage.removeItem('bearer_token');
     } catch (error) {
       console.error('Sign out error:', error);
     }
