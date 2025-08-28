@@ -181,6 +181,33 @@ export const typeDefs = gql`
     updatedAt: String!
   }
 
+  # Admin Types
+  type AdminOrganization {
+    id: ID!
+    name: String!
+    slug: String!
+    logo: String
+    createdAt: String!
+    updatedAt: String!
+    memberCount: Int!
+    formCount: Int!
+    members: [Member!]!
+    forms: [Form!]!
+  }
+
+  type AdminOrganizationsResult {
+    organizations: [AdminOrganization!]!
+    total: Int!
+    hasMore: Boolean!
+  }
+
+  type AdminStats {
+    organizationCount: Int!
+    userCount: Int!
+    formCount: Int!
+    responseCount: Int!
+  }
+
   type Query {
     # Auth Queries
     me: User
@@ -203,6 +230,11 @@ export const typeDefs = gql`
 
     # Form File Queries
     getFormFiles(formId: ID!, type: String): [FormFile!]!
+
+    # Admin Queries
+    adminOrganizations(limit: Int, offset: Int): AdminOrganizationsResult!
+    adminOrganization(id: ID!): AdminOrganization!
+    adminStats: AdminStats!
 
   }
 

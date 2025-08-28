@@ -94,6 +94,112 @@ importers:
         specifier: 13.6.27
         version: 13.6.27
 
+  apps/admin-app:
+    dependencies:
+      '@apollo/client':
+        specifier: ^3.13.8
+        version: 3.13.9(@types/react@18.3.23)(graphql@16.11.0)(react-dom@18.3.1)(react@18.3.1)
+      '@dculus/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      '@dculus/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      '@dculus/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
+      '@hookform/resolvers':
+        specifier: ^3.3.0
+        version: 3.10.0(react-hook-form@7.62.0)
+      '@radix-ui/react-dropdown-menu':
+        specifier: 2.1.15
+        version: 2.1.15(@types/react-dom@18.3.7)(@types/react@18.3.23)(react-dom@18.3.1)(react@18.3.1)
+      '@radix-ui/react-label':
+        specifier: 2.1.7
+        version: 2.1.7(@types/react-dom@18.3.7)(@types/react@18.3.23)(react-dom@18.3.1)(react@18.3.1)
+      '@radix-ui/react-select':
+        specifier: 2.2.5
+        version: 2.2.5(@types/react-dom@18.3.7)(@types/react@18.3.23)(react-dom@18.3.1)(react@18.3.1)
+      '@radix-ui/react-slot':
+        specifier: 1.2.3
+        version: 1.2.3(@types/react@18.3.23)(react@18.3.1)
+      apollo-upload-client:
+        specifier: 18.0.1
+        version: 18.0.1(@apollo/client@3.13.9)(graphql@16.11.0)
+      better-auth:
+        specifier: 1.3.4
+        version: 1.3.4(react-dom@18.3.1)(react@18.3.1)
+      class-variance-authority:
+        specifier: 0.7.1
+        version: 0.7.1
+      clsx:
+        specifier: 2.1.1
+        version: 2.1.1
+      graphql:
+        specifier: ^16.8.1
+        version: 16.11.0
+      lucide-react:
+        specifier: 0.534.0
+        version: 0.534.0(react@18.3.1)
+      react:
+        specifier: ^18.3.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.0
+        version: 18.3.1(react@18.3.1)
+      react-hook-form:
+        specifier: 7.62.0
+        version: 7.62.0(react@18.3.1)
+      react-router-dom:
+        specifier: ^6.20.1
+        version: 6.30.1(react-dom@18.3.1)(react@18.3.1)
+      tailwind-merge:
+        specifier: 3.3.1
+        version: 3.3.1
+      zustand:
+        specifier: 5.0.7
+        version: 5.0.7(@types/react@18.3.23)(react@18.3.1)
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.9
+      '@types/react':
+        specifier: ^18.3.0
+        version: 18.3.23
+      '@types/react-dom':
+        specifier: ^18.3.0
+        version: 18.3.7(@types/react@18.3.23)
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^6.13.0
+        version: 6.21.0(@typescript-eslint/parser@6.21.0)(eslint@8.57.1)(typescript@5.8.3)
+      '@typescript-eslint/parser':
+        specifier: ^6.13.0
+        version: 6.21.0(eslint@8.57.1)(typescript@5.8.3)
+      '@vitejs/plugin-react':
+        specifier: ^4.2.1
+        version: 4.7.0(vite@5.4.19)
+      autoprefixer:
+        specifier: 10.4.21
+        version: 10.4.21(postcss@8.5.6)
+      eslint:
+        specifier: ^8.55.0
+        version: 8.57.1
+      postcss:
+        specifier: 8.5.6
+        version: 8.5.6
+      tailwindcss:
+        specifier: ^3.4.0
+        version: 3.4.17(ts-node@10.9.2)
+      tailwindcss-animate:
+        specifier: 1.0.7
+        version: 1.0.7(tailwindcss@3.4.17)
+      typescript:
+        specifier: ^5.3.0
+        version: 5.8.3
+      vite:
+        specifier: ^5.0.8
+        version: 5.4.19(@types/node@20.19.9)
+
   apps/backend:
     dependencies:
       '@apollo/server':

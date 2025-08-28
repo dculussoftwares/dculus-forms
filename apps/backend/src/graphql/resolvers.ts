@@ -6,6 +6,7 @@ import { templatesResolvers } from './resolvers/templates.js';
 import { fileUploadResolvers } from './resolvers/fileUpload.js';
 import { formFileResolvers } from './resolvers/formFiles.js';
 import { unifiedExportResolvers } from './resolvers/unifiedExport.js';
+import { adminResolvers } from './resolvers/admin.js';
 import { GraphQLJSON } from 'graphql-type-json';
 
 
@@ -17,6 +18,7 @@ export const resolvers = {
     ...responsesResolvers.Query,
     ...templatesResolvers.Query,
     ...formFileResolvers.Query,
+    ...adminResolvers.Query,
   },
   Mutation: {
     ...betterAuthResolvers.Mutation,

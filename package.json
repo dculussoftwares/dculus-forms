@@ -8,7 +8,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "pnpm --parallel --filter backend --filter form-app --filter form-viewer run dev",
+    "dev": "pnpm --parallel --filter backend --filter form-app --filter form-viewer --filter admin-app run dev",
     "build": "pnpm run --recursive build",
     "clean": "pnpm run --recursive clean",
     "lint": "pnpm run --recursive lint",
@@ -23,6 +23,9 @@
     "form-viewer:dev": "pnpm --filter form-viewer dev",
     "form-viewer:build": "pnpm --filter form-viewer build",
     "form-viewer:preview": "pnpm --filter form-viewer preview",
+    "admin-app:dev": "pnpm --filter admin-app dev",
+    "admin-app:build": "pnpm --filter admin-app build",
+    "admin-app:preview": "pnpm --filter admin-app preview",
     "db:generate": "pnpm --filter backend db:generate",
     "db:push": "pnpm --filter backend db:push",
     "db:studio": "pnpm --filter backend db:studio",

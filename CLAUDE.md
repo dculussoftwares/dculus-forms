@@ -5,10 +5,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Common Development Commands
 
 ### Development Workflow
-- **Start all services**: `pnpm dev` - Starts backend, form-app, and form-viewer concurrently
+- **Start all services**: `pnpm dev` - Starts backend, form-app, form-viewer, and admin-app concurrently
 - **Backend only**: `pnpm backend:dev` - Express.js + GraphQL API on :4000
 - **Form builder only**: `pnpm form-app:dev` - React form builder app on :3000
 - **Form viewer only**: `pnpm form-viewer:dev` - React form viewer app on :5173
+- **Admin dashboard only**: `pnpm admin-app:dev` - React admin dashboard on :3002
 
 ### Database Commands
 - **Setup database**: `pnpm docker:up && pnpm db:generate && pnpm db:push`
@@ -22,12 +23,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-This is a **pnpm monorepo** with three main applications and shared packages:
+This is a **pnpm monorepo** with four main applications and shared packages:
 
 ### Applications (`apps/`)
 - **`backend/`**: Express.js + Apollo GraphQL server with Prisma ORM and MongoDB
 - **`form-app/`**: React form builder application using shadcn/ui components  
 - **`form-viewer/`**: React form viewing and submission application
+- **`admin-app/`**: React admin dashboard for system administration and cross-organization management
 
 ### Shared Packages (`packages/`)
 - **`@dculus/ui`**: All UI components (shadcn/ui), rich text editor components, and layouts
@@ -196,5 +198,33 @@ Additional field-specific constraints:
 **Access points**:
 - Form Builder: http://localhost:3000
 - Form Viewer: http://localhost:5173  
+- Admin Dashboard: http://localhost:3002
 - GraphQL API: http://localhost:4000/graphql
 - Database UI: http://localhost:8081 (admin/password123)
+
+## Admin Dashboard
+
+The **Admin Dashboard** (`admin-app`) provides system-wide administration capabilities:
+
+### Features
+- **Organizations Management**: View and manage all organizations in the system
+- **System Statistics**: Dashboard with key metrics (user count, form count, etc.)
+- **Cross-Organization Access**: Admin users can access data across all organizations
+- **Template Management**: Create and manage form templates (planned)
+- **User Management**: System-wide user administration (planned)
+
+### Admin GraphQL Queries
+- `adminOrganizations`: Get all organizations with member/form counts
+- `adminOrganization(id)`: Get detailed organization info including members and forms
+- `adminStats`: Get system-wide statistics
+
+### Authentication & Authorization
+- Uses the same better-auth system as other apps
+- Requires admin role for access (role checking implementation pending)
+- Planned integration with better-auth admin plugin for role-based access control
+
+### Development Notes
+- Admin app runs on port 3002
+- Shares UI components and utilities with other apps
+- GraphQL resolvers in `apps/backend/src/graphql/resolvers/admin.ts`
+- Admin-specific React components in `apps/admin-app/src/components/`
