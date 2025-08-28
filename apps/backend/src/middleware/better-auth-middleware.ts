@@ -14,7 +14,7 @@ export async function createBetterAuthContext(req: Request): Promise<BetterAuthC
       headers: fromNodeHeaders(req.headers),
     });
 
-    console.log('Auth context - User:', sessionData?.user?.email || 'none', 'Role:', sessionData?.user?.role || 'none');
+    console.log('Auth context - User:', sessionData?.user?.email || 'none', 'Role:', (sessionData?.user as any)?.role || 'none');
 
     return {
       user: sessionData?.user || null,

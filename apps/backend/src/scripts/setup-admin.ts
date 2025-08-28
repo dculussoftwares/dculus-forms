@@ -47,7 +47,7 @@ async function setupSuperAdmin() {
 
         console.log('Auth result:', result);
 
-        if (result.data?.user) {
+        if ((result as any).data?.user || result.user) {
           // Update the user role to superAdmin
           await prisma.user.update({
             where: { email: adminEmail },
