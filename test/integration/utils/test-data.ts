@@ -18,6 +18,10 @@ export interface TestUserWithOrganization extends TestUser {
   organizationName: string;
 }
 
+export interface SuperAdminTestUser extends TestUser {
+  role: 'superAdmin';
+}
+
 /**
  * Generate a random test user with unique email
  */
@@ -81,6 +85,42 @@ export function generateTestUserForScenario(scenario: string): TestUserWithOrgan
   );
 }
 
+/**
+ * Generate a super admin test user
+ */
+export function generateSuperAdminTestUser(prefix: string = 'superadmin'): SuperAdminTestUser {
+  const user = generateTestUser(prefix);
+  return {
+    ...user,
+    role: 'superAdmin' as const,
+  };
+}
+
+/**
+ * Generate default super admin credentials (for testing setup script)
+ */
+export function getDefaultSuperAdminCredentials(): SuperAdminTestUser {
+  return {
+    email: 'admin@dculus.com',
+    password: 'admin123!@#',
+    name: 'Super Administrator',
+    role: 'superAdmin' as const,
+  };
+}
+
+/**
+ * Generate test super admin credentials with unique values
+ */
+export function generateTestSuperAdminCredentials(): SuperAdminTestUser {
+  const uniqueId = generateId().toLowerCase();
+  return {
+    email: `test-admin-${uniqueId}@dculus.com`,
+    password: 'TestAdminPassword123!',
+    name: `Test Super Admin ${uniqueId}`,
+    role: 'superAdmin' as const,
+  };
+}
+
 // Common test data constants
 export const TEST_CONFIG = {
   // Default test environment configuration
@@ -102,6 +142,13 @@ export const TEST_CONFIG = {
   DEFAULT_ORG_NAME: 'Test Organization',
   PREMIUM_ORG_NAME: 'Premium Test Organization',
   ENTERPRISE_ORG_NAME: 'Enterprise Test Organization',
+  
+  // Admin test configuration
+  ADMIN_ROLES: ['admin', 'superAdmin'] as const,
+  DEFAULT_ADMIN_EMAIL: 'admin@dculus.com',
+  DEFAULT_ADMIN_PASSWORD: 'admin123!@#',
+  TEST_ADMIN_EMAIL: 'test-admin@dculus.com',
+  TEST_ADMIN_PASSWORD: 'TestAdminPassword123!',
 } as const;
 
 /**
