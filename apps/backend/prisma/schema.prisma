@@ -90,7 +90,7 @@ model Member {
   id             String   @id @map("_id")
   organizationId String
   userId         String
-  role           String   @default("member")
+  role           String   @default("companyMember")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -105,7 +105,7 @@ model Invitation {
   id             String   @id @map("_id")
   organizationId String
   email          String
-  role           String   @default("member")
+  role           String   @default("companyMember")
   status         String   @default("pending")
   expiresAt      DateTime
   inviterId      String
