@@ -42,7 +42,8 @@
       "Bash(az*)",
       "Bash(terra*)",
       "Bash(cd*)",
-      "Bash(pnpm*)"
+      "Bash(pnpm*)",
+      "Bash(TS*)"
     ],
     "deny": []
   }
