@@ -35,6 +35,9 @@ importers:
       lucide-react:
         specifier: 0.534.0
         version: 0.534.0(react@18.3.1)
+      nanoid:
+        specifier: 5.1.5
+        version: 5.1.5
       tailwind-merge:
         specifier: 3.3.1
         version: 3.3.1

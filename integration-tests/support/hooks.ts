@@ -2,6 +2,7 @@ import { Before, After, BeforeAll, AfterAll } from '@cucumber/cucumber';
 import { spawn, ChildProcess } from 'child_process';
 import axios from 'axios';
 import path from 'path';
+import { CustomWorld } from './world';
 
 let backendProcess: ChildProcess;
 
@@ -50,6 +51,13 @@ BeforeAll(async function() {
   // Wait for server to be ready
   const baseURL = process.env.TEST_BASE_URL || 'http://localhost:4000';
   await waitForServer(`${baseURL}/health`);
+});
+
+// Clean up authentication data after each scenario
+After(async function(this: CustomWorld) {
+  if (typeof (this as any).cleanup === 'function') {
+    await (this as any).cleanup();
+  }
 });
 
 AfterAll(async function() {

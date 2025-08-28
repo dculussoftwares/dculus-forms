@@ -35,8 +35,8 @@
     "docker:logs": "docker-compose logs -f",
     "ui:storybook": "pnpm --filter @dculus/ui storybook",
     "ui:build-storybook": "pnpm --filter @dculus/ui build-storybook",
-    "test:integration": "TS_NODE_PROJECT=integration-tests/tsconfig.json cucumber-js integration-tests/features/health.feature --require-module ts-node/register --require integration-tests/support/world.ts --require integration-tests/support/hooks.ts --require integration-tests/step-definitions/health.steps.ts",
-    "test:integration:dev": "TS_NODE_PROJECT=integration-tests/tsconfig.json cucumber-js integration-tests/features/health.feature --require-module ts-node/register --require integration-tests/support/world.ts --require integration-tests/support/hooks.ts --require integration-tests/step-definitions/health.steps.ts --watch"
+    "test:integration": "TS_NODE_PROJECT=integration-tests/tsconfig.json cucumber-js 'integration-tests/features/*.feature' --require-module ts-node/register --require integration-tests/support/world.ts --require integration-tests/support/hooks.ts --require integration-tests/step-definitions/common.steps.ts --require 'integration-tests/step-definitions/*.steps.ts'",
+    "test:integration:watch": "pnpm test:integration --watch"
   },
   "devDependencies": {
     "@cucumber/cucumber": "12.2.0",
@@ -78,6 +78,7 @@
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "lucide-react": "0.534.0",
+    "nanoid": "5.1.5",
     "tailwind-merge": "3.3.1"
   }
 }
