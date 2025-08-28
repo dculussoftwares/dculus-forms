@@ -1,7 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
-import { organization } from 'better-auth/plugins';
-import { bearer } from 'better-auth/plugins';
+import { organization, bearer, admin } from 'better-auth/plugins';
 import { prisma } from './prisma.js';
 import { authConfig } from './env.js';
 
@@ -15,7 +14,9 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
   trustedOrigins: [
     'http://localhost:3000', // Form app
     'http://localhost:3001', // Form viewer
+    'http://localhost:3002', // Admin app
     'http://localhost:4000', // Backend (for GraphQL playground)
+    'http://localhost:5173', // Form viewer (Vite dev server)
   ],
 
   emailAndPassword: {
@@ -39,6 +40,10 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
       organizationLimit: 5,
       creatorRole: 'owner',
       membershipLimit: 100,
+    }),
+    admin({
+      defaultRole: 'user',
+      adminRoles: ['admin', 'superAdmin'],
     }),
   ],
 
@@ -79,6 +84,7 @@ export type BetterAuthUser = {
   id: string;
   name: string;
   email: string;
+  role?: string;
   createdAt: Date;
   updatedAt: Date;
 };

@@ -219,9 +219,19 @@ The **Admin Dashboard** (`admin-app`) provides system-wide administration capabi
 - `adminStats`: Get system-wide statistics
 
 ### Authentication & Authorization
-- Uses the same better-auth system as other apps
-- Requires admin role for access (role checking implementation pending)
-- Planned integration with better-auth admin plugin for role-based access control
+- Uses the same better-auth system as other apps with admin plugin
+- Requires admin role ('admin' or 'superAdmin') for access
+- Role-based access control implemented with proper GraphQL resolver protection
+- Super admin setup script available for creating initial admin users
+
+### Admin Credentials
+**Default Super Admin Account:**
+- Email: `admin@dculus.com`
+- Password: `admin123!@#`
+- Role: `superAdmin`
+
+**Setup Commands:**
+- `pnpm admin:setup` - Create/update super admin user from environment variables
 
 ### Development Notes
 - Admin app runs on port 3002

@@ -18,6 +18,7 @@ model User {
   email         String   @unique
   emailVerified Boolean?
   image         String?
+  role          String?  @default("user")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

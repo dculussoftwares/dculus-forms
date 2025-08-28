@@ -10,16 +10,25 @@ export interface AdminOrganizationArgs {
   id: string;
 }
 
+// Helper function to check if user has admin privileges
+function requireAdminRole(context: any) {
+  if (!context.user) {
+    throw new GraphQLError('Authentication required');
+  }
+
+  const userRole = context.user.role;
+  if (!userRole || (userRole !== 'admin' && userRole !== 'superAdmin')) {
+    throw new GraphQLError('Admin privileges required');
+  }
+
+  return context.user;
+}
+
 export const adminResolvers = {
   Query: {
     adminOrganizations: async (_: any, args: AdminOrganizationsArgs, context: any) => {
-      // Check if user is authenticated and has admin role
-      if (!context.user) {
-        throw new GraphQLError('Authentication required');
-      }
-
-      // For now, we'll check if user exists - later we'll add proper role checking
-      // TODO: Add proper super admin role checking once better-auth admin plugin is implemented
+      // Check admin privileges
+      requireAdminRole(context);
 
       try {
         const { limit = 50, offset = 0 } = args;
@@ -58,12 +67,8 @@ export const adminResolvers = {
     },
 
     adminOrganization: async (_: any, args: AdminOrganizationArgs, context: any) => {
-      // Check if user is authenticated and has admin role
-      if (!context.user) {
-        throw new GraphQLError('Authentication required');
-      }
-
-      // TODO: Add proper super admin role checking
+      // Check admin privileges
+      requireAdminRole(context);
 
       try {
         const organization = await prisma.organization.findUnique({
@@ -116,10 +121,8 @@ export const adminResolvers = {
     },
 
     adminStats: async (_: any, __: any, context: any) => {
-      // Check if user is authenticated and has admin role
-      if (!context.user) {
-        throw new GraphQLError('Authentication required');
-      }
+      // Check admin privileges
+      requireAdminRole(context);
 
       try {
         const [organizationCount, userCount, formCount, responseCount] = await Promise.all([

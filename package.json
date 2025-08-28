@@ -33,6 +33,7 @@
     "db:migrate-layout": "pnpm --filter backend db:migrate-layout",
     "db:migrate-bg-images": "pnpm --filter backend db:migrate-bg-images",
     "db:setup": "./scripts/setup-db.sh",
+    "admin:setup": "pnpm --filter backend admin:setup",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
