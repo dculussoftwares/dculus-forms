@@ -39,7 +39,7 @@
     "docker:logs": "docker-compose logs -f",
     "ui:storybook": "pnpm --filter @dculus/ui storybook",
     "ui:build-storybook": "pnpm --filter @dculus/ui build-storybook",
-    "test:integration": "TS_NODE_PROJECT=integration-tests/tsconfig.json cucumber-js 'integration-tests/features/*.feature' --require-module ts-node/register --require integration-tests/support/world.ts --require integration-tests/support/hooks.ts --require integration-tests/step-definitions/common.steps.ts --require 'integration-tests/step-definitions/*.steps.ts'",
+    "test:integration": "TS_NODE_PROJECT=test/integration/tsconfig.json cucumber-js 'test/integration/features/*.feature' --require-module ts-node/register --require test/integration/support/world.ts --require test/integration/support/hooks.ts --require test/integration/step-definitions/common.steps.ts --require 'test/integration/step-definitions/*.steps.ts'",
     "test:integration:watch": "pnpm test:integration --watch"
   },
   "devDependencies": {

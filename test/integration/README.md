@@ -57,7 +57,7 @@ await authUtils.graphqlRequest('query { me { id email } }', {}, token);
 ## Test Structure
 
 ```
-integration-tests/
+test/integration/
 ├── features/           # Gherkin feature files
 │   ├── health.feature
 │   ├── auth.feature

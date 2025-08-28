@@ -8,7 +8,7 @@ export NODE_ENV=test
 export TEST_BASE_URL=http://localhost:4000
 
 # Run cucumber tests
-npx cucumber-js --config integration-tests/cucumber.js integration-tests/features
+npx cucumber-js --config test/integration/cucumber.js test/integration/features
 
 # Capture exit code
 EXIT_CODE=$?

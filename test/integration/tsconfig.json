@@ -1,5 +1,5 @@
 {
-  "extends": "../tsconfig.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "types": ["node"],
     "module": "CommonJS",
@@ -10,7 +10,7 @@
   },
   "include": [
     "**/*.ts",
-    "../apps/backend/src/**/*.ts"
+    "../../apps/backend/src/**/*.ts"
   ],
   "exclude": [
     "reports"
