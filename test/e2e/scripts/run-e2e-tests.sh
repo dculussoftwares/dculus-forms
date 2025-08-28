@@ -85,10 +85,10 @@ start_services() {
         FRONTEND_ALREADY_RUNNING=false
     fi
     
-    # Start database if not running
-    log "${BLUE}🗄️  Starting MongoDB...${NC}"
+    # Note: Backend uses cloud MongoDB, no local database setup needed
+    log "${BLUE}🗄️  Using cloud MongoDB (no local database needed)${NC}"
+    
     cd "$PROJECT_ROOT"
-    pnpm docker:up
     
     # Start backend if not already running
     if [ "$BACKEND_ALREADY_RUNNING" = false ]; then

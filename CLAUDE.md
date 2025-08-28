@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Admin dashboard only**: `pnpm admin-app:dev` - React admin dashboard on :3002
 
 ### Database Commands
-- **Setup database**: `pnpm docker:up && pnpm db:generate && pnpm db:push`
+- **Setup database schema**: `pnpm db:generate && pnpm db:push` - Generate Prisma client and push schema to cloud MongoDB
 - **Database management**: `pnpm db:studio` - Open Prisma Studio visual editor
 - **Seed sample data**: `pnpm db:seed`
 
@@ -44,7 +44,7 @@ This is a **pnpm monorepo** with four main applications and shared packages:
 - Backend uses **code-first GraphQL** schema approach
 
 ### Database & Authentication
-- **MongoDB** with **Prisma ORM** for type-safe database access
+- **Cloud MongoDB** with **Prisma ORM** for type-safe database access (no local Docker setup needed)
 - **better-auth** for authentication and organization management
 - Multi-tenant architecture with organizations, members, and role-based access
 
@@ -191,16 +191,15 @@ Additional field-specific constraints:
 **Quick setup**:
 1. `pnpm install`
 2. `pnpm build` (build shared packages)
-3. `pnpm docker:up` (start MongoDB)
-4. `pnpm db:generate && pnpm db:push`
-5. `pnpm dev` (start all services)
+3. `pnpm db:generate && pnpm db:push` (setup database schema on cloud MongoDB)
+4. `pnpm dev` (start all services)
 
 **Access points**:
 - Form Builder: http://localhost:3000
 - Form Viewer: http://localhost:5173  
 - Admin Dashboard: http://localhost:3002
 - GraphQL API: http://localhost:4000/graphql
-- Database UI: http://localhost:8081 (admin/password123)
+- Database Management: `pnpm db:studio` (Prisma Studio)
 
 ## Admin Dashboard
 

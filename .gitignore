@@ -146,4 +146,11 @@ test-temp/
 visual-regression-results/
 
 # Cucumber test reports
-tests/integration/reports/ 
+tests/integration/reports/
+test/integration/reports/
+test/e2e/reports/
+
+# E2E test service files
+test/e2e/.services.pid
+test/e2e/backend.log
+test/e2e/form-app.log 
