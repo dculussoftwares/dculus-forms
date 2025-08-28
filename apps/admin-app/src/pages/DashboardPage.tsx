@@ -68,9 +68,9 @@ export default function DashboardPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">{stat.name}</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {loading ? <LoadingSpinner /> : stat.value}
-                </p>
+                <div className="text-2xl font-semibold text-gray-900">
+                  {loading ? <LoadingSpinner className="min-h-8" /> : stat.value}
+                </div>
               </div>
             </div>
           </Card>
