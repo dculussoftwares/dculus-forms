@@ -43,7 +43,8 @@
       "Bash(terra*)",
       "Bash(cd*)",
       "Bash(pnpm*)",
-      "Bash(TS*)"
+      "Bash(TS*)",
+      "Bash(TS_NODE_PROJECT=*)"
     ],
     "deny": []
   }
