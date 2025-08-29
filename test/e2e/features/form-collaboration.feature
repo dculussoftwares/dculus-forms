@@ -101,3 +101,52 @@ Feature: Form Collaboration
     Then I should see the collaborative form builder interface
     And pages should be in order: "Event Details, Personal Information"
     And the page order should be persisted correctly
+
+  @FieldRearrangement @Collaboration
+  Scenario: Select Personal Information page and rearrange form fields
+    When I click the "Create Form" button on dashboard
+    Then I should be redirected to templates page
+    When I select the "Event Registration" template
+    And I fill in the form creation details:
+      | Field Name    | Value                                    |
+      | Form Title    | Field Rearrangement Test                 |
+      | Description   | Testing form field drag and drop        |
+    And I click the "Create Form" button in the template popover
+    Then I should be redirected to the form builder page
+    When I navigate back to form dashboard
+    And I click the Start Collaborating button in Quick Actions
+    Then I should see the collaborative form builder interface
+    When I select the "Personal Information" page from the sidebar
+    Then I should see 4 fields in the Personal Information page
+    And I should see field 1 with label "First Name" in position 1
+    And I should see field 2 with label "Last Name" in position 2
+    And I should see field 3 with label "Email" in position 3
+    And I should see field 4 with label "Phone Number" in position 4
+    When I drag field 2 to position 1
+    Then I should see fields in order: "Last Name, First Name, Email, Phone Number"
+    And I should see field 1 with label "Last Name" in position 1
+    And I should see field 2 with label "First Name" in position 2
+
+  @FieldRearrangement @Collaboration @FieldPersistence
+  Scenario: Drag field from middle to end position and verify persistence
+    When I click the "Create Form" button on dashboard
+    Then I should be redirected to templates page
+    When I select the "Event Registration" template
+    And I fill in the form creation details:
+      | Field Name    | Value                                    |
+      | Form Title    | Field Position Persistence Test          |
+      | Description   | Testing field order persistence         |
+    And I click the "Create Form" button in the template popover
+    Then I should be redirected to the form builder page
+    When I navigate back to form dashboard
+    And I click the Start Collaborating button in Quick Actions
+    Then I should see the collaborative form builder interface
+    When I select the "Personal Information" page from the sidebar
+    Then I should see 4 fields in the Personal Information page
+    When I drag field 2 to position 4
+    Then I should see fields in order: "First Name, Email, Phone Number, Last Name"
+    When I refresh the page
+    Then I should see the collaborative form builder interface
+    When I select the "Personal Information" page from the sidebar
+    Then I should see fields in order: "First Name, Email, Phone Number, Last Name"
+    And the field order should be persisted correctly

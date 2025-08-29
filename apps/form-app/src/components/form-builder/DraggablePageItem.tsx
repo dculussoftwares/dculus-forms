@@ -86,6 +86,7 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
             }
           `}
           onClick={onSelect}
+          data-testid={`select-page-${page.title.replace(/\s+/g, '-').toLowerCase()}`}
         >
           <div className="flex items-center space-x-3">
             {/* Drag Handle */}

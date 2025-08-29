@@ -45,7 +45,7 @@ const FIELD_TYPE_LABELS: Partial<Record<FieldType, string>> = {
 interface DraggableFieldProps {
   field: FormField;
   pageId: string;
-  index?: number; // Make optional since we're not using it
+  index: number; // Required for test IDs and field positioning
   isConnected: boolean;
   isSelected?: boolean;
   onUpdate: (updates: Record<string, any>) => void;
@@ -57,7 +57,7 @@ interface DraggableFieldProps {
 export const DraggableField: React.FC<DraggableFieldProps> = ({
   field,
   pageId,
-  index: _index, // Rename to indicate it's intentionally unused
+  index,
   isConnected,
   isSelected = false,
   onUpdate: _onUpdate,
@@ -136,6 +136,7 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
               {...attributes}
               {...listeners}
               data-drag-handle
+              data-testid={`field-drag-handle-${index + 1}`}
               className="flex-shrink-0 p-1 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             >
               <GripVertical className="w-4 h-4" />
@@ -159,7 +160,10 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
                   </div>
 
                   {/* Field Preview */}
-                  <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-md border border-gray-200 dark:border-gray-700">
+                  <div 
+                    className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-md border border-gray-200 dark:border-gray-700"
+                    data-testid={`field-content-${index + 1}`}
+                  >
                     <FieldPreview 
                       field={field} 
                       disabled={true} 
