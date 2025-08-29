@@ -1,3 +1,4 @@
+@FormCreation
 Feature: Form Creation
   As a user
   I want to create a form after signing up and signing in
@@ -6,6 +7,7 @@ Feature: Form Creation
   Background:
     Given I have test credentials ready
 
+  @Auth
   Scenario: New user signup and signin for form creation
     Given I am on the sign up page
     When I fill in the sign up form with valid data:
@@ -24,6 +26,7 @@ Feature: Form Creation
     And I should be successfully signed in
     And I should see the dashboard with forms content
 
+  @Navigation
   Scenario: Navigate to templates page from dashboard
     Given I am on the sign up page
     When I fill in the sign up form with valid data:
@@ -44,6 +47,7 @@ Feature: Form Creation
     Then I should be redirected to templates page
     And I should see available templates
 
+  @Creation
   Scenario: Create form from template
     Given I am on the sign up page
     When I fill in the sign up form with valid data:
@@ -71,6 +75,7 @@ Feature: Form Creation
     Then I should be redirected to the form builder page
     And I should see the form builder interface
 
+  @Validation
   Scenario: Form creation validation - missing title
     Given I am on the sign up page
     When I fill in the sign up form with valid data:
