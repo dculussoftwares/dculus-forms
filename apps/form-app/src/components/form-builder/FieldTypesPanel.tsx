@@ -181,6 +181,7 @@ const DraggableFieldType: React.FC<DraggableFieldTypeProps> = ({ fieldType }) =>
       <div
         ref={setNodeRef}
         data-draggable-id={`field-type-${fieldType.type}`}
+        data-testid={`field-type-${fieldType.label.replace(/\s+/g, '-').toLowerCase()}`}
         {...listeners}
         {...attributes}
         className={`group cursor-grab active:cursor-grabbing transition-transform duration-200 ${

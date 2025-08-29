@@ -150,3 +150,96 @@ Feature: Form Collaboration
     When I select the "Personal Information" page from the sidebar
     Then I should see fields in order: "First Name, Email, Phone Number, Last Name"
     And the field order should be persisted correctly
+
+  @FieldSidebarDrag @Collaboration
+  Scenario: Drag all field types from sidebar to Personal Information page
+    When I click the "Create Form" button on dashboard
+    Then I should be redirected to templates page
+    When I select the "Event Registration" template
+    And I fill in the form creation details:
+      | Field Name    | Value                                    |
+      | Form Title    | Field Addition Test Form                 |
+      | Description   | Testing adding fields from sidebar      |
+    And I click the "Create Form" button in the template popover
+    Then I should be redirected to the form builder page
+    When I navigate back to form dashboard
+    And I click the Start Collaborating button in Quick Actions
+    Then I should see the collaborative form builder interface
+    When I select the "Personal Information" page from the sidebar
+    Then I should see 4 fields in the Personal Information page
+    When I drag "Short Text" field type from sidebar to the page
+    Then I should see a new "Short Text" field added to the page
+    And I should see 5 fields in the Personal Information page
+    When I drag "Long Text" field type from sidebar to the page
+    Then I should see a new "Long Text" field added to the page
+    And I should see 6 fields in the Personal Information page
+    When I drag "Number" field type from sidebar to the page
+    Then I should see a new "Number" field added to the page
+    And I should see 7 fields in the Personal Information page
+    When I drag "Date" field type from sidebar to the page
+    Then I should see a new "Date" field added to the page
+    And I should see 8 fields in the Personal Information page
+    When I drag "Dropdown" field type from sidebar to the page
+    Then I should see a new "Dropdown" field added to the page
+    And I should see 9 fields in the Personal Information page
+    When I drag "Multiple Choice" field type from sidebar to the page
+    Then I should see a new "Multiple Choice" field added to the page
+    And I should see 10 fields in the Personal Information page
+    When I drag "Checkbox" field type from sidebar to the page
+    Then I should see a new "Checkbox" field added to the page
+    And I should see 11 fields in the Personal Information page
+
+  @FieldSidebarDrag @Collaboration @FieldInsertion
+  Scenario: Drag fields from sidebar to specific positions in Personal Information page
+    When I click the "Create Form" button on dashboard
+    Then I should be redirected to templates page
+    When I select the "Event Registration" template
+    And I fill in the form creation details:
+      | Field Name    | Value                                    |
+      | Form Title    | Strategic Field Insertion Test          |
+      | Description   | Testing precise field insertion         |
+    And I click the "Create Form" button in the template popover
+    Then I should be redirected to the form builder page
+    When I navigate back to form dashboard
+    And I click the Start Collaborating button in Quick Actions
+    Then I should see the collaborative form builder interface
+    When I select the "Personal Information" page from the sidebar
+    Then I should see 4 fields in the Personal Information page
+    When I drag "Number" field type from sidebar to position 1
+    Then I should see the "Number" field in position 1
+    And I should see 5 fields in the Personal Information page
+    When I drag "Date" field type from sidebar to position 3
+    Then I should see the "Date" field in position 3
+    And I should see 6 fields in the Personal Information page
+    When I drag "Dropdown" field type from sidebar to position 6
+    Then I should see the "Dropdown" field in position 6
+    And I should see 7 fields in the Personal Information page
+
+  @FieldSidebarDrag @Collaboration @FieldPersistence
+  Scenario: Verify persistence of fields added from sidebar after page refresh
+    When I click the "Create Form" button on dashboard
+    Then I should be redirected to templates page
+    When I select the "Event Registration" template
+    And I fill in the form creation details:
+      | Field Name    | Value                                      |
+      | Form Title    | Field Addition Persistence Test            |
+      | Description   | Testing field addition persistence        |
+    And I click the "Create Form" button in the template popover
+    Then I should be redirected to the form builder page
+    When I navigate back to form dashboard
+    And I click the Start Collaborating button in Quick Actions
+    Then I should see the collaborative form builder interface
+    When I select the "Personal Information" page from the sidebar
+    Then I should see 4 fields in the Personal Information page
+    When I drag "Short Text" field type from sidebar to the page
+    Then I should see a new "Short Text" field added to the page
+    When I drag "Number" field type from sidebar to the page
+    Then I should see a new "Number" field added to the page
+    When I drag "Dropdown" field type from sidebar to the page
+    Then I should see a new "Dropdown" field added to the page
+    And I should see 7 fields in the Personal Information page
+    When I refresh the page
+    Then I should see the collaborative form builder interface
+    When I select the "Personal Information" page from the sidebar
+    Then I should see 7 fields in the Personal Information page
+    And the added fields should be persisted correctly
