@@ -237,3 +237,96 @@ The **Admin Dashboard** (`admin-app`) provides system-wide administration capabi
 - Shares UI components and utilities with other apps
 - GraphQL resolvers in `apps/backend/src/graphql/resolvers/admin.ts`
 - Admin-specific React components in `apps/admin-app/src/components/`
+
+## Better-Auth Roles & Permissions
+
+This application uses **better-auth** with both **admin** and **organization** plugins to implement a comprehensive role-based access control system.
+
+### System-Level Roles (User.role)
+
+These roles provide global access control across the entire application:
+
+| Role | Description | Permissions | Default | Admin Role |
+|------|-------------|-------------|---------|------------|
+| `user` | Standard user account | - Create organizations<br>- Join organizations<br>- Create and manage forms within organizations | ✅ | ❌ |
+| `admin` | System administrator | - All user permissions<br>- Access admin dashboard<br>- View all organizations<br>- System-wide statistics<br>- Cross-organization data access | ❌ | ✅ |
+| `superAdmin` | Super administrator | - All admin permissions<br>- System administration<br>- Create other admin users<br>- Full system control | ❌ | ✅ |
+
+### Organization-Level Roles (Member.role)
+
+These roles control access within specific organizations:
+
+| Role | Description | Permissions | Default | Creator Role |
+|------|-------------|-------------|---------|--------------|
+| `companyMember` | Regular organization member | - View organization forms<br>- Create form responses<br>- Basic organization access | ✅ | ❌ |
+| `companyOwner` | Organization owner/admin | - All member permissions<br>- Create and manage forms<br>- Invite members<br>- Organization management<br>- Access organization settings | ❌ | ✅ |
+
+### Better-Auth Configuration
+
+**Plugin Configuration** (`apps/backend/src/lib/better-auth.ts:36-48`):
+```typescript
+plugins: [
+  bearer(),
+  organization({
+    allowUserToCreateOrganization: true,
+    organizationLimit: 5,
+    creatorRole: 'companyOwner',        // Role assigned to organization creators
+    membershipLimit: 100,
+  }),
+  admin({
+    defaultRole: 'user',                // Default role for new users
+    adminRoles: ['admin', 'superAdmin'], // Roles with admin privileges
+  }),
+]
+```
+
+### Access Control Implementation
+
+**GraphQL Resolver Protection** (`apps/backend/src/graphql/resolvers/admin.ts:26-37`):
+```typescript
+function requireAdminRole(context: any) {
+  if (!context.user) {
+    throw new GraphQLError('Authentication required');
+  }
+  
+  const userRole = context.user.role;
+  if (!userRole || (userRole !== 'admin' && userRole !== 'superAdmin')) {
+    throw new GraphQLError('Admin privileges required');
+  }
+  
+  return context.user;
+}
+```
+
+**Frontend Role Checks** (`apps/admin-app/src/services/auth.ts:88-92`):
+```typescript
+isAdmin: (user: any) => {
+  return user.role === 'admin' || user.role === 'superAdmin';
+},
+isSuperAdmin: (user: any) => {
+  return user.role === 'superAdmin';
+}
+```
+
+### Database Schema
+
+**User Model** (`apps/backend/prisma/schema.prisma:15-33`):
+- `role` field defaults to `"user"`
+- Stores system-level role (`user`, `admin`, `superAdmin`)
+
+**Member Model** (`apps/backend/prisma/schema.prisma:89-102`):
+- `role` field defaults to `"companyMember"`  
+- Stores organization-level role (`companyMember`, `companyOwner`)
+- Unique constraint on `[organizationId, userId]`
+
+**Invitation Model** (`apps/backend/prisma/schema.prisma:104-120`):
+- `role` field defaults to `"companyMember"`
+- Role that will be assigned when invitation is accepted
+
+### Role Migration
+
+The system includes migration script for updating legacy role names:
+- `member` → `companyMember`
+- `owner` → `companyOwner`
+
+Run with: `apps/backend/src/scripts/migrate-organization-roles.ts`
