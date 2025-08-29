@@ -7,8 +7,10 @@ assignees: ''
 
 ---
 
-Description:
+**Description:**
 
-Tech Task:
 
-Test scenarios:
+**Tech Task:**
+
+
+**Test scenarios:**
