@@ -193,7 +193,7 @@ export const PagesSidebar: React.FC<PagesSidebarProps> = ({
       <div className="flex-1 overflow-hidden flex flex-col">
         {activeTab === 'pages' ? (
           <div className="flex-1 overflow-y-auto p-4">
-            <div className="space-y-2">
+            <div className="space-y-2" data-testid="pages-list">
               {pages.map((page, index) => (
                 <DraggablePageItem
                   key={`page-item-${page.id}-${index}`}
@@ -250,6 +250,7 @@ export const PagesSidebar: React.FC<PagesSidebarProps> = ({
             onClick={handleAddPage}
             disabled={!isConnected}
             className="w-full"
+            data-testid="add-page-button"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Page

@@ -67,6 +67,7 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
   return (
     <div
       ref={pageItemRef}
+      data-testid={`page-item-${index + 1}`}
       className={`
         group transition-all duration-200
         ${isDragging ? 'opacity-50 scale-105 z-50' : ''}
@@ -91,6 +92,7 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
             <div
               {...attributes}
               {...listeners}
+              data-testid={`page-drag-handle-${index + 1}`}
               className="flex-shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               onClick={(e) => e.stopPropagation()}
             >
@@ -98,35 +100,44 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
             </div>
 
             {/* Page Number */}
-            <div className={`
-              w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold
-              ${isSelected 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-              }
-            `}>
+            <div 
+              data-testid={`page-number-${index + 1}`}
+              className={`
+                w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold
+                ${isSelected 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                }
+              `}
+            >
               {index + 1}
             </div>
 
             {/* Page Info */}
             <div className="flex-1 min-w-0">
-              <div className={`
-                text-sm font-medium leading-tight
-                line-clamp-2 overflow-hidden
-                ${isSelected 
-                  ? 'text-blue-900 dark:text-blue-100' 
-                  : 'text-gray-900 dark:text-white'
-                }
-              `}>
+              <div 
+                data-testid={`page-title-${index + 1}`}
+                className={`
+                  text-sm font-medium leading-tight
+                  line-clamp-2 overflow-hidden
+                  ${isSelected 
+                    ? 'text-blue-900 dark:text-blue-100' 
+                    : 'text-gray-900 dark:text-white'
+                  }
+                `}
+              >
                 {page.title}
               </div>
-              <div className={`
-                text-xs truncate
-                ${isSelected 
-                  ? 'text-blue-700 dark:text-blue-300' 
-                  : 'text-gray-500 dark:text-gray-400'
-                }
-              `}>
+              <div 
+                data-testid={`page-field-count-${index + 1}`}
+                className={`
+                  text-xs truncate
+                  ${isSelected 
+                    ? 'text-blue-700 dark:text-blue-300' 
+                    : 'text-gray-500 dark:text-gray-400'
+                  }
+                `}
+              >
                 {page.fields.length} {page.fields.length === 1 ? 'field' : 'fields'}
               </div>
             </div>
