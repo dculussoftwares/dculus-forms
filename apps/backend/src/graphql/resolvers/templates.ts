@@ -13,6 +13,7 @@ import { randomUUID } from 'crypto';
 import { copyFileForForm } from '../../services/fileUploadService.js';
 import { prisma } from '../../lib/prisma.js';
 import { constructCdnUrl } from '../../utils/cdn.js';
+import { requireSystemLevelRole, requireAuthentication, type AuthContext } from '../../utils/auth.js';
 
 export interface CreateTemplateArgs {
   input: {
@@ -42,17 +43,25 @@ export interface CreateFormFromTemplateArgs {
 
 export const templatesResolvers = {
   Query: {
-    templates: async (_: any, args: { category?: string }) => {
+    templates: async (_: any, args: { category?: string }, context: AuthContext) => {
       try {
+        // Template queries require any authenticated user
+        requireAuthentication(context);
         return await getAllTemplates(args.category);
       } catch (error) {
         console.error('Error fetching templates:', error);
+        // Re-throw GraphQLError as-is to preserve auth error messages
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
         throw new GraphQLError('Failed to fetch templates');
       }
     },
 
-    template: async (_: any, args: { id: string }) => {
+    template: async (_: any, args: { id: string }, context: AuthContext) => {
       try {
+        // Template queries require any authenticated user
+        requireAuthentication(context);
         const template = await getTemplateById(args.id);
         if (!template) {
           throw new GraphQLError('Template not found');
@@ -60,12 +69,18 @@ export const templatesResolvers = {
         return template;
       } catch (error) {
         console.error('Error fetching template:', error);
+        // Re-throw GraphQLError as-is to preserve auth error messages
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
         throw new GraphQLError('Failed to fetch template');
       }
     },
 
-    templatesByCategory: async () => {
+    templatesByCategory: async (_: any, args: any, context: AuthContext) => {
       try {
+        // Template queries require any authenticated user
+        requireAuthentication(context);
         const templatesByCategory = await getTemplatesByCategory();
         return Object.entries(templatesByCategory).map(([category, templates]) => ({
           category,
@@ -73,32 +88,50 @@ export const templatesResolvers = {
         }));
       } catch (error) {
         console.error('Error fetching templates by category:', error);
+        // Re-throw GraphQLError as-is to preserve auth error messages
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
         throw new GraphQLError('Failed to fetch templates by category');
       }
     },
 
-    templateCategories: async () => {
+    templateCategories: async (_: any, args: any, context: AuthContext) => {
       try {
+        // Template queries require any authenticated user
+        requireAuthentication(context);
         return await getTemplateCategories();
       } catch (error) {
         console.error('Error fetching template categories:', error);
+        // Re-throw GraphQLError as-is to preserve auth error messages
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
         throw new GraphQLError('Failed to fetch template categories');
       }
     },
   },
 
   Mutation: {
-    createTemplate: async (_: any, args: CreateTemplateArgs) => {
+    createTemplate: async (_: any, args: CreateTemplateArgs, context: AuthContext) => {
       try {
+        // Only system-level roles (admin, superAdmin) can create templates
+        requireSystemLevelRole(context);
         return await createTemplate(args.input);
       } catch (error) {
         console.error('Error creating template:', error);
+        // Re-throw GraphQLError as-is to preserve auth error messages
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
         throw new GraphQLError('Failed to create template');
       }
     },
 
-    updateTemplate: async (_: any, args: UpdateTemplateArgs) => {
+    updateTemplate: async (_: any, args: UpdateTemplateArgs, context: AuthContext) => {
       try {
+        // Only system-level roles (admin, superAdmin) can update templates
+        requireSystemLevelRole(context);
         const updatedTemplate = await updateTemplate(args.id, args.input);
         if (!updatedTemplate) {
           throw new GraphQLError('Template not found');
@@ -106,20 +139,30 @@ export const templatesResolvers = {
         return updatedTemplate;
       } catch (error) {
         console.error('Error updating template:', error);
+        // Re-throw GraphQLError as-is to preserve auth error messages
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
         throw new GraphQLError('Failed to update template');
       }
     },
 
-    deleteTemplate: async (_: any, args: { id: string }) => {
+    deleteTemplate: async (_: any, args: { id: string }, context: AuthContext) => {
       try {
+        // Only system-level roles (admin, superAdmin) can delete templates
+        requireSystemLevelRole(context);
         return await deleteTemplate(args.id);
       } catch (error) {
         console.error('Error deleting template:', error);
+        // Re-throw GraphQLError as-is to preserve auth error messages
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
         throw new GraphQLError('Failed to delete template');
       }
     },
 
-    createFormFromTemplate: async (_: any, args: CreateFormFromTemplateArgs, context: any) => {
+    createFormFromTemplate: async (_: any, args: CreateFormFromTemplateArgs, context: AuthContext) => {
       try {
         // Get the template
         const template = await getTemplateById(args.templateId);
@@ -127,10 +170,8 @@ export const templatesResolvers = {
           throw new GraphQLError('Template not found');
         }
 
-        // Ensure user is authenticated
-        if (!context.user) {
-          throw new GraphQLError('Authentication required');
-        }
+        // Ensure user is authenticated - any authenticated user can create forms from templates
+        const user = requireAuthentication(context);
 
         // Generate form ID upfront
         const newFormId = randomUUID();
@@ -180,7 +221,7 @@ export const templatesResolvers = {
           shortUrl: '', // Will be generated in createForm service
           isPublished: false,
           organizationId: args.organizationId,
-          createdById: context.user.id,
+          createdById: user.id,
         }, formSchema); // Initialize YJS document with modified schema
 
         // After form creation, check if it has a backgroundImageKey and create FormFile record

@@ -22,6 +22,10 @@ export interface SuperAdminTestUser extends TestUser {
   role: 'superAdmin';
 }
 
+export interface AdminTestUser extends TestUser {
+  role: 'admin';
+}
+
 /**
  * Generate a random test user with unique email
  */
@@ -93,6 +97,17 @@ export function generateSuperAdminTestUser(prefix: string = 'superadmin'): Super
   return {
     ...user,
     role: 'superAdmin' as const,
+  };
+}
+
+/**
+ * Generate an admin test user
+ */
+export function generateAdminTestUser(prefix: string = 'admin'): AdminTestUser {
+  const user = generateTestUser(prefix);
+  return {
+    ...user,
+    role: 'admin' as const,
   };
 }
 
