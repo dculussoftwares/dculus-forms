@@ -31,6 +31,19 @@ Feature: Form Creation
     Then I should be redirected to the form builder page
     And I should see the form builder interface
 
+  @Creation @EventRegistration
+  Scenario: Create form from Event Registration template
+    When I click the "Create Form" button on dashboard
+    Then I should be redirected to templates page
+    When I select the "Event Registration" template
+    And I fill in the form creation details:
+      | Field Name    | Value                                    |
+      | Form Title    | Summer Conference 2025                   |
+      | Description   | Registration for our annual conference   |
+    And I click the "Create Form" button in the template popover
+    Then I should be redirected to the form builder page
+    And I should see the form builder interface
+
   @Validation
   Scenario: Form creation validation - missing title
     When I click the "Create Form" button on dashboard

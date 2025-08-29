@@ -118,6 +118,34 @@ When('I select the first available template', async function (this: E2EWorld) {
   }
 });
 
+When('I select the {string} template', async function (this: E2EWorld, templateName: string) {
+  if (!this.page) {
+    throw new Error('Page not initialized.');
+  }
+
+  try {
+    // Wait for template cards to load
+    await this.page.waitForTimeout(2000);
+    
+    // Find the template card with the specified name
+    const templateCard = this.page.locator(`[data-testid="template-card"]:has-text("${templateName}")`);
+    await templateCard.waitFor({ state: 'visible', timeout: 10000 });
+    
+    // Look for the "Use Template" button within the specific template card
+    const useTemplateButton = templateCard.locator('button:has-text("Use Template")');
+    await useTemplateButton.waitFor({ state: 'visible', timeout: 5000 });
+    await useTemplateButton.click();
+    
+    // Wait for the popover to appear
+    await this.page.waitForTimeout(1000);
+    
+    console.log(`✅ Selected ${templateName} template`);
+  } catch (error) {
+    await this.takeScreenshot(`template-selection-failed-${templateName.replace(/\s+/g, '-')}`);
+    throw new Error(`Could not select ${templateName} template: ${error}`);
+  }
+});
+
 When('I fill in the form creation details:', async function (this: E2EWorld, dataTable) {
   if (!this.page) {
     throw new Error('Page not initialized.');
