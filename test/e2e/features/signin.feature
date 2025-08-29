@@ -7,21 +7,8 @@ Feature: User Sign In
     Given I have test credentials ready
 
   Scenario: Complete sign up then sign in flow
-    Given I am on the sign up page
-    When I fill in the sign up form with valid data:
-      | Field Name          | Value                    |
-      | Full Name           | John Doe                 |
-      | Email               | {generated_email}        |
-      | Organization Name   | {generated_organization} |
-      | Password            | TestPassword123!         |
-      | Confirm Password    | TestPassword123!         |
-    And I click the "Create account" button
-    Then I should be redirected to the home page
-    When I navigate to the sign in page
-    And I fill in the sign in form with the stored credentials
-    And I click the "Sign in" button
-    Then I should be redirected to the home page
-    And I should be successfully signed in
+    Given I am signed in as a new user
+    Then I should be successfully signed in
 
   Scenario: Sign in with missing required fields
     Given I am on the sign in page

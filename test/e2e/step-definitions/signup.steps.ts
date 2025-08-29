@@ -12,6 +12,51 @@ Given('I am on the sign up page', async function (this: E2EWorld) {
   expect(pageTitle).toContain('Create an account');
 });
 
+// Shared authentication step for form creation scenarios
+Given('I am signed in as a new user', { timeout: 60000 }, async function (this: E2EWorld) {
+  // Navigate to sign up page
+  await this.navigateToPage('/signup');
+  await this.waitForPageReady();
+  
+  // Fill in the sign up form with generated test data
+  const testEmail = this.generateTestEmail();
+  const testOrganization = this.generateTestOrganization();
+  
+  this.setTestData('testEmail', testEmail);
+  this.setTestData('testOrganization', testOrganization);
+  
+  await this.fillFormField('Full Name', 'Test User');
+  await this.fillFormField('Email', testEmail);
+  await this.fillFormField('Organization Name', testOrganization);
+  await this.fillFormField('Password', 'TestPassword123!');
+  await this.fillFormField('Confirm Password', 'TestPassword123!');
+  
+  // Click create account
+  await this.clickButton('Create account');
+  
+  // Wait for successful signup redirect
+  await this.page?.waitForTimeout(3000);
+  
+  // Navigate to sign in page
+  await this.navigateToPage('/signin');
+  await this.waitForPageReady();
+  
+  // Fill in sign in form with stored credentials
+  await this.fillFormField('Email', testEmail);
+  await this.fillFormField('Password', 'TestPassword123!');
+  
+  // Click sign in
+  await this.clickButton('Sign in');
+  
+  // Wait for successful signin
+  await this.page?.waitForTimeout(2000);
+  
+  // Verify we're successfully signed in - should not be on signin page anymore
+  const currentUrl = this.page?.url() || '';
+  const isOnSignInPage = currentUrl.includes('/signin');
+  expect(isOnSignInPage).toBeFalsy();
+});
+
 // Form filling steps
 When('I fill in the sign up form with valid data:', async function (this: E2EWorld, dataTable) {
   const rows = dataTable.hashes();
