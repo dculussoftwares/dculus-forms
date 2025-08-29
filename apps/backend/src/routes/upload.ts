@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
+import { Readable } from 'stream';
 import { uploadFile } from '../services/fileUploadService.js';
 import { prisma } from '../lib/prisma.js';
 import { randomUUID } from 'crypto';
@@ -33,7 +34,6 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       mimetype: file.mimetype,
       encoding: 'binary',
       createReadStream: () => {
-        const { Readable } = require('stream');
         return new Readable({
           read() {
             this.push(file.buffer);
