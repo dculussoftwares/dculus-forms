@@ -50,26 +50,13 @@ export class AuthUtils {
 
   constructor(baseURL: string = 'http://localhost:4000') {
     this.baseURL = baseURL;
-    // Use longer timeout for deployment mode
-    const timeout = process.env.TEST_DEPLOYMENT_MODE ? 
-                    parseInt(process.env.TEST_TIMEOUT || '60000') : 10000;
-    
     this.axiosInstance = axios.create({
       baseURL: this.baseURL,
-      timeout: timeout,
+      timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
       },
-      // For deployment mode, add retry configuration
-      ...(process.env.TEST_DEPLOYMENT_MODE && {
-        // Axios retry configuration would go here if axios-retry was installed
-        // For now, we'll handle retries in individual requests
-      })
     });
-
-    if (process.env.TEST_DEPLOYMENT_MODE) {
-      console.log(`⏱️  Using timeout ${timeout}ms for deployment testing`);
-    }
   }
 
   /**

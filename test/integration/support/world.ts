@@ -25,19 +25,10 @@ export class CustomWorldConstructor extends World implements CustomWorld {
 
   constructor(options: IWorldOptions) {
     super(options);
-    // Support both deployment and local testing URLs
-    this.baseURL = process.env.TEST_BASE_URL || 
-                   process.env.TEST_DEPLOYED_BASE_URL || 
-                   'http://localhost:4000';
+    this.baseURL = process.env.TEST_BASE_URL || 'http://localhost:4000';
     this.authUtils = new AuthUtils(this.baseURL);
     this.testUsers = new Map();
     this.uploadedFiles = [];
-    
-    // Log configuration for debugging
-    if (process.env.TEST_DEPLOYMENT_MODE) {
-      console.log(`🌐 Running integration tests in deployment mode:`);
-      console.log(`  Backend URL: ${this.baseURL}`);
-    }
   }
 
   /**

@@ -40,21 +40,9 @@ export class E2EWorldConstructor extends World implements E2EWorld {
 
   constructor(options: IWorldOptions) {
     super(options);
-    // Support both deployment and local testing URLs
-    this.baseURL = process.env.E2E_BASE_URL || 
-                   process.env.E2E_DEPLOYED_BASE_URL || 
-                   'http://localhost:3000';
-    this.backendURL = process.env.E2E_BACKEND_URL || 
-                      process.env.E2E_DEPLOYED_BACKEND_URL || 
-                      'http://localhost:4000';
+    this.baseURL = process.env.E2E_BASE_URL || 'http://localhost:3000';
+    this.backendURL = process.env.E2E_BACKEND_URL || 'http://localhost:4000';
     this.testData = {};
-    
-    // Log configuration for debugging
-    if (process.env.E2E_DEPLOYMENT_MODE) {
-      console.log(`🌐 Running E2E tests in deployment mode:`);
-      console.log(`  Frontend URL: ${this.baseURL}`);
-      console.log(`  Backend URL: ${this.backendURL}`);
-    }
   }
 
   /**
@@ -78,14 +66,9 @@ export class E2EWorldConstructor extends World implements E2EWorld {
     if (!this.page) {
       this.page = await this.context.newPage();
       
-      // Set longer timeouts for e2e tests, even longer for deployment mode
-      const timeout = process.env.E2E_DEPLOYMENT_MODE ? 60000 : 30000;
-      this.page.setDefaultTimeout(timeout);
-      this.page.setDefaultNavigationTimeout(timeout);
-      
-      if (process.env.E2E_DEPLOYMENT_MODE) {
-        console.log(`⏱️  Using extended timeouts for deployment testing: ${timeout}ms`);
-      }
+      // Set longer timeouts for e2e tests
+      this.page.setDefaultTimeout(30000);
+      this.page.setDefaultNavigationTimeout(30000);
     }
   }
 

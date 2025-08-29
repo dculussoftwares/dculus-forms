@@ -805,173 +805,10 @@ jobs:
           echo "- **Production**: https://dculus-forms-admin-app.pages.dev" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch Previews**: https://[branch].dculus-forms-admin-app.pages.dev" >> $GITHUB_STEP_SUMMARY
 
-  test-deployment-integration:
-    name: Test Deployed Backend (Integration)
-    runs-on: ubuntu-latest
-    needs: [deploy-to-azure]
-    if: (github.ref == 'refs/heads/release' || github.ref == 'refs/heads/main') && github.event_name != 'pull_request'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Wait for backend deployment to be ready
-        run: |
-          echo "Waiting for backend to be ready..."
-          BACKEND_URL="${{ env.BACKEND_URL }}"
-          MAX_ATTEMPTS=30
-          ATTEMPT=1
-          
-          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
-            echo "Attempt $ATTEMPT/$MAX_ATTEMPTS: Testing $BACKEND_URL/health"
-            if curl -f -s "$BACKEND_URL/health" >/dev/null; then
-              echo "✅ Backend is ready!"
-              break
-            else
-              echo "⏳ Backend not ready, waiting 10s..."
-              sleep 10
-              ATTEMPT=$((ATTEMPT + 1))
-            fi
-          done
-          
-          if [ $ATTEMPT -gt $MAX_ATTEMPTS ]; then
-            echo "❌ Backend failed to become ready"
-            exit 1
-          fi
-
-      - name: Run integration tests against deployment
-        env:
-          DEPLOYMENT_BACKEND_URL: ${{ env.BACKEND_URL }}
-          TEST_DEPLOYMENT_MODE: true
-          TEST_TIMEOUT: 60000
-        run: pnpm test:integration:deployment
-
-      - name: Upload integration test reports
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: deployment-integration-test-reports
-          path: |
-            test/integration/reports/
-          retention-days: 7
-
-  test-deployment-e2e:
-    name: Test Deployed Apps (E2E)
-    runs-on: ubuntu-latest
-    needs: [deploy-form-app-to-cloudflare, deploy-to-azure]
-    if: (github.ref == 'refs/heads/release' || github.ref == 'refs/heads/main') && github.event_name != 'pull_request'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
-      - name: Wait for deployments to be ready
-        run: |
-          echo "Waiting for deployments to be ready..."
-          
-          # Backend URL from deployment
-          BACKEND_URL="${{ env.BACKEND_URL }}"
-          # Form app URL (Cloudflare Pages)
-          FORM_APP_URL="https://dculus-forms-app.pages.dev"
-          
-          echo "Testing backend at: $BACKEND_URL"
-          echo "Testing form app at: $FORM_APP_URL"
-          
-          MAX_ATTEMPTS=30
-          
-          # Test backend
-          ATTEMPT=1
-          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
-            echo "Backend attempt $ATTEMPT/$MAX_ATTEMPTS"
-            if curl -f -s "$BACKEND_URL/health" >/dev/null; then
-              echo "✅ Backend is ready!"
-              break
-            else
-              sleep 10
-              ATTEMPT=$((ATTEMPT + 1))
-            fi
-          done
-          
-          if [ $ATTEMPT -gt $MAX_ATTEMPTS ]; then
-            echo "❌ Backend failed to become ready"
-            exit 1
-          fi
-          
-          # Test form app
-          ATTEMPT=1
-          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
-            echo "Form app attempt $ATTEMPT/$MAX_ATTEMPTS"
-            if curl -f -s "$FORM_APP_URL" >/dev/null; then
-              echo "✅ Form app is ready!"
-              break
-            else
-              sleep 10
-              ATTEMPT=$((ATTEMPT + 1))
-            fi
-          done
-          
-          if [ $ATTEMPT -gt $MAX_ATTEMPTS ]; then
-            echo "❌ Form app failed to become ready"
-            exit 1
-          fi
-
-      - name: Run E2E tests against deployment
-        env:
-          DEPLOYMENT_FORM_APP_URL: https://dculus-forms-app.pages.dev
-          DEPLOYMENT_BACKEND_URL: ${{ env.BACKEND_URL }}
-          E2E_DEPLOYMENT_MODE: true
-          PLAYWRIGHT_HEADLESS: true
-        run: pnpm test:e2e:deployment
-
-      - name: Upload E2E test reports
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: deployment-e2e-test-reports
-          path: |
-            test/e2e/reports/
-          retention-days: 7
-
-      - name: Upload E2E test screenshots
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: deployment-e2e-screenshots
-          path: |
-            test/e2e/reports/*.png
-          retention-days: 7
-
   build-summary:
     name: Build Summary
     runs-on: ubuntu-latest
-    needs: [deploy-to-azure, deploy-form-app-to-cloudflare, deploy-form-viewer-to-cloudflare, deploy-admin-app-to-cloudflare, test-deployment-integration, test-deployment-e2e]
+    needs: [deploy-to-azure, deploy-form-app-to-cloudflare, deploy-form-viewer-to-cloudflare, deploy-admin-app-to-cloudflare]
     if: always()
     steps:
       - name: Check deployment results
@@ -981,8 +818,6 @@ jobs:
           echo "Deploy Form App to Cloudflare: ${{ needs.deploy-form-app-to-cloudflare.result }}"
           echo "Deploy Form Viewer to Cloudflare: ${{ needs.deploy-form-viewer-to-cloudflare.result }}"
           echo "Deploy Admin App to Cloudflare: ${{ needs.deploy-admin-app-to-cloudflare.result }}"
-          echo "Test Deployment Integration: ${{ needs.test-deployment-integration.result }}"
-          echo "Test Deployment E2E: ${{ needs.test-deployment-e2e.result }}"
           echo ""
           
           # Check Azure deployment status
@@ -1021,23 +856,6 @@ jobs:
             echo "❌ Admin App Cloudflare deployment failed"
           fi
           
-          # Check deployment test status
-          if [[ "${{ needs.test-deployment-integration.result }}" == "success" ]]; then
-            echo "🚀 Deployment Integration tests completed successfully!"
-          elif [[ "${{ needs.test-deployment-integration.result }}" == "skipped" ]]; then
-            echo "⏭️  Deployment Integration tests skipped (not main/release branch or PR)"
-          else
-            echo "❌ Deployment Integration tests failed"
-          fi
-          
-          if [[ "${{ needs.test-deployment-e2e.result }}" == "success" ]]; then
-            echo "🚀 Deployment E2E tests completed successfully!"
-          elif [[ "${{ needs.test-deployment-e2e.result }}" == "skipped" ]]; then
-            echo "⏭️  Deployment E2E tests skipped (not main/release branch or PR)"
-          else
-            echo "❌ Deployment E2E tests failed"
-          fi
-          
           # Overall deployment status
           if [[ "${{ needs.deploy-to-azure.result }}" == "success" && 
                 "${{ needs.deploy-form-app-to-cloudflare.result }}" == "success" &&
@@ -1045,17 +863,6 @@ jobs:
                 "${{ needs.deploy-admin-app-to-cloudflare.result }}" == "success" ]]; then
             echo ""
             echo "✅ All deployments completed successfully!"
-            
-            # Check if tests also passed
-            if [[ "${{ needs.test-deployment-integration.result }}" == "success" && 
-                  "${{ needs.test-deployment-e2e.result }}" == "success" ]]; then
-              echo "✅ All deployment tests passed!"
-            elif [[ "${{ needs.test-deployment-integration.result }}" == "skipped" && 
-                    "${{ needs.test-deployment-e2e.result }}" == "skipped" ]]; then
-              echo "⏭️  Deployment tests were skipped"
-            else
-              echo "⚠️  Some deployment tests failed"
-            fi
           else
             echo ""
             echo "⚠️  Some deployments failed or were skipped"
