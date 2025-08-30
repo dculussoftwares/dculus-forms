@@ -31,7 +31,6 @@ export const DefaultValueInput: React.FC<DefaultValueInputProps> = ({
             <Input
               {...controlField}
               id="field-default"
-              data-testid="field-default-value-input"
               type="date"
               min={minDateValue || undefined}
               max={maxDateValue || undefined}
@@ -46,7 +45,6 @@ export const DefaultValueInput: React.FC<DefaultValueInputProps> = ({
           <Input
             {...controlField}
             id="field-default"
-            data-testid="field-default-value-input"
             placeholder="Default value"
             disabled={!isConnected}
             className={`text-sm ${errors.defaultValue ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}

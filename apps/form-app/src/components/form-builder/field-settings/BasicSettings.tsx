@@ -36,7 +36,6 @@ export const BasicSettings: React.FC<BasicSettingsProps> = ({
             <Input
               {...field}
               id="field-label"
-              data-testid="field-label-input"
               placeholder="Field label"
               disabled={!isConnected}
               className="text-sm"
@@ -59,7 +58,6 @@ export const BasicSettings: React.FC<BasicSettingsProps> = ({
             <Textarea
               {...field}
               id="field-hint"
-              data-testid="field-hint-input"
               placeholder="Help text for this field"
               disabled={!isConnected}
               className="text-sm resize-none"

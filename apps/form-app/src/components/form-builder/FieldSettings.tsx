@@ -83,7 +83,7 @@ export const FieldSettings: React.FC<FieldSettingsProps> = ({
   }
 
   return (
-    <div className="h-full flex flex-col" data-testid="field-settings-panel">
+    <div className="h-full flex flex-col">
       <FieldSettingsHeader field={field} isDirty={isDirty} />
 
       {/* Scrollable Content */}

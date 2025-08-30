@@ -52,7 +52,6 @@ export const FieldSettingsFooter: React.FC<FieldSettingsFooterProps> = ({
             size="sm"
             onClick={onCancel}
             disabled={!isDirty || !isConnected}
-            data-testid="field-settings-cancel-button"
           >
             Cancel
           </Button>
@@ -62,7 +61,6 @@ export const FieldSettingsFooter: React.FC<FieldSettingsFooterProps> = ({
               size="sm"
               onClick={onSave}
               disabled={!isDirty || !isValid || !isConnected || isSaving}
-              data-testid="field-settings-save-button"
               className={`transition-all duration-200 ${
                 isDirty 
                   ? 'bg-orange-600 hover:bg-orange-700 ring-2 ring-orange-200 dark:ring-orange-800 scale-105' 
