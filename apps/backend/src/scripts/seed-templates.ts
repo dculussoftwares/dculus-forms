@@ -9,6 +9,7 @@ import {
   CheckboxField,
   DateField,
   FillableFormFieldValidation,
+  TextFieldValidation,
   ThemeType,
   SpacingType,
   PageModeType,
@@ -96,7 +97,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
                 "",
                 "Please enter your full name",
                 "John Doe",
-                new FillableFormFieldValidation(true)
+                new TextFieldValidation(true)
               ),
               new EmailField(
                 randomUUID(),
@@ -114,7 +115,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
                 "",
                 "What is this regarding?",
                 "General Inquiry",
-                new FillableFormFieldValidation(true)
+                new TextFieldValidation(true)
               ),
               new TextAreaField(
                 randomUUID(),
@@ -123,7 +124,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
                 "",
                 "Please provide details about your inquiry",
                 "Type your message here...",
-                new FillableFormFieldValidation(true)
+                new TextFieldValidation(true)
               )
             ]
           }
@@ -193,7 +194,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
                 "",
                 "Any additional feedback you'd like to share?",
                 "Your feedback here...",
-                new FillableFormFieldValidation(false)
+                new TextFieldValidation(false)
               )
             ]
           }
@@ -231,7 +232,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
                 "",
                 "",
                 "John",
-                new FillableFormFieldValidation(true)
+                new TextFieldValidation(true)
               ),
               new TextInputField(
                 randomUUID(),
@@ -240,7 +241,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
                 "",
                 "",
                 "Doe",
-                new FillableFormFieldValidation(true)
+                new TextFieldValidation(true)
               ),
               new EmailField(
                 randomUUID(),
@@ -258,7 +259,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
                 "",
                 "For event updates and notifications",
                 "+1 (555) 123-4567",
-                new FillableFormFieldValidation(false)
+                new TextFieldValidation(false)
               )
             ]
           },
@@ -295,7 +296,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
                 "",
                 "Any special accommodations needed?",
                 "Please describe any special requirements...",
-                new FillableFormFieldValidation(false)
+                new TextFieldValidation(false)
               )
             ]
           }
@@ -333,7 +334,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
                 "",
                 "",
                 "Jane Smith",
-                new FillableFormFieldValidation(true)
+                new TextFieldValidation(true)
               ),
               new EmailField(
                 randomUUID(),
@@ -351,7 +352,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
                 "",
                 "",
                 "+1 (555) 987-6543",
-                new FillableFormFieldValidation(true)
+                new TextFieldValidation(true)
               ),
               new DateField(
                 randomUUID(),
@@ -387,7 +388,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
                 "",
                 "Briefly describe your relevant work experience",
                 "Describe your experience...",
-                new FillableFormFieldValidation(true)
+                new TextFieldValidation(true)
               ),
               new TextAreaField(
                 randomUUID(),
@@ -396,7 +397,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
                 "",
                 "Why are you interested in this position?",
                 "Tell us why you're interested...",
-                new FillableFormFieldValidation(true)
+                new TextFieldValidation(true)
               )
             ]
           }
@@ -465,7 +466,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
                 "",
                 "What improvements would you like to see?",
                 "Your suggestions...",
-                new FillableFormFieldValidation(false)
+                new TextFieldValidation(false)
               )
             ]
           }
@@ -503,7 +504,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
                 "",
                 "",
                 "John",
-                new FillableFormFieldValidation(true)
+                new TextFieldValidation(true)
               ),
               new EmailField(
                 randomUUID(),

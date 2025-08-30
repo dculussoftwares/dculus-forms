@@ -12,9 +12,51 @@ export const baseFieldValidationSchema = z.object({
 });
 
 // Field-specific validation schemas
-export const textInputFieldValidationSchema = baseFieldValidationSchema;
+export const textInputFieldValidationSchema = baseFieldValidationSchema.extend({
+  validation: z.object({
+    required: z.boolean().default(false),
+    minLength: z.number().min(0, 'Minimum length must be 0 or greater').optional().or(z.string().regex(/^\d*$/, 'Minimum length must be a valid number').optional()),
+    maxLength: z.number().min(1, 'Maximum length must be 1 or greater').optional().or(z.string().regex(/^\d*$/, 'Maximum length must be a valid number').optional()),
+  }).optional().refine(
+    (validation) => {
+      if (!validation) return true;
+      const { minLength, maxLength } = validation;
+      if (minLength !== undefined && maxLength !== undefined && minLength !== '' && maxLength !== '') {
+        const minNum = typeof minLength === 'string' ? parseInt(minLength) : minLength;
+        const maxNum = typeof maxLength === 'string' ? parseInt(maxLength) : maxLength;
+        return isNaN(minNum) || isNaN(maxNum) || minNum <= maxNum;
+      }
+      return true;
+    },
+    {
+      message: 'Minimum length must be less than or equal to maximum length',
+      path: ['maxLength'],
+    }
+  ),
+});
 
-export const textAreaFieldValidationSchema = baseFieldValidationSchema;
+export const textAreaFieldValidationSchema = baseFieldValidationSchema.extend({
+  validation: z.object({
+    required: z.boolean().default(false),
+    minLength: z.number().min(0, 'Minimum length must be 0 or greater').optional().or(z.string().regex(/^\d*$/, 'Minimum length must be a valid number').optional()),
+    maxLength: z.number().min(1, 'Maximum length must be 1 or greater').optional().or(z.string().regex(/^\d*$/, 'Maximum length must be a valid number').optional()),
+  }).optional().refine(
+    (validation) => {
+      if (!validation) return true;
+      const { minLength, maxLength } = validation;
+      if (minLength !== undefined && maxLength !== undefined && minLength !== '' && maxLength !== '') {
+        const minNum = typeof minLength === 'string' ? parseInt(minLength) : minLength;
+        const maxNum = typeof maxLength === 'string' ? parseInt(maxLength) : maxLength;
+        return isNaN(minNum) || isNaN(maxNum) || minNum <= maxNum;
+      }
+      return true;
+    },
+    {
+      message: 'Minimum length must be less than or equal to maximum length',
+      path: ['maxLength'],
+    }
+  ),
+});
 
 export const emailFieldValidationSchema = baseFieldValidationSchema.extend({
   placeholder: z.string().max(100, 'Placeholder is too long').optional(),

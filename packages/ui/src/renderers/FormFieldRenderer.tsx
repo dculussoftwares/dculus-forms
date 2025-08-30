@@ -1,6 +1,6 @@
 import React from 'react';
 import { Controller, Control, FieldValues, Path } from 'react-hook-form';
-import { FormField, FieldType, FillableFormField } from '@dculus/types';
+import { FormField, FieldType, FillableFormField, TextFieldValidation } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 
 interface FieldStyles {
@@ -80,6 +80,12 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
 
           switch (field.type) {
             case FieldType.TEXT_INPUT_FIELD:
+              const textValidation = fillableField?.validation as TextFieldValidation;
+              const currentLength = String(controllerField.value || '').length;
+              const showCharacterCount = textValidation?.minLength || textValidation?.maxLength;
+              const isOverLimit = textValidation?.maxLength && currentLength > textValidation.maxLength;
+              const isUnderLimit = textValidation?.minLength && currentLength < textValidation.minLength;
+              
               return (
                 <div>
                   <input
@@ -87,7 +93,20 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                     type="text"
                     className={getInputClassName(styles.input)}
                     placeholder={fillableField?.placeholder || 'Enter text...'}
+                    maxLength={textValidation?.maxLength}
                   />
+                  {showCharacterCount && (
+                    <div className="flex justify-between items-center mt-1">
+                      <span className={`text-xs ${
+                        isOverLimit || isUnderLimit ? 'text-red-500' : 'text-gray-500'
+                      }`}>
+                        {currentLength}
+                        {textValidation?.maxLength && `/${textValidation.maxLength}`} characters
+                        {textValidation?.minLength && !textValidation?.maxLength && 
+                          ` (min ${textValidation.minLength})`}
+                      </span>
+                    </div>
+                  )}
                   {hasError && (
                     <p className="mt-1 text-sm text-red-600" role="alert">
                       {error.message}
@@ -143,13 +162,32 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
               );
 
             case FieldType.TEXT_AREA_FIELD:
+              const textAreaValidation = fillableField?.validation as TextFieldValidation;
+              const textAreaLength = String(controllerField.value || '').length;
+              const showTextAreaCharacterCount = textAreaValidation?.minLength || textAreaValidation?.maxLength;
+              const isTextAreaOverLimit = textAreaValidation?.maxLength && textAreaLength > textAreaValidation.maxLength;
+              const isTextAreaUnderLimit = textAreaValidation?.minLength && textAreaLength < textAreaValidation.minLength;
+              
               return (
                 <div>
                   <textarea
                     {...inputProps}
                     className={getInputClassName(styles.textarea)}
                     placeholder={fillableField?.placeholder || 'Enter message...'}
+                    maxLength={textAreaValidation?.maxLength}
                   />
+                  {showTextAreaCharacterCount && (
+                    <div className="flex justify-between items-center mt-1">
+                      <span className={`text-xs ${
+                        isTextAreaOverLimit || isTextAreaUnderLimit ? 'text-red-500' : 'text-gray-500'
+                      }`}>
+                        {textAreaLength}
+                        {textAreaValidation?.maxLength && `/${textAreaValidation.maxLength}`} characters
+                        {textAreaValidation?.minLength && !textAreaValidation?.maxLength && 
+                          ` (min ${textAreaValidation.minLength})`}
+                      </span>
+                    </div>
+                  )}
                   {hasError && (
                     <p className="mt-1 text-sm text-red-600" role="alert">
                       {error.message}

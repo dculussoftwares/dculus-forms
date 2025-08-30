@@ -41,6 +41,8 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
   const minValue = watch('min');
   const maxValue = watch('max');
   const defaultValue = watch('defaultValue');
+  const minLengthValue = watch('validation.minLength');
+  const maxLengthValue = watch('validation.maxLength');
 
   // Re-trigger validation when related fields change (for cross-field validation)
   useEffect(() => {
@@ -50,8 +52,11 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
     } else if (field?.type === FieldType.NUMBER_FIELD) {
       // Trigger validation for all number-related fields when any of them change
       trigger(['min', 'max', 'defaultValue']);
+    } else if (field?.type === FieldType.TEXT_INPUT_FIELD || field?.type === FieldType.TEXT_AREA_FIELD) {
+      // Trigger validation for character limit fields when any of them change
+      trigger(['validation.minLength', 'validation.maxLength', 'defaultValue']);
     }
-  }, [minDateValue, maxDateValue, minValue, maxValue, defaultValue, field?.type, trigger]);
+  }, [minDateValue, maxDateValue, minValue, maxValue, defaultValue, minLengthValue, maxLengthValue, field?.type, trigger]);
 
   // Extract field data for form initialization (memoized to prevent re-renders)
   const extractFieldData = useCallback((field: FormField): any => {
@@ -66,6 +71,17 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
 
     // Add field-specific properties
     switch (field.type) {
+      case FieldType.TEXT_INPUT_FIELD:
+      case FieldType.TEXT_AREA_FIELD:
+        return {
+          ...baseData,
+          validation: {
+            required: (field as any).validation?.required || false,
+            minLength: (field as any).validation?.minLength || undefined,
+            maxLength: (field as any).validation?.maxLength || undefined,
+          },
+        } as any;
+      
       case FieldType.NUMBER_FIELD:
         return {
           ...baseData,
@@ -129,16 +145,28 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
     
     setIsSaving(true);
     try {
-      // Convert form data to field updates
-      const updates: Record<string, any> = { ...data };
+      // Convert form data to field updates - exclude nested validation object first
+      const { validation: _, required: __, ...cleanData } = data;
+      const updates: Record<string, any> = { ...cleanData };
       
       // Handle validation object updates
-      if ('required' in data) {
-        updates.validation = {
-          ...((field as any)?.validation || {}),
-          required: data.required,
-        };
-        delete updates.required;
+      if ('required' in data || ('validation' in data && data.validation)) {
+        if (field.type === FieldType.TEXT_INPUT_FIELD || field.type === FieldType.TEXT_AREA_FIELD) {
+          // For text fields, handle the validation object with character limits
+          const validationData = data.validation || {};
+          updates.validation = {
+            ...((field as any)?.validation || {}),
+            required: data.required !== undefined ? data.required : validationData.required || false,
+            minLength: validationData.minLength,
+            maxLength: validationData.maxLength,
+          };
+        } else {
+          // For other field types, handle only required
+          updates.validation = {
+            ...((field as any)?.validation || {}),
+            required: data.required || false,
+          };
+        }
       }
 
       onSave(updates);

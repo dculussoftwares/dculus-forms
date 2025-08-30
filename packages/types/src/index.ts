@@ -75,6 +75,21 @@ export class FillableFormFieldValidation {
   }
 }
 
+export class TextFieldValidation extends FillableFormFieldValidation {
+  minLength?: number;
+  maxLength?: number;
+  
+  constructor(
+    required: boolean, 
+    minLength?: number, 
+    maxLength?: number
+  ) {
+    super(required);
+    this.minLength = minLength;
+    this.maxLength = maxLength;
+  }
+}
+
 export class FillableFormField extends FormField {
   label: string;
   defaultValue: string;
@@ -103,6 +118,8 @@ export class FillableFormField extends FormField {
 }
 
 export class TextInputField extends FillableFormField {
+  validation: TextFieldValidation;
+  
   constructor(
     id: string,
     label: string,
@@ -110,14 +127,17 @@ export class TextInputField extends FillableFormField {
     prefix: string,
     hint: string,
     placeholder: string,
-    validation: FillableFormFieldValidation
+    validation: TextFieldValidation
   ) {
     super(id, label, defaultValue, prefix, hint, placeholder, validation);
     this.type = FieldType.TEXT_INPUT_FIELD;
+    this.validation = validation;
   }
 }
 
 export class TextAreaField extends FillableFormField {
+  validation: TextFieldValidation;
+  
   constructor(
     id: string,
     label: string,
@@ -125,10 +145,11 @@ export class TextAreaField extends FillableFormField {
     prefix: string,
     hint: string,
     placeholder: string,
-    validation: FillableFormFieldValidation
+    validation: TextFieldValidation
   ) {
     super(id, label, defaultValue, prefix, hint, placeholder, validation);
     this.type = FieldType.TEXT_AREA_FIELD;
+    this.validation = validation;
   }
 }
 
@@ -274,7 +295,23 @@ export const serializeFormField = (field: FormField): any => {
 };
 
 export const deserializeFormField = (data: any): FormField => {
-  const validation = data.validation ? new FillableFormFieldValidation(data.validation.required) : new FillableFormFieldValidation(false);
+  const getValidation = (data: any, fieldType: FieldType) => {
+    if (!data.validation) {
+      return fieldType === FieldType.TEXT_INPUT_FIELD || fieldType === FieldType.TEXT_AREA_FIELD
+        ? new TextFieldValidation(false)
+        : new FillableFormFieldValidation(false);
+    }
+    
+    if (fieldType === FieldType.TEXT_INPUT_FIELD || fieldType === FieldType.TEXT_AREA_FIELD) {
+      return new TextFieldValidation(
+        data.validation.required || false,
+        data.validation.minLength,
+        data.validation.maxLength
+      );
+    }
+    
+    return new FillableFormFieldValidation(data.validation.required || false);
+  };
   
   switch (data.type || data.__type) {
     case FieldType.TEXT_INPUT_FIELD:
@@ -285,7 +322,7 @@ export const deserializeFormField = (data: any): FormField => {
         data.prefix || '',
         data.hint || '',
         data.placeholder || '',
-        validation
+        getValidation(data, FieldType.TEXT_INPUT_FIELD) as TextFieldValidation
       );
     case FieldType.TEXT_AREA_FIELD:
       return new TextAreaField(
@@ -295,7 +332,7 @@ export const deserializeFormField = (data: any): FormField => {
         data.prefix || '',
         data.hint || '',
         data.placeholder || '',
-        validation
+        getValidation(data, FieldType.TEXT_AREA_FIELD) as TextFieldValidation
       );
     case FieldType.EMAIL_FIELD:
       return new EmailField(
@@ -305,7 +342,7 @@ export const deserializeFormField = (data: any): FormField => {
         data.prefix || '',
         data.hint || '',
         data.placeholder || '',
-        validation
+        getValidation(data, FieldType.EMAIL_FIELD) as FillableFormFieldValidation
       );
     case FieldType.NUMBER_FIELD:
       return new NumberField(
@@ -315,7 +352,7 @@ export const deserializeFormField = (data: any): FormField => {
         data.prefix || '',
         data.hint || '',
         data.placeholder || '',
-        validation,
+        getValidation(data, FieldType.NUMBER_FIELD) as FillableFormFieldValidation,
         data.min,
         data.max
       );
@@ -327,7 +364,7 @@ export const deserializeFormField = (data: any): FormField => {
         data.prefix || '',
         data.hint || '',
         data.placeholder || '',
-        validation,
+        getValidation(data, FieldType.SELECT_FIELD) as FillableFormFieldValidation,
         data.options || [],
         data.multiple || false
       );
@@ -339,7 +376,7 @@ export const deserializeFormField = (data: any): FormField => {
         data.prefix || '',
         data.hint || '',
         data.placeholder || '',
-        validation,
+        getValidation(data, FieldType.RADIO_FIELD) as FillableFormFieldValidation,
         data.options || []
       );
     case FieldType.CHECKBOX_FIELD:
@@ -350,7 +387,7 @@ export const deserializeFormField = (data: any): FormField => {
         data.prefix || '',
         data.hint || '',
         data.placeholder || '',
-        validation,
+        getValidation(data, FieldType.CHECKBOX_FIELD) as FillableFormFieldValidation,
         data.options || []
       );
     case FieldType.DATE_FIELD:
@@ -361,7 +398,7 @@ export const deserializeFormField = (data: any): FormField => {
         data.prefix || '',
         data.hint || '',
         data.placeholder || '',
-        validation,
+        getValidation(data, FieldType.DATE_FIELD) as FillableFormFieldValidation,
         data.minDate,
         data.maxDate
       );
