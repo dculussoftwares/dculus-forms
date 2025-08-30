@@ -371,22 +371,33 @@ class CollaborationManager {
       if (!fieldsArray) return;
 
       const fieldsObserver = () => {
-        console.log('📡 Fields changed');
+        console.log('📡 Fields array changed');
         this.updateFromYJS();
+        // Re-establish field observers for newly added fields
+        this.setupIndividualFieldObservers(fieldsArray);
       };
 
       fieldsArray.observe(fieldsObserver);
       this.observerCleanups.push(() => fieldsArray.unobserve(fieldsObserver));
 
-      fieldsArray.toArray().forEach(fieldMap => {
-        const fieldObserver = () => {
-          console.log('📡 Field properties changed');
-          this.updateFromYJS();
-        };
+      // Set up initial field observers
+      this.setupIndividualFieldObservers(fieldsArray);
+    });
+  }
 
-        fieldMap.observe(fieldObserver);
-        this.observerCleanups.push(() => fieldMap.unobserve(fieldObserver));
-      });
+  private setupIndividualFieldObservers(fieldsArray: Y.Array<Y.Map<any>>): void {
+    fieldsArray.toArray().forEach(fieldMap => {
+      // Check if we already have an observer for this field
+      const fieldId = fieldMap.get('id');
+      if (!fieldId) return;
+
+      const fieldObserver = () => {
+        console.log(`📡 Field ${fieldId} properties changed`);
+        this.updateFromYJS();
+      };
+
+      fieldMap.observe(fieldObserver);
+      this.observerCleanups.push(() => fieldMap.unobserve(fieldObserver));
     });
   }
 

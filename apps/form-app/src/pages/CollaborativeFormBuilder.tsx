@@ -126,14 +126,16 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
     const selectedField = getSelectedField();
     if (!selectedField) return;
 
-    const pageWithField = pages.find(page => 
+    // Get current pages from store to ensure we have the latest state
+    const currentPages = useFormBuilderStore.getState().pages;
+    const pageWithField = currentPages.find(page => 
       page.fields.some(field => field.id === selectedField.id)
     );
     
     if (pageWithField) {
       updateField(pageWithField.id, selectedField.id, updates);
     }
-  }, [getSelectedField, pages, updateField]);
+  }, [getSelectedField, updateField]);
 
   const handleFieldDeselect = useCallback(() => {
     setSelectedField(null);
