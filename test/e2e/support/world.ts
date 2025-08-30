@@ -1,5 +1,6 @@
 import { setWorldConstructor, World, IWorldOptions } from '@cucumber/cucumber';
 import { Browser, BrowserContext, Page, chromium } from 'playwright';
+import fs from 'fs';
 
 export interface E2EWorld extends World {
   browser?: Browser;
@@ -12,6 +13,7 @@ export interface E2EWorld extends World {
   
   // Methods that will be used in hooks and steps
   initializeBrowser(): Promise<void>;
+  initializeBrowserWithSharedAuth(sharedBrowser?: Browser, storageStatePath?: string): Promise<void>;
   navigateToPage(path: string): Promise<void>;
   waitForPageReady(): Promise<void>;
   fillFormField(fieldLabel: string, value: string): Promise<void>;
@@ -26,6 +28,7 @@ export interface E2EWorld extends World {
   getTestData(key: string): any;
   generateTestEmail(): string;
   generateTestOrganization(): string;
+  createFreshUserAuthentication(): Promise<void>;
   cleanup(): Promise<void>;
 }
 
@@ -62,6 +65,32 @@ export class E2EWorldConstructor extends World implements E2EWorld {
         ignoreHTTPSErrors: true,
       });
     }
+
+    if (!this.page) {
+      this.page = await this.context.newPage();
+      
+      // Set longer timeouts for e2e tests
+      this.page.setDefaultTimeout(30000);
+      this.page.setDefaultNavigationTimeout(30000);
+    }
+  }
+
+  /**
+   * Initialize browser context with shared browser instance
+   */
+  async initializeBrowserWithSharedAuth(sharedBrowser?: Browser, storageStatePath?: string): Promise<void> {
+    if (!sharedBrowser) {
+      // Fallback to regular initialization if shared browser not available
+      return this.initializeBrowser();
+    }
+
+    this.browser = sharedBrowser;
+
+    // Create new context (fresh for each scenario)
+    this.context = await this.browser.newContext({
+      viewport: { width: 1920, height: 1080 },
+      ignoreHTTPSErrors: true,
+    });
 
     if (!this.page) {
       this.page = await this.context.newPage();
@@ -326,7 +355,64 @@ export class E2EWorldConstructor extends World implements E2EWorld {
   }
 
   /**
-   * Clean up resources
+   * Create fresh user authentication when shared state fails
+   */
+  async createFreshUserAuthentication(): Promise<void> {
+    if (!this.page) {
+      throw new Error('Page not initialized.');
+    }
+
+    console.log('🔄 Creating fresh user authentication...');
+    
+    // Navigate to sign up page
+    await this.navigateToPage('/signup');
+    await this.waitForPageReady();
+    
+    // Fill in the sign up form with generated test data
+    const testEmail = this.generateTestEmail();
+    const testOrganization = this.generateTestOrganization();
+    
+    this.setTestData('testEmail', testEmail);
+    this.setTestData('testOrganization', testOrganization);
+    
+    await this.fillFormField('Full Name', 'Test User');
+    await this.fillFormField('Email', testEmail);
+    await this.fillFormField('Organization Name', testOrganization);
+    await this.fillFormField('Password', 'TestPassword123!');
+    await this.fillFormField('Confirm Password', 'TestPassword123!');
+    
+    // Click create account
+    await this.clickButton('Create account');
+    
+    // Wait for successful signup redirect
+    await this.page.waitForTimeout(3000);
+    
+    // Navigate to sign in page
+    await this.navigateToPage('/signin');
+    await this.waitForPageReady();
+    
+    // Fill in sign in form with stored credentials
+    await this.fillFormField('Email', testEmail);
+    await this.fillFormField('Password', 'TestPassword123!');
+    
+    // Click sign in
+    await this.clickButton('Sign in');
+    
+    // Wait for successful signin
+    await this.page.waitForTimeout(2000);
+    
+    // Verify we're successfully signed in - should not be on signin page anymore
+    const currentUrl = this.page.url();
+    const isOnSignInPage = currentUrl.includes('/signin');
+    if (isOnSignInPage) {
+      throw new Error('Fresh authentication failed - still on signin page');
+    }
+    
+    console.log('✅ Fresh user authentication completed');
+  }
+
+  /**
+   * Clean up resources (but keep shared browser alive)
    */
   async cleanup(): Promise<void> {
     if (this.page) {
@@ -339,10 +425,9 @@ export class E2EWorldConstructor extends World implements E2EWorld {
       this.context = undefined;
     }
 
-    if (this.browser) {
-      await this.browser.close();
-      this.browser = undefined;
-    }
+    // Don't close browser - it's shared across scenarios
+    // The shared browser will be closed in AfterAll hook
+    this.browser = undefined;
 
     // Clear test data
     this.testData = {};

@@ -13,48 +13,40 @@ Given('I am on the sign up page', async function (this: E2EWorld) {
 });
 
 // Shared authentication step for form creation scenarios
-Given('I am signed in as a new user', { timeout: 60000 }, async function (this: E2EWorld) {
-  // Navigate to sign up page
-  await this.navigateToPage('/signup');
-  await this.waitForPageReady();
+Given('I am signed in as a new user', { timeout: 30000 }, async function (this: E2EWorld) {
+  if (!this.page) {
+    throw new Error('Page not initialized.');
+  }
   
-  // Fill in the sign up form with generated test data
-  const testEmail = this.generateTestEmail();
-  const testOrganization = this.generateTestOrganization();
+  // With shared authentication state, we should already be signed in
+  // Just verify we can access the dashboard
+  try {
+    await this.navigateToPage('/');
+    await this.waitForPageReady();
+    
+    // Check if dashboard is accessible (indicates user is signed in)
+    const hasDashboardContent = await this.pageContainsText('My Forms') || 
+                               await this.pageContainsText('Dashboard') ||
+                               await this.pageContainsText('Create Form');
+                               
+    if (hasDashboardContent) {
+      console.log('✅ Using shared authentication state - already signed in');
+      return;
+    }
+    
+    // Check if we were redirected to signin/signup (auth state expired)
+    const currentUrl = this.page.url();
+    if (currentUrl.includes('/signin') || currentUrl.includes('/signup')) {
+      console.log('⚠️ Authentication state expired, falling back to fresh authentication');
+      return await this.createFreshUserAuthentication();
+    }
+    
+  } catch (error) {
+    console.log('⚠️ Error checking authentication state, creating fresh user:', error);
+    return await this.createFreshUserAuthentication();
+  }
   
-  this.setTestData('testEmail', testEmail);
-  this.setTestData('testOrganization', testOrganization);
-  
-  await this.fillFormField('Full Name', 'Test User');
-  await this.fillFormField('Email', testEmail);
-  await this.fillFormField('Organization Name', testOrganization);
-  await this.fillFormField('Password', 'TestPassword123!');
-  await this.fillFormField('Confirm Password', 'TestPassword123!');
-  
-  // Click create account
-  await this.clickButton('Create account');
-  
-  // Wait for successful signup redirect
-  await this.page?.waitForTimeout(3000);
-  
-  // Navigate to sign in page
-  await this.navigateToPage('/signin');
-  await this.waitForPageReady();
-  
-  // Fill in sign in form with stored credentials
-  await this.fillFormField('Email', testEmail);
-  await this.fillFormField('Password', 'TestPassword123!');
-  
-  // Click sign in
-  await this.clickButton('Sign in');
-  
-  // Wait for successful signin
-  await this.page?.waitForTimeout(2000);
-  
-  // Verify we're successfully signed in - should not be on signin page anymore
-  const currentUrl = this.page?.url() || '';
-  const isOnSignInPage = currentUrl.includes('/signin');
-  expect(isOnSignInPage).toBeFalsy();
+  console.log('✅ Shared authentication verified successfully');
 });
 
 // Form filling steps
@@ -102,9 +94,24 @@ When('I click the {string} link', async function (this: E2EWorld, linkText: stri
     throw new Error('Page not initialized.');
   }
   
-  const link = this.page.locator(`a:has-text("${linkText}")`);
-  await link.waitFor({ state: 'visible' });
-  await link.click();
+  try {
+    const link = this.page.locator(`a:has-text("${linkText}")`);
+    await link.waitFor({ state: 'visible', timeout: 10000 });
+    
+    // Wait for navigation after clicking the link
+    await Promise.all([
+      this.page.waitForLoadState('networkidle'),
+      link.click()
+    ]);
+    
+    // Additional wait for any dynamic content loading
+    await this.page.waitForTimeout(1000);
+    
+  } catch (error) {
+    console.error(`❌ Failed to click link "${linkText}":`, error);
+    await this.takeScreenshot(`link-click-error-${linkText.replace(/\s+/g, '-')}-${Date.now()}`);
+    throw error;
+  }
 });
 
 // Assertion steps

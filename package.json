@@ -44,8 +44,8 @@
     "test:e2e": "./test/e2e/scripts/run-e2e-tests.sh",
     "test:e2e:dev": "TS_NODE_PROJECT=test/e2e/tsconfig.json cucumber-js 'test/e2e/features/*.feature' --require-module ts-node/register --require test/e2e/support/world.ts --require test/e2e/support/hooks.ts --require 'test/e2e/step-definitions/*.steps.ts'",
     "test:e2e:headed": "TS_NODE_PROJECT=test/e2e/tsconfig.json PLAYWRIGHT_HEADLESS=false cucumber-js 'test/e2e/features/*.feature' --require-module ts-node/register --require test/e2e/support/world.ts --require test/e2e/support/hooks.ts --require 'test/e2e/step-definitions/*.steps.ts'",
-    "test:e2e:form-creation": "TS_NODE_PROJECT=test/e2e/tsconfig.json cucumber-js 'test/e2e/features/*.feature' --require-module ts-node/register --require test/e2e/support/world.ts --require test/e2e/support/hooks.ts --require 'test/e2e/step-definitions/*.steps.ts' --tags '@FieldSidebarDrag'",
-    "test:e2e:form-creation:headed": "TS_NODE_PROJECT=test/e2e/tsconfig.json PLAYWRIGHT_HEADLESS=false cucumber-js 'test/e2e/features/*.feature' --require-module ts-node/register --require test/e2e/support/world.ts --require test/e2e/support/hooks.ts --require 'test/e2e/step-definitions/*.steps.ts' --tags '@FieldSidebarDrag'"
+    "test:e2e:form-creation": "TS_NODE_PROJECT=test/e2e/tsconfig.json cucumber-js 'test/e2e/features/*.feature' --require-module ts-node/register --require test/e2e/support/world.ts --require test/e2e/support/hooks.ts --require 'test/e2e/step-definitions/*.steps.ts' --tags '@FormCreation'",
+    "test:e2e:form-creation:headed": "TS_NODE_PROJECT=test/e2e/tsconfig.json PLAYWRIGHT_HEADLESS=false cucumber-js 'test/e2e/features/*.feature' --require-module ts-node/register --require test/e2e/support/world.ts --require test/e2e/support/hooks.ts --require 'test/e2e/step-definitions/*.steps.ts' --tags '@FormCreation'"
   },
   "devDependencies": {
     "@cucumber/cucumber": "12.2.0",

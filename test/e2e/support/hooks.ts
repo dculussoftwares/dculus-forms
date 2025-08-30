@@ -2,12 +2,19 @@ import { Before, After, BeforeAll, AfterAll, Status } from '@cucumber/cucumber';
 import { spawn, ChildProcess } from 'child_process';
 import axios from 'axios';
 import path from 'path';
+import fs from 'fs';
+import { Browser, chromium } from 'playwright';
 import { E2EWorld } from './world';
 import { HealthCheckUtils } from '../utils/health-check-utils';
 
 const healthCheck = new HealthCheckUtils();
 let backendProcess: ChildProcess;
 let frontendProcess: ChildProcess;
+
+// Shared browser instance for optimization
+let sharedBrowser: Browser | undefined;
+let authStorageState: string | undefined;
+const storageStatePath = path.join(__dirname, '../reports/auth-state.json');
 
 const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -47,11 +54,93 @@ const isPortInUse = (port: number): Promise<boolean> => {
   });
 };
 
-// Global setup - start services automatically
-BeforeAll(async function () {
+// Create shared authentication state once for all scenarios
+const createSharedAuthenticationState = async (): Promise<void> => {
+  if (!sharedBrowser) {
+    throw new Error('Shared browser not initialized');
+  }
+  
+  console.log('🔐 Creating shared authentication state...');
+  
+  // Create temporary context for authentication
+  const tempContext = await sharedBrowser.newContext({
+    viewport: { width: 1920, height: 1080 },
+    ignoreHTTPSErrors: true,
+  });
+  
+  const tempPage = await tempContext.newPage();
+  tempPage.setDefaultTimeout(30000);
+  tempPage.setDefaultNavigationTimeout(30000);
+  
+  try {
+    // Generate test credentials
+    const testEmail = `shared-test-user-${Date.now()}@example.com`;
+    const testOrganization = `Shared Test Org ${Date.now()}`;
+    const testPassword = 'TestPassword123!';
+    
+    // Get the actual frontend URL (could be on different port)
+    const frontendUrl = process.env.E2E_BASE_URL || 'http://localhost:3000';
+    
+    // Navigate to sign up page
+    await tempPage.goto(`${frontendUrl}/signup`, { waitUntil: 'networkidle' });
+    
+    // Fill registration form
+    await tempPage.locator('#name').fill('Shared Test User');
+    await tempPage.locator('#email').fill(testEmail);
+    await tempPage.locator('#organizationName').fill(testOrganization);
+    await tempPage.locator('#password').fill(testPassword);
+    await tempPage.locator('#confirmPassword').fill(testPassword);
+    
+    // Submit registration
+    await tempPage.locator('button:has-text(\"Create account\")').click();
+    await tempPage.waitForTimeout(3000);
+    
+    // Navigate to sign in page
+    await tempPage.goto(`${frontendUrl}/signin`, { waitUntil: 'networkidle' });
+    
+    // Sign in
+    await tempPage.locator('#email').fill(testEmail);
+    await tempPage.locator('#password').fill(testPassword);
+    await tempPage.locator('button:has-text(\"Sign in\")').click();
+    
+    // Wait for successful signin and verify dashboard
+    await tempPage.waitForTimeout(2000);
+    await tempPage.waitForLoadState('networkidle');
+    
+    // Verify we're on dashboard
+    const currentUrl = tempPage.url();
+    if (currentUrl.includes('/signin')) {
+      throw new Error('Failed to authenticate - still on signin page');
+    }
+    
+    // Save authentication state
+    await tempContext.storageState({ path: storageStatePath });
+    authStorageState = storageStatePath;
+    
+    console.log('✅ Shared authentication state created and saved');
+    console.log(`📧 Test user email: ${testEmail}`);
+    
+  } catch (error) {
+    console.error('❌ Failed to create shared authentication state:', error);
+    throw error;
+  } finally {
+    await tempContext.close();
+  }
+};
+
+// Global setup - start services and shared browser
+BeforeAll({ timeout: 120000 }, async function () {
   console.log('🚀 Starting E2E test suite with auto-service management...');
   
   const rootDir = path.resolve(process.cwd());
+  
+  // Initialize shared browser instance
+  console.log('🌐 Initializing shared browser instance...');
+  sharedBrowser = await chromium.launch({
+    headless: process.env.PLAYWRIGHT_HEADLESS !== 'false',
+    slowMo: process.env.PLAYWRIGHT_SLOW_MO ? parseInt(process.env.PLAYWRIGHT_SLOW_MO) : 0,
+  });
+  console.log('✅ Shared browser initialized');
   
   // Check if services are already running
   const backendInUse = await isPortInUse(4000);
@@ -139,9 +228,12 @@ BeforeAll(async function () {
     console.error('❌ Failed to start services:', error);
     throw error;
   }
+  
+  // Authentication state will be created per scenario but with shared browser
+  console.log('✅ Shared browser ready for scenarios (authentication per scenario)');
 });
 
-// Before each scenario - initialize browser
+// Before each scenario - initialize browser context with shared authentication
 Before(async function (this: E2EWorld, scenario) {
   const scenarioName = scenario.pickle?.name || 'Unknown scenario';
   console.log(`🎬 Starting scenario: "${scenarioName}"`);
@@ -149,10 +241,10 @@ Before(async function (this: E2EWorld, scenario) {
   // Store scenario info in world for later use
   this.pickle = scenario.pickle;
   
-  // Initialize browser and page
-  await this.initializeBrowser();
+  // Initialize browser context with shared browser (no auth state initially)
+  await this.initializeBrowserWithSharedAuth(sharedBrowser);
   
-  console.log('✅ Browser initialized for scenario');
+  console.log('✅ Browser context initialized with shared authentication');
 });
 
 // After each scenario - cleanup and take screenshot on failure
@@ -217,4 +309,25 @@ AfterAll({ timeout: 30000 }, async function () {
   }
   
   console.log('✅ Service cleanup completed');
+  
+  // Close shared browser instance
+  if (sharedBrowser) {
+    console.log('🌐 Closing shared browser instance...');
+    try {
+      await sharedBrowser.close();
+      console.log('✅ Shared browser closed');
+    } catch (error) {
+      console.log('⚠️ Error closing shared browser:', error);
+    }
+  }
+  
+  // Clean up authentication state file
+  if (fs.existsSync(storageStatePath)) {
+    try {
+      fs.unlinkSync(storageStatePath);
+      console.log('🗑️ Authentication state file cleaned up');
+    } catch (error) {
+      console.log('⚠️ Error cleaning up auth state file:', error);
+    }
+  }
 });
