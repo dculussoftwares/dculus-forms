@@ -46,7 +46,8 @@
       "Bash(TS*)",
       "Bash(TS_NODE_PROJECT=*)",
       "Bash(TS_NODE_PROJECT=*):*",
-      "Bash(TS_NODE_PROJECT=* *)"
+      "Bash(pnpm type-check*)",
+      "Bash(cd *)"
     ],
     "deny": []
   }
