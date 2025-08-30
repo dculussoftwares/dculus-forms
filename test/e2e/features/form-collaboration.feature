@@ -243,3 +243,94 @@ Feature: Form Collaboration
     When I select the "Personal Information" page from the sidebar
     Then I should see 7 fields in the Personal Information page
     And the added fields should be persisted correctly
+
+  @PageAddition @Collaboration
+  Scenario: Add new page to collaborative form builder
+    When I click the "Create Form" button on dashboard
+    Then I should be redirected to templates page
+    When I select the "Event Registration" template
+    And I fill in the form creation details:
+      | Field Name    | Value                                    |
+      | Form Title    | Page Addition Test Form                  |
+      | Description   | Testing add page functionality          |
+    And I click the "Create Form" button in the template popover
+    Then I should be redirected to the form builder page
+    When I navigate back to form dashboard
+    And I click the Start Collaborating button in Quick Actions
+    Then I should see the collaborative form builder interface
+    And I should see 2 pages in the pages sidebar
+    When I click the Add Page button
+    Then I should see 3 pages in the pages sidebar
+    And I should see the new page in position 3
+    And the new page should have a default title
+    And I should be automatically navigated to the new page
+
+  @PageAddition @Collaboration @PageNaming
+  Scenario: Add multiple pages and verify naming
+    When I click the "Create Form" button on dashboard
+    Then I should be redirected to templates page
+    When I select the "Event Registration" template
+    And I fill in the form creation details:
+      | Field Name    | Value                                    |
+      | Form Title    | Multiple Page Addition Test              |
+      | Description   | Testing multiple page addition          |
+    And I click the "Create Form" button in the template popover
+    Then I should be redirected to the form builder page
+    When I navigate back to form dashboard
+    And I click the Start Collaborating button in Quick Actions
+    Then I should see the collaborative form builder interface
+    And I should see 2 pages in the pages sidebar
+    When I click the Add Page button
+    Then I should see 3 pages in the pages sidebar
+    When I click the Add Page button
+    Then I should see 4 pages in the pages sidebar
+    When I click the Add Page button
+    Then I should see 5 pages in the pages sidebar
+    And I should see pages with incremental naming pattern
+
+  @PageAddition @Collaboration @PagePersistence
+  Scenario: Verify page addition persistence after refresh
+    When I click the "Create Form" button on dashboard
+    Then I should be redirected to templates page
+    When I select the "Event Registration" template
+    And I fill in the form creation details:
+      | Field Name    | Value                                    |
+      | Form Title    | Page Addition Persistence Test           |
+      | Description   | Testing page addition persistence       |
+    And I click the "Create Form" button in the template popover
+    Then I should be redirected to the form builder page
+    When I navigate back to form dashboard
+    And I click the Start Collaborating button in Quick Actions
+    Then I should see the collaborative form builder interface
+    And I should see 2 pages in the pages sidebar
+    When I click the Add Page button
+    Then I should see 3 pages in the pages sidebar
+    When I click the Add Page button
+    Then I should see 4 pages in the pages sidebar
+    When I refresh the page
+    Then I should see the collaborative form builder interface
+    And I should see 4 pages in the pages sidebar
+    And the added pages should be persisted correctly
+
+  @PageAddition @Collaboration @PageInteraction
+  Scenario: Add page and interact with new page content
+    When I click the "Create Form" button on dashboard
+    Then I should be redirected to templates page
+    When I select the "Event Registration" template
+    And I fill in the form creation details:
+      | Field Name    | Value                                    |
+      | Form Title    | Page Interaction Test Form               |
+      | Description   | Testing new page interaction            |
+    And I click the "Create Form" button in the template popover
+    Then I should be redirected to the form builder page
+    When I navigate back to form dashboard
+    And I click the Start Collaborating button in Quick Actions
+    Then I should see the collaborative form builder interface
+    And I should see 2 pages in the pages sidebar
+    When I click the Add Page button
+    Then I should see 3 pages in the pages sidebar
+    When I select the new page from the sidebar
+    Then I should see an empty page with no fields
+    When I drag "Short Text" field type from sidebar to the page
+    Then I should see a new "Short Text" field added to the page
+    And I should see 1 fields in the new page
