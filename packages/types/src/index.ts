@@ -35,6 +35,7 @@
  * - Updated TextInputField and TextAreaField to use specialized validation
  * - Enhanced deserialization to handle character limits
  * - Updated seed templates to use new validation structure
+ * - Added TEXT_FIELD_VALIDATION type for specialized validation objects
  */
 
 // Form related types
@@ -133,7 +134,7 @@ export class FillableFormFieldValidation {
   type: FieldType;
   constructor(required: boolean) {
     this.required = required;
-    this.type = FieldType.FORM_FIELD;
+    this.type = FieldType.FILLABLE_FORM_FIELD;
   }
 }
 
@@ -156,6 +157,7 @@ export class TextFieldValidation extends FillableFormFieldValidation {
     maxLength?: number
   ) {
     super(required);
+    this.type = FieldType.TEXT_FIELD_VALIDATION;
     this.minLength = minLength;
     this.maxLength = maxLength;
   }
@@ -400,6 +402,7 @@ export enum FieldType {
   DATE_FIELD = 'date_field',
   FORM_FIELD = 'form_field',
   FILLABLE_FORM_FIELD = 'fillable_form_field',
+  TEXT_FIELD_VALIDATION = 'text_field_validation',
 }
 
 /**

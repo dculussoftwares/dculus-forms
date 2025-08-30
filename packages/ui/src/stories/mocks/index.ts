@@ -323,12 +323,12 @@ export const createRealFormPages = (): FormPage[] => {
 // Mock validation objects
 const requiredValidation: FillableFormFieldValidation = {
   required: true,
-  type: FieldType.TEXT_INPUT_FIELD
+  type: FieldType.FILLABLE_FORM_FIELD
 };
 
 const optionalValidation: FillableFormFieldValidation = {
   required: false,
-  type: FieldType.TEXT_INPUT_FIELD
+  type: FieldType.FILLABLE_FORM_FIELD
 };
 
 // Sample form fields
