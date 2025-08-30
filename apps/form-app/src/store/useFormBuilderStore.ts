@@ -18,6 +18,7 @@ import {
   DateField,
   FillableFormField,
   FillableFormFieldValidation,
+  TextFieldValidation,
   deserializeFormField,
   ThemeType,
   SpacingType,
@@ -40,6 +41,7 @@ type FieldData = {
   max?: number;
   minDate?: string;
   maxDate?: string;
+  validation?: any;
 };
 
 interface FormBuilderState {
@@ -71,7 +73,7 @@ interface FormBuilderState {
   duplicatePage: (pageId: string) => void;
   addField: (pageId: string, fieldType: FieldType, fieldData?: Partial<FieldData>) => void;
   addFieldAtIndex: (pageId: string, fieldType: FieldType, fieldData: Partial<FieldData>, insertIndex: number) => void;
-  updateField: (pageId: string, fieldId: string, updates: Partial<FieldData>) => void;
+  updateField: (pageId: string, fieldId: string, updates: Partial<FieldData> & { validation?: any }) => void;
   removeField: (pageId: string, fieldId: string) => void;
   reorderFields: (pageId: string, oldIndex: number, newIndex: number) => void;
   reorderPages: (oldIndex: number, newIndex: number) => void;
@@ -88,7 +90,7 @@ const isFillableFormField = (field: FormField): field is FillableFormField => {
 };
 
 const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
-  return {
+  const data: FieldData = {
     id: fieldMap.get('id') || '',
     type: fieldMap.get('type') || FieldType.TEXT_INPUT_FIELD,
     label: fieldMap.get('label') || '',
@@ -104,6 +106,21 @@ const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
     minDate: fieldMap.get('minDate'),
     maxDate: fieldMap.get('maxDate'),
   };
+
+  // Extract validation object if it exists
+  const validationMap = fieldMap.get('validation') as Y.Map<any>;
+  if (validationMap && validationMap.toJSON) {
+    data.validation = validationMap.toJSON();
+  } else if (validationMap) {
+    // Fallback for manual extraction
+    const validation: any = {};
+    validationMap.forEach((value, key) => {
+      validation[key] = value;
+    });
+    data.validation = validation;
+  }
+
+  return data;
 };
 
 const createYJSFieldMap = (fieldData: FieldData): Y.Map<any> => {
@@ -116,6 +133,14 @@ const createYJSFieldMap = (fieldData: FieldData): Y.Map<any> => {
         optionsArray.push([option])
       );
       fieldMap.set('options', optionsArray);
+    } else if (key === 'validation' && value && typeof value === 'object') {
+      const validationMap = new Y.Map();
+      Object.entries(value).forEach(([validationKey, validationValue]) => {
+        if (validationValue !== undefined) {
+          validationMap.set(validationKey, validationValue);
+        }
+      });
+      fieldMap.set('validation', validationMap);
     } else if (value !== undefined) {
       fieldMap.set(key, value);
     }
@@ -141,7 +166,6 @@ const generateUniqueId = (): string => {
 
 const createFormField = (fieldType: FieldType, fieldData: Partial<FieldData> = {}): FormField => {
   const fieldId = generateUniqueId();
-  const validation = new FillableFormFieldValidation(fieldData.required || false);
   const config = FIELD_CONFIGS[fieldType] || { label: 'Field' };
   
   const label = fieldData.label || config.label;
@@ -149,6 +173,21 @@ const createFormField = (fieldType: FieldType, fieldData: Partial<FieldData> = {
   const prefix = fieldData.prefix || '';
   const hint = fieldData.hint || '';
   const placeholder = fieldData.placeholder || '';
+  
+  // Create appropriate validation object based on field type
+  let validation;
+  if (fieldType === FieldType.TEXT_INPUT_FIELD || fieldType === FieldType.TEXT_AREA_FIELD) {
+    // Use TextFieldValidation for text fields to support minLength/maxLength
+    const validationData = fieldData.validation || {};
+    validation = new TextFieldValidation(
+      fieldData.required || validationData.required || false,
+      validationData.minLength,
+      validationData.maxLength
+    );
+  } else {
+    // Use basic validation for other field types
+    validation = new FillableFormFieldValidation(fieldData.required || false);
+  }
   
   switch (fieldType) {
     case FieldType.TEXT_INPUT_FIELD:
@@ -221,7 +260,8 @@ const deserializePagesFromYJS = (pagesArray: Y.Array<Y.Map<any>>): FormPage[] =>
     const fields: FormField[] = fieldsArray 
       ? fieldsArray.toArray().map((fieldMap) => {
           const fieldData = extractFieldData(fieldMap);
-          const validationObj = fieldMap.get('validation') || {
+          // Use the validation object from extractFieldData if available, otherwise create a default one
+          const validationObj = fieldData.validation || {
             required: fieldData.required,
             type: fieldData.type
           };
@@ -630,7 +670,7 @@ export const useFormBuilderStore = create<FormBuilderState>()(
           }
         },
 
-        updateField: (pageId: string, fieldId: string, updates: Partial<FieldData>) => {
+        updateField: (pageId: string, fieldId: string, updates: Partial<FieldData> & { validation?: any }) => {
           const { ydoc, isConnected } = get();
           if (!ydoc || !isConnected) return;
 
@@ -656,6 +696,20 @@ export const useFormBuilderStore = create<FormBuilderState>()(
               const optionsArray = new Y.Array();
               value.filter(option => option && option.trim() !== '').forEach((option: string) => optionsArray.push([option]));
               fieldMap.set('options', optionsArray);
+            } else if (key === 'validation' && value && typeof value === 'object') {
+              // Handle validation object by setting each property individually and maintaining backward compatibility
+              const validationMap = new Y.Map();
+              Object.entries(value).forEach(([validationKey, validationValue]) => {
+                if (validationValue !== undefined) {
+                  validationMap.set(validationKey, validationValue);
+                }
+              });
+              fieldMap.set('validation', validationMap);
+              
+              // Also set the required field at the top level for backward compatibility
+              if (value.required !== undefined) {
+                fieldMap.set('required', value.required);
+              }
             } else if (value !== undefined) {
               fieldMap.set(key, value);
             }

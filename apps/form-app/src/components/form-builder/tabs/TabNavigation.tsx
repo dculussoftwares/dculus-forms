@@ -116,6 +116,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                       onKeyDown={(e) => handleKeyDown(e, tab.id)}
                       onMouseEnter={() => setHoveredTab(tab.id)}
                       onMouseLeave={() => setHoveredTab(null)}
+                      data-testid={`${tab.id}-tab`}
                       className={`
                         relative flex items-center justify-center w-12 h-12 rounded-xl
                         transition-all duration-300 ease-out transform

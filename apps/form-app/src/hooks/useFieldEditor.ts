@@ -139,6 +139,19 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
     }
   }, [field?.id, reset, extractFieldData]);
 
+  // Also update form when field properties change (for existing fields)
+  useEffect(() => {
+    if (field && field.id === initializedFieldRef.current) {
+      const formData = extractFieldData(field);
+      // Only reset if the field data has actually changed to prevent unnecessary resets
+      const currentValues = getValues();
+      const hasChanged = JSON.stringify(formData) !== JSON.stringify(currentValues);
+      if (hasChanged) {
+        reset(formData);
+      }
+    }
+  }, [field, reset, extractFieldData, getValues]);
+
   // Save form data
   const handleSave = useCallback(handleSubmit(async (data) => {
     if (!field) return;

@@ -11,6 +11,10 @@ export const useFieldCreation = () => {
       defaultValue: '',
       prefix: '',
       hint: '',
+      validation: {
+        required: false,
+        type: fieldType.type,
+      },
     };
 
     // Add type-specific default data
@@ -23,6 +27,22 @@ export const useFieldCreation = () => {
         ...baseData,
         options: ['Option 1', 'Option 2'],
         ...(fieldType.type === FieldType.SELECT_FIELD ? { multiple: false } : {}),
+      };
+    }
+
+    // Add text field specific validation properties
+    if (
+      fieldType.type === FieldType.TEXT_INPUT_FIELD ||
+      fieldType.type === FieldType.TEXT_AREA_FIELD
+    ) {
+      return {
+        ...baseData,
+        validation: {
+          required: false,
+          type: fieldType.type,
+          minLength: undefined,
+          maxLength: undefined,
+        },
       };
     }
 

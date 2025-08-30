@@ -26,6 +26,7 @@ export const PrefixSettings: React.FC<PrefixSettingsProps> = ({
           <Input
             {...field}
             id="field-prefix"
+            data-testid="field-prefix-input"
             placeholder="e.g., $, @"
             disabled={!isConnected}
             className="text-sm"

@@ -27,6 +27,7 @@ export const CharacterLimitSettings: React.FC<CharacterLimitSettingsProps> = ({
             <Input
               {...field}
               id="field-min-length"
+              data-testid="field-min-length-input"
               type="number"
               min="0"
               placeholder="No minimum"
@@ -54,6 +55,7 @@ export const CharacterLimitSettings: React.FC<CharacterLimitSettingsProps> = ({
             <Input
               {...field}
               id="field-max-length"
+              data-testid="field-max-length-input"
               type="number"
               min="1"
               placeholder="No maximum"

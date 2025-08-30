@@ -23,6 +23,7 @@ export const ValidationSettings: React.FC<ValidationSettingsProps> = ({
             <input
               type="checkbox"
               id="field-required"
+              data-testid="field-required-toggle"
               checked={field.value || false}
               onChange={field.onChange}
               disabled={!isConnected}
