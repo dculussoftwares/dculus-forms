@@ -36,7 +36,7 @@ const FIELD_TYPE_LABELS: Partial<Record<FieldType, string>> = {
   [FieldType.EMAIL_FIELD]: 'Email',
   [FieldType.NUMBER_FIELD]: 'Number',
   [FieldType.SELECT_FIELD]: 'Dropdown',
-  [FieldType.RADIO_FIELD]: 'Multiple Choice',
+  [FieldType.RADIO_FIELD]: 'Radio',
   [FieldType.CHECKBOX_FIELD]: 'Checkbox',
   [FieldType.DATE_FIELD]: 'Date',
   [FieldType.FORM_FIELD]: 'Form Field',

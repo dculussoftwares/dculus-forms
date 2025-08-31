@@ -69,7 +69,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
       case FieldType.SELECT_FIELD:
         return 'Dropdown';
       case FieldType.RADIO_FIELD:
-        return 'Multiple Choice';
+        return 'Radio';
       case FieldType.CHECKBOX_FIELD:
         return 'Checkbox';
       case FieldType.DATE_FIELD:

@@ -69,7 +69,7 @@ export const FIELD_TYPES: FieldTypeConfig[] = [
   },
   {
     type: FieldType.RADIO_FIELD,
-    label: 'Multiple Choice',
+    label: 'Radio',
     description: 'Select one option',
     icon: <Circle className="w-5 h-5" />,
     category: 'choice'

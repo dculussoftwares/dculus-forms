@@ -1182,7 +1182,7 @@ Then('I should see a new {string} field added to the page', async function (this
         attributeCheck: (attr: string) => attr === 'SelectField',
         inputTypeCheck: (_type: string) => true
       },
-      'Multiple Choice': {
+      'Radio': {
         patterns: [/Multiple Choice|Radio/i],
         attributeCheck: (attr: string) => attr === 'RadioField',
         inputTypeCheck: (type: string) => type === 'radio'
@@ -1318,7 +1318,7 @@ Then('I should see the {string} field in position {int}', async function (this: 
         attributeCheck: (attr: string) => attr === 'SelectField',
         inputTypeCheck: (_type: string) => true // select doesn't have type attribute
       },
-      'Multiple Choice': {
+      'Radio': {
         patterns: [/Multiple Choice|Radio/i],
         attributeCheck: (attr: string) => attr === 'RadioField',
         inputTypeCheck: (type: string) => type === 'radio'

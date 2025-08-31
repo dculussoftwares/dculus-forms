@@ -13,7 +13,7 @@ This implementation adds comprehensive E2E tests for dragging field types from t
 - **Format**: `data-testid="field-type-{fieldType.label.replace(/\s+/g, '-').toLowerCase()}"`
 - **Examples**: 
   - `field-type-short-text` (for "Short Text")
-  - `field-type-multiple-choice` (for "Multiple Choice")
+  - `field-type-multiple-choice` (for "Radio")
   - `field-type-email` (for "Email")
 
 ### 2. E2E Test Scenarios
@@ -24,7 +24,7 @@ Added **3 comprehensive test scenarios**:
 
 #### A. **Basic Field Addition** (`@FieldSidebarDrag @Collaboration`)
 - **Purpose**: Test dragging all 8 field types from sidebar to Personal Information page
-- **Coverage**: All field types: Short Text, Long Text, Email, Number, Date, Dropdown, Multiple Choice, Checkbox
+- **Coverage**: All field types: Short Text, Long Text, Email, Number, Date, Dropdown, Radio, Checkbox
 - **Verification**: Field creation, field count incrementation, proper field display
 
 #### B. **Strategic Field Insertion** (`@FieldSidebarDrag @Collaboration @FieldInsertion`)
@@ -90,7 +90,7 @@ Then('the added fields should be persisted correctly', ...)
 | Number | `field-type-number` | `/Number/i` |
 | Date | `field-type-date` | `/Date/i` |
 | Dropdown | `field-type-dropdown` | `/Dropdown\|Select/i` |
-| Multiple Choice | `field-type-multiple-choice` | `/Multiple Choice\|Radio/i` |
+| Radio | `field-type-multiple-choice` | `/Multiple Choice\|Radio/i` |
 | Checkbox | `field-type-checkbox` | `/Checkbox/i` |
 
 ## Running the Tests

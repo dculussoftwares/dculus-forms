@@ -182,8 +182,8 @@ Feature: Form Collaboration
     When I drag "Dropdown" field type from sidebar to the page
     Then I should see a new "Dropdown" field added to the page
     And I should see 9 fields in the Personal Information page
-    When I drag "Multiple Choice" field type from sidebar to the page
-    Then I should see a new "Multiple Choice" field added to the page
+    When I drag "Radio" field type from sidebar to the page
+    Then I should see a new "Radio" field added to the page
     And I should see 10 fields in the Personal Information page
     When I drag "Checkbox" field type from sidebar to the page
     Then I should see a new "Checkbox" field added to the page
