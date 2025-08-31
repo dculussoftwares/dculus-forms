@@ -15,8 +15,14 @@ export const baseFieldValidationSchema = z.object({
 export const textInputFieldValidationSchema = baseFieldValidationSchema.extend({
   validation: z.object({
     required: z.boolean().default(false),
-    minLength: z.number().min(0, 'Minimum length must be 0 or greater').optional().or(z.string().regex(/^\d*$/, 'Minimum length must be a valid number').optional()),
-    maxLength: z.number().min(1, 'Maximum length must be 1 or greater').optional().or(z.string().regex(/^\d*$/, 'Maximum length must be a valid number').optional()),
+    minLength: z.number().min(0, 'Minimum length must be 0 or greater').max(5000, 'Minimum length cannot exceed 5000 characters').optional().or(z.string().regex(/^\d*$/, 'Minimum length must be a valid number').refine(
+      (val) => !val || parseInt(val) <= 5000,
+      'Minimum length cannot exceed 5000 characters'
+    ).optional()),
+    maxLength: z.number().min(1, 'Maximum length must be 1 or greater').max(5000, 'Maximum length cannot exceed 5000 characters').optional().or(z.string().regex(/^\d*$/, 'Maximum length must be a valid number').refine(
+      (val) => !val || parseInt(val) <= 5000,
+      'Maximum length cannot exceed 5000 characters'
+    ).optional()),
   }).optional().refine(
     (validation) => {
       if (!validation) return true;
@@ -38,8 +44,14 @@ export const textInputFieldValidationSchema = baseFieldValidationSchema.extend({
 export const textAreaFieldValidationSchema = baseFieldValidationSchema.extend({
   validation: z.object({
     required: z.boolean().default(false),
-    minLength: z.number().min(0, 'Minimum length must be 0 or greater').optional().or(z.string().regex(/^\d*$/, 'Minimum length must be a valid number').optional()),
-    maxLength: z.number().min(1, 'Maximum length must be 1 or greater').optional().or(z.string().regex(/^\d*$/, 'Maximum length must be a valid number').optional()),
+    minLength: z.number().min(0, 'Minimum length must be 0 or greater').max(5000, 'Minimum length cannot exceed 5000 characters').optional().or(z.string().regex(/^\d*$/, 'Minimum length must be a valid number').refine(
+      (val) => !val || parseInt(val) <= 5000,
+      'Minimum length cannot exceed 5000 characters'
+    ).optional()),
+    maxLength: z.number().min(1, 'Maximum length must be 1 or greater').max(5000, 'Maximum length cannot exceed 5000 characters').optional().or(z.string().regex(/^\d*$/, 'Maximum length must be a valid number').refine(
+      (val) => !val || parseInt(val) <= 5000,
+      'Maximum length cannot exceed 5000 characters'
+    ).optional()),
   }).optional().refine(
     (validation) => {
       if (!validation) return true;
