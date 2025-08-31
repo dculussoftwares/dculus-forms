@@ -202,7 +202,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
 
       case FieldType.SELECT_FIELD:
         return (
-          <Select disabled={disabled}>
+          <Select disabled={disabled} defaultValue={fieldData.defaultValue || undefined}>
             <SelectTrigger className="text-sm">
               <SelectValue placeholder={placeholder || "Choose an option"} />
             </SelectTrigger>
@@ -233,7 +233,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
                     id={`${field.id}-${index}`}
                     name={field.id}
                     value={option}
-                    defaultChecked={defaultValue === option}
+                    defaultChecked={fieldData.defaultValue === option}
                     disabled={disabled}
                     className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 disabled:opacity-50"
                   />
