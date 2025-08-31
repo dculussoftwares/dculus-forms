@@ -1,19 +1,23 @@
 import React from 'react';
-import { Controller, Control } from 'react-hook-form';
-import { Input, Label, Textarea } from '@dculus/ui';
-import { ErrorMessage } from './ErrorMessage';
+import { Label } from '@dculus/ui';
+import { FormInputField } from './FormInputField';
 import { DefaultValueInput } from './DefaultValueInput';
+import { FIELD_SETTINGS_CONSTANTS } from './constants';
+import { WatchableSettingsProps } from './types';
 import { FormField } from '@dculus/types';
 
-interface BasicSettingsProps {
-  control: Control<any>;
-  errors: Record<string, any>;
-  isConnected: boolean;
+/**
+ * Props interface extending both base and watchable settings props
+ */
+interface BasicSettingsProps extends WatchableSettingsProps {
+  /** FormField can be null when no field is selected */
   field: FormField | null;
-  watch: (name: string) => any;
-  setValue: (name: string, value: any) => void;
 }
 
+/**
+ * Basic settings component for all field types
+ * Handles label, help text, and default value configuration
+ */
 export const BasicSettings: React.FC<BasicSettingsProps> = ({
   control,
   errors,
@@ -23,58 +27,40 @@ export const BasicSettings: React.FC<BasicSettingsProps> = ({
   setValue
 }) => {
   return (
-    <div className="space-y-4">
-      <h4 className="text-sm font-medium text-gray-900 dark:text-white">Basic Settings</h4>
+    <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_SPACING}>
+      <h4 className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_TITLE}>
+        {FIELD_SETTINGS_CONSTANTS.SECTION_TITLES.BASIC_SETTINGS}
+      </h4>
       
       {/* Label */}
-      <div className="space-y-2">
-        <Label htmlFor="field-label" className="text-xs font-medium text-gray-700 dark:text-gray-300">
-          Label
-        </Label>
-        <Controller
-          name="label"
-          control={control}
-          render={({ field }) => (
-            <Input
-              {...field}
-              id="field-label"
-              placeholder="Field label"
-              disabled={!isConnected}
-              className="text-sm"
-              value={field.value || ''}
-            />
-          )}
-        />
-        <ErrorMessage error={errors.label?.message} />
-      </div>
+      <FormInputField
+        name="label"
+        label={FIELD_SETTINGS_CONSTANTS.LABELS.LABEL}
+        placeholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.FIELD_LABEL}
+        control={control}
+        error={errors.label}
+        disabled={!isConnected}
+      />
 
       {/* Hint */}
-      <div className="space-y-2">
-        <Label htmlFor="field-hint" className="text-xs font-medium text-gray-700 dark:text-gray-300">
-          Help Text
-        </Label>
-        <Controller
-          name="hint"
-          control={control}
-          render={({ field }) => (
-            <Textarea
-              {...field}
-              id="field-hint"
-              placeholder="Help text for this field"
-              disabled={!isConnected}
-              className="text-sm resize-none"
-              rows={2}
-              value={field.value || ''}
-            />
-          )}
-        />
-        <ErrorMessage error={errors.hint?.message} />
-      </div>
+      <FormInputField
+        name="hint"
+        label={FIELD_SETTINGS_CONSTANTS.LABELS.HELP_TEXT}
+        placeholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.HELP_TEXT}
+        multiline={true}
+        rows={2}
+        control={control}
+        error={errors.hint}
+        disabled={!isConnected}
+      />
 
       {/* Default Value */}
-      <div className="space-y-2">
-        <Label htmlFor="field-default" className="text-xs font-medium text-gray-700 dark:text-gray-300">
-          Default Value
+      <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.INPUT_SPACING}>
+        <Label 
+          htmlFor="field-default" 
+          className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.LABEL_STYLE}
+        >
+          {FIELD_SETTINGS_CONSTANTS.LABELS.DEFAULT_VALUE}
         </Label>
         <DefaultValueInput
           field={field}
@@ -84,7 +70,6 @@ export const BasicSettings: React.FC<BasicSettingsProps> = ({
           watch={watch}
           setValue={setValue}
         />
-        <ErrorMessage error={errors.defaultValue?.message} />
       </div>
     </div>
   );

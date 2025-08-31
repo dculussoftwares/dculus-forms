@@ -1,21 +1,23 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { FormField, FieldType, getFieldValidationSchema } from '@dculus/types';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { FieldType, getFieldValidationSchema, FieldFormData } from '@dculus/types';
+import { UseFieldEditorProps, UseFieldEditorReturn } from './types';
+import { extractFieldData } from './fieldDataExtractor';
 
-interface UseFieldEditorProps {
-  field: FormField | null;
-  onSave: (updates: Record<string, any>) => void;
-  onCancel?: () => void;
-}
-
-export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps) {
+/**
+ * Custom hook for managing field editor form state and operations
+ * Provides type-safe form handling with validation and auto-save functionality
+ */
+export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps): UseFieldEditorReturn {
   const [isSaving, setIsSaving] = useState(false);
 
-  // Get the appropriate validation schema for the field type
-  const validationSchema = field ? getFieldValidationSchema(field.type) : null;
+  // Memoize validation schema to prevent unnecessary re-renders
+  const validationSchema = useMemo(() => {
+    return field ? getFieldValidationSchema(field.type) : null;
+  }, [field?.type]);
 
-  const form = useForm<any>({
+  const form = useForm<FieldFormData>({
     resolver: validationSchema ? zodResolver(validationSchema) : undefined,
     mode: 'onChange',
     reValidateMode: 'onChange',
@@ -58,73 +60,10 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
     }
   }, [minDateValue, maxDateValue, minValue, maxValue, defaultValue, minLengthValue, maxLengthValue, field?.type, trigger]);
 
-  // Extract field data for form initialization (memoized to prevent re-renders)
-  const extractFieldData = useCallback((field: FormField): any => {
-    // Handle defaultValue specially for CheckboxField
-    let defaultValue = ('defaultValue' in field && field.defaultValue) || '';
-    if (field.type === FieldType.CHECKBOX_FIELD && 'defaultValueArray' in field) {
-      defaultValue = (field as any).defaultValueArray || [];
-    }
-    
-    const baseData = {
-      label: ('label' in field && field.label) || '',
-      hint: ('hint' in field && field.hint) || '',
-      placeholder: ('placeholder' in field && field.placeholder) || '',
-      defaultValue,
-      prefix: ('prefix' in field && field.prefix) || '',
-      required: (field as any).validation?.required || false,
-    };
-
-    // Add field-specific properties
-    switch (field.type) {
-      case FieldType.TEXT_INPUT_FIELD:
-      case FieldType.TEXT_AREA_FIELD:
-        return {
-          ...baseData,
-          validation: {
-            required: (field as any).validation?.required || false,
-            minLength: (field as any).validation?.minLength || undefined,
-            maxLength: (field as any).validation?.maxLength || undefined,
-          },
-        } as any;
-      
-      case FieldType.NUMBER_FIELD:
-        return {
-          ...baseData,
-          min: ('min' in field && field.min) || undefined,
-          max: ('max' in field && field.max) || undefined,
-        } as any;
-      
-      case FieldType.SELECT_FIELD:
-        return {
-          ...baseData,
-          options: ('options' in field && field.options) || [],
-        } as any;
-      
-      case FieldType.RADIO_FIELD:
-        return {
-          ...baseData,
-          options: ('options' in field && field.options) || [],
-        } as any;
-      
-      case FieldType.CHECKBOX_FIELD:
-        return {
-          ...baseData,
-          options: ('options' in field && field.options) || [],
-          multiple: ('multiple' in field && field.multiple) || true,
-        } as any;
-      
-      case FieldType.DATE_FIELD:
-        return {
-          ...baseData,
-          minDate: ('minDate' in field && field.minDate) || '',
-          maxDate: ('maxDate' in field && field.maxDate) || '',
-        } as any;
-      
-      default:
-        return baseData as any;
-    }
-  }, []); // Empty dependency array since this function doesn't use any external state
+  // Memoized field data extraction to prevent unnecessary re-computation
+  const fieldData = useMemo(() => {
+    return field ? extractFieldData(field) : {};
+  }, [field?.id, field?.type]); // Re-compute only when field ID or type changes
 
   // Track which field we've initialized to prevent unnecessary resets
   const initializedFieldRef = useRef<string | null>(null);
@@ -138,11 +77,10 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
   // Update form when field changes
   useEffect(() => {
     if (field && field.id !== initializedFieldRef.current) {
-      const formData = extractFieldData(field);
-      reset(formData);
+      reset(fieldData);
       initializedFieldRef.current = field.id;
     }
-  }, [field?.id, reset, extractFieldData]);
+  }, [field?.id, reset, fieldData]);
 
   // Save form data
   const handleSave = useCallback(handleSubmit(async (data) => {
@@ -151,17 +89,18 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
     setIsSaving(true);
     try {
       // Convert form data to field updates - exclude nested validation object first
-      const { validation: _, required: __, ...cleanData } = data;
+      const anyData = data as any;
+      const { validation: _, required: __, ...cleanData } = anyData;
       const updates: Record<string, any> = { ...cleanData };
       
       // Handle validation object updates
-      if ('required' in data || ('validation' in data && data.validation)) {
+      if ('required' in anyData || ('validation' in anyData && anyData.validation)) {
         if (field.type === FieldType.TEXT_INPUT_FIELD || field.type === FieldType.TEXT_AREA_FIELD) {
           // For text fields, handle the validation object with character limits
-          const validationData = data.validation || {};
+          const validationData = anyData.validation || {};
           updates.validation = {
             ...((field as any)?.validation || {}),
-            required: data.required !== undefined ? data.required : validationData.required || false,
+            required: anyData.required !== undefined ? anyData.required : validationData.required || false,
             minLength: validationData.minLength,
             maxLength: validationData.maxLength,
           };
@@ -169,7 +108,7 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
           // For other field types, handle only required
           updates.validation = {
             ...((field as any)?.validation || {}),
-            required: data.required || false,
+            required: anyData.required || false,
           };
         }
       }
@@ -186,20 +125,18 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
 
   // Cancel editing
   const handleCancel = useCallback(() => {
-    if (field) {
-      const formData = extractFieldData(field);
-      reset(formData);
+    if (field && fieldData) {
+      reset(fieldData);
     }
     onCancel?.();
-  }, [field, reset, onCancel, extractFieldData]);
+  }, [field, fieldData, reset, onCancel]);
 
   // Reset to original values
   const handleReset = useCallback(() => {
-    if (field) {
-      const formData = extractFieldData(field);
-      reset(formData);
+    if (field && fieldData) {
+      reset(fieldData);
     }
-  }, [field, reset, extractFieldData]);
+  }, [field, fieldData, reset]);
 
   // Auto-save if valid and dirty (with debounce to prevent loops)
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
@@ -215,26 +152,24 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
     handleSave();
   }, [isDirty, isValid, field, isSaving, handleSave]);
 
-  // Add option (for select/radio/checkbox fields)
-  const addOption = useCallback(() => {
-    const currentOptions = getValues('options' as any) || [];
-    setValue('options' as any, [...currentOptions, ''], { shouldDirty: true });
-  }, [getValues, setValue]);
-
-  // Update option (for select/radio/checkbox fields)
-  const updateOption = useCallback((index: number, value: string) => {
-    const currentOptions = getValues('options' as any) || [];
-    const newOptions = [...currentOptions];
-    newOptions[index] = value;
-    setValue('options' as any, newOptions, { shouldDirty: true });
-  }, [getValues, setValue]);
-
-  // Remove option (for select/radio/checkbox fields)
-  const removeOption = useCallback((index: number) => {
-    const currentOptions = getValues('options' as any) || [];
-    const newOptions = currentOptions.filter((_: any, i: number) => i !== index);
-    setValue('options' as any, newOptions, { shouldDirty: true });
-  }, [getValues, setValue]);
+  // Memoized option management functions for better performance
+  const optionHandlers = useMemo(() => ({
+    addOption: () => {
+      const currentOptions = getValues('options') || [];
+      setValue('options', [...currentOptions, ''], { shouldDirty: true });
+    },
+    updateOption: (index: number, value: string) => {
+      const currentOptions = getValues('options') || [];
+      const newOptions = [...currentOptions];
+      newOptions[index] = value;
+      setValue('options', newOptions, { shouldDirty: true });
+    },
+    removeOption: (index: number) => {
+      const currentOptions = getValues('options') || [];
+      const newOptions = currentOptions.filter((_, i) => i !== index);
+      setValue('options', newOptions, { shouldDirty: true });
+    },
+  }), [getValues, setValue]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -255,9 +190,9 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
     handleCancel,
     handleReset,
     handleAutoSave,
-    addOption,
-    updateOption,
-    removeOption,
+    addOption: optionHandlers.addOption,
+    updateOption: optionHandlers.updateOption,
+    removeOption: optionHandlers.removeOption,
     setValue,
     getValues,
   };

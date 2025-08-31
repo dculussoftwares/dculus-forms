@@ -2,16 +2,13 @@ import React from 'react';
 import { Button, Input } from '@dculus/ui';
 import { Plus, X } from 'lucide-react';
 import { ErrorMessage } from './ErrorMessage';
+import { FIELD_SETTINGS_CONSTANTS } from './constants';
+import { OptionsSettingsProps } from './types';
 
-interface OptionsSettingsProps {
-  options: string[];
-  isConnected: boolean;
-  errors: Record<string, any>;
-  addOption: () => void;
-  updateOption: (index: number, value: string) => void;
-  removeOption: (index: number) => void;
-}
-
+/**
+ * Settings component for option-based fields (Select, Radio, Checkbox)
+ * Handles adding, editing, and removing options
+ */
 export const OptionsSettings: React.FC<OptionsSettingsProps> = ({
   options,
   isConnected,
@@ -21,9 +18,11 @@ export const OptionsSettings: React.FC<OptionsSettingsProps> = ({
   removeOption
 }) => {
   return (
-    <div className="space-y-4">
+    <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_SPACING}>
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-medium text-gray-900 dark:text-white">Options</h4>
+        <h4 className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_TITLE}>
+          {FIELD_SETTINGS_CONSTANTS.SECTION_TITLES.OPTIONS}
+        </h4>
         <Button
           size="sm"
           variant="ghost"
@@ -33,11 +32,11 @@ export const OptionsSettings: React.FC<OptionsSettingsProps> = ({
           type="button"
         >
           <Plus className="w-4 h-4 mr-1" />
-          Add
+          {FIELD_SETTINGS_CONSTANTS.BUTTONS.ADD}
         </Button>
       </div>
       
-      <div className="space-y-2">
+      <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.INPUT_SPACING}>
         {options.map((option: string, index: number) => {
           const isEmpty = !option || option.trim() === '';
           const hasError = errors.options && Array.isArray(errors.options) && errors.options[index];
@@ -48,9 +47,11 @@ export const OptionsSettings: React.FC<OptionsSettingsProps> = ({
                 <Input
                   value={option}
                   onChange={(e) => updateOption(index, e.target.value)}
-                  placeholder={`Option ${index + 1}`}
+                  placeholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.OPTION_PLACEHOLDER(index)}
                   disabled={!isConnected}
-                  className={`text-sm flex-1 ${isEmpty ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  className={`${FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.TEXT_SMALL} flex-1 ${
+                    isEmpty ? FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.EMPTY_OPTION : ''
+                  }`}
                 />
                 <Button
                   size="icon"
@@ -65,7 +66,7 @@ export const OptionsSettings: React.FC<OptionsSettingsProps> = ({
               </div>
               {isEmpty && (
                 <div className="text-xs text-red-600 dark:text-red-400 ml-1">
-                  Option text cannot be empty
+                  {FIELD_SETTINGS_CONSTANTS.ERROR_MESSAGES.OPTION_EMPTY}
                 </div>
               )}
               {hasError && (

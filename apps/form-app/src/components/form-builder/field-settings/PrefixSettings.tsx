@@ -1,39 +1,25 @@
 import React from 'react';
-import { Controller, Control } from 'react-hook-form';
-import { Input, Label } from '@dculus/ui';
-import { ErrorMessage } from './ErrorMessage';
+import { FormInputField } from './FormInputField';
+import { FIELD_SETTINGS_CONSTANTS } from './constants';
+import { BaseFieldSettingsProps } from './types';
 
-interface PrefixSettingsProps {
-  control: Control<any>;
-  errors: Record<string, any>;
-  isConnected: boolean;
-}
-
-export const PrefixSettings: React.FC<PrefixSettingsProps> = ({
+/**
+ * Settings component for prefix configuration
+ * Used by TEXT_INPUT, TEXT_AREA, and NUMBER field types
+ */
+export const PrefixSettings: React.FC<BaseFieldSettingsProps> = ({
   control,
   errors,
   isConnected
 }) => {
   return (
-    <div className="space-y-2">
-      <Label htmlFor="field-prefix" className="text-xs font-medium text-gray-700 dark:text-gray-300">
-        Prefix
-      </Label>
-      <Controller
-        name="prefix"
-        control={control}
-        render={({ field }) => (
-          <Input
-            {...field}
-            id="field-prefix"
-            placeholder="e.g., $, @"
-            disabled={!isConnected}
-            className="text-sm"
-            value={field.value || ''}
-          />
-        )}
-      />
-      <ErrorMessage error={errors.prefix?.message} />
-    </div>
+    <FormInputField
+      name="prefix"
+      label={FIELD_SETTINGS_CONSTANTS.LABELS.PREFIX}
+      placeholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.PREFIX_TEXT}
+      control={control}
+      error={errors.prefix}
+      disabled={!isConnected}
+    />
   );
 };

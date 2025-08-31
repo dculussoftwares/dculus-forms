@@ -1,12 +1,18 @@
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
+import { ErrorMessageProps } from './types';
 
-interface ErrorMessageProps {
-  error?: any;
-}
-
+/**
+ * Displays validation errors with consistent styling and animation
+ * 
+ * @param error - Error object or string message to display
+ * @returns JSX element or null if no error
+ */
 export const ErrorMessage: React.FC<ErrorMessageProps> = ({ error }) => {
-  const errorMessage = error?.message || (typeof error === 'string' ? error : null);
+  const errorMessage = typeof error === 'string' 
+    ? error 
+    : error?.message || null;
+  
   if (!errorMessage) return null;
   
   return (
