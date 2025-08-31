@@ -18,6 +18,7 @@ import {
   DateField,
   FillableFormField,
   FillableFormFieldValidation,
+  TextFieldValidation,
   deserializeFormField,
   ThemeType,
   SpacingType,
@@ -88,19 +89,31 @@ const isFillableFormField = (field: FormField): field is FillableFormField => {
 };
 
 const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
+  const validationYMap = fieldMap.get('validation');
+  let validation: any = null;
+  
+  if (validationYMap && validationYMap instanceof Y.Map) {
+    validation = {
+      required: validationYMap.get('required'),
+      type: validationYMap.get('type'),
+      minLength: validationYMap.get('minLength'),
+      maxLength: validationYMap.get('maxLength'),
+    };
+  }
+  
   return {
     id: fieldMap.get('id') || '',
     type: fieldMap.get('type') || FieldType.TEXT_INPUT_FIELD,
     label: fieldMap.get('label') || '',
-    required: fieldMap.get('required') || false,
+    required: validation?.required || fieldMap.get('required') || false,
     placeholder: fieldMap.get('placeholder') || '',
     defaultValue: fieldMap.get('defaultValue') || '',
     prefix: fieldMap.get('prefix') || '',
     hint: fieldMap.get('hint') || '',
     options: fieldMap.get('options') ? fieldMap.get('options').toArray() : undefined,
     multiple: fieldMap.get('multiple'),
-    min: fieldMap.get('min'),
-    max: fieldMap.get('max'),
+    min: validation?.minLength || fieldMap.get('min'),
+    max: validation?.maxLength || fieldMap.get('max'),
     minDate: fieldMap.get('minDate'),
     maxDate: fieldMap.get('maxDate'),
   };
@@ -120,6 +133,26 @@ const createYJSFieldMap = (fieldData: FieldData): Y.Map<any> => {
       fieldMap.set(key, value);
     }
   });
+  
+  // Store validation object for text fields that have min/max length constraints
+  if (fieldData.type === FieldType.TEXT_INPUT_FIELD || fieldData.type === FieldType.TEXT_AREA_FIELD) {
+    const validationMap = new Y.Map();
+    validationMap.set('required', fieldData.required || false);
+    validationMap.set('type', FieldType.TEXT_FIELD_VALIDATION);
+    if (fieldData.min !== undefined) {
+      validationMap.set('minLength', fieldData.min);
+    }
+    if (fieldData.max !== undefined) {
+      validationMap.set('maxLength', fieldData.max);
+    }
+    fieldMap.set('validation', validationMap);
+  } else {
+    // For other field types, store basic validation
+    const validationMap = new Y.Map();
+    validationMap.set('required', fieldData.required || false);
+    validationMap.set('type', FieldType.FILLABLE_FORM_FIELD);
+    fieldMap.set('validation', validationMap);
+  }
   
   return fieldMap;
 };
@@ -141,7 +174,6 @@ const generateUniqueId = (): string => {
 
 const createFormField = (fieldType: FieldType, fieldData: Partial<FieldData> = {}): FormField => {
   const fieldId = generateUniqueId();
-  const validation = new FillableFormFieldValidation(fieldData.required || false);
   const config = FIELD_CONFIGS[fieldType] || { label: 'Field' };
   
   const label = fieldData.label || config.label;
@@ -151,22 +183,38 @@ const createFormField = (fieldType: FieldType, fieldData: Partial<FieldData> = {
   const placeholder = fieldData.placeholder || '';
   
   switch (fieldType) {
-    case FieldType.TEXT_INPUT_FIELD:
-      return new TextInputField(fieldId, label, defaultValue, prefix, hint, placeholder, validation);
-    case FieldType.TEXT_AREA_FIELD:
-      return new TextAreaField(fieldId, label, defaultValue, prefix, hint, placeholder, validation);
-    case FieldType.EMAIL_FIELD:
+    case FieldType.TEXT_INPUT_FIELD: {
+      const textValidation = new TextFieldValidation(fieldData.required || false, fieldData.min, fieldData.max);
+      return new TextInputField(fieldId, label, defaultValue, prefix, hint, placeholder, textValidation);
+    }
+    case FieldType.TEXT_AREA_FIELD: {
+      const textValidation = new TextFieldValidation(fieldData.required || false, fieldData.min, fieldData.max);
+      return new TextAreaField(fieldId, label, defaultValue, prefix, hint, placeholder, textValidation);
+    }
+    case FieldType.EMAIL_FIELD: {
+      const validation = new FillableFormFieldValidation(fieldData.required || false);
       return new EmailField(fieldId, label, defaultValue, prefix, hint, placeholder, validation);
-    case FieldType.NUMBER_FIELD:
+    }
+    case FieldType.NUMBER_FIELD: {
+      const validation = new FillableFormFieldValidation(fieldData.required || false);
       return new NumberField(fieldId, label, defaultValue, prefix, hint, placeholder, validation, fieldData.min, fieldData.max);
-    case FieldType.SELECT_FIELD:
+    }
+    case FieldType.SELECT_FIELD: {
+      const validation = new FillableFormFieldValidation(fieldData.required || false);
       return new SelectField(fieldId, label, defaultValue, prefix, hint, placeholder, validation, fieldData.options || [], fieldData.multiple || false);
-    case FieldType.RADIO_FIELD:
+    }
+    case FieldType.RADIO_FIELD: {
+      const validation = new FillableFormFieldValidation(fieldData.required || false);
       return new RadioField(fieldId, label, defaultValue, prefix, hint, placeholder, validation, fieldData.options || []);
-    case FieldType.CHECKBOX_FIELD:
+    }
+    case FieldType.CHECKBOX_FIELD: {
+      const validation = new FillableFormFieldValidation(fieldData.required || false);
       return new CheckboxField(fieldId, label, defaultValue, prefix, hint, placeholder, validation, fieldData.options || []);
-    case FieldType.DATE_FIELD:
+    }
+    case FieldType.DATE_FIELD: {
+      const validation = new FillableFormFieldValidation(fieldData.required || false);
       return new DateField(fieldId, label, defaultValue, prefix, hint, placeholder, validation, fieldData.minDate, fieldData.maxDate);
+    }
     default:
       return new FormField(fieldId);
   }
@@ -192,8 +240,8 @@ const serializeFieldToYMap = (field: FormField): Y.Map<any> => {
     placeholder: fillableField.placeholder || '',
     options: fillableField.options,
     multiple: fillableField.multiple,
-    min: fillableField.min,
-    max: fillableField.max,
+    min: fillableField.validation?.minLength || fillableField.min,
+    max: fillableField.validation?.maxLength || fillableField.max,
     minDate: fillableField.minDate,
     maxDate: fillableField.maxDate,
   };
@@ -221,10 +269,30 @@ const deserializePagesFromYJS = (pagesArray: Y.Array<Y.Map<any>>): FormPage[] =>
     const fields: FormField[] = fieldsArray 
       ? fieldsArray.toArray().map((fieldMap) => {
           const fieldData = extractFieldData(fieldMap);
-          const validationObj = fieldMap.get('validation') || {
-            required: fieldData.required,
-            type: fieldData.type
-          };
+          
+          // Extract validation from YJS map if it exists
+          const validationYMap = fieldMap.get('validation');
+          let validationObj: any;
+          
+          if (validationYMap && validationYMap instanceof Y.Map) {
+            validationObj = {
+              required: validationYMap.get('required') || false,
+              type: validationYMap.get('type') || FieldType.FILLABLE_FORM_FIELD,
+              minLength: validationYMap.get('minLength'),
+              maxLength: validationYMap.get('maxLength'),
+            };
+          } else {
+            // Fallback for backwards compatibility
+            validationObj = {
+              required: fieldData.required,
+              type: fieldData.type === FieldType.TEXT_INPUT_FIELD || fieldData.type === FieldType.TEXT_AREA_FIELD 
+                ? FieldType.TEXT_FIELD_VALIDATION 
+                : FieldType.FILLABLE_FORM_FIELD,
+              minLength: fieldData.min,
+              maxLength: fieldData.max,
+            };
+          }
+          
           return deserializeFormField({ ...fieldData, validation: validationObj });
         })
       : [];
@@ -661,12 +729,49 @@ export const useFormBuilderStore = create<FormBuilderState>()(
           if (fieldIndex === -1) return;
 
           const fieldMap = fieldsArray.get(fieldIndex);
+          const fieldType = fieldMap.get('type');
+          
+          // Get or create validation map
+          let validationMap = fieldMap.get('validation');
+          if (!validationMap || !(validationMap instanceof Y.Map)) {
+            validationMap = new Y.Map();
+            validationMap.set('required', false);
+            validationMap.set('type', 
+              (fieldType === FieldType.TEXT_INPUT_FIELD || fieldType === FieldType.TEXT_AREA_FIELD) 
+                ? FieldType.TEXT_FIELD_VALIDATION 
+                : FieldType.FILLABLE_FORM_FIELD
+            );
+            fieldMap.set('validation', validationMap);
+          }
           
           Object.entries(updates).forEach(([key, value]) => {
             if (key === 'options' && Array.isArray(value)) {
               const optionsArray = new Y.Array();
               value.filter(option => option && option.trim() !== '').forEach((option: string) => optionsArray.push([option]));
               fieldMap.set('options', optionsArray);
+            } else if (key === 'validation' && value && typeof value === 'object' && !Array.isArray(value)) {
+              // Handle validation object from field editor
+              const validationData = value as any;
+              if (validationData.required !== undefined) {
+                validationMap.set('required', validationData.required);
+              }
+              if (fieldType === FieldType.TEXT_INPUT_FIELD || fieldType === FieldType.TEXT_AREA_FIELD) {
+                if (validationData.minLength !== undefined) {
+                  validationMap.set('minLength', validationData.minLength);
+                }
+                if (validationData.maxLength !== undefined) {
+                  validationMap.set('maxLength', validationData.maxLength);
+                }
+              }
+            } else if (key === 'required') {
+              // Update validation required field (fallback for direct required updates)
+              validationMap.set('required', value);
+            } else if (key === 'min' && (fieldType === FieldType.TEXT_INPUT_FIELD || fieldType === FieldType.TEXT_AREA_FIELD)) {
+              // For text fields, min maps to minLength in validation (fallback for old format)
+              validationMap.set('minLength', value);
+            } else if (key === 'max' && (fieldType === FieldType.TEXT_INPUT_FIELD || fieldType === FieldType.TEXT_AREA_FIELD)) {
+              // For text fields, max maps to maxLength in validation (fallback for old format)
+              validationMap.set('maxLength', value);
             } else if (value !== undefined) {
               fieldMap.set(key, value);
             }
