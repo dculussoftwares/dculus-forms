@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Controller, Control } from 'react-hook-form';
 import { Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@dculus/ui';
 import { FormField, FieldType } from '@dculus/types';
@@ -9,6 +9,7 @@ interface DefaultValueInputProps {
   errors: Record<string, any>;
   isConnected: boolean;
   watch: (name: string) => any;
+  setValue?: (name: string, value: any) => void;
 }
 
 export const DefaultValueInput: React.FC<DefaultValueInputProps> = ({
@@ -16,8 +17,25 @@ export const DefaultValueInput: React.FC<DefaultValueInputProps> = ({
   control,
   errors,
   isConnected,
-  watch
+  watch,
+  setValue
 }) => {
+  // For SelectField, automatically reset default value if it's no longer in options
+  useEffect(() => {
+    if (field?.type === FieldType.SELECT_FIELD && setValue) {
+      const options = watch('options') || [];
+      const currentDefaultValue = watch('defaultValue');
+      
+      // If there's a default value set and it's not in the current options list
+      if (currentDefaultValue && 
+          currentDefaultValue !== '' && 
+          !options.some((option: string) => option === currentDefaultValue)) {
+        // Reset to empty (which will show as "None" in the UI)
+        setValue('defaultValue', '');
+      }
+    }
+  }, [field?.type, watch, setValue, watch('options')]);
+
   return (
     <Controller
       name="defaultValue"
@@ -57,11 +75,16 @@ export const DefaultValueInput: React.FC<DefaultValueInputProps> = ({
                 <SelectItem value="__none__">
                   None
                 </SelectItem>
-                {options.map((option: string, index: number) => (
-                  <SelectItem key={index} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
+                {options
+                  .map((option: string, originalIndex: number) => {
+                    if (!option || option.trim() === '') return null;
+                    return (
+                      <SelectItem key={`option-${originalIndex}`} value={option}>
+                        {option}
+                      </SelectItem>
+                    );
+                  })
+                  .filter(Boolean)}
               </SelectContent>
             </Select>
           );

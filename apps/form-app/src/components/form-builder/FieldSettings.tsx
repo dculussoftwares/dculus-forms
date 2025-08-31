@@ -37,6 +37,7 @@ export const FieldSettings: React.FC<FieldSettingsProps> = ({
     addOption,
     updateOption,
     removeOption,
+    setValue,
   } = useFieldEditor({
     field,
     onSave: (updates) => onUpdate?.(updates),
@@ -103,6 +104,7 @@ export const FieldSettings: React.FC<FieldSettingsProps> = ({
             isConnected={isConnected}
             field={field}
             watch={watch}
+            setValue={setValue}
           />
 
           {/* Field-specific settings */}

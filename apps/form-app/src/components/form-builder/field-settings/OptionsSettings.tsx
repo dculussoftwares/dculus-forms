@@ -38,27 +38,42 @@ export const OptionsSettings: React.FC<OptionsSettingsProps> = ({
       </div>
       
       <div className="space-y-2">
-        {options.map((option: string, index: number) => (
-          <div key={index} className="flex items-center space-x-2">
-            <Input
-              value={option}
-              onChange={(e) => updateOption(index, e.target.value)}
-              placeholder={`Option ${index + 1}`}
-              disabled={!isConnected}
-              className="text-sm flex-1"
-            />
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => removeOption(index)}
-              disabled={!isConnected}
-              className="h-8 w-8 text-gray-500 hover:text-red-600"
-              type="button"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-        ))}
+        {options.map((option: string, index: number) => {
+          const isEmpty = !option || option.trim() === '';
+          const hasError = errors.options && Array.isArray(errors.options) && errors.options[index];
+          
+          return (
+            <div key={index} className="space-y-1">
+              <div className="flex items-center space-x-2">
+                <Input
+                  value={option}
+                  onChange={(e) => updateOption(index, e.target.value)}
+                  placeholder={`Option ${index + 1}`}
+                  disabled={!isConnected}
+                  className={`text-sm flex-1 ${isEmpty ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
+                />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => removeOption(index)}
+                  disabled={!isConnected}
+                  className="h-8 w-8 text-gray-500 hover:text-red-600"
+                  type="button"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              {isEmpty && (
+                <div className="text-xs text-red-600 dark:text-red-400 ml-1">
+                  Option text cannot be empty
+                </div>
+              )}
+              {hasError && (
+                <ErrorMessage error={hasError} />
+              )}
+            </div>
+          );
+        })}
       </div>
       <ErrorMessage error={errors.options?.message} />
     </div>

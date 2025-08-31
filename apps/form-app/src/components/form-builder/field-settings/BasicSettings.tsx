@@ -11,6 +11,7 @@ interface BasicSettingsProps {
   isConnected: boolean;
   field: FormField | null;
   watch: (name: string) => any;
+  setValue: (name: string, value: any) => void;
 }
 
 export const BasicSettings: React.FC<BasicSettingsProps> = ({
@@ -18,7 +19,8 @@ export const BasicSettings: React.FC<BasicSettingsProps> = ({
   errors,
   isConnected,
   field,
-  watch
+  watch,
+  setValue
 }) => {
   return (
     <div className="space-y-4">
@@ -80,6 +82,7 @@ export const BasicSettings: React.FC<BasicSettingsProps> = ({
           errors={errors}
           isConnected={isConnected}
           watch={watch}
+          setValue={setValue}
         />
         <ErrorMessage error={errors.defaultValue?.message} />
       </div>

@@ -127,7 +127,6 @@ export const selectFieldValidationSchema = baseFieldValidationSchema.extend({
     (options) => new Set(options.filter(opt => opt.trim())).size === options.filter(opt => opt.trim()).length,
     'Duplicate options are not allowed'
   ),
-  multiple: z.boolean().default(false),
 });
 
 export const radioFieldValidationSchema = baseFieldValidationSchema.extend({
@@ -142,7 +141,6 @@ export const checkboxFieldValidationSchema = baseFieldValidationSchema.extend({
     (options) => new Set(options.filter(opt => opt.trim())).size === options.filter(opt => opt.trim()).length,
     'Duplicate options are not allowed'
   ),
-  multiple: z.boolean().default(true),
 });
 
 export const dateFieldValidationSchema = baseFieldValidationSchema.extend({
