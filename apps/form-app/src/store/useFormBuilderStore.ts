@@ -100,13 +100,33 @@ const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
     };
   }
   
+  // Handle defaultValue specially for checkbox fields  
+  let defaultValue = fieldMap.get('defaultValue') || '';
+  const fieldType = fieldMap.get('type');
+  
+  if (fieldType === FieldType.CHECKBOX_FIELD) {
+    const defaultValueData = fieldMap.get('defaultValue');
+    if (defaultValueData && typeof defaultValueData.toArray === 'function') {
+      // It's a Y.Array, convert to regular array
+      defaultValue = defaultValueData.toArray();
+    } else if (Array.isArray(defaultValueData)) {
+      // It's already an array
+      defaultValue = defaultValueData;
+    } else if (typeof defaultValueData === 'string' && defaultValueData) {
+      // Legacy comma-separated string format
+      defaultValue = defaultValueData.split(',').map(s => s.trim()).filter(Boolean);
+    } else {
+      defaultValue = [];
+    }
+  }
+  
   return {
     id: fieldMap.get('id') || '',
-    type: fieldMap.get('type') || FieldType.TEXT_INPUT_FIELD,
+    type: fieldType || FieldType.TEXT_INPUT_FIELD,
     label: fieldMap.get('label') || '',
     required: validation?.required || fieldMap.get('required') || false,
     placeholder: fieldMap.get('placeholder') || '',
-    defaultValue: fieldMap.get('defaultValue') || '',
+    defaultValue,
     prefix: fieldMap.get('prefix') || '',
     hint: fieldMap.get('hint') || '',
     options: fieldMap.get('options') ? fieldMap.get('options').toArray() : undefined,
@@ -746,6 +766,11 @@ export const useFormBuilderStore = create<FormBuilderState>()(
               const optionsArray = new Y.Array();
               value.filter(option => option && option.trim() !== '').forEach((option: string) => optionsArray.push([option]));
               fieldMap.set('options', optionsArray);
+            } else if (key === 'defaultValue' && Array.isArray(value) && fieldType === FieldType.CHECKBOX_FIELD) {
+              // Handle checkbox defaultValue arrays
+              const defaultValueArray = new Y.Array();
+              value.filter(val => val && val.trim() !== '').forEach((val: string) => defaultValueArray.push([val]));
+              fieldMap.set('defaultValue', defaultValueArray);
             } else if (key === 'validation' && value && typeof value === 'object' && !Array.isArray(value)) {
               // Handle validation object from field editor
               const validationData = value as any;

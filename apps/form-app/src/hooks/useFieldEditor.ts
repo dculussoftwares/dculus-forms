@@ -60,11 +60,17 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
 
   // Extract field data for form initialization (memoized to prevent re-renders)
   const extractFieldData = useCallback((field: FormField): any => {
+    // Handle defaultValue specially for CheckboxField
+    let defaultValue = ('defaultValue' in field && field.defaultValue) || '';
+    if (field.type === FieldType.CHECKBOX_FIELD && 'defaultValueArray' in field) {
+      defaultValue = (field as any).defaultValueArray || [];
+    }
+    
     const baseData = {
       label: ('label' in field && field.label) || '',
       hint: ('hint' in field && field.hint) || '',
       placeholder: ('placeholder' in field && field.placeholder) || '',
-      defaultValue: ('defaultValue' in field && field.defaultValue) || '',
+      defaultValue,
       prefix: ('prefix' in field && field.prefix) || '',
       required: (field as any).validation?.required || false,
     };

@@ -143,6 +143,11 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
               {page.fields.map((field, fieldIndex) => (
                 <React.Fragment key={`${page.id}-field-${field.id}-${fieldIndex}`}>
                   <DraggableField
+                    key={`field-${field.id}-${JSON.stringify({
+                      label: 'label' in field ? field.label : '',
+                      defaultValue: 'defaultValue' in field ? field.defaultValue : '',
+                      options: 'options' in field ? field.options : []
+                    })}`}
                     field={field}
                     pageId={page.id}
                     index={fieldIndex}

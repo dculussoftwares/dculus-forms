@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { FormField, FieldType } from '@dculus/types';
 import { Input, Textarea, Select, SelectTrigger, SelectContent, SelectValue, SelectItem, Label } from './index';
 
@@ -13,48 +13,88 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
   disabled = true,
   showValidation = true
 }) => {
-  const getFieldLabel = (): string => {
-    if ('label' in field && typeof field.label === 'string' && field.label) {
-      return field.label;
-    }
-    return getDefaultLabel(field.type);
-  };
+  // Memoize field data extraction to make it reactive to field changes
+  const fieldData = useMemo(() => {
+    const getFieldLabel = (): string => {
+      if ('label' in field && typeof field.label === 'string' && field.label) {
+        return field.label;
+      }
+      return getDefaultLabel(field.type);
+    };
 
-  const getFieldHint = (): string => {
-    if ('hint' in field && typeof field.hint === 'string' && field.hint) {
-      return field.hint;
-    }
-    return '';
-  };
+    const getFieldHint = (): string => {
+      if ('hint' in field && typeof field.hint === 'string' && field.hint) {
+        return field.hint;
+      }
+      return '';
+    };
 
-  const getFieldPlaceholder = (): string => {
-    if ('placeholder' in field && typeof field.placeholder === 'string' && field.placeholder) {
-      return field.placeholder;
-    }
-    return '';
-  };
+    const getFieldPlaceholder = (): string => {
+      if ('placeholder' in field && typeof field.placeholder === 'string' && field.placeholder) {
+        return field.placeholder;
+      }
+      return '';
+    };
 
-  const getFieldPrefix = (): string => {
-    if ('prefix' in field && typeof field.prefix === 'string' && field.prefix) {
-      return field.prefix;
-    }
-    return '';
-  };
+    const getFieldPrefix = (): string => {
+      if ('prefix' in field && typeof field.prefix === 'string' && field.prefix) {
+        return field.prefix;
+      }
+      return '';
+    };
 
-  const getFieldDefaultValue = (): string => {
-    if ('defaultValue' in field && typeof field.defaultValue === 'string' && field.defaultValue) {
-      return field.defaultValue;
-    }
-    return '';
-  };
+    const getFieldDefaultValue = (): string => {
+      if ('defaultValue' in field && typeof field.defaultValue === 'string' && field.defaultValue) {
+        return field.defaultValue;
+      }
+      return '';
+    };
 
+    const getFieldDefaultValueArray = (): string[] => {
+      if ('defaultValue' in field) {
+        // For CheckboxField, check if it has defaultValueArray getter
+        if ('defaultValueArray' in field) {
+          return (field as any).defaultValueArray || [];
+        }
+        // Handle array format
+        if (Array.isArray(field.defaultValue)) {
+          return field.defaultValue;
+        }
+        // Handle comma-separated string format (legacy)
+        if (typeof field.defaultValue === 'string' && field.defaultValue) {
+          return field.defaultValue.split(',').map(s => s.trim()).filter(Boolean);
+        }
+      }
+      return [];
+    };
 
-  const getFieldOptions = (): string[] => {
-    if ('options' in field && Array.isArray(field.options)) {
-      return field.options;
-    }
-    return [];
-  };
+    const getFieldOptions = (): string[] => {
+      if ('options' in field && Array.isArray(field.options)) {
+        return field.options;
+      }
+      return [];
+    };
+
+    return {
+      label: getFieldLabel(),
+      hint: getFieldHint(),
+      placeholder: getFieldPlaceholder(),
+      prefix: getFieldPrefix(),
+      defaultValue: getFieldDefaultValue(),
+      defaultValueArray: getFieldDefaultValueArray(),
+      options: getFieldOptions()
+    };
+  }, [
+    field,
+    // Add specific dependencies to ensure re-computation when field data changes
+    'label' in field ? field.label : null,
+    'hint' in field ? field.hint : null,
+    'placeholder' in field ? field.placeholder : null,
+    'prefix' in field ? field.prefix : null,
+    'defaultValue' in field ? field.defaultValue : null,
+    'defaultValueArray' in field ? (field as any).defaultValueArray : null,
+    'options' in field ? field.options : null,
+  ]);
 
   const getDefaultLabel = (type: FieldType): string => {
     switch (type) {
@@ -80,10 +120,10 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
   };
 
   const renderFieldInput = () => {
-    const placeholder = getFieldPlaceholder() || `Enter your ${getFieldLabel().toLowerCase()}`;
-    const defaultValue = getFieldDefaultValue();
-    const prefix = getFieldPrefix();
-    const options = getFieldOptions();
+    const placeholder = fieldData.placeholder || `Enter your ${fieldData.label.toLowerCase()}`;
+    const defaultValue = fieldData.defaultValue;
+    const prefix = fieldData.prefix;
+    const options = fieldData.options;
 
     switch (field.type) {
       case FieldType.TEXT_INPUT_FIELD:
@@ -193,6 +233,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
                     id={`${field.id}-${index}`}
                     name={field.id}
                     value={option}
+                    defaultChecked={defaultValue === option}
                     disabled={disabled}
                     className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 disabled:opacity-50"
                   />
@@ -211,6 +252,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
         );
 
       case FieldType.CHECKBOX_FIELD:
+        const defaultValues = fieldData.defaultValueArray;
         return (
           <div className="space-y-2">
             {options.length > 0 ? (
@@ -221,6 +263,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
                     id={`${field.id}-${index}`}
                     name={field.id}
                     value={option}
+                    defaultChecked={defaultValues.includes(option)}
                     disabled={disabled}
                     className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50"
                   />
@@ -265,7 +308,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
       {/* Field Label */}
       <div className="flex items-center space-x-1">
         <Label className="text-sm font-medium text-gray-900 dark:text-white">
-          {getFieldLabel()}
+          {fieldData.label}
         </Label>
       </div>
 
@@ -273,9 +316,9 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
       {renderFieldInput()}
 
       {/* Field Hint */}
-      {getFieldHint() && (
+      {fieldData.hint && (
         <p className="text-xs text-gray-500 dark:text-gray-400">
-          {getFieldHint()}
+          {fieldData.hint}
         </p>
       )}
     </div>

@@ -131,8 +131,7 @@ export const createValidationTestPages = (): FormPage[] => {
         'Select your country of residence',
         'Select a country...',
         new FillableFormFieldValidation(true),
-        ['United States', 'Canada', 'United Kingdom', 'Australia', 'Germany', 'France', 'Other'],
-        false
+        ['United States', 'Canada', 'United Kingdom', 'Australia', 'Germany', 'France', 'Other']
       ),
       new SelectField(
         'languages',
@@ -142,8 +141,7 @@ export const createValidationTestPages = (): FormPage[] => {
         'Select all languages you know (optional)',
         'Choose languages...',
         new FillableFormFieldValidation(false),
-        ['JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'Rust', 'Go'],
-        true
+        ['JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'Rust', 'Go']
       ),
       new RadioField(
         'experience',
@@ -383,8 +381,7 @@ export const createSampleFields = () => [
     '',
     '',
     new FillableFormFieldValidation(true),
-    ['Engineering', 'Marketing', 'Sales', 'HR', 'Operations'],
-    false
+    ['Engineering', 'Marketing', 'Sales', 'HR', 'Operations']
   ),
   
   new RadioField(

@@ -1,4 +1,4 @@
-import { FormPage, FormField } from './index.js';
+import { FormPage, FormField, CheckboxField } from './index.js';
 
 /**
  * Create a React Hook Form resolver for a specific form page
@@ -33,11 +33,15 @@ function getDefaultValueForField(field: FormField): any {
     return 'defaultValue' in field && typeof field.defaultValue === 'string';
   };
 
-  if (hasDefaultValue(field) && field.defaultValue) {
+  if (hasDefaultValue(field)) {
     // Handle different field types for default values
     switch (field.type) {
       case 'checkbox_field':
-        // For checkbox fields, defaultValue is now string[]
+        // For checkbox fields, use defaultValueArray getter if available
+        if (field instanceof CheckboxField) {
+          return field.defaultValueArray;
+        }
+        // Fallback for legacy format
         return Array.isArray(field.defaultValue) ? field.defaultValue : 
           (field.defaultValue ? field.defaultValue.split(',').map(s => s.trim()).filter(Boolean) : []);
       case 'number_field':

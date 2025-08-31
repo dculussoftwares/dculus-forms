@@ -140,20 +140,11 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
     }
 
     case FieldType.SELECT_FIELD: {
-      const selectField = field as SelectField;
-      
-      if (selectField.multiple) {
-        if (isRequired) {
-          return z.array(z.string()).min(1, `Please select at least one ${fillableField.label.toLowerCase()}`);
-        } else {
-          return z.array(z.string()).optional();
-        }
+      // SelectField is always single-select (no multiple property)
+      if (isRequired) {
+        return z.string().min(1, `Please select a ${fillableField.label.toLowerCase()}`);
       } else {
-        if (isRequired) {
-          return z.string().min(1, `Please select a ${fillableField.label.toLowerCase()}`);
-        } else {
-          return z.string().optional();
-        }
+        return z.string().optional();
       }
     }
 
