@@ -40,6 +40,7 @@ type FieldData = {
   max?: number;
   minDate?: string;
   maxDate?: string;
+  validation?: any;
 };
 
 interface FormBuilderState {
@@ -134,6 +135,7 @@ const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
     max: validation?.maxLength || fieldMap.get('max'),
     minDate: fieldMap.get('minDate'),
     maxDate: fieldMap.get('maxDate'),
+    validation: validation,
   };
 };
 
@@ -483,6 +485,17 @@ class CollaborationManager {
 
       fieldMap.observe(fieldObserver);
       this.observerCleanups.push(() => fieldMap.unobserve(fieldObserver));
+
+      // Also observe validation map changes specifically
+      const validationMap = fieldMap.get('validation');
+      if (validationMap && validationMap instanceof Y.Map) {
+        const validationObserver = () => {
+          console.log(`📡 Field ${fieldId} validation changed`);
+          this.updateFromYJS();
+        };
+        validationMap.observe(validationObserver);
+        this.observerCleanups.push(() => validationMap.unobserve(validationObserver));
+      }
     });
   }
 
@@ -774,6 +787,7 @@ export const useFormBuilderStore = create<FormBuilderState>()(
             } else if (key === 'validation' && value && typeof value === 'object' && !Array.isArray(value)) {
               // Handle validation object from field editor
               const validationData = value as any;
+              console.log(`🔄 Setting validation.required to: ${validationData.required} for field ${fieldId}`);
               if (validationData.required !== undefined) {
                 validationMap.set('required', validationData.required);
               }

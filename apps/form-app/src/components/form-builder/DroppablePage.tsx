@@ -146,7 +146,8 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
                     key={`field-${field.id}-${JSON.stringify({
                       label: 'label' in field ? field.label : '',
                       defaultValue: 'defaultValue' in field ? field.defaultValue : '',
-                      options: 'options' in field ? field.options : []
+                      options: 'options' in field ? field.options : [],
+                      validation: 'validation' in field ? field.validation : {}
                     })}`}
                     field={field}
                     pageId={page.id}

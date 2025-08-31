@@ -75,6 +75,16 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
       return [];
     };
 
+    const getFieldRequired = (): boolean => {
+      if ('validation' in field && field.validation && typeof field.validation === 'object') {
+        const required = (field.validation as any).required || false;
+        console.log(`🔍 FieldPreview checking required for field ${field.id}: ${required}`, field.validation);
+        return required;
+      }
+      console.log(`🔍 FieldPreview no validation found for field ${field.id}`);
+      return false;
+    };
+
     return {
       label: getFieldLabel(),
       hint: getFieldHint(),
@@ -82,7 +92,8 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
       prefix: getFieldPrefix(),
       defaultValue: getFieldDefaultValue(),
       defaultValueArray: getFieldDefaultValueArray(),
-      options: getFieldOptions()
+      options: getFieldOptions(),
+      required: getFieldRequired()
     };
   }, [
     field,
@@ -94,6 +105,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
     'defaultValue' in field ? field.defaultValue : null,
     'defaultValueArray' in field ? (field as any).defaultValueArray : null,
     'options' in field ? field.options : null,
+    'validation' in field ? field.validation : null,
   ]);
 
   const getDefaultLabel = (type: FieldType): string => {
@@ -309,6 +321,9 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
       <div className="flex items-center space-x-1">
         <Label className="text-sm font-medium text-gray-900 dark:text-white">
           {fieldData.label}
+          {fieldData.required && (
+            <span className="text-red-500 ml-1">*</span>
+          )}
         </Label>
       </div>
 
