@@ -24,11 +24,13 @@ export const FieldSettingsFooter: React.FC<FieldSettingsFooterProps> = ({
   onSave
 }) => {
   return (
-    <div className={`flex-shrink-0 border-t p-4 space-y-4 transition-all duration-200 ${
-      isDirty 
-        ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800 shadow-lg' 
-        : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
-    }`}>
+    <div 
+      data-testid="field-settings-footer"
+      className={`flex-shrink-0 border-t p-4 space-y-4 transition-all duration-200 ${
+        isDirty 
+          ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800 shadow-lg' 
+          : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+      }`}>
       {/* Form Actions */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
