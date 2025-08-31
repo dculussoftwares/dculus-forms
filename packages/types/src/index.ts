@@ -360,20 +360,39 @@ export class RadioField extends FillableFormField {
 
 export class CheckboxField extends FillableFormField {
   options: string[];
+  // Store array values but keep string compatibility for serialization
+  private _defaultValueArray: string[];
   
   constructor(
     id: string,
     label: string,
-    defaultValue: string,
+    defaultValue: string | string[], // Accept both for backwards compatibility
     prefix: string,
     hint: string,
     placeholder: string,
     validation: FillableFormFieldValidation,
     options: string[] = []
   ) {
-    super(id, label, defaultValue, prefix, hint, placeholder, validation);
+    // Convert defaultValue to string for parent constructor (for serialization compatibility)
+    const stringDefaultValue = Array.isArray(defaultValue) ? defaultValue.join(', ') : (defaultValue || '');
+    super(id, label, stringDefaultValue, prefix, hint, placeholder, validation);
     this.type = FieldType.CHECKBOX_FIELD;
     this.options = options;
+    
+    // Store the array version
+    this._defaultValueArray = Array.isArray(defaultValue) ? defaultValue : 
+      (defaultValue ? defaultValue.split(',').map(s => s.trim()).filter(Boolean) : []);
+  }
+  
+  // Getter to provide array access
+  get defaultValueArray(): string[] {
+    return this._defaultValueArray;
+  }
+  
+  // Setter to maintain both formats
+  set defaultValueArray(values: string[]) {
+    this._defaultValueArray = values;
+    this.defaultValue = values.join(', '); // Keep string version in sync
   }
 }
 

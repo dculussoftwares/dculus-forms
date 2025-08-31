@@ -137,11 +137,31 @@ export const radioFieldValidationSchema = baseFieldValidationSchema.extend({
 });
 
 export const checkboxFieldValidationSchema = baseFieldValidationSchema.extend({
+  // Override defaultValue to accept string[] for checkbox fields
+  defaultValue: z.array(z.string()).max(100, 'Too many default values selected').optional().or(
+    z.string().max(1000, 'Default value is too long').optional()
+  ),
   options: z.array(z.string().min(1, 'Option text cannot be empty')).min(1, 'Add at least one option for checkboxes').refine(
     (options) => new Set(options.filter(opt => opt.trim())).size === options.filter(opt => opt.trim()).length,
     'Duplicate options are not allowed'
   ),
-});
+}).refine(
+  (data) => {
+    // Validate that default values exist in options
+    if (data.defaultValue && data.options) {
+      const defaultValues = Array.isArray(data.defaultValue) ? data.defaultValue : 
+        (data.defaultValue ? data.defaultValue.split(',').map(s => s.trim()).filter(Boolean) : []);
+      
+      const invalidDefaults = defaultValues.filter(val => !data.options.includes(val));
+      return invalidDefaults.length === 0;
+    }
+    return true;
+  },
+  {
+    message: 'Default values must be from the available options',
+    path: ['defaultValue'],
+  }
+);
 
 export const dateFieldValidationSchema = baseFieldValidationSchema.extend({
   minDate: z.string().optional().refine(

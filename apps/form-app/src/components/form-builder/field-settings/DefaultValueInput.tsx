@@ -1,6 +1,14 @@
 import React, { useEffect } from 'react';
 import { Controller, Control } from 'react-hook-form';
-import { Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@dculus/ui';
+import { 
+  Input, 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue,
+  Label
+} from '@dculus/ui';
 import { FormField, FieldType } from '@dculus/types';
 
 interface DefaultValueInputProps {
@@ -20,18 +28,33 @@ export const DefaultValueInput: React.FC<DefaultValueInputProps> = ({
   watch,
   setValue
 }) => {
-  // For SelectField and RadioField, automatically reset default value if it's no longer in options
+  // For SelectField, RadioField, and CheckboxField, automatically reset default value if it's no longer in options
   useEffect(() => {
-    if ((field?.type === FieldType.SELECT_FIELD || field?.type === FieldType.RADIO_FIELD) && setValue) {
+    if ((field?.type === FieldType.SELECT_FIELD || field?.type === FieldType.RADIO_FIELD || field?.type === FieldType.CHECKBOX_FIELD) && setValue) {
       const options = watch('options') || [];
       const currentDefaultValue = watch('defaultValue');
       
-      // If there's a default value set and it's not in the current options list
-      if (currentDefaultValue && 
-          currentDefaultValue !== '' && 
-          !options.some((option: string) => option === currentDefaultValue)) {
-        // Reset to empty (which will show as "None" in the UI)
-        setValue('defaultValue', '');
+      if (field?.type === FieldType.CHECKBOX_FIELD) {
+        // For checkbox fields, defaultValue is now string[]
+        const selectedValues = Array.isArray(currentDefaultValue) ? currentDefaultValue : 
+          (currentDefaultValue ? currentDefaultValue.split(',').map((s: string) => s.trim()).filter(Boolean) : []);
+        
+        if (selectedValues.length > 0) {
+          const validValues = selectedValues.filter((value: string) => options.includes(value));
+          
+          // If some values are no longer valid, update to only valid values
+          if (validValues.length !== selectedValues.length) {
+            setValue('defaultValue', validValues);
+          }
+        }
+      } else {
+        // For select and radio fields, single value handling
+        if (currentDefaultValue && 
+            currentDefaultValue !== '' && 
+            !options.some((option: string) => option === currentDefaultValue)) {
+          // Reset to empty (which will show as "None" in the UI)
+          setValue('defaultValue', '');
+        }
       }
     }
   }, [field?.type, watch, setValue, watch('options')]);
@@ -56,6 +79,62 @@ export const DefaultValueInput: React.FC<DefaultValueInputProps> = ({
               className={`text-sm ${errors.defaultValue ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
               value={controlField.value || ''}
             />
+          );
+        }
+        
+        if (field?.type === FieldType.CHECKBOX_FIELD) {
+          const options = watch('options') || [];
+          // Handle both array (new format) and comma-separated string (legacy format)
+          const selectedValues = Array.isArray(controlField.value) ? controlField.value : 
+            (controlField.value ? controlField.value.split(',').map((s: string) => s.trim()).filter(Boolean) : []);
+          
+          const handleCheckboxToggle = (option: string, checked: boolean) => {
+            let newSelectedValues: string[];
+            if (checked) {
+              newSelectedValues = [...selectedValues, option];
+            } else {
+              newSelectedValues = selectedValues.filter((v: string) => v !== option);
+            }
+            // For CheckboxField, we now store as array but also maintain string format for compatibility
+            controlField.onChange(newSelectedValues);
+          };
+          
+          return (
+            <div className={`space-y-2 ${errors.defaultValue ? 'border border-red-300 rounded-md p-2' : ''}`}>
+              {options.length === 0 ? (
+                <div className="text-sm text-gray-500 dark:text-gray-400 italic">
+                  No options available. Add options first to set default values.
+                </div>
+              ) : (
+                <>
+                  {options
+                    .filter((option: string) => option && option.trim() !== '')
+                    .map((option: string, index: number) => (
+                      <div key={`checkbox-default-${index}`} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`default-option-${index}`}
+                          checked={selectedValues.includes(option)}
+                          onChange={(e) => handleCheckboxToggle(option, e.target.checked)}
+                          disabled={!isConnected}
+                          className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+                        />
+                        <Label 
+                          htmlFor={`default-option-${index}`} 
+                          className="text-sm font-normal text-gray-700 dark:text-gray-300 cursor-pointer"
+                        >
+                          {option}
+                        </Label>
+                      </div>
+                    ))}
+                  {selectedValues.length > 0 && (
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                      {selectedValues.length} option{selectedValues.length === 1 ? '' : 's'} selected as default
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           );
         }
         

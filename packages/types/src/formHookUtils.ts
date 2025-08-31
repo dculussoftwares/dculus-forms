@@ -37,8 +37,9 @@ function getDefaultValueForField(field: FormField): any {
     // Handle different field types for default values
     switch (field.type) {
       case 'checkbox_field':
-        // For checkbox fields, default value might be a comma-separated string
-        return field.defaultValue ? field.defaultValue.split(',').map(s => s.trim()) : [];
+        // For checkbox fields, defaultValue is now string[]
+        return Array.isArray(field.defaultValue) ? field.defaultValue : 
+          (field.defaultValue ? field.defaultValue.split(',').map(s => s.trim()).filter(Boolean) : []);
       case 'number_field':
         const numValue = parseFloat(field.defaultValue);
         return isNaN(numValue) ? undefined : numValue;
