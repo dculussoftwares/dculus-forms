@@ -7,7 +7,6 @@ import { OptionsSettings } from './OptionsSettings';
 import { MultipleSelectionSettings } from './MultipleSelectionSettings';
 import { NumberRangeSettings } from './NumberRangeSettings';
 import { DateRangeSettings } from './DateRangeSettings';
-import { CharacterLimitSettings } from './CharacterLimitSettings';
 
 interface FieldTypeSpecificSettingsProps {
   field: FormField;
@@ -36,7 +35,6 @@ export const FieldTypeSpecificSettings: React.FC<FieldTypeSpecificSettingsProps>
         <>
           <TextInputSettings control={control} errors={errors} isConnected={isConnected} />
           <PrefixSettings control={control} errors={errors} isConnected={isConnected} />
-          <CharacterLimitSettings control={control} errors={errors} isConnected={isConnected} />
         </>
       );
 
@@ -45,7 +43,6 @@ export const FieldTypeSpecificSettings: React.FC<FieldTypeSpecificSettingsProps>
         <>
           <TextInputSettings control={control} errors={errors} isConnected={isConnected} />
           <PrefixSettings control={control} errors={errors} isConnected={isConnected} />
-          <CharacterLimitSettings control={control} errors={errors} isConnected={isConnected} />
         </>
       );
 

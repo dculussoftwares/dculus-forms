@@ -118,7 +118,7 @@ export const FieldSettings: React.FC<FieldSettingsProps> = ({
           />
 
           {/* Validation */}
-          <ValidationSettings control={control} isConnected={isConnected} />
+          <ValidationSettings control={control} isConnected={isConnected} errors={errors} field={field} />
 
           {/* Add some bottom padding to prevent content from being hidden behind the floating actions */}
           <div className="pb-4"></div>
