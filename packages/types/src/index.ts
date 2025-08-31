@@ -102,13 +102,25 @@ export enum PageModeType {
  * 
  * When adding new field types or properties, ensure you update:
  * 1. Field class definitions (below)
- * 2. FieldType enum (below)
+ * 2. FieldType enum (below) 
  * 3. Serialization/deserialization functions (deserializeFormField)
  * 4. Validation schemas (validation.ts - getFieldValidationSchema)
  * 5. Form renderer (packages/ui/src/renderers/FormFieldRenderer.tsx)
  * 6. Field settings components (apps/form-app/src/components/form-builder/field-settings/)
- * 7. Field editor hook (apps/form-app/src/hooks/useFieldEditor.ts - extractFieldData)
- * 8. Seed templates (apps/backend/src/scripts/seed-templates.ts)
+ * 7. Field editor hook (apps/form-app/src/hooks/useFieldEditor.ts - extractFieldData and handleSave)
+ * 8. Form builder store (apps/form-app/src/store/useFormBuilderStore.ts):
+ *    - createFormField function for field creation
+ *    - serializeFieldToYMap function for YJS storage
+ *    - extractFieldData function for YJS retrieval  
+ *    - createYJSFieldMap function for validation storage
+ *    - updateField function for field updates (handle validation object format)
+ *    - deserializePagesFromYJS function for page loading
+ * 9. Seed templates (apps/backend/src/scripts/seed-templates.ts)
+ * 
+ * CRITICAL: For fields with specialized validation (like TextFieldValidation):
+ * - Ensure validation data is properly stored in YJS validation maps
+ * - Update updateField function to handle validation object format from field editor
+ * - Test both field saving and field duplication after changes
  */
 export class FormField {
   id: string;
@@ -638,10 +650,18 @@ export * from './formHookUtils.js';
  * 
  * 5. 📄 apps/form-app/src/hooks/useFieldEditor.ts
  *    - Update extractFieldData function to handle new properties
- *    - Update save logic if specialized validation is used
+ *    - Update handleSave function if specialized validation is used
  *    - Add field watching for validation triggers
  * 
- * 6. 📄 apps/backend/src/scripts/seed-templates.ts
+ * 6. 📄 apps/form-app/src/store/useFormBuilderStore.ts (CRITICAL for YJS collaboration)
+ *    - Update createFormField function for proper field instantiation
+ *    - Update serializeFieldToYMap function for YJS storage
+ *    - Update extractFieldData function for YJS data retrieval
+ *    - Update createYJSFieldMap function for validation object storage
+ *    - Update updateField function to handle validation object format from field editor
+ *    - Update deserializePagesFromYJS function for proper deserialization
+ * 
+ * 7. 📄 apps/backend/src/scripts/seed-templates.ts
  *    - Update template examples to use new field types
  *    - Ensure proper validation objects are used
  * 
@@ -649,9 +669,11 @@ export * from './formHookUtils.js';
  * 
  * ✅ Field creation in form builder
  * ✅ Field settings save/load correctly  
+ * ✅ Field duplication preserves all properties (including validation constraints)
  * ✅ Field rendering in form viewer
  * ✅ Form submission with validation
  * ✅ Serialization/deserialization works
+ * ✅ YJS collaborative editing preserves validation data
  * ✅ Template seeding succeeds
  * ✅ Character limits display and validate (for text fields)
  * ✅ Cross-field validation works (min ≤ max constraints)
