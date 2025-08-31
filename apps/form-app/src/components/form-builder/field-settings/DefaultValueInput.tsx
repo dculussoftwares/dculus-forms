@@ -20,9 +20,9 @@ export const DefaultValueInput: React.FC<DefaultValueInputProps> = ({
   watch,
   setValue
 }) => {
-  // For SelectField, automatically reset default value if it's no longer in options
+  // For SelectField and RadioField, automatically reset default value if it's no longer in options
   useEffect(() => {
-    if (field?.type === FieldType.SELECT_FIELD && setValue) {
+    if ((field?.type === FieldType.SELECT_FIELD || field?.type === FieldType.RADIO_FIELD) && setValue) {
       const options = watch('options') || [];
       const currentDefaultValue = watch('defaultValue');
       
@@ -59,7 +59,7 @@ export const DefaultValueInput: React.FC<DefaultValueInputProps> = ({
           );
         }
         
-        if (field?.type === FieldType.SELECT_FIELD) {
+        if (field?.type === FieldType.SELECT_FIELD || field?.type === FieldType.RADIO_FIELD) {
           const options = watch('options') || [];
           
           return (
