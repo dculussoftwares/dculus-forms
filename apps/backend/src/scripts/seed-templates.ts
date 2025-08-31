@@ -173,8 +173,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
                 "Which of our services did you use?",
                 "Select a service",
                 new FillableFormFieldValidation(true),
-                ["Customer Support", "Product Delivery", "Technical Support", "Billing", "Other"],
-                false
+                ["Customer Support", "Product Delivery", "Technical Support", "Billing", "Other"]
               ),
               new NumberField(
                 randomUUID(),
@@ -276,8 +275,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
                 "Which session would you like to attend?",
                 "Select a session",
                 new FillableFormFieldValidation(true),
-                ["Morning Session (9AM - 12PM)", "Afternoon Session (1PM - 4PM)", "Evening Session (5PM - 8PM)"],
-                false
+                ["Morning Session (9AM - 12PM)", "Afternoon Session (1PM - 4PM)", "Evening Session (5PM - 8PM)"]
               ),
               new CheckboxField(
                 randomUUID(),
@@ -378,8 +376,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
                 "How many years of relevant experience do you have?",
                 "Select experience level",
                 new FillableFormFieldValidation(true),
-                ["0-1 years", "2-3 years", "4-5 years", "6-10 years", "10+ years"],
-                false
+                ["0-1 years", "2-3 years", "4-5 years", "6-10 years", "10+ years"]
               ),
               new TextAreaField(
                 randomUUID(),

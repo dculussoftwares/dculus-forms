@@ -4,7 +4,6 @@ import { FormField, FieldType } from '@dculus/types';
 import { TextInputSettings } from './TextInputSettings';
 import { PrefixSettings } from './PrefixSettings';
 import { OptionsSettings } from './OptionsSettings';
-import { MultipleSelectionSettings } from './MultipleSelectionSettings';
 import { NumberRangeSettings } from './NumberRangeSettings';
 import { DateRangeSettings } from './DateRangeSettings';
 
@@ -60,17 +59,14 @@ export const FieldTypeSpecificSettings: React.FC<FieldTypeSpecificSettingsProps>
 
     case FieldType.SELECT_FIELD:
       return (
-        <>
-          <OptionsSettings
-            options={options}
-            isConnected={isConnected}
-            errors={errors}
-            addOption={addOption}
-            updateOption={updateOption}
-            removeOption={removeOption}
-          />
-          <MultipleSelectionSettings control={control} isConnected={isConnected} />
-        </>
+        <OptionsSettings
+          options={options}
+          isConnected={isConnected}
+          errors={errors}
+          addOption={addOption}
+          updateOption={updateOption}
+          removeOption={removeOption}
+        />
       );
 
     case FieldType.RADIO_FIELD:

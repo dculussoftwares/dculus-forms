@@ -36,7 +36,6 @@ type FieldData = {
   prefix?: string;
   hint?: string;
   options?: string[];
-  multiple?: boolean;
   min?: number;
   max?: number;
   minDate?: string;
@@ -111,7 +110,6 @@ const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
     prefix: fieldMap.get('prefix') || '',
     hint: fieldMap.get('hint') || '',
     options: fieldMap.get('options') ? fieldMap.get('options').toArray() : undefined,
-    multiple: fieldMap.get('multiple'),
     min: validation?.minLength || fieldMap.get('min'),
     max: validation?.maxLength || fieldMap.get('max'),
     minDate: fieldMap.get('minDate'),
@@ -201,7 +199,7 @@ const createFormField = (fieldType: FieldType, fieldData: Partial<FieldData> = {
     }
     case FieldType.SELECT_FIELD: {
       const validation = new FillableFormFieldValidation(fieldData.required || false);
-      return new SelectField(fieldId, label, defaultValue, prefix, hint, placeholder, validation, fieldData.options || [], fieldData.multiple || false);
+      return new SelectField(fieldId, label, defaultValue, prefix, hint, placeholder, validation, fieldData.options || []);
     }
     case FieldType.RADIO_FIELD: {
       const validation = new FillableFormFieldValidation(fieldData.required || false);
@@ -239,7 +237,6 @@ const serializeFieldToYMap = (field: FormField): Y.Map<any> => {
     required: fillableField.validation?.required || false,
     placeholder: fillableField.placeholder || '',
     options: fillableField.options,
-    multiple: fillableField.multiple,
     min: fillableField.validation?.minLength || fillableField.min,
     max: fillableField.validation?.maxLength || fillableField.max,
     minDate: fillableField.minDate,

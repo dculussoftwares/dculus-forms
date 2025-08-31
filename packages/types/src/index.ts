@@ -322,7 +322,6 @@ export class NumberField extends FillableFormField {
 
 export class SelectField extends FillableFormField {
   options: string[];
-  multiple: boolean;
   
   constructor(
     id: string,
@@ -332,13 +331,11 @@ export class SelectField extends FillableFormField {
     hint: string,
     placeholder: string,
     validation: FillableFormFieldValidation,
-    options: string[] = [],
-    multiple: boolean = false
+    options: string[] = []
   ) {
     super(id, label, defaultValue, prefix, hint, placeholder, validation);
     this.type = FieldType.SELECT_FIELD;
     this.options = options;
-    this.multiple = multiple;
   }
 }
 
@@ -515,8 +512,7 @@ export const deserializeFormField = (data: any): FormField => {
         data.hint || '',
         data.placeholder || '',
         getValidation(data, FieldType.SELECT_FIELD) as FillableFormFieldValidation,
-        data.options || [],
-        data.multiple || false
+        data.options || []
       );
     case FieldType.RADIO_FIELD:
       return new RadioField(

@@ -93,7 +93,6 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
         return {
           ...baseData,
           options: ('options' in field && field.options) || [],
-          multiple: ('multiple' in field && field.multiple) || false,
         } as any;
       
       case FieldType.RADIO_FIELD:

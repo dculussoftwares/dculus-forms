@@ -1,6 +1,6 @@
 import React from 'react';
 import { Controller, Control } from 'react-hook-form';
-import { Input } from '@dculus/ui';
+import { Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@dculus/ui';
 import { FormField, FieldType } from '@dculus/types';
 
 interface DefaultValueInputProps {
@@ -38,6 +38,32 @@ export const DefaultValueInput: React.FC<DefaultValueInputProps> = ({
               className={`text-sm ${errors.defaultValue ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
               value={controlField.value || ''}
             />
+          );
+        }
+        
+        if (field?.type === FieldType.SELECT_FIELD) {
+          const options = watch('options') || [];
+          
+          return (
+            <Select
+              value={controlField.value || '__none__'}
+              onValueChange={(value) => controlField.onChange(value === '__none__' ? '' : value)}
+              disabled={!isConnected}
+            >
+              <SelectTrigger className={`text-sm ${errors.defaultValue ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}>
+                <SelectValue placeholder="Select default option" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">
+                  None
+                </SelectItem>
+                {options.map((option: string, index: number) => (
+                  <SelectItem key={index} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           );
         }
         

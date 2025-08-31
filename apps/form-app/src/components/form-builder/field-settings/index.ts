@@ -4,7 +4,6 @@ export { DefaultValueInput } from './DefaultValueInput';
 export { TextInputSettings } from './TextInputSettings';
 export { PrefixSettings } from './PrefixSettings';
 export { OptionsSettings } from './OptionsSettings';
-export { MultipleSelectionSettings } from './MultipleSelectionSettings';
 export { NumberRangeSettings } from './NumberRangeSettings';
 export { DateRangeSettings } from './DateRangeSettings';
 export { FieldSettingsHeader } from './FieldSettingsHeader';
