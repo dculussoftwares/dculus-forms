@@ -54,6 +54,96 @@ graph TB
 
 ## 🔧 Component Patterns
 
+### Pattern 0: Specialized Validation Settings (IMPORTANT!)
+
+**Use this pattern for field types with unique validation requirements (like text character limits or checkbox selection limits):**
+
+```typescript
+// Example: SelectionLimitSettings.tsx for checkbox fields
+import React from 'react';
+import { Controller, Control } from 'react-hook-form';
+import { Input, Label } from '@dculus/ui';
+import { ErrorMessage } from './ErrorMessage';
+
+interface SelectionLimitSettingsProps {
+  control: Control<any>;
+  errors: Record<string, any>;
+  isConnected: boolean;
+}
+
+export const SelectionLimitSettings: React.FC<SelectionLimitSettingsProps> = ({
+  control,
+  errors,
+  isConnected
+}) => {
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="field-min-selections" className="text-xs font-medium text-gray-700 dark:text-gray-300">
+          Minimum Selections
+        </Label>
+        <Controller
+          name="validation.minSelections"  // ⚠️ CRITICAL: Use nested validation path
+          control={control}
+          render={({ field }) => (
+            <Input
+              {...field}
+              id="field-min-selections"
+              type="number"
+              min="0"
+              placeholder="No minimum"
+              disabled={!isConnected}
+              className="text-sm"
+              value={field.value || ''}
+              onChange={(e) => {
+                const value = e.target.value === '' ? undefined : parseInt(e.target.value);
+                field.onChange(value);
+              }}
+            />
+          )}
+        />
+        <ErrorMessage error={errors.validation?.minSelections?.message} />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="field-max-selections" className="text-xs font-medium text-gray-700 dark:text-gray-300">
+          Maximum Selections
+        </Label>
+        <Controller
+          name="validation.maxSelections"  // ⚠️ CRITICAL: Use nested validation path
+          control={control}
+          render={({ field }) => (
+            <Input
+              {...field}
+              id="field-max-selections"
+              type="number"
+              min="1"
+              placeholder="No maximum"
+              disabled={!isConnected}
+              className="text-sm"
+              value={field.value || ''}
+              onChange={(e) => {
+                const value = e.target.value === '' ? undefined : parseInt(e.target.value);
+                field.onChange(value);
+              }}
+            />
+          )}
+        />
+        <ErrorMessage error={errors.validation?.maxSelections?.message} />
+      </div>
+    </div>
+  );
+};
+```
+
+**⚠️ CRITICAL REQUIREMENTS for Specialized Validation:**
+
+1. **Field names MUST use `validation.` prefix**: `validation.minSelections`, `validation.maxSelections`
+2. **Error paths MUST be nested**: `errors.validation?.minSelections?.message`
+3. **Follow the complete implementation checklist** (see "Adding Specialized Validation Fields" section below)
+
+## 🔧 Component Patterns
+
 ### Pattern 1: Basic Settings Component
 
 ```typescript
@@ -159,6 +249,261 @@ export const ComplexSettings: React.FC<BaseFieldSettingsProps> = ({
   );
 };
 ```
+
+## 🔬 Adding Specialized Validation Fields
+
+**Use this comprehensive checklist when adding validation constraints to field types (like character limits for text fields or selection limits for checkbox fields):**
+
+### Step 1: Create Specialized Validation Class in Types Package
+
+**File**: `packages/types/src/index.ts`
+
+```typescript
+// Example: CheckboxFieldValidation class
+export class CheckboxFieldValidation extends FillableFormFieldValidation {
+  minSelections?: number;
+  maxSelections?: number;
+  
+  constructor(
+    required: boolean, 
+    minSelections?: number, 
+    maxSelections?: number
+  ) {
+    super(required);
+    this.type = FieldType.CHECKBOX_FIELD_VALIDATION;
+    this.minSelections = minSelections;
+    this.maxSelections = maxSelections;
+  }
+}
+```
+
+**Add to FieldType enum:**
+```typescript
+export enum FieldType {
+  // ... existing types
+  CHECKBOX_FIELD_VALIDATION = 'checkbox_field_validation',
+}
+```
+
+### Step 2: Update Field Class to Use Specialized Validation
+
+**File**: `packages/types/src/index.ts`
+
+```typescript
+export class CheckboxField extends FillableFormField {
+  // ... existing properties
+  validation: CheckboxFieldValidation; // ← Specify the specialized type
+  
+  constructor(
+    // ... other parameters
+    validation: CheckboxFieldValidation, // ← Use specialized validation
+    // ... rest of parameters
+  ) {
+    super(id, label, '', prefix, hint, placeholder, validation);
+    this.type = FieldType.CHECKBOX_FIELD;
+    this.validation = validation; // ← Assign the specialized validation
+    // ... rest of constructor
+  }
+}
+```
+
+### Step 3: Update Deserialization Function
+
+**File**: `packages/types/src/index.ts`
+
+```typescript
+const getValidation = (data: any, fieldType: FieldType) => {
+  // ... existing validation creation logic
+  
+  if (fieldType === FieldType.CHECKBOX_FIELD) {
+    return new CheckboxFieldValidation(
+      data.validation.required || false,
+      data.validation.minSelections,
+      data.validation.maxSelections
+    );
+  }
+  
+  // ... rest of validation logic
+};
+
+// Update the field creation case
+case FieldType.CHECKBOX_FIELD:
+  return new CheckboxField(
+    // ... parameters
+    getValidation(data, FieldType.CHECKBOX_FIELD) as CheckboxFieldValidation,
+    // ... rest of parameters
+  );
+```
+
+### Step 4: Create Validation Schema
+
+**File**: `packages/types/src/validation.ts`
+
+```typescript
+export const checkboxFieldValidationSchema = baseFieldValidationSchema.extend({
+  // ... existing properties
+  validation: z.object({
+    required: z.boolean().default(false),
+    minSelections: z.number().min(0, 'Minimum selections must be 0 or greater').optional(),
+    maxSelections: z.number().min(1, 'Maximum selections must be 1 or greater').optional(),
+  }).optional().refine(
+    (validation) => {
+      if (!validation) return true;
+      const { minSelections, maxSelections } = validation;
+      if (minSelections !== undefined && maxSelections !== undefined) {
+        return minSelections <= maxSelections;
+      }
+      return true;
+    },
+    {
+      message: 'Minimum selections must be less than or equal to maximum selections',
+      path: ['maxSelections'],
+    }
+  ),
+  // ... rest of validation schema
+});
+```
+
+### Step 5: Update Field Data Extraction
+
+**File**: `apps/form-app/src/hooks/types.ts`
+
+```typescript
+export interface CheckboxValidationFieldData {
+  validation: {
+    required: boolean;
+    minSelections?: number;
+    maxSelections?: number;
+  };
+}
+```
+
+**File**: `apps/form-app/src/hooks/fieldDataExtractor.ts`
+
+```typescript
+export function extractCheckboxValidationData(field: FormField): CheckboxValidationFieldData {
+  const validation = (field as any).validation || {};
+  
+  return {
+    validation: {
+      required: validation.required || false,
+      minSelections: validation.minSelections || undefined,
+      maxSelections: validation.maxSelections || undefined,
+    },
+  };
+}
+
+// Update field extractor
+[FieldType.CHECKBOX_FIELD]: (field: FormField) => ({
+  ...extractBaseFieldData(field),
+  ...extractOptionData(field),
+  ...extractCheckboxValidationData(field), // ← Add validation extraction
+}),
+```
+
+### Step 6: Update useFieldEditor Hook
+
+**File**: `apps/form-app/src/hooks/useFieldEditor.ts`
+
+```typescript
+// Add validation field watching
+const minSelectionsValue = watch('validation.minSelections');
+const maxSelectionsValue = watch('validation.maxSelections');
+
+// Add cross-field validation triggering
+useEffect(() => {
+  // ... existing validation triggers
+  else if (field?.type === FieldType.CHECKBOX_FIELD) {
+    trigger(['validation.minSelections', 'validation.maxSelections', 'options']);
+  }
+}, [/* ... existing deps */, minSelectionsValue, maxSelectionsValue, field?.type, trigger]);
+
+// Update validation handling in handleSave
+if (field.type === FieldType.CHECKBOX_FIELD) {
+  const validationData = anyData.validation || {};
+  updates.validation = {
+    ...((field as any)?.validation || {}),
+    required: anyData.required !== undefined ? anyData.required : validationData.required || false,
+    minSelections: validationData.minSelections,
+    maxSelections: validationData.maxSelections,
+  };
+}
+```
+
+### Step 7: Update Form Builder Store YJS Integration
+
+**File**: `apps/form-app/src/store/useFormBuilderStore.ts`
+
+```typescript
+// Update validation extraction
+if (validationYMap && validationYMap instanceof Y.Map) {
+  validationObj = {
+    // ... existing properties
+    minSelections: validationYMap.get('minSelections'),
+    maxSelections: validationYMap.get('maxSelections'),
+  };
+}
+
+// Update field creation
+case FieldType.CHECKBOX_FIELD: {
+  const validation = new CheckboxFieldValidation(
+    fieldData.required || false,
+    fieldData.validation?.minSelections,
+    fieldData.validation?.maxSelections
+  );
+  // ... rest of field creation
+}
+
+// Update YJS validation map creation
+else if (fieldData.type === FieldType.CHECKBOX_FIELD) {
+  const validationMap = new Y.Map();
+  validationMap.set('required', fieldData.required || false);
+  validationMap.set('type', FieldType.CHECKBOX_FIELD_VALIDATION);
+  if (fieldData.validation?.minSelections !== undefined) {
+    validationMap.set('minSelections', fieldData.validation.minSelections);
+  }
+  if (fieldData.validation?.maxSelections !== undefined) {
+    validationMap.set('maxSelections', fieldData.validation.maxSelections);
+  }
+  fieldMap.set('validation', validationMap);
+}
+
+// Update validation handling in updateField
+else if (fieldType === FieldType.CHECKBOX_FIELD) {
+  if (validationData.minSelections !== undefined) {
+    validationMap.set('minSelections', validationData.minSelections);
+  }
+  if (validationData.maxSelections !== undefined) {
+    validationMap.set('maxSelections', validationData.maxSelections);
+  }
+}
+```
+
+### Step 8: Create UI Component and Add to Configuration
+
+**Create**: `SelectionLimitSettings.tsx` (following Pattern 0 above)
+
+**Update**: `fieldSettingsConfig.tsx`
+
+```typescript
+[FieldType.CHECKBOX_FIELD]: {
+  components: [
+    { component: OptionsSettings, /* ... */ },
+    { component: SelectionLimitSettings }, // ← Add your component
+  ],
+  // ... rest of configuration
+},
+```
+
+### ✅ Testing Checklist for Specialized Validation
+
+- [ ] Field creation with validation works
+- [ ] Validation values save and persist on reload
+- [ ] Cross-field validation triggers (min ≤ max)
+- [ ] YJS collaborative editing syncs validation data
+- [ ] Error messages display correctly
+- [ ] TypeScript compilation passes
+- [ ] Form submission respects validation constraints
 
 ## 📝 Adding New Field Types
 
@@ -492,6 +837,8 @@ PrefixSettings            // Prefix configuration
 OptionsSettings           // Options management
 NumberRangeSettings       // Number min/max
 DateRangeSettings         // Date min/max
+CharacterLimitSettings    // Text field min/max character limits
+SelectionLimitSettings    // Checkbox field min/max selection limits
 ```
 
 ### Available Utilities
@@ -500,7 +847,8 @@ DateRangeSettings         // Date min/max
 // From fieldDataExtractor.ts
 extractFieldData(field)           // Main extraction function
 extractBaseFieldData(field)       // Base field properties
-extractValidationData(field)      // Validation settings
+extractValidationData(field)      // Text field validation (minLength/maxLength)
+extractCheckboxValidationData(field) // Checkbox validation (minSelections/maxSelections)
 extractOptionData(field)          // Options array
 extractNumberRangeData(field)     // Number ranges
 extractDateRangeData(field)       // Date ranges
@@ -528,11 +876,56 @@ FIELD_SETTINGS_CONSTANTS = {
 }
 ```
 
+## 📋 Existing Specialized Validation Examples
+
+### Text Field Character Limits (✅ Implemented)
+
+**Components**: `CharacterLimitSettings.tsx`
+**Validation Class**: `TextFieldValidation` (minLength, maxLength)
+**Field Types**: `TEXT_INPUT_FIELD`, `TEXT_AREA_FIELD`
+**Form Path**: `validation.minLength`, `validation.maxLength`
+
+### Checkbox Selection Limits (✅ Implemented)
+
+**Components**: `SelectionLimitSettings.tsx`
+**Validation Class**: `CheckboxFieldValidation` (minSelections, maxSelections)
+**Field Types**: `CHECKBOX_FIELD`
+**Form Path**: `validation.minSelections`, `validation.maxSelections`
+
+### Number Range Constraints (✅ Implemented)
+
+**Components**: `NumberRangeSettings.tsx`
+**Properties**: Stored directly on `NumberField` class (min, max)
+**Field Types**: `NUMBER_FIELD`
+**Form Path**: `min`, `max` (direct properties, not nested in validation)
+
+### Date Range Constraints (✅ Implemented)
+
+**Components**: `DateRangeSettings.tsx`
+**Properties**: Stored directly on `DateField` class (minDate, maxDate)
+**Field Types**: `DATE_FIELD`
+**Form Path**: `minDate`, `maxDate` (direct properties, not nested in validation)
+
+## 🔄 Architecture Decision: When to Use Validation Object vs Direct Properties
+
+### Use Validation Object Pattern (✅ Recommended for New Validations)
+- **Examples**: TextFieldValidation, CheckboxFieldValidation
+- **When**: Validation constraints that are part of field validation logic
+- **Benefits**: Better type safety, consistent validation handling, easier to extend
+- **Form Paths**: `validation.minLength`, `validation.maxSelections`, etc.
+
+### Direct Properties Pattern (🔄 Legacy)
+- **Examples**: NumberField.min/max, DateField.minDate/maxDate  
+- **When**: Existing implementations (maintained for compatibility)
+- **Form Paths**: `min`, `max`, `minDate`, `maxDate`
+
+**⚠️ For new specialized validation, always use the validation object pattern following the CheckboxFieldValidation example.**
+
 ---
 
 ## 📋 Checklist for Changes
 
-When modifying field settings, ensure you:
+### For Basic Field Settings Changes:
 
 - [ ] Used proper TypeScript interfaces from `types.ts`
 - [ ] Imported constants from `constants.ts` (no hardcoded strings)
@@ -544,5 +937,40 @@ When modifying field settings, ensure you:
 - [ ] Memoized expensive operations
 - [ ] Ran `pnpm type-check` to verify TypeScript compliance
 - [ ] Tested component behavior with different field types
+
+### For Specialized Validation Fields (CRITICAL):
+
+- [ ] **Types Package Updates**:
+  - [ ] Created specialized validation class (e.g., `CheckboxFieldValidation`)
+  - [ ] Added new validation type to `FieldType` enum
+  - [ ] Updated field class to use specialized validation
+  - [ ] Updated `deserializeFormField` function with new validation handling
+- [ ] **Validation Schema**:
+  - [ ] Added validation schema in `packages/types/src/validation.ts`
+  - [ ] Included cross-field validation (min ≤ max)
+  - [ ] Added field-specific constraints validation
+- [ ] **Data Extraction**:
+  - [ ] Added interface in `apps/form-app/src/hooks/types.ts`
+  - [ ] Created extraction function in `fieldDataExtractor.ts`
+  - [ ] Updated field extractor to include validation data
+- [ ] **Form Editor Integration**:
+  - [ ] Added validation field watching in `useFieldEditor.ts`
+  - [ ] Added cross-field validation triggering
+  - [ ] Updated validation handling in `handleSave`
+- [ ] **YJS Store Integration**:
+  - [ ] Updated validation extraction from YJS maps
+  - [ ] Updated field creation with specialized validation
+  - [ ] Updated YJS validation map storage
+  - [ ] Updated `updateField` validation handling
+- [ ] **UI Component**:
+  - [ ] Used `validation.` prefixed form field names
+  - [ ] Used nested error paths (`errors.validation?.field?.message`)
+  - [ ] Added to field settings configuration
+- [ ] **Testing**:
+  - [ ] Values save and persist on page reload
+  - [ ] Cross-field validation works (min ≤ max)
+  - [ ] YJS collaborative editing syncs validation data
+  - [ ] Error messages display correctly
+  - [ ] TypeScript compilation passes without errors
 
 **Remember**: The architecture prioritizes reusability, type safety, and maintainability. Always prefer extending existing components over creating new ones, and use the configuration-driven approach for field type mapping.
