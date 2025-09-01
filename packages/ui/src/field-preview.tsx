@@ -13,17 +13,8 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
   disabled = true,
   showValidation = true
 }) => {
-  // Debug: Component render tracking
-  // console.log(`🎯 [FieldPreview] Component render for field ${field.id} (${field.type}):`, {
-  //   field,
-  //   hasDefaultValues: 'defaultValues' in field,
-  //   defaultValuesRaw: (field as any).defaultValues,
-  //   timestamp: new Date().toISOString()
-  // });
   // Memoize field data extraction to make it reactive to field changes
   const fieldData = useMemo(() => {
-    // Debug: useMemo recalculation tracking
-    // console.log(`🔄 [FieldPreview] useMemo recalculating for field ${field.id} (${field.type})`);
     const getFieldLabel = (): string => {
       if ('label' in field && typeof field.label === 'string' && field.label) {
         return field.label;
@@ -61,19 +52,8 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
 
     const getFieldDefaultValueArray = (): string[] => {
       // CheckboxField should have defaultValues array
-      // Debug: CheckboxField defaultValues extraction
-      if (field.type === 'checkbox_field') {
-        console.log(`🔍 [CheckboxField] Getting defaultValues for ${field.id}:`, {
-          defaultValues: (field as any).defaultValues
-        });
-      }
-      
       if ('defaultValues' in field && Array.isArray((field as any).defaultValues)) {
-        const values = (field as any).defaultValues;
-        if (field.type === 'checkbox_field') {
-          console.log(`✅ [CheckboxField] Using defaultValues for ${field.id}:`, values);
-        }
-        return values;
+        return (field as any).defaultValues;
       }
       return [];
     };
@@ -87,15 +67,12 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
 
     const getFieldRequired = (): boolean => {
       if ('validation' in field && field.validation && typeof field.validation === 'object') {
-        const required = (field.validation as any).required || false;
-        console.log(`🔍 FieldPreview checking required for field ${field.id}: ${required}`, field.validation);
-        return required;
+        return (field.validation as any).required || false;
       }
-      console.log(`🔍 FieldPreview no validation found for field ${field.id}`);
       return false;
     };
 
-    const extractedData = {
+    return {
       label: getFieldLabel(),
       hint: getFieldHint(),
       placeholder: getFieldPlaceholder(),
@@ -105,10 +82,6 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
       options: getFieldOptions(),
       required: getFieldRequired()
     };
-    
-    // Debug: Extracted field data
-    // console.log(`📊 [FieldPreview] Extracted data for field ${field.id}:`, extractedData);
-    return extractedData;
   }, [
     field,
     // Add specific dependencies to ensure re-computation when field data changes
@@ -279,17 +252,11 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
 
       case FieldType.CHECKBOX_FIELD:
         const defaultValues = fieldData.defaultValueArray;
-        // Debug: Checkbox rendering with key data
-        console.log(`☑️ [CheckboxField] Rendering ${field.id} with defaultValues:`, defaultValues);
-        
         return (
           <div className="space-y-2">
             {options.length > 0 ? (
               options.map((option, index) => {
                 const isChecked = defaultValues.includes(option);
-                // Debug: Individual checkbox state
-                console.log(`🔲 [CheckboxField] Option "${option}": ${isChecked ? 'CHECKED' : 'unchecked'}`);
-                
                 return (
                   <div key={index} className="flex items-center space-x-2">
                     <input
