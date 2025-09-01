@@ -13,8 +13,17 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
   disabled = true,
   showValidation = true
 }) => {
+  // Debug: Component render tracking
+  // console.log(`🎯 [FieldPreview] Component render for field ${field.id} (${field.type}):`, {
+  //   field,
+  //   hasDefaultValues: 'defaultValues' in field,
+  //   defaultValuesRaw: (field as any).defaultValues,
+  //   timestamp: new Date().toISOString()
+  // });
   // Memoize field data extraction to make it reactive to field changes
   const fieldData = useMemo(() => {
+    // Debug: useMemo recalculation tracking
+    // console.log(`🔄 [FieldPreview] useMemo recalculating for field ${field.id} (${field.type})`);
     const getFieldLabel = (): string => {
       if ('label' in field && typeof field.label === 'string' && field.label) {
         return field.label;
@@ -52,8 +61,19 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
 
     const getFieldDefaultValueArray = (): string[] => {
       // CheckboxField should have defaultValues array
+      // Debug: CheckboxField defaultValues extraction
+      if (field.type === 'checkbox_field') {
+        console.log(`🔍 [CheckboxField] Getting defaultValues for ${field.id}:`, {
+          defaultValues: (field as any).defaultValues
+        });
+      }
+      
       if ('defaultValues' in field && Array.isArray((field as any).defaultValues)) {
-        return (field as any).defaultValues;
+        const values = (field as any).defaultValues;
+        if (field.type === 'checkbox_field') {
+          console.log(`✅ [CheckboxField] Using defaultValues for ${field.id}:`, values);
+        }
+        return values;
       }
       return [];
     };
@@ -75,7 +95,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
       return false;
     };
 
-    return {
+    const extractedData = {
       label: getFieldLabel(),
       hint: getFieldHint(),
       placeholder: getFieldPlaceholder(),
@@ -85,6 +105,10 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
       options: getFieldOptions(),
       required: getFieldRequired()
     };
+    
+    // Debug: Extracted field data
+    // console.log(`📊 [FieldPreview] Extracted data for field ${field.id}:`, extractedData);
+    return extractedData;
   }, [
     field,
     // Add specific dependencies to ensure re-computation when field data changes
@@ -93,6 +117,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
     'placeholder' in field ? field.placeholder : null,
     'prefix' in field ? field.prefix : null,
     'defaultValue' in field ? field.defaultValue : null,
+    'defaultValues' in field ? (field as any).defaultValues : null,
     'options' in field ? field.options : null,
     'validation' in field ? field.validation : null,
   ]);
@@ -254,28 +279,38 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
 
       case FieldType.CHECKBOX_FIELD:
         const defaultValues = fieldData.defaultValueArray;
+        // Debug: Checkbox rendering with key data
+        console.log(`☑️ [CheckboxField] Rendering ${field.id} with defaultValues:`, defaultValues);
+        
         return (
           <div className="space-y-2">
             {options.length > 0 ? (
-              options.map((option, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id={`${field.id}-${index}`}
-                    name={field.id}
-                    value={option}
-                    defaultChecked={defaultValues.includes(option)}
-                    disabled={disabled}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50"
-                  />
-                  <label
-                    htmlFor={`${field.id}-${index}`}
-                    className="text-sm text-gray-700 dark:text-gray-300"
-                  >
-                    {option}
-                  </label>
-                </div>
-              ))
+              options.map((option, index) => {
+                const isChecked = defaultValues.includes(option);
+                // Debug: Individual checkbox state
+                console.log(`🔲 [CheckboxField] Option "${option}": ${isChecked ? 'CHECKED' : 'unchecked'}`);
+                
+                return (
+                  <div key={index} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id={`${field.id}-${index}`}
+                      name={field.id}
+                      value={option}
+                      checked={isChecked}
+                      disabled={disabled}
+                      onChange={() => {}} // Disabled preview - no actual interaction
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50"
+                    />
+                    <label
+                      htmlFor={`${field.id}-${index}`}
+                      className="text-sm text-gray-700 dark:text-gray-300"
+                    >
+                      {option}
+                    </label>
+                  </div>
+                );
+              })
             ) : (
               <div className="text-sm text-gray-500 italic">No options added yet</div>
             )}
