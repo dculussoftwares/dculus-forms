@@ -145,6 +145,26 @@ export const checkboxFieldValidationSchema = baseFieldValidationSchema.extend({
     (options) => new Set(options.filter(opt => opt.trim())).size === options.filter(opt => opt.trim()).length,
     'Duplicate options are not allowed'
   ),
+  validation: z.object({
+    required: z.boolean().default(false),
+    minSelections: z.number().min(0, 'Minimum selections must be 0 or greater').optional().or(z.string().regex(/^\d*$/, 'Minimum selections must be a valid number').optional()),
+    maxSelections: z.number().min(1, 'Maximum selections must be 1 or greater').optional().or(z.string().regex(/^\d*$/, 'Maximum selections must be a valid number').optional()),
+  }).optional().refine(
+    (validation) => {
+      if (!validation) return true;
+      const { minSelections, maxSelections } = validation;
+      if (minSelections !== undefined && maxSelections !== undefined && minSelections !== '' && maxSelections !== '') {
+        const minNum = typeof minSelections === 'string' ? parseInt(minSelections) : minSelections;
+        const maxNum = typeof maxSelections === 'string' ? parseInt(maxSelections) : maxSelections;
+        return isNaN(minNum) || isNaN(maxNum) || minNum <= maxNum;
+      }
+      return true;
+    },
+    {
+      message: 'Minimum selections must be less than or equal to maximum selections',
+      path: ['maxSelections'],
+    }
+  ),
 }).refine(
   (data) => {
     // Validate that default values exist in options
@@ -160,6 +180,23 @@ export const checkboxFieldValidationSchema = baseFieldValidationSchema.extend({
   {
     message: 'Default values must be from the available options',
     path: ['defaultValue'],
+  }
+).refine(
+  (data) => {
+    // Validate that selection limits don't exceed available options
+    if (data.options && data.validation) {
+      const optionsCount = data.options.length;
+      const maxSelections = data.validation.maxSelections;
+      if (maxSelections !== undefined && maxSelections !== '') {
+        const maxNum = typeof maxSelections === 'string' ? parseInt(maxSelections) : maxSelections;
+        return isNaN(maxNum) || maxNum <= optionsCount;
+      }
+    }
+    return true;
+  },
+  {
+    message: 'Maximum selections cannot exceed the number of available options',
+    path: ['validation', 'maxSelections'],
   }
 );
 

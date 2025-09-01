@@ -19,6 +19,7 @@ import {
   FillableFormField,
   FillableFormFieldValidation,
   TextFieldValidation,
+  CheckboxFieldValidation,
   deserializeFormField,
   ThemeType,
   SpacingType,
@@ -98,6 +99,8 @@ const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
       type: validationYMap.get('type'),
       minLength: validationYMap.get('minLength'),
       maxLength: validationYMap.get('maxLength'),
+      minSelections: validationYMap.get('minSelections'),
+      maxSelections: validationYMap.get('maxSelections'),
     };
   }
   
@@ -154,7 +157,7 @@ const createYJSFieldMap = (fieldData: FieldData): Y.Map<any> => {
     }
   });
   
-  // Store validation object for text fields that have min/max length constraints
+  // Store validation object for fields that have specialized validation
   if (fieldData.type === FieldType.TEXT_INPUT_FIELD || fieldData.type === FieldType.TEXT_AREA_FIELD) {
     const validationMap = new Y.Map();
     validationMap.set('required', fieldData.required || false);
@@ -164,6 +167,17 @@ const createYJSFieldMap = (fieldData: FieldData): Y.Map<any> => {
     }
     if (fieldData.max !== undefined) {
       validationMap.set('maxLength', fieldData.max);
+    }
+    fieldMap.set('validation', validationMap);
+  } else if (fieldData.type === FieldType.CHECKBOX_FIELD) {
+    const validationMap = new Y.Map();
+    validationMap.set('required', fieldData.required || false);
+    validationMap.set('type', FieldType.CHECKBOX_FIELD_VALIDATION);
+    if (fieldData.validation?.minSelections !== undefined) {
+      validationMap.set('minSelections', fieldData.validation.minSelections);
+    }
+    if (fieldData.validation?.maxSelections !== undefined) {
+      validationMap.set('maxSelections', fieldData.validation.maxSelections);
     }
     fieldMap.set('validation', validationMap);
   } else {
@@ -228,7 +242,11 @@ const createFormField = (fieldType: FieldType, fieldData: Partial<FieldData> = {
       return new RadioField(fieldId, label, defaultValue, prefix, hint, placeholder, validation, fieldData.options || []);
     }
     case FieldType.CHECKBOX_FIELD: {
-      const validation = new FillableFormFieldValidation(fieldData.required || false);
+      const validation = new CheckboxFieldValidation(
+        fieldData.required || false,
+        fieldData.validation?.minSelections,
+        fieldData.validation?.maxSelections
+      );
       // For checkbox fields, use defaultValue as array (it could be string or array from fieldData)
       const checkboxDefaults = fieldData.defaultValue || [];
       return new CheckboxField(fieldId, label, checkboxDefaults, prefix, hint, placeholder, validation, fieldData.options || []);
@@ -301,6 +319,8 @@ const deserializePagesFromYJS = (pagesArray: Y.Array<Y.Map<any>>): FormPage[] =>
               type: validationYMap.get('type') || FieldType.FILLABLE_FORM_FIELD,
               minLength: validationYMap.get('minLength'),
               maxLength: validationYMap.get('maxLength'),
+              minSelections: validationYMap.get('minSelections'),
+              maxSelections: validationYMap.get('maxSelections'),
             };
           } else {
             // Fallback for backwards compatibility
@@ -308,7 +328,9 @@ const deserializePagesFromYJS = (pagesArray: Y.Array<Y.Map<any>>): FormPage[] =>
               required: fieldData.required,
               type: fieldData.type === FieldType.TEXT_INPUT_FIELD || fieldData.type === FieldType.TEXT_AREA_FIELD 
                 ? FieldType.TEXT_FIELD_VALIDATION 
-                : FieldType.FILLABLE_FORM_FIELD,
+                : fieldData.type === FieldType.CHECKBOX_FIELD
+                  ? FieldType.CHECKBOX_FIELD_VALIDATION
+                  : FieldType.FILLABLE_FORM_FIELD,
               minLength: fieldData.min,
               maxLength: fieldData.max,
             };
@@ -768,11 +790,13 @@ export const useFormBuilderStore = create<FormBuilderState>()(
           if (!validationMap || !(validationMap instanceof Y.Map)) {
             validationMap = new Y.Map();
             validationMap.set('required', false);
-            validationMap.set('type', 
-              (fieldType === FieldType.TEXT_INPUT_FIELD || fieldType === FieldType.TEXT_AREA_FIELD) 
-                ? FieldType.TEXT_FIELD_VALIDATION 
-                : FieldType.FILLABLE_FORM_FIELD
-            );
+            if (fieldType === FieldType.TEXT_INPUT_FIELD || fieldType === FieldType.TEXT_AREA_FIELD) {
+              validationMap.set('type', FieldType.TEXT_FIELD_VALIDATION);
+            } else if (fieldType === FieldType.CHECKBOX_FIELD) {
+              validationMap.set('type', FieldType.CHECKBOX_FIELD_VALIDATION);
+            } else {
+              validationMap.set('type', FieldType.FILLABLE_FORM_FIELD);
+            }
             fieldMap.set('validation', validationMap);
           }
           
@@ -799,6 +823,13 @@ export const useFormBuilderStore = create<FormBuilderState>()(
                 }
                 if (validationData.maxLength !== undefined) {
                   validationMap.set('maxLength', validationData.maxLength);
+                }
+              } else if (fieldType === FieldType.CHECKBOX_FIELD) {
+                if (validationData.minSelections !== undefined) {
+                  validationMap.set('minSelections', validationData.minSelections);
+                }
+                if (validationData.maxSelections !== undefined) {
+                  validationMap.set('maxSelections', validationData.maxSelections);
                 }
               }
             } else if (key === 'required') {

@@ -5,6 +5,7 @@ import { PrefixSettings } from './PrefixSettings';
 import { NumberRangeSettings } from './NumberRangeSettings';
 import { DateRangeSettings } from './DateRangeSettings';
 import { OptionsSettings } from './OptionsSettings';
+import { SelectionLimitSettings } from './SelectionLimitSettings';
 import { BaseFieldSettingsProps, OptionsSettingsProps } from './types';
 
 /**
@@ -117,6 +118,7 @@ export const FIELD_SETTINGS_CONFIG: Partial<Record<FieldType, FieldSettingsCompo
           removeOption: baseProps.removeOption,
         }),
       },
+      { component: SelectionLimitSettings },
     ],
     supportsCharacterLimits: false,
     supportsPrefix: false,

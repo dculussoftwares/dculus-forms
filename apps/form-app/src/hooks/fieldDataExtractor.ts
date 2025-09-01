@@ -1,5 +1,5 @@
 import { FormField, FieldType } from '@dculus/types';
-import { BaseFieldData, OptionFieldData, ValidationFieldData, NumberRangeFieldData, DateRangeFieldData } from './types';
+import { BaseFieldData, OptionFieldData, ValidationFieldData, NumberRangeFieldData, DateRangeFieldData, CheckboxValidationFieldData } from './types';
 
 /**
  * Type-safe field data extraction utilities
@@ -47,6 +47,21 @@ export function extractValidationData(field: FormField): ValidationFieldData {
       required: validation.required || false,
       minLength: validation.minLength || undefined,
       maxLength: validation.maxLength || undefined,
+    },
+  };
+}
+
+/**
+ * Extract validation data for checkbox fields
+ */
+export function extractCheckboxValidationData(field: FormField): CheckboxValidationFieldData {
+  const validation = (field as any).validation || {};
+  
+  return {
+    validation: {
+      required: validation.required || false,
+      minSelections: validation.minSelections || undefined,
+      maxSelections: validation.maxSelections || undefined,
     },
   };
 }
@@ -119,6 +134,7 @@ const FIELD_DATA_EXTRACTORS: Partial<Record<FieldType, (field: FormField) => Rec
   [FieldType.CHECKBOX_FIELD]: (field: FormField) => ({
     ...extractBaseFieldData(field),
     ...extractOptionData(field),
+    ...extractCheckboxValidationData(field),
     multiple: ('multiple' in field && field.multiple) || true,
   }),
 
@@ -155,6 +171,13 @@ export function fieldHasOptions(field: FormField): field is FormField & OptionFi
  */
 export function fieldHasValidation(field: FormField): field is FormField & ValidationFieldData {
   return field.type === FieldType.TEXT_INPUT_FIELD || field.type === FieldType.TEXT_AREA_FIELD;
+}
+
+/**
+ * Type predicate to check if a field has checkbox validation settings
+ */
+export function fieldHasCheckboxValidation(field: FormField): field is FormField & CheckboxValidationFieldData {
+  return field.type === FieldType.CHECKBOX_FIELD;
 }
 
 /**

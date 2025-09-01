@@ -82,6 +82,17 @@ export interface DateRangeFieldData {
 }
 
 /**
+ * Selection validation configuration for checkbox fields
+ */
+export interface CheckboxValidationFieldData {
+  validation: {
+    required: boolean;
+    minSelections?: number;
+    maxSelections?: number;
+  };
+}
+
+/**
  * Base field data that all fields share
  */
 export interface BaseFieldData {

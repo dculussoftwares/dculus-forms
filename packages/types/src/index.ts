@@ -176,6 +176,28 @@ export class TextFieldValidation extends FillableFormFieldValidation {
 }
 
 /**
+ * Specialized validation class for checkbox fields
+ * Contains selection limit validation properties (minSelections/maxSelections)
+ * 
+ * Similar to TextFieldValidation but for validating checkbox selection constraints
+ */
+export class CheckboxFieldValidation extends FillableFormFieldValidation {
+  minSelections?: number;
+  maxSelections?: number;
+  
+  constructor(
+    required: boolean, 
+    minSelections?: number, 
+    maxSelections?: number
+  ) {
+    super(required);
+    this.type = FieldType.CHECKBOX_FIELD_VALIDATION;
+    this.minSelections = minSelections;
+    this.maxSelections = maxSelections;
+  }
+}
+
+/**
  * Base class for fields that can be filled by users
  * Contains common properties like label, placeholder, validation, etc.
  * 
@@ -361,6 +383,7 @@ export class RadioField extends FillableFormField {
 export class CheckboxField extends FillableFormField {
   options: string[];
   defaultValues: string[]; // Array of default selected values
+  validation: CheckboxFieldValidation;
   
   constructor(
     id: string,
@@ -369,12 +392,13 @@ export class CheckboxField extends FillableFormField {
     prefix: string,
     hint: string,
     placeholder: string,
-    validation: FillableFormFieldValidation,
+    validation: CheckboxFieldValidation,
     options: string[] = []
   ) {
     // Pass empty string to parent constructor since we don't use the inherited defaultValue
     super(id, label, '', prefix, hint, placeholder, validation);
     this.type = FieldType.CHECKBOX_FIELD;
+    this.validation = validation;
     this.options = options;
     
     // Set array values
@@ -418,6 +442,7 @@ export enum FieldType {
   FORM_FIELD = 'form_field',
   FILLABLE_FORM_FIELD = 'fillable_form_field',
   TEXT_FIELD_VALIDATION = 'text_field_validation',
+  CHECKBOX_FIELD_VALIDATION = 'checkbox_field_validation',
 }
 
 /**
@@ -450,9 +475,12 @@ export const serializeFormField = (field: FormField): any => {
 export const deserializeFormField = (data: any): FormField => {
   const getValidation = (data: any, fieldType: FieldType) => {
     if (!data.validation) {
-      return fieldType === FieldType.TEXT_INPUT_FIELD || fieldType === FieldType.TEXT_AREA_FIELD
-        ? new TextFieldValidation(false)
-        : new FillableFormFieldValidation(false);
+      if (fieldType === FieldType.TEXT_INPUT_FIELD || fieldType === FieldType.TEXT_AREA_FIELD) {
+        return new TextFieldValidation(false);
+      } else if (fieldType === FieldType.CHECKBOX_FIELD) {
+        return new CheckboxFieldValidation(false);
+      }
+      return new FillableFormFieldValidation(false);
     }
     
     if (fieldType === FieldType.TEXT_INPUT_FIELD || fieldType === FieldType.TEXT_AREA_FIELD) {
@@ -460,6 +488,14 @@ export const deserializeFormField = (data: any): FormField => {
         data.validation.required || false,
         data.validation.minLength,
         data.validation.maxLength
+      );
+    }
+    
+    if (fieldType === FieldType.CHECKBOX_FIELD) {
+      return new CheckboxFieldValidation(
+        data.validation.required || false,
+        data.validation.minSelections,
+        data.validation.maxSelections
       );
     }
     
@@ -539,7 +575,7 @@ export const deserializeFormField = (data: any): FormField => {
         data.prefix || '',
         data.hint || '',
         data.placeholder || '',
-        getValidation(data, FieldType.CHECKBOX_FIELD) as FillableFormFieldValidation,
+        getValidation(data, FieldType.CHECKBOX_FIELD) as CheckboxFieldValidation,
         data.options || []
       );
     case FieldType.DATE_FIELD:

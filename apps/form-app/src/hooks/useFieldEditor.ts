@@ -45,6 +45,8 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
   const defaultValue = watch('defaultValue');
   const minLengthValue = watch('validation.minLength');
   const maxLengthValue = watch('validation.maxLength');
+  const minSelectionsValue = watch('validation.minSelections');
+  const maxSelectionsValue = watch('validation.maxSelections');
 
   // Re-trigger validation when related fields change (for cross-field validation)
   useEffect(() => {
@@ -57,8 +59,11 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
     } else if (field?.type === FieldType.TEXT_INPUT_FIELD || field?.type === FieldType.TEXT_AREA_FIELD) {
       // Trigger validation for character limit fields when any of them change
       trigger(['validation.minLength', 'validation.maxLength', 'defaultValue']);
+    } else if (field?.type === FieldType.CHECKBOX_FIELD) {
+      // Trigger validation for selection limit fields when any of them change
+      trigger(['validation.minSelections', 'validation.maxSelections', 'defaultValue', 'options']);
     }
-  }, [minDateValue, maxDateValue, minValue, maxValue, defaultValue, minLengthValue, maxLengthValue, field?.type, trigger]);
+  }, [minDateValue, maxDateValue, minValue, maxValue, defaultValue, minLengthValue, maxLengthValue, minSelectionsValue, maxSelectionsValue, field?.type, trigger]);
 
   // Memoized field data extraction to prevent unnecessary re-computation
   const fieldData = useMemo(() => {
@@ -103,6 +108,15 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
             required: anyData.required !== undefined ? anyData.required : validationData.required || false,
             minLength: validationData.minLength,
             maxLength: validationData.maxLength,
+          };
+        } else if (field.type === FieldType.CHECKBOX_FIELD) {
+          // For checkbox fields, handle the validation object with selection limits
+          const validationData = anyData.validation || {};
+          updates.validation = {
+            ...((field as any)?.validation || {}),
+            required: anyData.required !== undefined ? anyData.required : validationData.required || false,
+            minSelections: validationData.minSelections,
+            maxSelections: validationData.maxSelections,
           };
         } else {
           // For other field types, handle only required
