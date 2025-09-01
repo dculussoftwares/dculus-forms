@@ -6,6 +6,7 @@ import { NumberRangeSettings } from './NumberRangeSettings';
 import { DateRangeSettings } from './DateRangeSettings';
 import { OptionsSettings } from './OptionsSettings';
 import { SelectionLimitSettings } from './SelectionLimitSettings';
+import { RichTextSettings } from './RichTextSettings';
 import { BaseFieldSettingsProps, OptionsSettingsProps } from './types';
 
 /**
@@ -128,6 +129,15 @@ export const FIELD_SETTINGS_CONFIG: Partial<Record<FieldType, FieldSettingsCompo
   [FieldType.DATE_FIELD]: {
     components: [
       { component: DateRangeSettings },
+    ],
+    supportsCharacterLimits: false,
+    supportsPrefix: false,
+    hasOptions: false,
+  },
+
+  [FieldType.RICH_TEXT_FIELD]: {
+    components: [
+      { component: RichTextSettings },
     ],
     supportsCharacterLimits: false,
     supportsPrefix: false,

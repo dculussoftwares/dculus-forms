@@ -10,7 +10,8 @@ import {
   ChevronDown,
   Circle,
   CheckSquare,
-  Calendar
+  Calendar,
+  FileCode
 } from 'lucide-react';
 
 export interface FieldTypeConfig {
@@ -80,6 +81,15 @@ export const FIELD_TYPES: FieldTypeConfig[] = [
     description: 'Select multiple options',
     icon: <CheckSquare className="w-5 h-5" />,
     category: 'choice'
+  },
+  
+  // Content Fields
+  {
+    type: FieldType.RICH_TEXT_FIELD,
+    label: 'Rich Text',
+    description: 'Formatted text content (read-only)',
+    icon: <FileCode className="w-5 h-5" />,
+    category: 'content'
   }
 ];
 

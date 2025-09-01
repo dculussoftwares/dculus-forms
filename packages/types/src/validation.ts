@@ -248,6 +248,11 @@ export const dateFieldValidationSchema = baseFieldValidationSchema.extend({
   }
 );
 
+// Rich text field validation schema
+export const richTextFieldValidationSchema = z.object({
+  content: z.string().max(50000, 'Content is too long (max 50,000 characters)').default(''),
+});
+
 // Factory function to get validation schema by field type
 export function getFieldValidationSchema(fieldType: FieldType) {
   switch (fieldType) {
@@ -267,6 +272,8 @@ export function getFieldValidationSchema(fieldType: FieldType) {
       return checkboxFieldValidationSchema;
     case FieldType.DATE_FIELD:
       return dateFieldValidationSchema;
+    case FieldType.RICH_TEXT_FIELD:
+      return richTextFieldValidationSchema;
     default:
       return baseFieldValidationSchema;
   }
@@ -282,6 +289,7 @@ export type SelectFieldFormData = z.infer<typeof selectFieldValidationSchema>;
 export type RadioFieldFormData = z.infer<typeof radioFieldValidationSchema>;
 export type CheckboxFieldFormData = z.infer<typeof checkboxFieldValidationSchema>;
 export type DateFieldFormData = z.infer<typeof dateFieldValidationSchema>;
+export type RichTextFieldFormData = z.infer<typeof richTextFieldValidationSchema>;
 
 // Union type for all field form data
 export type FieldFormData = 
@@ -292,7 +300,8 @@ export type FieldFormData =
   | SelectFieldFormData
   | RadioFieldFormData
   | CheckboxFieldFormData
-  | DateFieldFormData;
+  | DateFieldFormData
+  | RichTextFieldFormData;
 
 // Form layout validation schema
 export const formLayoutValidationSchema = z.object({

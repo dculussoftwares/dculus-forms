@@ -26,6 +26,13 @@ export const useFieldCreation = () => {
       };
     }
 
+    // Rich text field has different structure (non-fillable)
+    if (fieldType.type === FieldType.RICH_TEXT_FIELD) {
+      return {
+        content: '<p>Enter your rich text content here...</p>',
+      };
+    }
+
     return baseData;
   }, []);
 

@@ -16,6 +16,7 @@ export { PrefixSettings } from './PrefixSettings';
 export { OptionsSettings } from './OptionsSettings';
 export { NumberRangeSettings } from './NumberRangeSettings';
 export { DateRangeSettings } from './DateRangeSettings';
+export { RichTextSettings } from './RichTextSettings';
 
 // Shared components
 export { FormInputField } from './FormInputField';

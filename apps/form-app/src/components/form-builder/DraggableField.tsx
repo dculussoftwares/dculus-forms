@@ -15,7 +15,8 @@ import {
   Calendar,
   Copy,
   Trash2,
-  Settings
+  Settings,
+  FileCode
 } from 'lucide-react';
 
 const FIELD_ICONS: Partial<Record<FieldType, React.ReactNode>> = {
@@ -27,6 +28,7 @@ const FIELD_ICONS: Partial<Record<FieldType, React.ReactNode>> = {
   [FieldType.RADIO_FIELD]: <Circle className="w-4 h-4" />,
   [FieldType.CHECKBOX_FIELD]: <CheckSquare className="w-4 h-4" />,
   [FieldType.DATE_FIELD]: <Calendar className="w-4 h-4" />,
+  [FieldType.RICH_TEXT_FIELD]: <FileCode className="w-4 h-4" />,
   [FieldType.FORM_FIELD]: <Type className="w-4 h-4" />,
 };
 
@@ -39,6 +41,7 @@ const FIELD_TYPE_LABELS: Partial<Record<FieldType, string>> = {
   [FieldType.RADIO_FIELD]: 'Radio',
   [FieldType.CHECKBOX_FIELD]: 'Checkbox',
   [FieldType.DATE_FIELD]: 'Date',
+  [FieldType.RICH_TEXT_FIELD]: 'Rich Text',
   [FieldType.FORM_FIELD]: 'Form Field',
 };
 

@@ -1,12 +1,37 @@
 import React, { useMemo } from 'react';
-import { FormField, FieldType } from '@dculus/types';
-import { Input, Textarea, Select, SelectTrigger, SelectContent, SelectValue, SelectItem, Label } from './index';
+import { FormField, FieldType, RichTextFormField } from '@dculus/types';
+import { Input, Textarea, Select, SelectTrigger, SelectContent, SelectValue, SelectItem, Label, RichTextEditor } from './index';
 
 interface FieldPreviewProps {
   field: FormField;
   disabled?: boolean;
   showValidation?: boolean;
 }
+
+const getDefaultLabel = (type: FieldType): string => {
+  switch (type) {
+    case FieldType.TEXT_INPUT_FIELD:
+      return 'Short Text';
+    case FieldType.TEXT_AREA_FIELD:
+      return 'Long Text';
+    case FieldType.EMAIL_FIELD:
+      return 'Email';
+    case FieldType.NUMBER_FIELD:
+      return 'Number';
+    case FieldType.SELECT_FIELD:
+      return 'Dropdown';
+    case FieldType.RADIO_FIELD:
+      return 'Radio';
+    case FieldType.CHECKBOX_FIELD:
+      return 'Checkbox';
+    case FieldType.DATE_FIELD:
+      return 'Date';
+    case FieldType.RICH_TEXT_FIELD:
+      return 'Rich Text';
+    default:
+      return 'Field';
+  }
+};
 
 export const FieldPreview: React.FC<FieldPreviewProps> = ({
   field,
@@ -95,28 +120,6 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
     'validation' in field ? field.validation : null,
   ]);
 
-  const getDefaultLabel = (type: FieldType): string => {
-    switch (type) {
-      case FieldType.TEXT_INPUT_FIELD:
-        return 'Short Text';
-      case FieldType.TEXT_AREA_FIELD:
-        return 'Long Text';
-      case FieldType.EMAIL_FIELD:
-        return 'Email';
-      case FieldType.NUMBER_FIELD:
-        return 'Number';
-      case FieldType.SELECT_FIELD:
-        return 'Dropdown';
-      case FieldType.RADIO_FIELD:
-        return 'Radio';
-      case FieldType.CHECKBOX_FIELD:
-        return 'Checkbox';
-      case FieldType.DATE_FIELD:
-        return 'Date';
-      default:
-        return 'Field';
-    }
-  };
 
   const renderFieldInput = () => {
     const placeholder = fieldData.placeholder || `Enter your ${fieldData.label.toLowerCase()}`;
@@ -295,6 +298,18 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
             disabled={disabled}
             className="text-sm"
           />
+        );
+
+      case FieldType.RICH_TEXT_FIELD:
+        const richTextField = field as RichTextFormField;
+        return (
+          <div className="border border-gray-200 rounded-lg">
+            <RichTextEditor
+              value={richTextField.content || '<p>Rich text content will appear here...</p>'}
+              editable={false}
+              className="min-h-24 border-none shadow-none"
+            />
+          </div>
         );
 
       default:

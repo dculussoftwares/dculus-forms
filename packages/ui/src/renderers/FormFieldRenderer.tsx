@@ -1,7 +1,8 @@
 import React from 'react';
 import { Controller, Control, FieldValues, Path } from 'react-hook-form';
-import { FormField, FieldType, FillableFormField, TextFieldValidation } from '@dculus/types';
+import { FormField, FieldType, FillableFormField, TextFieldValidation, RichTextFormField } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
+import { LexicalRichTextEditor } from '../rich-text-editor/LexicalRichTextEditor';
 
 interface FieldStyles {
   container: string;
@@ -316,6 +317,20 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
       />
     );
   };
+
+  // Handle non-fillable fields separately (like RichTextFormField)
+  if (field.type === FieldType.RICH_TEXT_FIELD) {
+    const richTextField = field as RichTextFormField;
+    return (
+      <div className={`${styles.container} ${className}`}>
+        <LexicalRichTextEditor
+          value={richTextField.content}
+          editable={false}
+          className="border-none shadow-none"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={`${styles.container} ${className}`}>

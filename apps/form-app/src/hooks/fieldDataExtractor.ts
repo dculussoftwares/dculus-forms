@@ -1,5 +1,5 @@
 import { FormField, FieldType } from '@dculus/types';
-import { BaseFieldData, OptionFieldData, ValidationFieldData, NumberRangeFieldData, DateRangeFieldData, CheckboxValidationFieldData } from './types';
+import { BaseFieldData, OptionFieldData, ValidationFieldData, NumberRangeFieldData, DateRangeFieldData, CheckboxValidationFieldData, RichTextFieldData } from './types';
 
 /**
  * Type-safe field data extraction utilities
@@ -99,6 +99,16 @@ export function extractDateRangeData(field: FormField): DateRangeFieldData {
 }
 
 /**
+ * Extract rich text content data for rich text fields
+ */
+export function extractRichTextData(field: FormField): RichTextFieldData {
+  const richTextField = field as any;
+  return {
+    content: richTextField.content || '',
+  };
+}
+
+/**
  * Field type specific data extractors
  */
 const FIELD_DATA_EXTRACTORS: Partial<Record<FieldType, (field: FormField) => Record<string, any>>> = {
@@ -141,6 +151,10 @@ const FIELD_DATA_EXTRACTORS: Partial<Record<FieldType, (field: FormField) => Rec
   [FieldType.DATE_FIELD]: (field: FormField) => ({
     ...extractBaseFieldData(field),
     ...extractDateRangeData(field),
+  }),
+
+  [FieldType.RICH_TEXT_FIELD]: (field: FormField) => ({
+    ...extractRichTextData(field),
   }),
 };
 
@@ -192,4 +206,11 @@ export function fieldHasNumberRange(field: FormField): field is FormField & Numb
  */
 export function fieldHasDateRange(field: FormField): field is FormField & DateRangeFieldData {
   return field.type === FieldType.DATE_FIELD;
+}
+
+/**
+ * Type predicate to check if a field has rich text content
+ */
+export function fieldHasRichTextContent(field: FormField): field is FormField & RichTextFieldData {
+  return field.type === FieldType.RICH_TEXT_FIELD;
 }

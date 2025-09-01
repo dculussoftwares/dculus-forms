@@ -236,6 +236,49 @@ export class FillableFormField extends FormField {
 }
 
 /**
+ * Base class for fields that don't accept user input
+ * Used for display-only fields like rich text, instructions, etc.
+ * 
+ * When adding new non-fillable properties:
+ * 1. Add properties to specific field classes (not here)
+ * 2. Update FieldType enum
+ * 3. Update deserializeFormField switch case
+ * 4. Update FormFieldRenderer switch case
+ * 5. Add field-specific settings component
+ * 6. Update field settings configuration
+ */
+export class NonFillableFormField extends FormField {
+  constructor(id: string) {
+    super(id);
+    this.type = FieldType.NON_FILLABLE_FORM_FIELD;
+  }
+}
+
+/**
+ * Rich text field for displaying formatted content (read-only)
+ * Contains content property for storing HTML
+ * 
+ * When modifying:
+ * 1. Update RichTextSettings component
+ * 2. Update FormFieldRenderer case
+ * 3. Update field data extraction
+ * 4. Update validation schema
+ * 5. Update YJS serialization
+ */
+export class RichTextFormField extends NonFillableFormField {
+  content: string;
+  
+  constructor(
+    id: string,
+    content: string = ''
+  ) {
+    super(id);
+    this.content = content;
+    this.type = FieldType.RICH_TEXT_FIELD;
+  }
+}
+
+/**
  * Text input field with character limit support
  * Uses TextFieldValidation for minLength/maxLength validation
  * 
@@ -438,8 +481,10 @@ export enum FieldType {
   CHECKBOX_FIELD = 'checkbox_field',
   RADIO_FIELD = 'radio_field',
   DATE_FIELD = 'date_field',
+  RICH_TEXT_FIELD = 'rich_text_field',
   FORM_FIELD = 'form_field',
   FILLABLE_FORM_FIELD = 'fillable_form_field',
+  NON_FILLABLE_FORM_FIELD = 'non_fillable_form_field',
   TEXT_FIELD_VALIDATION = 'text_field_validation',
   CHECKBOX_FIELD_VALIDATION = 'checkbox_field_validation',
 }
@@ -588,6 +633,11 @@ export const deserializeFormField = (data: any): FormField => {
         getValidation(data, FieldType.DATE_FIELD) as FillableFormFieldValidation,
         data.minDate,
         data.maxDate
+      );
+    case FieldType.RICH_TEXT_FIELD:
+      return new RichTextFormField(
+        data.id,
+        data.content || ''
       );
     default:
       return new FormField(data.id);

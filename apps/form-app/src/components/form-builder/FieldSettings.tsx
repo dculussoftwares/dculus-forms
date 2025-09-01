@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { FormField } from '@dculus/types';
+import { FormField, FieldType, FillableFormField } from '@dculus/types';
 import { Settings } from 'lucide-react';
 import { useFieldEditor } from '../../hooks/useFieldEditor';
 import {
@@ -10,6 +10,34 @@ import {
   FieldSettingsHeader,
   FieldSettingsFooter
 } from './field-settings';
+
+/**
+ * Helper function to check if a field is fillable (has basic form properties)
+ * Non-fillable fields like RichTextFormField should not show basic settings
+ */
+const isFillableField = (field: FormField): field is FillableFormField => {
+  // Explicitly exclude non-fillable field types
+  const nonFillableFieldTypes = [
+    FieldType.RICH_TEXT_FIELD,
+    FieldType.NON_FILLABLE_FORM_FIELD
+  ];
+  
+  if (nonFillableFieldTypes.includes(field.type)) {
+    return false;
+  }
+  
+  // Check if it's a fillable field by instance or properties
+  return field instanceof FillableFormField || 
+         (field as any).label !== undefined;
+};
+
+/**
+ * Helper function to check if a field supports validation
+ * Non-fillable fields should not show validation settings
+ */
+const supportsValidation = (field: FormField): boolean => {
+  return field.type !== FieldType.RICH_TEXT_FIELD;
+};
 
 
 interface FieldSettingsProps {
@@ -97,15 +125,17 @@ export const FieldSettings: React.FC<FieldSettingsProps> = ({
             <ValidationSummary errors={errors} />
           )}
 
-          {/* Basic Settings */}
-          <BasicSettings
-            control={control}
-            errors={errors}
-            isConnected={isConnected}
-            field={field}
-            watch={watch}
-            setValue={setValue}
-          />
+          {/* Basic Settings - only for fillable fields */}
+          {isFillableField(field) && (
+            <BasicSettings
+              control={control}
+              errors={errors}
+              isConnected={isConnected}
+              field={field}
+              watch={watch}
+              setValue={setValue}
+            />
+          )}
 
           {/* Field-specific settings */}
           <FieldTypeSpecificSettings
@@ -119,8 +149,10 @@ export const FieldSettings: React.FC<FieldSettingsProps> = ({
             removeOption={removeOption}
           />
 
-          {/* Validation */}
-          <ValidationSettings control={control} isConnected={isConnected} errors={errors} field={field} />
+          {/* Validation - only for fields that support validation */}
+          {supportsValidation(field) && (
+            <ValidationSettings control={control} isConnected={isConnected} errors={errors} field={field} />
+          )}
 
           {/* Add some bottom padding to prevent content from being hidden behind the floating actions */}
           <div className="pb-4"></div>

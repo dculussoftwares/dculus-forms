@@ -93,6 +93,13 @@ export interface CheckboxValidationFieldData {
 }
 
 /**
+ * Rich text content configuration for rich text fields
+ */
+export interface RichTextFieldData {
+  content: string;
+}
+
+/**
  * Base field data that all fields share
  */
 export interface BaseFieldData {

@@ -16,6 +16,7 @@ import {
   RadioField,
   CheckboxField,
   DateField,
+  RichTextFormField,
   FillableFormField,
   FillableFormFieldValidation,
   TextFieldValidation,
@@ -42,6 +43,7 @@ type FieldData = {
   minDate?: string;
   maxDate?: string;
   validation?: any;
+  content?: string;  // For rich text fields
 };
 
 interface FormBuilderState {
@@ -124,7 +126,7 @@ const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
     }
   }
   
-  return {
+  const result: any = {
     id: fieldMap.get('id') || '',
     type: fieldType || FieldType.TEXT_INPUT_FIELD,
     label: fieldMap.get('label') || '',
@@ -140,6 +142,13 @@ const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
     maxDate: fieldMap.get('maxDate'),
     validation: validation,
   };
+  
+  // Handle rich text field content
+  if (fieldType === FieldType.RICH_TEXT_FIELD) {
+    result.content = fieldMap.get('content') || '';
+  }
+  
+  return result;
 };
 
 const createYJSFieldMap = (fieldData: FieldData): Y.Map<any> => {
@@ -200,6 +209,7 @@ const FIELD_CONFIGS: Partial<Record<FieldType, { label: string; placeholder?: st
   [FieldType.RADIO_FIELD]: { label: 'Radio' },
   [FieldType.CHECKBOX_FIELD]: { label: 'Checkbox' },
   [FieldType.DATE_FIELD]: { label: 'Date' },
+  // NOTE: RICH_TEXT_FIELD omitted intentionally - it's non-fillable and shouldn't have a label
 };
 
 const generateUniqueId = (): string => {
@@ -255,6 +265,10 @@ const createFormField = (fieldType: FieldType, fieldData: Partial<FieldData> = {
       const validation = new FillableFormFieldValidation(fieldData.required || false);
       return new DateField(fieldId, label, defaultValue, prefix, hint, placeholder, validation, fieldData.minDate, fieldData.maxDate);
     }
+    case FieldType.RICH_TEXT_FIELD: {
+      const content = (fieldData as any).content || '<p>Enter your rich text content here...</p>';
+      return new RichTextFormField(fieldId, content);
+    }
     default:
       return new FormField(fieldId);
   }
@@ -265,6 +279,12 @@ const serializeFieldToYMap = (field: FormField): Y.Map<any> => {
     const fieldMap = new Y.Map();
     fieldMap.set('id', field.id);
     fieldMap.set('type', field.type);
+    
+    // Handle rich text fields
+    if (field.type === FieldType.RICH_TEXT_FIELD) {
+      fieldMap.set('content', (field as any).content || '');
+    }
+    
     return fieldMap;
   }
   
