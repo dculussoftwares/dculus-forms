@@ -250,7 +250,6 @@ export const L1ClassicLayout: React.FC<LayoutProps> = ({
                 
                 <PageRenderer
                   pages={pages}
-                  pageMode={layout?.pageMode}
                   layoutStyles={getLayoutStyles()}
                   mode={mode}
                 />

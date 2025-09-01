@@ -249,7 +249,6 @@ export const L5SplitLayout: React.FC<LayoutProps> = ({
                 
                 <PageRenderer
                   pages={pages}
-                  pageMode={layout?.pageMode}
                   layoutStyles={getLayoutStyles()}
                   mode={mode}
                 />

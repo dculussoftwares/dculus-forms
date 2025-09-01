@@ -235,7 +235,6 @@ export const L7SingleLayout: React.FC<LayoutProps> = ({
                 
                 <PageRenderer
                   pages={pages}
-                  pageMode={layout?.pageMode}
                   layoutStyles={getLayoutStyles()}
                   mode={mode}
                 />

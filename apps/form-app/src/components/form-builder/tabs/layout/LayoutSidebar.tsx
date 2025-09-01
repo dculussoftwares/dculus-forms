@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Palette, Image, Search } from 'lucide-react';
-import { FormLayout, LayoutCode, PageModeType } from '@dculus/types';
+import { FormLayout, LayoutCode } from '@dculus/types';
 import { Tabs, TabsList, TabsTrigger, TabsContent, Button } from '@dculus/ui';
 import { useQuery } from '@apollo/client';
 import { LayoutThumbnails } from './LayoutThumbnails';
@@ -236,37 +236,6 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
           </div>
         </div>
 
-        {/* Page Mode Selection with Tabs */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="space-y-3">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Page Mode
-            </label>
-            <Tabs 
-              value={layout.pageMode || PageModeType.SINGLE_PAGE} 
-              onValueChange={(value) => onLayoutUpdate({ pageMode: value as PageModeType })}
-            >
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value={PageModeType.SINGLE_PAGE} className="text-xs">
-                  Single Page
-                </TabsTrigger>
-                <TabsTrigger value={PageModeType.MULTIPAGE} className="text-xs">
-                  Multipage
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value={PageModeType.SINGLE_PAGE} className="mt-2">
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Show all pages in a single scrollable view
-                </p>
-              </TabsContent>
-              <TabsContent value={PageModeType.MULTIPAGE} className="mt-2">
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Show one page at a time with navigation buttons
-                </p>
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
 
         {/* Additional Sidebar Content */}
         <div className="p-4">

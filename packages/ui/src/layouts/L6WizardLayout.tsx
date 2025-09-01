@@ -189,7 +189,6 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
                 
                 <PageRenderer
                   pages={pages}
-                  pageMode={layout?.pageMode}
                   layoutStyles={getLayoutStyles()}
                   className=""
                   showPageNavigation={true}

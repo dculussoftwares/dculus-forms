@@ -420,7 +420,7 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
     layoutMap.set('customBackGroundColor', layout.customBackGroundColor || '#ffffff');
     layoutMap.set('customCTAButtonName', layout.customCTAButtonName || 'Submit');
     layoutMap.set('backgroundImageKey', layout.backgroundImageKey || '');
-    layoutMap.set('pageMode', layout.pageMode || 'single_page');
+    layoutMap.set('pageMode', layout.pageMode || 'multipage');
     
     formSchemaMap.set('layout', layoutMap);
     formSchemaMap.set('isShuffleEnabled', Boolean(formSchema.isShuffleEnabled));

@@ -50,7 +50,7 @@ const SAMPLE_LAYOUT = {
   "content": "<h1><strong>Sample Template</strong></h1><p>This is a sample template form. Customize this content to match your needs.</p>",
   "customBackGroundColor": "#ffffff",
   "backgroundImageKey": "",
-  "pageMode": "single_page"
+  "pageMode": "multipage"
 };
 
 interface Template {

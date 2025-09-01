@@ -449,7 +449,7 @@ export const sampleLayouts: Record<string, FormLayout> = {
     customBackGroundColor: '#e8f5e8',
     customCTAButtonName: 'Submit',
     backgroundImageKey: 'files/form-background/1755534544285-1ce176ab-9b91-410e-bfb8-a4278f7d7477-pixabay-1755534544279.jpg',
-    pageMode: PageModeType.SINGLE_PAGE
+    pageMode: PageModeType.MULTIPAGE
   },
   
   modern: {
@@ -461,7 +461,7 @@ export const sampleLayouts: Record<string, FormLayout> = {
     customBackGroundColor: '#e8f5e8',
     customCTAButtonName: 'Submit',
     backgroundImageKey: 'files/form-background/1755534544285-1ce176ab-9b91-410e-bfb8-a4278f7d7477-pixabay-1755534544279.jpg',
-    pageMode: PageModeType.SINGLE_PAGE
+    pageMode: PageModeType.MULTIPAGE
   },
   
   card: {
@@ -473,7 +473,7 @@ export const sampleLayouts: Record<string, FormLayout> = {
     customBackGroundColor: '#e8f5e8',
     customCTAButtonName: 'Submit',
     backgroundImageKey: 'files/form-background/1755534544285-1ce176ab-9b91-410e-bfb8-a4278f7d7477-pixabay-1755534544279.jpg',
-    pageMode: PageModeType.SINGLE_PAGE
+    pageMode: PageModeType.MULTIPAGE
   },
   
   minimal: {
@@ -485,7 +485,7 @@ export const sampleLayouts: Record<string, FormLayout> = {
     customBackGroundColor: '#e8f5e8',
     customCTAButtonName: 'Submit',
     backgroundImageKey: 'files/form-background/1755534544285-1ce176ab-9b91-410e-bfb8-a4278f7d7477-pixabay-1755534544279.jpg',
-    pageMode: PageModeType.SINGLE_PAGE
+    pageMode: PageModeType.MULTIPAGE
   },
   
   split: {
@@ -497,7 +497,7 @@ export const sampleLayouts: Record<string, FormLayout> = {
     customBackGroundColor: '#e8f5e8',
     customCTAButtonName: 'Submit',
     backgroundImageKey: 'files/form-background/1755534544285-1ce176ab-9b91-410e-bfb8-a4278f7d7477-pixabay-1755534544279.jpg',
-    pageMode: PageModeType.SINGLE_PAGE
+    pageMode: PageModeType.MULTIPAGE
   },
   
   wizard: {
@@ -509,7 +509,7 @@ export const sampleLayouts: Record<string, FormLayout> = {
     customBackGroundColor: '#e8f5e8',
     customCTAButtonName: 'Submit',
     backgroundImageKey: 'files/form-background/1755534544285-1ce176ab-9b91-410e-bfb8-a4278f7d7477-pixabay-1755534544279.jpg',
-    pageMode: PageModeType.SINGLE_PAGE
+    pageMode: PageModeType.MULTIPAGE
   },
   
   single: {
@@ -521,7 +521,7 @@ export const sampleLayouts: Record<string, FormLayout> = {
     customBackGroundColor: '#e8f5e8',
     customCTAButtonName: 'Submit',
     backgroundImageKey: 'files/form-background/1755534544285-1ce176ab-9b91-410e-bfb8-a4278f7d7477-pixabay-1755534544279.jpg',
-    pageMode: PageModeType.SINGLE_PAGE
+    pageMode: PageModeType.MULTIPAGE
   },
   
   image: {
@@ -533,7 +533,7 @@ export const sampleLayouts: Record<string, FormLayout> = {
     customBackGroundColor: '#e8f5e8',
     customCTAButtonName: 'Submit',
     backgroundImageKey: 'files/form-background/1755534544285-1ce176ab-9b91-410e-bfb8-a4278f7d7477-pixabay-1755534544279.jpg',
-    pageMode: PageModeType.SINGLE_PAGE
+    pageMode: PageModeType.MULTIPAGE
   },
   
   pages: {
@@ -545,7 +545,7 @@ export const sampleLayouts: Record<string, FormLayout> = {
     customBackGroundColor: '#e8f5e8',
     customCTAButtonName: 'Submit',
     backgroundImageKey: 'files/form-background/1755534544285-1ce176ab-9b91-410e-bfb8-a4278f7d7477-pixabay-1755534544279.jpg',
-    pageMode: PageModeType.SINGLE_PAGE
+    pageMode: PageModeType.MULTIPAGE
   }
 };
 

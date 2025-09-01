@@ -93,7 +93,6 @@ export enum SpacingType {
 }
 
 export enum PageModeType {
-  SINGLE_PAGE = 'single_page',
   MULTIPAGE = 'multipage',
 }
 

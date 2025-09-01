@@ -304,7 +304,7 @@ export const formLayoutValidationSchema = z.object({
   customBackGroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color format'),
   customCTAButtonName: z.string().max(50, 'Button name is too long').optional(),
   backgroundImageKey: z.string().max(200, 'Background image key is too long'),
-  pageMode: z.enum(['single_page', 'multipage']),
+  pageMode: z.enum(['multipage']),
 });
 
 export type FormLayoutFormData = z.infer<typeof formLayoutValidationSchema>;

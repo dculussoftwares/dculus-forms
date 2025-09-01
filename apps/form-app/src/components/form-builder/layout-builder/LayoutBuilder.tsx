@@ -21,7 +21,7 @@ const NEW_LAYOUT_TEMPLATES: FormLayout[] = [
     code: 'L1' as LayoutCode,
     content: 'Add your introduction and instructions here...',
     backgroundImageKey: '',
-    pageMode: PageModeType.SINGLE_PAGE,
+    pageMode: PageModeType.MULTIPAGE,
   },
   {
     theme: ThemeType.LIGHT,
@@ -31,7 +31,7 @@ const NEW_LAYOUT_TEMPLATES: FormLayout[] = [
     code: 'L2' as LayoutCode,
     content: 'Add helpful context and guidance here...',
     backgroundImageKey: '',
-    pageMode: PageModeType.SINGLE_PAGE,
+    pageMode: PageModeType.MULTIPAGE,
   },
   {
     theme: ThemeType.LIGHT,
@@ -41,7 +41,7 @@ const NEW_LAYOUT_TEMPLATES: FormLayout[] = [
     code: 'L3' as LayoutCode,
     content: 'Brief description or welcome message...',
     backgroundImageKey: '',
-    pageMode: PageModeType.SINGLE_PAGE,
+    pageMode: PageModeType.MULTIPAGE,
   },
   {
     theme: ThemeType.LIGHT,
@@ -51,7 +51,7 @@ const NEW_LAYOUT_TEMPLATES: FormLayout[] = [
     code: 'L4' as LayoutCode,
     content: 'Detailed documentation and help content...',
     backgroundImageKey: '',
-    pageMode: PageModeType.SINGLE_PAGE,
+    pageMode: PageModeType.MULTIPAGE,
   },
   {
     theme: ThemeType.LIGHT,
@@ -61,7 +61,7 @@ const NEW_LAYOUT_TEMPLATES: FormLayout[] = [
     code: 'L5' as LayoutCode,
     content: 'Additional information and context...',
     backgroundImageKey: '',
-    pageMode: PageModeType.SINGLE_PAGE,
+    pageMode: PageModeType.MULTIPAGE,
   },
   {
     theme: ThemeType.LIGHT,
@@ -72,7 +72,7 @@ const NEW_LAYOUT_TEMPLATES: FormLayout[] = [
     content:
       'Welcome message...\n---\nContextual help for step 2...\n---\nFinal thoughts and next steps...',
     backgroundImageKey: '',
-    pageMode: PageModeType.SINGLE_PAGE,
+    pageMode: PageModeType.MULTIPAGE,
   },
 ];
 const LAYOUT_TEMPLATES: LayoutTemplate[] = [

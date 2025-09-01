@@ -37,7 +37,7 @@ export const LayoutTab: React.FC<LayoutTabProps> = ({ onLayoutChange }) => {
         content: '<h1>Form Preview</h1>',
         customBackGroundColor: '',
         backgroundImageKey: '',
-        pageMode: 'single_page' as const,
+        pageMode: 'multipage' as const,
       },
       isShuffleEnabled: false,
     }),

@@ -26,11 +26,6 @@ const meta: Meta<typeof PageRenderer> = {
     ),
   ],
   argTypes: {
-    pageMode: {
-      control: { type: 'select' },
-      options: ['single_page', 'multipage'],
-      description: 'Whether to render all pages at once or one at a time',
-    },
     mode: {
       control: { type: 'select' },
       options: Object.values(formModes),
@@ -55,7 +50,6 @@ const meta: Meta<typeof PageRenderer> = {
   },
   args: {
     pages: createSamplePages(),
-    pageMode: 'multipage',
     showPageNavigation: true,
     className: '',
     mode: RendererMode.PREVIEW,
@@ -68,14 +62,12 @@ type Story = StoryObj<typeof meta>;
 // Default multipage story
 export const Default: Story = {
   args: {
-    pageMode: 'multipage',
   },
 };
 
 // Single page mode
 export const SinglePageMode: Story = {
   args: {
-    pageMode: 'single_page',
   },
   parameters: {
     docs: {
@@ -89,7 +81,6 @@ export const SinglePageMode: Story = {
 // Multipage mode
 export const MultipageMode: Story = {
   args: {
-    pageMode: 'multipage',
   },
   parameters: {
     docs: {
@@ -103,7 +94,6 @@ export const MultipageMode: Story = {
 // Builder mode - allows navigation without validation
 export const BuilderMode: Story = {
   args: {
-    pageMode: 'multipage',
     mode: RendererMode.BUILDER,
   },
   parameters: {
@@ -118,7 +108,6 @@ export const BuilderMode: Story = {
 // Submission mode - enforces validation
 export const SubmissionMode: Story = {
   args: {
-    pageMode: 'multipage',
     mode: RendererMode.SUBMISSION,
   },
   parameters: {
@@ -133,7 +122,6 @@ export const SubmissionMode: Story = {
 // Preview mode
 export const PreviewMode: Story = {
   args: {
-    pageMode: 'multipage',
     mode: RendererMode.PREVIEW,
   },
   parameters: {
@@ -148,7 +136,6 @@ export const PreviewMode: Story = {
 // Hidden navigation
 export const HiddenNavigation: Story = {
   args: {
-    pageMode: 'multipage',
     showPageNavigation: false,
   },
   parameters: {
@@ -164,7 +151,6 @@ export const HiddenNavigation: Story = {
 export const SinglePageForm: Story = {
   args: {
     pages: createSinglePage(),
-    pageMode: 'single_page',
   },
   parameters: {
     docs: {
@@ -206,7 +192,6 @@ export const PagesWithNoFields: Story = {
         order: 1,
       },
     ],
-    pageMode: 'multipage',
   },
   parameters: {
     docs: {
@@ -220,7 +205,6 @@ export const PagesWithNoFields: Story = {
 // Custom layout styles
 export const CustomLayoutStyles: Story = {
   args: {
-    pageMode: 'single_page',
     layoutStyles: {
       field: {
         container: 'mb-6 p-4 border-2 border-blue-200 rounded-lg',
@@ -244,7 +228,6 @@ export const CustomLayoutStyles: Story = {
 // Form with controlled values
 export const ControlledForm: Story = {
   args: {
-    pageMode: 'single_page',
     formValues: {
       'field-1': 'John Doe',
       'field-2': 'john.doe@example.com',
@@ -267,7 +250,6 @@ export const ControlledForm: Story = {
 // Dark theme styling
 export const DarkTheme: Story = {
   args: {
-    pageMode: 'multipage',
     className: 'dark',
     layoutStyles: {
       field: {
@@ -294,7 +276,6 @@ export const DarkTheme: Story = {
 export const ValidationTestForm: Story = {
   args: {
     pages: createValidationTestPages(),
-    pageMode: 'multipage',
     mode: RendererMode.SUBMISSION,
     showPageNavigation: true,
   },

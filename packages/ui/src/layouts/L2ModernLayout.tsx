@@ -249,7 +249,6 @@ export const L2ModernLayout: React.FC<LayoutProps> = ({
                 
                 <PageRenderer
                   pages={pages}
-                  pageMode={layout?.pageMode}
                   layoutStyles={getLayoutStyles()}
                   mode={mode}
                 />

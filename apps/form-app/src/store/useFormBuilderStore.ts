@@ -544,7 +544,7 @@ class CollaborationManager {
         customBackGroundColor: layoutMap.get('customBackGroundColor') || '#ffffff',
         customCTAButtonName: layoutMap.get('customCTAButtonName') || 'Submit',
         backgroundImageKey: layoutMap.get('backgroundImageKey') || '',
-        pageMode: layoutMap.get('pageMode') || PageModeType.SINGLE_PAGE
+        pageMode: layoutMap.get('pageMode') || PageModeType.MULTIPAGE
       };
     }
 
@@ -621,7 +621,7 @@ export const useFormBuilderStore = create<FormBuilderState>()(
           customBackGroundColor: '#ffffff',
           customCTAButtonName: 'Submit',
           backgroundImageKey: '',
-          pageMode: PageModeType.SINGLE_PAGE
+          pageMode: PageModeType.MULTIPAGE
         },
         isShuffleEnabled: false,
         selectedPageId: null,

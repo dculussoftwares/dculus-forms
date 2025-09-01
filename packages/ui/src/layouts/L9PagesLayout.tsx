@@ -75,7 +75,6 @@ export const L9PagesLayout: React.FC<LayoutProps> = ({
               
               <PageRenderer
                 pages={pages}
-                pageMode={layout?.pageMode}
                 layoutStyles={getLayoutStyles()}
                 mode={mode}
               />

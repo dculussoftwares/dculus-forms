@@ -11,7 +11,6 @@ export type { LayoutStyles } from './SinglePageForm';
 
 interface PageRendererProps {
   pages: FormPage[];
-  pageMode?: 'single_page' | 'multipage';
   className?: string;
   showPageNavigation?: boolean;
   layoutStyles?: LayoutStyles;
@@ -25,7 +24,6 @@ interface PageRendererProps {
 
 export const PageRenderer: React.FC<PageRendererProps> = ({
   pages,
-  pageMode = 'single_page',
   className = '',
   showPageNavigation = true,
   layoutStyles,
@@ -53,8 +51,6 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
     showAllValidationErrors: () => Promise<void>;
   }>(null);
 
-  // Determine if we're in multipage mode
-  const isMultipage = pageMode === 'multipage';
 
   // Get current page
   const currentPage = pages[currentPageIndex];
@@ -98,14 +94,6 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
     }
   }, [currentPage?.id, handleValidationChange]);
 
-  // Create memoized validation handlers for each page in single page mode
-  const pageValidationHandlers = useMemo(() => {
-    const handlers: Record<string, (isValid: boolean) => void> = {};
-    pages.forEach(page => {
-      handlers[page.id] = (isValid: boolean) => handleValidationChange(page.id, isValid);
-    });
-    return handlers;
-  }, [pages, handleValidationChange]);
 
   // Handle page form submission
   const handlePageSubmit = useCallback((pageId: string, data: Record<string, any>) => {
@@ -277,42 +265,79 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
     );
   }
 
-  if (isMultipage) {
-    // Multipage mode - show current page with navigation
-    return (
-      <div className={`space-y-6 ${className}`}>
-        {/* Page navigation header */}
-        {showPageNavigation && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <h3 className="text-xl font-semibold text-white">
-                  Page {currentPageIndex + 1} of {pages.length}:{' '}
-                  {pages[currentPageIndex]?.title}
-                </h3>
-                {/* Page validation indicator */}
-                {enableStrictValidation && (
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                    navigationState.currentPageValid 
-                      ? 'bg-green-100 text-green-800' 
-                      : navigationState.isFirstAttempt
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-red-100 text-red-800'
-                  }`}>
-                    {navigationState.currentPageValid 
-                      ? '✓ Valid' 
-                      : navigationState.isFirstAttempt 
-                        ? '◦ Ready'
-                        : '⚠ Invalid'}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={goToPrevPage}
-                  disabled={!navigationState.canGoPrevious}
-                  className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-white bg-white/20 hover:bg-white/30 disabled:bg-white/10 disabled:text-white/50 rounded-md transition-colors"
+  // Multipage mode - show current page with navigation
+  return (
+    <div className={`space-y-6 ${className}`}>
+      {/* Page navigation header */}
+      {showPageNavigation && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h3 className="text-xl font-semibold text-white">
+                Page {currentPageIndex + 1} of {pages.length}:{' '}
+                {pages[currentPageIndex]?.title}
+              </h3>
+              {/* Page validation indicator */}
+              {enableStrictValidation && (
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                  navigationState.currentPageValid 
+                    ? 'bg-green-100 text-green-800' 
+                    : navigationState.isFirstAttempt
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-red-100 text-red-800'
+                }`}>
+                  {navigationState.currentPageValid 
+                    ? '✓ Valid' 
+                    : navigationState.isFirstAttempt 
+                      ? '◦ Ready'
+                      : '⚠ Invalid'}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={goToPrevPage}
+                disabled={!navigationState.canGoPrevious}
+                className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-white bg-white/20 hover:bg-white/30 disabled:bg-white/10 disabled:text-white/50 rounded-md transition-colors"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+                Previous
+              </button>
+              <span className="text-white/80 text-sm px-2">
+                {currentPageIndex + 1} / {pages.length}
+              </span>
+              {navigationState.isLastPage ? (
+                <button
+                  onClick={goToNextPage}
+                  disabled={false}
+                  className={`flex items-center gap-1 px-3 py-2 text-sm font-medium text-white rounded-md transition-colors ${
+                    navigationState.currentPageValid
+                      ? 'bg-green-600 hover:bg-green-700'
+                      : navigationState.isFirstAttempt
+                        ? 'bg-blue-600 hover:bg-blue-700'
+                        : 'bg-red-600 hover:bg-red-700'
+                  }`}
+                  title={
+                    navigationState.currentPageValid
+                      ? 'Submit and continue to next page'
+                      : navigationState.isFirstAttempt 
+                        ? 'Click to validate and submit (will show validation errors if any)'
+                        : 'Fix validation errors to continue'
+                  }
+                >
+                  Submit
                   <svg
                     className="w-4 h-4"
                     fill="none"
@@ -323,185 +348,117 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M15 19l-7-7 7-7"
+                      d="M5 13l4 4L19 7"
                     />
                   </svg>
-                  Previous
                 </button>
-                <span className="text-white/80 text-sm px-2">
-                  {currentPageIndex + 1} / {pages.length}
-                </span>
-                {navigationState.isLastPage ? (
-                  <button
-                    onClick={goToNextPage}
-                    disabled={false}
-                    className={`flex items-center gap-1 px-3 py-2 text-sm font-medium text-white rounded-md transition-colors ${
-                      navigationState.currentPageValid
-                        ? 'bg-green-600 hover:bg-green-700'
-                        : navigationState.isFirstAttempt
-                          ? 'bg-blue-600 hover:bg-blue-700'
-                          : 'bg-red-600 hover:bg-red-700'
-                    }`}
-                    title={
-                      navigationState.currentPageValid
-                        ? 'Submit and continue to next page'
-                        : navigationState.isFirstAttempt 
-                          ? 'Click to validate and submit (will show validation errors if any)'
-                          : 'Fix validation errors to continue'
-                    }
+              ) : (
+                <button
+                  onClick={goToNextPage}
+                  disabled={false}
+                  className={`flex items-center gap-1 px-3 py-2 text-sm font-medium text-white rounded-md transition-colors ${
+                    navigationState.currentPageValid
+                      ? 'bg-green-600 hover:bg-green-700'
+                      : navigationState.isFirstAttempt
+                        ? 'bg-blue-600 hover:bg-blue-700'
+                        : 'bg-red-600 hover:bg-red-700'
+                  }`}
+                  title={
+                    navigationState.currentPageValid
+                      ? 'Continue to next page'
+                      : navigationState.isFirstAttempt 
+                        ? 'Click to validate (will show validation errors if any)'
+                        : 'Fix validation errors to continue'
+                  }
+                >
+                  Next
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    Submit
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  </button>
-                ) : (
-                  <button
-                    onClick={goToNextPage}
-                    disabled={false}
-                    className={`flex items-center gap-1 px-3 py-2 text-sm font-medium text-white rounded-md transition-colors ${
-                      navigationState.currentPageValid
-                        ? 'bg-green-600 hover:bg-green-700'
-                        : navigationState.isFirstAttempt
-                          ? 'bg-blue-600 hover:bg-blue-700'
-                          : 'bg-red-600 hover:bg-red-700'
-                    }`}
-                    title={
-                      navigationState.currentPageValid
-                        ? 'Continue to next page'
-                        : navigationState.isFirstAttempt 
-                          ? 'Click to validate (will show validation errors if any)'
-                          : 'Fix validation errors to continue'
-                    }
-                  >
-                    Next
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </button>
-                )}
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Validation error summary */}
+          {showValidationSummary && validationErrors.length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">
+                    Please fix the following errors to continue:
+                  </h3>
+                  <ul className="mt-2 text-sm text-red-700 list-disc list-inside space-y-1">
+                    {validationErrors.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
+          )}
+        </div>
+      )}
 
-            {/* Validation error summary */}
-            {showValidationSummary && validationErrors.length > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800">
-                      Please fix the following errors to continue:
-                    </h3>
-                    <ul className="mt-2 text-sm text-red-700 list-disc list-inside space-y-1">
-                      {validationErrors.map((error, index) => (
-                        <li key={index}>{error}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+      {/* Current page form */}
+      {currentPage && (
+        <div className="bg-white rounded-lg p-6 shadow-lg">
+          <SinglePageForm
+            page={currentPage}
+            layoutStyles={layoutStyles}
+            mode={mode}
+            onSubmit={handlePageSubmit}
+            showSubmitButton={false} // Navigation handles submission
+            formRef={currentPageFormRef}
+            onValidationChange={currentPageValidationHandler}
+            enableRealtimeValidation={true}
+          />
+        </div>
+      )}
 
-        {/* Current page form */}
-        {currentPage && (
-          <div className="bg-white rounded-lg p-6 shadow-lg">
-            <SinglePageForm
-              page={currentPage}
-              layoutStyles={layoutStyles}
-              mode={mode}
-              onSubmit={handlePageSubmit}
-              showSubmitButton={false} // Navigation handles submission
-              formRef={currentPageFormRef}
-              onValidationChange={currentPageValidationHandler}
-              enableRealtimeValidation={true}
-            />
-          </div>
-        )}
-
-        {/* Page dots indicator */}
-        {showPageNavigation && pages.length > 1 && (
-          <div className="flex justify-center space-x-2">
-            {pages.map((page, index) => {
-              const isCurrentPage = index === currentPageIndex;
-              const isPageValid = pageValidationStates[page.id];
-              
-              return (
-                <button
-                  key={index}
-                  onClick={() => goToPage(index)}
-                  className={`relative w-3 h-3 rounded-full transition-colors ${
-                    isCurrentPage
-                      ? 'bg-white'
-                      : 'bg-white/30 hover:bg-white/50'
-                  }`}
-                  aria-label={`Go to page ${index + 1}${isPageValid ? ' (completed)' : ''}`}
-                  title={`Page ${index + 1}${page.title ? `: ${page.title}` : ''}${isPageValid ? ' ✓' : ''}`}
-                >
-                  {/* Validation indicator */}
-                  {enableStrictValidation && isPageValid && !isCurrentPage && (
-                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full border border-white"></span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    );
-  } else {
-    // Single page mode - show all pages as separate forms
-    return (
-      <div className={`space-y-8 ${className}`}>
-        {pages.map((page, pageIndex) => (
-          <div key={page.id} className="bg-white rounded-lg p-6 shadow-lg">
-            <SinglePageForm
-              page={page}
-              layoutStyles={layoutStyles}
-              mode={mode}
-              onSubmit={handlePageSubmit}
-              showSubmitButton={pageIndex === pages.length - 1} // Show submit only on last page
-              submitButtonText={pageIndex === pages.length - 1 ? "Submit Form" : undefined}
-              onValidationChange={pageValidationHandlers[page.id]}
-              enableRealtimeValidation={true}
-            />
+      {/* Page dots indicator */}
+      {showPageNavigation && pages.length > 1 && (
+        <div className="flex justify-center space-x-2">
+          {pages.map((page, index) => {
+            const isCurrentPage = index === currentPageIndex;
+            const isPageValid = pageValidationStates[page.id];
             
-            {/* Page separator line (except for last page) */}
-            {pageIndex < pages.length - 1 && (
-              <div className="mt-6 pt-4 border-t border-gray-200">
-                <div className="text-center text-gray-400 text-sm">
-                  Page {pageIndex + 2} continues below
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  }
+            return (
+              <button
+                key={index}
+                onClick={() => goToPage(index)}
+                className={`relative w-3 h-3 rounded-full transition-colors ${
+                  isCurrentPage
+                    ? 'bg-white'
+                    : 'bg-white/30 hover:bg-white/50'
+                }`}
+                aria-label={`Go to page ${index + 1}${isPageValid ? ' (completed)' : ''}`}
+                title={`Page ${index + 1}${page.title ? `: ${page.title}` : ''}${isPageValid ? ' ✓' : ''}`}
+              >
+                {/* Validation indicator */}
+                {enableStrictValidation && isPageValid && !isCurrentPage && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full border border-white"></span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 };

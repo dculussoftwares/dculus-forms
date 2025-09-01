@@ -1,5 +1,5 @@
 import React from 'react';
-import { FormLayout, LayoutCode, PageModeType } from '@dculus/types';
+import { FormLayout, LayoutCode } from '@dculus/types';
 
 interface LayoutOptionsProps {
   layout: FormLayout;
@@ -32,12 +32,6 @@ export const LayoutOptions: React.FC<LayoutOptionsProps> = ({
           <span className="text-gray-600 dark:text-gray-400">Spacing:</span>
           <span className="text-gray-900 dark:text-white capitalize">
             {layout?.spacing || 'normal'}
-          </span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-gray-600 dark:text-gray-400">Page Mode:</span>
-          <span className="text-gray-900 dark:text-white capitalize">
-            {layout?.pageMode === PageModeType.MULTIPAGE ? 'Multipage' : 'Single Page'}
           </span>
         </div>
       </div>

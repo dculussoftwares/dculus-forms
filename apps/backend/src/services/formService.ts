@@ -121,7 +121,7 @@ export const createForm = async (
       customBackGroundColor: '#ffffff',
       customCTAButtonName: 'Submit',
       backgroundImageKey: '',
-      pageMode: PageModeType.SINGLE_PAGE
+      pageMode: PageModeType.MULTIPAGE
     },
     isShuffleEnabled: false
   };

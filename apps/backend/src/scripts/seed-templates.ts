@@ -137,7 +137,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
           content: getHtmlContent('contact'),
           customBackGroundColor: "#ffffff",
           backgroundImageKey: getImageKey(0),
-          pageMode: PageModeType.SINGLE_PAGE
+          pageMode: PageModeType.MULTIPAGE
         },
         isShuffleEnabled: false
       }
@@ -206,7 +206,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
           content: getHtmlContent('feedback'),
           customBackGroundColor: "#f8f9fa",
           backgroundImageKey: getImageKey(1),
-          pageMode: PageModeType.SINGLE_PAGE
+          pageMode: PageModeType.MULTIPAGE
         },
         isShuffleEnabled: false
       }
@@ -476,7 +476,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
           content: getHtmlContent('survey'),
           customBackGroundColor: "#f3e5f5",
           backgroundImageKey: getImageKey(0),
-          pageMode: PageModeType.SINGLE_PAGE
+          pageMode: PageModeType.MULTIPAGE
         },
         isShuffleEnabled: false
       }
@@ -543,7 +543,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
           content: getHtmlContent('newsletter'),
           customBackGroundColor: "#e8f5e8",
           backgroundImageKey: getImageKey(1),
-          pageMode: PageModeType.SINGLE_PAGE
+          pageMode: PageModeType.MULTIPAGE
         },
         isShuffleEnabled: false
       }
