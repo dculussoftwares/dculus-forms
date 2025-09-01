@@ -229,7 +229,9 @@ const createFormField = (fieldType: FieldType, fieldData: Partial<FieldData> = {
     }
     case FieldType.CHECKBOX_FIELD: {
       const validation = new FillableFormFieldValidation(fieldData.required || false);
-      return new CheckboxField(fieldId, label, defaultValue, prefix, hint, placeholder, validation, fieldData.options || []);
+      // For checkbox fields, use defaultValue as array (it could be string or array from fieldData)
+      const checkboxDefaults = fieldData.defaultValue || [];
+      return new CheckboxField(fieldId, label, checkboxDefaults, prefix, hint, placeholder, validation, fieldData.options || []);
     }
     case FieldType.DATE_FIELD: {
       const validation = new FillableFormFieldValidation(fieldData.required || false);

@@ -1,4 +1,4 @@
-import { FormPage, FormField, CheckboxField } from './index.js';
+import { FormPage, FormField, CheckboxField, FieldType } from './index.js';
 
 /**
  * Create a React Hook Form resolver for a specific form page
@@ -28,6 +28,14 @@ export function generatePageDefaultValues(page: FormPage): Record<string, any> {
  * Get the default value for a specific field type
  */
 function getDefaultValueForField(field: FormField): any {
+  // Handle checkbox fields specially since they don't have string defaultValue
+  if (field.type === FieldType.CHECKBOX_FIELD) {
+    if (field instanceof CheckboxField) {
+      return field.defaultValues;
+    }
+    return [];
+  }
+
   // Type guard to check if field has defaultValue property
   const hasDefaultValue = (field: any): field is { defaultValue: string } => {
     return 'defaultValue' in field && typeof field.defaultValue === 'string';
@@ -36,18 +44,10 @@ function getDefaultValueForField(field: FormField): any {
   if (hasDefaultValue(field)) {
     // Handle different field types for default values
     switch (field.type) {
-      case 'checkbox_field':
-        // For checkbox fields, use defaultValueArray getter if available
-        if (field instanceof CheckboxField) {
-          return field.defaultValueArray;
-        }
-        // Fallback for legacy format
-        return Array.isArray(field.defaultValue) ? field.defaultValue : 
-          (field.defaultValue ? field.defaultValue.split(',').map(s => s.trim()).filter(Boolean) : []);
-      case 'number_field':
+      case FieldType.NUMBER_FIELD:
         const numValue = parseFloat(field.defaultValue);
         return isNaN(numValue) ? undefined : numValue;
-      case 'select_field':
+      case FieldType.SELECT_FIELD:
         // Check if this is a multi-select field
         const isMultiple = (field as any).multiple;
         if (isMultiple) {
@@ -61,12 +61,10 @@ function getDefaultValueForField(field: FormField): any {
 
   // Return appropriate empty values for each field type
   switch (field.type) {
-    case 'checkbox_field':
-      return [];
-    case 'select_field':
+    case FieldType.SELECT_FIELD:
       const isMultiple = (field as any).multiple;
       return isMultiple ? [] : '';
-    case 'number_field':
+    case FieldType.NUMBER_FIELD:
       return undefined;
     default:
       return '';
@@ -105,15 +103,15 @@ export function transformFormDataForSubmission(
     
     // Handle field-specific transformations
     switch (field.type) {
-      case 'number_field':
+      case FieldType.NUMBER_FIELD:
         // Ensure numbers are properly typed
         transformed[field.id] = value === '' ? null : value;
         break;
-      case 'checkbox_field':
+      case FieldType.CHECKBOX_FIELD:
         // Ensure checkboxes are arrays
         transformed[field.id] = Array.isArray(value) ? value : [];
         break;
-      case 'select_field':
+      case FieldType.SELECT_FIELD:
         const isMultiple = (field as any).multiple;
         if (isMultiple) {
           transformed[field.id] = Array.isArray(value) ? value : [];

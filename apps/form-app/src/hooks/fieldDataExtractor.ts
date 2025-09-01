@@ -28,8 +28,8 @@ function getFieldDefaultValue(field: FormField): string | string[] {
   const fieldWithDefaults = field as any;
   
   // Handle checkbox fields with array default values
-  if (field.type === FieldType.CHECKBOX_FIELD && fieldWithDefaults.defaultValueArray) {
-    return fieldWithDefaults.defaultValueArray || [];
+  if (field.type === FieldType.CHECKBOX_FIELD) {
+    return fieldWithDefaults.defaultValues || [];
   }
   
   // Handle regular default values

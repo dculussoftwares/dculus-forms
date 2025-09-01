@@ -51,19 +51,9 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
     };
 
     const getFieldDefaultValueArray = (): string[] => {
-      if ('defaultValue' in field) {
-        // For CheckboxField, check if it has defaultValueArray getter
-        if ('defaultValueArray' in field) {
-          return (field as any).defaultValueArray || [];
-        }
-        // Handle array format
-        if (Array.isArray(field.defaultValue)) {
-          return field.defaultValue;
-        }
-        // Handle comma-separated string format (legacy)
-        if (typeof field.defaultValue === 'string' && field.defaultValue) {
-          return field.defaultValue.split(',').map(s => s.trim()).filter(Boolean);
-        }
+      // CheckboxField should have defaultValues array
+      if ('defaultValues' in field && Array.isArray((field as any).defaultValues)) {
+        return (field as any).defaultValues;
       }
       return [];
     };
@@ -103,7 +93,6 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
     'placeholder' in field ? field.placeholder : null,
     'prefix' in field ? field.prefix : null,
     'defaultValue' in field ? field.defaultValue : null,
-    'defaultValueArray' in field ? (field as any).defaultValueArray : null,
     'options' in field ? field.options : null,
     'validation' in field ? field.validation : null,
   ]);

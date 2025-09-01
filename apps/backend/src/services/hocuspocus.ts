@@ -360,7 +360,16 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
             fieldMap.set('id', field.id);
             fieldMap.set('type', field.type);
             fieldMap.set('label', field.label || '');
-            fieldMap.set('defaultValue', field.defaultValue || '');
+            
+            // Handle defaultValue - use defaultValues for CheckboxField
+            if (field.type === 'checkbox_field' && field.defaultValues) {
+              const defaultValuesArray = new Y.Array();
+              field.defaultValues.filter((val: any) => val && val.trim() !== '').forEach((val: string) => defaultValuesArray.push([val]));
+              fieldMap.set('defaultValue', defaultValuesArray);
+            } else {
+              fieldMap.set('defaultValue', field.defaultValue || '');
+            }
+            
             fieldMap.set('prefix', field.prefix || '');
             fieldMap.set('hint', field.hint || '');
             fieldMap.set('required', field.validation?.required || false);
