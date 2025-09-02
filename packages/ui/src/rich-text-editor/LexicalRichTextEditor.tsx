@@ -109,20 +109,35 @@ function OnChangeHandler({ onChange }: { onChange?: (html: string) => void }) {
 
 function InitialContentPlugin({ value }: { value: string }) {
   const [editor] = useLexicalComposerContext();
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [lastLoadedValue, setLastLoadedValue] = useState<string>('');
 
   useEffect(() => {
-    if (!isLoaded && value && value !== '<p></p>') {
-      editor.update(() => {
-        const parser = new DOMParser();
-        const dom = parser.parseFromString(value, 'text/html');
-        const nodes = $generateNodesFromDOM(editor, dom);
-        $getRoot().clear();
-        $insertNodes(nodes);
-      });
-      setIsLoaded(true);
+    // Always sync with the value prop (controlled component behavior)
+    if (value !== lastLoadedValue) {
+      
+      // Handle empty or default values
+      if (!value || value === '<p></p>' || value === '<p class="editor-paragraph"><br></p>') {
+        if (lastLoadedValue) {
+          // Clear the editor if value becomes empty
+          editor.update(() => {
+            $getRoot().clear();
+            $getRoot().append($generateNodesFromDOM(editor, new DOMParser().parseFromString('<p></p>', 'text/html'))[0]);
+          });
+        }
+        setLastLoadedValue(value || '');
+      } else {
+        // Load new content
+        editor.update(() => {
+          const parser = new DOMParser();
+          const dom = parser.parseFromString(value, 'text/html');
+          const nodes = $generateNodesFromDOM(editor, dom);
+          $getRoot().clear();
+          $insertNodes(nodes);
+        });
+        setLastLoadedValue(value);
+      }
     }
-  }, [editor, value, isLoaded]);
+  }, [editor, value, lastLoadedValue]);
 
   return null;
 }

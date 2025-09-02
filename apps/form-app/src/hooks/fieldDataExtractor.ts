@@ -103,8 +103,9 @@ export function extractDateRangeData(field: FormField): DateRangeFieldData {
  */
 export function extractRichTextData(field: FormField): RichTextFieldData {
   const richTextField = field as any;
+  const extractedContent = richTextField.content || '';
   return {
-    content: richTextField.content || '',
+    content: extractedContent,
   };
 }
 

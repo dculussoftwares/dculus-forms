@@ -118,6 +118,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
     'defaultValues' in field ? (field as any).defaultValues : null,
     'options' in field ? field.options : null,
     'validation' in field ? field.validation : null,
+    'content' in field ? (field as any).content : null, // Add content dependency for Rich Text fields
   ]);
 
 
@@ -302,10 +303,11 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
 
       case FieldType.RICH_TEXT_FIELD:
         const richTextField = field as RichTextFormField;
+        const richTextContent = richTextField.content || '<p>Rich text content will appear here...</p>';
         return (
           <div className="border border-gray-200 rounded-lg">
             <RichTextEditor
-              value={richTextField.content || '<p>Rich text content will appear here...</p>'}
+              value={richTextContent}
               editable={false}
               className="min-h-24 border-none shadow-none"
             />

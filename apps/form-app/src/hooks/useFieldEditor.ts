@@ -36,6 +36,7 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
 
   // Watch all form values to detect changes (with stable reference)
   watch();
+  
 
   // Watch specific fields for cross-field validation re-triggering
   const minDateValue = watch('minDate');
@@ -68,7 +69,7 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
   // Memoized field data extraction to prevent unnecessary re-computation
   const fieldData = useMemo(() => {
     return field ? extractFieldData(field) : {};
-  }, [field?.id, field?.type]); // Re-compute only when field ID or type changes
+  }, [field?.id, field?.type, 'content' in (field || {}) ? (field as any)?.content : null]); // Re-compute when field ID, type, or Rich Text content changes
 
   // Track which field we've initialized to prevent unnecessary resets
   const initializedFieldRef = useRef<string | null>(null);
@@ -82,7 +83,11 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
   // Update form when field changes
   useEffect(() => {
     if (field && field.id !== initializedFieldRef.current) {
+      
+      // Reset the form with field data
       reset(fieldData);
+      
+      
       initializedFieldRef.current = field.id;
     }
   }, [field?.id, reset, fieldData]);
@@ -90,6 +95,7 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
   // Save form data
   const handleSave = useCallback(handleSubmit(async (data) => {
     if (!field) return;
+    
     
     setIsSaving(true);
     try {

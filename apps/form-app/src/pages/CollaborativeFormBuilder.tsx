@@ -127,6 +127,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
     const selectedField = getSelectedField();
     if (!selectedField) return;
 
+
     // Get current pages from store to ensure we have the latest state
     const currentPages = useFormBuilderStore.getState().pages;
     const pageWithField = currentPages.find(page => 
@@ -135,6 +136,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
     
     if (pageWithField) {
       updateField(pageWithField.id, selectedField.id, updates);
+    } else {
     }
   }, [getSelectedField, updateField]);
 

@@ -145,7 +145,14 @@ const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
   
   // Handle rich text field content
   if (fieldType === FieldType.RICH_TEXT_FIELD) {
-    result.content = fieldMap.get('content') || '';
+    const extractedContent = fieldMap.get('content') || '';
+    console.log('📥 extractFieldData - Rich Text from YJS:', {
+      fieldId: result.id,
+      hasContent: !!fieldMap.get('content'),
+      contentLength: extractedContent.length,
+      content: extractedContent.substring(0, 100) + '...'
+    });
+    result.content = extractedContent;
   }
   
   return result;
@@ -189,6 +196,9 @@ const createYJSFieldMap = (fieldData: FieldData): Y.Map<any> => {
       validationMap.set('maxSelections', fieldData.validation.maxSelections);
     }
     fieldMap.set('validation', validationMap);
+  } else if (fieldData.type === FieldType.RICH_TEXT_FIELD) {
+    // Rich Text fields don't have validation - skip validation setup
+    // Content is already handled in the Object.entries loop above
   } else {
     // For other field types, store basic validation
     const validationMap = new Y.Map();
@@ -267,6 +277,11 @@ const createFormField = (fieldType: FieldType, fieldData: Partial<FieldData> = {
     }
     case FieldType.RICH_TEXT_FIELD: {
       const content = (fieldData as any).content || '<p>Enter your rich text content here...</p>';
+      console.log('🏗️ createFormField - Creating Rich Text Field:', {
+        fieldId,
+        contentLength: content.length,
+        content: content.substring(0, 100) + '...'
+      });
       return new RichTextFormField(fieldId, content);
     }
     default:
@@ -787,7 +802,11 @@ export const useFormBuilderStore = create<FormBuilderState>()(
           const { ydoc, isConnected } = get();
           if (!ydoc || !isConnected) return;
 
-          console.log(`🔄 Updating field ${fieldId} in page ${pageId}:`, updates);
+          console.log(`🔄 FormBuilderStore - Updating field ${fieldId} in page ${pageId}:`, {
+            updates,
+            isRichTextUpdate: updates.content !== undefined,
+            richTextContent: updates.content ? updates.content.substring(0, 100) + '...' : 'N/A'
+          });
 
           const formSchemaMap = ydoc.getMap('formSchema');
           const pagesArray = getOrCreatePagesArray(formSchemaMap);
@@ -821,6 +840,14 @@ export const useFormBuilderStore = create<FormBuilderState>()(
           }
           
           Object.entries(updates).forEach(([key, value]) => {
+            console.log(`📝 FormBuilderStore - Processing update key '${key}':`, {
+              fieldId,
+              key,
+              value: key === 'content' ? (typeof value === 'string' ? value.substring(0, 100) + '...' : value) : value,
+              valueType: typeof value,
+              fieldType
+            });
+            
             if (key === 'options' && Array.isArray(value)) {
               const optionsArray = new Y.Array();
               value.filter(option => option && option.trim() !== '').forEach((option: string) => optionsArray.push([option]));
@@ -862,6 +889,7 @@ export const useFormBuilderStore = create<FormBuilderState>()(
               // For text fields, max maps to maxLength in validation (fallback for old format)
               validationMap.set('maxLength', value);
             } else if (value !== undefined) {
+              console.log(`✅ FormBuilderStore - Setting field property:`, { fieldId, key, value: key === 'content' ? `[${value.length} chars]` : value });
               fieldMap.set(key, value);
             }
           });

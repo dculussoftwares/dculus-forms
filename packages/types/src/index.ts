@@ -635,9 +635,10 @@ export const deserializeFormField = (data: any): FormField => {
         data.maxDate
       );
     case FieldType.RICH_TEXT_FIELD:
+      const richTextContent = data.content || '';
       return new RichTextFormField(
         data.id,
-        data.content || ''
+        richTextContent
       );
     default:
       return new FormField(data.id);
