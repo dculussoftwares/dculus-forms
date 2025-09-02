@@ -95,6 +95,7 @@ export { SimpleRichTextEditor } from "./rich-text-editor/SimpleRichTextEditor"
 
 // Field Preview Component
 export { FieldPreview } from "./field-preview"
+export { FieldDragPreview } from "./field-drag-preview"
 
 // Renderers
 export { LayoutRenderer } from "./renderers/LayoutRenderer"

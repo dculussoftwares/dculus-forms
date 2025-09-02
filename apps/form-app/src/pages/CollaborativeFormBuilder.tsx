@@ -10,7 +10,8 @@ import {
 } from '@dnd-kit/core';
 import { useFormBuilderStore } from '../store/useFormBuilderStore';
 import { FieldTypeDisplay, type FieldTypeConfig } from '../components/form-builder/FieldTypesPanel';
-import { DraggableField } from '../components/form-builder/DraggableField';
+import { FormField } from '@dculus/types';
+import { FieldDragPreview } from '@dculus/ui';
 import { FormBuilderHeader } from '@/components/form-builder';
 import { LoadingState } from '../components/form-builder/LoadingState';
 import { ErrorState } from '../components/form-builder/ErrorState';
@@ -176,7 +177,8 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
 
     const draggedItemWithType = draggedItem as any;
 
-    if (draggedItemWithType.type) {
+    // Dragging a field type from the sidebar
+    if (draggedItemWithType.type && !draggedItemWithType.id) {
       return (
         <div className="opacity-90">
           <FieldTypeDisplay fieldType={draggedItemWithType} isOverlay={true} />
@@ -184,6 +186,16 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
       );
     }
 
+    // Dragging an existing FormField
+    if (draggedItemWithType instanceof FormField || (draggedItemWithType.id && draggedItemWithType.type)) {
+      return (
+        <div className="opacity-90">
+          <FieldDragPreview field={draggedItemWithType} />
+        </div>
+      );
+    }
+
+    // Dragging a page
     if (draggedItemWithType.id && typeof draggedItemWithType.title === 'string') {
       const pageIndex = pages.findIndex(p => p.id === draggedItemWithType.id);
       return (
@@ -193,18 +205,9 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
       );
     }
 
-    return (
-      <DraggableField
-        field={draggedItemWithType}
-        pageId=""
-        index={0}
-        isConnected={isConnected}
-        onUpdate={() => {}}
-        onRemove={() => {}}
-        onDuplicate={() => {}}
-      />
-    );
-  }, [activeId, draggedItem, pages, isConnected]);
+    // Fallback
+    return null;
+  }, [activeId, draggedItem, pages]);
 
   const renderTabContent = useCallback(() => {
     switch (activeTab) {

@@ -88,6 +88,35 @@ export function getImageUrl(s3Key: string, cdnEndpoint: string): string {
 }
 
 /**
+ * Strips HTML tags from text and truncates with ellipsis
+ * @param html - HTML string to process
+ * @param maxLength - Maximum length before truncation (default: 50)
+ * @returns Plain text with ellipsis if truncated
+ */
+export function stripHtmlAndTruncate(html: string, maxLength: number = 50): string {
+  if (!html) return '';
+  
+  // Strip HTML tags using regex
+  const plainText = html.replace(/<[^>]*>/g, '').trim();
+  
+  // Decode common HTML entities
+  const decodedText = plainText
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+  
+  // Truncate with ellipsis if needed
+  if (decodedText.length <= maxLength) {
+    return decodedText;
+  }
+  
+  return decodedText.substring(0, maxLength - 3).trim() + '...';
+}
+
+/**
  * Utility function for merging CSS classes with Tailwind support
  * Similar to clsx but with tailwind-merge integration
  */
