@@ -35,7 +35,6 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
     handleSave,
     handleCancel,
     handleReset,
-    handleAutoSave,
     isContentLoading,
   } = useRichTextFieldForm({
     field,

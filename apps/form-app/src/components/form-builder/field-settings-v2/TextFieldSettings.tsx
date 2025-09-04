@@ -37,7 +37,6 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
     handleSave,
     handleCancel,
     handleReset,
-    handleAutoSave,
   } = useTextFieldForm({
     field,
     onSave: (updates) => onUpdate?.(updates),

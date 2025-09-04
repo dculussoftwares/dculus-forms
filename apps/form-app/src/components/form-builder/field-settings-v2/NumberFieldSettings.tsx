@@ -37,7 +37,6 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
     handleSave,
     handleCancel,
     handleReset,
-    handleAutoSave,
   } = useNumberFieldForm({
     field,
     onSave: (updates) => onUpdate?.(updates),

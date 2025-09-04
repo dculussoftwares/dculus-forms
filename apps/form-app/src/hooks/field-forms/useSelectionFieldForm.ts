@@ -37,7 +37,6 @@ export interface UseSelectionFieldFormReturn {
   handleSave: () => void;
   handleCancel: () => void;
   handleReset: () => void;
-  handleAutoSave: () => void;
   setValue: ReturnType<typeof useForm<SelectionFieldFormData>>['setValue'];
   getValues: ReturnType<typeof useForm<SelectionFieldFormData>>['getValues'];
   // Option management functions
@@ -163,6 +162,17 @@ export function useSelectionFieldForm({ field, onSave, onCancel }: UseSelectionF
     mode: 'onChange',
     reValidateMode: 'onChange',
     criteriaMode: 'all',
+    defaultValues: {
+      label: 'Field Label',
+      hint: '',
+      placeholder: '',
+      prefix: '',
+      defaultValue: '',
+      required: false,
+      options: [''],
+      multiple: undefined,
+      validation: undefined,
+    },
   });
 
   const { 
@@ -309,7 +319,6 @@ export function useSelectionFieldForm({ field, onSave, onCancel }: UseSelectionF
     handleSave,
     handleCancel,
     handleReset,
-    handleAutoSave,
     setValue,
     getValues,
     addOption: optionHandlers.addOption,

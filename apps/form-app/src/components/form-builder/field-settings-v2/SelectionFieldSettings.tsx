@@ -45,7 +45,6 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
     handleSave,
     handleCancel,
     handleReset,
-    handleAutoSave,
     addOption,
     updateOption,
     removeOption,

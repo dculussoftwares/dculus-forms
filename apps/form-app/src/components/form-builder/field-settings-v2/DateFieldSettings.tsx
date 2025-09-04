@@ -37,7 +37,6 @@ export const DateFieldSettings: React.FC<DateFieldSettingsProps> = ({
     handleSave,
     handleCancel,
     handleReset,
-    handleAutoSave,
   } = useDateFieldForm({
     field,
     onSave: (updates) => onUpdate?.(updates),

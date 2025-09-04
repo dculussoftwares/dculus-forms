@@ -26,7 +26,6 @@ export interface UseRichTextFieldFormReturn {
   handleSave: () => void;
   handleCancel: () => void;
   handleReset: () => void;
-  handleAutoSave: () => void;
   setValue: ReturnType<typeof useForm<RichTextFieldFormData>>['setValue'];
   getValues: ReturnType<typeof useForm<RichTextFieldFormData>>['getValues'];
   // Rich text specific loading state
@@ -75,6 +74,9 @@ export function useRichTextFieldForm({ field, onSave, onCancel }: UseRichTextFie
     mode: 'onChange',
     reValidateMode: 'onChange',
     criteriaMode: 'all',
+    defaultValues: {
+      content: '<p>Rich text content</p>',
+    },
   });
 
   const { 
@@ -209,7 +211,6 @@ export function useRichTextFieldForm({ field, onSave, onCancel }: UseRichTextFie
     handleSave,
     handleCancel,
     handleReset,
-    handleAutoSave,
     setValue: setValueWithSync,
     getValues,
     isContentLoading,

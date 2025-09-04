@@ -33,7 +33,6 @@ export interface UseDateFieldFormReturn {
   handleSave: () => void;
   handleCancel: () => void;
   handleReset: () => void;
-  handleAutoSave: () => void;
   setValue: ReturnType<typeof useForm<DateFieldFormData>>['setValue'];
   getValues: ReturnType<typeof useForm<DateFieldFormData>>['getValues'];
 }
@@ -156,6 +155,16 @@ export function useDateFieldForm({ field, onSave, onCancel }: UseDateFieldFormPr
     mode: 'onChange',
     reValidateMode: 'onChange',
     criteriaMode: 'all',
+    defaultValues: {
+      label: 'Field Label',
+      hint: '',
+      placeholder: '',
+      prefix: '',
+      defaultValue: undefined,
+      required: false,
+      minDate: undefined,
+      maxDate: undefined,
+    },
   });
 
   const { 
@@ -260,7 +269,6 @@ export function useDateFieldForm({ field, onSave, onCancel }: UseDateFieldFormPr
     handleSave,
     handleCancel,
     handleReset,
-    handleAutoSave,
     setValue,
     getValues,
   };

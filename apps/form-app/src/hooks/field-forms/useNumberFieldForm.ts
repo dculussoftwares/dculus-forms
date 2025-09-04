@@ -33,7 +33,6 @@ export interface UseNumberFieldFormReturn {
   handleSave: () => void;
   handleCancel: () => void;
   handleReset: () => void;
-  handleAutoSave: () => void;
   setValue: ReturnType<typeof useForm<NumberFieldFormData>>['setValue'];
   getValues: ReturnType<typeof useForm<NumberFieldFormData>>['getValues'];
 }
@@ -119,6 +118,16 @@ export function useNumberFieldForm({ field, onSave, onCancel }: UseNumberFieldFo
     mode: 'onChange',
     reValidateMode: 'onChange',
     criteriaMode: 'all',
+    defaultValues: {
+      label: 'Field Label',
+      hint: '',
+      placeholder: '',
+      prefix: '',
+      defaultValue: undefined,
+      required: false,
+      min: undefined,
+      max: undefined,
+    },
   });
 
   const { 
@@ -223,7 +232,6 @@ export function useNumberFieldForm({ field, onSave, onCancel }: UseNumberFieldFo
     handleSave,
     handleCancel,
     handleReset,
-    handleAutoSave,
     setValue,
     getValues,
   };
