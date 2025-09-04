@@ -205,21 +205,10 @@ export function useSelectionFieldForm({ field, onSave, onCancel }: UseSelectionF
     }
   }, [field?.id, reset, fieldData]);
 
-  // Debounced auto-save to prevent excessive API calls
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
+  // Placeholder for auto-save (disabled)
   const handleAutoSave = useCallback(() => {
-    if (!isDirty || !isValid || !field || isSaving) return;
-    
-    // Clear existing timeout
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-    }
-    
-    // Debounce auto-save by 500ms
-    autoSaveTimeoutRef.current = setTimeout(() => {
-      handleSave();
-    }, 500);
-  }, [isDirty, isValid, field, isSaving]);
+    // Auto-save disabled
+  }, []);
 
   // Memoized option management functions
   const optionHandlers = useMemo(() => ({
@@ -310,14 +299,6 @@ export function useSelectionFieldForm({ field, onSave, onCancel }: UseSelectionF
     }
   }, [field, fieldData, reset]);
 
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
-    };
-  }, []);
 
   return {
     form,

@@ -160,21 +160,10 @@ export function useNumberFieldForm({ field, onSave, onCancel }: UseNumberFieldFo
     }
   }, [field?.id, reset, fieldData]);
 
-  // Debounced auto-save to prevent excessive API calls
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
+  // Placeholder for auto-save (disabled)
   const handleAutoSave = useCallback(() => {
-    if (!isDirty || !isValid || !field || isSaving) return;
-    
-    // Clear existing timeout
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-    }
-    
-    // Debounce auto-save by 500ms
-    autoSaveTimeoutRef.current = setTimeout(() => {
-      handleSave();
-    }, 500);
-  }, [isDirty, isValid, field, isSaving]);
+    // Auto-save disabled
+  }, []);
 
   // Save form data with proper error handling and number conversion
   const handleSave = useCallback(handleSubmit(async (data) => {
@@ -224,14 +213,6 @@ export function useNumberFieldForm({ field, onSave, onCancel }: UseNumberFieldFo
     }
   }, [field, fieldData, reset]);
 
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
-    };
-  }, []);
 
   return {
     form,

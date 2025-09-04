@@ -129,21 +129,10 @@ export function useRichTextFieldForm({ field, onSave, onCancel }: UseRichTextFie
     }
   }, [field?.id, reset, fieldData]);
 
-  // Debounced auto-save to prevent excessive API calls during rich text editing
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
+  // Placeholder for auto-save (disabled)
   const handleAutoSave = useCallback(() => {
-    if (!isDirty || !isValid || !field || isSaving || isContentLoading) return;
-    
-    // Clear existing timeout
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-    }
-    
-    // Longer debounce for rich text content (1 second)
-    autoSaveTimeoutRef.current = setTimeout(() => {
-      handleSave();
-    }, 1000);
-  }, [isDirty, isValid, field, isSaving, isContentLoading]);
+    // Auto-save disabled
+  }, []);
 
   // Save form data with proper error handling and content sanitization
   const handleSave = useCallback(handleSubmit(async (data) => {
@@ -205,9 +194,6 @@ export function useRichTextFieldForm({ field, onSave, onCancel }: UseRichTextFie
   // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
       if (validationTimeoutRef.current) {
         clearTimeout(validationTimeoutRef.current);
       }

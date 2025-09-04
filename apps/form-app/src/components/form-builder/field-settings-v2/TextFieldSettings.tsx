@@ -46,15 +46,12 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
 
   const { control, formState: { isDirty } } = form;
 
-  // Handle auto-save when switching fields - only save when field actually changes
+  // Track field changes (auto-save disabled)
   const fieldIdRef = useRef<string | null>(null);
   useEffect(() => {
-    // If we're switching from one field to another (not initial mount)
-    if (fieldIdRef.current && fieldIdRef.current !== field?.id && isDirty && isValid) {
-      handleAutoSave();
-    }
+    // Track field changes without auto-save
     fieldIdRef.current = field?.id || null;
-  }, [field?.id, isDirty, isValid, handleAutoSave]);
+  }, [field?.id]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
