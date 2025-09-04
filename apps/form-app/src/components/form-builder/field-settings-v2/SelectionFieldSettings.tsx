@@ -31,7 +31,7 @@ interface SelectionFieldSettingsProps {
  * Specialized settings component for selection-based fields
  * Handles SELECT_FIELD, RADIO_FIELD, and CHECKBOX_FIELD types
  */
-export const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
+const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
   field,
   isConnected,
   onUpdate,
@@ -94,8 +94,8 @@ export const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
     );
   }
 
-  const isSelectField = field.type === 'select_field';
   const isCheckboxField = field.type === 'checkbox_field';
+  const isSingleSelectionField = field.type === 'select_field' || field.type === 'radio_field';
 
   return (
     <div className="h-full flex flex-col">
@@ -139,36 +139,30 @@ export const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
               disabled={!isConnected}
             />
 
-            {/* Placeholder (for select fields) */}
-            {isSelectField && (
+            {/* Placeholder (for single selection fields - dropdown and radio) */}
+            {isSingleSelectionField && (
               <FormInputField
                 name="placeholder"
                 label={FIELD_SETTINGS_CONSTANTS.LABELS.PLACEHOLDER}
-                placeholder="Choose an option..."
+                placeholder={field.type === 'select_field' ? "Choose an option..." : "Select an option..."}
                 control={control}
                 error={errors.placeholder}
                 disabled={!isConnected}
               />
             )}
 
-            {/* Default Value - Dropdown for Radio and Select fields */}
-            {(field.type === 'radio_field' || field.type === 'select_field') && (
+            {/* Default Value - Dropdown for single selection fields (Radio and Select) */}
+            {isSingleSelectionField && (
               <div className="space-y-2">
                 <Label className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.LABEL_STYLE}>
                   {FIELD_SETTINGS_CONSTANTS.LABELS.DEFAULT_VALUE}
                 </Label>
-                {/* Debug info */}
-                {process.env.NODE_ENV === 'development' && (
-                  <div className="text-xs text-gray-500 bg-gray-100 p-2 rounded dark:bg-gray-800 dark:text-gray-400">
-                    Options count: {options.length}, Options: {JSON.stringify(options, null, 2)}
-                  </div>
-                )}
                 <Controller
                   name="defaultValue"
                   control={control}
                   render={({ field: controllerField }) => (
                     <Select
-                      value={controllerField.value || '__no_default__'}
+                      value={typeof controllerField.value === 'string' ? controllerField.value || '__no_default__' : '__no_default__'}
                       onValueChange={(value) => {
                         // Convert the special "no default" value back to empty string
                         const actualValue = value === '__no_default__' ? '' : value;
@@ -222,12 +216,6 @@ export const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                 <Label className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.LABEL_STYLE}>
                   {FIELD_SETTINGS_CONSTANTS.LABELS.DEFAULT_VALUE}
                 </Label>
-                {/* Debug info */}
-                {process.env.NODE_ENV === 'development' && (
-                  <div className="text-xs text-gray-500 bg-gray-100 p-2 rounded dark:bg-gray-800 dark:text-gray-400">
-                    Options count: {options.length}, Options: {JSON.stringify(options, null, 2)}
-                  </div>
-                )}
                 <Controller
                   name="defaultValue"
                   control={control}

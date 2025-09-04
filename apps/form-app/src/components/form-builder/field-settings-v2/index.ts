@@ -1,7 +1,7 @@
 // Export all field-specific settings components
 export { TextFieldSettings } from './TextFieldSettings';
 export { NumberFieldSettings } from './NumberFieldSettings';
-export { SelectionFieldSettings } from './SelectionFieldSettings';
+export { default as SelectionFieldSettings } from './SelectionFieldSettings';
 export { DateFieldSettings } from './DateFieldSettings';
 export { RichTextFieldSettings } from './RichTextFieldSettings';
 

@@ -86,7 +86,7 @@ const selectionFieldValidationSchema = z.object({
   (data) => {
     // Validate that options are unique and non-empty
     const nonEmptyOptions = data.options.filter(option => option.trim().length > 0);
-    const uniqueOptions = [...new Set(nonEmptyOptions)];
+    const uniqueOptions = Array.from(new Set(nonEmptyOptions));
     return uniqueOptions.length === nonEmptyOptions.length && nonEmptyOptions.length > 0;
   },
   {
@@ -140,7 +140,7 @@ const extractSelectionFieldData = (field: SelectField | RadioField | CheckboxFie
     defaultValue: field.defaultValue || (isCheckboxField ? [] : ''),
     required: validation.required || false,
     options: (field as any).options || [''],
-    multiple: isSelectField ? (field as SelectField).multiple : undefined,
+    multiple: isSelectField ? (field as any).multiple : undefined,
     validation: isCheckboxField ? {
       minSelections: validation.minSelections,
       maxSelections: validation.maxSelections,
