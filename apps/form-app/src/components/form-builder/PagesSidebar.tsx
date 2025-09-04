@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { DraggablePageItem } from './DraggablePageItem';
 import { JSONPreview } from './JSONPreview';
-import { FieldSettings } from './FieldSettings';
+import { FieldSettingsV2 as FieldSettings } from './field-settings-v2';
 
 interface PagesSidebarProps {
   pages: FormPage[];
