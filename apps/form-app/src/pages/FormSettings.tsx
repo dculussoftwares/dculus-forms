@@ -34,7 +34,6 @@ import {
   Calendar,
   Clock,
   Mail,
-  MoreHorizontal,
   Crown
 } from 'lucide-react';
 import { cn } from '@dculus/utils';
@@ -46,45 +45,12 @@ interface GeneralSetting {
 }
 
 const generalSettings: GeneralSetting[] = [
-  { id: 'display', label: 'Display', icon: Monitor },
   { id: 'general', label: 'General Settings', icon: Globe },
   { id: 'thank-you', label: 'Thank You Page & Redirection', icon: CheckCircle },
-  { id: 'date-time', label: 'Date & Time', icon: Calendar },
-  { id: 'form-availability', label: 'Form Availability', icon: Clock },
-  { id: 'smtp', label: 'SMTP', icon: Mail },
-  { id: 'others', label: 'Others', icon: MoreHorizontal },
 ];
 
 const emailNotificationSettings = [
   { id: 'email-notifications', label: 'Email & Notifications', icon: Mail },
-];
-
-const brandingSettings = [
-  { id: 'branding', label: 'Branding', icon: Crown },
-];
-
-const prefillSettings = [
-  { id: 'prefill', label: 'Prefill', icon: Globe },
-];
-
-const pdfDocumentSettings = [
-  { id: 'pdf-document', label: 'PDF & Document Merge', icon: Globe },
-];
-
-const submissionStorageSettings = [
-  { id: 'submissions-storage', label: 'Submissions & Storage', icon: Globe },
-];
-
-const translationSettings = [
-  { id: 'translation', label: 'Translation & Messages', icon: Globe },
-];
-
-const spamControlSettings = [
-  { id: 'spam-control', label: 'Spam Control', icon: Globe },
-];
-
-const mobileAppSettings = [
-  { id: 'mobile-app', label: 'Mobile App', icon: Globe },
 ];
 
 interface SettingsSidebarProps {
@@ -93,7 +59,7 @@ interface SettingsSidebarProps {
 }
 
 const SettingsSidebar: React.FC<SettingsSidebarProps> = ({ selectedSection, onSectionChange }) => {
-  const [collapsedSections] = useState<Set<string>>(new Set(['email-notifications', 'branding', 'prefill', 'pdf-document', 'submissions-storage', 'translation', 'spam-control', 'mobile-app']));
+  const [collapsedSections] = useState<Set<string>>(new Set(['email-notifications']));
 
   const SidebarSection = ({ 
     settings, 
@@ -144,13 +110,6 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({ selectedSection, onSe
     <>
       <SidebarSection settings={generalSettings} title="General" />
       <SidebarSection settings={emailNotificationSettings} title="Email & Notifications" />
-      <SidebarSection settings={brandingSettings} title="Branding" />
-      <SidebarSection settings={prefillSettings} title="Prefill" />
-      <SidebarSection settings={pdfDocumentSettings} title="PDF & Document Merge" />
-      <SidebarSection settings={submissionStorageSettings} title="Submissions & Storage" />
-      <SidebarSection settings={translationSettings} title="Translation & Messages" />
-      <SidebarSection settings={spamControlSettings} title="Spam Control" />
-      <SidebarSection settings={mobileAppSettings} title="Mobile App" />
     </>
   );
 };
