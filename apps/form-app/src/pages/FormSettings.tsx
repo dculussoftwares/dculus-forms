@@ -905,6 +905,12 @@ const FormSettings: React.FC = () => {
                   </span>
                 </div>
               </div>
+              <div className="pt-4">
+                <Button onClick={handleSaveChanges} disabled={isSaving} className="bg-green-600 hover:bg-green-700 text-white">
+                  <Save className="mr-2 h-4 w-4" />
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         );
@@ -1008,15 +1014,6 @@ const FormSettings: React.FC = () => {
               Configure settings and preferences for "{form.title}"
             </TypographyP>
           </div>
-          <div className="flex space-x-3">
-            <Button variant="outline" size="sm" disabled={isSaving}>
-              Reset to Defaults
-            </Button>
-            <Button size="sm" onClick={handleSaveChanges} disabled={isSaving}>
-              <Save className="mr-2 h-4 w-4" />
-              {isSaving ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </div>
         </div>
 
         <Separator />
@@ -1050,21 +1047,6 @@ const FormSettings: React.FC = () => {
           </Card>
         )}
 
-        {/* Save Actions */}
-        <div className="flex justify-between items-center pt-6 border-t">
-          <TypographyMuted className="text-xs">
-            Changes are saved manually • Click "Save Changes" to apply updates
-          </TypographyMuted>
-          <div className="flex space-x-3">
-            <Button variant="outline" disabled={isSaving}>
-              Cancel Changes
-            </Button>
-            <Button onClick={handleSaveChanges} disabled={isSaving}>
-              <Save className="mr-2 h-4 w-4" />
-              {isSaving ? 'Saving...' : 'Save All Changes'}
-            </Button>
-          </div>
-        </div>
       </div>
     </MainLayout>
   );
