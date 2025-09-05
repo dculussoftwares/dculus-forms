@@ -135,17 +135,6 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
               disabled={!isConnected}
             />
 
-            {/* Placeholder (for single selection fields - dropdown and radio) */}
-            {isSingleSelectionField && (
-              <FormInputField
-                name="placeholder"
-                label={FIELD_SETTINGS_CONSTANTS.LABELS.PLACEHOLDER}
-                placeholder={field.type === 'select_field' ? "Choose an option..." : "Select an option..."}
-                control={control}
-                error={errors.placeholder}
-                disabled={!isConnected}
-              />
-            )}
 
             {/* Default Value - Dropdown for single selection fields (Radio and Select) */}
             {isSingleSelectionField && (

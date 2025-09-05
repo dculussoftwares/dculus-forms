@@ -393,11 +393,11 @@ export class SelectField extends FillableFormField {
     defaultValue: string,
     prefix: string,
     hint: string,
-    placeholder: string,
     validation: FillableFormFieldValidation,
     options: string[] = []
   ) {
-    super(id, label, defaultValue, prefix, hint, placeholder, validation);
+    // SelectField doesn't use placeholder - pass empty string
+    super(id, label, defaultValue, prefix, hint, '', validation);
     this.type = FieldType.SELECT_FIELD;
     this.options = options;
   }
@@ -412,11 +412,11 @@ export class RadioField extends FillableFormField {
     defaultValue: string,
     prefix: string,
     hint: string,
-    placeholder: string,
     validation: FillableFormFieldValidation,
     options: string[] = []
   ) {
-    super(id, label, defaultValue, prefix, hint, placeholder, validation);
+    // RadioField doesn't use placeholder - pass empty string
+    super(id, label, defaultValue, prefix, hint, '', validation);
     this.type = FieldType.RADIO_FIELD;
     this.options = options;
   }
@@ -596,7 +596,6 @@ export const deserializeFormField = (data: any): FormField => {
         data.defaultValue || '',
         data.prefix || '',
         data.hint || '',
-        data.placeholder || '',
         getValidation(data, FieldType.SELECT_FIELD) as FillableFormFieldValidation,
         data.options || []
       );
@@ -607,7 +606,6 @@ export const deserializeFormField = (data: any): FormField => {
         data.defaultValue || '',
         data.prefix || '',
         data.hint || '',
-        data.placeholder || '',
         getValidation(data, FieldType.RADIO_FIELD) as FillableFormFieldValidation,
         data.options || []
       );

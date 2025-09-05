@@ -18,7 +18,7 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
   }, [field?.type]);
 
   const form = useForm<FieldFormData>({
-    resolver: validationSchema ? zodResolver(validationSchema) : undefined,
+    resolver: validationSchema ? zodResolver(validationSchema as any) : undefined,
     mode: 'onChange',
     reValidateMode: 'onChange',
     criteriaMode: 'all',

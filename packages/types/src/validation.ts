@@ -122,14 +122,14 @@ export const numberFieldValidationSchema = baseFieldValidationSchema.extend({
   }
 );
 
-export const selectFieldValidationSchema = baseFieldValidationSchema.extend({
+export const selectFieldValidationSchema = baseFieldValidationSchema.omit({ placeholder: true }).extend({
   options: z.array(z.string().min(1, 'Option text cannot be empty')).min(1, 'Add at least one option for the dropdown').refine(
     (options) => new Set(options.filter(opt => opt.trim())).size === options.filter(opt => opt.trim()).length,
     'Duplicate options are not allowed'
   ),
 });
 
-export const radioFieldValidationSchema = baseFieldValidationSchema.extend({
+export const radioFieldValidationSchema = baseFieldValidationSchema.omit({ placeholder: true }).extend({
   options: z.array(z.string().min(1, 'Option text cannot be empty')).min(2, 'Radio fields need at least 2 options to choose from').refine(
     (options) => new Set(options.filter(opt => opt.trim())).size === options.filter(opt => opt.trim()).length,
     'Duplicate options are not allowed'

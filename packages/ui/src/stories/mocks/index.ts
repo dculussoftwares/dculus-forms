@@ -129,7 +129,6 @@ export const createValidationTestPages = (): FormPage[] => {
         '',
         '',
         'Select your country of residence',
-        'Select a country...',
         new FillableFormFieldValidation(true),
         ['United States', 'Canada', 'United Kingdom', 'Australia', 'Germany', 'France', 'Other']
       ),
@@ -139,7 +138,6 @@ export const createValidationTestPages = (): FormPage[] => {
         '',
         '',
         'Select all languages you know (optional)',
-        'Choose languages...',
         new FillableFormFieldValidation(false),
         ['JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'Rust', 'Go']
       ),
@@ -149,7 +147,6 @@ export const createValidationTestPages = (): FormPage[] => {
         '',
         '',
         'How would you describe your experience?',
-        '',
         new FillableFormFieldValidation(true),
         ['Beginner (0-1 years)', 'Intermediate (2-5 years)', 'Senior (5-10 years)', 'Expert (10+ years)']
       ),
@@ -196,7 +193,6 @@ export const createValidationTestPages = (): FormPage[] => {
         '',
         '',
         'Would you like to receive our newsletter?',
-        '',
         new FillableFormFieldValidation(true),
         ['Yes, send me updates', 'No, thanks']
       ),
@@ -379,7 +375,6 @@ export const createSampleFields = () => [
     '',
     '',
     '',
-    '',
     new FillableFormFieldValidation(true),
     ['Engineering', 'Marketing', 'Sales', 'HR', 'Operations']
   ),
@@ -387,7 +382,6 @@ export const createSampleFields = () => [
   new RadioField(
     generateId(),
     'Experience Level',
-    '',
     '',
     '',
     '',

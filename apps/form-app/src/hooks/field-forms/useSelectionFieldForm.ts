@@ -8,7 +8,6 @@ import { z } from 'zod';
 interface SelectionFieldFormData {
   label: string;
   hint?: string;
-  placeholder?: string;
   prefix?: string;
   defaultValue?: string | string[];
   required: boolean;
@@ -49,7 +48,6 @@ export interface UseSelectionFieldFormReturn {
 const selectionFieldValidationSchema = z.object({
   label: z.string().min(1, 'Field label is required'),
   hint: z.string().optional(),
-  placeholder: z.string().optional(),
   prefix: z.string().optional(),
   defaultValue: z.union([z.string(), z.array(z.string())]).optional(),
   required: z.boolean().default(false),
@@ -134,7 +132,6 @@ const extractSelectionFieldData = (field: SelectField | RadioField | CheckboxFie
   return {
     label: field.label || '',
     hint: field.hint || '',
-    placeholder: field.placeholder || '',
     prefix: field.prefix || '',
     defaultValue: field.defaultValue || (isCheckboxField ? [] : ''),
     required: validation.required || false,
@@ -165,7 +162,6 @@ export function useSelectionFieldForm({ field, onSave, onCancel }: UseSelectionF
     defaultValues: {
       label: 'Field Label',
       hint: '',
-      placeholder: '',
       prefix: '',
       defaultValue: '',
       required: false,
@@ -252,7 +248,6 @@ export function useSelectionFieldForm({ field, onSave, onCancel }: UseSelectionF
       const updates: Record<string, any> = {
         label: data.label,
         hint: data.hint || '',
-        placeholder: data.placeholder || '',
         prefix: data.prefix || '',
         defaultValue: data.defaultValue,
         options: validOptions,

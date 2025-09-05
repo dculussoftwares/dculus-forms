@@ -255,11 +255,11 @@ const createFormField = (fieldType: FieldType, fieldData: Partial<FieldData> = {
     }
     case FieldType.SELECT_FIELD: {
       const validation = new FillableFormFieldValidation(fieldData.required || false);
-      return new SelectField(fieldId, label, defaultValue, prefix, hint, placeholder, validation, fieldData.options || []);
+      return new SelectField(fieldId, label, defaultValue, prefix, hint, validation, fieldData.options || []);
     }
     case FieldType.RADIO_FIELD: {
       const validation = new FillableFormFieldValidation(fieldData.required || false);
-      return new RadioField(fieldId, label, defaultValue, prefix, hint, placeholder, validation, fieldData.options || []);
+      return new RadioField(fieldId, label, defaultValue, prefix, hint, validation, fieldData.options || []);
     }
     case FieldType.CHECKBOX_FIELD: {
       const validation = new CheckboxFieldValidation(
