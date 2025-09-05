@@ -129,11 +129,21 @@ const extractSelectionFieldData = (field: SelectField | RadioField | CheckboxFie
   const isSelectField = field.type === 'select_field';
   const isCheckboxField = field.type === 'checkbox_field';
   
+  // Get the correct default value property based on field type
+  let defaultValue;
+  if (isCheckboxField) {
+    // CheckboxField uses 'defaultValues' (plural) property
+    defaultValue = (field as CheckboxField).defaultValues || [];
+  } else {
+    // SelectField and RadioField use 'defaultValue' (singular) property
+    defaultValue = field.defaultValue || '';
+  }
+  
   return {
     label: field.label || '',
     hint: field.hint || '',
     prefix: field.prefix || '',
-    defaultValue: field.defaultValue || (isCheckboxField ? [] : ''),
+    defaultValue,
     required: validation.required || false,
     options: (field as any).options || [''],
     multiple: isSelectField ? (field as any).multiple : undefined,
@@ -198,7 +208,20 @@ export function useSelectionFieldForm({ field, onSave, onCancel }: UseSelectionF
   // Memoized field data extraction to prevent unnecessary re-computation
   const fieldData = useMemo(() => {
     return field ? extractSelectionFieldData(field) : null;
-  }, [field?.id, field?.type]);
+  }, [
+    field?.id, 
+    field?.type,
+    field?.label,
+    field?.hint,
+    field?.prefix,
+    field?.defaultValue, // For SelectField and RadioField
+    (field as CheckboxField)?.defaultValues, // For CheckboxField
+    (field as any)?.options,
+    (field as any)?.multiple, // For SelectField
+    (field as any)?.validation?.required,
+    (field as any)?.validation?.minSelections, // For CheckboxField
+    (field as any)?.validation?.maxSelections, // For CheckboxField
+  ]);
 
   // Track which field we've initialized to prevent unnecessary resets
   const initializedFieldRef = useRef<string | null>(null);
