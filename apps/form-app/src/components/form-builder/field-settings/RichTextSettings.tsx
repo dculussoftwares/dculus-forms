@@ -71,7 +71,6 @@ export const RichTextSettings: React.FC<BaseFieldSettingsProps> = ({
             // Use the watched value instead of field.value for better synchronization
             const editorValue = contentValue ?? field.value ?? '';
             
-            
             return (
               <div className="border border-gray-200 rounded-lg">
                 <RichTextEditor

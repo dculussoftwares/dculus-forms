@@ -35,7 +35,7 @@ export interface UseRichTextFieldFormReturn {
 
 // Validation schema for rich text fields
 const richTextFieldValidationSchema = z.object({
-  content: z.string().min(1, 'Content is required for rich text fields'),
+  content: z.string(),
 });
 
 // Helper function to sanitize HTML content
@@ -53,8 +53,9 @@ const sanitizeHtmlContent = (content: string): string => {
 
 // Helper function to extract data from rich text field
 const extractRichTextFieldData = (field: RichTextFormField): RichTextFieldFormData => {
+  const content = field.content || '';
   return {
-    content: sanitizeHtmlContent(field.content || ''),
+    content: content || '<p></p>',
   };
 };
 
@@ -69,13 +70,14 @@ export function useRichTextFieldForm({ field, onSave, onCancel }: UseRichTextFie
   // Memoized validation schema to prevent unnecessary re-renders
   const validationSchema = useMemo(() => richTextFieldValidationSchema, []);
 
+  // Create form with stable default values
   const form = useForm<RichTextFieldFormData>({
     resolver: zodResolver(validationSchema),
     mode: 'onChange',
     reValidateMode: 'onChange',
     criteriaMode: 'all',
     defaultValues: {
-      content: '<p>Rich text content</p>',
+      content: '<p></p>', // Always start with empty, will be reset with actual content
     },
   });
 
@@ -119,17 +121,21 @@ export function useRichTextFieldForm({ field, onSave, onCancel }: UseRichTextFie
 
   // Update form when field changes
   useEffect(() => {
-    if (field && fieldData && field.id !== initializedFieldRef.current) {
-      setIsContentLoading(true);
-      
-      // Small delay to show loading state for rich text content
-      setTimeout(() => {
+    if (field && fieldData) {
+      // Reset for new field or if content has changed
+      if (field.id !== initializedFieldRef.current) {
+        setIsContentLoading(true);
+        
+        // Reset immediately without delay to prevent empty state
         reset(fieldData);
         setIsContentLoading(false);
         initializedFieldRef.current = field.id;
-      }, 100);
+      }
+    } else if (!field) {
+      // Clear initialized field ref when no field is selected
+      initializedFieldRef.current = null;
     }
-  }, [field?.id, reset, fieldData]);
+  }, [field?.id, field?.content, reset, fieldData]);
 
 
   // Save form data with proper error handling and content sanitization
