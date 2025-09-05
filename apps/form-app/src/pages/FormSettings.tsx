@@ -1026,7 +1026,7 @@ const FormSettings: React.FC = () => {
         { label: 'Settings', href: `/dashboard/form/${formId}/settings` },
       ]}
     >
-      <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+      <div className="px-4 py-8 space-y-8">
         {/* Header Section */}
         <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
           <div>
@@ -1071,8 +1071,8 @@ const FormSettings: React.FC = () => {
 
           {/* Right Content Area */}
           <div className="flex-1 overflow-y-auto">
-            <div className="p-8">
-              <div className="max-w-4xl">
+            <div className="p-6">
+              <div className="w-full">
                 {renderCurrentSection()}
               </div>
             </div>
