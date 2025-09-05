@@ -80,6 +80,7 @@ interface FormBuilderState {
   reorderFields: (pageId: string, oldIndex: number, newIndex: number) => void;
   reorderPages: (oldIndex: number, newIndex: number) => void;
   duplicateField: (pageId: string, fieldId: string) => void;
+  moveFieldBetweenPages: (sourcePageId: string, targetPageId: string, fieldId: string, insertIndex?: number) => void;
   updateLayout: (layoutUpdates: Partial<FormLayout>) => void;
   
   getSelectedField: () => FormField | null;
@@ -1135,6 +1136,68 @@ export const useFormBuilderStore = create<FormBuilderState>()(
           pagesArray.toArray().forEach((pageMap, index) => {
             pageMap.set('order', index);
           });
+        },
+
+        moveFieldBetweenPages: (sourcePageId: string, targetPageId: string, fieldId: string, insertIndex?: number) => {
+          const { ydoc, isConnected } = get();
+          if (!ydoc || !isConnected) {
+            console.warn('Cannot move field between pages: YJS document not available or not connected');
+            return;
+          }
+
+          if (sourcePageId === targetPageId) {
+            console.warn('Cannot move field to same page - use reorderFields instead');
+            return;
+          }
+
+          const formSchemaMap = ydoc.getMap('formSchema');
+          const pagesArray = getOrCreatePagesArray(formSchemaMap);
+
+          // Find source and target pages
+          const sourcePageIndex = pagesArray.toArray().findIndex(pageMap => pageMap.get('id') === sourcePageId);
+          const targetPageIndex = pagesArray.toArray().findIndex(pageMap => pageMap.get('id') === targetPageId);
+
+          if (sourcePageIndex === -1 || targetPageIndex === -1) {
+            console.warn(`Page not found - source: ${sourcePageId}, target: ${targetPageId}`);
+            return;
+          }
+
+          const sourcePageMap = pagesArray.get(sourcePageIndex);
+          const targetPageMap = pagesArray.get(targetPageIndex);
+          const sourceFieldsArray = sourcePageMap.get('fields') as Y.Array<Y.Map<any>>;
+          const targetFieldsArray = targetPageMap.get('fields') as Y.Array<Y.Map<any>>;
+
+          // Find the field to move
+          const fieldIndex = sourceFieldsArray.toArray().findIndex(fieldMap => fieldMap.get('id') === fieldId);
+          if (fieldIndex === -1) {
+            console.warn(`Field ${fieldId} not found in source page ${sourcePageId}`);
+            return;
+          }
+
+          // Extract the field data
+          const fieldMap = sourceFieldsArray.get(fieldIndex);
+          const fieldData = extractFieldData(fieldMap);
+
+          console.log(`Moving field ${fieldId} from page ${sourcePageId} to page ${targetPageId} at index ${insertIndex || targetFieldsArray.length}`);
+
+          // Remove field from source page
+          sourceFieldsArray.delete(fieldIndex, 1);
+
+          // Add field to target page at specified index
+          const newFieldMap = createYJSFieldMap(fieldData);
+          const safeInsertIndex = insertIndex !== undefined ? Math.max(0, Math.min(insertIndex, targetFieldsArray.length)) : targetFieldsArray.length;
+          
+          if (safeInsertIndex === targetFieldsArray.length) {
+            targetFieldsArray.push([newFieldMap]);
+          } else {
+            targetFieldsArray.insert(safeInsertIndex, [newFieldMap]);
+          }
+
+          // Update selected field if it was the moved field
+          const { selectedFieldId } = get();
+          if (selectedFieldId === fieldId) {
+            set({ selectedPageId: targetPageId });
+          }
         },
 
         updateLayout: (layoutUpdates: Partial<FormLayout>) => {

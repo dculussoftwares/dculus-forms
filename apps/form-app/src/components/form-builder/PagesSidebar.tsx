@@ -181,7 +181,9 @@ export const PagesSidebar: React.FC<PagesSidebarProps> = ({
         </div>
         <p className="text-sm text-gray-500 dark:text-gray-400">
           {activeTab === 'pages' 
-            ? `${pages.length} ${pages.length === 1 ? 'page' : 'pages'}` 
+            ? pages.length > 1 
+              ? `${pages.length} pages • Drag fields here to move between pages`
+              : `${pages.length} ${pages.length === 1 ? 'page' : 'pages'}`
             : activeTab === 'json'
             ? 'Form Schema Preview'
             : 'Field Properties'

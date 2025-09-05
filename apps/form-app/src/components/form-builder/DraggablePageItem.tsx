@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
+import { useDndContext, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { FormPage } from '@dculus/types';
 import { Button, Card } from '@dculus/ui';
@@ -7,6 +8,7 @@ import {
   GripVertical,
   Trash2,
   Copy,
+  Plus,
 } from 'lucide-react';
 import { ConfirmationDialog } from './ConfirmationDialog';
 
@@ -33,11 +35,12 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
 }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const pageItemRef = useRef<HTMLDivElement>(null);
+  const { active, over } = useDndContext();
   
   const {
     attributes,
     listeners,
-    setNodeRef,
+    setNodeRef: setSortableRef,
     transform,
     transition,
     isDragging,
@@ -49,10 +52,38 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
     },
   });
 
+  const {
+    isOver: isDropOver,
+    setNodeRef: setDroppableRef,
+  } = useDroppable({
+    id: `page-thumbnail-${page.id}`,
+    data: {
+      type: 'page',
+      pageId: page.id,
+      accepts: ['field', 'field-type'], // Accept field drops and new field types
+    },
+  });
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   };
+
+  // Check drag states for visual feedback
+  const isDraggingField = active?.data?.current?.type === 'field';
+  const isDraggingFieldType = active?.data?.current?.type === 'field-type';
+  
+  // Check if hovering over this page (either the thumbnail droppable or the sortable page item)
+  const isOverThisPage = over?.id === `page-thumbnail-${page.id}` || over?.id === page.id;
+  
+  const isDraggingFromDifferentPage = isDraggingField && 
+    active?.data?.current?.pageId !== page.id &&
+    isOverThisPage;
+    
+  const isDraggingFieldTypeToThisPage = isDraggingFieldType && isOverThisPage;
+  
+  
+  // Don't combine refs - use separate elements for sorting and dropping
 
   // Scroll into view when shouldScrollIntoView is true and isSelected is true
   useEffect(() => {
@@ -74,20 +105,40 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
       `}
     >
       <div
-        ref={setNodeRef}
+        ref={setSortableRef}
         style={style}
+        className={`
+          transition-all duration-200 relative
+          ${isDraggingFromDifferentPage || isDraggingFieldTypeToThisPage ? 'scale-105 z-10' : ''}
+        `}
       >
-        <Card 
-          className={`
-            p-3 cursor-pointer transition-all duration-200 border-2
-            ${isSelected 
-              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30 shadow-md' 
-              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm'
-            }
-          `}
-          onClick={onSelect}
-          data-testid={`select-page-${page.title.replace(/\s+/g, '-').toLowerCase()}`}
+        <div
+          ref={setDroppableRef}
+          className="relative w-full h-full"
         >
+          <Card 
+            className={`
+              p-3 cursor-pointer transition-all duration-200 border-2 relative
+              ${isSelected 
+                ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30 shadow-md' 
+                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm'
+              }
+              ${isDraggingFromDifferentPage 
+                ? 'border-green-400 bg-green-50/80 dark:bg-green-950/50 ring-2 ring-green-200 dark:ring-green-800' 
+                : ''
+              }
+              ${isDraggingFieldTypeToThisPage 
+                ? 'border-blue-400 bg-blue-50/80 dark:bg-blue-950/50 ring-2 ring-blue-200 dark:ring-blue-800' 
+                : ''
+              }
+              ${isDropOver && (isDraggingField || isDraggingFieldType)
+                ? 'shadow-lg' 
+                : ''
+              }
+            `}
+            onClick={onSelect}
+            data-testid={`select-page-${page.title.replace(/\s+/g, '-').toLowerCase()}`}
+          >
           <div className="flex items-center space-x-3">
             {/* Drag Handle */}
             <div
@@ -132,7 +183,7 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
               <div 
                 data-testid={`page-field-count-${index + 1}`}
                 className={`
-                  text-xs truncate
+                  text-xs truncate mb-2
                   ${isSelected 
                     ? 'text-blue-700 dark:text-blue-300' 
                     : 'text-gray-500 dark:text-gray-400'
@@ -140,6 +191,44 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
                 `}
               >
                 {page.fields.length} {page.fields.length === 1 ? 'field' : 'fields'}
+              </div>
+
+              {/* Field Preview Bars (Thumbnail Style) */}
+              <div className="space-y-1">
+                {page.fields.length === 0 ? (
+                  <div className="flex items-center justify-center py-1 text-gray-400 dark:text-gray-600">
+                    <div className="text-center">
+                      <Plus className="w-3 h-3 mx-auto mb-0.5" />
+                      <div className="text-xs">Empty</div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Show first few fields as mini bars */}
+                    {page.fields.slice(0, 3).map((field, fieldIndex) => (
+                      <div
+                        key={`${page.id}-${field.id}-${fieldIndex}`}
+                        className={`
+                          h-1.5 rounded-sm
+                          ${isSelected 
+                            ? 'bg-blue-200 dark:bg-blue-700' 
+                            : 'bg-gray-200 dark:bg-gray-700'
+                          }
+                        `}
+                        style={{ 
+                          width: `${Math.max(40, Math.min(90, 60 + (fieldIndex * 10)))}%` 
+                        }}
+                      />
+                    ))}
+                    
+                    {/* Show "more" indicator if there are additional fields */}
+                    {page.fields.length > 3 && (
+                      <div className="text-xs text-gray-500 dark:text-gray-400 text-right pt-0.5">
+                        +{page.fields.length - 3}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
 
@@ -175,7 +264,29 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
               )}
             </div>
           </div>
+
+          {/* Drop Indicator Overlays */}
+          {isDraggingFromDifferentPage && (
+            <div className="absolute inset-0 bg-green-400/10 border-2 border-dashed border-green-400 rounded-lg flex items-center justify-center z-10">
+              <div className="bg-green-500 text-white px-2 py-1 rounded text-xs font-medium shadow-lg flex items-center space-x-1">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
+                </svg>
+                <span>Move here</span>
+              </div>
+            </div>
+          )}
+          
+          {isDraggingFieldTypeToThisPage && (
+            <div className="absolute inset-0 bg-blue-400/10 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center z-10">
+              <div className="bg-blue-500 text-white px-2 py-1 rounded text-xs font-medium shadow-lg flex items-center space-x-1">
+                <Plus className="w-3 h-3" />
+                <span>Add here</span>
+              </div>
+            </div>
+          )}
         </Card>
+        </div>
 
         {/* Delete Confirmation Dialog */}
         <ConfirmationDialog

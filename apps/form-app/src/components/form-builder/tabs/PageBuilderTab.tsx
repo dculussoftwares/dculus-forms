@@ -40,6 +40,7 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
     updateField,
     removeField,
     duplicateField,
+    moveFieldBetweenPages,
     getSelectedField
   } = useFormBuilderStore();
 
@@ -74,11 +75,13 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
                 isSelected={true}
                 isConnected={isConnected}
                 selectedFieldId={selectedFieldId}
+                pages={pages}
                 onSelect={() => {}}
                 onUpdateField={updateField}
                 onRemoveField={removeField}
                 onDuplicateField={duplicateField}
                 onEditField={onFieldEdit}
+                onMoveFieldBetweenPages={moveFieldBetweenPages}
               />
             </div>
           ) : (

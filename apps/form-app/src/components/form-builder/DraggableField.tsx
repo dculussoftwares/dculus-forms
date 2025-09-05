@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { FormField, FieldType } from '@dculus/types';
+import { FormField, FieldType, FormPage } from '@dculus/types';
 import { Card, Button, FieldPreview } from '@dculus/ui';
 import {
   GripVertical,
@@ -16,8 +16,10 @@ import {
   Copy,
   Trash2,
   Settings,
-  FileCode
+  FileCode,
+  MoreVertical
 } from 'lucide-react';
+import { PageSelector } from './PageSelector';
 
 const FIELD_ICONS: Partial<Record<FieldType, React.ReactNode>> = {
   [FieldType.TEXT_INPUT_FIELD]: <Type className="w-4 h-4" />,
@@ -51,10 +53,12 @@ interface DraggableFieldProps {
   index: number; // Required for test IDs and field positioning
   isConnected: boolean;
   isSelected?: boolean;
+  pages?: FormPage[];
   onUpdate: (updates: Record<string, any>) => void;
   onRemove: () => void;
   onDuplicate: () => void;
   onEdit?: () => void;
+  onMoveToPage?: (fieldId: string, targetPageId: string) => void;
 }
 
 export const DraggableField: React.FC<DraggableFieldProps> = ({
@@ -63,10 +67,12 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
   index,
   isConnected,
   isSelected = false,
+  pages = [],
   onUpdate: _onUpdate,
   onRemove,
   onDuplicate,
   onEdit,
+  onMoveToPage,
 }) => {
 
 
@@ -105,6 +111,12 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
     
     if (!isInteractiveElement && onEdit) {
       onEdit();
+    }
+  };
+
+  const handleMoveToPage = (targetPageId: string) => {
+    if (onMoveToPage) {
+      onMoveToPage(field.id, targetPageId);
     }
   };
 
@@ -204,15 +216,36 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
                     onClick={onDuplicate}
                     disabled={!isConnected}
                     className="h-8 w-8 text-gray-500 hover:text-blue-600"
+                    title="Duplicate field"
                   >
                     <Copy className="w-4 h-4" />
                   </Button>
+                  {onMoveToPage && pages.length > 1 && (
+                    <PageSelector
+                      pages={pages}
+                      currentPageId={pageId}
+                      onPageSelect={handleMoveToPage}
+                      disabled={!isConnected}
+                      triggerElement={
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          disabled={!isConnected}
+                          className="h-8 w-8 text-gray-500 hover:text-green-600"
+                          title="Move to page"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      }
+                    />
+                  )}
                   <Button
                     size="icon"
                     variant="ghost"
                     onClick={onRemove}
                     disabled={!isConnected}
                     className="h-8 w-8 text-gray-500 hover:text-red-600"
+                    title="Delete field"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>

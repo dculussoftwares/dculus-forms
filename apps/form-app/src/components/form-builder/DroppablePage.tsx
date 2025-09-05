@@ -17,11 +17,13 @@ interface DroppablePageProps {
   isSelected: boolean;
   isConnected: boolean;
   selectedFieldId?: string | null;
+  pages: FormPage[];
   onSelect: () => void;
   onUpdateField: (pageId: string, fieldId: string, updates: Record<string, any>) => void;
   onRemoveField: (pageId: string, fieldId: string) => void;
   onDuplicateField: (pageId: string, fieldId: string) => void;
   onEditField?: (fieldId: string) => void;
+  onMoveFieldBetweenPages: (sourcePageId: string, targetPageId: string, fieldId: string) => void;
 }
 
 export const DroppablePage: React.FC<DroppablePageProps> = ({
@@ -30,11 +32,13 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
   isSelected,
   isConnected,
   selectedFieldId,
+  pages,
   onSelect,
   onUpdateField,
   onRemoveField,
   onDuplicateField,
   onEditField,
+  onMoveFieldBetweenPages,
 }) => {
   const {
     isOver,
@@ -53,12 +57,18 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
 
   // Check if we're dragging a field type from sidebar
   const isDraggingFieldType = active?.data?.current?.type === 'field-type';
+  const isDraggingField = active?.data?.current?.type === 'field';
   const isDraggingOverThisPage = over?.data?.current?.pageId === page.id;
-  const shouldShowDropIndicators = isDraggingFieldType && isDraggingOverThisPage;
+  const shouldShowDropIndicators = (isDraggingFieldType || isDraggingField) && isDraggingOverThisPage;
+
+  // Check if we're dragging a field from a different page
+  const isDraggingFieldFromOtherPage = isDraggingField && 
+    active?.data?.current?.pageId !== page.id && 
+    isDraggingOverThisPage;
 
   // Calculate drop position based on drag target
   const getDropInsertIndex = (): number => {
-    if (!over || !isDraggingFieldType) return -1;
+    if (!over || (!isDraggingFieldType && !isDraggingField)) return -1;
     
     const overData = over.data.current;
     if (overData?.type === 'field') {
@@ -83,7 +93,14 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
           ? 'border-blue-500 shadow-lg ring-2 ring-blue-200 dark:ring-blue-800' 
           : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
         }
-        ${isOver ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-950/30' : ''}
+        ${isOver && isDraggingFieldType 
+          ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-950/30' 
+          : ''
+        }
+        ${isDraggingFieldFromOtherPage 
+          ? 'border-green-400 bg-green-50/50 dark:bg-green-950/30 ring-2 ring-green-200 dark:ring-green-800' 
+          : ''
+        }
       `}
       onClick={onSelect}
     >
@@ -127,7 +144,8 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
         ref={setDroppableRef}
         className={`
           min-h-24 p-4 relative
-          ${isOver ? 'bg-blue-50/50 dark:bg-blue-950/20' : ''}
+          ${isOver && isDraggingFieldType ? 'bg-blue-50/50 dark:bg-blue-950/20' : ''}
+          ${isDraggingFieldFromOtherPage ? 'bg-green-50/30 dark:bg-green-950/10' : ''}
         `}
       >
         {page.fields.length === 0 ? (
@@ -154,10 +172,12 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
                     index={fieldIndex}
                     isConnected={isConnected}
                     isSelected={selectedFieldId === field.id}
+                    pages={pages}
                     onUpdate={(updates: Record<string, any>) => onUpdateField(page.id, field.id, updates)}
                     onRemove={() => onRemoveField(page.id, field.id)}
                     onDuplicate={() => onDuplicateField(page.id, field.id)}
                     onEdit={onEditField ? () => onEditField(field.id) : undefined}
+                    onMoveToPage={(fieldId: string, targetPageId: string) => onMoveFieldBetweenPages(page.id, targetPageId, fieldId)}
                   />
                   
                   {/* Drop indicator after each field */}
@@ -176,10 +196,22 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
         )}
 
         {/* Drop indicator overlay - shows when dragging over the entire area */}
-        {isOver && (
+        {isOver && isDraggingFieldType && (
           <div className="absolute inset-2 pointer-events-none border-2 border-dashed border-blue-400 rounded-lg bg-blue-50/10 dark:bg-blue-950/10 flex items-center justify-center z-10">
             <div className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-lg">
-              Drop field here
+              Drop new field here
+            </div>
+          </div>
+        )}
+        
+        {/* Cross-page field move indicator */}
+        {isDraggingFieldFromOtherPage && (
+          <div className="absolute inset-2 pointer-events-none border-2 border-dashed border-green-400 rounded-lg bg-green-50/10 dark:bg-green-950/10 flex items-center justify-center z-10">
+            <div className="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-lg flex items-center space-x-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
+              </svg>
+              <span>Move field to this page</span>
             </div>
           </div>
         )}

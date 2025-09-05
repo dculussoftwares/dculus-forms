@@ -69,6 +69,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
     updateField,
     reorderFields,
     reorderPages,
+    moveFieldBetweenPages,
     getSelectedField,
     updateLayout
   } = useFormBuilderStore();
@@ -117,6 +118,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
     onAddField: handleAddField,
     onReorderFields: reorderFields,
     onReorderPages: reorderPages,
+    onMoveFieldBetweenPages: moveFieldBetweenPages,
   });
 
   const handleFieldEdit = useCallback((fieldId: string) => {

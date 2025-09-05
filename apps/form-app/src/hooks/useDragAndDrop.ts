@@ -19,6 +19,7 @@ interface UseDragAndDropProps {
   onAddField: (pageId: string, fieldType: FieldTypeConfig, insertIndex?: number) => void;
   onReorderFields: (pageId: string, oldIndex: number, newIndex: number) => void;
   onReorderPages: (oldIndex: number, newIndex: number) => void;
+  onMoveFieldBetweenPages: (sourcePageId: string, targetPageId: string, fieldId: string, insertIndex?: number) => void;
 }
 
 export const useDragAndDrop = ({
@@ -26,6 +27,7 @@ export const useDragAndDrop = ({
   onAddField,
   onReorderFields,
   onReorderPages,
+  onMoveFieldBetweenPages,
 }: UseDragAndDropProps): DragState & DragHandlers => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draggedItem, setDraggedItem] = useState<FieldTypeConfig | FormField | FormPage | null>(null);
@@ -85,15 +87,17 @@ export const useDragAndDrop = ({
       return;
     }
 
-    // Handle field reordering within the same page
+    // Handle field reordering within the same page or moving between pages
     if (activeData?.type === 'field' && overData?.type === 'field') {
       const activeField = activeData.field;
       const overField = overData.field;
       const activePageId = activeData.pageId;
       const overPageId = overData.pageId;
 
-      // Only allow reordering within the same page
-      if (activePageId === overPageId && activeField.id !== overField.id) {
+      if (activeField.id === overField.id) return; // Same field, no action needed
+
+      if (activePageId === overPageId) {
+        // Reorder within the same page
         const page = pages.find(p => p.id === activePageId);
         if (page && page.fields.length > 1) {
           const oldIndex = page.fields.findIndex(f => f.id === activeField.id);
@@ -104,26 +108,46 @@ export const useDragAndDrop = ({
             onReorderFields(activePageId, oldIndex, newIndex);
           }
         }
+      } else {
+        // Move between pages
+        const targetPage = pages.find(p => p.id === overPageId);
+        if (targetPage) {
+          const insertIndex = targetPage.fields.findIndex(f => f.id === overField.id);
+          console.log(`Cross-page field move: moving field ${activeField.id} from page ${activePageId} to page ${overPageId} at index ${insertIndex}`);
+          onMoveFieldBetweenPages(activePageId, overPageId, activeField.id, insertIndex);
+        }
       }
       return;
     }
 
-    // Handle field dropped on empty page area (move to end)
-    if (activeData?.type === 'field' && overData?.type === 'page') {
+    // Handle field dropped on empty page area (move to end) or page thumbnail
+    if (activeData?.type === 'field' && (overData?.type === 'page' || overData?.type === 'page-item')) {
       const activeField = activeData.field;
       const activePageId = activeData.pageId;
-      const overPageId = overData.pageId;
+      // For page-item drops, get the page ID from the page object
+      const overPageId = overData?.type === 'page-item' ? overData.page?.id : overData.pageId;
 
       if (activePageId === overPageId) {
-        const page = pages.find(p => p.id === activePageId);
-        if (page && page.fields.length > 1) {
-          const oldIndex = page.fields.findIndex(f => f.id === activeField.id);
-          const newIndex = page.fields.length - 1;
-          
-          if (oldIndex !== -1 && oldIndex !== newIndex) {
-            console.log(`Field move to end: moving field from index ${oldIndex} to ${newIndex} in page ${activePageId}`);
-            onReorderFields(activePageId, oldIndex, newIndex);
+        // Move to end within same page (only for regular page drops, not thumbnails)
+        if (!over.id.toString().includes('page-thumbnail-')) {
+          const page = pages.find(p => p.id === activePageId);
+          if (page && page.fields.length > 1) {
+            const oldIndex = page.fields.findIndex(f => f.id === activeField.id);
+            const newIndex = page.fields.length - 1;
+            
+            if (oldIndex !== -1 && oldIndex !== newIndex) {
+              console.log(`Field move to end: moving field from index ${oldIndex} to ${newIndex} in page ${activePageId}`);
+              onReorderFields(activePageId, oldIndex, newIndex);
+            }
           }
+        }
+      } else {
+        // Move to end of different page (works for both regular page and thumbnail drops)
+        const targetPage = pages.find(p => p.id === overPageId);
+        if (targetPage) {
+          const dropType = over.id.toString().includes('page-thumbnail-') ? 'thumbnail' : 'page';
+          console.log(`Cross-page field move via ${dropType}: moving field ${activeField.id} from page ${activePageId} to end of page ${overPageId}`);
+          onMoveFieldBetweenPages(activePageId, overPageId, activeField.id);
         }
       }
       return;
@@ -144,7 +168,7 @@ export const useDragAndDrop = ({
         }
       }
     }
-  }, [pages, onAddField, onReorderFields, onReorderPages]);
+  }, [pages, onAddField, onReorderFields, onReorderPages, onMoveFieldBetweenPages]);
 
   return {
     activeId,
