@@ -19,7 +19,7 @@ import {
   FileCode,
   MoreVertical
 } from 'lucide-react';
-import { PageSelector } from './PageSelector';
+import { PageActionsSelector } from './PageActionsSelector';
 
 const FIELD_ICONS: Partial<Record<FieldType, React.ReactNode>> = {
   [FieldType.TEXT_INPUT_FIELD]: <Type className="w-4 h-4" />,
@@ -228,42 +228,22 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
                   >
                     <Copy className="w-4 h-4" />
                   </Button>
-                  {onMoveToPage && pages.length > 1 && (
-                    <PageSelector
+                  {(onMoveToPage || onCopyToPage) && pages.length > 1 && (
+                    <PageActionsSelector
                       pages={pages}
                       currentPageId={pageId}
-                      onPageSelect={handleMoveToPage}
+                      onMoveToPage={handleMoveToPage}
+                      onCopyToPage={handleCopyToPage}
                       disabled={!isConnected}
                       triggerElement={
                         <Button
                           size="icon"
                           variant="ghost"
                           disabled={!isConnected}
-                          className="h-8 w-8 text-gray-500 hover:text-green-600"
-                          title="Move to page"
+                          className="h-8 w-8 text-gray-500 hover:text-blue-600"
+                          title="Page actions"
                         >
                           <MoreVertical className="w-4 h-4" />
-                        </Button>
-                      }
-                    />
-                  )}
-                  {onCopyToPage && pages.length > 1 && (
-                    <PageSelector
-                      pages={pages}
-                      currentPageId={pageId}
-                      onPageSelect={handleCopyToPage}
-                      disabled={!isConnected}
-                      label="Copy to Page"
-                      icon={<Copy className="w-4 h-4" />}
-                      triggerElement={
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          disabled={!isConnected}
-                          className="h-8 w-8 text-gray-500 hover:text-purple-600"
-                          title="Copy to page"
-                        >
-                          <Copy className="w-4 h-4" />
                         </Button>
                       }
                     />
