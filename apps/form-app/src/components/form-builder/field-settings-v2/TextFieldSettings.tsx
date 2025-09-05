@@ -3,7 +3,7 @@ import { TextInputField, TextAreaField, EmailField } from '@dculus/types';
 import { Settings } from 'lucide-react';
 import { Controller } from 'react-hook-form';
 import { Label } from '@dculus/ui';
-import { useTextFieldForm } from '../../../hooks/field-forms';
+import { useTextFieldForm } from '@/hooks';
 import {
   ValidationSummary,
   FieldSettingsHeader,
@@ -181,34 +181,38 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
               </Label>
             </div>
 
-            {/* Character Limits */}
-            <FormInputField
-              name="validation.minLength"
-              label={FIELD_SETTINGS_CONSTANTS.LABELS.MINIMUM_LENGTH}
-              placeholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.NO_MINIMUM}
-              type="number"
-              min="0"
-              control={control}
-              error={(errors.validation as any)?.minLength}
-              disabled={!isConnected}
-              transform={{
-                output: (value: string) => value === '' ? undefined : parseInt(value)
-              }}
-            />
+            {/* Character Limits - only for text input and text area fields, not email */}
+            {field.type !== 'email_field' && (
+              <>
+                <FormInputField
+                  name="validation.minLength"
+                  label={FIELD_SETTINGS_CONSTANTS.LABELS.MINIMUM_LENGTH}
+                  placeholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.NO_MINIMUM}
+                  type="number"
+                  min="0"
+                  control={control}
+                  error={(errors.validation as any)?.minLength}
+                  disabled={!isConnected}
+                  transform={{
+                    output: (value: string) => value === '' ? undefined : parseInt(value)
+                  }}
+                />
 
-            <FormInputField
-              name="validation.maxLength"
-              label={FIELD_SETTINGS_CONSTANTS.LABELS.MAXIMUM_LENGTH}
-              placeholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.NO_MAXIMUM}
-              type="number"
-              min="1"
-              control={control}
-              error={(errors.validation as any)?.maxLength}
-              disabled={!isConnected}
-              transform={{
-                output: (value: string) => value === '' ? undefined : parseInt(value)
-              }}
-            />
+                <FormInputField
+                  name="validation.maxLength"
+                  label={FIELD_SETTINGS_CONSTANTS.LABELS.MAXIMUM_LENGTH}
+                  placeholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.NO_MAXIMUM}
+                  type="number"
+                  min="1"
+                  control={control}
+                  error={(errors.validation as any)?.maxLength}
+                  disabled={!isConnected}
+                  transform={{
+                    output: (value: string) => value === '' ? undefined : parseInt(value)
+                  }}
+                />
+              </>
+            )}
           </div>
 
           {/* Add some bottom padding to prevent content from being hidden behind the floating actions */}
