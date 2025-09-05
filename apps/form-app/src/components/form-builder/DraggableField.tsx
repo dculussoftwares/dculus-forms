@@ -59,6 +59,7 @@ interface DraggableFieldProps {
   onDuplicate: () => void;
   onEdit?: () => void;
   onMoveToPage?: (fieldId: string, targetPageId: string) => void;
+  onCopyToPage?: (fieldId: string, targetPageId: string) => void;
 }
 
 export const DraggableField: React.FC<DraggableFieldProps> = ({
@@ -73,6 +74,7 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
   onDuplicate,
   onEdit,
   onMoveToPage,
+  onCopyToPage,
 }) => {
 
 
@@ -117,6 +119,12 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
   const handleMoveToPage = (targetPageId: string) => {
     if (onMoveToPage) {
       onMoveToPage(field.id, targetPageId);
+    }
+  };
+
+  const handleCopyToPage = (targetPageId: string) => {
+    if (onCopyToPage) {
+      onCopyToPage(field.id, targetPageId);
     }
   };
 
@@ -235,6 +243,27 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
                           title="Move to page"
                         >
                           <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      }
+                    />
+                  )}
+                  {onCopyToPage && pages.length > 1 && (
+                    <PageSelector
+                      pages={pages}
+                      currentPageId={pageId}
+                      onPageSelect={handleCopyToPage}
+                      disabled={!isConnected}
+                      label="Copy to Page"
+                      icon={<Copy className="w-4 h-4" />}
+                      triggerElement={
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          disabled={!isConnected}
+                          className="h-8 w-8 text-gray-500 hover:text-purple-600"
+                          title="Copy to page"
+                        >
+                          <Copy className="w-4 h-4" />
                         </Button>
                       }
                     />

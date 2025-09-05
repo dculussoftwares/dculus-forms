@@ -24,6 +24,7 @@ interface DroppablePageProps {
   onDuplicateField: (pageId: string, fieldId: string) => void;
   onEditField?: (fieldId: string) => void;
   onMoveFieldBetweenPages: (sourcePageId: string, targetPageId: string, fieldId: string) => void;
+  onCopyFieldToPage: (sourcePageId: string, targetPageId: string, fieldId: string) => void;
 }
 
 export const DroppablePage: React.FC<DroppablePageProps> = ({
@@ -39,6 +40,7 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
   onDuplicateField,
   onEditField,
   onMoveFieldBetweenPages,
+  onCopyFieldToPage,
 }) => {
   const {
     isOver,
@@ -178,6 +180,7 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
                     onDuplicate={() => onDuplicateField(page.id, field.id)}
                     onEdit={onEditField ? () => onEditField(field.id) : undefined}
                     onMoveToPage={(fieldId: string, targetPageId: string) => onMoveFieldBetweenPages(page.id, targetPageId, fieldId)}
+                    onCopyToPage={(fieldId: string, targetPageId: string) => onCopyFieldToPage(page.id, targetPageId, fieldId)}
                   />
                   
                   {/* Drop indicator after each field */}

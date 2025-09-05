@@ -81,6 +81,7 @@ interface FormBuilderState {
   reorderPages: (oldIndex: number, newIndex: number) => void;
   duplicateField: (pageId: string, fieldId: string) => void;
   moveFieldBetweenPages: (sourcePageId: string, targetPageId: string, fieldId: string, insertIndex?: number) => void;
+  copyFieldToPage: (sourcePageId: string, targetPageId: string, fieldId: string) => void;
   updateLayout: (layoutUpdates: Partial<FormLayout>) => void;
   
   getSelectedField: () => FormField | null;
@@ -1198,6 +1199,57 @@ export const useFormBuilderStore = create<FormBuilderState>()(
           if (selectedFieldId === fieldId) {
             set({ selectedPageId: targetPageId });
           }
+        },
+
+        copyFieldToPage: (sourcePageId: string, targetPageId: string, fieldId: string) => {
+          const { ydoc, isConnected } = get();
+          if (!ydoc || !isConnected) {
+            console.warn('Cannot copy field to page: YJS document not available or not connected');
+            return;
+          }
+
+          if (sourcePageId === targetPageId) {
+            console.warn('Cannot copy field to same page - use duplicateField instead');
+            return;
+          }
+
+          const formSchemaMap = ydoc.getMap('formSchema');
+          const pagesArray = getOrCreatePagesArray(formSchemaMap);
+
+          // Find source and target pages
+          const sourcePageIndex = pagesArray.toArray().findIndex(pageMap => pageMap.get('id') === sourcePageId);
+          const targetPageIndex = pagesArray.toArray().findIndex(pageMap => pageMap.get('id') === targetPageId);
+
+          if (sourcePageIndex === -1 || targetPageIndex === -1) {
+            console.warn(`Page not found - source: ${sourcePageId}, target: ${targetPageId}`);
+            return;
+          }
+
+          const sourcePageMap = pagesArray.get(sourcePageIndex);
+          const targetPageMap = pagesArray.get(targetPageIndex);
+          const sourceFieldsArray = sourcePageMap.get('fields') as Y.Array<Y.Map<any>>;
+          const targetFieldsArray = targetPageMap.get('fields') as Y.Array<Y.Map<any>>;
+
+          // Find the field to copy
+          const fieldIndex = sourceFieldsArray.toArray().findIndex(fieldMap => fieldMap.get('id') === fieldId);
+          if (fieldIndex === -1) {
+            console.warn(`Field ${fieldId} not found in source page ${sourcePageId}`);
+            return;
+          }
+
+          // Extract the field data
+          const originalFieldMap = sourceFieldsArray.get(fieldIndex);
+          const fieldData = extractFieldData(originalFieldMap);
+
+          // Create a copy with new ID and modified label
+          fieldData.id = `field-${Date.now()}-copy`;
+          fieldData.label = `${fieldData.label} (Copy)`;
+
+          console.log(`Copying field ${fieldId} from page ${sourcePageId} to page ${targetPageId}`);
+
+          // Add the copied field to target page at the end
+          const copiedFieldMap = createYJSFieldMap(fieldData);
+          targetFieldsArray.push([copiedFieldMap]);
         },
 
         updateLayout: (layoutUpdates: Partial<FormLayout>) => {

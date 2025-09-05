@@ -16,6 +16,8 @@ interface PageSelectorProps {
   triggerElement: React.ReactNode;
   onPageSelect: (pageId: string) => void;
   disabled?: boolean;
+  label?: string;
+  icon?: React.ReactNode;
 }
 
 export const PageSelector: React.FC<PageSelectorProps> = ({
@@ -24,6 +26,8 @@ export const PageSelector: React.FC<PageSelectorProps> = ({
   triggerElement,
   onPageSelect,
   disabled = false,
+  label = "Move to Page",
+  icon = <ArrowRight className="w-4 h-4" />,
 }) => {
   const availablePages = pages.filter(page => page.id !== currentPageId);
 
@@ -38,8 +42,8 @@ export const PageSelector: React.FC<PageSelectorProps> = ({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="flex items-center space-x-2">
-          <ArrowRight className="w-4 h-4" />
-          <span>Move to Page</span>
+          {icon}
+          <span>{label}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {availablePages.map((page, index) => (
