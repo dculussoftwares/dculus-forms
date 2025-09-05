@@ -169,10 +169,6 @@ export function useNumberFieldForm({ field, onSave, onCancel }: UseNumberFieldFo
     }
   }, [field?.id, reset, fieldData]);
 
-  // Placeholder for auto-save (disabled)
-  const handleAutoSave = useCallback(() => {
-    // Auto-save disabled
-  }, []);
 
   // Save form data with proper error handling and number conversion
   const handleSave = useCallback(handleSubmit(async (data) => {

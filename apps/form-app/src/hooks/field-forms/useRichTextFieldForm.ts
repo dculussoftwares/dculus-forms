@@ -131,10 +131,6 @@ export function useRichTextFieldForm({ field, onSave, onCancel }: UseRichTextFie
     }
   }, [field?.id, reset, fieldData]);
 
-  // Placeholder for auto-save (disabled)
-  const handleAutoSave = useCallback(() => {
-    // Auto-save disabled
-  }, []);
 
   // Save form data with proper error handling and content sanitization
   const handleSave = useCallback(handleSubmit(async (data) => {

@@ -215,10 +215,6 @@ export function useSelectionFieldForm({ field, onSave, onCancel }: UseSelectionF
     }
   }, [field?.id, reset, fieldData]);
 
-  // Placeholder for auto-save (disabled)
-  const handleAutoSave = useCallback(() => {
-    // Auto-save disabled
-  }, []);
 
   // Memoized option management functions
   const optionHandlers = useMemo(() => ({

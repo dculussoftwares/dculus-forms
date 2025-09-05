@@ -206,10 +206,6 @@ export function useDateFieldForm({ field, onSave, onCancel }: UseDateFieldFormPr
     }
   }, [field?.id, reset, fieldData]);
 
-  // Placeholder for auto-save (disabled)
-  const handleAutoSave = useCallback(() => {
-    // Auto-save disabled
-  }, []);
 
   // Save form data with proper error handling and date conversion
   const handleSave = useCallback(handleSubmit(async (data) => {
