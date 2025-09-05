@@ -269,10 +269,6 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
 
           {/* Options Management */}
           <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_SPACING}>
-            <h4 className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_TITLE}>
-              Options
-            </h4>
-            
             <OptionsSettings
               control={control}
               errors={errors}
