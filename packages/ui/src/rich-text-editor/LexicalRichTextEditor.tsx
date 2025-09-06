@@ -121,34 +121,47 @@ function OnChangeHandler({ onChange }: { onChange?: (html: string) => void }) {
 function InitialContentPlugin({ value }: { value: string }) {
   const [editor] = useLexicalComposerContext();
   const [lastLoadedValue, setLastLoadedValue] = useState<string>('');
+  const [isInternalUpdate, setIsInternalUpdate] = useState(false);
 
   useEffect(() => {
-    // Always sync with the value prop (controlled component behavior)
+    // Skip update if this is caused by internal editor changes
+    if (isInternalUpdate) {
+      setIsInternalUpdate(false);
+      return;
+    }
+
+    // Only sync if the value prop is different from what we last loaded
+    // AND different from current editor content
     if (value !== lastLoadedValue) {
-      
-      // Handle empty or default values
-      if (!value || value === '<p></p>' || value === '<p class="editor-paragraph"><br></p>') {
-        if (lastLoadedValue) {
-          // Clear the editor if value becomes empty
-          editor.update(() => {
+      editor.update(() => {
+        const currentHtml = $generateHtmlFromNodes(editor, null);
+        
+        // Only update if the external value is actually different from current content
+        if (currentHtml !== value) {
+          // Handle empty or default values
+          if (!value || value === '<p></p>' || value === '<p class="editor-paragraph"><br></p>') {
             $getRoot().clear();
             $getRoot().append($generateNodesFromDOM(editor, new DOMParser().parseFromString('<p></p>', 'text/html'))[0]);
-          });
+          } else {
+            // Load new content only if it's truly different
+            const parser = new DOMParser();
+            const dom = parser.parseFromString(value, 'text/html');
+            const nodes = $generateNodesFromDOM(editor, dom);
+            $getRoot().clear();
+            $insertNodes(nodes);
+          }
         }
-        setLastLoadedValue(value || '');
-      } else {
-        // Load new content
-        editor.update(() => {
-          const parser = new DOMParser();
-          const dom = parser.parseFromString(value, 'text/html');
-          const nodes = $generateNodesFromDOM(editor, dom);
-          $getRoot().clear();
-          $insertNodes(nodes);
-        });
-        setLastLoadedValue(value);
-      }
+      });
+      setLastLoadedValue(value);
     }
-  }, [editor, value, lastLoadedValue]);
+  }, [editor, value, lastLoadedValue, isInternalUpdate]);
+
+  // Register listener to detect internal changes
+  useEffect(() => {
+    return editor.registerUpdateListener(() => {
+      setIsInternalUpdate(true);
+    });
+  }, [editor]);
 
   return null;
 }
