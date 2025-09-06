@@ -14,6 +14,7 @@ import { SignUp } from './pages/SignUp';
 import { SignIn } from './pages/SignIn';
 import Settings from './pages/Settings';
 import FormDashboard from './pages/FormDashboard';
+import FormAnalytics from './pages/FormAnalytics';
 import FormSettings from './pages/FormSettings';
 import CollaborativeFormBuilder from './pages/CollaborativeFormBuilder';
 
@@ -46,6 +47,11 @@ function App() {
           <Route path="/dashboard/form/:formId/collaborate/:tab?" element={
             <ProtectedRoute>
               <CollaborativeFormBuilder />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/form/:formId/analytics" element={
+            <ProtectedRoute>
+              <FormAnalytics />
             </ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/settings" element={

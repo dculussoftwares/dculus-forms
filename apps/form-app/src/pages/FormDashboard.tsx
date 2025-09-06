@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Card,
   Separator,
@@ -17,6 +17,7 @@ import { AlertCircle } from 'lucide-react';
 
 const FormDashboard: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
+  const navigate = useNavigate();
   
   const {
     form,
@@ -100,8 +101,7 @@ const FormDashboard: React.FC = () => {
             window.open(formViewerUrl, '_blank');
           }}
           onViewAnalytics={() => {
-            // TODO: Navigate to analytics page when implemented
-            console.log('Navigate to analytics');
+            navigate(`/dashboard/form/${formId}/analytics`);
           }}
           updateLoading={updateLoading}
           deleteLoading={deleteLoading}
