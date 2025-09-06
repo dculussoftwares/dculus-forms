@@ -17,6 +17,9 @@ import {
   Input,
   Label,
   Textarea,
+  RadioGroup,
+  RadioGroupItem,
+  Checkbox,
 } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { GET_FORM_BY_ID } from '../graphql/queries';
@@ -295,24 +298,23 @@ const FormSettings: React.FC = () => {
       <CardContent className="space-y-6">
         <div>
           <Label className="text-sm font-medium mb-3 block">Form Theme</Label>
-          <div className="flex flex-col space-y-2">
+          <RadioGroup
+            value={settings.display.theme}
+            onValueChange={(value) => updateSetting('display', 'theme', value)}
+            className="flex flex-col gap-2"
+          >
             {['light', 'dark', 'auto'].map((theme) => (
-              <div key={theme} className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  id={`theme-${theme}`}
-                  name="theme"
+              <div key={theme} className="flex items-center gap-3">
+                <RadioGroupItem
                   value={theme}
-                  checked={settings.display.theme === theme}
-                  onChange={(e) => updateSetting('display', 'theme', e.target.value)}
-                  className="w-4 h-4 text-green-600 focus:ring-green-500"
+                  id={`theme-${theme}`}
                 />
-                <Label htmlFor={`theme-${theme}`} className="text-sm capitalize">
+                <Label htmlFor={`theme-${theme}`} className="text-sm capitalize cursor-pointer">
                   {theme === 'auto' ? 'Auto (System Preference)' : `${theme} Theme`}
                 </Label>
               </div>
             ))}
-          </div>
+          </RadioGroup>
         </div>
 
         <div className="space-y-3">
@@ -401,123 +403,117 @@ const FormSettings: React.FC = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="space-y-4">
-          <div className="flex items-center space-x-2">
-            <input
-              type="radio"
-              id="thank-you-page"
-              name="pageMode"
-              value="thank-you-page"
-              checked={settings.thankYou.mode === 'thank-you-page'}
-              onChange={(e) => updateSetting('thankYou', 'mode', e.target.value)}
-              className="w-4 h-4 text-green-600 focus:ring-green-500"
-            />
-            <Label htmlFor="thank-you-page" className="text-sm font-medium">
-              Thank You Page
-            </Label>
-          </div>
-          <p className="text-sm text-gray-600 ml-6">
-            Customize your Thank You page message.
-          </p>
-        </div>
-
-        <div className="ml-6 space-y-4">
-          <div className="flex items-center space-x-4">
-            {[
-              { value: 'plain', label: 'Plain Text' },
-              { value: 'rich', label: 'Rich Text', premium: true }
-            ].map((type) => (
-              <div key={type.value} className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  id={`text-${type.value}`}
-                  name="textType"
-                  value={type.value}
-                  checked={settings.thankYou.textType === type.value}
-                  onChange={(e) => updateSetting('thankYou', 'textType', e.target.value)}
-                  className="w-4 h-4 text-green-600 focus:ring-green-500"
-                />
-                <Label htmlFor={`text-${type.value}`} className="text-sm flex items-center">
-                  {type.label}
-                  {type.premium && <Crown className="w-4 h-4 ml-1 text-yellow-500" />}
-                </Label>
-              </div>
-            ))}
-          </div>
-
-          <div className="space-y-2">
-            <Textarea
-              value={settings.thankYou.message}
-              onChange={(e) => updateSetting('thankYou', 'message', e.target.value)}
-              placeholder="Thank you! Your response has been submitted."
-              className="min-h-[80px]"
-            />
-            <p className="text-xs text-gray-500">(Maximum 100 characters)</p>
-          </div>
-
-          <div className="space-y-3">
-            {[
-              { key: 'includeAnotherResponse', label: 'Include a link to allow respondents to add another response.' },
-              { key: 'includePdfDownload', label: 'Include a link to download PDF of submitted response in the Thank You Page.' },
-              { key: 'includeAnalytics', label: 'Add Google Analytics or Facebook Pixel tracking code.' }
-            ].map((option) => (
-              <div key={option.key} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id={option.key}
-                  checked={settings.thankYou[option.key as keyof typeof settings.thankYou] as boolean}
-                  onChange={(e) => updateSetting('thankYou', option.key, e.target.checked)}
-                  className="w-4 h-4 text-green-600 focus:ring-green-500 rounded"
-                />
-                <Label htmlFor={option.key} className="text-sm">
-                  {option.label}
-                </Label>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex items-center space-x-2">
-            <input
-              type="radio"
-              id="redirect-to"
-              name="pageMode"
-              value="redirect"
-              checked={settings.thankYou.mode === 'redirect'}
-              onChange={(e) => updateSetting('thankYou', 'mode', e.target.value)}
-              className="w-4 h-4 text-green-600 focus:ring-green-500"
-            />
-            <Label htmlFor="redirect-to" className="text-sm font-medium flex items-center">
-              Redirect To
-              <Crown className="w-4 h-4 ml-1 text-yellow-500" />
-            </Label>
-          </div>
-
-          {settings.thankYou.mode === 'redirect' && (
-            <div className="ml-6 space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="redirect-url" className="text-sm font-medium">Redirect URL</Label>
-                <Input
-                  id="redirect-url"
-                  value={settings.thankYou.redirectUrl}
-                  onChange={(e) => updateSetting('thankYou', 'redirectUrl', e.target.value)}
-                  placeholder="https://example.com/thank-you"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="splash-message" className="text-sm font-medium">Splash Message</Label>
-                <Input
-                  id="splash-message"
-                  value={settings.thankYou.splashMessage}
-                  onChange={(e) => updateSetting('thankYou', 'splashMessage', e.target.value)}
-                  placeholder="Enter the splash message."
-                />
-                <p className="text-xs text-gray-500">(Maximum 100 characters)</p>
-              </div>
+        <RadioGroup
+          value={settings.thankYou.mode}
+          onValueChange={(value) => updateSetting('thankYou', 'mode', value)}
+        >
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <RadioGroupItem
+                value="thank-you-page"
+                id="thank-you-page"
+              />
+              <Label htmlFor="thank-you-page" className="text-sm font-medium cursor-pointer">
+                Thank You Page
+              </Label>
             </div>
-          )}
-        </div>
+            <p className="text-sm text-gray-600 ml-7">
+              Customize your Thank You page message.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <RadioGroupItem
+                value="redirect"
+                id="redirect-to"
+              />
+              <Label htmlFor="redirect-to" className="text-sm font-medium flex items-center cursor-pointer">
+                Redirect To
+                <Crown className="w-4 h-4 ml-1 text-yellow-500" />
+              </Label>
+            </div>
+          </div>
+        </RadioGroup>
+
+        {settings.thankYou.mode === 'thank-you-page' && (
+          <div className="ml-7 space-y-4">
+            <RadioGroup
+              value={settings.thankYou.textType}
+              onValueChange={(value) => updateSetting('thankYou', 'textType', value)}
+              className="flex items-center gap-6"
+            >
+              {[
+                { value: 'plain', label: 'Plain Text' },
+                { value: 'rich', label: 'Rich Text', premium: true }
+              ].map((type) => (
+                <div key={type.value} className="flex items-center gap-3">
+                  <RadioGroupItem
+                    value={type.value}
+                    id={`text-${type.value}`}
+                  />
+                  <Label htmlFor={`text-${type.value}`} className="text-sm flex items-center cursor-pointer">
+                    {type.label}
+                    {type.premium && <Crown className="w-4 h-4 ml-1 text-yellow-500" />}
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
+
+            <div className="space-y-2">
+              <Textarea
+                value={settings.thankYou.message}
+                onChange={(e) => updateSetting('thankYou', 'message', e.target.value)}
+                placeholder="Thank you! Your response has been submitted."
+                className="min-h-[80px]"
+              />
+              <p className="text-xs text-gray-500">(Maximum 100 characters)</p>
+            </div>
+
+            <div className="space-y-3">
+              {[
+                { key: 'includeAnotherResponse', label: 'Include a link to allow respondents to add another response.' },
+                { key: 'includePdfDownload', label: 'Include a link to download PDF of submitted response in the Thank You Page.' },
+                { key: 'includeAnalytics', label: 'Add Google Analytics or Facebook Pixel tracking code.' }
+              ].map((option) => (
+                <div key={option.key} className="flex items-center gap-3">
+                  <Checkbox
+                    id={option.key}
+                    checked={settings.thankYou[option.key as keyof typeof settings.thankYou] as boolean}
+                    onCheckedChange={(checked) => updateSetting('thankYou', option.key, checked)}
+                  />
+                  <Label htmlFor={option.key} className="text-sm cursor-pointer">
+                    {option.label}
+                  </Label>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {settings.thankYou.mode === 'redirect' && (
+          <div className="ml-7 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="redirect-url" className="text-sm font-medium">Redirect URL</Label>
+              <Input
+                id="redirect-url"
+                value={settings.thankYou.redirectUrl}
+                onChange={(e) => updateSetting('thankYou', 'redirectUrl', e.target.value)}
+                placeholder="https://example.com/thank-you"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="splash-message" className="text-sm font-medium">Splash Message</Label>
+              <Input
+                id="splash-message"
+                value={settings.thankYou.splashMessage}
+                onChange={(e) => updateSetting('thankYou', 'splashMessage', e.target.value)}
+                placeholder="Enter the splash message."
+              />
+              <p className="text-xs text-gray-500">(Maximum 100 characters)</p>
+            </div>
+          </div>
+        )}
 
         <div className="pt-4">
           <Button className="bg-green-600 hover:bg-green-700 text-white">
