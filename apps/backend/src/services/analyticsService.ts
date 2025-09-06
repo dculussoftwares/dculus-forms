@@ -1,7 +1,24 @@
 import { UAParser } from 'ua-parser-js';
-import { getCode, getName } from 'country-list';
+import countries from 'i18n-iso-countries';
+import * as ct from 'countries-and-timezones';
+import { createRequire } from 'module';
 import { prisma } from '../lib/prisma.js';
 
+// Create require for CommonJS modules in ES module context
+const require = createRequire(import.meta.url);
+
+// Initialize locale registration using closure for state management
+const initializeLocale = (() => {
+  let isInitialized = false;
+  return () => {
+    if (!isInitialized) {
+      countries.registerLocale(require('i18n-iso-countries/langs/en.json'));
+      isInitialized = true;
+    }
+  };
+})();
+
+// Types
 interface AnalyticsData {
   formId: string;
   sessionId: string;
@@ -16,319 +33,260 @@ interface GeolocationResult {
   city?: string;
 }
 
-class AnalyticsService {
-  private geoReader: any = null;
-  
-  constructor() {
-    this.initializeGeoReader();
-  }
+interface UserAgentInfo {
+  operatingSystem: string | null;
+  browser: string | null;
+  browserVersion: string | null;
+}
 
-  private async initializeGeoReader() {
-    try {
-      // For now, we'll use a fallback approach without MaxMind DB
-      // In production, you would download and use MaxMind GeoLite2-Country.mmdb
-      console.log('GeoIP service initialized (fallback mode)');
-    } catch (error) {
-      console.warn('GeoIP database not available, using fallback methods');
-    }
-  }
-
-  private parseUserAgent(userAgent: string) {
-    try {
-      const parser = new UAParser(userAgent);
-      const result = parser.getResult();
-      
-      return {
-        operatingSystem: result.os.name || null,
-        browser: result.browser.name || null,
-        browserVersion: result.browser.version || null
-      };
-    } catch (error) {
-      console.error('Error parsing user agent:', error);
-      return {
-        operatingSystem: null,
-        browser: null,
-        browserVersion: null
-      };
-    }
-  }
-
-  private async getGeolocationFromIP(ip: string): Promise<GeolocationResult> {
-    try {
-      // TODO: Implement MaxMind GeoIP2 when database is available
-      // For now, return null to use fallback methods
-      return {};
-    } catch (error) {
-      console.error('Error getting geolocation from IP:', error);
-      return {};
-    }
-  }
-
-  private getCountryFromLanguage(language: string): string | null {
-    try {
-      const parts = language.split('-');
-      if (parts.length >= 2) {
-        const alpha2Code = parts[1].toUpperCase(); // e.g., "US", "CA", "GB"
-        
-        // Convert 2-letter to 3-letter ISO code
-        const countryName = getName(alpha2Code);
-        if (countryName) {
-          // Get 3-letter code by looking up the name
-          const countries3Letter: { [key: string]: string } = {
-            'United States': 'USA',
-            'Canada': 'CAN',
-            'United Kingdom': 'GBR',
-            'Germany': 'DEU',
-            'France': 'FRA',
-            'Japan': 'JPN',
-            'Australia': 'AUS',
-            'Brazil': 'BRA',
-            'India': 'IND',
-            'China': 'CHN',
-            'Mexico': 'MEX',
-            'Spain': 'ESP',
-            'Italy': 'ITA',
-            'Netherlands': 'NLD',
-            'Sweden': 'SWE',
-            'Norway': 'NOR',
-            'Denmark': 'DNK',
-            'Finland': 'FIN',
-            'Russia': 'RUS',
-            'South Korea': 'KOR'
-          };
-          
-          return countries3Letter[countryName] || null;
-        }
-      }
-      return null;
-    } catch (error) {
-      console.error('Error parsing country from language:', error);
-      return null;
-    }
-  }
-
-  private getCountryFromTimezone(timezone: string): string | null {
-    const timezoneToCountry: { [key: string]: string } = {
-      // North America
-      'America/New_York': 'USA',
-      'America/Chicago': 'USA',
-      'America/Denver': 'USA',
-      'America/Los_Angeles': 'USA',
-      'America/Phoenix': 'USA',
-      'America/Anchorage': 'USA',
-      'America/Hawaii': 'USA',
-      'America/Toronto': 'CAN',
-      'America/Vancouver': 'CAN',
-      'America/Halifax': 'CAN',
-      'America/Mexico_City': 'MEX',
-      
-      // Europe
-      'Europe/London': 'GBR',
-      'Europe/Dublin': 'IRL',
-      'Europe/Paris': 'FRA',
-      'Europe/Berlin': 'DEU',
-      'Europe/Madrid': 'ESP',
-      'Europe/Rome': 'ITA',
-      'Europe/Amsterdam': 'NLD',
-      'Europe/Stockholm': 'SWE',
-      'Europe/Oslo': 'NOR',
-      'Europe/Copenhagen': 'DNK',
-      'Europe/Helsinki': 'FIN',
-      'Europe/Moscow': 'RUS',
-      
-      // Asia Pacific
-      'Asia/Tokyo': 'JPN',
-      'Asia/Seoul': 'KOR',
-      'Asia/Shanghai': 'CHN',
-      'Asia/Hong_Kong': 'HKG',
-      'Asia/Singapore': 'SGP',
-      'Asia/Kolkata': 'IND',
-      'Australia/Sydney': 'AUS',
-      'Australia/Melbourne': 'AUS',
-      'Australia/Perth': 'AUS',
-      
-      // South America
-      'America/Sao_Paulo': 'BRA',
-      'America/Argentina/Buenos_Aires': 'ARG',
-      'America/Santiago': 'CHL'
-    };
+// Pure utility functions
+const parseUserAgent = (userAgent: string): UserAgentInfo => {
+  try {
+    const parser = new UAParser(userAgent);
+    const result = parser.getResult();
     
-    return timezoneToCountry[timezone] || null;
+    return {
+      operatingSystem: result.os.name || null,
+      browser: result.browser.name || null,
+      browserVersion: result.browser.version || null
+    };
+  } catch (error) {
+    console.error('Error parsing user agent:', error);
+    return {
+      operatingSystem: null,
+      browser: null,
+      browserVersion: null
+    };
   }
+};
 
-  async trackFormView(data: AnalyticsData, clientIP?: string): Promise<void> {
-    try {
-      // Parse user agent
-      const userAgentData = this.parseUserAgent(data.userAgent);
+const getGeolocationFromIP = async (_ip: string): Promise<GeolocationResult> => {
+  try {
+    // TODO: Implement MaxMind GeoIP2 when database is available
+    return {};
+  } catch (error) {
+    console.error('Error getting geolocation from IP:', error);
+    return {};
+  }
+};
+
+const getCountryFromLanguage = (language: string): string | null => {
+  try {
+    initializeLocale();
+    
+    const parts = language.split('-');
+    if (parts.length >= 2) {
+      const alpha2Code = parts[1].toUpperCase();
+      const alpha3Code = countries.alpha2ToAlpha3(alpha2Code);
       
-      // Attempt to get country from multiple sources
-      let countryCode: string | null = null;
-      let regionCode: string | null = null;
-      let city: string | null = null;
-      
-      // Method 1: IP geolocation (most accurate when available)
-      if (clientIP) {
-        const geoData = await this.getGeolocationFromIP(clientIP);
-        countryCode = geoData.countryCode || null;
-        regionCode = geoData.regionCode || null;
-        city = geoData.city || null;
+      if (alpha3Code) {
+        console.log(`Language ${language} -> Alpha2: ${alpha2Code} -> Alpha3: ${alpha3Code}`);
+        return alpha3Code;
       }
-      
-      // Method 2: Fallback to browser language
-      if (!countryCode && data.language) {
-        countryCode = this.getCountryFromLanguage(data.language);
-      }
-      
-      // Method 3: Fallback to timezone
-      if (!countryCode && data.timezone) {
-        countryCode = this.getCountryFromTimezone(data.timezone);
-      }
-      
-      // Generate a unique ID for the analytics record
-      const analyticsId = Math.random().toString(36).substring(2, 15) + 
-                         Math.random().toString(36).substring(2, 15);
-      
-      // Store analytics data
-      await prisma.formViewAnalytics.create({
-        data: {
-          id: analyticsId,
-          formId: data.formId,
-          sessionId: data.sessionId,
-          userAgent: data.userAgent,
-          operatingSystem: userAgentData.operatingSystem,
-          browser: userAgentData.browser,
-          browserVersion: userAgentData.browserVersion,
-          countryCode,
-          regionCode,
-          city,
-          timezone: data.timezone,
-          language: data.language,
-          viewedAt: new Date()
+    }
+    return null;
+  } catch (error) {
+    console.error('Error parsing country from language:', error);
+    return null;
+  }
+};
+
+const getCountryFromTimezone = (timezone: string): string | null => {
+  try {
+    initializeLocale();
+    
+    const timezoneInfo = ct.getTimezone(timezone);
+    
+    if (timezoneInfo && timezoneInfo.countries) {
+      const countryCode = timezoneInfo.countries[0];
+      if (countryCode) {
+        const alpha3Code = countries.alpha2ToAlpha3(countryCode);
+        
+        if (alpha3Code) {
+          console.log(`Timezone ${timezone} -> Alpha2: ${countryCode} -> Alpha3: ${alpha3Code}`);
+          return alpha3Code;
         }
-      });
-      
-      console.log(`Analytics tracked for form ${data.formId}, session ${data.sessionId}, country: ${countryCode || 'unknown'}`);
-    } catch (error) {
-      console.error('Error tracking form view analytics:', error);
-      // Don't throw error to avoid disrupting form viewing
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error parsing country from timezone:', error);
+    return null;
+  }
+};
+
+const getCountryNameFromCode = (code: string): string => {
+  try {
+    initializeLocale();
+    const countryName = countries.getName(code, 'en');
+    return countryName || code || 'Unknown';
+  } catch (error) {
+    console.error('Error getting country name from code:', error);
+    return code || 'Unknown';
+  }
+};
+
+// Higher-order functions for country detection
+const detectCountryCode = async (data: AnalyticsData, clientIP?: string): Promise<string | null> => {
+  // Method 1: IP geolocation (most accurate when available)
+  if (clientIP) {
+    const geoData = await getGeolocationFromIP(clientIP);
+    if (geoData.countryCode) {
+      return geoData.countryCode;
     }
   }
 
-  async getFormAnalytics(formId: string, timeRange?: { start: Date; end: Date }) {
-    try {
-      const whereClause: any = { formId };
-      
-      if (timeRange) {
-        whereClause.viewedAt = {
-          gte: timeRange.start,
-          lte: timeRange.end
-        };
+  // Method 2: Fallback to browser language
+  if (data.language) {
+    const countryCode = getCountryFromLanguage(data.language);
+    if (countryCode) {
+      console.log(`Country from language ${data.language}: ${countryCode}`);
+      return countryCode;
+    }
+  }
+
+  // Method 3: Fallback to timezone
+  if (data.timezone) {
+    const countryCode = getCountryFromTimezone(data.timezone);
+    if (countryCode) {
+      console.log(`Country from timezone ${data.timezone}: ${countryCode}`);
+      return countryCode;
+    }
+  }
+
+  return null;
+};
+
+const generateAnalyticsId = (): string => {
+  return Math.random().toString(36).substring(2, 15) + 
+         Math.random().toString(36).substring(2, 15);
+};
+
+// Main business logic functions
+const trackFormView = async (data: AnalyticsData, clientIP?: string): Promise<void> => {
+  try {
+    const userAgentData = parseUserAgent(data.userAgent);
+    const countryCode = await detectCountryCode(data, clientIP);
+    const analyticsId = generateAnalyticsId();
+
+    await prisma.formViewAnalytics.create({
+      data: {
+        id: analyticsId,
+        formId: data.formId,
+        sessionId: data.sessionId,
+        userAgent: data.userAgent,
+        operatingSystem: userAgentData.operatingSystem,
+        browser: userAgentData.browser,
+        browserVersion: userAgentData.browserVersion,
+        countryCode,
+        regionCode: null, // TODO: Add region detection
+        city: null,       // TODO: Add city detection
+        timezone: data.timezone,
+        language: data.language,
+        viewedAt: new Date()
       }
+    });
+    
+    console.log(`Analytics tracked for form ${data.formId}, session ${data.sessionId}, country: ${countryCode || 'unknown'}`);
+  } catch (error) {
+    console.error('Error tracking form view analytics:', error);
+    // Don't throw error to avoid disrupting form viewing
+  }
+};
+
+// Database query functions
+const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: Date }) => {
+  try {
+    const whereClause: any = { formId };
+    
+    if (timeRange) {
+      whereClause.viewedAt = {
+        gte: timeRange.start,
+        lte: timeRange.end
+      };
+    }
+    
+    // Parallel execution of database queries for better performance
+    const [totalViews, uniqueSessionsData, countryStats, osStats, browserStats] = await Promise.all([
+      prisma.formViewAnalytics.count({ where: whereClause }),
       
-      // Get total views and unique sessions
-      const totalViews = await prisma.formViewAnalytics.count({
-        where: whereClause
-      });
-      
-      const uniqueSessions = await prisma.formViewAnalytics.groupBy({
+      prisma.formViewAnalytics.groupBy({
         by: ['sessionId'],
         where: whereClause
-      });
+      }),
       
-      // Get top countries
-      const countryStats = await prisma.formViewAnalytics.groupBy({
+      prisma.formViewAnalytics.groupBy({
         by: ['countryCode'],
         where: { ...whereClause, countryCode: { not: null } },
         _count: { countryCode: true },
         orderBy: { _count: { countryCode: 'desc' } },
         take: 10
-      });
+      }),
       
-      // Get top operating systems
-      const osStats = await prisma.formViewAnalytics.groupBy({
+      prisma.formViewAnalytics.groupBy({
         by: ['operatingSystem'],
         where: { ...whereClause, operatingSystem: { not: null } },
         _count: { operatingSystem: true },
         orderBy: { _count: { operatingSystem: 'desc' } },
         take: 10
-      });
+      }),
       
-      // Get top browsers
-      const browserStats = await prisma.formViewAnalytics.groupBy({
+      prisma.formViewAnalytics.groupBy({
         by: ['browser'],
         where: { ...whereClause, browser: { not: null } },
         _count: { browser: true },
         orderBy: { _count: { browser: 'desc' } },
         take: 10
-      });
-      
-      // Convert country codes to names
-      const topCountries = countryStats.map((stat: any) => {
-        const countryName = this.getCountryNameFromCode(stat.countryCode || '');
-        return {
-          code: stat.countryCode,
-          name: countryName,
-          count: stat._count.countryCode,
-          percentage: totalViews > 0 ? (stat._count.countryCode / totalViews) * 100 : 0
-        };
-      });
-      
-      const topOperatingSystems = osStats.map((stat: any) => ({
-        name: stat.operatingSystem,
-        count: stat._count.operatingSystem,
-        percentage: totalViews > 0 ? (stat._count.operatingSystem / totalViews) * 100 : 0
-      }));
-      
-      const topBrowsers = browserStats.map((stat: any) => ({
-        name: stat.browser,
-        count: stat._count.browser,
-        percentage: totalViews > 0 ? (stat._count.browser / totalViews) * 100 : 0
-      }));
-      
-      return {
-        totalViews,
-        uniqueSessions: uniqueSessions.length,
-        topCountries,
-        topOperatingSystems,
-        topBrowsers
-      };
-    } catch (error) {
-      console.error('Error getting form analytics:', error);
-      throw new Error('Failed to fetch analytics data');
-    }
-  }
-  
-  private getCountryNameFromCode(code: string): string {
-    const countryNames: { [key: string]: string } = {
-      'USA': 'United States',
-      'CAN': 'Canada',
-      'GBR': 'United Kingdom',
-      'DEU': 'Germany',
-      'FRA': 'France',
-      'JPN': 'Japan',
-      'AUS': 'Australia',
-      'BRA': 'Brazil',
-      'IND': 'India',
-      'CHN': 'China',
-      'MEX': 'Mexico',
-      'ESP': 'Spain',
-      'ITA': 'Italy',
-      'NLD': 'Netherlands',
-      'SWE': 'Sweden',
-      'NOR': 'Norway',
-      'DNK': 'Denmark',
-      'FIN': 'Finland',
-      'RUS': 'Russia',
-      'KOR': 'South Korea',
-      'IRL': 'Ireland',
-      'HKG': 'Hong Kong',
-      'SGP': 'Singapore',
-      'ARG': 'Argentina',
-      'CHL': 'Chile'
-    };
-    
-    return countryNames[code] || code || 'Unknown';
-  }
-}
+      })
+    ]);
 
-export const analyticsService = new AnalyticsService();
+    // Transform data using functional programming principles
+    const topCountries = countryStats.map((stat: any) => ({
+      code: stat.countryCode,
+      name: getCountryNameFromCode(stat.countryCode || ''),
+      count: stat._count.countryCode,
+      percentage: totalViews > 0 ? (stat._count.countryCode / totalViews) * 100 : 0
+    }));
+    
+    const topOperatingSystems = osStats.map((stat: any) => ({
+      name: stat.operatingSystem,
+      count: stat._count.operatingSystem,
+      percentage: totalViews > 0 ? (stat._count.operatingSystem / totalViews) * 100 : 0
+    }));
+    
+    const topBrowsers = browserStats.map((stat: any) => ({
+      name: stat.browser,
+      count: stat._count.browser,
+      percentage: totalViews > 0 ? (stat._count.browser / totalViews) * 100 : 0
+    }));
+    
+    return {
+      totalViews,
+      uniqueSessions: uniqueSessionsData.length,
+      topCountries,
+      topOperatingSystems,
+      topBrowsers
+    };
+  } catch (error) {
+    console.error('Error getting form analytics:', error);
+    throw new Error('Failed to fetch analytics data');
+  }
+};
+
+// Initialize service (log startup)
+const initializeService = () => {
+  console.log('GeoIP service initialized (fallback mode)');
+};
+
+// Service object using functional composition
+const analyticsService = {
+  trackFormView,
+  getFormAnalytics,
+  initialize: initializeService
+};
+
+// Initialize on module load
+analyticsService.initialize();
+
+export { analyticsService };
