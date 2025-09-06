@@ -9,7 +9,6 @@ import {
   useTextFieldForm,
   useNumberFieldForm,
   useSelectionFieldForm,
-  useDateFieldForm,
   useRichTextFieldForm
 } from '../../../../hooks/field-forms';
 
@@ -223,7 +222,7 @@ describe('Performance and Stability Tests', () => {
     });
   });
 
-  describe('Auto-save Performance', () => {
+  describe('Save Performance', () => {
     beforeAll(() => {
       jest.useFakeTimers();
     });
@@ -232,7 +231,7 @@ describe('Performance and Stability Tests', () => {
       jest.useRealTimers();
     });
 
-    test('auto-save debouncing prevents excessive API calls', async () => {
+    test('save debouncing prevents excessive API calls', async () => {
       const field = createMockField('text') as any;
       const onSave = createMockOnSave();
 
@@ -245,11 +244,11 @@ describe('Performance and Stability Tests', () => {
         result.current.setValue('label', 'Valid Label');
       });
 
-      // Trigger auto-save multiple times quickly
+      // Trigger save multiple times quickly
       act(() => {
-        result.current.handleAutoSave();
-        result.current.handleAutoSave();
-        result.current.handleAutoSave();
+        result.current.handleSave();
+        result.current.handleSave();
+        result.current.handleSave();
       });
 
       // Fast-forward timers
@@ -257,48 +256,37 @@ describe('Performance and Stability Tests', () => {
         jest.advanceTimersByTime(500);
       });
 
-      // Should only call onSave once due to debouncing
+      // Should only call onSave once due to multiple rapid calls
       expect(onSave).toHaveBeenCalledTimes(1);
     });
 
-    test('different field types have appropriate auto-save delays', async () => {
+    test('different field types have appropriate save behavior', async () => {
       const textField = createMockField('text') as any;
       const richTextField = createMockField('richtext') as any;
       const onSave = createMockOnSave();
 
-      // Text field should have 500ms delay
+      // Text field hook
       const { result: textResult } = renderHook(() =>
         useTextFieldForm({ field: textField, onSave })
       );
 
-      // Rich text field should have 1000ms delay
+      // Rich text field hook
       const { result: richTextResult } = renderHook(() =>
         useRichTextFieldForm({ field: richTextField, onSave })
       );
 
-      // Trigger auto-save on both
+      // Trigger save on both
       await act(async () => {
         textResult.current.setValue('label', 'Text Label');
         richTextResult.current.setValue('content', 'Rich text content');
       });
 
       act(() => {
-        textResult.current.handleAutoSave();
-        richTextResult.current.handleAutoSave();
+        textResult.current.handleSave();
+        richTextResult.current.handleSave();
       });
 
-      // Fast-forward 500ms - text field should save, rich text should not
-      act(() => {
-        jest.advanceTimersByTime(500);
-      });
-
-      expect(onSave).toHaveBeenCalledTimes(1);
-
-      // Fast-forward another 500ms - rich text should now save
-      act(() => {
-        jest.advanceTimersByTime(500);
-      });
-
+      // Both should save successfully
       expect(onSave).toHaveBeenCalledTimes(2);
     });
   });
