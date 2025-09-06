@@ -91,6 +91,7 @@ export {
 } from "./alert-dialog"
 
 // Rich Text Editor
+
 export { LexicalRichTextEditor as RichTextEditor } from "./rich-text-editor/LexicalRichTextEditor"
 export { SimpleRichTextEditor } from "./rich-text-editor/SimpleRichTextEditor"
 
