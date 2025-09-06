@@ -6,6 +6,7 @@ import { deserializeFormSchema } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { GET_FORM_BY_SHORT_URL, SUBMIT_RESPONSE } from '../graphql/queries';
 import ThankYouDisplay from '../components/ThankYouDisplay';
+import { useFormAnalytics } from '../hooks/useFormAnalytics';
 
 const FormViewer: React.FC = () => {
   const { shortUrl } = useParams<{ shortUrl: string }>();
@@ -20,6 +21,12 @@ const FormViewer: React.FC = () => {
   });
 
   const [submitResponse] = useMutation(SUBMIT_RESPONSE);
+
+  // Track form analytics when form is loaded
+  useFormAnalytics({ 
+    formId: data?.formByShortUrl?.id || '', 
+    enabled: !!data?.formByShortUrl?.id 
+  });
 
   const handleFormSubmit = async (formId: string, responses: Record<string, unknown>) => {
     setSubmissionState('submitting');

@@ -139,6 +139,7 @@ model Form {
   createdBy    User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
   responses    Response[]
   files        FormFile[]
+  analytics    FormViewAnalytics[]
 
   @@map("form")
 }
@@ -215,4 +216,28 @@ model FormFile {
   form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
 
   @@map("form_file")
+}
+
+// Form View Analytics Model
+model FormViewAnalytics {
+  id              String   @id @map("_id")
+  formId          String
+  sessionId       String   // Anonymous UUID session identifier
+  userAgent       String
+  operatingSystem String?  // Parsed OS (Windows, macOS, Linux, etc.)
+  browser         String?  // Parsed browser (Chrome, Firefox, Safari, etc.)
+  browserVersion  String?  // Browser version
+  countryCode     String?  // ISO 3166-1 alpha-3 (e.g., "USA", "CAN", "GBR")
+  regionCode      String?  // State/province code
+  city            String?  // City if available
+  timezone        String?  // IANA timezone (e.g., "America/New_York")
+  language        String?  // Browser locale (e.g., "en-US", "fr-CA")
+  viewedAt        DateTime @default(now())
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+  @@index([viewedAt])
+  @@index([sessionId])
+  @@map("form_view_analytics")
 }

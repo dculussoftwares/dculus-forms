@@ -330,3 +330,166 @@ The system includes migration script for updating legacy role names:
 - `owner` → `companyOwner`
 
 Run with: `apps/backend/src/scripts/migrate-organization-roles.ts`
+
+## Form Viewer Analytics System
+
+The form viewer includes a comprehensive analytics system that tracks form views with privacy-first anonymous data collection.
+
+### Analytics Architecture
+
+**Database Model** (`apps/backend/prisma/schema.prisma:220-242`):
+```prisma
+model FormViewAnalytics {
+  id              String   @id @map("_id")
+  formId          String   // Reference to Form
+  sessionId       String   // Anonymous UUID session identifier  
+  userAgent       String   // Full user agent string
+  operatingSystem String?  // Parsed OS (Windows, macOS, Linux, etc.)
+  browser         String?  // Parsed browser (Chrome, Firefox, Safari, etc.)
+  browserVersion  String?  // Browser version
+  countryCode     String?  // ISO 3166-1 alpha-3 (USA, CAN, GBR, etc.)
+  regionCode      String?  // State/province code
+  city            String?  // City if available
+  timezone        String?  // IANA timezone (America/New_York, etc.)
+  language        String?  // Browser locale (en-US, fr-CA, etc.)
+  viewedAt        DateTime @default(now())
+  
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+  
+  @@index([formId])
+  @@index([viewedAt])
+  @@index([sessionId])
+  @@map("form_view_analytics")
+}
+```
+
+### Analytics Dependencies
+
+**Latest Libraries Used:**
+- `@maxmind/geoip2-node@6.1.0` - IP geolocation (production-ready)
+- `ua-parser-js@1.0.41` - User agent parsing
+- `country-list@2.4.1` - ISO country code utilities
+- `@types/ua-parser-js` & `@types/country-list` - TypeScript definitions
+
+### Privacy-First Data Collection
+
+**Anonymous Session Tracking:**
+- Generates UUID session IDs via `crypto.randomUUID()`
+- Stored in localStorage as `dculus_form_session_id`
+- No personal data collection or IP address storage
+- GDPR/CCPA compliant design
+
+**Multi-Source Country Detection:**
+1. **Primary**: IP geolocation (when available)
+2. **Fallback 1**: Browser language parsing (`en-US` → `USA`)
+3. **Fallback 2**: Timezone mapping (`America/New_York` → `USA`)
+
+### GraphQL Analytics API
+
+**Tracking Mutation:**
+```graphql
+mutation TrackFormView($input: TrackFormViewInput!) {
+  trackFormView(input: $input) {
+    success
+  }
+}
+```
+
+**Analytics Query** (requires authentication):
+```graphql
+query GetFormAnalytics($formId: ID!, $timeRange: TimeRangeInput) {
+  formAnalytics(formId: $formId, timeRange: $timeRange) {
+    totalViews
+    uniqueSessions
+    topCountries {
+      code        # ISO 3-letter code (USA, CAN, GBR)
+      name        # Display name (United States, Canada, United Kingdom)
+      count
+      percentage
+    }
+    topOperatingSystems {
+      name        # Windows, macOS, Linux, etc.
+      count
+      percentage
+    }
+    topBrowsers {
+      name        # Chrome, Firefox, Safari, etc.
+      count
+      percentage
+    }
+  }
+}
+```
+
+### Client-Side Integration
+
+**Form Viewer Hook** (`apps/form-viewer/src/hooks/useFormAnalytics.ts`):
+```typescript
+import { useFormAnalytics } from '../hooks/useFormAnalytics';
+
+// Auto-track analytics when form loads
+useFormAnalytics({ 
+  formId: form.id, 
+  enabled: true 
+});
+```
+
+**Automatic Data Collection:**
+- **Browser Info**: User agent, timezone, language
+- **Session Management**: Persistent anonymous session IDs
+- **Error Handling**: Analytics failures don't disrupt form viewing
+- **Privacy**: No personal data sent to server
+
+### Analytics Service
+
+**Backend Service** (`apps/backend/src/services/analyticsService.ts`):
+- User agent parsing with latest libraries
+- Geographic detection with multiple fallback methods
+- Country code standardization (ISO 3166-1 alpha-3)
+- Efficient database aggregation queries
+- Privacy-compliant data processing
+
+**Key Features:**
+- **Real-time tracking**: Analytics recorded on form load
+- **Country standardization**: 3-letter ISO codes (USA, CAN, GBR)
+- **Browser detection**: OS, browser, and version parsing
+- **Session deduplication**: Unique session counting
+- **Time-range filtering**: Analytics queries with date ranges
+
+### Implementation Files
+
+**Core Implementation:**
+- `apps/backend/src/services/analyticsService.ts` - Analytics processing service
+- `apps/backend/src/graphql/resolvers/analytics.ts` - GraphQL resolvers
+- `apps/form-viewer/src/hooks/useFormAnalytics.ts` - Client-side tracking hook
+- `apps/form-viewer/src/pages/FormViewer.tsx` - Integration point
+
+**Database:**
+- New `form_view_analytics` collection in MongoDB
+- Indexed on formId, viewedAt, and sessionId for performance
+- Connected to existing Form model via foreign key
+
+### Usage Examples
+
+**Check Analytics Data:**
+```bash
+# View recent analytics for a form
+node -e "
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+prisma.formViewAnalytics.findMany({
+  where: { formId: 'your-form-id' },
+  orderBy: { viewedAt: 'desc' },
+  take: 10
+}).then(console.log);
+"
+```
+
+**Analytics Dashboard Integration:**
+The GraphQL `formAnalytics` query provides all data needed for building analytics dashboards with charts showing:
+- Total views and unique sessions over time
+- Geographic distribution (countries with ISO codes)
+- Browser and operating system statistics
+- Visitor behavior patterns
+
+This system provides comprehensive form analytics while maintaining user privacy and following modern data protection standards.

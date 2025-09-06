@@ -7,6 +7,7 @@ import { fileUploadResolvers } from './resolvers/fileUpload.js';
 import { formFileResolvers } from './resolvers/formFiles.js';
 import { unifiedExportResolvers } from './resolvers/unifiedExport.js';
 import { adminResolvers } from './resolvers/admin.js';
+import { analyticsResolvers } from './resolvers/analytics.js';
 import { GraphQLJSON } from 'graphql-type-json';
 
 
@@ -19,6 +20,7 @@ export const resolvers = {
     ...templatesResolvers.Query,
     ...formFileResolvers.Query,
     ...adminResolvers.Query,
+    ...analyticsResolvers.Query,
   },
   Mutation: {
     ...betterAuthResolvers.Mutation,
@@ -27,6 +29,7 @@ export const resolvers = {
     ...templatesResolvers.Mutation,
     ...fileUploadResolvers.Mutation,
     ...unifiedExportResolvers.Mutation,
+    ...analyticsResolvers.Mutation,
   },
   Form: {
     ...formsResolvers.Form,

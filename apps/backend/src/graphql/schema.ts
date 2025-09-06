@@ -235,6 +235,52 @@ export const typeDefs = gql`
     mongoCollectionCount: Int!
   }
 
+  # Analytics Types
+  type FormAnalytics {
+    totalViews: Int!
+    uniqueSessions: Int!
+    topCountries: [CountryStats!]!
+    topOperatingSystems: [OSStats!]!
+    topBrowsers: [BrowserStats!]!
+  }
+
+  type CountryStats {
+    code: String
+    name: String!
+    count: Int!
+    percentage: Float!
+  }
+
+  type OSStats {
+    name: String!
+    count: Int!
+    percentage: Float!
+  }
+
+  type BrowserStats {
+    name: String!
+    count: Int!
+    percentage: Float!
+  }
+
+  type TrackFormViewResponse {
+    success: Boolean!
+  }
+
+  # Analytics Input Types
+  input TrackFormViewInput {
+    formId: ID!
+    sessionId: String!
+    userAgent: String!
+    timezone: String
+    language: String
+  }
+
+  input TimeRangeInput {
+    start: String!
+    end: String!
+  }
+
   type Query {
     # Auth Queries
     me: User
@@ -263,6 +309,9 @@ export const typeDefs = gql`
     adminOrganization(id: ID!): AdminOrganization!
     adminStats: AdminStats!
 
+    # Analytics Queries
+    formAnalytics(formId: ID!, timeRange: TimeRangeInput): FormAnalytics!
+
   }
 
   type Mutation {
@@ -290,6 +339,9 @@ export const typeDefs = gql`
 
     # Export Mutations
     generateFormResponseReport(formId: ID!, format: ExportFormat!): ExportResult!
+
+    # Analytics Mutations
+    trackFormView(input: TrackFormViewInput!): TrackFormViewResponse!
 
   }
 
