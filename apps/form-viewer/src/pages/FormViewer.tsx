@@ -5,6 +5,7 @@ import { FormRenderer } from '@dculus/ui';
 import { deserializeFormSchema } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { GET_FORM_BY_SHORT_URL, SUBMIT_RESPONSE } from '../graphql/queries';
+import ThankYouDisplay from '../components/ThankYouDisplay';
 
 const FormViewer: React.FC = () => {
   const { shortUrl } = useParams<{ shortUrl: string }>();
@@ -117,30 +118,19 @@ const FormViewer: React.FC = () => {
   if (submissionState === 'success') {
     return (
       <div className="h-screen w-full flex items-center justify-center">
-        <div className="text-center p-8 max-w-md">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg
-              className="w-8 h-8 text-green-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        <div className="w-full">
+          <ThankYouDisplay 
+            settings={form?.settings?.thankYou}
+            fallbackMessage={submissionMessage}
+          />
+          <div className="text-center mt-6">
+            <button
+              onClick={() => setSubmissionState('idle')}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
+              Submit Another Response
+            </button>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Success!</h1>
-          <p className="text-gray-600 mb-6">{submissionMessage}</p>
-          <button
-            onClick={() => setSubmissionState('idle')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Submit Another Response
-          </button>
         </div>
       </div>
     );
