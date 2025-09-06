@@ -6,7 +6,6 @@ import {
   FORMAT_TEXT_COMMAND,
   SELECTION_CHANGE_COMMAND,
   $createParagraphNode,
-  $getNodeByKey,
 } from 'lexical';
 import {
   $isListNode,

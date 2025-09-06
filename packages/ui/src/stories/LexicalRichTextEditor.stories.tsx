@@ -2,6 +2,19 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { LexicalRichTextEditor } from '../rich-text-editor/LexicalRichTextEditor';
 
+const sampleMentionFields = [
+  { fieldId: 'first-name', label: 'First Name' },
+  { fieldId: 'last-name', label: 'Last Name' },
+  { fieldId: 'email', label: 'Email Address' },
+  { fieldId: 'phone', label: 'Phone Number' },
+  { fieldId: 'company', label: 'Company Name' },
+  { fieldId: 'address', label: 'Street Address' },
+  { fieldId: 'city', label: 'City' },
+  { fieldId: 'state', label: 'State' },
+  { fieldId: 'zip', label: 'ZIP Code' },
+  { fieldId: 'country', label: 'Country' },
+];
+
 const meta: Meta<typeof LexicalRichTextEditor> = {
   title: 'Components/LexicalRichTextEditor',
   component: LexicalRichTextEditor,
@@ -34,11 +47,16 @@ const meta: Meta<typeof LexicalRichTextEditor> = {
       control: 'boolean',
       description: 'Whether the editor is editable or read-only',
     },
+    mentionFields: {
+      control: false,
+      description: 'Array of fields available for mentions',
+    },
   },
   args: {
     placeholder: 'Enter content...',
     className: '',
     editable: true,
+    mentionFields: [],
   },
 };
 
@@ -267,6 +285,82 @@ export const HeadingsHierarchy: Story = {
     docs: {
       description: {
         story: 'Rich text editor showing the complete heading hierarchy from H1 to H6.',
+      },
+    },
+  },
+};
+
+// Mention functionality
+export const WithMentions: Story = {
+  render: (args) => <ControlledEditor {...args} />,
+  args: {
+    mentionFields: sampleMentionFields,
+    placeholder: 'Type @ to mention a field (try typing @first or @email)...',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Rich text editor with enhanced mention functionality. Type @ to see a styled dropdown with field labels. Features include hover effects, keyboard navigation, smooth animations, and improved UX. Shows field labels in dropdown and editor, but stores field IDs in HTML.',
+      },
+    },
+  },
+};
+
+// Mentions with content - showing field IDs in HTML but labels in display
+export const MentionsWithContent: Story = {
+  render: (args) => <ControlledEditor {...args} />,
+  args: {
+    mentionFields: sampleMentionFields,
+    value: `<p>Dear <span data-beautiful-mention="true" data-trigger="@" data-value="first-name">@first-name</span> <span data-beautiful-mention="true" data-trigger="@" data-value="last-name">@last-name</span>,</p>
+<p>Thank you for your interest in our services. We have received your application and will contact you at <span data-beautiful-mention="true" data-trigger="@" data-value="email">@email</span> within 24 hours.</p>
+<p>Your application details:</p>
+<ul>
+  <li>Company: <span data-beautiful-mention="true" data-trigger="@" data-value="company">@company</span></li>
+  <li>Phone: <span data-beautiful-mention="true" data-trigger="@" data-value="phone">@phone</span></li>
+  <li>Address: <span data-beautiful-mention="true" data-trigger="@" data-value="address">@address</span>, <span data-beautiful-mention="true" data-trigger="@" data-value="city">@city</span>, <span data-beautiful-mention="true" data-trigger="@" data-value="state">@state</span> <span data-beautiful-mention="true" data-trigger="@" data-value="zip">@zip</span></li>
+</ul>
+<p>Best regards,<br>The Team</p>`,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Demonstrates the perfect mention behavior: users see friendly labels like "First Name" in the editor, but field IDs like "first-name" are saved in HTML for backend processing. Try typing @ to add new mentions - they show labels but save IDs!',
+      },
+    },
+  },
+};
+
+// Read-only mentions
+export const ReadOnlyWithMentions: Story = {
+  args: {
+    mentionFields: sampleMentionFields,
+    editable: false,
+    value: `<p>This is a read-only editor with mentions: <span data-beautiful-mention="true" data-trigger="@" data-value="first-name">@first-name</span> and <span data-beautiful-mention="true" data-trigger="@" data-value="email">@email</span></p>`,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Read-only rich text editor displaying field ID mentions without editing capabilities.',
+      },
+    },
+  },
+};
+
+// Limited mention fields
+export const LimitedMentions: Story = {
+  render: (args) => <ControlledEditor {...args} />,
+  args: {
+    mentionFields: [
+      { fieldId: 'name', label: 'Full Name' },
+      { fieldId: 'email', label: 'Email' },
+      { fieldId: 'date', label: 'Today\'s Date' },
+    ],
+    placeholder: 'Type @ to see available fields (name, email, date)...',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Rich text editor with a limited set of mention fields.',
       },
     },
   },

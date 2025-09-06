@@ -39,6 +39,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "lexical": "0.34.0",
+    "lexical-beautiful-mentions": "0.1.48",
     "lucide-react": "^0.534.0",
     "react-hook-form": "7.62.0",
     "tailwind-merge": "^2.0.0",

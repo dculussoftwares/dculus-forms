@@ -52,6 +52,7 @@ const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
       case 'thank-you':
         return (
           <ThankYouSettings
+            form={form}
             settings={settings.thankYou}
             isSaving={isSaving}
             onToggleEnabled={(enabled) => onUpdateThankYouSetting('enabled', enabled)}

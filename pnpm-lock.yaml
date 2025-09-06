@@ -644,6 +644,9 @@ importers:
       lexical:
         specifier: 0.34.0
         version: 0.34.0
+      lexical-beautiful-mentions:
+        specifier: 0.1.48
+        version: 0.1.48(@lexical/react@0.34.0)(@lexical/utils@0.34.0)(lexical@0.34.0)(react-dom@18.3.1)(react@18.3.1)
       lucide-react:
         specifier: ^0.534.0
         version: 0.534.0(react@18.3.1)
@@ -10317,6 +10320,22 @@ packages:
       prelude-ls: 1.2.1
       type-check: 0.4.0
     dev: true
+
+  /lexical-beautiful-mentions@0.1.48(@lexical/react@0.34.0)(@lexical/utils@0.34.0)(lexical@0.34.0)(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-ukiSAxMB9Hl88V19eT5uDSC7gDpeXKhgO6MEtmHKnj69VgwLVCKclIr2UO6yJs97QEw3cqJA5nM4j72obgXlmw==}
+    peerDependencies:
+      '@lexical/react': '>=0.11.0'
+      '@lexical/utils': '>=0.11.0'
+      lexical: '>=0.11.0'
+      react: ^18.3.0
+      react-dom: ^18.3.0
+    dependencies:
+      '@lexical/react': 0.34.0(react-dom@18.3.1)(react@18.3.1)(yjs@13.6.27)
+      '@lexical/utils': 0.34.0
+      lexical: 0.34.0
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+    dev: false
 
   /lexical@0.34.0:
     resolution: {integrity: sha512-oqQ87i49oGRt8u9qIXow+fWeqN6luRMtYAa1GAx1l9AaR3A8Tfrgnmj2+13ej6CMPK6JunKaUXbd+7FDy+s8XQ==}
