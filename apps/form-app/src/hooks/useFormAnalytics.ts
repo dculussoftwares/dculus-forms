@@ -27,12 +27,19 @@ export interface BrowserStats {
   percentage: number;
 }
 
+export interface ViewsOverTimeData {
+  date: string;
+  views: number;
+  sessions: number;
+}
+
 export interface FormAnalyticsData {
   totalViews: number;
   uniqueSessions: number;
   topCountries: CountryStats[];
   topOperatingSystems: OSStats[];
   topBrowsers: BrowserStats[];
+  viewsOverTime: ViewsOverTimeData[];
 }
 
 export type TimeRangePreset = '7d' | '30d' | '90d' | 'custom';

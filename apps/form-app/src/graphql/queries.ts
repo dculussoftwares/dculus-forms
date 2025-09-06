@@ -163,6 +163,11 @@ export const GET_FORM_ANALYTICS = gql`
         count
         percentage
       }
+      viewsOverTime {
+        date
+        views
+        sessions
+      }
     }
   }
 `;

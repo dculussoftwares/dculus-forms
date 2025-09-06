@@ -215,7 +215,7 @@ const FormAnalytics: React.FC = () => {
           <>
             {/* Views Over Time Chart */}
             <ViewsOverTimeChart
-              data={[]} // TODO: Add viewsOverTime data from backend when available
+              data={analyticsData?.viewsOverTime || []}
               loading={analyticsLoading}
               timeRange={timeRangePreset}
             />

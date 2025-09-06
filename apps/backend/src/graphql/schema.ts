@@ -242,6 +242,13 @@ export const typeDefs = gql`
     topCountries: [CountryStats!]!
     topOperatingSystems: [OSStats!]!
     topBrowsers: [BrowserStats!]!
+    viewsOverTime: [ViewsOverTimeData!]!
+  }
+  
+  type ViewsOverTimeData {
+    date: String!
+    views: Int!
+    sessions: Int!
   }
 
   type CountryStats {

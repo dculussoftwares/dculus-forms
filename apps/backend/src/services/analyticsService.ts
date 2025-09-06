@@ -195,6 +195,19 @@ const trackFormView = async (data: AnalyticsData, clientIP?: string): Promise<vo
   }
 };
 
+// Helper function to generate date range for time series
+const generateDateRange = (start: Date, end: Date): string[] => {
+  const dates: string[] = [];
+  const currentDate = new Date(start);
+  
+  while (currentDate <= end) {
+    dates.push(currentDate.toISOString().split('T')[0]); // YYYY-MM-DD format
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  
+  return dates;
+};
+
 // Database query functions
 const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: Date }) => {
   try {
@@ -208,7 +221,7 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
     }
     
     // Parallel execution of database queries for better performance
-    const [totalViews, uniqueSessionsData, countryStats, osStats, browserStats] = await Promise.all([
+    const [totalViews, uniqueSessionsData, countryStats, osStats, browserStats, dailyViews] = await Promise.all([
       prisma.formViewAnalytics.count({ where: whereClause }),
       
       prisma.formViewAnalytics.groupBy({
@@ -238,6 +251,18 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
         _count: { browser: true },
         orderBy: { _count: { browser: 'desc' } },
         take: 10
+      }),
+      
+      // Time-series data: Get all records for daily aggregation
+      prisma.formViewAnalytics.findMany({
+        where: whereClause,
+        select: {
+          viewedAt: true,
+          sessionId: true
+        },
+        orderBy: {
+          viewedAt: 'asc'
+        }
       })
     ]);
 
@@ -261,12 +286,49 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
       percentage: totalViews > 0 ? (stat._count.browser / totalViews) * 100 : 0
     }));
     
+    // Process time-series data: Group by date
+    const timeSeriesMap = new Map<string, { views: number; sessions: Set<string> }>();
+    
+    dailyViews.forEach((record: any) => {
+      const dateKey = record.viewedAt.toISOString().split('T')[0]; // YYYY-MM-DD
+      
+      if (!timeSeriesMap.has(dateKey)) {
+        timeSeriesMap.set(dateKey, { views: 0, sessions: new Set() });
+      }
+      
+      const dayData = timeSeriesMap.get(dateKey)!;
+      dayData.views += 1;
+      dayData.sessions.add(record.sessionId);
+    });
+    
+    // Convert to array format expected by frontend
+    const viewsOverTime = Array.from(timeSeriesMap.entries())
+      .map(([date, data]) => ({
+        date,
+        views: data.views,
+        sessions: data.sessions.size
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+    
+    // Fill in missing dates with zero values if timeRange is specified
+    let filledViewsOverTime = viewsOverTime;
+    if (timeRange && viewsOverTime.length > 0) {
+      const dateRange = generateDateRange(timeRange.start, timeRange.end);
+      const existingDates = new Set(viewsOverTime.map(v => v.date));
+      
+      filledViewsOverTime = dateRange.map(date => {
+        const existingData = viewsOverTime.find(v => v.date === date);
+        return existingData || { date, views: 0, sessions: 0 };
+      });
+    }
+    
     return {
       totalViews,
       uniqueSessions: uniqueSessionsData.length,
       topCountries,
       topOperatingSystems,
-      topBrowsers
+      topBrowsers,
+      viewsOverTime: filledViewsOverTime
     };
   } catch (error) {
     console.error('Error getting form analytics:', error);
