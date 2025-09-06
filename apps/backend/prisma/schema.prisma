@@ -127,6 +127,7 @@ model Form {
   description      String?
   shortUrl         String   @unique
   formSchema       Json
+  settings         Json?
   isPublished      Boolean  @default(false)
   organizationId   String
   createdById      String

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@apollo/client';
 import {
@@ -209,6 +209,21 @@ const FormSettings: React.FC = () => {
     },
   });
 
+  // Initialize settings from GraphQL data
+  useEffect(() => {
+    if (formData?.form?.settings) {
+      const formSettings = formData.form.settings;
+      
+      setSettings(prev => ({
+        ...prev,
+        thankYou: {
+          enabled: formSettings.thankYou?.enabled ?? false,
+          message: formSettings.thankYou?.message ?? 'Thank you! Your response has been submitted.',
+        }
+      }));
+    }
+  }, [formData]);
+
   const [regenerateShortUrl] = useMutation(REGENERATE_SHORT_URL, {
     onCompleted: () => {
       setIsSaving(false);
@@ -270,6 +285,31 @@ const FormSettings: React.FC = () => {
       await regenerateShortUrl({
         variables: {
           id: formId,
+        },
+      });
+    } catch (error) {
+      // Error handled by onError callback
+    }
+  };
+
+  const handleSaveThankYouSettings = async () => {
+    if (!formId) return;
+    
+    setIsSaving(true);
+    setErrors({});
+
+    try {
+      await updateForm({
+        variables: {
+          id: formId,
+          input: {
+            settings: {
+              thankYou: {
+                enabled: settings.thankYou.enabled,
+                message: settings.thankYou.message,
+              }
+            }
+          },
         },
       });
     } catch (error) {
@@ -480,8 +520,13 @@ const FormSettings: React.FC = () => {
         )}
 
         <div className="pt-4">
-          <Button className="bg-green-600 hover:bg-green-700 text-white">
-            Save Thank You Settings
+          <Button 
+            onClick={handleSaveThankYouSettings}
+            disabled={isSaving}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            <Save className="mr-2 h-4 w-4" />
+            {isSaving ? 'Saving...' : 'Save Thank You Settings'}
           </Button>
         </div>
       </CardContent>

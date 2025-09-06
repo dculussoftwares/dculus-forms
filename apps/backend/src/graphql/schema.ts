@@ -35,6 +35,16 @@ export const typeDefs = gql`
     updatedAt: String!
   }
 
+  # Form Settings Types
+  type ThankYouSettings {
+    enabled: Boolean!
+    message: String!
+  }
+
+  type FormSettings {
+    thankYou: ThankYouSettings
+  }
+
   # Form Types
   type Form {
     id: ID!
@@ -42,6 +52,7 @@ export const typeDefs = gql`
     description: String
     shortUrl: String!
     formSchema: JSON
+    settings: FormSettings
     isPublished: Boolean!
     organization: Organization!
     createdBy: User!
@@ -124,9 +135,19 @@ export const typeDefs = gql`
     organizationId: ID!
   }
 
+  input ThankYouSettingsInput {
+    enabled: Boolean!
+    message: String!
+  }
+
+  input FormSettingsInput {
+    thankYou: ThankYouSettingsInput
+  }
+
   input UpdateFormInput {
     title: String
     description: String
+    settings: FormSettingsInput
     isPublished: Boolean
   }
 

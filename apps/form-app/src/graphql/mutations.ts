@@ -50,6 +50,12 @@ export const UPDATE_FORM = gql`
       title
       description
       shortUrl
+      settings {
+        thankYou {
+          enabled
+          message
+        }
+      }
       isPublished
       organization {
         id

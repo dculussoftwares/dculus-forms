@@ -71,6 +71,12 @@ export const GET_FORM_BY_ID = gql`
       shortUrl
       isPublished
       formSchema
+      settings {
+        thankYou {
+          enabled
+          message
+        }
+      }
       organization {
         id
         name

@@ -174,6 +174,7 @@ export const updateForm = async (id: string, formData: Partial<Omit<Form, 'id' |
     if (formData.title) updateData.title = formData.title;
     if (formData.description !== undefined) updateData.description = formData.description;
     if (formData.isPublished !== undefined) updateData.isPublished = formData.isPublished;
+    if (formData.settings !== undefined) updateData.settings = formData.settings;
     
     const updatedForm = await prisma.form.update({
       where: { id },

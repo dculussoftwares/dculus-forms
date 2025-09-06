@@ -57,6 +57,13 @@ export const formsResolvers = {
       const formId = parent.id;
       return await getFormSchemaFromHocuspocus(formId);
     },
+    settings: (parent: any) => {
+      // Parse JSON settings from database or return null if no settings
+      if (parent.settings) {
+        return JSON.parse(typeof parent.settings === 'string' ? parent.settings : JSON.stringify(parent.settings));
+      }
+      return null;
+    },
   },
   Mutation: {
     createForm: async (
