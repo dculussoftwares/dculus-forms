@@ -7,7 +7,8 @@ import {
 } from '../../services/responseService.js';
 import { getFormById } from '../../services/formService.js';
 import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
-import { generateId } from '@dculus/utils';
+import { generateId, substituteMentions, createFieldLabelsMap } from '@dculus/utils';
+import { deserializeFormSchema } from '@dculus/types';
 
 export const responsesResolvers = {
   Query: {
@@ -47,6 +48,28 @@ export const responsesResolvers = {
       if (form?.settings?.thankYou?.enabled && form.settings.thankYou.message) {
         thankYouMessage = form.settings.thankYou.message;
         showCustomThankYou = true;
+        
+        // Apply mention substitution if we have a custom message
+        try {
+          // Create field labels map from form schema for better fallback display
+          let fieldLabels: Record<string, string> = {};
+          
+          if (form.formSchema) {
+            const deserializedSchema = deserializeFormSchema(form.formSchema);
+            fieldLabels = createFieldLabelsMap(deserializedSchema);
+          }
+          
+          // Apply mention substitution to replace field IDs with actual user responses
+          thankYouMessage = substituteMentions(
+            thankYouMessage,
+            input.data, // User responses as field_id: value pairs
+            fieldLabels  // Field labels for fallback display
+          );
+        } catch (error) {
+          // If substitution fails, log error but continue with original message
+          console.error('Failed to apply mention substitution:', error);
+          // thankYouMessage remains the original HTML with mentions
+        }
       }
       
       return {

@@ -15,6 +15,7 @@ import { generateShortUrl } from '@dculus/utils';
 
 export interface Form extends Omit<IForm, 'formSchema'> {
   formSchema: any; // JsonValue from Prisma
+  settings?: any; // JsonValue from Prisma - includes thankYou settings
 }
 
 export type { FormSchema, FormPage, FormField, FormLayout, ThemeType, SpacingType };

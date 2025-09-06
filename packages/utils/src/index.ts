@@ -128,3 +128,6 @@ export function cn(...classes: (string | undefined | null | boolean)[]): string 
 
 // Re-export constants
 export * from './constants.js';
+
+// Re-export mention substitution utilities
+export * from './mentionSubstitution.js';
