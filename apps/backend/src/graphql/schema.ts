@@ -74,6 +74,8 @@ export const typeDefs = gql`
     formId: ID!
     data: JSON!
     submittedAt: String!
+    thankYouMessage: String!
+    showCustomThankYou: Boolean!
   }
 
   # Template Types

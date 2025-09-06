@@ -5,6 +5,7 @@ import {
   submitResponse, 
   deleteResponse 
 } from '../../services/responseService.js';
+import { getFormById } from '../../services/formService.js';
 import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
 import { generateId } from '@dculus/utils';
 
@@ -27,13 +28,32 @@ export const responsesResolvers = {
   },
   Mutation: {
     submitResponse: async (_: any, { input }: { input: any }) => {
+      // Save the response
       const responseData = {
         id: generateId(),
         formId: input.formId,
         data: input.data,
         submittedAt: new Date(),
       };
-      return await submitResponse(responseData);
+      const response = await submitResponse(responseData);
+
+      // Get form with settings to determine thank you message
+      const form = await getFormById(input.formId);
+      
+      // Determine thank you message
+      let thankYouMessage = "Thank you! Your form has been submitted successfully.";
+      let showCustomThankYou = false;
+      
+      if (form?.settings?.thankYou?.enabled && form.settings.thankYou.message) {
+        thankYouMessage = form.settings.thankYou.message;
+        showCustomThankYou = true;
+      }
+      
+      return {
+        ...response,
+        thankYouMessage,
+        showCustomThankYou
+      };
     },
     deleteResponse: async (_: any, { id }: { id: string }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);

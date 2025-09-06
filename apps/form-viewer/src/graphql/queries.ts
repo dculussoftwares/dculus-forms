@@ -8,12 +8,6 @@ export const GET_FORM_BY_SHORT_URL = gql`
       description
       shortUrl
       formSchema
-      settings {
-        thankYou {
-          enabled
-          message
-        }
-      }
       isPublished
       organization {
         id
@@ -38,6 +32,8 @@ export const SUBMIT_RESPONSE = gql`
       formId
       data
       submittedAt
+      thankYouMessage
+      showCustomThankYou
     }
   }
 `;

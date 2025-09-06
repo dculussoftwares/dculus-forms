@@ -12,6 +12,7 @@ const FormViewer: React.FC = () => {
   const cdnEndpoint = import.meta.env?.VITE_CDN_ENDPOINT as string | undefined;
   const [submissionState, setSubmissionState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [submissionMessage, setSubmissionMessage] = useState<string>('');
+  const [thankYouData, setThankYouData] = useState<{message: string; isCustom: boolean} | null>(null);
 
   const { loading, error, data } = useQuery(GET_FORM_BY_SHORT_URL, {
     variables: { shortUrl: shortUrl || '' },
@@ -25,7 +26,7 @@ const FormViewer: React.FC = () => {
     setSubmissionMessage('');
     
     try {
-      await submitResponse({
+      const result = await submitResponse({
         variables: {
           input: {
             formId,
@@ -34,8 +35,13 @@ const FormViewer: React.FC = () => {
         },
       });
       
+      const { thankYouMessage, showCustomThankYou } = result.data.submitResponse;
+      
       setSubmissionState('success');
-      setSubmissionMessage('Thank you! Your form has been submitted successfully.');
+      setThankYouData({
+        message: thankYouMessage,
+        isCustom: showCustomThankYou
+      });
     } catch (err: unknown) {
       console.error('Form submission error:', err);
       setSubmissionState('error');
@@ -115,17 +121,20 @@ const FormViewer: React.FC = () => {
   }
 
   // Show success message after submission
-  if (submissionState === 'success') {
+  if (submissionState === 'success' && thankYouData) {
     return (
       <div className="h-screen w-full flex items-center justify-center">
         <div className="w-full">
           <ThankYouDisplay 
-            settings={form?.settings?.thankYou}
-            fallbackMessage={submissionMessage}
+            message={thankYouData.message}
+            isCustom={thankYouData.isCustom}
           />
           <div className="text-center mt-6">
             <button
-              onClick={() => setSubmissionState('idle')}
+              onClick={() => {
+                setSubmissionState('idle');
+                setThankYouData(null);
+              }}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
             >
               Submit Another Response

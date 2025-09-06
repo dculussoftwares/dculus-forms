@@ -1,24 +1,16 @@
 import React from 'react';
 import { RichTextEditor } from '@dculus/ui';
 
-interface ThankYouSettings {
-  enabled: boolean;
-  message: string;
-}
-
 interface ThankYouDisplayProps {
-  settings?: ThankYouSettings;
-  fallbackMessage?: string;
+  message: string;
+  isCustom: boolean;
 }
 
 const ThankYouDisplay: React.FC<ThankYouDisplayProps> = ({
-  settings,
-  fallbackMessage = 'Thank you! Your form has been submitted successfully.'
+  message,
+  isCustom
 }) => {
-  // Check if custom thank you page is enabled and has a message
-  const shouldUseCustomMessage = settings?.enabled && settings.message;
-
-  if (shouldUseCustomMessage) {
+  if (isCustom) {
     // Display custom rich text message
     return (
       <div className="text-center p-8 max-w-2xl mx-auto">
@@ -40,7 +32,7 @@ const ThankYouDisplay: React.FC<ThankYouDisplayProps> = ({
         
         <div className="mb-6 prose prose-lg max-w-none mx-auto">
           <RichTextEditor
-            value={settings.message}
+            value={message}
             editable={false}
             onChange={() => {}} // No-op since it's read-only
             className="border-none shadow-none"
@@ -70,7 +62,7 @@ const ThankYouDisplay: React.FC<ThankYouDisplayProps> = ({
         </svg>
       </div>
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Success!</h1>
-      <p className="text-gray-600 mb-6">{fallbackMessage}</p>
+      <p className="text-gray-600 mb-6">{message}</p>
     </div>
   );
 };
