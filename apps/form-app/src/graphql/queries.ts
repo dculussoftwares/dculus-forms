@@ -141,3 +141,28 @@ export const GENERATE_FORM_RESPONSE_REPORT = gql`
     }
   }
 `;
+
+export const GET_FORM_ANALYTICS = gql`
+  query GetFormAnalytics($formId: ID!, $timeRange: TimeRangeInput) {
+    formAnalytics(formId: $formId, timeRange: $timeRange) {
+      totalViews
+      uniqueSessions
+      topCountries {
+        code
+        name
+        count
+        percentage
+      }
+      topOperatingSystems {
+        name
+        count
+        percentage
+      }
+      topBrowsers {
+        name
+        count
+        percentage
+      }
+    }
+  }
+`;
