@@ -3,12 +3,6 @@ import { Controller, Control, FieldValues, Path } from 'react-hook-form';
 import { FormField, FieldType, FillableFormField, TextFieldValidation, RichTextFormField } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { LexicalRichTextEditor } from '../rich-text-editor/LexicalRichTextEditor';
-import { RadioGroup, RadioGroupItem } from '../radio-group';
-import { Checkbox } from '../checkbox';
-import { Label } from '../label';
-import { Input } from '../input';
-import { Textarea } from '../textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../select';
 
 interface FieldStyles {
   container: string;
@@ -95,10 +89,10 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
               
               return (
                 <div>
-                  <Input
+                  <input
                     {...inputProps}
                     type="text"
-                    className={hasError ? 'border-red-300 focus-visible:border-red-500 focus-visible:ring-red-500' : ''}
+                    className={getInputClassName(styles.input)}
                     placeholder={fillableField?.placeholder || 'Enter text...'}
                     maxLength={textValidation?.maxLength}
                   />
@@ -125,10 +119,10 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
             case FieldType.EMAIL_FIELD:
               return (
                 <div>
-                  <Input
+                  <input
                     {...inputProps}
                     type="email"
-                    className={hasError ? 'border-red-300 focus-visible:border-red-500 focus-visible:ring-red-500' : ''}
+                    className={getInputClassName(styles.input)}
                     placeholder={fillableField?.placeholder || 'Enter email...'}
                   />
                   {hasError && (
@@ -144,7 +138,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
               const numberValue = controllerField.value ?? '';
               return (
                 <div>
-                  <Input
+                  <input
                     name={controllerField.name}
                     ref={controllerField.ref}
                     onBlur={controllerField.onBlur}
@@ -152,7 +146,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                     type="number"
                     min={numberField.min}
                     max={numberField.max}
-                    className={hasError ? 'border-red-300 focus-visible:border-red-500 focus-visible:ring-red-500' : ''}
+                    className={getInputClassName(styles.input)}
                     placeholder={fillableField?.placeholder || 'Enter number...'}
                     disabled={!isInteractive}
                     onChange={(e) => {
@@ -177,9 +171,9 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
               
               return (
                 <div>
-                  <Textarea
+                  <textarea
                     {...inputProps}
-                    className={hasError ? 'border-red-300 focus-visible:border-red-500 focus-visible:ring-red-500' : ''}
+                    className={getInputClassName(styles.textarea)}
                     placeholder={fillableField?.placeholder || 'Enter message...'}
                     maxLength={textAreaValidation?.maxLength}
                   />
@@ -206,22 +200,14 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
             case FieldType.SELECT_FIELD:
               return (
                 <div>
-                  <Select
-                    value={controllerField.value ?? ''}
-                    onValueChange={controllerField.onChange}
-                    disabled={!isInteractive}
-                  >
-                    <SelectTrigger className={hasError ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}>
-                      <SelectValue placeholder={fillableField?.placeholder || 'Select option...'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(fillableField as any)?.options?.map((option: string, index: number) => (
-                        <SelectItem key={index} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <select {...inputProps} className={getInputClassName(styles.select)}>
+                    <option value="">{fillableField?.placeholder || 'Select option...'}</option>
+                    {(fillableField as any)?.options?.map((option: string, index: number) => (
+                      <option key={index} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
                   {hasError && (
                     <p className="mt-1 text-sm text-red-600" role="alert">
                       {error.message}
@@ -233,28 +219,28 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
             case FieldType.RADIO_FIELD:
               return (
                 <div>
-                  <RadioGroup
-                    value={controllerField.value ?? ''}
-                    onValueChange={controllerField.onChange}
-                    disabled={!isInteractive}
-                    className={hasError ? 'border-l-2 border-red-300 pl-3' : ''}
-                  >
+                  <div className={`space-y-2 ${hasError ? 'border-l-2 border-red-300 pl-3' : ''}`}>
                     {(fillableField as any)?.options?.map((option: string, index: number) => (
-                      <div key={index} className="flex items-center gap-3">
-                        <RadioGroupItem
-                          value={option}
+                      <div key={index} className="flex items-center">
+                        <input
+                          type="radio"
                           id={`${field.id}-${index}`}
-                          className={hasError ? 'border-red-300 text-red-600' : 'border-primary text-primary'}
+                          value={option}
+                          checked={(controllerField.value ?? '') === option}
+                          onChange={(e) => controllerField.onChange(e.target.value)}
+                          className={`w-4 h-4 border-gray-300 focus:ring-2 ${
+                            hasError 
+                              ? 'text-red-600 focus:ring-red-500 border-red-300' 
+                              : 'text-blue-600 focus:ring-blue-500'
+                          }`}
+                          disabled={!isInteractive}
                         />
-                        <Label 
-                          htmlFor={`${field.id}-${index}`} 
-                          className="text-sm font-normal cursor-pointer text-gray-700 dark:text-gray-300"
-                        >
+                        <label htmlFor={`${field.id}-${index}`} className="ml-2 text-sm text-gray-700 dark:text-gray-300">
                           {option}
-                        </Label>
+                        </label>
                       </div>
                     ))}
-                  </RadioGroup>
+                  </div>
                   {hasError && (
                     <p className="mt-1 text-sm text-red-600" role="alert">
                       {error.message}
@@ -267,27 +253,29 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
               const currentValues = controllerField.value ?? [];
               return (
                 <div>
-                  <div className={`grid gap-2 ${hasError ? 'border-l-2 border-red-300 pl-3' : ''}`}>
+                  <div className={`space-y-2 ${hasError ? 'border-l-2 border-red-300 pl-3' : ''}`}>
                     {(fillableField as any)?.options?.map((option: string, index: number) => (
-                      <div key={index} className="flex items-center gap-3">
-                        <Checkbox
+                      <div key={index} className="flex items-center">
+                        <input
+                          type="checkbox"
                           id={`${field.id}-${index}`}
                           checked={currentValues.includes(option)}
-                          onCheckedChange={(checked) => {
-                            const newValues = checked
+                          onChange={(e) => {
+                            const newValues = e.target.checked
                               ? [...currentValues, option]
                               : currentValues.filter((v: string) => v !== option);
                             controllerField.onChange(newValues);
                           }}
+                          className={`w-4 h-4 border-gray-300 rounded focus:ring-2 ${
+                            hasError 
+                              ? 'text-red-600 focus:ring-red-500 border-red-300' 
+                              : 'text-blue-600 focus:ring-blue-500'
+                          }`}
                           disabled={!isInteractive}
-                          className={hasError ? 'border-red-300' : ''}
                         />
-                        <Label 
-                          htmlFor={`${field.id}-${index}`} 
-                          className="text-sm font-normal cursor-pointer text-gray-700 dark:text-gray-300"
-                        >
+                        <label htmlFor={`${field.id}-${index}`} className="ml-2 text-sm text-gray-700 dark:text-gray-300">
                           {option}
-                        </Label>
+                        </label>
                       </div>
                     ))}
                   </div>
@@ -303,12 +291,12 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
               const dateField = field as any;
               return (
                 <div>
-                  <Input
+                  <input
                     {...inputProps}
                     type="date"
                     min={dateField.minDate}
                     max={dateField.maxDate}
-                    className={hasError ? 'border-red-300 focus-visible:border-red-500 focus-visible:ring-red-500' : ''}
+                    className={getInputClassName(styles.input)}
                   />
                   {hasError && (
                     <p className="mt-1 text-sm text-red-600" role="alert">
