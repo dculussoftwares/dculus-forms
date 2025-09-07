@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
-import { Globe, TrendingUp } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, Button } from '@dculus/ui';
+import { Globe, TrendingUp, BarChart3, Map } from 'lucide-react';
 import { CountryStats } from '../../hooks/useFormAnalytics';
+import { WorldMapVisualization } from './WorldMapVisualization';
 
 interface GeographicChartProps {
   data: CountryStats[];
@@ -58,18 +59,37 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent
   );
 };
 
+type ViewType = 'chart' | 'map';
+
 export const GeographicChart: React.FC<GeographicChartProps> = ({
   data,
   totalViews,
   loading = false
 }) => {
+  const [viewType, setViewType] = useState<ViewType>('map');
+  // Show world map if requested
+  if (viewType === 'map') {
+    return (
+      <div className="animate-in fade-in duration-300">
+        <WorldMapVisualization
+          data={data}
+          totalViews={totalViews}
+          loading={loading}
+        />
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center text-base">
-            <Globe className="h-4 w-4 mr-2 text-blue-600" />
-            Geographic Distribution
+          <CardTitle className="flex items-center justify-between text-base">
+            <div className="flex items-center">
+              <Globe className="h-4 w-4 mr-2 text-blue-600" />
+              Geographic Distribution
+            </div>
+            <ViewToggleButtons viewType={viewType} onViewTypeChange={setViewType} />
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -85,9 +105,12 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
     return (
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center text-base">
-            <Globe className="h-4 w-4 mr-2 text-blue-600" />
-            Geographic Distribution
+          <CardTitle className="flex items-center justify-between text-base">
+            <div className="flex items-center">
+              <Globe className="h-4 w-4 mr-2 text-blue-600" />
+              Geographic Distribution
+            </div>
+            <ViewToggleButtons viewType={viewType} onViewTypeChange={setViewType} />
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -126,19 +149,23 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
   const topCountry = data[0];
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center justify-between text-base">
-          <div className="flex items-center">
-            <Globe className="h-4 w-4 mr-2 text-blue-600" />
-            Geographic Distribution
-          </div>
-          <div className="flex items-center text-sm text-green-600">
-            <TrendingUp className="h-3 w-3 mr-1" />
-            {data.length} countries
-          </div>
-        </CardTitle>
-      </CardHeader>
+    <div className="animate-in fade-in duration-300">
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center justify-between text-base">
+            <div className="flex items-center">
+              <Globe className="h-4 w-4 mr-2 text-blue-600" />
+              Geographic Distribution
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center text-sm text-green-600">
+                <TrendingUp className="h-3 w-3 mr-1" />
+                {data.length} countries
+              </div>
+              <ViewToggleButtons viewType={viewType} onViewTypeChange={setViewType} />
+            </div>
+          </CardTitle>
+        </CardHeader>
       <CardContent>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
@@ -212,5 +239,45 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
         </div>
       </CardContent>
     </Card>
+    </div>
+  );
+};
+
+// View toggle buttons component
+interface ViewToggleButtonsProps {
+  viewType: ViewType;
+  onViewTypeChange: (viewType: ViewType) => void;
+}
+
+const ViewToggleButtons: React.FC<ViewToggleButtonsProps> = ({ viewType, onViewTypeChange }) => {
+  return (
+    <div className="flex items-center bg-gray-100 rounded-lg p-1 border shadow-sm">
+      <Button
+        size="sm"
+        variant={viewType === 'map' ? 'default' : 'ghost'}
+        onClick={() => onViewTypeChange('map')}
+        className={`h-8 px-3 text-xs font-medium transition-all duration-200 ${
+          viewType === 'map' 
+            ? 'bg-white shadow-sm text-blue-700 border-0' 
+            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+        }`}
+      >
+        <Map className="h-3 w-3 mr-1.5" />
+        Map View
+      </Button>
+      <Button
+        size="sm"
+        variant={viewType === 'chart' ? 'default' : 'ghost'}
+        onClick={() => onViewTypeChange('chart')}
+        className={`h-8 px-3 text-xs font-medium transition-all duration-200 ${
+          viewType === 'chart' 
+            ? 'bg-white shadow-sm text-blue-700 border-0' 
+            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+        }`}
+      >
+        <BarChart3 className="h-3 w-3 mr-1.5" />
+        Chart View
+      </Button>
+    </div>
   );
 };
