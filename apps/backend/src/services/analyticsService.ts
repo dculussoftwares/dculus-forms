@@ -27,6 +27,10 @@ interface AnalyticsData {
   language?: string;
 }
 
+interface SubmissionAnalyticsData extends AnalyticsData {
+  responseId: string;
+}
+
 interface GeolocationResult {
   countryCode?: string;
   regionCode?: string;
@@ -195,6 +199,38 @@ const trackFormView = async (data: AnalyticsData, clientIP?: string): Promise<vo
   }
 };
 
+const trackFormSubmission = async (data: SubmissionAnalyticsData, clientIP?: string): Promise<void> => {
+  try {
+    const userAgentData = parseUserAgent(data.userAgent);
+    const countryCode = await detectCountryCode(data, clientIP);
+    const analyticsId = generateAnalyticsId();
+
+    await prisma.formSubmissionAnalytics.create({
+      data: {
+        id: analyticsId,
+        formId: data.formId,
+        responseId: data.responseId,
+        sessionId: data.sessionId,
+        userAgent: data.userAgent,
+        operatingSystem: userAgentData.operatingSystem,
+        browser: userAgentData.browser,
+        browserVersion: userAgentData.browserVersion,
+        countryCode,
+        regionCode: null, // TODO: Add region detection
+        city: null,       // TODO: Add city detection
+        timezone: data.timezone,
+        language: data.language,
+        submittedAt: new Date()
+      }
+    });
+    
+    console.log(`Submission analytics tracked for form ${data.formId}, response ${data.responseId}, session ${data.sessionId}, country: ${countryCode || 'unknown'}`);
+  } catch (error) {
+    console.error('Error tracking form submission analytics:', error);
+    // Don't throw error to avoid disrupting form submission
+  }
+};
+
 // Helper function to generate date range for time series
 const generateDateRange = (start: Date, end: Date): string[] => {
   const dates: string[] = [];
@@ -341,10 +377,140 @@ const initializeService = () => {
   console.log('GeoIP service initialized (fallback mode)');
 };
 
+// Database query functions for submission analytics
+const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: Date; end: Date }) => {
+  try {
+    const whereClause: any = { formId };
+    
+    if (timeRange) {
+      whereClause.submittedAt = {
+        gte: timeRange.start,
+        lte: timeRange.end
+      };
+    }
+    
+    // Parallel execution of database queries for better performance
+    const [totalSubmissions, uniqueSessionsData, countryStats, osStats, browserStats, dailySubmissions] = await Promise.all([
+      prisma.formSubmissionAnalytics.count({ where: whereClause }),
+      
+      prisma.formSubmissionAnalytics.groupBy({
+        by: ['sessionId'],
+        where: whereClause
+      }),
+      
+      prisma.formSubmissionAnalytics.groupBy({
+        by: ['countryCode'],
+        where: { ...whereClause, countryCode: { not: null } },
+        _count: { countryCode: true },
+        orderBy: { _count: { countryCode: 'desc' } },
+        take: 10
+      }),
+      
+      prisma.formSubmissionAnalytics.groupBy({
+        by: ['operatingSystem'],
+        where: { ...whereClause, operatingSystem: { not: null } },
+        _count: { operatingSystem: true },
+        orderBy: { _count: { operatingSystem: 'desc' } },
+        take: 10
+      }),
+      
+      prisma.formSubmissionAnalytics.groupBy({
+        by: ['browser'],
+        where: { ...whereClause, browser: { not: null } },
+        _count: { browser: true },
+        orderBy: { _count: { browser: 'desc' } },
+        take: 10
+      }),
+      
+      // Time-series data: Get all records for daily aggregation
+      prisma.formSubmissionAnalytics.findMany({
+        where: whereClause,
+        select: {
+          submittedAt: true,
+          sessionId: true
+        },
+        orderBy: {
+          submittedAt: 'asc'
+        }
+      })
+    ]);
+
+    // Transform data using functional programming principles
+    const topCountries = countryStats.map((stat: any) => ({
+      code: stat.countryCode,
+      name: getCountryNameFromCode(stat.countryCode || ''),
+      count: stat._count.countryCode,
+      percentage: totalSubmissions > 0 ? (stat._count.countryCode / totalSubmissions) * 100 : 0
+    }));
+    
+    const topOperatingSystems = osStats.map((stat: any) => ({
+      name: stat.operatingSystem,
+      count: stat._count.operatingSystem,
+      percentage: totalSubmissions > 0 ? (stat._count.operatingSystem / totalSubmissions) * 100 : 0
+    }));
+    
+    const topBrowsers = browserStats.map((stat: any) => ({
+      name: stat.browser,
+      count: stat._count.browser,
+      percentage: totalSubmissions > 0 ? (stat._count.browser / totalSubmissions) * 100 : 0
+    }));
+    
+    // Process time-series data: Group by date
+    const timeSeriesMap = new Map<string, { submissions: number; sessions: Set<string> }>();
+    
+    dailySubmissions.forEach((record: any) => {
+      const dateKey = record.submittedAt.toISOString().split('T')[0]; // YYYY-MM-DD
+      
+      if (!timeSeriesMap.has(dateKey)) {
+        timeSeriesMap.set(dateKey, { submissions: 0, sessions: new Set() });
+      }
+      
+      const dayData = timeSeriesMap.get(dateKey)!;
+      dayData.submissions += 1;
+      dayData.sessions.add(record.sessionId);
+    });
+    
+    // Convert to array format expected by frontend
+    const submissionsOverTime = Array.from(timeSeriesMap.entries())
+      .map(([date, data]) => ({
+        date,
+        submissions: data.submissions,
+        sessions: data.sessions.size
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+    
+    // Fill in missing dates with zero values if timeRange is specified
+    let filledSubmissionsOverTime = submissionsOverTime;
+    if (timeRange && submissionsOverTime.length > 0) {
+      const dateRange = generateDateRange(timeRange.start, timeRange.end);
+      const existingDates = new Set(submissionsOverTime.map(v => v.date));
+      
+      filledSubmissionsOverTime = dateRange.map(date => {
+        const existingData = submissionsOverTime.find(v => v.date === date);
+        return existingData || { date, submissions: 0, sessions: 0 };
+      });
+    }
+    
+    return {
+      totalSubmissions,
+      uniqueSessions: uniqueSessionsData.length,
+      topCountries,
+      topOperatingSystems,
+      topBrowsers,
+      submissionsOverTime: filledSubmissionsOverTime
+    };
+  } catch (error) {
+    console.error('Error getting form submission analytics:', error);
+    throw new Error('Failed to fetch submission analytics data');
+  }
+};
+
 // Service object using functional composition
 const analyticsService = {
   trackFormView,
+  trackFormSubmission,
   getFormAnalytics,
+  getFormSubmissionAnalytics,
   initialize: initializeService
 };
 

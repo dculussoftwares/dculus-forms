@@ -1,13 +1,15 @@
 import React from 'react';
 import { Card } from '@dculus/ui';
-import { Users, Monitor, Globe, BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
-import { FormAnalyticsData } from '../../hooks/useFormAnalytics';
+import { Users, Monitor, Globe, TrendingUp, TrendingDown, FileCheck, Target } from 'lucide-react';
+import { FormAnalyticsData, FormSubmissionAnalyticsData } from '../../hooks/useFormAnalytics';
 
 interface AnalyticsOverviewProps {
   data: FormAnalyticsData | null;
+  submissionData: FormSubmissionAnalyticsData | null;
   conversionRate: number;
+  submissionConversionRate: number;
   topCountry: any;
-  topBrowser: any;
+  topSubmissionCountry: any;
   loading?: boolean;
 }
 
@@ -89,9 +91,11 @@ const MetricCard: React.FC<MetricCardProps> = ({
 
 export const AnalyticsOverview: React.FC<AnalyticsOverviewProps> = ({
   data,
+  submissionData,
   conversionRate,
+  submissionConversionRate,
   topCountry,
-  topBrowser,
+  topSubmissionCountry,
   loading
 }) => {
   const metrics = [
@@ -105,37 +109,53 @@ export const AnalyticsOverview: React.FC<AnalyticsOverviewProps> = ({
       trend: undefined // TODO: Add trend calculation when we have historical data
     },
     {
-      title: 'Unique Sessions',
-      value: data?.uniqueSessions || 0,
-      subtitle: `${conversionRate}% session rate`,
-      icon: Monitor,
+      title: 'Total Submissions',
+      value: submissionData?.totalSubmissions || 0,
+      subtitle: `${submissionConversionRate}% conversion rate`,
+      icon: FileCheck,
       iconColor: 'text-green-600',
       iconBgColor: 'bg-green-100'
     },
     {
-      title: 'Top Country',
-      value: topCountry?.name || 'Unknown',
-      subtitle: topCountry 
-        ? `${topCountry.count} views (${topCountry.percentage.toFixed(1)}%)`
-        : 'No data available',
-      icon: Globe,
+      title: 'View Sessions',
+      value: data?.uniqueSessions || 0,
+      subtitle: `${conversionRate}% unique view rate`,
+      icon: Monitor,
       iconColor: 'text-purple-600',
       iconBgColor: 'bg-purple-100'
     },
     {
-      title: 'Top Browser',
-      value: topBrowser?.name || 'Unknown',
-      subtitle: topBrowser 
-        ? `${topBrowser.count} views (${topBrowser.percentage.toFixed(1)}%)`
-        : 'No data available',
-      icon: BarChart3,
+      title: 'Submission Sessions',
+      value: submissionData?.uniqueSessions || 0,
+      subtitle: 'Unique submission sessions',
+      icon: Target,
+      iconColor: 'text-indigo-600',
+      iconBgColor: 'bg-indigo-100'
+    },
+    {
+      title: 'Top View Country',
+      value: topCountry?.name || 'Unknown',
+      subtitle: topCountry 
+        ? `${topCountry.count} views (${topCountry.percentage.toFixed(1)}%)`
+        : 'No view data available',
+      icon: Globe,
       iconColor: 'text-orange-600',
       iconBgColor: 'bg-orange-100'
+    },
+    {
+      title: 'Top Submission Country',
+      value: topSubmissionCountry?.name || 'Unknown',
+      subtitle: topSubmissionCountry 
+        ? `${topSubmissionCountry.count} submissions (${topSubmissionCountry.percentage.toFixed(1)}%)`
+        : 'No submission data available',
+      icon: Globe,
+      iconColor: 'text-red-600',
+      iconBgColor: 'bg-red-100'
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
       {metrics.map((metric, index) => (
         <MetricCard
           key={index}

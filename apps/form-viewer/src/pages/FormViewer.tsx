@@ -7,6 +7,7 @@ import { RendererMode } from '@dculus/utils';
 import { GET_FORM_BY_SHORT_URL, SUBMIT_RESPONSE } from '../graphql/queries';
 import ThankYouDisplay from '../components/ThankYouDisplay';
 import { useFormAnalytics } from '../hooks/useFormAnalytics';
+import { useFormSubmissionAnalytics } from '../hooks/useFormSubmissionAnalytics';
 
 const FormViewer: React.FC = () => {
   const { shortUrl } = useParams<{ shortUrl: string }>();
@@ -28,16 +29,32 @@ const FormViewer: React.FC = () => {
     enabled: !!data?.formByShortUrl?.id 
   });
 
+  // Hook for gathering submission analytics data
+  const { getSubmissionAnalyticsData } = useFormSubmissionAnalytics({
+    formId: data?.formByShortUrl?.id || '',
+    enabled: !!data?.formByShortUrl?.id
+  });
+
   const handleFormSubmit = async (formId: string, responses: Record<string, unknown>) => {
     setSubmissionState('submitting');
     setSubmissionMessage('');
     
     try {
+      // Get analytics data for submission tracking
+      const analyticsData = getSubmissionAnalyticsData();
+
       const result = await submitResponse({
         variables: {
           input: {
             formId,
             data: responses,
+            // Include analytics data for submission tracking (optional)
+            ...(analyticsData && {
+              sessionId: analyticsData.sessionId,
+              userAgent: analyticsData.userAgent,
+              timezone: analyticsData.timezone,
+              language: analyticsData.language
+            }),
           },
         },
       });

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@apollo/client';
-import { GET_FORM_ANALYTICS } from '../graphql/queries';
+import { GET_FORM_ANALYTICS, GET_FORM_SUBMISSION_ANALYTICS } from '../graphql/queries';
 import { useAuth } from '../contexts/AuthContext';
 
 export interface TimeRange {
@@ -33,6 +33,12 @@ export interface ViewsOverTimeData {
   sessions: number;
 }
 
+export interface SubmissionsOverTimeData {
+  date: string;
+  submissions: number;
+  sessions: number;
+}
+
 export interface FormAnalyticsData {
   totalViews: number;
   uniqueSessions: number;
@@ -40,6 +46,15 @@ export interface FormAnalyticsData {
   topOperatingSystems: OSStats[];
   topBrowsers: BrowserStats[];
   viewsOverTime: ViewsOverTimeData[];
+}
+
+export interface FormSubmissionAnalyticsData {
+  totalSubmissions: number;
+  uniqueSessions: number;
+  topCountries: CountryStats[];
+  topOperatingSystems: OSStats[];
+  topBrowsers: BrowserStats[];
+  submissionsOverTime: SubmissionsOverTimeData[];
 }
 
 export type TimeRangePreset = '7d' | '30d' | '90d' | 'custom';
@@ -95,7 +110,23 @@ export const useFormAnalytics = ({ formId, initialTimeRange = '30d' }: UseFormAn
     notifyOnNetworkStatusChange: false // Prevent unnecessary re-renders
   });
 
+  const { 
+    data: submissionData, 
+    loading: submissionLoading, 
+    error: submissionError, 
+    refetch: refetchSubmissions 
+  } = useQuery(GET_FORM_SUBMISSION_ANALYTICS, {
+    variables: {
+      formId,
+      timeRange
+    },
+    skip: !formId || !timeRange || !isAuthenticated || authLoading,
+    errorPolicy: 'all',
+    notifyOnNetworkStatusChange: false
+  });
+
   const analyticsData: FormAnalyticsData | null = data?.formAnalytics || null;
+  const submissionAnalyticsData: FormSubmissionAnalyticsData | null = submissionData?.formSubmissionAnalytics || null;
 
   // Helper function to update time range
   const updateTimeRange = (preset: TimeRangePreset, custom?: TimeRange) => {
@@ -110,6 +141,7 @@ export const useFormAnalytics = ({ formId, initialTimeRange = '30d' }: UseFormAn
   // Helper function to refresh data
   const refreshData = () => {
     refetch();
+    refetchSubmissions();
   };
 
   // Calculate additional metrics
@@ -117,15 +149,26 @@ export const useFormAnalytics = ({ formId, initialTimeRange = '30d' }: UseFormAn
     ? (analyticsData.uniqueSessions / analyticsData.totalViews * 100) 
     : 0;
 
+  // Calculate submission conversion rate (submissions / views)
+  const submissionConversionRate = (analyticsData && submissionAnalyticsData)
+    ? (submissionAnalyticsData.totalSubmissions / analyticsData.totalViews * 100)
+    : 0;
+
   const topCountry = analyticsData?.topCountries?.[0];
   const topBrowser = analyticsData?.topBrowsers?.[0];
   const topOS = analyticsData?.topOperatingSystems?.[0];
 
+  // Submission analytics top stats
+  const topSubmissionCountry = submissionAnalyticsData?.topCountries?.[0];
+  const topSubmissionBrowser = submissionAnalyticsData?.topBrowsers?.[0];
+  const topSubmissionOS = submissionAnalyticsData?.topOperatingSystems?.[0];
+
   return {
     // Core data
     analyticsData,
-    loading: loading || authLoading,
-    error,
+    submissionAnalyticsData,
+    loading: loading || authLoading || submissionLoading,
+    error: error || submissionError,
     
     // Time range management
     timeRangePreset,
@@ -137,12 +180,17 @@ export const useFormAnalytics = ({ formId, initialTimeRange = '30d' }: UseFormAn
     
     // Computed metrics
     conversionRate: Number(conversionRate.toFixed(1)),
+    submissionConversionRate: Number(submissionConversionRate.toFixed(1)),
     topCountry,
     topBrowser,
     topOS,
+    topSubmissionCountry,
+    topSubmissionBrowser,
+    topSubmissionOS,
     
     // Status flags
     hasData: isAuthenticated && !!analyticsData && analyticsData.totalViews > 0,
+    hasSubmissionData: isAuthenticated && !!submissionAnalyticsData && submissionAnalyticsData.totalSubmissions > 0,
     isEmpty: isAuthenticated && !!analyticsData && analyticsData.totalViews === 0,
     isAuthenticated
   };

@@ -156,6 +156,11 @@ export const typeDefs = gql`
   input SubmitResponseInput {
     formId: ID!
     data: JSON!
+    # Analytics tracking data (optional for backward compatibility)
+    sessionId: String
+    userAgent: String
+    timezone: String
+    language: String
   }
 
   # Template Input Types
@@ -251,6 +256,21 @@ export const typeDefs = gql`
     sessions: Int!
   }
 
+  type FormSubmissionAnalytics {
+    totalSubmissions: Int!
+    uniqueSessions: Int!
+    topCountries: [CountryStats!]!
+    topOperatingSystems: [OSStats!]!
+    topBrowsers: [BrowserStats!]!
+    submissionsOverTime: [SubmissionsOverTimeData!]!
+  }
+
+  type SubmissionsOverTimeData {
+    date: String!
+    submissions: Int!
+    sessions: Int!
+  }
+
   type CountryStats {
     code: String
     name: String!
@@ -277,6 +297,15 @@ export const typeDefs = gql`
   # Analytics Input Types
   input TrackFormViewInput {
     formId: ID!
+    sessionId: String!
+    userAgent: String!
+    timezone: String
+    language: String
+  }
+
+  input TrackFormSubmissionInput {
+    formId: ID!
+    responseId: ID!
     sessionId: String!
     userAgent: String!
     timezone: String
@@ -318,6 +347,7 @@ export const typeDefs = gql`
 
     # Analytics Queries
     formAnalytics(formId: ID!, timeRange: TimeRangeInput): FormAnalytics!
+    formSubmissionAnalytics(formId: ID!, timeRange: TimeRangeInput): FormSubmissionAnalytics!
 
   }
 
@@ -349,6 +379,7 @@ export const typeDefs = gql`
 
     # Analytics Mutations
     trackFormView(input: TrackFormViewInput!): TrackFormViewResponse!
+    trackFormSubmission(input: TrackFormSubmissionInput!): TrackFormViewResponse!
 
   }
 

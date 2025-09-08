@@ -7,7 +7,9 @@ import { WorldMapVisualization } from './WorldMapVisualization';
 
 interface GeographicChartProps {
   data: CountryStats[];
+  submissionData?: CountryStats[];
   totalViews: number;
+  totalSubmissions?: number;
   loading?: boolean;
 }
 
@@ -22,14 +24,15 @@ const COLORS = [
   '#f97316', // orange-500
 ];
 
-const CustomTooltip = ({ active, payload }: any) => {
+const CustomTooltip = ({ active, payload, dataMode }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
+    const metricLabel = dataMode === 'submissions' ? 'Submissions' : 'Views';
     return (
       <div className="bg-white p-3 border rounded-lg shadow-lg">
         <p className="font-semibold text-gray-900">{data.name}</p>
         <p className="text-sm text-gray-600">
-          Views: {data.count} ({data.percentage.toFixed(1)}%)
+          {metricLabel}: {data.count} ({data.percentage.toFixed(1)}%)
         </p>
       </div>
     );
@@ -60,20 +63,30 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent
 };
 
 type ViewType = 'chart' | 'map';
+type DataMode = 'views' | 'submissions';
 
 export const GeographicChart: React.FC<GeographicChartProps> = ({
   data,
+  submissionData = [],
   totalViews,
+  totalSubmissions = 0,
   loading = false
 }) => {
   const [viewType, setViewType] = useState<ViewType>('map');
+  const [dataMode, setDataMode] = useState<DataMode>('views');
+  // Get current data based on mode
+  const currentData = dataMode === 'submissions' ? submissionData : data;
+  const currentTotal = dataMode === 'submissions' ? totalSubmissions : totalViews;
+
   // Show world map if requested
   if (viewType === 'map') {
     return (
       <div className="animate-in fade-in duration-300">
         <WorldMapVisualization
-          data={data}
-          totalViews={totalViews}
+          data={currentData}
+          submissionData={submissionData}
+          dataMode={dataMode}
+          onDataModeChange={setDataMode}
           loading={loading}
         />
       </div>
@@ -89,7 +102,10 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
               <Globe className="h-4 w-4 mr-2 text-blue-600" />
               Geographic Distribution
             </div>
-            <ViewToggleButtons viewType={viewType} onViewTypeChange={setViewType} />
+            <div className="flex items-center gap-2">
+              <DataModeToggle dataMode={dataMode} onDataModeChange={setDataMode} />
+              <ViewToggleButtons viewType={viewType} onViewTypeChange={setViewType} />
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -101,7 +117,11 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
     );
   }
 
-  if (!data || data.length === 0) {
+  if (!currentData || currentData.length === 0) {
+    const emptyMessage = dataMode === 'submissions' 
+      ? 'Data will appear once visitors submit your form'
+      : 'Data will appear once visitors access your form';
+    
     return (
       <Card>
         <CardHeader className="pb-3">
@@ -110,7 +130,10 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
               <Globe className="h-4 w-4 mr-2 text-blue-600" />
               Geographic Distribution
             </div>
-            <ViewToggleButtons viewType={viewType} onViewTypeChange={setViewType} />
+            <div className="flex items-center gap-2">
+              <DataModeToggle dataMode={dataMode} onDataModeChange={setDataMode} />
+              <ViewToggleButtons viewType={viewType} onViewTypeChange={setViewType} />
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -118,7 +141,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
             <Globe className="h-12 w-12 mb-3 text-gray-300" />
             <p className="text-sm">No geographic data available</p>
             <p className="text-xs text-gray-400 mt-1">
-              Data will appear once visitors access your form
+              {emptyMessage}
             </p>
           </div>
         </CardContent>
@@ -127,15 +150,15 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
   }
 
   // Prepare data for the pie chart
-  const chartData = data.slice(0, 8).map((country, index) => ({
+  const chartData = currentData.slice(0, 8).map((country, index) => ({
     ...country,
     color: COLORS[index % COLORS.length]
   }));
 
   // Calculate "Others" if there are more than 8 countries
-  if (data.length > 8) {
-    const othersCount = data.slice(8).reduce((sum, country) => sum + country.count, 0);
-    const othersPercentage = (othersCount / totalViews) * 100;
+  if (currentData.length > 8) {
+    const othersCount = currentData.slice(8).reduce((sum, country) => sum + country.count, 0);
+    const othersPercentage = (othersCount / currentTotal) * 100;
     
     chartData.push({
       name: 'Others',
@@ -146,7 +169,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
     });
   }
 
-  const topCountry = data[0];
+  const topCountry = currentData[0];
 
   return (
     <div className="animate-in fade-in duration-300">
@@ -160,8 +183,9 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
             <div className="flex items-center gap-3">
               <div className="flex items-center text-sm text-green-600">
                 <TrendingUp className="h-3 w-3 mr-1" />
-                {data.length} countries
+                {currentData.length} countries
               </div>
+              <DataModeToggle dataMode={dataMode} onDataModeChange={setDataMode} />
               <ViewToggleButtons viewType={viewType} onViewTypeChange={setViewType} />
             </div>
           </CardTitle>
@@ -184,7 +208,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<CustomTooltip dataMode={dataMode} />} />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -198,7 +222,9 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
                 <p className="text-lg font-bold text-blue-800">{topCountry.name}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-blue-600">{topCountry.count} views</p>
+                <p className="text-sm text-blue-600">
+                  {topCountry.count} {dataMode === 'submissions' ? 'submissions' : 'views'}
+                </p>
                 <p className="text-lg font-bold text-blue-800">
                   {topCountry.percentage.toFixed(1)}%
                 </p>
@@ -209,7 +235,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
         
         {/* Countries List */}
         <div className="mt-4 space-y-2">
-          {data.slice(0, 5).map((country, index) => (
+          {currentData.slice(0, 5).map((country, index) => (
             <div key={country.code || country.name} className="flex items-center justify-between py-1">
               <div className="flex items-center">
                 <div 
@@ -229,10 +255,10 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
             </div>
           ))}
           
-          {data.length > 5 && (
+          {currentData.length > 5 && (
             <div className="pt-2 border-t">
               <p className="text-xs text-gray-500 text-center">
-                +{data.length - 5} more countries
+                +{currentData.length - 5} more countries
               </p>
             </div>
           )}
@@ -277,6 +303,43 @@ const ViewToggleButtons: React.FC<ViewToggleButtonsProps> = ({ viewType, onViewT
       >
         <BarChart3 className="h-3 w-3 mr-1.5" />
         Chart View
+      </Button>
+    </div>
+  );
+};
+
+// Data mode toggle component
+interface DataModeToggleProps {
+  dataMode: DataMode;
+  onDataModeChange: (mode: DataMode) => void;
+}
+
+const DataModeToggle: React.FC<DataModeToggleProps> = ({ dataMode, onDataModeChange }) => {
+  return (
+    <div className="flex items-center bg-gray-100 rounded-lg p-1 border shadow-sm">
+      <Button
+        size="sm"
+        variant={dataMode === 'views' ? 'default' : 'ghost'}
+        onClick={() => onDataModeChange('views')}
+        className={`h-8 px-3 text-xs font-medium transition-all duration-200 ${
+          dataMode === 'views' 
+            ? 'bg-white shadow-sm text-blue-700 border-0' 
+            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+        }`}
+      >
+        Views
+      </Button>
+      <Button
+        size="sm"
+        variant={dataMode === 'submissions' ? 'default' : 'ghost'}
+        onClick={() => onDataModeChange('submissions')}
+        className={`h-8 px-3 text-xs font-medium transition-all duration-200 ${
+          dataMode === 'submissions' 
+            ? 'bg-white shadow-sm text-orange-700 border-0' 
+            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+        }`}
+      >
+        Submissions
       </Button>
     </div>
   );

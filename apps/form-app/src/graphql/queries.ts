@@ -171,3 +171,33 @@ export const GET_FORM_ANALYTICS = gql`
     }
   }
 `;
+
+export const GET_FORM_SUBMISSION_ANALYTICS = gql`
+  query GetFormSubmissionAnalytics($formId: ID!, $timeRange: TimeRangeInput) {
+    formSubmissionAnalytics(formId: $formId, timeRange: $timeRange) {
+      totalSubmissions
+      uniqueSessions
+      topCountries {
+        code
+        name
+        count
+        percentage
+      }
+      topOperatingSystems {
+        name
+        count
+        percentage
+      }
+      topBrowsers {
+        name
+        count
+        percentage
+      }
+      submissionsOverTime {
+        date
+        submissions
+        sessions
+      }
+    }
+  }
+`;

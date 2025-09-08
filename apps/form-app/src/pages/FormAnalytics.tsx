@@ -26,6 +26,7 @@ const FormAnalytics: React.FC = () => {
 
   const {
     analyticsData,
+    submissionAnalyticsData,
     loading: analyticsLoading,
     error: analyticsError,
     timeRangePreset,
@@ -33,8 +34,9 @@ const FormAnalytics: React.FC = () => {
     updateTimeRange,
     refreshData,
     conversionRate,
+    submissionConversionRate,
     topCountry,
-    topBrowser,
+    topSubmissionCountry,
     hasData,
     isEmpty,
     isAuthenticated
@@ -138,9 +140,11 @@ const FormAnalytics: React.FC = () => {
         {/* Overview Cards */}
         <AnalyticsOverview
           data={analyticsData}
+          submissionData={submissionAnalyticsData}
           conversionRate={conversionRate}
+          submissionConversionRate={submissionConversionRate}
           topCountry={topCountry}
-          topBrowser={topBrowser}
+          topSubmissionCountry={topSubmissionCountry}
           loading={analyticsLoading}
         />
 
@@ -213,9 +217,10 @@ const FormAnalytics: React.FC = () => {
 
         {!analyticsError && isAuthenticated && hasData && (
           <>
-            {/* Views Over Time Chart */}
+            {/* Views & Submissions Over Time Chart */}
             <ViewsOverTimeChart
               data={analyticsData?.viewsOverTime || []}
+              submissionData={submissionAnalyticsData?.submissionsOverTime || []}
               loading={analyticsLoading}
               timeRange={timeRangePreset}
             />
@@ -223,7 +228,9 @@ const FormAnalytics: React.FC = () => {
             {/* Geographic Distribution */}
             <GeographicChart
               data={analyticsData?.topCountries || []}
+              submissionData={submissionAnalyticsData?.topCountries || []}
               totalViews={analyticsData?.totalViews || 0}
+              totalSubmissions={submissionAnalyticsData?.totalSubmissions || 0}
               loading={analyticsLoading}
             />
 
@@ -231,6 +238,8 @@ const FormAnalytics: React.FC = () => {
             <BrowserOSCharts
               osData={analyticsData?.topOperatingSystems || []}
               browserData={analyticsData?.topBrowsers || []}
+              osSubmissionData={submissionAnalyticsData?.topOperatingSystems || []}
+              browserSubmissionData={submissionAnalyticsData?.topBrowsers || []}
               loading={analyticsLoading}
             />
           </>

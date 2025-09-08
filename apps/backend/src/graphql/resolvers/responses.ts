@@ -9,6 +9,7 @@ import { getFormById } from '../../services/formService.js';
 import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
 import { generateId, substituteMentions, createFieldLabelsMap } from '@dculus/utils';
 import { deserializeFormSchema } from '@dculus/types';
+import { analyticsService } from '../../services/analyticsService.js';
 
 export const responsesResolvers = {
   Query: {
@@ -28,7 +29,7 @@ export const responsesResolvers = {
     },
   },
   Mutation: {
-    submitResponse: async (_: any, { input }: { input: any }) => {
+    submitResponse: async (_: any, { input }: { input: any }, context: any) => {
       // Save the response
       const responseData = {
         id: generateId(),
@@ -37,6 +38,32 @@ export const responsesResolvers = {
         submittedAt: new Date(),
       };
       const response = await submitResponse(responseData);
+
+      // Track submission analytics if analytics data is provided
+      if (input.sessionId && input.userAgent) {
+        try {
+          // Get client IP from request
+          const clientIP = context.req?.ip || 
+                          context.req?.connection?.remoteAddress || 
+                          context.req?.socket?.remoteAddress || 
+                          (context.req?.headers?.['x-forwarded-for'] as string)?.split(',')[0];
+
+          // Track the submission analytics
+          await analyticsService.trackFormSubmission({
+            formId: input.formId,
+            responseId: response.id,
+            sessionId: input.sessionId,
+            userAgent: input.userAgent,
+            timezone: input.timezone,
+            language: input.language
+          }, clientIP);
+
+          console.log(`Submission analytics tracked for form ${input.formId}, response ${response.id}`);
+        } catch (error) {
+          // Log error but don't fail the response submission
+          console.error('Error tracking submission analytics:', error);
+        }
+      }
 
       // Get form with settings to determine thank you message
       const form = await getFormById(input.formId);
