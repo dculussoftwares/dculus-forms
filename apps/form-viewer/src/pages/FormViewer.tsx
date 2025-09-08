@@ -15,6 +15,7 @@ const FormViewer: React.FC = () => {
   const [submissionState, setSubmissionState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [submissionMessage, setSubmissionMessage] = useState<string>('');
   const [thankYouData, setThankYouData] = useState<{message: string; isCustom: boolean} | null>(null);
+  const [hasStartedForm, setHasStartedForm] = useState<boolean>(false);
 
   const { loading, error, data } = useQuery(GET_FORM_BY_SHORT_URL, {
     variables: { shortUrl: shortUrl || '' },
@@ -24,7 +25,7 @@ const FormViewer: React.FC = () => {
   const [submitResponse] = useMutation(SUBMIT_RESPONSE);
 
   // Track form analytics when form is loaded
-  useFormAnalytics({ 
+  const { trackFormStartTime } = useFormAnalytics({ 
     formId: data?.formByShortUrl?.id || '', 
     enabled: !!data?.formByShortUrl?.id 
   });
@@ -35,6 +36,14 @@ const FormViewer: React.FC = () => {
     enabled: !!data?.formByShortUrl?.id
   });
 
+  // Handle first form interaction to track start time
+  const handleFirstFormInteraction = () => {
+    if (!hasStartedForm) {
+      setHasStartedForm(true);
+      trackFormStartTime();
+    }
+  };
+
   const handleFormSubmit = async (formId: string, responses: Record<string, unknown>) => {
     setSubmissionState('submitting');
     setSubmissionMessage('');
@@ -42,6 +51,23 @@ const FormViewer: React.FC = () => {
     try {
       // Get analytics data for submission tracking
       const analyticsData = getSubmissionAnalyticsData();
+      
+      // Calculate completion time if we have form start time
+      let completionTimeSeconds = null;
+      if (analyticsData) {
+        const startTimeKey = `form_start_time_${analyticsData.sessionId}_${formId}`;
+        const startTimeStr = localStorage.getItem(startTimeKey);
+        if (startTimeStr) {
+          const startTime = new Date(startTimeStr);
+          const endTime = new Date();
+          completionTimeSeconds = Math.round((endTime.getTime() - startTime.getTime()) / 1000);
+          
+          // Clean up the stored start time
+          localStorage.removeItem(startTimeKey);
+          
+          console.log('Form completion time calculated:', { completionTimeSeconds });
+        }
+      }
 
       const result = await submitResponse({
         variables: {
@@ -53,7 +79,8 @@ const FormViewer: React.FC = () => {
               sessionId: analyticsData.sessionId,
               userAgent: analyticsData.userAgent,
               timezone: analyticsData.timezone,
-              language: analyticsData.language
+              language: analyticsData.language,
+              ...(completionTimeSeconds && { completionTimeSeconds })
             }),
           },
         },
@@ -206,6 +233,7 @@ const FormViewer: React.FC = () => {
         className="h-full w-full"
         formId={form.id}
         onFormSubmit={handleFormSubmit}
+        onResponseChange={handleFirstFormInteraction}
       />
       
       {/* Loading overlay during submission */}

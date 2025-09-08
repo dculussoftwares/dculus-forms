@@ -52,6 +52,39 @@ export const analyticsResolvers = {
       }
     },
 
+    updateFormStartTime: async (_: any, { input }: { input: UpdateFormStartTimeInput }) => {
+      try {
+        // Verify form exists and is published
+        const form = await prisma.form.findUnique({
+          where: { id: input.formId },
+          select: { id: true, isPublished: true }
+        });
+        
+        if (!form) {
+          throw new GraphQLError('Form not found');
+        }
+        
+        if (!form.isPublished) {
+          throw new GraphQLError('Form is not published');
+        }
+
+        await analyticsService.updateFormStartTime({
+          formId: input.formId,
+          sessionId: input.sessionId,
+          startedAt: input.startedAt
+        });
+
+        return {
+          success: true
+        };
+      } catch (error) {
+        console.error('Error in updateFormStartTime mutation:', error);
+        return {
+          success: false
+        };
+      }
+    },
+
     trackFormSubmission: async (_: any, { input }: { input: TrackFormSubmissionInput }, context: any) => {
       try {
         // Get client IP from request
@@ -95,7 +128,8 @@ export const analyticsResolvers = {
           sessionId: input.sessionId,
           userAgent: input.userAgent,
           timezone: input.timezone,
-          language: input.language
+          language: input.language,
+          completionTimeSeconds: input.completionTimeSeconds
         }, clientIP);
         
         return {
@@ -236,6 +270,12 @@ export interface TrackFormViewInput {
   language?: string;
 }
 
+export interface UpdateFormStartTimeInput {
+  formId: string;
+  sessionId: string;
+  startedAt: string;
+}
+
 export interface TrackFormSubmissionInput {
   formId: string;
   responseId: string;
@@ -243,6 +283,7 @@ export interface TrackFormSubmissionInput {
   userAgent: string;
   timezone?: string;
   language?: string;
+  completionTimeSeconds?: number;
 }
 
 export interface TimeRangeInput {

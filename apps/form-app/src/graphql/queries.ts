@@ -177,6 +177,13 @@ export const GET_FORM_SUBMISSION_ANALYTICS = gql`
     formSubmissionAnalytics(formId: $formId, timeRange: $timeRange) {
       totalSubmissions
       uniqueSessions
+      averageCompletionTime
+      completionTimePercentiles {
+        p50
+        p75
+        p90
+        p95
+      }
       topCountries {
         code
         name
@@ -197,6 +204,13 @@ export const GET_FORM_SUBMISSION_ANALYTICS = gql`
         date
         submissions
         sessions
+      }
+      completionTimeDistribution {
+        label
+        minSeconds
+        maxSeconds
+        count
+        percentage
       }
     }
   }

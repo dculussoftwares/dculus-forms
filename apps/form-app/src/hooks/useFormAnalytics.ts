@@ -48,13 +48,31 @@ export interface FormAnalyticsData {
   viewsOverTime: ViewsOverTimeData[];
 }
 
+export interface CompletionTimePercentiles {
+  p50: number | null;
+  p75: number | null;
+  p90: number | null;
+  p95: number | null;
+}
+
+export interface CompletionTimeRange {
+  label: string;
+  minSeconds: number;
+  maxSeconds: number | null;
+  count: number;
+  percentage: number;
+}
+
 export interface FormSubmissionAnalyticsData {
   totalSubmissions: number;
   uniqueSessions: number;
+  averageCompletionTime: number | null;
+  completionTimePercentiles: CompletionTimePercentiles | null;
   topCountries: CountryStats[];
   topOperatingSystems: OSStats[];
   topBrowsers: BrowserStats[];
   submissionsOverTime: SubmissionsOverTimeData[];
+  completionTimeDistribution: CompletionTimeRange[];
 }
 
 export type TimeRangePreset = '7d' | '30d' | '90d' | 'custom';

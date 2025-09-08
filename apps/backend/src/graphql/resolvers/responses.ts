@@ -55,7 +55,8 @@ export const responsesResolvers = {
             sessionId: input.sessionId,
             userAgent: input.userAgent,
             timezone: input.timezone,
-            language: input.language
+            language: input.language,
+            completionTimeSeconds: input.completionTimeSeconds
           }, clientIP);
 
           console.log(`Submission analytics tracked for form ${input.formId}, response ${response.id}`);

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card } from '@dculus/ui';
-import { Users, Monitor, Globe, TrendingUp, TrendingDown, FileCheck, Target } from 'lucide-react';
+import { Users, Monitor, Globe, TrendingUp, TrendingDown, FileCheck, Target, Clock } from 'lucide-react';
 import { FormAnalyticsData, FormSubmissionAnalyticsData } from '../../hooks/useFormAnalytics';
 
 interface AnalyticsOverviewProps {
@@ -26,6 +26,23 @@ interface MetricCardProps {
   };
   loading?: boolean;
 }
+
+// Helper function to format completion time from seconds to human-readable format
+const formatCompletionTime = (seconds: number | null): string => {
+  if (!seconds || seconds <= 0) return 'N/A';
+  
+  if (seconds < 60) {
+    return `${Math.round(seconds)}s`;
+  } else if (seconds < 3600) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.round(seconds % 60);
+    return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
+  } else {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.round((seconds % 3600) / 60);
+    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+  }
+};
 
 const MetricCard: React.FC<MetricCardProps> = ({
   title,
@@ -151,11 +168,21 @@ export const AnalyticsOverview: React.FC<AnalyticsOverviewProps> = ({
       icon: Globe,
       iconColor: 'text-red-600',
       iconBgColor: 'bg-red-100'
+    },
+    {
+      title: 'Avg Completion Time',
+      value: formatCompletionTime(submissionData?.averageCompletionTime || null),
+      subtitle: submissionData?.averageCompletionTime 
+        ? 'Time to complete form'
+        : 'No completion data available',
+      icon: Clock,
+      iconColor: 'text-cyan-600',
+      iconBgColor: 'bg-cyan-100'
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-6">
       {metrics.map((metric, index) => (
         <MetricCard
           key={index}

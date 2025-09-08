@@ -11,6 +11,8 @@ import { AnalyticsOverview } from '../components/Analytics/AnalyticsOverview';
 import { GeographicChart } from '../components/Analytics/GeographicChart';
 import { BrowserOSCharts } from '../components/Analytics/BrowserOSCharts';
 import { ViewsOverTimeChart } from '../components/Analytics/ViewsOverTimeChart';
+import { CompletionTimeChart } from '../components/Analytics/CompletionTimeChart';
+import { CompletionTimePercentiles } from '../components/Analytics/CompletionTimePercentiles';
 
 const FormAnalytics: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
@@ -238,6 +240,19 @@ const FormAnalytics: React.FC = () => {
                 submissionAnalyticsData?.topOperatingSystems || []
               }
               browserSubmissionData={submissionAnalyticsData?.topBrowsers || []}
+              loading={analyticsLoading}
+            />
+
+            {/* Completion Time Statistics */}
+            <CompletionTimePercentiles
+              data={submissionAnalyticsData?.completionTimePercentiles || null}
+              averageTime={submissionAnalyticsData?.averageCompletionTime || null}
+              loading={analyticsLoading}
+            />
+
+            {/* Completion Time Distribution */}
+            <CompletionTimeChart
+              data={submissionAnalyticsData?.completionTimeDistribution || []}
               loading={analyticsLoading}
             />
           </>

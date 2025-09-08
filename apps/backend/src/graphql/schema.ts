@@ -161,6 +161,7 @@ export const typeDefs = gql`
     userAgent: String
     timezone: String
     language: String
+    completionTimeSeconds: Int # Time taken to complete form in seconds
   }
 
   # Template Input Types
@@ -259,16 +260,34 @@ export const typeDefs = gql`
   type FormSubmissionAnalytics {
     totalSubmissions: Int!
     uniqueSessions: Int!
+    averageCompletionTime: Float # Average completion time in seconds
+    completionTimePercentiles: CompletionTimePercentiles
     topCountries: [CountryStats!]!
     topOperatingSystems: [OSStats!]!
     topBrowsers: [BrowserStats!]!
     submissionsOverTime: [SubmissionsOverTimeData!]!
+    completionTimeDistribution: [CompletionTimeRange!]!
   }
 
   type SubmissionsOverTimeData {
     date: String!
     submissions: Int!
     sessions: Int!
+  }
+
+  type CompletionTimePercentiles {
+    p50: Float # Median completion time in seconds
+    p75: Float # 75th percentile in seconds
+    p90: Float # 90th percentile in seconds
+    p95: Float # 95th percentile in seconds
+  }
+
+  type CompletionTimeRange {
+    label: String! # e.g., "0-30 seconds", "1-2 minutes"
+    minSeconds: Int!
+    maxSeconds: Int
+    count: Int!
+    percentage: Float!
   }
 
   type CountryStats {
@@ -303,6 +322,12 @@ export const typeDefs = gql`
     language: String
   }
 
+  input UpdateFormStartTimeInput {
+    formId: ID!
+    sessionId: String!
+    startedAt: String! # ISO 8601 timestamp when user started interacting with form
+  }
+
   input TrackFormSubmissionInput {
     formId: ID!
     responseId: ID!
@@ -310,6 +335,7 @@ export const typeDefs = gql`
     userAgent: String!
     timezone: String
     language: String
+    completionTimeSeconds: Int # Time taken to complete form in seconds
   }
 
   input TimeRangeInput {
@@ -379,6 +405,7 @@ export const typeDefs = gql`
 
     # Analytics Mutations
     trackFormView(input: TrackFormViewInput!): TrackFormViewResponse!
+    updateFormStartTime(input: UpdateFormStartTimeInput!): TrackFormViewResponse!
     trackFormSubmission(input: TrackFormSubmissionInput!): TrackFormViewResponse!
 
   }

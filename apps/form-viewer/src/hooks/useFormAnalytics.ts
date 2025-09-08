@@ -9,6 +9,14 @@ const TRACK_FORM_VIEW = gql`
   }
 `;
 
+const UPDATE_FORM_START_TIME = gql`
+  mutation UpdateFormStartTime($input: UpdateFormStartTimeInput!) {
+    updateFormStartTime(input: $input) {
+      success
+    }
+  }
+`;
+
 interface UseFormAnalyticsOptions {
   formId: string;
   enabled?: boolean;
@@ -17,6 +25,10 @@ interface UseFormAnalyticsOptions {
 export const useFormAnalytics = ({ formId, enabled = true }: UseFormAnalyticsOptions) => {
   const [trackFormView] = useMutation(TRACK_FORM_VIEW, {
     errorPolicy: 'ignore' // Don't fail form viewing if analytics fails
+  });
+
+  const [updateFormStartTime] = useMutation(UPDATE_FORM_START_TIME, {
+    errorPolicy: 'ignore' // Don't fail form interaction if analytics fails
   });
 
   const generateSessionId = useCallback(() => {
@@ -69,6 +81,36 @@ export const useFormAnalytics = ({ formId, enabled = true }: UseFormAnalyticsOpt
     }
   }, [formId, enabled, generateSessionId, trackFormView]);
 
+  const trackFormStartTime = useCallback(async () => {
+    if (!enabled || !formId) {
+      return;
+    }
+
+    try {
+      const sessionId = generateSessionId();
+      const startedAt = new Date().toISOString();
+
+      // Store start time locally for completion time calculation
+      localStorage.setItem(`form_start_time_${sessionId}_${formId}`, startedAt);
+
+      // Update form start time on server
+      await updateFormStartTime({
+        variables: {
+          input: {
+            formId,
+            sessionId,
+            startedAt
+          }
+        }
+      });
+
+      console.log('Form start time tracked successfully', { formId, sessionId, startedAt });
+    } catch (error) {
+      // Silently handle analytics errors to not disrupt form interaction
+      console.warn('Form start time tracking failed:', error);
+    }
+  }, [formId, enabled, generateSessionId, updateFormStartTime]);
+
   useEffect(() => {
     if (enabled && formId) {
       // Track the view when the hook is first used
@@ -77,6 +119,7 @@ export const useFormAnalytics = ({ formId, enabled = true }: UseFormAnalyticsOpt
   }, [trackView, enabled, formId]);
 
   return {
-    trackView
+    trackView,
+    trackFormStartTime
   };
 };

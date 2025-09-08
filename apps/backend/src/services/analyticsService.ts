@@ -29,6 +29,13 @@ interface AnalyticsData {
 
 interface SubmissionAnalyticsData extends AnalyticsData {
   responseId: string;
+  completionTimeSeconds?: number;
+}
+
+interface UpdateFormStartTimeData {
+  formId: string;
+  sessionId: string;
+  startedAt: string; // ISO 8601 timestamp
 }
 
 interface GeolocationResult {
@@ -199,6 +206,27 @@ const trackFormView = async (data: AnalyticsData, clientIP?: string): Promise<vo
   }
 };
 
+// Update form start time when user first interacts with form
+const updateFormStartTime = async (data: UpdateFormStartTimeData): Promise<void> => {
+  try {
+    await prisma.formViewAnalytics.updateMany({
+      where: {
+        formId: data.formId,
+        sessionId: data.sessionId,
+        startedAt: null // Only update if not already set
+      },
+      data: {
+        startedAt: new Date(data.startedAt)
+      }
+    });
+    
+    console.log(`Form start time updated for form ${data.formId}, session ${data.sessionId}`);
+  } catch (error) {
+    console.error('Error updating form start time:', error);
+    // Don't throw error to avoid disrupting form interaction
+  }
+};
+
 const trackFormSubmission = async (data: SubmissionAnalyticsData, clientIP?: string): Promise<void> => {
   try {
     const userAgentData = parseUserAgent(data.userAgent);
@@ -220,7 +248,8 @@ const trackFormSubmission = async (data: SubmissionAnalyticsData, clientIP?: str
         city: null,       // TODO: Add city detection
         timezone: data.timezone,
         language: data.language,
-        submittedAt: new Date()
+        submittedAt: new Date(),
+        completionTimeSeconds: data.completionTimeSeconds
       }
     });
     
@@ -242,6 +271,55 @@ const generateDateRange = (start: Date, end: Date): string[] => {
   }
   
   return dates;
+};
+
+// Helper function to calculate completion time percentiles
+const calculatePercentiles = (values: number[]) => {
+  if (values.length === 0) return { p50: null, p75: null, p90: null, p95: null };
+  
+  const sorted = values.sort((a, b) => a - b);
+  const len = sorted.length;
+  
+  const getPercentile = (p: number) => {
+    const index = Math.ceil((p / 100) * len) - 1;
+    return sorted[Math.max(0, Math.min(index, len - 1))];
+  };
+  
+  return {
+    p50: getPercentile(50),
+    p75: getPercentile(75),
+    p90: getPercentile(90),
+    p95: getPercentile(95)
+  };
+};
+
+// Helper function to create completion time distribution ranges
+const createCompletionTimeDistribution = (completionTimes: number[]) => {
+  const ranges = [
+    { label: '0-30 seconds', minSeconds: 0, maxSeconds: 30 },
+    { label: '31-60 seconds', minSeconds: 31, maxSeconds: 60 },
+    { label: '1-2 minutes', minSeconds: 61, maxSeconds: 120 },
+    { label: '2-5 minutes', minSeconds: 121, maxSeconds: 300 },
+    { label: '5-10 minutes', minSeconds: 301, maxSeconds: 600 },
+    { label: '10+ minutes', minSeconds: 601, maxSeconds: null }
+  ];
+  
+  const total = completionTimes.length;
+  
+  return ranges.map(range => {
+    const count = completionTimes.filter(time => {
+      if (range.maxSeconds === null) {
+        return time >= range.minSeconds;
+      }
+      return time >= range.minSeconds && time <= range.maxSeconds;
+    }).length;
+    
+    return {
+      ...range,
+      count,
+      percentage: total > 0 ? (count / total) * 100 : 0
+    };
+  }).filter(range => range.count > 0); // Only return ranges with data
 };
 
 // Database query functions
@@ -390,7 +468,7 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
     }
     
     // Parallel execution of database queries for better performance
-    const [totalSubmissions, uniqueSessionsData, countryStats, osStats, browserStats, dailySubmissions] = await Promise.all([
+    const [totalSubmissions, uniqueSessionsData, countryStats, osStats, browserStats, dailySubmissions, completionTimeData] = await Promise.all([
       prisma.formSubmissionAnalytics.count({ where: whereClause }),
       
       prisma.formSubmissionAnalytics.groupBy({
@@ -431,6 +509,17 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
         },
         orderBy: {
           submittedAt: 'asc'
+        }
+      }),
+      
+      // Completion time data: Get all completion times for statistical analysis
+      prisma.formSubmissionAnalytics.findMany({
+        where: { 
+          ...whereClause, 
+          completionTimeSeconds: { not: null } 
+        },
+        select: {
+          completionTimeSeconds: true
         }
       })
     ]);
@@ -491,13 +580,28 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
       });
     }
     
+    // Process completion time data
+    const completionTimes = completionTimeData
+      .map((record: any) => record.completionTimeSeconds)
+      .filter((time: number) => time != null && time > 0);
+    
+    const averageCompletionTime = completionTimes.length > 0 
+      ? completionTimes.reduce((sum: number, time: number) => sum + time, 0) / completionTimes.length 
+      : null;
+    
+    const completionTimePercentiles = calculatePercentiles(completionTimes);
+    const completionTimeDistribution = createCompletionTimeDistribution(completionTimes);
+    
     return {
       totalSubmissions,
       uniqueSessions: uniqueSessionsData.length,
+      averageCompletionTime,
+      completionTimePercentiles,
       topCountries,
       topOperatingSystems,
       topBrowsers,
-      submissionsOverTime: filledSubmissionsOverTime
+      submissionsOverTime: filledSubmissionsOverTime,
+      completionTimeDistribution
     };
   } catch (error) {
     console.error('Error getting form submission analytics:', error);
@@ -508,6 +612,7 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
 // Service object using functional composition
 const analyticsService = {
   trackFormView,
+  updateFormStartTime,
   trackFormSubmission,
   getFormAnalytics,
   getFormSubmissionAnalytics,
