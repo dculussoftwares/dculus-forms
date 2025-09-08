@@ -107,7 +107,8 @@ export const useFormAnalytics = ({ formId, initialTimeRange = '30d' }: UseFormAn
     },
     skip: !formId || !timeRange || !isAuthenticated || authLoading,
     errorPolicy: 'all',
-    notifyOnNetworkStatusChange: false // Prevent unnecessary re-renders
+    fetchPolicy: 'cache-and-network',
+    notifyOnNetworkStatusChange: true
   });
 
   const { 
@@ -122,7 +123,8 @@ export const useFormAnalytics = ({ formId, initialTimeRange = '30d' }: UseFormAn
     },
     skip: !formId || !timeRange || !isAuthenticated || authLoading,
     errorPolicy: 'all',
-    notifyOnNetworkStatusChange: false
+    fetchPolicy: 'cache-and-network',
+    notifyOnNetworkStatusChange: true
   });
 
   const analyticsData: FormAnalyticsData | null = data?.formAnalytics || null;
@@ -139,9 +141,26 @@ export const useFormAnalytics = ({ formId, initialTimeRange = '30d' }: UseFormAn
   };
 
   // Helper function to refresh data
-  const refreshData = () => {
-    refetch();
-    refetchSubmissions();
+  const refreshData = async () => {
+    console.log('Refreshing analytics data...', { formId, timeRange });
+    try {
+      const [analyticsResult, submissionResult] = await Promise.all([
+        refetch({
+          formId,
+          timeRange
+        }),
+        refetchSubmissions({
+          formId,
+          timeRange
+        })
+      ]);
+      console.log('Analytics data refreshed successfully', { 
+        analytics: analyticsResult.data, 
+        submissions: submissionResult.data 
+      });
+    } catch (error) {
+      console.error('Error refreshing analytics data:', error);
+    }
   };
 
   // Calculate additional metrics
