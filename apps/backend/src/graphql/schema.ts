@@ -297,6 +297,232 @@ export const typeDefs = gql`
     percentage: Float!
   }
 
+  # Field Analytics Types
+  type FieldAnalytics {
+    fieldId: ID!
+    fieldType: String!
+    fieldLabel: String!
+    totalResponses: Int!
+    responseRate: Float!
+    lastUpdated: String!
+    
+    # Text field analytics
+    textAnalytics: TextFieldAnalytics
+    
+    # Number field analytics
+    numberAnalytics: NumberFieldAnalytics
+    
+    # Selection field analytics (Select/Radio)
+    selectionAnalytics: SelectionFieldAnalytics
+    
+    # Checkbox field analytics
+    checkboxAnalytics: CheckboxFieldAnalytics
+    
+    # Date field analytics
+    dateAnalytics: DateFieldAnalytics
+    
+    # Email field analytics
+    emailAnalytics: EmailFieldAnalytics
+  }
+
+  type TextFieldAnalytics {
+    averageLength: Float!
+    minLength: Int!
+    maxLength: Int!
+    wordCloud: [WordCloudEntry!]!
+    lengthDistribution: [LengthDistribution!]!
+    commonPhrases: [PhraseEntry!]!
+    recentResponses: [TextResponse!]!
+  }
+
+  type WordCloudEntry {
+    word: String!
+    count: Int!
+    weight: Float!
+  }
+
+  type LengthDistribution {
+    range: String!
+    count: Int!
+  }
+
+  type PhraseEntry {
+    phrase: String!
+    count: Int!
+  }
+
+  type TextResponse {
+    value: String!
+    submittedAt: String!
+    responseId: ID!
+  }
+
+  type NumberFieldAnalytics {
+    min: Float!
+    max: Float!
+    average: Float!
+    median: Float!
+    standardDeviation: Float!
+    distribution: [NumberDistribution!]!
+    trend: [NumberTrend!]!
+    percentiles: NumberPercentiles!
+  }
+
+  type NumberDistribution {
+    range: String!
+    count: Int!
+    percentage: Float!
+  }
+
+  type NumberTrend {
+    date: String!
+    average: Float!
+    count: Int!
+  }
+
+  type NumberPercentiles {
+    p25: Float!
+    p50: Float!
+    p75: Float!
+    p90: Float!
+    p95: Float!
+  }
+
+  type SelectionFieldAnalytics {
+    options: [OptionStats!]!
+    trend: [SelectionTrend!]!
+    topOption: String!
+    responseDistribution: String!
+  }
+
+  type OptionStats {
+    option: String!
+    count: Int!
+    percentage: Float!
+  }
+
+  type SelectionTrend {
+    date: String!
+    options: [OptionCount!]!
+  }
+
+  type OptionCount {
+    option: String!
+    count: Int!
+  }
+
+  type CheckboxFieldAnalytics {
+    individualOptions: [OptionStats!]!
+    combinations: [CombinationStats!]!
+    averageSelections: Float!
+    selectionDistribution: [SelectionCountDistribution!]!
+    correlations: [OptionCorrelation!]!
+  }
+
+  type CombinationStats {
+    combination: [String!]!
+    count: Int!
+    percentage: Float!
+  }
+
+  type SelectionCountDistribution {
+    selectionCount: Int!
+    responseCount: Int!
+    percentage: Float!
+  }
+
+  type OptionCorrelation {
+    option1: String!
+    option2: String!
+    correlation: Float!
+  }
+
+  type DateFieldAnalytics {
+    earliestDate: String!
+    latestDate: String!
+    mostCommonDate: String!
+    dateDistribution: [DateDistribution!]!
+    weekdayDistribution: [WeekdayDistribution!]!
+    monthlyDistribution: [MonthlyDistribution!]!
+    seasonalPatterns: [SeasonalPattern!]!
+  }
+
+  type DateDistribution {
+    date: String!
+    count: Int!
+  }
+
+  type WeekdayDistribution {
+    weekday: String!
+    count: Int!
+    percentage: Float!
+  }
+
+  type MonthlyDistribution {
+    month: String!
+    count: Int!
+    percentage: Float!
+  }
+
+  type SeasonalPattern {
+    season: String!
+    count: Int!
+    percentage: Float!
+  }
+
+  type EmailFieldAnalytics {
+    validEmails: Int!
+    invalidEmails: Int!
+    validationRate: Float!
+    domains: [DomainStats!]!
+    topLevelDomains: [TLDStats!]!
+    corporateVsPersonal: CorporatePersonalBreakdown!
+    popularProviders: [ProviderStats!]!
+  }
+
+  type DomainStats {
+    domain: String!
+    count: Int!
+    percentage: Float!
+  }
+
+  type TLDStats {
+    tld: String!
+    count: Int!
+    percentage: Float!
+  }
+
+  type CorporatePersonalBreakdown {
+    corporate: Int!
+    personal: Int!
+    unknown: Int!
+  }
+
+  type ProviderStats {
+    provider: String!
+    count: Int!
+    percentage: Float!
+  }
+
+  type AllFieldsAnalytics {
+    formId: ID!
+    totalResponses: Int!
+    fields: [FieldAnalytics!]!
+  }
+
+  type FieldAnalyticsCacheStats {
+    totalEntries: Int!
+    expiredEntries: Int!
+    totalMemoryUsage: Int!
+    memoryUsageFormatted: String!
+    hitRatio: Int!
+  }
+
+  type CacheInvalidationResponse {
+    success: Boolean!
+    message: String!
+  }
+
   type OSStats {
     name: String!
     count: Int!
@@ -374,6 +600,11 @@ export const typeDefs = gql`
     # Analytics Queries
     formAnalytics(formId: ID!, timeRange: TimeRangeInput): FormAnalytics!
     formSubmissionAnalytics(formId: ID!, timeRange: TimeRangeInput): FormSubmissionAnalytics!
+    
+    # Field Analytics Queries
+    fieldAnalytics(formId: ID!, fieldId: ID!): FieldAnalytics!
+    allFieldsAnalytics(formId: ID!): AllFieldsAnalytics!
+    fieldAnalyticsCacheStats: FieldAnalyticsCacheStats!
 
   }
 
@@ -407,6 +638,9 @@ export const typeDefs = gql`
     trackFormView(input: TrackFormViewInput!): TrackFormViewResponse!
     updateFormStartTime(input: UpdateFormStartTimeInput!): TrackFormViewResponse!
     trackFormSubmission(input: TrackFormSubmissionInput!): TrackFormViewResponse!
+    
+    # Field Analytics Cache Mutations
+    invalidateFieldAnalyticsCache(formId: ID!): CacheInvalidationResponse!
 
   }
 

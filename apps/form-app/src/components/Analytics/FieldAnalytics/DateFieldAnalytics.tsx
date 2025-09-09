@@ -1,0 +1,561 @@
+import React, { useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
+import { StatCard, EnhancedBarChart, EnhancedLineChart, CHART_COLORS } from './BaseChartComponents';
+import { DateFieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
+import { Calendar, Clock, TrendingUp, Sunrise, Snowflake, Flower, Sun, Leaf } from 'lucide-react';
+import { MetricHelper, METRIC_HELPERS } from './MetricHelper';
+
+interface DateFieldAnalyticsProps {
+  data: DateFieldAnalyticsData;
+  fieldLabel: string;
+  totalResponses: number;
+  loading?: boolean;
+}
+
+// Calendar Heatmap Component
+const CalendarHeatmap: React.FC<{
+  dateDistribution: Array<{ date: string; count: number }>;
+  loading?: boolean;
+}> = ({ dateDistribution, loading }) => {
+  const heatmapData = useMemo(() => {
+    if (!dateDistribution || dateDistribution.length === 0) return { months: [], maxCount: 0 };
+
+    const counts = new Map<string, number>();
+    let maxCount = 0;
+
+    dateDistribution.forEach(item => {
+      counts.set(item.date, item.count);
+      maxCount = Math.max(maxCount, item.count);
+    });
+
+    // Group dates by month for display
+    const monthsMap = new Map<string, Array<{ date: string; count: number; day: number }>>();
+    
+    dateDistribution.forEach(item => {
+      const date = new Date(item.date);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!monthsMap.has(monthKey)) {
+        monthsMap.set(monthKey, []);
+      }
+      
+      monthsMap.get(monthKey)!.push({
+        date: item.date,
+        count: item.count,
+        day: date.getDate()
+      });
+    });
+
+    const months = Array.from(monthsMap.entries())
+      .map(([monthKey, days]) => ({
+        month: monthKey,
+        monthName: new Date(monthKey + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+        days: days.sort((a, b) => a.day - b.day)
+      }))
+      .sort((a, b) => a.month.localeCompare(b.month));
+
+    return { months, maxCount };
+  }, [dateDistribution]);
+
+  const getIntensityColor = (count: number, maxCount: number) => {
+    if (maxCount === 0) return 'bg-gray-100';
+    const intensity = count / maxCount;
+    if (intensity === 0) return 'bg-gray-100';
+    if (intensity <= 0.25) return 'bg-blue-200';
+    if (intensity <= 0.5) return 'bg-blue-400';
+    if (intensity <= 0.75) return 'bg-blue-600';
+    return 'bg-blue-800';
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Date Selection Calendar</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="animate-pulse">
+            <div className="h-64 bg-gray-200 rounded"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!dateDistribution || dateDistribution.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Date Selection Calendar</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center text-gray-500 py-8">
+            No date data available
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Date Selection Calendar</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-6">
+          {heatmapData.months.map(month => (
+            <div key={month.month} className="space-y-2">
+              <h4 className="font-medium text-gray-900">{month.monthName}</h4>
+              <div className="grid grid-cols-7 gap-1">
+                {/* Day headers */}
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                  <div key={index} className="text-xs text-gray-500 text-center p-1">
+                    {day}
+                  </div>
+                ))}
+                
+                {/* Calendar days */}
+                {month.days.map(dayData => {
+                  const date = new Date(dayData.date);
+                  const dayOfWeek = date.getDay();
+                  const intensity = getIntensityColor(dayData.count, heatmapData.maxCount);
+                  
+                  return (
+                    <div
+                      key={dayData.date}
+                      className={`h-8 w-8 ${intensity} rounded flex items-center justify-center text-xs text-white font-medium cursor-pointer hover:ring-2 hover:ring-blue-300 transition-all`}
+                      title={`${date.toLocaleDateString()}: ${dayData.count} selections`}
+                      style={{ gridColumn: dayOfWeek + 1 }}
+                    >
+                      {dayData.day}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        <div className="mt-6 flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            Intensity scale (selections per day)
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-500">Less</span>
+            <div className="flex gap-1">
+              {['bg-gray-100', 'bg-blue-200', 'bg-blue-400', 'bg-blue-600', 'bg-blue-800'].map((color, index) => (
+                <div key={index} className={`w-3 h-3 ${color} rounded`} />
+              ))}
+            </div>
+            <span className="text-xs text-gray-500">More</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Seasonal Analysis Component
+const SeasonalAnalysis: React.FC<{
+  seasonalPatterns: Array<{ season: string; count: number; percentage: number }>;
+  loading?: boolean;
+}> = ({ seasonalPatterns, loading }) => {
+  const getSeasonIcon = (season: string) => {
+    switch (season.toLowerCase()) {
+      case 'spring': return <Flower className="h-6 w-6 text-green-500" />;
+      case 'summer': return <Sun className="h-6 w-6 text-yellow-500" />;
+      case 'fall': case 'autumn': return <Leaf className="h-6 w-6 text-orange-500" />;
+      case 'winter': return <Snowflake className="h-6 w-6 text-blue-500" />;
+      default: return <Calendar className="h-6 w-6 text-gray-500" />;
+    }
+  };
+
+  const getSeasonColor = (season: string) => {
+    switch (season.toLowerCase()) {
+      case 'spring': return 'bg-green-100 border-green-300';
+      case 'summer': return 'bg-yellow-100 border-yellow-300';
+      case 'fall': case 'autumn': return 'bg-orange-100 border-orange-300';
+      case 'winter': return 'bg-blue-100 border-blue-300';
+      default: return 'bg-gray-100 border-gray-300';
+    }
+  };
+
+  if (loading || !seasonalPatterns || seasonalPatterns.length === 0) {
+    return null;
+  }
+
+  const totalSeasonalResponses = seasonalPatterns.reduce((sum, season) => sum + season.count, 0);
+  const topSeason = seasonalPatterns.reduce((max, season) => 
+    season.count > max.count ? season : max, seasonalPatterns[0]);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Seasonal Patterns</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {seasonalPatterns.map((season, index) => {
+            const isTopSeason = season.season === topSeason.season;
+            return (
+              <div 
+                key={season.season}
+                className={`border-2 rounded-lg p-4 transition-all ${
+                  isTopSeason ? 'border-blue-400 bg-blue-50' : getSeasonColor(season.season)
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    {getSeasonIcon(season.season)}
+                    <span className="font-medium text-gray-900">{season.season}</span>
+                  </div>
+                  {isTopSeason && (
+                    <div className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
+                      Peak
+                    </div>
+                  )}
+                </div>
+                <div className="text-2xl font-bold text-gray-900 mb-1">
+                  {season.percentage.toFixed(1)}%
+                </div>
+                <div className="text-sm text-gray-600">
+                  {season.count} selections
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all duration-500 ${
+                      isTopSeason ? 'bg-blue-500' : 
+                      season.season.toLowerCase() === 'spring' ? 'bg-green-500' :
+                      season.season.toLowerCase() === 'summer' ? 'bg-yellow-500' :
+                      season.season.toLowerCase() === 'fall' ? 'bg-orange-500' :
+                      'bg-blue-400'
+                    }`}
+                    style={{ width: `${season.percentage}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        
+        <div className="p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp className="h-4 w-4 text-blue-600" />
+            <span className="font-medium text-gray-900">Seasonal Insights</span>
+          </div>
+          <div className="text-sm text-gray-700 space-y-1">
+            <p>• <strong>{topSeason.season}</strong> is the most popular season with {topSeason.percentage.toFixed(1)}% of selections</p>
+            <p>• Total seasonal data covers {totalSeasonalResponses} dated responses</p>
+            {seasonalPatterns.length === 4 && (
+              <p>• Distribution: {
+                Math.max(...seasonalPatterns.map(s => s.percentage)) - 
+                Math.min(...seasonalPatterns.map(s => s.percentage)) < 15 ? 
+                'Even across seasons' : 'Some seasonal preferences'
+              }</p>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Date Range Analysis
+const DateRangeAnalysis: React.FC<{
+  earliestDate: string;
+  latestDate: string;
+  mostCommonDate: string;
+  totalResponses: number;
+}> = ({ earliestDate, latestDate, mostCommonDate, totalResponses }) => {
+  const dateRange = useMemo(() => {
+    const earliest = new Date(earliestDate);
+    const latest = new Date(latestDate);
+    const common = new Date(mostCommonDate);
+    
+    const daysDifference = Math.ceil((latest.getTime() - earliest.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return {
+      earliest: earliest.toLocaleDateString('en-US', { 
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+      }),
+      latest: latest.toLocaleDateString('en-US', { 
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+      }),
+      common: common.toLocaleDateString('en-US', { 
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+      }),
+      daysDifference
+    };
+  }, [earliestDate, latestDate, mostCommonDate]);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Date Range Overview</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <Calendar className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+              <div className="text-sm font-medium text-gray-600 mb-1">Earliest Date</div>
+              <div className="text-sm text-gray-900">{dateRange.earliest}</div>
+            </div>
+            
+            <div className="text-center p-4 bg-green-50 rounded-lg">
+              <Sunrise className="h-8 w-8 mx-auto mb-2 text-green-600" />
+              <div className="text-sm font-medium text-gray-600 mb-1">Most Common</div>
+              <div className="text-sm text-gray-900">{dateRange.common}</div>
+            </div>
+            
+            <div className="text-center p-4 bg-purple-50 rounded-lg">
+              <Clock className="h-8 w-8 mx-auto mb-2 text-purple-600" />
+              <div className="text-sm font-medium text-gray-600 mb-1">Latest Date</div>
+              <div className="text-sm text-gray-900">{dateRange.latest}</div>
+            </div>
+          </div>
+          
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">Date Range Span:</span>
+              <span className="font-medium text-gray-900">
+                {dateRange.daysDifference} days
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-sm mt-2">
+              <span className="text-gray-600">Total Date Responses:</span>
+              <span className="font-medium text-gray-900">{totalResponses}</span>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
+  data,
+  fieldLabel,
+  totalResponses,
+  loading
+}) => {
+  const weekdayChartData = useMemo(() => {
+    if (!data?.weekdayDistribution) return [];
+    const weekdayOrder = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return weekdayOrder.map(weekday => {
+      const found = data.weekdayDistribution.find(item => item.weekday === weekday);
+      return {
+        name: weekday.substring(0, 3), // Mon, Tue, etc.
+        value: found ? found.count : 0,
+        percentage: found ? found.percentage : 0,
+        fullName: weekday
+      };
+    });
+  }, [data?.weekdayDistribution]);
+
+  const monthlyChartData = useMemo(() => {
+    if (!data?.monthlyDistribution) return [];
+    const monthOrder = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return monthOrder.map(month => {
+      const found = data.monthlyDistribution.find(item => item.month === month);
+      return {
+        name: month.substring(0, 3), // Jan, Feb, etc.
+        value: found ? found.count : 0,
+        percentage: found ? found.percentage : 0,
+        fullName: month
+      };
+    });
+  }, [data?.monthlyDistribution]);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <StatCard 
+              key={i}
+              title="Loading..." 
+              value="--" 
+              loading={true} 
+            />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="animate-pulse h-96 bg-gray-200 rounded"></div>
+          <div className="animate-pulse h-96 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data || !data.dateDistribution || data.dateDistribution.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-500">
+        <div className="text-center">
+          <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+          <p className="text-lg font-medium">No date data available</p>
+          <p className="text-sm">This date field hasn't received any responses yet.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const totalDateResponses = data.dateDistribution.reduce((sum, item) => sum + item.count, 0);
+  const dateRange = Math.ceil(
+    (new Date(data.latestDate).getTime() - new Date(data.earliestDate).getTime()) / (1000 * 60 * 60 * 24)
+  );
+  const mostPopularWeekday = data.weekdayDistribution.reduce((max, day) => 
+    day.count > max.count ? day : max, data.weekdayDistribution[0]);
+  const mostPopularMonth = data.monthlyDistribution.reduce((max, month) => 
+    month.count > max.count ? month : max, data.monthlyDistribution[0]);
+
+  return (
+    <div className="space-y-6">
+      {/* Key Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Total Responses"
+          value={totalDateResponses}
+          subtitle="Date selections made"
+          icon={<Calendar className="h-5 w-5" />}
+        />
+        <StatCard
+          title="Date Range"
+          value={`${dateRange} days`}
+          subtitle="From earliest to latest"
+          icon={<Clock className="h-5 w-5" />}
+        />
+        <StatCard
+          title="Popular Day"
+          value={mostPopularWeekday.weekday}
+          subtitle={`${mostPopularWeekday.percentage.toFixed(1)}% of selections`}
+          icon={<Sunrise className="h-5 w-5" />}
+        />
+        <StatCard
+          title="Popular Month"
+          value={mostPopularMonth.month.substring(0, 3)}
+          subtitle={`${mostPopularMonth.count} selections`}
+          icon={<TrendingUp className="h-5 w-5" />}
+        />
+      </div>
+
+      {/* Date Range Overview */}
+      <DateRangeAnalysis
+        earliestDate={data.earliestDate}
+        latestDate={data.latestDate}
+        mostCommonDate={data.mostCommonDate}
+        totalResponses={totalDateResponses}
+      />
+
+      {/* Calendar Heatmap */}
+      <div className="space-y-4">
+        <MetricHelper {...METRIC_HELPERS.DATE_DISTRIBUTION} compact />
+        <CalendarHeatmap dateDistribution={data.dateDistribution} />
+      </div>
+
+      {/* Weekday and Monthly Analysis */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <MetricHelper {...METRIC_HELPERS.WEEKDAY_PATTERNS} compact />
+          <EnhancedBarChart
+            data={weekdayChartData}
+            title="Day of Week Distribution"
+            yAxisLabel="Number of Selections"
+            colorPalette={[CHART_COLORS.primary[1]]}
+            height={300}
+          />
+        </div>
+        <div className="space-y-4">
+          <MetricHelper {...METRIC_HELPERS.MONTHLY_TRENDS} compact />
+          <EnhancedBarChart
+            data={monthlyChartData}
+            title="Monthly Distribution"
+            yAxisLabel="Number of Selections"
+            colorPalette={[CHART_COLORS.primary[2]]}
+            height={300}
+          />
+        </div>
+      </div>
+
+      {/* Seasonal Analysis */}
+      <div className="space-y-4">
+        <MetricHelper {...METRIC_HELPERS.SEASONAL_ANALYSIS} compact />
+        <SeasonalAnalysis seasonalPatterns={data.seasonalPatterns} />
+      </div>
+
+      {/* Summary Statistics */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Date Analysis Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
+            <div className="space-y-2">
+              <h4 className="font-medium text-gray-900">Time Range</h4>
+              <div className="space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Span:</span>
+                  <span className="font-medium">{dateRange} days</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Earliest:</span>
+                  <span className="font-medium">{new Date(data.earliestDate).toLocaleDateString()}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="font-medium text-gray-900">Popular Periods</h4>
+              <div className="space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Weekday:</span>
+                  <span className="font-medium">{mostPopularWeekday.weekday}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Month:</span>
+                  <span className="font-medium">{mostPopularMonth.month}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="font-medium text-gray-900">Response Patterns</h4>
+              <div className="space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total dates:</span>
+                  <span className="font-medium">{data.dateDistribution.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Unique dates:</span>
+                  <span className="font-medium">{data.dateDistribution.filter(d => d.count > 0).length}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="font-medium text-gray-900">Data Quality</h4>
+              <div className="space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Response rate:</span>
+                  <span className="font-medium">
+                    {totalResponses > 0 ? ((totalDateResponses / totalResponses) * 100).toFixed(1) : '0'}%
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Distribution:</span>
+                  <span className="font-medium">
+                    {data.seasonalPatterns.length === 4 ? 'All seasons' : 'Partial'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
