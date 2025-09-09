@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, Button } from '@dculus/ui';
+import React, { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Card, CardContent, Button } from '@dculus/ui';
 import { useFieldAnalyticsManager, FieldAnalyticsData, useFieldAnalyticsCache } from '../../../hooks/useFieldAnalytics';
 import { usePerformanceMonitor, useMemoryTracker } from '../../../hooks/usePerformanceMonitor';
 import { TextFieldAnalytics } from './TextFieldAnalytics';
@@ -25,6 +26,7 @@ import {
 
 interface FieldAnalyticsViewerProps {
   formId: string;
+  initialSelectedFieldId?: string | null;
 }
 
 // Field Type Icons
@@ -296,8 +298,14 @@ const AnalyticsContent: React.FC<{
 };
 
 // Main Component
-export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ formId }) => {
-  const [view, setView] = useState<'grid' | 'analytics'>('grid');
+export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ formId, initialSelectedFieldId }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Get selected field from URL parameters
+  const selectedFieldIdFromUrl = searchParams.get('field') || null;
+  
+  // Determine view based on whether a field is selected
+  const view = selectedFieldIdFromUrl ? 'analytics' : 'grid';
   
   const {
     allFields,
@@ -313,6 +321,24 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
     refreshAll,
     loading
   } = useFieldAnalyticsManager(formId);
+  
+  // Initialize URL parameter if initialSelectedFieldId is provided
+  useEffect(() => {
+    if (initialSelectedFieldId && !selectedFieldIdFromUrl) {
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.set('field', initialSelectedFieldId);
+      setSearchParams(newSearchParams);
+    }
+  }, [initialSelectedFieldId, selectedFieldIdFromUrl, searchParams, setSearchParams]);
+
+  // Sync URL field selection with the analytics manager
+  useEffect(() => {
+    if (selectedFieldIdFromUrl && selectedFieldIdFromUrl !== selectedFieldId) {
+      selectField(selectedFieldIdFromUrl);
+    } else if (!selectedFieldIdFromUrl && selectedFieldId) {
+      clearSelection();
+    }
+  }, [selectedFieldIdFromUrl, selectedFieldId, selectField, clearSelection]);
   
   const { invalidateFormCache } = useFieldAnalyticsCache();
 
@@ -363,13 +389,17 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
   };
 
   const handleFieldSelect = (fieldId: string) => {
-    selectField(fieldId);
-    setView('analytics');
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('field', fieldId);
+    setSearchParams(newSearchParams);
+    // The selectField will be triggered by the useEffect hook
   };
 
   const handleBackToGrid = () => {
-    clearSelection();
-    setView('grid');
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.delete('field');
+    setSearchParams(newSearchParams);
+    // The clearSelection will be triggered by the useEffect hook
   };
 
   if (allFieldsLoading) {
@@ -555,7 +585,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
           {/* Field Selection Grid */}
           <FieldSelectionGrid
             fields={allFields}
-            selectedFieldId={selectedFieldId}
+            selectedFieldId={selectedFieldIdFromUrl}
             onFieldSelect={handleFieldSelect}
             totalFormResponses={totalResponses}
           />

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { Button, Card, LoadingSpinner } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
@@ -17,7 +17,13 @@ import { FieldAnalyticsViewer } from '../components/Analytics/FieldAnalytics/Fie
 
 const FormAnalytics: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
-  const [activeTab, setActiveTab] = useState<'overview' | 'fields'>('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Get tab from URL, default to 'overview'
+  const activeTab = (searchParams.get('tab') as 'overview' | 'fields') || 'overview';
+  
+  // Get selected field from URL for field analytics
+  const selectedFieldId = searchParams.get('field') || null;
 
   const { data, loading, error } = useQuery(GET_FORM_BY_ID, {
     variables: { id: formId },
@@ -87,6 +93,16 @@ const FormAnalytics: React.FC = () => {
   }
 
   const form = data.form;
+
+  const setActiveTab = (tab: 'overview' | 'fields') => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('tab', tab);
+    // Clear field selection when switching to overview tab
+    if (tab === 'overview') {
+      newSearchParams.delete('field');
+    }
+    setSearchParams(newSearchParams);
+  };
 
   const handleViewForm = () => {
     const formViewerUrl = `http://localhost:5173/f/${form.shortUrl}`;
@@ -309,7 +325,10 @@ const FormAnalytics: React.FC = () => {
             )}
           </>
         ) : (
-          <FieldAnalyticsViewer formId={formId || ''} />
+          <FieldAnalyticsViewer 
+            formId={formId || ''} 
+            initialSelectedFieldId={selectedFieldId}
+          />
         )}
       </div>
     </MainLayout>
