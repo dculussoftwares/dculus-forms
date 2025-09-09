@@ -984,35 +984,8 @@ export const getFieldAnalytics = async (
 /**
  * Get form schema from collaborative document if main schema is empty
  */
-const getFormSchemaFromCollaborative = async (formId: string): Promise<any> => {
-  try {
-    // Query the collaborative_document collection directly
-    const result = await prisma.$runCommandRaw({
-      find: 'collaborative_document',
-      filter: { _id: `collab-${formId}` }
-    });
-
-    if (result.cursor.firstBatch.length === 0) {
-      return null;
-    }
-
-    const doc = result.cursor.firstBatch[0];
-    
-    // For now, we can't easily decode YJS binary data in Node.js without additional libraries
-    // But we can check if the document exists and has data
-    if (doc.state && doc.state.$binary) {
-      console.log(`Found collaborative document for form ${formId}, but YJS binary decoding not implemented yet`);
-      // TODO: Implement YJS binary state decoding to extract form schema
-      // This would require importing YJS and decoding the binary state
-      return null;
-    }
-    
-    return null;
-  } catch (error) {
-    console.error(`Error fetching collaborative document for form ${formId}:`, error);
-    return null;
-  }
-};
+// Import the working YJS schema decoder from Hocuspocus service
+import { getFormSchemaFromHocuspocus } from './hocuspocus.js';
 
 /**
  * Get analytics for all fields in a form (with caching and optimizations)
@@ -1045,17 +1018,19 @@ export const getAllFieldsAnalytics = async (formId: string): Promise<{
     throw new Error(`Form not found: ${formId}`);
   }
 
-  let formSchema = form.formSchema as any;
+  // Always try to get schema from YJS collaborative document first
+  console.log(`🔍 Attempting to get form schema from YJS collaborative document for form ${formId}...`);
+  let formSchema = await getFormSchemaFromHocuspocus(formId);
   
-  // If the form schema is empty, try to get it from collaborative document
-  if (!formSchema || Object.keys(formSchema).length === 0) {
-    console.log(`Form ${formId} has empty schema, checking collaborative document...`);
-    const collaborativeSchema = await getFormSchemaFromCollaborative(formId);
-    if (collaborativeSchema) {
-      formSchema = collaborativeSchema;
-    } else {
-      // For now, return empty result with a helpful message
-      console.log(`No schema found in collaborative document for form ${formId}. This form may not have been edited yet.`);
+  if (formSchema) {
+    console.log(`✅ Successfully retrieved form schema from YJS collaborative document for form ${formId}`);
+  } else {
+    // Fallback to database schema if YJS document doesn't exist
+    console.log(`❌ No YJS collaborative document found, falling back to database schema for form ${formId}`);
+    formSchema = form.formSchema as any;
+    
+    if (!formSchema || Object.keys(formSchema).length === 0) {
+      console.log(`❌ Database schema is also empty for form ${formId}`);
       return {
         formId,
         totalResponses: 0,
@@ -1076,10 +1051,12 @@ export const getAllFieldsAnalytics = async (formId: string): Promise<{
         page.fields.forEach((field: any) => {
           // Only process fillable fields
           if (field.type !== FieldType.RICH_TEXT_FIELD && field.type !== FieldType.FORM_FIELD) {
+            const fieldLabel = field.label || `Field ${field.id}`;
+            console.log(`🏷️ Processing field: ${field.id} - Type: ${field.type} - Label: "${fieldLabel}"`);
             allFields.push({
               id: field.id,
               type: field.type,
-              label: field.label || `Field ${field.id}`,
+              label: fieldLabel,
             });
           }
         });

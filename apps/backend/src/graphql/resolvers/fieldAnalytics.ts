@@ -8,6 +8,7 @@ import {
   type FieldAnalytics 
 } from '../../services/fieldAnalyticsService.js';
 import { prisma } from '../../lib/prisma.js';
+import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 
 /**
  * Check if user has access to the form (optimized query)
@@ -44,12 +45,22 @@ const checkFormAccess = async (formId: string, userId: string, includeSchema: bo
  * Get field info from form schema
  */
 const getFieldInfo = (formSchema: any, fieldId: string): { type: FieldType; label: string } | null => {
+  console.log('🔍 Looking for field info:', { fieldId, hasPages: !!formSchema.pages });
+  
   if (!formSchema.pages) return null;
 
   for (const page of formSchema.pages) {
     if (page.fields) {
+      console.log('🔍 Checking page fields:', page.fields.map((f: any) => ({ id: f.id, type: f.type, hasLabel: !!f.label, label: f.label })));
       const field = page.fields.find((f: any) => f.id === fieldId);
       if (field) {
+        console.log('✅ Found field:', { 
+          fieldId, 
+          type: field.type, 
+          label: field.label,
+          hasLabel: !!field.label,
+          fullFieldObject: field
+        });
         return {
           type: field.type as FieldType,
           label: field.label || `Field ${fieldId}`
@@ -58,6 +69,7 @@ const getFieldInfo = (formSchema: any, fieldId: string): { type: FieldType; labe
     }
   }
 
+  console.log('❌ Field not found:', fieldId);
   return null;
 };
 
@@ -188,11 +200,62 @@ export const fieldAnalyticsResolvers = {
         });
       }
 
-      // Check form access (include schema for field info)
-      const form = await checkFormAccess(formId, context.user.id, true);
+      // Check form access (don't need schema from DB since we'll get it from Hocuspocus)
+      const form = await checkFormAccess(formId, context.user.id, false);
+
+      console.log('🔍 Getting form schema from Hocuspocus collaborative document...');
       
-      // Get field information from form schema
-      const fieldInfo = getFieldInfo(form.formSchema, fieldId);
+      // Get the proper form schema from YJS collaborative document
+      const formSchemaFromHocuspocus = await getFormSchemaFromHocuspocus(formId);
+      
+      console.log('📋 Hocuspocus schema structure:', {
+        hasSchema: !!formSchemaFromHocuspocus,
+        hasPages: !!formSchemaFromHocuspocus?.pages,
+        pagesCount: formSchemaFromHocuspocus?.pages?.length || 0,
+        firstPageFields: formSchemaFromHocuspocus?.pages?.[0]?.fields?.length || 0
+      });
+      
+      if (!formSchemaFromHocuspocus) {
+        console.log('❌ No collaborative schema found, falling back to database schema');
+        
+        // Fallback to database schema if collaborative document doesn't exist
+        const fallbackForm = await checkFormAccess(formId, context.user.id, true);
+        const fallbackSchema = fallbackForm.formSchema as any; // Type assertion for Prisma JSON field
+        
+        console.log('📋 Fallback DB schema structure:', {
+          hasFormSchema: !!fallbackSchema,
+          hasPages: !!fallbackSchema?.pages,
+          pagesCount: fallbackSchema?.pages?.length || 0,
+          firstPageFields: fallbackSchema?.pages?.[0]?.fields?.length || 0
+        });
+        
+        if (!fallbackSchema) {
+          throw new GraphQLError('No form schema found in either collaborative document or database', {
+            extensions: { code: 'NOT_FOUND' }
+          });
+        }
+        
+        // Get field information from fallback schema
+        const fieldInfo = getFieldInfo(fallbackSchema, fieldId);
+        if (!fieldInfo) {
+          throw new GraphQLError(`Field not found: ${fieldId}`, {
+            extensions: { code: 'NOT_FOUND' }
+          });
+        }
+      } else {
+        // Get field information from Hocuspocus schema
+        const fieldInfo = getFieldInfo(formSchemaFromHocuspocus, fieldId);
+        if (!fieldInfo) {
+          throw new GraphQLError(`Field not found: ${fieldId}`, {
+            extensions: { code: 'NOT_FOUND' }
+          });
+        }
+      }
+      
+      // Use the schema we found (prefer Hocuspocus over database)
+      console.log("formSchemaFromHocuspocus", JSON.stringify(formSchemaFromHocuspocus.pages));
+      const activeSchema = formSchemaFromHocuspocus || (form.formSchema as any);
+      const fieldInfo = getFieldInfo(activeSchema, fieldId);
       if (!fieldInfo) {
         throw new GraphQLError(`Field not found: ${fieldId}`, {
           extensions: { code: 'NOT_FOUND' }
@@ -216,6 +279,8 @@ export const fieldAnalyticsResolvers = {
           extensions: { code: 'UNSUPPORTED_FIELD_TYPE' }
         });
       }
+
+      console.log("fieldInfo.label", fieldInfo.label);
 
       try {
         const analytics = await getFieldAnalytics(

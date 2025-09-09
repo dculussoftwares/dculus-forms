@@ -315,6 +315,15 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
   } = useFieldAnalyticsManager(formId);
   
   const { invalidateFormCache } = useFieldAnalyticsCache();
+
+  // Debug field labels
+  console.log('🔍 FieldAnalyticsViewer - All Fields Data:', allFields.map(field => ({
+    fieldId: field.fieldId,
+    fieldType: field.fieldType,
+    fieldLabel: field.fieldLabel,
+    hasFieldLabel: !!field.fieldLabel,
+    fallback: `Field ${field.fieldId}`
+  })));
   
   // Performance monitoring (only in development and limited logging)
   const { markLoadComplete, getPerformanceSummary } = usePerformanceMonitor({
