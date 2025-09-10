@@ -1,7 +1,9 @@
 import * as React from "react"
 import { ChevronRight, MoreHorizontal } from "lucide-react"
 import { Slot } from "@radix-ui/react-slot"
-import { cn } from "./utils"
+
+// Following Dculus design principles: import utilities only from @dculus/utils
+import { cn } from "@dculus/utils"
 
 const Breadcrumb = React.forwardRef<
   HTMLElement,

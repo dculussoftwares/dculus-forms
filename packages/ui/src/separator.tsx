@@ -1,17 +1,32 @@
 import * as React from "react"
-import { cn } from "./utils"
 
-const Separator = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & {
-    orientation?: "horizontal" | "vertical"
-    decorative?: boolean
-  }
->(
-  (
-    { className, orientation = "horizontal", decorative = true, ...props },
-    ref
-  ) => (
+// Following Dculus design principles: import utilities only from @dculus/utils
+import { cn } from "@dculus/utils"
+
+/**
+ * Separator component props extending HTML div attributes
+ * Following Dculus functional programming principles with complete TypeScript safety
+ */
+export interface SeparatorProps extends React.HTMLAttributes<HTMLDivElement> {
+  /**
+   * The orientation of the separator
+   * @default "horizontal"
+   */
+  orientation?: "horizontal" | "vertical"
+  /**
+   * Whether the separator is decorative or semantic
+   * @default true
+   */
+  decorative?: boolean
+}
+
+/**
+ * Functional Separator component for visual division
+ * Supports both horizontal and vertical orientations with proper ARIA attributes
+ * Following Dculus design principles: functional programming first, full type safety
+ */
+const Separator = React.forwardRef<HTMLDivElement, SeparatorProps>(
+  ({ className, orientation = "horizontal", decorative = true, ...props }, ref) => (
     <div
       ref={ref}
       role={decorative ? "none" : "separator"}

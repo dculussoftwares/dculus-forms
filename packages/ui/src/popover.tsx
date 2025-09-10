@@ -3,7 +3,8 @@
 import * as React from "react"
 import * as PopoverPrimitive from "@radix-ui/react-popover"
 
-import { cn } from "./utils"
+// Following Dculus design principles: import utilities only from @dculus/utils
+import { cn } from "@dculus/utils"
 
 const Popover = PopoverPrimitive.Root
 

@@ -10,19 +10,43 @@ import {
   BreadcrumbSeparator,
 } from './breadcrumb';
 
-interface PageWrapperProps {
+/**
+ * Breadcrumb item configuration
+ * Following Dculus functional programming principles with complete TypeScript safety
+ */
+interface BreadcrumbItem {
+  /** Display label for the breadcrumb */
+  label: string;
+  /** Optional href for navigation */
+  href?: string;
+  /** Whether this breadcrumb item is the active page */
+  isActive?: boolean;
+}
+
+/**
+ * PageWrapper component props
+ * Following Dculus functional programming principles with complete TypeScript safety
+ */
+export interface PageWrapperProps {
+  /** Main content to be rendered in the page */
   children: React.ReactNode;
+  /** Page title displayed in header and breadcrumb */
   title: string;
+  /** Optional subtitle displayed below the title */
   subtitle?: string;
-  breadcrumbs?: Array<{
-    label: string;
-    href?: string;
-    isActive?: boolean;
-  }>;
+  /** Array of breadcrumb items for navigation */
+  breadcrumbs?: BreadcrumbItem[];
+  /** Optional action buttons or components for the header */
   actions?: React.ReactNode;
+  /** Additional CSS classes for the content area */
   className?: string;
 }
 
+/**
+ * Functional PageWrapper component for consistent page layout
+ * Provides header with breadcrumbs, title section, and content area
+ * Following Dculus design principles: functional programming first, full type safety
+ */
 export function PageWrapper({
   children,
   title,

@@ -1,6 +1,2 @@
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+// Following Dculus design principles: import utilities only from @dculus/utils
+export { cn } from "@dculus/utils";

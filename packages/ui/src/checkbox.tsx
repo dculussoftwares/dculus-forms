@@ -2,11 +2,23 @@ import * as React from "react"
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
 import { Check } from "lucide-react"
 
-import { cn } from "./utils"
+// Following Dculus design principles: import utilities only from @dculus/utils
+import { cn } from "@dculus/utils"
 
+/**
+ * Checkbox component props extending Radix UI Checkbox primitive
+ * Following Dculus functional programming principles with complete TypeScript safety
+ */
+export interface CheckboxProps extends React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root> {}
+
+/**
+ * Functional Checkbox component with full accessibility and TypeScript safety
+ * Built on Radix UI primitives for best-in-class accessibility
+ * Following Dculus design principles: functional programming first, full type safety
+ */
 const Checkbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
+  CheckboxProps
 >(({ className, ...props }, ref) => (
   <CheckboxPrimitive.Root
     ref={ref}

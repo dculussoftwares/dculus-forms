@@ -2,7 +2,8 @@ import * as React from "react"
 import * as SelectPrimitive from "@radix-ui/react-select"
 import { Check, ChevronDown, ChevronUp } from "lucide-react"
 
-import { cn } from "./utils";
+// Following Dculus design principles: import utilities only from @dculus/utils
+import { cn } from "@dculus/utils";
 
 const Select = SelectPrimitive.Root
 

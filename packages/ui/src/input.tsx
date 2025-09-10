@@ -1,10 +1,19 @@
 import * as React from "react"
 
-import { cn } from "./utils";
+// Following Dculus design principles: import utilities only from @dculus/utils
+import { cn } from "@dculus/utils";
 
-export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {}
+/**
+ * Input component props extending HTML input attributes
+ * Following Dculus functional programming principles with complete TypeScript safety
+ */
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
+/**
+ * Functional Input component with full accessibility and TypeScript safety
+ * Supports all standard input types with consistent styling
+ * Following Dculus design principles: functional programming first, full type safety
+ */
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, ...props }, ref) => {
     return (

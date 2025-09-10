@@ -1,4 +1,6 @@
-// nanoid will be dynamically imported when needed
+// Dependencies
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export const generateId = (): string => {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -118,11 +120,10 @@ export function stripHtmlAndTruncate(html: string, maxLength: number = 50): stri
 
 /**
  * Utility function for merging CSS classes with Tailwind support
- * Similar to clsx but with tailwind-merge integration
+ * Combines clsx for conditional classes with tailwind-merge for proper Tailwind deduplication
  */
-export function cn(...classes: (string | undefined | null | boolean)[]): string {
-  // Filter out falsy values and join with spaces
-  return classes.filter(Boolean).join(' ');
+export function cn(...inputs: ClassValue[]): string {
+  return twMerge(clsx(inputs));
 }
 
 

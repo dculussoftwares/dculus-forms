@@ -1,6 +1,11 @@
 import React from 'react';
+
+// Following Dculus design principles: import UI components only from @dculus/ui
 import { Button } from './button';
 import { Card } from './card';
+
+// Following Dculus design principles: import utilities only from @dculus/utils
+import { cn } from "@dculus/utils"
 
 interface AlertDialogProps {
   open: boolean;

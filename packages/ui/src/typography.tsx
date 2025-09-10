@@ -1,10 +1,21 @@
 import * as React from "react"
-import { cn } from "./utils"
 
+// Following Dculus design principles: import utilities only from @dculus/utils
+import { cn } from "@dculus/utils"
+
+/**
+ * Base typography component props extending HTML element attributes
+ * Following Dculus functional programming principles with complete TypeScript safety
+ */
 export interface TypographyProps extends React.HTMLAttributes<HTMLElement> {
+  /** Content to be rendered */
   children: React.ReactNode
 }
 
+/**
+ * Main heading component (H1) with large, bold styling
+ * Following Dculus design principles: functional programming first, full type safety
+ */
 export function TypographyH1({ className, children, ...props }: TypographyProps) {
   return (
     <h1
@@ -19,6 +30,10 @@ export function TypographyH1({ className, children, ...props }: TypographyProps)
   )
 }
 
+/**
+ * Secondary heading component (H2) with border bottom
+ * Following Dculus design principles: functional programming first, full type safety
+ */
 export function TypographyH2({ className, children, ...props }: TypographyProps) {
   return (
     <h2
@@ -33,6 +48,10 @@ export function TypographyH2({ className, children, ...props }: TypographyProps)
   )
 }
 
+/**
+ * Tertiary heading component (H3) for section titles
+ * Following Dculus design principles: functional programming first, full type safety
+ */
 export function TypographyH3({ className, children, ...props }: TypographyProps) {
   return (
     <h3
@@ -47,6 +66,10 @@ export function TypographyH3({ className, children, ...props }: TypographyProps)
   )
 }
 
+/**
+ * Fourth-level heading component (H4) for subsection titles
+ * Following Dculus design principles: functional programming first, full type safety
+ */
 export function TypographyH4({ className, children, ...props }: TypographyProps) {
   return (
     <h4
@@ -61,6 +84,10 @@ export function TypographyH4({ className, children, ...props }: TypographyProps)
   )
 }
 
+/**
+ * Paragraph component with proper line height and spacing
+ * Following Dculus design principles: functional programming first, full type safety
+ */
 export function TypographyP({ className, children, ...props }: TypographyProps) {
   return (
     <p
@@ -80,6 +107,10 @@ export function TypographyP({ className, children, ...props }: TypographyProps) 
 
 
 
+/**
+ * Large text component for emphasized content
+ * Following Dculus design principles: functional programming first, full type safety
+ */
 export function TypographyLarge({ className, children, ...props }: TypographyProps) {
   return (
     <div
@@ -94,6 +125,10 @@ export function TypographyLarge({ className, children, ...props }: TypographyPro
   )
 }
 
+/**
+ * Small text component for fine print and secondary information
+ * Following Dculus design principles: functional programming first, full type safety
+ */
 export function TypographySmall({ className, children, ...props }: TypographyProps) {
   return (
     <small
@@ -108,6 +143,10 @@ export function TypographySmall({ className, children, ...props }: TypographyPro
   )
 }
 
+/**
+ * Muted text component for secondary or less important information
+ * Following Dculus design principles: functional programming first, full type safety
+ */
 export function TypographyMuted({ className, children, ...props }: TypographyProps) {
   return (
     <p

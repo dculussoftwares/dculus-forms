@@ -762,9 +762,15 @@ importers:
 
   packages/utils:
     dependencies:
+      clsx:
+        specifier: ^2.0.0
+        version: 2.1.1
       nanoid:
         specifier: 5.1.5
         version: 5.1.5
+      tailwind-merge:
+        specifier: ^2.0.0
+        version: 2.6.0
     devDependencies:
       typescript:
         specifier: ^5.6.3

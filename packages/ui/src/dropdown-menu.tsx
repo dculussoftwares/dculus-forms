@@ -1,7 +1,9 @@
 import * as React from "react"
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
 import { Check, ChevronRight, Circle } from "lucide-react"
-import { cn } from "./utils"
+
+// Following Dculus design principles: import utilities only from @dculus/utils
+import { cn } from "@dculus/utils"
 
 const DropdownMenu = DropdownMenuPrimitive.Root
 

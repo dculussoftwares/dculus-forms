@@ -1,10 +1,19 @@
 import * as React from "react"
 
-import { cn } from "./utils";
+// Following Dculus design principles: import utilities only from @dculus/utils
+import { cn } from "@dculus/utils";
 
-export interface TextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
+/**
+ * Textarea component props extending HTML textarea attributes
+ * Following Dculus functional programming principles with complete TypeScript safety
+ */
+export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
 
+/**
+ * Functional Textarea component with full accessibility and TypeScript safety
+ * Multi-line text input with consistent styling and auto-resize capabilities
+ * Following Dculus design principles: functional programming first, full type safety
+ */
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, ...props }, ref) => {
     return (

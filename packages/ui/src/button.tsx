@@ -2,7 +2,8 @@ import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 
-import { cn } from "./utils";
+// Following Dculus design principles: import utilities only from @dculus/utils
+import { cn } from "@dculus/utils";
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
@@ -33,20 +34,34 @@ const buttonVariants = cva(
   }
 )
 
+/**
+ * Button component props extending HTML button attributes
+ * Following Dculus functional programming principles with complete TypeScript safety
+ */
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
+  /**
+   * When true, the button will render as a child component using Radix Slot
+   * Useful for rendering the button as a different element (e.g., Link)
+   */
   asChild?: boolean
 }
 
+/**
+ * Functional Button component with full TypeScript safety
+ * Supports multiple variants and sizes with proper accessibility
+ * Following Dculus design principles: functional programming first, full type safety
+ */
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
+    
     return (
       <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
+        className={cn(buttonVariants({ variant, size }), className)}
         ref={ref}
-        {...(props as any)}
+        {...props}
       />
     )
   }
