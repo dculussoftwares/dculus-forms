@@ -208,48 +208,97 @@ const MiniPieChart: React.FC<{ data: Array<{ name: string; value: number }> }> =
 };
 
 const MiniPreviewChart: React.FC<{ field: FieldAnalyticsData }> = ({ field }) => {
-  // Generate mock preview data based on field type for demonstration
-  const getMockPreviewData = (fieldType: string) => {
-    switch (fieldType) {
+  // Get real preview data from analytics data
+  const getRealPreviewData = (field: FieldAnalyticsData) => {
+    switch (field.fieldType) {
       case 'text_input_field':
       case 'text_area_field':
-        return { type: 'wordcloud' as const, data: [
-          { word: 'great', count: 15 }, { word: 'good', count: 12 }, { word: 'awesome', count: 8 },
-          { word: 'nice', count: 6 }, { word: 'excellent', count: 5 }
-        ]};
+        if (field.textAnalytics?.wordCloud && field.textAnalytics.wordCloud.length > 0) {
+          return { 
+            type: 'wordcloud' as const, 
+            data: field.textAnalytics.wordCloud.slice(0, 5).map(item => ({
+              word: item.word,
+              count: item.count
+            }))
+          };
+        }
+        break;
+      
       case 'number_field':
-        return { type: 'bar' as const, data: [
-          { name: '0-10', value: 5 }, { name: '11-20', value: 12 }, { name: '21-30', value: 8 },
-          { name: '31-40', value: 15 }, { name: '41-50', value: 3 }
-        ]};
+        if (field.numberAnalytics?.distribution && field.numberAnalytics.distribution.length > 0) {
+          return { 
+            type: 'bar' as const, 
+            data: field.numberAnalytics.distribution.slice(0, 5).map(item => ({
+              name: item.range,
+              value: item.count
+            }))
+          };
+        }
+        break;
+      
       case 'email_field':
-        return { type: 'bar' as const, data: [
-          { name: 'gmail', value: 25 }, { name: 'yahoo', value: 8 }, { name: 'outlook', value: 12 },
-          { name: 'company', value: 18 }, { name: 'other', value: 7 }
-        ]};
+        if (field.emailAnalytics?.domains && field.emailAnalytics.domains.length > 0) {
+          return { 
+            type: 'bar' as const, 
+            data: field.emailAnalytics.domains.slice(0, 5).map(item => ({
+              name: item.domain.length > 10 ? `${item.domain.substring(0, 10)}...` : item.domain,
+              value: item.count
+            }))
+          };
+        }
+        break;
+      
       case 'date_field':
-        return { type: 'bar' as const, data: [
-          { name: 'Jan', value: 8 }, { name: 'Feb', value: 12 }, { name: 'Mar', value: 15 },
-          { name: 'Apr', value: 10 }, { name: 'May', value: 6 }
-        ]};
+        if (field.dateAnalytics?.monthlyDistribution && field.dateAnalytics.monthlyDistribution.length > 0) {
+          return { 
+            type: 'bar' as const, 
+            data: field.dateAnalytics.monthlyDistribution.slice(0, 5).map(item => ({
+              name: item.month,
+              value: item.count
+            }))
+          };
+        }
+        break;
+      
       case 'select_field':
       case 'radio_field':
-        return { type: 'pie' as const, data: [
-          { name: 'Option A', value: 45 }, { name: 'Option B', value: 30 },
-          { name: 'Option C', value: 15 }, { name: 'Option D', value: 10 }
-        ]};
+        if (field.selectionAnalytics?.options && field.selectionAnalytics.options.length > 0) {
+          return { 
+            type: 'pie' as const, 
+            data: field.selectionAnalytics.options.slice(0, 4).map(item => ({
+              name: item.option.length > 15 ? `${item.option.substring(0, 15)}...` : item.option,
+              value: item.count
+            }))
+          };
+        }
+        break;
+      
       case 'checkbox_field':
-        return { type: 'bar' as const, data: [
-          { name: 'Choice 1', value: 28 }, { name: 'Choice 2', value: 22 },
-          { name: 'Choice 3', value: 18 }, { name: 'Choice 4', value: 12 }
-        ]};
+        if (field.checkboxAnalytics?.individualOptions && field.checkboxAnalytics.individualOptions.length > 0) {
+          return { 
+            type: 'bar' as const, 
+            data: field.checkboxAnalytics.individualOptions.slice(0, 4).map(item => ({
+              name: item.option.length > 12 ? `${item.option.substring(0, 12)}...` : item.option,
+              value: item.count
+            }))
+          };
+        }
+        break;
+      
       default:
         return null;
     }
+    return null;
   };
 
-  const previewData = getMockPreviewData(field.fieldType);
-  if (!previewData) return null;
+  const previewData = getRealPreviewData(field);
+  if (!previewData) {
+    return (
+      <div className="flex items-center justify-center h-16 text-gray-400 text-sm">
+        No data available
+      </div>
+    );
+  }
 
   switch (previewData.type) {
     case 'wordcloud':
