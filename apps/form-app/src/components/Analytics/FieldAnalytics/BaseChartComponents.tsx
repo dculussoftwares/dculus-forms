@@ -1,13 +1,53 @@
 import React, { useState } from 'react';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, ScatterChart, Scatter } from 'recharts';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
 import { HelpCircle } from 'lucide-react';
 
 // Color palettes for different chart types
 export const CHART_COLORS = {
-  primary: ['#3b82f6', '#8b5cf6', '#06d6a0', '#f59e0b', '#ef4444', '#10b981', '#f97316', '#8b5a2b'],
-  secondary: ['#dbeafe', '#e7d3ff', '#ccfbf1', '#fef3c7', '#fecaca', '#d1fae5', '#fed7aa', '#e7e5e4'],
-  gradient: ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe', '#43e97b', '#38f9d7']
+  primary: [
+    '#3b82f6',
+    '#8b5cf6',
+    '#06d6a0',
+    '#f59e0b',
+    '#ef4444',
+    '#10b981',
+    '#f97316',
+    '#8b5a2b',
+  ],
+  secondary: [
+    '#dbeafe',
+    '#e7d3ff',
+    '#ccfbf1',
+    '#fef3c7',
+    '#fecaca',
+    '#d1fae5',
+    '#fed7aa',
+    '#e7e5e4',
+  ],
+  gradient: [
+    '#667eea',
+    '#764ba2',
+    '#f093fb',
+    '#f5576c',
+    '#4facfe',
+    '#00f2fe',
+    '#43e97b',
+    '#38f9d7',
+  ],
 };
 
 // Helper tooltip component
@@ -29,7 +69,7 @@ const HelpTooltip: React.FC<HelpTooltipProps> = ({ title, description }) => {
       >
         <HelpCircle className="h-4 w-4" />
       </button>
-      
+
       {isVisible && (
         <div className="absolute z-10 left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-64 p-3 bg-gray-900 text-white text-sm rounded-lg shadow-lg">
           <div className="font-medium mb-1">{title}</div>
@@ -49,14 +89,17 @@ const CustomTooltip = ({ active, payload, label, formatter }: any) => {
         <p className="font-medium text-gray-900 mb-2">{label}</p>
         {payload.map((entry: any, index: number) => (
           <div key={index} className="flex items-center gap-2 text-sm">
-            <div 
-              className="w-3 h-3 rounded-full" 
+            <div
+              className="w-3 h-3 rounded-full"
               style={{ backgroundColor: entry.color }}
             />
             <span className="text-gray-700">
-              {entry.name}: {(() => {
+              {entry.name}:{' '}
+              {(() => {
                 try {
-                  return formatter ? formatter(entry.value, entry.name, entry) : entry.value;
+                  return formatter
+                    ? formatter(entry.value, entry.name, entry)
+                    : entry.value;
                 } catch (error) {
                   console.warn('Tooltip formatter error:', error);
                   return entry.value;
@@ -92,7 +135,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   icon,
   trend,
   loading,
-  helpText
+  helpText,
 }) => {
   if (loading) {
     return (
@@ -111,9 +154,8 @@ export const StatCard: React.FC<StatCardProps> = ({
     );
   }
 
-  const displayValue = typeof value === 'number' 
-    ? value.toLocaleString() 
-    : value || '--';
+  const displayValue =
+    typeof value === 'number' ? value.toLocaleString() : value || '--';
 
   return (
     <Card>
@@ -121,25 +163,25 @@ export const StatCard: React.FC<StatCardProps> = ({
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <p className="text-sm font-medium text-gray-600">{title}</p>
-            {helpText && (
-              <HelpTooltip title={title} description={helpText} />
-            )}
+            {helpText && <HelpTooltip title={title} description={helpText} />}
           </div>
           {icon && <div className="text-gray-400">{icon}</div>}
         </div>
         <div className="flex items-baseline justify-between">
           <p className="text-2xl font-bold text-gray-900">{displayValue}</p>
           {trend && (
-            <div className={`flex items-center text-sm ${
-              trend.isPositive ? 'text-green-600' : 'text-red-600'
-            }`}>
-              <span>{trend.isPositive ? '↗' : '↘'} {Math.abs(trend.value)}%</span>
+            <div
+              className={`flex items-center text-sm ${
+                trend.isPositive ? 'text-green-600' : 'text-red-600'
+              }`}
+            >
+              <span>
+                {trend.isPositive ? '↗' : '↘'} {Math.abs(trend.value)}%
+              </span>
             </div>
           )}
         </div>
-        {subtitle && (
-          <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
-        )}
+        {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
       </CardContent>
     </Card>
   );
@@ -164,8 +206,8 @@ export const EnhancedPieChart: React.FC<EnhancedPieChartProps> = ({
   showPercentage = true,
   colorPalette = CHART_COLORS.primary,
   loading,
-  emptyMessage = "No data available",
-  helpText
+  emptyMessage = 'No data available',
+  helpText: _helpText,
 }) => {
   if (loading) {
     return (
@@ -197,8 +239,10 @@ export const EnhancedPieChart: React.FC<EnhancedPieChartProps> = ({
     );
   }
 
-  const tooltipFormatter = (value: number, name: string, props: any) => {
-    const percentage = props.payload.percentage || ((value / data.reduce((sum, item) => sum + item.value, 0)) * 100);
+  const tooltipFormatter = (value: number, _name: string, props: any) => {
+    const percentage =
+      props.payload.percentage ||
+      (value / data.reduce((sum, item) => sum + item.value, 0)) * 100;
     return `${value} (${percentage.toFixed(1)}%)`;
   };
 
@@ -217,21 +261,21 @@ export const EnhancedPieChart: React.FC<EnhancedPieChartProps> = ({
               cx="50%"
               cy="50%"
               outerRadius={80}
-              label={showPercentage ? 
-                ({ name, percentage }: any) => `${name}: ${percentage ? percentage.toFixed(1) : '0'}%` : 
-                false
+              label={
+                showPercentage
+                  ? ({ name, percentage }: any) =>
+                      `${name}: ${percentage ? percentage.toFixed(1) : '0'}%`
+                  : false
               }
             >
-              {data.map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={colorPalette[index % colorPalette.length]} 
+              {data.map((_entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={colorPalette[index % colorPalette.length]}
                 />
               ))}
             </Pie>
-            <Tooltip 
-              content={<CustomTooltip formatter={tooltipFormatter} />}
-            />
+            <Tooltip content={<CustomTooltip formatter={tooltipFormatter} />} />
           </PieChart>
         </ResponsiveContainer>
       </CardContent>
@@ -260,10 +304,10 @@ export const EnhancedBarChart: React.FC<EnhancedBarChartProps> = ({
   horizontal = false,
   colorPalette = CHART_COLORS.primary,
   loading,
-  emptyMessage = "No data available",
+  emptyMessage = 'No data available',
   yAxisLabel,
   xAxisLabel,
-  showGrid = true
+  showGrid = true,
 }) => {
   if (loading) {
     return (
@@ -310,18 +354,56 @@ export const EnhancedBarChart: React.FC<EnhancedBarChartProps> = ({
             {showGrid && <CartesianGrid strokeDasharray="3 3" />}
             {horizontal ? (
               <>
-                <XAxis type="number" label={xAxisLabel ? { value: xAxisLabel, position: 'insideBottom', offset: -10 } : undefined} />
-                <YAxis dataKey="name" type="category" width={80} />
+                <XAxis
+                  type="number"
+                  label={
+                    xAxisLabel
+                      ? {
+                          value: xAxisLabel,
+                          position: 'insideBottom',
+                          offset: -10,
+                        }
+                      : undefined
+                  }
+                />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  width={120}
+                  tick={{ fontSize: 12 }}
+                  interval={0}
+                />
               </>
             ) : (
               <>
-                <XAxis dataKey="name" label={xAxisLabel ? { value: xAxisLabel, position: 'insideBottom', offset: -10 } : undefined} />
-                <YAxis label={yAxisLabel ? { value: yAxisLabel, angle: -90, position: 'insideLeft' } : undefined} />
+                <XAxis
+                  dataKey="name"
+                  label={
+                    xAxisLabel
+                      ? {
+                          value: xAxisLabel,
+                          position: 'insideBottom',
+                          offset: -10,
+                        }
+                      : undefined
+                  }
+                />
+                <YAxis
+                  label={
+                    yAxisLabel
+                      ? {
+                          value: yAxisLabel,
+                          angle: -90,
+                          position: 'insideLeft',
+                        }
+                      : undefined
+                  }
+                />
               </>
             )}
             <Tooltip content={<CustomTooltip />} />
-            <Bar 
-              dataKey="value" 
+            <Bar
+              dataKey="value"
               fill={colorPalette[0]}
               radius={horizontal ? [0, 4, 4, 0] : [4, 4, 0, 0]}
             />
@@ -352,11 +434,11 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
   height = 300,
   color = CHART_COLORS.primary[0],
   loading,
-  emptyMessage = "No data available",
+  emptyMessage = 'No data available',
   yAxisLabel,
   xAxisLabel,
   showGrid = true,
-  showDots = true
+  showDots = true,
 }) => {
   if (loading) {
     return (
@@ -400,18 +482,26 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
             margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
           >
             {showGrid && <CartesianGrid strokeDasharray="3 3" />}
-            <XAxis 
-              dataKey="name" 
-              label={xAxisLabel ? { value: xAxisLabel, position: 'insideBottom', offset: -10 } : undefined} 
+            <XAxis
+              dataKey="name"
+              label={
+                xAxisLabel
+                  ? { value: xAxisLabel, position: 'insideBottom', offset: -10 }
+                  : undefined
+              }
             />
-            <YAxis 
-              label={yAxisLabel ? { value: yAxisLabel, angle: -90, position: 'insideLeft' } : undefined} 
+            <YAxis
+              label={
+                yAxisLabel
+                  ? { value: yAxisLabel, angle: -90, position: 'insideLeft' }
+                  : undefined
+              }
             />
             <Tooltip content={<CustomTooltip />} />
-            <Line 
-              type="monotone" 
-              dataKey="value" 
-              stroke={color} 
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke={color}
               strokeWidth={2}
               dot={showDots ? { fill: color, strokeWidth: 2, r: 4 } : false}
               activeDot={{ r: 6, stroke: color, strokeWidth: 2, fill: '#fff' }}
@@ -440,8 +530,8 @@ export const Histogram: React.FC<HistogramProps> = ({
   height = 300,
   color = CHART_COLORS.primary[0],
   loading,
-  emptyMessage = "No data available",
-  showPercentage = false
+  emptyMessage = 'No data available',
+  showPercentage = false,
 }) => {
   if (loading) {
     return (
@@ -473,12 +563,12 @@ export const Histogram: React.FC<HistogramProps> = ({
     );
   }
 
-  const tooltipFormatter = (value: number, name: string, props: any) => {
+  const tooltipFormatter = (value: number, _name: string, props: any) => {
     try {
       const percentage = props?.payload?.percentage;
-      return showPercentage && percentage !== undefined && percentage !== null ? 
-        `${value} (${percentage.toFixed(1)}%)` : 
-        value?.toString() || '0';
+      return showPercentage && percentage !== undefined && percentage !== null
+        ? `${value} (${percentage.toFixed(1)}%)`
+        : value?.toString() || '0';
     } catch (error) {
       console.warn('Tooltip formatter error:', error);
       return value?.toString() || '0';
@@ -500,11 +590,7 @@ export const Histogram: React.FC<HistogramProps> = ({
             <XAxis dataKey="range" />
             <YAxis />
             <Tooltip content={<CustomTooltip formatter={tooltipFormatter} />} />
-            <Bar 
-              dataKey="count" 
-              fill={color}
-              radius={[4, 4, 0, 0]}
-            />
+            <Bar dataKey="count" fill={color} radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
@@ -529,8 +615,8 @@ export const MultiBarChart: React.FC<MultiBarChartProps> = ({
   title,
   height = 300,
   loading,
-  emptyMessage = "No data available",
-  stacked = false
+  emptyMessage = 'No data available',
+  stacked = false,
 }) => {
   if (loading) {
     return (
@@ -578,9 +664,9 @@ export const MultiBarChart: React.FC<MultiBarChartProps> = ({
             <YAxis />
             <Tooltip content={<CustomTooltip />} />
             {series.map((s, index) => (
-              <Bar 
+              <Bar
                 key={s.key}
-                dataKey={s.key} 
+                dataKey={s.key}
                 name={s.name}
                 fill={s.color}
                 stackId={stacked ? 'stack' : undefined}

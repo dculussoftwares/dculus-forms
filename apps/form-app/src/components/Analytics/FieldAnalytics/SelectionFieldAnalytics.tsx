@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
-import { StatCard, EnhancedPieChart, EnhancedBarChart, EnhancedLineChart, CHART_COLORS } from './BaseChartComponents';
+import { StatCard, EnhancedPieChart, CHART_COLORS } from './BaseChartComponents';
 import { SelectionFieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
-import { CheckCircle, TrendingUp, BarChart2, Target, Crown } from 'lucide-react';
+import { CheckCircle, BarChart2, Target, Crown } from 'lucide-react';
 import { MetricHelper, METRIC_HELPERS } from './MetricHelper';
 
 interface SelectionFieldAnalyticsProps {
@@ -320,7 +320,7 @@ const QuickInsights: React.FC<{
 
 export const SelectionFieldAnalytics: React.FC<SelectionFieldAnalyticsProps> = ({
   data,
-  fieldLabel,
+  fieldLabel: _fieldLabel,
   fieldType,
   totalResponses,
   loading
@@ -332,16 +332,6 @@ export const SelectionFieldAnalytics: React.FC<SelectionFieldAnalyticsProps> = (
       value: option.count,
       percentage: option.percentage,
       fullName: option.option
-    }));
-  }, [data?.options]);
-
-  const barChartData = useMemo(() => {
-    if (!data?.options) return [];
-    return data.options.map(option => ({
-      name: option.option.length > 15 ? `${option.option.substring(0, 15)}...` : option.option,
-      value: option.count,
-      fullName: option.option,
-      percentage: option.percentage
     }));
   }, [data?.options]);
 
@@ -434,12 +424,66 @@ export const SelectionFieldAnalytics: React.FC<SelectionFieldAnalyticsProps> = (
         </div>
         <div className="space-y-4">
           <MetricHelper {...METRIC_HELPERS.OPTION_POPULARITY} compact />
-          <EnhancedBarChart
-            data={barChartData}
-            title="Option Popularity"
-            yAxisLabel="Number of Selections"
-            height={350}
-          />
+          <Card>
+            <CardHeader>
+              <CardTitle>Option Popularity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart
+                  data={data.options.map(option => ({
+                    name: option.option.length > 15 ? `${option.option.substring(0, 15)}...` : option.option,
+                    value: option.count,
+                    fullName: option.option,
+                    percentage: option.percentage
+                  }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fontSize: 12 }}
+                    interval={0}
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                  />
+                  <YAxis 
+                    label={{ value: 'Number of Selections', angle: -90, position: 'insideLeft' }}
+                  />
+                  <Tooltip 
+                    content={({ active, payload, label: _label }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-white p-3 border rounded-lg shadow-lg border-gray-200">
+                            <p className="font-medium text-gray-900 mb-2" title={data.fullName}>
+                              {data.fullName}
+                            </p>
+                            <div className="flex items-center gap-2 text-sm">
+                              <div className="w-3 h-3 rounded-full bg-blue-600" />
+                              <span className="text-gray-700">
+                                Selections: {data.value} ({data.percentage.toFixed(1)}%)
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                    {data.options.map((_entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={index === 0 ? CHART_COLORS.primary[1] : CHART_COLORS.primary[0]} 
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
         </div>
       </div>
 

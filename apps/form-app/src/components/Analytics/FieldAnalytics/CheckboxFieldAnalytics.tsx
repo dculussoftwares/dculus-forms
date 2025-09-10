@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
-import { StatCard, EnhancedBarChart, MultiBarChart, CHART_COLORS } from './BaseChartComponents';
+import { StatCard } from './BaseChartComponents';
 import { CheckboxFieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
-import { CheckSquare, Users, Link, BarChart3, TrendingUp } from 'lucide-react';
+import { CheckSquare, Link, BarChart3, TrendingUp } from 'lucide-react';
 import { MetricHelper, METRIC_HELPERS } from './MetricHelper';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface CheckboxFieldAnalyticsProps {
   data: CheckboxFieldAnalyticsData;
@@ -17,7 +18,7 @@ const CorrelationMatrix: React.FC<{
   correlations: Array<{ option1: string; option2: string; correlation: number }>;
   options: string[];
   loading?: boolean;
-}> = ({ correlations, options, loading }) => {
+}> = ({ correlations, options: _options, loading }) => {
   if (loading) {
     return (
       <Card>
@@ -228,13 +229,72 @@ const SelectionDistribution: React.FC<{
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <EnhancedBarChart
-        data={chartData}
-        title="Selection Count Distribution"
-        yAxisLabel="Number of Responses"
-        xAxisLabel="Options Selected"
-        height={300}
-      />
+      <Card>
+        <CardHeader>
+          <CardTitle>Selection Count Distribution</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart
+              data={chartData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="name" 
+                tick={{ fontSize: 12 }}
+                interval={0}
+                angle={-45}
+                textAnchor="end"
+                height={80}
+              />
+              <YAxis 
+                label={{ value: 'Number of Responses', angle: -90, position: 'insideLeft' }}
+              />
+              <Tooltip 
+                content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    const data = payload[0].payload;
+                    const isAverage = Math.abs(data.selectionCount - averageSelections) < 0.5;
+                    return (
+                      <div className="bg-white p-3 border rounded-lg shadow-lg border-gray-200">
+                        <p className="font-medium text-gray-900 mb-2">{label}</p>
+                        <div className="flex items-center gap-2 text-sm">
+                          <div className="w-3 h-3 rounded-full bg-blue-600" />
+                          <span className="text-gray-700">
+                            Responses: {data.value} ({data.percentage.toFixed(1)}%)
+                          </span>
+                          {isAverage && (
+                            <span className="text-xs text-blue-600 font-medium bg-blue-50 px-1 rounded">
+                              Average
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Bar 
+                dataKey="value" 
+                radius={[4, 4, 0, 0]}
+              >
+                {chartData.map((entry, index) => {
+                  const isAverage = Math.abs(entry.selectionCount - averageSelections) < 0.5;
+                  return (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={isAverage ? '#2563eb' : '#6b7280'} 
+                    />
+                  );
+                })}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+      
       <Card>
         <CardHeader>
           <CardTitle>Selection Patterns</CardTitle>
@@ -282,35 +342,59 @@ const IndividualOptionAnalysis: React.FC<{
   options: Array<{ option: string; count: number; percentage: number }>;
   totalResponses: number;
   loading?: boolean;
-}> = ({ options, totalResponses, loading }) => {
-  const chartData = useMemo(() => {
-    if (!options) return [];
-    return options.map(option => ({
-      name: option.option.length > 15 ? `${option.option.substring(0, 15)}...` : option.option,
-      value: option.count,
-      fullName: option.option,
-      percentage: option.percentage
-    }));
-  }, [options]);
+}> = ({ options, totalResponses: _totalResponses, loading }) => {
 
   if (loading || !options || options.length === 0) {
     return null;
   }
 
   return (
-    <EnhancedBarChart
-      data={chartData}
-      title="Individual Option Popularity"
-      yAxisLabel="Times Selected"
-      horizontal={true}
-      height={Math.max(300, options.length * 40)}
-    />
+    <Card>
+      <CardHeader>
+        <CardTitle>Individual Option Popularity</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {options.map((option, index) => (
+            <div 
+              key={index}
+              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-gray-900 truncate" title={option.option}>
+                  {option.option}
+                </div>
+                <div className="text-sm text-gray-600">
+                  {option.percentage.toFixed(1)}% of responses
+                </div>
+              </div>
+              <div className="flex items-center gap-4 flex-shrink-0">
+                <div className="w-24 bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${option.percentage}%` }}
+                  />
+                </div>
+                <div className="text-right min-w-0">
+                  <div className="text-lg font-bold text-gray-900">
+                    {option.count}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    times
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
 export const CheckboxFieldAnalytics: React.FC<CheckboxFieldAnalyticsProps> = ({
   data,
-  fieldLabel,
+  fieldLabel: _fieldLabel,
   totalResponses,
   loading
 }) => {
