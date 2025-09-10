@@ -1052,7 +1052,6 @@ export const getAllFieldsAnalytics = async (formId: string): Promise<{
           // Only process fillable fields
           if (field.type !== FieldType.RICH_TEXT_FIELD && field.type !== FieldType.FORM_FIELD) {
             const fieldLabel = field.label || `Field ${field.id}`;
-            console.log(`🏷️ Processing field: ${field.id} - Type: ${field.type} - Label: "${fieldLabel}"`);
             allFields.push({
               id: field.id,
               type: field.type,

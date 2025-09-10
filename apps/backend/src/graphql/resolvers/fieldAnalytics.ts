@@ -45,22 +45,12 @@ const checkFormAccess = async (formId: string, userId: string, includeSchema: bo
  * Get field info from form schema
  */
 const getFieldInfo = (formSchema: any, fieldId: string): { type: FieldType; label: string } | null => {
-  console.log('🔍 Looking for field info:', { fieldId, hasPages: !!formSchema.pages });
-  
   if (!formSchema.pages) return null;
 
   for (const page of formSchema.pages) {
     if (page.fields) {
-      console.log('🔍 Checking page fields:', page.fields.map((f: any) => ({ id: f.id, type: f.type, hasLabel: !!f.label, label: f.label })));
       const field = page.fields.find((f: any) => f.id === fieldId);
       if (field) {
-        console.log('✅ Found field:', { 
-          fieldId, 
-          type: field.type, 
-          label: field.label,
-          hasLabel: !!field.label,
-          fullFieldObject: field
-        });
         return {
           type: field.type as FieldType,
           label: field.label || `Field ${fieldId}`
@@ -253,7 +243,6 @@ export const fieldAnalyticsResolvers = {
       }
       
       // Use the schema we found (prefer Hocuspocus over database)
-      console.log("formSchemaFromHocuspocus", JSON.stringify(formSchemaFromHocuspocus.pages));
       const activeSchema = formSchemaFromHocuspocus || (form.formSchema as any);
       const fieldInfo = getFieldInfo(activeSchema, fieldId);
       if (!fieldInfo) {
