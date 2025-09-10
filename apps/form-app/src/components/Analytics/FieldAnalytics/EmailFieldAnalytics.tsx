@@ -19,7 +19,6 @@ const ValidationIndicator: React.FC<{
   invalidEmails: number;
   validationRate: number;
 }> = ({ validEmails, invalidEmails, validationRate }) => {
-  const totalEmails = validEmails + invalidEmails;
   const isHighValidation = validationRate >= 90;
   const isMediumValidation = validationRate >= 70;
 
@@ -357,7 +356,7 @@ const PopularProviders: React.FC<{
 
 export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
   data,
-  fieldLabel,
+  fieldLabel: _fieldLabel,
   totalResponses,
   loading
 }) => {

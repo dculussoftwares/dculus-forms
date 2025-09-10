@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
-import { StatCard, EnhancedBarChart, Histogram, CHART_COLORS } from './BaseChartComponents';
+import { StatCard, Histogram, CHART_COLORS } from './BaseChartComponents';
 import { TextFieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
 import { FileText, Hash, Type, MessageSquare } from 'lucide-react';
 import { MetricHelper, METRIC_HELPERS } from './MetricHelper';
@@ -237,7 +237,7 @@ const CommonPhrases: React.FC<{
 
 export const TextFieldAnalytics: React.FC<TextFieldAnalyticsProps> = ({
   data,
-  fieldLabel,
+  fieldLabel: _fieldLabel,
   totalResponses,
   loading
 }) => {

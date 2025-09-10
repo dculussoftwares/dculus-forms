@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
-import { StatCard, EnhancedLineChart, Histogram, CHART_COLORS } from './BaseChartComponents';
+import { StatCard, CHART_COLORS } from './BaseChartComponents';
 import { NumberFieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
 import { Calculator, TrendingUp, BarChart3, Target, Hash } from 'lucide-react';
 import { MetricHelper, METRIC_HELPERS } from './MetricHelper';
@@ -227,7 +227,7 @@ const BoxPlot: React.FC<{
 const TrendAnalysis: React.FC<{
   trend: Array<{ date: string; average: number; count: number }>;
   loading?: boolean;
-}> = ({ trend, loading }) => {
+}> = ({ trend, loading: _loading }) => {
   const chartData = useMemo(() => {
     if (!trend || trend.length === 0) return [];
     
@@ -274,7 +274,7 @@ const TrendAnalysis: React.FC<{
 
 export const NumberFieldAnalytics: React.FC<NumberFieldAnalyticsProps> = ({
   data,
-  fieldLabel,
+  fieldLabel: _fieldLabel,
   totalResponses,
   loading
 }) => {

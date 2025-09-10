@@ -197,7 +197,7 @@ const SeasonalAnalysis: React.FC<{
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {seasonalPatterns.map((season, index) => {
+          {seasonalPatterns.map((season, _index) => {
             const isTopSeason = season.season === topSeason.season;
             return (
               <div 

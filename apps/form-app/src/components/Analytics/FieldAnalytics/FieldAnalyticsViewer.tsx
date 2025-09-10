@@ -76,7 +76,7 @@ const FieldSelectionGrid: React.FC<{
   selectedFieldId: string | null;
   onFieldSelect: (fieldId: string) => void;
   totalFormResponses: number;
-}> = ({ fields, selectedFieldId, onFieldSelect, totalFormResponses }) => {
+}> = ({ fields, selectedFieldId, onFieldSelect, totalFormResponses: _totalFormResponses }) => {
   if (fields.length === 0) {
     return (
       <Card>
@@ -355,12 +355,12 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
   })));
   
   // Performance monitoring (only in development and limited logging)
-  const { markLoadComplete, getPerformanceSummary } = usePerformanceMonitor({
+  const { markLoadComplete, getPerformanceSummary: _getPerformanceSummary } = usePerformanceMonitor({
     componentName: 'FieldAnalyticsViewer',
     enableLogging: false, // Disable verbose logging
   });
   
-  const { getMemoryPressure } = useMemoryTracker('FieldAnalyticsViewer');
+  const { getMemoryPressure: _getMemoryPressure } = useMemoryTracker('FieldAnalyticsViewer');
   
   // Mark load complete when data is ready
   useEffect(() => {
@@ -487,30 +487,25 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex-1">
-          <div className="flex items-center gap-3">
-            {view === 'analytics' && (
-              <Button
-                onClick={handleBackToGrid}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Fields
-              </Button>
-            )}
-            <h1 className="text-2xl font-bold text-gray-900">
-              {view === 'grid' ? 'Field Analytics' : 'Field Insights'}
-            </h1>
-          </div>
-          <p className="text-gray-600 mt-1">
-            {view === 'grid' 
-              ? `Analyze individual field performance across ${totalResponses} form responses`
-              : selectedField 
-                ? `${selectedField.fieldLabel || selectedField.fieldId} • ${getFieldTypeDisplayName(selectedField.fieldType)}`
-                : 'Loading field details...'
-            }
-          </p>
+          {view === 'analytics' && (
+            <Button
+              onClick={handleBackToGrid}
+              variant="ghost"
+              size="sm"
+              className="mb-4 text-gray-600 hover:text-gray-900 p-0 h-auto font-normal"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              All Fields
+            </Button>
+          )}
+          <h1 className="text-2xl font-bold text-gray-900">
+            {view === 'grid' ? 'Field Analytics' : 'Field Insights'}
+          </h1>
+          {view === 'grid' && (
+            <p className="text-gray-600 mt-1">
+              Analyze individual field performance across {totalResponses} form responses
+            </p>
+          )}
         </div>
 
         {/* Field Navigation - only show in analytics view */}
