@@ -31,6 +31,14 @@ export interface AppConfig {
   isProduction: boolean;
 }
 
+export interface EmailConfig {
+  host: string;
+  port: number;
+  user: string;
+  password: string;
+  from: string;
+}
+
 export const s3Config: S3Config = {
   endpoint: requireEnv('S3_ENDPOINT'),
   accessKey: requireEnv('S3_ACCESS_KEY'),
@@ -55,4 +63,12 @@ export const appConfig: AppConfig = {
   nodeEnv,
   isDevelopment: nodeEnv === 'development',
   isProduction: nodeEnv === 'production',
+};
+
+export const emailConfig: EmailConfig = {
+  host: optionalEnv('EMAIL_HOST', 'some-host')!,
+  port: parseInt(optionalEnv('EMAIL_PORT', '587')!, 10),
+  user: optionalEnv('EMAIL_USER', 'some-user')!,
+  password: optionalEnv('EMAIL_PASSWORD', 'some-password')!,
+  from: optionalEnv('EMAIL_FROM', 'no-reply@dculus.com')!,
 };

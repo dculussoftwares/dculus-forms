@@ -12,6 +12,7 @@ import {
 } from '@dculus/types';
 import { initializeHocuspocusDocument } from './hocuspocus.js';
 import { generateShortUrl } from '@dculus/utils';
+import { sendFormPublishedNotification } from './emailService.js';
 
 export interface Form extends Omit<IForm, 'formSchema'> {
   formSchema: any; // JsonValue from Prisma
@@ -170,6 +171,19 @@ export const createForm = async (
 
 export const updateForm = async (id: string, formData: Partial<Omit<Form, 'id' | 'createdAt' | 'updatedAt' | 'organizationId' | 'createdById' | 'shortUrl'>>): Promise<Form | null> => {
   try {
+    // First, get the current form state to check if it's being published
+    const currentForm = await prisma.form.findUnique({
+      where: { id },
+      include: {
+        organization: true,
+        createdBy: true,
+      },
+    });
+    
+    if (!currentForm) {
+      throw new Error('Form not found');
+    }
+    
     const updateData: any = {};
     
     if (formData.title) updateData.title = formData.title;
@@ -185,6 +199,28 @@ export const updateForm = async (id: string, formData: Partial<Omit<Form, 'id' |
         createdBy: true,
       },
     });
+    
+    // Check if form is being published (changed from false to true)
+    const isBeingPublished = !currentForm.isPublished && formData.isPublished === true;
+    
+    if (isBeingPublished) {
+      try {
+        // Send email notification to form owner
+        const formUrl = `${process.env.FORM_VIEWER_URL || 'http://localhost:5173'}/form/${updatedForm.shortUrl}`;
+        
+        await sendFormPublishedNotification({
+          formTitle: updatedForm.title,
+          formDescription: updatedForm.description || undefined,
+          formUrl,
+          ownerName: updatedForm.createdBy.name || updatedForm.createdBy.email,
+        }, updatedForm.createdBy.email);
+        
+        console.log(`Form published notification sent to: ${updatedForm.createdBy.email}`);
+      } catch (emailError) {
+        // Log email error but don't fail the form update
+        console.error('Failed to send form published notification:', emailError);
+      }
+    }
     
     return {
       ...updatedForm,
