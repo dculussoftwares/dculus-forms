@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
-import { StatCard, EnhancedPieChart, EnhancedBarChart, CHART_COLORS } from './BaseChartComponents';
+import { StatCard, EnhancedPieChart, CHART_COLORS } from './BaseChartComponents';
 import { EmailFieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
 import { Mail, Shield, Building, User, Globe, AlertTriangle, CheckCircle } from 'lucide-react';
 import { MetricHelper, METRIC_HELPERS } from './MetricHelper';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface EmailFieldAnalyticsProps {
   data: EmailFieldAnalyticsData;
@@ -208,13 +209,14 @@ const CorporatePersonalBreakdown: React.FC<{
 const TopLevelDomainsChart: React.FC<{
   topLevelDomains: Array<{ tld: string; count: number; percentage: number }>;
   loading?: boolean;
-}> = ({ topLevelDomains, loading }) => {
+}> = ({ topLevelDomains, loading: _loading }) => {
   const chartData = useMemo(() => {
     if (!topLevelDomains) return [];
     return topLevelDomains.slice(0, 10).map(tld => ({
       name: `.${tld.tld}`,
       value: tld.count,
-      percentage: tld.percentage
+      percentage: tld.percentage,
+      fullName: `.${tld.tld}`
     }));
   }, [topLevelDomains]);
 
@@ -223,14 +225,58 @@ const TopLevelDomainsChart: React.FC<{
   }
 
   return (
-    <EnhancedBarChart
-      data={chartData}
-      title="Top Level Domains"
-      yAxisLabel="Number of Emails"
-      xAxisLabel="Domain Extension"
-      height={300}
-      colorPalette={[CHART_COLORS.primary[3]]}
-    />
+    <Card>
+      <CardHeader>
+        <CardTitle>Top Level Domains</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart
+            data={chartData}
+            margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis 
+              dataKey="name" 
+              tick={{ fontSize: 12 }}
+              interval={0}
+            />
+            <YAxis 
+              label={{ value: 'Number of Emails', angle: -90, position: 'insideLeft' }}
+            />
+            <Tooltip 
+              content={({ active, payload, label: _label }) => {
+                if (active && payload && payload.length) {
+                  const data = payload[0].payload;
+                  return (
+                    <div className="bg-white p-3 border rounded-lg shadow-lg border-gray-200">
+                      <p className="font-medium text-gray-900 mb-2">
+                        {data.fullName}
+                      </p>
+                      <div className="flex items-center gap-2 text-sm">
+                        <div className="w-3 h-3 rounded-full bg-orange-600" />
+                        <span className="text-gray-700">
+                          Emails: {data.value} ({data.percentage.toFixed(1)}%)
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              }}
+            />
+            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+              {chartData.map((_entry, index) => (
+                <Cell 
+                  key={`cell-${index}`} 
+                  fill={CHART_COLORS.primary[3]} 
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -410,14 +456,60 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
       {domainChartData.length > 0 && (
         <div className="space-y-4">
           <MetricHelper {...METRIC_HELPERS.DOMAIN_ANALYSIS} compact />
-          <EnhancedBarChart
-            data={domainChartData}
-            title="Most Common Email Domains"
-            yAxisLabel="Number of Emails"
-            horizontal={true}
-            height={Math.max(300, domainChartData.length * 30)}
-            colorPalette={CHART_COLORS.primary}
-          />
+          <Card>
+            <CardHeader>
+              <CardTitle>Most Common Email Domains</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={domainChartData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fontSize: 12 }}
+                    interval={0}
+                    angle={-45}
+                    textAnchor="end"
+                  />
+                  <YAxis 
+                    label={{ value: 'Number of Emails', angle: -90, position: 'insideLeft' }}
+                  />
+                  <Tooltip 
+                    content={({ active, payload, label: _label }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-white p-3 border rounded-lg shadow-lg border-gray-200">
+                            <p className="font-medium text-gray-900 mb-2">
+                              {data.fullName}
+                            </p>
+                            <div className="flex items-center gap-2 text-sm">
+                              <div className="w-3 h-3 rounded-full bg-orange-600" />
+                              <span className="text-gray-700">
+                                Emails: {data.value} ({data.percentage.toFixed(1)}%)
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                    {domainChartData.map((_entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={CHART_COLORS.primary[index % CHART_COLORS.primary.length]} 
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
         </div>
       )}
 

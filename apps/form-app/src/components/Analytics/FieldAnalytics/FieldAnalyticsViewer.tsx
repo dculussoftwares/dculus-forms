@@ -21,7 +21,10 @@ import {
   BarChart3, 
   TrendingUp,
   Users,
-  Eye
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  ArrowLeft
 } from 'lucide-react';
 
 interface FieldAnalyticsViewerProps {
@@ -402,6 +405,31 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
     // The clearSelection will be triggered by the useEffect hook
   };
 
+  // Field navigation helpers
+  const getCurrentFieldIndex = () => {
+    if (!selectedFieldIdFromUrl || !allFields.length) return -1;
+    return allFields.findIndex(field => field.fieldId === selectedFieldIdFromUrl);
+  };
+
+  const handlePrevField = () => {
+    const currentIndex = getCurrentFieldIndex();
+    if (currentIndex > 0) {
+      const prevField = allFields[currentIndex - 1];
+      handleFieldSelect(prevField.fieldId);
+    }
+  };
+
+  const handleNextField = () => {
+    const currentIndex = getCurrentFieldIndex();
+    if (currentIndex < allFields.length - 1) {
+      const nextField = allFields[currentIndex + 1];
+      handleFieldSelect(nextField.fieldId);
+    }
+  };
+
+  const canNavigatePrev = () => getCurrentFieldIndex() > 0;
+  const canNavigateNext = () => getCurrentFieldIndex() < allFields.length - 1;
+
   if (allFieldsLoading) {
     return (
       <div className="space-y-6">
@@ -458,15 +486,17 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
+        <div className="flex-1">
           <div className="flex items-center gap-3">
             {view === 'analytics' && (
               <Button
                 onClick={handleBackToGrid}
                 variant="outline"
                 size="sm"
+                className="flex items-center gap-2"
               >
-                ← Back to Fields
+                <ArrowLeft className="h-4 w-4" />
+                Back to Fields
               </Button>
             )}
             <h1 className="text-2xl font-bold text-gray-900">
@@ -477,11 +507,38 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
             {view === 'grid' 
               ? `Analyze individual field performance across ${totalResponses} form responses`
               : selectedField 
-                ? `Detailed analytics for "${selectedField.fieldLabel || selectedField.fieldId}"`
+                ? `${selectedField.fieldLabel || selectedField.fieldId} • ${getFieldTypeDisplayName(selectedField.fieldType)}`
                 : 'Loading field details...'
             }
           </p>
         </div>
+
+        {/* Field Navigation - only show in analytics view */}
+        {view === 'analytics' && allFields.length > 1 && (
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handlePrevField}
+              variant="outline"
+              size="sm"
+              disabled={!canNavigatePrev()}
+              title="Previous field"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm text-gray-600 px-2">
+              {getCurrentFieldIndex() + 1} of {allFields.length}
+            </span>
+            <Button
+              onClick={handleNextField}
+              variant="outline"
+              size="sm"
+              disabled={!canNavigateNext()}
+              title="Next field"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
         
         <div className="flex items-center gap-2">
           <Button
