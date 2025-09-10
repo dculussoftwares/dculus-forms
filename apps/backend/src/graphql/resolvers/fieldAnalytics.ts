@@ -280,8 +280,6 @@ export const fieldAnalyticsResolvers = {
         });
       }
 
-      console.log("fieldInfo.label", fieldInfo.label);
-
       try {
         const analytics = await getFieldAnalytics(
           formId,
