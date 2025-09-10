@@ -3,6 +3,7 @@ export { Input } from "./input"
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from "./card"
 export { Label } from "./label"
 export { Checkbox } from "./checkbox"
+export { RadioGroup, RadioGroupItem } from "./radio-group"
 export { Textarea } from "./textarea"
 export {
   Select,

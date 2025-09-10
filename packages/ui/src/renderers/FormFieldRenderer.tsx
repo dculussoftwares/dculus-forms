@@ -3,7 +3,7 @@ import { Controller, Control, FieldValues, Path } from 'react-hook-form';
 import { FormField, FieldType, FillableFormField, TextFieldValidation, RichTextFormField } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { LexicalRichTextEditor } from '../rich-text-editor/LexicalRichTextEditor';
-import { Checkbox } from '../index';
+import { Checkbox, RadioGroup, RadioGroupItem } from '../index';
 
 interface FieldStyles {
   container: string;
@@ -220,27 +220,26 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
             case FieldType.RADIO_FIELD:
               return (
                 <div>
-                  <div className={`space-y-2 ${hasError ? 'border-l-2 border-red-300 pl-3' : ''}`}>
-                    {(fillableField as any)?.options?.map((option: string, index: number) => (
-                      <div key={index} className="flex items-center">
-                        <input
-                          type="radio"
-                          id={`${field.id}-${index}`}
-                          value={option}
-                          checked={(controllerField.value ?? '') === option}
-                          onChange={(e) => controllerField.onChange(e.target.value)}
-                          className={`w-4 h-4 border-gray-300 focus:ring-2 ${
-                            hasError 
-                              ? 'text-red-600 focus:ring-red-500 border-red-300' 
-                              : 'text-blue-600 focus:ring-blue-500'
-                          }`}
-                          disabled={!isInteractive}
-                        />
-                        <label htmlFor={`${field.id}-${index}`} className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                          {option}
-                        </label>
-                      </div>
-                    ))}
+                  <div className={`${hasError ? 'border-l-2 border-red-300 pl-3' : ''}`}>
+                    <RadioGroup
+                      value={controllerField.value ?? ''}
+                      onValueChange={controllerField.onChange}
+                      disabled={!isInteractive}
+                      className="space-y-2"
+                    >
+                      {(fillableField as any)?.options?.map((option: string, index: number) => (
+                        <div key={index} className="flex items-center space-x-2">
+                          <RadioGroupItem 
+                            value={option} 
+                            id={`${field.id}-${index}`}
+                            className={hasError ? 'border-red-300 focus:ring-red-500' : ''}
+                          />
+                          <label htmlFor={`${field.id}-${index}`} className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                            {option}
+                          </label>
+                        </div>
+                      ))}
+                    </RadioGroup>
                   </div>
                   {hasError && (
                     <p className="mt-1 text-sm text-red-600" role="alert">

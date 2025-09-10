@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { FormField, FieldType, RichTextFormField } from '@dculus/types';
-import { Input, Textarea, Select, SelectTrigger, SelectContent, SelectValue, SelectItem, Label, RichTextEditor, Checkbox } from './index';
+import { Input, Textarea, Select, SelectTrigger, SelectContent, SelectValue, SelectItem, Label, RichTextEditor, Checkbox, RadioGroup, RadioGroupItem } from './index';
 
 interface FieldPreviewProps {
   field: FormField;
@@ -227,27 +227,28 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
 
       case FieldType.RADIO_FIELD:
         return (
-          <div className="space-y-2">
+          <div>
             {options.length > 0 ? (
-              options.map((option, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    id={`${field.id}-${index}`}
-                    name={field.id}
-                    value={option}
-                    defaultChecked={fieldData.defaultValue === option}
-                    disabled={disabled}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 disabled:opacity-50"
-                  />
-                  <label
-                    htmlFor={`${field.id}-${index}`}
-                    className="text-sm text-gray-700 dark:text-gray-300"
-                  >
-                    {option}
-                  </label>
-                </div>
-              ))
+              <RadioGroup 
+                defaultValue={fieldData.defaultValue || undefined}
+                disabled={disabled}
+                className="space-y-2"
+              >
+                {options.map((option, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <RadioGroupItem 
+                      value={option} 
+                      id={`${field.id}-${index}`}
+                    />
+                    <label
+                      htmlFor={`${field.id}-${index}`}
+                      className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
+                    >
+                      {option}
+                    </label>
+                  </div>
+                ))}
+              </RadioGroup>
             ) : (
               <div className="text-sm text-gray-500 italic">No options added yet</div>
             )}
