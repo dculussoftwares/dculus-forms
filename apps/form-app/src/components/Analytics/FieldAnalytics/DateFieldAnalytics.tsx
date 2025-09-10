@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
-import { StatCard, EnhancedBarChart, EnhancedLineChart, CHART_COLORS } from './BaseChartComponents';
+import { StatCard, CHART_COLORS } from './BaseChartComponents';
 import { DateFieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
 import { Calendar, Clock, TrendingUp, Sunrise, Snowflake, Flower, Sun, Leaf } from 'lucide-react';
 import { MetricHelper, METRIC_HELPERS } from './MetricHelper';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface DateFieldAnalyticsProps {
   data: DateFieldAnalyticsData;
@@ -336,7 +337,7 @@ const DateRangeAnalysis: React.FC<{
 
 export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
   data,
-  fieldLabel,
+  fieldLabel: _fieldLabel,
   totalResponses,
   loading
 }) => {
@@ -461,23 +462,113 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
           <MetricHelper {...METRIC_HELPERS.WEEKDAY_PATTERNS} compact />
-          <EnhancedBarChart
-            data={weekdayChartData}
-            title="Day of Week Distribution"
-            yAxisLabel="Number of Selections"
-            colorPalette={[CHART_COLORS.primary[1]]}
-            height={300}
-          />
+          <Card>
+            <CardHeader>
+              <CardTitle>Day of Week Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={weekdayChartData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fontSize: 12 }}
+                    interval={0}
+                  />
+                  <YAxis 
+                    label={{ value: 'Number of Selections', angle: -90, position: 'insideLeft' }}
+                  />
+                  <Tooltip 
+                    content={({ active, payload, label: _label }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-white p-3 border rounded-lg shadow-lg border-gray-200">
+                            <p className="font-medium text-gray-900 mb-2">
+                              {data.fullName}
+                            </p>
+                            <div className="flex items-center gap-2 text-sm">
+                              <div className="w-3 h-3 rounded-full bg-blue-600" />
+                              <span className="text-gray-700">
+                                Selections: {data.value} ({data.percentage.toFixed(1)}%)
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                    {weekdayChartData.map((_entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={CHART_COLORS.primary[1]} 
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
         </div>
         <div className="space-y-4">
           <MetricHelper {...METRIC_HELPERS.MONTHLY_TRENDS} compact />
-          <EnhancedBarChart
-            data={monthlyChartData}
-            title="Monthly Distribution"
-            yAxisLabel="Number of Selections"
-            colorPalette={[CHART_COLORS.primary[2]]}
-            height={300}
-          />
+          <Card>
+            <CardHeader>
+              <CardTitle>Monthly Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={monthlyChartData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fontSize: 12 }}
+                    interval={0}
+                  />
+                  <YAxis 
+                    label={{ value: 'Number of Selections', angle: -90, position: 'insideLeft' }}
+                  />
+                  <Tooltip 
+                    content={({ active, payload, label: _label }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-white p-3 border rounded-lg shadow-lg border-gray-200">
+                            <p className="font-medium text-gray-900 mb-2">
+                              {data.fullName}
+                            </p>
+                            <div className="flex items-center gap-2 text-sm">
+                              <div className="w-3 h-3 rounded-full bg-green-600" />
+                              <span className="text-gray-700">
+                                Selections: {data.value} ({data.percentage.toFixed(1)}%)
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                    {monthlyChartData.map((_entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={CHART_COLORS.primary[2]} 
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
