@@ -26,6 +26,7 @@ import {
   ChevronRight,
   ArrowLeft
 } from 'lucide-react';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 
 interface FieldAnalyticsViewerProps {
   formId: string;
@@ -70,6 +71,198 @@ const getFieldTypeDisplayName = (fieldType: string) => {
   }
 };
 
+// Mini Chart Colors
+const MINI_CHART_COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#6B7280'];
+
+// Mini Preview Charts
+const MiniWordCloud: React.FC<{ words: Array<{ word: string; count: number }> }> = ({ words }) => {
+  if (!words || words.length === 0) return (
+    <div className="flex items-center justify-center h-full text-gray-400">
+      <div className="text-center">
+        <FileText className="h-12 w-12 mx-auto mb-2" />
+        <p className="text-sm">No word data</p>
+      </div>
+    </div>
+  );
+  
+  const topWords = words.slice(0, 10);
+  const maxCount = Math.max(...topWords.map(w => w.count));
+  
+  return (
+    <div className="flex flex-wrap gap-3 items-center justify-center h-full p-4">
+      {topWords.map((word) => {
+        const size = Math.max(16, Math.min(36, 16 + (word.count / maxCount) * 20));
+        const opacity = Math.max(0.6, word.count / maxCount);
+        return (
+          <span
+            key={word.word}
+            className="px-2 py-1 text-blue-600 font-semibold hover:scale-110 transition-transform cursor-default"
+            style={{ 
+              fontSize: `${size}px`,
+              opacity: opacity
+            }}
+            title={`"${word.word}" appears ${word.count} times`}
+          >
+            {word.word}
+          </span>
+        );
+      })}
+    </div>
+  );
+};
+
+const MiniBarChart: React.FC<{ data: Array<{ name: string; value: number }> }> = ({ data }) => {
+  if (!data || data.length === 0) return (
+    <div className="flex items-center justify-center h-full text-gray-400">
+      <div className="text-center">
+        <BarChart3 className="h-12 w-12 mx-auto mb-2" />
+        <p className="text-sm">No chart data</p>
+      </div>
+    </div>
+  );
+  
+  return (
+    <div className="h-full w-full p-4">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data.slice(0, 6)} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
+          <XAxis 
+            dataKey="name" 
+            tick={{ fontSize: 12, fill: '#6B7280' }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis 
+            tick={{ fontSize: 12, fill: '#6B7280' }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <Bar 
+            dataKey="value" 
+            fill="#3B82F6" 
+            radius={[4, 4, 0, 0]}
+            style={{ filter: 'drop-shadow(0 2px 4px rgba(59, 130, 246, 0.3))' }}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
+const MiniPieChart: React.FC<{ data: Array<{ name: string; value: number }> }> = ({ data }) => {
+  if (!data || data.length === 0) return (
+    <div className="flex items-center justify-center h-full text-gray-400">
+      <div className="text-center">
+        <CircleDot className="h-12 w-12 mx-auto mb-2" />
+        <p className="text-sm">No selection data</p>
+      </div>
+    </div>
+  );
+  
+  const chartData = data.slice(0, 5);
+  
+  return (
+    <div className="h-full w-full flex items-center justify-center">
+      <div className="flex items-center gap-8">
+        {/* Pie Chart */}
+        <div className="flex-shrink-0">
+          <ResponsiveContainer width={180} height={180}>
+            <PieChart>
+              <Pie
+                data={chartData}
+                dataKey="value"
+                cx="50%"
+                cy="50%"
+                innerRadius={40}
+                outerRadius={80}
+                paddingAngle={2}
+              >
+                {chartData.map((_entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={MINI_CHART_COLORS[index % MINI_CHART_COLORS.length]}
+                    style={{ filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))' }}
+                  />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        
+        {/* Legend */}
+        <div className="space-y-2">
+          {chartData.map((item, index) => (
+            <div key={item.name} className="flex items-center gap-2">
+              <div 
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: MINI_CHART_COLORS[index % MINI_CHART_COLORS.length] }}
+              />
+              <span className="text-sm text-gray-700 font-medium">
+                {item.name}: {item.value}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const MiniPreviewChart: React.FC<{ field: FieldAnalyticsData }> = ({ field }) => {
+  // Generate mock preview data based on field type for demonstration
+  const getMockPreviewData = (fieldType: string) => {
+    switch (fieldType) {
+      case 'text_input_field':
+      case 'text_area_field':
+        return { type: 'wordcloud' as const, data: [
+          { word: 'great', count: 15 }, { word: 'good', count: 12 }, { word: 'awesome', count: 8 },
+          { word: 'nice', count: 6 }, { word: 'excellent', count: 5 }
+        ]};
+      case 'number_field':
+        return { type: 'bar' as const, data: [
+          { name: '0-10', value: 5 }, { name: '11-20', value: 12 }, { name: '21-30', value: 8 },
+          { name: '31-40', value: 15 }, { name: '41-50', value: 3 }
+        ]};
+      case 'email_field':
+        return { type: 'bar' as const, data: [
+          { name: 'gmail', value: 25 }, { name: 'yahoo', value: 8 }, { name: 'outlook', value: 12 },
+          { name: 'company', value: 18 }, { name: 'other', value: 7 }
+        ]};
+      case 'date_field':
+        return { type: 'bar' as const, data: [
+          { name: 'Jan', value: 8 }, { name: 'Feb', value: 12 }, { name: 'Mar', value: 15 },
+          { name: 'Apr', value: 10 }, { name: 'May', value: 6 }
+        ]};
+      case 'select_field':
+      case 'radio_field':
+        return { type: 'pie' as const, data: [
+          { name: 'Option A', value: 45 }, { name: 'Option B', value: 30 },
+          { name: 'Option C', value: 15 }, { name: 'Option D', value: 10 }
+        ]};
+      case 'checkbox_field':
+        return { type: 'bar' as const, data: [
+          { name: 'Choice 1', value: 28 }, { name: 'Choice 2', value: 22 },
+          { name: 'Choice 3', value: 18 }, { name: 'Choice 4', value: 12 }
+        ]};
+      default:
+        return null;
+    }
+  };
+
+  const previewData = getMockPreviewData(field.fieldType);
+  if (!previewData) return null;
+
+  switch (previewData.type) {
+    case 'wordcloud':
+      return <MiniWordCloud words={previewData.data as Array<{ word: string; count: number }>} />;
+    case 'bar':
+      return <MiniBarChart data={previewData.data as Array<{ name: string; value: number }>} />;
+    case 'pie':
+      return <MiniPieChart data={previewData.data as Array<{ name: string; value: number }>} />;
+    default:
+      return null;
+  }
+};
+
 // Field Selection Grid
 const FieldSelectionGrid: React.FC<{
   fields: FieldAnalyticsData[];
@@ -99,7 +292,7 @@ const FieldSelectionGrid: React.FC<{
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 gap-4">
       {fields.map((field) => {
         const isSelected = selectedFieldId === field.fieldId;
         
@@ -111,55 +304,92 @@ const FieldSelectionGrid: React.FC<{
             }`}
             onClick={() => onFieldSelect(field.fieldId)}
           >
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className={`p-2 rounded-lg ${
-                    isSelected ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
-                  }`}>
-                    {getFieldTypeIcon(field.fieldType)}
-                  </div>
-                  <div>
-                    <div className="font-medium text-gray-900 text-sm">
-                      {field.fieldLabel || `Field ${field.fieldId}`}
+            <CardContent className="p-6">
+              <div className="flex items-stretch gap-6">
+                {/* Left side - Field Info */}
+                <div 
+                  className="flex-shrink-0 w-80"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={`p-3 rounded-lg ${
+                      isSelected ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {getFieldTypeIcon(field.fieldType)}
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {getFieldTypeDisplayName(field.fieldType)}
+                    <div>
+                      <div className="font-semibold text-gray-900 text-lg">
+                        {field.fieldLabel || `Field ${field.fieldId}`}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {getFieldTypeDisplayName(field.fieldType)}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Stats */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm text-gray-700">Responses</span>
+                      </div>
+                      <div className="font-bold text-lg text-gray-900">
+                        {field.totalResponses}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm text-gray-700">Response Rate</span>
+                      </div>
+                      <div className={`px-3 py-1 rounded-full text-sm font-bold ${
+                        getResponseRateColor(field.responseRate)
+                      }`}>
+                        {field.responseRate.toFixed(1)}%
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Eye className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm text-gray-700">Last Updated</span>
+                      </div>
+                      <div className="font-medium text-sm text-gray-900">
+                        {new Date(field.lastUpdated).toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </div>
                     </div>
                   </div>
                 </div>
-                
-                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  getResponseRateColor(field.responseRate)
-                }`}>
-                  {field.responseRate.toFixed(0)}%
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <div className="flex items-center gap-1 text-gray-500 mb-1">
-                    <Users className="h-3 w-3" />
-                    <span>Responses</span>
-                  </div>
-                  <div className="font-semibold text-gray-900">
-                    {field.totalResponses}
+                {/* Right side - Chart Preview */}
+                <div 
+                  className="flex-1 min-h-0"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="h-full bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 flex flex-col">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Data Preview</h3>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onFieldSelect(field.fieldId);
+                        }}
+                        className="text-xs text-gray-600 bg-white px-3 py-1.5 rounded-full hover:bg-gray-50 hover:text-gray-800 transition-colors cursor-pointer border border-gray-200"
+                      >
+                        Click to explore →
+                      </button>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center min-h-[200px]">
+                      <MiniPreviewChart field={field} />
+                    </div>
                   </div>
                 </div>
-                
-                <div>
-                  <div className="flex items-center gap-1 text-gray-500 mb-1">
-                    <TrendingUp className="h-3 w-3" />
-                    <span>Rate</span>
-                  </div>
-                  <div className="font-semibold text-gray-900">
-                    {field.responseRate.toFixed(1)}%
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-3 text-xs text-gray-500">
-                Last updated: {new Date(field.lastUpdated).toLocaleDateString()}
               </div>
             </CardContent>
           </Card>
@@ -471,7 +701,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           {[...Array(6)].map((_, i) => (
             <Card key={i}>
               <CardContent className="p-4">
