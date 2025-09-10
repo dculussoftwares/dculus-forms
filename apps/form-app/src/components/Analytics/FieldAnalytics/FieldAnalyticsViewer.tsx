@@ -303,6 +303,7 @@ const AnalyticsContent: React.FC<{
 // Main Component
 export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ formId, initialSelectedFieldId }) => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
   
   // Get selected field from URL parameters
   const selectedFieldIdFromUrl = searchParams.get('field') || null;
@@ -406,6 +407,17 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
       refreshAll();
     } catch (err) {
       console.error('Failed to invalidate cache:', err);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      refreshAll();
+      // Give a minimum delay to show the spinning animation
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -556,12 +568,12 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
         
         <div className="flex items-center gap-2">
           <Button
-            onClick={refreshAll}
+            onClick={handleRefresh}
             variant="outline"
             size="sm"
-            disabled={loading}
+            disabled={allFieldsLoading || selectedFieldLoading || isRefreshing}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 mr-2 ${(allFieldsLoading || selectedFieldLoading || isRefreshing) ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
           
