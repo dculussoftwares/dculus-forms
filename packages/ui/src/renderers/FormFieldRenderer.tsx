@@ -3,6 +3,7 @@ import { Controller, Control, FieldValues, Path } from 'react-hook-form';
 import { FormField, FieldType, FillableFormField, TextFieldValidation, RichTextFormField } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { LexicalRichTextEditor } from '../rich-text-editor/LexicalRichTextEditor';
+import { Checkbox } from '../index';
 
 interface FieldStyles {
   container: string;
@@ -256,17 +257,16 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                   <div className={`space-y-2 ${hasError ? 'border-l-2 border-red-300 pl-3' : ''}`}>
                     {(fillableField as any)?.options?.map((option: string, index: number) => (
                       <div key={index} className="flex items-center">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           id={`${field.id}-${index}`}
                           checked={currentValues.includes(option)}
-                          onChange={(e) => {
-                            const newValues = e.target.checked
+                          onCheckedChange={(checked) => {
+                            const newValues = checked
                               ? [...currentValues, option]
                               : currentValues.filter((v: string) => v !== option);
                             controllerField.onChange(newValues);
                           }}
-                          className={`w-4 h-4 border-gray-300 rounded focus:ring-2 ${
+                          className={`${
                             hasError 
                               ? 'text-red-600 focus:ring-red-500 border-red-300' 
                               : 'text-blue-600 focus:ring-blue-500'

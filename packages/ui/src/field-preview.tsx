@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { FormField, FieldType, RichTextFormField } from '@dculus/types';
-import { Input, Textarea, Select, SelectTrigger, SelectContent, SelectValue, SelectItem, Label, RichTextEditor } from './index';
+import { Input, Textarea, Select, SelectTrigger, SelectContent, SelectValue, SelectItem, Label, RichTextEditor, Checkbox } from './index';
 
 interface FieldPreviewProps {
   field: FormField;
@@ -263,15 +263,11 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
                 const isChecked = defaultValues.includes(option);
                 return (
                   <div key={index} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       id={`${field.id}-${index}`}
-                      name={field.id}
-                      value={option}
                       checked={isChecked}
                       disabled={disabled}
-                      onChange={() => {}} // Disabled preview - no actual interaction
-                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50"
+                      onCheckedChange={() => {}} // Disabled preview - no actual interaction
                     />
                     <label
                       htmlFor={`${field.id}-${index}`}

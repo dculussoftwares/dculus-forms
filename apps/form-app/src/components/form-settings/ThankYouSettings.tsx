@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
   Label,
+  Checkbox,
 } from '@dculus/ui';
 import { CheckCircle, Save } from 'lucide-react';
 import { deserializeFormSchema, FillableFormField } from '@dculus/types';
@@ -77,12 +78,10 @@ const ThankYouSettings: React.FC<ThankYouSettingsProps> = ({
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
+          <Checkbox
             id="thank-you-enabled"
             checked={settings.enabled}
-            onChange={(e) => onToggleEnabled(e.target.checked)}
-            className="w-4 h-4 text-green-600 focus:ring-green-500 rounded"
+            onCheckedChange={onToggleEnabled}
           />
           <div className="space-y-1">
             <Label

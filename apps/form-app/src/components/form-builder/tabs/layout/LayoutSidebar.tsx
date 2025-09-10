@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Palette, Image, Search } from 'lucide-react';
 import { FormLayout, LayoutCode } from '@dculus/types';
-import { Tabs, TabsList, TabsTrigger, TabsContent, Button } from '@dculus/ui';
+import { Tabs, TabsList, TabsTrigger, TabsContent, Button, Checkbox } from '@dculus/ui';
 import { useQuery } from '@apollo/client';
 import { LayoutThumbnails } from './LayoutThumbnails';
 import { LayoutOptions } from './LayoutOptions';
@@ -111,12 +111,10 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
             
             {/* Toggle for custom background color */}
             <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="isCustomBackgroundColorEnabled"
                 checked={layout.isCustomBackgroundColorEnabled || false}
-                onChange={(e) => onLayoutUpdate({ isCustomBackgroundColorEnabled: e.target.checked })}
-                className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                onCheckedChange={(checked) => onLayoutUpdate({ isCustomBackgroundColorEnabled: !!checked })}
               />
               <label htmlFor="isCustomBackgroundColorEnabled" className="text-sm text-gray-700 dark:text-gray-300">
                 Use custom background color

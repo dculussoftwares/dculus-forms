@@ -7,7 +7,8 @@ import {
   SelectItem, 
   SelectTrigger, 
   SelectValue,
-  Label
+  Label,
+  Checkbox
 } from '@dculus/ui';
 import { FormField, FieldType } from '@dculus/types';
 
@@ -111,13 +112,11 @@ export const DefaultValueInput: React.FC<DefaultValueInputProps> = ({
                     .filter((option: string) => option && option.trim() !== '')
                     .map((option: string, index: number) => (
                       <div key={`checkbox-default-${index}`} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           id={`default-option-${index}`}
                           checked={selectedValues.includes(option)}
-                          onChange={(e) => handleCheckboxToggle(option, e.target.checked)}
+                          onCheckedChange={(checked) => handleCheckboxToggle(option, !!checked)}
                           disabled={!isConnected}
-                          className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
                         />
                         <Label 
                           htmlFor={`default-option-${index}`} 

@@ -8,7 +8,8 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
+  Checkbox
 } from '@dculus/ui';
 import { useSelectionFieldForm } from '../../../hooks/field-forms';
 import {
@@ -227,14 +228,13 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                               
                               return (
                                 <div key={option.id || index} className="flex items-center space-x-2">
-                                  <input
-                                    type="checkbox"
+                                  <Checkbox
                                     id={`default-${option.id || index}`}
                                     checked={selectedValues.includes(String(optionValue))}
-                                    onChange={(e) => {
+                                    onCheckedChange={(checked) => {
                                       const value = String(optionValue);
                                       let newValues;
-                                      if (e.target.checked) {
+                                      if (checked) {
                                         newValues = [...selectedValues, value];
                                       } else {
                                         newValues = selectedValues.filter((val: string) => val !== value);
@@ -242,7 +242,6 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                                       controllerField.onChange(newValues);
                                     }}
                                     disabled={!isConnected}
-                                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                                   />
                                   <Label 
                                     htmlFor={`default-${option.id || index}`}
@@ -341,13 +340,11 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                 name="required"
                 control={control}
                 render={({ field: controllerField }) => (
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     id="field-required"
                     checked={controllerField.value || false}
-                    onChange={controllerField.onChange}
+                    onCheckedChange={controllerField.onChange}
                     disabled={!isConnected}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                   />
                 )}
               />
