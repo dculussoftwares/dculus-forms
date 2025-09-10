@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, Button } from '@dculus/ui';
-import { useFieldAnalyticsManager, FieldAnalyticsData, useFieldAnalyticsCache } from '../../../hooks/useFieldAnalytics';
-import { usePerformanceMonitor, useMemoryTracker } from '../../../hooks/usePerformanceMonitor';
+import { useFieldAnalyticsManager, FieldAnalyticsData, useFieldAnalyticsCache } from '@/hooks/useFieldAnalytics.ts';
+import { usePerformanceMonitor, useMemoryTracker } from '@/hooks/usePerformanceMonitor.ts';
 import { TextFieldAnalytics } from './TextFieldAnalytics';
 import { NumberFieldAnalytics } from './NumberFieldAnalytics';
 import { SelectionFieldAnalytics } from './SelectionFieldAnalytics';
@@ -325,23 +325,41 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
     loading
   } = useFieldAnalyticsManager(formId);
   
+  // Field URL helpers - convert between fieldId and URL-friendly parameter
+  const getFieldUrlParam = (fieldId: string) => {
+    const fieldIndex = allFields.findIndex(field => field.fieldId === fieldId);
+    return fieldIndex >= 0 ? `field-${fieldIndex + 1}` : fieldId;
+  };
+
+  const getFieldIdFromUrlParam = (urlParam: string) => {
+    if (urlParam.startsWith('field-')) {
+      const fieldNumber = parseInt(urlParam.replace('field-', ''));
+      if (!isNaN(fieldNumber) && fieldNumber > 0 && fieldNumber <= allFields.length) {
+        return allFields[fieldNumber - 1]?.fieldId || null;
+      }
+    }
+    // Fallback: try to find exact match (for backward compatibility)
+    return allFields.find(field => field.fieldId === urlParam)?.fieldId || null;
+  };
+
   // Initialize URL parameter if initialSelectedFieldId is provided
   useEffect(() => {
     if (initialSelectedFieldId && !selectedFieldIdFromUrl) {
       const newSearchParams = new URLSearchParams(searchParams);
-      newSearchParams.set('field', initialSelectedFieldId);
+      newSearchParams.set('field', getFieldUrlParam(initialSelectedFieldId));
       setSearchParams(newSearchParams);
     }
-  }, [initialSelectedFieldId, selectedFieldIdFromUrl, searchParams, setSearchParams]);
+  }, [initialSelectedFieldId, selectedFieldIdFromUrl, searchParams, setSearchParams, allFields]);
 
   // Sync URL field selection with the analytics manager
   useEffect(() => {
-    if (selectedFieldIdFromUrl && selectedFieldIdFromUrl !== selectedFieldId) {
-      selectField(selectedFieldIdFromUrl);
+    const actualFieldId = getFieldIdFromUrlParam(selectedFieldIdFromUrl || '');
+    if (actualFieldId && actualFieldId !== selectedFieldId) {
+      selectField(actualFieldId);
     } else if (!selectedFieldIdFromUrl && selectedFieldId) {
       clearSelection();
     }
-  }, [selectedFieldIdFromUrl, selectedFieldId, selectField, clearSelection]);
+  }, [selectedFieldIdFromUrl, selectedFieldId, selectField, clearSelection, allFields]);
   
   const { invalidateFormCache } = useFieldAnalyticsCache();
 
@@ -393,7 +411,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
 
   const handleFieldSelect = (fieldId: string) => {
     const newSearchParams = new URLSearchParams(searchParams);
-    newSearchParams.set('field', fieldId);
+    newSearchParams.set('field', getFieldUrlParam(fieldId));
     setSearchParams(newSearchParams);
     // The selectField will be triggered by the useEffect hook
   };
@@ -407,8 +425,9 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
 
   // Field navigation helpers
   const getCurrentFieldIndex = () => {
-    if (!selectedFieldIdFromUrl || !allFields.length) return -1;
-    return allFields.findIndex(field => field.fieldId === selectedFieldIdFromUrl);
+    const actualFieldId = getFieldIdFromUrlParam(selectedFieldIdFromUrl || '');
+    if (!actualFieldId || !allFields.length) return -1;
+    return allFields.findIndex(field => field.fieldId === actualFieldId);
   };
 
   const handlePrevField = () => {
@@ -486,7 +505,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           {view === 'analytics' && (
             <Button
               onClick={handleBackToGrid}
@@ -498,7 +517,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
               All Fields
             </Button>
           )}
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900 w-40">
             {view === 'grid' ? 'Field Analytics' : 'Field Insights'}
           </h1>
           {view === 'grid' && (
