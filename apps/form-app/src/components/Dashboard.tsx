@@ -5,10 +5,12 @@ import {
   TypographyMuted,
   TypographyH3,
   Button,
+  Input,
 } from '@dculus/ui';
 import { MainLayout } from "./MainLayout";
-import { FileText, Eye, Plus, Users2, Edit3 } from 'lucide-react';
+import { FileText, Eye, Plus, Users2, Edit3, Search, X } from 'lucide-react';
 import { useNavigate, Routes, Route } from 'react-router-dom';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@apollo/client';
 import { GET_FORMS_DASHBOARD, GET_ACTIVE_ORGANIZATION } from '../graphql/queries';
 import Templates from '../pages/Templates';
@@ -42,6 +44,7 @@ export function Dashboard() {
 
 function FormsListDashboard() {
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
   const { data: orgData } = useQuery(GET_ACTIVE_ORGANIZATION);
   const { data: formsData, loading: formsLoading, error: formsError } = useQuery(GET_FORMS_DASHBOARD, {
     variables: { organizationId: orgData?.activeOrganization?.id },
@@ -49,6 +52,23 @@ function FormsListDashboard() {
   });
 
   const forms = formsData?.forms || [];
+
+  // Filter forms based on search term
+  const filteredForms = useMemo(() => {
+    if (!searchTerm.trim()) return forms;
+    
+    return forms.filter((form: any) => {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        form.title?.toLowerCase().includes(searchLower) ||
+        form.description?.toLowerCase().includes(searchLower)
+      );
+    });
+  }, [forms, searchTerm]);
+
+  const clearSearch = () => {
+    setSearchTerm('');
+  };
 
   return (
     <MainLayout 
@@ -63,6 +83,7 @@ function FormsListDashboard() {
             <TypographyH3 className="text-2xl font-bold tracking-tight">Your Forms</TypographyH3>
             <TypographyMuted className="text-muted-foreground">
               {forms.length} form{forms.length !== 1 ? 's' : ''} in your workspace
+              {searchTerm && ` • ${filteredForms.length} matching search`}
             </TypographyMuted>
           </div>
           <Button 
@@ -74,6 +95,31 @@ function FormsListDashboard() {
             Create Form
           </Button>
         </div>
+
+        {/* Search Bar */}
+        {forms.length > 0 && (
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search forms by name or description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-10"
+              />
+              {searchTerm && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearSearch}
+                  className="absolute right-1 top-1/2 h-7 w-7 p-0 -translate-y-1/2 hover:bg-muted"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Forms Grid */}
         {formsLoading ? (
@@ -99,7 +145,7 @@ function FormsListDashboard() {
               <div className="text-muted-foreground text-sm">Please try refreshing the page</div>
             </div>
           </div>
-        ) : forms.length === 0 ? (
+        ) : filteredForms.length === 0 && !searchTerm ? (
           <div className="text-center py-20">
             <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-xl p-12 max-w-lg mx-auto">
               <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
@@ -119,9 +165,29 @@ function FormsListDashboard() {
               </Button>
             </div>
           </div>
+        ) : filteredForms.length === 0 && searchTerm ? (
+          <div className="text-center py-20">
+            <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-xl p-12 max-w-lg mx-auto">
+              <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Search className="w-8 h-8 text-primary" />
+              </div>
+              <TypographyH3 className="text-xl font-semibold mb-3">No forms found</TypographyH3>
+              <TypographyMuted className="text-muted-foreground mb-6 max-w-sm mx-auto">
+                No forms match your search for "{searchTerm}". Try a different search term.
+              </TypographyMuted>
+              <Button 
+                onClick={clearSearch}
+                variant="outline"
+                size="lg"
+              >
+                <X className="mr-2 h-4 w-4" />
+                Clear Search
+              </Button>
+            </div>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {forms.map((form: any) => (
+            {filteredForms.map((form: any) => (
               <FormCard key={form.id} form={form} onNavigate={navigate} />
             ))}
           </div>
