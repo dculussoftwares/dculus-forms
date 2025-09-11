@@ -577,14 +577,14 @@ const ResponsesTable: React.FC = () => {
             )}
             
             {/* Field filters */}
-            {Object.values(filters).filter(f => f.active).map((filter) => {
+            {Object.entries(filters).filter(([, f]) => f.active).map(([filterId, filter]) => {
               const field = fillableFields.find(f => f.id === filter.fieldId);
               return field ? (
                 <FilterChip
-                  key={filter.fieldId}
+                  key={filterId}
                   field={field}
                   filter={filter}
-                  onRemove={() => handleRemoveFilter(filter.fieldId)}
+                  onRemove={() => handleRemoveFilter(filterId)}
                 />
               ) : null;
             })}

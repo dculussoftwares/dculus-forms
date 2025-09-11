@@ -84,10 +84,14 @@ export const FilterChip: React.FC<FilterChipProps> = ({
       <Button
         variant="ghost"
         size="sm"
-        onClick={onRemove}
-        className="h-5 w-5 p-0 hover:bg-blue-200/50 text-blue-700 hover:text-blue-900 ml-1 flex-shrink-0 rounded-full"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onRemove();
+        }}
+        className="h-6 w-6 p-0 hover:bg-blue-200/50 text-blue-700 hover:text-blue-900 ml-1 flex-shrink-0 rounded-full pointer-events-auto"
       >
-        <X className="h-3 w-3" />
+        <X className="h-4 w-4 pointer-events-none" />
         <span className="sr-only">Remove filter</span>
       </Button>
     </div>
