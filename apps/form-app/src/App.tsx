@@ -13,6 +13,7 @@ import ResponsesIndividual from './pages/ResponsesIndividual';
 import { SignUp } from './pages/SignUp';
 import { SignIn } from './pages/SignIn';
 import { SignInOTP } from './pages/SignInOTP';
+import { ForgotPassword } from './pages/ForgotPassword';
 import Settings from './pages/Settings';
 import FormDashboard from './pages/FormDashboard';
 import FormAnalytics from './pages/FormAnalytics';
@@ -28,6 +29,7 @@ function App() {
           {/* Public routes */}
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signin/otp" element={<SignInOTP />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/signup" element={<SignUp />} />
           
           {/* Protected routes */}

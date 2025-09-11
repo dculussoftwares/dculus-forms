@@ -16,7 +16,7 @@ import {
 import { slugify } from '@dculus/utils';
 import { authClient, signUp, emailOtp, signIn } from '../lib/auth-client';
 import { OTPInput } from '../components/OTPInput';
-import { ArrowLeft, Mail, Timer, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Mail, Timer } from 'lucide-react';
 
 export const SignUp = () => {
   const [step, setStep] = useState<'form' | 'verify'>('form');

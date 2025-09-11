@@ -46,6 +46,6 @@ const customSignOut = async (options?: any) => {
   return authClient.signOut(options);
 };
 
-export const { signIn, signUp, useSession, getSession, emailOtp } = authClient;
+export const { signIn, signUp, useSession, getSession, emailOtp, forgetPassword } = authClient;
 
 export const signOut = customSignOut;

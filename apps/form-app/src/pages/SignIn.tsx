@@ -1,16 +1,26 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button, Input, Label, Card, CardContent, CardDescription, CardHeader, CardTitle, TypographyH2, TypographyP, TypographySmall } from "@dculus/ui";
 import { signIn } from "../lib/auth-client";
 
 export const SignIn = () => {
+  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
+
+  // Check for success messages from URL params
+  React.useEffect(() => {
+    const message = searchParams.get('message');
+    if (message === 'password-reset-success') {
+      setSuccessMessage('Password reset successful! Please sign in with your new password.');
+    }
+  }, [searchParams]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -154,6 +164,12 @@ export const SignIn = () => {
                   )}
                 </div>
 
+                {successMessage && (
+                  <TypographySmall className="text-green-600 text-center bg-green-50 p-3 rounded-md border border-green-200">
+                    {successMessage}
+                  </TypographySmall>
+                )}
+
                 {errors.submit && (
                   <TypographySmall className="text-red-500 text-center">
                     {errors.submit}
@@ -191,6 +207,15 @@ export const SignIn = () => {
               </Button>
             </CardContent>
           </Card>
+
+          <TypographySmall className="text-center">
+            <Link
+              to="/forgot-password"
+              className="underline underline-offset-4 hover:text-primary"
+            >
+              Forgot your password?
+            </Link>
+          </TypographySmall>
 
           <TypographySmall className="text-center">
             Don't have an account?{" "}
