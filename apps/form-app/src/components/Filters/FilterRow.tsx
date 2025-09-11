@@ -295,11 +295,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
 
   return (
     <div className="flex items-center gap-3 p-4 bg-white border border-slate-200 rounded-lg">
-      {isFirst ? (
-        <div className="text-sm text-slate-600 px-2">
-          Show me all responses where...
-        </div>
-      ) : (
+      {!isFirst && (
         <div className="text-sm font-medium text-slate-600 px-2">
           and
         </div>

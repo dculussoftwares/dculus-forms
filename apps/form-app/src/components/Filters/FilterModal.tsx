@@ -71,7 +71,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
               Filter responses
             </h2>
             <p className="text-sm text-slate-500 mt-1">
-              Create filters to show specific responses that match your criteria
+              Show me all responses where the following conditions are met
             </p>
           </div>
           <Button
