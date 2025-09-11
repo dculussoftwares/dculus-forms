@@ -108,39 +108,8 @@ export function ServerDataTable<TData, TValue>({
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
-      {/* Enhanced Search Bar - Fixed width, no horizontal scroll */}
-      <div className="flex items-center justify-between bg-gradient-to-r from-slate-50 to-gray-50 p-4 rounded-xl border border-slate-200/60 flex-shrink-0">
-        <div className="relative flex-1 max-w-sm min-w-0">
-          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-            <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-          <input
-            placeholder={searchPlaceholder}
-            value={globalFilter ?? ""}
-            onChange={(event) => setGlobalFilter(String(event.target.value))}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
-            disabled={loading}
-          />
-          {globalFilter && (
-            <button
-              onClick={() => setGlobalFilter("")}
-              className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
-        </div>
-        <div className="flex items-center space-x-2 text-xs text-gray-500 flex-shrink-0">
-          <span className="px-2 py-1 bg-white rounded-md border">{totalItems} total</span>
-        </div>
-      </div>
-      
       {/* Table Container - Only this part scrolls horizontally */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="bg-white border border-slate-200 flex-1 min-h-0 flex flex-col overflow-hidden">
         {/* Table wrapper with horizontal scroll ONLY for table content */}
         <div className="flex-1 min-h-0 relative overflow-hidden">
           <div 
@@ -285,91 +254,46 @@ export function ServerDataTable<TData, TValue>({
         </div>
       </div>
       
-      {/* Enhanced Pagination Controls - Fixed width, no horizontal scroll */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-gradient-to-r from-slate-50 to-gray-50 rounded-xl border border-slate-200/60 flex-shrink-0">
-        {/* Results Info */}
-        <div className="flex items-center space-x-4 min-w-0">
-          <div className="text-sm text-slate-600">
-            Showing <span className="font-semibold text-slate-800">{startItem}</span> to{" "}
-            <span className="font-semibold text-slate-800">{endItem}</span> of{" "}
-            <span className="font-semibold text-slate-800">{totalItems}</span> results
-          </div>
-          
-          {/* Rows per page */}
-          <div className="flex items-center space-x-2 flex-shrink-0">
-            <label className="text-sm font-medium text-slate-600">Rows:</label>
-            <select
-              value={pageSize}
-              onChange={(e) => onPageSizeChange(Number(e.target.value))}
-              className="h-9 w-16 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
-              disabled={loading}
-            >
-              {[10, 20, 30, 50, 100].map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </select>
-          </div>
+      {/* Compact Pagination */}
+      <div className="flex items-center justify-between px-4 py-2 bg-slate-50 border-t border-slate-200 flex-shrink-0">
+        {/* Rows per page */}
+        <div className="flex items-center space-x-2">
+          <span className="text-xs text-slate-600">Rows:</span>
+          <select
+            value={pageSize}
+            onChange={(e) => onPageSizeChange(Number(e.target.value))}
+            className="h-7 w-14 bg-white border border-slate-200 rounded text-xs font-medium text-slate-700 focus:outline-none focus:border-blue-500"
+            disabled={loading}
+          >
+            {[10, 20, 30, 50, 100].map((size) => (
+              <option key={size} value={size}>
+                {size}
+              </option>
+            ))}
+          </select>
         </div>
 
-        {/* Page Info & Navigation */}
-        <div className="flex items-center space-x-4 flex-shrink-0">
-          <div className="flex items-center space-x-2 px-3 py-1.5 bg-white rounded-lg border border-slate-200">
-            <span className="text-xs text-slate-500">Page</span>
-            <span className="text-sm font-semibold text-slate-800">{currentPage}</span>
-            <span className="text-xs text-slate-500">of</span>
-            <span className="text-sm font-semibold text-slate-800">{pageCount}</span>
-          </div>
-          
-          {/* Navigation Buttons */}
+        {/* Page Navigation */}
+        <div className="flex items-center space-x-2">
+          <span className="text-xs text-slate-600">{currentPage} of {pageCount}</span>
           <div className="flex items-center space-x-1">
             <Button
               variant="outline"
               size="sm"
-              className="hidden sm:flex h-9 w-9 p-0 bg-white hover:bg-slate-50 border-slate-200 transition-all duration-200 hover:border-slate-300"
-              onClick={() => onPageChange(1)}
-              disabled={currentPage === 1 || loading}
-            >
-              <span className="sr-only">Go to first page</span>
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-              </svg>
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 w-9 p-0 bg-white hover:bg-slate-50 border-slate-200 transition-all duration-200 hover:border-slate-300"
+              className="h-7 w-7 p-0"
               onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage === 1 || loading}
             >
-              <span className="sr-only">Go to previous page</span>
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-3 w-3" />
             </Button>
-            
             <Button
               variant="outline"
               size="sm"
-              className="h-9 w-9 p-0 bg-white hover:bg-slate-50 border-slate-200 transition-all duration-200 hover:border-slate-300"
+              className="h-7 w-7 p-0"
               onClick={() => onPageChange(currentPage + 1)}
               disabled={currentPage === pageCount || loading}
             >
-              <span className="sr-only">Go to next page</span>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              className="hidden sm:flex h-9 w-9 p-0 bg-white hover:bg-slate-50 border-slate-200 transition-all duration-200 hover:border-slate-300"
-              onClick={() => onPageChange(pageCount)}
-              disabled={currentPage === pageCount || loading}
-            >
-              <span className="sr-only">Go to last page</span>
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-              </svg>
+              <ChevronRight className="h-3 w-3" />
             </Button>
           </div>
         </div>

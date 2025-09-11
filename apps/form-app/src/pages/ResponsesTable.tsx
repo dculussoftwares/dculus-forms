@@ -39,7 +39,6 @@ import {
   FileText,
   Filter,
   MoreHorizontal,
-  Table,
   Search,
   Settings2,
   X,
@@ -453,7 +452,7 @@ const ResponsesTable: React.FC = () => {
       });
 
     return (
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 bg-gradient-to-r from-slate-50 via-white to-slate-50 border-b border-slate-200 w-full overflow-hidden">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-slate-50 border-b border-slate-200 w-full overflow-hidden">
         {/* Left side - Search and filters */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1 min-w-0 overflow-hidden">
           {/* Enhanced search */}
@@ -627,32 +626,22 @@ const ResponsesTable: React.FC = () => {
     >
       {/* Full-screen container with horizontal overflow prevention */}
       <div className="flex flex-col h-full w-full overflow-x-hidden">
-        {/* Header with navigation and form info */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-white flex-shrink-0 w-full overflow-hidden">
-          <div className="flex items-center gap-4 min-w-0 overflow-hidden">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(`/dashboard/form/${actualFormId}/responses`)}
-              className="hover:bg-slate-100 flex-shrink-0"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Responses
-            </Button>
-            <div className="h-6 w-px bg-slate-300 flex-shrink-0" />
-            <div className="min-w-0 overflow-hidden">
-              <h1 className="text-xl font-semibold text-slate-900 truncate">{form.title}</h1>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="inline-flex items-center px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded-md font-medium flex-shrink-0">
-                  <Table className="h-3 w-3 mr-1" />
-                  Table View
-                </span>
-                <span className="text-sm text-muted-foreground flex-shrink-0">
-                  {responsePagination?.total || 0} responses
-                </span>
-              </div>
-            </div>
-          </div>
+        {/* Compact Header */}
+        <div className="flex items-center gap-4 p-3 border-b border-slate-200 bg-white flex-shrink-0 w-full overflow-hidden">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(`/dashboard/form/${actualFormId}/responses`)}
+            className="hover:bg-slate-100 flex-shrink-0"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+          <div className="h-4 w-px bg-slate-300 flex-shrink-0" />
+          <h1 className="text-lg font-semibold text-slate-900 truncate flex-1">{form.title}</h1>
+          <span className="text-sm text-muted-foreground flex-shrink-0">
+            {responsePagination?.total || 0} responses
+          </span>
         </div>
 
         {/* Main content area - prevents horizontal page scroll */}
@@ -692,7 +681,7 @@ const ResponsesTable: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col bg-white border border-slate-200 m-6 rounded-lg shadow-sm overflow-hidden">
+            <div className="flex-1 flex flex-col bg-white border border-slate-200 m-2 overflow-hidden">
               {/* Enhanced toolbar - Fixed width, no horizontal scroll */}
               <div className="flex-shrink-0 overflow-hidden">
                 <DataTableToolbar />
