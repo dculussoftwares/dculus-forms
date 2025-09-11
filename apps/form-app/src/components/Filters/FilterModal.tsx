@@ -121,12 +121,6 @@ export const FilterModal: React.FC<FilterModalProps> = ({
               </Button>
             </div>
 
-            {/* Give feedback link (matching TypeForm design) */}
-            <div className="pt-8 border-t border-slate-200">
-              <button className="text-blue-600 text-sm hover:text-blue-800">
-                Give feedback
-              </button>
-            </div>
           </div>
         </div>
 

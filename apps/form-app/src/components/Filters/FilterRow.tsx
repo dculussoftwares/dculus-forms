@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ChevronDown } from 'lucide-react';
+import { X } from 'lucide-react';
 import {
   Button,
   Select,
@@ -294,17 +294,31 @@ export const FilterRow: React.FC<FilterRowProps> = ({
   };
 
   return (
-    <div className="flex items-center gap-3 p-4 bg-white border border-slate-200 rounded-lg">
-      {!isFirst && (
-        <div className="text-sm font-medium text-slate-600 px-2">
-          and
-        </div>
-      )}
+    <div className="p-4 bg-white border border-slate-200 rounded-lg space-y-3">
+      {/* Header Row: "and" connector + Remove Button */}
+      <div className="flex items-center justify-between">
+        {!isFirst ? (
+          <div className="text-sm font-medium text-slate-600">
+            and
+          </div>
+        ) : (
+          <div></div>
+        )}
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onRemove}
+          className="h-8 w-8 p-0 hover:bg-slate-100 flex-shrink-0"
+        >
+          <X className="h-4 w-4 text-slate-500" />
+        </Button>
+      </div>
 
-      {/* Field Selection */}
-      <div className="min-w-0">
+      {/* Row 1: Field Selection */}
+      <div>
         <Select value={filter.fieldId || ''} onValueChange={handleFieldChange}>
-          <SelectTrigger className="h-9 min-w-[200px] bg-blue-50 border-blue-200 hover:bg-blue-100">
+          <SelectTrigger className="h-10 w-full bg-blue-50 border-blue-200 hover:bg-blue-100">
             <SelectValue placeholder="Select a field">
               {currentField && (
                 <div className="flex items-center gap-2">
@@ -317,7 +331,6 @@ export const FilterRow: React.FC<FilterRowProps> = ({
                 </div>
               )}
             </SelectValue>
-            <ChevronDown className="h-4 w-4 text-blue-700" />
           </SelectTrigger>
           <SelectContent>
             {fields.map((field) => (
@@ -336,40 +349,33 @@ export const FilterRow: React.FC<FilterRowProps> = ({
         </Select>
       </div>
 
-      {/* Operator Selection */}
+      {/* Row 2: Operator and Value */}
       {currentField && (
-        <div className="min-w-0">
-          <Select value={filter.operator || ''} onValueChange={handleOperatorChange}>
-            <SelectTrigger className="h-9 min-w-[140px]">
-              <SelectValue placeholder="includes" />
-            </SelectTrigger>
-            <SelectContent>
-              {operatorOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex items-center gap-3">
+          {/* Operator Selection */}
+          <div className="min-w-0 flex-shrink-0">
+            <Select value={filter.operator || ''} onValueChange={handleOperatorChange}>
+              <SelectTrigger className="h-10 min-w-[140px]">
+                <SelectValue placeholder="includes" />
+              </SelectTrigger>
+              <SelectContent>
+                {operatorOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Value Input */}
+          {filter.operator && (
+            <div className="flex-1 min-w-0">
+              {renderFilterInput(currentField, filter, onChange)}
+            </div>
+          )}
         </div>
       )}
-
-      {/* Value Input */}
-      {currentField && filter.operator && (
-        <div className="min-w-0">
-          {renderFilterInput(currentField, filter, onChange)}
-        </div>
-      )}
-
-      {/* Remove Button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onRemove}
-        className="h-9 w-9 p-0 hover:bg-slate-100 flex-shrink-0 ml-2"
-      >
-        <X className="h-4 w-4 text-slate-500" />
-      </Button>
     </div>
   );
 };
