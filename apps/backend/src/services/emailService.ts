@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer';
 import { emailConfig } from '../lib/env.js';
 import { generateFormPublishedHtml } from '../templates/formPublishedEmail.js';
 import { generateOTPEmailHtml, generateOTPEmailText, type OTPEmailData } from '../templates/otpEmail.js';
+import { generateResetPasswordEmailHtml, generateResetPasswordEmailText, type ResetPasswordEmailData } from '../templates/resetPasswordEmail.js';
 
 export interface EmailOptions {
   to: string;
@@ -21,6 +22,12 @@ export interface SendOTPEmailOptions {
   to: string;
   otp: string;
   type: 'sign-in' | 'sign-up' | 'email-verification' | 'forget-password';
+}
+
+export interface SendResetPasswordEmailOptions {
+  to: string;
+  resetUrl: string;
+  expiresInHours?: number;
 }
 
 // Create transporter instance
@@ -103,4 +110,26 @@ export async function sendOTPEmail(options: SendOTPEmailOptions): Promise<void> 
   });
 
   console.log(`OTP email sent successfully to: ${to} (Type: ${type})`);
+}
+
+export async function sendResetPasswordEmail(options: SendResetPasswordEmailOptions): Promise<void> {
+  const { to, resetUrl, expiresInHours = 1 } = options;
+
+  const resetPasswordData: ResetPasswordEmailData = {
+    userEmail: to,
+    resetUrl,
+    expiresInHours,
+  };
+
+  const html = generateResetPasswordEmailHtml(resetPasswordData);
+  const text = generateResetPasswordEmailText(resetPasswordData);
+
+  await sendEmail({
+    to,
+    subject: '🔑 Reset your password - Dculus Forms',
+    html,
+    text,
+  });
+
+  console.log(`Password reset email sent successfully to: ${to}`);
 }
