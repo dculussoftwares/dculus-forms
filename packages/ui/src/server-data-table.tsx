@@ -109,7 +109,7 @@ export function ServerDataTable<TData, TValue>({
   return (
     <div className={cn("flex flex-col h-full", className)}>
       {/* Table Container - Only this part scrolls horizontally */}
-      <div className="bg-white border border-slate-200 flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="bg-white border border-slate-200/60 rounded-lg shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden">
         {/* Table wrapper with horizontal scroll ONLY for table content */}
         <div className="flex-1 min-h-0 relative overflow-hidden">
           <div 
@@ -124,14 +124,14 @@ export function ServerDataTable<TData, TValue>({
               }}
             >
             {/* Enhanced Header */}
-            <thead className="sticky top-0 z-20 bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50 backdrop-blur-sm">
+            <thead className="sticky top-0 z-20 bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50 backdrop-blur-sm rounded-t-lg">
               {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id} className="border-b border-slate-200">
+                <tr key={headerGroup.id} className="border-b border-slate-200/50">
                   {headerGroup.headers.map((header) => {
                     return (
                       <th
                         key={header.id}
-                        className="h-14 px-6 text-left align-middle font-semibold text-slate-700 [&:has([role=checkbox])]:pr-0 whitespace-nowrap bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50 border-b border-slate-200/80 first:pl-8 last:pr-8 relative"
+                        className="h-14 px-6 text-left align-middle font-semibold text-slate-700 [&:has([role=checkbox])]:pr-0 whitespace-nowrap bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50 border-b border-slate-200/40 first:pl-8 last:pr-8 relative first:rounded-tl-lg last:rounded-tr-lg"
                         style={{ width: header.getSize() }}
                       >
                         <div className="flex items-center justify-between">
@@ -173,7 +173,7 @@ export function ServerDataTable<TData, TValue>({
             </thead>
             
             {/* Enhanced Body */}
-            <tbody className="bg-white relative divide-y divide-slate-100">
+            <tbody className="bg-white relative divide-y divide-slate-100/60">
               {/* Loading overlay for when data exists but is refreshing */}
               {loading && table.getRowModel().rows?.length > 0 && (
                 <tr>
@@ -272,14 +272,14 @@ export function ServerDataTable<TData, TValue>({
       </div>
       
       {/* Compact Pagination */}
-      <div className="flex items-center justify-between px-4 py-2 bg-slate-50 border-t border-slate-200 flex-shrink-0">
+      <div className="flex items-center justify-between px-4 py-2 bg-slate-50 border-t border-slate-200/50 flex-shrink-0 rounded-b-lg">
         {/* Rows per page */}
         <div className="flex items-center space-x-2">
           <span className="text-xs text-slate-600">Rows:</span>
           <select
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            className="h-7 w-14 bg-white border border-slate-200 rounded text-xs font-medium text-slate-700 focus:outline-none focus:border-blue-500"
+            className="h-7 w-14 bg-white border border-slate-200/60 rounded-md text-xs font-medium text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors"
             disabled={loading}
           >
             {[10, 20, 30, 50, 100].map((size) => (

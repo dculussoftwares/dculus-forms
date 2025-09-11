@@ -244,7 +244,7 @@ const ResponsesTable: React.FC = () => {
           return (
             <div className="flex items-center space-x-2">
               <Hash className="h-4 w-4 text-muted-foreground" />
-              <span className="inline-flex items-center px-2 py-1 text-xs font-mono font-medium bg-slate-100 text-slate-800 border border-slate-200 rounded-md">
+              <span className="inline-flex items-center px-2 py-1 text-xs font-mono font-medium bg-slate-100/80 text-slate-800 border border-slate-200/60 rounded-md">
                 {id?.slice(-6) || 'N/A'}
               </span>
             </div>
@@ -482,7 +482,7 @@ const ResponsesTable: React.FC = () => {
         ]}
       >
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="max-w-md text-center p-8 bg-white rounded-lg shadow-sm border border-slate-200">
+          <div className="max-w-md text-center p-8 bg-white rounded-lg shadow-sm border border-slate-200/60">
             <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
             <h3 className="mb-2 text-xl font-semibold">
               {formData?.form ? 'Error Loading Responses' : 'Form Not Found'}
@@ -513,7 +513,7 @@ const ResponsesTable: React.FC = () => {
       });
 
     return (
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-slate-50 border-b border-slate-200 w-full overflow-hidden">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-slate-50/80 border-b border-slate-200/40 w-full overflow-hidden">
         {/* Left side - Search and filters */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1 min-w-0 overflow-hidden">
           {/* Enhanced search */}
@@ -547,14 +547,14 @@ const ResponsesTable: React.FC = () => {
           >
             <Filter className="h-4 w-4 mr-2" />
             Filters
-            {showFilters && <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">On</span>}
+            {showFilters && <span className="ml-2 px-2 py-0.5 bg-blue-100/80 text-blue-800 text-xs rounded-full font-medium border border-blue-200/40">On</span>}
           </Button>
 
           {/* Active filters display */}
           <div className="flex items-center gap-2 flex-wrap">
             {/* Search indicator */}
             {globalFilter && (
-              <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-sm rounded-md border border-blue-200">
+              <div className="flex items-center gap-1 px-2 py-1 bg-blue-50/80 text-blue-700 text-sm rounded-md border border-blue-200/60">
                 <span className="truncate max-w-32">Search: "{globalFilter.slice(0, 15)}{globalFilter.length > 15 ? '...' : ''}"</span>
                 <Button
                   variant="ghost"
@@ -591,7 +591,7 @@ const ResponsesTable: React.FC = () => {
                 <Settings2 className="h-4 w-4 mr-2" />
                 <span className="hidden sm:inline">Columns</span>
                 {hiddenColumns.length > 0 && (
-                  <span className="ml-2 px-2 py-0.5 bg-slate-100 text-slate-700 text-xs rounded-full font-medium">
+                  <span className="ml-2 px-2 py-0.5 bg-slate-100/80 text-slate-700 text-xs rounded-full font-medium border border-slate-200/40">
                     {hiddenColumns.length} hidden
                   </span>
                 )}
@@ -718,7 +718,7 @@ const ResponsesTable: React.FC = () => {
       {/* Full-screen container with horizontal overflow prevention */}
       <div className="flex flex-col h-full w-full overflow-x-hidden">
         {/* Compact Header */}
-        <div className="flex items-center gap-4 p-3 border-b border-slate-200 bg-white flex-shrink-0 w-full overflow-hidden">
+        <div className="flex items-center gap-4 p-3 border-b border-slate-200/40 bg-white flex-shrink-0 w-full overflow-hidden rounded-t-lg">
           <Button
             variant="ghost"
             size="sm"
@@ -759,7 +759,7 @@ const ResponsesTable: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="flex-1 flex bg-white border border-slate-200 m-2 overflow-hidden">
+            <div className="flex-1 flex bg-white border border-slate-200/60 rounded-lg shadow-sm m-2 overflow-hidden">
               {/* Filter panel */}
               {showFilters && (
                 <FilterPanel
