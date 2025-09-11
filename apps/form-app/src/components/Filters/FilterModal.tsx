@@ -88,7 +88,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
           <div className="space-y-4">
             {/* Show existing filters */}
             {activeFilters.length > 0 ? (
-              <>
+              <div className="max-h-96 overflow-y-auto space-y-4 pr-2">
                 {activeFilters.map(([filterId, filter], index) => (
                   <FilterRow
                     key={filterId}
@@ -99,7 +99,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                     isFirst={index === 0}
                   />
                 ))}
-              </>
+              </div>
             ) : (
               <div className="text-center py-12">
                 <div className="text-slate-500 text-lg mb-4">No filters applied</div>
