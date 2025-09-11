@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import { emailConfig } from '../lib/env.js';
 import { generateFormPublishedHtml } from '../templates/formPublishedEmail.js';
+import { generateOTPEmailHtml, generateOTPEmailText, type OTPEmailData } from '../templates/otpEmail.js';
 
 export interface EmailOptions {
   to: string;
@@ -14,6 +15,12 @@ export interface FormPublishedEmailData {
   formDescription?: string;
   formUrl: string;
   ownerName: string;
+}
+
+export interface SendOTPEmailOptions {
+  to: string;
+  otp: string;
+  type: 'sign-in' | 'sign-up' | 'email-verification' | 'forget-password';
 }
 
 // Create transporter instance
@@ -58,4 +65,42 @@ export async function sendFormPublishedNotification(data: FormPublishedEmailData
     html,
     text,
   });
+}
+
+export async function sendOTPEmail(options: SendOTPEmailOptions): Promise<void> {
+  const { to, otp, type } = options;
+  const expiresInMinutes = 5;
+
+  const otpData: OTPEmailData = {
+    otp,
+    type,
+    expiresInMinutes,
+  };
+
+  const getSubject = () => {
+    switch (type) {
+      case 'sign-in':
+        return `🔐 Your sign-in code: ${otp}`;
+      case 'sign-up':
+        return `🎉 Welcome to Dculus Forms - Verify your account`;
+      case 'email-verification':
+        return `✅ Verify your email address`;
+      case 'forget-password':
+        return `🔑 Reset your password`;
+      default:
+        return `🔐 Your verification code: ${otp}`;
+    }
+  };
+
+  const html = generateOTPEmailHtml(otpData);
+  const text = generateOTPEmailText(otpData);
+
+  await sendEmail({
+    to,
+    subject: getSubject(),
+    html,
+    text,
+  });
+
+  console.log(`OTP email sent successfully to: ${to} (Type: ${type})`);
 }

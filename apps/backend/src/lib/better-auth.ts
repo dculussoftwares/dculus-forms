@@ -1,8 +1,9 @@
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
-import { organization, bearer, admin } from 'better-auth/plugins';
+import { organization, bearer, admin, emailOTP } from 'better-auth/plugins';
 import { prisma } from './prisma.js';
 import { authConfig } from './env.js';
+import { sendOTPEmail } from '../services/emailService.js';
 
 export const auth: ReturnType<typeof betterAuth> = betterAuth({
   database: prismaAdapter(prisma, {
@@ -44,6 +45,18 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
     admin({
       defaultRole: 'user',
       adminRoles: ['admin', 'superAdmin'],
+    }),
+    emailOTP({
+      otpLength: 6,
+      expiresIn: 5 * 60, // 5 minutes
+      allowedAttempts: 3,
+      async sendVerificationOTP({ email, otp, type }) {
+        await sendOTPEmail({
+          to: email,
+          otp,
+          type,
+        });
+      },
     }),
   ],
 

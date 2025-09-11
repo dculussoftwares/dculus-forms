@@ -1,11 +1,11 @@
 import { createAuthClient } from 'better-auth/react';
-import { organizationClient } from 'better-auth/client/plugins';
+import { organizationClient, emailOTPClient } from 'better-auth/client/plugins';
 import { getApiBaseUrl } from './config';
 
 const baseUrl = getApiBaseUrl();
 
 export const authClient = createAuthClient({
-  plugins: [organizationClient()],
+  plugins: [organizationClient(), emailOTPClient()],
   baseURL: baseUrl, // Your backend URL
   fetchOptions: {
     onSuccess: (ctx) => {
@@ -46,6 +46,6 @@ const customSignOut = async (options?: any) => {
   return authClient.signOut(options);
 };
 
-export const { signIn, signUp, useSession, getSession } = authClient;
+export const { signIn, signUp, useSession, getSession, emailOtp } = authClient;
 
 export const signOut = customSignOut;

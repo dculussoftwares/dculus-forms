@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Button,
@@ -14,10 +14,15 @@ import {
   TypographySmall,
 } from '@dculus/ui';
 import { slugify } from '@dculus/utils';
-import { authClient, signUp } from '../lib/auth-client';
+import { authClient, signUp, emailOtp, signIn } from '../lib/auth-client';
+import { OTPInput } from '../components/OTPInput';
+import { ArrowLeft, Mail, Timer, CheckCircle } from 'lucide-react';
 
 export const SignUp = () => {
+  const [step, setStep] = useState<'form' | 'verify'>('form');
   const [isLoading, setIsLoading] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [countdown, setCountdown] = useState(0);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -27,7 +32,15 @@ export const SignUp = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
-  // const [createOrganization] = useMutation(CREATE_ORGANIZATION);
+  
+  // Countdown timer for resend OTP
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (countdown > 0) {
+      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [countdown]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -77,17 +90,14 @@ export const SignUp = () => {
     }
 
     setIsLoading(true);
+    setErrors({});
 
     try {
-      // First, create the user account
-
-      const organizationSlug = slugify(formData.organizationName);
-
+      // First, create the user account without email verification
       const signUpResponse = await signUp.email({
         email: formData.email,
         password: formData.password,
         name: formData.name,
-        callbackURL: '/', // Redirect after successful signup
       });
 
       if (signUpResponse.error) {
@@ -97,16 +107,23 @@ export const SignUp = () => {
         return;
       }
 
-      // const organizationSlug = slugify(formData.organizationName);
-      await authClient.organization.create({
-        name: formData.organizationName,
-        slug: organizationSlug,
-        keepCurrentActiveOrganization: false,
+      // Send OTP for email verification
+      const otpResponse = await emailOtp.sendVerificationOtp({
+        email: formData.email,
+        type: 'email-verification',
       });
 
-      await authClient.signOut();
-     
-      navigate('/');
+      if (otpResponse.error) {
+        setErrors({
+          submit: otpResponse.error.message || 'Failed to send verification code',
+        });
+        return;
+      }
+
+      // Move to OTP verification step
+      setStep('verify');
+      setCountdown(60);
+      setOtp('');
     } catch (error) {
       console.error('Signup error:', error);
       setErrors({
@@ -115,6 +132,101 @@ export const SignUp = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (otp.length !== 6) {
+      setErrors({ otp: 'Please enter the complete 6-digit code' });
+      return;
+    }
+
+    setIsLoading(true);
+    setErrors({});
+    
+    try {
+      // Verify the OTP
+      const verifyResponse = await emailOtp.verifyEmail({
+        email: formData.email,
+        otp: otp.trim(),
+      });
+
+      if (verifyResponse.error) {
+        setErrors({
+          otp: verifyResponse.error.message || 'Invalid or expired code',
+        });
+        return;
+      }
+
+      // Sign in the user
+      const signInResponse = await signIn.email({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (signInResponse.error) {
+        setErrors({
+          otp: 'Verification successful, but sign-in failed. Please sign in manually.',
+        });
+        return;
+      }
+
+      // Create the organization
+      const organizationSlug = slugify(formData.organizationName);
+      await authClient.organization.create({
+        name: formData.organizationName,
+        slug: organizationSlug,
+        keepCurrentActiveOrganization: false,
+      });
+
+      // Navigate to dashboard
+      navigate('/');
+    } catch (error) {
+      console.error('OTP verification error:', error);
+      setErrors({
+        otp: 'An unexpected error occurred. Please try again.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    if (countdown > 0) return;
+    
+    setIsLoading(true);
+    setErrors({});
+    
+    try {
+      const response = await emailOtp.sendVerificationOtp({
+        email: formData.email,
+        type: 'email-verification',
+      });
+
+      if (response.error) {
+        setErrors({ 
+          submit: response.error.message || 'Failed to resend verification code' 
+        });
+      } else {
+        setCountdown(60);
+        setOtp('');
+      }
+    } catch (error) {
+      console.error('Resend OTP error:', error);
+      setErrors({ 
+        submit: 'Failed to resend verification code. Please try again.' 
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBackToForm = () => {
+    setStep('form');
+    setOtp('');
+    setErrors({});
+    setCountdown(0);
   };
 
   return (
@@ -151,126 +263,206 @@ export const SignUp = () => {
       <div className="lg:p-8">
         <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
           <div className="flex flex-col space-y-2 text-center">
-            <TypographyH2>Create an account</TypographyH2>
+            <TypographyH2>
+              {step === 'form' ? 'Create an account' : 'Verify your email'}
+            </TypographyH2>
             <TypographySmall className="text-muted-foreground">
-              Enter your details below to create your account
+              {step === 'form' 
+                ? 'Enter your details below to create your account'
+                : `We sent a 6-digit verification code to ${formData.email}`
+              }
             </TypographySmall>
           </div>
 
           <Card>
             <CardHeader className="space-y-1">
-              <CardTitle className="text-xl">Get started</CardTitle>
+              <CardTitle className="text-xl flex items-center gap-2">
+                {step === 'verify' && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleBackToForm}
+                    className="p-1 h-auto"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                  </Button>
+                )}
+                <Mail className="w-5 h-5" />
+                {step === 'form' ? 'Get started' : 'Enter verification code'}
+              </CardTitle>
               <CardDescription>
-                Create your account and organization to start building forms
+                {step === 'form'
+                  ? 'Create your account and organization to start building forms'
+                  : 'Enter the 6-digit code we sent to verify your email address'
+                }
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    type="text"
-                    placeholder="John Doe"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    disabled={isLoading}
-                    className={errors.name ? 'border-red-500' : ''}
-                  />
-                  {errors.name && (
-                    <TypographySmall className="text-red-500">
-                      {errors.name}
+              {step === 'form' ? (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      type="text"
+                      placeholder="John Doe"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      disabled={isLoading}
+                      className={errors.name ? 'border-red-500' : ''}
+                    />
+                    {errors.name && (
+                      <TypographySmall className="text-red-500">
+                        {errors.name}
+                      </TypographySmall>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      placeholder="john@example.com"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      disabled={isLoading}
+                      className={errors.email ? 'border-red-500' : ''}
+                    />
+                    {errors.email && (
+                      <TypographySmall className="text-red-500">
+                        {errors.email}
+                      </TypographySmall>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="organizationName">Organization Name</Label>
+                    <Input
+                      id="organizationName"
+                      name="organizationName"
+                      type="text"
+                      placeholder="Acme Inc."
+                      value={formData.organizationName}
+                      onChange={handleInputChange}
+                      disabled={isLoading}
+                      className={errors.organizationName ? 'border-red-500' : ''}
+                    />
+                    {errors.organizationName && (
+                      <TypographySmall className="text-red-500">
+                        {errors.organizationName}
+                      </TypographySmall>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      name="password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      disabled={isLoading}
+                      className={errors.password ? 'border-red-500' : ''}
+                    />
+                    {errors.password && (
+                      <TypographySmall className="text-red-500">
+                        {errors.password}
+                      </TypographySmall>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <Input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
+                      disabled={isLoading}
+                      className={errors.confirmPassword ? 'border-red-500' : ''}
+                    />
+                    {errors.confirmPassword && (
+                      <TypographySmall className="text-red-500">
+                        {errors.confirmPassword}
+                      </TypographySmall>
+                    )}
+                  </div>
+
+                  {errors.submit && (
+                    <TypographySmall className="text-red-500 text-center">
+                      {errors.submit}
                     </TypographySmall>
                   )}
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="john@example.com"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    disabled={isLoading}
-                    className={errors.email ? 'border-red-500' : ''}
-                  />
-                  {errors.email && (
-                    <TypographySmall className="text-red-500">
-                      {errors.email}
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? 'Creating account...' : 'Create account'}
+                  </Button>
+                </form>
+              ) : (
+                <form onSubmit={handleVerifyOTP} className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-center block">Verification Code</Label>
+                      <OTPInput
+                        value={otp}
+                        onChange={(value) => {
+                          setOtp(value);
+                          if (errors.otp) {
+                            setErrors(prev => ({ ...prev, otp: "" }));
+                          }
+                        }}
+                        disabled={isLoading}
+                        hasError={!!errors.otp}
+                      />
+                      {errors.otp && (
+                        <TypographySmall className="text-red-500 text-center">
+                          {errors.otp}
+                        </TypographySmall>
+                      )}
+                    </div>
+
+                    <div className="text-center">
+                      {countdown > 0 ? (
+                        <TypographySmall className="text-muted-foreground flex items-center justify-center gap-2">
+                          <Timer className="w-4 h-4" />
+                          Resend code in {countdown}s
+                        </TypographySmall>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={handleResendOTP}
+                          disabled={isLoading}
+                          className="text-sm"
+                        >
+                          Didn't receive the code? Resend
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {errors.submit && (
+                    <TypographySmall className="text-red-500 text-center">
+                      {errors.submit}
                     </TypographySmall>
                   )}
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="organizationName">Organization Name</Label>
-                  <Input
-                    id="organizationName"
-                    name="organizationName"
-                    type="text"
-                    placeholder="Acme Inc."
-                    value={formData.organizationName}
-                    onChange={handleInputChange}
-                    disabled={isLoading}
-                    className={errors.organizationName ? 'border-red-500' : ''}
-                  />
-                  {errors.organizationName && (
-                    <TypographySmall className="text-red-500">
-                      {errors.organizationName}
-                    </TypographySmall>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    disabled={isLoading}
-                    className={errors.password ? 'border-red-500' : ''}
-                  />
-                  {errors.password && (
-                    <TypographySmall className="text-red-500">
-                      {errors.password}
-                    </TypographySmall>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    disabled={isLoading}
-                    className={errors.confirmPassword ? 'border-red-500' : ''}
-                  />
-                  {errors.confirmPassword && (
-                    <TypographySmall className="text-red-500">
-                      {errors.confirmPassword}
-                    </TypographySmall>
-                  )}
-                </div>
-
-                {errors.submit && (
-                  <TypographySmall className="text-red-500 text-center">
-                    {errors.submit}
-                  </TypographySmall>
-                )}
-
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? 'Creating account...' : 'Create account'}
-                </Button>
-              </form>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isLoading || otp.length !== 6}
+                  >
+                    {isLoading ? 'Verifying...' : 'Complete Sign Up'}
+                  </Button>
+                </form>
+              )}
             </CardContent>
           </Card>
 
