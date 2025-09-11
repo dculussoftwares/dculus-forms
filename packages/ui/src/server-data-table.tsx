@@ -174,19 +174,18 @@ export function ServerDataTable<TData, TValue>({
             
             {/* Enhanced Body */}
             <tbody className="bg-white relative divide-y divide-slate-100">
-              {/* Premium Loading overlay */}
-              {loading && (
+              {/* Loading overlay for when data exists but is refreshing */}
+              {loading && table.getRowModel().rows?.length > 0 && (
                 <tr>
                   <td colSpan={columns.length} className="relative p-0">
-                    <div className="absolute inset-0 bg-gradient-to-b from-white/95 to-white/90 backdrop-blur-sm flex items-center justify-center z-10 min-h-[300px]">
-                      <div className="flex flex-col items-center space-y-4">
+                    <div className="absolute inset-0 bg-gradient-to-b from-white/95 to-white/90 backdrop-blur-sm flex items-center justify-center z-10 min-h-[200px]">
+                      <div className="flex flex-col items-center space-y-3">
                         <div className="relative">
                           <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
                           <div className="absolute inset-0 w-8 h-8 border-4 border-transparent border-r-blue-300 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
                         </div>
                         <div className="text-center">
-                          <p className="text-sm font-medium text-slate-700">Loading responses...</p>
-                          <p className="text-xs text-slate-500 mt-1">Preparing your data</p>
+                          <p className="text-sm font-medium text-slate-700">Updating...</p>
                         </div>
                       </div>
                     </div>
@@ -228,7 +227,25 @@ export function ServerDataTable<TData, TValue>({
                     ))}
                   </tr>
                 ))
-              ) : !loading ? (
+              ) : loading ? (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="h-64 text-center"
+                  >
+                    <div className="flex flex-col items-center justify-center space-y-4 py-12">
+                      <div className="relative">
+                        <div className="w-12 h-12 border-4 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
+                        <div className="absolute inset-0 w-12 h-12 border-4 border-transparent border-r-blue-300 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-slate-700">Loading responses...</p>
+                        <p className="text-xs text-slate-500 mt-1">Please wait while we fetch your data</p>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
                 <tr>
                   <td
                     colSpan={columns.length}
@@ -247,7 +264,7 @@ export function ServerDataTable<TData, TValue>({
                     </div>
                   </td>
                 </tr>
-              ) : null}
+              )}
             </tbody>
           </table>
           </div>
