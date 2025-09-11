@@ -107,10 +107,10 @@ export function ServerDataTable<TData, TValue>({
   const endItem = Math.min(currentPage * pageSize, totalItems)
 
   return (
-    <div className={cn("space-y-6", className)}>
-      {/* Enhanced Search Bar */}
-      <div className="flex items-center justify-between bg-gradient-to-r from-slate-50 to-gray-50 p-4 rounded-xl border border-slate-200/60">
-        <div className="relative flex-1 max-w-sm">
+    <div className={cn("flex flex-col h-full", className)}>
+      {/* Enhanced Search Bar - Fixed width, no horizontal scroll */}
+      <div className="flex items-center justify-between bg-gradient-to-r from-slate-50 to-gray-50 p-4 rounded-xl border border-slate-200/60 flex-shrink-0">
+        <div className="relative flex-1 max-w-sm min-w-0">
           <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
             <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -134,19 +134,26 @@ export function ServerDataTable<TData, TValue>({
             </button>
           )}
         </div>
-        <div className="flex items-center space-x-2 text-xs text-gray-500">
+        <div className="flex items-center space-x-2 text-xs text-gray-500 flex-shrink-0">
           <span className="px-2 py-1 bg-white rounded-md border">{totalItems} total</span>
         </div>
       </div>
       
-      {/* Modern Table Container */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 overflow-hidden">
-        {/* Scrollable table container with sticky header */}
-        <div className="overflow-auto relative" style={{ maxHeight }}>
-          <table 
-            className="w-full min-w-[800px] relative" 
-            style={{ width: table.getCenterTotalSize() }}
+      {/* Table Container - Only this part scrolls horizontally */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 flex-1 min-h-0 flex flex-col overflow-hidden">
+        {/* Table wrapper with horizontal scroll ONLY for table content */}
+        <div className="flex-1 min-h-0 relative overflow-hidden">
+          <div 
+            className="overflow-auto absolute inset-0" 
+            style={{ maxHeight }}
           >
+            <table 
+              className="relative" 
+              style={{ 
+                width: table.getCenterTotalSize(),
+                minWidth: '100%'
+              }}
+            >
             {/* Enhanced Header */}
             <thead className="sticky top-0 z-20 bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50 backdrop-blur-sm">
               {table.getHeaderGroups().map((headerGroup) => (
@@ -274,13 +281,14 @@ export function ServerDataTable<TData, TValue>({
               ) : null}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
       
-      {/* Enhanced Pagination Controls */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-gradient-to-r from-slate-50 to-gray-50 rounded-xl border border-slate-200/60">
+      {/* Enhanced Pagination Controls - Fixed width, no horizontal scroll */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-gradient-to-r from-slate-50 to-gray-50 rounded-xl border border-slate-200/60 flex-shrink-0">
         {/* Results Info */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 min-w-0">
           <div className="text-sm text-slate-600">
             Showing <span className="font-semibold text-slate-800">{startItem}</span> to{" "}
             <span className="font-semibold text-slate-800">{endItem}</span> of{" "}
@@ -288,7 +296,7 @@ export function ServerDataTable<TData, TValue>({
           </div>
           
           {/* Rows per page */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 flex-shrink-0">
             <label className="text-sm font-medium text-slate-600">Rows:</label>
             <select
               value={pageSize}
@@ -306,7 +314,7 @@ export function ServerDataTable<TData, TValue>({
         </div>
 
         {/* Page Info & Navigation */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 flex-shrink-0">
           <div className="flex items-center space-x-2 px-3 py-1.5 bg-white rounded-lg border border-slate-200">
             <span className="text-xs text-slate-500">Page</span>
             <span className="text-sm font-semibold text-slate-800">{currentPage}</span>

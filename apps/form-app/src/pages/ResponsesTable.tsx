@@ -1,14 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@apollo/client';
-import { ColumnDef } from '@tanstack/react-table';
+import { ColumnDef, VisibilityState } from '@tanstack/react-table';
 import {
   Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -17,6 +12,8 @@ import {
   ServerDataTable,
   TypographyH3,
   TypographyP,
+  DataTableColumnHeader,
+  Input,
 } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import {
@@ -43,6 +40,15 @@ import {
   Filter,
   MoreHorizontal,
   Table,
+  Search,
+  Settings2,
+  X,
+  Calendar,
+  Hash,
+  Type,
+  CheckSquare,
+  List,
+  RotateCcw,
 } from 'lucide-react';
 
 // Helper function to format values based on field type
@@ -71,8 +77,15 @@ const ResponsesTable: React.FC = () => {
   // Pagination and sorting state
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [sortBy, setSortBy] = useState('submittedAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  // Note: Sorting is now handled by the DataTable components directly
+  // These states are kept for server-side sorting if needed in the future
+  const [sortBy] = useState('submittedAt');
+  const [sortOrder] = useState<'asc' | 'desc'>('desc');
+  
+  // Enhanced UI state
+  const [globalFilter, setGlobalFilter] = useState('');
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [showFilters, setShowFilters] = useState(false);
 
   // Use formId if available, otherwise fall back to id for backward compatibility
   const actualFormId = formId || id;
@@ -110,18 +123,8 @@ const ResponsesTable: React.FC = () => {
 
   const isExporting = exportLoading;
 
-  // Handle sorting change
-  const handleSortingChange = (column: string) => {
-    if (sortBy === column) {
-      // If clicking the same column, toggle sort order
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      // If clicking a different column, set new column and default to desc
-      setSortBy(column);
-      setSortOrder('desc');
-    }
-    setCurrentPage(1); // Reset to first page when changing sort
-  };
+  // This function is not needed with the new DataTableColumnHeader component
+  // Sorting is handled automatically by TanStack Table
 
   // Common download function
   const handleDownload = (downloadUrl: string, filename: string) => {
@@ -173,207 +176,69 @@ const ResponsesTable: React.FC = () => {
     const baseColumns: ColumnDef<FormResponse>[] = [
       {
         accessorKey: 'id',
-        header: () => (
-          <button
-            className="group flex items-center space-x-2 text-left font-semibold text-slate-700 hover:text-slate-900 transition-all duration-200 hover:bg-slate-100/50 px-2 py-1.5 rounded-md -mx-2"
-            onClick={() => handleSortingChange('id')}
-          >
-            <span className="font-semibold text-sm">Response ID</span>
-            <div className="flex flex-col space-y-0.5 ml-1">
-              {sortBy === 'id' ? (
-                <div className="flex items-center">
-                  {sortOrder === 'asc' ? (
-                    <svg
-                      className="w-4 h-4 text-blue-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2.5}
-                        d="M5 15l7-7 7 7"
-                      />
-                    </svg>
-                  ) : (
-                    <svg
-                      className="w-4 h-4 text-blue-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2.5}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  )}
-                </div>
-              ) : (
-                <div className="flex flex-col opacity-30 group-hover:opacity-70 transition-opacity">
-                  <svg
-                    className="w-3 h-3 text-slate-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 15l7-7 7 7"
-                    />
-                  </svg>
-                  <svg
-                    className="w-3 h-3 text-slate-400 -mt-1"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-              )}
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Response ID" />
+        ),
+        cell: ({ row }) => {
+          const id = row.getValue('id') as string;
+          return (
+            <div className="flex items-center space-x-2">
+              <Hash className="h-4 w-4 text-muted-foreground" />
+              <span className="inline-flex items-center px-2 py-1 text-xs font-mono font-medium bg-slate-100 text-slate-800 border border-slate-200 rounded-md">
+                {id?.slice(-6) || 'N/A'}
+              </span>
             </div>
-          </button>
-        ),
-        cell: ({ row }) => (
-          <div className="w-24">
-            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-              #{row.getValue('id')}
-            </span>
-          </div>
-        ),
-        size: 120,
-        minSize: 80,
-        maxSize: 200,
+          );
+        },
+        enableSorting: true,
+        enableHiding: false,
+        size: 140,
       },
       {
         accessorKey: 'submittedAt',
-        header: () => (
-          <button
-            className="group flex items-center space-x-2 text-left font-semibold text-slate-700 hover:text-slate-900 transition-all duration-200 hover:bg-slate-100/50 px-2 py-1.5 rounded-md -mx-2"
-            onClick={() => handleSortingChange('submittedAt')}
-          >
-            <span className="font-semibold text-sm">Submitted At</span>
-            <div className="flex flex-col space-y-0.5 ml-1">
-              {sortBy === 'submittedAt' ? (
-                <div className="flex items-center">
-                  {sortOrder === 'asc' ? (
-                    <svg
-                      className="w-4 h-4 text-blue-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2.5}
-                        d="M5 15l7-7 7 7"
-                      />
-                    </svg>
-                  ) : (
-                    <svg
-                      className="w-4 h-4 text-blue-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2.5}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  )}
-                </div>
-              ) : (
-                <div className="flex flex-col opacity-30 group-hover:opacity-70 transition-opacity">
-                  <svg
-                    className="w-3 h-3 text-slate-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 15l7-7 7 7"
-                    />
-                  </svg>
-                  <svg
-                    className="w-3 h-3 text-slate-400 -mt-1"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-              )}
-            </div>
-          </button>
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Submitted At" />
         ),
         cell: ({ row }) => {
           const submittedAt = row.getValue('submittedAt') as string | number;
-          // Convert string timestamp to number if needed
           const timestamp =
             typeof submittedAt === 'string'
               ? parseInt(submittedAt, 10)
               : submittedAt;
           const date = new Date(timestamp);
 
-          // Check if date is valid
           if (isNaN(date.getTime())) {
             return (
-              <div className="w-36">
-                <span className="text-sm text-gray-400 whitespace-nowrap">
-                  Invalid date
-                </span>
+              <div className="flex items-center space-x-2 text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                <span className="text-sm">Invalid date</span>
               </div>
             );
           }
 
           return (
-            <div className="w-36">
-              <div className="flex flex-col space-y-0.5">
-                <span className="text-sm font-medium text-slate-800">
+            <div className="flex items-center space-x-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">
                   {date.toLocaleDateString(undefined, {
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric',
                   })}
                 </span>
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-muted-foreground">
                   {date.toLocaleTimeString(undefined, {
                     hour: '2-digit',
                     minute: '2-digit',
-                    timeZoneName: 'short',
                   })}
                 </span>
               </div>
             </div>
           );
         },
+        enableSorting: true,
         size: 180,
-        minSize: 120,
-        maxSize: 250,
       },
     ];
 
@@ -382,108 +247,66 @@ const ResponsesTable: React.FC = () => {
     formSchema.pages.forEach((page) => {
       page.fields.forEach((field) => {
         if (field instanceof FillableFormField) {
+          // Get field type icon
+          const getFieldIcon = (fieldType: FieldType) => {
+            switch (fieldType) {
+              case FieldType.TEXT_INPUT_FIELD:
+                return <Type className="h-4 w-4" />;
+              case FieldType.CHECKBOX_FIELD:
+                return <CheckSquare className="h-4 w-4" />;
+              case FieldType.DATE_FIELD:
+                return <Calendar className="h-4 w-4" />;
+              case FieldType.SELECT_FIELD:
+              case FieldType.RADIO_FIELD:
+                return <List className="h-4 w-4" />;
+              default:
+                return <Type className="h-4 w-4" />;
+            }
+          };
+
           fieldColumns.push({
             accessorKey: `data.${field.id}`,
-            header: () => (
-              <button
-                className="group flex items-center space-x-2 text-left font-semibold text-slate-700 hover:text-slate-900 transition-all duration-200 hover:bg-slate-100/50 px-2 py-1.5 rounded-md -mx-2"
-                onClick={() => handleSortingChange(`data.${field.id}`)}
-              >
-                <span
-                  className="font-semibold text-sm truncate max-w-[120px]"
-                  title={field.label}
-                >
-                  {field.label}
-                </span>
-                <div className="flex flex-col space-y-0.5 ml-1 flex-shrink-0">
-                  {sortBy === `data.${field.id}` ? (
-                    <div className="flex items-center">
-                      {sortOrder === 'asc' ? (
-                        <svg
-                          className="w-4 h-4 text-blue-600"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2.5}
-                            d="M5 15l7-7 7 7"
-                          />
-                        </svg>
-                      ) : (
-                        <svg
-                          className="w-4 h-4 text-blue-600"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2.5}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col opacity-30 group-hover:opacity-70 transition-opacity">
-                      <svg
-                        className="w-3 h-3 text-slate-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 15l7-7 7 7"
-                        />
-                      </svg>
-                      <svg
-                        className="w-3 h-3 text-slate-400 -mt-1"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </div>
-                  )}
+            id: `field-${field.id}`,
+            header: ({ column }) => (
+              <div className="flex items-center space-x-2">
+                <div className="text-muted-foreground">
+                  {getFieldIcon(field.type)}
                 </div>
-              </button>
+                <DataTableColumnHeader 
+                  column={column} 
+                  title={field.label} 
+                />
+              </div>
             ),
             cell: ({ row }) => {
               const value = row.original.data[field.id];
               const formattedValue = formatFieldValue(value, field.type);
+              
+              if (!formattedValue) {
+                return (
+                  <div className="flex items-center space-x-2 text-muted-foreground">
+                    {getFieldIcon(field.type)}
+                    <span className="text-sm italic">No response</span>
+                  </div>
+                );
+              }
+
               return (
-                <div className="overflow-hidden">
-                  {formattedValue ? (
-                    <span
-                      className="text-sm text-slate-700 font-medium block"
-                      title={formattedValue}
-                    >
+                <div className="flex items-center space-x-2">
+                  <div className="text-muted-foreground">
+                    {getFieldIcon(field.type)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-medium truncate block" title={formattedValue}>
                       {formattedValue}
                     </span>
-                  ) : (
-                    <span className="text-xs text-slate-400 italic">
-                      No response
-                    </span>
-                  )}
+                  </div>
                 </div>
               );
             },
+            enableSorting: true,
+            enableHiding: true,
             size: 200,
-            minSize: 120,
-            maxSize: 400,
           });
         }
       });
@@ -492,13 +315,13 @@ const ResponsesTable: React.FC = () => {
     // Actions column
     const actionsColumn: ColumnDef<FormResponse> = {
       id: 'actions',
-      header: 'Actions',
+      header: () => <div className="text-center">Actions</div>,
       cell: ({ row }) => (
-        <div className="flex items-center gap-1 w-20">
+        <div className="flex items-center justify-center gap-1">
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200"
+            className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
             onClick={(e) => {
               e.stopPropagation();
               // TODO: Navigate to individual response view
@@ -506,29 +329,40 @@ const ResponsesTable: React.FC = () => {
             }}
           >
             <Eye className="h-4 w-4" />
+            <span className="sr-only">View response</span>
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 hover:bg-slate-50 hover:text-slate-600 transition-all duration-200"
-            onClick={(e) => {
-              e.stopPropagation();
-              // TODO: Show more actions menu
-              console.log('More actions for:', row.original.id);
-            }}
-          >
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 hover:bg-slate-50"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+                <span className="sr-only">More actions</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => console.log('Edit response:', row.original.id)}>
+                <Eye className="mr-2 h-4 w-4" />
+                View Details
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => console.log('Delete response:', row.original.id)}>
+                <X className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       ),
-      size: 100,
-      minSize: 80,
-      maxSize: 150,
       enableSorting: false,
+      enableHiding: false,
+      size: 80,
     };
 
     return [...baseColumns, ...fieldColumns, actionsColumn];
-  }, [formData, sortBy, sortOrder, handleSortingChange]);
+  }, [formData, sortBy, sortOrder]);
 
   const loading = formLoading;
   const error = formError || responsesError;
@@ -587,8 +421,8 @@ const ResponsesTable: React.FC = () => {
           },
         ]}
       >
-        <div className="max-w-4xl mx-auto px-4 py-12">
-          <Card className="p-8 text-center">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="max-w-md text-center p-8 bg-white rounded-lg shadow-sm border border-slate-200">
             <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
             <h3 className="mb-2 text-xl font-semibold">
               {formData?.form ? 'Error Loading Responses' : 'Form Not Found'}
@@ -598,13 +432,182 @@ const ResponsesTable: React.FC = () => {
                 ? 'There was an error loading the form responses. Please try again.'
                 : "The form you're looking for doesn't exist or you don't have permission to view it."}
             </p>
-          </Card>
+          </div>
         </div>
       </MainLayout>
     );
   }
 
   const form = formData.form;
+
+  // Enhanced data table toolbar component
+  const DataTableToolbar = () => {
+    const hiddenColumns = Object.entries(columnVisibility)
+      .filter(([_, visible]) => !visible)
+      .map(([id]) => {
+        const field = formData?.form?.formSchema ? 
+          deserializeFormSchema(formData.form.formSchema)
+            .pages.flatMap(p => p.fields)
+            .find(f => `field-${f.id}` === id && f instanceof FillableFormField) : null;
+        return field ? (field as FillableFormField).label : id;
+      });
+
+    return (
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 bg-gradient-to-r from-slate-50 via-white to-slate-50 border-b border-slate-200 w-full overflow-hidden">
+        {/* Left side - Search and filters */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1 min-w-0 overflow-hidden">
+          {/* Enhanced search */}
+          <div className="relative w-full sm:w-80 sm:max-w-[320px] min-w-0">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search responses..."
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              className="pl-9 h-10 w-full"
+            />
+            {globalFilter && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-transparent"
+                onClick={() => setGlobalFilter('')}
+              >
+                <X className="h-4 w-4" />
+                <span className="sr-only">Clear search</span>
+              </Button>
+            )}
+          </div>
+
+          {/* Filter toggle */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex-shrink-0 ${showFilters ? 'bg-blue-50 border-blue-200' : ''}`}
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            Filters
+            {showFilters && <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">On</span>}
+          </Button>
+
+          {/* Active filters indicator */}
+          {globalFilter && (
+            <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-sm rounded-md border border-blue-200 max-w-xs">
+              <span className="truncate">Search: "{globalFilter.slice(0, 20)}{globalFilter.length > 20 ? '...' : ''}"</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-4 w-4 p-0 hover:bg-transparent text-blue-700 flex-shrink-0"
+                onClick={() => setGlobalFilter('')}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Right side - Actions and column visibility */}
+        <div className="flex items-center gap-3 flex-shrink-0 overflow-visible">
+          {/* Column visibility */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="flex-shrink-0">
+                <Settings2 className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Columns</span>
+                {hiddenColumns.length > 0 && (
+                  <span className="ml-2 px-2 py-0.5 bg-slate-100 text-slate-700 text-xs rounded-full font-medium">
+                    {hiddenColumns.length} hidden
+                  </span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="p-2">
+                <div className="flex items-center justify-between pb-2 mb-2 border-b">
+                  <span className="text-sm font-medium">Toggle columns</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-xs"
+                    onClick={() => setColumnVisibility({})}
+                  >
+                    <RotateCcw className="h-3 w-3 mr-1" />
+                    Reset
+                  </Button>
+                </div>
+                {columns.map((column) => {
+                  if (!column.id || column.enableHiding === false) return null;
+                  const isVisible = columnVisibility[column.id] !== false;
+                  return (
+                    <div key={column.id} className="flex items-center space-x-2 py-1">
+                      <input
+                        type="checkbox"
+                        checked={isVisible}
+                        onChange={(e) => setColumnVisibility(prev => ({
+                          ...prev,
+                          [column.id!]: e.target.checked
+                        }))}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <span className="text-sm">
+                        {column.id.startsWith('field-') 
+                          ? formData?.form?.formSchema 
+                            ? (() => {
+                                const field = deserializeFormSchema(formData.form.formSchema)
+                                  .pages.flatMap(p => p.fields)
+                                  .find(f => `field-${f.id}` === column.id);
+                                return field instanceof FillableFormField ? field.label : column.id;
+                              })()
+                            : column.id
+                          : column.id === 'id' ? 'Response ID'
+                          : column.id === 'submittedAt' ? 'Submitted At'
+                          : column.id}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Export dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isExporting}
+                className="flex-shrink-0"
+              >
+                {exportLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Export</span>
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={exportToExcel} disabled={isExporting}>
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Export as Excel
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportToCsv} disabled={isExporting}>
+                <FileText className="h-4 w-4 mr-2" />
+                Export as CSV
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <MainLayout
@@ -622,126 +625,63 @@ const ResponsesTable: React.FC = () => {
         },
       ]}
     >
-      <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-        {/* Enhanced Header Section */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-gradient-to-r from-slate-50 to-blue-50/30 p-6 rounded-xl border border-slate-200/60">
-          <div className="flex items-center gap-4">
+      {/* Full-screen container with horizontal overflow prevention */}
+      <div className="flex flex-col h-full w-full overflow-x-hidden">
+        {/* Header with navigation and form info */}
+        <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-white flex-shrink-0 w-full overflow-hidden">
+          <div className="flex items-center gap-4 min-w-0 overflow-hidden">
             <Button
               variant="ghost"
               size="sm"
-              onClick={() =>
-                navigate(`/dashboard/form/${actualFormId}/responses`)
-              }
-              className="text-slate-600 hover:text-slate-900 hover:bg-white/70 transition-all duration-200 px-3 py-2 rounded-lg"
+              onClick={() => navigate(`/dashboard/form/${actualFormId}/responses`)}
+              className="hover:bg-slate-100 flex-shrink-0"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Responses
             </Button>
-            <div className="h-6 w-px bg-slate-300"></div>
-            <div className="flex flex-col">
-              <h1 className="text-lg font-bold text-slate-900">{form.title}</h1>
-              <p className="text-sm text-slate-600">Table View</p>
+            <div className="h-6 w-px bg-slate-300 flex-shrink-0" />
+            <div className="min-w-0 overflow-hidden">
+              <h1 className="text-xl font-semibold text-slate-900 truncate">{form.title}</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="inline-flex items-center px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded-md font-medium flex-shrink-0">
+                  <Table className="h-3 w-3 mr-1" />
+                  Table View
+                </span>
+                <span className="text-sm text-muted-foreground flex-shrink-0">
+                  {responsePagination?.total || 0} responses
+                </span>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-white hover:bg-slate-50 border-slate-200 transition-all duration-200"
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={isExporting}
-                  className="bg-white hover:bg-slate-50 border-slate-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {exportLoading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-600 mr-2"></div>
-                      Exporting...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="h-4 w-4 mr-2" />
-                      Export
-                      <ChevronDown className="h-4 w-4 ml-2" />
-                    </>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem
-                  onClick={exportToExcel}
-                  disabled={isExporting}
-                  className="cursor-pointer"
-                >
-                  <FileSpreadsheet className="h-4 w-4 mr-2" />
-                  Export as Excel
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={exportToCsv}
-                  disabled={isExporting}
-                  className="cursor-pointer"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Export as CSV
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
 
-        {/* Enhanced Responses Table Card */}
-        <Card className="shadow-sm border-slate-200/60">
-          <CardHeader className="bg-gradient-to-r from-white to-slate-50/50 border-b border-slate-100">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-blue-50 rounded-lg border border-blue-100">
-                  <Table className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <CardTitle className="text-slate-800 font-bold text-xl">
-                    Responses Data
-                  </CardTitle>
-                  <CardDescription className="text-slate-600 mt-1">
-                    {responsePagination?.total || 0} total responses
-                  </CardDescription>
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {responsesError ? (
-              <div className="text-center py-12">
+        {/* Main content area - prevents horizontal page scroll */}
+        <div className="flex-1 flex flex-col min-h-0 w-full overflow-x-hidden">
+          {responsesError ? (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center p-8">
                 <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
                 <TypographyH3 className="text-gray-900 mb-2">
                   Error Loading Responses
                 </TypographyH3>
                 <TypographyP className="text-gray-600 mb-6">
-                  There was an error loading the form responses. Please try
-                  again.
+                  There was an error loading the form responses. Please try again.
                 </TypographyP>
-                <Button
-                  onClick={() => window.location.reload()}
-                  variant="outline"
-                >
+                <Button onClick={() => window.location.reload()} variant="outline">
+                  <RotateCcw className="h-4 w-4 mr-2" />
                   Refresh Page
                 </Button>
               </div>
-            ) : responses.length === 0 && !responsesLoading ? (
-              <div className="text-center py-12">
+            </div>
+          ) : responses.length === 0 && !responsesLoading ? (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center p-8">
                 <Database className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                 <TypographyH3 className="text-gray-900 mb-2">
                   No responses yet
                 </TypographyH3>
                 <TypographyP className="text-gray-600 mb-6">
-                  Once people start submitting your form, their responses will
-                  appear here.
+                  Once people start submitting your form, their responses will appear here.
                 </TypographyP>
                 <Button
                   onClick={() => navigate(`/dashboard/form/${actualFormId}`)}
@@ -750,27 +690,56 @@ const ResponsesTable: React.FC = () => {
                   Back to Dashboard
                 </Button>
               </div>
-            ) : (
-              <ServerDataTable
-                columns={columns}
-                data={responses}
-                searchPlaceholder="Search responses..."
-                onRowClick={(row) => {
-                  // TODO: Navigate to individual response view
-                  console.log('Row clicked:', row.id);
-                }}
-                pageCount={responsePagination?.totalPages || 0}
-                currentPage={currentPage}
-                pageSize={pageSize}
-                totalItems={responsePagination?.total || 0}
-                onPageChange={handlePageChange}
-                onPageSizeChange={handlePageSizeChange}
-                loading={responsesLoading}
-                maxHeight="70vh"
-              />
-            )}
-          </CardContent>
-        </Card>
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col bg-white border border-slate-200 m-6 rounded-lg shadow-sm overflow-hidden">
+              {/* Enhanced toolbar - Fixed width, no horizontal scroll */}
+              <div className="flex-shrink-0 overflow-hidden">
+                <DataTableToolbar />
+              </div>
+              
+              {/* Table container - Only table content scrolls horizontally */}
+              <div className="flex-1 overflow-hidden">
+                <ServerDataTable
+                  columns={columns.map(col => ({
+                    ...col,
+                    // Apply column visibility
+                    meta: {
+                      ...col.meta,
+                      hidden: col.id ? columnVisibility[col.id] === false : false
+                    }
+                  })).filter(col => !col.meta?.hidden)}
+                  data={responses.filter((response: FormResponse) => {
+                    if (!globalFilter) return true;
+                    
+                    const searchText = globalFilter.toLowerCase();
+                    
+                    // Search in response ID
+                    if (response.id.toLowerCase().includes(searchText)) return true;
+                    
+                    // Search in response data
+                    return Object.values(response.data || {}).some(value => 
+                      String(value).toLowerCase().includes(searchText)
+                    );
+                  })}
+                  searchPlaceholder="Search responses..."
+                  onRowClick={(row) => {
+                    console.log('Row clicked:', row.id);
+                  }}
+                  pageCount={responsePagination?.totalPages || 0}
+                  currentPage={currentPage}
+                  pageSize={pageSize}
+                  totalItems={responsePagination?.total || 0}
+                  onPageChange={handlePageChange}
+                  onPageSizeChange={handlePageSizeChange}
+                  loading={responsesLoading}
+                  maxHeight="100%"
+                  className="border-0 h-full"
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </MainLayout>
   );
