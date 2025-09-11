@@ -89,15 +89,6 @@ export {
   AlertDialogAction,
   AlertDialogCancel,
 } from "./alert-dialog"
-export {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
-  DialogDescription,
-} from "./dialog"
 
 // Rich Text Editor
 
