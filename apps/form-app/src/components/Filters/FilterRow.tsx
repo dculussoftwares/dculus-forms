@@ -89,12 +89,19 @@ const renderFilterInput = (
   }
 
   const handleValueChange = (value: string) => {
-    onChange({ value, active: true });
+    onChange({ 
+      fieldId: filter.fieldId,
+      operator: filter.operator,
+      value, 
+      active: true 
+    });
   };
 
   const handleNumberRangeChange = (type: 'min' | 'max', value: string) => {
     const numValue = value === '' ? undefined : Number(value);
     onChange({
+      fieldId: filter.fieldId,
+      operator: filter.operator,
       numberRange: {
         ...filter.numberRange,
         [type]: numValue,
@@ -105,6 +112,8 @@ const renderFilterInput = (
 
   const handleDateRangeChange = (type: 'from' | 'to', value: string) => {
     onChange({
+      fieldId: filter.fieldId,
+      operator: filter.operator,
       dateRange: {
         ...filter.dateRange,
         [type]: value || undefined,
@@ -219,7 +228,12 @@ const renderFilterInput = (
                         const newValues = checked
                           ? [...currentValues, option]
                           : currentValues.filter(v => v !== option);
-                        onChange({ values: newValues, active: newValues.length > 0 });
+                        onChange({ 
+                          fieldId: filter.fieldId,
+                          operator: filter.operator,
+                          values: newValues, 
+                          active: newValues.length > 0 
+                        });
                       }}
                     />
                     <label
@@ -269,6 +283,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
 
   const handleOperatorChange = (operator: string) => {
     onChange({
+      fieldId: filter.fieldId, // Preserve the selected field
       operator,
       value: undefined,
       values: undefined,
