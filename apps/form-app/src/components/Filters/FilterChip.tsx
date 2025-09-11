@@ -60,25 +60,32 @@ const getFilterLabel = (filter: FilterState): string => {
   }
 };
 
+const truncateLabel = (label: string, maxLength = 30): string => {
+  return label.length > maxLength ? `${label.slice(0, maxLength)}...` : label;
+};
+
 export const FilterChip: React.FC<FilterChipProps> = ({
   field,
   filter,
   onRemove,
 }) => {
+  const truncatedLabel = truncateLabel(field.label);
+  const filterLabel = getFilterLabel(filter);
+  
   return (
-    <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 border border-blue-200 rounded-md text-sm">
+    <div className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-50/80 border border-blue-200/60 rounded-full text-sm hover:bg-blue-100/80 transition-colors">
       <div className="text-blue-700 flex-shrink-0">
         {getFieldIcon(field.type)}
       </div>
-      <div className="text-blue-800 font-medium truncate max-w-xs">
-        <span className="font-semibold">{field.label}</span>
-        <span className="font-normal ml-1">{getFilterLabel(filter)}</span>
+      <div className="text-blue-800 font-medium truncate max-w-xs" title={`${field.label} ${filterLabel}`}>
+        <span className="font-semibold">{truncatedLabel}</span>
+        <span className="font-normal ml-1">{filterLabel}</span>
       </div>
       <Button
         variant="ghost"
         size="sm"
         onClick={onRemove}
-        className="h-4 w-4 p-0 hover:bg-blue-100 text-blue-700 hover:text-blue-900 ml-1 flex-shrink-0"
+        className="h-5 w-5 p-0 hover:bg-blue-200/50 text-blue-700 hover:text-blue-900 ml-1 flex-shrink-0 rounded-full"
       >
         <X className="h-3 w-3" />
         <span className="sr-only">Remove filter</span>

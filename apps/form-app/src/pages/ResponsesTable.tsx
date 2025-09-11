@@ -16,7 +16,7 @@ import {
   Input,
 } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
-import { FilterPanel, FilterChip, FilterState } from '../components/Filters';
+import { FilterModal, FilterChip, FilterState } from '../components/Filters';
 import {
   GENERATE_FORM_RESPONSE_REPORT,
   GET_FORM_BY_ID,
@@ -84,7 +84,7 @@ const ResponsesTable: React.FC = () => {
   // Enhanced UI state
   const [globalFilter, setGlobalFilter] = useState('');
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [filters, setFilters] = useState<Record<string, FilterState>>({});
 
   // Use formId if available, otherwise fall back to id for backward compatibility
@@ -115,6 +115,11 @@ const ResponsesTable: React.FC = () => {
       delete newFilters[fieldId];
       return newFilters;
     });
+    setCurrentPage(1);
+  };
+
+  const handleApplyFilters = () => {
+    // Reset to first page when applying filters
     setCurrentPage(1);
   };
 
@@ -542,12 +547,16 @@ const ResponsesTable: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setShowFilters(!showFilters)}
-            className={`flex-shrink-0 ${showFilters ? 'bg-blue-50 border-blue-200' : ''}`}
+            onClick={() => setShowFilterModal(true)}
+            className="flex-shrink-0"
           >
             <Filter className="h-4 w-4 mr-2" />
             Filters
-            {showFilters && <span className="ml-2 px-2 py-0.5 bg-blue-100/80 text-blue-800 text-xs rounded-full font-medium border border-blue-200/40">On</span>}
+            {Object.values(filters).some(f => f.active) && (
+              <span className="ml-2 px-2 py-0.5 bg-blue-100/80 text-blue-800 text-xs rounded-full font-medium border border-blue-200/40">
+                {Object.values(filters).filter(f => f.active).length}
+              </span>
+            )}
           </Button>
 
           {/* Active filters display */}
@@ -760,17 +769,6 @@ const ResponsesTable: React.FC = () => {
             </div>
           ) : (
             <div className="flex-1 flex bg-white border border-slate-200/60 rounded-lg shadow-sm m-2 overflow-hidden">
-              {/* Filter panel */}
-              {showFilters && (
-                <FilterPanel
-                  fields={fillableFields}
-                  filters={filters}
-                  onFilterChange={handleFilterChange}
-                  onClearAllFilters={handleClearAllFilters}
-                  onClose={() => setShowFilters(false)}
-                />
-              )}
-              
               {/* Main table area */}
               <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Enhanced toolbar - Fixed width, no horizontal scroll */}
@@ -822,6 +820,18 @@ const ResponsesTable: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Filter Modal */}
+      <FilterModal
+        open={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        fields={fillableFields}
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onRemoveFilter={handleRemoveFilter}
+        onClearAllFilters={handleClearAllFilters}
+        onApplyFilters={handleApplyFilters}
+      />
     </MainLayout>
   );
 };
