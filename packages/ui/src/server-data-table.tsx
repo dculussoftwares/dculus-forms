@@ -241,8 +241,8 @@ export function ServerDataTable<TData, TValue>({
                         </svg>
                       </div>
                       <div className="text-center">
-                        <p className="text-sm font-medium text-slate-700">No results found</p>
-                        <p className="text-xs text-slate-500 mt-1">Try adjusting your search or filters</p>
+                        <p className="text-sm font-medium text-slate-700">No data found</p>
+                        <p className="text-xs text-slate-500 mt-1">No responses available or try adjusting your search filters</p>
                       </div>
                     </div>
                   </td>

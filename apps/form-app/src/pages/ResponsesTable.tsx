@@ -32,7 +32,6 @@ import {
   AlertCircle,
   ArrowLeft,
   ChevronDown,
-  Database,
   Download,
   Eye,
   FileSpreadsheet,
@@ -639,9 +638,14 @@ const ResponsesTable: React.FC = () => {
           </Button>
           <div className="h-4 w-px bg-slate-300 flex-shrink-0" />
           <h1 className="text-lg font-semibold text-slate-900 truncate flex-1">{form.title}</h1>
-          <span className="text-sm text-muted-foreground flex-shrink-0">
-            {responsePagination?.total || 0} responses
-          </span>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {responsesLoading && (
+              <div className="w-4 h-4 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin"></div>
+            )}
+            <span className="text-sm text-muted-foreground">
+              {responsePagination?.total || 0} responses
+            </span>
+          </div>
         </div>
 
         {/* Main content area - prevents horizontal page scroll */}
@@ -659,24 +663,6 @@ const ResponsesTable: React.FC = () => {
                 <Button onClick={() => window.location.reload()} variant="outline">
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Refresh Page
-                </Button>
-              </div>
-            </div>
-          ) : responses.length === 0 && !responsesLoading ? (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center p-8">
-                <Database className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <TypographyH3 className="text-gray-900 mb-2">
-                  No responses yet
-                </TypographyH3>
-                <TypographyP className="text-gray-600 mb-6">
-                  Once people start submitting your form, their responses will appear here.
-                </TypographyP>
-                <Button
-                  onClick={() => navigate(`/dashboard/form/${actualFormId}`)}
-                  variant="outline"
-                >
-                  Back to Dashboard
                 </Button>
               </div>
             </div>
