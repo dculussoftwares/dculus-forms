@@ -66,9 +66,14 @@ export const FilterModal: React.FC<FilterModalProps> = ({
       <div className="relative bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-2xl font-semibold text-slate-900">
-            Filter responses
-          </h2>
+          <div>
+            <h2 className="text-2xl font-semibold text-slate-900">
+              Filter responses
+            </h2>
+            <p className="text-sm text-slate-500 mt-1">
+              Create filters to show specific responses that match your criteria
+            </p>
+          </div>
           <Button
             variant="ghost"
             size="sm"
