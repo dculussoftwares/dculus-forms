@@ -124,6 +124,26 @@ export const typeDefs = gql`
     format: ExportFormat!
   }
 
+  # Filter Types
+  input ResponseFilterInput {
+    fieldId: String!
+    operator: String!
+    value: String
+    values: [String!]
+    dateRange: DateRangeInput
+    numberRange: NumberRangeInput
+  }
+
+  input DateRangeInput {
+    from: String
+    to: String
+  }
+
+  input NumberRangeInput {
+    min: Float
+    max: Float
+  }
+
   # Input Types
   input CreateOrganizationInput {
     name: String!
@@ -672,7 +692,7 @@ export const typeDefs = gql`
     deleteFile(key: String!): Boolean!
 
     # Export Mutations
-    generateFormResponseReport(formId: ID!, format: ExportFormat!): ExportResult!
+    generateFormResponseReport(formId: ID!, format: ExportFormat!, filters: [ResponseFilterInput!]): ExportResult!
 
     # Analytics Mutations
     trackFormView(input: TrackFormViewInput!): TrackFormViewResponse!

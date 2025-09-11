@@ -6,12 +6,14 @@ import { generateExportFile, ExportFormat } from '../../services/unifiedExportSe
 import { uploadTemporaryFile } from '../../services/temporaryFileService.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 import { deserializeFormSchema } from '@dculus/types';
+import { ResponseFilter, applyResponseFilters } from '../../services/responseFilterService.js';
+
 
 export const unifiedExportResolvers = {
   Mutation: {
     generateFormResponseReport: async (
       _: any, 
-      { formId, format }: { formId: string; format: 'EXCEL' | 'CSV' }, 
+      { formId, format, filters = [] }: { formId: string; format: 'EXCEL' | 'CSV'; filters?: ResponseFilter[] }, 
       context: { auth: BetterAuthContext }
     ) => {
       try {
@@ -34,13 +36,25 @@ export const unifiedExportResolvers = {
 
         // Get all responses for the form (unlimited)
         console.log(`Fetching all responses for unified ${exportFormat.toUpperCase()} export - form: ${formId}`);
-        const responses = await getAllResponsesByFormId(formId);
+        let responses = await getAllResponsesByFormId(formId);
         
         if (responses.length === 0) {
           throw new GraphQLError('No responses found for this form');
         }
 
-        console.log(`Found ${responses.length} responses, generating ${exportFormat.toUpperCase()} file...`);
+        console.log(`Found ${responses.length} responses before filtering`);
+
+        // Apply filters if provided
+        if (filters && filters.length > 0) {
+          responses = applyResponseFilters(responses, filters);
+          console.log(`Found ${responses.length} responses after applying ${filters.length} filters`);
+          
+          if (responses.length === 0) {
+            throw new GraphQLError('No responses match the applied filters');
+          }
+        }
+
+        console.log(`Generating ${exportFormat.toUpperCase()} file with ${responses.length} responses...`);
 
         // Get live form schema from Hocuspocus first, fallback to database
         console.log('Unified Export - Getting live form schema from Hocuspocus...');

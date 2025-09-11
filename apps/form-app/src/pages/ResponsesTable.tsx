@@ -185,15 +185,42 @@ const ResponsesTable: React.FC = () => {
     console.log(`Download initiated: ${filename}`);
   };
 
+  // Convert frontend filters to GraphQL format
+  const convertFiltersForExport = () => {
+    return Object.values(filters)
+      .filter(filter => filter.active)
+      .map(filter => ({
+        fieldId: filter.fieldId,
+        operator: filter.operator,
+        value: filter.value || undefined,
+        values: filter.values || undefined,
+        dateRange: filter.dateRange ? {
+          from: filter.dateRange.from || undefined,
+          to: filter.dateRange.to || undefined
+        } : undefined,
+        numberRange: filter.numberRange ? {
+          min: filter.numberRange.min || undefined,
+          max: filter.numberRange.max || undefined
+        } : undefined
+      }));
+  };
+
   // Handle export with format selection
   const handleExport = async (format: 'EXCEL' | 'CSV') => {
     if (!actualFormId) return;
 
     try {
-      console.log(`Generating ${format} report on backend...`);
+      const activeFilters = convertFiltersForExport();
+      const hasFilters = activeFilters.length > 0;
+      
+      console.log(`Generating ${format} report on backend${hasFilters ? ` with ${activeFilters.length} filters` : ' (all responses)'}...`);
 
       const { data } = await generateReport({
-        variables: { formId: actualFormId, format },
+        variables: { 
+          formId: actualFormId, 
+          format,
+          filters: hasFilters ? activeFilters : undefined
+        },
       });
 
       if (data?.generateFormResponseReport?.downloadUrl) {

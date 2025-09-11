@@ -132,8 +132,8 @@ export const GET_ALL_FORM_RESPONSES = gql`
 `;
 
 export const GENERATE_FORM_RESPONSE_REPORT = gql`
-  mutation GenerateFormResponseReport($formId: ID!, $format: ExportFormat!) {
-    generateFormResponseReport(formId: $formId, format: $format) {
+  mutation GenerateFormResponseReport($formId: ID!, $format: ExportFormat!, $filters: [ResponseFilterInput!]) {
+    generateFormResponseReport(formId: $formId, format: $format, filters: $filters) {
       downloadUrl
       expiresAt
       filename
