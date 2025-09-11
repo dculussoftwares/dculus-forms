@@ -101,8 +101,8 @@ export const GET_FORM_BY_ID = gql`
 `;
 
 export const GET_FORM_RESPONSES = gql`
-  query GetFormResponses($formId: ID!, $page: Int = 1, $limit: Int = 10, $sortBy: String = "submittedAt", $sortOrder: String = "desc") {
-    responsesByForm(formId: $formId, page: $page, limit: $limit, sortBy: $sortBy, sortOrder: $sortOrder) {
+  query GetFormResponses($formId: ID!, $page: Int = 1, $limit: Int = 10, $sortBy: String = "submittedAt", $sortOrder: String = "desc", $filters: [ResponseFilterInput!]) {
+    responsesByForm(formId: $formId, page: $page, limit: $limit, sortBy: $sortBy, sortOrder: $sortOrder, filters: $filters) {
       data {
         id
         formId

@@ -45,12 +45,133 @@ export const getResponseById = async (id: string): Promise<FormResponse | null> 
   }
 };
 
+interface ResponseFilter {
+  fieldId: string;
+  operator: string;
+  value?: string;
+  values?: string[];
+  dateRange?: { from?: string; to?: string };
+  numberRange?: { min?: number; max?: number };
+}
+
+// Helper function to apply filters to responses
+const applyFilters = (responses: any[], filters?: ResponseFilter[]): any[] => {
+  if (!filters || filters.length === 0) {
+    return responses;
+  }
+
+  return responses.filter(response => {
+    return filters.every(filter => {
+      const fieldData = response.data?.[filter.fieldId];
+      
+      switch (filter.operator) {
+        case 'EQUALS':
+          return String(fieldData).toLowerCase() === String(filter.value || '').toLowerCase();
+        
+        case 'NOT_EQUALS':
+          return String(fieldData).toLowerCase() !== String(filter.value || '').toLowerCase();
+        
+        case 'CONTAINS':
+          return String(fieldData).toLowerCase().includes(String(filter.value || '').toLowerCase());
+        
+        case 'NOT_CONTAINS':
+          return !String(fieldData).toLowerCase().includes(String(filter.value || '').toLowerCase());
+        
+        case 'STARTS_WITH':
+          return String(fieldData).toLowerCase().startsWith(String(filter.value || '').toLowerCase());
+        
+        case 'ENDS_WITH':
+          return String(fieldData).toLowerCase().endsWith(String(filter.value || '').toLowerCase());
+        
+        case 'IS_EMPTY':
+          return fieldData === null || fieldData === undefined || String(fieldData).trim() === '';
+        
+        case 'IS_NOT_EMPTY':
+          return fieldData !== null && fieldData !== undefined && String(fieldData).trim() !== '';
+        
+        case 'IN':
+          return filter.values?.some(value => 
+            String(fieldData).toLowerCase() === String(value).toLowerCase()
+          ) ?? false;
+        
+        case 'NOT_IN':
+          return !(filter.values?.some(value => 
+            String(fieldData).toLowerCase() === String(value).toLowerCase()
+          ) ?? false);
+        
+        case 'GREATER_THAN':
+          const gtNum = Number(fieldData);
+          const gtCompare = Number(filter.value);
+          return !isNaN(gtNum) && !isNaN(gtCompare) && gtNum > gtCompare;
+        
+        case 'LESS_THAN':
+          const ltNum = Number(fieldData);
+          const ltCompare = Number(filter.value);
+          return !isNaN(ltNum) && !isNaN(ltCompare) && ltNum < ltCompare;
+        
+        case 'BETWEEN':
+          if (!filter.numberRange) return false;
+          const betweenNum = Number(fieldData);
+          const minVal = filter.numberRange.min;
+          const maxVal = filter.numberRange.max;
+          return !isNaN(betweenNum) && 
+                 (minVal === undefined || betweenNum >= minVal) && 
+                 (maxVal === undefined || betweenNum <= maxVal);
+        
+        case 'DATE_EQUALS':
+          try {
+            const fieldDate = new Date(Number(fieldData) || fieldData);
+            const compareDate = new Date(filter.value || '');
+            return fieldDate.toDateString() === compareDate.toDateString();
+          } catch {
+            return false;
+          }
+        
+        case 'DATE_BEFORE':
+          try {
+            const fieldDate = new Date(Number(fieldData) || fieldData);
+            const compareDate = new Date(filter.value || '');
+            return fieldDate < compareDate;
+          } catch {
+            return false;
+          }
+        
+        case 'DATE_AFTER':
+          try {
+            const fieldDate = new Date(Number(fieldData) || fieldData);
+            const compareDate = new Date(filter.value || '');
+            return fieldDate > compareDate;
+          } catch {
+            return false;
+          }
+        
+        case 'DATE_BETWEEN':
+          if (!filter.dateRange) return false;
+          try {
+            const fieldDate = new Date(Number(fieldData) || fieldData);
+            const fromDate = filter.dateRange.from ? new Date(filter.dateRange.from) : null;
+            const toDate = filter.dateRange.to ? new Date(filter.dateRange.to) : null;
+            
+            return (!fromDate || fieldDate >= fromDate) && 
+                   (!toDate || fieldDate <= toDate);
+          } catch {
+            return false;
+          }
+        
+        default:
+          return true;
+      }
+    });
+  });
+};
+
 export const getResponsesByFormId = async (
   formId: string, 
   page: number = 1, 
   limit: number = 10,
   sortBy: string = 'submittedAt',
-  sortOrder: string = 'desc'
+  sortOrder: string = 'desc',
+  filters?: ResponseFilter[]
 ): Promise<{
   data: FormResponse[];
   total: number;
@@ -75,49 +196,76 @@ export const getResponsesByFormId = async (
     validSortBy = 'submittedAt';
   }
 
-  // Get total count for pagination metadata
-  const total = await prisma.response.count({
-    where: { formId },
-  });
-
-  // Get paginated responses with conditional sorting
-  let responses;
+  // When filters are applied or form field sorting is needed, we need to load all responses
+  // to apply filters and sort in memory
+  const needsMemoryProcessing = filters && filters.length > 0 || isFormFieldSort;
   
-  if (isFormFieldSort) {
-    // For form field sorting, get all responses and sort them in memory
-    // This is less efficient but more reliable for form field sorting
-    const allResponses = await prisma.response.findMany({
+  let allResponses;
+  let filteredResponses;
+  let responses;
+  let total;
+  
+  if (needsMemoryProcessing) {
+    // Get all responses for filtering/sorting in memory
+    allResponses = await prisma.response.findMany({
       where: { formId },
     });
     
-    // Extract the field ID from 'data.fieldId'
-    const fieldId = validSortBy.replace('data.', '');
+    // Apply filters first
+    filteredResponses = applyFilters(allResponses, filters);
+    total = filteredResponses.length;
     
-    // Sort responses by form field value
-    const sortedResponses = allResponses.sort((a, b) => {
-      const aValue = (a.data as any)?.[fieldId];
-      const bValue = (b.data as any)?.[fieldId];
+    // Apply sorting
+    if (isFormFieldSort) {
+      const fieldId = validSortBy.replace('data.', '');
       
-      // Handle null/undefined values
-      if (aValue == null && bValue == null) return 0;
-      if (aValue == null) return validSortOrder === 'asc' ? -1 : 1;
-      if (bValue == null) return validSortOrder === 'asc' ? 1 : -1;
-      
-      // Convert to strings for comparison
-      const aStr = String(aValue).toLowerCase();
-      const bStr = String(bValue).toLowerCase();
-      
-      let comparison = 0;
-      if (aStr < bStr) comparison = -1;
-      if (aStr > bStr) comparison = 1;
-      
-      return validSortOrder === 'asc' ? comparison : -comparison;
+      filteredResponses.sort((a, b) => {
+        const aValue = (a.data as any)?.[fieldId];
+        const bValue = (b.data as any)?.[fieldId];
+        
+        // Handle null/undefined values
+        if (aValue == null && bValue == null) return 0;
+        if (aValue == null) return validSortOrder === 'asc' ? -1 : 1;
+        if (bValue == null) return validSortOrder === 'asc' ? 1 : -1;
+        
+        // Convert to strings for comparison
+        const aStr = String(aValue).toLowerCase();
+        const bStr = String(bValue).toLowerCase();
+        
+        let comparison = 0;
+        if (aStr < bStr) comparison = -1;
+        if (aStr > bStr) comparison = 1;
+        
+        return validSortOrder === 'asc' ? comparison : -comparison;
+      });
+    } else {
+      // Sort by regular fields
+      filteredResponses.sort((a, b) => {
+        let aValue, bValue;
+        
+        if (validSortBy === 'submittedAt') {
+          aValue = new Date(a.submittedAt).getTime();
+          bValue = new Date(b.submittedAt).getTime();
+        } else {
+          aValue = a[validSortBy];
+          bValue = b[validSortBy];
+        }
+        
+        if (aValue < bValue) return validSortOrder === 'asc' ? -1 : 1;
+        if (aValue > bValue) return validSortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    
+    // Apply pagination
+    responses = filteredResponses.slice(skip, skip + validLimit);
+    
+  } else {
+    // No filters and regular sorting - use database query for better performance
+    total = await prisma.response.count({
+      where: { formId },
     });
     
-    // Apply pagination to sorted results
-    responses = sortedResponses.slice(skip, skip + validLimit);
-  } else {
-    // For regular field sorting (id, submittedAt)
     responses = await prisma.response.findMany({
       where: { formId },
       orderBy: { [validSortBy]: validSortOrder },

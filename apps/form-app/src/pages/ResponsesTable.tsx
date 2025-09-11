@@ -16,6 +16,7 @@ import {
   Input,
 } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
+import { FilterPanel, FilterChip, FilterState } from '../components/Filters';
 import {
   GENERATE_FORM_RESPONSE_REPORT,
   GET_FORM_BY_ID,
@@ -84,9 +85,38 @@ const ResponsesTable: React.FC = () => {
   const [globalFilter, setGlobalFilter] = useState('');
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<Record<string, FilterState>>({});
 
   // Use formId if available, otherwise fall back to id for backward compatibility
   const actualFormId = formId || id;
+
+  // Filter handlers
+  const handleFilterChange = (fieldId: string, filterUpdate: Partial<FilterState>) => {
+    setFilters(prev => ({
+      ...prev,
+      [fieldId]: { 
+        ...prev[fieldId],
+        fieldId,
+        ...filterUpdate 
+      }
+    }));
+    // Reset to first page when filters change
+    setCurrentPage(1);
+  };
+
+  const handleClearAllFilters = () => {
+    setFilters({});
+    setCurrentPage(1);
+  };
+
+  const handleRemoveFilter = (fieldId: string) => {
+    setFilters(prev => {
+      const newFilters = { ...prev };
+      delete newFilters[fieldId];
+      return newFilters;
+    });
+    setCurrentPage(1);
+  };
 
   const {
     data: formData,
@@ -96,6 +126,19 @@ const ResponsesTable: React.FC = () => {
     variables: { id: actualFormId },
     skip: !actualFormId,
   });
+
+  // Convert filters to GraphQL format
+  const graphqlFilters = useMemo(() => {
+    const activeFilters = Object.values(filters).filter(f => f.active);
+    return activeFilters.length > 0 ? activeFilters.map(filter => ({
+      fieldId: filter.fieldId,
+      operator: filter.operator,
+      value: filter.value,
+      values: filter.values,
+      dateRange: filter.dateRange,
+      numberRange: filter.numberRange,
+    })) : null;
+  }, [filters]);
 
   const {
     data: responsesData,
@@ -109,6 +152,7 @@ const ResponsesTable: React.FC = () => {
       limit: pageSize,
       sortBy,
       sortOrder,
+      filters: graphqlFilters,
     },
     skip: !actualFormId,
     notifyOnNetworkStatusChange: true,
@@ -163,6 +207,24 @@ const ResponsesTable: React.FC = () => {
 
   // Export to CSV function (using unified backend)
   const exportToCsv = () => handleExport('CSV');
+
+  // Extract fillable form fields for filtering
+  const fillableFields = useMemo(() => {
+    if (!formData?.form?.formSchema) return [];
+
+    const formSchema: FormSchema = deserializeFormSchema(formData.form.formSchema);
+    const fields: FillableFormField[] = [];
+    
+    formSchema.pages.forEach((page) => {
+      page.fields.forEach((field) => {
+        if (field instanceof FillableFormField) {
+          fields.push(field);
+        }
+      });
+    });
+    
+    return fields;
+  }, [formData]);
 
   // Generate dynamic columns based on form schema
   const columns: ColumnDef<FormResponse>[] = useMemo(() => {
@@ -488,20 +550,36 @@ const ResponsesTable: React.FC = () => {
             {showFilters && <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">On</span>}
           </Button>
 
-          {/* Active filters indicator */}
-          {globalFilter && (
-            <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-sm rounded-md border border-blue-200 max-w-xs">
-              <span className="truncate">Search: "{globalFilter.slice(0, 20)}{globalFilter.length > 20 ? '...' : ''}"</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-4 w-4 p-0 hover:bg-transparent text-blue-700 flex-shrink-0"
-                onClick={() => setGlobalFilter('')}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-          )}
+          {/* Active filters display */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Search indicator */}
+            {globalFilter && (
+              <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-sm rounded-md border border-blue-200">
+                <span className="truncate max-w-32">Search: "{globalFilter.slice(0, 15)}{globalFilter.length > 15 ? '...' : ''}"</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-4 w-4 p-0 hover:bg-transparent text-blue-700 flex-shrink-0"
+                  onClick={() => setGlobalFilter('')}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+            
+            {/* Field filters */}
+            {Object.values(filters).filter(f => f.active).map((filter) => {
+              const field = fillableFields.find(f => f.id === filter.fieldId);
+              return field ? (
+                <FilterChip
+                  key={filter.fieldId}
+                  field={field}
+                  filter={filter}
+                  onRemove={() => handleRemoveFilter(filter.fieldId)}
+                />
+              ) : null;
+            })}
+          </div>
         </div>
 
         {/* Right side - Actions and column visibility */}
@@ -519,9 +597,9 @@ const ResponsesTable: React.FC = () => {
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <div className="p-2">
-                <div className="flex items-center justify-between pb-2 mb-2 border-b">
+            <DropdownMenuContent align="end" className="w-64">
+              <div className="flex flex-col max-h-80">
+                <div className="flex items-center justify-between p-3 pb-2 border-b flex-shrink-0">
                   <span className="text-sm font-medium">Toggle columns</span>
                   <Button
                     variant="ghost"
@@ -533,37 +611,51 @@ const ResponsesTable: React.FC = () => {
                     Reset
                   </Button>
                 </div>
-                {columns.map((column) => {
-                  if (!column.id || column.enableHiding === false) return null;
-                  const isVisible = columnVisibility[column.id] !== false;
-                  return (
-                    <div key={column.id} className="flex items-center space-x-2 py-1">
-                      <input
-                        type="checkbox"
-                        checked={isVisible}
-                        onChange={(e) => setColumnVisibility(prev => ({
-                          ...prev,
-                          [column.id!]: e.target.checked
-                        }))}
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                      <span className="text-sm">
-                        {column.id.startsWith('field-') 
-                          ? formData?.form?.formSchema 
-                            ? (() => {
-                                const field = deserializeFormSchema(formData.form.formSchema)
-                                  .pages.flatMap(p => p.fields)
-                                  .find(f => `field-${f.id}` === column.id);
-                                return field instanceof FillableFormField ? field.label : column.id;
-                              })()
-                            : column.id
-                          : column.id === 'id' ? 'Response ID'
-                          : column.id === 'submittedAt' ? 'Submitted At'
-                          : column.id}
-                      </span>
+                <div className="overflow-y-auto flex-1 p-2">
+                  {columns.length === 0 ? (
+                    <div className="text-center text-slate-500 text-sm py-4">
+                      No columns available
                     </div>
-                  );
-                })}
+                  ) : (
+                    <div className="space-y-1">
+                      {columns.map((column) => {
+                        if (!column.id || column.enableHiding === false) return null;
+                        const isVisible = columnVisibility[column.id] !== false;
+                        
+                        let columnLabel = column.id;
+                        if (column.id.startsWith('field-')) {
+                          if (formData?.form?.formSchema) {
+                            const field = deserializeFormSchema(formData.form.formSchema)
+                              .pages.flatMap(p => p.fields)
+                              .find(f => `field-${f.id}` === column.id);
+                            columnLabel = field instanceof FillableFormField ? field.label : column.id;
+                          }
+                        } else if (column.id === 'id') {
+                          columnLabel = 'Response ID';
+                        } else if (column.id === 'submittedAt') {
+                          columnLabel = 'Submitted At';
+                        }
+                        
+                        return (
+                          <div key={column.id} className="flex items-center space-x-2 p-2 rounded hover:bg-slate-50">
+                            <input
+                              type="checkbox"
+                              checked={isVisible}
+                              onChange={(e) => setColumnVisibility(prev => ({
+                                ...prev,
+                                [column.id!]: e.target.checked
+                              }))}
+                              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-sm flex-1 min-w-0 truncate" title={columnLabel}>
+                              {columnLabel}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -667,14 +759,27 @@ const ResponsesTable: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col bg-white border border-slate-200 m-2 overflow-hidden">
-              {/* Enhanced toolbar - Fixed width, no horizontal scroll */}
-              <div className="flex-shrink-0 overflow-hidden">
-                <DataTableToolbar />
-              </div>
+            <div className="flex-1 flex bg-white border border-slate-200 m-2 overflow-hidden">
+              {/* Filter panel */}
+              {showFilters && (
+                <FilterPanel
+                  fields={fillableFields}
+                  filters={filters}
+                  onFilterChange={handleFilterChange}
+                  onClearAllFilters={handleClearAllFilters}
+                  onClose={() => setShowFilters(false)}
+                />
+              )}
               
-              {/* Table container - Only table content scrolls horizontally */}
-              <div className="flex-1 overflow-hidden">
+              {/* Main table area */}
+              <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Enhanced toolbar - Fixed width, no horizontal scroll */}
+                <div className="flex-shrink-0 overflow-hidden">
+                  <DataTableToolbar />
+                </div>
+                
+                {/* Table container - Only table content scrolls horizontally */}
+                <div className="flex-1 overflow-hidden">
                 <ServerDataTable
                   columns={columns.map(col => ({
                     ...col,
@@ -711,6 +816,7 @@ const ResponsesTable: React.FC = () => {
                   maxHeight="100%"
                   className="border-0 h-full"
                 />
+                </div>
               </div>
             </div>
           )}

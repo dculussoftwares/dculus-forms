@@ -569,6 +569,46 @@ export const typeDefs = gql`
     end: String!
   }
 
+  # Response Filter Types
+  enum FilterOperator {
+    EQUALS
+    NOT_EQUALS
+    CONTAINS
+    NOT_CONTAINS
+    STARTS_WITH
+    ENDS_WITH
+    IS_EMPTY
+    IS_NOT_EMPTY
+    GREATER_THAN
+    LESS_THAN
+    BETWEEN
+    IN
+    NOT_IN
+    DATE_EQUALS
+    DATE_BETWEEN
+    DATE_BEFORE
+    DATE_AFTER
+  }
+
+  input DateRangeInput {
+    from: String
+    to: String
+  }
+
+  input NumberRangeInput {
+    min: Float
+    max: Float
+  }
+
+  input ResponseFilterInput {
+    fieldId: String!
+    operator: FilterOperator!
+    value: String
+    values: [String!]
+    dateRange: DateRangeInput
+    numberRange: NumberRangeInput
+  }
+
   type Query {
     # Auth Queries
     me: User
@@ -581,7 +621,7 @@ export const typeDefs = gql`
     formByShortUrl(shortUrl: String!): Form
     responses(organizationId: ID!): [FormResponse!]!
     response(id: ID!): FormResponse
-    responsesByForm(formId: ID!, page: Int = 1, limit: Int = 10, sortBy: String = "submittedAt", sortOrder: String = "desc"): PaginatedResponses!
+    responsesByForm(formId: ID!, page: Int = 1, limit: Int = 10, sortBy: String = "submittedAt", sortOrder: String = "desc", filters: [ResponseFilterInput!]): PaginatedResponses!
 
     # Template Queries
     templates(category: String): [FormTemplate!]!

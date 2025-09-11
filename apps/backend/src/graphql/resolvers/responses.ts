@@ -23,9 +23,9 @@ export const responsesResolvers = {
       if (!response) throw new Error("Response not found");
       return response;
     },
-    responsesByForm: async (_: any, { formId, page, limit, sortBy, sortOrder }: { formId: string, page: number, limit: number, sortBy: string, sortOrder: string }, context: { auth: BetterAuthContext }) => {
+    responsesByForm: async (_: any, { formId, page, limit, sortBy, sortOrder, filters }: { formId: string, page: number, limit: number, sortBy: string, sortOrder: string, filters?: any[] }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);
-      return await getResponsesByFormId(formId, page, limit, sortBy, sortOrder);
+      return await getResponsesByFormId(formId, page, limit, sortBy, sortOrder, filters);
     },
   },
   Mutation: {
