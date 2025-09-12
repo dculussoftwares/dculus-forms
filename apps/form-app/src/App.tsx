@@ -19,6 +19,8 @@ import FormDashboard from './pages/FormDashboard';
 import FormAnalytics from './pages/FormAnalytics';
 import FormSettings from './pages/FormSettings';
 import CollaborativeFormBuilder from './pages/CollaborativeFormBuilder';
+import AcceptInvitation from './pages/AcceptInvitation';
+import RejectInvitation from './pages/RejectInvitation';
 
 
 function App() {
@@ -31,6 +33,8 @@ function App() {
           <Route path="/signin/otp" element={<SignInOTP />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/invite/accept/:invitationId" element={<AcceptInvitation />} />
+          <Route path="/invite/reject/:invitationId" element={<RejectInvitation />} />
           
           {/* Protected routes */}
           <Route path="/" element={
