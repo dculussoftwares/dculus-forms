@@ -2,50 +2,50 @@ import 'dotenv/config';
 import { prisma } from '../lib/prisma.js';
 
 /**
- * Migration script to update organization member roles from 'companyMember'/'companyOwner' to 'member'/'owner'
+ * Migration script to update organization member roles from 'member'/'owner' to 'companyMember'/'companyOwner'
  */
 async function migrateOrganizationRoles() {
   console.log('🔄 Starting organization roles migration...');
 
   try {
-    // Update all 'companyMember' roles to 'member'
+    // Update all 'member' roles to 'companyMember'
     const memberUpdate = await prisma.member.updateMany({
-      where: { role: 'companyMember' },
-      data: { role: 'member' },
+      where: { role: 'member' },
+      data: { role: 'companyMember' },
     });
 
-    console.log(`✅ Updated ${memberUpdate.count} member roles from 'companyMember' to 'member'`);
+    console.log(`✅ Updated ${memberUpdate.count} member roles from 'member' to 'companyMember'`);
 
-    // Update all 'companyOwner' roles to 'owner'
+    // Update all 'owner' roles to 'companyOwner'
     const ownerUpdate = await prisma.member.updateMany({
-      where: { role: 'companyOwner' },
-      data: { role: 'owner' },
+      where: { role: 'owner' },
+      data: { role: 'companyOwner' },
     });
 
-    console.log(`✅ Updated ${ownerUpdate.count} owner roles from 'companyOwner' to 'owner'`);
+    console.log(`✅ Updated ${ownerUpdate.count} owner roles from 'owner' to 'companyOwner'`);
 
-    // Update all invitation 'companyMember' roles to 'member'
+    // Update all invitation 'member' roles to 'companyMember'
     const invitationMemberUpdate = await prisma.invitation.updateMany({
-      where: { role: 'companyMember' },
-      data: { role: 'member' },
+      where: { role: 'member' },
+      data: { role: 'companyMember' },
     });
 
-    console.log(`✅ Updated ${invitationMemberUpdate.count} invitation roles from 'companyMember' to 'member'`);
+    console.log(`✅ Updated ${invitationMemberUpdate.count} invitation roles from 'member' to 'companyMember'`);
 
-    // Update all invitation 'companyOwner' roles to 'owner'
+    // Update all invitation 'owner' roles to 'companyOwner'
     const invitationOwnerUpdate = await prisma.invitation.updateMany({
-      where: { role: 'companyOwner' },
-      data: { role: 'owner' },
+      where: { role: 'owner' },
+      data: { role: 'companyOwner' },
     });
 
-    console.log(`✅ Updated ${invitationOwnerUpdate.count} invitation roles from 'companyOwner' to 'owner'`);
+    console.log(`✅ Updated ${invitationOwnerUpdate.count} invitation roles from 'owner' to 'companyOwner'`);
 
     // Verify the migration by counting records with old role names
     const remainingOldMemberRoles = await prisma.member.count({
       where: { 
         OR: [
-          { role: 'companyMember' },
-          { role: 'companyOwner' }
+          { role: 'member' },
+          { role: 'owner' }
         ]
       }
     });
@@ -53,8 +53,8 @@ async function migrateOrganizationRoles() {
     const remainingOldInvitationRoles = await prisma.invitation.count({
       where: { 
         OR: [
-          { role: 'companyMember' },
-          { role: 'companyOwner' }
+          { role: 'member' },
+          { role: 'owner' }
         ]
       }
     });
