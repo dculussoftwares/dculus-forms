@@ -10,6 +10,8 @@ import {
   TypographyH1,
   TypographyH3,
   TypographyP,
+  toastSuccess,
+  toastError,
 } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { FormSettingsContainer } from '../components/form-settings';
@@ -55,6 +57,7 @@ const FormSettings: React.FC = () => {
     },
     onError: (error) => {
       setErrors({ general: error });
+      // Error toast is now handled in the hook
     },
   });
 
@@ -63,10 +66,12 @@ const FormSettings: React.FC = () => {
       setIsSaving(false);
       setErrors({});
       refetch();
+      toastSuccess('Form settings saved successfully');
     },
     onError: (error) => {
       setIsSaving(false);
       setErrors({ general: error.message });
+      toastError('Failed to save form settings', error.message);
     },
   });
 
@@ -75,10 +80,12 @@ const FormSettings: React.FC = () => {
       setIsSaving(false);
       setErrors({});
       refetch();
+      toastSuccess('Short URL regenerated successfully');
     },
     onError: (error) => {
       setIsSaving(false);
       setErrors({ general: error.message });
+      toastError('Failed to regenerate short URL', error.message);
     },
   });
 
@@ -99,6 +106,7 @@ const FormSettings: React.FC = () => {
     if (!title) {
       setErrors({ title: 'Form title is required' });
       setIsSaving(false);
+      toastError('Validation Error', 'Form title is required');
       return;
     }
 

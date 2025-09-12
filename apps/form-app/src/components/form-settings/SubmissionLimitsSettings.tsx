@@ -9,6 +9,7 @@ import {
   Label,
   Checkbox,
   Input,
+  toastError,
 } from '@dculus/ui';
 import { Shield, Save, Calendar, Users } from 'lucide-react';
 import type { SubmissionLimitsSettings as SubmissionLimitsSettingsType } from '@dculus/types';
@@ -40,9 +41,15 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
 
   const handleMaxResponsesLimitChange = (value: string) => {
     const limit = parseInt(value, 10);
-    if (!isNaN(limit) && limit > 0) {
-      onUpdateMaxResponses(true, limit);
+    if (isNaN(limit) || limit < 1) {
+      toastError('Invalid Limit', 'Response limit must be a positive number');
+      return;
     }
+    if (limit > 10000) {
+      toastError('Invalid Limit', 'Response limit cannot exceed 10,000');
+      return;
+    }
+    onUpdateMaxResponses(true, limit);
   };
 
   const handleTimeWindowToggle = (enabled: boolean) => {
@@ -60,6 +67,11 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
   };
 
   const handleStartDateChange = (value: string) => {
+    const endDate = settings.timeWindow?.endDate;
+    if (endDate && value && new Date(value) > new Date(endDate)) {
+      toastError('Invalid Date Range', 'Start date must be before end date');
+      return;
+    }
     onUpdateTimeWindow(
       true, 
       value, 
@@ -68,6 +80,11 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
   };
 
   const handleEndDateChange = (value: string) => {
+    const startDate = settings.timeWindow?.startDate;
+    if (startDate && value && new Date(value) < new Date(startDate)) {
+      toastError('Invalid Date Range', 'End date must be after start date');
+      return;
+    }
     onUpdateTimeWindow(
       true, 
       settings.timeWindow?.startDate, 

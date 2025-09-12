@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useMutation } from '@apollo/client';
 import { UPDATE_FORM } from '../graphql/mutations';
 import type { SubmissionLimitsSettings } from '@dculus/types';
+import { toastSuccess, toastError } from '@dculus/ui';
 
 interface FormSettingsData {
   thankYou: {
@@ -41,6 +42,7 @@ export const useFormSettings = ({
     },
     onError: (error) => {
       setIsSaving(false);
+      toastError('Failed to save settings', error.message);
       onError?.(error.message);
     },
   });
@@ -119,13 +121,18 @@ export const useFormSettings = ({
   };
 
   // Save thank you settings
-  const saveThankYouSettings = () => {
-    return saveSettings({
-      thankYou: {
-        enabled: settings.thankYou.enabled,
-        message: settings.thankYou.message,
-      }
-    });
+  const saveThankYouSettings = async () => {
+    try {
+      await saveSettings({
+        thankYou: {
+          enabled: settings.thankYou.enabled,
+          message: settings.thankYou.message,
+        }
+      });
+      toastSuccess('Thank You settings saved successfully');
+    } catch (error) {
+      // Error already handled in the mutation onError callback
+    }
   };
 
   // Update submission limits
@@ -137,10 +144,15 @@ export const useFormSettings = ({
   };
 
   // Save submission limits settings
-  const saveSubmissionLimits = () => {
-    return saveSettings({
-      submissionLimits: settings.submissionLimits,
-    });
+  const saveSubmissionLimits = async () => {
+    try {
+      await saveSettings({
+        submissionLimits: settings.submissionLimits,
+      });
+      toastSuccess('Submission limits saved successfully');
+    } catch (error) {
+      // Error already handled in the mutation onError callback
+    }
   };
 
   return {
