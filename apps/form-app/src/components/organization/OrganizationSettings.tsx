@@ -11,7 +11,23 @@ export const OrganizationSettings: React.FC = () => {
   const { activeOrganization } = useAuthContext();
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('members');
-  const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
+  const [pendingInvitations, setPendingInvitations] = useState<Array<{
+    id: string;
+    email: string;
+    role: string;
+    status: string;
+    expiresAt: string;
+    createdAt: string;
+    inviter: {
+      id: string;
+      name: string;
+      email: string;
+    };
+    organization?: {
+      id: string;
+      name: string;
+    };
+  }>>([]);
 
   const fetchInvitations = async () => {
     if (!activeOrganization?.id) return;
@@ -24,19 +40,27 @@ export const OrganizationSettings: React.FC = () => {
       });
       
       
-      // Handle different possible response structures
+      // Handle different possible response structures and filter for pending only
+      let allInvitations = [];
       if (Array.isArray(invitations)) {
-        setPendingInvitations(invitations);
+        allInvitations = invitations;
       } else if (invitations && Array.isArray(invitations.data)) {
-        setPendingInvitations(invitations.data);
+        allInvitations = invitations.data;
       } else if (invitations && typeof invitations === 'object' && !Array.isArray(invitations)) {
         // If it's an object, it might contain the invitations as a property
         const invitationArray = Object.values(invitations).find(val => Array.isArray(val));
-        setPendingInvitations(invitationArray || []);
+        allInvitations = invitationArray || [];
       } else {
         console.warn('Unexpected invitations response format:', invitations);
-        setPendingInvitations([]);
+        allInvitations = [];
       }
+      
+      // Filter to only show pending invitations (exclude canceled/cancelled and accepted)
+      const pendingOnly = allInvitations.filter(invitation => 
+        invitation.status === 'pending'
+      );
+      
+      setPendingInvitations(pendingOnly);
     } catch (error) {
       console.error('Error fetching invitations:', error);
       setPendingInvitations([]);
