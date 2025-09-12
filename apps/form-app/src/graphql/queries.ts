@@ -215,3 +215,26 @@ export const GET_FORM_SUBMISSION_ANALYTICS = gql`
     }
   }
 `;
+
+export const GET_INVITATION_PUBLIC = gql`
+  query GetInvitationPublic($id: ID!) {
+    getInvitationPublic(id: $id) {
+      id
+      email
+      role
+      status
+      expiresAt
+      createdAt
+      organization {
+        id
+        name
+        slug
+      }
+      inviter {
+        id
+        name
+        email
+      }
+    }
+  }
+`;

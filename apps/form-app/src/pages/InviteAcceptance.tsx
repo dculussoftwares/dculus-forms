@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Alert, AlertDescription } from '@dculus/ui';
 import { Users, Mail, AlertCircle, CheckCircle } from 'lucide-react';
@@ -6,42 +6,28 @@ import { useAuthContext } from '../contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { parseDate, isDateExpired } from '../utils/dateHelpers';
 import { authClient, organization } from '../lib/auth-client';
+import { useQuery } from '@apollo/client';
+import { GET_INVITATION_PUBLIC } from '../graphql/queries';
 
 const InviteAcceptance: React.FC = () => {
   const { invitationId } = useParams<{ invitationId: string }>();
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuthContext();
   const [error, setError] = useState<string | null>(null);
-  const [invitation, setInvitation] = useState<any>(null);
-  const [invitationLoading, setInvitationLoading] = useState(false);
-  const [invitationError, setInvitationError] = useState<string | null>(null);
   const [acceptLoading, setAcceptLoading] = useState(false);
 
-  // Fetch invitation details using Better Auth
-  useEffect(() => {
-    const fetchInvitation = async () => {
-      if (!invitationId) return;
-      
-      setInvitationLoading(true);
-      setInvitationError(null);
-      
-      try {
-        const invitationData = await organization.getInvitation({
-          query: {
-            id: invitationId,
-          },
-        });
-        setInvitation(invitationData);
-      } catch (error: any) {
-        console.error('Error fetching invitation:', error);
-        setInvitationError(error.message || 'Failed to fetch invitation');
-      } finally {
-        setInvitationLoading(false);
-      }
-    };
+  // Fetch invitation details using GraphQL (public endpoint)
+  const { 
+    data: invitationData, 
+    loading: invitationLoading, 
+    error: invitationError 
+  } = useQuery(GET_INVITATION_PUBLIC, {
+    variables: { id: invitationId || '' },
+    skip: !invitationId,
+    errorPolicy: 'all',
+  });
 
-    fetchInvitation();
-  }, [invitationId]);
+  const invitation = invitationData?.getInvitationPublic;
   const isExpired = invitation && isDateExpired(invitation.expiresAt);
 
   // Handle accepting invitation
@@ -126,7 +112,7 @@ const InviteAcceptance: React.FC = () => {
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                {invitationError || 'This invitation link is invalid or has been removed. Please contact the organization administrator for a new invitation.'}
+                {invitationError?.message || 'This invitation link is invalid or has been removed. Please contact the organization administrator for a new invitation.'}
               </AlertDescription>
             </Alert>
             <Button 
@@ -157,7 +143,7 @@ const InviteAcceptance: React.FC = () => {
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 This invitation expired {formatDistanceToNow(parseDate(invitation.expiresAt), { addSuffix: true })}. 
-                Please contact {invitation.inviter.name} for a new invitation.
+                Please contact {invitation.inviter?.name || 'the inviter'} for a new invitation.
               </AlertDescription>
             </Alert>
             <Button 
@@ -181,9 +167,9 @@ const InviteAcceptance: React.FC = () => {
             <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
               <Users className="h-8 w-8 text-primary" />
             </div>
-            <CardTitle>You're Invited to Join {invitation.organization.name}</CardTitle>
+            <CardTitle>You're Invited to Join {invitation.organization?.name || 'Organization'}</CardTitle>
             <CardDescription>
-              {invitation.inviter.name} has invited you to collaborate on forms and manage responses together.
+              {invitation.inviter?.name || 'Someone'} has invited you to collaborate on forms and manage responses together.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -285,9 +271,9 @@ const InviteAcceptance: React.FC = () => {
           <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
             <CheckCircle className="h-8 w-8 text-green-600" />
           </div>
-          <CardTitle>Welcome to {invitation.organization.name}!</CardTitle>
+          <CardTitle>Welcome to {invitation.organization?.name || 'the Organization'}!</CardTitle>
           <CardDescription>
-            You've been invited by {invitation.inviter.name} to join their organization.
+            You've been invited by {invitation.inviter?.name || 'someone'} to join their organization.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -295,7 +281,7 @@ const InviteAcceptance: React.FC = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Organization</span>
-                <span className="font-medium">{invitation.organization.name}</span>
+                <span className="font-medium">{invitation.organization?.name || 'Organization'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Your Role</span>
@@ -305,7 +291,7 @@ const InviteAcceptance: React.FC = () => {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Invited By</span>
-                <span className="font-medium">{invitation.inviter.name}</span>
+                <span className="font-medium">{invitation.inviter?.name || 'Someone'}</span>
               </div>
             </div>
           </div>
