@@ -23,8 +23,6 @@ export const OrganizationSettings: React.FC = () => {
         },
       });
       
-      // Debug: Log the response to understand the structure
-      console.log('Better Auth listInvitations response:', invitations);
       
       // Handle different possible response structures
       if (Array.isArray(invitations)) {

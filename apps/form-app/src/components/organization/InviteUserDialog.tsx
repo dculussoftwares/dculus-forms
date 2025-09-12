@@ -39,7 +39,6 @@ export const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
 
 
   const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
-    console.log('InviteUserDialog handleSubmit called', { email, role, organizationId });
     
     if (e) {
       e.preventDefault();

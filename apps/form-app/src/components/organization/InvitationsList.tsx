@@ -10,7 +10,15 @@ interface Invitation {
   email: string;
   role: string;
   expiresAt: string;
+  status: string;
+  createdAt: string;
   inviter: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  organization?: {
+    id: string;
     name: string;
   };
 }
@@ -44,8 +52,6 @@ export const InvitationsList: React.FC<InvitationsListProps> = ({
     }
   };
 
-  // Debug: Log the invitations prop to understand what we're receiving
-  console.log('InvitationsList received invitations:', invitations, 'Type:', typeof invitations, 'isArray:', Array.isArray(invitations));
 
   // Ensure invitations is an array
   const invitationArray = Array.isArray(invitations) ? invitations : [];
@@ -118,7 +124,7 @@ export const InvitationsList: React.FC<InvitationsListProps> = ({
               <div>
                 <div className="font-medium">{invitation.email}</div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>Invited by {invitation.inviter.name}</span>
+                  <span>Invited by {invitation.inviter?.name || 'Unknown'}</span>
                   <span>•</span>
                   <div className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
