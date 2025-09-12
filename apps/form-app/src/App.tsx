@@ -1,6 +1,7 @@
 
 import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { Toaster } from '@dculus/ui';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Dashboard } from './components/Dashboard';
 import FormsList from './pages/FormsList';
@@ -123,6 +124,7 @@ function App() {
           } />
           {/* Templates is now nested under Dashboard */}
         </Routes>
+        <Toaster />
       </div>
     </AuthProvider>
   );

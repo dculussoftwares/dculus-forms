@@ -1,6 +1,6 @@
 import React from 'react';
 import { useMutation } from '@apollo/client';
-import { Badge, Button, toast } from '@dculus/ui';
+import { Badge, Button, toastSuccess, toastError } from '@dculus/ui';
 import { Mail, Clock, X, Crown, User } from 'lucide-react';
 import { CANCEL_INVITATION } from '../../graphql/invitations';
 import { Invitation } from '../../graphql/invitations';
@@ -18,18 +18,11 @@ export const InvitationsList: React.FC<InvitationsListProps> = ({
 }) => {
   const [cancelInvitation, { loading: cancelLoading }] = useMutation(CANCEL_INVITATION, {
     onCompleted: () => {
-      toast({
-        title: 'Invitation cancelled',
-        description: 'The invitation has been cancelled successfully.',
-      });
+      toastSuccess('Invitation cancelled', 'The invitation has been cancelled successfully.');
       onInvitationAction();
     },
     onError: (error) => {
-      toast({
-        title: 'Error cancelling invitation',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toastError('Error cancelling invitation', error.message);
     },
   });
 

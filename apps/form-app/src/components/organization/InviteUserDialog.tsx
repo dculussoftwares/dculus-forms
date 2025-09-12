@@ -15,7 +15,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  toast,
+  toastSuccess,
+  toastError,
 } from '@dculus/ui';
 import { Mail, UserPlus } from 'lucide-react';
 import { INVITE_USER } from '../../graphql/invitations';
@@ -40,21 +41,14 @@ export const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
 
   const [inviteUser] = useMutation(INVITE_USER, {
     onCompleted: () => {
-      toast({
-        title: 'Invitation sent successfully',
-        description: `An invitation has been sent to ${email}.`,
-      });
+      toastSuccess('Invitation sent successfully', `An invitation has been sent to ${email}.`);
       setEmail('');
       setRole('companyMember');
       onInviteSent();
       onClose();
     },
     onError: (error) => {
-      toast({
-        title: 'Error sending invitation',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toastError('Error sending invitation', error.message);
     },
   });
 
@@ -62,22 +56,14 @@ export const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
     e.preventDefault();
     
     if (!email.trim()) {
-      toast({
-        title: 'Email required',
-        description: 'Please enter an email address.',
-        variant: 'destructive',
-      });
+      toastError('Email required', 'Please enter an email address.');
       return;
     }
 
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      toast({
-        title: 'Invalid email',
-        description: 'Please enter a valid email address.',
-        variant: 'destructive',
-      });
+      toastError('Invalid email', 'Please enter a valid email address.');
       return;
     }
 

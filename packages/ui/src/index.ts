@@ -13,7 +13,8 @@ export {
   DialogDescription,
 } from "./dialog"
 export { Alert, AlertTitle, AlertDescription } from "./alert"
-export { toast } from "./use-toast"
+export { toast, toastSuccess, toastError, toastInfo } from "./use-toast"
+export { Toaster } from "./sonner"
 export { Input } from "./input"
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from "./card"
 export { Label } from "./label"
