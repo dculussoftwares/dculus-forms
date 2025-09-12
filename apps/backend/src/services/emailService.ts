@@ -3,6 +3,7 @@ import { emailConfig } from '../lib/env.js';
 import { generateFormPublishedHtml } from '../templates/formPublishedEmail.js';
 import { generateOTPEmailHtml, generateOTPEmailText, type OTPEmailData } from '../templates/otpEmail.js';
 import { generateResetPasswordEmailHtml, generateResetPasswordEmailText, type ResetPasswordEmailData } from '../templates/resetPasswordEmail.js';
+import { generateInvitationEmailHtml, generateInvitationEmailText, type InvitationEmailData } from '../templates/invitationEmail.js';
 
 export interface EmailOptions {
   to: string;
@@ -28,6 +29,13 @@ export interface SendResetPasswordEmailOptions {
   to: string;
   resetUrl: string;
   expiresInHours?: number;
+}
+
+export interface SendInvitationEmailOptions {
+  to: string;
+  invitationId: string;
+  organizationName: string;
+  inviterName: string;
 }
 
 // Create transporter instance
@@ -132,4 +140,32 @@ export async function sendResetPasswordEmail(options: SendResetPasswordEmailOpti
   });
 
   console.log(`Password reset email sent successfully to: ${to}`);
+}
+
+export async function sendInvitationEmail(options: SendInvitationEmailOptions): Promise<void> {
+  const { to, invitationId, organizationName, inviterName } = options;
+  const expiresInHours = 48;
+
+  // Create invitation URL - this will point to the form app's invite handler
+  const invitationUrl = `${process.env.FORM_APP_URL || 'http://localhost:3000'}/invite/${invitationId}`;
+
+  const invitationData: InvitationEmailData = {
+    to,
+    organizationName,
+    inviterName,
+    invitationUrl,
+    expiresInHours,
+  };
+
+  const html = generateInvitationEmailHtml(invitationData);
+  const text = generateInvitationEmailText(invitationData);
+
+  await sendEmail({
+    to,
+    subject: `🎉 You've been invited to join ${organizationName} on Dculus Forms`,
+    html,
+    text,
+  });
+
+  console.log(`Invitation email sent successfully to: ${to} for organization: ${organizationName}`);
 }

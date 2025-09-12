@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Button,
   Input,
@@ -17,6 +17,8 @@ import { slugify } from '@dculus/utils';
 import { authClient, signUp, emailOtp, signIn } from '../lib/auth-client';
 import { OTPInput } from '../components/OTPInput';
 import { ArrowLeft, Mail, Timer } from 'lucide-react';
+import { useMutation } from '@apollo/client';
+import { ACCEPT_INVITATION } from '../graphql/invitations';
 
 export const SignUp = () => {
   const [step, setStep] = useState<'form' | 'verify'>('form');
@@ -32,7 +34,21 @@ export const SignUp = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
+  const location = useLocation();
   
+  // Check for invitation context
+  const invitationEmail = location.state?.email;
+  const pendingInvitationId = typeof window !== 'undefined' ? sessionStorage.getItem('pendingInvitationId') : null;
+  
+  const [acceptInvitation] = useMutation(ACCEPT_INVITATION);
+  
+  // Prefill email if coming from invitation
+  useEffect(() => {
+    if (invitationEmail) {
+      setFormData(prev => ({ ...prev, email: invitationEmail }));
+    }
+  }, [invitationEmail]);
+
   // Countdown timer for resend OTP
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -74,7 +90,8 @@ export const SignUp = () => {
       newErrors.confirmPassword = "Passwords don't match";
     }
 
-    if (!formData.organizationName.trim()) {
+    // Organization name is only required if not joining via invitation
+    if (!pendingInvitationId && !formData.organizationName.trim()) {
       newErrors.organizationName = 'Organization name is required';
     }
 
@@ -172,13 +189,38 @@ export const SignUp = () => {
         return;
       }
 
-      // Create the organization
-      const organizationSlug = slugify(formData.organizationName);
-      await authClient.organization.create({
-        name: formData.organizationName,
-        slug: organizationSlug,
-        keepCurrentActiveOrganization: false,
-      });
+      // Check if there's a pending invitation to accept
+      if (pendingInvitationId) {
+        try {
+          await acceptInvitation({
+            variables: { invitationId: pendingInvitationId },
+          });
+          
+          // Clear the pending invitation
+          sessionStorage.removeItem('pendingInvitationId');
+          
+          // Navigate to dashboard with success message
+          navigate('/', { 
+            state: { 
+              message: 'Welcome! You have successfully joined the organization.' 
+            } 
+          });
+          return;
+        } catch (invitationError) {
+          console.error('Error accepting invitation:', invitationError);
+          // Continue with normal organization creation if invitation acceptance fails
+        }
+      }
+
+      // Create the organization if not accepting an invitation
+      if (!pendingInvitationId) {
+        const organizationSlug = slugify(formData.organizationName);
+        await authClient.organization.create({
+          name: formData.organizationName,
+          slug: organizationSlug,
+          keepCurrentActiveOrganization: false,
+        });
+      }
 
       // Navigate to dashboard
       navigate('/');
@@ -264,11 +306,17 @@ export const SignUp = () => {
         <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
           <div className="flex flex-col space-y-2 text-center">
             <TypographyH2>
-              {step === 'form' ? 'Create an account' : 'Verify your email'}
+              {step === 'form' 
+                ? (pendingInvitationId ? 'Complete your invitation' : 'Create an account')
+                : 'Verify your email'
+              }
             </TypographyH2>
             <TypographySmall className="text-muted-foreground">
               {step === 'form' 
-                ? 'Enter your details below to create your account'
+                ? (pendingInvitationId 
+                    ? 'Create your account to join the organization'
+                    : 'Enter your details below to create your account'
+                  )
                 : `We sent a 6-digit verification code to ${formData.email}`
               }
             </TypographySmall>
@@ -338,24 +386,27 @@ export const SignUp = () => {
                     )}
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="organizationName">Organization Name</Label>
-                    <Input
-                      id="organizationName"
-                      name="organizationName"
-                      type="text"
-                      placeholder="Acme Inc."
-                      value={formData.organizationName}
-                      onChange={handleInputChange}
-                      disabled={isLoading}
-                      className={errors.organizationName ? 'border-red-500' : ''}
-                    />
-                    {errors.organizationName && (
-                      <TypographySmall className="text-red-500">
-                        {errors.organizationName}
-                      </TypographySmall>
-                    )}
-                  </div>
+                  {/* Only show organization name field if not joining via invitation */}
+                  {!pendingInvitationId && (
+                    <div className="space-y-2">
+                      <Label htmlFor="organizationName">Organization Name</Label>
+                      <Input
+                        id="organizationName"
+                        name="organizationName"
+                        type="text"
+                        placeholder="Acme Inc."
+                        value={formData.organizationName}
+                        onChange={handleInputChange}
+                        disabled={isLoading}
+                        className={errors.organizationName ? 'border-red-500' : ''}
+                      />
+                      {errors.organizationName && (
+                        <TypographySmall className="text-red-500">
+                          {errors.organizationName}
+                        </TypographySmall>
+                      )}
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>

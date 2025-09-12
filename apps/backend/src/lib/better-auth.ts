@@ -3,7 +3,7 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { organization, bearer, admin, emailOTP } from 'better-auth/plugins';
 import { prisma } from './prisma.js';
 import { authConfig } from './env.js';
-import { sendOTPEmail, sendResetPasswordEmail } from '../services/emailService.js';
+import { sendOTPEmail, sendResetPasswordEmail, sendInvitationEmail } from '../services/emailService.js';
 
 export const auth: ReturnType<typeof betterAuth> = betterAuth({
   database: prismaAdapter(prisma, {
@@ -48,6 +48,15 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
       organizationLimit: 5,
       creatorRole: 'companyOwner',
       membershipLimit: 100,
+      sendInvitationEmail: async ({ email, invitation, organization, inviter }) => {
+        await sendInvitationEmail({
+          to: email,
+          invitationId: invitation.id,
+          organizationName: organization.name,
+          inviterName: inviter.user.name,
+        });
+      },
+      invitationExpiresIn: 60 * 60 * 24 * 2, // 2 days
     }),
     admin({
       defaultRole: 'user',

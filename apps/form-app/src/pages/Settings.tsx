@@ -1,11 +1,12 @@
 import React from "react"
 import { MainLayout } from "../components/MainLayout"
+import { OrganizationSettings } from "../components/organization/OrganizationSettings"
 
 const Settings: React.FC = () => {
   return (
-    <MainLayout title="Settings" subtitle="Manage your preferences">
+    <MainLayout title="Settings" subtitle="Manage your organization and preferences">
       <div className="p-8">
-        <p className="text-muted-foreground">This is a blank settings page.</p>
+        <OrganizationSettings />
       </div>
     </MainLayout>
   )

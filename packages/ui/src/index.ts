@@ -1,4 +1,19 @@
 export { Button, buttonVariants } from "./button"
+export { Badge } from "./badge"
+export {
+  Dialog,
+  DialogPortal,
+  DialogOverlay,
+  DialogClose,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from "./dialog"
+export { Alert, AlertTitle, AlertDescription } from "./alert"
+export { toast } from "./use-toast"
 export { Input } from "./input"
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from "./card"
 export { Label } from "./label"

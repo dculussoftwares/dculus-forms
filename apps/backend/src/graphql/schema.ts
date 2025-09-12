@@ -35,6 +35,18 @@ export const typeDefs = gql`
     updatedAt: String!
   }
 
+  type Invitation {
+    id: ID!
+    email: String!
+    role: String!
+    status: String!
+    organization: Organization!
+    inviter: User!
+    expiresAt: String!
+    createdAt: String!
+    updatedAt: String!
+  }
+
   # Form Settings Types
   type ThankYouSettings {
     enabled: Boolean!
@@ -129,6 +141,12 @@ export const typeDefs = gql`
   input CreateOrganizationInput {
     name: String!
     slug: String!
+  }
+
+  input InviteUserInput {
+    organizationId: ID!
+    email: String!
+    role: String = "companyMember"
   }
 
   input CreateFormInput {
@@ -616,6 +634,10 @@ export const typeDefs = gql`
     myOrganizations: [Organization!]!
     activeOrganization: Organization
     
+    # Invitation Queries
+    organizationInvitations(organizationId: ID!): [Invitation!]!
+    invitation(id: ID!): Invitation
+    
     # Form Queries
     forms(organizationId: ID!): [Form!]!
     form(id: ID!): Form
@@ -653,6 +675,12 @@ export const typeDefs = gql`
     # Auth Mutations
     createOrganization(name: String!): Organization
     setActiveOrganization(organizationId: ID!): Organization
+    
+    # Invitation Mutations
+    inviteUser(input: InviteUserInput!): Invitation!
+    acceptInvitation(invitationId: ID!): Invitation!
+    rejectInvitation(invitationId: ID!): Invitation!
+    cancelInvitation(invitationId: ID!): Invitation!
     
     # Form Mutations
     createForm(input: CreateFormInput!): Form!

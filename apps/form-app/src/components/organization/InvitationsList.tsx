@@ -1,0 +1,154 @@
+import React from 'react';
+import { useMutation } from '@apollo/client';
+import { Badge, Button, toast } from '@dculus/ui';
+import { Mail, Clock, X, Crown, User } from 'lucide-react';
+import { CANCEL_INVITATION } from '../../graphql/invitations';
+import { Invitation } from '../../graphql/invitations';
+import { formatDistanceToNow } from 'date-fns';
+import { parseDate, isDateExpired } from '../../utils/dateHelpers';
+
+interface InvitationsListProps {
+  invitations: Invitation[];
+  onInvitationAction: () => void;
+}
+
+export const InvitationsList: React.FC<InvitationsListProps> = ({
+  invitations,
+  onInvitationAction,
+}) => {
+  const [cancelInvitation, { loading: cancelLoading }] = useMutation(CANCEL_INVITATION, {
+    onCompleted: () => {
+      toast({
+        title: 'Invitation cancelled',
+        description: 'The invitation has been cancelled successfully.',
+      });
+      onInvitationAction();
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error cancelling invitation',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleCancelInvitation = async (invitationId: string) => {
+    try {
+      await cancelInvitation({
+        variables: { invitationId },
+      });
+    } catch (error) {
+      console.error('Error cancelling invitation:', error);
+    }
+  };
+
+  if (invitations.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+        <h3 className="text-lg font-medium">No pending invitations</h3>
+        <p className="text-muted-foreground">
+          All invitations have been responded to or there are no pending invitations.
+        </p>
+      </div>
+    );
+  }
+
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'companyOwner':
+        return <Crown className="h-4 w-4" />;
+      default:
+        return <User className="h-4 w-4" />;
+    }
+  };
+
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'companyOwner':
+        return 'Owner';
+      case 'companyMember':
+        return 'Member';
+      default:
+        return role;
+    }
+  };
+
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role) {
+      case 'companyOwner':
+        return 'default' as const;
+      case 'companyMember':
+        return 'secondary' as const;
+      default:
+        return 'outline' as const;
+    }
+  };
+
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium">Pending Invitations</h3>
+        <Badge variant="outline">
+          {invitations.length} pending invitation{invitations.length !== 1 ? 's' : ''}
+        </Badge>
+      </div>
+      
+      <div className="space-y-3">
+        {invitations.map((invitation) => (
+          <div
+            key={invitation.id}
+            className={`flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors ${
+              isDateExpired(invitation.expiresAt) ? 'opacity-60' : ''
+            }`}
+          >
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-muted rounded-full">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div>
+                <div className="font-medium">{invitation.email}</div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>Invited by {invitation.inviter.name}</span>
+                  <span>•</span>
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {isDateExpired(invitation.expiresAt) ? (
+                      <span className="text-destructive">Expired</span>
+                    ) : (
+                      <span>
+                        Expires {formatDistanceToNow(parseDate(invitation.expiresAt), { addSuffix: true })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Badge variant={getRoleBadgeVariant(invitation.role)} className="flex items-center gap-1">
+                {getRoleIcon(invitation.role)}
+                {getRoleLabel(invitation.role)}
+              </Badge>
+              
+              {!isDateExpired(invitation.expiresAt) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleCancelInvitation(invitation.id)}
+                  disabled={cancelLoading}
+                  className="flex items-center gap-1"
+                >
+                  <X className="h-3 w-3" />
+                  Cancel
+                </Button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};

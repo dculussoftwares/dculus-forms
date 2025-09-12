@@ -15,6 +15,7 @@ import { SignIn } from './pages/SignIn';
 import { SignInOTP } from './pages/SignInOTP';
 import { ForgotPassword } from './pages/ForgotPassword';
 import Settings from './pages/Settings';
+import InviteAcceptance from './pages/InviteAcceptance';
 import FormDashboard from './pages/FormDashboard';
 import FormAnalytics from './pages/FormAnalytics';
 import FormSettings from './pages/FormSettings';
@@ -31,6 +32,7 @@ function App() {
           <Route path="/signin/otp" element={<SignInOTP />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/invite/:invitationId" element={<InviteAcceptance />} />
           
           {/* Protected routes */}
           <Route path="/" element={
