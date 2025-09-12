@@ -9,7 +9,6 @@ import { unifiedExportResolvers } from './resolvers/unifiedExport.js';
 import { adminResolvers } from './resolvers/admin.js';
 import { analyticsResolvers } from './resolvers/analytics.js';
 import { fieldAnalyticsResolvers } from './resolvers/fieldAnalytics.js';
-import { invitationResolvers } from './resolvers/invitations.js';
 import { GraphQLJSON } from 'graphql-type-json';
 
 
@@ -24,7 +23,6 @@ export const resolvers = {
     ...adminResolvers.Query,
     ...analyticsResolvers.Query,
     ...fieldAnalyticsResolvers.Query,
-    ...invitationResolvers.Query,
   },
   Mutation: {
     ...betterAuthResolvers.Mutation,
@@ -35,7 +33,6 @@ export const resolvers = {
     ...unifiedExportResolvers.Mutation,
     ...analyticsResolvers.Mutation,
     ...fieldAnalyticsResolvers.Mutation,
-    ...invitationResolvers.Mutation,
   },
   Form: {
     ...formsResolvers.Form,

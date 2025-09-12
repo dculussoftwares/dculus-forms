@@ -14,11 +14,9 @@ import {
   TypographySmall,
 } from '@dculus/ui';
 import { slugify } from '@dculus/utils';
-import { authClient, signUp, emailOtp, signIn } from '../lib/auth-client';
+import { authClient, signUp, emailOtp, signIn, organization } from '../lib/auth-client';
 import { OTPInput } from '../components/OTPInput';
 import { ArrowLeft, Mail, Timer } from 'lucide-react';
-import { useMutation } from '@apollo/client';
-import { ACCEPT_INVITATION } from '../graphql/invitations';
 
 export const SignUp = () => {
   const [step, setStep] = useState<'form' | 'verify'>('form');
@@ -39,8 +37,6 @@ export const SignUp = () => {
   // Check for invitation context
   const invitationEmail = location.state?.email;
   const pendingInvitationId = typeof window !== 'undefined' ? sessionStorage.getItem('pendingInvitationId') : null;
-  
-  const [acceptInvitation] = useMutation(ACCEPT_INVITATION);
   
   // Prefill email if coming from invitation
   useEffect(() => {
@@ -192,8 +188,8 @@ export const SignUp = () => {
       // Check if there's a pending invitation to accept
       if (pendingInvitationId) {
         try {
-          await acceptInvitation({
-            variables: { invitationId: pendingInvitationId },
+          await organization.acceptInvitation({
+            invitationId: pendingInvitationId,
           });
           
           // Clear the pending invitation

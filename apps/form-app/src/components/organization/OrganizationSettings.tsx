@@ -1,25 +1,53 @@
-import React, { useState } from 'react';
-import { useQuery } from '@apollo/client';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Tabs, TabsContent, TabsList, TabsTrigger } from '@dculus/ui';
 import { Users, UserPlus, Settings as SettingsIcon } from 'lucide-react';
-import { GET_ORGANIZATION_INVITATIONS } from '../../graphql/invitations';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { MembersList } from './MembersList';
 import { InvitationsList } from './InvitationsList';
 import { InviteUserDialog } from './InviteUserDialog';
+import { organization } from '../../lib/auth-client';
 
 export const OrganizationSettings: React.FC = () => {
   const { activeOrganization } = useAuthContext();
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('members');
+  const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
 
-  const { data: invitationsData, refetch: refetchInvitations } = useQuery(
-    GET_ORGANIZATION_INVITATIONS,
-    {
-      variables: { organizationId: activeOrganization?.id },
-      skip: !activeOrganization?.id,
+  const fetchInvitations = async () => {
+    if (!activeOrganization?.id) return;
+    
+    try {
+      const invitations = await organization.listInvitations({
+        query: {
+          organizationId: activeOrganization.id,
+        },
+      });
+      
+      // Debug: Log the response to understand the structure
+      console.log('Better Auth listInvitations response:', invitations);
+      
+      // Handle different possible response structures
+      if (Array.isArray(invitations)) {
+        setPendingInvitations(invitations);
+      } else if (invitations && Array.isArray(invitations.data)) {
+        setPendingInvitations(invitations.data);
+      } else if (invitations && typeof invitations === 'object' && !Array.isArray(invitations)) {
+        // If it's an object, it might contain the invitations as a property
+        const invitationArray = Object.values(invitations).find(val => Array.isArray(val));
+        setPendingInvitations(invitationArray || []);
+      } else {
+        console.warn('Unexpected invitations response format:', invitations);
+        setPendingInvitations([]);
+      }
+    } catch (error) {
+      console.error('Error fetching invitations:', error);
+      setPendingInvitations([]);
     }
-  );
+  };
+
+  useEffect(() => {
+    fetchInvitations();
+  }, [activeOrganization?.id]);
 
   if (!activeOrganization) {
     return (
@@ -34,8 +62,6 @@ export const OrganizationSettings: React.FC = () => {
       </Card>
     );
   }
-
-  const pendingInvitations = invitationsData?.organizationInvitations || [];
 
   return (
     <div className="space-y-6">
@@ -66,7 +92,7 @@ export const OrganizationSettings: React.FC = () => {
               </TabsTrigger>
               <TabsTrigger value="invitations" className="flex items-center gap-2">
                 <UserPlus className="h-4 w-4" />
-                Pending Invitations ({pendingInvitations.length})
+                Pending Invitations ({Array.isArray(pendingInvitations) ? pendingInvitations.length : 0})
               </TabsTrigger>
             </TabsList>
             
@@ -77,9 +103,7 @@ export const OrganizationSettings: React.FC = () => {
             <TabsContent value="invitations" className="mt-6">
               <InvitationsList
                 invitations={pendingInvitations}
-                onInvitationAction={() => {
-                  refetchInvitations();
-                }}
+                onInvitationAction={fetchInvitations}
               />
             </TabsContent>
           </Tabs>
@@ -91,7 +115,7 @@ export const OrganizationSettings: React.FC = () => {
         onClose={() => setIsInviteDialogOpen(false)}
         organizationId={activeOrganization.id}
         onInviteSent={() => {
-          refetchInvitations();
+          fetchInvitations();
           setActiveTab('invitations');
         }}
       />

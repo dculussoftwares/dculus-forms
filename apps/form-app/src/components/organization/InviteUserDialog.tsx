@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useMutation } from '@apollo/client';
 import {
   Dialog,
   DialogContent,
@@ -19,8 +18,7 @@ import {
   toastError,
 } from '@dculus/ui';
 import { Mail, UserPlus } from 'lucide-react';
-import { INVITE_USER } from '../../graphql/invitations';
-import { InviteUserInput } from '../../graphql/invitations';
+import { organization } from '../../lib/auth-client';
 
 interface InviteUserDialogProps {
   isOpen: boolean;
@@ -36,24 +34,16 @@ export const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
   onInviteSent,
 }) => {
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState('companyMember');
+  const [role, setRole] = useState('member');
   const [isLoading, setIsLoading] = useState(false);
 
-  const [inviteUser] = useMutation(INVITE_USER, {
-    onCompleted: () => {
-      toastSuccess('Invitation sent successfully', `An invitation has been sent to ${email}.`);
-      setEmail('');
-      setRole('companyMember');
-      onInviteSent();
-      onClose();
-    },
-    onError: (error) => {
-      toastError('Error sending invitation', error.message);
-    },
-  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
+    console.log('InviteUserDialog handleSubmit called', { email, role, organizationId });
+    
+    if (e) {
+      e.preventDefault();
+    }
     
     if (!email.trim()) {
       toastError('Email required', 'Please enter an email address.');
@@ -70,17 +60,20 @@ export const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
     setIsLoading(true);
     
     try {
-      const input: InviteUserInput = {
-        organizationId,
+      await organization.inviteMember({
         email: email.trim(),
-        role,
-      };
-
-      await inviteUser({
-        variables: { input },
+        role: role as "member" | "admin" | "owner",
+        organizationId, // Optional if using active organization
       });
-    } catch (error) {
+      
+      toastSuccess('Invitation sent successfully', `An invitation has been sent to ${email}.`);
+      setEmail('');
+      setRole('member');
+      onInviteSent();
+      onClose();
+    } catch (error: any) {
       console.error('Error inviting user:', error);
+      toastError('Error sending invitation', error.message || 'Failed to send invitation');
     } finally {
       setIsLoading(false);
     }
@@ -89,7 +82,7 @@ export const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
   const handleClose = () => {
     if (!isLoading) {
       setEmail('');
-      setRole('companyMember');
+      setRole('member');
       onClose();
     }
   };
@@ -132,7 +125,7 @@ export const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="companyMember">
+                <SelectItem value="member">
                   <div className="flex flex-col">
                     <span>Member</span>
                     <span className="text-xs text-muted-foreground">
@@ -140,7 +133,7 @@ export const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
                     </span>
                   </div>
                 </SelectItem>
-                <SelectItem value="companyOwner">
+                <SelectItem value="owner">
                   <div className="flex flex-col">
                     <span>Owner</span>
                     <span className="text-xs text-muted-foreground">

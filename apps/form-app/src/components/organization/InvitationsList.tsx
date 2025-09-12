@@ -1,11 +1,19 @@
 import React from 'react';
-import { useMutation } from '@apollo/client';
 import { Badge, Button, toastSuccess, toastError } from '@dculus/ui';
 import { Mail, Clock, X, Crown, User } from 'lucide-react';
-import { CANCEL_INVITATION } from '../../graphql/invitations';
-import { Invitation } from '../../graphql/invitations';
 import { formatDistanceToNow } from 'date-fns';
 import { parseDate, isDateExpired } from '../../utils/dateHelpers';
+import { organization } from '../../lib/auth-client';
+
+interface Invitation {
+  id: string;
+  email: string;
+  role: string;
+  expiresAt: string;
+  inviter: {
+    name: string;
+  };
+}
 
 interface InvitationsListProps {
   invitations: Invitation[];
@@ -16,27 +24,33 @@ export const InvitationsList: React.FC<InvitationsListProps> = ({
   invitations,
   onInvitationAction,
 }) => {
-  const [cancelInvitation, { loading: cancelLoading }] = useMutation(CANCEL_INVITATION, {
-    onCompleted: () => {
-      toastSuccess('Invitation cancelled', 'The invitation has been cancelled successfully.');
-      onInvitationAction();
-    },
-    onError: (error) => {
-      toastError('Error cancelling invitation', error.message);
-    },
-  });
+  const [cancelLoading, setCancelLoading] = React.useState(false);
 
   const handleCancelInvitation = async (invitationId: string) => {
+    setCancelLoading(true);
+    
     try {
-      await cancelInvitation({
-        variables: { invitationId },
+      await organization.cancelInvitation({
+        invitationId,
       });
-    } catch (error) {
+      
+      toastSuccess('Invitation cancelled', 'The invitation has been cancelled successfully.');
+      onInvitationAction();
+    } catch (error: any) {
       console.error('Error cancelling invitation:', error);
+      toastError('Error cancelling invitation', error.message || 'Failed to cancel invitation');
+    } finally {
+      setCancelLoading(false);
     }
   };
 
-  if (invitations.length === 0) {
+  // Debug: Log the invitations prop to understand what we're receiving
+  console.log('InvitationsList received invitations:', invitations, 'Type:', typeof invitations, 'isArray:', Array.isArray(invitations));
+
+  // Ensure invitations is an array
+  const invitationArray = Array.isArray(invitations) ? invitations : [];
+
+  if (invitationArray.length === 0) {
     return (
       <div className="text-center py-8">
         <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -85,12 +99,12 @@ export const InvitationsList: React.FC<InvitationsListProps> = ({
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Pending Invitations</h3>
         <Badge variant="outline">
-          {invitations.length} pending invitation{invitations.length !== 1 ? 's' : ''}
+          {invitationArray.length} pending invitation{invitationArray.length !== 1 ? 's' : ''}
         </Badge>
       </div>
       
       <div className="space-y-3">
-        {invitations.map((invitation) => (
+        {invitationArray.map((invitation) => (
           <div
             key={invitation.id}
             className={`flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors ${

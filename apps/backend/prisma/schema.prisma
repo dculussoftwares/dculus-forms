@@ -105,19 +105,19 @@ model Invitation {
   id             String   @id @map("_id")
   organizationId String
   email          String
-  role           String   @default("companyMember")
+  role           String   @default("member")
   status         String   @default("pending")
-  expiresAt      DateTime
   inviterId      String
+  expiresAt      DateTime
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   inviter      User         @relation("InvitedBy", fields: [inviterId], references: [id], onDelete: Cascade)
 
-  @@unique([organizationId, email])
   @@map("invitation")
 }
+
 
 // Application Models
 

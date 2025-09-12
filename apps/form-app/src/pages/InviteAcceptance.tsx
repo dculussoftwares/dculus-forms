@@ -1,57 +1,73 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from '@apollo/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Alert, AlertDescription } from '@dculus/ui';
 import { Users, Mail, AlertCircle, CheckCircle } from 'lucide-react';
-import { GET_INVITATION, ACCEPT_INVITATION } from '../graphql/invitations';
 import { useAuthContext } from '../contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { parseDate, isDateExpired } from '../utils/dateHelpers';
-import { authClient } from '../lib/auth-client';
+import { authClient, organization } from '../lib/auth-client';
 
 const InviteAcceptance: React.FC = () => {
   const { invitationId } = useParams<{ invitationId: string }>();
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuthContext();
   const [error, setError] = useState<string | null>(null);
+  const [invitation, setInvitation] = useState<any>(null);
+  const [invitationLoading, setInvitationLoading] = useState(false);
+  const [invitationError, setInvitationError] = useState<string | null>(null);
+  const [acceptLoading, setAcceptLoading] = useState(false);
 
-  const {
-    data: invitationData,
-    loading: invitationLoading,
-    error: invitationError,
-  } = useQuery(GET_INVITATION, {
-    variables: { id: invitationId! },
-    skip: !invitationId,
-  });
+  // Fetch invitation details using Better Auth
+  useEffect(() => {
+    const fetchInvitation = async () => {
+      if (!invitationId) return;
+      
+      setInvitationLoading(true);
+      setInvitationError(null);
+      
+      try {
+        const invitationData = await organization.getInvitation({
+          query: {
+            id: invitationId,
+          },
+        });
+        setInvitation(invitationData);
+      } catch (error: any) {
+        console.error('Error fetching invitation:', error);
+        setInvitationError(error.message || 'Failed to fetch invitation');
+      } finally {
+        setInvitationLoading(false);
+      }
+    };
 
-  const [acceptInvitation, { loading: acceptLoading }] = useMutation(ACCEPT_INVITATION, {
-    onCompleted: () => {
-      // Redirect to dashboard or organization page
-      navigate('/dashboard', { 
-        replace: true,
-        state: { 
-          message: `Welcome to ${invitationData.invitation.organization.name}! You have successfully joined the organization.` 
-        }
-      });
-    },
-    onError: (error) => {
-      setError(error.message);
-    },
-  });
-
-  const invitation = invitationData?.invitation;
+    fetchInvitation();
+  }, [invitationId]);
   const isExpired = invitation && isDateExpired(invitation.expiresAt);
 
   // Handle accepting invitation
   const handleAcceptInvitation = async () => {
     if (!invitationId) return;
     
+    setAcceptLoading(true);
+    setError(null);
+    
     try {
-      await acceptInvitation({
-        variables: { invitationId },
+      await organization.acceptInvitation({
+        invitationId,
       });
-    } catch (error) {
+      
+      // Redirect to dashboard or organization page
+      navigate('/dashboard', { 
+        replace: true,
+        state: { 
+          message: `Welcome to ${invitation?.organization?.name}! You have successfully joined the organization.` 
+        }
+      });
+    } catch (error: any) {
       console.error('Error accepting invitation:', error);
+      setError(error.message || 'Failed to accept invitation');
+    } finally {
+      setAcceptLoading(false);
     }
   };
 
@@ -96,7 +112,7 @@ const InviteAcceptance: React.FC = () => {
   }
 
   // Error states
-  if (invitationError || !invitation) {
+  if (invitationError || (!invitationLoading && !invitation)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Card className="w-full max-w-md">
@@ -110,7 +126,7 @@ const InviteAcceptance: React.FC = () => {
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                This invitation link is invalid or has been removed. Please contact the organization administrator for a new invitation.
+                {invitationError || 'This invitation link is invalid or has been removed. Please contact the organization administrator for a new invitation.'}
               </AlertDescription>
             </Alert>
             <Button 
