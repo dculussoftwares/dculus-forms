@@ -376,12 +376,17 @@ export const SignUp = () => {
                       placeholder="john@example.com"
                       value={formData.email}
                       onChange={handleInputChange}
-                      disabled={isLoading}
+                      disabled={isLoading || !!pendingInvitationId}
                       className={errors.email ? 'border-red-500' : ''}
                     />
                     {errors.email && (
                       <TypographySmall className="text-red-500">
                         {errors.email}
+                      </TypographySmall>
+                    )}
+                    {pendingInvitationId && (
+                      <TypographySmall className="text-muted-foreground">
+                        Email address is pre-filled from your invitation
                       </TypographySmall>
                     )}
                   </div>

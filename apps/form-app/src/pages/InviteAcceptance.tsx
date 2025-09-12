@@ -7,6 +7,7 @@ import { GET_INVITATION, ACCEPT_INVITATION } from '../graphql/invitations';
 import { useAuthContext } from '../contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { parseDate, isDateExpired } from '../utils/dateHelpers';
+import { authClient } from '../lib/auth-client';
 
 const InviteAcceptance: React.FC = () => {
   const { invitationId } = useParams<{ invitationId: string }>();
@@ -60,12 +61,25 @@ const InviteAcceptance: React.FC = () => {
     if (invitationId) {
       sessionStorage.setItem('pendingInvitationId', invitationId);
     }
-    navigate('/auth/signup', { 
+    navigate('/signup', { 
       state: { 
         email: invitation?.email,
         redirectUrl: `/invite/${invitationId}`
       } 
     });
+  };
+
+  // Handle sign out
+  const handleSignOut = async () => {
+    try {
+      await authClient.signOut();
+      // After sign out, redirect to signup with invitation context
+      handleSignUp();
+    } catch (error) {
+      console.error('Error signing out:', error);
+      // Still redirect to signup even if signout fails
+      handleSignUp();
+    }
   };
 
   // Loading states
@@ -101,7 +115,7 @@ const InviteAcceptance: React.FC = () => {
             </Alert>
             <Button 
               className="w-full mt-4" 
-              onClick={() => navigate('/auth/signin')}
+              onClick={() => navigate('/signin')}
             >
               Go to Sign In
             </Button>
@@ -132,7 +146,7 @@ const InviteAcceptance: React.FC = () => {
             </Alert>
             <Button 
               className="w-full mt-4" 
-              onClick={() => navigate('/auth/signin')}
+              onClick={() => navigate('/signin')}
             >
               Go to Sign In
             </Button>
@@ -190,7 +204,7 @@ const InviteAcceptance: React.FC = () => {
               <Button 
                 variant="outline" 
                 className="w-full" 
-                onClick={() => navigate('/auth/signin', { 
+                onClick={() => navigate('/signin', { 
                   state: { redirectUrl: `/invite/${invitationId}` } 
                 })}
               >
@@ -229,7 +243,7 @@ const InviteAcceptance: React.FC = () => {
             <div className="space-y-2 mt-4">
               <Button 
                 className="w-full" 
-                onClick={() => navigate('/auth/signout')}
+                onClick={handleSignOut}
               >
                 Sign Out & Create New Account
               </Button>
