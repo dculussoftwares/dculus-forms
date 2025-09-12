@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle, ChevronDown, Globe, Mail } from 'lucide-react';
+import { CheckCircle, ChevronDown, Globe, Mail, Shield } from 'lucide-react';
 import { cn } from '@dculus/utils';
 
 interface GeneralSetting {
@@ -11,6 +11,7 @@ interface GeneralSetting {
 const generalSettings: GeneralSetting[] = [
   { id: 'general', label: 'General Settings', icon: Globe },
   { id: 'thank-you', label: 'Thank You Page', icon: CheckCircle },
+  { id: 'submission-limits', label: 'Submission Limits', icon: Shield },
 ];
 
 const emailNotificationSettings = [

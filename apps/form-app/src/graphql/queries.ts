@@ -71,10 +71,22 @@ export const GET_FORM_BY_ID = gql`
       shortUrl
       isPublished
       formSchema
+      responseCount
       settings {
         thankYou {
           enabled
           message
+        }
+        submissionLimits {
+          maxResponses {
+            enabled
+            limit
+          }
+          timeWindow {
+            enabled
+            startDate
+            endDate
+          }
         }
       }
       organization {

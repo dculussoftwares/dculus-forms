@@ -114,15 +114,26 @@ const FormViewer: React.FC = () => {
   }
 
   if (error) {
+    // Handle submission limit errors specifically
+    const isSubmissionLimitError = error.message.includes('maximum response limit') || 
+                                   error.message.includes('not yet open') || 
+                                   error.message.includes('submission period has ended');
+    
     return (
       <div className="h-screen w-full flex items-center justify-center">
         <div className="text-center p-8">
           <h1 className="text-2xl font-bold text-red-600 mb-2">
-            Form Not Found
+            {isSubmissionLimitError ? 'Form Unavailable' : 'Form Not Found'}
           </h1>
           <p className="text-gray-600 mb-4">
             {error.message === 'Form is not published'
               ? 'This form is not yet published.'
+              : error.message.includes('maximum response limit')
+              ? 'This form has reached its maximum number of responses and is no longer accepting submissions.'
+              : error.message.includes('not yet open')
+              ? 'This form is not yet open for submissions. Please check back later.'
+              : error.message.includes('submission period has ended')
+              ? 'The submission period for this form has ended.'
               : "The form you're looking for doesn't exist or has been removed."}
           </p>
           <p className="text-sm text-gray-500">Error: {error.message}</p>

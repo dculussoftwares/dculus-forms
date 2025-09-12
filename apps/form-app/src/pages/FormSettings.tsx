@@ -44,6 +44,8 @@ const FormSettings: React.FC = () => {
     isSaving: settingsIsSaving,
     updateSetting,
     saveThankYouSettings,
+    updateSubmissionLimits,
+    saveSubmissionLimits,
   } = useFormSettings({
     formId,
     initialSettings: formData?.form?.settings,
@@ -223,10 +225,13 @@ const FormSettings: React.FC = () => {
           settings={settings}
           isSaving={isSaving || settingsIsSaving}
           errors={errors}
+          currentResponseCount={form?.responseCount || 0}
           onSaveGeneralSettings={handleSaveGeneralSettings}
           onRegenerateShortUrl={handleRegenerateShortUrl}
           onUpdateThankYouSetting={handleUpdateThankYouSetting}
           onSaveThankYouSettings={saveThankYouSettings}
+          onUpdateSubmissionLimits={updateSubmissionLimits}
+          onSaveSubmissionLimits={saveSubmissionLimits}
         />
 
         {/* Error Display */}

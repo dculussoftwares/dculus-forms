@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useMutation } from '@apollo/client';
 import { UPDATE_FORM } from '../graphql/mutations';
+import type { SubmissionLimitsSettings } from '@dculus/types';
 
 interface FormSettingsData {
   thankYou: {
     enabled: boolean;
     message: string;
   };
+  submissionLimits: SubmissionLimitsSettings;
 }
 
 interface UseFormSettingsProps {
@@ -27,6 +29,7 @@ export const useFormSettings = ({
       enabled: false,
       message: 'Thank you! Your response has been submitted.',
     },
+    submissionLimits: {},
   });
   
   const [isSaving, setIsSaving] = useState(false);
@@ -50,7 +53,8 @@ export const useFormSettings = ({
         thankYou: {
           enabled: initialSettings.thankYou?.enabled ?? false,
           message: initialSettings.thankYou?.message ?? 'Thank you! Your response has been submitted.',
-        }
+        },
+        submissionLimits: initialSettings.submissionLimits ?? {},
       }));
     }
   }, [initialSettings]);
@@ -100,11 +104,28 @@ export const useFormSettings = ({
     });
   };
 
+  // Update submission limits
+  const updateSubmissionLimits = (limits: SubmissionLimitsSettings) => {
+    setSettings(prev => ({
+      ...prev,
+      submissionLimits: limits,
+    }));
+  };
+
+  // Save submission limits settings
+  const saveSubmissionLimits = () => {
+    return saveSettings({
+      submissionLimits: settings.submissionLimits,
+    });
+  };
+
   return {
     settings,
     isSaving,
     updateSetting,
     saveSettings,
     saveThankYouSettings,
+    updateSubmissionLimits,
+    saveSubmissionLimits,
   };
 };

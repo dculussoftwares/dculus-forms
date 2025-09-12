@@ -4,16 +4,20 @@ import { Card, CardContent } from '@dculus/ui';
 import SettingsSidebar from './SettingsSidebar';
 import GeneralSettings from './GeneralSettings';
 import ThankYouSettings from './ThankYouSettings';
+import SubmissionLimitsSettings from './SubmissionLimitsSettings';
 
 interface FormSettingsContainerProps {
   form: any;
   settings: any;
   isSaving: boolean;
   errors: { [key: string]: string };
+  currentResponseCount?: number;
   onSaveGeneralSettings: () => void;
   onRegenerateShortUrl: () => void;
   onUpdateThankYouSetting: (key: string, value: any) => void;
   onSaveThankYouSettings: () => void;
+  onUpdateSubmissionLimits: (limits: any) => void;
+  onSaveSubmissionLimits: () => void;
 }
 
 const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
@@ -21,10 +25,13 @@ const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
   settings,
   isSaving,
   errors,
+  currentResponseCount = 0,
   onSaveGeneralSettings,
   onRegenerateShortUrl,
   onUpdateThankYouSetting,
   onSaveThankYouSettings,
+  onUpdateSubmissionLimits,
+  onSaveSubmissionLimits,
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   
@@ -58,6 +65,28 @@ const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
             onToggleEnabled={(enabled) => onUpdateThankYouSetting('enabled', enabled)}
             onMessageChange={(message) => onUpdateThankYouSetting('message', message)}
             onSave={onSaveThankYouSettings}
+          />
+        );
+      
+      case 'submission-limits':
+        return (
+          <SubmissionLimitsSettings
+            settings={settings.submissionLimits || {}}
+            isSaving={isSaving}
+            currentResponseCount={currentResponseCount}
+            onUpdateMaxResponses={(enabled, limit) => {
+              onUpdateSubmissionLimits({
+                ...settings.submissionLimits,
+                maxResponses: enabled ? { enabled, limit } : { enabled: false }
+              });
+            }}
+            onUpdateTimeWindow={(enabled, startDate, endDate) => {
+              onUpdateSubmissionLimits({
+                ...settings.submissionLimits,
+                timeWindow: enabled ? { enabled, startDate, endDate } : { enabled: false }
+              });
+            }}
+            onSave={onSaveSubmissionLimits}
           />
         );
       

@@ -38,6 +38,33 @@
  * - Added TEXT_FIELD_VALIDATION type for specialized validation objects
  */
 
+// Form Settings types
+export interface ThankYouSettings {
+  enabled: boolean;
+  message: string;
+}
+
+export interface MaxResponsesSettings {
+  enabled: boolean;
+  limit: number;
+}
+
+export interface TimeWindowSettings {
+  enabled: boolean;
+  startDate?: string; // ISO date string
+  endDate?: string;   // ISO date string
+}
+
+export interface SubmissionLimitsSettings {
+  maxResponses?: MaxResponsesSettings;
+  timeWindow?: TimeWindowSettings;
+}
+
+export interface FormSettings {
+  thankYou?: ThankYouSettings;
+  submissionLimits?: SubmissionLimitsSettings;
+}
+
 // Form related types
 export interface Form {
   id: string;
@@ -45,6 +72,7 @@ export interface Form {
   description?: string;
   shortUrl: string;
   formSchema: FormSchema;
+  settings?: FormSettings;
   isPublished: boolean;
   organizationId: string;
   createdById: string;

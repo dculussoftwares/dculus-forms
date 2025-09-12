@@ -53,8 +53,25 @@ export const typeDefs = gql`
     message: String!
   }
 
+  type MaxResponsesSettings {
+    enabled: Boolean!
+    limit: Int!
+  }
+
+  type TimeWindowSettings {
+    enabled: Boolean!
+    startDate: String
+    endDate: String
+  }
+
+  type SubmissionLimitsSettings {
+    maxResponses: MaxResponsesSettings
+    timeWindow: TimeWindowSettings
+  }
+
   type FormSettings {
     thankYou: ThankYouSettings
+    submissionLimits: SubmissionLimitsSettings
   }
 
   # Form Types
@@ -68,6 +85,7 @@ export const typeDefs = gql`
     isPublished: Boolean!
     organization: Organization!
     createdBy: User!
+    responseCount: Int!
     createdAt: String!
     updatedAt: String!
     metadata: FormMetadata
@@ -156,8 +174,25 @@ export const typeDefs = gql`
     message: String!
   }
 
+  input MaxResponsesSettingsInput {
+    enabled: Boolean!
+    limit: Int!
+  }
+
+  input TimeWindowSettingsInput {
+    enabled: Boolean!
+    startDate: String
+    endDate: String
+  }
+
+  input SubmissionLimitsSettingsInput {
+    maxResponses: MaxResponsesSettingsInput
+    timeWindow: TimeWindowSettingsInput
+  }
+
   input FormSettingsInput {
     thankYou: ThankYouSettingsInput
+    submissionLimits: SubmissionLimitsSettingsInput
   }
 
   input UpdateFormInput {

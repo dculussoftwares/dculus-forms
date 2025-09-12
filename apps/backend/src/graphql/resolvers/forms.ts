@@ -33,6 +33,42 @@ export const formsResolvers = {
       const form = await getFormByShortUrl(shortUrl);
       if (!form) throw new Error("Form not found");
       if (!form.isPublished) throw new Error("Form is not published");
+      
+      // Check submission limits
+      if (form.settings?.submissionLimits) {
+        const limits = form.settings.submissionLimits;
+        
+        // Check maximum responses limit
+        if (limits.maxResponses?.enabled) {
+          const currentResponseCount = await prisma.response.count({
+            where: { formId: form.id }
+          });
+          
+          if (currentResponseCount >= limits.maxResponses.limit) {
+            throw new Error("Form has reached its maximum response limit");
+          }
+        }
+        
+        // Check time window limits
+        if (limits.timeWindow?.enabled) {
+          const now = new Date();
+          
+          if (limits.timeWindow.startDate) {
+            const startDate = new Date(limits.timeWindow.startDate + 'T00:00:00');
+            if (now < startDate) {
+              throw new Error("Form is not yet open for submissions");
+            }
+          }
+          
+          if (limits.timeWindow.endDate) {
+            const endDate = new Date(limits.timeWindow.endDate + 'T23:59:59');
+            if (now > endDate) {
+              throw new Error("Form submission period has ended");
+            }
+          }
+        }
+      }
+      
       return form;
     },
   },
@@ -63,6 +99,13 @@ export const formsResolvers = {
         return JSON.parse(typeof parent.settings === 'string' ? parent.settings : JSON.stringify(parent.settings));
       }
       return null;
+    },
+    responseCount: async (parent: any) => {
+      // Count total responses for this form
+      const count = await prisma.response.count({
+        where: { formId: parent.id }
+      });
+      return count;
     },
   },
   Mutation: {

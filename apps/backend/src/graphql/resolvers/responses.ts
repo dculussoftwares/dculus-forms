@@ -30,7 +30,48 @@ export const responsesResolvers = {
   },
   Mutation: {
     submitResponse: async (_: any, { input }: { input: any }, context: any) => {
-      // Save the response
+      // Get form first to check submission limits
+      const form = await getFormById(input.formId);
+      if (!form) {
+        throw new Error("Form not found");
+      }
+      
+      // Check submission limits if they exist
+      if (form.settings?.submissionLimits) {
+        const limits = form.settings.submissionLimits;
+        
+        // Check maximum responses limit
+        if (limits.maxResponses?.enabled) {
+          // Count current responses
+          const currentResponseCount = await getAllResponses(form.organizationId)
+            .then(responses => responses.filter(r => r.formId === input.formId).length);
+          
+          if (currentResponseCount >= limits.maxResponses.limit) {
+            throw new Error("Form has reached its maximum response limit");
+          }
+        }
+        
+        // Check time window limits
+        if (limits.timeWindow?.enabled) {
+          const now = new Date();
+          
+          if (limits.timeWindow.startDate) {
+            const startDate = new Date(limits.timeWindow.startDate + 'T00:00:00');
+            if (now < startDate) {
+              throw new Error("Form is not yet open for submissions");
+            }
+          }
+          
+          if (limits.timeWindow.endDate) {
+            const endDate = new Date(limits.timeWindow.endDate + 'T23:59:59');
+            if (now > endDate) {
+              throw new Error("Form submission period has ended");
+            }
+          }
+        }
+      }
+      
+      // If all limits pass, save the response
       const responseData = {
         id: generateId(),
         formId: input.formId,
@@ -67,14 +108,14 @@ export const responsesResolvers = {
       }
 
       // Get form with settings to determine thank you message
-      const form = await getFormById(input.formId);
+      const formWithSettings = await getFormById(input.formId);
       
       // Determine thank you message
       let thankYouMessage = "Thank you! Your form has been submitted successfully.";
       let showCustomThankYou = false;
       
-      if (form?.settings?.thankYou?.enabled && form.settings.thankYou.message) {
-        thankYouMessage = form.settings.thankYou.message;
+      if (formWithSettings?.settings?.thankYou?.enabled && formWithSettings.settings.thankYou.message) {
+        thankYouMessage = formWithSettings.settings.thankYou.message;
         showCustomThankYou = true;
         
         // Apply mention substitution if we have a custom message
@@ -82,8 +123,8 @@ export const responsesResolvers = {
           // Create field labels map from form schema for better fallback display
           let fieldLabels: Record<string, string> = {};
           
-          if (form.formSchema) {
-            const deserializedSchema = deserializeFormSchema(form.formSchema);
+          if (formWithSettings.formSchema) {
+            const deserializedSchema = deserializeFormSchema(formWithSettings.formSchema);
             fieldLabels = createFieldLabelsMap(deserializedSchema);
           }
           
