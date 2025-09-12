@@ -74,6 +74,27 @@ export const useFormSettings = ({
     }));
   };
 
+  // Helper function to strip __typename from objects
+  const stripTypename = (obj: any): any => {
+    if (obj === null || obj === undefined) return obj;
+    
+    if (Array.isArray(obj)) {
+      return obj.map(stripTypename);
+    }
+    
+    if (typeof obj === 'object') {
+      const cleaned: any = {};
+      for (const [key, value] of Object.entries(obj)) {
+        if (key !== '__typename') {
+          cleaned[key] = stripTypename(value);
+        }
+      }
+      return cleaned;
+    }
+    
+    return obj;
+  };
+
   // Save specific settings section
   const saveSettings = async (settingsToSave: Partial<FormSettingsData>) => {
     if (!formId) return;
@@ -81,11 +102,14 @@ export const useFormSettings = ({
     setIsSaving(true);
 
     try {
+      // Strip __typename fields from the settings object
+      const cleanedSettings = stripTypename(settingsToSave);
+      
       await updateForm({
         variables: {
           id: formId,
           input: {
-            settings: settingsToSave,
+            settings: cleanedSettings,
           },
         },
       });

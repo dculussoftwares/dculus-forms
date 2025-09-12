@@ -50,10 +50,22 @@ export const UPDATE_FORM = gql`
       title
       description
       shortUrl
+      responseCount
       settings {
         thankYou {
           enabled
           message
+        }
+        submissionLimits {
+          maxResponses {
+            enabled
+            limit
+          }
+          timeWindow {
+            enabled
+            startDate
+            endDate
+          }
         }
       }
       isPublished
