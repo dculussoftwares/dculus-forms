@@ -107,6 +107,7 @@ app.use(
 // Parse CORS origins from environment variable
 const corsOrigins = process.env.CORS_ORIGINS?.split(',').map(origin => origin.trim()) || [
   'http://localhost:3000',
+  'http://localhost:3001', // Form app alternative port
   'http://localhost:3002', // Admin app
   'http://localhost:5173'
 ];
