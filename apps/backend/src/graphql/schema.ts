@@ -35,16 +35,6 @@ export const typeDefs = gql`
     updatedAt: String!
   }
 
-  type Invitation {
-    id: ID!
-    email: String!
-    role: String!
-    status: String!
-    expiresAt: String!
-    organizationName: String!
-    inviterName: String!
-  }
-
   # Form Settings Types
   type ThankYouSettings {
     enabled: Boolean!
@@ -625,9 +615,6 @@ export const typeDefs = gql`
     me: User
     myOrganizations: [Organization!]!
     activeOrganization: Organization
-    
-    # Public queries (no auth required)
-    invitation(id: ID!): Invitation
     
     # Form Queries
     forms(organizationId: ID!): [Form!]!

@@ -1,65 +1,52 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Card, CardContent, CardHeader, CardTitle, LoadingSpinner } from '@dculus/ui';
 import { organization } from '../lib/auth-client';
-import { useQuery } from '@apollo/client';
-import { GET_INVITATION } from '../graphql/invitations';
 import { CheckCircle, XCircle, UserX, AlertTriangle } from 'lucide-react';
 
 const RejectInvitation: React.FC = () => {
   const { invitationId } = useParams<{ invitationId: string }>();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [invitation, setInvitation] = useState<any>(null);
   const [rejecting, setRejecting] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
 
-  // Use GraphQL query to fetch invitation details (no auth required)
-  const { data, loading, error } = useQuery(GET_INVITATION, {
-    variables: { id: invitationId || '' },
-    skip: !invitationId,
-    errorPolicy: 'all'
-  });
+  useEffect(() => {
+    const loadInvitation = async () => {
+      if (!invitationId) {
+        setResult({ success: false, message: 'Invalid invitation link' });
+        setLoading(false);
+        return;
+      }
 
-  const invitation = data?.invitation;
+      try {
+        const { data, error } = await organization.getInvitation({
+          query: { id: invitationId }
+        });
 
-  // Handle invalid invitation ID
-  if (!invitationId) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="text-center py-8">
-            <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <p className="text-lg text-red-700 mb-4">Invalid invitation link</p>
-            <Button onClick={() => navigate('/dashboard')} className="w-full">
-              Go to Dashboard
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+        if (error) {
+          throw new Error(error.message);
+        }
 
-  // Handle GraphQL errors
-  if (error && !loading) {
-    const errorMessage = error.graphQLErrors?.[0]?.message || error.message || 'Failed to load invitation';
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="text-center py-8">
-            <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <p className="text-lg text-red-700 mb-4">{errorMessage}</p>
-            <div className="space-y-2">
-              <Button onClick={() => navigate('/dashboard')} variant="outline" className="w-full">
-                Go to Dashboard
-              </Button>
-              <Button onClick={() => window.location.reload()} variant="ghost" className="w-full">
-                Try Again
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+        if (!data) {
+          throw new Error('Invitation not found');
+        }
+
+        setInvitation(data);
+      } catch (err) {
+        console.error('Failed to load invitation:', err);
+        setResult({
+          success: false,
+          message: err instanceof Error ? err.message : 'Failed to load invitation'
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadInvitation();
+  }, [invitationId]);
 
   const handleReject = async () => {
     if (!invitationId) return;

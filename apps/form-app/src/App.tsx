@@ -21,7 +21,6 @@ import FormSettings from './pages/FormSettings';
 import CollaborativeFormBuilder from './pages/CollaborativeFormBuilder';
 import AcceptInvitation from './pages/AcceptInvitation';
 import RejectInvitation from './pages/RejectInvitation';
-import InviteSignUp from './pages/InviteSignUp';
 
 
 function App() {
@@ -36,7 +35,6 @@ function App() {
           <Route path="/signup" element={<SignUp />} />
           <Route path="/invite/accept/:invitationId" element={<AcceptInvitation />} />
           <Route path="/invite/reject/:invitationId" element={<RejectInvitation />} />
-          <Route path="/invite/signup/:invitationId" element={<InviteSignUp />} />
           
           {/* Protected routes */}
           <Route path="/" element={

@@ -1,87 +1,53 @@
-import React, { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  LoadingSpinner,
-} from '@dculus/ui';
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Button, Card, CardContent, CardHeader, CardTitle, LoadingSpinner } from '@dculus/ui';
 import { organization, useSession } from '../lib/auth-client';
-import { useQuery } from '@apollo/client';
-import { GET_INVITATION } from '../graphql/invitations';
-import { Building, CheckCircle, UserPlus, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle, UserPlus, Building } from 'lucide-react';
 
 const AcceptInvitation: React.FC = () => {
   const { invitationId } = useParams<{ invitationId: string }>();
   const navigate = useNavigate();
   const { data: session } = useSession();
+  const [loading, setLoading] = useState(true);
+  const [invitation, setInvitation] = useState<any>(null);
   const [accepting, setAccepting] = useState(false);
-  const [result, setResult] = useState<{
-    success: boolean;
-    message: string;
-  } | null>(null);
+  const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
 
-  // Use GraphQL query to fetch invitation details (no auth required)
-  const { data, loading, error } = useQuery(GET_INVITATION, {
-    variables: { id: invitationId || '' },
-    skip: !invitationId,
-    errorPolicy: 'all',
-  });
+  useEffect(() => {
+    const loadInvitation = async () => {
+      if (!invitationId) {
+        setResult({ success: false, message: 'Invalid invitation link' });
+        setLoading(false);
+        return;
+      }
 
-  const invitation = data?.invitation;
+      try {
+        const { data, error } = await organization.getInvitation({
+          query: { id: invitationId }
+        });
 
-  // Handle invalid invitation ID
-  if (!invitationId) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="text-center py-8">
-            <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <p className="text-lg text-red-700 mb-4">Invalid invitation link</p>
-            <Button onClick={() => navigate('/dashboard')} className="w-full">
-              Go to Dashboard
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+        if (error) {
+          throw new Error(error.message);
+        }
 
-  // Handle GraphQL errors
-  if (error && !loading) {
-    const errorMessage =
-      error.graphQLErrors?.[0]?.message ||
-      error.message ||
-      'Failed to load invitation';
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="text-center py-8">
-            <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <p className="text-lg text-red-700 mb-4">{errorMessage}</p>
-            <div className="space-y-2">
-              <Button
-                onClick={() => navigate('/dashboard')}
-                variant="outline"
-                className="w-full"
-              >
-                Go to Dashboard
-              </Button>
-              <Button
-                onClick={() => window.location.reload()}
-                variant="ghost"
-                className="w-full"
-              >
-                Try Again
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+        if (!data) {
+          throw new Error('Invitation not found');
+        }
+
+        setInvitation(data);
+      } catch (err) {
+        console.error('Failed to load invitation:', err);
+        setResult({
+          success: false,
+          message: err instanceof Error ? err.message : 'Failed to load invitation'
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadInvitation();
+  }, [invitationId]);
 
   const handleAccept = async () => {
     if (!invitationId) return;
@@ -98,8 +64,7 @@ const AcceptInvitation: React.FC = () => {
 
       setResult({
         success: true,
-        message:
-          'Invitation accepted successfully! Redirecting to dashboard...',
+        message: 'Invitation accepted successfully! Redirecting to dashboard...'
       });
 
       // Redirect to dashboard after a short delay
@@ -110,8 +75,7 @@ const AcceptInvitation: React.FC = () => {
       console.error('Failed to accept invitation:', err);
       setResult({
         success: false,
-        message:
-          err instanceof Error ? err.message : 'Failed to accept invitation',
+        message: err instanceof Error ? err.message : 'Failed to accept invitation'
       });
     } finally {
       setAccepting(false);
@@ -119,13 +83,11 @@ const AcceptInvitation: React.FC = () => {
   };
 
   const handleSignIn = () => {
-    navigate('/signin', {
-      state: { returnUrl: `/invite/accept/${invitationId}` },
-    });
+    navigate('/signin', { state: { returnUrl: `/invite/accept/${invitationId}` } });
   };
 
   const handleSignUp = () => {
-    navigate(`/invite/signup/${invitationId}`);
+    navigate('/signup', { state: { returnUrl: `/invite/accept/${invitationId}` } });
   };
 
   if (loading) {
@@ -151,25 +113,15 @@ const AcceptInvitation: React.FC = () => {
             ) : (
               <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
             )}
-            <p
-              className={`text-lg ${result.success ? 'text-green-700' : 'text-red-700'}`}
-            >
+            <p className={`text-lg ${result.success ? 'text-green-700' : 'text-red-700'}`}>
               {result.message}
             </p>
             {!result.success && (
               <div className="mt-4 space-y-2">
-                <Button
-                  onClick={() => navigate('/dashboard')}
-                  variant="outline"
-                  className="w-full"
-                >
+                <Button onClick={() => navigate('/dashboard')} variant="outline" className="w-full">
                   Go to Dashboard
                 </Button>
-                <Button
-                  onClick={() => window.location.reload()}
-                  variant="ghost"
-                  className="w-full"
-                >
+                <Button onClick={() => window.location.reload()} variant="ghost" className="w-full">
                   Try Again
                 </Button>
               </div>
@@ -213,43 +165,25 @@ const AcceptInvitation: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="text-center text-muted-foreground">
-              <p>
-                You've been invited to join{' '}
-                <strong>{invitation.organizationName}</strong>
-              </p>
-              <p>
-                as a{' '}
-                <strong>
-                  {invitation.role === 'owner'
-                    ? 'Owner'
-                    : invitation.role === 'admin'
-                      ? 'Admin'
-                      : 'Member'}
-                </strong>
-              </p>
+              <p>You've been invited to join <strong>{invitation.organizationName}</strong></p>
+              <p>as a <strong>{invitation.role === 'owner' ? 'Owner' : invitation.role === 'admin' ? 'Admin' : 'Member'}</strong></p>
               <p className="text-sm mt-2">by {invitation.inviterName}</p>
             </div>
-
+            
             <div className="space-y-2">
-              <p className="text-center font-medium">
-                Please sign in to accept this invitation
-              </p>
+              <p className="text-center font-medium">Please sign in to accept this invitation</p>
               <Button onClick={handleSignIn} className="w-full">
                 Sign In
               </Button>
-              <Button
-                onClick={handleSignUp}
-                variant="outline"
-                className="w-full"
-              >
+              <Button onClick={handleSignUp} variant="outline" className="w-full">
                 Create Account
               </Button>
             </div>
 
             <div className="text-center">
-              <Button
-                variant="ghost"
-                onClick={() => navigate('/invite/reject/' + invitationId)}
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate('/invite/reject/' + invitationId)} 
                 className="text-red-600 hover:text-red-700"
               >
                 Decline Invitation
@@ -274,22 +208,12 @@ const AcceptInvitation: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="text-center">
-            <p className="text-lg">
-              Welcome, <strong>{session.user.name}</strong>!
+            <p className="text-lg">Welcome, <strong>{session.user.name}</strong>!</p>
+            <p className="text-muted-foreground">
+              You've been invited to join <strong>{invitation.organizationName}</strong>
             </p>
             <p className="text-muted-foreground">
-              You've been invited to join{' '}
-              <strong>{invitation.organizationName}</strong>
-            </p>
-            <p className="text-muted-foreground">
-              as a{' '}
-              <strong>
-                {invitation.role === 'owner'
-                  ? 'Owner'
-                  : invitation.role === 'admin'
-                    ? 'Admin'
-                    : 'Member'}
-              </strong>
+              as a <strong>{invitation.role === 'owner' ? 'Owner' : invitation.role === 'admin' ? 'Admin' : 'Member'}</strong>
             </p>
             <p className="text-sm text-muted-foreground mt-2">
               Invited by {invitation.inviterName}
@@ -297,15 +221,15 @@ const AcceptInvitation: React.FC = () => {
           </div>
 
           <div className="space-y-2">
-            <Button
-              onClick={handleAccept}
-              disabled={accepting}
+            <Button 
+              onClick={handleAccept} 
+              disabled={accepting} 
               className="w-full"
             >
               {accepting ? 'Accepting...' : 'Accept Invitation'}
             </Button>
-            <Button
-              variant="outline"
+            <Button 
+              variant="outline" 
               onClick={() => navigate('/invite/reject/' + invitationId)}
               disabled={accepting}
               className="w-full"
@@ -315,8 +239,8 @@ const AcceptInvitation: React.FC = () => {
           </div>
 
           <div className="text-center">
-            <Button
-              variant="ghost"
+            <Button 
+              variant="ghost" 
               onClick={() => navigate('/dashboard')}
               className="text-muted-foreground"
             >
