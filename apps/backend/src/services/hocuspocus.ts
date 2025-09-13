@@ -250,37 +250,50 @@ export const getFormSchemaFromHocuspocus = async (formId: string): Promise<any |
               for (let j = 0; j < fieldsArray.length; j++) {
                 const fieldMap = fieldsArray.get(j);
                 if (fieldMap instanceof Y.Map) {
-                  const field: any = {
-                    id: fieldMap.get('id'),
-                    type: fieldMap.get('type'),
-                    label: fieldMap.get('label'),
-                    defaultValue: fieldMap.get('defaultValue'),
-                    prefix: fieldMap.get('prefix'),
-                    hint: fieldMap.get('hint'),
-                    validation: {
-                      required: fieldMap.get('required'),
-                      type: fieldMap.get('type')
-                    }
-                  };
+                  const fieldType = fieldMap.get('type');
                   
-                  // Handle field-specific properties
-                  if (fieldMap.has('options')) {
-                    const optionsArray = fieldMap.get('options');
-                    if (optionsArray instanceof Y.Array) {
-                      field.options = [];
-                      for (let k = 0; k < optionsArray.length; k++) {
-                        field.options.push(optionsArray.get(k));
+                  // Handle Rich Text fields differently (they only have id, type, and content)
+                  if (fieldType === 'rich_text_field') {
+                    const field: any = {
+                      id: fieldMap.get('id'),
+                      type: fieldType,
+                      content: fieldMap.get('content') || ''
+                    };
+                    page.fields.push(field);
+                  } else {
+                    // Handle all other field types with fillable properties
+                    const field: any = {
+                      id: fieldMap.get('id'),
+                      type: fieldType,
+                      label: fieldMap.get('label'),
+                      defaultValue: fieldMap.get('defaultValue'),
+                      prefix: fieldMap.get('prefix'),
+                      hint: fieldMap.get('hint'),
+                      validation: {
+                        required: fieldMap.get('required'),
+                        type: fieldType
+                      }
+                    };
+                    
+                    // Handle field-specific properties
+                    if (fieldMap.has('options')) {
+                      const optionsArray = fieldMap.get('options');
+                      if (optionsArray instanceof Y.Array) {
+                        field.options = [];
+                        for (let k = 0; k < optionsArray.length; k++) {
+                          field.options.push(optionsArray.get(k));
+                        }
                       }
                     }
+                    
+                    if (fieldMap.has('multiple')) field.multiple = fieldMap.get('multiple');
+                    if (fieldMap.has('min')) field.min = fieldMap.get('min');
+                    if (fieldMap.has('max')) field.max = fieldMap.get('max');
+                    if (fieldMap.has('minDate')) field.minDate = fieldMap.get('minDate');
+                    if (fieldMap.has('maxDate')) field.maxDate = fieldMap.get('maxDate');
+                    
+                    page.fields.push(field);
                   }
-                  
-                  if (fieldMap.has('multiple')) field.multiple = fieldMap.get('multiple');
-                  if (fieldMap.has('min')) field.min = fieldMap.get('min');
-                  if (fieldMap.has('max')) field.max = fieldMap.get('max');
-                  if (fieldMap.has('minDate')) field.minDate = fieldMap.get('minDate');
-                  if (fieldMap.has('maxDate')) field.maxDate = fieldMap.get('maxDate');
-                  
-                  page.fields.push(field);
                 }
               }
             }
@@ -359,34 +372,41 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
             const fieldMap = new Y.Map();
             fieldMap.set('id', field.id);
             fieldMap.set('type', field.type);
-            fieldMap.set('label', field.label || '');
             
-            // Handle defaultValue - use defaultValues for CheckboxField
-            if (field.type === 'checkbox_field' && field.defaultValues) {
-              const defaultValuesArray = new Y.Array();
-              field.defaultValues.filter((val: any) => val && val.trim() !== '').forEach((val: string) => defaultValuesArray.push([val]));
-              fieldMap.set('defaultValue', defaultValuesArray);
+            // Handle Rich Text fields differently (they only need content property)
+            if (field.type === 'rich_text_field') {
+              fieldMap.set('content', field.content || '');
             } else {
-              fieldMap.set('defaultValue', field.defaultValue || '');
+              // Handle all other field types with fillable properties
+              fieldMap.set('label', field.label || '');
+              
+              // Handle defaultValue - use defaultValues for CheckboxField
+              if (field.type === 'checkbox_field' && field.defaultValues) {
+                const defaultValuesArray = new Y.Array();
+                field.defaultValues.filter((val: any) => val && val.trim() !== '').forEach((val: string) => defaultValuesArray.push([val]));
+                fieldMap.set('defaultValue', defaultValuesArray);
+              } else {
+                fieldMap.set('defaultValue', field.defaultValue || '');
+              }
+              
+              fieldMap.set('prefix', field.prefix || '');
+              fieldMap.set('hint', field.hint || '');
+              fieldMap.set('required', field.validation?.required || false);
+              
+              // Handle field-specific properties
+              if (field.options && Array.isArray(field.options)) {
+                const optionsArray = new Y.Array();
+                // Filter out empty or whitespace-only options
+                field.options.filter((option: any) => option && option.trim() !== '').forEach((option: string) => optionsArray.push([option]));
+                fieldMap.set('options', optionsArray);
+              }
+              
+              if (field.multiple !== undefined) fieldMap.set('multiple', field.multiple);
+              if (field.min !== undefined) fieldMap.set('min', field.min);
+              if (field.max !== undefined) fieldMap.set('max', field.max);
+              if (field.minDate !== undefined) fieldMap.set('minDate', field.minDate);
+              if (field.maxDate !== undefined) fieldMap.set('maxDate', field.maxDate);
             }
-            
-            fieldMap.set('prefix', field.prefix || '');
-            fieldMap.set('hint', field.hint || '');
-            fieldMap.set('required', field.validation?.required || false);
-            
-            // Handle field-specific properties
-            if (field.options && Array.isArray(field.options)) {
-              const optionsArray = new Y.Array();
-              // Filter out empty or whitespace-only options
-              field.options.filter((option: any) => option && option.trim() !== '').forEach((option: string) => optionsArray.push([option]));
-              fieldMap.set('options', optionsArray);
-            }
-            
-            if (field.multiple !== undefined) fieldMap.set('multiple', field.multiple);
-            if (field.min !== undefined) fieldMap.set('min', field.min);
-            if (field.max !== undefined) fieldMap.set('max', field.max);
-            if (field.minDate !== undefined) fieldMap.set('minDate', field.minDate);
-            if (field.maxDate !== undefined) fieldMap.set('maxDate', field.maxDate);
             
             console.log(`    ⚙️ Field ${fieldIndex + 1}: ${field.type} - "${field.label}"`);
             fieldsArray.push([fieldMap]);
