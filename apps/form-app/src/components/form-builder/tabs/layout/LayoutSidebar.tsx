@@ -19,6 +19,7 @@ interface LayoutSidebarProps {
   formId: string;
   onLayoutSelect: (layoutCode: LayoutCode) => void;
   onLayoutUpdate: (updates: Partial<FormLayout>) => void;
+  canEditLayout: boolean;
 }
 
 export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
@@ -27,7 +28,8 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
   isConnected,
   formId,
   onLayoutSelect,
-  onLayoutUpdate
+  onLayoutUpdate,
+  canEditLayout
 }) => {
   const [selectedImageKey, setSelectedImageKey] = useState<string | null>(layout.backgroundImageKey || null);
   const [isPixabayModalOpen, setIsPixabayModalOpen] = useState(false);
@@ -67,7 +69,7 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
               Layout Templates
             </h3>
             <p className="text-xs text-gray-600 dark:text-gray-400">
-              Choose a layout style
+              {canEditLayout ? "Choose a layout style" : "View-only mode"}
             </p>
           </div>
         </div>
@@ -80,6 +82,7 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
           <LayoutThumbnails 
             currentLayoutCode={currentLayoutCode}
             onLayoutSelect={onLayoutSelect}
+            disabled={!canEditLayout}
           />
         </div>
 
@@ -92,9 +95,10 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
             <input
               type="text"
               value={layout.customCTAButtonName || ''}
-              onChange={(e) => onLayoutUpdate({ customCTAButtonName: e.target.value })}
+              onChange={(e) => canEditLayout && onLayoutUpdate({ customCTAButtonName: e.target.value })}
               placeholder="Enter button text..."
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              disabled={!canEditLayout}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <p className="text-xs text-gray-500 dark:text-gray-400">
               Customize the text for call-to-action buttons
@@ -114,7 +118,8 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
               <Checkbox
                 id="isCustomBackgroundColorEnabled"
                 checked={layout.isCustomBackgroundColorEnabled || false}
-                onCheckedChange={(checked) => onLayoutUpdate({ isCustomBackgroundColorEnabled: !!checked })}
+                onCheckedChange={(checked) => canEditLayout && onLayoutUpdate({ isCustomBackgroundColorEnabled: !!checked })}
+                disabled={!canEditLayout}
               />
               <label htmlFor="isCustomBackgroundColorEnabled" className="text-sm text-gray-700 dark:text-gray-300">
                 Use custom background color
@@ -131,15 +136,17 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
                   <input
                     type="color"
                     value={layout.customBackGroundColor || '#000000'}
-                    onChange={(e) => onLayoutUpdate({ customBackGroundColor: e.target.value })}
-                    className="w-8 h-8 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
+                    onChange={(e) => canEditLayout && onLayoutUpdate({ customBackGroundColor: e.target.value })}
+                    disabled={!canEditLayout}
+                    className="w-8 h-8 border border-gray-300 dark:border-gray-600 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   <input
                     type="text"
                     value={layout.customBackGroundColor || '#000000'}
-                    onChange={(e) => onLayoutUpdate({ customBackGroundColor: e.target.value })}
+                    onChange={(e) => canEditLayout && onLayoutUpdate({ customBackGroundColor: e.target.value })}
                     placeholder="#000000"
-                    className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    disabled={!canEditLayout}
+                    className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -174,50 +181,63 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
               </TabsList>
               
               <TabsContent value="custom" className="mt-3 space-y-3">
-                {/* Upload new background image */}
-                <BackgroundImageUpload
-                  formId={formId}
-                  onUploadSuccess={handleImageUploadSuccess}
-                />
-                
-                {/* Gallery of uploaded images */}
-                {formFilesData?.getFormFiles && (
-                  <div className="space-y-3">
-                    <BackgroundImageGallery
-                      images={formFilesData.getFormFiles}
-                      selectedImageKey={selectedImageKey || undefined}
-                      onImageSelect={handleImageSelect}
+                {canEditLayout ? (
+                  <>
+                    {/* Upload new background image */}
+                    <BackgroundImageUpload
+                      formId={formId}
+                      onUploadSuccess={handleImageUploadSuccess}
                     />
+                    
+                    {/* Gallery of uploaded images */}
+                    {formFilesData?.getFormFiles && (
+                      <div className="space-y-3">
+                        <BackgroundImageGallery
+                          images={formFilesData.getFormFiles}
+                          selectedImageKey={selectedImageKey || undefined}
+                          onImageSelect={handleImageSelect}
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Apply button for custom images */}
+                    {selectedImageKey && selectedImageKey !== layout.backgroundImageKey && (
+                      <button
+                        onClick={handleApplyBackgroundImage}
+                        className="w-full px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors"
+                      >
+                        Apply Background Image
+                      </button>
+                    )}
+                    
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Upload and manage your own background images
+                    </p>
+                  </>
+                ) : (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <p className="text-sm">View-only mode</p>
+                    <p className="text-xs mt-1">Background image upload disabled</p>
                   </div>
                 )}
-                
-                {/* Apply button for custom images */}
-                {selectedImageKey && selectedImageKey !== layout.backgroundImageKey && (
-                  <button
-                    onClick={handleApplyBackgroundImage}
-                    className="w-full px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors"
-                  >
-                    Apply Background Image
-                  </button>
-                )}
-                
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Upload and manage your own background images
-                </p>
               </TabsContent>
               
               <TabsContent value="pixabay" className="mt-3">
                 <div className="space-y-3">
                   <Button
-                    onClick={() => setIsPixabayModalOpen(true)}
+                    onClick={() => canEditLayout && setIsPixabayModalOpen(true)}
                     className="w-full"
                     variant="outline"
+                    disabled={!canEditLayout}
                   >
                     <Search className="w-4 h-4 mr-2" />
                     Browse Images from Pixabay
                   </Button>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Search and select from thousands of free background images
+                    {canEditLayout 
+                      ? "Search and select from thousands of free background images"
+                      : "View-only mode - image browsing disabled"
+                    }
                   </p>
                 </div>
               </TabsContent>
@@ -225,8 +245,9 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
             
             {layout.backgroundImageKey && (
               <button
-                onClick={() => onLayoutUpdate({ backgroundImageKey: '' })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                onClick={() => canEditLayout && onLayoutUpdate({ backgroundImageKey: '' })}
+                disabled={!canEditLayout}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Clear Background
               </button>

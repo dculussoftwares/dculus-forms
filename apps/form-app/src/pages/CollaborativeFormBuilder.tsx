@@ -2,6 +2,7 @@ import React, { useEffect, useCallback, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { useAuthContext } from '../contexts/AuthContext';
+import { FormPermissionProvider, PermissionLevel } from '../contexts/FormPermissionContext';
 import {
   DndContext,
   DragOverlay,
@@ -291,7 +292,11 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
     );
   }
 
+  // Get user permission from form data, default to VIEWER if not available
+  const userPermission = (formData?.form?.userPermission as PermissionLevel) || 'VIEWER';
+
   return (
+    <FormPermissionProvider userPermission={userPermission}>
     <DndContext
       sensors={sensors}
       collisionDetection={collisionDetectionStrategy}
@@ -337,6 +342,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
         )}
       </div>
     </DndContext>
+    </FormPermissionProvider>
   );
 };
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { FieldType } from '@dculus/types';
 import { Card, TypographyH3 } from '@dculus/ui';
+import { useFormPermissions } from '../../hooks/useFormPermissions';
 import {
   Type,
   FileText,
@@ -211,6 +212,13 @@ interface FieldTypesPanelProps {
 export { FieldTypeDisplay };
 
 export const FieldTypesPanel: React.FC<FieldTypesPanelProps> = ({ className = '' }) => {
+  const permissions = useFormPermissions();
+  
+  // Hide field types panel for viewers as they can't add fields
+  if (!permissions.canAddFields()) {
+    return null;
+  }
+  
   const groupedFields = FIELD_TYPES.reduce((acc, field) => {
     if (!acc[field.category]) {
       acc[field.category] = [];

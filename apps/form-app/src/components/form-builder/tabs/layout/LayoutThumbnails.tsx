@@ -176,11 +176,13 @@ const LAYOUT_TEMPLATES: Array<{
 interface LayoutThumbnailsProps {
   currentLayoutCode: LayoutCode;
   onLayoutSelect: (layoutCode: LayoutCode) => void;
+  disabled?: boolean;
 }
 
 export const LayoutThumbnails: React.FC<LayoutThumbnailsProps> = ({
   currentLayoutCode,
-  onLayoutSelect
+  onLayoutSelect,
+  disabled = false
 }) => {
   return (
     <div className="h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
@@ -188,11 +190,14 @@ export const LayoutThumbnails: React.FC<LayoutThumbnailsProps> = ({
         {LAYOUT_TEMPLATES.map((template) => (
         <button
           key={template.code}
-          onClick={() => onLayoutSelect(template.code)}
-          className={`text-left p-2 rounded-lg border-2 transition-all duration-200 hover:shadow-lg hover:scale-[1.02] h-20 ${
-            currentLayoutCode === template.code
-              ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 shadow-lg ring-2 ring-purple-200 dark:ring-purple-800'
-              : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 bg-white dark:bg-gray-800'
+          onClick={() => !disabled && onLayoutSelect(template.code)}
+          disabled={disabled}
+          className={`text-left p-2 rounded-lg border-2 transition-all duration-200 h-20 ${
+            disabled 
+              ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 opacity-50 cursor-not-allowed'
+              : currentLayoutCode === template.code
+                ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 shadow-lg ring-2 ring-purple-200 dark:ring-purple-800'
+                : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 bg-white dark:bg-gray-800 hover:shadow-lg hover:scale-[1.02]'
           }`}
         >
           {/* Header with name and check */}

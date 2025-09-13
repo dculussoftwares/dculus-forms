@@ -4,6 +4,7 @@ import { useDndContext, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { FormPage } from '@dculus/types';
 import { Button, Card } from '@dculus/ui';
+import { useFormPermissions } from '../../hooks/useFormPermissions';
 import {
   GripVertical,
   Trash2,
@@ -33,6 +34,7 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
   onDuplicate,
   shouldScrollIntoView = false,
 }) => {
+  const permissions = useFormPermissions();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const pageItemRef = useRef<HTMLDivElement>(null);
   const { active, over } = useDndContext();
@@ -50,6 +52,7 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
       type: 'page-item',
       page,
     },
+    disabled: !permissions.canReorderPages(), // Disable page dragging for viewers
   });
 
   const {
@@ -141,15 +144,21 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
           >
           <div className="flex items-center space-x-3">
             {/* Drag Handle */}
-            <div
-              {...attributes}
-              {...listeners}
-              data-testid={`page-drag-handle-${index + 1}`}
-              className="flex-shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <GripVertical className="w-4 h-4" />
-            </div>
+            {permissions.canReorderPages() ? (
+              <div
+                {...attributes}
+                {...listeners}
+                data-testid={`page-drag-handle-${index + 1}`}
+                className="flex-shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <GripVertical className="w-4 h-4" />
+              </div>
+            ) : (
+              <div className="flex-shrink-0 text-gray-300 dark:text-gray-600">
+                <GripVertical className="w-4 h-4" />
+              </div>
+            )}
 
             {/* Page Number */}
             <div 
@@ -232,37 +241,39 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center space-x-1">
-              {onDuplicate && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDuplicate();
-                  }}
-                  disabled={!isConnected}
-                  className="h-6 w-6 p-0 text-gray-500 hover:text-blue-600"
-                >
-                  <Copy className="w-3 h-3" />
-                </Button>
-              )}
-              {onRemove && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowDeleteDialog(true);
-                  }}
-                  disabled={!isConnected}
-                  className="h-6 w-6 p-0 text-gray-500 hover:text-red-600"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
-              )}
-            </div>
+            {/* Actions - Only show for users with edit permissions */}
+            {!permissions.isReadOnly && (
+              <div className="flex items-center space-x-1">
+                {onDuplicate && permissions.canAddPages() && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDuplicate();
+                    }}
+                    disabled={!isConnected}
+                    className="h-6 w-6 p-0 text-gray-500 hover:text-blue-600"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </Button>
+                )}
+                {onRemove && permissions.canDeletePages() && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDeleteDialog(true);
+                    }}
+                    disabled={!isConnected}
+                    className="h-6 w-6 p-0 text-gray-500 hover:text-red-600"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Drop Indicator Overlays */}

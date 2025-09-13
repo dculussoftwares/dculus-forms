@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { FormPage, FormLayout, FormField } from '@dculus/types';
 import { Button } from '@dculus/ui';
+import { useFormPermissions } from '../../hooks/useFormPermissions';
 import {
   Plus,
   FileText,
@@ -46,6 +47,7 @@ export const PagesSidebar: React.FC<PagesSidebarProps> = ({
   width = 320,
   onWidthChange,
 }) => {
+  const permissions = useFormPermissions();
   const [activeTab, setActiveTab] = useState<'pages' | 'json' | 'field-settings'>('pages');
   const [isResizing, setIsResizing] = useState(false);
   const [newlyCreatedPageId, setNewlyCreatedPageId] = useState<string | null>(null);
@@ -172,7 +174,8 @@ export const PagesSidebar: React.FC<PagesSidebarProps> = ({
               variant={activeTab === 'field-settings' ? 'default' : 'ghost'}
               onClick={() => handleTabSwitch('field-settings')}
               className="h-8 px-3"
-              disabled={!selectedField}
+              disabled={!selectedField || !permissions.canEditFields()}
+              title={!permissions.canEditFields() ? "View-only mode - field editing disabled" : ""}
             >
               <Settings className="w-4 h-4 mr-1" />
               Field
@@ -244,8 +247,8 @@ export const PagesSidebar: React.FC<PagesSidebarProps> = ({
         )}
       </div>
 
-      {/* Fixed Add Page Button at Bottom */}
-      {activeTab === 'pages' && (
+      {/* Fixed Add Page Button at Bottom - Only show for users who can add pages */}
+      {activeTab === 'pages' && permissions.canAddPages() && (
         <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
           <Button
             size="sm"

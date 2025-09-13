@@ -3,6 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FormField, FieldType, FormPage } from '@dculus/types';
 import { Card, Button, FieldPreview } from '@dculus/ui';
+import { useFormPermissions } from '../../hooks/useFormPermissions';
 import {
   GripVertical,
   Type,
@@ -76,7 +77,7 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
   onMoveToPage,
   onCopyToPage,
 }) => {
-
+  const permissions = useFormPermissions();
 
   const {
     attributes,
@@ -92,6 +93,7 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
       field,
       pageId,
     },
+    disabled: !permissions.canReorderFields(), // Disable dragging for viewers
   });
 
   const style = {
@@ -111,7 +113,7 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
       target.closest('input') || 
       target.closest('[data-drag-handle]');
     
-    if (!isInteractiveElement && onEdit) {
+    if (!isInteractiveElement && onEdit && permissions.canEditFields()) {
       onEdit();
     }
   };
@@ -155,15 +157,21 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
         <div className="p-4">
           <div className="flex items-start space-x-3">
             {/* Drag Handle */}
-            <div
-              {...attributes}
-              {...listeners}
-              data-drag-handle
-              data-testid={`field-drag-handle-${index + 1}`}
-              className="flex-shrink-0 p-1 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-            >
-              <GripVertical className="w-4 h-4" />
-            </div>
+            {permissions.canReorderFields() ? (
+              <div
+                {...attributes}
+                {...listeners}
+                data-drag-handle
+                data-testid={`field-drag-handle-${index + 1}`}
+                className="flex-shrink-0 p-1 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                <GripVertical className="w-4 h-4" />
+              </div>
+            ) : (
+              <div className="flex-shrink-0 p-1 text-gray-300 dark:text-gray-600">
+                <GripVertical className="w-4 h-4" />
+              </div>
+            )}
 
             {/* Field Icon */}
             <div className="flex-shrink-0 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-400">
@@ -204,61 +212,67 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
                   )}
                 </div>
 
-                {/* Field Actions */}
-                <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity ml-3">
-                  {onEdit && (
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={onEdit}
-                      disabled={!isConnected}
-                      className="h-8 w-8 text-gray-500 hover:text-blue-600"
-                      title="Field settings"
-                    >
-                      <Settings className="w-4 h-4" />
-                    </Button>
-                  )}
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={onDuplicate}
-                    disabled={!isConnected}
-                    className="h-8 w-8 text-gray-500 hover:text-blue-600"
-                    title="Duplicate field"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                  {(onMoveToPage || onCopyToPage) && pages.length > 1 && (
-                    <PageActionsSelector
-                      pages={pages}
-                      currentPageId={pageId}
-                      onMoveToPage={handleMoveToPage}
-                      onCopyToPage={handleCopyToPage}
-                      disabled={!isConnected}
-                      triggerElement={
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          disabled={!isConnected}
-                          className="h-8 w-8 text-gray-500 hover:text-blue-600"
-                          title="Page actions"
-                        >
-                          <MoreVertical className="w-4 h-4" />
-                        </Button>
-                      }
-                    />
-                  )}
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={onRemove}
-                    disabled={!isConnected}
-                    className="h-8 w-8 text-gray-500 hover:text-red-600"
-                    title="Delete field"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
+                {/* Field Actions - Only show for users with edit permissions */}
+                {!permissions.isReadOnly && (
+                  <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity ml-3">
+                    {onEdit && permissions.canEditFields() && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={onEdit}
+                        disabled={!isConnected}
+                        className="h-8 w-8 text-gray-500 hover:text-blue-600"
+                        title="Field settings"
+                      >
+                        <Settings className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {permissions.canAddFields() && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={onDuplicate}
+                        disabled={!isConnected}
+                        className="h-8 w-8 text-gray-500 hover:text-blue-600"
+                        title="Duplicate field"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {(onMoveToPage || onCopyToPage) && pages.length > 1 && permissions.canEditFields() && (
+                      <PageActionsSelector
+                        pages={pages}
+                        currentPageId={pageId}
+                        onMoveToPage={handleMoveToPage}
+                        onCopyToPage={handleCopyToPage}
+                        disabled={!isConnected}
+                        triggerElement={
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            disabled={!isConnected}
+                            className="h-8 w-8 text-gray-500 hover:text-blue-600"
+                            title="Page actions"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        }
+                      />
+                    )}
+                    {permissions.canDeleteFields() && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={onRemove}
+                        disabled={!isConnected}
+                        className="h-8 w-8 text-gray-500 hover:text-red-600"
+                        title="Delete field"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
 
 

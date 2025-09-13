@@ -22,6 +22,8 @@ import {
     ArrowLeft
 } from 'lucide-react';
 import { ShareModal } from '../sharing/ShareModal';
+import { PermissionBadge } from './PermissionBadge';
+import { useFormPermissions } from '../../hooks/useFormPermissions';
 
 interface FormBuilderHeaderProps {
     formId: string;
@@ -49,6 +51,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
     const [formTitle, setFormTitle] = useState(initialFormTitle || 'Untitled Form');
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
+    const permissions = useFormPermissions();
     
     // Update local state when prop changes
     useEffect(() => {
@@ -79,7 +82,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                                 <Zap className="w-4 h-4 text-white" />
                             </div>
                             <div>
-                                {isEditingTitle ? (
+                                {isEditingTitle && permissions.canEdit ? (
                                     <Input
                                         value={formTitle}
                                         onChange={(e) => setFormTitle(e.target.value)}
@@ -90,35 +93,44 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                                     />
                                 ) : (
                                     <button
-                                        onClick={() => setIsEditingTitle(true)}
-                                        className="text-lg font-semibold text-gray-900 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 flex items-center space-x-1"
+                                        onClick={() => permissions.canEdit && setIsEditingTitle(true)}
+                                        className={`text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-1 ${
+                                            permissions.canEdit ? 'hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer' : 'cursor-default'
+                                        }`}
+                                        disabled={!permissions.canEdit}
+                                        title={!permissions.canEdit ? "You don't have permission to edit the form title" : ""}
                                     >
                                         <span>{formTitle}</span>
-                                        <Edit3 className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        {permissions.canEdit && (
+                                            <Edit3 className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        )}
                                     </button>
                                 )}
                             </div>
                         </div>
                         
-                        {/* Connection Status */}
-                        <div className="flex items-center space-x-2">
-                            {isLoading ? (
-                                <>
-                                    <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">Connecting...</span>
-                                </>
-                            ) : isConnected ? (
-                                <>
-                                    <div className="w-2 h-2 bg-green-400 rounded-full" />
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">Live</span>
-                                    <Users className="w-4 h-4 text-gray-400" />
-                                </>
-                            ) : (
-                                <>
-                                    <div className="w-2 h-2 bg-red-400 rounded-full" />
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">Offline</span>
-                                </>
-                            )}
+                        {/* Permission Badge and Connection Status */}
+                        <div className="flex items-center space-x-3">
+                            <PermissionBadge />
+                            <div className="flex items-center space-x-2">
+                                {isLoading ? (
+                                    <>
+                                        <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
+                                        <span className="text-sm text-gray-600 dark:text-gray-400">Connecting...</span>
+                                    </>
+                                ) : isConnected ? (
+                                    <>
+                                        <div className="w-2 h-2 bg-green-400 rounded-full" />
+                                        <span className="text-sm text-gray-600 dark:text-gray-400">Live</span>
+                                        <Users className="w-4 h-4 text-gray-400" />
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="w-2 h-2 bg-red-400 rounded-full" />
+                                        <span className="text-sm text-gray-600 dark:text-gray-400">Offline</span>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -128,20 +140,29 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                             <Eye className="w-4 h-4 mr-2" />
                             Preview
                         </Button>
-                        <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-gray-600 dark:text-gray-400"
-                            onClick={() => setShowShareModal(true)}
-                            disabled={!organizationId || !currentUserId || !formShortUrl}
-                        >
-                            <Share2 className="w-4 h-4 mr-2" />
-                            Share
-                        </Button>
-                        <Button size="sm" disabled={!isConnected}>
-                            <Save className="w-4 h-4 mr-2" />
-                            Save
-                        </Button>
+                        {permissions.canShareForm() && (
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-gray-600 dark:text-gray-400"
+                                onClick={() => setShowShareModal(true)}
+                                disabled={!organizationId || !currentUserId || !formShortUrl}
+                                title={!permissions.canShareForm() ? "Only form owners can manage sharing" : ""}
+                            >
+                                <Share2 className="w-4 h-4 mr-2" />
+                                Share
+                            </Button>
+                        )}
+                        {permissions.canSaveForm() && (
+                            <Button 
+                                size="sm" 
+                                disabled={!isConnected}
+                                title={!permissions.canSaveForm() ? "You don't have permission to save changes" : ""}
+                            >
+                                <Save className="w-4 h-4 mr-2" />
+                                Save
+                            </Button>
+                        )}
                         
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
