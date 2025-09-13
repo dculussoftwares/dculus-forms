@@ -13,6 +13,7 @@ import {
 import { initializeHocuspocusDocument } from './hocuspocus.js';
 import { generateShortUrl } from '@dculus/utils';
 import { sendFormPublishedNotification } from './emailService.js';
+import { randomUUID } from 'crypto';
 
 export interface Form extends Omit<IForm, 'formSchema'> {
   formSchema: any; // JsonValue from Prisma
@@ -153,6 +154,22 @@ export const createForm = async (
     ...newForm,
     description: newForm.description || undefined,
   };
+
+  // Create OWNER permission for the form creator
+  try {
+    await prisma.formPermission.create({
+      data: {
+        id: randomUUID(),
+        formId: result.id,
+        userId: formData.createdById,
+        permission: 'OWNER',
+        grantedById: formData.createdById, // Self-granted
+      }
+    });
+    console.log(`✅ Created OWNER permission for form creator: ${result.id}`);
+  } catch (error) {
+    console.error(`❌ Failed to create OWNER permission for form ${result.id}:`, error);
+  }
 
   // Initialize Hocuspocus document for collaborative editing
   const schemaToInitialize = templateFormSchema || defaultFormSchema;

@@ -10,12 +10,14 @@ import {
 import { getTemplateById } from '../../services/templateService.js';
 import { getFormMetadata, constructBackgroundImageUrl } from '../../services/formMetadataService.js';
 import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
+import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import { generateId } from '@dculus/utils';
 import { copyFileForForm } from '../../services/fileUploadService.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 import { constructCdnUrl } from '../../utils/cdn.js';
 import { prisma } from '../../lib/prisma.js';
 import { randomUUID } from 'crypto';
+import { GraphQLError } from 'graphql';
 
 export const formsResolvers = {
   Query: {
@@ -25,9 +27,14 @@ export const formsResolvers = {
     },
     form: async (_: any, { id }: { id: string }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);
-      const form = await getFormById(id);
-      if (!form) throw new Error("Form not found");
-      return form;
+      
+      // Check if user has access to this form
+      const accessCheck = await checkFormAccess(context.auth.user!.id, id, PermissionLevel.VIEWER);
+      if (!accessCheck.hasAccess) {
+        throw new GraphQLError('Access denied: You do not have permission to view this form');
+      }
+      
+      return accessCheck.form;
     },
     formByShortUrl: async (_: any, { shortUrl }: { shortUrl: string }) => {
       const form = await getFormByShortUrl(shortUrl);
@@ -176,10 +183,13 @@ export const formsResolvers = {
     },
     updateForm: async (_: any, { id, input }: { id: string; input: any }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);
-      const existingForm = await getFormById(id);
-      if (!existingForm) {
-        throw new Error("Form not found");
+      
+      // Check if user has EDITOR access to this form
+      const accessCheck = await checkFormAccess(context.auth.user!.id, id, PermissionLevel.EDITOR);
+      if (!accessCheck.hasAccess) {
+        throw new GraphQLError('Access denied: You do not have permission to edit this form');
       }
+      
       const updateData = {
         ...input,
         updatedAt: new Date(),
@@ -188,18 +198,24 @@ export const formsResolvers = {
     },
     deleteForm: async (_: any, { id }: { id: string }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);
-      const existingForm = await getFormById(id);
-      if (!existingForm) {
-        throw new Error("Form not found");
+      
+      // Check if user has OWNER access to delete this form
+      const accessCheck = await checkFormAccess(context.auth.user!.id, id, PermissionLevel.OWNER);
+      if (!accessCheck.hasAccess) {
+        throw new GraphQLError('Access denied: Only the form owner can delete this form');
       }
+      
       return await deleteForm(id);
     },
     regenerateShortUrl: async (_: any, { id }: { id: string }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);
-      const existingForm = await getFormById(id);
-      if (!existingForm) {
-        throw new Error("Form not found");
+      
+      // Check if user has EDITOR access to regenerate URL
+      const accessCheck = await checkFormAccess(context.auth.user!.id, id, PermissionLevel.EDITOR);
+      if (!accessCheck.hasAccess) {
+        throw new GraphQLError('Access denied: You do not have permission to regenerate the URL for this form');
       }
+      
       return await regenerateShortUrl(id);
     },
   },

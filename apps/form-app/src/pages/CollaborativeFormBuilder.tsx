@@ -1,6 +1,7 @@
 import React, { useEffect, useCallback, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
+import { useAuthContext } from '../contexts/AuthContext';
 import {
   DndContext,
   DragOverlay,
@@ -41,6 +42,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
   const { formId, tab } = useParams<{ formId: string; tab?: string }>();
   const navigate = useNavigate();
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
+  const { user } = useAuthContext();
   
   const activeTab: BuilderTab = useMemo(() => {
     return (tab && VALID_TABS.includes(tab as BuilderTab)) 
@@ -305,6 +307,9 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
           <FormBuilderHeader 
             formId={formId}
             formTitle={formData?.form?.title}
+            formShortUrl={formData?.form?.shortUrl}
+            organizationId={formData?.form?.organization?.id}
+            currentUserId={user?.id}
             isLoading={isLoading}
             isConnected={isConnected}
             onAddPage={() => {}}

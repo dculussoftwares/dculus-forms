@@ -35,7 +35,7 @@ const FormsList: React.FC = () => {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {data?.forms?.map((form: any) => (
+        {data?.accessibleForms?.map((form: any) => (
           <Card key={form.id} className="hover:shadow-md transition-shadow">
             <CardHeader>
               <CardTitle className="text-xl">{form.title}</CardTitle>
@@ -75,7 +75,7 @@ const FormsList: React.FC = () => {
         ))}
       </div>
 
-      {data?.forms?.length === 0 && (
+      {data?.accessibleForms?.length === 0 && (
         <Card className="text-center py-12">
           <CardContent>
             <TypographyH2 className="mb-4">No forms created yet</TypographyH2>

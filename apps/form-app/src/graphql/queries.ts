@@ -12,12 +12,15 @@ export const GET_ACTIVE_ORGANIZATION = gql`
 
 export const GET_FORMS = gql`
   query GetForms($organizationId: ID!) {
-    forms(organizationId: $organizationId) {
+    accessibleForms(organizationId: $organizationId) {
       id
       title
       description
       shortUrl
       isPublished
+      sharingScope
+      defaultPermission
+      userPermission
       organization {
         id
         name
@@ -28,6 +31,7 @@ export const GET_FORMS = gql`
         name
         email
       }
+      responseCount
       createdAt
       updatedAt
       metadata {
@@ -43,12 +47,16 @@ export const GET_FORMS = gql`
 
 export const GET_FORMS_DASHBOARD = gql`
   query GetFormsDashboard($organizationId: ID!) {
-    forms(organizationId: $organizationId) {
+    accessibleForms(organizationId: $organizationId) {
       id
       title
       description
       shortUrl
       isPublished
+      sharingScope
+      defaultPermission
+      userPermission
+      responseCount
       createdAt
       updatedAt
       metadata {
@@ -72,6 +80,9 @@ export const GET_FORM_BY_ID = gql`
       isPublished
       formSchema
       responseCount
+      sharingScope
+      defaultPermission
+      userPermission
       settings {
         thankYou {
           enabled

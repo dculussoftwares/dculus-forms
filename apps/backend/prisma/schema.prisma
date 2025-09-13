@@ -28,6 +28,8 @@ model User {
   members     Member[]
   invitations Invitation[] @relation("InvitedBy")
   forms       Form[]
+  formPermissions FormPermission[]
+  grantedPermissions FormPermission[] @relation("GrantedPermissions")
 
   @@map("user")
 }
@@ -131,6 +133,8 @@ model Form {
   isPublished      Boolean  @default(false)
   organizationId   String
   createdById      String
+  sharingScope     String   @default("PRIVATE") // PRIVATE, SPECIFIC_MEMBERS, ALL_ORG_MEMBERS
+  defaultPermission String  @default("VIEWER")  // Default permission for ALL_ORG_MEMBERS scope
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -141,6 +145,7 @@ model Form {
   files                  FormFile[]
   analytics              FormViewAnalytics[]
   submissionAnalytics    FormSubmissionAnalytics[]
+  permissions            FormPermission[]
 
   @@map("form")
 }
@@ -271,4 +276,24 @@ model FormSubmissionAnalytics {
   @@index([sessionId])
   @@index([completionTimeSeconds])
   @@map("form_submission_analytics")
+}
+
+// Form Permission Model for sharing and access control
+model FormPermission {
+  id          String   @id @map("_id")
+  formId      String   // Reference to Form
+  userId      String   // Reference to User (organization member)
+  permission  String   // OWNER, EDITOR, VIEWER, NO_ACCESS
+  grantedById String   // Who granted this permission
+  grantedAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  form      Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  grantedBy User @relation("GrantedPermissions", fields: [grantedById], references: [id])
+
+  @@unique([formId, userId])
+  @@index([formId])
+  @@index([userId])
+  @@map("form_permission")
 }

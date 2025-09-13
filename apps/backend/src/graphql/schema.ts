@@ -86,6 +86,10 @@ export const typeDefs = gql`
     organization: Organization!
     createdBy: User!
     responseCount: Int!
+    sharingScope: SharingScope!
+    defaultPermission: PermissionLevel!
+    permissions: [FormPermission!]!
+    userPermission: PermissionLevel
     createdAt: String!
     updatedAt: String!
     metadata: FormMetadata
@@ -97,6 +101,37 @@ export const typeDefs = gql`
     backgroundImageKey: String
     backgroundImageUrl: String
     lastUpdated: String!
+  }
+
+  # Form Sharing Types
+  enum SharingScope {
+    PRIVATE
+    SPECIFIC_MEMBERS
+    ALL_ORG_MEMBERS
+  }
+
+  enum PermissionLevel {
+    OWNER
+    EDITOR
+    VIEWER
+    NO_ACCESS
+  }
+
+  type FormPermission {
+    id: ID!
+    formId: ID!
+    userId: ID!
+    user: User!
+    permission: PermissionLevel!
+    grantedBy: User!
+    grantedAt: String!
+    updatedAt: String!
+  }
+
+  type FormSharingSettings {
+    sharingScope: SharingScope!
+    defaultPermission: PermissionLevel!
+    permissions: [FormPermission!]!
   }
 
   type FormResponse {
@@ -200,6 +235,25 @@ export const typeDefs = gql`
     description: String
     settings: FormSettingsInput
     isPublished: Boolean
+  }
+
+  # Form Sharing Input Types
+  input ShareFormInput {
+    formId: ID!
+    sharingScope: SharingScope!
+    defaultPermission: PermissionLevel
+    userPermissions: [UserPermissionInput!]
+  }
+
+  input UserPermissionInput {
+    userId: ID!
+    permission: PermissionLevel!
+  }
+
+  input UpdateFormPermissionInput {
+    formId: ID!
+    userId: ID!
+    permission: PermissionLevel!
   }
 
   input SubmitResponseInput {
@@ -675,6 +729,11 @@ export const typeDefs = gql`
     response(id: ID!): FormResponse
     responsesByForm(formId: ID!, page: Int = 1, limit: Int = 10, sortBy: String = "submittedAt", sortOrder: String = "desc", filters: [ResponseFilterInput!]): PaginatedResponses!
 
+    # Form Sharing Queries
+    formPermissions(formId: ID!): [FormPermission!]!
+    accessibleForms(organizationId: ID!): [Form!]!
+    organizationMembers(organizationId: ID!): [User!]!
+
     # Template Queries
     templates(category: String): [FormTemplate!]!
     template(id: ID!): FormTemplate
@@ -713,6 +772,11 @@ export const typeDefs = gql`
     regenerateShortUrl(id: ID!): Form!
     submitResponse(input: SubmitResponseInput!): FormResponse!
     deleteResponse(id: ID!): Boolean!
+
+    # Form Sharing Mutations
+    shareForm(input: ShareFormInput!): FormSharingSettings!
+    updateFormPermission(input: UpdateFormPermissionInput!): FormPermission!
+    removeFormAccess(formId: ID!, userId: ID!): Boolean!
 
     # Template Mutations
     createTemplate(input: CreateTemplateInput!): FormTemplate!

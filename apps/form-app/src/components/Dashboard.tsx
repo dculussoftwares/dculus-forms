@@ -51,7 +51,7 @@ function FormsListDashboard() {
     skip: !orgData?.activeOrganization?.id,
   });
 
-  const forms = formsData?.forms || [];
+  const forms = formsData?.accessibleForms || [];
 
   // Filter forms based on search term
   const filteredForms = useMemo(() => {

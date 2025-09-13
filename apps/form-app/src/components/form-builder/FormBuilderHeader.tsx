@@ -21,10 +21,14 @@ import {
     Zap,
     ArrowLeft
 } from 'lucide-react';
+import { ShareModal } from '../sharing/ShareModal';
 
 interface FormBuilderHeaderProps {
     formId: string;
     formTitle?: string;
+    formShortUrl?: string;
+    organizationId?: string;
+    currentUserId?: string;
     isLoading: boolean;
     isConnected: boolean;
     onAddPage: () => void;
@@ -34,6 +38,9 @@ interface FormBuilderHeaderProps {
 export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({ 
     formId: _formId, 
     formTitle: initialFormTitle,
+    formShortUrl,
+    organizationId,
+    currentUserId,
     isLoading, 
     isConnected, 
     onAddPage: _onAddPage,
@@ -41,6 +48,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
 }) => {
     const [formTitle, setFormTitle] = useState(initialFormTitle || 'Untitled Form');
     const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
     
     // Update local state when prop changes
     useEffect(() => {
@@ -120,7 +128,13 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                             <Eye className="w-4 h-4 mr-2" />
                             Preview
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-gray-600 dark:text-gray-400">
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-gray-600 dark:text-gray-400"
+                            onClick={() => setShowShareModal(true)}
+                            disabled={!organizationId || !currentUserId || !formShortUrl}
+                        >
                             <Share2 className="w-4 h-4 mr-2" />
                             Share
                         </Button>
@@ -154,6 +168,19 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                     </div>
                 </div>
             </div>
+
+            {/* Share Modal */}
+            {showShareModal && organizationId && currentUserId && formShortUrl && (
+                <ShareModal
+                    isOpen={showShareModal}
+                    onClose={() => setShowShareModal(false)}
+                    formId={_formId}
+                    formTitle={formTitle}
+                    formShortUrl={formShortUrl}
+                    organizationId={organizationId}
+                    currentUserId={currentUserId}
+                />
+            )}
         </div>
     );
 };
