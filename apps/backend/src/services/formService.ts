@@ -13,6 +13,7 @@ import {
 import { initializeHocuspocusDocument } from './hocuspocus.js';
 import { generateShortUrl } from '@dculus/utils';
 import { sendFormPublishedNotification } from './emailService.js';
+import { checkFormAccess, PermissionLevel } from '../graphql/resolvers/formSharing.js';
 import { randomUUID } from 'crypto';
 
 export interface Form extends Omit<IForm, 'formSchema'> {
@@ -186,7 +187,7 @@ export const createForm = async (
   return result;
 };
 
-export const updateForm = async (id: string, formData: Partial<Omit<Form, 'id' | 'createdAt' | 'updatedAt' | 'organizationId' | 'createdById' | 'shortUrl'>>): Promise<Form | null> => {
+export const updateForm = async (id: string, formData: Partial<Omit<Form, 'id' | 'createdAt' | 'updatedAt' | 'organizationId' | 'createdById' | 'shortUrl'>>, userId?: string): Promise<Form | null> => {
   try {
     // First, get the current form state to check if it's being published
     const currentForm = await prisma.form.findUnique({
@@ -199,6 +200,36 @@ export const updateForm = async (id: string, formData: Partial<Omit<Form, 'id' |
     
     if (!currentForm) {
       throw new Error('Form not found');
+    }
+    
+    // If userId is provided, validate permissions at service layer
+    if (userId) {
+      // Analyze formData to determine required permission level
+      const hasLayoutChanges = formData.hasOwnProperty('title') || 
+                             formData.hasOwnProperty('description') || 
+                             formData.hasOwnProperty('settings');
+      
+      const hasCriticalChanges = formData.hasOwnProperty('isPublished');
+      
+      // Determine required permission level based on update type
+      let requiredPermission: string = PermissionLevel.EDITOR;
+      
+      if (hasCriticalChanges) {
+        // Critical changes like publishing require OWNER
+        requiredPermission = PermissionLevel.OWNER;
+      } else if (hasLayoutChanges) {
+        // Layout and content changes require EDITOR
+        requiredPermission = PermissionLevel.EDITOR;
+      }
+      
+      // Check if user has required access level
+      const accessCheck = await checkFormAccess(userId, id, requiredPermission as any);
+      if (!accessCheck.hasAccess) {
+        const permissionName = requiredPermission === 'OWNER' ? 'owner' : 'editor';
+        throw new Error(`Access denied: ${permissionName} permissions required for this type of update`);
+      }
+      
+      console.log(`✅ Permission validated for user ${userId} on form ${id}: ${requiredPermission}`);
     }
     
     const updateData: any = {};
@@ -273,8 +304,19 @@ export const regenerateShortUrl = async (id: string): Promise<Form | null> => {
   }
 };
 
-export const deleteForm = async (id: string): Promise<boolean> => {
+export const deleteForm = async (id: string, userId?: string): Promise<boolean> => {
   try {
+    // If userId is provided, validate permissions at service layer
+    if (userId) {
+      // Check if user has OWNER access to delete this form
+      const accessCheck = await checkFormAccess(userId, id, PermissionLevel.OWNER);
+      if (!accessCheck.hasAccess) {
+        throw new Error('Access denied: Only the form owner can delete this form');
+      }
+      
+      console.log(`✅ Permission validated for user ${userId} to delete form ${id}: OWNER`);
+    }
+    
     await prisma.form.delete({
       where: { id },
     });

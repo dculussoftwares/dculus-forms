@@ -2,10 +2,52 @@ import { Hocuspocus } from '@hocuspocus/server';
 import { Database } from '@hocuspocus/extension-database';
 import { prisma } from '../lib/prisma.js';
 import { extractFormStatsFromYDoc, updateFormMetadata } from './formMetadataService.js';
+import { checkFormAccess, PermissionLevel } from '../graphql/resolvers/formSharing.js';
+import { auth } from '../lib/better-auth.js';
+import { GraphQLError } from 'graphql';
 
 // Debounce configuration for metadata updates
 const METADATA_UPDATE_DEBOUNCE_MS = 5000; // 5 seconds
 const metadataUpdateTimeouts = new Map<string, NodeJS.Timeout>();
+
+// Helper function to validate user session and form access
+const validateUserAccess = async (token: string, formId: string, requiredPermission: string = PermissionLevel.VIEWER) => {
+  try {
+    // Parse bearer token
+    const authToken = token?.replace('Bearer ', '');
+    if (!authToken) {
+      throw new Error('No authentication token provided');
+    }
+
+    // Validate session with better-auth
+    const headers = new Headers();
+    headers.set('authorization', `Bearer ${authToken}`);
+    headers.set('content-type', 'application/json');
+    
+    const sessionData = await auth.api.getSession({
+      headers: headers
+    });
+
+    if (!sessionData?.user) {
+      throw new Error('Invalid or expired session');
+    }
+
+    // Check form access permissions
+    const accessCheck = await checkFormAccess(sessionData.user.id, formId, requiredPermission as any);
+    if (!accessCheck.hasAccess) {
+      throw new Error(`Access denied: Insufficient permissions for form ${formId}`);
+    }
+
+    return {
+      user: sessionData.user,
+      permission: accessCheck.permission,
+      form: accessCheck.form
+    };
+  } catch (error) {
+    console.error(`[validateUserAccess] Error:`, error);
+    throw error;
+  }
+};
 
 export const createHocuspocusServer = () => {
   return new Hocuspocus({
@@ -82,45 +124,71 @@ export const createHocuspocusServer = () => {
         },
       }),
     ],
-    onAuthenticate: async ({ documentName, ...rest }) => {
+    onAuthenticate: async ({ documentName, token, requestHeaders, requestParameters, ...rest }) => {
       console.log('🔐 [onAuthenticate] Called with:', { 
         documentName, 
+        hasToken: !!token,
+        hasHeaders: !!requestHeaders,
+        hasParams: !!requestParameters,
         restKeys: Object.keys(rest)
       });
       
       try {
         if (!documentName || documentName.trim() === '') {
           console.warn('⚠️ [onAuthenticate] Empty or undefined documentName received');
+          throw new Error('Document name is required');
         }
         
-        // For development - allow access without token
-        // TODO: Implement proper JWT verification and organization membership check
-        
-        // Verify user has access to the form document
         const formId = documentName;
-        const form = await prisma.form.findUnique({
-          where: { id: formId },
-          include: {
-            organization: {
-              include: {
-                members: true,
-              },
-            },
-          },
-        });
-
-        if (!form) {
-          console.warn(`[onAuthenticate] Form not found: ${formId}`);
-          // For development, allow creating new documents
-          return { user: { id: 'demo-user' } };
+        
+        // Extract token from multiple sources
+        let authToken = token;
+        
+        // Try to get token from URL query parameters
+        if (!authToken && requestParameters && requestParameters.get) {
+          const tokenParam = requestParameters.get('token');
+          if (tokenParam) {
+            authToken = tokenParam;
+            console.log('🔍 [onAuthenticate] Found token in URL parameters');
+          }
         }
-
-        // For now, allow access if form exists
-        return { user: { id: 'demo-user', formId } };
+        
+        // Try to get token from Authorization header
+        if (!authToken && requestHeaders) {
+          try {
+            // Handle both Map-like and Headers-like objects
+            const authHeader = (requestHeaders as any).get?.('authorization') || 
+                             (requestHeaders as any).get?.('Authorization') ||
+                             (requestHeaders as any)['authorization'] ||
+                             (requestHeaders as any)['Authorization'];
+            
+            if (authHeader && typeof authHeader === 'string') {
+              authToken = authHeader.replace('Bearer ', '');
+              console.log('🔍 [onAuthenticate] Found token in Authorization header');
+            }
+          } catch (error) {
+            console.log('🔍 [onAuthenticate] Could not extract token from headers:', error);
+          }
+        }
+        
+        console.log('🔐 [onAuthenticate] Final token status:', { hasToken: !!authToken });
+        
+        // Validate user authentication and form access
+        const userAccess = await validateUserAccess(authToken, formId, PermissionLevel.VIEWER);
+        
+        console.log(`✅ [onAuthenticate] User ${userAccess.user.email} authenticated for form ${formId} with ${userAccess.permission} permission`);
+        
+        return { 
+          user: { 
+            id: userAccess.user.id, 
+            email: userAccess.user.email,
+            permission: userAccess.permission,
+            formId 
+          } 
+        };
       } catch (error) {
-        console.error('[onAuthenticate]', error);
-        // For development, allow access even on errors
-        return { user: { id: 'demo-user' } };
+        console.error(`❌ [onAuthenticate] Authentication failed for form ${documentName}:`, error);
+        throw error; // This will reject the connection
       }
     },
     onConnect: async ({ documentName, ...rest }) => {
@@ -138,6 +206,15 @@ export const createHocuspocusServer = () => {
       console.log(`🔌 User disconnected from document: "${documentName}"`);
     },
     onChange: async ({ documentName, document, context }) => {
+      // Check if user has edit permissions before processing changes
+      const userContext = context?.user;
+      if (userContext?.permission === PermissionLevel.VIEWER) {
+        console.warn(`⚠️ [onChange] VIEWER user ${userContext.email} attempted to modify form ${documentName} - change ignored`);
+        return; // Don't process changes for viewers
+      }
+
+      console.log(`📝 [onChange] Processing changes for form ${documentName} by user ${userContext?.email || 'unknown'} (${userContext?.permission || 'unknown'})`);
+      
       // Debounce metadata updates to handle frequent collaborative changes
       if (!metadataUpdateTimeouts.has(documentName)) {
         console.log(`📊 [onChange] Scheduling metadata update for form: ${documentName}`);

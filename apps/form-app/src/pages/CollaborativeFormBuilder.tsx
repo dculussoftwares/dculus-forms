@@ -297,7 +297,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
 
   return (
     <FormPermissionProvider userPermission={userPermission}>
-    <DndContext
+      <DndContext
       sensors={sensors}
       collisionDetection={collisionDetectionStrategy}
       onDragStart={handleDragStart}
@@ -341,7 +341,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
           </DragOverlay>
         )}
       </div>
-    </DndContext>
+      </DndContext>
     </FormPermissionProvider>
   );
 };

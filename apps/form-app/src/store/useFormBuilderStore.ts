@@ -418,10 +418,29 @@ class CollaborationManager {
       this.ydoc = new Y.Doc();
       const wsUrl = getWebSocketUrl();
       
+      // Get authentication token from localStorage
+      const authToken = localStorage.getItem('bearer_token');
+      console.log('🔐 Initializing Hocuspocus with auth token:', !!authToken);
+      
+      // Prepare WebSocket URL with authentication token
+      const wsUrlWithAuth = authToken ? `${wsUrl}?token=${encodeURIComponent(authToken)}` : wsUrl;
+      
       this.provider = new HocuspocusProvider({
-        url: wsUrl,
+        url: wsUrlWithAuth,
         name: formId,
         document: this.ydoc,
+        token: authToken || undefined, // Also try passing as token parameter
+        parameters: {
+          // Additional parameters if needed
+          formId: formId,
+          ...(authToken && { token: authToken }), // Pass token in parameters too
+        },
+        // Try passing token via WebSocket options
+        websocketOptions: {
+          headers: authToken ? {
+            'Authorization': `Bearer ${authToken}`
+          } : undefined
+        }
       });
 
       this.setupConnectionHandlers();

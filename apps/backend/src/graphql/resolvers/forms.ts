@@ -184,17 +184,49 @@ export const formsResolvers = {
     updateForm: async (_: any, { id, input }: { id: string; input: any }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);
       
-      // Check if user has EDITOR access to this form
-      const accessCheck = await checkFormAccess(context.auth.user!.id, id, PermissionLevel.EDITOR);
+      // Analyze input to determine required permission level
+      const hasLayoutChanges = input.hasOwnProperty('title') || 
+                             input.hasOwnProperty('description') || 
+                             input.hasOwnProperty('settings');
+      
+      const hasCriticalChanges = input.hasOwnProperty('isPublished') || 
+                                input.hasOwnProperty('shortUrl') || 
+                                input.hasOwnProperty('organizationId');
+      
+      // Determine required permission level based on update type
+      let requiredPermission: string = PermissionLevel.EDITOR;
+      
+      if (hasCriticalChanges) {
+        // Critical changes like publishing, URL changes, org changes require OWNER
+        requiredPermission = PermissionLevel.OWNER;
+      } else if (hasLayoutChanges) {
+        // Layout and content changes require EDITOR
+        requiredPermission = PermissionLevel.EDITOR;
+      }
+      
+      // Check if user has required access level
+      const accessCheck = await checkFormAccess(context.auth.user!.id, id, requiredPermission as any);
       if (!accessCheck.hasAccess) {
-        throw new GraphQLError('Access denied: You do not have permission to edit this form');
+        const permissionName = requiredPermission === 'OWNER' ? 'owner' : 'editor';
+        throw new GraphQLError(`Access denied: ${permissionName} permissions required for this type of update`);
+      }
+      
+      // Additional validation for specific fields
+      if (input.hasOwnProperty('organizationId') && input.organizationId !== accessCheck.form.organizationId) {
+        // Only allow moving forms within same organization for now
+        throw new GraphQLError('Access denied: Cannot transfer form to different organization');
+      }
+      
+      if (input.hasOwnProperty('createdById')) {
+        // Never allow changing form ownership through update
+        throw new GraphQLError('Access denied: Cannot change form ownership through update');
       }
       
       const updateData = {
         ...input,
         updatedAt: new Date(),
       };
-      return await updateForm(id, updateData);
+      return await updateForm(id, updateData, context.auth.user!.id);
     },
     deleteForm: async (_: any, { id }: { id: string }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);
@@ -205,7 +237,7 @@ export const formsResolvers = {
         throw new GraphQLError('Access denied: Only the form owner can delete this form');
       }
       
-      return await deleteForm(id);
+      return await deleteForm(id, context.auth.user!.id);
     },
     regenerateShortUrl: async (_: any, { id }: { id: string }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);
