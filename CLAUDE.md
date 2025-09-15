@@ -493,3 +493,36 @@ The GraphQL `formAnalytics` query provides all data needed for building analytic
 - Visitor behavior patterns
 
 This system provides comprehensive form analytics while maintaining user privacy and following modern data protection standards.
+
+## Toast Notifications
+
+The application uses **Sonner** for user feedback notifications throughout the interface. All toast notifications are centralized through the `@dculus/ui` package and follow standardized patterns.
+
+### Implementation Reference
+
+For detailed guidance on implementing toast notifications consistently across the application, see:
+- **[Toast Implementation Guide](./TOAST_IMPLEMENTATION_GUIDE.md)** - Comprehensive documentation of toast notification patterns, best practices, and implementation examples
+
+### Key Features
+- **Centralized imports** from `@dculus/ui` package (`toastSuccess`, `toastError`, `toastInfo`)
+- **Consistent patterns** for GraphQL mutations, permission violations, and user actions
+- **Contextual messaging** with appropriate success/error details
+- **Permission-aware feedback** for unauthorized operations
+- **Integration** with Apollo Client, better-auth, and form builder operations
+
+### Common Usage Patterns
+```typescript
+// Import from centralized UI package
+import { toastSuccess, toastError } from '@dculus/ui';
+
+// GraphQL mutation success
+toastSuccess('Form created successfully', `"${formTitle}" is ready for editing`);
+
+// Permission violation
+toastError('Permission denied', 'You need EDITOR access to perform this action');
+
+// Copy to clipboard
+toastSuccess('Copied to clipboard', 'Form link has been copied');
+```
+
+The toast system provides immediate user feedback for all major operations including form creation, sharing, permission management, authentication, and collaboration features.
