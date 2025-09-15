@@ -34,6 +34,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
+  toastSuccess,
+  toastError,
 } from "@dculus/ui"
 import { useAuth } from "../contexts/AuthContext"
 import { signOut } from "../lib/auth-client"
@@ -65,10 +67,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const handleSignOut = async () => {
     try {
       await signOut()
+      toastSuccess('Signed out successfully', 'You have been signed out of your account')
       // Optionally redirect to sign-in page
       window.location.href = '/signin'
     } catch (error) {
       console.error('Error signing out:', error)
+      toastError('Sign out failed', 'There was an error signing you out. Please try again.')
     }
   }
 

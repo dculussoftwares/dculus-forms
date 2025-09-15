@@ -10,6 +10,8 @@ import {
   PopoverTrigger,
   TypographyH3,
   TypographySmall,
+  toastSuccess,
+  toastError
 } from '@dculus/ui';
 import { Plus, Loader2 } from 'lucide-react';
 import { CREATE_FORM } from '../graphql/mutations';
@@ -40,11 +42,13 @@ export const CreateFormPopover: React.FC<CreateFormPopoverProps> = ({ onFormCrea
       setFormData({ title: '', description: '' });
       setErrors({});
       onFormCreated?.();
+      toastSuccess('Form created successfully', `"${data.createForm.title}" is ready for editing`);
       // Navigate to form builder with the new form ID
       navigate(`/forms/${data.createForm.id}/edit`);
     },
     onError: (error) => {
       setErrors({ submit: error.message });
+      toastError('Failed to create form', error.message);
     },
   });
 
@@ -109,6 +113,7 @@ export const CreateFormPopover: React.FC<CreateFormPopoverProps> = ({ onFormCrea
       });
     } catch (error) {
       console.error('Error creating form:', error);
+      // Additional error is already handled by mutation onError callback
     }
   };
 

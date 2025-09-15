@@ -19,7 +19,9 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-  Separator
+  Separator,
+  toastSuccess,
+  toastError
 } from '@dculus/ui';
 import {
   Users,
@@ -92,31 +94,31 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   const [shareForm, { loading: sharing }] = useMutation(SHARE_FORM, {
     onCompleted: () => {
-      console.log('Form sharing settings updated successfully');
+      toastSuccess('Form sharing settings updated successfully');
       refetchPermissions();
     },
     onError: (error) => {
-      console.error(`Failed to update sharing settings: ${error.message}`);
+      toastError('Failed to update sharing settings', error.message);
     }
   });
 
   const [updatePermission] = useMutation(UPDATE_FORM_PERMISSION, {
     onCompleted: () => {
-      console.log('Permission updated successfully');
+      toastSuccess('User permission updated successfully');
       refetchPermissions();
     },
     onError: (error) => {
-      console.error(`Failed to update permission: ${error.message}`);
+      toastError('Failed to update user permission', error.message);
     }
   });
 
   const [removeAccess] = useMutation(REMOVE_FORM_ACCESS, {
     onCompleted: () => {
-      console.log('Access removed successfully');
+      toastSuccess('User access removed successfully');
       refetchPermissions();
     },
     onError: (error) => {
-      console.error(`Failed to remove access: ${error.message}`);
+      toastError('Failed to remove user access', error.message);
     }
   });
 
@@ -195,10 +197,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     try {
       await navigator.clipboard.writeText(formUrl);
       setLinkCopied(true);
-      console.log('Link copied to clipboard');
+      toastSuccess('Form link copied to clipboard');
       setTimeout(() => setLinkCopied(false), 2000);
     } catch (error) {
-      console.error('Failed to copy link');
+      toastError('Failed to copy link', 'Unable to access clipboard');
     }
   };
 

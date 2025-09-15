@@ -10,6 +10,8 @@ import {
   Label,
   Textarea,
   LoadingSpinner,
+  toastSuccess,
+  toastError,
 } from '@dculus/ui';
 import { CREATE_FORM } from '../graphql/mutations';
 import { useAppConfig } from '../hooks/useAppConfig';
@@ -83,6 +85,7 @@ export const UseTemplatePopover: React.FC<UseTemplatePopoverProps> = ({
       });
 
       if (data?.createForm) {
+        toastSuccess('Form created successfully', `"${data.createForm.title}" is ready for editing`);
         // Navigate to the new Form Dashboard page
         navigate(`/dashboard/form/${data.createForm.id}`);
         setIsOpen(false);
@@ -94,8 +97,10 @@ export const UseTemplatePopover: React.FC<UseTemplatePopoverProps> = ({
       }
     } catch (error) {
       console.error('Error creating form:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create form. Please try again.';
+      toastError('Failed to create form from template', errorMessage);
       setErrors({ 
-        title: error instanceof Error ? error.message : 'Failed to create form. Please try again.' 
+        title: errorMessage
       });
     }
   };

@@ -1,6 +1,7 @@
 import { useFormBuilderStore } from '../store/useFormBuilderStore';
 import { useFormPermissions } from './useFormPermissions';
 import { FieldType } from '@dculus/types';
+import { toastError } from '@dculus/ui';
 
 /**
  * Permission-aware wrapper around useFormBuilderStore
@@ -13,8 +14,10 @@ export const usePermissionAwareFormBuilder = () => {
   // Helper function for permission violations
   const handlePermissionViolation = (action: string) => {
     console.warn(`Permission denied: ${action} - User has ${permissions.userPermission} access`);
-    // Could show a toast notification here
-    // toast.error(`You don't have permission to ${action.toLowerCase()}`);
+    toastError(
+      'Permission denied', 
+      `You don't have permission to ${action.toLowerCase()}. You need ${permissions.userPermission === 'VIEWER' ? 'EDITOR' : 'OWNER'} access.`
+    );
   };
 
   // Wrap store methods with permission checks
