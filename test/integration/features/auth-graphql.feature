@@ -1,3 +1,4 @@
+@AuthGraphQL @Authentication @GraphQL
 Feature: GraphQL Authentication Test
   As an integration test
   I want to test GraphQL queries with authentication
@@ -6,12 +7,14 @@ Feature: GraphQL Authentication Test
   Background:
     Given the backend server is running
 
+  @AuthenticatedRequest @UserQuery
   Scenario: Authenticated GraphQL request
     Given I create and authenticate a test user
     When I send an authenticated GraphQL query to get my user information
     Then I should receive my user data successfully
     And the user data should match my authenticated user
 
+  @UnauthenticatedRequest @AuthError
   Scenario: Unauthenticated GraphQL request
     When I send a GraphQL query without authentication token
-    Then I should receive an authentication error
+    Then I should receive a GraphQL authentication error

@@ -138,4 +138,33 @@ When('I send a GraphQL query without authentication token', async function (this
   }
 });
 
-// Removed duplicate - now handled in common.steps.ts
+Then('I should receive a GraphQL authentication error', function (this: CustomWorld) {
+  // For GraphQL, authentication errors can come in different forms:
+  // 1. HTTP 401/403 status code
+  // 2. HTTP 200 with GraphQL errors array
+  expect(this.response).toBeDefined();
+
+  if (this.response?.status === 200) {
+    // Check for GraphQL errors in response
+    expect(this.response.data).toHaveProperty('errors');
+    const errors = this.response.data.errors;
+    expect(errors.length).toBeGreaterThan(0);
+
+    // Verify the error message contains authentication-related keywords
+    const errorMessage = errors[0].message.toLowerCase();
+    const isAuthError = errorMessage.includes('authentication') ||
+                       errorMessage.includes('unauthorized') ||
+                       errorMessage.includes('required');
+
+    if (!isAuthError) {
+      throw new Error(`Expected authentication error, but got: ${errors[0].message}`);
+    }
+
+    console.log('✅ Received expected authentication error:', errors[0].message);
+  } else if (this.response?.status === 401 || this.response?.status === 403) {
+    // HTTP-level authentication error
+    console.log('✅ Received HTTP authentication error:', this.response.status);
+  } else {
+    throw new Error(`Expected authentication error, but got status: ${this.response?.status}`);
+  }
+});
