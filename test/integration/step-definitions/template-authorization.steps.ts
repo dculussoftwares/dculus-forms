@@ -659,12 +659,12 @@ When('I send a GraphQL mutation to create a form from template without authentic
         title: 'Form from Template (should fail)'
       }
     });
-    
+
     (this as any).response = response;
     console.log('Unauthenticated create form from template mutation response received');
   } catch (error: any) {
     console.error('Error in unauthenticated create form from template mutation:', error);
-    this.response = error.response;
+    (this as any).response = error.response;
   }
 });
 

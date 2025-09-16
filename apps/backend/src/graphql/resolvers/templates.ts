@@ -164,14 +164,14 @@ export const templatesResolvers = {
 
     createFormFromTemplate: async (_: any, args: CreateFormFromTemplateArgs, context: AuthContext) => {
       try {
+        // Ensure user is authenticated first - any authenticated user can create forms from templates
+        const user = requireAuthentication(context);
+
         // Get the template
         const template = await getTemplateById(args.templateId);
         if (!template) {
           throw new GraphQLError('Template not found');
         }
-
-        // Ensure user is authenticated - any authenticated user can create forms from templates
-        const user = requireAuthentication(context);
 
         // Generate form ID upfront
         const newFormId = randomUUID();
@@ -306,6 +306,10 @@ export const templatesResolvers = {
         return newForm;
       } catch (error) {
         console.error('Error creating form from template:', error);
+        // Re-throw GraphQLError as-is to preserve auth error messages
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
         throw new GraphQLError('Failed to create form from template');
       }
     },

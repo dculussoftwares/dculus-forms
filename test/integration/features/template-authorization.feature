@@ -1,3 +1,4 @@
+@TemplateAuthorization
 Feature: Template Authorization and Authentication
   As a system user
   I want to access templates with proper authorization
