@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Card,
@@ -12,13 +12,19 @@ import { QuickActions } from '../components/FormDashboard/QuickActions';
 import { FormStructure, RecentResponses } from '../components/FormDashboard/RecentResponses';
 import { ResponseTable } from '../components/FormDashboard/ResponseTable';
 import { DeleteDialog, UnpublishDialog, CollectResponsesDialog } from '../components/FormDashboard/Dialogs';
+import { ShareModal } from '../components/sharing/ShareModal';
 import { useFormDashboard } from '../hooks/useFormDashboard';
+import { useAuth } from '../contexts/AuthContext';
+import { useAppConfig } from '../hooks/useAppConfig';
 import { AlertCircle } from 'lucide-react';
 
 const FormDashboard: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
   const navigate = useNavigate();
-  
+  const { user } = useAuth();
+  const { organizationId } = useAppConfig();
+  const [showShareModal, setShowShareModal] = useState(false);
+
   const {
     form,
     responses,
@@ -41,6 +47,11 @@ const FormDashboard: React.FC = () => {
     handleCopyLink,
     handleOpenFormViewer,
   } = useFormDashboard(formId);
+
+  // Share functionality
+  const handleShare = () => {
+    setShowShareModal(true);
+  };
 
   if (formLoading || responsesLoading) {
     return (
@@ -103,6 +114,7 @@ const FormDashboard: React.FC = () => {
           onViewAnalytics={() => {
             navigate(`/dashboard/form/${formId}/analytics`);
           }}
+          onShare={handleShare}
           updateLoading={updateLoading}
           deleteLoading={deleteLoading}
         />
@@ -150,6 +162,19 @@ const FormDashboard: React.FC = () => {
           onCopyLink={handleCopyLink}
           onOpenForm={handleOpenFormViewer}
         />
+
+        {/* Share Modal */}
+        {showShareModal && organizationId && user && (
+          <ShareModal
+            isOpen={showShareModal}
+            onClose={() => setShowShareModal(false)}
+            formId={form.id}
+            formTitle={form.title}
+            formShortUrl={form.shortUrl}
+            organizationId={organizationId}
+            currentUserId={user.id}
+          />
+        )}
       </div>
     </MainLayout>
   );

@@ -17,6 +17,7 @@ import {
   Link,
   Trash2,
   MoreHorizontal,
+  Share2,
 } from 'lucide-react';
 
 interface FormHeaderProps {
@@ -34,6 +35,7 @@ interface FormHeaderProps {
   onCollectResponses: () => void;
   onPreview: () => void;
   onViewAnalytics: () => void;
+  onShare?: () => void;
   updateLoading: boolean;
   deleteLoading: boolean;
 }
@@ -46,6 +48,7 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
   onCollectResponses,
   onPreview,
   onViewAnalytics,
+  onShare,
   updateLoading,
   deleteLoading,
 }) => {
@@ -108,6 +111,19 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
           >
             <Link className="mr-2 h-4 w-4" />
             Collect Responses
+          </Button>
+        )}
+
+        {/* Share Action (when share handler is provided) */}
+        {onShare && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onShare}
+            className="text-purple-600 border-purple-300 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-400"
+          >
+            <Share2 className="mr-2 h-4 w-4" />
+            Share
           </Button>
         )}
 

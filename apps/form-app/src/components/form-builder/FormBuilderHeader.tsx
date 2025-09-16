@@ -147,7 +147,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                                 className="text-gray-600 dark:text-gray-400"
                                 onClick={() => setShowShareModal(true)}
                                 disabled={!organizationId || !currentUserId || !formShortUrl}
-                                title={!permissions.canShareForm() ? "Only form owners can manage sharing" : ""}
+                                title={!permissions.canShareForm() ? "You need access to this form to manage sharing" : ""}
                             >
                                 <Share2 className="w-4 h-4 mr-2" />
                                 Share
