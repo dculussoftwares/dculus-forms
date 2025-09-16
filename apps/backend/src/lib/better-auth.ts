@@ -46,7 +46,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
     organization({
       allowUserToCreateOrganization: true,
       organizationLimit: 5,
-      creatorRole: 'owner',
+      creatorRole: 'companyOwner',
       membershipLimit: 100,
       sendInvitationEmail: async ({ email, invitation, organization, inviter }) => {
         await sendInvitationEmail({

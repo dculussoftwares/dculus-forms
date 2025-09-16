@@ -36,29 +36,29 @@ Given('the backend server is running', async function (this: CustomWorld) {
   }
 });
 
-// Common authentication error step - Commented out to avoid conflicts with template-specific step definitions
-// Then('I should receive an authentication error', function (this: CustomWorld) {
-//   // GraphQL typically returns 200 with errors in the response
-//   // or might return 401/403 for authentication errors
-//   expect(this.response).toBeDefined();
-//   
-//   if (this.response?.status === 200) {
-//     // Check for GraphQL errors
-//     expect(this.response.data).toHaveProperty('errors');
-//     const errors = this.response.data.errors;
-//     expect(errors.length).toBeGreaterThan(0);
-//     
-//     const authError = errors.find((error: any) => 
-//       error.message.toLowerCase().includes('auth') ||
-//       error.message.toLowerCase().includes('unauthorized') ||
-//       error.message.toLowerCase().includes('required')
-//     );
-//     expect(authError).toBeDefined();
-//   } else {
-//     // HTTP-level authentication error
-//     const validAuthErrorCodes = [401, 403];
-//     if (!validAuthErrorCodes.includes(this.response?.status || 0)) {
-//       throw new Error(`Expected 401 or 403, but got ${this.response?.status}`);
-//     }
-//   }
-// });
+// Common authentication error step
+Then('I should receive an authentication error', function (this: CustomWorld) {
+  // GraphQL typically returns 200 with errors in the response
+  // or might return 401/403 for authentication errors
+  expect(this.response).toBeDefined();
+
+  if (this.response?.status === 200) {
+    // Check for GraphQL errors
+    expect(this.response.data).toHaveProperty('errors');
+    const errors = this.response.data.errors;
+    expect(errors.length).toBeGreaterThan(0);
+
+    const authError = errors.find((error: any) =>
+      error.message.toLowerCase().includes('auth') ||
+      error.message.toLowerCase().includes('unauthorized') ||
+      error.message.toLowerCase().includes('required')
+    );
+    expect(authError).toBeDefined();
+  } else {
+    // HTTP-level authentication error
+    const validAuthErrorCodes = [401, 403];
+    if (!validAuthErrorCodes.includes(this.response?.status || 0)) {
+      throw new Error(`Expected 401 or 403, but got ${this.response?.status}`);
+    }
+  }
+});

@@ -801,17 +801,7 @@ Then('I should receive an authorization error', function (this: CustomWorld) {
   expect(response.data.errors.length).toBeGreaterThan(0);
 });
 
-Then('I should receive an authentication error', function (this: CustomWorld) {
-  const response = (this as any).response;
-  expect(response).toBeDefined();
-  // GraphQL can return 200 with errors array or 400 for bad requests
-  const validErrorStatuses = [200, 400];
-  if (!validErrorStatuses.includes(response.status)) {
-    throw new Error(`Expected status to be 200 or 400, but got ${response.status}`);
-  }
-  expect(response.data).toHaveProperty('errors');
-  expect(response.data.errors.length).toBeGreaterThan(0);
-});
+// Authentication error step moved to common.steps.ts to avoid conflicts
 
 Then('the error message should indicate admin privileges are required', function (this: CustomWorld) {
   const response = (this as any).response;
