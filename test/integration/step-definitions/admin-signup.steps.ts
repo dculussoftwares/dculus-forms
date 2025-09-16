@@ -448,6 +448,52 @@ When('I send an admin GraphQL query with regular user token', async function (th
   }
 });
 
+Then('I should receive an authentication error', function (this: CustomWorld) {
+  const error = (this as any).unauthError;
+  const response = (this as any).unauthResponse;
+
+  // Check if we got the expected GraphQL error about authentication
+  let hasAuthError = false;
+
+  if (response && response.data && response.data.errors) {
+    // GraphQL errors array
+    const errors = response.data.errors;
+    hasAuthError = errors.some((err: any) =>
+      err.message && (err.message.toLowerCase().includes('authentication') ||
+                      err.message.toLowerCase().includes('unauthorized'))
+    );
+  } else if (error && error.message) {
+    // Regular error message
+    hasAuthError = error.message.toLowerCase().includes('auth');
+  }
+
+  expect(hasAuthError).toBe(true);
+  console.log('✅ Received authentication error');
+});
+
+Then('I should receive an admin authentication error', function (this: CustomWorld) {
+  const error = (this as any).unauthError;
+  const response = (this as any).unauthResponse;
+
+  // Check if we got the expected GraphQL error about authentication
+  let hasAuthError = false;
+
+  if (response && response.data && response.data.errors) {
+    // GraphQL errors array
+    const errors = response.data.errors;
+    hasAuthError = errors.some((err: any) =>
+      err.message && (err.message.toLowerCase().includes('authentication') ||
+                      err.message.toLowerCase().includes('unauthorized'))
+    );
+  } else if (error && error.message) {
+    // Regular error message
+    hasAuthError = error.message.toLowerCase().includes('auth');
+  }
+
+  expect(hasAuthError).toBe(true);
+  console.log('✅ Received admin authentication error');
+});
+
 Then('I should receive an admin privileges required error', function (this: CustomWorld) {
   const error = (this as any).unauthorizedError;
   const response = (this as any).unauthorizedResponse;

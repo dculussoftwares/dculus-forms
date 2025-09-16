@@ -128,6 +128,28 @@ export const adminResolvers = {
           skip: offset,
           take: limit,
           include: {
+            members: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+            forms: {
+              select: {
+                id: true,
+                title: true,
+                isPublished: true,
+                createdAt: true,
+              },
+              orderBy: {
+                createdAt: 'desc',
+              },
+            },
             _count: {
               select: {
                 members: true,
