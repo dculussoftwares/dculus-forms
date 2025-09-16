@@ -708,7 +708,7 @@ Then('I should receive an access denied error', function (this: CustomWorld) {
 });
 
 Then('I should receive an error that the form is not published', function (this: CustomWorld) {
-  const lastError = testData.get('lastError');
+  const lastError = this.getSharedTestData('lastError');
   expect(lastError).toBeDefined();
   expect(lastError.toLowerCase()).toMatch(/not.*published|form.*not.*published/);
 });

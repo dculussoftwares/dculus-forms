@@ -1,34 +1,46 @@
 import { setWorldConstructor, World, IWorldOptions } from '@cucumber/cucumber';
 import { AxiosResponse } from 'axios';
 import { AuthUtils, AuthUser, AuthSession } from '../utils/auth-utils';
+import { FormTestUtils, Form } from '../utils/form-test-utils';
 
 export interface CustomWorld extends World {
   response?: AxiosResponse;
   baseURL: string;
   authUtils: AuthUtils;
+  formTestUtils: FormTestUtils;
   authToken?: string;
   currentUser?: AuthUser;
   currentSession?: AuthSession;
   testUsers: Map<string, { user: AuthUser; token: string; organizationId?: string }>;
   uploadedFiles: string[]; // Track uploaded files for cleanup
+  createdForms: Form[]; // Track created forms for cleanup
+  sharedTestData: Map<string, any>; // Shared data across step files
+  setSharedTestData(key: string, value: any): void;
+  getSharedTestData(key: string): any;
 }
 
 export class CustomWorldConstructor extends World implements CustomWorld {
   public response?: AxiosResponse;
   public baseURL: string;
   public authUtils: AuthUtils;
+  public formTestUtils: FormTestUtils;
   public authToken?: string;
   public currentUser?: AuthUser;
   public currentSession?: AuthSession;
   public testUsers: Map<string, { user: AuthUser; token: string; organizationId?: string }>;
   public uploadedFiles: string[];
+  public createdForms: Form[];
+  public sharedTestData: Map<string, any>;
 
   constructor(options: IWorldOptions) {
     super(options);
     this.baseURL = process.env.TEST_BASE_URL || 'http://localhost:4000';
     this.authUtils = new AuthUtils(this.baseURL);
+    this.formTestUtils = new FormTestUtils(this.baseURL);
     this.testUsers = new Map();
     this.uploadedFiles = [];
+    this.createdForms = [];
+    this.sharedTestData = new Map();
   }
 
   /**
@@ -92,10 +104,21 @@ export class CustomWorldConstructor extends World implements CustomWorld {
   }
 
   /**
-   * Get the current organization ID from session
+   * Get the current organization ID from session or stored test user
    */
   getCurrentOrganizationId(): string | undefined {
-    return this.currentSession?.activeOrganizationId;
+    // Try to get from session first
+    if (this.currentSession?.activeOrganizationId) {
+      return this.currentSession.activeOrganizationId;
+    }
+
+    // If not in session, try to get from stored test user
+    const mainUser = this.testUsers.get('main');
+    if (mainUser?.organizationId) {
+      return mainUser.organizationId;
+    }
+
+    return undefined;
   }
 
   /**
@@ -103,6 +126,27 @@ export class CustomWorldConstructor extends World implements CustomWorld {
    */
   trackUploadedFile(fileKey: string): void {
     this.uploadedFiles.push(fileKey);
+  }
+
+  /**
+   * Track created form for cleanup
+   */
+  trackCreatedForm(form: Form): void {
+    this.createdForms.push(form);
+  }
+
+  /**
+   * Set shared test data that can be accessed across step files
+   */
+  setSharedTestData(key: string, value: any): void {
+    this.sharedTestData.set(key, value);
+  }
+
+  /**
+   * Get shared test data that can be accessed across step files
+   */
+  getSharedTestData(key: string): any {
+    return this.sharedTestData.get(key);
   }
 
   /**
@@ -128,6 +172,32 @@ export class CustomWorldConstructor extends World implements CustomWorld {
    * Clean up all test users created during this scenario
    */
   async cleanup(): Promise<void> {
+    // Clean up created forms
+    if (this.createdForms.length > 0) {
+      console.log(`Cleaning up ${this.createdForms.length} created forms...`);
+      for (const form of this.createdForms) {
+        try {
+          // Find a token that has access to this form
+          let tokenToUse = this.authToken;
+
+          // If current token doesn't work, try other stored tokens
+          if (!tokenToUse) {
+            for (const [, userData] of this.testUsers) {
+              tokenToUse = userData.token;
+              break;
+            }
+          }
+
+          if (tokenToUse) {
+            await this.formTestUtils.deleteForm(tokenToUse, form.id);
+          }
+        } catch (error) {
+          console.warn(`Failed to delete form ${form.id}:`, error);
+        }
+      }
+      this.createdForms = [];
+    }
+
     // Clean up uploaded files
     if (this.uploadedFiles.length > 0) {
       console.log(`Cleaning up ${this.uploadedFiles.length} uploaded files...`);

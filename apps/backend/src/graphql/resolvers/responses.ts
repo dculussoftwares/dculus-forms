@@ -30,12 +30,17 @@ export const responsesResolvers = {
   },
   Mutation: {
     submitResponse: async (_: any, { input }: { input: any }, context: any) => {
-      // Get form first to check submission limits
+      // Get form first to check if it exists and is published
       const form = await getFormById(input.formId);
       if (!form) {
         throw new Error("Form not found");
       }
-      
+
+      // Check if form is published - critical business rule
+      if (!form.isPublished) {
+        throw new Error("Form is not published and cannot accept responses");
+      }
+
       // Check submission limits if they exist
       if (form.settings?.submissionLimits) {
         const limits = form.settings.submissionLimits;

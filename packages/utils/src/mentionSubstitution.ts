@@ -5,53 +5,85 @@
 
 /**
  * Substitutes field ID mentions in HTML content with actual user response values
- * 
- * @param html - HTML content containing mentions like <span data-beautiful-mention="true" data-value="field-id">@field-id</span>
+ *
+ * @param html - HTML content containing mentions like <span data-beautiful-mention="true" data-value="field-id">@field-id</span> or simple placeholders like {{field-id}}
  * @param responses - User responses as key-value pairs where key is field ID and value is the response
  * @param fieldLabels - Optional mapping of field IDs to human-readable labels for fallback display
  * @returns HTML with mentions replaced by actual values
- * 
+ *
  * @example
  * ```typescript
  * const html = '<p>Dear <span data-beautiful-mention="true" data-value="first-name">@first-name</span>,</p>';
  * const responses = { 'first-name': 'John' };
  * const result = substituteMentions(html, responses);
  * // Result: '<p>Dear John,</p>'
+ *
+ * // Also supports simple placeholders:
+ * const template = 'Hello {{name}}! Welcome to {{company}}.';
+ * const data = { name: 'John', company: 'Acme Corp' };
+ * const result2 = substituteMentions(template, data);
+ * // Result: 'Hello John! Welcome to Acme Corp.'
  * ```
  */
 export function substituteMentions(
-  html: string, 
-  responses: Record<string, any>, 
+  html: string,
+  responses: Record<string, any>,
   fieldLabels?: Record<string, string>
 ): string {
   if (!html) return html;
 
-  // Regular expression to find mention spans - supports both formats:
+  let result = html;
+
+  // First, handle simple placeholder substitution {{field-id}}
+  const placeholderRegex = /\{\{([^}]+)\}\}/g;
+  result = result.replace(placeholderRegex, (match, fieldId) => {
+    const responseValue = responses[fieldId];
+
+    if (responseValue !== undefined && responseValue !== null && responseValue !== '') {
+      // Convert response value to string and escape HTML special characters
+      const valueStr = String(responseValue);
+      return escapeHtml(valueStr);
+    }
+
+    // Fallback: try to show field label if available
+    if (fieldLabels && fieldLabels[fieldId]) {
+      const labelFallback = `[${fieldLabels[fieldId]}]`;
+      return escapeHtml(labelFallback);
+    }
+
+    // Final fallback: show field ID in brackets
+    const fieldIdFallback = `[${fieldId}]`;
+    return escapeHtml(fieldIdFallback);
+  });
+
+  // Then, handle HTML mention spans - supports both formats:
   // 1. Original: <span data-beautiful-mention="true" data-value="FIELD_ID">content</span>
   // 2. Lexical: <span data-lexical-beautiful-mention="true" data-lexical-beautiful-mention-value="FIELD_ID">content</span>
   const mentionRegex = /<span[^>]+data-(?:lexical-)?beautiful-mention="true"[^>]+data-(?:lexical-beautiful-mention-)?value="([^"]+)"[^>]*>([^<]*)<\/span>/gi;
-  
-  return html.replace(mentionRegex, (match, fieldId, originalContent) => {
+
+  result = result.replace(mentionRegex, (match, fieldId, originalContent) => {
     // Get the actual response value for this field ID
     const responseValue = responses[fieldId];
-    
+
     if (responseValue !== undefined && responseValue !== null && responseValue !== '') {
       // Convert response value to string and escape HTML special characters
       const valueStr = String(responseValue);
       const escapedValue = escapeHtml(valueStr);
       return escapedValue;
     }
-    
+
     // Fallback: try to show field label if available
     if (fieldLabels && fieldLabels[fieldId]) {
       const labelFallback = `[${fieldLabels[fieldId]}]`;
       return escapeHtml(labelFallback);
     }
-    
+
     // Final fallback: show field ID in brackets
     const fieldIdFallback = `[${fieldId}]`;
     return escapeHtml(fieldIdFallback);
   });
+
+  return result;
 }
 
 /**
