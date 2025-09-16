@@ -119,6 +119,13 @@ export const GET_FORM_BY_ID = gql`
         backgroundImageUrl
         lastUpdated
       }
+      dashboardStats {
+        averageCompletionTime
+        responseRate
+        responsesToday
+        responsesThisWeek
+        responsesThisMonth
+      }
     }
   }
 `;

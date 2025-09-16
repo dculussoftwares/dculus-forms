@@ -93,6 +93,7 @@ export const typeDefs = gql`
     createdAt: String!
     updatedAt: String!
     metadata: FormMetadata
+    dashboardStats: FormDashboardStats
   }
 
   type FormMetadata {
@@ -101,6 +102,14 @@ export const typeDefs = gql`
     backgroundImageKey: String
     backgroundImageUrl: String
     lastUpdated: String!
+  }
+
+  type FormDashboardStats {
+    averageCompletionTime: Float # Average completion time in seconds
+    responseRate: Float # Response rate as percentage (0-100)
+    responsesToday: Int!
+    responsesThisWeek: Int!
+    responsesThisMonth: Int!
   }
 
   # Form Sharing Types

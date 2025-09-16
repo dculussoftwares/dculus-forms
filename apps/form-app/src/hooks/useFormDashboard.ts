@@ -88,19 +88,24 @@ export const useFormDashboard = (formId: string | undefined) => {
     const responsePagination = responsesData.responsesByForm;
     const responses = responsePagination.data || responsePagination || [];
     const totalResponses = responsePagination.total || responses.length;
-    const totalFields = 0;
 
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    // Get real dashboard stats from the form data
+    const formDashboardStats = formData.form.dashboardStats;
+    const totalFields = formData.form.metadata?.fieldCount || 0;
 
-    const responsesToday = responses.filter(
-      (r: any) => new Date(r.submittedAt) >= today
-    ).length;
+    // Format average completion time
+    const formatCompletionTime = (seconds: number | null) => {
+      if (!seconds) return '0 min';
+      if (seconds < 60) return `${Math.round(seconds)}s`;
+      const minutes = Math.round(seconds / 60 * 10) / 10;
+      return `${minutes} min`;
+    };
 
-    const responsesThisWeek = responses.filter(
-      (r: any) => new Date(r.submittedAt) >= weekAgo
-    ).length;
+    // Format response rate
+    const formatResponseRate = (rate: number | null) => {
+      if (!rate) return '0%';
+      return `${Math.round(rate * 10) / 10}%`;
+    };
 
     const recentResponses = responses
       .slice()
@@ -113,11 +118,11 @@ export const useFormDashboard = (formId: string | undefined) => {
     return {
       totalResponses,
       totalFields,
-      averageCompletionTime: '3.2 min',
+      averageCompletionTime: formatCompletionTime(formDashboardStats?.averageCompletionTime),
       recentResponses,
-      responseRate: '67.8%',
-      responsesToday,
-      responsesThisWeek,
+      responseRate: formatResponseRate(formDashboardStats?.responseRate),
+      responsesToday: formDashboardStats?.responsesToday || 0,
+      responsesThisWeek: formDashboardStats?.responsesThisWeek || 0,
     };
   }, [formData, responsesData]);
 

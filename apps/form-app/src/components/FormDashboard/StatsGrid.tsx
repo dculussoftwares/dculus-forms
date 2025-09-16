@@ -47,7 +47,7 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{stats.responseRate}</div>
-          <p className="text-xs text-muted-foreground">+2.5% from last month</p>
+          <p className="text-xs text-muted-foreground">Views converted to responses</p>
         </CardContent>
       </Card>
 
@@ -61,7 +61,7 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
         <CardContent>
           <div className="text-2xl font-bold">{stats.averageCompletionTime}</div>
           <p className="text-xs text-muted-foreground">
-            -0.3 min from last week
+            Average time to complete form
           </p>
         </CardContent>
       </Card>

@@ -114,6 +114,88 @@ export const formsResolvers = {
       });
       return count;
     },
+    dashboardStats: async (parent: any) => {
+      const formId = parent.id;
+
+      // Get time boundaries
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+      // Get response counts for different time periods
+      const [
+        responsesToday,
+        responsesThisWeek,
+        responsesThisMonth,
+        totalViews,
+        submissionAnalytics
+      ] = await Promise.all([
+        // Responses today
+        prisma.response.count({
+          where: {
+            formId,
+            submittedAt: { gte: today }
+          }
+        }),
+
+        // Responses this week
+        prisma.response.count({
+          where: {
+            formId,
+            submittedAt: { gte: weekAgo }
+          }
+        }),
+
+        // Responses this month
+        prisma.response.count({
+          where: {
+            formId,
+            submittedAt: { gte: monthAgo }
+          }
+        }),
+
+        // Total views for response rate calculation
+        prisma.formViewAnalytics.count({
+          where: { formId }
+        }),
+
+        // Get submission analytics for average completion time
+        prisma.formSubmissionAnalytics.findMany({
+          where: { responseId: { in:
+            await prisma.response.findMany({
+              where: { formId },
+              select: { id: true }
+            }).then(responses => responses.map(r => r.id))
+          }},
+          select: { completionTimeSeconds: true }
+        })
+      ]);
+
+      // Calculate average completion time in seconds
+      let averageCompletionTime = null;
+      if (submissionAnalytics.length > 0) {
+        const validCompletionTimes = submissionAnalytics
+          .map(s => s.completionTimeSeconds)
+          .filter((t): t is number => t !== null && t > 0);
+
+        if (validCompletionTimes.length > 0) {
+          averageCompletionTime = validCompletionTimes.reduce((sum, time) => sum + time, 0) / validCompletionTimes.length;
+        }
+      }
+
+      // Calculate response rate as percentage
+      const totalResponses = await prisma.response.count({ where: { formId } });
+      const responseRate = totalViews > 0 ? (totalResponses / totalViews) * 100 : 0;
+
+      return {
+        averageCompletionTime,
+        responseRate,
+        responsesToday,
+        responsesThisWeek,
+        responsesThisMonth
+      };
+    },
   },
   Mutation: {
     createForm: async (
