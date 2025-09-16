@@ -9,13 +9,11 @@ import { MainLayout } from '../components/MainLayout';
 import { FormHeader } from '../components/FormDashboard/FormHeader';
 import { StatsGrid } from '../components/FormDashboard/StatsGrid';
 import { QuickActions } from '../components/FormDashboard/QuickActions';
-import { FormStructure, RecentResponses } from '../components/FormDashboard/RecentResponses';
-import { ResponseTable } from '../components/FormDashboard/ResponseTable';
 import { DeleteDialog, UnpublishDialog, CollectResponsesDialog } from '../components/FormDashboard/Dialogs';
 import { ShareModal } from '../components/sharing/ShareModal';
 import { useFormDashboard } from '../hooks/useFormDashboard';
 import { useAuth } from '../contexts/AuthContext';
-import { useAppConfig } from '../hooks/useAppConfig';
+import { useAppConfig } from '@/hooks';
 import { AlertCircle } from 'lucide-react';
 
 const FormDashboard: React.FC = () => {
@@ -27,10 +25,8 @@ const FormDashboard: React.FC = () => {
 
   const {
     form,
-    responses,
     dashboardStats,
     formLoading,
-    responsesLoading,
     deleteLoading,
     updateLoading,
     formError,
@@ -53,7 +49,7 @@ const FormDashboard: React.FC = () => {
     setShowShareModal(true);
   };
 
-  if (formLoading || responsesLoading) {
+  if (formLoading) {
     return (
       <MainLayout
         title="Form Dashboard"
@@ -125,18 +121,7 @@ const FormDashboard: React.FC = () => {
 
         <QuickActions formId={formId!} />
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-          <FormStructure formId={formId!} />
-          <RecentResponses
-            responses={dashboardStats.recentResponses}
-            totalResponses={dashboardStats.totalResponses}
-          />
-        </div>
 
-        <ResponseTable
-          responses={responses}
-          totalResponses={dashboardStats.totalResponses}
-        />
 
         <DeleteDialog
           open={showDeleteDialog}
