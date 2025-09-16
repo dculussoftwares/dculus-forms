@@ -253,40 +253,30 @@ export class AuthUtils {
   }
 
   /**
-   * Create a super admin user by directly creating in database (for testing)
+   * Create a super admin user using the actual admin setup script
    */
   async createSuperAdmin(email: string, password: string, name: string): Promise<{ user: AdminUser; token: string }> {
     try {
-      // Step 1: Create user account using better-auth API first
-      const signUpResponse = await this.axiosInstance.post('/api/auth/sign-up/email', {
-        email,
-        password,
-        name,
-        callbackURL: '/',
-      });
+      // Use the actual admin setup script to create a real admin user
+      const setupSuccess = await this.runAdminSetupScript(email, password, name);
 
-      if (signUpResponse.data.error) {
-        throw new Error(`Super admin creation failed: ${signUpResponse.data.error.message}`);
+      if (!setupSuccess) {
+        throw new Error('Admin setup script failed');
       }
 
-      // Step 2: Since we can't modify the database directly in integration tests,
-      // we'll return a user object with the superAdmin role and test what we can test
+      // Now sign in as the admin user
+      const signInResult = await this.signInUser(email, password);
+
       const user: AdminUser = {
-        ...signUpResponse.data.user,
+        ...signInResult.user,
         role: 'superAdmin' as const,
       };
 
-      // Extract the bearer token from response headers  
-      const authToken = signUpResponse.headers['set-auth-token'];
-      if (!authToken) {
-        throw new Error('No auth token received after super admin creation');
-      }
-
-      console.log(`Test super admin user created: ${user.email} (role will be verified via GraphQL)`);
+      console.log(`Super admin user created and authenticated: ${user.email}`);
 
       return {
         user,
-        token: authToken,
+        token: signInResult.token,
       };
     } catch (error: any) {
       if (error.response?.data?.error) {

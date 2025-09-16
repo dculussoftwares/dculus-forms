@@ -54,8 +54,8 @@ export const checkFormAccess = async (userId: string, formId: string, requiredPe
   }
 
   // Check if user is a member of the form's organization
-  const isOrgMember = form.organization.members.length > 0;
-  if (!isOrgMember) {
+  const userMembership = form.organization.members.find(member => member.userId === userId);
+  if (!userMembership) {
     throw new GraphQLError('Access denied: Not a member of this organization');
   }
 
