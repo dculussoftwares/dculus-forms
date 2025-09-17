@@ -91,12 +91,11 @@ jobs:
             timeout: 10
 
     env:
-      # CI-specific environment variables
-      CI_INTEGRATION_TEST: true
+      # Use deployed backend URL instead of localhost
       TEST_BASE_URL: ${{ needs.check-trigger.outputs.backend_url }}
-      TEST_EMAIL: ${{ secrets.CI_TEST_EMAIL }}
-      TEST_PASSWORD: ${{ secrets.CI_TEST_PASSWORD }}
-      TEST_ORG_PREFIX: ${{ vars.CI_TEST_ORG_PREFIX || 'ci-test' }}
+      # Use CI test credentials
+      CI_TEST_EMAIL: ${{ secrets.CI_TEST_EMAIL }}
+      CI_TEST_PASSWORD: ${{ secrets.CI_TEST_PASSWORD }}
       NODE_ENV: test
 
     steps:
@@ -162,7 +161,6 @@ jobs:
           echo "🧪 Running integration tests: ${{ matrix.test-suite.name }}"
           echo "Features: ${{ matrix.test-suite.features }}"
           echo "Backend URL: ${{ env.TEST_BASE_URL }}"
-          echo "Test Email: ${{ env.TEST_EMAIL }}"
 
           # Create reports directory
           mkdir -p test-reports

@@ -32,14 +32,13 @@ export interface AdminTestUser extends TestUser {
 export function generateTestUser(prefix: string = 'testuser'): TestUser {
   const uniqueId = generateId().toLowerCase();
 
-  // Use CI test email pattern if in CI environment
-  const isCIEnvironment = process.env.CI_INTEGRATION_TEST === 'true';
+  // Use CI test email if provided in environment, otherwise use test domain
   let email: string;
+  const ciTestEmail = process.env.CI_TEST_EMAIL;
 
-  if (isCIEnvironment) {
-    const baseEmail = process.env.TEST_EMAIL || 'integrationtestdculus@mailinator.com';
-    // Use + addressing for unique emails in CI
-    email = baseEmail.replace('@', `+${prefix}-${uniqueId}@`);
+  if (ciTestEmail) {
+    // Use + addressing for unique emails when using CI email
+    email = ciTestEmail.replace('@', `+${prefix}-${uniqueId}@`);
   } else {
     // Use test domain for local testing
     email = `${prefix}-${uniqueId}@example.com`;
@@ -47,7 +46,7 @@ export function generateTestUser(prefix: string = 'testuser'): TestUser {
 
   return {
     email: email,
-    password: process.env.TEST_PASSWORD || 'TestPassword123!',
+    password: process.env.CI_TEST_PASSWORD || 'TestPassword123!',
     name: `Test User ${uniqueId}`,
   };
 }

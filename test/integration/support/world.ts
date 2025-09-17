@@ -2,14 +2,12 @@ import { setWorldConstructor, World, IWorldOptions } from '@cucumber/cucumber';
 import { AxiosResponse } from 'axios';
 import { AuthUtils, AuthUser, AuthSession } from '../utils/auth-utils';
 import { FormTestUtils, Form } from '../utils/form-test-utils';
-import { CITestUtils, isCITestingEnabled } from '../utils/ci-test-utils';
 
 export interface CustomWorld extends World {
   response?: AxiosResponse;
   baseURL: string;
   authUtils: AuthUtils;
   formTestUtils: FormTestUtils;
-  ciTestUtils?: CITestUtils; // CI-specific test utilities
   authToken?: string;
   currentUser?: AuthUser;
   currentSession?: AuthSession;
@@ -17,7 +15,6 @@ export interface CustomWorld extends World {
   uploadedFiles: string[]; // Track uploaded files for cleanup
   createdForms: Form[]; // Track created forms for cleanup
   sharedTestData: Map<string, any>; // Shared data across step files
-  isCIEnvironment: boolean; // Flag to indicate CI environment
   setSharedTestData(key: string, value: any): void;
   getSharedTestData(key: string): any;
 }
@@ -27,7 +24,6 @@ export class CustomWorldConstructor extends World implements CustomWorld {
   public baseURL: string;
   public authUtils: AuthUtils;
   public formTestUtils: FormTestUtils;
-  public ciTestUtils?: CITestUtils;
   public authToken?: string;
   public currentUser?: AuthUser;
   public currentSession?: AuthSession;
@@ -35,29 +31,18 @@ export class CustomWorldConstructor extends World implements CustomWorld {
   public uploadedFiles: string[];
   public createdForms: Form[];
   public sharedTestData: Map<string, any>;
-  public isCIEnvironment: boolean;
 
   constructor(options: IWorldOptions) {
     super(options);
     this.baseURL = process.env.TEST_BASE_URL || 'http://localhost:4000';
-    this.isCIEnvironment = isCITestingEnabled();
-
     this.authUtils = new AuthUtils(this.baseURL);
     this.formTestUtils = new FormTestUtils(this.baseURL);
-
-    // Initialize CI test utilities if in CI environment
-    if (this.isCIEnvironment) {
-      const config = CITestUtils.getCIConfig();
-      this.ciTestUtils = new CITestUtils(config);
-      console.log(`🤖 CI Environment detected - using ${this.baseURL}`);
-    } else {
-      console.log(`🏠 Local Environment detected - using ${this.baseURL}`);
-    }
-
     this.testUsers = new Map();
     this.uploadedFiles = [];
     this.createdForms = [];
     this.sharedTestData = new Map();
+
+    console.log(`🔧 Test environment configured - using ${this.baseURL}`);
   }
 
   /**
@@ -189,13 +174,6 @@ export class CustomWorldConstructor extends World implements CustomWorld {
    * Clean up all test users created during this scenario
    */
   async cleanup(): Promise<void> {
-    // Use CI-specific cleanup if in CI environment
-    if (this.isCIEnvironment && this.ciTestUtils) {
-      await this.ciTestUtils.cleanup();
-      return;
-    }
-
-    // Standard cleanup for local environment
     // Clean up created forms
     if (this.createdForms.length > 0) {
       console.log(`Cleaning up ${this.createdForms.length} created forms...`);
