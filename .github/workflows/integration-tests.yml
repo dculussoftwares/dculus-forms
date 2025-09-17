@@ -1,0 +1,321 @@
+name: Integration Tests
+
+on:
+  # Run daily at 2 AM UTC to validate deployed backend
+  schedule:
+    - cron: '0 2 * * *'
+
+  # Allow manual triggering with environment selection
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to test against'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+      test_tags:
+        description: 'Test tags to run (comma-separated)'
+        required: false
+        default: '@HealthCheck,@AuthenticationCI,@FormLifecycleCI'
+        type: string
+
+  # Run after successful deployment to production
+  workflow_run:
+    workflows: ["Build Pipeline"]
+    types:
+      - completed
+    branches:
+      - main
+
+permissions:
+  contents: read
+  issues: write  # For creating failure reports
+  actions: read
+
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '8.15.0'
+
+jobs:
+  # Only run if build pipeline succeeded or if manually triggered
+  check-trigger:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+      backend_url: ${{ steps.check.outputs.backend_url }}
+    steps:
+      - name: Check if integration tests should run
+        id: check
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            if [[ "${{ github.event.inputs.environment }}" == "production" ]]; then
+              echo "backend_url=https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io" >> $GITHUB_OUTPUT
+            else
+              echo "backend_url=https://staging-dculus-forms-backend.example.com" >> $GITHUB_OUTPUT
+            fi
+          elif [[ "${{ github.event_name }}" == "schedule" ]]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "backend_url=https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "workflow_run" && "${{ github.event.workflow_run.conclusion }}" == "success" ]]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "backend_url=https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io" >> $GITHUB_OUTPUT
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          fi
+
+  integration-tests:
+    name: Run Integration Tests
+    runs-on: ubuntu-latest
+    needs: check-trigger
+    if: needs.check-trigger.outputs.should_run == 'true'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        test-suite:
+          - name: "Health & Authentication"
+            features: "health.feature,auth.feature,auth-simple.feature,auth-graphql.feature"
+            timeout: 10
+          - name: "Form Lifecycle"
+            features: "form-lifecycle.feature"
+            timeout: 15
+          - name: "Admin Features"
+            features: "admin-signup.feature,template-authorization.feature"
+            timeout: 12
+          - name: "Form Responses"
+            features: "form-responses.feature"
+            timeout: 10
+
+    env:
+      # CI-specific environment variables
+      CI_INTEGRATION_TEST: true
+      TEST_BASE_URL: ${{ needs.check-trigger.outputs.backend_url }}
+      TEST_EMAIL: ${{ secrets.CI_TEST_EMAIL }}
+      TEST_PASSWORD: ${{ secrets.CI_TEST_PASSWORD }}
+      TEST_ORG_PREFIX: ${{ vars.CI_TEST_ORG_PREFIX || 'ci-test' }}
+      NODE_ENV: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared packages
+        run: |
+          pnpm --filter @dculus/types build
+          pnpm --filter @dculus/utils build
+          pnpm --filter @dculus/ui build
+
+      - name: Wait for backend to be ready
+        run: |
+          echo "Waiting for backend to be ready at ${{ env.TEST_BASE_URL }}..."
+
+          # Wait up to 5 minutes for backend to be ready
+          for i in {1..30}; do
+            echo "Health check attempt $i/30..."
+            if curl -f -s "${{ env.TEST_BASE_URL }}/health" > /dev/null; then
+              echo "✅ Backend is ready!"
+              break
+            else
+              echo "⏳ Backend not ready, waiting 10 seconds..."
+              sleep 10
+            fi
+
+            if [ $i -eq 30 ]; then
+              echo "❌ Backend failed to become ready after 5 minutes"
+              exit 1
+            fi
+          done
+
+      - name: Run Integration Tests - ${{ matrix.test-suite.name }}
+        timeout-minutes: ${{ matrix.test-suite.timeout }}
+        run: |
+          echo "🧪 Running integration tests: ${{ matrix.test-suite.name }}"
+          echo "Features: ${{ matrix.test-suite.features }}"
+          echo "Backend URL: ${{ env.TEST_BASE_URL }}"
+          echo "Test Email: ${{ env.TEST_EMAIL }}"
+
+          # Create reports directory
+          mkdir -p test-reports
+
+          # Convert comma-separated features to space-separated file paths
+          FEATURE_FILES=""
+          IFS=',' read -ra FEATURES <<< "${{ matrix.test-suite.features }}"
+          for feature in "${FEATURES[@]}"; do
+            FEATURE_FILES="$FEATURE_FILES test/integration/features/$(echo $feature | xargs)"
+          done
+
+          echo "Running features: $FEATURE_FILES"
+
+          # Run tests with specific feature files
+          TS_NODE_PROJECT=test/integration/tsconfig.json cucumber-js \
+            $FEATURE_FILES \
+            --require-module ts-node/register \
+            --require test/integration/support/world.ts \
+            --require test/integration/support/hooks.ts \
+            --require test/integration/step-definitions/common.steps.ts \
+            --require 'test/integration/step-definitions/*.steps.ts' \
+            --format json:test-reports/cucumber-report-${{ matrix.test-suite.name }}.json \
+            --format html:test-reports/cucumber-report-${{ matrix.test-suite.name }}.html \
+            --format progress
+
+      - name: Upload Test Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-reports-${{ matrix.test-suite.name }}
+          path: test-reports/
+          retention-days: 7
+
+      - name: Test Results Summary
+        if: always()
+        run: |
+          echo "## 🧪 Integration Test Results - ${{ matrix.test-suite.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Backend URL:** ${{ env.TEST_BASE_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Test Features:** ${{ matrix.test-suite.features }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ github.event.inputs.environment || 'production' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f "test-reports/cucumber-report-${{ matrix.test-suite.name }}.json" ]; then
+            # Parse test results from JSON report
+            echo "**Test Results:**" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            node -e "
+              const fs = require('fs');
+              const report = JSON.parse(fs.readFileSync('test-reports/cucumber-report-${{ matrix.test-suite.name }}.json'));
+              let passed = 0, failed = 0, skipped = 0;
+
+              report.forEach(feature => {
+                feature.elements?.forEach(scenario => {
+                  const steps = scenario.steps || [];
+                  if (steps.some(step => step.result?.status === 'failed')) {
+                    failed++;
+                  } else if (steps.some(step => step.result?.status === 'skipped')) {
+                    skipped++;
+                  } else if (steps.length > 0) {
+                    passed++;
+                  }
+                });
+              });
+
+              console.log(\`Passed: \${passed}\`);
+              console.log(\`Failed: \${failed}\`);
+              console.log(\`Skipped: \${skipped}\`);
+              console.log(\`Total: \${passed + failed + skipped}\`);
+            " >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  create-issue-on-failure:
+    name: Create Issue on Test Failure
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    if: failure() && (github.event_name == 'schedule' || github.event_name == 'workflow_run')
+    steps:
+      - name: Create failure issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `🚨 Integration Tests Failed - ${new Date().toISOString().split('T')[0]}`;
+            const body = `
+            ## Integration Test Failure Report
+
+            **Failed on:** ${new Date().toISOString()}
+            **Workflow:** ${context.workflow}
+            **Run ID:** ${context.runId}
+            **Backend URL:** ${{ needs.check-trigger.outputs.backend_url }}
+
+            ### Details
+            The scheduled integration tests against the deployed backend have failed.
+
+            **Action Required:**
+            1. Check the [workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId}) for details
+            2. Investigate backend health and connectivity
+            3. Review test failure logs and reports
+
+            ### Quick Checks
+            - [ ] Backend health endpoint responding
+            - [ ] Database connectivity working
+            - [ ] Authentication system functioning
+            - [ ] Test user credentials valid
+
+            This issue was created automatically by the integration test workflow.
+            `;
+
+            // Check if similar issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['integration-test-failure'],
+              state: 'open'
+            });
+
+            if (issues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['bug', 'integration-test-failure', 'automated-issue']
+              });
+            }
+
+  summary:
+    name: Integration Test Summary
+    runs-on: ubuntu-latest
+    needs: [check-trigger, integration-tests]
+    if: always() && needs.check-trigger.outputs.should_run == 'true'
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "## 🧪 Integration Test Suite Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Backend URL:** ${{ needs.check-trigger.outputs.backend_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ github.event.inputs.environment || 'production' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check overall status
+          if [[ "${{ needs.integration-tests.result }}" == "success" ]]; then
+            echo "### ✅ All Integration Tests Passed!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "The deployed backend is functioning correctly and all API endpoints are responding as expected." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Integration Tests Failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Some integration tests failed. Please check the individual test reports for details." >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Reports" >> $GITHUB_STEP_SUMMARY
+          echo "Detailed test reports are available in the workflow artifacts." >> $GITHUB_STEP_SUMMARY
