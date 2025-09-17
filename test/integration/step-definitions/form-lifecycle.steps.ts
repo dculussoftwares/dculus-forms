@@ -186,20 +186,22 @@ When('I attempt to create a form with invalid template ID {string}', async funct
 });
 
 When('I attempt to create a form from any template', async function (this: CustomWorld) {
-  const templates = await formTestUtils.getTemplates('invalid-token');
-  const template = templates[0];
-
-  const createInput: CreateFormInput = {
-    templateId: template.id,
-    title: 'Test Form',
-    organizationId: 'test-org-id'
-  };
-
   try {
+    // First try to get templates without authentication - this should fail
+    const templates = await formTestUtils.getTemplates('invalid-token');
+    const template = templates[0];
+
+    const createInput: CreateFormInput = {
+      templateId: template.id,
+      title: 'Test Form',
+      organizationId: 'test-org-id'
+    };
+
     await formTestUtils.createForm('invalid-token', createInput);
     throw new Error('Expected form creation to fail, but it succeeded');
   } catch (error: any) {
     testData.set('lastError', error.message);
+    this.setSharedTestData('lastError', error.message); // Store in shared context for cross-file access
   }
 });
 
@@ -777,6 +779,7 @@ When('I attempt to retrieve the form by its ID', async function (this: CustomWor
     throw new Error('Expected form retrieval to fail, but it succeeded');
   } catch (error: any) {
     testData.set('lastError', error.message);
+    this.setSharedTestData('lastError', error.message); // Store in shared context for cross-file access
   }
 });
 

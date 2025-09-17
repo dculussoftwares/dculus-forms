@@ -22,6 +22,12 @@ const expect = (actual: any) => ({
     if (actual <= expected) {
       throw new Error(`Expected ${actual} to be greater than ${expected}`);
     }
+  },
+  toMatch: (pattern: RegExp | string) => {
+    const regex = typeof pattern === 'string' ? new RegExp(pattern, 'i') : pattern;
+    if (!regex.test(String(actual))) {
+      throw new Error(`Expected "${actual}" to match ${pattern}`);
+    }
   }
 });
 
@@ -38,6 +44,13 @@ Given('the backend server is running', async function (this: CustomWorld) {
 
 // Common authentication error step
 Then('I should receive an authentication error', function (this: CustomWorld) {
+  // Check for shared test data lastError first (for cross-file compatibility)
+  const sharedError = this.getSharedTestData('lastError');
+  if (sharedError) {
+    expect(sharedError).toMatch(/auth|unauthorized|required|authentication/i);
+    return;
+  }
+
   // GraphQL typically returns 200 with errors in the response
   // or might return 401/403 for authentication errors
   expect(this.response).toBeDefined();

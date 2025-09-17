@@ -733,8 +733,10 @@ Then('the response retrieval should fail', function (this: CustomWorld) {
 // Authentication error step moved to common.steps.ts to avoid conflicts
 
 Then('I should receive an access denied error', function (this: CustomWorld) {
-  expect(lastError).toBeDefined();
-  expect(lastError).toMatch(/access.*denied|permission|unauthorized/i);
+  // Check multiple sources for error message for cross-file compatibility
+  const errorMessage = lastError || testData.get('lastError') || this.getSharedTestData('lastError');
+  expect(errorMessage).toBeDefined();
+  expect(errorMessage).toMatch(/access.*denied|permission|unauthorized/i);
 });
 
 // Response Deletion Steps

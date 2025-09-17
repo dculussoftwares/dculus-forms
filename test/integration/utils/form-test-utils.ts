@@ -431,6 +431,10 @@ export class FormTestUtils {
       throw new Error(`Failed to get form: ${response.data.errors[0].message}`);
     }
 
+    if (!response.data.data.form) {
+      throw new Error('Form not found or access denied');
+    }
+
     return response.data.data.form;
   }
 

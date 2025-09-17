@@ -56,21 +56,8 @@ export const checkFormAccess = async (userId: string, formId: string, requiredPe
   // Check if user is a member of the form's organization
   const userMembership = form.organization.members.find(member => member.userId === userId);
   if (!userMembership) {
-    console.log('DEBUG: User is not a member of the organization');
-    console.log('DEBUG: userId:', userId);
-    console.log('DEBUG: form.organizationId:', form.organizationId);
-    console.log('DEBUG: form.createdById:', form.createdById);
-    console.log('DEBUG: organization members:', form.organization.members.map(m => ({ userId: m.userId, role: m.role })));
-
-    // In test environments or if there are no other members, allow the user access
-    // This handles the case where better-auth organization membership isn't synced with our Member table
-    const isTestEnv = process.env.NODE_ENV === 'test' || process.env.TEST_BASE_URL || process.env.CUCUMBER_TIMEOUT;
-    if (isTestEnv) {
-      console.log('DEBUG: Test environment detected - granting access despite missing membership');
-      return { hasAccess: true, permission: PermissionLevel.EDITOR, form };
-    }
-
-    throw new GraphQLError('Access denied: Not a member of this organization');
+    // No access if user is not a member of the organization
+    return { hasAccess: false, permission: PermissionLevel.NO_ACCESS, form };
   }
 
   // Check explicit permissions

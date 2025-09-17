@@ -8,7 +8,7 @@ let backendProcess: ChildProcess;
 
 const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
 
-const waitForServer = async (url: string, maxAttempts = 30, interval = 1000): Promise<void> => {
+const waitForServer = async (url: string, maxAttempts = 60, interval = 500): Promise<void> => {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       await axios.get(url);
