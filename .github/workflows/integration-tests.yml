@@ -174,16 +174,16 @@ jobs:
 
           echo "Running features: $FEATURE_FILES"
 
-          # Run tests with specific feature files
-          TS_NODE_PROJECT=test/integration/tsconfig.json cucumber-js \
+          # Run tests with specific feature files using npx to ensure cucumber-js is available
+          TS_NODE_PROJECT=test/integration/tsconfig.json npx cucumber-js \
             $FEATURE_FILES \
             --require-module ts-node/register \
             --require test/integration/support/world.ts \
             --require test/integration/support/hooks.ts \
             --require test/integration/step-definitions/common.steps.ts \
             --require 'test/integration/step-definitions/*.steps.ts' \
-            --format json:test-reports/cucumber-report-${{ matrix.test-suite.name }}.json \
-            --format html:test-reports/cucumber-report-${{ matrix.test-suite.name }}.html \
+            --format json:test-reports/cucumber-report-$(echo "${{ matrix.test-suite.name }}" | tr ' ' '-').json \
+            --format html:test-reports/cucumber-report-$(echo "${{ matrix.test-suite.name }}" | tr ' ' '-').html \
             --format progress
 
       - name: Upload Test Reports
@@ -204,13 +204,14 @@ jobs:
           echo "**Environment:** ${{ github.event.inputs.environment || 'production' }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [ -f "test-reports/cucumber-report-${{ matrix.test-suite.name }}.json" ]; then
+          REPORT_NAME=$(echo "${{ matrix.test-suite.name }}" | tr ' ' '-')
+          if [ -f "test-reports/cucumber-report-${REPORT_NAME}.json" ]; then
             # Parse test results from JSON report
             echo "**Test Results:**" >> $GITHUB_STEP_SUMMARY
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
             node -e "
               const fs = require('fs');
-              const report = JSON.parse(fs.readFileSync('test-reports/cucumber-report-${{ matrix.test-suite.name }}.json'));
+              const report = JSON.parse(fs.readFileSync('test-reports/cucumber-report-${REPORT_NAME}.json'));
               let passed = 0, failed = 0, skipped = 0;
 
               report.forEach(feature => {
