@@ -915,9 +915,38 @@ Given('another user has created a form with responses', function (this: CustomWo
   testData.set('otherUserForm', true);
 });
 
-Given('I do not have access to that form', function (this: CustomWorld) {
-  // Mark that we don't have access to the other user's form
-  testData.set('noAccess', true);
+// Note: 'I do not have access to that form' step is defined in form-lifecycle.steps.ts to avoid conflicts
+
+Given('the form is published', async function (this: CustomWorld) {
+  // Ensure the test form is published for analytics testing
+  if (!testForm.isPublished) {
+    const updateInput = {
+      isPublished: true
+    };
+
+    const mutation = `
+      mutation UpdateForm($id: ID!, $input: UpdateFormInput!) {
+        updateForm(id: $id, input: $input) {
+          id
+          isPublished
+        }
+      }
+    `;
+
+    const response = await formTestUtils.authUtils.graphqlRequest(
+      mutation,
+      { id: testForm.id, input: updateInput },
+      this.authToken!
+    );
+
+    if (response.data.errors) {
+      throw new Error(`Failed to publish form: ${response.data.errors[0].message}`);
+    }
+
+    testForm.isPublished = true;
+  }
+
+  expect(testForm.isPublished).toBe(true);
 });
 
 Given('I am not authenticated', function (this: CustomWorld) {

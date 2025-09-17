@@ -102,7 +102,7 @@ export interface SubmitResponseInput {
 }
 
 export class FormTestUtils {
-  private authUtils: AuthUtils;
+  public authUtils: AuthUtils;
   private baseURL: string;
 
   constructor(baseURL: string = 'http://localhost:4000') {

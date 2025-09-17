@@ -68,7 +68,7 @@ Feature: Form Lifecycle Management
     Then the form settings should be updated successfully
     And the thank you message should be customized
 
-  @FormUpdate @ErrorHandling
+  @FormUpdate @ErrorHandling @Permission
   Scenario: Fail to update form without proper permissions
     Given another user has created a form
     And I have VIEWER permission to that form
@@ -76,7 +76,7 @@ Feature: Form Lifecycle Management
     Then the form update should fail
     And I should receive a permission error
 
-  @FormUpdate @ErrorHandling
+  @FormUpdate @ErrorHandling @Permission
   Scenario: Fail to publish form without OWNER permission
     Given another user has created a form
     And I have EDITOR permission to that form
@@ -94,7 +94,7 @@ Feature: Form Lifecycle Management
     And the form should be accessible via the new URL
     And the old URL should no longer work
 
-  @FormURL @ErrorHandling
+  @FormURL @ErrorHandling @Permission
   Scenario: Fail to regenerate URL without EDITOR permission
     Given another user has created a form
     And I have VIEWER permission to that form
@@ -111,7 +111,7 @@ Feature: Form Lifecycle Management
     And the form should no longer be accessible
     And attempting to access the form should return "Form not found"
 
-  @FormDeletion @ErrorHandling
+  @FormDeletion @ErrorHandling @Permission
   Scenario: Fail to delete form without OWNER permission
     Given another user has created a form
     And I have EDITOR permission to that form
@@ -143,7 +143,7 @@ Feature: Form Lifecycle Management
     And the form schema should be included
     And no permission-sensitive data should be exposed
 
-  @FormRetrieval @ErrorHandling
+  @FormRetrieval @ErrorHandling @Permission
   Scenario: Fail to retrieve form without proper permissions
     Given another user has created a private form
     And I do not have access to that form

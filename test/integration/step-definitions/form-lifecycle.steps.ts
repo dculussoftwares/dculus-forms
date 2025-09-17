@@ -495,14 +495,51 @@ Given('another user has created a form', async function (this: CustomWorld) {
   (this as any).storeTestUser('other', otherUser, otherUserToken, signUpResult.organization.id);
 });
 
-Given('I have {string} permission to that form', async function (this: CustomWorld, permissionLevel: string) {
-  // In a real implementation, this would involve sharing the form with specific permissions
-  // For now, we'll simulate this by storing the permission level
-  testData.set('simulatedPermission', permissionLevel);
-
-  // Note: This step assumes that form sharing functionality is implemented
-  // The actual implementation would use the shareForm mutation to grant specific permissions
+Given('I have VIEWER permission to that form', async function (this: CustomWorld) {
+  await shareFormWithUser.call(this, 'VIEWER');
 });
+
+Given('I have EDITOR permission to that form', async function (this: CustomWorld) {
+  await shareFormWithUser.call(this, 'EDITOR');
+});
+
+// Helper function to share form with current user
+async function shareFormWithUser(this: CustomWorld, permissionLevel: string) {
+  // Share the form with the current user with specified permission
+  const shareInput = {
+    formId: otherUserForm.id,
+    sharingScope: 'SPECIFIC_MEMBERS',
+    userPermissions: [
+      {
+        userId: this.currentUser!.id,
+        permission: permissionLevel
+      }
+    ]
+  };
+
+  const shareMutation = `
+    mutation ShareForm($input: ShareFormInput!) {
+      shareForm(input: $input) {
+        sharingScope
+        defaultPermission
+        permissions {
+          id
+          userId
+          permission
+        }
+      }
+    }
+  `;
+
+  try {
+    await formTestUtils.authUtils.graphqlRequest(shareMutation, { input: shareInput }, otherUserToken);
+    testData.set('grantedPermission', permissionLevel);
+  } catch (error: any) {
+    console.error('Failed to share form:', error.message);
+    testData.set('lastError', error.message);
+    throw error;
+  }
+}
 
 Given('I do not have access to that form', function (this: CustomWorld) {
   // This is implicitly true since the form was created by another user
