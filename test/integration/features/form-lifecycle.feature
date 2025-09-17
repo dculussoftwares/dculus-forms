@@ -1,3 +1,4 @@
+@FormLifecycle
 Feature: Form Lifecycle Management
   As a form creator
   I want to manage form creation, updates, and deletion

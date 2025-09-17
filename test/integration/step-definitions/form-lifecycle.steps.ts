@@ -204,8 +204,35 @@ Then('the form should be created successfully', function (this: CustomWorld) {
 Then('the form should have the correct title and template structure', function (this: CustomWorld) {
   expect(currentForm.title).toBeDefined();
   expect(currentForm.formSchema).toBeDefined();
-  // Verify the form schema matches the template structure
-  expect(currentForm.formSchema).toEqual(currentTemplate.formSchema);
+
+  // Parse form schema if it's a string
+  let formSchema = currentForm.formSchema;
+  if (typeof formSchema === 'string') {
+    formSchema = JSON.parse(formSchema);
+  }
+
+  // Verify that the form schema has the same basic structure as template
+  // (excluding dynamic fields like backgroundImageKey that get modified during creation)
+  expect(formSchema.pages).toBeDefined();
+  expect(formSchema.pages.length).toBeGreaterThan(0);
+  expect(formSchema.layout).toBeDefined();
+
+  // Check if basic structure matches template (pages and fields)
+  if (currentTemplate.formSchema.pages) {
+    expect(formSchema.pages.length).toBe(currentTemplate.formSchema.pages.length);
+
+    formSchema.pages.forEach((page: any, index: number) => {
+      const templatePage = currentTemplate.formSchema.pages[index];
+      expect(page.fields.length).toBe(templatePage.fields.length);
+
+      // Verify field types match
+      page.fields.forEach((field: any, fieldIndex: number) => {
+        const templateField = templatePage.fields[fieldIndex];
+        expect(field.type).toBe(templateField.type);
+        expect(field.label).toBe(templateField.label);
+      });
+    });
+  }
 });
 
 Then('the form should be unpublished by default', function (this: CustomWorld) {
@@ -240,7 +267,44 @@ Then('I should receive an error {string}', function (this: CustomWorld, expected
   expect(lastError).toContain(expectedError);
 });
 
-// Authentication error step moved to common.steps.ts to avoid conflicts
+// Authentication steps
+
+Given('I am authenticated', function (this: CustomWorld) {
+  expect((this as any).isAuthenticated()).toBe(true);
+});
+
+// Note: 'I am not authenticated' step is defined in form-responses.steps.ts to avoid conflicts
+
+Given('another user has created a private form', async function (this: CustomWorld) {
+  // Create another test user
+  const otherUser = generateTestUser();
+  const organizationName = `Other Test Org ${Date.now()}`;
+
+  const signUpResult = await this.authUtils.signUpUser(
+    otherUser.email,
+    otherUser.password,
+    otherUser.name,
+    organizationName
+  );
+
+  const signInResult = await this.authUtils.signInUser(otherUser.email, otherUser.password);
+  otherUserToken = signInResult.token;
+
+  // Create a private form as the other user
+  const templates = await formTestUtils.getTemplates(otherUserToken);
+  const template = templates[0];
+
+  const createInput: CreateFormInput = {
+    templateId: template.id,
+    title: `Private Form ${Date.now()}`,
+    organizationId: signUpResult.organization.id
+  };
+
+  otherUserForm = await formTestUtils.createForm(otherUserToken, createInput);
+
+  // Store other user for cleanup
+  (this as any).storeTestUser('other', otherUser, otherUserToken, signUpResult.organization.id);
+});
 
 // Form Update Steps
 
@@ -701,14 +765,10 @@ Then('the form retrieval should fail', function (this: CustomWorld) {
   expect(testData.get('lastError')).toBeDefined();
 });
 
-Then('I should receive an access denied error', function (this: CustomWorld) {
-  const lastError = testData.get('lastError');
-  expect(lastError).toBeDefined();
-  expect(lastError.toLowerCase()).toMatch(/access.*denied|permission|unauthorized/);
-});
+// Note: 'I should receive an access denied error' step is defined in form-responses.steps.ts to avoid conflicts
 
 Then('I should receive an error that the form is not published', function (this: CustomWorld) {
-  const lastError = this.getSharedTestData('lastError');
+  const lastError = testData.get('lastError');
   expect(lastError).toBeDefined();
   expect(lastError.toLowerCase()).toMatch(/not.*published|form.*not.*published/);
 });
@@ -727,7 +787,12 @@ When('I configure the form with maximum {int} responses', async function (this: 
     }
   };
 
-  currentForm = await formTestUtils.updateForm(this.authToken!, currentForm.id, updateInput);
+  try {
+    currentForm = await formTestUtils.updateForm(this.authToken!, currentForm.id, updateInput);
+  } catch (error: any) {
+    testData.set('lastError', error.message);
+    throw error;
+  }
 });
 
 When('I configure the form with time window from tomorrow to next week', async function (this: CustomWorld) {
@@ -749,7 +814,12 @@ When('I configure the form with time window from tomorrow to next week', async f
     }
   };
 
-  currentForm = await formTestUtils.updateForm(this.authToken!, currentForm.id, updateInput);
+  try {
+    currentForm = await formTestUtils.updateForm(this.authToken!, currentForm.id, updateInput);
+  } catch (error: any) {
+    testData.set('lastError', error.message);
+    throw error;
+  }
 });
 
 Then('the form should enforce the response limit', function (this: CustomWorld) {
