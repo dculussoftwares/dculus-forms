@@ -25,6 +25,19 @@ export const responsesResolvers = {
     },
     responsesByForm: async (_: any, { formId, page, limit, sortBy, sortOrder, filters }: { formId: string, page: number, limit: number, sortBy: string, sortOrder: string, filters?: any[] }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);
+
+      // Check if the user has access to this form before allowing response access
+      const form = await getFormById(formId);
+      if (!form) {
+        throw new Error("Form not found");
+      }
+
+      // Check if user is a member of the organization that owns this form
+      const userSession = context.auth.session;
+      if (!userSession || userSession.activeOrganizationId !== form.organizationId) {
+        throw new Error("Access denied: You do not have permission to view responses for this form");
+      }
+
       return await getResponsesByFormId(formId, page, limit, sortBy, sortOrder, filters);
     },
   },

@@ -57,7 +57,9 @@ Given('I create a test form', async function (this: CustomWorld) {
         id
         title
         shortUrl
-        organizationId
+        organization {
+          id
+        }
       }
     }
   `;

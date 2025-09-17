@@ -1,4 +1,4 @@
-import { Given, When, Then } from '@cucumber/cucumber';
+import { Given, When, Then, Before } from '@cucumber/cucumber';
 import { CustomWorld } from '../support/world';
 import { FormTestUtils, Form, FormTemplate, CreateFormInput, UpdateFormInput } from '../utils/form-test-utils';
 import { generateTestUser } from '../utils/test-data';
@@ -78,6 +78,16 @@ let otherUserToken: string;
 
 // Test data storage
 const testData = new Map<string, any>();
+
+// Reset state before each scenario
+Before(function(this: CustomWorld) {
+  // Reset form state to undefined to trigger re-creation
+  currentForm = undefined as any;
+  testData.clear();
+  if (!formTestUtils) {
+    formTestUtils = new FormTestUtils();
+  }
+});
 
 // Background Steps
 
@@ -311,6 +321,9 @@ Given('another user has created a private form', async function (this: CustomWor
 Given('I have created a form from a template', async function (this: CustomWorld) {
   if (!currentForm) {
     const templates = await formTestUtils.getTemplates(this.authToken!);
+    if (!templates || templates.length === 0) {
+      throw new Error('No templates available for testing');
+    }
     const template = templates[0];
 
     const organizationId = (this as any).getCurrentOrganizationId();
@@ -321,6 +334,7 @@ Given('I have created a form from a template', async function (this: CustomWorld
     };
 
     currentForm = await formTestUtils.createForm(this.authToken!, createInput);
+    console.log(`Created form: ${currentForm.id}`);
   }
 });
 
@@ -338,6 +352,14 @@ Given('I have created an unpublished form', async function (this: CustomWorld) {
     };
 
     currentForm = await formTestUtils.createForm(this.authToken!, createInput);
+
+    // Ensure form is unpublished if it was created as published
+    if (currentForm.isPublished) {
+      const updateInput: UpdateFormInput = {
+        isPublished: false
+      };
+      currentForm = await formTestUtils.updateForm(this.authToken!, currentForm.id, updateInput);
+    }
   }
   expect(currentForm.isPublished).toBe(false);
 });
@@ -526,6 +548,13 @@ async function shareFormWithUser(this: CustomWorld, permissionLevel: string) {
           id
           userId
           permission
+          grantedBy {
+            id
+            name
+            email
+          }
+          grantedAt
+          updatedAt
         }
       }
     }
@@ -757,6 +786,7 @@ When('I attempt to retrieve the form by its short URL without authentication', a
     throw new Error('Expected form retrieval to fail, but it succeeded');
   } catch (error: any) {
     testData.set('lastError', error.message);
+    this.setSharedTestData('lastError', error.message); // Also store in shared context
   }
 });
 
@@ -805,7 +835,7 @@ Then('the form retrieval should fail', function (this: CustomWorld) {
 // Note: 'I should receive an access denied error' step is defined in form-responses.steps.ts to avoid conflicts
 
 Then('I should receive an error that the form is not published', function (this: CustomWorld) {
-  const lastError = testData.get('lastError');
+  const lastError = this.getSharedTestData('lastError');
   expect(lastError).toBeDefined();
   expect(lastError.toLowerCase()).toMatch(/not.*published|form.*not.*published/);
 });
@@ -813,6 +843,10 @@ Then('I should receive an error that the form is not published', function (this:
 // Business Rules Steps
 
 When('I configure the form with maximum {int} responses', async function (this: CustomWorld, maxResponses: number) {
+  if (!currentForm) {
+    throw new Error('No current form available. Please create a form first.');
+  }
+
   const updateInput: UpdateFormInput = {
     settings: {
       submissionLimits: {
@@ -833,6 +867,10 @@ When('I configure the form with maximum {int} responses', async function (this: 
 });
 
 When('I configure the form with time window from tomorrow to next week', async function (this: CustomWorld) {
+  if (!currentForm) {
+    throw new Error('No current form available. Please create a form first.');
+  }
+
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
 
