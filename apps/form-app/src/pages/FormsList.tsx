@@ -2,16 +2,30 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { Button, Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, TypographyH1, TypographyH2, TypographyLarge, TypographySmall } from '@dculus/ui';
-import { GET_FORMS } from '../graphql/queries';
+import { GET_MY_FORMS_WITH_CATEGORY, GET_SHARED_FORMS_WITH_CATEGORY } from '../graphql/queries';
 import { useAppConfig } from '@/hooks';
 
 const FormsList: React.FC = () => {
   const navigate = useNavigate();
   const { organizationId } = useAppConfig();
-  const { loading, error, data } = useQuery(GET_FORMS, {
+  const { loading: myFormsLoading, error: myFormsError, data: myFormsData } = useQuery(GET_MY_FORMS_WITH_CATEGORY, {
     variables: { organizationId },
     skip: !organizationId
   });
+
+  const { loading: sharedFormsLoading, error: sharedFormsError, data: sharedFormsData } = useQuery(GET_SHARED_FORMS_WITH_CATEGORY, {
+    variables: { organizationId },
+    skip: !organizationId
+  });
+
+  const loading = myFormsLoading || sharedFormsLoading;
+  const error = myFormsError || sharedFormsError;
+
+  // Combine all forms
+  const allForms = [
+    ...(myFormsData?.formsWithCategory || []),
+    ...(sharedFormsData?.formsWithCategory || [])
+  ];
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
@@ -35,7 +49,7 @@ const FormsList: React.FC = () => {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {data?.accessibleForms?.map((form: any) => (
+        {allForms.map((form: any) => (
           <Card key={form.id} className="hover:shadow-md transition-shadow">
             <CardHeader>
               <CardTitle className="text-xl">{form.title}</CardTitle>
@@ -75,7 +89,7 @@ const FormsList: React.FC = () => {
         ))}
       </div>
 
-      {data?.accessibleForms?.length === 0 && (
+      {allForms.length === 0 && (
         <Card className="text-center py-12">
           <CardContent>
             <TypographyH2 className="mb-4">No forms created yet</TypographyH2>

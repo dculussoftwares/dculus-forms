@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
-import { GET_FORM_BY_ID, GET_FORMS_DASHBOARD } from '../graphql/queries';
+import { GET_FORM_BY_ID, GET_MY_FORMS_WITH_CATEGORY } from '../graphql/queries';
 import { DELETE_FORM, UPDATE_FORM } from '../graphql/mutations';
 import { useAppConfig } from '@/hooks';
 
@@ -36,14 +36,14 @@ export const useFormDashboard = (formId: string | undefined) => {
       if (data?.deleteForm && organizationId) {
         cache.updateQuery(
           {
-            query: GET_FORMS_DASHBOARD,
+            query: GET_MY_FORMS_WITH_CATEGORY,
             variables: { organizationId },
           },
           (existingData) => {
-            if (!existingData?.forms) return existingData;
+            if (!existingData?.formsWithCategory) return existingData;
             return {
               ...existingData,
-              forms: existingData.forms.filter((form: any) => form.id !== formId),
+              formsWithCategory: existingData.formsWithCategory.filter((form: any) => form.id !== formId),
             };
           }
         );

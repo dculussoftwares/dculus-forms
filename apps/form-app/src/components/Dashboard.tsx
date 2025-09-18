@@ -12,7 +12,7 @@ import { FileText, Eye, Plus, Users2, Edit3, Search, X } from 'lucide-react';
 import { useNavigate, Routes, Route } from 'react-router-dom';
 import { useState, useMemo } from 'react';
 import { useQuery } from '@apollo/client';
-import { GET_ACTIVE_ORGANIZATION, GET_MY_FORMS, GET_SHARED_FORMS } from '../graphql/queries';
+import { GET_ACTIVE_ORGANIZATION, GET_MY_FORMS_WITH_CATEGORY, GET_SHARED_FORMS_WITH_CATEGORY } from '../graphql/queries';
 import Templates from '../pages/Templates';
 import FormDashboard from '../pages/FormDashboard';
 import { FilterChip } from './ui/FilterChip';
@@ -52,12 +52,12 @@ function FormsListDashboard() {
   const { data: orgData } = useQuery(GET_ACTIVE_ORGANIZATION);
 
   // Separate queries for each category
-  const { data: myFormsData, loading: myFormsLoading, error: myFormsError } = useQuery(GET_MY_FORMS, {
+  const { data: myFormsData, loading: myFormsLoading, error: myFormsError } = useQuery(GET_MY_FORMS_WITH_CATEGORY, {
     variables: { organizationId: orgData?.activeOrganization?.id },
     skip: !orgData?.activeOrganization?.id,
   });
 
-  const { data: sharedFormsData, loading: sharedFormsLoading, error: sharedFormsError } = useQuery(GET_SHARED_FORMS, {
+  const { data: sharedFormsData, loading: sharedFormsLoading, error: sharedFormsError } = useQuery(GET_SHARED_FORMS_WITH_CATEGORY, {
     variables: { organizationId: orgData?.activeOrganization?.id },
     skip: !orgData?.activeOrganization?.id,
   });

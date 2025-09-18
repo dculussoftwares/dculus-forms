@@ -10,65 +10,6 @@ export const GET_ACTIVE_ORGANIZATION = gql`
   }
 `;
 
-export const GET_FORMS = gql`
-  query GetForms($organizationId: ID!) {
-    accessibleForms(organizationId: $organizationId) {
-      id
-      title
-      description
-      shortUrl
-      isPublished
-      sharingScope
-      defaultPermission
-      userPermission
-      organization {
-        id
-        name
-        slug
-      }
-      createdBy {
-        id
-        name
-        email
-      }
-      responseCount
-      createdAt
-      updatedAt
-      metadata {
-        pageCount
-        fieldCount
-        backgroundImageKey
-        backgroundImageUrl
-        lastUpdated
-      }
-    }
-  }
-`;
-
-export const GET_FORMS_DASHBOARD = gql`
-  query GetFormsDashboard($organizationId: ID!) {
-    accessibleForms(organizationId: $organizationId) {
-      id
-      title
-      description
-      shortUrl
-      isPublished
-      sharingScope
-      defaultPermission
-      userPermission
-      responseCount
-      createdAt
-      updatedAt
-      metadata {
-        pageCount
-        fieldCount
-        backgroundImageKey
-        backgroundImageUrl
-        lastUpdated
-      }
-    }
-  }
-`;
 
 export const GET_FORMS_WITH_CATEGORY = gql`
   query GetFormsWithCategory($organizationId: ID!, $category: FormCategory!) {
@@ -106,8 +47,8 @@ export const GET_FORMS_WITH_CATEGORY = gql`
   }
 `;
 
-export const GET_MY_FORMS = gql`
-  query GetMyForms($organizationId: ID!) {
+export const GET_MY_FORMS_WITH_CATEGORY = gql`
+  query GetMyFormsWithCategory($organizationId: ID!) {
     formsWithCategory(organizationId: $organizationId, category: MY_FORMS) {
       id
       title
@@ -142,8 +83,8 @@ export const GET_MY_FORMS = gql`
   }
 `;
 
-export const GET_SHARED_FORMS = gql`
-  query GetSharedForms($organizationId: ID!) {
+export const GET_SHARED_FORMS_WITH_CATEGORY = gql`
+  query GetSharedFormsWithCategory($organizationId: ID!) {
     formsWithCategory(organizationId: $organizationId, category: SHARED_WITH_ME) {
       id
       title
