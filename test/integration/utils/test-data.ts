@@ -159,9 +159,9 @@ export const TEST_CONFIG = {
   WEAK_PASSWORD: 'weak',
   STRONG_PASSWORD: 'StrongP@ssw0rd123!',
   
-  // Test timeouts
-  AUTH_TIMEOUT: 5000,
-  API_TIMEOUT: 10000,
+  // Test timeouts - increased for remote backends
+  AUTH_TIMEOUT: process.env.TEST_BASE_URL?.includes('localhost') ? 5000 : 15000,
+  API_TIMEOUT: process.env.TEST_BASE_URL?.includes('localhost') ? 10000 : 20000,
   
   // Test data cleanup
   CLEANUP_ENABLED: process.env.TEST_CLEANUP !== 'false',

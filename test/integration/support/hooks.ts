@@ -1,8 +1,12 @@
-import { Before, After, BeforeAll, AfterAll } from '@cucumber/cucumber';
+import { Before, After, BeforeAll, AfterAll, setDefaultTimeout } from '@cucumber/cucumber';
 import { spawn, ChildProcess } from 'child_process';
 import axios from 'axios';
 import path from 'path';
 import { CustomWorld } from './world';
+
+// Set step timeout based on backend type (local vs remote)
+const isRemoteBackend = process.env.TEST_BASE_URL && !process.env.TEST_BASE_URL.includes('localhost');
+setDefaultTimeout(isRemoteBackend ? 30000 : 10000); // 30s for remote, 10s for local
 
 let backendProcess: ChildProcess;
 
