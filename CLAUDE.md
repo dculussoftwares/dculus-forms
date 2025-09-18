@@ -21,6 +21,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Type check**: `pnpm type-check`
 - **Lint code**: `pnpm lint`
 
+### Integration Testing
+- **Local tests**: `pnpm test:integration` - Run all integration tests against local backend
+- **Production tests**: `pnpm test:integration:production` - Run all integration tests against deployed backend
+- **Health check**: `pnpm test:integration:health` - Quick health test against deployed backend
+- **Auth tests**: `pnpm test:integration:auth` - Authentication tests against deployed backend
+
 ## Architecture Overview
 
 This is a **pnpm monorepo** with four main applications and shared packages:
