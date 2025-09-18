@@ -429,18 +429,7 @@ class CollaborationManager {
         url: wsUrlWithAuth,
         name: formId,
         document: this.ydoc,
-        token: authToken || undefined, // Also try passing as token parameter
-        parameters: {
-          // Additional parameters if needed
-          formId: formId,
-          ...(authToken && { token: authToken }), // Pass token in parameters too
-        },
-        // Try passing token via WebSocket options
-        websocketOptions: {
-          headers: authToken ? {
-            'Authorization': `Bearer ${authToken}`
-          } : undefined
-        }
+        token: authToken || undefined,
       });
 
       this.setupConnectionHandlers();
