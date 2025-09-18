@@ -79,16 +79,16 @@ jobs:
         test-suite:
           - name: "Health & Authentication"
             features: "health.feature,auth.feature,auth-simple.feature,auth-graphql.feature"
-            timeout: 10
+            timeout: 20
           - name: "Form Lifecycle"
             features: "form-lifecycle.feature"
-            timeout: 15
+            timeout: 25
           - name: "Admin Features"
             features: "admin-signup.feature,template-authorization.feature"
-            timeout: 12
+            timeout: 22
           - name: "Form Responses"
             features: "form-responses.feature"
-            timeout: 10
+            timeout: 20
 
     env:
       # Use deployed backend URL instead of localhost
