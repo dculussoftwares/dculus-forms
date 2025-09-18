@@ -70,6 +70,114 @@ export const GET_FORMS_DASHBOARD = gql`
   }
 `;
 
+export const GET_FORMS_WITH_CATEGORY = gql`
+  query GetFormsWithCategory($organizationId: ID!, $category: FormCategory!) {
+    formsWithCategory(organizationId: $organizationId, category: $category) {
+      id
+      title
+      description
+      shortUrl
+      isPublished
+      sharingScope
+      defaultPermission
+      userPermission
+      category
+      responseCount
+      createdAt
+      updatedAt
+      organization {
+        id
+        name
+        slug
+      }
+      createdBy {
+        id
+        name
+        email
+      }
+      metadata {
+        pageCount
+        fieldCount
+        backgroundImageKey
+        backgroundImageUrl
+        lastUpdated
+      }
+    }
+  }
+`;
+
+export const GET_MY_FORMS = gql`
+  query GetMyForms($organizationId: ID!) {
+    formsWithCategory(organizationId: $organizationId, category: MY_FORMS) {
+      id
+      title
+      description
+      shortUrl
+      isPublished
+      sharingScope
+      defaultPermission
+      userPermission
+      category
+      responseCount
+      createdAt
+      updatedAt
+      organization {
+        id
+        name
+        slug
+      }
+      createdBy {
+        id
+        name
+        email
+      }
+      metadata {
+        pageCount
+        fieldCount
+        backgroundImageKey
+        backgroundImageUrl
+        lastUpdated
+      }
+    }
+  }
+`;
+
+export const GET_SHARED_FORMS = gql`
+  query GetSharedForms($organizationId: ID!) {
+    formsWithCategory(organizationId: $organizationId, category: SHARED_WITH_ME) {
+      id
+      title
+      description
+      shortUrl
+      isPublished
+      sharingScope
+      defaultPermission
+      userPermission
+      category
+      responseCount
+      createdAt
+      updatedAt
+      organization {
+        id
+        name
+        slug
+      }
+      createdBy {
+        id
+        name
+        email
+      }
+      metadata {
+        pageCount
+        fieldCount
+        backgroundImageKey
+        backgroundImageUrl
+        lastUpdated
+      }
+    }
+  }
+`;
+
 export const GET_FORM_BY_ID = gql`
   query GetFormById($id: ID!) {
     form(id: $id) {

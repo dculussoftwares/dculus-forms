@@ -90,6 +90,7 @@ export const typeDefs = gql`
     defaultPermission: PermissionLevel!
     permissions: [FormPermission!]!
     userPermission: PermissionLevel
+    category: FormCategory
     createdAt: String!
     updatedAt: String!
     metadata: FormMetadata
@@ -124,6 +125,11 @@ export const typeDefs = gql`
     EDITOR
     VIEWER
     NO_ACCESS
+  }
+
+  enum FormCategory {
+    MY_FORMS
+    SHARED_WITH_ME
   }
 
   type FormPermission {
@@ -741,6 +747,7 @@ export const typeDefs = gql`
     # Form Sharing Queries
     formPermissions(formId: ID!): [FormPermission!]!
     accessibleForms(organizationId: ID!): [Form!]!
+    formsWithCategory(organizationId: ID!, category: FormCategory!): [Form!]!
     organizationMembers(organizationId: ID!): [User!]!
 
     # Template Queries

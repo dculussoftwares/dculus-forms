@@ -12,9 +12,10 @@ import { FileText, Eye, Plus, Users2, Edit3, Search, X } from 'lucide-react';
 import { useNavigate, Routes, Route } from 'react-router-dom';
 import { useState, useMemo } from 'react';
 import { useQuery } from '@apollo/client';
-import { GET_FORMS_DASHBOARD, GET_ACTIVE_ORGANIZATION } from '../graphql/queries';
+import { GET_ACTIVE_ORGANIZATION, GET_MY_FORMS, GET_SHARED_FORMS } from '../graphql/queries';
 import Templates from '../pages/Templates';
 import FormDashboard from '../pages/FormDashboard';
+import { FilterChip } from './ui/FilterChip';
 
 export function Dashboard() {
   return (
@@ -42,29 +43,73 @@ export function Dashboard() {
   );
 }
 
+type FilterCategory = 'all' | 'my-forms' | 'shared-with-me';
+
 function FormsListDashboard() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeFilter, setActiveFilter] = useState<FilterCategory>('all');
   const { data: orgData } = useQuery(GET_ACTIVE_ORGANIZATION);
-  const { data: formsData, loading: formsLoading, error: formsError } = useQuery(GET_FORMS_DASHBOARD, {
+
+  // Separate queries for each category
+  const { data: myFormsData, loading: myFormsLoading, error: myFormsError } = useQuery(GET_MY_FORMS, {
     variables: { organizationId: orgData?.activeOrganization?.id },
     skip: !orgData?.activeOrganization?.id,
   });
 
-  const forms = formsData?.accessibleForms || [];
+  const { data: sharedFormsData, loading: sharedFormsLoading, error: sharedFormsError } = useQuery(GET_SHARED_FORMS, {
+    variables: { organizationId: orgData?.activeOrganization?.id },
+    skip: !orgData?.activeOrganization?.id,
+  });
 
-  // Filter forms based on search term
-  const filteredForms = useMemo(() => {
-    if (!searchTerm.trim()) return forms;
-    
-    return forms.filter((form: any) => {
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        form.title?.toLowerCase().includes(searchLower) ||
-        form.description?.toLowerCase().includes(searchLower)
-      );
-    });
-  }, [forms, searchTerm]);
+  // Extract forms from responses
+  const myForms = myFormsData?.formsWithCategory || [];
+  const sharedForms = sharedFormsData?.formsWithCategory || [];
+  const allForms = [...myForms, ...sharedForms];
+
+  // Loading and error states
+  const formsLoading = myFormsLoading || sharedFormsLoading;
+  const formsError = myFormsError || sharedFormsError;
+
+  // Categorized forms
+  const categorizedForms = useMemo(() => {
+    return {
+      myForms,
+      sharedWithMe: sharedForms
+    };
+  }, [myForms, sharedForms]);
+
+  // Filter forms based on search term and chip filter
+  const filteredCategorizedForms = useMemo(() => {
+    let formsToShow = categorizedForms;
+
+    // Apply chip filter first
+    if (activeFilter === 'my-forms') {
+      formsToShow = {
+        myForms: categorizedForms.myForms,
+        sharedWithMe: []
+      };
+    } else if (activeFilter === 'shared-with-me') {
+      formsToShow = {
+        myForms: [],
+        sharedWithMe: categorizedForms.sharedWithMe
+      };
+    }
+
+    // Apply search filter
+    if (!searchTerm.trim()) return formsToShow;
+
+    const searchLower = searchTerm.toLowerCase();
+    const filterForms = (formsList: any[]) => formsList.filter((form: any) =>
+      form.title?.toLowerCase().includes(searchLower) ||
+      form.description?.toLowerCase().includes(searchLower)
+    );
+
+    return {
+      myForms: filterForms(formsToShow.myForms),
+      sharedWithMe: filterForms(formsToShow.sharedWithMe)
+    };
+  }, [categorizedForms, searchTerm, activeFilter]);
 
   const clearSearch = () => {
     setSearchTerm('');
@@ -82,11 +127,11 @@ function FormsListDashboard() {
           <div>
             <TypographyH3 className="text-2xl font-bold tracking-tight">Your Forms</TypographyH3>
             <TypographyMuted className="text-muted-foreground">
-              {forms.length} form{forms.length !== 1 ? 's' : ''} in your workspace
-              {searchTerm && ` • ${filteredForms.length} matching search`}
+              {allForms.length} form{allForms.length !== 1 ? 's' : ''} in your workspace
+              {searchTerm && ` • ${filteredCategorizedForms.myForms.length + filteredCategorizedForms.sharedWithMe.length} matching search`}
             </TypographyMuted>
           </div>
-          <Button 
+          <Button
             onClick={() => navigate('/dashboard/templates')}
             className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
             size="lg"
@@ -97,46 +142,101 @@ function FormsListDashboard() {
         </div>
 
         {/* Search Bar */}
-        {forms.length > 0 && (
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search forms by name or description..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-10"
-              />
-              {searchTerm && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearSearch}
-                  className="absolute right-1 top-1/2 h-7 w-7 p-0 -translate-y-1/2 hover:bg-muted"
+        {allForms.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search forms by name or description..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-10"
+                />
+                {searchTerm && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearSearch}
+                    className="absolute right-1 top-1/2 h-7 w-7 p-0 -translate-y-1/2 hover:bg-muted"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Filter Chips */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <TypographySmall className="text-muted-foreground font-medium">
+                Filter:
+              </TypographySmall>
+              <div className="flex flex-wrap gap-2">
+                <FilterChip
+                  selected={activeFilter === 'all'}
+                  onClick={() => setActiveFilter('all')}
+                  variant="default"
                 >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
+                  All Forms ({allForms.length})
+                </FilterChip>
+                <FilterChip
+                  selected={activeFilter === 'my-forms'}
+                  onClick={() => setActiveFilter('my-forms')}
+                  variant="default"
+                >
+                  My Forms ({categorizedForms.myForms.length})
+                </FilterChip>
+                <FilterChip
+                  selected={activeFilter === 'shared-with-me'}
+                  onClick={() => setActiveFilter('shared-with-me')}
+                  variant="default"
+                >
+                  Shared With Me ({categorizedForms.sharedWithMe.length})
+                </FilterChip>
+              </div>
             </div>
           </div>
         )}
 
         {/* Forms Grid */}
         {formsLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Card key={i} className="overflow-hidden animate-pulse">
-                <div className="h-48 bg-muted"></div>
-                <CardContent className="p-6 space-y-3">
-                  <div className="h-4 bg-muted rounded w-3/4"></div>
-                  <div className="h-3 bg-muted rounded w-1/2"></div>
-                  <div className="flex gap-2 pt-2">
-                    <div className="h-6 bg-muted rounded w-16"></div>
-                    <div className="h-6 bg-muted rounded w-20"></div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="space-y-8">
+            <div>
+              <TypographyH3 className="text-lg font-semibold mb-4">My Forms</TypographyH3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Card key={i} className="overflow-hidden animate-pulse">
+                    <div className="h-48 bg-muted"></div>
+                    <CardContent className="p-6 space-y-3">
+                      <div className="h-4 bg-muted rounded w-3/4"></div>
+                      <div className="h-3 bg-muted rounded w-1/2"></div>
+                      <div className="flex gap-2 pt-2">
+                        <div className="h-6 bg-muted rounded w-16"></div>
+                        <div className="h-6 bg-muted rounded w-20"></div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+            <div>
+              <TypographyH3 className="text-lg font-semibold mb-4">Shared With Me</TypographyH3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Card key={`shared-${i}`} className="overflow-hidden animate-pulse">
+                    <div className="h-48 bg-muted"></div>
+                    <CardContent className="p-6 space-y-3">
+                      <div className="h-4 bg-muted rounded w-3/4"></div>
+                      <div className="h-3 bg-muted rounded w-1/2"></div>
+                      <div className="flex gap-2 pt-2">
+                        <div className="h-6 bg-muted rounded w-16"></div>
+                        <div className="h-6 bg-muted rounded w-20"></div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
           </div>
         ) : formsError ? (
           <div className="text-center py-12">
@@ -145,7 +245,7 @@ function FormsListDashboard() {
               <div className="text-muted-foreground text-sm">Please try refreshing the page</div>
             </div>
           </div>
-        ) : filteredForms.length === 0 && !searchTerm ? (
+        ) : allForms.length === 0 ? (
           <div className="text-center py-20">
             <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-xl p-12 max-w-lg mx-auto">
               <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
@@ -155,7 +255,7 @@ function FormsListDashboard() {
               <TypographyMuted className="text-muted-foreground mb-6 max-w-sm mx-auto">
                 Get started by creating your first form from one of our beautiful templates
               </TypographyMuted>
-              <Button 
+              <Button
                 onClick={() => navigate('/dashboard/templates')}
                 size="lg"
                 className="bg-primary hover:bg-primary/90"
@@ -165,7 +265,7 @@ function FormsListDashboard() {
               </Button>
             </div>
           </div>
-        ) : filteredForms.length === 0 && searchTerm ? (
+        ) : (filteredCategorizedForms.myForms.length === 0 && filteredCategorizedForms.sharedWithMe.length === 0 && searchTerm) ? (
           <div className="text-center py-20">
             <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-xl p-12 max-w-lg mx-auto">
               <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
@@ -175,7 +275,7 @@ function FormsListDashboard() {
               <TypographyMuted className="text-muted-foreground mb-6 max-w-sm mx-auto">
                 No forms match your search for "{searchTerm}". Try a different search term.
               </TypographyMuted>
-              <Button 
+              <Button
                 onClick={clearSearch}
                 variant="outline"
                 size="lg"
@@ -186,10 +286,46 @@ function FormsListDashboard() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredForms.map((form: any) => (
-              <FormCard key={form.id} form={form} onNavigate={navigate} />
-            ))}
+          <div className="space-y-8">
+            {/* My Forms Section */}
+            {(filteredCategorizedForms.myForms.length > 0 || (!searchTerm && categorizedForms.myForms.length > 0)) && (
+              <div>
+                <TypographyH3 className="text-lg font-semibold mb-4">
+                  My Forms ({categorizedForms.myForms.length})
+                </TypographyH3>
+                {filteredCategorizedForms.myForms.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {filteredCategorizedForms.myForms.map((form: any) => (
+                      <FormCard key={form.id} form={form} onNavigate={navigate} />
+                    ))}
+                  </div>
+                ) : searchTerm ? (
+                  <TypographyMuted className="text-muted-foreground italic">
+                    No forms match your search in this category.
+                  </TypographyMuted>
+                ) : null}
+              </div>
+            )}
+
+            {/* Shared With Me Section */}
+            {(filteredCategorizedForms.sharedWithMe.length > 0 || (!searchTerm && categorizedForms.sharedWithMe.length > 0)) && (
+              <div>
+                <TypographyH3 className="text-lg font-semibold mb-4">
+                  Shared With Me ({categorizedForms.sharedWithMe.length})
+                </TypographyH3>
+                {filteredCategorizedForms.sharedWithMe.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {filteredCategorizedForms.sharedWithMe.map((form: any) => (
+                      <FormCard key={form.id} form={form} onNavigate={navigate} showPermissionBadge />
+                    ))}
+                  </div>
+                ) : searchTerm ? (
+                  <TypographyMuted className="text-muted-foreground italic">
+                    No forms match your search in this category.
+                  </TypographyMuted>
+                ) : null}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -200,9 +336,10 @@ function FormsListDashboard() {
 interface FormCardProps {
   form: any;
   onNavigate: (path: string) => void;
+  showPermissionBadge?: boolean;
 }
 
-function FormCard({ form, onNavigate }: FormCardProps) {
+function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardProps) {
   // Use metadata if available, otherwise fallback to defaults
   const metadata = form.metadata;
   const primaryColor = '#3b82f6';
@@ -263,15 +400,24 @@ function FormCard({ form, onNavigate }: FormCardProps) {
           </div>
         )}
         
-        {/* Status Badge */}
-        <div className="absolute top-4 right-4">
+        {/* Status & Permission Badges */}
+        <div className="absolute top-4 right-4 flex flex-col gap-2">
           <div className={`px-3 py-1 rounded-full text-xs font-medium shadow-lg ${
-            form.isPublished 
-              ? 'bg-green-100 text-green-700 border border-green-200' 
+            form.isPublished
+              ? 'bg-green-100 text-green-700 border border-green-200'
               : 'bg-yellow-100 text-yellow-700 border border-yellow-200'
           }`}>
             {form.isPublished ? 'Published' : 'Draft'}
           </div>
+          {showPermissionBadge && form.userPermission && (
+            <div className={`px-3 py-1 rounded-full text-xs font-medium shadow-lg ${
+              form.userPermission === 'EDITOR'
+                ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                : 'bg-gray-100 text-gray-700 border border-gray-200'
+            }`}>
+              {form.userPermission === 'EDITOR' ? 'Editor' : 'Viewer'}
+            </div>
+          )}
         </div>
 
         {/* Quick Actions */}

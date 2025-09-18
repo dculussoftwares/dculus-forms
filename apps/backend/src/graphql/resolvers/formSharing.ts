@@ -161,6 +161,69 @@ export const formSharingResolvers = {
       return forms;
     },
 
+    formsWithCategory: async (
+      _: any,
+      { organizationId, category }: {
+        organizationId: string;
+        category: string;
+      },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+      const userId = context.auth.user!.id;
+
+      let whereCondition;
+
+      if (category === 'MY_FORMS') {
+        // Return only forms owned by the user
+        whereCondition = {
+          organizationId,
+          createdById: userId
+        };
+      } else if (category === 'SHARED_WITH_ME') {
+        // Return only forms shared with the user (not owned by user)
+        whereCondition = {
+          organizationId,
+          createdById: { not: userId },
+          OR: [
+            // Forms with explicit permissions for the user
+            {
+              permissions: {
+                some: {
+                  userId,
+                  permission: { not: PermissionLevel.NO_ACCESS }
+                }
+              }
+            },
+            // Forms shared with all organization members
+            {
+              sharingScope: SharingScope.ALL_ORG_MEMBERS,
+              defaultPermission: { not: PermissionLevel.NO_ACCESS }
+            }
+          ]
+        };
+      } else {
+        throw new GraphQLError(`Invalid category: ${category}. Must be MY_FORMS or SHARED_WITH_ME`);
+      }
+
+      const forms = await prisma.form.findMany({
+        where: whereCondition,
+        include: {
+          organization: true,
+          createdBy: true,
+          permissions: {
+            include: {
+              user: true,
+              grantedBy: true
+            }
+          }
+        },
+        orderBy: { updatedAt: 'desc' }
+      });
+
+      return forms;
+    },
+
     organizationMembers: async (_: any, { organizationId }: { organizationId: string }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);
 
@@ -367,9 +430,16 @@ export const formSharingResolvers = {
 
     userPermission: async (parent: any, _args: any, context: { auth: BetterAuthContext }) => {
       if (!context.auth?.user?.id) return null;
-      
+
       const accessCheck = await checkFormAccess(context.auth.user.id, parent.id);
       return accessCheck.permission;
+    },
+
+    category: (parent: any, _args: any, context: { auth: BetterAuthContext }) => {
+      const userId = context.auth?.user?.id;
+      if (!userId || !parent.createdById) return null;
+
+      return parent.createdById === userId ? 'MY_FORMS' : 'SHARED_WITH_ME';
     }
   },
 
