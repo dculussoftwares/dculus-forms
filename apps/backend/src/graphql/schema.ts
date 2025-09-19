@@ -775,7 +775,6 @@ export const typeDefs = gql`
   type Mutation {
     # Auth Mutations
     createOrganization(name: String!): Organization
-    setActiveOrganization(organizationId: ID!): Organization
     
     
     # Form Mutations

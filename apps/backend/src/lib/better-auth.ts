@@ -45,7 +45,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
     bearer(),
     organization({
       allowUserToCreateOrganization: true,
-      organizationLimit: 5,
+      organizationLimit: 1, // Restrict users to only one organization
       creatorRole: 'companyOwner',
       membershipLimit: 100,
       sendInvitationEmail: async ({ email, invitation, organization, inviter }) => {
@@ -92,8 +92,8 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
             where: {
               userId: session.userId,
             },
-          }); 
-          
+          });
+
           console.log('Member found:', member?.id || 'none');
 
           return {
@@ -102,6 +102,27 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
               activeOrganizationId: member?.organizationId || null,
             },
           };
+        },
+      },
+    },
+    member: {
+      create: {
+        before: async (member: any) => {
+          console.log('Creating member for user:', member.userId);
+
+          // Check if user already belongs to an organization (single organization rule)
+          const existingMembership = await prisma.member.findFirst({
+            where: { userId: member.userId },
+          });
+
+          if (existingMembership) {
+            const { APIError } = await import('better-auth/api');
+            throw new APIError('BAD_REQUEST', {
+              message: 'User can only belong to one organization. You are already a member of an organization.',
+            });
+          }
+
+          return { data: member };
         },
       },
     },

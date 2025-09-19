@@ -39,11 +39,10 @@ import {
 } from "@dculus/ui"
 import { useAuth } from "../contexts/AuthContext"
 import { signOut } from "../lib/auth-client"
-import { OrganizationSwitcher } from "./OrganizationSwitcher"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { open } = useSidebar()
-  const { user } = useAuth()
+  const { user, activeOrganization } = useAuth()
   const location = useLocation()
   
   const navigationData = {
@@ -111,10 +110,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
 
       <SidebarContent className="flex-1">
-        {/* Organization Switcher */}
-        {open && (
+        {/* Organization Display */}
+        {open && activeOrganization && (
           <div className="px-3 py-2 border-b border-sidebar-border">
-            <OrganizationSwitcher />
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-sidebar-accent">
+              <div className="flex aspect-square size-6 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                <span className="text-xs font-medium">
+                  {activeOrganization.name.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div className="flex-1 text-left min-w-0">
+                <div className="text-sm font-medium truncate">
+                  {activeOrganization.name}
+                </div>
+                <div className="text-xs text-muted-foreground truncate">
+                  Organization
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

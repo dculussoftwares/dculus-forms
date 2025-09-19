@@ -1,3 +1,9 @@
+/**
+ * @deprecated This component is deprecated as users are now restricted to a single organization.
+ * The organization display is now handled directly in the AppSidebar component.
+ * This file is kept for reference but should not be used in new code.
+ */
+
 import React, { useState } from 'react';
 import { useQuery } from '@apollo/client';
 import {
@@ -11,7 +17,6 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-  toastError
 } from '@dculus/ui';
 import { ChevronDown, Building2, Check, Plus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -34,8 +39,8 @@ interface Organization {
 }
 
 export const OrganizationSwitcher: React.FC = () => {
-  const { activeOrganization, setActiveOrganization, user, organizationError } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const { activeOrganization, user, organizationError } = useAuth();
+  const [isLoading] = useState(false);
 
   const { data: userOrgsData, loading: orgsLoading } = useQuery(GET_USER_ORGANIZATIONS, {
     skip: !user,
@@ -44,20 +49,9 @@ export const OrganizationSwitcher: React.FC = () => {
 
   const organizations: Organization[] = userOrgsData?.me?.organizations || [];
 
-  const handleOrganizationSwitch = async (organizationId: string) => {
-    if (organizationId === activeOrganization?.id) return;
-
-    setIsLoading(true);
-    try {
-      const success = await setActiveOrganization(organizationId);
-      if (!success) {
-        toastError('Failed to switch organization', 'Please try again');
-      }
-    } catch (error) {
-      console.error('Error switching organization:', error);
-    } finally {
-      setIsLoading(false);
-    }
+  // Organization switching is deprecated - users can only have one organization
+  const handleOrganizationSwitch = async (_organizationId: string) => {
+    console.warn('Organization switching is deprecated - users can only have one organization');
   };
 
   // Show error state if there's an organization error

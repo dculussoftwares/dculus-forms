@@ -95,6 +95,15 @@ export const betterAuthResolvers = {
     ) => {
       requireAuth(context.auth);
 
+      // Check if user already belongs to an organization (single organization rule)
+      const existingMembership = await prisma.member.findFirst({
+        where: { userId: context.auth.user!.id },
+      });
+
+      if (existingMembership) {
+        throw new GraphQLError('User can only belong to one organization. You are already a member of an organization.');
+      }
+
       const organizationId = nanoid();
       const memberId = nanoid();
 
@@ -133,26 +142,5 @@ export const betterAuthResolvers = {
       });
     },
 
-    setActiveOrganization: async (
-      _: any,
-      { organizationId }: { organizationId: string },
-      context: { auth: BetterAuthContext; req: any }
-    ) => {
-      // 🔒 SECURITY FIX: Use centralized middleware to verify organization membership
-      await requireOrganizationMembership(context.auth, organizationId);
-
-      // User is verified member - return full organization with members
-      // (maintaining compatibility with existing GraphQL schema expectations)
-      return await prisma.organization.findUnique({
-        where: { id: organizationId },
-        include: {
-          members: {
-            include: {
-              user: true,
-            },
-          },
-        },
-      });
-    },
   },
 };
