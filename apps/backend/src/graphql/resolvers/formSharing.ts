@@ -118,48 +118,6 @@ export const formSharingResolvers = {
       });
     },
 
-    accessibleForms: async (_: any, { organizationId }: { organizationId: string }, context: { auth: BetterAuthContext }) => {
-      requireAuth(context.auth);
-      const userId = context.auth.user!.id;
-
-      // Get all forms in the organization where the user has access
-      const forms = await prisma.form.findMany({
-        where: {
-          organizationId,
-          OR: [
-            // Forms owned by the user
-            { createdById: userId },
-            // Forms with explicit permissions for the user
-            { 
-              permissions: {
-                some: {
-                  userId,
-                  permission: { not: PermissionLevel.NO_ACCESS }
-                }
-              }
-            },
-            // Forms shared with all organization members
-            {
-              sharingScope: SharingScope.ALL_ORG_MEMBERS,
-              defaultPermission: { not: PermissionLevel.NO_ACCESS }
-            }
-          ]
-        },
-        include: {
-          organization: true,
-          createdBy: true,
-          permissions: {
-            include: {
-              user: true,
-              grantedBy: true
-            }
-          }
-        },
-        orderBy: { updatedAt: 'desc' }
-      });
-
-      return forms;
-    },
 
     formsWithCategory: async (
       _: any,

@@ -1,9 +1,8 @@
-import { 
-  getAllForms, 
-  getFormById, 
+import {
+  getFormById,
   getFormByShortUrl,
-  createForm, 
-  updateForm, 
+  createForm,
+  updateForm,
   deleteForm,
   regenerateShortUrl
 } from '../../services/formService.js';
@@ -21,10 +20,6 @@ import { GraphQLError } from 'graphql';
 
 export const formsResolvers = {
   Query: {
-    forms: async (_: any, { organizationId }: { organizationId: string }, context: { auth: BetterAuthContext }) => {
-      requireAuth(context.auth);
-      return await getAllForms(organizationId);
-    },
     form: async (_: any, { id }: { id: string }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);
       

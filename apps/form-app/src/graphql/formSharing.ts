@@ -55,34 +55,6 @@ export const GET_ORGANIZATION_MEMBERS = gql`
   }
 `;
 
-export const GET_ACCESSIBLE_FORMS = gql`
-  query GetAccessibleForms($organizationId: ID!) {
-    accessibleForms(organizationId: $organizationId) {
-      id
-      title
-      description
-      shortUrl
-      isPublished
-      sharingScope
-      defaultPermission
-      userPermission
-      createdAt
-      updatedAt
-      createdBy {
-        id
-        name
-        email
-      }
-      responseCount
-      metadata {
-        pageCount
-        fieldCount
-        backgroundImageUrl
-        lastUpdated
-      }
-    }
-  }
-`;
 
 // Mutations
 export const SHARE_FORM = gql`

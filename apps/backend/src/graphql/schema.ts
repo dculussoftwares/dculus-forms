@@ -737,7 +737,6 @@ export const typeDefs = gql`
     getInvitationPublic(id: ID!): Invitation
     
     # Form Queries
-    forms(organizationId: ID!): [Form!]!
     form(id: ID!): Form
     formByShortUrl(shortUrl: String!): Form
     responses(organizationId: ID!): [FormResponse!]!
@@ -746,7 +745,6 @@ export const typeDefs = gql`
 
     # Form Sharing Queries
     formPermissions(formId: ID!): [FormPermission!]!
-    accessibleForms(organizationId: ID!): [Form!]!
     formsWithCategory(organizationId: ID!, category: FormCategory!): [Form!]!
     organizationMembers(organizationId: ID!): [User!]!
 

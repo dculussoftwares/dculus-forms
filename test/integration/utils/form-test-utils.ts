@@ -529,17 +529,32 @@ export class FormTestUtils {
   }
 
   /**
-   * Get all forms in an organization
+   * Get all forms in an organization (now uses formsWithCategory)
+   * For backward compatibility - combines my forms and shared forms
    */
   async getForms(token: string, organizationId: string): Promise<Form[]> {
+    return this.getAllAccessibleForms(token, organizationId);
+  }
+
+  /**
+   * Get forms with specific category (recommended approach)
+   */
+  async getFormsWithCategory(token: string, organizationId: string, category: 'MY_FORMS' | 'SHARED_WITH_ME'): Promise<Form[]> {
     const query = `
-      query GetForms($organizationId: ID!) {
-        forms(organizationId: $organizationId) {
+      query GetFormsWithCategory($organizationId: ID!, $category: FormCategory!) {
+        formsWithCategory(organizationId: $organizationId, category: $category) {
           id
           title
           description
           shortUrl
           isPublished
+          sharingScope
+          defaultPermission
+          userPermission
+          category
+          responseCount
+          createdAt
+          updatedAt
           organization {
             id
             name
@@ -550,21 +565,50 @@ export class FormTestUtils {
             name
             email
           }
-          responseCount
-          userPermission
-          createdAt
-          updatedAt
+          metadata {
+            pageCount
+            fieldCount
+            backgroundImageKey
+            backgroundImageUrl
+            lastUpdated
+          }
         }
       }
     `;
 
-    const response = await this.authUtils.graphqlRequest(query, { organizationId }, token);
+    const response = await this.authUtils.graphqlRequest(query, { organizationId, category }, token);
 
     if (response.data.errors) {
-      throw new Error(`Failed to get forms: ${response.data.errors[0].message}`);
+      throw new Error(`Failed to get forms with category: ${response.data.errors[0].message}`);
     }
 
-    return response.data.data.forms;
+    return response.data.data.formsWithCategory;
+  }
+
+  /**
+   * Get forms owned by the current user
+   */
+  async getMyForms(token: string, organizationId: string): Promise<Form[]> {
+    return this.getFormsWithCategory(token, organizationId, 'MY_FORMS');
+  }
+
+  /**
+   * Get forms shared with the current user (not owned by them)
+   */
+  async getSharedForms(token: string, organizationId: string): Promise<Form[]> {
+    return this.getFormsWithCategory(token, organizationId, 'SHARED_WITH_ME');
+  }
+
+  /**
+   * Get all accessible forms (combines my forms and shared forms)
+   */
+  async getAllAccessibleForms(token: string, organizationId: string): Promise<Form[]> {
+    const [myForms, sharedForms] = await Promise.all([
+      this.getMyForms(token, organizationId),
+      this.getSharedForms(token, organizationId)
+    ]);
+
+    return [...myForms, ...sharedForms];
   }
 
   // Response Operations
