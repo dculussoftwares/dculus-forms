@@ -528,13 +528,6 @@ export class FormTestUtils {
     return response.data.data.regenerateShortUrl;
   }
 
-  /**
-   * Get all forms in an organization (now uses formsWithCategory)
-   * For backward compatibility - combines my forms and shared forms
-   */
-  async getForms(token: string, organizationId: string): Promise<Form[]> {
-    return this.getAllAccessibleForms(token, organizationId);
-  }
 
   /**
    * Get forms with specific category (recommended approach)
@@ -599,17 +592,6 @@ export class FormTestUtils {
     return this.getFormsWithCategory(token, organizationId, 'SHARED_WITH_ME');
   }
 
-  /**
-   * Get all accessible forms (combines my forms and shared forms)
-   */
-  async getAllAccessibleForms(token: string, organizationId: string): Promise<Form[]> {
-    const [myForms, sharedForms] = await Promise.all([
-      this.getMyForms(token, organizationId),
-      this.getSharedForms(token, organizationId)
-    ]);
-
-    return [...myForms, ...sharedForms];
-  }
 
   // Response Operations
 
