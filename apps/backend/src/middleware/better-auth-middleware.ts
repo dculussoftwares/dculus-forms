@@ -1,6 +1,8 @@
 import { Request } from 'express';
 import { fromNodeHeaders } from 'better-auth/node';
 import { auth } from '../lib/better-auth.js';
+import { prisma } from '../lib/prisma.js';
+import { GraphQLError } from 'graphql';
 
 export interface BetterAuthContext {
   user: any | null;
@@ -44,4 +46,69 @@ export function requireOrganization(context: BetterAuthContext) {
     throw new Error('Active organization required');
   }
   return context;
+}
+
+/**
+ * Verify that a user is a member of a specific organization
+ * Uses Prisma to check membership in alignment with better-auth data model
+ */
+export async function requireOrganizationMembership(
+  context: BetterAuthContext,
+  organizationId: string
+): Promise<any> {
+  requireAuth(context);
+
+  const membership = await prisma.member.findFirst({
+    where: {
+      organizationId,
+      userId: context.user!.id
+    },
+    include: {
+      organization: true,
+      user: true
+    }
+  });
+
+  if (!membership) {
+    throw new GraphQLError('Access denied: You are not a member of this organization');
+  }
+
+  return membership;
+}
+
+/**
+ * Verify that a user has a specific role within an organization
+ */
+export async function requireOrganizationRole(
+  context: BetterAuthContext,
+  organizationId: string,
+  requiredRole: 'companyOwner' | 'companyMember'
+): Promise<any> {
+  const membership = await requireOrganizationMembership(context, organizationId);
+
+  if (membership.role !== requiredRole) {
+    throw new GraphQLError(`Access denied: ${requiredRole} role required for this operation`);
+  }
+
+  return membership;
+}
+
+/**
+ * Check organization membership without throwing error
+ * Returns membership object or null
+ */
+export async function checkOrganizationMembership(
+  userId: string,
+  organizationId: string
+): Promise<any | null> {
+  return await prisma.member.findFirst({
+    where: {
+      organizationId,
+      userId
+    },
+    include: {
+      organization: true,
+      user: true
+    }
+  });
 }

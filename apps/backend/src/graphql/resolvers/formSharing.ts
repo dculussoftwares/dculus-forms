@@ -1,5 +1,5 @@
 import { prisma } from '../../lib/prisma.js';
-import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
+import { BetterAuthContext, requireAuth, requireOrganizationMembership } from '../../middleware/better-auth-middleware.js';
 import { randomUUID } from 'crypto';
 import { GraphQLError } from 'graphql';
 
@@ -183,20 +183,10 @@ export const formSharingResolvers = {
     },
 
     organizationMembers: async (_: any, { organizationId }: { organizationId: string }, context: { auth: BetterAuthContext }) => {
-      requireAuth(context.auth);
+      // 🔒 SECURITY: Use centralized middleware to verify organization membership
+      await requireOrganizationMembership(context.auth, organizationId);
 
-      // Check if user is a member of the organization
-      const membership = await prisma.member.findFirst({
-        where: {
-          organizationId,
-          userId: context.auth.user!.id
-        }
-      });
-
-      if (!membership) {
-        throw new GraphQLError('Access denied: Not a member of this organization');
-      }
-
+      // User is verified member - return organization members
       const members = await prisma.member.findMany({
         where: { organizationId },
         include: { user: true },

@@ -1,6 +1,13 @@
-import { BetterAuthContext, requireAuth, } from '../../middleware/better-auth-middleware.js';
+import {
+  BetterAuthContext,
+  requireAuth,
+  requireOrganizationMembership,
+} from '../../middleware/better-auth-middleware.js';
 import { prisma } from '../../lib/prisma.js';
 import { nanoid } from 'nanoid';
+import { auth } from '../../lib/better-auth.js';
+import { fromNodeHeaders } from 'better-auth/node';
+import { GraphQLError } from 'graphql';
 
 export const betterAuthResolvers = {
   Query: {
@@ -46,16 +53,15 @@ export const betterAuthResolvers = {
         return null;
       }
 
-      return await prisma.organization.findUnique({
-        where: { id: context.auth.session.activeOrganizationId },
-        include: {
-          members: {
-            include: {
-              user: true,
-            },
-          },
-        },
-      });
+      // 🔒 SECURITY FIX: Verify user is actually a member of the active organization
+      // This prevents returning organization data if session was compromised
+      const membership = await requireOrganizationMembership(
+        context.auth,
+        context.auth.session.activeOrganizationId
+      );
+
+      // Return organization from membership data to ensure it's properly verified
+      return membership.organization;
     },
   },
 
@@ -93,7 +99,6 @@ export const betterAuthResolvers = {
         },
       });
 
-
       return await prisma.organization.findUnique({
         where: { id: organization.id },
         include: {
@@ -109,14 +114,13 @@ export const betterAuthResolvers = {
     setActiveOrganization: async (
       _: any,
       { organizationId }: { organizationId: string },
-      context: { auth: BetterAuthContext }
+      context: { auth: BetterAuthContext; req: any }
     ) => {
-      requireAuth(context.auth);
+      // 🔒 SECURITY FIX: Use centralized middleware to verify organization membership
+      await requireOrganizationMembership(context.auth, organizationId);
 
-      // For now, just return the organization without updating session
-      // In a full implementation, you'd update the session or use a different approach
-
-
+      // User is verified member - return full organization with members
+      // (maintaining compatibility with existing GraphQL schema expectations)
       return await prisma.organization.findUnique({
         where: { id: organizationId },
         include: {

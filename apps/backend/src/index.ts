@@ -205,6 +205,7 @@ async function startServer() {
           user: authContext.user,
           session: authContext.session,
           auth: authContext,
+          req, // Add request object for better-auth API calls
           prisma,
         };
       },
