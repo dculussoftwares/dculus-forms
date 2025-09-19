@@ -31,15 +31,14 @@ The system implements several levels of authorization:
 | `trackFormSubmission` | Mutation | Public | Form must be published | Analytics submission tracking |
 | `submitResponse` | Mutation | Public | Form must be published | Submit form responses |
 | **Form Operations** |
-| `forms` | Query | Organization Member | Member of specified org | Lists org forms |
 | `form` | Query | Form Permissions | VIEWER or higher | Individual form access |
 | `createForm` | Mutation | Organization Member | Member of target org | Creates new form |
 | `updateForm` | Mutation | Form Permissions | EDITOR for content, OWNER for publishing | Dynamic permission based on update type |
 | `deleteForm` | Mutation | Form Permissions | OWNER only | Permanent form deletion |
 | `regenerateShortUrl` | Mutation | Form Permissions | EDITOR or higher | Regenerates public URL |
-| **Form Sharing** |
+| **Form Sharing & Lists** |
 | `formPermissions` | Query | Form Permissions | VIEWER or higher | View form permissions |
-| `accessibleForms` | Query | Organization Member | Member of specified org | Forms user can access |
+| `formsWithCategory` | Query | Organization Member | Member of specified org | Secure categorized form lists (MY_FORMS/SHARED_WITH_ME) |
 | `organizationMembers` | Query | Organization Member | Member of specified org | List org members for sharing |
 | `shareForm` | Mutation | Form Permissions | OWNER only | Configure form sharing |
 | `updateFormPermission` | Mutation | Form Permissions | OWNER only | Update user permissions |
@@ -155,26 +154,63 @@ function requireAdminRole(context: any) {
 }
 ```
 
+## Form Categorization System
+
+The `formsWithCategory` query implements secure form access through categorization:
+
+### Categories
+
+| Category | Description | Access Rules |
+|----------|-------------|--------------|
+| **MY_FORMS** | Forms owned by the current user | Returns only forms where `createdById = userId` |
+| **SHARED_WITH_ME** | Forms shared with the current user | Returns forms with explicit permissions or org-wide sharing (excludes owned forms) |
+
+### Security Implementation
+
+```typescript
+// MY_FORMS category - only user's own forms
+whereCondition = {
+  organizationId,
+  createdById: userId
+};
+
+// SHARED_WITH_ME category - shared forms only
+whereCondition = {
+  organizationId,
+  createdById: { not: userId },
+  OR: [
+    // Forms with explicit permissions
+    { permissions: { some: { userId, permission: { not: 'NO_ACCESS' } } } },
+    // Forms shared with all org members
+    { sharingScope: 'ALL_ORG_MEMBERS', defaultPermission: { not: 'NO_ACCESS' } }
+  ]
+};
+```
+
+
 ## Key Security Features
 
 1. **Dynamic Permission Checking**: Form operations check specific permission levels based on action type
 2. **Organization Isolation**: Users can only access data within their organization memberships
-3. **Public Form Access**: Published forms are accessible via short URLs without authentication
-4. **Admin Role Separation**: Clear distinction between system-level and organization-level permissions
-5. **Form Sharing Scopes**: PRIVATE, SPECIFIC_MEMBERS, ALL_ORG_MEMBERS with configurable default permissions
-6. **Analytics Privacy**: Public analytics tracking for published forms only, authenticated analytics viewing
-7. **Submission Limits**: Forms can enforce maximum responses and time window restrictions
-8. **Invitation System**: Secure organization invitation flow with expiration and status tracking
+3. **Categorized Form Access**: Users only see forms in appropriate categories (owned vs shared)
+4. **Public Form Access**: Published forms are accessible via short URLs without authentication
+5. **Admin Role Separation**: Clear distinction between system-level and organization-level permissions
+6. **Form Sharing Scopes**: PRIVATE, SPECIFIC_MEMBERS, ALL_ORG_MEMBERS with configurable default permissions
+7. **Analytics Privacy**: Public analytics tracking for published forms only, authenticated analytics viewing
+8. **Submission Limits**: Forms can enforce maximum responses and time window restrictions
+9. **Invitation System**: Secure organization invitation flow with expiration and status tracking
 
 ## Best Practices
 
 1. **Always check form access** before performing form operations
-2. **Use appropriate permission levels** for different operation types
-3. **Validate organization membership** for org-scoped operations
-4. **Handle public operations carefully** with proper form state validation
-5. **Implement proper error handling** for authorization failures
-6. **Log admin operations** for audit trails
-7. **Respect sharing scopes** when implementing new form features
+2. **Use categorized form queries** - Use `formsWithCategory` with appropriate category (MY_FORMS/SHARED_WITH_ME)
+3. **Use appropriate permission levels** for different operation types
+4. **Validate organization membership** for org-scoped operations
+5. **Handle public operations carefully** with proper form state validation
+6. **Implement proper error handling** for authorization failures
+7. **Log admin operations** for audit trails
+8. **Respect sharing scopes** when implementing new form features
+9. **Avoid legacy form list patterns** - Do not implement bulk form access without categorization
 
 ## Error Handling
 
