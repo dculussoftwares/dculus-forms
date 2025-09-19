@@ -730,7 +730,6 @@ export const typeDefs = gql`
   type Query {
     # Auth Queries
     me: User
-    myOrganizations: [Organization!]!
     activeOrganization: Organization
     
     # Public Queries (no auth required)

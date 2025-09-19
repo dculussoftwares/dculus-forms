@@ -14,11 +14,10 @@ This document provides a comprehensive analysis of the Dculus Forms GraphQL API 
 
 ## 📊 GraphQL API Inventory
 
-### Queries (24 total)
+### Queries (23 total)
 
 #### Authentication & Organization Management
 - `me` - Get current user information
-- `myOrganizations` - List user's organizations
 - `activeOrganization` - Get active organization
 - `getInvitationPublic(id)` - Public invitation lookup
 - `organizationMembers(organizationId)` - List organization members

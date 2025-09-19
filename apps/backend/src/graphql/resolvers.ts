@@ -16,6 +16,9 @@ import { GraphQLJSON } from 'graphql-type-json';
 
 export const resolvers = {
   JSON: GraphQLJSON,
+  User: {
+    ...betterAuthResolvers.User,
+  },
   Query: {
     ...betterAuthResolvers.Query,
     ...formsResolvers.Query,

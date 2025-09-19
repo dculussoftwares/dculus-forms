@@ -19,7 +19,6 @@ The system implements several levels of authorization:
 |-----------|------|--------------|----------------------|-------|
 | **Authentication & Organization** |
 | `me` | Query | Authenticated | Any authenticated user | Returns current user with organizations array |
-| `myOrganizations` | Query | Authenticated | Any authenticated user | Returns user's organization memberships |
 | `activeOrganization` | Query | Authenticated | Organization member | **🔒 SECURED**: Verifies membership before returning org data |
 | `createOrganization` | Mutation | Authenticated | Any authenticated user | Creates org, user becomes companyOwner |
 | `setActiveOrganization` | Mutation | Authenticated | **🔒 Organization member** | **SECURED**: Verifies membership before switching |

@@ -181,10 +181,13 @@ When('I send a setActiveOrganization mutation with my organization ID',
       try {
         const myOrganizationsQuery = `
           query MyOrganizations {
-            myOrganizations {
+            me {
               id
-              name
-              slug
+              organizations {
+                id
+                name
+                slug
+              }
             }
           }
         `;
@@ -194,10 +197,10 @@ When('I send a setActiveOrganization mutation with my organization ID',
           this.authToken!
         );
 
-        if (orgResponse.data?.data?.myOrganizations?.length > 0) {
-          organizationId = orgResponse.data.data.myOrganizations[0].id;
+        if (orgResponse.data?.data?.me?.organizations?.length > 0) {
+          organizationId = orgResponse.data.data.me.organizations[0].id;
           // Store for later use
-          this.setSharedTestData('currentOrganization', orgResponse.data.data.myOrganizations[0]);
+          this.setSharedTestData('currentOrganization', orgResponse.data.data.me.organizations[0]);
         }
       } catch (error: any) {
         throw new Error(`Failed to get user organizations: ${error.message}`);
@@ -296,10 +299,13 @@ When('I send a setActiveOrganization mutation with my first organization ID',
       try {
         const myOrganizationsQuery = `
           query MyOrganizations {
-            myOrganizations {
+            me {
               id
-              name
-              slug
+              organizations {
+                id
+                name
+                slug
+              }
             }
           }
         `;
@@ -309,8 +315,8 @@ When('I send a setActiveOrganization mutation with my first organization ID',
           this.authToken!
         );
 
-        if (orgResponse.data?.data?.myOrganizations?.length > 0) {
-          organizationId = orgResponse.data.data.myOrganizations[0].id;
+        if (orgResponse.data?.data?.me?.organizations?.length > 0) {
+          organizationId = orgResponse.data.data.me.organizations[0].id;
         }
       } catch (error: any) {
         throw new Error(`Failed to get user organizations: ${error.message}`);

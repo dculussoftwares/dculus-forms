@@ -219,21 +219,24 @@ Then('the response should contain my email and name', function (this: CustomWorl
   expect(userData.name).toBe(this.currentUser?.name);
 });
 
-When('I send a GraphQL query to get my organizations', 
+When('I send a GraphQL query to get my organizations',
   async function (this: CustomWorld) {
     const query = `
       query MyOrganizations {
-        myOrganizations {
+        me {
           id
-          name
-          slug
-          members {
+          organizations {
             id
-            role
-            user {
+            name
+            slug
+            members {
               id
-              email
-              name
+              role
+              user {
+                id
+                email
+                name
+              }
             }
           }
         }
@@ -249,18 +252,19 @@ When('I send a GraphQL query to get my organizations',
   }
 );
 
-Then('I should receive a list containing my organization', 
+Then('I should receive a list containing my organization',
   function (this: CustomWorld) {
     expect(this.response?.status).toBe(200);
     expect(this.response?.data).toHaveProperty('data');
-    expect(this.response?.data.data).toHaveProperty('myOrganizations');
-    expect(this.response?.data.data.myOrganizations.length).toBeGreaterThan(0);
+    expect(this.response?.data.data).toHaveProperty('me');
+    expect(this.response?.data.data.me).toHaveProperty('organizations');
+    expect(this.response?.data.data.me.organizations.length).toBeGreaterThan(0);
   }
 );
 
-Then('the organization should have the correct name and members', 
+Then('the organization should have the correct name and members',
   function (this: CustomWorld) {
-    const organizations = this.response?.data.data.myOrganizations;
+    const organizations = this.response?.data.data.me.organizations;
     const organization = organizations[0];
     
     expect(organization).toHaveProperty('name');

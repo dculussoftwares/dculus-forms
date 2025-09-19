@@ -10,22 +10,11 @@ import { fromNodeHeaders } from 'better-auth/node';
 import { GraphQLError } from 'graphql';
 
 export const betterAuthResolvers = {
-  Query: {
-    me: async (_: any, __: any, context: { auth: BetterAuthContext }) => {
-      requireAuth(context.auth);
-      return context.auth.user;
-    },
-
-    myOrganizations: async (
-      _: any,
-      __: any,
-      context: { auth: BetterAuthContext }
-    ) => {
-      requireAuth(context.auth);
-
-      // Get user's organizations through Prisma since Better Auth API might not have the exact method
+  User: {
+    organizations: async (user: any) => {
+      // Get user's organizations through Prisma
       const memberships = await prisma.member.findMany({
-        where: { userId: context.auth.user!.id },
+        where: { userId: user.id },
         include: {
           organization: {
             include: {
@@ -40,6 +29,13 @@ export const betterAuthResolvers = {
       });
 
       return memberships.map((membership: any) => membership.organization);
+    },
+  },
+
+  Query: {
+    me: async (_: any, __: any, context: { auth: BetterAuthContext }) => {
+      requireAuth(context.auth);
+      return context.auth.user;
     },
 
     activeOrganization: async (

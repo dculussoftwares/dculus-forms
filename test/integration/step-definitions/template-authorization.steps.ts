@@ -601,13 +601,16 @@ When('I send an authenticated GraphQL mutation to create a form from template', 
     // Get user's organization - use a GraphQL query to get user organizations
     const orgQuery = `
       query MyOrganizations {
-        myOrganizations {
+        me {
           id
-          name
+          organizations {
+            id
+            name
+          }
         }
       }
     `;
-    
+
     const orgResponse = await this.authUtils.axiosInstance.post('/graphql', {
       query: orgQuery
     }, {
@@ -615,12 +618,12 @@ When('I send an authenticated GraphQL mutation to create a form from template', 
         'Authorization': `Bearer ${(this as any).authToken}`
       }
     });
-    
-    if (!orgResponse.data.data?.myOrganizations || orgResponse.data.data.myOrganizations.length === 0) {
+
+    if (!orgResponse.data.data?.me?.organizations || orgResponse.data.data.me.organizations.length === 0) {
       throw new Error('User has no organizations available');
     }
-    
-    const organizationId = orgResponse.data.data.myOrganizations[0].id;
+
+    const organizationId = orgResponse.data.data.me.organizations[0].id;
     console.log('Using organization ID from GraphQL query:', organizationId);
     
     const response = await this.authUtils.axiosInstance.post('/graphql', {
