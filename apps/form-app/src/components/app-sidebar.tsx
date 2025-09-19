@@ -39,6 +39,7 @@ import {
 } from "@dculus/ui"
 import { useAuth } from "../contexts/AuthContext"
 import { signOut } from "../lib/auth-client"
+import { OrganizationSwitcher } from "./OrganizationSwitcher"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { open } = useSidebar()
@@ -108,8 +109,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      
+
       <SidebarContent className="flex-1">
+        {/* Organization Switcher */}
+        {open && (
+          <div className="px-3 py-2 border-b border-sidebar-border">
+            <OrganizationSwitcher />
+          </div>
+        )}
+
         {open && (
           <div className="px-3 py-2">
             <div className="relative">

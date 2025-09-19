@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Tabs, TabsContent, TabsList, TabsTrigger } from '@dculus/ui';
-import { Users, UserPlus, Settings as SettingsIcon } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Tabs, TabsContent, TabsList, TabsTrigger, Alert, AlertDescription, toastError } from '@dculus/ui';
+import { Users, UserPlus, Settings as SettingsIcon, AlertTriangle } from 'lucide-react';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { MembersList } from './MembersList';
 import { InvitationsList } from './InvitationsList';
@@ -8,7 +8,7 @@ import { InviteUserDialog } from './InviteUserDialog';
 import { organization } from '../../lib/auth-client';
 
 export const OrganizationSettings: React.FC = () => {
-  const { activeOrganization } = useAuthContext();
+  const { activeOrganization, organizationError } = useAuthContext();
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('members');
   const [pendingInvitations, setPendingInvitations] = useState<Array<{
@@ -61,15 +61,44 @@ export const OrganizationSettings: React.FC = () => {
       );
       
       setPendingInvitations(pendingOnly);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching invitations:', error);
       setPendingInvitations([]);
+
+      // Show user-friendly error for authorization failures
+      if (error?.message?.includes('Access denied') || error?.message?.includes('not a member')) {
+        toastError('Access Denied', 'You do not have permission to view organization invitations');
+      } else if (error?.message?.includes('Authentication required')) {
+        toastError('Authentication Required', 'Please sign in to view invitations');
+      }
     }
   };
 
   useEffect(() => {
     fetchInvitations();
   }, [activeOrganization?.id]);
+
+  // Show error state if there's an organization error
+  if (organizationError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Organization Settings</CardTitle>
+          <CardDescription>Error accessing organization</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              {organizationError.includes('Access denied') || organizationError.includes('not a member')
+                ? 'You do not have access to this organization. Please contact an organization owner for access.'
+                : organizationError}
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!activeOrganization) {
     return (

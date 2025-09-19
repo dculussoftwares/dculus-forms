@@ -114,3 +114,23 @@ export const REGENERATE_SHORT_URL = gql`
     }
   }
 `;
+
+export const SET_ACTIVE_ORGANIZATION = gql`
+  mutation SetActiveOrganization($organizationId: ID!) {
+    setActiveOrganization(organizationId: $organizationId) {
+      id
+      name
+      slug
+      logo
+      members {
+        id
+        role
+        user {
+          id
+          name
+          email
+        }
+      }
+    }
+  }
+`;

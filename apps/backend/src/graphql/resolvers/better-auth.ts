@@ -53,15 +53,41 @@ export const betterAuthResolvers = {
         return null;
       }
 
-      // 🔒 SECURITY FIX: Verify user is actually a member of the active organization
-      // This prevents returning organization data if session was compromised
-      const membership = await requireOrganizationMembership(
-        context.auth,
-        context.auth.session.activeOrganizationId
-      );
+      try {
+        // 🔒 SECURITY FIX: Verify user is actually a member of the active organization
+        // This prevents returning organization data if session was compromised
+        await requireOrganizationMembership(
+          context.auth,
+          context.auth.session.activeOrganizationId
+        );
 
-      // Return organization from membership data to ensure it's properly verified
-      return membership.organization;
+        // User is verified member - return full organization with members
+        const organization = await prisma.organization.findUnique({
+          where: { id: context.auth.session.activeOrganizationId },
+          include: {
+            members: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        });
+
+        // If organization not found, return null
+        if (!organization) {
+          return null;
+        }
+
+        return organization;
+      } catch (error: any) {
+        // If user is not a member of the organization, return null instead of throwing
+        // This allows the frontend to handle the case gracefully
+        if (error.message.includes('Access denied') || error.message.includes('not a member')) {
+          return null;
+        }
+        // Re-throw other errors (like authentication errors)
+        throw error;
+      }
     },
   },
 

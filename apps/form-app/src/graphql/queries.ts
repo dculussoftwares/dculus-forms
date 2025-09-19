@@ -317,3 +317,26 @@ export const GET_INVITATION_PUBLIC = gql`
     }
   }
 `;
+
+export const GET_USER_ORGANIZATIONS = gql`
+  query GetUserOrganizations {
+    me {
+      id
+      organizations {
+        id
+        name
+        slug
+        logo
+        members {
+          id
+          role
+          user {
+            id
+            name
+            email
+          }
+        }
+      }
+    }
+  }
+`;
