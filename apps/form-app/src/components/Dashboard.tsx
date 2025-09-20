@@ -168,9 +168,6 @@ function FormsListDashboard() {
 
             {/* Filter Chips */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <TypographySmall className="text-muted-foreground font-medium">
-                Filter:
-              </TypographySmall>
               <div className="flex flex-wrap gap-2">
                 <FilterChip
                   selected={activeFilter === 'all'}
