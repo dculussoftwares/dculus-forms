@@ -299,12 +299,13 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
   const handlePreview = (e: React.MouseEvent) => {
     e.stopPropagation();
     // Navigate to form preview/viewer
-    window.open(`/form/${form.id}`, '_blank');
+    const formViewerUrl = `http://localhost:5173/f/${form.shortUrl}`;
+    window.open(formViewerUrl, '_blank');
   };
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onNavigate(`/dashboard/form/${form.id}/builder`);
+    onNavigate(`/dashboard/form/${form.id}/collaborate/page-builder`);
   };
 
   return (
