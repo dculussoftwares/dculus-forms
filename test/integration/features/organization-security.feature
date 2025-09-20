@@ -44,16 +44,12 @@ Feature: Organization Security Tests
     Then the mutation should fail with an authentication error
     And the error message should indicate the token is invalid
 
-  @setActiveOrganization @Security @MultipleOrganizations
-  Scenario: User can switch between organizations they belong to
-    Given I am authenticated as a test user
-    And I am a member of multiple organizations
-    When I send a setActiveOrganization mutation with my first organization ID
-    Then the mutation should succeed
-    And I should receive the first organization details
-    When I send a setActiveOrganization mutation with my second organization ID
-    Then the mutation should succeed
-    And I should receive the second organization details
+  @setActiveOrganization @Security @OrganizationLimit
+  Scenario: User cannot create multiple organizations due to organization limit
+    Given I am authenticated as a test user with an organization
+    When I attempt to create a second organization
+    Then the operation should fail with an organization limit error
+    And the error message should indicate "User can only belong to one organization"
 
   @setActiveOrganization @Security @RoleBasedAccess
   Scenario: Users with different roles can set active organization

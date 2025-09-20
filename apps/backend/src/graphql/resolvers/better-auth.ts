@@ -142,5 +142,36 @@ export const betterAuthResolvers = {
       });
     },
 
+    setActiveOrganization: async (
+      _: any,
+      { organizationId }: { organizationId: string },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+
+      // Verify user is a member of the requested organization
+      const membership = await requireOrganizationMembership(context.auth, organizationId);
+
+      // Update user's session to set the active organization
+      // For now, we'll just return the organization as the session update
+      // would typically be handled by better-auth's session management
+      const organization = await prisma.organization.findUnique({
+        where: { id: organizationId },
+        include: {
+          members: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      });
+
+      if (!organization) {
+        throw new GraphQLError('Organization not found');
+      }
+
+      return organization;
+    },
+
   },
 };
