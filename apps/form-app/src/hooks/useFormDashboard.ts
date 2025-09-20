@@ -94,7 +94,7 @@ export const useFormDashboard = (formId: string | undefined) => {
     };
 
     return {
-      totalResponses: formDashboardStats?.totalResponses || 0,
+      totalResponses: formData.form.responseCount || 0,
       totalFields,
       averageCompletionTime: formatCompletionTime(formDashboardStats?.averageCompletionTime),
       responseRate: formatResponseRate(formDashboardStats?.responseRate),
