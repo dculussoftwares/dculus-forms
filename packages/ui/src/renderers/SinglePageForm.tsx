@@ -1,5 +1,5 @@
 import React, { useEffect, useImperativeHandle, useCallback, useMemo } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormPage, generatePageDefaultValues, FieldType } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
@@ -92,6 +92,22 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
 
   const { handleSubmit, reset, control, getValues, formState, trigger, clearErrors, setFocus } = methods;
   const { isValid, errors, isSubmitting, touchedFields, isSubmitted, submitCount } = formState;
+
+  // Watch form values to sync with store in real-time
+  const watchedValues = useWatch({ control });
+
+  // Update store whenever form values change
+  useEffect(() => {
+    if (watchedValues && Object.keys(watchedValues).length > 0) {
+      // Only update if the values have actually changed to prevent infinite loops
+      const currentStoreValues = store.getPageResponses(page.id);
+      const hasChanged = JSON.stringify(currentStoreValues) !== JSON.stringify(watchedValues);
+
+      if (hasChanged) {
+        store.setPageResponses(page.id, watchedValues);
+      }
+    }
+  }, [watchedValues, store, page.id]);
 
   // Reset form when page changes or stored values change
   useEffect(() => {
