@@ -264,8 +264,8 @@ These roles control access within specific organizations:
 
 | Role | Description | Permissions | Default | Creator Role |
 |------|-------------|-------------|---------|--------------|
-| `companyMember` | Regular organization member | - View organization forms<br>- Create form responses<br>- Basic organization access | ✅ | ❌ |
-| `companyOwner` | Organization owner/admin | - All member permissions<br>- Create and manage forms<br>- Invite members<br>- Organization management<br>- Access organization settings | ❌ | ✅ |
+| `member` | Regular organization member | - View organization forms<br>- Create form responses<br>- Basic organization access | ✅ | ❌ |
+| `owner` | Organization owner/admin | - All member permissions<br>- Create and manage forms<br>- Invite members<br>- Organization management<br>- Access organization settings | ❌ | ✅ |
 
 ### Better-Auth Configuration
 
@@ -276,7 +276,7 @@ plugins: [
   organization({
     allowUserToCreateOrganization: true,
     organizationLimit: 5,
-    creatorRole: 'companyOwner',        // Role assigned to organization creators
+    creatorRole: 'owner',        // Role assigned to organization creators
     membershipLimit: 100,
   }),
   admin({
@@ -321,19 +321,19 @@ isSuperAdmin: (user: any) => {
 - Stores system-level role (`user`, `admin`, `superAdmin`)
 
 **Member Model** (`apps/backend/prisma/schema.prisma:89-102`):
-- `role` field defaults to `"companyMember"`  
-- Stores organization-level role (`companyMember`, `companyOwner`)
+- `role` field defaults to `"member"`
+- Stores organization-level role (`member`, `owner`)
 - Unique constraint on `[organizationId, userId]`
 
 **Invitation Model** (`apps/backend/prisma/schema.prisma:104-120`):
-- `role` field defaults to `"companyMember"`
+- `role` field defaults to `"member"`
 - Role that will be assigned when invitation is accepted
 
 ### Role Migration
 
 The system includes migration script for updating legacy role names:
-- `member` → `companyMember`
-- `owner` → `companyOwner`
+- `companyMember` → `member`
+- `companyOwner` → `owner`
 
 Run with: `apps/backend/src/scripts/migrate-organization-roles.ts`
 

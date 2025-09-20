@@ -39,7 +39,7 @@ export const MembersList: React.FC<MembersListProps> = ({ organization }) => {
 
   const getRoleIcon = (role: string) => {
     switch (role) {
-      case 'companyOwner':
+      case 'owner':
         return <Crown className="h-4 w-4" />;
       default:
         return <User className="h-4 w-4" />;
@@ -48,9 +48,9 @@ export const MembersList: React.FC<MembersListProps> = ({ organization }) => {
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case 'companyOwner':
+      case 'owner':
         return 'Owner';
-      case 'companyMember':
+      case 'member':
         return 'Member';
       default:
         return role;
@@ -59,9 +59,9 @@ export const MembersList: React.FC<MembersListProps> = ({ organization }) => {
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
-      case 'companyOwner':
+      case 'owner':
         return 'default' as const;
-      case 'companyMember':
+      case 'member':
         return 'secondary' as const;
       default:
         return 'outline' as const;

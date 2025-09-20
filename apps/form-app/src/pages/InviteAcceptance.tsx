@@ -182,7 +182,7 @@ const InviteAcceptance: React.FC = () => {
                     Invited to: {invitation.email}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Role: {invitation.role === 'companyOwner' ? 'Organization Owner' : 'Team Member'}
+                    Role: {invitation.role === 'owner' ? 'Organization Owner' : 'Team Member'}
                   </div>
                 </div>
               </div>
@@ -286,7 +286,7 @@ const InviteAcceptance: React.FC = () => {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Your Role</span>
                 <span className="font-medium">
-                  {invitation.role === 'companyOwner' ? 'Organization Owner' : 'Team Member'}
+                  {invitation.role === 'owner' ? 'Organization Owner' : 'Team Member'}
                 </span>
               </div>
               <div className="flex items-center justify-between">

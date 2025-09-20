@@ -100,9 +100,9 @@ export const OrganizationSwitcher: React.FC = () => {
     if (!membership) return 'Member';
 
     switch (membership.role) {
-      case 'companyOwner':
+      case 'owner':
         return 'Owner';
-      case 'companyMember':
+      case 'member':
         return 'Member';
       default:
         return membership.role;

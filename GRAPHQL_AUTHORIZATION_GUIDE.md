@@ -20,7 +20,7 @@ The system implements several levels of authorization:
 | **Authentication & Organization** |
 | `me` | Query | Authenticated | Any authenticated user | Returns current user with organizations array |
 | `activeOrganization` | Query | Authenticated | Organization member | **🔒 SECURED**: Verifies membership before returning org data |
-| `createOrganization` | Mutation | Authenticated | Any authenticated user | Creates org, user becomes companyOwner |
+| `createOrganization` | Mutation | Authenticated | Any authenticated user | Creates org, user becomes owner |
 | `setActiveOrganization` | Mutation | Authenticated | **🔒 Organization member** | **SECURED**: Verifies membership before switching |
 | **Public Operations** |
 | `getInvitationPublic` | Query | Public | None | Validates invitation tokens |

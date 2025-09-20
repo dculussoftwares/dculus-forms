@@ -82,7 +82,7 @@ export async function requireOrganizationMembership(
 export async function requireOrganizationRole(
   context: BetterAuthContext,
   organizationId: string,
-  requiredRole: 'companyOwner' | 'companyMember'
+  requiredRole: 'owner' | 'member'
 ): Promise<any> {
   const membership = await requireOrganizationMembership(context, organizationId);
 

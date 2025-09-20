@@ -92,7 +92,7 @@ model Member {
   id             String   @id @map("_id")
   organizationId String
   userId         String
-  role           String   @default("companyMember")
+  role           String   @default("member")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

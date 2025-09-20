@@ -126,7 +126,7 @@ export const betterAuthResolvers = {
           id: memberId,
           organizationId: organization.id,
           userId: context.auth.user!.id,
-          role: 'companyOwner',
+          role: 'owner',
         },
       });
 

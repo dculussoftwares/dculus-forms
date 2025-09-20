@@ -57,11 +57,11 @@ Feature: Organization Security Tests
 
   @setActiveOrganization @Security @RoleBasedAccess
   Scenario: Users with different roles can set active organization
-    Given I am authenticated as a test user with "companyMember" role in an organization
+    Given I am authenticated as a test user with "member" role in an organization
     When I send a setActiveOrganization mutation with my organization ID
     Then the mutation should succeed
     And I should receive the organization details
-    Given I am authenticated as a test user with "companyOwner" role in an organization
+    Given I am authenticated as a test user with "owner" role in an organization
     When I send a setActiveOrganization mutation with my organization ID
     Then the mutation should succeed
     And I should receive the organization details

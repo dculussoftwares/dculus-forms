@@ -70,7 +70,7 @@ export const InvitationsList: React.FC<InvitationsListProps> = ({
 
   const getRoleIcon = (role: string) => {
     switch (role) {
-      case 'companyOwner':
+      case 'owner':
         return <Crown className="h-4 w-4" />;
       default:
         return <User className="h-4 w-4" />;
@@ -79,9 +79,9 @@ export const InvitationsList: React.FC<InvitationsListProps> = ({
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case 'companyOwner':
+      case 'owner':
         return 'Owner';
-      case 'companyMember':
+      case 'member':
         return 'Member';
       default:
         return role;
@@ -90,9 +90,9 @@ export const InvitationsList: React.FC<InvitationsListProps> = ({
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
-      case 'companyOwner':
+      case 'owner':
         return 'default' as const;
-      case 'companyMember':
+      case 'member':
         return 'secondary' as const;
       default:
         return 'outline' as const;

@@ -276,7 +276,7 @@ Then('the organization should have the correct name and members',
       (member: any) => member.user.id === this.currentUser?.id
     );
     expect(currentUserMember).toBeDefined();
-    expect(currentUserMember.role).toBe('companyOwner'); // Created user is company owner
+    expect(currentUserMember.role).toBe('owner'); // Created user is organization owner
   }
 );
 
