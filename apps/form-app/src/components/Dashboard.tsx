@@ -127,8 +127,7 @@ function FormsListDashboard() {
           <div>
             <TypographyH3 className="text-2xl font-bold tracking-tight">Your Forms</TypographyH3>
             <TypographyMuted className="text-muted-foreground">
-              {allForms.length} form{allForms.length !== 1 ? 's' : ''} in your workspace
-              {searchTerm && ` • ${filteredCategorizedForms.myForms.length + filteredCategorizedForms.sharedWithMe.length} matching search`}
+              {searchTerm && `${filteredCategorizedForms.myForms.length + filteredCategorizedForms.sharedWithMe.length} matching search`}
             </TypographyMuted>
           </div>
           <Button
@@ -197,43 +196,20 @@ function FormsListDashboard() {
 
         {/* Forms Grid */}
         {formsLoading ? (
-          <div className="space-y-8">
-            <div>
-              <TypographyH3 className="text-lg font-semibold mb-4">My Forms</TypographyH3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Card key={i} className="overflow-hidden animate-pulse">
-                    <div className="h-48 bg-muted"></div>
-                    <CardContent className="p-6 space-y-3">
-                      <div className="h-4 bg-muted rounded w-3/4"></div>
-                      <div className="h-3 bg-muted rounded w-1/2"></div>
-                      <div className="flex gap-2 pt-2">
-                        <div className="h-6 bg-muted rounded w-16"></div>
-                        <div className="h-6 bg-muted rounded w-20"></div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-            <div>
-              <TypographyH3 className="text-lg font-semibold mb-4">Shared With Me</TypographyH3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Card key={`shared-${i}`} className="overflow-hidden animate-pulse">
-                    <div className="h-48 bg-muted"></div>
-                    <CardContent className="p-6 space-y-3">
-                      <div className="h-4 bg-muted rounded w-3/4"></div>
-                      <div className="h-3 bg-muted rounded w-1/2"></div>
-                      <div className="flex gap-2 pt-2">
-                        <div className="h-6 bg-muted rounded w-16"></div>
-                        <div className="h-6 bg-muted rounded w-20"></div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Card key={i} className="overflow-hidden animate-pulse">
+                <div className="h-48 bg-muted"></div>
+                <CardContent className="p-6 space-y-3">
+                  <div className="h-4 bg-muted rounded w-3/4"></div>
+                  <div className="h-3 bg-muted rounded w-1/2"></div>
+                  <div className="flex gap-2 pt-2">
+                    <div className="h-6 bg-muted rounded w-16"></div>
+                    <div className="h-6 bg-muted rounded w-20"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         ) : formsError ? (
           <div className="text-center py-12">
@@ -283,46 +259,13 @@ function FormsListDashboard() {
             </div>
           </div>
         ) : (
-          <div className="space-y-8">
-            {/* My Forms Section */}
-            {(filteredCategorizedForms.myForms.length > 0 || (!searchTerm && categorizedForms.myForms.length > 0)) && (
-              <div>
-                <TypographyH3 className="text-lg font-semibold mb-4">
-                  My Forms ({categorizedForms.myForms.length})
-                </TypographyH3>
-                {filteredCategorizedForms.myForms.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {filteredCategorizedForms.myForms.map((form: any) => (
-                      <FormCard key={form.id} form={form} onNavigate={navigate} />
-                    ))}
-                  </div>
-                ) : searchTerm ? (
-                  <TypographyMuted className="text-muted-foreground italic">
-                    No forms match your search in this category.
-                  </TypographyMuted>
-                ) : null}
-              </div>
-            )}
-
-            {/* Shared With Me Section */}
-            {(filteredCategorizedForms.sharedWithMe.length > 0 || (!searchTerm && categorizedForms.sharedWithMe.length > 0)) && (
-              <div>
-                <TypographyH3 className="text-lg font-semibold mb-4">
-                  Shared With Me ({categorizedForms.sharedWithMe.length})
-                </TypographyH3>
-                {filteredCategorizedForms.sharedWithMe.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {filteredCategorizedForms.sharedWithMe.map((form: any) => (
-                      <FormCard key={form.id} form={form} onNavigate={navigate} showPermissionBadge />
-                    ))}
-                  </div>
-                ) : searchTerm ? (
-                  <TypographyMuted className="text-muted-foreground italic">
-                    No forms match your search in this category.
-                  </TypographyMuted>
-                ) : null}
-              </div>
-            )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredCategorizedForms.myForms.map((form: any) => (
+              <FormCard key={form.id} form={form} onNavigate={navigate} />
+            ))}
+            {filteredCategorizedForms.sharedWithMe.map((form: any) => (
+              <FormCard key={form.id} form={form} onNavigate={navigate} showPermissionBadge />
+            ))}
           </div>
         )}
       </div>
