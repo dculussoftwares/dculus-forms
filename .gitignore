@@ -41,6 +41,13 @@ coverage/
 # nyc test coverage
 .nyc_output
 
+# c8 coverage
+.c8_output
+
+# V8 coverage (Node.js built-in)
+.coverage/
+v8-coverage/
+
 # Dependency directories
 jspm_packages/
 

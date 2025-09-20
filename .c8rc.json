@@ -1,0 +1,41 @@
+{
+  "include": [
+    "apps/backend/src/**/*.ts",
+    "**/apps/backend/src/**/*.ts"
+  ],
+  "exclude": [
+    "apps/backend/src/**/*.test.ts",
+    "apps/backend/src/**/*.spec.ts",
+    "apps/backend/src/scripts/**",
+    "apps/backend/src/**/*.d.ts",
+    "test/**",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "node_modules/**",
+    "coverage/**",
+    "**/node_modules/**"
+  ],
+  "extension": [
+    ".ts",
+    ".js"
+  ],
+  "reporter": [
+    "text",
+    "html",
+    "lcov",
+    "json"
+  ],
+  "reportsDir": "coverage",
+  "all": true,
+  "src": [
+    "apps/backend/src"
+  ],
+  "tempDirectory": "coverage/tmp",
+  "allowExternal": true,
+  "watermarks": {
+    "lines": [80, 95],
+    "functions": [80, 95],
+    "branches": [80, 95],
+    "statements": [80, 95]
+  }
+}

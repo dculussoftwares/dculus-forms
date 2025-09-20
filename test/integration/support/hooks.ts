@@ -40,14 +40,19 @@ BeforeAll(async function() {
 
     const rootDir = path.resolve(process.cwd());
 
-    // Start backend server
-    backendProcess = spawn('pnpm', ['backend:dev'], {
+    // Start backend server with coverage if NODE_V8_COVERAGE is set
+    const isCoverageMode = process.env.NODE_V8_COVERAGE;
+    const backendCommand = isCoverageMode ? ['--filter', 'backend', 'dev:coverage'] : ['backend:dev'];
+
+    backendProcess = spawn('pnpm', backendCommand, {
       cwd: rootDir,
       stdio: 'pipe',
       env: {
         ...process.env,
         NODE_ENV: 'test',
-        PORT: '4000'
+        PORT: '4000',
+        // Pass through coverage environment variable
+        ...(isCoverageMode && { NODE_V8_COVERAGE: process.env.NODE_V8_COVERAGE })
       }
     });
 

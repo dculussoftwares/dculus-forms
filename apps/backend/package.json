@@ -18,7 +18,8 @@
     "db:migrate-layout": "tsx src/scripts/migrate-form-layout.ts",
     "db:migrate-bg-images": "tsx src/scripts/migrate-background-images.ts",
     "auth:generate": "pnpm dlx @better-auth/cli generate",
-    "admin:setup": "tsx src/scripts/setup-admin.ts"
+    "admin:setup": "tsx src/scripts/setup-admin.ts",
+    "dev:coverage": "tsx watch src/index.ts"
   },
   "dependencies": {
     "@apollo/server": "^4.9.5",
