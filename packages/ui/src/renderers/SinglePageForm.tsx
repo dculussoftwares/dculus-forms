@@ -60,8 +60,15 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
   const getInitialValues = useCallback(() => {
     const defaults = createPageDefaultValues(page);
     const storedResponses = store.getPageResponses(page.id);
-    const merged = { ...defaults, ...storedResponses };
-    
+
+    // Only use stored responses if they contain meaningful data
+    const hasMeaningfulStoredData = Object.values(storedResponses).some(value =>
+      value !== '' && value !== null && value !== undefined &&
+      !(Array.isArray(value) && value.length === 0)
+    );
+
+    const merged = hasMeaningfulStoredData ? { ...defaults, ...storedResponses } : defaults;
+
     // Ensure no undefined values in the merged object
     const cleanedValues: Record<string, any> = {};
     page.fields.forEach(field => {
@@ -79,7 +86,7 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
         }
       }
     });
-    
+
     return cleanedValues;
   }, [page, store]);
 
@@ -114,6 +121,55 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
     const initialValues = getInitialValues();
     reset(initialValues);
   }, [page.id, reset, getInitialValues]);
+
+  // Additional effect to handle store data updates (for EDIT mode)
+  useEffect(() => {
+    const currentStoreValues = store.getPageResponses(page.id);
+    console.log('SinglePageForm - Store data for page', page.id, ':', currentStoreValues);
+
+    // Only reset if store has meaningful data (more than just defaults)
+    const hasStoreData = Object.keys(currentStoreValues).length > 0 &&
+      Object.values(currentStoreValues).some(value =>
+        value !== '' && value !== null && value !== undefined &&
+        !(Array.isArray(value) && value.length === 0)
+      );
+
+    console.log('SinglePageForm - Has store data:', hasStoreData);
+
+    if (hasStoreData) {
+      const initialValues = getInitialValues();
+      console.log('SinglePageForm - Resetting form with values:', initialValues);
+      reset(initialValues);
+    }
+  }, [store, page.id, reset, getInitialValues]);
+
+  // Watch for meaningful store data and reset form when it becomes available
+  useEffect(() => {
+    // Subscribe to store changes using the correct Zustand pattern
+    const unsubscribe = useFormResponseStore.subscribe((state) => {
+      const currentStoreValues = state.getPageResponses(page.id);
+
+      // Check if the store now has meaningful data
+      const hasNewMeaningfulData = Object.values(currentStoreValues).some(value =>
+        value !== '' && value !== null && value !== undefined &&
+        !(Array.isArray(value) && value.length === 0)
+      );
+
+      if (hasNewMeaningfulData) {
+        console.log('SinglePageForm - Store received meaningful data, updating form:', currentStoreValues);
+        // Use the store values directly instead of calling getInitialValues
+        console.log('SinglePageForm - Resetting form with store values:', currentStoreValues);
+
+        // Use setTimeout to ensure reset happens after React Hook Form is fully ready
+        setTimeout(() => {
+          console.log('SinglePageForm - Executing delayed reset with values:', currentStoreValues);
+          reset(currentStoreValues);
+        }, 100);
+      }
+    });
+
+    return unsubscribe;
+  }, [page.id, reset]);
 
   // Calculate if navigation should be allowed on first attempt
   const allowNavigationOnFirstAttempt = submitCount === 0;

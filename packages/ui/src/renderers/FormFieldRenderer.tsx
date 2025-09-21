@@ -51,9 +51,9 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
   const styles = baseStyles;
 
   // Determine if field should be interactive
-  // PREVIEW and SUBMISSION modes: interactive
+  // PREVIEW, SUBMISSION, and EDIT modes: interactive
   // BUILDER mode: disabled/read-only
-  const isInteractive = mode === RendererMode.PREVIEW || mode === RendererMode.SUBMISSION;
+  const isInteractive = mode === RendererMode.PREVIEW || mode === RendererMode.SUBMISSION || mode === RendererMode.EDIT;
   
   const renderControlledField = () => {
     return (

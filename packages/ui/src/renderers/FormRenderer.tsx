@@ -74,13 +74,13 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
         Object.keys(existingData[pageId] || {}).length > 0
       );
 
-      if (!hasExistingData) {
-        // Use requestAnimationFrame to ensure DOM is ready and avoid render loops
-        requestAnimationFrame(() => {
-          // Clear existing responses first
-          store.clearAllResponses();
+      // Always initialize when we have existing data, regardless of current store state
+      // Use requestAnimationFrame to ensure DOM is ready and avoid render loops
+      requestAnimationFrame(() => {
+        // Clear existing responses first
+        store.clearAllResponses();
 
-          if (formSchema?.pages) {
+        if (formSchema?.pages) {
             // Create a mapping of fieldId to pageId
             const fieldToPageMap: Record<string, string> = {};
             formSchema.pages.forEach((page: any) => {
@@ -91,19 +91,26 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
               });
             });
 
+            console.log('FormRenderer - Field to page mapping:', fieldToPageMap);
+            console.log('FormRenderer - Existing response data fields:', Object.keys(existingResponseData));
+
             // Build page responses object
             const pageResponses: Record<string, Record<string, any>> = {};
 
             Object.entries(existingResponseData).forEach(([fieldId, value]) => {
               const pageId = fieldToPageMap[fieldId] || formSchema.pages[0]?.id || 'default';
+              console.log(`FormRenderer - Mapping field ${fieldId} to page ${pageId}`);
               if (!pageResponses[pageId]) {
                 pageResponses[pageId] = {};
               }
               pageResponses[pageId][fieldId] = value;
             });
 
+            console.log('FormRenderer - Final page responses:', pageResponses);
+
             // Set all page responses at once to minimize re-renders
             Object.entries(pageResponses).forEach(([pageId, responses]) => {
+              console.log(`FormRenderer - Setting page ${pageId} responses:`, responses);
               store.setPageResponses(pageId, responses);
             });
           } else {
@@ -111,9 +118,8 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
             store.setPageResponses('default', existingResponseData);
           }
 
-          console.log('Form initialization completed');
-        });
-      }
+        console.log('Form initialization completed');
+      });
 
       setInitializationKey(currentKey);
     }
