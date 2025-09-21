@@ -40,4 +40,5 @@ export enum RendererMode {
   PREVIEW = 'PREVIEW',
   BUILDER = 'BUILDER',
   SUBMISSION = 'SUBMISSION',
+  EDIT = 'EDIT',
 }

@@ -1,9 +1,10 @@
-import { 
-  getAllResponses, 
-  getResponseById, 
-  getResponsesByFormId, 
-  submitResponse, 
-  deleteResponse 
+import {
+  getAllResponses,
+  getResponseById,
+  getResponsesByFormId,
+  submitResponse,
+  updateResponse,
+  deleteResponse
 } from '../../services/responseService.js';
 import { getFormById } from '../../services/formService.js';
 import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
@@ -164,6 +165,29 @@ export const responsesResolvers = {
         thankYouMessage,
         showCustomThankYou
       };
+    },
+    updateResponse: async (_: any, { input }: { input: { responseId: string; data: Record<string, any> } }, context: { auth: BetterAuthContext }) => {
+      requireAuth(context.auth);
+
+      // 1. Validate response exists
+      const existingResponse = await getResponseById(input.responseId);
+      if (!existingResponse) {
+        throw new Error("Response not found");
+      }
+
+      // 2. Check user permissions (form owner/editor access)
+      const form = await getFormById(existingResponse.formId);
+      if (!form) {
+        throw new Error("Form not found");
+      }
+
+      const userSession = context.auth.session;
+      if (!userSession || userSession.activeOrganizationId !== form.organizationId) {
+        throw new Error("Access denied: You do not have permission to edit this response");
+      }
+
+      // 3. Update response data
+      return await updateResponse(input.responseId, input.data);
     },
     deleteResponse: async (_: any, { id }: { id: string }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);

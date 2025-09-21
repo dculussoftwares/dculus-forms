@@ -215,6 +215,27 @@ export const submitResponse = async (responseData: Partial<FormResponse>): Promi
   };
 };
 
+export const updateResponse = async (responseId: string, data: Record<string, any>): Promise<FormResponse> => {
+  try {
+    const updatedResponse = await prisma.response.update({
+      where: { id: responseId },
+      data: {
+        data: data,
+      },
+    });
+
+    return {
+      id: updatedResponse.id,
+      formId: updatedResponse.formId,
+      data: (updatedResponse.data as Record<string, any>) || {},
+      submittedAt: updatedResponse.submittedAt,
+    };
+  } catch (error) {
+    console.error('Error updating response:', error);
+    throw new Error(`Failed to update response: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
 export const deleteResponse = async (id: string): Promise<boolean> => {
   try {
     await prisma.response.delete({

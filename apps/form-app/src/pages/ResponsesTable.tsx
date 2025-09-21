@@ -34,6 +34,7 @@ import {
   ArrowLeft,
   ChevronDown,
   Download,
+  Edit,
   Eye,
   FileSpreadsheet,
   FileText,
@@ -436,9 +437,9 @@ const ResponsesTable: React.FC = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => console.log('Edit response:', row.original.id)}>
-                <Eye className="mr-2 h-4 w-4" />
-                View Details
+              <DropdownMenuItem onClick={() => navigate(`/dashboard/form/${actualFormId}/responses/${row.original.id}/edit`)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit Response
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => console.log('Delete response:', row.original.id)}>
                 <X className="mr-2 h-4 w-4" />

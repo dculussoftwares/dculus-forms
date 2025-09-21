@@ -221,6 +221,28 @@ export const GENERATE_FORM_RESPONSE_REPORT = gql`
   }
 `;
 
+export const GET_RESPONSE_BY_ID = gql`
+  query GetResponseById($id: ID!) {
+    response(id: $id) {
+      id
+      formId
+      data
+      submittedAt
+    }
+  }
+`;
+
+export const UPDATE_RESPONSE = gql`
+  mutation UpdateResponse($input: UpdateResponseInput!) {
+    updateResponse(input: $input) {
+      id
+      formId
+      data
+      submittedAt
+    }
+  }
+`;
+
 export const GET_FORM_ANALYTICS = gql`
   query GetFormAnalytics($formId: ID!, $timeRange: TimeRangeInput) {
     formAnalytics(formId: $formId, timeRange: $timeRange) {

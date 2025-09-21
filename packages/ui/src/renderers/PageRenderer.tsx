@@ -38,7 +38,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
   
   const store = useFormResponseStore();
   const { getFormattedResponses } = useFormResponseUtils();
-  const { onFormSubmit, formId } = useFormResponseContext();
+  const { onFormSubmit, onResponseUpdate, formId, responseId, mode: contextMode } = useFormResponseContext();
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [pageValidationStates, setPageValidationStates] = useState<Record<string, boolean>>({});
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -108,15 +108,17 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
   // Handle form completion (last page submitted)
   const handleFormComplete = () => {
     const allData = store.getAllResponses();
-    
-    // Try to submit to parent form handler first
-    if (onFormSubmit && formId) {
-      const formattedData = getFormattedResponses();
+    const formattedData = getFormattedResponses();
+
+    // Handle based on mode - EDIT mode uses onResponseUpdate, others use onFormSubmit
+    if (contextMode === RendererMode.EDIT && onResponseUpdate && responseId) {
+      onResponseUpdate(responseId, formattedData);
+    } else if (onFormSubmit && formId) {
       onFormSubmit(formId, formattedData);
     } else if (onFormComplete) {
       onFormComplete(allData);
     }
-    
+
     console.log('Form completed with all data:', allData);
   };
 
@@ -331,13 +333,13 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
                   }`}
                   title={
                     navigationState.currentPageValid
-                      ? 'Submit and continue to next page'
-                      : navigationState.isFirstAttempt 
+                      ? (contextMode === RendererMode.EDIT ? 'Update response and continue to next page' : 'Submit and continue to next page')
+                      : navigationState.isFirstAttempt
                         ? 'Click to validate and submit (will show validation errors if any)'
                         : 'Fix validation errors to continue'
                   }
                 >
-                  Submit
+                  {contextMode === RendererMode.EDIT ? 'Update Response' : 'Submit'}
                   <svg
                     className="w-4 h-4"
                     fill="none"

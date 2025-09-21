@@ -282,6 +282,11 @@ export const typeDefs = gql`
     completionTimeSeconds: Int # Time taken to complete form in seconds
   }
 
+  input UpdateResponseInput {
+    responseId: ID!
+    data: JSON!
+  }
+
   # Template Input Types
   input CreateTemplateInput {
     name: String!
@@ -784,6 +789,7 @@ export const typeDefs = gql`
     deleteForm(id: ID!): Boolean!
     regenerateShortUrl(id: ID!): Form!
     submitResponse(input: SubmitResponseInput!): FormResponse!
+    updateResponse(input: UpdateResponseInput!): FormResponse!
     deleteResponse(id: ID!): Boolean!
 
     # Form Sharing Mutations

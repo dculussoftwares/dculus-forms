@@ -9,6 +9,7 @@ import FormBuilder from './pages/FormBuilder';
 import FormViewer from './pages/FormViewer';
 import Responses from './pages/Responses';
 import ResponsesTable from './pages/ResponsesTable';
+import ResponseEdit from './pages/ResponseEdit';
 import ResponsesAnalytics from './pages/ResponsesAnalytics';
 import ResponsesIndividual from './pages/ResponsesIndividual';
 import { SignUp } from './pages/SignUp';
@@ -100,6 +101,11 @@ function App() {
           <Route path="/dashboard/form/:formId/responses/table" element={
             <ProtectedRoute>
               <ResponsesTable />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/form/:formId/responses/:responseId/edit" element={
+            <ProtectedRoute>
+              <ResponseEdit />
             </ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/responses/analytics" element={

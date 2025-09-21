@@ -149,6 +149,7 @@ export const useFormResponseUtils = () => {
       const mergedResponses = { ...defaultValues, ...currentResponses };
       store.setPageResponses(pageId, mergedResponses);
     },
+
   }), [store]);
 };
 
