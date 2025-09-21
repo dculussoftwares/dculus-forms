@@ -1,12 +1,15 @@
-import React, { useEffect, useImperativeHandle, useCallback, useMemo, useRef } from 'react';
-import { useForm, FormProvider, useWatch } from 'react-hook-form';
+import React, { useImperativeHandle, useMemo } from 'react';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FormPage, generatePageDefaultValues, FieldType } from '@dculus/types';
+import { FormPage } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { FormFieldRenderer } from './FormFieldRenderer';
+import { createPageSchema } from '../utils/zodSchemaBuilder';
+import { FormValidationState } from '../types/validation';
+import { useFormInitialization, useFormValidation, useStoreSync, useFormSubmission } from '../hooks';
+import { ValidationErrorSummary, FormControls, PageHeader } from '../components';
+import { DEFAULT_LAYOUT_STYLES, FORM_CONSTANTS } from '../constants/formStyles';
 import { useFormResponseStore } from '../stores/useFormResponseStore';
-import { createPageSchema, createPageDefaultValues, validatePageData } from '../utils/zodSchemaBuilder';
-import { FormValidationState, PageValidationHook } from '../types/validation';
 
 interface FieldStyles {
   container: string;
@@ -45,204 +48,69 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
   mode = RendererMode.PREVIEW,
   onSubmit,
   showSubmitButton = false,
-  submitButtonText = 'Submit',
+  submitButtonText = FORM_CONSTANTS.DEFAULT_SUBMIT_TEXT,
   className = '',
   formRef,
   onValidationChange,
   enableRealtimeValidation = true,
 }) => {
-  const store = useFormResponseStore();
+  // Initialize custom hooks
+  const { getInitialValues, store } = useFormInitialization(page);
 
-  // Create Zod schema for this page
+  // Create Zod schema for this page (memoized for performance)
   const validationSchema = useMemo(() => createPageSchema(page), [page]);
 
-  // Get initial values from Zustand store, fallback to defaults - DETERMINISTIC
-  const getInitialValues = useCallback(() => {
-    const defaults = createPageDefaultValues(page);
-    const storedResponses = store.getPageResponses(page.id);
-
-    console.log('SinglePageForm - getInitialValues called with stored responses:', storedResponses);
-
-    // Always use stored responses if they exist, even if some fields are empty
-    const merged = Object.keys(storedResponses).length > 0 ? { ...defaults, ...storedResponses } : defaults;
-
-    // Ensure no undefined values in the merged object
-    const cleanedValues: Record<string, any> = {};
-    page.fields.forEach(field => {
-      const value = merged[field.id];
-      if (value !== undefined) {
-        cleanedValues[field.id] = value;
-      } else {
-        // Set appropriate default based on field type
-        switch (field.type) {
-          case FieldType.CHECKBOX_FIELD:
-            cleanedValues[field.id] = [];
-            break;
-          default:
-            cleanedValues[field.id] = '';
-        }
-      }
-    });
-
-    console.log('SinglePageForm - returning cleaned values:', cleanedValues);
-    return cleanedValues;
-  }, [page, store]);
-
+  // Initialize React Hook Form
   const methods = useForm({
     defaultValues: getInitialValues(),
     mode: enableRealtimeValidation ? 'onChange' : 'onSubmit',
     resolver: zodResolver(validationSchema),
-    criteriaMode: 'all', // Show all validation errors
+    criteriaMode: 'all',
   });
 
-  const { handleSubmit, reset, control, getValues, formState, trigger, clearErrors, setFocus } = methods;
-  const { isValid, errors, isSubmitting, touchedFields, isSubmitted, submitCount } = formState;
+  const { handleSubmit, reset, control } = methods;
 
-  // Watch form values to sync with store in real-time
-  const watchedValues = useWatch({ control });
+  // Initialize validation hook
+  const {
+    isValid,
+    isSubmitting,
+    validationStates,
+    validatePage,
+    getValidationState,
+    showAllValidationErrors,
+    getFormattedErrors
+  } = useFormValidation(methods, page, onValidationChange);
 
-  // Current store values - used for comparison
-  const currentStoreValues = store.getPageResponses(page.id);
-  const storeValuesRef = useRef<Record<string, any>>({});
+  // Initialize submission hook
+  const { handleSubmit: handleFormSubmit, submitCurrentValues } = useFormSubmission(
+    methods,
+    page,
+    store,
+    onSubmit
+  );
 
-  // Initialize ref on first render
-  useEffect(() => {
-    storeValuesRef.current = store.getPageResponses(page.id);
-  }, []); // Only run once on mount
-
-  // Update store whenever form values change (user input)
-  useEffect(() => {
-    if (watchedValues && Object.keys(watchedValues).length > 0) {
-      // Only update if the values have actually changed to prevent infinite loops
-      const currentStoreValues = store.getPageResponses(page.id);
-      const hasChanged = JSON.stringify(currentStoreValues) !== JSON.stringify(watchedValues);
-
-      if (hasChanged) {
-        console.log('SinglePageForm - User input detected, updating store:', watchedValues);
-        store.setPageResponses(page.id, watchedValues);
-      }
-    }
-  }, [watchedValues, store, page.id]);
-
-  // Handle external store changes (from other sources) - ONLY if values actually changed
-  useEffect(() => {
-    const storeData = store.getPageResponses(page.id);
-    const previousStoreData = storeValuesRef.current;
-
-    // Only reset if store data has meaningfully changed
-    const hasStoreData = Object.keys(storeData).length > 0;
-    const hasChanged = JSON.stringify(previousStoreData) !== JSON.stringify(storeData);
-
-    if (hasStoreData && hasChanged) {
-      console.log('SinglePageForm - External store change detected, resetting form:', storeData);
-      const formValues = getInitialValues();
-      reset(formValues);
-
-      // Update our reference
-      storeValuesRef.current = storeData;
-    }
-  }, [currentStoreValues, store, page.id, reset, getInitialValues]);
-
-  // Calculate if navigation should be allowed on first attempt
-  const allowNavigationOnFirstAttempt = submitCount === 0;
-  const showLenientValidation = submitCount > 0 && !isValid;
-
-  // Notify parent of validation state changes
-  useEffect(() => {
-    if (onValidationChange) {
-      // Always report the actual validation state
-      // The parent (PageRenderer) will handle button enabling/disabling
-      onValidationChange(isValid);
-    }
-  }, [isValid, onValidationChange]);
-
-  // Form submission handler
-  const onFormSubmit = useCallback(async (data: Record<string, any>) => {
-    try {
-      // Validate the data using our schema
-      const validationResult = validatePageData(page, data);
-      
-      if (validationResult.isValid) {
-        // Save to store and trigger callback
-        store.setPageResponses(page.id, data);
-        onSubmit(page.id, data);
-      } else {
-        console.error('Form validation failed:', validationResult.errors);
-      }
-    } catch (error: unknown) {
-      console.error('Form submission error:', error);
-    }
-  }, [page, store, onSubmit]);
-
-  // Validation helper functions
-  const validatePage = useCallback(async (): Promise<boolean> => {
-    const result = await trigger();
-    return result;
-  }, [trigger]);
-
-  const getValidationState = useCallback((): FormValidationState => {
-    return {
-      isValid,
-      isSubmitting,
-      isSubmitted,
-      submitCount,
-      errors,
-      touchedFields,
-      allowNavigationOnFirstAttempt,
-    };
-  }, [isValid, isSubmitting, isSubmitted, submitCount, errors, touchedFields, allowNavigationOnFirstAttempt]);
-
-  // Force show all validation errors (for navigation attempts)
-  const showAllValidationErrors = useCallback(async () => {
-    // Trigger validation for all fields first
-    await trigger();
-    
-    // Focus each field briefly to mark it as touched and show errors
-    for (const field of page.fields) {
-      try {
-        setFocus(field.id);
-        // Small delay to ensure the field is properly focused and touched
-        await new Promise(resolve => setTimeout(resolve, 10));
-      } catch (error) {
-        // Continue if field doesn't exist or can't be focused
-        console.warn(`Could not focus field ${field.id}:`, error);
-      }
-    }
-    
-    // Final validation trigger to ensure all errors are displayed
-    await trigger();
-  }, [trigger, page.fields, setFocus]);
+  // Initialize store synchronization
+  useStoreSync(control, page.id, store, (values) => {
+    reset(getInitialValues());
+  });
 
   // Expose methods to parent via ref
   useImperativeHandle(formRef, () => ({
-    submit: () => {
-      // Get current form values and submit them
-      const currentData = getValues();
-      onFormSubmit(currentData);
-    },
+    submit: submitCurrentValues,
     validate: validatePage,
     getValidationState,
     showAllValidationErrors,
-  }), [getValues, onFormSubmit, validatePage, getValidationState, showAllValidationErrors]);
+  }), [submitCurrentValues, validatePage, getValidationState, showAllValidationErrors]);
 
-  const defaultLayoutStyles: LayoutStyles = {
-    field: {
-      container: 'mb-4',
-      label: 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2',
-      input: 'w-full h-10 bg-white border border-gray-300 rounded-md px-3 text-gray-500',
-      textarea: 'w-full h-24 bg-white border border-gray-300 rounded-md px-3 py-2 text-gray-500',
-      select: 'w-full h-10 bg-white border border-gray-300 rounded-md px-3 text-gray-500',
-    },
-    submitButton: 'w-full h-10 bg-blue-600 text-white rounded-md flex items-center justify-center hover:bg-blue-700 transition-colors',
-  };
+  // Determine styles to use
+  const styles = layoutStyles || DEFAULT_LAYOUT_STYLES;
 
-  const styles = layoutStyles || defaultLayoutStyles;
-
+  // Early return for empty pages
   if (!page.fields || page.fields.length === 0) {
     return (
       <div className={`text-center py-8 ${className}`}>
         <p className="text-gray-500 text-sm">
-          No fields in this page yet.
+          {FORM_CONSTANTS.EMPTY_PAGE_MESSAGE}
         </p>
       </div>
     );
@@ -250,15 +118,9 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(onFormSubmit)} className={`space-y-4 ${className}`}>
-        {/* Page Title */}
-        {page.title && (
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            {page.title}
-          </h3>
-        )}
+      <form onSubmit={handleSubmit(handleFormSubmit)} className={`space-y-4 ${className}`}>
+        <PageHeader title={page.title} />
 
-        {/* Form Fields */}
         <div className="space-y-4">
           {page.fields.map((field) => (
             <FormFieldRenderer
@@ -271,39 +133,14 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
           ))}
         </div>
 
-        {/* Submit Button (optional) */}
-        {showSubmitButton && (
-          <div className="space-y-2">
-            {/* Show validation errors summary if form is invalid */}
-            {!isValid && Object.keys(errors).length > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-md p-3">
-                <p className="text-sm text-red-600 font-medium mb-2">
-                  Please fix the following errors:
-                </p>
-                <ul className="text-sm text-red-600 space-y-1">
-                  {Object.entries(errors).map(([fieldId, error]) => {
-                    const message = error && typeof error === 'object' && 'message' in error 
-                      ? error.message as string 
-                      : 'Unknown error';
-                    return (
-                      <li key={fieldId}>• {message}</li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
-            
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className={`${styles.submitButton} ${
-                isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-              } ${!isValid ? 'bg-red-500 hover:bg-red-600' : ''}`}
-            >
-              {isSubmitting ? 'Submitting...' : submitButtonText}
-            </button>
-          </div>
-        )}
+        <FormControls
+          showSubmitButton={showSubmitButton}
+          submitButtonText={submitButtonText}
+          isSubmitting={isSubmitting}
+          isValid={isValid}
+          errors={getFormattedErrors()}
+          buttonStyles={styles.submitButton}
+        />
       </form>
     </FormProvider>
   );
