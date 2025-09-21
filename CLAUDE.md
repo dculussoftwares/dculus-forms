@@ -27,6 +27,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Health check**: `pnpm test:integration:health` - Quick health test against deployed backend
 - **Auth tests**: `pnpm test:integration:auth` - Authentication tests against deployed backend
 
+### Browser Testing (Playwright)
+- **Test credentials for Playwright MCP**: Use `sivam2@mailinator.com` as email and `password` as password for all browser automation tests
+
 ## Architecture Overview
 
 This is a **pnpm monorepo** with four main applications and shared packages:
