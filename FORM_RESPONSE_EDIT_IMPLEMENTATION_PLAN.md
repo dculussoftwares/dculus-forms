@@ -29,6 +29,9 @@ This document outlines the implementation plan for adding form response editing 
 - **Current Behavior**: Logs `'Edit response: ${responseId}'` on edit button click
 - **Actions Available**: View Details, Delete (placeholder)
 
+### Browser Testing (Playwright)
+- Test credentials for Playwright MCP: Use sivam2@mailinator.com as email and password as password for all browser automation tests
+
 ### Form Viewer Architecture (`FormViewer.tsx`)
 - **Location**: `apps/form-viewer/src/pages/FormViewer.tsx`
 - **Core Component**: Uses `FormRenderer` from `@dculus/ui`
