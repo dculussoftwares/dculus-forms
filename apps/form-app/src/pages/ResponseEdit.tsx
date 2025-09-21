@@ -143,6 +143,7 @@ const ResponseEdit: React.FC = () => {
 
   // Deserialize the form schema from the backend
   const formSchema = deserializeFormSchema(form.formSchema);
+  const cdnEndpoint = (import.meta as any).env?.VITE_CDN_ENDPOINT;
 
   return (
     <MainLayout
@@ -176,6 +177,7 @@ const ResponseEdit: React.FC = () => {
       {/* Form renderer in edit mode */}
       <div className="h-full w-full">
         <FormRenderer
+          cdnEndpoint={cdnEndpoint}
           formSchema={formSchema}
           mode={RendererMode.EDIT}
           existingResponseData={response.data}
