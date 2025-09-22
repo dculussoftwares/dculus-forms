@@ -4,7 +4,7 @@ import { useQuery, useMutation } from '@apollo/client';
 import { FormRenderer } from '@dculus/ui';
 import { RendererMode } from '@dculus/utils';
 import { deserializeFormSchema } from '@dculus/types';
-import { GET_FORM_BY_ID, GET_RESPONSE_BY_ID, UPDATE_RESPONSE } from '../graphql/queries';
+import { GET_FORM_BY_ID, GET_RESPONSE_BY_ID, UPDATE_RESPONSE, GET_FORM_RESPONSES } from '../graphql/queries';
 import { MainLayout } from '../components/MainLayout';
 import { Button, LoadingSpinner, toastSuccess, toastError } from '@dculus/ui';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
@@ -27,7 +27,23 @@ const ResponseEdit: React.FC = () => {
   });
 
   // Update response mutation
-  const [updateResponseMutation] = useMutation(UPDATE_RESPONSE);
+  const [updateResponseMutation] = useMutation(UPDATE_RESPONSE, {
+    // Refetch queries to update the cache after successful update
+    refetchQueries: [
+      {
+        query: GET_FORM_RESPONSES,
+        variables: {
+          formId: formId,
+          page: 1,
+          limit: 20,
+          sortBy: "submittedAt",
+          sortOrder: "desc"
+        }
+      }
+    ],
+    // Update cache optimistically for better UX
+    awaitRefetchQueries: true
+  });
 
   const handleResponseUpdate = async (responseId: string, data: Record<string, any>) => {
     if (!responseId) return;
