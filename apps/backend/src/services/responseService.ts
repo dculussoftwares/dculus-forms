@@ -215,21 +215,73 @@ export const submitResponse = async (responseData: Partial<FormResponse>): Promi
   };
 };
 
-export const updateResponse = async (responseId: string, data: Record<string, any>): Promise<FormResponse> => {
-  try {
-    const updatedResponse = await prisma.response.update({
-      where: { id: responseId },
-      data: {
-        data: data,
-      },
-    });
+export const updateResponse = async (
+  responseId: string,
+  data: Record<string, any>,
+  editContext?: {
+    userId: string;
+    ipAddress?: string;
+    userAgent?: string;
+    editReason?: string;
+  }
+): Promise<FormResponse> => {
+  console.log('updateResponse called with:', { responseId, hasEditContext: !!editContext, editContext });
+  // Debug logging
 
-    return {
-      id: updatedResponse.id,
-      formId: updatedResponse.formId,
-      data: (updatedResponse.data as Record<string, any>) || {},
-      submittedAt: updatedResponse.submittedAt,
-    };
+  try {
+    // If edit tracking context is provided, we need to track the edit
+    if (editContext) {
+      console.log('Edit tracking mode - creating snapshot and recording edit');
+      const { ResponseEditTrackingService } = await import('./responseEditTrackingService.js');
+
+      // Get the current response and form schema for change detection
+      const { response: currentResponse, formSchema } = await ResponseEditTrackingService.getResponseWithFormSchema(responseId);
+      const oldData = currentResponse.data as Record<string, any>;
+
+      // Create a snapshot before the edit
+      await ResponseEditTrackingService.createSnapshot(responseId, oldData, 'EDIT', editContext.userId);
+
+      // Update the response
+      const updatedResponse = await prisma.response.update({
+        where: { id: responseId },
+        data: { data: data },
+      });
+
+      // Record the edit with field-level changes
+      await ResponseEditTrackingService.recordEdit(
+        responseId,
+        oldData,
+        data,
+        formSchema,
+        {
+          userId: editContext.userId,
+          ipAddress: editContext.ipAddress,
+          userAgent: editContext.userAgent,
+          editType: 'MANUAL',
+          editReason: editContext.editReason
+        }
+      );
+
+      return {
+        id: updatedResponse.id,
+        formId: updatedResponse.formId,
+        data: (updatedResponse.data as Record<string, any>) || {},
+        submittedAt: updatedResponse.submittedAt,
+      };
+    } else {
+      // Legacy mode - just update without tracking
+      const updatedResponse = await prisma.response.update({
+        where: { id: responseId },
+        data: { data: data },
+      });
+
+      return {
+        id: updatedResponse.id,
+        formId: updatedResponse.formId,
+        data: (updatedResponse.data as Record<string, any>) || {},
+        submittedAt: updatedResponse.submittedAt,
+      };
+    }
   } catch (error) {
     console.error('Error updating response:', error);
     throw new Error(`Failed to update response: ${error instanceof Error ? error.message : 'Unknown error'}`);

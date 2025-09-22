@@ -187,6 +187,14 @@ export const GET_FORM_RESPONSES = gql`
         formId
         data
         submittedAt
+        hasBeenEdited
+        totalEdits
+        lastEditedAt
+        lastEditedBy {
+          id
+          name
+          email
+        }
       }
       total
       page
@@ -358,6 +366,136 @@ export const GET_USER_ORGANIZATIONS = gql`
             email
           }
         }
+      }
+    }
+  }
+`;
+
+// Response Edit History Queries
+export const GET_RESPONSE_EDIT_HISTORY = gql`
+  query GetResponseEditHistory($responseId: ID!) {
+    responseEditHistory(responseId: $responseId) {
+      id
+      responseId
+      editedBy {
+        id
+        name
+        email
+        image
+      }
+      editedAt
+      editType
+      editReason
+      ipAddress
+      userAgent
+      totalChanges
+      changesSummary
+      fieldChanges {
+        id
+        fieldId
+        fieldLabel
+        fieldType
+        previousValue
+        newValue
+        changeType
+        valueChangeSize
+      }
+    }
+  }
+`;
+
+export const GET_RESPONSE_SNAPSHOTS = gql`
+  query GetResponseSnapshots($responseId: ID!) {
+    responseSnapshots(responseId: $responseId) {
+      id
+      responseId
+      snapshotData
+      snapshotAt
+      snapshotType
+      createdBy {
+        id
+        name
+        email
+        image
+      }
+      isRestorable
+    }
+  }
+`;
+
+// Response Edit History Mutations
+export const UPDATE_RESPONSE_WITH_TRACKING = gql`
+  mutation UpdateResponseWithTracking($input: UpdateResponseInput!) {
+    updateResponse(input: $input) {
+      id
+      formId
+      data
+      submittedAt
+      hasBeenEdited
+      lastEditedAt
+      totalEdits
+    }
+  }
+`;
+
+export const RESTORE_RESPONSE = gql`
+  mutation RestoreResponse($input: RestoreResponseInput!) {
+    restoreResponse(input: $input) {
+      id
+      formId
+      data
+      submittedAt
+      thankYouMessage
+      showCustomThankYou
+    }
+  }
+`;
+
+export const CREATE_RESPONSE_SNAPSHOT = gql`
+  mutation CreateResponseSnapshot($input: CreateSnapshotInput!) {
+    createResponseSnapshot(input: $input) {
+      id
+      responseId
+      snapshotData
+      snapshotAt
+      snapshotType
+      createdBy {
+        id
+        name
+        email
+        image
+      }
+      isRestorable
+    }
+  }
+`;
+
+// Enhanced response query with edit tracking fields
+export const GET_RESPONSE_WITH_EDIT_INFO = gql`
+  query GetResponseWithEditInfo($id: ID!) {
+    response(id: $id) {
+      id
+      formId
+      data
+      submittedAt
+      editHistory {
+        id
+        editedBy {
+          id
+          name
+          email
+          image
+        }
+        editedAt
+        editType
+        changesSummary
+        totalChanges
+      }
+      snapshots {
+        id
+        snapshotAt
+        snapshotType
+        isRestorable
       }
     }
   }

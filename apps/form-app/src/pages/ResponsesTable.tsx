@@ -2,21 +2,23 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@apollo/client';
 import { ColumnDef, VisibilityState } from '@tanstack/react-table';
+import { formatDistanceToNow } from 'date-fns';
 import {
+  Badge,
   Button,
+  DataTableColumnHeader,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  Input,
   LoadingSpinner,
   ServerDataTable,
   TypographyH3,
   TypographyP,
-  DataTableColumnHeader,
-  Input,
 } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
-import { FilterModal, FilterChip, FilterState } from '../components/Filters';
+import { FilterChip, FilterModal, FilterState } from '../components/Filters';
 import {
   GENERATE_FORM_RESPONSE_REPORT,
   GET_FORM_BY_ID,
@@ -32,6 +34,8 @@ import {
 import {
   AlertCircle,
   ArrowLeft,
+  Calendar,
+  CheckSquare,
   ChevronDown,
   Download,
   Edit,
@@ -39,16 +43,15 @@ import {
   FileSpreadsheet,
   FileText,
   Filter,
+  Hash,
+  History,
+  List,
   MoreHorizontal,
+  RotateCcw,
   Search,
   Settings2,
-  X,
-  Calendar,
-  Hash,
   Type,
-  CheckSquare,
-  List,
-  RotateCcw,
+  X,
 } from 'lucide-react';
 
 // Helper function to format values based on field type
@@ -81,7 +84,7 @@ const ResponsesTable: React.FC = () => {
   // These states are kept for server-side sorting if needed in the future
   const [sortBy] = useState('submittedAt');
   const [sortOrder] = useState<'asc' | 'desc'>('desc');
-  
+
   // Enhanced UI state
   const [globalFilter, setGlobalFilter] = useState('');
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -92,14 +95,17 @@ const ResponsesTable: React.FC = () => {
   const actualFormId = formId || id;
 
   // Filter handlers
-  const handleFilterChange = (fieldId: string, filterUpdate: Partial<FilterState>) => {
-    setFilters(prev => ({
+  const handleFilterChange = (
+    fieldId: string,
+    filterUpdate: Partial<FilterState>
+  ) => {
+    setFilters((prev) => ({
       ...prev,
-      [fieldId]: { 
+      [fieldId]: {
         ...prev[fieldId],
         fieldId,
-        ...filterUpdate 
-      }
+        ...filterUpdate,
+      },
     }));
     // Reset to first page when filters change
     setCurrentPage(1);
@@ -111,7 +117,7 @@ const ResponsesTable: React.FC = () => {
   };
 
   const handleRemoveFilter = (fieldId: string) => {
-    setFilters(prev => {
+    setFilters((prev) => {
       const newFilters = { ...prev };
       delete newFilters[fieldId];
       return newFilters;
@@ -135,15 +141,17 @@ const ResponsesTable: React.FC = () => {
 
   // Convert filters to GraphQL format
   const graphqlFilters = useMemo(() => {
-    const activeFilters = Object.values(filters).filter(f => f.active);
-    return activeFilters.length > 0 ? activeFilters.map(filter => ({
-      fieldId: filter.fieldId,
-      operator: filter.operator,
-      value: filter.value,
-      values: filter.values,
-      dateRange: filter.dateRange,
-      numberRange: filter.numberRange,
-    })) : null;
+    const activeFilters = Object.values(filters).filter((f) => f.active);
+    return activeFilters.length > 0
+      ? activeFilters.map((filter) => ({
+          fieldId: filter.fieldId,
+          operator: filter.operator,
+          value: filter.value,
+          values: filter.values,
+          dateRange: filter.dateRange,
+          numberRange: filter.numberRange,
+        }))
+      : null;
   }, [filters]);
 
   const {
@@ -189,20 +197,24 @@ const ResponsesTable: React.FC = () => {
   // Convert frontend filters to GraphQL format
   const convertFiltersForExport = () => {
     return Object.values(filters)
-      .filter(filter => filter.active)
-      .map(filter => ({
+      .filter((filter) => filter.active)
+      .map((filter) => ({
         fieldId: filter.fieldId,
         operator: filter.operator,
         value: filter.value || undefined,
         values: filter.values || undefined,
-        dateRange: filter.dateRange ? {
-          from: filter.dateRange.from || undefined,
-          to: filter.dateRange.to || undefined
-        } : undefined,
-        numberRange: filter.numberRange ? {
-          min: filter.numberRange.min || undefined,
-          max: filter.numberRange.max || undefined
-        } : undefined
+        dateRange: filter.dateRange
+          ? {
+              from: filter.dateRange.from || undefined,
+              to: filter.dateRange.to || undefined,
+            }
+          : undefined,
+        numberRange: filter.numberRange
+          ? {
+              min: filter.numberRange.min || undefined,
+              max: filter.numberRange.max || undefined,
+            }
+          : undefined,
       }));
   };
 
@@ -213,14 +225,16 @@ const ResponsesTable: React.FC = () => {
     try {
       const activeFilters = convertFiltersForExport();
       const hasFilters = activeFilters.length > 0;
-      
-      console.log(`Generating ${format} report on backend${hasFilters ? ` with ${activeFilters.length} filters` : ' (all responses)'}...`);
+
+      console.log(
+        `Generating ${format} report on backend${hasFilters ? ` with ${activeFilters.length} filters` : ' (all responses)'}...`
+      );
 
       const { data } = await generateReport({
-        variables: { 
-          formId: actualFormId, 
+        variables: {
+          formId: actualFormId,
           format,
-          filters: hasFilters ? activeFilters : undefined
+          filters: hasFilters ? activeFilters : undefined,
         },
       });
 
@@ -245,9 +259,11 @@ const ResponsesTable: React.FC = () => {
   const fillableFields = useMemo(() => {
     if (!formData?.form?.formSchema) return [];
 
-    const formSchema: FormSchema = deserializeFormSchema(formData.form.formSchema);
+    const formSchema: FormSchema = deserializeFormSchema(
+      formData.form.formSchema
+    );
     const fields: FillableFormField[] = [];
-    
+
     formSchema.pages.forEach((page) => {
       page.fields.forEach((field) => {
         if (field instanceof FillableFormField) {
@@ -255,7 +271,7 @@ const ResponsesTable: React.FC = () => {
         }
       });
     });
-    
+
     return fields;
   }, [formData]);
 
@@ -333,6 +349,59 @@ const ResponsesTable: React.FC = () => {
         enableSorting: true,
         size: 180,
       },
+      {
+        accessorKey: 'hasBeenEdited',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Edit Status" />
+        ),
+        cell: ({ row }) => {
+          const response = row.original;
+          const hasBeenEdited = response.hasBeenEdited;
+          const totalEdits = response.totalEdits || 0;
+          const lastEditedAt = response.lastEditedAt;
+          const lastEditedBy = response.lastEditedBy;
+
+          if (!hasBeenEdited) {
+            return (
+              <div className="flex items-center space-x-2">
+                <div className="h-2 w-2 bg-green-500 rounded-full" />
+                <span className="text-sm text-muted-foreground">Original</span>
+              </div>
+            );
+          }
+
+          return (
+            <div className="flex items-center space-x-2">
+              <div className="h-2 w-2 bg-orange-500 rounded-full" />
+              <div className="flex flex-col">
+                <div className="flex items-center space-x-1">
+                  <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                    <History className="h-3 w-3 mr-1" />
+                    {totalEdits} edit{totalEdits !== 1 ? 's' : ''}
+                  </Badge>
+                </div>
+                {lastEditedAt && (
+                  <div className="flex items-center space-x-1 mt-1">
+                    <span className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(lastEditedAt), { addSuffix: true })}
+                    </span>
+                    {lastEditedBy && (
+                      <>
+                        <span className="text-xs text-muted-foreground">by</span>
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {lastEditedBy.name}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        },
+        enableSorting: true,
+        size: 200,
+      },
     ];
 
     // Generate columns for form fields
@@ -365,16 +434,13 @@ const ResponsesTable: React.FC = () => {
                 <div className="text-muted-foreground">
                   {getFieldIcon(field.type)}
                 </div>
-                <DataTableColumnHeader 
-                  column={column} 
-                  title={field.label} 
-                />
+                <DataTableColumnHeader column={column} title={field.label} />
               </div>
             ),
             cell: ({ row }) => {
               const value = row.original.data[field.id];
               const formattedValue = formatFieldValue(value, field.type);
-              
+
               if (!formattedValue) {
                 return (
                   <div className="flex items-center space-x-2 text-muted-foreground">
@@ -390,7 +456,10 @@ const ResponsesTable: React.FC = () => {
                     {getFieldIcon(field.type)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm font-medium truncate block" title={formattedValue}>
+                    <span
+                      className="text-sm font-medium truncate block"
+                      title={formattedValue}
+                    >
                       {formattedValue}
                     </span>
                   </div>
@@ -437,11 +506,31 @@ const ResponsesTable: React.FC = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => navigate(`/dashboard/form/${actualFormId}/responses/${row.original.id}/edit`)}>
+              <DropdownMenuItem
+                onClick={() =>
+                  navigate(
+                    `/dashboard/form/${actualFormId}/responses/${row.original.id}/edit`
+                  )
+                }
+              >
                 <Edit className="mr-2 h-4 w-4" />
                 Edit Response
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => console.log('Delete response:', row.original.id)}>
+              <DropdownMenuItem
+                onClick={() => navigate(`/dashboard/form/${actualFormId}/responses/${row.original.id}/history`)}
+                disabled={!row.original.hasBeenEdited}
+              >
+                <History className="mr-2 h-4 w-4" />
+                Edit History
+                {(row.original.totalEdits || 0) > 0 && (
+                  <Badge variant="outline" className="ml-2 bg-orange-50 text-orange-700 border-orange-200 text-xs">
+                    {row.original.totalEdits}
+                  </Badge>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => console.log('Delete response:', row.original.id)}
+              >
                 <X className="mr-2 h-4 w-4" />
                 Delete
               </DropdownMenuItem>
@@ -538,10 +627,13 @@ const ResponsesTable: React.FC = () => {
     const hiddenColumns = Object.entries(columnVisibility)
       .filter(([_, visible]) => !visible)
       .map(([id]) => {
-        const field = formData?.form?.formSchema ? 
-          deserializeFormSchema(formData.form.formSchema)
-            .pages.flatMap(p => p.fields)
-            .find(f => `field-${f.id}` === id && f instanceof FillableFormField) : null;
+        const field = formData?.form?.formSchema
+          ? deserializeFormSchema(formData.form.formSchema)
+              .pages.flatMap((p) => p.fields)
+              .find(
+                (f) => `field-${f.id}` === id && f instanceof FillableFormField
+              )
+          : null;
         return field ? (field as FillableFormField).label : id;
       });
 
@@ -580,9 +672,9 @@ const ResponsesTable: React.FC = () => {
           >
             <Filter className="h-4 w-4 mr-2" />
             Filters
-            {Object.values(filters).some(f => f.active) && (
+            {Object.values(filters).some((f) => f.active) && (
               <span className="ml-2 px-2 py-0.5 bg-blue-100/80 text-blue-800 text-xs rounded-full font-medium border border-blue-200/40">
-                {Object.values(filters).filter(f => f.active).length}
+                {Object.values(filters).filter((f) => f.active).length}
               </span>
             )}
           </Button>
@@ -592,7 +684,10 @@ const ResponsesTable: React.FC = () => {
             {/* Search indicator */}
             {globalFilter && (
               <div className="flex items-center gap-1 px-2 py-1 bg-blue-50/80 text-blue-700 text-sm rounded-md border border-blue-200/60">
-                <span className="truncate max-w-32">Search: "{globalFilter.slice(0, 15)}{globalFilter.length > 15 ? '...' : ''}"</span>
+                <span className="truncate max-w-32">
+                  Search: "{globalFilter.slice(0, 15)}
+                  {globalFilter.length > 15 ? '...' : ''}"
+                </span>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -603,19 +698,23 @@ const ResponsesTable: React.FC = () => {
                 </Button>
               </div>
             )}
-            
+
             {/* Field filters */}
-            {Object.entries(filters).filter(([, f]) => f.active).map(([filterId, filter]) => {
-              const field = fillableFields.find(f => f.id === filter.fieldId);
-              return field ? (
-                <FilterChip
-                  key={filterId}
-                  field={field}
-                  filter={filter}
-                  onRemove={() => handleRemoveFilter(filterId)}
-                />
-              ) : null;
-            })}
+            {Object.entries(filters)
+              .filter(([, f]) => f.active)
+              .map(([filterId, filter]) => {
+                const field = fillableFields.find(
+                  (f) => f.id === filter.fieldId
+                );
+                return field ? (
+                  <FilterChip
+                    key={filterId}
+                    field={field}
+                    filter={filter}
+                    onRemove={() => handleRemoveFilter(filterId)}
+                  />
+                ) : null;
+              })}
           </div>
         </div>
 
@@ -656,35 +755,49 @@ const ResponsesTable: React.FC = () => {
                   ) : (
                     <div className="space-y-1">
                       {columns.map((column) => {
-                        if (!column.id || column.enableHiding === false) return null;
+                        if (!column.id || column.enableHiding === false)
+                          return null;
                         const isVisible = columnVisibility[column.id] !== false;
-                        
+
                         let columnLabel = column.id;
                         if (column.id.startsWith('field-')) {
                           if (formData?.form?.formSchema) {
-                            const field = deserializeFormSchema(formData.form.formSchema)
-                              .pages.flatMap(p => p.fields)
-                              .find(f => `field-${f.id}` === column.id);
-                            columnLabel = field instanceof FillableFormField ? field.label : column.id;
+                            const field = deserializeFormSchema(
+                              formData.form.formSchema
+                            )
+                              .pages.flatMap((p) => p.fields)
+                              .find((f) => `field-${f.id}` === column.id);
+                            columnLabel =
+                              field instanceof FillableFormField
+                                ? field.label
+                                : column.id;
                           }
                         } else if (column.id === 'id') {
                           columnLabel = 'Response ID';
                         } else if (column.id === 'submittedAt') {
                           columnLabel = 'Submitted At';
                         }
-                        
+
                         return (
-                          <div key={column.id} className="flex items-center space-x-2 p-2 rounded hover:bg-slate-50">
+                          <div
+                            key={column.id}
+                            className="flex items-center space-x-2 p-2 rounded hover:bg-slate-50"
+                          >
                             <input
                               type="checkbox"
                               checked={isVisible}
-                              onChange={(e) => setColumnVisibility(prev => ({
-                                ...prev,
-                                [column.id!]: e.target.checked
-                              }))}
+                              onChange={(e) =>
+                                setColumnVisibility((prev) => ({
+                                  ...prev,
+                                  [column.id!]: e.target.checked,
+                                }))
+                              }
                               className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                             />
-                            <span className="text-sm flex-1 min-w-0 truncate" title={columnLabel}>
+                            <span
+                              className="text-sm flex-1 min-w-0 truncate"
+                              title={columnLabel}
+                            >
                               {columnLabel}
                             </span>
                           </div>
@@ -759,14 +872,18 @@ const ResponsesTable: React.FC = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate(`/dashboard/form/${actualFormId}/responses`)}
+            onClick={() =>
+              navigate(`/dashboard/form/${actualFormId}/responses`)
+            }
             className="hover:bg-slate-100 flex-shrink-0"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
           <div className="h-4 w-px bg-slate-300 flex-shrink-0" />
-          <h1 className="text-lg font-semibold text-slate-900 truncate flex-1">{form.title}</h1>
+          <h1 className="text-lg font-semibold text-slate-900 truncate flex-1">
+            {form.title}
+          </h1>
           <div className="flex items-center gap-2 flex-shrink-0">
             {responsesLoading && (
               <div className="w-4 h-4 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin"></div>
@@ -787,9 +904,13 @@ const ResponsesTable: React.FC = () => {
                   Error Loading Responses
                 </TypographyH3>
                 <TypographyP className="text-gray-600 mb-6">
-                  There was an error loading the form responses. Please try again.
+                  There was an error loading the form responses. Please try
+                  again.
                 </TypographyP>
-                <Button onClick={() => window.location.reload()} variant="outline">
+                <Button
+                  onClick={() => window.location.reload()}
+                  variant="outline"
+                >
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Refresh Page
                 </Button>
@@ -803,45 +924,50 @@ const ResponsesTable: React.FC = () => {
                 <div className="flex-shrink-0 overflow-hidden">
                   <DataTableToolbar />
                 </div>
-                
+
                 {/* Table container - Only table content scrolls horizontally */}
                 <div className="flex-1 overflow-hidden">
-                <ServerDataTable
-                  columns={columns.map(col => ({
-                    ...col,
-                    // Apply column visibility
-                    meta: {
-                      ...col.meta,
-                      hidden: col.id ? columnVisibility[col.id] === false : false
-                    }
-                  })).filter(col => !col.meta?.hidden)}
-                  data={responses.filter((response: FormResponse) => {
-                    if (!globalFilter) return true;
-                    
-                    const searchText = globalFilter.toLowerCase();
-                    
-                    // Search in response ID
-                    if (response.id.toLowerCase().includes(searchText)) return true;
-                    
-                    // Search in response data
-                    return Object.values(response.data || {}).some(value => 
-                      String(value).toLowerCase().includes(searchText)
-                    );
-                  })}
-                  searchPlaceholder="Search responses..."
-                  onRowClick={(row) => {
-                    console.log('Row clicked:', row.id);
-                  }}
-                  pageCount={responsePagination?.totalPages || 0}
-                  currentPage={currentPage}
-                  pageSize={pageSize}
-                  totalItems={responsePagination?.total || 0}
-                  onPageChange={handlePageChange}
-                  onPageSizeChange={handlePageSizeChange}
-                  loading={responsesLoading}
-                  maxHeight="100%"
-                  className="border-0 h-full"
-                />
+                  <ServerDataTable
+                    columns={columns
+                      .map((col) => ({
+                        ...col,
+                        // Apply column visibility
+                        meta: {
+                          ...col.meta,
+                          hidden: col.id
+                            ? columnVisibility[col.id] === false
+                            : false,
+                        },
+                      }))
+                      .filter((col) => !col.meta?.hidden)}
+                    data={responses.filter((response: FormResponse) => {
+                      if (!globalFilter) return true;
+
+                      const searchText = globalFilter.toLowerCase();
+
+                      // Search in response ID
+                      if (response.id.toLowerCase().includes(searchText))
+                        return true;
+
+                      // Search in response data
+                      return Object.values(response.data || {}).some((value) =>
+                        String(value).toLowerCase().includes(searchText)
+                      );
+                    })}
+                    searchPlaceholder="Search responses..."
+                    onRowClick={(row) => {
+                      console.log('Row clicked:', row.id);
+                    }}
+                    pageCount={responsePagination?.totalPages || 0}
+                    currentPage={currentPage}
+                    pageSize={pageSize}
+                    totalItems={responsePagination?.total || 0}
+                    onPageChange={handlePageChange}
+                    onPageSizeChange={handlePageSizeChange}
+                    loading={responsesLoading}
+                    maxHeight="100%"
+                    className="border-0 h-full"
+                  />
                 </div>
               </div>
             </div>

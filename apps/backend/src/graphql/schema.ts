@@ -156,6 +156,67 @@ export const typeDefs = gql`
     submittedAt: String!
     thankYouMessage: String!
     showCustomThankYou: Boolean!
+    hasBeenEdited: Boolean!
+    totalEdits: Int!
+    lastEditedAt: String
+    lastEditedBy: User
+    editHistory: [ResponseEditHistory!]!
+    snapshots: [ResponseSnapshot!]!
+  }
+
+  # Response Edit Tracking Types
+
+  type ResponseEditHistory {
+    id: ID!
+    responseId: ID!
+    editedBy: User!
+    editedAt: String!
+    editType: EditType!
+    editReason: String
+    ipAddress: String
+    userAgent: String
+    totalChanges: Int!
+    changesSummary: String
+    fieldChanges: [ResponseFieldChange!]!
+  }
+
+  type ResponseFieldChange {
+    id: ID!
+    fieldId: ID!
+    fieldLabel: String!
+    fieldType: String!
+    previousValue: JSON
+    newValue: JSON
+    changeType: ChangeType!
+    valueChangeSize: Int
+  }
+
+  type ResponseSnapshot {
+    id: ID!
+    responseId: ID!
+    snapshotData: JSON!
+    snapshotAt: String!
+    snapshotType: SnapshotType!
+    createdBy: User
+    isRestorable: Boolean!
+  }
+
+  enum EditType {
+    MANUAL
+    SYSTEM
+    BULK
+  }
+
+  enum ChangeType {
+    ADD
+    UPDATE
+    DELETE
+  }
+
+  enum SnapshotType {
+    EDIT
+    MANUAL
+    SCHEDULED
   }
 
   # Template Types
@@ -285,6 +346,21 @@ export const typeDefs = gql`
   input UpdateResponseInput {
     responseId: ID!
     data: JSON!
+    editReason: String
+  }
+
+  # Response Edit Tracking Input Types
+
+  input RestoreResponseInput {
+    responseId: ID!
+    snapshotId: ID!
+    restoreReason: String
+  }
+
+  input CreateSnapshotInput {
+    responseId: ID!
+    snapshotType: SnapshotType!
+    reason: String
   }
 
   # Template Input Types
@@ -747,6 +823,10 @@ export const typeDefs = gql`
     response(id: ID!): FormResponse
     responsesByForm(formId: ID!, page: Int = 1, limit: Int = 10, sortBy: String = "submittedAt", sortOrder: String = "desc", filters: [ResponseFilterInput!]): PaginatedResponses!
 
+    # Response Edit Tracking Queries
+    responseEditHistory(responseId: ID!): [ResponseEditHistory!]!
+    responseSnapshots(responseId: ID!): [ResponseSnapshot!]!
+
     # Form Sharing Queries
     formPermissions(formId: ID!): [FormPermission!]!
     formsWithCategory(organizationId: ID!, category: FormCategory!): [Form!]!
@@ -791,6 +871,10 @@ export const typeDefs = gql`
     submitResponse(input: SubmitResponseInput!): FormResponse!
     updateResponse(input: UpdateResponseInput!): FormResponse!
     deleteResponse(id: ID!): Boolean!
+
+    # Response Edit Tracking Mutations
+    restoreResponse(input: RestoreResponseInput!): FormResponse!
+    createResponseSnapshot(input: CreateSnapshotInput!): ResponseSnapshot!
 
     # Form Sharing Mutations
     shareForm(input: ShareFormInput!): FormSharingSettings!

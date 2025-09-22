@@ -1,7 +1,7 @@
 
 import { betterAuthResolvers } from './resolvers/better-auth.js';
 import { formsResolvers } from './resolvers/forms.js';
-import { responsesResolvers } from './resolvers/responses.js';
+import { extendedResponsesResolvers } from './resolvers/responses.js';
 import { templatesResolvers } from './resolvers/templates.js';
 import { fileUploadResolvers } from './resolvers/fileUpload.js';
 import { formFileResolvers } from './resolvers/formFiles.js';
@@ -22,7 +22,7 @@ export const resolvers = {
   Query: {
     ...betterAuthResolvers.Query,
     ...formsResolvers.Query,
-    ...responsesResolvers.Query,
+    ...extendedResponsesResolvers.Query,
     ...templatesResolvers.Query,
     ...formFileResolvers.Query,
     ...adminResolvers.Query,
@@ -34,7 +34,7 @@ export const resolvers = {
   Mutation: {
     ...betterAuthResolvers.Mutation,
     ...formsResolvers.Mutation,
-    ...responsesResolvers.Mutation,
+    ...extendedResponsesResolvers.Mutation,
     ...templatesResolvers.Mutation,
     ...fileUploadResolvers.Mutation,
     ...unifiedExportResolvers.Mutation,
@@ -45,6 +45,9 @@ export const resolvers = {
   Form: {
     ...formsResolvers.Form,
     ...formSharingResolvers.Form,
+  },
+  FormResponse: {
+    ...extendedResponsesResolvers.FormResponse,
   },
   FormPermission: {
     ...formSharingResolvers.FormPermission,

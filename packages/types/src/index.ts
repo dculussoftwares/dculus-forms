@@ -700,6 +700,92 @@ export interface FormResponse {
   formId: string;
   data: Record<string, any>;
   submittedAt: Date;
+  hasBeenEdited?: boolean;
+  lastEditedAt?: string;
+  lastEditedBy?: User;
+  totalEdits?: number;
+  editHistory?: ResponseEditHistory[];
+  snapshots?: ResponseSnapshot[];
+}
+
+// Response Edit Tracking Types
+export interface ResponseEditHistory {
+  id: string;
+  responseId: string;
+  editedBy: User;
+  editedAt: string;
+  editType: EditType;
+  editReason?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  totalChanges: number;
+  changesSummary?: string;
+  fieldChanges: ResponseFieldChange[];
+}
+
+export interface ResponseFieldChange {
+  id: string;
+  fieldId: string;
+  fieldLabel: string;
+  fieldType: string;
+  previousValue: any;
+  newValue: any;
+  changeType: ChangeType;
+  valueChangeSize?: number;
+}
+
+export interface ResponseSnapshot {
+  id: string;
+  responseId: string;
+  snapshotData: Record<string, any>;
+  snapshotAt: string;
+  snapshotType: SnapshotType;
+  createdBy?: User;
+  isRestorable: boolean;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  image?: string;
+}
+
+export enum EditType {
+  MANUAL = 'MANUAL',
+  SYSTEM = 'SYSTEM',
+  BULK = 'BULK'
+}
+
+export enum ChangeType {
+  ADD = 'ADD',
+  UPDATE = 'UPDATE',
+  DELETE = 'DELETE'
+}
+
+export enum SnapshotType {
+  EDIT = 'EDIT',
+  MANUAL = 'MANUAL',
+  SCHEDULED = 'SCHEDULED'
+}
+
+// Input types for mutations
+export interface UpdateResponseInput {
+  responseId: string;
+  data: Record<string, any>;
+  editReason?: string;
+}
+
+export interface RestoreResponseInput {
+  responseId: string;
+  snapshotId: string;
+  restoreReason?: string;
+}
+
+export interface CreateSnapshotInput {
+  responseId: string;
+  snapshotType: SnapshotType;
+  reason?: string;
 }
 
 // API Response types
