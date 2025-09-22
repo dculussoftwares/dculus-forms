@@ -539,7 +539,16 @@ export const extendedResponsesResolvers = {
   FormResponse: {
     hasBeenEdited: async (parent: any) => {
       console.log('hasBeenEdited resolver executing for response:', parent.id);
-      return false; // Hardcoded for now to test if resolver is actually called
+      try {
+        const { ResponseEditTrackingService } = await import(
+          '../../services/responseEditTrackingService.js'
+        );
+        const editHistory = await ResponseEditTrackingService.getEditHistory(parent.id);
+        return editHistory.length > 0;
+      } catch (error) {
+        console.error('Error getting hasBeenEdited for response:', parent.id, error);
+        return false;
+      }
     },
 
     totalEdits: async (parent: any) => {
@@ -581,11 +590,8 @@ export const extendedResponsesResolvers = {
         if (editHistory.length > 0) {
           // Most recent edit is first in the array
           const lastEdit = editHistory[0];
-          return {
-            id: lastEdit.editedBy,
-            name: lastEdit.editedBy, // You might need to fetch user details separately
-            email: null // You might need to fetch user details separately
-          };
+          // editedBy is already a full User object with id, name, email, image
+          return lastEdit.editedBy;
         }
         return null;
       } catch (error) {
