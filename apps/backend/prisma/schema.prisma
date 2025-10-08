@@ -31,7 +31,6 @@ model User {
   formPermissions FormPermission[]
   grantedPermissions FormPermission[] @relation("GrantedPermissions")
   responseEdits ResponseEditHistory[]
-  responseSnapshots ResponseSnapshot[]
 
   @@map("user")
 }
@@ -161,7 +160,6 @@ model Response {
   form                       Form                        @relation(fields: [formId], references: [id], onDelete: Cascade)
   formSubmissionAnalytics    FormSubmissionAnalytics?
   editHistory                ResponseEditHistory[]
-  snapshots                  ResponseSnapshot[]
 
   @@map("response")
 }
@@ -345,25 +343,4 @@ model ResponseFieldChange {
   @@index([fieldId])
   @@index([changeType])
   @@map("response_field_change")
-}
-
-model ResponseSnapshot {
-  id               String   @id @map("_id")
-  responseId       String   // Reference to Response
-  snapshotData     Json     // Full response data at this point in time
-  snapshotAt       DateTime @default(now())
-  snapshotType     String   @default("EDIT") // EDIT, MANUAL, SCHEDULED
-  createdById      String?  // User who triggered this snapshot (optional for system)
-  isRestorable     Boolean  @default(true) // Whether this version can be restored
-  retentionExpiry  DateTime? // When this snapshot should be deleted (for retention policies)
-
-  // Relations
-  response         Response @relation(fields: [responseId], references: [id], onDelete: Cascade)
-  createdBy        User?    @relation(fields: [createdById], references: [id])
-
-  @@index([responseId])
-  @@index([snapshotAt])
-  @@index([snapshotType])
-  @@index([retentionExpiry])
-  @@map("response_snapshot")
 }

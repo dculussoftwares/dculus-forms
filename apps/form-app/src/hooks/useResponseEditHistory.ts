@@ -2,16 +2,10 @@ import { useQuery, useMutation, ApolloError } from '@apollo/client';
 import { useApolloClient } from '@apollo/client';
 import {
   GET_RESPONSE_EDIT_HISTORY,
-  GET_RESPONSE_SNAPSHOTS,
-  RESTORE_RESPONSE,
-  CREATE_RESPONSE_SNAPSHOT,
   UPDATE_RESPONSE_WITH_TRACKING
 } from '../graphql/queries';
 import {
   ResponseEditHistory,
-  ResponseSnapshot,
-  RestoreResponseInput,
-  CreateSnapshotInput,
   UpdateResponseInput
 } from '@dculus/types';
 import { toastSuccess, toastError } from '@dculus/ui';
@@ -24,27 +18,19 @@ interface UseResponseEditHistoryProps {
 interface UseResponseEditHistoryReturn {
   // Data
   editHistory: ResponseEditHistory[];
-  snapshots: ResponseSnapshot[];
   isLoadingHistory: boolean;
-  isLoadingSnapshots: boolean;
 
   // Error states
   historyError: ApolloError | undefined;
-  snapshotsError: ApolloError | undefined;
 
   // Mutations
-  restoreResponse: (input: RestoreResponseInput) => Promise<void>;
-  createSnapshot: (input: CreateSnapshotInput) => Promise<void>;
   updateResponseWithTracking: (input: UpdateResponseInput) => Promise<void>;
 
   // Loading states
-  isRestoring: boolean;
-  isCreatingSnapshot: boolean;
   isUpdating: boolean;
 
   // Actions
   refetchHistory: () => void;
-  refetchSnapshots: () => void;
   invalidateHistory: () => void;
 }
 
@@ -73,78 +59,6 @@ export const useResponseEditHistory = ({
       );
     }
   });
-
-  // Fetch snapshots
-  const {
-    data: snapshotsData,
-    loading: isLoadingSnapshots,
-    error: snapshotsError,
-    refetch: refetchSnapshots
-  } = useQuery(GET_RESPONSE_SNAPSHOTS, {
-    variables: { responseId },
-    skip: !enabled || !responseId,
-    errorPolicy: 'all',
-    notifyOnNetworkStatusChange: true,
-    onError: (error) => {
-      console.error('Failed to fetch snapshots:', error);
-      toastError(
-        'Failed to load snapshots',
-        'Some restore functionality may be limited'
-      );
-    }
-  });
-
-  // Restore response mutation
-  const [restoreResponseMutation, { loading: isRestoring }] = useMutation(
-    RESTORE_RESPONSE,
-    {
-      onCompleted: () => {
-        toastSuccess(
-          'Response restored successfully',
-          'The response has been restored to the selected version'
-        );
-
-        // Refetch queries
-        apolloClient.refetchQueries({
-          include: ['GetResponseEditHistory', 'GetResponseSnapshots', 'GetResponseWithEditInfo']
-        });
-
-        // Refetch to get latest data
-        refetchHistory();
-        refetchSnapshots();
-      },
-      onError: (error) => {
-        console.error('Failed to restore response:', error);
-        toastError(
-          'Failed to restore response',
-          error.message || 'An unexpected error occurred'
-        );
-      }
-    }
-  );
-
-  // Create snapshot mutation
-  const [createSnapshotMutation, { loading: isCreatingSnapshot }] = useMutation(
-    CREATE_RESPONSE_SNAPSHOT,
-    {
-      onCompleted: () => {
-        toastSuccess(
-          'Snapshot created successfully',
-          'A new restore point has been saved'
-        );
-
-        // Refetch snapshots to show the new one
-        refetchSnapshots();
-      },
-      onError: (error) => {
-        console.error('Failed to create snapshot:', error);
-        toastError(
-          'Failed to create snapshot',
-          error.message || 'Please try again'
-        );
-      }
-    }
-  );
 
   // Update response with tracking mutation
   const [updateResponseMutation, { loading: isUpdating }] = useMutation(
@@ -175,28 +89,6 @@ export const useResponseEditHistory = ({
   );
 
   // Action functions
-  const restoreResponse = async (input: RestoreResponseInput) => {
-    try {
-      await restoreResponseMutation({
-        variables: { input }
-      });
-    } catch (error) {
-      // Error is handled in the mutation's onError callback
-      throw error;
-    }
-  };
-
-  const createSnapshot = async (input: CreateSnapshotInput) => {
-    try {
-      await createSnapshotMutation({
-        variables: { input }
-      });
-    } catch (error) {
-      // Error is handled in the mutation's onError callback
-      throw error;
-    }
-  };
-
   const updateResponseWithTracking = async (input: UpdateResponseInput) => {
     try {
       await updateResponseMutation({
@@ -210,34 +102,26 @@ export const useResponseEditHistory = ({
 
   const invalidateHistory = () => {
     apolloClient.refetchQueries({
-      include: ['GetResponseEditHistory', 'GetResponseSnapshots']
+      include: ['GetResponseEditHistory']
     });
   };
 
   return {
     // Data
     editHistory: historyData?.responseEditHistory || [],
-    snapshots: snapshotsData?.responseSnapshots || [],
     isLoadingHistory,
-    isLoadingSnapshots,
 
     // Error states
     historyError,
-    snapshotsError,
 
     // Mutations
-    restoreResponse,
-    createSnapshot,
     updateResponseWithTracking,
 
     // Loading states
-    isRestoring,
-    isCreatingSnapshot,
     isUpdating,
 
     // Actions
     refetchHistory,
-    refetchSnapshots,
     invalidateHistory
   };
 };

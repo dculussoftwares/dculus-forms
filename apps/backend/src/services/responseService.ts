@@ -238,9 +238,6 @@ export const updateResponse = async (
       const { response: currentResponse, formSchema } = await ResponseEditTrackingService.getResponseWithFormSchema(responseId);
       const oldData = currentResponse.data as Record<string, any>;
 
-      // Create a snapshot before the edit
-      await ResponseEditTrackingService.createSnapshot(responseId, oldData, 'EDIT', editContext.userId);
-
       // Update the response
       const updatedResponse = await prisma.response.update({
         where: { id: responseId },

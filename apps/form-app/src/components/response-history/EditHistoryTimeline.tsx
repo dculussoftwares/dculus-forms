@@ -17,7 +17,6 @@ import {
   Clock,
   ChevronDown,
   ChevronRight,
-  RotateCcw,
   Eye
 } from 'lucide-react';
 import { FieldChangeCard } from './FieldChangeCard';
@@ -25,14 +24,12 @@ import { FieldChangeCard } from './FieldChangeCard';
 interface EditHistoryTimelineProps {
   editHistory: ResponseEditHistory[];
   onViewSnapshot?: (editId: string) => void;
-  onRestoreFromEdit?: (editId: string) => void;
   isLoading?: boolean;
 }
 
 export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
   editHistory,
   onViewSnapshot,
-  onRestoreFromEdit,
   isLoading = false
 }) => {
   const [expandedEdits, setExpandedEdits] = useState<Set<string>>(new Set());
@@ -179,15 +176,6 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
                       >
                         <Eye className="h-4 w-4" />
                         View
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onRestoreFromEdit?.(edit.id)}
-                        className="text-blue-600 hover:text-blue-700"
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                        Restore
                       </Button>
                     </div>
                   </div>

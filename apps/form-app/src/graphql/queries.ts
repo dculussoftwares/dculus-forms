@@ -404,25 +404,6 @@ export const GET_RESPONSE_EDIT_HISTORY = gql`
   }
 `;
 
-export const GET_RESPONSE_SNAPSHOTS = gql`
-  query GetResponseSnapshots($responseId: ID!) {
-    responseSnapshots(responseId: $responseId) {
-      id
-      responseId
-      snapshotData
-      snapshotAt
-      snapshotType
-      createdBy {
-        id
-        name
-        email
-        image
-      }
-      isRestorable
-    }
-  }
-`;
-
 // Response Edit History Mutations
 export const UPDATE_RESPONSE_WITH_TRACKING = gql`
   mutation UpdateResponseWithTracking($input: UpdateResponseInput!) {
@@ -434,38 +415,6 @@ export const UPDATE_RESPONSE_WITH_TRACKING = gql`
       hasBeenEdited
       lastEditedAt
       totalEdits
-    }
-  }
-`;
-
-export const RESTORE_RESPONSE = gql`
-  mutation RestoreResponse($input: RestoreResponseInput!) {
-    restoreResponse(input: $input) {
-      id
-      formId
-      data
-      submittedAt
-      thankYouMessage
-      showCustomThankYou
-    }
-  }
-`;
-
-export const CREATE_RESPONSE_SNAPSHOT = gql`
-  mutation CreateResponseSnapshot($input: CreateSnapshotInput!) {
-    createResponseSnapshot(input: $input) {
-      id
-      responseId
-      snapshotData
-      snapshotAt
-      snapshotType
-      createdBy {
-        id
-        name
-        email
-        image
-      }
-      isRestorable
     }
   }
 `;
@@ -490,12 +439,6 @@ export const GET_RESPONSE_WITH_EDIT_INFO = gql`
         editType
         changesSummary
         totalChanges
-      }
-      snapshots {
-        id
-        snapshotAt
-        snapshotType
-        isRestorable
       }
     }
   }

@@ -705,7 +705,6 @@ export interface FormResponse {
   lastEditedBy?: User;
   totalEdits?: number;
   editHistory?: ResponseEditHistory[];
-  snapshots?: ResponseSnapshot[];
 }
 
 // Response Edit Tracking Types
@@ -734,16 +733,6 @@ export interface ResponseFieldChange {
   valueChangeSize?: number;
 }
 
-export interface ResponseSnapshot {
-  id: string;
-  responseId: string;
-  snapshotData: Record<string, any>;
-  snapshotAt: string;
-  snapshotType: SnapshotType;
-  createdBy?: User;
-  isRestorable: boolean;
-}
-
 export interface User {
   id: string;
   name: string;
@@ -763,29 +752,11 @@ export enum ChangeType {
   DELETE = 'DELETE'
 }
 
-export enum SnapshotType {
-  EDIT = 'EDIT',
-  MANUAL = 'MANUAL',
-  SCHEDULED = 'SCHEDULED'
-}
-
 // Input types for mutations
 export interface UpdateResponseInput {
   responseId: string;
   data: Record<string, any>;
   editReason?: string;
-}
-
-export interface RestoreResponseInput {
-  responseId: string;
-  snapshotId: string;
-  restoreReason?: string;
-}
-
-export interface CreateSnapshotInput {
-  responseId: string;
-  snapshotType: SnapshotType;
-  reason?: string;
 }
 
 // API Response types

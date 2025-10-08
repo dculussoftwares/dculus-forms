@@ -161,7 +161,6 @@ export const typeDefs = gql`
     lastEditedAt: String
     lastEditedBy: User
     editHistory: [ResponseEditHistory!]!
-    snapshots: [ResponseSnapshot!]!
   }
 
   # Response Edit Tracking Types
@@ -191,16 +190,6 @@ export const typeDefs = gql`
     valueChangeSize: Int
   }
 
-  type ResponseSnapshot {
-    id: ID!
-    responseId: ID!
-    snapshotData: JSON!
-    snapshotAt: String!
-    snapshotType: SnapshotType!
-    createdBy: User
-    isRestorable: Boolean!
-  }
-
   enum EditType {
     MANUAL
     SYSTEM
@@ -211,12 +200,6 @@ export const typeDefs = gql`
     ADD
     UPDATE
     DELETE
-  }
-
-  enum SnapshotType {
-    EDIT
-    MANUAL
-    SCHEDULED
   }
 
   # Template Types
@@ -350,18 +333,6 @@ export const typeDefs = gql`
   }
 
   # Response Edit Tracking Input Types
-
-  input RestoreResponseInput {
-    responseId: ID!
-    snapshotId: ID!
-    restoreReason: String
-  }
-
-  input CreateSnapshotInput {
-    responseId: ID!
-    snapshotType: SnapshotType!
-    reason: String
-  }
 
   # Template Input Types
   input CreateTemplateInput {
@@ -825,7 +796,6 @@ export const typeDefs = gql`
 
     # Response Edit Tracking Queries
     responseEditHistory(responseId: ID!): [ResponseEditHistory!]!
-    responseSnapshots(responseId: ID!): [ResponseSnapshot!]!
 
     # Form Sharing Queries
     formPermissions(formId: ID!): [FormPermission!]!
@@ -871,10 +841,6 @@ export const typeDefs = gql`
     submitResponse(input: SubmitResponseInput!): FormResponse!
     updateResponse(input: UpdateResponseInput!): FormResponse!
     deleteResponse(id: ID!): Boolean!
-
-    # Response Edit Tracking Mutations
-    restoreResponse(input: RestoreResponseInput!): FormResponse!
-    createResponseSnapshot(input: CreateSnapshotInput!): ResponseSnapshot!
 
     # Form Sharing Mutations
     shareForm(input: ShareFormInput!): FormSharingSettings!

@@ -270,26 +270,6 @@ export class ResponseEditTrackingService {
   }
 
   /**
-   * Creates a snapshot of response data
-   */
-  static async createSnapshot(
-    responseId: string,
-    data: Record<string, any>,
-    snapshotType: 'EDIT' | 'MANUAL' | 'SCHEDULED' = 'EDIT',
-    createdById?: string
-  ): Promise<void> {
-    await prisma.responseSnapshot.create({
-      data: {
-        id: generateId(),
-        responseId,
-        snapshotData: data,
-        snapshotType,
-        createdById
-      }
-    });
-  }
-
-  /**
    * Gets edit history for a response
    */
   static async getEditHistory(responseId: string) {
@@ -310,63 +290,6 @@ export class ResponseEditTrackingService {
       },
       orderBy: { editedAt: 'desc' }
     });
-  }
-
-  /**
-   * Gets snapshots for a response
-   */
-  static async getSnapshots(responseId: string) {
-    return await prisma.responseSnapshot.findMany({
-      where: {
-        responseId,
-        isRestorable: true
-      },
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true
-          }
-        }
-      },
-      orderBy: { snapshotAt: 'desc' }
-    });
-  }
-
-  /**
-   * Restores response data from a snapshot
-   */
-  static async restoreFromSnapshot(
-    responseId: string,
-    snapshotId: string,
-    restoredById: string
-  ): Promise<Record<string, any>> {
-    const snapshot = await prisma.responseSnapshot.findFirst({
-      where: {
-        id: snapshotId,
-        responseId,
-        isRestorable: true
-      }
-    });
-
-    if (!snapshot) {
-      throw new Error('Snapshot not found or not restorable');
-    }
-
-    const snapshotData = snapshot.snapshotData as Record<string, any>;
-
-    // Update the response with snapshot data
-    await prisma.response.update({
-      where: { id: responseId },
-      data: { data: snapshotData }
-    });
-
-    // Create a new snapshot of the restoration
-    await this.createSnapshot(responseId, snapshotData, 'MANUAL', restoredById);
-
-    return snapshotData;
   }
 
   /**

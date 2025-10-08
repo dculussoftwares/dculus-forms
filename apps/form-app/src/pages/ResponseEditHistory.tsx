@@ -4,7 +4,6 @@ import { useQuery } from '@apollo/client';
 import { format } from 'date-fns';
 import { GET_FORM_BY_ID, GET_RESPONSE_BY_ID } from '../graphql/queries';
 import { useResponseEditHistory } from '../hooks/useResponseEditHistory';
-import { SnapshotType } from '@dculus/types';
 import {
   Button,
   Card,
@@ -26,13 +25,9 @@ import {
   History,
   Edit3,
   Clock,
-  User,
-  RotateCcw,
-  Camera,
   AlertCircle
 } from 'lucide-react';
 import { EditHistoryTimeline } from '../components/response-history/EditHistoryTimeline';
-import { RestoreDialog } from '../components/response-history/RestoreDialog';
 
 // Helper function to safely format dates
 const safeFormatDate = (dateString: string | null | undefined, formatString: string, fallback = 'Unknown date'): string => {
@@ -62,20 +57,11 @@ export const ResponseEditHistory: React.FC = () => {
     skip: !responseId
   });
 
-  // Fetch edit history and snapshots
+  // Fetch edit history
   const {
     editHistory,
-    snapshots,
     isLoadingHistory,
-    // isLoadingSnapshots,
-    historyError,
-    snapshotsError,
-    restoreResponse,
-    createSnapshot,
-    isRestoring,
-    isCreatingSnapshot
-    // refetchHistory,
-    // refetchSnapshots
+    historyError
   } = useResponseEditHistory({
     responseId: responseId!,
     enabled: !!responseId
@@ -86,48 +72,8 @@ export const ResponseEditHistory: React.FC = () => {
   const isLoading = formLoading || responseLoading || isLoadingHistory;
 
   const handleViewSnapshot = (editId: string) => {
-    // setSelectedEditId(editId);
-    // Could open a modal or navigate to a detailed view
+    // Could open a modal or navigate to a detailed view in the future
     console.log('View snapshot for edit:', editId);
-  };
-
-  const handleRestoreFromEdit = async (editId: string) => {
-    // Find the snapshot associated with this edit
-    const edit = editHistory.find(e => e.id === editId);
-    if (!edit || !responseId) return;
-
-    // For now, we'll use the most recent snapshot
-    // In a more sophisticated implementation, we could track which snapshot
-    // corresponds to each edit
-    const relevantSnapshot = snapshots.find(s => s.snapshotType === SnapshotType.EDIT);
-    if (!relevantSnapshot) {
-      alert('No snapshot available for restoration');
-      return;
-    }
-
-    try {
-      await restoreResponse({
-        responseId,
-        snapshotId: relevantSnapshot.id,
-        restoreReason: `Restored from edit by ${edit.editedBy.name} on ${safeFormatDate(edit.editedAt, 'MMM dd, yyyy', 'unknown date')}`
-      });
-    } catch (error) {
-      console.error('Failed to restore:', error);
-    }
-  };
-
-  const handleCreateManualSnapshot = async () => {
-    if (!responseId) return;
-
-    try {
-      await createSnapshot({
-        responseId,
-        snapshotType: SnapshotType.MANUAL,
-        reason: 'Manual snapshot created from edit history view'
-      });
-    } catch (error) {
-      console.error('Failed to create snapshot:', error);
-    }
   };
 
   const handleGoToEdit = () => {
@@ -235,28 +181,6 @@ export const ResponseEditHistory: React.FC = () => {
           </div>
 
           <div className="flex items-center space-x-3">
-            <Button
-              variant="outline"
-              onClick={handleCreateManualSnapshot}
-              disabled={isCreatingSnapshot}
-            >
-              <Camera className="h-4 w-4 mr-2" />
-              {isCreatingSnapshot ? 'Creating...' : 'Create Snapshot'}
-            </Button>
-
-            <RestoreDialog
-              snapshots={snapshots}
-              responseId={responseId!}
-              onRestore={restoreResponse}
-              trigger={
-                <Button variant="outline">
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Restore Response
-                </Button>
-              }
-              isLoading={isRestoring}
-            />
-
             <Button onClick={handleGoToEdit}>
               <Edit3 className="h-4 w-4 mr-2" />
               Edit Response
@@ -297,13 +221,11 @@ export const ResponseEditHistory: React.FC = () => {
       </Card>
 
       {/* Error States */}
-      {(historyError || snapshotsError) && (
+      {historyError && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            {historyError ? 'Failed to load edit history. ' : ''}
-            {snapshotsError ? 'Failed to load snapshots. ' : ''}
-            Some functionality may be limited.
+            Failed to load edit history. Some functionality may be limited.
           </AlertDescription>
         </Alert>
       )}
@@ -328,63 +250,9 @@ export const ResponseEditHistory: React.FC = () => {
         <EditHistoryTimeline
           editHistory={editHistory}
           onViewSnapshot={handleViewSnapshot}
-          onRestoreFromEdit={handleRestoreFromEdit}
           isLoading={isLoadingHistory}
         />
       </div>
-
-      {/* Snapshots Info */}
-      {snapshots.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center space-x-2">
-              <Camera className="h-5 w-5" />
-              <span>Available Snapshots ({snapshots.length})</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {snapshots.slice(0, 5).map((snapshot) => (
-                <div key={snapshot.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
-                  <div className="flex items-center space-x-3">
-                    <Badge className={
-                      snapshot.snapshotType === SnapshotType.MANUAL
-                        ? 'bg-green-100 text-green-800'
-                        : snapshot.snapshotType === SnapshotType.EDIT
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-purple-100 text-purple-800'
-                    }>
-                      {snapshot.snapshotType}
-                    </Badge>
-                    <div className="text-sm">
-                      <div className="font-medium">
-                        {safeFormatDate(snapshot.snapshotAt, 'MMM dd, yyyy \'at\' h:mm a')}
-                      </div>
-                      {snapshot.createdBy && (
-                        <div className="text-gray-600 flex items-center space-x-1">
-                          <User className="h-3 w-3" />
-                          <span>{snapshot.createdBy.name}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {snapshot.isRestorable ? 'Restorable' : 'View only'}
-                  </div>
-                </div>
-              ))}
-
-              {snapshots.length > 5 && (
-                <div className="text-center pt-2">
-                  <span className="text-sm text-gray-500">
-                    ...and {snapshots.length - 5} more snapshots
-                  </span>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };
