@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Card,
-  Separator,
   LoadingSpinner,
 } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
@@ -96,33 +95,45 @@ const FormDashboard: React.FC = () => {
         { label: form.title, href: `/dashboard/form/${formId}` },
       ]}
     >
-      <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-        <FormHeader
-          form={form}
-          onPublish={handlePublish}
-          onUnpublish={() => setShowUnpublishDialog(true)}
-          onDelete={() => setShowDeleteDialog(true)}
-          onCollectResponses={handleCollectResponses}
-          onPreview={() => {
-            const formViewerUrl = `http://localhost:5173/f/${form.shortUrl}`;
-            window.open(formViewerUrl, '_blank');
-          }}
-          onViewAnalytics={() => {
-            navigate(`/dashboard/form/${formId}/analytics`);
-          }}
-          onShare={handleShare}
-          updateLoading={updateLoading}
-          deleteLoading={deleteLoading}
-        />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+        <div className="max-w-7xl mx-auto px-6 py-10 space-y-12">
+          {/* Header Section */}
+          <FormHeader
+            form={form}
+            onPublish={handlePublish}
+            onUnpublish={() => setShowUnpublishDialog(true)}
+            onDelete={() => setShowDeleteDialog(true)}
+            onCollectResponses={handleCollectResponses}
+            onPreview={() => {
+              const formViewerUrl = `http://localhost:5173/f/${form.shortUrl}`;
+              window.open(formViewerUrl, '_blank');
+            }}
+            onViewAnalytics={() => {
+              navigate(`/dashboard/form/${formId}/analytics`);
+            }}
+            onShare={handleShare}
+            updateLoading={updateLoading}
+            deleteLoading={deleteLoading}
+          />
 
-        <Separator />
+          {/* Stats Section */}
+          <div>
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold text-slate-900 mb-1">
+                Performance Overview
+              </h2>
+              <p className="text-sm text-slate-600">
+                Track your form's key metrics and engagement
+              </p>
+            </div>
+            <StatsGrid stats={dashboardStats} />
+          </div>
 
-        <StatsGrid stats={dashboardStats} />
+          {/* Quick Actions Section */}
+          <QuickActions formId={formId!} />
+        </div>
 
-        <QuickActions formId={formId!} />
-
-
-
+        {/* Dialogs */}
         <DeleteDialog
           open={showDeleteDialog}
           onOpenChange={setShowDeleteDialog}

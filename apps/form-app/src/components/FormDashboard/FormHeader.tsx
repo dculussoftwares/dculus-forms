@@ -1,14 +1,12 @@
 import React from 'react';
 import {
-  TypographyH1,
-  TypographyP,
-  TypographyMuted,
   Button,
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  Badge,
 } from '@dculus/ui';
 import {
   Eye,
@@ -18,6 +16,7 @@ import {
   Trash2,
   MoreHorizontal,
   Share2,
+  Calendar,
 } from 'lucide-react';
 
 interface FormHeaderProps {
@@ -53,27 +52,27 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
   deleteLoading,
 }) => {
   return (
-    <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
-      <div>
-        <TypographyH1 className="mb-2">{form.title}</TypographyH1>
-        <TypographyP className="text-slate-600">
-          {form.description || 'Monitor your form performance and responses'}
-        </TypographyP>
-        <div className="flex items-center space-x-4 mt-3">
-          <div className="flex items-center space-x-1">
-            <div
-              className={`w-2 h-2 rounded-full ${
-                form.isPublished ? 'bg-green-500' : 'bg-yellow-500'
-              }`}
-            />
-            <TypographyMuted>
-              {form.isPublished ? 'Published' : 'Draft'}
-            </TypographyMuted>
-          </div>
-          <TypographyMuted>•</TypographyMuted>
-          <TypographyMuted>
-            Created {(() => {
-              // Handle timestamp strings (milliseconds as string) and ISO date strings
+    <div className="space-y-6">
+      {/* Status Badge */}
+      <div className="flex items-center gap-3">
+        <Badge
+          variant={form.isPublished ? "default" : "secondary"}
+          className={`${
+            form.isPublished
+              ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200'
+              : 'bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200'
+          } px-3 py-1 text-xs font-medium border`}
+        >
+          <span className={`w-1.5 h-1.5 rounded-full mr-2 ${
+            form.isPublished ? 'bg-emerald-500' : 'bg-amber-500'
+          }`} />
+          {form.isPublished ? 'Live' : 'Draft'}
+        </Badge>
+
+        <div className="flex items-center gap-2 text-sm text-slate-500">
+          <Calendar className="w-3.5 h-3.5" />
+          <span>
+            {(() => {
               const timestamp = typeof form.createdAt === 'string' && /^\d+$/.test(form.createdAt)
                 ? parseInt(form.createdAt, 10)
                 : form.createdAt;
@@ -82,77 +81,97 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
                 ? date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
                 : 'Date unavailable';
             })()}
-          </TypographyMuted>
+          </span>
         </div>
       </div>
-      <div className="flex space-x-3">
+
+      {/* Title and Description */}
+      <div className="space-y-2">
+        <h1 className="text-4xl font-bold text-slate-900 tracking-tight">
+          {form.title}
+        </h1>
+        <p className="text-lg text-slate-600 max-w-3xl">
+          {form.description || 'Monitor your form performance and responses'}
+        </p>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex flex-wrap items-center gap-3">
         {/* Primary Action - Publish/Unpublish */}
         {form.isPublished ? (
           <Button
             variant="outline"
-            size="sm"
             onClick={onUnpublish}
             disabled={updateLoading}
-            className="text-orange-600 border-orange-300 hover:bg-orange-50 hover:text-orange-700 hover:border-orange-400"
+            className="h-10 px-5 rounded-lg border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-medium transition-all"
           >
             <EyeOff className="mr-2 h-4 w-4" />
             {updateLoading ? 'Unpublishing...' : 'Unpublish'}
           </Button>
         ) : (
           <Button
-            size="sm"
             onClick={onPublish}
             disabled={updateLoading}
-            className="bg-green-600 hover:bg-green-700 text-white"
+            className="h-10 px-5 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-medium shadow-sm hover:shadow transition-all"
           >
             <Eye className="mr-2 h-4 w-4" />
             {updateLoading ? 'Publishing...' : 'Publish'}
           </Button>
         )}
 
-        {/* Secondary Action - Collect Responses (only when published) */}
+        {/* Secondary Actions */}
         {form.isPublished && (
           <Button
             variant="outline"
-            size="sm"
             onClick={onCollectResponses}
-            className="text-blue-600 border-blue-300 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-400"
+            className="h-10 px-5 rounded-lg border-2 border-blue-200 hover:border-blue-300 hover:bg-blue-50 text-blue-700 font-medium transition-all"
           >
             <Link className="mr-2 h-4 w-4" />
-            Collect Responses
+            Get Link
           </Button>
         )}
 
-        {/* Share Action (when share handler is provided) */}
         {onShare && (
           <Button
             variant="outline"
-            size="sm"
             onClick={onShare}
-            className="text-purple-600 border-purple-300 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-400"
+            className="h-10 px-5 rounded-lg border-2 border-purple-200 hover:border-purple-300 hover:bg-purple-50 text-purple-700 font-medium transition-all"
           >
             <Share2 className="mr-2 h-4 w-4" />
             Share
           </Button>
         )}
 
+        <Button
+          variant="outline"
+          onClick={onPreview}
+          className="h-10 px-5 rounded-lg border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-medium transition-all"
+        >
+          <Eye className="mr-2 h-4 w-4" />
+          Preview
+        </Button>
+
+        <Button
+          variant="outline"
+          onClick={onViewAnalytics}
+          className="h-10 px-5 rounded-lg border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 font-medium transition-all"
+        >
+          <BarChart3 className="mr-2 h-4 w-4" />
+          Analytics
+        </Button>
+
         {/* More Actions Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              className="h-10 w-10 rounded-lg border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 p-0"
+            >
               <MoreHorizontal className="h-4 w-4" />
               <span className="sr-only">More actions</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={onPreview}>
-              <Eye className="mr-2 h-4 w-4" />
-              Preview Form
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onViewAnalytics}>
-              <BarChart3 className="mr-2 h-4 w-4" />
-              View Analytics
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={onDelete}
