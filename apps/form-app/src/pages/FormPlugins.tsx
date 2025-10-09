@@ -125,11 +125,11 @@ const FormPlugins: React.FC = () => {
   if (formLoading) {
     return (
       <MainLayout
-        title="Connect"
+        title="Plugins"
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Form Dashboard', href: `/dashboard/form/${formId}` },
-          { label: 'Connect', href: `/dashboard/form/${formId}/plugins` },
+          { label: 'Plugins', href: `/dashboard/form/${formId}/plugins` },
         ]}
       >
         <div className="flex justify-center items-center min-h-96">
@@ -142,10 +142,10 @@ const FormPlugins: React.FC = () => {
   if (formError || !formData?.form) {
     return (
       <MainLayout
-        title="Connect"
+        title="Plugins"
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Connect', href: `/dashboard/form/${formId}/plugins` },
+          { label: 'Plugins', href: `/dashboard/form/${formId}/plugins` },
         ]}
       >
         <div className="max-w-4xl mx-auto px-4 py-12">
@@ -166,11 +166,11 @@ const FormPlugins: React.FC = () => {
 
   return (
     <MainLayout
-      title={`${form.title} - Connect`}
+      title={`${form.title} - Plugins`}
       breadcrumbs={[
         { label: 'Dashboard', href: '/dashboard' },
         { label: form.title, href: `/dashboard/form/${formId}` },
-        { label: 'Connect', href: `/dashboard/form/${formId}/plugins` },
+        { label: 'Plugins', href: `/dashboard/form/${formId}/plugins` },
       ]}
     >
       <div className="min-h-screen bg-slate-50">
@@ -189,7 +189,7 @@ const FormPlugins: React.FC = () => {
                   Back to Dashboard
                 </Button>
                 <h1 className="text-3xl font-bold text-slate-900 mb-2">
-                  Connect
+                  Plugins
                 </h1>
                 <p className="text-slate-600 text-lg">
                   Extend your forms with powerful integrations
