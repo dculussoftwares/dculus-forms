@@ -36,8 +36,8 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 240 5.9% 90%;
     --sidebar-ring: 158.8 100% 35.3%;
-    --font-sans: "DM Sans", sans-serif;
-    --font-serif: "DM Sans", serif;
+    --font-sans: "Inter", sans-serif;
+    --font-serif: "Inter", serif;
     --font-mono: "JetBrains Mono", monospace;
     --radius: 0.5rem;
     --shadow-2xs: 0px 4px 10px -2px hsl(0 0% 0% / 0.03);
@@ -85,8 +85,8 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 158.8 100% 35.3%;
-    --font-sans: "DM Sans", sans-serif;
-    --font-serif: "DM Sans", serif;
+    --font-sans: "Inter", sans-serif;
+    --font-serif: "Inter", serif;
     --font-mono: "JetBrains Mono", monospace;
     --radius: 0.5rem;
     --shadow-2xs: 0px 4px 10px -2px hsl(0 0% 0% / 0.05);
