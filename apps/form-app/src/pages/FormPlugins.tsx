@@ -18,17 +18,9 @@ import {
   Star,
   TrendingUp,
   Zap,
-  Users,
-  BarChart3,
   Mail,
   MessageSquare,
-  Database,
-  Cloud,
-  CreditCard,
   FileText,
-  Calendar,
-  ShoppingCart,
-  Lock,
   Webhook,
   Globe,
   Palette,
@@ -50,103 +42,37 @@ const FormPlugins: React.FC = () => {
   });
 
   const categories = [
-    { id: 'all', name: 'All integrations', icon: Globe, count: 42 },
-    { id: 'popular', name: 'Most popular', icon: TrendingUp, count: 12 },
-    { id: 'automation', name: 'Automation', icon: Zap, count: 8 },
-    { id: 'crm', name: 'CRM & Sales', icon: Users, count: 6 },
-    { id: 'analytics', name: 'Analytics', icon: BarChart3, count: 5 },
-    { id: 'email', name: 'Email Marketing', icon: Mail, count: 7 },
-    { id: 'communication', name: 'Communication', icon: MessageSquare, count: 5 },
-    { id: 'database', name: 'Database', icon: Database, count: 4 },
-    { id: 'storage', name: 'Cloud Storage', icon: Cloud, count: 4 },
-    { id: 'payment', name: 'Payments', icon: CreditCard, count: 3 },
-    { id: 'productivity', name: 'Productivity', icon: FileText, count: 6 },
-    { id: 'scheduling', name: 'Scheduling', icon: Calendar, count: 3 },
-    { id: 'ecommerce', name: 'E-commerce', icon: ShoppingCart, count: 4 },
-    { id: 'security', name: 'Security', icon: Lock, count: 2 },
-    { id: 'webhooks', name: 'Webhooks & API', icon: Webhook, count: 5 },
+    { id: 'all', name: 'All integrations', icon: Globe, count: 7 },
+    { id: 'popular', name: 'Most popular', icon: TrendingUp, count: 3 },
+    { id: 'email', name: 'Email', icon: Mail, count: 1 },
+    { id: 'productivity', name: 'Productivity', icon: FileText, count: 2 },
+    { id: 'communication', name: 'Communication', icon: MessageSquare, count: 2 },
+    { id: 'automation', name: 'Automation', icon: Zap, count: 1 },
+    { id: 'webhooks', name: 'Webhooks & API', icon: Webhook, count: 1 },
   ];
 
   const integrations = [
     // Popular
-    { name: 'Slack', description: 'Send form responses to Slack channels', category: 'popular', logo: '💬', color: 'bg-purple-100', popular: true },
+    { name: 'Email', description: 'Send automated email notifications for form submissions', category: 'popular', logo: '📧', color: 'bg-blue-100', popular: true },
     { name: 'Google Sheets', description: 'Sync responses to Google Sheets automatically', category: 'popular', logo: '📊', color: 'bg-green-100', popular: true },
-    { name: 'Zapier', description: 'Connect with 5000+ apps', category: 'popular', logo: '⚡', color: 'bg-orange-100', popular: true },
-    { name: 'Mailchimp', description: 'Add subscribers to your email lists', category: 'popular', logo: '✉️', color: 'bg-yellow-100', popular: true },
-    { name: 'HubSpot', description: 'Create contacts and deals automatically', category: 'popular', logo: '🎯', color: 'bg-orange-100', popular: true },
-    { name: 'Salesforce', description: 'Sync leads and contacts to Salesforce', category: 'popular', logo: '☁️', color: 'bg-blue-100', popular: true },
+    { name: 'WhatsApp', description: 'Send form notifications via WhatsApp', category: 'popular', logo: '💬', color: 'bg-green-100', popular: true },
 
-    // Automation
-    { name: 'Make', description: 'Visual automation platform', category: 'automation', logo: '🔄', color: 'bg-purple-100' },
-    { name: 'n8n', description: 'Open-source workflow automation', category: 'automation', logo: '🤖', color: 'bg-pink-100' },
-    { name: 'Integromat', description: 'Advanced automation scenarios', category: 'automation', logo: '⚙️', color: 'bg-indigo-100' },
-    { name: 'IFTTT', description: 'Simple automation for everyday tasks', category: 'automation', logo: '🔗', color: 'bg-blue-100' },
-
-    // CRM & Sales
-    { name: 'Pipedrive', description: 'Sales CRM integration', category: 'crm', logo: '📈', color: 'bg-green-100' },
-    { name: 'Zoho CRM', description: 'Customer relationship management', category: 'crm', logo: '👥', color: 'bg-red-100' },
-    { name: 'Monday.com', description: 'Work management platform', category: 'crm', logo: '📋', color: 'bg-purple-100' },
-    { name: 'Airtable', description: 'Flexible database platform', category: 'crm', logo: '🗂️', color: 'bg-yellow-100' },
-
-    // Analytics
-    { name: 'Google Analytics', description: 'Track form submissions and conversions', category: 'analytics', logo: '📊', color: 'bg-orange-100' },
-    { name: 'Mixpanel', description: 'Product analytics and insights', category: 'analytics', logo: '📈', color: 'bg-purple-100' },
-    { name: 'Amplitude', description: 'Digital analytics platform', category: 'analytics', logo: '📉', color: 'bg-blue-100' },
-    { name: 'Segment', description: 'Customer data platform', category: 'analytics', logo: '🎯', color: 'bg-green-100' },
-
-    // Email Marketing
-    { name: 'SendGrid', description: 'Email delivery platform', category: 'email', logo: '📧', color: 'bg-blue-100' },
-    { name: 'ConvertKit', description: 'Email marketing for creators', category: 'email', logo: '✨', color: 'bg-pink-100' },
-    { name: 'ActiveCampaign', description: 'Marketing automation platform', category: 'email', logo: '🎨', color: 'bg-indigo-100' },
-    { name: 'Brevo', description: 'Email and SMS marketing', category: 'email', logo: '💌', color: 'bg-green-100' },
-
-    // Communication
-    { name: 'Microsoft Teams', description: 'Team collaboration platform', category: 'communication', logo: '👔', color: 'bg-blue-100' },
-    { name: 'Discord', description: 'Send notifications to Discord servers', category: 'communication', logo: '🎮', color: 'bg-indigo-100' },
-    { name: 'Telegram', description: 'Instant messaging notifications', category: 'communication', logo: '✈️', color: 'bg-blue-100' },
-    { name: 'Twilio', description: 'SMS and voice notifications', category: 'communication', logo: '📱', color: 'bg-red-100' },
-
-    // Database
-    { name: 'PostgreSQL', description: 'Store responses in PostgreSQL', category: 'database', logo: '🐘', color: 'bg-blue-100' },
-    { name: 'MySQL', description: 'MySQL database integration', category: 'database', logo: '🗄️', color: 'bg-orange-100' },
-    { name: 'MongoDB', description: 'NoSQL database integration', category: 'database', logo: '🍃', color: 'bg-green-100' },
-    { name: 'Supabase', description: 'Open-source Firebase alternative', category: 'database', logo: '⚡', color: 'bg-emerald-100' },
-
-    // Cloud Storage
-    { name: 'Google Drive', description: 'Save files to Google Drive', category: 'storage', logo: '📁', color: 'bg-blue-100' },
-    { name: 'Dropbox', description: 'Store files in Dropbox', category: 'storage', logo: '📦', color: 'bg-blue-100' },
-    { name: 'OneDrive', description: 'Microsoft cloud storage', category: 'storage', logo: '☁️', color: 'bg-blue-100' },
-    { name: 'AWS S3', description: 'Amazon cloud storage', category: 'storage', logo: '🪣', color: 'bg-orange-100' },
-
-    // Payments
-    { name: 'Stripe', description: 'Accept payments with your forms', category: 'payment', logo: '💳', color: 'bg-purple-100' },
-    { name: 'PayPal', description: 'PayPal payment integration', category: 'payment', logo: '💰', color: 'bg-blue-100' },
-    { name: 'Square', description: 'Payment processing platform', category: 'payment', logo: '▪️', color: 'bg-gray-100' },
+    // Email
+    { name: 'Email', description: 'Send automated email notifications for form submissions', category: 'email', logo: '📧', color: 'bg-blue-100' },
 
     // Productivity
-    { name: 'Notion', description: 'Create database entries in Notion', category: 'productivity', logo: '📝', color: 'bg-gray-100' },
-    { name: 'Trello', description: 'Create cards from form submissions', category: 'productivity', logo: '📌', color: 'bg-blue-100' },
-    { name: 'Asana', description: 'Task management integration', category: 'productivity', logo: '✓', color: 'bg-pink-100' },
-    { name: 'ClickUp', description: 'All-in-one productivity platform', category: 'productivity', logo: '🚀', color: 'bg-purple-100' },
+    { name: 'Google Sheets', description: 'Sync responses to Google Sheets automatically', category: 'productivity', logo: '📊', color: 'bg-green-100' },
+    { name: 'Microsoft Excel', description: 'Export and sync data to Microsoft Excel', category: 'productivity', logo: '📈', color: 'bg-green-100' },
 
-    // Scheduling
-    { name: 'Calendly', description: 'Schedule meetings from forms', category: 'scheduling', logo: '📅', color: 'bg-blue-100' },
-    { name: 'Cal.com', description: 'Open-source scheduling', category: 'scheduling', logo: '⏰', color: 'bg-indigo-100' },
-    { name: 'Google Calendar', description: 'Create calendar events', category: 'scheduling', logo: '📆', color: 'bg-red-100' },
+    // Communication
+    { name: 'WhatsApp', description: 'Send form notifications via WhatsApp', category: 'communication', logo: '💬', color: 'bg-green-100' },
+    { name: 'Telegram', description: 'Instant messaging notifications via Telegram', category: 'communication', logo: '✈️', color: 'bg-blue-100' },
 
-    // E-commerce
-    { name: 'Shopify', description: 'E-commerce platform integration', category: 'ecommerce', logo: '🛍️', color: 'bg-green-100' },
-    { name: 'WooCommerce', description: 'WordPress e-commerce', category: 'ecommerce', logo: '🛒', color: 'bg-purple-100' },
-    { name: 'BigCommerce', description: 'Enterprise e-commerce', category: 'ecommerce', logo: '🏪', color: 'bg-blue-100' },
-
-    // Security
-    { name: 'Auth0', description: 'Authentication and authorization', category: 'security', logo: '🔐', color: 'bg-orange-100' },
-    { name: 'Okta', description: 'Identity and access management', category: 'security', logo: '🛡️', color: 'bg-blue-100' },
+    // Automation
+    { name: 'n8n', description: 'Open-source workflow automation', category: 'automation', logo: '🤖', color: 'bg-pink-100' },
 
     // Webhooks & API
-    { name: 'Custom Webhooks', description: 'Send data to any URL', category: 'webhooks', logo: '🔗', color: 'bg-gray-100' },
-    { name: 'REST API', description: 'Access via RESTful API', category: 'webhooks', logo: '🌐', color: 'bg-green-100' },
-    { name: 'GraphQL API', description: 'Query with GraphQL', category: 'webhooks', logo: '◆', color: 'bg-pink-100' },
+    { name: 'Custom Webhooks', description: 'Send data to any URL endpoint', category: 'webhooks', logo: '🔗', color: 'bg-gray-100' },
   ];
 
   const filteredIntegrations = integrations.filter((integration) => {
@@ -307,7 +233,7 @@ const FormPlugins: React.FC = () => {
                         Q2 2025
                       </Badge>
                       <Badge variant="secondary" className="bg-white">
-                        42 Integrations
+                        7 Integrations
                       </Badge>
                     </div>
                   </div>
