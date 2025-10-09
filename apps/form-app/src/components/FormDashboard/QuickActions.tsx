@@ -11,7 +11,6 @@ import {
   Users,
   Database,
   LineChart,
-  Workflow,
   Puzzle,
   Settings,
   Sparkles,
@@ -46,13 +45,6 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId }) => {
       icon: LineChart,
       color: 'teal',
       path: `/dashboard/form/${formId}/analytics`,
-    },
-    {
-      title: 'Workflows',
-      description: 'Automate responses and actions',
-      icon: Workflow,
-      color: 'green',
-      path: `/dashboard/form/${formId}/workflows`,
     },
     {
       title: 'Plugins',
@@ -151,7 +143,6 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId }) => {
                       {action.title === 'Collaborate' && 'Start Collaborating'}
                       {action.title === 'Responses' && 'View Responses'}
                       {action.title === 'Analytics' && 'View Analytics'}
-                      {action.title === 'Workflows' && 'Setup Workflows'}
                       {action.title === 'Plugins' && 'Browse Plugins'}
                       {action.title === 'Settings' && 'Open Settings'}
                       <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-1 transition-transform" />
