@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import {
@@ -16,7 +16,6 @@ import {
   ArrowLeft,
   Search,
   Star,
-  TrendingUp,
   Zap,
   Mail,
   MessageSquare,
@@ -26,11 +25,47 @@ import {
   Palette,
 } from 'lucide-react';
 
+const FAVORITES_STORAGE_KEY = 'dculus_favorite_integrations';
+
 const FormPlugins: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+
+  // Load favorites from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(FAVORITES_STORAGE_KEY);
+      if (stored) {
+        setFavorites(new Set(JSON.parse(stored)));
+      }
+    } catch (error) {
+      console.error('Failed to load favorites:', error);
+    }
+  }, []);
+
+  // Save favorites to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(Array.from(favorites)));
+    } catch (error) {
+      console.error('Failed to save favorites:', error);
+    }
+  }, [favorites]);
+
+  const toggleFavorite = (integrationName: string) => {
+    setFavorites(prev => {
+      const newFavorites = new Set(prev);
+      if (newFavorites.has(integrationName)) {
+        newFavorites.delete(integrationName);
+      } else {
+        newFavorites.add(integrationName);
+      }
+      return newFavorites;
+    });
+  };
 
   const {
     data: formData,
@@ -41,22 +76,7 @@ const FormPlugins: React.FC = () => {
     skip: !formId,
   });
 
-  const categories = [
-    { id: 'all', name: 'All integrations', icon: Globe, count: 7 },
-    { id: 'popular', name: 'Most popular', icon: TrendingUp, count: 3 },
-    { id: 'email', name: 'Email', icon: Mail, count: 1 },
-    { id: 'productivity', name: 'Productivity', icon: FileText, count: 2 },
-    { id: 'communication', name: 'Communication', icon: MessageSquare, count: 2 },
-    { id: 'automation', name: 'Automation', icon: Zap, count: 1 },
-    { id: 'webhooks', name: 'Webhooks & API', icon: Webhook, count: 1 },
-  ];
-
   const integrations = [
-    // Popular
-    { name: 'Email', description: 'Send automated email notifications for form submissions', category: 'popular', logo: '📧', color: 'bg-blue-100', popular: true },
-    { name: 'Google Sheets', description: 'Sync responses to Google Sheets automatically', category: 'popular', logo: '📊', color: 'bg-green-100', popular: true },
-    { name: 'WhatsApp', description: 'Send form notifications via WhatsApp', category: 'popular', logo: '💬', color: 'bg-green-100', popular: true },
-
     // Email
     { name: 'Email', description: 'Send automated email notifications for form submissions', category: 'email', logo: '📧', color: 'bg-blue-100' },
 
@@ -75,14 +95,32 @@ const FormPlugins: React.FC = () => {
     { name: 'Custom Webhooks', description: 'Send data to any URL endpoint', category: 'webhooks', logo: '🔗', color: 'bg-gray-100' },
   ];
 
+  const categories = [
+    { id: 'all', name: 'All integrations', icon: Globe, count: 7 },
+    { id: 'favorites', name: 'Favorites', icon: Star, count: favorites.size },
+    { id: 'email', name: 'Email', icon: Mail, count: 1 },
+    { id: 'productivity', name: 'Productivity', icon: FileText, count: 2 },
+    { id: 'communication', name: 'Communication', icon: MessageSquare, count: 2 },
+    { id: 'automation', name: 'Automation', icon: Zap, count: 1 },
+    { id: 'webhooks', name: 'Webhooks & API', icon: Webhook, count: 1 },
+  ];
+
   const filteredIntegrations = integrations.filter((integration) => {
-    const matchesCategory = selectedCategory === 'all' || integration.category === selectedCategory;
+    // Filter by favorites
+    if (selectedCategory === 'favorites') {
+      if (!favorites.has(integration.name)) return false;
+    } else if (selectedCategory !== 'all') {
+      // Filter by other categories
+      if (integration.category !== selectedCategory) return false;
+    }
+
+    // Filter by search
     const matchesSearch = integration.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          integration.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    return matchesSearch;
   });
 
-  const popularIntegrations = integrations.filter(i => i.popular);
+  const favoriteIntegrations = integrations.filter(i => favorites.has(i.name));
 
   if (formLoading) {
     return (
@@ -240,38 +278,59 @@ const FormPlugins: React.FC = () => {
                 </div>
               </div>
 
-              {/* Most Popular */}
-              {selectedCategory === 'all' && !searchQuery && (
+              {/* Favorites Section */}
+              {selectedCategory === 'all' && !searchQuery && favoriteIntegrations.length > 0 && (
                 <div className="mb-10">
                   <div className="flex items-center gap-2 mb-4">
                     <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
                     <h2 className="text-xl font-semibold text-slate-900">
-                      Most popular
+                      Your Favorites
                     </h2>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {popularIntegrations.map((integration) => (
-                      <Card
-                        key={integration.name}
-                        className="group hover:shadow-lg transition-all duration-200 cursor-pointer border-slate-200 hover:border-slate-300"
-                      >
-                        <CardContent className="p-5">
-                          <div className="flex items-start gap-4">
-                            <div className={`${integration.color} w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0`}>
-                              {integration.logo}
+                    {favoriteIntegrations.map((integration) => {
+                      const isFavorite = favorites.has(integration.name);
+                      return (
+                        <Card
+                          key={integration.name}
+                          className="group hover:shadow-lg transition-all duration-200 border-slate-200 hover:border-slate-300 relative"
+                        >
+                          <CardContent className="p-5">
+                            <div className="flex items-start gap-4">
+                              <div className={`${integration.color} w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0`}>
+                                {integration.logo}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2 mb-1">
+                                  <h3 className="font-semibold text-slate-900 group-hover:text-slate-700">
+                                    {integration.name}
+                                  </h3>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleFavorite(integration.name);
+                                    }}
+                                    className="flex-shrink-0 p-1 rounded-md hover:bg-slate-100 transition-colors"
+                                    aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                                  >
+                                    <Star
+                                      className={`h-4 w-4 transition-all ${
+                                        isFavorite
+                                          ? 'fill-amber-500 text-amber-500'
+                                          : 'text-slate-400 hover:text-amber-500'
+                                      }`}
+                                    />
+                                  </button>
+                                </div>
+                                <p className="text-sm text-slate-600 line-clamp-2">
+                                  {integration.description}
+                                </p>
+                              </div>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-slate-900 mb-1 group-hover:text-slate-700">
-                                {integration.name}
-                              </h3>
-                              <p className="text-sm text-slate-600 line-clamp-2">
-                                {integration.description}
-                              </p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -295,33 +354,49 @@ const FormPlugins: React.FC = () => {
                   </Card>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredIntegrations.map((integration) => (
-                      <Card
-                        key={integration.name}
-                        className="group hover:shadow-lg transition-all duration-200 cursor-pointer border-slate-200 hover:border-slate-300"
-                      >
-                        <CardContent className="p-5">
-                          <div className="flex items-start gap-4">
-                            <div className={`${integration.color} w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0`}>
-                              {integration.logo}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-2 mb-1">
-                                <h3 className="font-semibold text-slate-900 group-hover:text-slate-700">
-                                  {integration.name}
-                                </h3>
-                                {integration.popular && (
-                                  <Star className="h-4 w-4 text-amber-500 fill-amber-500 flex-shrink-0" />
-                                )}
+                    {filteredIntegrations.map((integration) => {
+                      const isFavorite = favorites.has(integration.name);
+                      return (
+                        <Card
+                          key={integration.name}
+                          className="group hover:shadow-lg transition-all duration-200 border-slate-200 hover:border-slate-300 relative"
+                        >
+                          <CardContent className="p-5">
+                            <div className="flex items-start gap-4">
+                              <div className={`${integration.color} w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0`}>
+                                {integration.logo}
                               </div>
-                              <p className="text-sm text-slate-600 line-clamp-2">
-                                {integration.description}
-                              </p>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2 mb-1">
+                                  <h3 className="font-semibold text-slate-900 group-hover:text-slate-700">
+                                    {integration.name}
+                                  </h3>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleFavorite(integration.name);
+                                    }}
+                                    className="flex-shrink-0 p-1 rounded-md hover:bg-slate-100 transition-colors"
+                                    aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                                  >
+                                    <Star
+                                      className={`h-4 w-4 transition-all ${
+                                        isFavorite
+                                          ? 'fill-amber-500 text-amber-500'
+                                          : 'text-slate-400 hover:text-amber-500'
+                                      }`}
+                                    />
+                                  </button>
+                                </div>
+                                <p className="text-sm text-slate-600 line-clamp-2">
+                                  {integration.description}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
                 )}
               </div>
