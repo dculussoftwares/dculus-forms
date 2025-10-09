@@ -21,6 +21,7 @@ import InviteAcceptance from './pages/InviteAcceptance';
 import FormDashboard from './pages/FormDashboard';
 import FormAnalytics from './pages/FormAnalytics';
 import FormSettings from './pages/FormSettings';
+import FormPlugins from './pages/FormPlugins';
 import CollaborativeFormBuilder from './pages/CollaborativeFormBuilder';
 
 
@@ -65,6 +66,11 @@ function App() {
           <Route path="/dashboard/form/:formId/settings" element={
             <ProtectedRoute>
               <FormSettings />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/form/:formId/plugins" element={
+            <ProtectedRoute>
+              <FormPlugins />
             </ProtectedRoute>
           } />
 
