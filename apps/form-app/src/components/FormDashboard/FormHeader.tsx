@@ -72,7 +72,16 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
           </div>
           <TypographyMuted>•</TypographyMuted>
           <TypographyMuted>
-            Created {new Date(form.createdAt).toLocaleDateString()}
+            Created {(() => {
+              // Handle timestamp strings (milliseconds as string) and ISO date strings
+              const timestamp = typeof form.createdAt === 'string' && /^\d+$/.test(form.createdAt)
+                ? parseInt(form.createdAt, 10)
+                : form.createdAt;
+              const date = new Date(timestamp);
+              return !isNaN(date.getTime())
+                ? date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+                : 'Date unavailable';
+            })()}
           </TypographyMuted>
         </div>
       </div>

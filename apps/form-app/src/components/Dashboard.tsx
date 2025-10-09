@@ -413,16 +413,18 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
 
           <div className="flex items-center justify-between pt-2">
             <TypographySmall className="text-muted-foreground">
-              {form.createdAt ? (() => {
-                // Handle both timestamp strings and ISO date strings
+              Created {form.createdAt ? (() => {
+                // Handle timestamp strings (milliseconds as string) and ISO date strings
                 const timestamp = typeof form.createdAt === 'string' && /^\d+$/.test(form.createdAt)
-                  ? parseInt(form.createdAt)
+                  ? parseInt(form.createdAt, 10)
                   : form.createdAt;
                 const date = new Date(timestamp);
-                return !isNaN(date.getTime()) ? date.toLocaleDateString() : 'Date unavailable';
+                return !isNaN(date.getTime())
+                  ? date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+                  : 'Date unavailable';
               })() : 'Date unavailable'}
             </TypographySmall>
-            <div 
+            <div
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: primaryColor }}
             />
