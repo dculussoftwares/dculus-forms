@@ -10,10 +10,12 @@ import { StatsGrid } from '../components/FormDashboard/StatsGrid';
 import { QuickActions } from '../components/FormDashboard/QuickActions';
 import { DeleteDialog, UnpublishDialog, CollectResponsesDialog } from '../components/FormDashboard/Dialogs';
 import { ShareModal } from '../components/sharing/ShareModal';
+import { PublishSuccessAnimation } from '../components/FormDashboard/PublishSuccessAnimation';
 import { useFormDashboard } from '../hooks/useFormDashboard';
 import { useAuth } from '../contexts/AuthContext';
 import { useAppConfig } from '@/hooks';
 import { AlertCircle } from 'lucide-react';
+import { toastSuccess } from '@dculus/ui';
 
 const FormDashboard: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
@@ -35,6 +37,8 @@ const FormDashboard: React.FC = () => {
     setShowUnpublishDialog,
     showCollectResponsesDialog,
     setShowCollectResponsesDialog,
+    showPublishAnimation,
+    setShowPublishAnimation,
     handleDelete,
     handlePublish,
     handleUnpublish,
@@ -46,6 +50,17 @@ const FormDashboard: React.FC = () => {
   // Share functionality
   const handleShare = () => {
     setShowShareModal(true);
+  };
+
+  // Handle copy link from animation
+  const handleAnimationCopyLink = () => {
+    handleCopyLink();
+    toastSuccess('Copied to clipboard', 'Form link has been copied');
+  };
+
+  // Handle view form from animation
+  const handleAnimationViewForm = () => {
+    handleOpenFormViewer();
   };
 
   if (formLoading) {
@@ -169,6 +184,17 @@ const FormDashboard: React.FC = () => {
             formShortUrl={form.shortUrl}
             organizationId={organizationId}
             currentUserId={user.id}
+          />
+        )}
+
+        {/* Publish Success Animation */}
+        {showPublishAnimation && (
+          <PublishSuccessAnimation
+            formTitle={form.title}
+            formUrl={`http://localhost:5173/f/${form.shortUrl}`}
+            onClose={() => setShowPublishAnimation(false)}
+            onCopyLink={handleAnimationCopyLink}
+            onViewForm={handleAnimationViewForm}
           />
         )}
       </div>

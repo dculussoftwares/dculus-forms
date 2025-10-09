@@ -20,6 +20,7 @@ export const useFormDashboard = (formId: string | undefined) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showUnpublishDialog, setShowUnpublishDialog] = useState(false);
   const [showCollectResponsesDialog, setShowCollectResponsesDialog] = useState(false);
+  const [showPublishAnimation, setShowPublishAnimation] = useState(false);
 
   const {
     data: formData,
@@ -58,6 +59,12 @@ export const useFormDashboard = (formId: string | undefined) => {
   });
 
   const [updateForm, { loading: updateLoading }] = useMutation(UPDATE_FORM, {
+    onCompleted: (data) => {
+      // Show celebration animation when form is published
+      if (data?.updateForm?.isPublished) {
+        setShowPublishAnimation(true);
+      }
+    },
     onError: (error) => {
       console.error('Error updating form:', error);
     },
@@ -178,6 +185,8 @@ export const useFormDashboard = (formId: string | undefined) => {
     setShowUnpublishDialog,
     showCollectResponsesDialog,
     setShowCollectResponsesDialog,
+    showPublishAnimation,
+    setShowPublishAnimation,
 
     // Handlers
     handleDelete,
