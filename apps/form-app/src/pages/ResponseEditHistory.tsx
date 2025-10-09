@@ -84,7 +84,7 @@ export const ResponseEditHistory: React.FC = () => {
 
   const handleGoToTable = () => {
     if (formId) {
-      navigate(`/dashboard/form/${formId}/responses/table`);
+      navigate(`/dashboard/form/${formId}/responses`);
     }
   };
 

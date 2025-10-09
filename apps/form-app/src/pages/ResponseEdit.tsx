@@ -57,7 +57,7 @@ const ResponseEdit: React.FC = () => {
       });
 
       toastSuccess('Response updated successfully', 'Your changes have been saved');
-      navigate(`/dashboard/form/${formId}/responses/table`);
+      navigate(`/dashboard/form/${formId}/responses`);
     } catch (error: any) {
       console.error('Failed to update response:', error);
       toastError('Failed to update response', error.message || 'An error occurred while updating the response');
@@ -74,7 +74,6 @@ const ResponseEdit: React.FC = () => {
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Form Dashboard', href: `/dashboard/form/${formId}` },
           { label: 'Responses', href: `/dashboard/form/${formId}/responses` },
-          { label: 'Table View', href: `/dashboard/form/${formId}/responses/table` },
           { label: 'Edit Response', href: `/dashboard/form/${formId}/responses/${responseId}/edit` },
         ]}
       >
@@ -93,7 +92,6 @@ const ResponseEdit: React.FC = () => {
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Form Dashboard', href: `/dashboard/form/${formId}` },
           { label: 'Responses', href: `/dashboard/form/${formId}/responses` },
-          { label: 'Table View', href: `/dashboard/form/${formId}/responses/table` },
           { label: 'Edit Response', href: `/dashboard/form/${formId}/responses/${responseId}/edit` },
         ]}
       >
@@ -109,7 +107,7 @@ const ResponseEdit: React.FC = () => {
                 : "The response you're trying to edit doesn't exist or you don't have permission to edit it."}
             </p>
             <Button
-              onClick={() => navigate(`/dashboard/form/${formId}/responses/table`)}
+              onClick={() => navigate(`/dashboard/form/${formId}/responses`)}
               variant="outline"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -133,7 +131,6 @@ const ResponseEdit: React.FC = () => {
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Form Dashboard', href: `/dashboard/form/${formId}` },
           { label: 'Responses', href: `/dashboard/form/${formId}/responses` },
-          { label: 'Table View', href: `/dashboard/form/${formId}/responses/table` },
           { label: 'Edit Response', href: `/dashboard/form/${formId}/responses/${responseId}/edit` },
         ]}
       >
@@ -145,7 +142,7 @@ const ResponseEdit: React.FC = () => {
               This form is not yet configured. Please try again later.
             </p>
             <Button
-              onClick={() => navigate(`/dashboard/form/${formId}/responses/table`)}
+              onClick={() => navigate(`/dashboard/form/${formId}/responses`)}
               variant="outline"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -168,7 +165,7 @@ const ResponseEdit: React.FC = () => {
         { label: 'Dashboard', href: '/dashboard' },
         { label: form.title, href: `/dashboard/form/${formId}` },
         { label: 'Responses', href: `/dashboard/form/${formId}/responses` },
-        { label: 'Table View', href: `/dashboard/form/${formId}/responses/table` },
+        { label: 'Table View', href: `/dashboard/form/${formId}/responses` },
         { label: 'Edit Response', href: `/dashboard/form/${formId}/responses/${responseId}/edit` },
       ]}
     >
@@ -177,12 +174,12 @@ const ResponseEdit: React.FC = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate(`/dashboard/form/${formId}/responses/table`)}
+          onClick={() => navigate(`/dashboard/form/${formId}/responses`)}
           className="hover:bg-slate-100 flex-shrink-0"
           disabled={isSubmitting}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Table
+          Back to Responses
         </Button>
         <div className="h-4 w-px bg-slate-300 flex-shrink-0" />
         <h1 className="text-lg font-semibold text-slate-900 truncate flex-1">

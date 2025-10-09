@@ -8,7 +8,6 @@ import FormsList from './pages/FormsList';
 import FormBuilder from './pages/FormBuilder';
 import FormViewer from './pages/FormViewer';
 import Responses from './pages/Responses';
-import ResponsesTable from './pages/ResponsesTable';
 import ResponseEdit from './pages/ResponseEdit';
 import { ResponseEditHistory } from './pages/ResponseEditHistory';
 import ResponsesAnalytics from './pages/ResponsesAnalytics';
@@ -97,11 +96,6 @@ function App() {
           <Route path="/dashboard/form/:formId/responses" element={
             <ProtectedRoute>
               <Responses />
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard/form/:formId/responses/table" element={
-            <ProtectedRoute>
-              <ResponsesTable />
             </ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/responses/:responseId/edit" element={
