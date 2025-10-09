@@ -13,12 +13,7 @@ import {
   Badge,
   Alert,
   AlertDescription,
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator
+  LoadingSpinner
 } from '@dculus/ui';
 import {
   ArrowLeft,
@@ -28,6 +23,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { EditHistoryTimeline } from '../components/response-history/EditHistoryTimeline';
+import { MainLayout } from '../components/MainLayout';
 
 // Helper function to safely format dates
 const safeFormatDate = (dateString: string | null | undefined, formatString: string, fallback = 'Unknown date'): string => {
@@ -90,169 +86,150 @@ export const ResponseEditHistory: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex-1 space-y-6 p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/3" />
-          <div className="h-4 bg-gray-200 rounded w-1/2" />
-          <div className="space-y-3">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-32 bg-gray-200 rounded" />
-            ))}
-          </div>
+      <MainLayout
+        title="Edit History"
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Form Dashboard', href: `/dashboard/form/${formId}` },
+          { label: 'Responses', href: `/dashboard/form/${formId}/responses` },
+          { label: 'Edit History', href: `/dashboard/form/${formId}/responses/${responseId}/history` },
+        ]}
+      >
+        <div className="flex justify-center items-center min-h-96">
+          <LoadingSpinner />
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
   if (!form || !response) {
     return (
-      <div className="flex-1 flex items-center justify-center p-6">
-        <Alert className="max-w-md">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Response or form not found. Please check the URL and try again.
-          </AlertDescription>
-        </Alert>
-      </div>
+      <MainLayout
+        title="Edit History"
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Form Dashboard', href: `/dashboard/form/${formId}` },
+          { label: 'Responses', href: `/dashboard/form/${formId}/responses` },
+          { label: 'Edit History', href: `/dashboard/form/${formId}/responses/${responseId}/history` },
+        ]}
+      >
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="max-w-md text-center p-8 bg-white rounded-lg shadow-sm border border-slate-200/60">
+            <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+            <h3 className="mb-2 text-xl font-semibold">Not Found</h3>
+            <p className="text-slate-600">
+              Response or form not found. Please check the URL and try again.
+            </p>
+          </div>
+        </div>
+      </MainLayout>
     );
   }
 
   return (
-    <div className="flex-1 space-y-6 p-6">
-      {/* Header */}
-      <div className="space-y-4">
-        {/* Breadcrumb */}
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink
-                onClick={() => navigate('/dashboard')}
-                className="cursor-pointer"
-              >
-                Dashboard
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink
-                onClick={() => navigate(`/dashboard/form/${formId}`)}
-                className="cursor-pointer"
-              >
-                {form.title}
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink
-                onClick={handleGoToTable}
-                className="cursor-pointer"
-              >
-                Responses
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Edit History</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-
-        {/* Page Header */}
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleGoToTable}
-                className="text-gray-600 hover:text-gray-900"
-              >
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Back to Responses
-              </Button>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
-              <History className="h-6 w-6" />
-              <span>Response Edit History</span>
+    <MainLayout
+      title={`${form.title} - Edit History`}
+      breadcrumbs={[
+        { label: 'Dashboard', href: '/dashboard' },
+        { label: form.title, href: `/dashboard/form/${formId}` },
+        { label: 'Responses', href: `/dashboard/form/${formId}/responses` },
+        { label: 'Edit History', href: `/dashboard/form/${formId}/responses/${responseId}/history` },
+      ]}
+    >
+      <div className="flex flex-col h-full w-full overflow-x-hidden">
+        {/* Compact Header */}
+        <div className="flex items-center gap-4 p-3 border-b border-slate-200/40 bg-white flex-shrink-0 w-full overflow-hidden rounded-t-lg">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleGoToTable}
+            className="hover:bg-slate-100 flex-shrink-0"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Responses
+          </Button>
+          <div className="h-4 w-px bg-slate-300 flex-shrink-0" />
+          <div className="flex items-center space-x-2 flex-1">
+            <History className="h-5 w-5 text-slate-600" />
+            <h1 className="text-lg font-semibold text-slate-900 truncate">
+              Response Edit History
             </h1>
-            <p className="text-gray-600">
-              View all changes made to this response over time
-            </p>
           </div>
-
-          <div className="flex items-center space-x-3">
-            <Button onClick={handleGoToEdit}>
-              <Edit3 className="h-4 w-4 mr-2" />
-              Edit Response
-            </Button>
-          </div>
+          <Button onClick={handleGoToEdit} className="flex-shrink-0">
+            <Edit3 className="h-4 w-4 mr-2" />
+            Edit Response
+          </Button>
         </div>
-      </div>
 
-      {/* Response Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Response Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div>
-              <span className="font-medium text-gray-500">Response ID:</span>
-              <div className="font-mono text-xs text-gray-700 mt-1">
-                {responseId}
+        {/* Main content area */}
+        <div className="flex-1 flex flex-col min-h-0 w-full overflow-x-hidden space-y-6 p-6">
+
+          {/* Response Info */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Response Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="font-medium text-gray-500">Response ID:</span>
+                  <div className="font-mono text-xs text-gray-700 mt-1">
+                    {responseId}
+                  </div>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-500">Submitted:</span>
+                  <div className="text-gray-700 mt-1">
+                    {safeFormatDate(response.submittedAt, 'MMM dd, yyyy \'at\' h:mm a')}
+                  </div>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-500">Total Edits:</span>
+                  <div className="text-gray-700 mt-1">
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                      {editHistory.length} edit{editHistory.length !== 1 ? 's' : ''}
+                    </Badge>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div>
-              <span className="font-medium text-gray-500">Submitted:</span>
-              <div className="text-gray-700 mt-1">
-                {safeFormatDate(response.submittedAt, 'MMM dd, yyyy \'at\' h:mm a')}
-              </div>
-            </div>
-            <div>
-              <span className="font-medium text-gray-500">Total Edits:</span>
-              <div className="text-gray-700 mt-1">
-                <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                  {editHistory.length} edit{editHistory.length !== 1 ? 's' : ''}
-                </Badge>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
-      {/* Error States */}
-      {historyError && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Failed to load edit history. Some functionality may be limited.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Edit History Timeline */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Edit Timeline ({editHistory.length} {editHistory.length === 1 ? 'edit' : 'edits'})
-          </h2>
-
-          {editHistory.length > 0 && (
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <Clock className="h-4 w-4" />
-              <span>
-                Last edited {safeFormatDate(editHistory[0].editedAt, 'MMM dd, yyyy', 'unknown date')}
-              </span>
-            </div>
+          {/* Error States */}
+          {historyError && (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Failed to load edit history. Some functionality may be limited.
+              </AlertDescription>
+            </Alert>
           )}
-        </div>
 
-        <EditHistoryTimeline
-          editHistory={editHistory}
-          onViewSnapshot={handleViewSnapshot}
-          isLoading={isLoadingHistory}
-        />
+          {/* Edit History Timeline */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Edit Timeline ({editHistory.length} {editHistory.length === 1 ? 'edit' : 'edits'})
+              </h2>
+
+              {editHistory.length > 0 && (
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <Clock className="h-4 w-4" />
+                  <span>
+                    Last edited {safeFormatDate(editHistory[0].editedAt, 'MMM dd, yyyy', 'unknown date')}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <EditHistoryTimeline
+              editHistory={editHistory}
+              onViewSnapshot={handleViewSnapshot}
+              isLoading={isLoadingHistory}
+            />
+          </div>
+        </div>
       </div>
-    </div>
+    </MainLayout>
   );
 };
