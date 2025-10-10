@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
 import {
   Button,
   Card,
@@ -8,9 +8,14 @@ import {
   Input,
   LoadingSpinner,
   Badge,
+  Switch,
+  toastSuccess,
+  toastError,
 } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
+import { EmailPluginModal } from '../components/EmailPluginModal';
 import { GET_FORM_BY_ID } from '../graphql/queries';
+import { GET_FORM_PLUGINS, TOGGLE_FORM_PLUGIN } from '../graphql/plugins.graphql';
 import {
   AlertCircle,
   ArrowLeft,
@@ -23,6 +28,9 @@ import {
   Webhook,
   Globe,
   Palette,
+  Settings,
+  CheckCircle,
+  Plus,
 } from 'lucide-react';
 
 const FAVORITES_STORAGE_KEY = 'dculus_favorite_integrations';
@@ -33,6 +41,8 @@ const FormPlugins: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [selectedPlugin, setSelectedPlugin] = useState<any>(null);
 
   // Load favorites from localStorage on mount
   useEffect(() => {
@@ -75,6 +85,38 @@ const FormPlugins: React.FC = () => {
     variables: { id: formId },
     skip: !formId,
   });
+
+  const {
+    data: pluginsData,
+    loading: pluginsLoading,
+    refetch: refetchPlugins,
+  } = useQuery(GET_FORM_PLUGINS, {
+    variables: { formId },
+    skip: !formId,
+  });
+
+  const [togglePlugin] = useMutation(TOGGLE_FORM_PLUGIN, {
+    onCompleted: () => {
+      refetchPlugins();
+    },
+    onError: (error) => {
+      toastError('Failed to toggle plugin', error.message);
+    },
+  });
+
+  const handleTogglePlugin = async (pluginId: string, enabled: boolean) => {
+    try {
+      await togglePlugin({
+        variables: { id: pluginId, enabled },
+      });
+      toastSuccess(
+        enabled ? 'Plugin enabled' : 'Plugin disabled',
+        enabled ? 'The plugin is now active' : 'The plugin has been disabled'
+      );
+    } catch (error) {
+      console.error('Failed to toggle plugin:', error);
+    }
+  };
 
   const integrations = [
     // Email
@@ -252,7 +294,78 @@ const FormPlugins: React.FC = () => {
 
             {/* Integration Cards */}
             <main className="flex-1">
-              {/* Coming Soon Notice */}
+              {/* Configured Plugins Section */}
+              {pluginsLoading ? (
+                <div className="flex justify-center py-12">
+                  <LoadingSpinner />
+                </div>
+              ) : pluginsData?.formPlugins && pluginsData.formPlugins.length > 0 ? (
+                <div className="mb-10">
+                  <div className="flex items-center gap-2 mb-4">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <h2 className="text-xl font-semibold text-slate-900">
+                      Configured Plugins
+                    </h2>
+                  </div>
+                  <div className="space-y-3">
+                    {pluginsData.formPlugins.map((plugin: any) => {
+                      const pluginInfo = integrations.find(i => i.name.toLowerCase() === plugin.pluginId);
+                      return (
+                        <Card
+                          key={plugin.id}
+                          className="border-slate-200 hover:border-slate-300 transition-all"
+                        >
+                          <CardContent className="p-5">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                <div className={`${pluginInfo?.color || 'bg-gray-100'} w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0`}>
+                                  {pluginInfo?.logo || '🔌'}
+                                </div>
+                                <div>
+                                  <h3 className="font-semibold text-slate-900 mb-1">
+                                    {plugin.pluginId.charAt(0).toUpperCase() + plugin.pluginId.slice(1)} Plugin
+                                  </h3>
+                                  <p className="text-sm text-slate-600">
+                                    {pluginInfo?.description || 'Custom plugin configuration'}
+                                  </p>
+                                  {plugin.triggerEvents && plugin.triggerEvents.length > 0 && (
+                                    <div className="flex gap-2 mt-2">
+                                      {plugin.triggerEvents.map((event: string) => (
+                                        <Badge key={event} variant="secondary" className="text-xs">
+                                          {event}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-4">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedPlugin(plugin);
+                                    setIsEmailModalOpen(true);
+                                  }}
+                                >
+                                  <Settings className="h-4 w-4 mr-1" />
+                                  Configure
+                                </Button>
+                                <Switch
+                                  checked={plugin.enabled}
+                                  onCheckedChange={(checked: boolean) => handleTogglePlugin(plugin.id, checked)}
+                                />
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Available Integrations Notice */}
               <div className="mb-8 bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl p-6">
                 <div className="flex items-start gap-4">
                   <div className="bg-indigo-100 p-3 rounded-lg">
@@ -260,18 +373,18 @@ const FormPlugins: React.FC = () => {
                   </div>
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-slate-900 mb-1">
-                      Coming Soon
+                      Available Integrations
                     </h3>
                     <p className="text-slate-700 text-sm mb-3">
-                      We're building a powerful integration ecosystem. These integrations are planned
+                      Email plugin is now available! Additional integrations are planned
                       for our upcoming releases. Star your favorites to get notified when they launch!
                     </p>
                     <div className="flex gap-2">
                       <Badge variant="secondary" className="bg-white">
-                        Q2 2025
+                        1 Available
                       </Badge>
                       <Badge variant="secondary" className="bg-white">
-                        7 Integrations
+                        6 Coming Soon
                       </Badge>
                     </div>
                   </div>
@@ -356,6 +469,9 @@ const FormPlugins: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredIntegrations.map((integration) => {
                       const isFavorite = favorites.has(integration.name);
+                      const isEmailPlugin = integration.name === 'Email';
+                      const emailPluginExists = pluginsData?.formPlugins?.some((p: any) => p.pluginId === 'email');
+
                       return (
                         <Card
                           key={integration.name}
@@ -388,9 +504,27 @@ const FormPlugins: React.FC = () => {
                                     />
                                   </button>
                                 </div>
-                                <p className="text-sm text-slate-600 line-clamp-2">
+                                <p className="text-sm text-slate-600 line-clamp-2 mb-3">
                                   {integration.description}
                                 </p>
+                                {isEmailPlugin && !emailPluginExists && (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedPlugin(null);
+                                      setIsEmailModalOpen(true);
+                                    }}
+                                    className="w-full"
+                                  >
+                                    <Plus className="h-4 w-4 mr-1" />
+                                    Configure
+                                  </Button>
+                                )}
+                                {isEmailPlugin && emailPluginExists && (
+                                  <Badge variant="secondary" className="bg-green-100 text-green-700">
+                                    Configured
+                                  </Badge>
+                                )}
                               </div>
                             </div>
                           </CardContent>
@@ -425,6 +559,20 @@ const FormPlugins: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Email Plugin Configuration Modal */}
+      <EmailPluginModal
+        isOpen={isEmailModalOpen}
+        onClose={() => {
+          setIsEmailModalOpen(false);
+          setSelectedPlugin(null);
+        }}
+        formId={formId!}
+        plugin={selectedPlugin}
+        onSuccess={() => {
+          refetchPlugins();
+        }}
+      />
     </MainLayout>
   );
 };

@@ -22,10 +22,15 @@ import { createBetterAuthContext } from './middleware/better-auth-middleware.js'
 import { prisma } from './lib/prisma.js';
 import { createHocuspocusServer } from './services/hocuspocus.js';
 import { appConfig } from './lib/env.js';
+import { JobExecutor } from './lib/job-executor.js';
+import { setupPluginListeners } from './lib/plugin-listener.js';
 
 const app = express();
 const httpServer = createServer(app);
 const PORT = appConfig.port;
+
+// Initialize plugin system
+const jobExecutor = new JobExecutor(prisma);
 
 // Middleware
 app.use(
@@ -227,6 +232,26 @@ async function startServer() {
   wss.on('connection', (ws, request) => {
     console.log('🔌 WebSocket connection established');
     hocuspocusServer.handleConnection(ws, request);
+  });
+
+  // Initialize plugin system
+  await jobExecutor.initialize();
+  setupPluginListeners(jobExecutor);
+  console.log('🔌 Plugin system initialized');
+
+  // Graceful shutdown handlers
+  process.on('SIGTERM', async () => {
+    console.log('🛑 SIGTERM received, shutting down gracefully...');
+    await jobExecutor.gracefulShutdown();
+    await prisma.$disconnect();
+    process.exit(0);
+  });
+
+  process.on('SIGINT', async () => {
+    console.log('🛑 SIGINT received, shutting down gracefully...');
+    await jobExecutor.gracefulShutdown();
+    await prisma.$disconnect();
+    process.exit(0);
   });
 
   httpServer.listen(PORT, () => {
