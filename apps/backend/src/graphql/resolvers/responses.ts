@@ -18,6 +18,7 @@ import {
 } from '@dculus/utils';
 import { deserializeFormSchema } from '@dculus/types';
 import { analyticsService } from '../../services/analyticsService.js';
+import { eventBus } from '../../lib/events.js';
 
 export const responsesResolvers = {
   Query: {
@@ -223,6 +224,20 @@ export const responsesResolvers = {
           console.error('Failed to apply mention substitution:', error);
           // thankYouMessage remains the original HTML with mentions
         }
+      }
+
+      // 🔥 Emit form.submitted event for plugins
+      try {
+        eventBus.emit('form.submitted', {
+          formId: input.formId,
+          responseId: response.id,
+          organizationId: form.organizationId,
+          data: input.data,
+          submittedAt: response.submittedAt,
+        });
+      } catch (error) {
+        // Log error but don't fail the response submission
+        console.error('Error emitting form.submitted event:', error);
       }
 
       return {

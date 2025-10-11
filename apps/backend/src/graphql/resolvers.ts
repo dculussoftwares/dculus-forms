@@ -11,6 +11,7 @@ import { analyticsResolvers } from './resolvers/analytics.js';
 import { fieldAnalyticsResolvers } from './resolvers/fieldAnalytics.js';
 import { invitationResolvers } from './resolvers/invitations.js';
 import { formSharingResolvers } from './resolvers/formSharing.js';
+import { pluginResolvers } from './resolvers/plugins.js';
 import { GraphQLJSON } from 'graphql-type-json';
 
 
@@ -30,6 +31,7 @@ export const resolvers = {
     ...fieldAnalyticsResolvers.Query,
     ...invitationResolvers.Query,
     ...formSharingResolvers.Query,
+    ...pluginResolvers.Query,
   },
   Mutation: {
     ...betterAuthResolvers.Mutation,
@@ -41,6 +43,7 @@ export const resolvers = {
     ...analyticsResolvers.Mutation,
     ...fieldAnalyticsResolvers.Mutation,
     ...formSharingResolvers.Mutation,
+    ...pluginResolvers.Mutation,
   },
   Form: {
     ...formsResolvers.Form,

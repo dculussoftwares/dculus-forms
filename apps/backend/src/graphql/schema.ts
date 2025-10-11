@@ -825,6 +825,11 @@ export const typeDefs = gql`
     allFieldsAnalytics(formId: ID!): AllFieldsAnalytics!
     fieldAnalyticsCacheStats: FieldAnalyticsCacheStats!
 
+    # Plugin Queries
+    availablePlugins: [Plugin!]!
+    formPluginConfigs(formId: ID!): [FormPluginConfig!]!
+    pluginConfig(formId: ID!, pluginId: String!): FormPluginConfig
+
   }
 
   type Mutation {
@@ -868,6 +873,55 @@ export const typeDefs = gql`
     # Field Analytics Cache Mutations
     invalidateFieldAnalyticsCache(formId: ID!): CacheInvalidationResponse!
 
+    # Plugin Mutations
+    installPlugin(input: InstallPluginInput!): FormPluginConfig!
+    updatePluginConfig(input: UpdatePluginConfigInput!): FormPluginConfig!
+    togglePlugin(input: TogglePluginInput!): FormPluginConfig!
+    uninstallPlugin(id: ID!): Boolean!
+
+  }
+
+  # Plugin Types
+  type Plugin {
+    id: ID!
+    name: String!
+    description: String!
+    icon: String!
+    category: String!
+    version: String!
+    isActive: Boolean!
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  type FormPluginConfig {
+    id: ID!
+    formId: String!
+    pluginId: String!
+    organizationId: String!
+    config: JSON!
+    isEnabled: Boolean!
+    createdAt: String!
+    updatedAt: String!
+    plugin: Plugin!
+  }
+
+  # Plugin Inputs
+  input InstallPluginInput {
+    formId: ID!
+    pluginId: String!
+    organizationId: ID!
+    config: JSON!
+  }
+
+  input UpdatePluginConfigInput {
+    id: ID!
+    config: JSON!
+  }
+
+  input TogglePluginInput {
+    id: ID!
+    isEnabled: Boolean!
   }
 
   scalar Upload

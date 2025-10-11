@@ -21,7 +21,7 @@ import InviteAcceptance from './pages/InviteAcceptance';
 import FormDashboard from './pages/FormDashboard';
 import FormAnalytics from './pages/FormAnalytics';
 import FormSettings from './pages/FormSettings';
-import FormPlugins from './pages/FormPlugins';
+import FormPlugins from './pages/FormPluginsNew';
 import CollaborativeFormBuilder from './pages/CollaborativeFormBuilder';
 
 

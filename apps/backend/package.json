@@ -41,6 +41,7 @@
     "cors": "^2.8.5",
     "countries-and-timezones": "3.8.0",
     "dotenv": "17.2.1",
+    "eventemitter3": "5.0.1",
     "express": "^4.18.2",
     "graphql": "^16.8.1",
     "graphql-tag": "2.12.6",
@@ -59,7 +60,8 @@
     "prisma": "6.13.0",
     "ws": "8.18.3",
     "xlsx": "0.18.5",
-    "yjs": "13.6.27"
+    "yjs": "13.6.27",
+    "zod": "4.1.12"
   },
   "devDependencies": {
     "@better-auth/cli": "1.3.4",

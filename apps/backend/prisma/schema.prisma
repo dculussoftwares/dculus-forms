@@ -147,6 +147,7 @@ model Form {
   analytics              FormViewAnalytics[]
   submissionAnalytics    FormSubmissionAnalytics[]
   permissions            FormPermission[]
+  pluginConfigs          FormPluginConfig[]
 
   @@map("form")
 }
@@ -343,4 +344,44 @@ model ResponseFieldChange {
   @@index([fieldId])
   @@index([changeType])
   @@map("response_field_change")
+}
+
+// Plugin System Models
+
+model Plugin {
+  id          String   @id @map("_id")
+  name        String
+  description String
+  icon        String   // Emoji or icon identifier
+  category    String   // 'automation', 'email', 'webhooks', etc.
+  version     String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  formConfigs FormPluginConfig[]
+
+  @@map("plugin")
+}
+
+model FormPluginConfig {
+  id             String   @id @map("_id")
+  formId         String
+  pluginId       String
+  organizationId String
+  config         Json     // Plugin-specific configuration (validated by plugin schema)
+  isEnabled      Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  form   Form   @relation(fields: [formId], references: [id], onDelete: Cascade)
+  plugin Plugin @relation(fields: [pluginId], references: [id], onDelete: Cascade)
+
+  @@unique([formId, pluginId])
+  @@index([formId])
+  @@index([pluginId])
+  @@index([organizationId])
+  @@map("form_plugin_config")
 }
