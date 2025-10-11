@@ -1,0 +1,52 @@
+type PluginConfig {
+  id: ID!
+  formId: ID!
+  pluginId: String!
+  pluginVersion: String!
+  enabled: Boolean!
+  config: JSON!
+  triggerEvents: [String!]!
+  createdById: ID!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type PluginExecutionLog {
+  id: ID!
+  pluginConfigId: ID!
+  jobId: ID
+  event: String!
+  status: String!
+  executedAt: String!
+  executionTime: Int!
+  errorMessage: String
+  errorStack: String
+  inputData: JSON
+  outputData: JSON
+}
+
+input CreateFormPluginInput {
+  formId: ID!
+  pluginId: String!
+  config: JSON!
+  triggerEvents: [String!]!
+}
+
+input UpdateFormPluginInput {
+  id: ID!
+  config: JSON!
+  triggerEvents: [String!]
+}
+
+type Query {
+  formPlugins(formId: ID!): [PluginConfig!]!
+  formPlugin(id: ID!): PluginConfig
+  pluginExecutionLogs(pluginConfigId: ID!, limit: Int): [PluginExecutionLog!]!
+}
+
+type Mutation {
+  createFormPlugin(input: CreateFormPluginInput!): PluginConfig!
+  updateFormPlugin(input: UpdateFormPluginInput!): PluginConfig!
+  toggleFormPlugin(id: ID!, enabled: Boolean!): PluginConfig!
+  deleteFormPlugin(id: ID!): Boolean!
+}
