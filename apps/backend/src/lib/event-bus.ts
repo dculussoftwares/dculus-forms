@@ -52,6 +52,53 @@ export interface PluginEvents {
     pluginId: string;
     error: string;
   };
+
+  // Generic plugin execution events
+  'plugin.execute': {
+    jobId: string;
+    pluginConfigId: string;
+    pluginId: string;
+    formId: string;
+    config: Record<string, any>;
+    payload: Record<string, any>;
+    event: string;
+  };
+
+  // Email plugin specific events
+  'plugin.email.execute': {
+    jobId: string;
+    pluginConfigId: string;
+    formId: string;
+    config: Record<string, any>;
+    payload: Record<string, any>;
+    event: string;
+  };
+
+  'plugin.email.send': {
+    jobId: string;
+    pluginConfigId: string;
+    formId: string;
+    formTitle: string;
+    recipientEmail: string;
+    subject: string;
+    message: string;
+    submissionData: Record<string, any>;
+    sendToSubmitter?: boolean;
+    submitterEmailFieldId?: string;
+  };
+
+  'plugin.email.sent': {
+    jobId: string;
+    pluginConfigId: string;
+    messageId: string;
+    sentTo: string[];
+  };
+
+  'plugin.email.failed': {
+    jobId: string;
+    pluginConfigId: string;
+    error: string;
+  };
 }
 
 /**

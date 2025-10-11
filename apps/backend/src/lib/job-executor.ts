@@ -70,7 +70,7 @@ export class JobExecutor {
   }
 
   /**
-   * Execute a plugin job in the main thread
+   * Execute a plugin job using event-driven dispatch
    */
   private async executeJob(job: any) {
     const startTime = Date.now();
@@ -92,27 +92,53 @@ export class JobExecutor {
         throw new Error('Plugin config not found or disabled');
       }
 
-      // Execute plugin based on pluginId
-      let result;
-      if (config.pluginId === 'email') {
-        // Dynamic import to avoid circular dependencies
-        const { executeEmailPlugin } = await import('../plugins/email-executor.js');
-        result = await executeEmailPlugin({
-          pluginConfigId: config.id,
-          event: job.payload.event,
-          payload: job.payload.data,
-          config: config.config as Record<string, any>,
-          formId: config.formId
-        });
-      } else {
-        throw new Error(`Unknown plugin type: ${config.pluginId}`);
+      // Emit plugin-specific execution event (event-driven dispatch)
+      // This allows plugins to be completely independent
+      const executionEvent = `plugin.${config.pluginId}.execute` as keyof typeof eventBus;
+
+      eventBus.emit(executionEvent as any, {
+        jobId: job.id,
+        pluginConfigId: config.id,
+        formId: config.formId,
+        config: config.config as Record<string, any>,
+        payload: job.payload.data,
+        event: job.payload.event
+      });
+
+      // Note: Actual job completion will be handled by event listeners
+      // They will emit 'plugin.{pluginId}.completed' or 'plugin.{pluginId}.failed'
+      // which will be caught by the completion handlers below
+
+      console.log(`🚀 Plugin job ${job.jobName} dispatched to ${config.pluginId} plugin`);
+
+    } catch (error: any) {
+      console.error(`❌ Plugin job ${job.jobName} failed to dispatch:`, error);
+      await this.handleJobFailure(job, error, Date.now() - startTime);
+    }
+  }
+
+  /**
+   * Handle job completion (called by plugin event listeners)
+   */
+  async handleJobCompletion(jobId: string, result: any) {
+    try {
+      const job = await this.prisma.pluginJob.findUnique({
+        where: { id: jobId },
+        include: { pluginConfig: true }
+      });
+
+      if (!job) {
+        console.error(`Job ${jobId} not found for completion`);
+        return;
       }
 
-      const executionTime = Date.now() - startTime;
+      const executionTime = job.startedAt
+        ? Date.now() - job.startedAt.getTime()
+        : 0;
 
       // Mark job as completed
       await this.prisma.pluginJob.update({
-        where: { id: job.id },
+        where: { id: jobId },
         data: {
           status: 'completed',
           completedAt: new Date()
@@ -123,7 +149,7 @@ export class JobExecutor {
       await this.prisma.pluginExecutionLog.create({
         data: {
           id: generateId(),
-          pluginConfigId: config.id,
+          pluginConfigId: job.pluginConfigId,
           jobId: job.id,
           event: job.payload.event,
           status: 'success',
@@ -135,68 +161,76 @@ export class JobExecutor {
 
       eventBus.emit('plugin.job.completed', {
         jobId: job.id,
-        pluginConfigId: config.id,
+        pluginConfigId: job.pluginConfigId,
         event: job.payload.event,
         result,
         executionTime
       });
 
       console.log(`✅ Plugin job ${job.jobName} completed in ${executionTime}ms`);
+    } catch (error) {
+      console.error(`Error handling job completion for ${jobId}:`, error);
+    }
+  }
 
-    } catch (error: any) {
-      console.error(`❌ Plugin job ${job.jobName} failed:`, error);
+  /**
+   * Handle job failure (called by plugin event listeners or internally)
+   */
+  private async handleJobFailure(job: any, error: any, executionTime: number) {
+    // Handle failure and retry logic
+    const jobData = await this.prisma.pluginJob.findUnique({
+      where: { id: job.id },
+      select: { attempts: true, maxAttempts: true }
+    });
 
-      // Handle failure and retry logic
-      const jobData = await this.prisma.pluginJob.findUnique({
+    if (jobData && jobData.attempts < jobData.maxAttempts) {
+      // Retry - set back to pending
+      await this.prisma.pluginJob.update({
         where: { id: job.id },
-        select: { attempts: true, maxAttempts: true }
+        data: {
+          status: 'pending',
+          attempts: { increment: 1 },
+          lastError: error.message
+        }
       });
 
-      if (jobData && jobData.attempts < jobData.maxAttempts) {
-        // Retry - set back to pending
-        await this.prisma.pluginJob.update({
-          where: { id: job.id },
-          data: {
-            status: 'pending',
-            attempts: { increment: 1 },
-            lastError: error.message
-          }
-        });
+      // Reschedule with exponential backoff
+      const retryDelay = Math.pow(2, jobData.attempts) * 1000; // 1s, 2s, 4s...
+      setTimeout(() => this.executeJob(job), retryDelay);
 
-        // Reschedule with exponential backoff
-        const retryDelay = Math.pow(2, jobData.attempts) * 1000; // 1s, 2s, 4s...
-        setTimeout(() => this.executeJob(job), retryDelay);
+      console.log(`🔄 Plugin job ${job.jobName} will retry in ${retryDelay}ms (attempt ${jobData.attempts + 1}/${jobData.maxAttempts})`);
 
-      } else {
-        // Max retries reached - mark as failed
-        await this.prisma.pluginJob.update({
-          where: { id: job.id },
-          data: {
-            status: 'failed',
-            completedAt: new Date(),
-            lastError: error.message
-          }
-        });
+    } else {
+      // Max retries reached - mark as failed
+      await this.prisma.pluginJob.update({
+        where: { id: job.id },
+        data: {
+          status: 'failed',
+          completedAt: new Date(),
+          lastError: error.message
+        }
+      });
 
-        await this.prisma.pluginExecutionLog.create({
-          data: {
-            id: generateId(),
-            pluginConfigId: job.pluginConfigId,
-            jobId: job.id,
-            event: job.payload.event,
-            status: 'failed',
-            executedAt: new Date(),
-            executionTime: Date.now() - startTime,
-            errorMessage: error.message,
-            errorStack: error.stack
-          }
-        });
-
-        eventBus.emit('plugin.job.failed', {
+      await this.prisma.pluginExecutionLog.create({
+        data: {
+          id: generateId(),
+          pluginConfigId: job.pluginConfigId,
           jobId: job.id,
-          error: error.message
-        });
-      }
+          event: job.payload.event,
+          status: 'failed',
+          executedAt: new Date(),
+          executionTime,
+          errorMessage: error.message,
+          errorStack: error.stack
+        }
+      });
+
+      eventBus.emit('plugin.job.failed', {
+        jobId: job.id,
+        error: error.message
+      });
+
+      console.log(`❌ Plugin job ${job.jobName} failed after ${jobData?.attempts || 0} attempts`);
     }
   }
 

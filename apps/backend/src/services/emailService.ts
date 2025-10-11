@@ -38,6 +38,14 @@ export interface SendInvitationEmailOptions {
   inviterName: string;
 }
 
+export interface FormSubmissionEmailData {
+  formTitle: string;
+  subject: string;
+  message: string;
+  submissionData: Record<string, any>;
+  recipientEmail: string;
+}
+
 // Create transporter instance
 const createTransporter = () => {
   return nodemailer.createTransport({
@@ -168,4 +176,81 @@ export async function sendInvitationEmail(options: SendInvitationEmailOptions): 
   });
 
   console.log(`Invitation email sent successfully to: ${to} for organization: ${organizationName}`);
+}
+
+/**
+ * Send form submission notification email
+ * Used by email plugin to send notifications when forms are submitted
+ */
+export async function sendFormSubmissionEmail(data: FormSubmissionEmailData): Promise<string> {
+  const { formTitle, subject, message, submissionData, recipientEmail } = data;
+
+  // Render HTML email template
+  const html = renderFormSubmissionEmailTemplate(message, submissionData, formTitle);
+  const text = `${message}\n\n${Object.entries(submissionData)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join('\n')}`;
+
+  const transporter = createTransporter();
+  const result = await transporter.sendMail({
+    from: emailConfig.from,
+    to: recipientEmail,
+    subject,
+    html,
+    text,
+  });
+
+  console.log(`Form submission email sent successfully to: ${recipientEmail}`);
+  return result.messageId;
+}
+
+/**
+ * Render HTML email template for form submissions
+ */
+function renderFormSubmissionEmailTemplate(
+  message: string,
+  submissionData: Record<string, any>,
+  formTitle: string
+): string {
+  // Build field values table
+  const fieldsHtml = Object.entries(submissionData)
+    .map(
+      ([key, value]) => `
+      <tr>
+        <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: 600;">${key}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee;">${value}</td>
+      </tr>
+    `
+    )
+    .join('');
+
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px 8px 0 0;">
+        <h2 style="margin: 0; color: #111827;">New Form Submission</h2>
+        <p style="margin: 10px 0 0 0; color: #6b7280;">${formTitle}</p>
+      </div>
+
+      <div style="padding: 20px; background-color: #ffffff;">
+        <div style="margin-bottom: 20px;">
+          ${message}
+        </div>
+
+        <h3 style="color: #374151; margin-bottom: 15px;">Submission Details</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+          ${fieldsHtml}
+        </table>
+
+        <p style="margin-top: 20px; color: #6b7280; font-size: 14px;">
+          Submitted: ${new Date().toLocaleString()}
+        </p>
+      </div>
+
+      <div style="background-color: #f9fafb; padding: 15px; text-align: center; border-radius: 0 0 8px 8px;">
+        <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+          Powered by Dculus Forms
+        </p>
+      </div>
+    </div>
+  `;
 }
