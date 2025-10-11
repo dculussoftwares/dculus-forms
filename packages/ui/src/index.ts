@@ -21,7 +21,6 @@ export { Label } from "./label"
 export { Checkbox } from "./checkbox"
 export { RadioGroup, RadioGroupItem } from "./radio-group"
 export { Textarea } from "./textarea"
-export { Switch } from "./switch"
 export {
   Select,
   SelectGroup,

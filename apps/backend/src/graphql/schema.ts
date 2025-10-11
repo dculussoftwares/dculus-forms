@@ -779,55 +779,14 @@ export const typeDefs = gql`
     numberRange: NumberRangeInput
   }
 
-  # Plugin Types
-  type PluginConfig {
-    id: ID!
-    formId: ID!
-    pluginId: String!
-    pluginVersion: String!
-    enabled: Boolean!
-    config: JSON!
-    triggerEvents: [String!]!
-    createdById: ID!
-    createdAt: String!
-    updatedAt: String!
-  }
-
-  type PluginExecutionLog {
-    id: ID!
-    pluginConfigId: ID!
-    jobId: ID
-    event: String!
-    status: String!
-    executedAt: String!
-    executionTime: Int!
-    errorMessage: String
-    errorStack: String
-    inputData: JSON
-    outputData: JSON
-  }
-
-  input CreateFormPluginInput {
-    formId: ID!
-    pluginId: String!
-    config: JSON!
-    triggerEvents: [String!]!
-  }
-
-  input UpdateFormPluginInput {
-    id: ID!
-    config: JSON!
-    triggerEvents: [String!]
-  }
-
   type Query {
     # Auth Queries
     me: User
     activeOrganization: Organization
-
+    
     # Public Queries (no auth required)
     getInvitationPublic(id: ID!): Invitation
-
+    
     # Form Queries
     form(id: ID!): Form
     formByShortUrl(shortUrl: String!): Form
@@ -860,16 +819,11 @@ export const typeDefs = gql`
     # Analytics Queries
     formAnalytics(formId: ID!, timeRange: TimeRangeInput): FormAnalytics!
     formSubmissionAnalytics(formId: ID!, timeRange: TimeRangeInput): FormSubmissionAnalytics!
-
+    
     # Field Analytics Queries
     fieldAnalytics(formId: ID!, fieldId: ID!): FieldAnalytics!
     allFieldsAnalytics(formId: ID!): AllFieldsAnalytics!
     fieldAnalyticsCacheStats: FieldAnalyticsCacheStats!
-
-    # Plugin Queries
-    formPlugins(formId: ID!): [PluginConfig!]!
-    formPlugin(id: ID!): PluginConfig
-    pluginExecutionLogs(pluginConfigId: ID!, limit: Int): [PluginExecutionLog!]!
 
   }
 
@@ -913,12 +867,6 @@ export const typeDefs = gql`
     
     # Field Analytics Cache Mutations
     invalidateFieldAnalyticsCache(formId: ID!): CacheInvalidationResponse!
-
-    # Plugin Mutations
-    createFormPlugin(input: CreateFormPluginInput!): PluginConfig!
-    updateFormPlugin(input: UpdateFormPluginInput!): PluginConfig!
-    toggleFormPlugin(id: ID!, enabled: Boolean!): PluginConfig!
-    deleteFormPlugin(id: ID!): Boolean!
 
   }
 

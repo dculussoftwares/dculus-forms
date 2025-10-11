@@ -18,7 +18,6 @@ import {
 } from '@dculus/utils';
 import { deserializeFormSchema } from '@dculus/types';
 import { analyticsService } from '../../services/analyticsService.js';
-import { eventBus } from '../../lib/event-bus.js';
 
 export const responsesResolvers = {
   Query: {
@@ -184,18 +183,6 @@ export const responsesResolvers = {
           // Log error but don't fail the response submission
           console.error('Error tracking submission analytics:', error);
         }
-      }
-
-      // Emit plugin event for form submission
-      try {
-        await eventBus.emit('form.submitted', {
-          formId: input.formId,
-          responseId: response.id,
-          data: input.data
-        });
-        console.log(`Plugin event emitted for form submission: ${input.formId}`);
-      } catch (error) {
-        console.error('Error emitting plugin event:', error);
       }
 
       // Get form with settings to determine thank you message

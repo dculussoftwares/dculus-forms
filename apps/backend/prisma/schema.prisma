@@ -31,7 +31,6 @@ model User {
   formPermissions FormPermission[]
   grantedPermissions FormPermission[] @relation("GrantedPermissions")
   responseEdits ResponseEditHistory[]
-  pluginConfigs PluginConfig[]
 
   @@map("user")
 }
@@ -148,7 +147,6 @@ model Form {
   analytics              FormViewAnalytics[]
   submissionAnalytics    FormSubmissionAnalytics[]
   permissions            FormPermission[]
-  pluginConfigs          PluginConfig[]
 
   @@map("form")
 }
@@ -345,76 +343,4 @@ model ResponseFieldChange {
   @@index([fieldId])
   @@index([changeType])
   @@map("response_field_change")
-}
-
-// Plugin System Models
-
-// Plugin Configuration
-model PluginConfig {
-  id             String   @id @map("_id")
-  formId         String
-  pluginId       String   // "email", "webhooks", etc.
-  pluginVersion  String   // Plugin version for compatibility
-  enabled        Boolean  @default(false)
-  config         Json     // Plugin-specific settings
-  triggerEvents  String[] // ["form.submitted", "response.edited"]
-  createdById    String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  form        Form                  @relation(fields: [formId], references: [id], onDelete: Cascade)
-  createdBy   User                  @relation(fields: [createdById], references: [id], onDelete: Cascade)
-  jobs        PluginJob[]
-  logs        PluginExecutionLog[]
-
-  @@unique([formId, pluginId])
-  @@index([formId])
-  @@index([pluginId])
-  @@index([enabled])
-  @@map("plugin_config")
-}
-
-// Job Queue (Bree persistence)
-model PluginJob {
-  id              String    @id @map("_id")
-  pluginConfigId  String
-  jobName         String    @unique // Unique job name for Bree
-  status          String    @default("pending") // "pending", "running", "completed", "failed"
-  priority        Int       @default(0)
-  scheduledFor    DateTime
-  startedAt       DateTime?
-  completedAt     DateTime?
-  attempts        Int       @default(0)
-  maxAttempts     Int       @default(3)
-  lastError       String?
-  payload         Json      // Job execution data
-
-  pluginConfig PluginConfig @relation(fields: [pluginConfigId], references: [id], onDelete: Cascade)
-
-  @@index([status])
-  @@index([scheduledFor])
-  @@index([pluginConfigId])
-  @@map("plugin_job")
-}
-
-// Execution Logs
-model PluginExecutionLog {
-  id              String   @id @map("_id")
-  pluginConfigId  String
-  jobId           String?
-  event           String   // Trigger event name
-  status          String   // "success", "failed", "timeout"
-  executedAt      DateTime @default(now())
-  executionTime   Int      // milliseconds
-  errorMessage    String?
-  errorStack      String?
-  inputData       Json?
-  outputData      Json?
-
-  pluginConfig PluginConfig @relation(fields: [pluginConfigId], references: [id], onDelete: Cascade)
-
-  @@index([pluginConfigId])
-  @@index([executedAt])
-  @@index([status])
-  @@map("plugin_execution_log")
 }
