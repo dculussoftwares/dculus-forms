@@ -24,8 +24,6 @@ import { createHocuspocusServer } from './services/hocuspocus.js';
 import { appConfig } from './lib/env.js';
 import { JobExecutor } from './lib/job-executor.js';
 import { setupPluginListeners } from './lib/plugin-listener.js';
-import { setupEmailServiceListener } from './services/emailServiceListener.js';
-import { initializePlugins, shutdownPlugins } from './lib/plugin-loader.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -237,18 +235,14 @@ async function startServer() {
   });
 
   // Initialize plugin system
-  // Note: Must initialize plugins BEFORE loading jobs, so event listeners are ready
+  await jobExecutor.initialize();
   setupPluginListeners(jobExecutor);
-  setupEmailServiceListener(jobExecutor);
-  await initializePlugins();
-  await jobExecutor.initialize(); // This loads pending jobs and will dispatch them
   console.log('🔌 Plugin system initialized');
 
   // Graceful shutdown handlers
   process.on('SIGTERM', async () => {
     console.log('🛑 SIGTERM received, shutting down gracefully...');
     await jobExecutor.gracefulShutdown();
-    await shutdownPlugins();
     await prisma.$disconnect();
     process.exit(0);
   });
@@ -256,7 +250,6 @@ async function startServer() {
   process.on('SIGINT', async () => {
     console.log('🛑 SIGINT received, shutting down gracefully...');
     await jobExecutor.gracefulShutdown();
-    await shutdownPlugins();
     await prisma.$disconnect();
     process.exit(0);
   });
