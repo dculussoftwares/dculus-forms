@@ -1,886 +1,660 @@
 # Plugin Development Guide
-## How to Create Custom Plugins for Dculus Forms
+
+Complete guide for creating custom plugins for the dculus-forms plugin system.
+
+## Table of Contents
+
+1. [Prerequisites](#prerequisites)
+2. [Quick Start](#quick-start)
+3. [Plugin Structure](#plugin-structure)
+4. [Step-by-Step Tutorial](#step-by-step-tutorial)
+5. [Configuration Schema](#configuration-schema)
+6. [Frontend Components](#frontend-components)
+7. [Testing](#testing)
+8. [Best Practices](#best-practices)
 
 ---
 
-## 📋 **Table of Contents**
+## Prerequisites
 
-1. [Overview](#overview)
-2. [Prerequisites](#prerequisites)
-3. [Quick Start](#quick-start)
-4. [Plugin Structure](#plugin-structure)
-5. [Step-by-Step Tutorial](#step-by-step-tutorial)
-6. [Advanced Topics](#advanced-topics)
-7. [Best Practices](#best-practices)
-8. [Testing](#testing)
-9. [Publishing](#publishing)
+**Required Knowledge**:
+- TypeScript fundamentals
+- Node.js and async/await
+- React and React Hooks
+- Zod schema validation
 
----
+**Development Environment**:
+- Node.js >=18.0.0
+- pnpm >=8.0.0
+- Running dculus-forms backend and frontend
 
-## 🎯 **Overview**
-
-Dculus Forms plugins are self-contained modules that extend form functionality by responding to form events (like submissions, updates, etc.). Each plugin consists of:
-
-- **Backend logic** - Executes when triggered
-- **Frontend UI** - Configuration interface
-- **Manifest** - Plugin metadata
-- **Schema** - Configuration validation
-
-### **Supported Trigger Events**
-
-- `form.submitted` - When a form response is submitted
-- `form.updated` - When a form is edited
-- `response.edited` - When a response is modified
-- `response.deleted` - When a response is deleted
+**Resources**:
+- [Plugin System Documentation](./PLUGIN_SYSTEM_DOCUMENTATION.md)
+- [Zod Documentation](https://zod.dev/)
+- [shadcn/ui Components](https://ui.shadcn.com/)
 
 ---
 
-## ✅ **Prerequisites**
-
-- Node.js >= 18.0.0
-- TypeScript knowledge
-- Understanding of React and Express.js
-- Familiarity with Zod for validation
-
----
-
-## 🚀 **Quick Start**
-
-### **1. Create Plugin Directory**
+## Quick Start
 
 ```bash
-cd plugins
-mkdir my-plugin
-cd my-plugin
-```
+# 1. Create plugin directories
+mkdir -p apps/backend/src/plugins/my-plugin
+mkdir -p apps/form-app/src/plugins/my-plugin
 
-### **2. Initialize Plugin**
-
-```bash
-pnpm init
-mkdir -p backend frontend
-```
-
-### **3. Create Manifest**
-
-Create `plugin.manifest.json`:
-
-```json
-{
-  "id": "my-plugin",
-  "name": "My Plugin",
-  "version": "1.0.0",
-  "description": "Plugin description",
-  "category": "automation",
-  "icon": "zap",
-  "author": "Your Name",
-  "triggers": ["form.submitted"],
-  "dependencies": {}
-}
-```
-
-### **4. Implement Backend**
-
-Create `backend/index.ts`:
-
-```typescript
-import { IPlugin, ExecutionContext, ExecutionResult } from '@dculus/plugins-core';
-import { z } from 'zod';
-
-// Define config schema
-const configSchema = z.object({
-  apiKey: z.string().min(1, 'API key is required'),
-  endpoint: z.string().url('Invalid URL')
-});
-
-export class MyPlugin implements IPlugin {
-  id = 'my-plugin';
-  name = 'My Plugin';
-  version = '1.0.0';
-  description = 'Plugin description';
-  category = 'automation' as const;
-  icon = 'zap';
-
-  configSchema = configSchema;
-  defaultConfig = {
-    apiKey: '',
-    endpoint: 'https://api.example.com'
-  };
-
-  triggers = ['form.submitted'] as const;
-
-  async execute(context: ExecutionContext): Promise<ExecutionResult> {
-    const { config, payload } = context;
-
-    try {
-      // Your plugin logic here
-      console.log('Executing plugin with:', config, payload);
-
-      return {
-        success: true,
-        data: { message: 'Success' }
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-
-  async validate(config: unknown) {
-    try {
-      this.configSchema.parse(config);
-      return { valid: true };
-    } catch (error: any) {
-      return {
-        valid: false,
-        errors: error.errors.map((e: any) => e.message)
-      };
-    }
-  }
-
-  async test(config: unknown) {
-    try {
-      const parsedConfig = this.configSchema.parse(config);
-      // Test connection/API
-
-      return {
-        success: true,
-        message: 'Connection successful'
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.message
-      };
-    }
-  }
-}
-
-export default new MyPlugin();
-```
-
-### **5. Create Frontend Config Form**
-
-Create `frontend/ConfigForm.tsx`:
-
-```typescript
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button, Input } from '@dculus/ui';
-import { configSchema } from '../backend/schema';
-
-export const MyPluginConfigForm = ({ initialConfig, onSave, onTest }) => {
-  const { register, handleSubmit, formState: { errors } } = useForm({
-    resolver: zodResolver(configSchema),
-    defaultValues: initialConfig
-  });
-
-  return (
-    <form onSubmit={handleSubmit(onSave)} className="space-y-4">
-      <Input
-        label="API Key"
-        type="password"
-        {...register('apiKey')}
-        error={errors.apiKey?.message}
-      />
-
-      <Input
-        label="API Endpoint"
-        {...register('endpoint')}
-        error={errors.endpoint?.message}
-      />
-
-      <div className="flex gap-2">
-        <Button type="button" variant="outline" onClick={handleSubmit(onTest)}>
-          Test Connection
-        </Button>
-        <Button type="submit">
-          Save Configuration
-        </Button>
-      </div>
-    </form>
-  );
-};
+# 2. Create schema file (see examples below)
+# 3. Create plugin class (see examples below)
+# 4. Create config dialog (see examples below)
+# 5. Register plugin in apps/backend/src/index.ts
+# 6. Add dialog to apps/form-app/src/pages/FormPluginsNew.tsx
+# 7. Test!
 ```
 
 ---
 
-## 📁 **Plugin Structure**
+## Plugin Structure
+
+### Directory Layout
 
 ```
-my-plugin/
-├── package.json                    # Plugin dependencies
-├── plugin.manifest.json            # Plugin metadata
-├── README.md                       # Plugin documentation
-├── backend/
-│   ├── index.ts                    # Main plugin class (exports default)
-│   ├── schema.ts                   # Zod validation schemas
-│   ├── types.ts                    # TypeScript types (optional)
-│   └── utils.ts                    # Helper functions (optional)
-└── frontend/
-    ├── ConfigForm.tsx              # Configuration UI
-    ├── Icon.tsx                    # Plugin icon (optional)
-    └── index.tsx                   # Frontend exports
+apps/backend/src/plugins/my-plugin/
+├── index.ts      # Plugin class
+└── schema.ts     # Zod validation schema
+
+apps/form-app/src/plugins/my-plugin/
+└── ConfigDialog.tsx   # React configuration UI
 ```
 
 ---
 
-## 📝 **Step-by-Step Tutorial: Creating a Slack Plugin**
+## Step-by-Step Tutorial
 
-### **Step 1: Setup**
+### Example: Webhook Plugin
 
-```bash
-mkdir plugins/slack
-cd plugins/slack
-pnpm init
-mkdir -p backend frontend
-```
-
-### **Step 2: Create Manifest**
-
-`plugin.manifest.json`:
-
-```json
-{
-  "id": "slack",
-  "name": "Slack Notifications",
-  "version": "1.0.0",
-  "description": "Send notifications to Slack channels",
-  "category": "communication",
-  "icon": "message-square",
-  "author": "Dculus",
-  "triggers": ["form.submitted", "response.edited"],
-  "dependencies": {
-    "@slack/web-api": "^7.0.0"
-  }
-}
-```
-
-### **Step 3: Define Configuration Schema**
-
-`backend/schema.ts`:
+#### Step 1: Create Schema (`apps/backend/src/plugins/webhook/schema.ts`)
 
 ```typescript
 import { z } from 'zod';
 
-export const slackConfigSchema = z.object({
-  webhookUrl: z.string().url('Invalid webhook URL'),
-  channel: z.string().min(1, 'Channel is required'),
-  username: z.string().default('Form Bot'),
-  iconEmoji: z.string().default(':robot_face:'),
-  messageTemplate: z.string().min(1, 'Message template is required')
+export const webhookConfigSchema = z.object({
+  url: z.string().url('Must be a valid URL').min(1),
+  headers: z.record(z.string(), z.string()).optional().default({}),
+  timeout: z.number().min(1000).max(30000).default(5000),
+  retryOnFailure: z.boolean().default(true),
+  maxRetries: z.number().min(0).max(5).default(3),
+  isEnabled: z.boolean().default(true),
 });
 
-export type SlackConfig = z.infer<typeof slackConfigSchema>;
+export type WebhookConfig = z.infer<typeof webhookConfigSchema>;
 ```
 
-### **Step 4: Implement Backend Logic**
-
-`backend/index.ts`:
+#### Step 2: Implement Plugin (`apps/backend/src/plugins/webhook/index.ts`)
 
 ```typescript
-import { IPlugin, ExecutionContext, ExecutionResult } from '@dculus/plugins-core';
-import { WebClient } from '@slack/web-api';
-import { slackConfigSchema, SlackConfig } from './schema';
+import { BasePlugin } from '../base/BasePlugin.js';
+import { webhookConfigSchema, type WebhookConfig } from './schema.js';
+import type { FormSubmittedEvent } from '../../lib/events.js';
 
-export class SlackPlugin implements IPlugin {
-  id = 'slack';
-  name = 'Slack Notifications';
-  version = '1.0.0';
-  description = 'Send notifications to Slack channels';
-  category = 'communication' as const;
-  icon = 'message-square';
-
-  configSchema = slackConfigSchema;
-  defaultConfig = {
-    webhookUrl: '',
-    channel: '#general',
-    username: 'Form Bot',
-    iconEmoji: ':robot_face:',
-    messageTemplate: 'New form submission received!'
-  };
-
-  triggers = ['form.submitted', 'response.edited'] as const;
-
-  async execute(context: ExecutionContext): Promise<ExecutionResult> {
-    const config = context.config as SlackConfig;
-    const { payload } = context;
-
-    try {
-      // Extract webhook token from URL
-      const token = this.extractToken(config.webhookUrl);
-      const client = new WebClient(token);
-
-      // Render message template
-      const message = this.renderTemplate(config.messageTemplate, payload);
-
-      // Send to Slack
-      const result = await client.chat.postMessage({
-        channel: config.channel,
-        text: message,
-        username: config.username,
-        icon_emoji: config.iconEmoji
-      });
-
-      return {
-        success: true,
-        data: {
-          messageTs: result.ts,
-          channel: result.channel
-        }
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-
-  async validate(config: unknown) {
-    try {
-      this.configSchema.parse(config);
-      return { valid: true };
-    } catch (error: any) {
-      return {
-        valid: false,
-        errors: error.errors.map((e: any) => e.message)
-      };
-    }
-  }
-
-  async test(config: unknown) {
-    try {
-      const parsedConfig = this.configSchema.parse(config) as SlackConfig;
-      const token = this.extractToken(parsedConfig.webhookUrl);
-      const client = new WebClient(token);
-
-      // Test authentication
-      await client.auth.test();
-
-      return {
-        success: true,
-        message: 'Slack connection successful'
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        message: `Slack test failed: ${error.message}`
-      };
-    }
-  }
-
-  private extractToken(webhookUrl: string): string {
-    // Extract token from webhook URL
-    const match = webhookUrl.match(/hooks\/([^\/]+)/);
-    return match ? match[1] : webhookUrl;
-  }
-
-  private renderTemplate(template: string, data: any): string {
-    return template.replace(/\{\{(\w+)\}\}/g, (match, field) => {
-      return data[field] || match;
+export class WebhookPlugin extends BasePlugin {
+  constructor() {
+    super({
+      id: 'webhook',
+      name: 'Webhooks',
+      description: 'Send form submissions to external webhooks via HTTP POST',
+      icon: '🔗',
+      category: 'webhooks',
+      version: '1.0.0',
     });
   }
-}
 
-export default new SlackPlugin();
-```
+  getConfigSchema() {
+    return webhookConfigSchema;
+  }
 
-### **Step 5: Create Frontend Form**
+  async onFormSubmitted(event: FormSubmittedEvent): Promise<void> {
+    const config = await this.getConfig(event.formId) as WebhookConfig;
 
-`frontend/ConfigForm.tsx`:
+    console.log(`[Webhook] Sending to ${config.url}`);
 
-```typescript
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button, Input, Textarea } from '@dculus/ui';
-import { slackConfigSchema } from '../backend/schema';
+    const payload = {
+      event: 'form.submitted',
+      timestamp: event.submittedAt.toISOString(),
+      form: { id: event.formId, organizationId: event.organizationId },
+      response: { id: event.responseId, data: event.data },
+    };
 
-export const SlackConfigForm = ({ initialConfig, onSave, onTest }) => {
-  const { register, handleSubmit, formState: { errors } } = useForm({
-    resolver: zodResolver(slackConfigSchema),
-    defaultValues: initialConfig
-  });
+    await this.sendWithRetry(config, payload);
+  }
 
-  return (
-    <form onSubmit={handleSubmit(onSave)} className="space-y-4">
-      <div>
-        <h3 className="font-semibold mb-3">Slack Settings</h3>
-
-        <Input
-          label="Webhook URL"
-          type="url"
-          placeholder="https://hooks.slack.com/services/..."
-          {...register('webhookUrl')}
-          error={errors.webhookUrl?.message}
-        />
-
-        <Input
-          label="Channel"
-          placeholder="#general"
-          {...register('channel')}
-          error={errors.channel?.message}
-        />
-
-        <Input
-          label="Username"
-          {...register('username')}
-          error={errors.username?.message}
-        />
-
-        <Input
-          label="Icon Emoji"
-          placeholder=":robot_face:"
-          {...register('iconEmoji')}
-          error={errors.iconEmoji?.message}
-        />
-
-        <Textarea
-          label="Message Template"
-          rows={4}
-          placeholder="Use {{fieldName}} for dynamic values"
-          {...register('messageTemplate')}
-          error={errors.messageTemplate?.message}
-        />
-      </div>
-
-      <div className="flex gap-2">
-        <Button type="button" variant="outline" onClick={handleSubmit(onTest)}>
-          Test Connection
-        </Button>
-        <Button type="submit">
-          Save Configuration
-        </Button>
-      </div>
-    </form>
-  );
-};
-```
-
----
-
-## 🔧 **Advanced Topics**
-
-### **1. Accessing Form Data**
-
-```typescript
-async execute(context: ExecutionContext): Promise<ExecutionResult> {
-  const { formId, payload, config } = context;
-
-  // Access form schema
-  const form = await prisma.form.findUnique({
-    where: { id: formId },
-    include: { organization: true }
-  });
-
-  // Process form fields
-  const formSchema = form.formSchema as any;
-  const fields = formSchema.pages.flatMap(p => p.fields);
-
-  // Use form data
-  console.log('Form:', form.title);
-  console.log('Response data:', payload);
-}
-```
-
-### **2. Storing Plugin State**
-
-```typescript
-// Use plugin config to store state
-async execute(context: ExecutionContext): Promise<ExecutionResult> {
-  const { pluginConfigId, config } = context;
-
-  // Update plugin config with new state
-  await prisma.pluginConfig.update({
-    where: { id: pluginConfigId },
-    data: {
-      config: {
-        ...config,
-        lastExecuted: new Date(),
-        executionCount: (config.executionCount || 0) + 1
+  private async sendWithRetry(config: WebhookConfig, payload: any): Promise<void> {
+    for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
+      try {
+        await this.sendWebhook(config, payload);
+        console.log(`[Webhook] Success`);
+        return;
+      } catch (error: any) {
+        if (attempt < config.maxRetries && config.retryOnFailure) {
+          console.log(`[Webhook] Retry ${attempt + 1}/${config.maxRetries}`);
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+        } else {
+          console.error(`[Webhook] Failed:`, error.message);
+          throw error;
+        }
       }
     }
-  });
+  }
+
+  private async sendWebhook(config: WebhookConfig, payload: any): Promise<void> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), config.timeout);
+
+    try {
+      const response = await fetch(config.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'dculus-forms-webhook/1.0',
+          ...config.headers,
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
 }
 ```
 
-### **3. External API Integration**
+#### Step 3: Register Plugin (`apps/backend/src/index.ts`)
 
 ```typescript
-import axios from 'axios';
+import { WebhookPlugin } from './plugins/webhook/index.js';
 
-async execute(context: ExecutionContext): Promise<ExecutionResult> {
-  const { config, payload } = context;
+// Add to initialization
+pluginRegistry.register(new WebhookPlugin());
+await pluginRegistry.initialize();
+```
 
-  try {
-    const response = await axios.post(config.apiEndpoint, {
-      data: payload,
-      timestamp: new Date().toISOString()
-    }, {
-      headers: {
-        'Authorization': `Bearer ${config.apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      timeout: 10000 // 10 second timeout
+#### Step 4: Create Config Dialog (`apps/form-app/src/plugins/webhook/ConfigDialog.tsx`)
+
+```typescript
+import { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Button,
+  Input,
+  Label,
+  Switch,
+} from '@dculus/ui';
+
+interface WebhookConfigDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  initialConfig?: any;
+  onSave: (config: any) => void;
+  isEditing?: boolean;
+}
+
+export function WebhookConfigDialog({
+  open,
+  onOpenChange,
+  initialConfig,
+  onSave,
+  isEditing = false,
+}: WebhookConfigDialogProps) {
+  const [url, setUrl] = useState(initialConfig?.url || '');
+  const [timeout, setTimeout] = useState(initialConfig?.timeout || 5000);
+  const [retryOnFailure, setRetryOnFailure] = useState(
+    initialConfig?.retryOnFailure ?? true
+  );
+  const [maxRetries, setMaxRetries] = useState(initialConfig?.maxRetries || 3);
+
+  const handleSave = () => {
+    onSave({
+      url,
+      headers: {},
+      timeout,
+      retryOnFailure,
+      maxRetries,
+      isEnabled: true,
     });
+  };
 
-    return {
-      success: true,
-      data: response.data
-    };
-  } catch (error: any) {
-    return {
-      success: false,
-      error: error.message
-    };
-  }
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>
+            {isEditing ? 'Configure' : 'Install'} Webhook Plugin
+          </DialogTitle>
+          <DialogDescription>
+            Send form submissions to external webhooks via HTTP POST
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="url">Webhook URL *</Label>
+            <Input
+              id="url"
+              type="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://api.example.com/webhooks"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="timeout">Timeout (ms)</Label>
+            <Input
+              id="timeout"
+              type="number"
+              value={timeout}
+              onChange={(e) => setTimeout(parseInt(e.target.value))}
+              min="1000"
+              max="30000"
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="retry">Retry on Failure</Label>
+              <p className="text-sm text-slate-500">
+                Automatically retry failed requests
+              </p>
+            </div>
+            <Switch
+              id="retry"
+              checked={retryOnFailure}
+              onCheckedChange={setRetryOnFailure}
+            />
+          </div>
+
+          {retryOnFailure && (
+            <div className="space-y-2 pl-4 border-l-2">
+              <Label htmlFor="maxRetries">Max Retries</Label>
+              <Input
+                id="maxRetries"
+                type="number"
+                value={maxRetries}
+                onChange={(e) => setMaxRetries(parseInt(e.target.value))}
+                min="0"
+                max="5"
+              />
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={!url}>
+            {isEditing ? 'Save Changes' : 'Install Plugin'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
 ```
 
-### **4. Conditional Execution**
+#### Step 5: Add to Marketplace (`apps/form-app/src/pages/FormPluginsNew.tsx`)
 
 ```typescript
-async execute(context: ExecutionContext): Promise<ExecutionResult> {
-  const { config, payload } = context;
+import { WebhookConfigDialog } from '../plugins/webhook/ConfigDialog';
 
-  // Only execute if certain conditions are met
-  if (config.condition === 'email_only' && !payload.email) {
-    return {
-      success: true,
-      data: { skipped: true, reason: 'No email field' }
-    };
-  }
+// Add dialog rendering
+{selectedPluginConfig?.pluginId === 'webhook' && (
+  <WebhookConfigDialog
+    open={isConfigDialogOpen}
+    onOpenChange={setIsConfigDialogOpen}
+    initialConfig={selectedPluginConfig?.config}
+    onSave={handleUpdatePluginConfig}
+    isEditing={true}
+  />
+)}
 
-  // Execute plugin logic
-  // ...
-}
-```
-
-### **5. Template Rendering**
-
-```typescript
-private renderTemplate(template: string, data: any): string {
-  // Support for nested fields
-  return template.replace(/\{\{([\w.]+)\}\}/g, (match, path) => {
-    const value = path.split('.').reduce((obj, key) => obj?.[key], data);
-    return value !== undefined ? String(value) : match;
-  });
-}
-
-// Usage
-const message = this.renderTemplate(
-  'Hello {{user.name}}, your order {{order.id}} is {{order.status}}',
-  {
-    user: { name: 'John' },
-    order: { id: '12345', status: 'confirmed' }
-  }
-);
-// Output: "Hello John, your order 12345 is confirmed"
+{installDialogPlugin?.id === 'webhook' && (
+  <WebhookConfigDialog
+    open={isInstallDialogOpen}
+    onOpenChange={setIsInstallDialogOpen}
+    onSave={handleInstallPlugin}
+    isEditing={false}
+  />
+)}
 ```
 
 ---
 
-## ✨ **Best Practices**
+## Configuration Schema
 
-### **1. Error Handling**
-
-```typescript
-async execute(context: ExecutionContext): Promise<ExecutionResult> {
-  try {
-    // Plugin logic
-    return { success: true, data: result };
-  } catch (error: any) {
-    // Log error for debugging
-    console.error(`[${this.id}] Execution failed:`, error);
-
-    // Return user-friendly error
-    return {
-      success: false,
-      error: this.getUserFriendlyError(error)
-    };
-  }
-}
-
-private getUserFriendlyError(error: any): string {
-  if (error.code === 'ECONNREFUSED') {
-    return 'Unable to connect to API. Please check your endpoint.';
-  }
-  if (error.code === 'ETIMEDOUT') {
-    return 'Request timed out. Please try again.';
-  }
-  return error.message || 'An unexpected error occurred';
-}
-```
-
-### **2. Validation**
+### Common Zod Patterns
 
 ```typescript
-// Use strict validation
-const configSchema = z.object({
-  apiKey: z.string()
-    .min(10, 'API key must be at least 10 characters')
-    .regex(/^[a-zA-Z0-9_-]+$/, 'Invalid API key format'),
+import { z } from 'zod';
 
-  endpoint: z.string()
-    .url('Invalid URL')
-    .refine(url => url.startsWith('https://'), {
-      message: 'Endpoint must use HTTPS'
-    }),
+export const configSchema = z.object({
+  // Required string
+  apiKey: z.string().min(1, 'API key is required'),
 
-  retries: z.number()
-    .int()
-    .min(0)
-    .max(5)
-    .default(3)
+  // URL validation
+  webhookUrl: z.string().url('Must be a valid URL'),
+
+  // Email validation
+  email: z.string().email('Must be a valid email'),
+
+  // Number with range
+  timeout: z.number().min(1000).max(30000).default(5000),
+
+  // Enum/Select
+  priority: z.enum(['low', 'medium', 'high']).default('medium'),
+
+  // Boolean with default
+  enabled: z.boolean().default(true),
+
+  // Optional string
+  description: z.string().optional(),
+
+  // Array of strings
+  recipients: z.array(z.string().email()).min(1),
+
+  // Nested object
+  smtp: z.object({
+    host: z.string(),
+    port: z.number(),
+    secure: z.boolean(),
+  }),
+
+  // Record/Map
+  headers: z.record(z.string(), z.string()).optional().default({}),
+
+  // Pattern matching
+  token: z.string().regex(/^[a-zA-Z0-9]{32}$/, 'Invalid token format'),
 });
+
+export type Config = z.infer<typeof configSchema>;
 ```
 
-### **3. Security**
+---
+
+## Frontend Components
+
+### Common UI Patterns
+
+**Text Input**:
+```typescript
+<div className="space-y-2">
+  <Label htmlFor="apiKey">API Key *</Label>
+  <Input
+    id="apiKey"
+    type="password"
+    value={apiKey}
+    onChange={(e) => setApiKey(e.target.value)}
+    placeholder="Enter API key"
+  />
+  <p className="text-sm text-slate-500">Helper text</p>
+</div>
+```
+
+**Number Input**:
+```typescript
+<Input
+  type="number"
+  value={timeout}
+  onChange={(e) => setTimeout(parseInt(e.target.value))}
+  min="1000"
+  max="30000"
+/>
+```
+
+**Toggle Switch**:
+```typescript
+<Switch
+  checked={enabled}
+  onCheckedChange={setEnabled}
+/>
+```
+
+**Select Dropdown**:
+```typescript
+<Select value={priority} onValueChange={setPriority}>
+  <SelectTrigger><SelectValue /></SelectTrigger>
+  <SelectContent>
+    <SelectItem value="low">Low</SelectItem>
+    <SelectItem value="medium">Medium</SelectItem>
+    <SelectItem value="high">High</SelectItem>
+  </SelectContent>
+</Select>
+```
+
+---
+
+## Testing
+
+### Manual Testing Checklist
+
+1. **Backend**:
+   - [ ] Plugin registered (check console logs)
+   - [ ] Appears in available plugins
+   - [ ] Configuration validates correctly
+   - [ ] Executes on form submission
+   - [ ] Errors are logged
+
+2. **Frontend**:
+   - [ ] Plugin card displays correctly
+   - [ ] Install dialog opens
+   - [ ] Configuration saves
+   - [ ] Shows in installed section
+   - [ ] Configure/Enable/Disable works
+   - [ ] Uninstall removes plugin
+
+3. **Integration**:
+   - [ ] Submit form via GraphQL
+   - [ ] Check backend console logs
+   - [ ] Verify external API received data
+
+### Test with cURL
+
+```bash
+# Submit form
+curl -X POST http://localhost:4000/graphql \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "mutation { submitResponse(input: {formId: \"abc123\", data: {test: \"value\"}}) { id } }"
+  }'
+
+# Check backend logs for plugin execution
+```
+
+---
+
+## Best Practices
+
+### Security
 
 ```typescript
-// Never log sensitive data
-console.log('Config:', {
+// ❌ Never log sensitive data
+console.log('[Plugin] Config:', config);
+
+// ✅ Redact sensitive fields
+console.log('[Plugin] Config:', {
   ...config,
-  apiKey: '***REDACTED***',
-  password: '***REDACTED***'
+  apiKey: config.apiKey ? '***' : undefined,
 });
 
-// Validate input data
-const sanitizedData = {
-  email: payload.email?.toString().toLowerCase().trim(),
-  message: payload.message?.toString().slice(0, 1000) // Limit length
-};
+// ✅ Validate URLs (HTTPS only)
+url: z.string()
+  .url()
+  .refine(url => url.startsWith('https://'), {
+    message: 'Only HTTPS URLs allowed',
+  }),
+```
 
-// Use HTTPS for external requests
-if (!config.endpoint.startsWith('https://')) {
-  throw new Error('Endpoint must use HTTPS');
+### Error Handling
+
+```typescript
+async onFormSubmitted(event: FormSubmittedEvent): Promise<void> {
+  try {
+    // Your logic
+  } catch (error: any) {
+    console.error(`[${this.metadata.id}] Error:`, error.message);
+    throw error; // Let BasePlugin.execute() handle it
+  }
 }
 ```
 
-### **4. Performance**
+### Performance
 
 ```typescript
-// Use timeouts
+// ✅ Use AbortController for timeouts
 const controller = new AbortController();
-const timeoutId = setTimeout(() => controller.abort(), 30000);
+const timeoutId = setTimeout(() => controller.abort(), config.timeout);
 
 try {
-  const response = await fetch(url, {
-    signal: controller.signal,
-    // ...
-  });
+  await fetch(url, { signal: controller.signal });
 } finally {
   clearTimeout(timeoutId);
 }
 
-// Batch operations when possible
-const results = await Promise.all(
-  items.map(item => this.processItem(item))
-);
+// ✅ Parallel API calls when possible
+const [result1, result2] = await Promise.all([
+  apiCall1(),
+  apiCall2(),
+]);
 ```
 
-### **5. Logging**
+### Code Organization
 
 ```typescript
-async execute(context: ExecutionContext): Promise<ExecutionResult> {
-  const startTime = Date.now();
-
-  try {
-    console.log(`[${this.id}] Starting execution`, {
-      event: context.event,
-      formId: context.formId
-    });
-
-    const result = await this.performAction(context);
-
-    const duration = Date.now() - startTime;
-    console.log(`[${this.id}] Execution completed in ${duration}ms`);
-
-    return { success: true, data: result };
-  } catch (error: any) {
-    console.error(`[${this.id}] Execution failed:`, error);
-    return { success: false, error: error.message };
+// ✅ Extract helper methods
+class MyPlugin extends BasePlugin {
+  async onFormSubmitted(event: FormSubmittedEvent): Promise<void> {
+    const payload = this.buildPayload(event);
+    await this.sendWithRetry(payload);
   }
+
+  private buildPayload(event: FormSubmittedEvent) { /* ... */ }
+  private sendWithRetry(payload: any) { /* ... */ }
 }
 ```
 
 ---
 
-## 🧪 **Testing**
+## Common Patterns
 
-### **Unit Tests**
-
-Create `backend/__tests__/plugin.test.ts`:
+### Retry Logic
 
 ```typescript
-import { MyPlugin } from '../index';
-
-describe('MyPlugin', () => {
-  const plugin = new MyPlugin();
-
-  it('should validate config correctly', async () => {
-    const result = await plugin.validate({
-      apiKey: 'test-key',
-      endpoint: 'https://api.example.com'
-    });
-
-    expect(result.valid).toBe(true);
-  });
-
-  it('should reject invalid config', async () => {
-    const result = await plugin.validate({
-      apiKey: '',
-      endpoint: 'invalid-url'
-    });
-
-    expect(result.valid).toBe(false);
-    expect(result.errors).toHaveLength(2);
-  });
-
-  it('should execute successfully', async () => {
-    const result = await plugin.execute({
-      pluginConfigId: 'test-id',
-      event: 'form.submitted',
-      payload: { name: 'Test' },
-      config: { apiKey: 'key', endpoint: 'https://api.example.com' },
-      formId: 'form-id'
-    });
-
-    expect(result.success).toBe(true);
-  });
-});
-```
-
-### **Integration Tests**
-
-```typescript
-// Test with real MongoDB and Bree
-describe('Plugin Integration', () => {
-  beforeAll(async () => {
-    // Setup test database
-    await prisma.$connect();
-  });
-
-  afterAll(async () => {
-    await prisma.$disconnect();
-  });
-
-  it('should create and execute job', async () => {
-    const config = await prisma.pluginConfig.create({
-      data: {
-        formId: 'test-form',
-        pluginId: 'my-plugin',
-        enabled: true,
-        config: { apiKey: 'test' },
-        triggerEvents: ['form.submitted']
+private async executeWithRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3
+): Promise<T> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (attempt < maxRetries) {
+        const delay = 1000 * Math.pow(2, attempt); // Exponential backoff
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        throw error;
       }
-    });
+    }
+  }
+  throw new Error('Should not reach here');
+}
+```
 
-    const job = await jobExecutor.createJob({
-      pluginConfigId: config.id,
-      event: 'form.submitted',
-      payload: { test: true }
-    });
+### Template Rendering
 
-    expect(job.status).toBe('pending');
+```typescript
+private renderTemplate(template: string, data: Record<string, any>): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (match, field) => {
+    return data[field] !== undefined ? String(data[field]) : match;
   });
-});
+}
+
+// Usage:
+const message = renderTemplate('Hello {{name}}!', { name: 'John' });
+// Result: "Hello John!"
 ```
 
 ---
 
-## 📦 **Publishing Your Plugin**
+## Troubleshooting
 
-### **1. Documentation**
+### Plugin not appearing
 
-Create `README.md`:
+```typescript
+// Check: Is plugin registered?
+pluginRegistry.register(new MyPlugin());
+await pluginRegistry.initialize();
 
-```markdown
-# My Plugin
-
-Short description of what the plugin does.
-
-## Features
-
-- Feature 1
-- Feature 2
-
-## Configuration
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| apiKey | string | Yes | Your API key |
-| endpoint | string | Yes | API endpoint URL |
-
-## Supported Events
-
-- `form.submitted` - Triggered when form is submitted
-- `response.edited` - Triggered when response is edited
-
-## Usage
-
-1. Install the plugin
-2. Configure your API credentials
-3. Select trigger events
-4. Save and enable
-
-## Support
-
-For issues, contact: support@example.com
+// Look for log: "✅ Registered plugin: My Plugin (my-plugin)"
 ```
 
-### **2. Package for Distribution**
+### Plugin not executing
 
-```bash
-# Build plugin
-pnpm build
+```typescript
+// Add debug logs:
+async execute(event: FormSubmittedEvent): Promise<void> {
+  console.log(`[DEBUG] Execute called for form ${event.formId}`);
+  const config = await this.getConfig(event.formId);
+  console.log(`[DEBUG] Config:`, config);
 
-# Create distributable package
-pnpm pack
+  if (!config || !config.isEnabled) {
+    console.log('[DEBUG] Skipping - no config or disabled');
+    return;
+  }
+
+  await this.onFormSubmitted(event);
+}
 ```
 
-### **3. Submit to Plugin Registry**
+### Validation errors
 
-(Coming soon: Official plugin registry)
-
----
-
-## 📚 **Resources**
-
-- [Plugin Architecture](./PLUGIN_ARCHITECTURE.md)
-- [GraphQL API Documentation](./docs/GRAPHQL_API.md)
-- [Example Plugins](./plugins/)
-- [Community Forum](https://community.dculus.com)
+```typescript
+// Test schema manually:
+const result = myPluginConfigSchema.safeParse(yourConfig);
+if (!result.success) {
+  console.log('Validation errors:', result.error.format());
+}
+```
 
 ---
 
-## 🆘 **Troubleshooting**
+## Next Steps
 
-### **Plugin not showing in UI**
+1. **Study Examples**:
+   - [Hello World Plugin](apps/backend/src/plugins/hello-world/)
+   - [Event Bus](apps/backend/src/lib/events.ts)
+   - [Base Plugin Class](apps/backend/src/plugins/base/BasePlugin.ts)
 
-- Ensure `plugin.manifest.json` is valid
-- Check plugin is exported as default in `backend/index.ts`
-- Verify plugin directory is in `/plugins`
+2. **Read Documentation**:
+   - [Plugin System Documentation](./PLUGIN_SYSTEM_DOCUMENTATION.md)
+   - [Project Documentation](./CLAUDE.md)
 
-### **Execution errors**
-
-- Check worker thread logs
-- Verify configuration schema matches data
-- Test plugin with `test()` method first
-
-### **Configuration validation failing**
-
-- Review Zod schema
-- Check for typos in field names
-- Ensure all required fields are provided
+3. **Build Your Plugin**:
+   - Follow the step-by-step tutorial above
+   - Test thoroughly
+   - Share with the community!
 
 ---
 
-**Happy Plugin Development!** 🚀
+**Happy Plugin Development! 🚀**
 
-**Version**: 1.0.0
-**Last Updated**: 2025-01-10
+For help or questions:
+- [GitHub Issues](https://github.com/your-repo/issues)
+- [Plugin System Documentation](./PLUGIN_SYSTEM_DOCUMENTATION.md)
