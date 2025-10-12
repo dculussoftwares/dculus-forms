@@ -1,309 +1,363 @@
-and we are using graphql as api layer, so use graphql queries and mutations to interact with the backend always, dont create any rest api endpoints strictly except `better-auth` api's. we are using apollo server as graphql server, so use apollo server features like context, middlewares etc.
+# Copilot Instructions for Dculus Forms
 
-# Copilot LLM Instructions for Dculus Forms Monorepo
+**GraphQL-First Architecture**: Use GraphQL queries/mutations for ALL backend communication. Never create REST endpoints except for `better-auth` APIs. Apollo Server provides context, middlewares, and type-safe resolvers.
 
-## General Coding Principles
+## Critical Architecture Principles
 
-1. **Functional Programming**: Always prefer functional programming paradigms (pure functions, immutability, stateless logic, composition, etc.) over imperative or OOP styles unless strictly necessary. (except FormField)
-2. **Type Safety**: All code must be fully type-safe using TypeScript. Use generics, utility types, and type inference to maximize safety and developer experience.
-3. **Validation**: Use `zod` for all schema validation, both on backend (GraphQL, Prisma) and frontend (form validation, API responses).
-4. **Consistency**: Follow the established project structure and naming conventions. Reuse shared code and components from the appropriate packages.
+1. **Functional Programming**: Prefer pure functions, immutability, and composition over OOP (exception: FormField class hierarchy)
+2. **Type Safety**: All code must be fully typed with TypeScript. Use generics, utility types, and inference
+3. **Validation**: Use `zod` for all validation (forms, GraphQL inputs, API responses)
+4. **Zero Duplication**: Never duplicate UI/utilities - always import from shared packages (`@dculus/*`)
+5. **Code-First GraphQL**: Schema defined in TypeScript using `graphql-tag`, not SDL files
 
-## Project Structure (Monorepo)
+## Monorepo Structure
 
-- `apps/backend`: Express.js + Apollo GraphQL API server. Contains GraphQL schema, resolvers, services, middleware, and Prisma setup. All backend business logic and data access lives here.
-- `apps/form-app`: React form builder app. Uses Apollo Client for GraphQL, shadcn/ui for UI, and imports shared components from `@dculus/ui`.
-- `apps/form-viewer`: React app for viewing and submitting forms. Also uses shared UI and types.
-- `packages/ui`: Shared shadcn/ui components and rich text editor components. All UI components must be imported from here for consistency.
-- `packages/utils`: Shared utility functions, constants, API utilities, and helper functions.
-- `packages/types`: Shared TypeScript types and interfaces for all apps.
+### Applications (`apps/`)
+- **`backend/`**: Express + Apollo GraphQL + Prisma ORM + MongoDB (cloud-hosted, no Docker needed)
+  - GraphQL resolvers in `src/graphql/resolvers/` (organized by domain: forms, responses, templates, plugins, admin)
+  - Business logic in `src/services/` 
+  - Prisma client in `src/lib/prisma.ts`
+  - Authentication via better-auth in `src/lib/better-auth.ts`
+- **`form-app/`**: React form builder (shadcn/ui) on `:3000`
+- **`form-viewer/`**: React form viewer/submission app on `:5173`
+- **`admin-app/`**: React admin dashboard for cross-org management on `:3002`
 
-## Folder Structure
+### Shared Packages (`packages/`)
+- **`@dculus/ui`**: ALL UI components (shadcn/ui + Lexical rich text editor + Zustand stores)
+- **`@dculus/utils`**: Shared utilities (`generateId`, `cn`, `API_ENDPOINTS`, `getImageUrl`)
+- **`@dculus/types`**: TypeScript types + FormField class hierarchy
 
-```
-dculus-forms/
-├── docker-compose.yml              # MongoDB setup
-├── package.json                    # Root package.json with workspace scripts
-├── pnpm-lock.yaml                 # pnpm lockfile
-├── pnpm-workspace.yaml            # pnpm workspace configuration
-├── tsconfig.json                  # Root TypeScript config
-├── README.md                      # Project documentation
-├── PRISMA_SETUP_COMPLETE.md       # Database setup documentation
-├── TEMPLATE_GALLERY_README.md     # Template gallery documentation
-├── .github/
-│   └── copilot-instructions.md    # This file - LLM instructions
-├── scripts/
-│   └── setup-db.sh               # Database setup script
-├── apps/
-│   ├── backend/                   # Express.js + Apollo GraphQL API server
-│   │   ├── auth.ts               # Better-auth configuration
-│   │   ├── package.json          # Backend dependencies
-│   │   ├── tsconfig.json         # Backend TypeScript config
-│   │   ├── DATABASE_SETUP.md     # Database setup guide
-│   │   ├── prisma/
-│   │   │   ├── schema.prisma     # Prisma database schema
-│   │   │   └── schema.prisma.backup
-│   │   └── src/
-│   │       ├── index.ts          # Main server entry point
-│   │       ├── graphql/          # GraphQL schema and resolvers
-│   │       │   ├── schema.ts     # GraphQL schema definition
-│   │       │   ├── resolvers.ts  # GraphQL resolvers
-│   │       │   └── resolvers/    # Individual resolver files
-│   │       ├── lib/              # Configuration and setup
-│   │       │   ├── better-auth.ts # Better-auth configuration
-│   │       │   └── prisma.ts     # Prisma client setup
-│   │       ├── middleware/       # Express/Apollo middlewares
-│   │       │   ├── better-auth-middleware.ts
-│   │       │   └── errorHandler.ts
-│   │       ├── routes/           # REST API routes (only for better-auth)
-│   │       │   ├── forms.ts
-│   │       │   ├── health.ts
-│   │       │   ├── responses.ts
-│   │       │   └── templates.ts
-│   │       ├── services/         # Business logic services
-│   │       │   ├── formService.ts
-│   │       │   ├── responseService.ts
-│   │       │   └── templateService.ts
-│   │       ├── scripts/          # Database and migration scripts
-│   │       │   ├── migrate-fields-to-schema.ts
-│   │       │   ├── seed-templates.ts
-│   │       │   └── seed.ts
-│   │       └── utils/            # Utility functions
-│   ├── form-app/                 # React form builder application
-│   │   ├── components.json       # shadcn/ui configuration
-│   │   ├── index.html           # HTML template
-│   │   ├── package.json         # Form app dependencies
-│   │   ├── postcss.config.js    # PostCSS configuration
-│   │   ├── tailwind.config.js   # Tailwind CSS configuration
-│   │   ├── tsconfig.json        # TypeScript configuration
-│   │   ├── tsconfig.node.json   # Node TypeScript configuration
-│   │   ├── vite.config.ts       # Vite configuration
-│   │   ├── SHADCN_README.md     # shadcn/ui setup documentation
-│   │   └── src/
-│   │       ├── App.tsx          # Main app component
-│   │       ├── index.css        # Global styles
-│   │       ├── main.tsx         # App entry point
-│   │       ├── styles.css       # Additional styles
-│   │       ├── components/      # App-specific components
-│   │       │   ├── app-sidebar.tsx
-│   │       │   ├── CreateFormPopover.tsx
-│   │       │   ├── Dashboard.tsx
-│   │       │   ├── Header.tsx
-│   │       │   ├── MainLayout.tsx
-│   │       │   ├── ProtectedRoute.tsx
-│   │       │   └── ShadcnDemo.tsx
-│   │       ├── contexts/        # React contexts
-│   │       │   └── AuthContext.tsx
-│   │       ├── graphql/         # GraphQL queries and mutations
-│   │       │   ├── mutations.ts
-│   │       │   └── queries.ts
-│   │       ├── hooks/           # Custom React hooks
-│   │       │   ├── index.ts
-│   │       │   └── useAppConfig.ts
-│   │       ├── lib/             # Client configuration
-│   │       │   └── auth-client.ts
-│   │       ├── pages/           # Page components
-│   │       │   ├── FormBuilder.tsx
-│   │       │   ├── FormsList.tsx
-│   │       │   ├── FormViewer.tsx
-│   │       │   ├── Responses.tsx
-│   │       │   ├── Settings.tsx
-│   │       │   ├── SignIn.tsx
-│   │       │   └── SignUp.tsx
-│   │       └── services/        # Client services
-│   │           └── apolloClient.ts
-│   └── form-viewer/             # React form viewer application
-│       ├── eslint.config.js     # ESLint configuration
-│       ├── index.html          # HTML template
-│       ├── package.json        # Form viewer dependencies
-│       ├── postcss.config.cjs  # PostCSS configuration
-│       ├── tailwind.config.js  # Tailwind CSS configuration
-│       ├── tsconfig.app.json   # App TypeScript configuration
-│       ├── tsconfig.json       # TypeScript configuration
-│       ├── tsconfig.node.json  # Node TypeScript configuration
-│       ├── vite.config.ts      # Vite configuration
-│       ├── README.md           # Form viewer documentation
-│       ├── public/
-│       │   └── vite.svg        # Public assets
-│       └── src/
-│           ├── App.css         # App styles
-│           ├── App.tsx         # Main app component
-│           ├── index.css       # Global styles
-│           ├── main.tsx        # App entry point
-│           ├── vite-env.d.ts   # Vite type definitions
-│           ├── assets/
-│           │   └── react.svg   # Static assets
-│           ├── components/     # App-specific components
-│           │   ├── DemoPage.tsx
-│           │   └── Header.tsx
-│           └── pages/          # Page components
-│               └── Home.tsx
-└── packages/
-    ├── ui/                     # Shared UI components
-    │   ├── package.json       # UI package dependencies
-    │   ├── tsconfig.json      # TypeScript configuration
-    │   └── src/
-    │       ├── index.ts       # Component exports
-    │       ├── button.tsx     # shadcn/ui button component
-    │       ├── card.tsx       # shadcn/ui card component
-    │       ├── input.tsx      # shadcn/ui input component
-    │       ├── sidebar.tsx    # shadcn/ui sidebar component
-    │       ├── rich-text-editor/ # Lexical rich text editor components
-    │       └── (all other shadcn/ui components)
-    ├── utils/                  # Shared utilities and constants
-    │   ├── package.json       # Utils package dependencies
-    │   ├── tsconfig.json      # TypeScript configuration
-    │   └── src/
-    │       ├── index.ts       # Utility exports (generateId, cn, etc.)
-    │       └── constants.ts   # Shared constants and API endpoints
-    └── types/                 # Shared TypeScript types
-        ├── package.json       # Types package dependencies
-        ├── tsconfig.json      # TypeScript configuration
-        ├── tsconfig.tsbuildinfo
-        └── src/
-            └── index.ts       # Type definitions and interfaces
+## Essential Import Patterns
+
+```typescript
+// UI Components (shadcn/ui)
+import { Button, Card, Input, SidebarProvider } from '@dculus/ui';
+
+// UI Store (Zustand)
+import { useFormResponseStore, useFormResponseUtils } from '@dculus/ui';
+
+// Utilities and Constants
+import { generateId, API_ENDPOINTS, cn, getImageUrl, RendererMode } from '@dculus/utils';
+
+// Types and FormField Classes
+import type { Form, FormSchema, FormPage, User, Organisation } from '@dculus/types';
+import { TextInputField, EmailField, NumberField, FillableFormField } from '@dculus/types';
+
+// Apollo Client
+import { useQuery, useMutation, gql } from '@apollo/client';
 ```
 
-## Backend (API Layer)
+## FormSchema & Field Class Hierarchy
 
-- **GraphQL Only**: All business logic must be exposed via GraphQL queries and mutations (Apollo Server). Do not create REST endpoints except for `better-auth` APIs.
-- **Prisma + MongoDB**: Use Prisma Client for all DB access. Leverage MongoDB features (aggregation, transactions) via Prisma when needed.
-- **Authentication/Authorization**: Use `better-auth` (with PrismaAdapter, JWT or cookie-based) for all user/org/auth logic. Refer to `better_auth_llm_instructions.md` for details.
-- **Context/Middleware**: Use Apollo Server context for passing user/org info, and middlewares for auth, error handling, etc.
-- **Type Safety**: All resolvers, services, and DB logic must be fully typed. Use zod for input/output validation.
+### Core Schema Structure
+```typescript
+FormSchema {
+  pages: FormPage[];           // Multi-page support
+  layout: FormLayout;          // Theme, colors, spacing, background
+  isShuffleEnabled: boolean;   // Randomize order
+}
 
-## Frontend (React Apps)
+FormPage {
+  id: string;
+  title: string;
+  fields: FormField[];         // Array of field instances
+  order: number;
+}
 
-- **Apollo Client**: Use Apollo Client for all data fetching/mutations. Leverage cache, optimistic updates, and type-safe hooks.
-- **shadcn/ui**: Use only shadcn/ui components, imported from `@dculus/ui`. Do not duplicate UI code in app folders.
-- **Shared Components**: Place all reusable UI in `packages/ui/src/`. App-specific UI stays in the app's own `components` folder.
-- **Shared Utils**: Use utility functions and constants from `@dculus/utils`.
-- **Type Safety**: All React code must be typed. Use zod schemas for form validation and API data.
-- **Global Theme**: Follow the global theme and design system as defined in shared components.
+FormLayout {
+  theme: 'light' | 'dark' | 'auto';
+  spacing: 'compact' | 'normal' | 'spacious';
+  code: string;                // Layout identifier (L1, L2, etc.)
+  customBackGroundColor: string;
+  backgroundImageKey: string;  // Static file key
+}
+```
 
-## Shared Code
+### Field Class Hierarchy
+```
+FormField (base: id, type)
+├── FillableFormField (user input fields)
+│   ├── label, defaultValue, prefix, hint, validation
+│   ├── TextInputField
+│   ├── TextAreaField
+│   ├── EmailField
+│   ├── NumberField (min/max constraints)
+│   ├── SelectField (options[], multiple)
+│   ├── RadioField (options[])
+│   ├── CheckboxField (options[])
+│   └── DateField (minDate/maxDate)
+└── NonFillableFormField
+    └── RichTextFormField (Lexical editor content)
+```
 
-- **Types**: All shared types/interfaces go in `packages/types` and are imported as `@dculus/types`.
-- **UI Components**: All reusable UI (Button, Card, Sidebar, etc.) in `@dculus/ui`.
-- **Utils/Constants**: Common utility functions and constants in `@dculus/utils`.
+**Serialization Pattern**: Use `serializeFormField()`/`deserializeFormField()` when storing/retrieving from DB or YJS.
 
-## Code Properties & Best Practices
+## RendererMode System
 
-- **Functional, Pure, and Composable**: Write pure functions, avoid side effects, and compose logic.
-- **Type-Driven Development**: Start with types/zod schemas, then implement logic.
-- **No Duplication**: Never duplicate code or UI. Always import from shared packages.
-- **GraphQL-First**: All backend/frontend data flow is via GraphQL. No REST except for `better-auth`.
-- **Prisma/MongoDB**: Use Prisma for all DB access. Use MongoDB features via Prisma when needed.
-- **Auth**: All user/org/auth logic must use `better-auth` and follow its LLM instructions.
-- **Validation**: All input/output must be validated with zod.
-- **Error Handling**: Use functional error handling (Result/Either types, never throw unless necessary).
-- **Testing**: (When implemented) Use type-safe, functional tests.
+Forms render differently based on mode:
+
+| Mode | Purpose | Text Editable | Field Interactive | Validation | Navigation |
+|------|---------|---------------|-------------------|------------|------------|
+| **BUILDER** | Form editing | ✅ In edit mode | ❌ Disabled | ❌ Hidden | Always enabled |
+| **PREVIEW** | Read-only view | ❌ No | ✅ Interactive | ✅ Shows errors | Requires validation |
+| **SUBMISSION** | User submits | ❌ No | ✅ Interactive | ✅ Shows errors | Requires validation |
+
+**Implementation**: Pass `mode` prop through `LayoutRenderer` → layout components (L1-L9) → `PageRenderer` → `FormFieldRenderer`.
+
+## Real-Time Collaboration (YJS)
+
+- **YJS + y-websocket** for real-time collaborative form editing
+- **y-mongodb-provider** persists YJS documents to MongoDB (`dculus_forms_yjs` database)
+- WebSocket server in `apps/backend/src/services/collaboration.ts`
+- Each `Form` has a corresponding YJS document identified by `formId`
+- Frontend uses `useCollaboration` hook with `WebsocketProvider`
+
+## External Plugin System
+
+### Architecture
+- Plugins installed from URLs (pre-built bundles, not npm packages)
+- **Two files per plugin**:
+  - `plugin.backend.js`: Event handlers, business logic (Node.js ESM)
+  - `plugin.config.js`: Configuration UI component (React UMD/ESM)
+- Code stored in database, loaded via dynamic `import()`
+- Organization-scoped plugins
+
+### Plugin Events
+```typescript
+// Form lifecycle events (EventEmitter3)
+eventEmitter.on('form.submitted', async (data) => { /* handler */ });
+eventEmitter.on('form.created', async (data) => { /* handler */ });
+eventEmitter.on('form.updated', async (data) => { /* handler */ });
+eventEmitter.on('form.deleted', async (data) => { /* handler */ });
+```
+
+### Key Files
+- Plugin resolvers: `apps/backend/src/graphql/resolvers/plugins.ts`
+- Plugin registry: `apps/backend/src/plugins/registry.ts`
+- Plugin schema: `prisma/schema.prisma` (ExternalPlugin model)
+
+## Authentication & Authorization
+
+### better-auth Configuration
+- **Multi-tenant**: Organization-based access control
+- **Roles**: `user`, `owner`, `admin`, `superAdmin`
+- **Plugins**: bearer tokens, organization management, admin, emailOTP
+- **Sessions**: Cookie-based (7-day expiry) + bearer token support
+- Config in `apps/backend/src/lib/better-auth.ts`
+
+### GraphQL Context Pattern
+```typescript
+// In resolvers, always extract user/org from context
+const { userId, organizationId } = await getUserAndOrgFromContext(context);
+if (!userId) throw new Error('Authentication required');
+```
+
+### Admin App Specifics
+- Cookie-based auth (NOT bearer tokens)
+- Apollo Client with `credentials: 'include'`
+- Admin queries: `adminOrganizations`, `adminStats`
+- Default admin: `admin@dculus.com` / `admin123!@#`
+
+## State Management
+
+### Zustand Store (`@dculus/ui`)
+```typescript
+// Page-aware form responses
+const { setFieldValue, getFieldValue, getPageResponses } = useFormResponseStore();
+
+// Set value for specific page and field
+setFieldValue('page-1', 'email-field', 'user@example.com');
+
+// Get formatted responses for submission
+const { getFormattedResponses } = useFormResponseUtils();
+const responses = getFormattedResponses(); // Flattened object
+```
+
+## Analytics System
+
+### Privacy-First Tracking
+- Anonymous session UUIDs (stored in localStorage)
+- No IP addresses stored
+- Geographic detection via timezone/language fallback
+- User agent parsing for OS/browser info
+- Model: `FormViewAnalytics` in Prisma schema
+
+### Implementation
+```typescript
+// Client-side (form-viewer)
+useFormAnalytics({ formId: form.id, enabled: true });
+
+// Backend mutation
+trackFormView(formId, sessionId, userAgent, timezone, language)
+```
+
+## Development Workflows
+
+### Essential Commands
+```bash
+# Development (starts all apps + backend)
+pnpm dev
+
+# Individual services
+pnpm backend:dev        # Backend on :4000
+pnpm form-app:dev       # Form builder on :3000
+pnpm form-viewer:dev    # Viewer on :5173
+pnpm admin-app:dev      # Admin on :3002
+
+# Database (cloud MongoDB, no Docker needed)
+pnpm db:generate        # Generate Prisma client
+pnpm db:push            # Push schema changes
+pnpm db:studio          # Visual DB editor
+pnpm db:seed            # Seed sample data
+
+# Build
+pnpm build              # Build all packages/apps
+pnpm type-check         # TypeScript validation
+pnpm lint               # ESLint
+```
+
+### Testing
+```bash
+# Integration tests (Cucumber.js + better-auth)
+pnpm test:integration                  # All tests (local)
+pnpm test:integration:production       # Against deployed backend
+pnpm test:integration:auth             # Auth tests only
+pnpm test:integration:by-tags          # Filter by Cucumber tags
+
+# E2E tests (Playwright + Cucumber)
+pnpm test:e2e                          # Automated E2E
+pnpm test:e2e:headed                   # With browser UI
+pnpm test:e2e:form-creation            # Specific feature
+
+# Test credentials (Playwright)
+Email: sivam2@mailinator.com
+Password: password
+```
+
+### Integration Test Structure
+- Feature files: `test/integration/features/*.feature`
+- Step definitions: `test/integration/step-definitions/*.steps.ts`
+- Auth utilities: `test/integration/utils/auth-utils.ts`
+- No mocks - tests against real backend with better-auth
+
+## Backend Resolver Organization
+
+Resolvers are domain-separated in `apps/backend/src/graphql/resolvers/`:
+- `forms.ts`: Form CRUD operations
+- `responses.ts`: Form submissions and response management
+- `templates.ts`: Template gallery
+- `plugins.ts`: External plugin installation/management
+- `admin.ts`: Admin-only queries (`adminOrganizations`, `adminStats`)
+- `analytics.ts`: Form view tracking
+- `fileUpload.ts`: File upload mutations
+- `formSharing.ts`: Shareable link management
+- `invitations.ts`: Organization invitations
+- `better-auth.ts`: User/org GraphQL integration
+
+## Common Patterns
+
+### GraphQL Error Handling
+```typescript
+try {
+  // business logic
+  return result;
+} catch (error) {
+  console.error('Error in resolver:', error);
+  throw new Error('User-friendly message');
+}
+```
+
+### Prisma Transactions
+```typescript
+await prisma.$transaction(async (tx) => {
+  await tx.form.update({ /* ... */ });
+  await tx.formViewAnalytics.create({ /* ... */ });
+});
+```
+
+### Layout Component Pattern
+```typescript
+// All layout components (L1-L9) follow this pattern
+interface LayoutProps {
+  page: FormPage;
+  currentPageIndex: number;
+  totalPages: number;
+  onNavigate: (direction: 'next' | 'prev') => void;
+  layout: FormLayout;
+  mode?: RendererMode;
+  isEditMode?: boolean;
+  onEditModeChange?: (editing: boolean) => void;
+}
+
+export const Layout: React.FC<LayoutProps> = ({
+  mode = RendererMode.PREVIEW,
+  // ... other props
+}) => {
+  return (
+    <div>
+      {mode === RendererMode.BUILDER && <EditControls />}
+      <LexicalRichTextEditor editable={mode === RendererMode.BUILDER && isEditMode} />
+      <PageRenderer mode={mode} page={page} />
+    </div>
+  );
+};
+```
+
+## File Upload System
+
+- Static files stored in `static-files/` directory
+- GraphQL mutation: `uploadFile(file: Upload!): FileUploadResponse`
+- Returns `key`, `url`, `filename`, `mimeType`, `size`
+- Use `getImageUrl(key)` from `@dculus/utils` to construct full URLs
+
+## Infrastructure
+
+### Deployment
+- Backend: Azure Container Apps (Docker)
+- Frontend: Cloudflare Pages
+- Database: MongoDB Atlas (cloud)
+- Production URL: `https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io`
+
+### Environment Variables
+```bash
+# Backend (.env)
+DATABASE_URL="mongodb://..."
+BETTER_AUTH_SECRET="..."
+BETTER_AUTH_BASE_URL="http://localhost:4000"
+```
+
+## Key Documentation Files
+
+- `EXTERNAL_PLUGIN_SYSTEM.md`: Plugin architecture and SDK
+- `RENDERER_MODE_CHANGES.md`: Layout mode implementation details
+- `ANALYTICS.md`: Analytics system (form-viewer)
+- `GRAPHQL_AUTHORIZATION_GUIDE.md`: Authorization patterns
+- `test/integration/README.md`: Integration testing guide
+- `packages/ui/src/stores/README.md`: Zustand store usage
 
 ## LLM-Specific Guidance
 
-- **Deeply Understand Project Structure**: Always reason about where code should live (app, shared, types, etc.).
-- **Follow Monorepo Conventions**: Use pnpm workspaces, import paths, and shared build scripts.
-- **Use Modern TypeScript**: Use latest TS features (as supported by project config).
-- **No Unnecessary Boilerplate**: Be concise, DRY, and idiomatic.
-- **Documentation**: Add JSDoc/type comments for all exported functions/types.
+1. **Always check existing implementations** before creating new patterns
+2. **Import from shared packages** - never duplicate UI/utilities
+3. **Use GraphQL** - no REST endpoints except better-auth
+4. **Follow FormField class hierarchy** - serialize/deserialize properly
+5. **Pass `mode` prop** through layout components for correct rendering
+6. **Test with integration tests** - use `pnpm test:integration:by-tags`
+7. **Document with JSDoc** - all exported functions/types need comments
 
-## Development Commands
+## Quick Reference
 
-### App Running Commands
-- **Start All Services**: `pnpm dev` - Starts backend, form-app, and form-viewer concurrently
-- **Backend Only**: `pnpm backend:dev` - Start backend in development mode
-- **Form App Only**: `pnpm form-app:dev` - Start form builder app in development mode
-- **Form Viewer Only**: `pnpm form-viewer:dev` - Start form viewer app in development mode
+| Task | File/Location |
+|------|---------------|
+| Add GraphQL resolver | `apps/backend/src/graphql/resolvers/*.ts` |
+| Create UI component | `packages/ui/src/*.tsx` (export from index.ts) |
+| Add shared utility | `packages/utils/src/index.ts` |
+| Define types | `packages/types/src/index.ts` |
+| Add field type | Extend FormField class in `@dculus/types` |
+| Configure layout | `apps/form-app/src/components/form-builder/layout-renderer/L*.tsx` |
+| Add integration test | `test/integration/features/*.feature` + step definitions |
+| Add E2E test | `test/e2e/features/*.feature` + Playwright steps |
 
-### Database Commands
-- **Start Database**: `pnpm docker:up` - Start MongoDB container
-- **Stop Database**: `pnpm docker:down` - Stop MongoDB container
-- **Generate Prisma Client**: `pnpm db:generate` - Generate Prisma client from schema
-- **Push Schema**: `pnpm db:push` - Push schema changes to database
-- **Database Studio**: `pnpm db:studio` - Open Prisma Studio (visual DB editor)
-- **Seed Database**: `pnpm db:seed` - Seed database with sample data
+---
 
-### Build Commands
-- **Build All**: `pnpm build` - Build all packages and apps
-- **Build Backend**: `pnpm backend:build` - Build backend for production
-- **Build Form App**: `pnpm form-app:build` - Build form app for production
-- **Build Form Viewer**: `pnpm form-viewer:build` - Build form viewer for production
-
-### Quick Setup for New Development Environment
-1. Install dependencies: `pnpm install`
-2. Build shared packages: `pnpm build`
-3. Start database: `pnpm docker:up`
-4. Generate Prisma client: `pnpm db:generate`
-5. Push schema: `pnpm db:push`
-6. Start all apps: `pnpm dev`
-
-## Example Imports
-
-```typescript
-// Shared UI
-import { Button, Card, SidebarProvider } from '@dculus/ui';
-
-// Shared utilities and constants
-import { generateId, API_ENDPOINTS, cn } from '@dculus/utils';
-
-// Shared Types
-import type { Form, User, Organisation } from '@dculus/types';
-
-// Apollo Client
-import { useQuery, useMutation } from '@apollo/client';
-```
-
-## Collaborative Form Builder Implementation
-
-### Architecture Overview
-The collaborative form builder uses **YJS (Yjs)** for real-time collaborative editing with **y-mongodb-provider** for persistence and **y-websocket** for communication. The implementation follows a standard client-server architecture where multiple users can simultaneously edit form schemas, with changes being broadcasted in real-time and persisted to a MongoDB database.
-
-### Core Technologies
-- **YJS**: A CRDT implementation for real-time collaborative editing.
-- **y-websocket**: A WebSocket provider for YJS that handles real-time communication.
-- **y-mongodb-provider**: A persistence provider for YJS that stores documents in MongoDB.
-- **MongoDB**: A NoSQL database used to store the YJS documents.
-- **Express.js**: The backend server that hosts the WebSocket server.
-- **React Hooks**: The frontend uses a custom hook (`useCollaboration`) to integrate with the YJS backend.
-
-### Backend Implementation
-
-#### Collaboration Server (`/apps/backend/src/services/collaboration.ts`)
-The backend consists of a single file that sets up a WebSocket server and handles YJS document synchronization and persistence.
-
-**Key Features:**
-- **WebSocket Server**: A WebSocket server is created and attached to the main HTTP server. It listens for connections on the `/collaboration` path.
-- **YJS Document Management**: A map of YJS documents is maintained in memory. When a client connects, the corresponding document is either retrieved from the map or created and loaded from MongoDB.
-- **Persistence**: The `y-mongodb-provider` is used to persist YJS documents to a separate MongoDB database (`dculus_forms_yjs`).
-- **Synchronization**: The server uses `y-protocols` to handle the YJS synchronization protocol, broadcasting updates to all connected clients.
-
-### Frontend Implementation
-
-**Key Features:**
-- **`WebsocketProvider`**: The hook uses the `WebsocketProvider` from `y-websocket` to handle the WebSocket connection and synchronization.
-- **State Management**: The hook manages the connection status and the list of pages, which are synchronized with the YJS document.
-- **Real-time Updates**: The UI is automatically updated when the YJS document changes.
-
-### File Organization
-
-#### Backend Files
-```
-/apps/backend/src/
-├── services/
-│   └── collaboration.ts      # The main collaboration server
-├── index.ts                  # Initializes the collaboration server
-└── package.json              # Includes y-websocket, y-mongodb-provider, etc.
-```
-
-#### Frontend Files
-```
-/apps/form-app/src/
-├── pages/
-│   └── CollaborativeFormBuilder.tsx # The collaborative editing UI
-└── package.json              # Includes y-websocket
-```
-
-## Reference
-
-- See `README.md` for architecture, scripts, and conventions.
-- See `better_auth_llm_instructions.md` for all authentication/authorization logic.
+**Version**: 2.0 | **Last Updated**: 2025-01-12
