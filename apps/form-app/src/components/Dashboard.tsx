@@ -691,12 +691,22 @@ function FormCard({
           {showPermissionBadge && form.userPermission && (
             <div
               className={`px-3 py-1 rounded-full text-xs font-medium shadow-lg ${
-                form.userPermission === 'EDITOR'
+                form.userPermission === 'OWNER'
+                  ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                  : form.userPermission === 'EDITOR'
                   ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                  : 'bg-gray-100 text-gray-700 border border-gray-200'
+                  : form.userPermission === 'VIEWER'
+                  ? 'bg-gray-100 text-gray-700 border border-gray-200'
+                  : 'bg-red-100 text-red-700 border border-red-200'
               }`}
             >
-              {form.userPermission === 'EDITOR' ? 'Editor' : 'Viewer'}
+              {form.userPermission === 'OWNER'
+                ? 'Owner'
+                : form.userPermission === 'EDITOR'
+                ? 'Editor'
+                : form.userPermission === 'VIEWER'
+                ? 'Viewer'
+                : 'No Access'}
             </div>
           )}
         </div>
