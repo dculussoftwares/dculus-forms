@@ -49,10 +49,8 @@ type FilterCategory = 'all' | 'my-forms' | 'shared-with-me';
 function FormsListDashboard() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeFilter, setActiveFilter] = useState<FilterCategory>('my-forms'); // Changed default to 'my-forms'
-  const [myFormsPage, setMyFormsPage] = useState(1);
-  const [sharedFormsPage, setSharedFormsPage] = useState(1);
-  const [allFormsPage, setAllFormsPage] = useState(1);
+  const [activeFilter, setActiveFilter] = useState<FilterCategory>('my-forms');
+  const [currentPage, setCurrentPage] = useState(1); // Single page state
   const pageLimit = 12; // Forms per page
   
   const { data: orgData } = useQuery(GET_ACTIVE_ORGANIZATION);
@@ -61,7 +59,7 @@ function FormsListDashboard() {
   const { data: myFormsData, loading: myFormsLoading, error: myFormsError } = useQuery(GET_MY_FORMS_WITH_CATEGORY, {
     variables: { 
       organizationId: orgData?.activeOrganization?.id,
-      page: activeFilter === 'my-forms' ? myFormsPage : (activeFilter === 'all' ? allFormsPage : 1),
+      page: currentPage,
       limit: pageLimit,
       filters: searchTerm.trim() ? { search: searchTerm.trim() } : undefined
     },
@@ -71,7 +69,7 @@ function FormsListDashboard() {
   const { data: sharedFormsData, loading: sharedFormsLoading, error: sharedFormsError } = useQuery(GET_SHARED_FORMS_WITH_CATEGORY, {
     variables: { 
       organizationId: orgData?.activeOrganization?.id,
-      page: activeFilter === 'shared-with-me' ? sharedFormsPage : (activeFilter === 'all' ? allFormsPage : 1),
+      page: currentPage,
       limit: pageLimit,
       filters: searchTerm.trim() ? { search: searchTerm.trim() } : undefined
     },
@@ -96,16 +94,12 @@ function FormsListDashboard() {
 
   // Reset to page 1 when search changes
   useEffect(() => {
-    setMyFormsPage(1);
-    setSharedFormsPage(1);
-    setAllFormsPage(1);
+    setCurrentPage(1);
   }, [searchTerm]);
 
   // Reset to page 1 when filter changes
   useEffect(() => {
-    setMyFormsPage(1);
-    setSharedFormsPage(1);
-    setAllFormsPage(1);
+    setCurrentPage(1);
   }, [activeFilter]);
 
   // Determine which forms to display based on filter
@@ -116,7 +110,7 @@ function FormsListDashboard() {
       return { forms: sharedForms, pagination: sharedFormsPagination, showPermissionBadge: true };
     } else {
       // For "all" filter, show combined results from both queries
-      // Both queries use the same page number (allFormsPage)
+      // Both queries use the same page number (currentPage)
       const allForms = [...myForms, ...sharedForms];
       const totalCount = myFormsTotalCount + sharedFormsTotalCount;
       const totalPages = Math.ceil(totalCount / pageLimit);
@@ -125,11 +119,11 @@ function FormsListDashboard() {
       const combinedPagination = {
         forms: allForms,
         totalCount,
-        page: allFormsPage,
+        page: currentPage,
         limit: pageLimit,
         totalPages,
-        hasNextPage: allFormsPage < totalPages,
-        hasPreviousPage: allFormsPage > 1,
+        hasNextPage: currentPage < totalPages,
+        hasPreviousPage: currentPage > 1,
       };
       
       return {
@@ -138,16 +132,10 @@ function FormsListDashboard() {
         showPermissionBadge: false,
       };
     }
-  }, [activeFilter, myForms, sharedForms, myFormsPagination, sharedFormsPagination, myFormsTotalCount, sharedFormsTotalCount, allFormsPage, pageLimit]);
+  }, [activeFilter, myForms, sharedForms, myFormsPagination, sharedFormsPagination, myFormsTotalCount, sharedFormsTotalCount, currentPage, pageLimit]);
 
   const handlePageChange = (page: number) => {
-    if (activeFilter === 'my-forms') {
-      setMyFormsPage(page);
-    } else if (activeFilter === 'shared-with-me') {
-      setSharedFormsPage(page);
-    } else if (activeFilter === 'all') {
-      setAllFormsPage(page);
-    }
+    setCurrentPage(page);
     // Scroll to top when page changes
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
