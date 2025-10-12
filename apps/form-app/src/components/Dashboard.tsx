@@ -49,11 +49,21 @@ type FilterCategory = 'all' | 'my-forms' | 'shared-with-me';
 function FormsListDashboard() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('my-forms');
   const [currentPage, setCurrentPage] = useState(1); // Single page state
   const pageLimit = 12; // Forms per page
   
   const { data: orgData } = useQuery(GET_ACTIVE_ORGANIZATION);
+
+  // Debounce search term to avoid excessive queries
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500); // Wait 500ms after user stops typing
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // Separate queries for each category with pagination
   const { data: myFormsData, loading: myFormsLoading, error: myFormsError } = useQuery(GET_MY_FORMS_WITH_CATEGORY, {
@@ -61,7 +71,7 @@ function FormsListDashboard() {
       organizationId: orgData?.activeOrganization?.id,
       page: currentPage,
       limit: pageLimit,
-      filters: searchTerm.trim() ? { search: searchTerm.trim() } : undefined
+      filters: debouncedSearchTerm.trim() ? { search: debouncedSearchTerm.trim() } : undefined
     },
     skip: !orgData?.activeOrganization?.id || activeFilter === 'shared-with-me',
   });
@@ -71,7 +81,7 @@ function FormsListDashboard() {
       organizationId: orgData?.activeOrganization?.id,
       page: currentPage,
       limit: pageLimit,
-      filters: searchTerm.trim() ? { search: searchTerm.trim() } : undefined
+      filters: debouncedSearchTerm.trim() ? { search: debouncedSearchTerm.trim() } : undefined
     },
     skip: !orgData?.activeOrganization?.id || activeFilter === 'my-forms',
   });
@@ -91,11 +101,14 @@ function FormsListDashboard() {
   // Loading and error states
   const formsLoading = myFormsLoading || sharedFormsLoading;
   const formsError = myFormsError || sharedFormsError;
+  
+  // Show typing indicator when user is typing but query hasn't fired yet
+  const isTyping = searchTerm !== debouncedSearchTerm && searchTerm.length > 0;
 
-  // Reset to page 1 when search changes
+  // Reset to page 1 when debounced search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [debouncedSearchTerm]);
 
   // Reset to page 1 when filter changes
   useEffect(() => {
@@ -169,8 +182,8 @@ function FormsListDashboard() {
           </Button>
         </div>
 
-        {/* Search Bar */}
-        {allFormsTotalCount > 0 && (
+        {/* Search Bar - Show during loading or when forms exist */}
+        {(formsLoading || allFormsTotalCount > 0) && (
           <div className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="relative flex-1 max-w-md">
@@ -181,6 +194,11 @@ function FormsListDashboard() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 pr-10"
                 />
+                {isTyping && (
+                  <div className="absolute right-10 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                    Searching...
+                  </div>
+                )}
                 {searchTerm && (
                   <Button
                     variant="ghost"
