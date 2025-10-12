@@ -419,18 +419,16 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
 
       {/* Current page form */}
       {currentPage && (
-        <div className="bg-white rounded-lg p-6 shadow-lg">
-          <SinglePageForm
-            page={currentPage}
-            layoutStyles={layoutStyles}
-            mode={mode}
-            onSubmit={handlePageSubmit}
-            showSubmitButton={false} // Navigation handles submission
-            formRef={currentPageFormRef}
-            onValidationChange={currentPageValidationHandler}
-            enableRealtimeValidation={true}
-          />
-        </div>
+        <SinglePageForm
+          page={currentPage}
+          layoutStyles={layoutStyles}
+          mode={mode}
+          onSubmit={handlePageSubmit}
+          showSubmitButton={false} // Navigation handles submission
+          formRef={currentPageFormRef}
+          onValidationChange={currentPageValidationHandler}
+          enableRealtimeValidation={true}
+        />
       )}
 
       {/* Page dots indicator */}

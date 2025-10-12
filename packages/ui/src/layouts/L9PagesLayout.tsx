@@ -69,10 +69,6 @@ export const L9PagesLayout: React.FC<LayoutProps> = ({
           {/* Pages content with white background container */}
           <div className="h-full relative z-10 p-8 overflow-y-auto">
             <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-              <h2 className="text-2xl font-light text-gray-900 dark:text-white mb-8 tracking-wide">
-                Form
-              </h2>
-              
               <PageRenderer
                 pages={pages}
                 layoutStyles={getLayoutStyles()}

@@ -234,10 +234,6 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
                   Back to Intro
                 </button>
                 
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                  Form Pages
-                </h2>
-                
                 <PageRenderer
                   pages={pages}
                   layoutStyles={getLayoutStyles()}

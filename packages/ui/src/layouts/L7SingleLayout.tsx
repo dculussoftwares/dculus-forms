@@ -229,10 +229,6 @@ export const L7SingleLayout: React.FC<LayoutProps> = ({
                   Back to Intro
                 </button>
                 
-                <h2 className="text-2xl font-light text-gray-900 dark:text-white mb-8 tracking-wide">
-                  Form Pages
-                </h2>
-                
                 <PageRenderer
                   pages={pages}
                   layoutStyles={getLayoutStyles()}

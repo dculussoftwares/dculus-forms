@@ -183,10 +183,6 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
 
               {/* Pages from schema displayed vertically */}
               <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
-                <h2 className="text-xl font-light text-gray-900 dark:text-white mb-6 tracking-wide">
-                  Form Pages
-                </h2>
-                
                 <PageRenderer
                   pages={pages}
                   layoutStyles={getLayoutStyles()}
