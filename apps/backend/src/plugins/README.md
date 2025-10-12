@@ -12,10 +12,12 @@ Plugins extend form functionality by reacting to lifecycle events like form subm
 plugins/
 ├── README.md                    # This file
 ├── base/
-│   └── BasePlugin.ts            # Abstract base class for all plugins
+│   ├── BasePlugin.ts            # Abstract base class for all plugins
+│   └── PluginContext.ts         # Organization-scoped API access
 ├── hello-world/
 │   ├── index.ts                 # Example plugin implementation
-│   └── schema.ts                # Example configuration schema
+│   ├── schema.ts                # Example configuration schema
+│   └── README.md                # Plugin documentation
 └── registry.ts                  # Plugin registry (singleton)
 ```
 
@@ -83,8 +85,17 @@ plugins/
        return myPluginConfigSchema;
      }
 
-     async onFormSubmitted(event: FormSubmittedEvent): Promise<void> {
+     async onFormSubmitted(
+       event: FormSubmittedEvent,
+       context: PluginContext
+     ): Promise<void> {
        const config = await this.getConfig(event.formId);
+
+       // Use context to access form data
+       const form = await context.getForm(event.formId);
+       const response = await context.getResponse(event.responseId);
+
+       console.log(`Form: "${form.title}"`);
        // Your plugin logic here
      }
    }
@@ -120,7 +131,11 @@ abstract class BasePlugin {
   abstract getConfigSchema(): z.ZodSchema;
 
   // Main execution logic when form is submitted
-  abstract onFormSubmitted(event: FormSubmittedEvent): Promise<void>;
+  // Receives event data and organization-scoped PluginContext
+  abstract onFormSubmitted(
+    event: FormSubmittedEvent,
+    context: PluginContext
+  ): Promise<void>;
 }
 ```
 
@@ -135,6 +150,52 @@ async onDisabled(formId: string): Promise<void> { }
 
 // Called when plugin is uninstalled
 async onUninstalled(formId: string): Promise<void> { }
+```
+
+### Plugin Context API
+
+Plugins receive a `PluginContext` instance that provides organization-scoped access to form data:
+
+```typescript
+class PluginContext {
+  // Get form details (organization-scoped)
+  async getForm(formId: string): Promise<Form>
+
+  // Get response details with form included
+  async getResponse(responseId: string): Promise<Response & { form: Form }>
+
+  // List responses for a form (default limit: 100, max: 1000)
+  async listResponses(formId: string, limit?: number): Promise<Response[]>
+
+  // Get organization details
+  async getOrganization(): Promise<Organization>
+
+  // Get organization/form IDs (for logging)
+  getOrganizationId(): string
+  getFormId(): string
+}
+```
+
+**Security**: All methods automatically enforce organization boundaries. Attempting to access data from other organizations will throw an error.
+
+**Example Usage**:
+
+```typescript
+async onFormSubmitted(
+  event: FormSubmittedEvent,
+  context: PluginContext
+): Promise<void> {
+  // Get form and response details
+  const form = await context.getForm(event.formId);
+  const response = await context.getResponse(event.responseId);
+
+  console.log(`Form: "${form.title}"`);
+  console.log(`Response:`, response.data);
+
+  // List all responses
+  const responses = await context.listResponses(event.formId, 50);
+  console.log(`Total responses: ${responses.length}`);
+}
 ```
 
 ### Built-in Methods
@@ -325,9 +386,13 @@ url: z.string().url().refine(
 ### Error Handling
 
 ```typescript
-async onFormSubmitted(event: FormSubmittedEvent): Promise<void> {
+async onFormSubmitted(
+  event: FormSubmittedEvent,
+  context: PluginContext
+): Promise<void> {
   try {
-    // Your logic
+    const form = await context.getForm(event.formId);
+    // Your logic here
   } catch (error: any) {
     console.error(`[${this.metadata.id}] Error:`, error.message);
     throw error; // Let BasePlugin.execute() handle it
@@ -423,7 +488,9 @@ async execute(event: FormSubmittedEvent): Promise<void> {
     return;
   }
 
-  await this.onFormSubmitted(event);
+  // Create context and call plugin
+  const context = new PluginContext(event.organizationId, event.formId);
+  await this.onFormSubmitted(event, context);
 }
 ```
 

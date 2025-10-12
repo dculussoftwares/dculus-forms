@@ -10,6 +10,10 @@ This document describes the **implemented event-driven plugin system** for dculu
 
 1. [Architecture Overview](#architecture-overview)
 2. [Core Components](#core-components)
+   - Base Plugin Class
+   - Plugin Context API
+   - Plugin Registry
+   - Plugin Service
 3. [Event System](#event-system)
 4. [Database Schema](#database-schema)
 5. [Plugin Development Guide](#plugin-development-guide)
@@ -192,7 +196,7 @@ export interface PluginMetadata {
 | Method | Return Type | Purpose |
 |--------|------------|---------|
 | `getConfigSchema()` | `z.ZodSchema` | Returns Zod validation schema for plugin config |
-| `onFormSubmitted(event)` | `Promise<void>` | Main execution logic when form is submitted |
+| `onFormSubmitted(event, context)` | `Promise<void>` | Main execution logic when form is submitted. Receives event data and organization-scoped PluginContext |
 
 **Optional Lifecycle Hooks**:
 
@@ -241,10 +245,20 @@ export class MyPlugin extends BasePlugin {
     });
   }
 
-  async onFormSubmitted(event: FormSubmittedEvent): Promise<void> {
+  async onFormSubmitted(
+    event: FormSubmittedEvent,
+    context: PluginContext  // Organization-scoped context
+  ): Promise<void> {
     const config = await this.getConfig(event.formId);
 
     console.log(`Processing form ${event.formId} with config:`, config);
+
+    // Use context to access form data
+    const form = await context.getForm(event.formId);
+    const response = await context.getResponse(event.responseId);
+
+    console.log(`Form: "${form.title}"`);
+    console.log(`Response data:`, response.data);
 
     // Your plugin logic here
     // - Make API calls
@@ -260,7 +274,105 @@ export class MyPlugin extends BasePlugin {
 }
 ```
 
-### 3. Plugin Registry (`apps/backend/src/plugins/registry.ts`)
+### 3. Plugin Context API (`apps/backend/src/plugins/base/PluginContext.ts`)
+
+Provides organization-scoped API access to plugins without requiring custom API keys. Plugins receive a `PluginContext` instance automatically when events are triggered.
+
+**File Location**: [apps/backend/src/plugins/base/PluginContext.ts](apps/backend/src/plugins/base/PluginContext.ts)
+
+**Key Features**:
+- **Automatic organization scoping**: All methods enforce organization boundaries
+- **No authentication needed**: Context inherits organization from event
+- **Type-safe API**: Leverages existing Prisma models
+- **Security by design**: Plugins cannot access other organizations' data
+
+**Available Methods**:
+
+```typescript
+class PluginContext {
+  // Get form details (automatically scoped to plugin's organization)
+  async getForm(formId: string): Promise<Form>
+
+  // Get response details with form included
+  async getResponse(responseId: string): Promise<Response & { form: Form }>
+
+  // List responses for a form (with optional limit, default 100, max 1000)
+  async listResponses(formId: string, limit?: number): Promise<Response[]>
+
+  // Get organization details
+  async getOrganization(): Promise<Organization>
+
+  // Get current organization ID (for logging/debugging)
+  getOrganizationId(): string
+
+  // Get current form ID (for logging/debugging)
+  getFormId(): string
+}
+```
+
+**Usage Example**:
+
+```typescript
+import { BasePlugin, PluginContext } from '../base/BasePlugin.js';
+import type { FormSubmittedEvent } from '../../lib/events.js';
+
+export class MyPlugin extends BasePlugin {
+  async onFormSubmitted(
+    event: FormSubmittedEvent,
+    context: PluginContext  // Organization-scoped context
+  ): Promise<void> {
+    // Get form details
+    const form = await context.getForm(event.formId);
+    console.log(`Form title: ${form.title}`);
+
+    // Get response details
+    const response = await context.getResponse(event.responseId);
+    console.log(`Response data:`, response.data);
+
+    // List all responses for this form
+    const allResponses = await context.listResponses(event.formId, 50);
+    console.log(`Total responses: ${allResponses.length}`);
+
+    // Get organization info
+    const org = await context.getOrganization();
+    console.log(`Organization: ${org.name}`);
+
+    // Context methods automatically enforce organization boundaries
+    // Attempting to access data from other organizations will throw an error
+  }
+}
+```
+
+**Security Model**:
+
+The PluginContext automatically scopes all operations to the organization that owns the form. This means:
+
+✅ **Allowed**:
+- Access forms within the same organization
+- Access responses for forms in the same organization
+- List responses for forms in the same organization
+
+❌ **Blocked** (throws error):
+- Access forms from other organizations
+- Access responses from other organizations
+- Cross-organization data access
+
+**Error Handling**:
+
+```typescript
+try {
+  const form = await context.getForm(formId);
+  // Process form...
+} catch (error) {
+  // Error thrown if:
+  // - Form not found
+  // - Form belongs to different organization
+  // - Database error
+  console.error('Failed to access form:', error.message);
+}
+```
+
+### 4. Plugin Registry (`apps/backend/src/plugins/registry.ts`)
 
 Centralized singleton that manages all plugin instances and coordinates the plugin lifecycle.
 
@@ -635,14 +747,21 @@ export class MyPlugin extends BasePlugin {
     return myPluginConfigSchema;
   }
 
-  async onFormSubmitted(event: FormSubmittedEvent): Promise<void> {
+  async onFormSubmitted(
+    event: FormSubmittedEvent,
+    context: PluginContext  // Organization-scoped context
+  ): Promise<void> {
     const config = await this.getConfig(event.formId) as MyPluginConfig;
 
     console.log(`[${this.metadata.id}] Processing form submission...`);
 
     try {
+      // Use context to get form details
+      const form = await context.getForm(event.formId);
+      const response = await context.getResponse(event.responseId);
+
       // Make webhook request
-      const response = await fetch(config.webhookUrl, {
+      const webhookResponse = await fetch(config.webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -650,18 +769,20 @@ export class MyPlugin extends BasePlugin {
         },
         body: JSON.stringify({
           formId: event.formId,
+          formTitle: form.title,  // Now we have access to form title!
           responseId: event.responseId,
-          data: event.data,
+          data: response.data,
           submittedAt: event.submittedAt,
+          organizationId: event.organizationId,
         }),
         signal: AbortSignal.timeout(config.timeout),
       });
 
-      if (!response.ok) {
-        throw new Error(`Webhook request failed: ${response.statusText}`);
+      if (!webhookResponse.ok) {
+        throw new Error(`Webhook request failed: ${webhookResponse.statusText}`);
       }
 
-      console.log(`[${this.metadata.id}] Webhook sent successfully`);
+      console.log(`[${this.metadata.id}] Webhook sent successfully for form "${form.title}"`);
     } catch (error: any) {
       console.error(`[${this.metadata.id}] Webhook failed:`, error.message);
       throw error; // Re-throw to be caught by execute() wrapper
@@ -1439,18 +1560,35 @@ export class HelloWorldPlugin extends BasePlugin {
     );
   }
 
-  async onFormSubmitted(event: FormSubmittedEvent): Promise<void> {
+  async onFormSubmitted(
+    event: FormSubmittedEvent,
+    context: PluginContext  // Organization-scoped context
+  ): Promise<void> {
     const config = await this.getConfig(event.formId);
 
-    console.log('============================================================');
+    if (!config) {
+      console.log(`[HelloWorld] No configuration found for form: ${event.formId}`);
+      return;
+    }
+
+    // Use context to get form and response details
+    const form = await context.getForm(event.formId);
+    const response = await context.getResponse(event.responseId);
+
+    const separator = '='.repeat(60);
+    const timestamp = new Date(event.submittedAt).toLocaleString();
+
+    console.log('\n' + separator);
     console.log('🎉 HELLO WORLD PLUGIN TRIGGERED!');
-    console.log('============================================================');
-    console.log('📝 Message:', config.message);
-    console.log('📋 Form ID:', event.formId);
-    console.log('🆔 Response ID:', event.responseId);
-    console.log('🏢 Organization ID:', event.organizationId);
-    console.log('⏰ Timestamp:', new Date(event.submittedAt).toLocaleString());
-    console.log('============================================================');
+    console.log(separator);
+    console.log(`📝 Message: ${config.message}`);
+    console.log(`📋 Form: "${form.title}" (${event.formId})`);
+    console.log(`🆔 Response ID: ${event.responseId}`);
+    console.log(`🏢 Organization ID: ${event.organizationId}`);
+    console.log(`⏰ Timestamp: ${timestamp}`);
+    console.log('📊 Response Data:');
+    console.log(JSON.stringify(response.data, null, 2));
+    console.log(separator + '\n');
   }
 }
 ```

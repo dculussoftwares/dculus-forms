@@ -111,16 +111,30 @@ export class WebhookPlugin extends BasePlugin {
     return webhookConfigSchema;
   }
 
-  async onFormSubmitted(event: FormSubmittedEvent): Promise<void> {
+  async onFormSubmitted(
+    event: FormSubmittedEvent,
+    context: PluginContext  // Organization-scoped context
+  ): Promise<void> {
     const config = await this.getConfig(event.formId) as WebhookConfig;
 
     console.log(`[Webhook] Sending to ${config.url}`);
 
+    // Use context to get form and response details
+    const form = await context.getForm(event.formId);
+    const response = await context.getResponse(event.responseId);
+
     const payload = {
       event: 'form.submitted',
       timestamp: event.submittedAt.toISOString(),
-      form: { id: event.formId, organizationId: event.organizationId },
-      response: { id: event.responseId, data: event.data },
+      form: {
+        id: event.formId,
+        title: form.title,  // Now we have access to form title!
+        organizationId: event.organizationId,
+      },
+      response: {
+        id: event.responseId,
+        data: response.data,  // Use response data from context
+      },
     };
 
     await this.sendWithRetry(config, payload);
@@ -505,9 +519,16 @@ url: z.string()
 ### Error Handling
 
 ```typescript
-async onFormSubmitted(event: FormSubmittedEvent): Promise<void> {
+async onFormSubmitted(
+  event: FormSubmittedEvent,
+  context: PluginContext
+): Promise<void> {
   try {
-    // Your logic
+    // Use context API to access data
+    const form = await context.getForm(event.formId);
+    const response = await context.getResponse(event.responseId);
+
+    // Your logic here...
   } catch (error: any) {
     console.error(`[${this.metadata.id}] Error:`, error.message);
     throw error; // Let BasePlugin.execute() handle it
@@ -540,8 +561,11 @@ const [result1, result2] = await Promise.all([
 ```typescript
 // ✅ Extract helper methods
 class MyPlugin extends BasePlugin {
-  async onFormSubmitted(event: FormSubmittedEvent): Promise<void> {
-    const payload = this.buildPayload(event);
+  async onFormSubmitted(
+    event: FormSubmittedEvent,
+    context: PluginContext
+  ): Promise<void> {
+    const payload = await this.buildPayload(event, context);
     await this.sendWithRetry(payload);
   }
 

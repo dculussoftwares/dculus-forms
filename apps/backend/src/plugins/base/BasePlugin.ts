@@ -8,6 +8,10 @@
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma.js';
 import type { FormSubmittedEvent } from '../../lib/events.js';
+import { PluginContext } from './PluginContext.js';
+
+// Re-export PluginContext for convenience
+export { PluginContext };
 
 export interface PluginMetadata {
   id: string; // Unique plugin identifier (e.g., 'hello-world')
@@ -42,8 +46,14 @@ export abstract class BasePlugin {
   /**
    * Handle form submission event
    * Override this method to implement custom logic
+   *
+   * @param event - Form submission event data
+   * @param context - Plugin context with org-scoped API access
    */
-  abstract onFormSubmitted(event: FormSubmittedEvent): Promise<void>;
+  abstract onFormSubmitted(
+    event: FormSubmittedEvent,
+    context: PluginContext
+  ): Promise<void>;
 
   /**
    * Get plugin configuration for a specific form
@@ -123,8 +133,11 @@ export abstract class BasePlugin {
         return;
       }
 
-      // Execute the plugin-specific logic
-      await this.onFormSubmitted(event);
+      // Create organization-scoped context for this plugin
+      const context = new PluginContext(event.organizationId, event.formId);
+
+      // Execute the plugin-specific logic with context
+      await this.onFormSubmitted(event, context);
     } catch (error) {
       console.error(
         `[Plugin: ${this.metadata.id}] Error executing plugin:`,
