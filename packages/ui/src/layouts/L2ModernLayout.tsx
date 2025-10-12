@@ -18,9 +18,9 @@ export const L2ModernLayout: React.FC<LayoutProps> = ({
     field: {
       container: 'mb-6',
       label: 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2',
-      input: 'w-full h-12 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg px-4 text-gray-500',
-      textarea: 'w-full h-32 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg px-4 py-3 text-gray-500',
-      select: 'w-full h-12 bg-gray-50 dark:bg-gray-700 border-0 rounded-lg px-4 text-gray-500',
+      input: 'w-full h-12 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-4 text-gray-900 dark:text-gray-100',
+      textarea: 'w-full h-32 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-3 text-gray-900 dark:text-gray-100',
+      select: 'w-full h-12 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-4 text-gray-900 dark:text-gray-100',
     },
     submitButton: 'w-full h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-md flex items-center justify-center'
   });
@@ -229,13 +229,13 @@ export const L2ModernLayout: React.FC<LayoutProps> = ({
               ></div>
             )}
             
-            {/* Pages content without center background container */}
+            {/* Pages content with white background container */}
             <div className="h-full relative z-10 p-8 overflow-y-auto">
-              <div className="max-w-2xl mx-auto">
+              <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
                 {/* Back button */}
                 <button
                   onClick={() => setShowPages(false)}
-                  className="flex items-center gap-2 text-white/80 hover:text-white mb-4 transition-colors"
+                  className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white mb-4 transition-colors"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -243,7 +243,7 @@ export const L2ModernLayout: React.FC<LayoutProps> = ({
                   Back to Intro
                 </button>
                 
-                <h2 className="text-2xl font-bold text-white mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
                   Form Pages
                 </h2>
                 

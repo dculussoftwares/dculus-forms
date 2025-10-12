@@ -18,9 +18,9 @@ export const L4MinimalLayout: React.FC<LayoutProps> = ({
     field: {
       container: 'mb-8',
       label: 'block text-xs font-light text-gray-500 dark:text-gray-400 mt-2',
-      input: 'w-full h-12 bg-transparent border-b border-gray-200 dark:border-gray-700 px-0 text-gray-500',
-      textarea: 'w-full h-32 bg-transparent border-b border-gray-200 dark:border-gray-700 px-0 py-0 text-gray-500',
-      select: 'w-full h-12 bg-transparent border-b border-gray-200 dark:border-gray-700 px-0 text-gray-500',
+      input: 'w-full h-12 bg-transparent border-b-2 border-gray-300 dark:border-gray-600 px-0 text-gray-900 dark:text-gray-100 focus:border-gray-600 dark:focus:border-gray-400',
+      textarea: 'w-full h-32 bg-transparent border-b-2 border-gray-300 dark:border-gray-600 px-0 py-0 text-gray-900 dark:text-gray-100 focus:border-gray-600 dark:focus:border-gray-400',
+      select: 'w-full h-12 bg-transparent border-b-2 border-gray-300 dark:border-gray-600 px-0 text-gray-900 dark:text-gray-100 focus:border-gray-600 dark:focus:border-gray-400',
     },
     submitButton: 'w-full h-12 bg-slate-800 rounded-lg flex items-center justify-center'
   });
@@ -229,9 +229,9 @@ export const L4MinimalLayout: React.FC<LayoutProps> = ({
               ></div>
             )}
             
-            {/* Pages content without center background container */}
+            {/* Pages content with white background container */}
             <div className="h-full relative z-10 p-8 overflow-y-auto">
-              <div className="max-w-2xl mx-auto">
+              <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
                 {/* Back button */}
                 <button
                   onClick={() => setShowPages(false)}

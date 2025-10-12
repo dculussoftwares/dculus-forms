@@ -18,9 +18,9 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
     field: {
       container: 'mb-6',
       label: 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2',
-      input: 'w-full h-12 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 text-gray-500',
-      textarea: 'w-full h-24 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-gray-500',
-      select: 'w-full h-12 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 text-gray-500',
+      input: 'w-full h-12 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 text-gray-900 dark:text-gray-100',
+      textarea: 'w-full h-24 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-gray-900 dark:text-gray-100',
+      select: 'w-full h-12 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 text-gray-900 dark:text-gray-100',
     },
     submitButton: 'w-full h-12 bg-blue-600 rounded-lg flex items-center justify-center'
   });
@@ -182,8 +182,8 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
               </div>
 
               {/* Pages from schema displayed vertically */}
-              <div className="rounded-lg p-6 shadow-lg">
-                <h2 className="text-xl font-light text-gray-900 mb-6 tracking-wide">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
+                <h2 className="text-xl font-light text-gray-900 dark:text-white mb-6 tracking-wide">
                   Form Pages
                 </h2>
                 

@@ -17,9 +17,9 @@ export const L8ImageLayout: React.FC<LayoutProps> = ({
     field: {
       container: 'mb-6',
       label: 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2',
-      input: 'w-full h-12 bg-white/80 backdrop-blur-sm border border-gray-300 rounded-lg px-4 text-gray-700',
-      textarea: 'w-full h-24 bg-white/80 backdrop-blur-sm border border-gray-300 rounded-lg px-4 py-3 text-gray-700',
-      select: 'w-full h-12 bg-white/80 backdrop-blur-sm border border-gray-300 rounded-lg px-4 text-gray-700',
+      input: 'w-full h-12 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 text-gray-900 dark:text-gray-100',
+      textarea: 'w-full h-24 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-gray-900 dark:text-gray-100',
+      select: 'w-full h-12 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 text-gray-900 dark:text-gray-100',
     },
     submitButton: 'w-full h-12 bg-slate-800 rounded-lg flex items-center justify-center'
   });
@@ -122,9 +122,9 @@ export const L8ImageLayout: React.FC<LayoutProps> = ({
               ></div>
             )}
             
-            {/* Pages content without center background container */}
+            {/* Pages content with white background container */}
             <div className="h-full relative z-10 p-8 overflow-y-auto">
-              <div className="max-w-2xl mx-auto">
+              <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
                 {/* Back button */}
                 <button
                   onClick={() => setShowPages(false)}

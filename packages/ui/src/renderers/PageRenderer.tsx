@@ -275,7 +275,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <h3 className="text-xl font-semibold text-white">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Page {currentPageIndex + 1} of {pages.length}:{' '}
                 {pages[currentPageIndex]?.title}
               </h3>
@@ -300,7 +300,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
               <button
                 onClick={goToPrevPage}
                 disabled={!navigationState.canGoPrevious}
-                className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-white bg-white/20 hover:bg-white/30 disabled:bg-white/10 disabled:text-white/50 rounded-md transition-colors"
+                className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-700 dark:text-white bg-gray-100 dark:bg-white/20 hover:bg-gray-200 dark:hover:bg-white/30 disabled:bg-gray-50 dark:disabled:bg-white/10 disabled:text-gray-400 dark:disabled:text-white/50 rounded-md transition-colors"
               >
                 <svg
                   className="w-4 h-4"
@@ -317,7 +317,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
                 </svg>
                 Previous
               </button>
-              <span className="text-white/80 text-sm px-2">
+              <span className="text-gray-700 dark:text-white/80 text-sm px-2">
                 {currentPageIndex + 1} / {pages.length}
               </span>
               {navigationState.isLastPage ? (
@@ -446,8 +446,8 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
                 onClick={() => goToPage(index)}
                 className={`relative w-3 h-3 rounded-full transition-colors ${
                   isCurrentPage
-                    ? 'bg-white'
-                    : 'bg-white/30 hover:bg-white/50'
+                    ? 'bg-gray-900 dark:bg-white'
+                    : 'bg-gray-300 dark:bg-white/30 hover:bg-gray-400 dark:hover:bg-white/50'
                 }`}
                 aria-label={`Go to page ${index + 1}${isPageValid ? ' (completed)' : ''}`}
                 title={`Page ${index + 1}${page.title ? `: ${page.title}` : ''}${isPageValid ? ' ✓' : ''}`}
