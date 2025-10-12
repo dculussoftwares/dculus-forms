@@ -96,12 +96,12 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
               type="text"
               value={layout.customCTAButtonName || ''}
               onChange={(e) => canEditLayout && onLayoutUpdate({ customCTAButtonName: e.target.value })}
-              placeholder="Enter button text..."
+              placeholder="Get Started"
               disabled={!canEditLayout}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Customize the text for call-to-action buttons
+              Button text to start filling the form (e.g., "Get Started", "Begin Survey")
             </p>
           </div>
         </div>

@@ -89,7 +89,7 @@ export const LayoutPreview: React.FC<LayoutPreviewProps> = ({ layout, className 
                 className="px-4 py-2 bg-blue-500 text-white rounded text-sm font-medium"
                 style={{ backgroundColor: layout.theme === ThemeType.DARK ? '#3b82f6' : '#2563eb' }}
               >
-                {layout.customCTAButtonName || 'Submit'}
+                {layout.customCTAButtonName || 'Get Started'}
               </div>
             </div>
           </div>
