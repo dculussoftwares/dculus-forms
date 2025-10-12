@@ -6,11 +6,12 @@ import {
   TypographyH3,
   Button,
   Input,
+  Pagination,
 } from '@dculus/ui';
 import { MainLayout } from "./MainLayout";
 import { FileText, Eye, Plus, Users2, Edit3, Search, X } from 'lucide-react';
 import { useNavigate, Routes, Route } from 'react-router-dom';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@apollo/client';
 import { GET_ACTIVE_ORGANIZATION, GET_MY_FORMS_WITH_CATEGORY, GET_SHARED_FORMS_WITH_CATEGORY } from '../graphql/queries';
 import Templates from '../pages/Templates';
@@ -48,68 +49,108 @@ type FilterCategory = 'all' | 'my-forms' | 'shared-with-me';
 function FormsListDashboard() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeFilter, setActiveFilter] = useState<FilterCategory>('all');
+  const [activeFilter, setActiveFilter] = useState<FilterCategory>('my-forms'); // Changed default to 'my-forms'
+  const [myFormsPage, setMyFormsPage] = useState(1);
+  const [sharedFormsPage, setSharedFormsPage] = useState(1);
+  const [allFormsPage, setAllFormsPage] = useState(1);
+  const pageLimit = 12; // Forms per page
+  
   const { data: orgData } = useQuery(GET_ACTIVE_ORGANIZATION);
 
-  // Separate queries for each category
+  // Separate queries for each category with pagination
   const { data: myFormsData, loading: myFormsLoading, error: myFormsError } = useQuery(GET_MY_FORMS_WITH_CATEGORY, {
-    variables: { organizationId: orgData?.activeOrganization?.id },
-    skip: !orgData?.activeOrganization?.id,
+    variables: { 
+      organizationId: orgData?.activeOrganization?.id,
+      page: activeFilter === 'my-forms' ? myFormsPage : (activeFilter === 'all' ? allFormsPage : 1),
+      limit: pageLimit,
+      filters: searchTerm.trim() ? { search: searchTerm.trim() } : undefined
+    },
+    skip: !orgData?.activeOrganization?.id || activeFilter === 'shared-with-me',
   });
 
   const { data: sharedFormsData, loading: sharedFormsLoading, error: sharedFormsError } = useQuery(GET_SHARED_FORMS_WITH_CATEGORY, {
-    variables: { organizationId: orgData?.activeOrganization?.id },
-    skip: !orgData?.activeOrganization?.id,
+    variables: { 
+      organizationId: orgData?.activeOrganization?.id,
+      page: activeFilter === 'shared-with-me' ? sharedFormsPage : (activeFilter === 'all' ? allFormsPage : 1),
+      limit: pageLimit,
+      filters: searchTerm.trim() ? { search: searchTerm.trim() } : undefined
+    },
+    skip: !orgData?.activeOrganization?.id || activeFilter === 'my-forms',
   });
 
-  // Extract forms from responses
-  const myForms = myFormsData?.formsWithCategory || [];
-  const sharedForms = sharedFormsData?.formsWithCategory || [];
-  const allForms = [...myForms, ...sharedForms];
+  // Extract forms and pagination info from responses
+  const myForms = myFormsData?.formsWithCategory?.forms || [];
+  const myFormsPagination = myFormsData?.formsWithCategory;
+  
+  const sharedForms = sharedFormsData?.formsWithCategory?.forms || [];
+  const sharedFormsPagination = sharedFormsData?.formsWithCategory;
+
+  // Total counts for filter chips
+  const myFormsTotalCount = myFormsPagination?.totalCount || 0;
+  const sharedFormsTotalCount = sharedFormsPagination?.totalCount || 0;
+  const allFormsTotalCount = myFormsTotalCount + sharedFormsTotalCount;
 
   // Loading and error states
   const formsLoading = myFormsLoading || sharedFormsLoading;
   const formsError = myFormsError || sharedFormsError;
 
-  // Categorized forms
-  const categorizedForms = useMemo(() => {
-    return {
-      myForms,
-      sharedWithMe: sharedForms
-    };
-  }, [myForms, sharedForms]);
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setMyFormsPage(1);
+    setSharedFormsPage(1);
+    setAllFormsPage(1);
+  }, [searchTerm]);
 
-  // Filter forms based on search term and chip filter
-  const filteredCategorizedForms = useMemo(() => {
-    let formsToShow = categorizedForms;
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setMyFormsPage(1);
+    setSharedFormsPage(1);
+    setAllFormsPage(1);
+  }, [activeFilter]);
 
-    // Apply chip filter first
+  // Determine which forms to display based on filter
+  const displayForms = useMemo(() => {
     if (activeFilter === 'my-forms') {
-      formsToShow = {
-        myForms: categorizedForms.myForms,
-        sharedWithMe: []
-      };
+      return { forms: myForms, pagination: myFormsPagination, showPermissionBadge: false };
     } else if (activeFilter === 'shared-with-me') {
-      formsToShow = {
-        myForms: [],
-        sharedWithMe: categorizedForms.sharedWithMe
+      return { forms: sharedForms, pagination: sharedFormsPagination, showPermissionBadge: true };
+    } else {
+      // For "all" filter, show combined results from both queries
+      // Both queries use the same page number (allFormsPage)
+      const allForms = [...myForms, ...sharedForms];
+      const totalCount = myFormsTotalCount + sharedFormsTotalCount;
+      const totalPages = Math.ceil(totalCount / pageLimit);
+      
+      // Create combined pagination info
+      const combinedPagination = {
+        forms: allForms,
+        totalCount,
+        page: allFormsPage,
+        limit: pageLimit,
+        totalPages,
+        hasNextPage: allFormsPage < totalPages,
+        hasPreviousPage: allFormsPage > 1,
+      };
+      
+      return {
+        forms: allForms,
+        pagination: combinedPagination,
+        showPermissionBadge: false,
       };
     }
+  }, [activeFilter, myForms, sharedForms, myFormsPagination, sharedFormsPagination, myFormsTotalCount, sharedFormsTotalCount, allFormsPage, pageLimit]);
 
-    // Apply search filter
-    if (!searchTerm.trim()) return formsToShow;
-
-    const searchLower = searchTerm.toLowerCase();
-    const filterForms = (formsList: any[]) => formsList.filter((form: any) =>
-      form.title?.toLowerCase().includes(searchLower) ||
-      form.description?.toLowerCase().includes(searchLower)
-    );
-
-    return {
-      myForms: filterForms(formsToShow.myForms),
-      sharedWithMe: filterForms(formsToShow.sharedWithMe)
-    };
-  }, [categorizedForms, searchTerm, activeFilter]);
+  const handlePageChange = (page: number) => {
+    if (activeFilter === 'my-forms') {
+      setMyFormsPage(page);
+    } else if (activeFilter === 'shared-with-me') {
+      setSharedFormsPage(page);
+    } else if (activeFilter === 'all') {
+      setAllFormsPage(page);
+    }
+    // Scroll to top when page changes
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const clearSearch = () => {
     setSearchTerm('');
@@ -127,7 +168,7 @@ function FormsListDashboard() {
           <div>
             <TypographyH3 className="text-2xl font-bold tracking-tight">Your Forms</TypographyH3>
             <TypographyMuted className="text-muted-foreground">
-              {searchTerm && `${filteredCategorizedForms.myForms.length + filteredCategorizedForms.sharedWithMe.length} matching search`}
+              {searchTerm && displayForms.forms.length > 0 && `${displayForms.pagination?.totalCount || displayForms.forms.length} matching search`}
             </TypographyMuted>
           </div>
           <Button
@@ -141,7 +182,7 @@ function FormsListDashboard() {
         </div>
 
         {/* Search Bar */}
-        {allForms.length > 0 && (
+        {allFormsTotalCount > 0 && (
           <div className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="relative flex-1 max-w-md">
@@ -173,21 +214,21 @@ function FormsListDashboard() {
                   onClick={() => setActiveFilter('all')}
                   variant="default"
                 >
-                  All Forms ({allForms.length})
+                  All Forms ({allFormsTotalCount})
                 </FilterChip>
                 <FilterChip
                   selected={activeFilter === 'my-forms'}
                   onClick={() => setActiveFilter('my-forms')}
                   variant="default"
                 >
-                  My Forms ({categorizedForms.myForms.length})
+                  My Forms ({myFormsTotalCount})
                 </FilterChip>
                 <FilterChip
                   selected={activeFilter === 'shared-with-me'}
                   onClick={() => setActiveFilter('shared-with-me')}
                   variant="default"
                 >
-                  Shared With Me ({categorizedForms.sharedWithMe.length})
+                  Shared With Me ({sharedFormsTotalCount})
                 </FilterChip>
               </div>
             </div>
@@ -218,7 +259,7 @@ function FormsListDashboard() {
               <div className="text-muted-foreground text-sm">Please try refreshing the page</div>
             </div>
           </div>
-        ) : allForms.length === 0 ? (
+        ) : allFormsTotalCount === 0 ? (
           <div className="text-center py-20">
             <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-xl p-12 max-w-lg mx-auto">
               <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
@@ -238,7 +279,7 @@ function FormsListDashboard() {
               </Button>
             </div>
           </div>
-        ) : (filteredCategorizedForms.myForms.length === 0 && filteredCategorizedForms.sharedWithMe.length === 0 && searchTerm) ? (
+        ) : displayForms.forms.length === 0 && searchTerm ? (
           <div className="text-center py-20">
             <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-xl p-12 max-w-lg mx-auto">
               <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
@@ -259,13 +300,38 @@ function FormsListDashboard() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredCategorizedForms.myForms.map((form: any) => (
-              <FormCard key={form.id} form={form} onNavigate={navigate} />
-            ))}
-            {filteredCategorizedForms.sharedWithMe.map((form: any) => (
-              <FormCard key={form.id} form={form} onNavigate={navigate} showPermissionBadge />
-            ))}
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {displayForms.forms.map((form: any) => (
+                <FormCard 
+                  key={form.id} 
+                  form={form} 
+                  onNavigate={navigate} 
+                  showPermissionBadge={displayForms.showPermissionBadge || (activeFilter === 'all' && form.userPermission)} 
+                />
+              ))}
+            </div>
+            
+            {/* Pagination */}
+            {displayForms.pagination && (
+              <div className="flex justify-center mt-8">
+                {displayForms.pagination.totalPages > 1 ? (
+                  <Pagination
+                    currentPage={displayForms.pagination.page}
+                    totalPages={displayForms.pagination.totalPages}
+                    onPageChange={handlePageChange}
+                    hasNextPage={displayForms.pagination.hasNextPage}
+                    hasPreviousPage={displayForms.pagination.hasPreviousPage}
+                    totalCount={displayForms.pagination.totalCount}
+                    pageSize={displayForms.pagination.limit}
+                  />
+                ) : (
+                  <div className="text-sm text-muted-foreground">
+                    Showing {displayForms.pagination.totalCount} of {displayForms.pagination.totalCount} results
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

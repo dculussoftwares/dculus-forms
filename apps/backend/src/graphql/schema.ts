@@ -779,6 +779,22 @@ export const typeDefs = gql`
     numberRange: NumberRangeInput
   }
 
+  # Pagination Input Types
+  input FormsFilterInput {
+    search: String
+  }
+
+  # Paginated Forms Response
+  type PaginatedForms {
+    forms: [Form!]!
+    totalCount: Int!
+    page: Int!
+    limit: Int!
+    totalPages: Int!
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+  }
+
   type Query {
     # Auth Queries
     me: User
@@ -799,7 +815,7 @@ export const typeDefs = gql`
 
     # Form Sharing Queries
     formPermissions(formId: ID!): [FormPermission!]!
-    formsWithCategory(organizationId: ID!, category: FormCategory!): [Form!]!
+    formsWithCategory(organizationId: ID!, category: FormCategory!, page: Int = 1, limit: Int = 10, filters: FormsFilterInput): PaginatedForms!
     organizationMembers(organizationId: ID!): [User!]!
 
     # Template Queries

@@ -121,16 +121,32 @@ export const formSharingResolvers = {
 
     formsWithCategory: async (
       _: any,
-      { organizationId, category }: {
+      { 
+        organizationId, 
+        category,
+        page = 1,
+        limit = 10,
+        filters
+      }: {
         organizationId: string;
         category: string;
+        page?: number;
+        limit?: number;
+        filters?: {
+          search?: string;
+        };
       },
       context: { auth: BetterAuthContext }
     ) => {
       requireAuth(context.auth);
       const userId = context.auth.user!.id;
 
-      let whereCondition;
+      // Validate pagination parameters
+      const currentPage = Math.max(1, page);
+      const pageLimit = Math.min(Math.max(1, limit), 100); // Max 100 items per page
+      const skip = (currentPage - 1) * pageLimit;
+
+      let whereCondition: any;
 
       if (category === 'MY_FORMS') {
         // Return only forms owned by the user
@@ -164,6 +180,52 @@ export const formSharingResolvers = {
         throw new GraphQLError(`Invalid category: ${category}. Must be MY_FORMS or SHARED_WITH_ME`);
       }
 
+      // Add search filter if provided
+      if (filters?.search && filters.search.trim()) {
+        const searchTerm = filters.search.trim();
+        whereCondition.OR = [
+          ...(whereCondition.OR || []),
+          { title: { contains: searchTerm, mode: 'insensitive' } },
+          { description: { contains: searchTerm, mode: 'insensitive' } }
+        ];
+
+        // If we already have OR conditions from category filtering, we need to combine them properly
+        if (category === 'SHARED_WITH_ME') {
+          // For shared forms, we need both the category OR conditions AND the search OR conditions
+          whereCondition.AND = [
+            {
+              OR: [
+                {
+                  permissions: {
+                    some: {
+                      userId,
+                      permission: { not: PermissionLevel.NO_ACCESS }
+                    }
+                  }
+                },
+                {
+                  sharingScope: SharingScope.ALL_ORG_MEMBERS,
+                  defaultPermission: { not: PermissionLevel.NO_ACCESS }
+                }
+              ]
+            },
+            {
+              OR: [
+                { title: { contains: searchTerm, mode: 'insensitive' } },
+                { description: { contains: searchTerm, mode: 'insensitive' } }
+              ]
+            }
+          ];
+          delete whereCondition.OR;
+        }
+      }
+
+      // Get total count for pagination
+      const totalCount = await prisma.form.count({
+        where: whereCondition
+      });
+
+      // Get paginated forms
       const forms = await prisma.form.findMany({
         where: whereCondition,
         include: {
@@ -176,10 +238,22 @@ export const formSharingResolvers = {
             }
           }
         },
-        orderBy: { updatedAt: 'desc' }
+        orderBy: { updatedAt: 'desc' },
+        skip,
+        take: pageLimit
       });
 
-      return forms;
+      const totalPages = Math.ceil(totalCount / pageLimit);
+
+      return {
+        forms,
+        totalCount,
+        page: currentPage,
+        limit: pageLimit,
+        totalPages,
+        hasNextPage: currentPage < totalPages,
+        hasPreviousPage: currentPage > 1
+      };
     },
 
     organizationMembers: async (_: any, { organizationId }: { organizationId: string }, context: { auth: BetterAuthContext }) => {

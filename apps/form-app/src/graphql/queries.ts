@@ -48,73 +48,89 @@ export const GET_FORMS_WITH_CATEGORY = gql`
 `;
 
 export const GET_MY_FORMS_WITH_CATEGORY = gql`
-  query GetMyFormsWithCategory($organizationId: ID!) {
-    formsWithCategory(organizationId: $organizationId, category: MY_FORMS) {
-      id
-      title
-      description
-      shortUrl
-      isPublished
-      sharingScope
-      defaultPermission
-      userPermission
-      category
-      responseCount
-      createdAt
-      updatedAt
-      organization {
+  query GetMyFormsWithCategory($organizationId: ID!, $page: Int = 1, $limit: Int = 10, $filters: FormsFilterInput) {
+    formsWithCategory(organizationId: $organizationId, category: MY_FORMS, page: $page, limit: $limit, filters: $filters) {
+      forms {
         id
-        name
-        slug
+        title
+        description
+        shortUrl
+        isPublished
+        sharingScope
+        defaultPermission
+        userPermission
+        category
+        responseCount
+        createdAt
+        updatedAt
+        organization {
+          id
+          name
+          slug
+        }
+        createdBy {
+          id
+          name
+          email
+        }
+        metadata {
+          pageCount
+          fieldCount
+          backgroundImageKey
+          backgroundImageUrl
+          lastUpdated
+        }
       }
-      createdBy {
-        id
-        name
-        email
-      }
-      metadata {
-        pageCount
-        fieldCount
-        backgroundImageKey
-        backgroundImageUrl
-        lastUpdated
-      }
+      totalCount
+      page
+      limit
+      totalPages
+      hasNextPage
+      hasPreviousPage
     }
   }
 `;
 
 export const GET_SHARED_FORMS_WITH_CATEGORY = gql`
-  query GetSharedFormsWithCategory($organizationId: ID!) {
-    formsWithCategory(organizationId: $organizationId, category: SHARED_WITH_ME) {
-      id
-      title
-      description
-      shortUrl
-      isPublished
-      sharingScope
-      defaultPermission
-      userPermission
-      category
-      responseCount
-      createdAt
-      updatedAt
-      organization {
+  query GetSharedFormsWithCategory($organizationId: ID!, $page: Int = 1, $limit: Int = 10, $filters: FormsFilterInput) {
+    formsWithCategory(organizationId: $organizationId, category: SHARED_WITH_ME, page: $page, limit: $limit, filters: $filters) {
+      forms {
         id
-        name
-        slug
+        title
+        description
+        shortUrl
+        isPublished
+        sharingScope
+        defaultPermission
+        userPermission
+        category
+        responseCount
+        createdAt
+        updatedAt
+        organization {
+          id
+          name
+          slug
+        }
+        createdBy {
+          id
+          name
+          email
+        }
+        metadata {
+          pageCount
+          fieldCount
+          backgroundImageKey
+          backgroundImageUrl
+          lastUpdated
+        }
       }
-      createdBy {
-        id
-        name
-        email
-      }
-      metadata {
-        pageCount
-        fieldCount
-        backgroundImageKey
-        backgroundImageUrl
-        lastUpdated
-      }
+      totalCount
+      page
+      limit
+      totalPages
+      hasNextPage
+      hasPreviousPage
     }
   }
 `;

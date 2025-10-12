@@ -1,5 +1,15 @@
 export { Button, buttonVariants } from "./button"
 export { Badge } from "./badge"
+export { 
+  Pagination,
+  PaginationRoot,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationEllipsis,
+} from "./pagination"
 export {
   Dialog,
   DialogPortal,
