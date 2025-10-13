@@ -1,0 +1,31 @@
+{
+  "$schema": "https://dculus.com/schemas/plugin-manifest-v1.json",
+  "id": "hello-world-external",
+  "name": "Hello World (External)",
+  "description": "A simple external plugin that logs a greeting when forms are submitted",
+  "icon": "👋",
+  "category": "automation",
+  "version": "1.0.0",
+  "author": {
+    "name": "Dculus Team",
+    "email": "plugins@dculus.com",
+    "url": "https://dculus.com"
+  },
+  "homepage": "https://github.com/dculus/hello-world-plugin",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dculus/hello-world-plugin"
+  },
+  "license": "MIT",
+  "bundles": {
+    "backend": "plugin.backend.js",
+    "frontend": "plugin.config.js"
+  },
+  "permissions": [
+    "form:read",
+    "response:read",
+    "organization:read"
+  ],
+  "minVersion": "1.0.0",
+  "maxVersion": "2.0.0"
+}

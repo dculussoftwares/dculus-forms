@@ -845,6 +845,7 @@ export const typeDefs = gql`
     availablePlugins: [Plugin!]!
     formPluginConfigs(formId: ID!): [FormPluginConfig!]!
     pluginConfig(formId: ID!, pluginId: String!): FormPluginConfig
+    pluginConfigUI(pluginId: ID!): String
 
   }
 
@@ -895,6 +896,11 @@ export const typeDefs = gql`
     togglePlugin(input: TogglePluginInput!): FormPluginConfig!
     uninstallPlugin(id: ID!): Boolean!
 
+    # External Plugin Mutations
+    installExternalPlugin(input: InstallExternalPluginInput!): InstallPluginResult!
+    uninstallExternalPlugin(pluginId: ID!): InstallPluginResult!
+    updateExternalPlugin(pluginId: ID!): InstallPluginResult!
+
   }
 
   # Plugin Types
@@ -906,6 +912,9 @@ export const typeDefs = gql`
     category: String!
     version: String!
     isActive: Boolean!
+    isExternal: Boolean!
+    installUrl: String
+    installSource: String
     createdAt: String!
     updatedAt: String!
   }
@@ -938,6 +947,18 @@ export const typeDefs = gql`
   input TogglePluginInput {
     id: ID!
     isEnabled: Boolean!
+  }
+
+  # External Plugin Types
+  input InstallExternalPluginInput {
+    url: String!
+  }
+
+  type InstallPluginResult {
+    success: Boolean!
+    pluginId: String
+    message: String!
+    warnings: [String!]
   }
 
   scalar Upload

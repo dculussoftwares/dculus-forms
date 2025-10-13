@@ -15,7 +15,7 @@ import type { FormSubmittedEvent } from '../../lib/events.js';
 import { helloWorldConfigSchema, type HelloWorldConfig } from './schema.js';
 
 export class HelloWorldPlugin extends BasePlugin {
-  constructor() {
+  constructor(prismaClient: any) {
     super({
       id: 'hello-world',
       name: 'Hello World',
@@ -24,7 +24,7 @@ export class HelloWorldPlugin extends BasePlugin {
       icon: '👋',
       category: 'automation',
       version: '1.0.0',
-    });
+    }, prismaClient);
   }
 
   /**

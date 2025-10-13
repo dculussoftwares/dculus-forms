@@ -3,16 +3,23 @@
  *
  * Provides organization-scoped API access to plugins.
  * All methods automatically enforce organization boundaries.
+ *
+ * IMPORTANT: For external plugins, the prismaClient MUST be injected by the host application.
+ * This prevents bundling Prisma client code into external plugin bundles.
  */
 
-import { prisma } from '../../lib/prisma.js';
 import type { Form, Response, Organization } from '@prisma/client';
 
 export class PluginContext {
   constructor(
     private readonly organizationId: string,
-    private readonly formId: string
-  ) {}
+    private readonly formId: string,
+    private readonly prisma: any
+  ) {
+    if (!prisma) {
+      throw new Error('[PluginContext] prismaClient is required but was not provided');
+    }
+  }
 
   /**
    * Get form details

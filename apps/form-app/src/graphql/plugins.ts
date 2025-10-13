@@ -145,3 +145,38 @@ export const UNINSTALL_PLUGIN = gql`
     uninstallPlugin(id: $id)
   }
 `;
+
+// External Plugin Installation Mutations
+export const INSTALL_EXTERNAL_PLUGIN = gql`
+  mutation InstallExternalPlugin($input: InstallExternalPluginInput!) {
+    installExternalPlugin(input: $input) {
+      success
+      pluginId
+      message
+    }
+  }
+`;
+
+export const UNINSTALL_EXTERNAL_PLUGIN = gql`
+  mutation UninstallExternalPlugin($pluginId: ID!) {
+    uninstallExternalPlugin(pluginId: $pluginId) {
+      success
+      message
+    }
+  }
+`;
+
+export const UPDATE_EXTERNAL_PLUGIN = gql`
+  mutation UpdateExternalPlugin($pluginId: ID!) {
+    updateExternalPlugin(pluginId: $pluginId) {
+      success
+      message
+    }
+  }
+`;
+
+export const GET_PLUGIN_CONFIG_UI = gql`
+  query GetPluginConfigUI($pluginId: ID!) {
+    pluginConfigUI(pluginId: $pluginId)
+  }
+`;

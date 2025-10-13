@@ -187,7 +187,7 @@ const server = new ApolloServer({
 async function startServer() {
   // Initialize plugin system
   console.log('🔌 Initializing plugin system...');
-  pluginRegistry.register(new HelloWorldPlugin());
+  pluginRegistry.register(new HelloWorldPlugin(prisma));
   await pluginRegistry.initialize();
   console.log('✅ Plugin system initialized');
 

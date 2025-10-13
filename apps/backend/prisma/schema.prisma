@@ -356,6 +356,15 @@ model Plugin {
   category    String   // 'automation', 'email', 'webhooks', etc.
   version     String
   isActive    Boolean  @default(true)
+
+  // External Plugin Fields
+  isExternal       Boolean  @default(false) // true if installed from external URL
+  installUrl       String?  // URL where plugin was installed from (e.g., http://localhost:3001)
+  installSource    String?  // Source type: 'url', 'cdn', 'github', etc.
+  backendCode      String?  // ESM bundle code for backend (base64 or raw JavaScript)
+  frontendCode     String?  // UMD bundle code for frontend config UI
+  manifest         Json?    // Full manifest.json content
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

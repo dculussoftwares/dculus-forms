@@ -1,0 +1,27 @@
+{
+  "name": "hello-world-external-plugin",
+  "version": "1.0.0",
+  "description": "Hello World external plugin for dculus-forms",
+  "type": "module",
+  "scripts": {
+    "build": "node build.js",
+    "serve": "npx serve dist -p 3001",
+    "clean": "rm -rf dist && mkdir -p dist"
+  },
+  "keywords": [
+    "dculus",
+    "forms",
+    "plugin",
+    "hello-world"
+  ],
+  "author": "Dculus Team",
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.25.9",
+    "typescript": "^5.3.0",
+    "@types/react": "^18.0.0"
+  },
+  "dependencies": {
+    "zod": "^4.1.12"
+  }
+}

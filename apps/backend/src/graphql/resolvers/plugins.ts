@@ -6,6 +6,7 @@
 
 import { GraphQLError } from 'graphql';
 import * as pluginService from '../../services/pluginService.js';
+import { PluginLoader } from '../../plugins/loader/PluginLoader.js';
 
 export const pluginResolvers = {
   Query: {
@@ -40,6 +41,30 @@ export const pluginResolvers = {
       }
 
       return pluginService.getPluginConfig(formId, pluginId);
+    },
+
+    /**
+     * Get plugin configuration UI bundle code
+     */
+    pluginConfigUI: async (_: any, { pluginId }: { pluginId: string }, context: any) => {
+      if (!context.user) {
+        throw new GraphQLError('Authentication required');
+      }
+
+      // Get plugin from database
+      const plugin = await context.prisma.plugin.findUnique({
+        where: { id: pluginId },
+      });
+
+      if (!plugin) {
+        throw new GraphQLError('Plugin not found');
+      }
+
+      if (!plugin.isExternal || !plugin.frontendCode) {
+        throw new GraphQLError('Plugin does not have a configuration UI');
+      }
+
+      return plugin.frontendCode;
     },
   },
 
@@ -216,6 +241,109 @@ export const pluginResolvers = {
       }
 
       return pluginService.uninstallPlugin(id);
+    },
+
+    /**
+     * Install external plugin from URL
+     */
+    installExternalPlugin: async (
+      _: any,
+      { input }: { input: { url: string } },
+      context: any
+    ) => {
+      if (!context.user) {
+        throw new GraphQLError('Authentication required');
+      }
+
+      // Get user's active organization from session
+      const activeOrganizationId = context.auth?.session?.activeOrganizationId;
+
+      if (!activeOrganizationId) {
+        throw new GraphQLError('No active organization. Please set an active organization first.');
+      }
+
+      // Verify user is a member of the organization
+      const membership = await context.prisma.member.findFirst({
+        where: {
+          userId: context.user.id,
+          organizationId: activeOrganizationId,
+        },
+      });
+
+      if (!membership) {
+        throw new GraphQLError('You are not a member of the active organization');
+      }
+
+      // Install plugin using PluginLoader
+      const result = await PluginLoader.installFromUrl(input.url, activeOrganizationId);
+
+      return result;
+    },
+
+    /**
+     * Uninstall external plugin
+     */
+    uninstallExternalPlugin: async (_: any, { pluginId }: { pluginId: string }, context: any) => {
+      if (!context.user) {
+        throw new GraphQLError('Authentication required');
+      }
+
+      // Get user's active organization from session
+      const activeOrganizationId = context.auth?.session?.activeOrganizationId;
+
+      if (!activeOrganizationId) {
+        throw new GraphQLError('No active organization. Please set an active organization first.');
+      }
+
+      // Verify user is a member of the organization
+      const membership = await context.prisma.member.findFirst({
+        where: {
+          userId: context.user.id,
+          organizationId: activeOrganizationId,
+        },
+      });
+
+      if (!membership) {
+        throw new GraphQLError('You are not a member of the active organization');
+      }
+
+      // Uninstall plugin using PluginLoader
+      const result = await PluginLoader.uninstallPlugin(pluginId, activeOrganizationId);
+
+      return result;
+    },
+
+    /**
+     * Update external plugin to latest version
+     */
+    updateExternalPlugin: async (_: any, { pluginId }: { pluginId: string }, context: any) => {
+      if (!context.user) {
+        throw new GraphQLError('Authentication required');
+      }
+
+      // Get user's active organization from session
+      const activeOrganizationId = context.auth?.session?.activeOrganizationId;
+
+      if (!activeOrganizationId) {
+        throw new GraphQLError('No active organization. Please set an active organization first.');
+      }
+
+      // Verify user is a member of the organization
+      const membership = await context.prisma.member.findFirst({
+        where: {
+          userId: context.user.id,
+          organizationId: activeOrganizationId,
+        },
+      });
+
+      if (!membership) {
+        throw new GraphQLError('You are not a member of the active organization');
+      }
+
+      // Update plugin using PluginLoader
+      const result = await PluginLoader.updatePlugin(pluginId, activeOrganizationId);
+
+      return result;
     },
   },
 };

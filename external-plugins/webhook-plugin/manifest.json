@@ -1,0 +1,31 @@
+{
+  "$schema": "https://dculus.com/schemas/plugin-manifest-v1.json",
+  "id": "webhook-notifier",
+  "name": "Webhook Notifier",
+  "description": "Send form submissions to a custom webhook URL with retry logic",
+  "icon": "🔔",
+  "category": "integration",
+  "version": "1.0.0",
+  "author": {
+    "name": "Dculus Team",
+    "email": "plugins@dculus.com",
+    "url": "https://dculus.com"
+  },
+  "homepage": "https://github.com/dculus/webhook-plugin",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dculus/webhook-plugin"
+  },
+  "license": "MIT",
+  "bundles": {
+    "backend": "plugin.backend.js",
+    "frontend": "plugin.config.js"
+  },
+  "permissions": [
+    "form:read",
+    "response:read",
+    "organization:read"
+  ],
+  "minVersion": "1.0.0",
+  "maxVersion": "2.0.0"
+}

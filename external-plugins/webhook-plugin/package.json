@@ -1,0 +1,28 @@
+{
+  "name": "webhook-notifier-plugin",
+  "version": "1.0.0",
+  "description": "Webhook notifier plugin for dculus-forms",
+  "type": "module",
+  "scripts": {
+    "build": "node build.js",
+    "serve": "npx serve dist -p 3002",
+    "clean": "rm -rf dist && mkdir -p dist"
+  },
+  "keywords": [
+    "dculus",
+    "forms",
+    "plugin",
+    "webhook",
+    "integration"
+  ],
+  "author": "Dculus Team",
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.25.9",
+    "typescript": "^5.3.0",
+    "@types/react": "^18.0.0"
+  },
+  "dependencies": {
+    "zod": "^4.1.12"
+  }
+}

@@ -6,7 +6,6 @@
  */
 
 import { z } from 'zod';
-import { prisma } from '../../lib/prisma.js';
 import type { FormSubmittedEvent } from '../../lib/events.js';
 import { PluginContext } from './PluginContext.js';
 
@@ -29,12 +28,21 @@ export interface PluginConfig {
 
 /**
  * Abstract base class for all plugins
+ *
+ * IMPORTANT: For external plugins, the prismaClient MUST be injected by the host application.
+ * This prevents bundling Prisma client code into external plugin bundles.
  */
 export abstract class BasePlugin {
   public readonly metadata: PluginMetadata;
+  protected prisma: any; // PrismaClient instance injected by host - using any to avoid type dependency
 
-  constructor(metadata: PluginMetadata) {
+  constructor(metadata: PluginMetadata, prismaClient: any) {
     this.metadata = metadata;
+    this.prisma = prismaClient;
+
+    if (!prismaClient) {
+      throw new Error('[BasePlugin] prismaClient is required but was not provided');
+    }
   }
 
   /**
@@ -60,7 +68,7 @@ export abstract class BasePlugin {
    */
   async getConfig(formId: string): Promise<PluginConfig | null> {
     try {
-      const config = await prisma.formPluginConfig.findUnique({
+      const config = await this.prisma.formPluginConfig.findUnique({
         where: {
           formId_pluginId: {
             formId,
@@ -134,7 +142,7 @@ export abstract class BasePlugin {
       }
 
       // Create organization-scoped context for this plugin
-      const context = new PluginContext(event.organizationId, event.formId);
+      const context = new PluginContext(event.organizationId, event.formId, this.prisma);
 
       // Execute the plugin-specific logic with context
       await this.onFormSubmitted(event, context);

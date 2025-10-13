@@ -39,8 +39,10 @@ import {
   Trash2,
   AlertCircle,
   CheckCircle2,
+  Download,
 } from 'lucide-react';
 import { HelloWorldConfigDialog } from '../plugins/hello-world/ConfigDialog';
+import { InstallPluginDialog } from '../components/plugins/InstallPluginDialog';
 
 const FormPluginsNew: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
@@ -49,6 +51,7 @@ const FormPluginsNew: React.FC = () => {
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [uninstallDialogOpen, setUninstallDialogOpen] = useState(false);
   const [pluginToUninstall, setPluginToUninstall] = useState<any>(null);
+  const [installFromUrlDialogOpen, setInstallFromUrlDialogOpen] = useState(false);
 
   // GraphQL Queries
   const {
@@ -352,9 +355,18 @@ const FormPluginsNew: React.FC = () => {
 
           {/* Available Plugins Section */}
           <div>
-            <h2 className="text-2xl font-semibold text-slate-900 mb-4">
-              Available Plugins
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-semibold text-slate-900">
+                Available Plugins
+              </h2>
+              <Button
+                variant="outline"
+                onClick={() => setInstallFromUrlDialogOpen(true)}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Install from URL
+              </Button>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {availablePlugins.map((plugin: any) => {
@@ -428,6 +440,16 @@ const FormPluginsNew: React.FC = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Install Plugin from URL Dialog */}
+        <InstallPluginDialog
+          open={installFromUrlDialogOpen}
+          onOpenChange={setInstallFromUrlDialogOpen}
+          onSuccess={() => {
+            refetchPlugins();
+            refetchConfigs();
+          }}
+        />
       </div>
     </MainLayout>
   );

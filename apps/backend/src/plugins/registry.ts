@@ -3,6 +3,7 @@
  *
  * Central registry for all plugins. Handles plugin registration,
  * event listener setup, and plugin discovery.
+ * Supports both built-in plugins and organization-scoped external plugins.
  */
 
 import { eventBus } from '../lib/events.js';
@@ -11,34 +12,73 @@ import type { BasePlugin } from './base/BasePlugin.js';
 
 class PluginRegistry {
   private plugins: Map<string, BasePlugin> = new Map();
+  // Organization-scoped plugins: Map<organizationId, Map<pluginId, plugin>>
+  private organizationPlugins: Map<string, Map<string, BasePlugin>> = new Map();
   private initialized = false;
 
   /**
    * Register a plugin and set up its event listeners
+   * @param plugin - Plugin instance to register
+   * @param organizationId - Optional organization ID for scoped external plugins
    */
-  register(plugin: BasePlugin): void {
-    if (this.plugins.has(plugin.metadata.id)) {
-      console.warn(
-        `[PluginRegistry] Plugin ${plugin.metadata.id} is already registered. Skipping.`
+  register(plugin: BasePlugin, organizationId?: string): void {
+    if (organizationId) {
+      // Register organization-scoped external plugin
+      if (!this.organizationPlugins.has(organizationId)) {
+        this.organizationPlugins.set(organizationId, new Map());
+      }
+
+      const orgPlugins = this.organizationPlugins.get(organizationId)!;
+
+      if (orgPlugins.has(plugin.metadata.id)) {
+        console.warn(
+          `[PluginRegistry] Plugin ${plugin.metadata.id} is already registered for org ${organizationId}. Skipping.`
+        );
+        return;
+      }
+
+      console.log(
+        `[PluginRegistry] Registering plugin for org ${organizationId}: ${plugin.metadata.name} (${plugin.metadata.id})`
       );
-      return;
+
+      orgPlugins.set(plugin.metadata.id, plugin);
+
+      // Set up event listener for form.submitted
+      eventBus.on('form.submitted', async (event: any) => {
+        // Only execute if event is for this organization
+        if (event.organizationId === organizationId) {
+          await plugin.execute(event);
+        }
+      });
+
+      console.log(
+        `[PluginRegistry] Plugin ${plugin.metadata.id} is now listening to form.submitted events for org ${organizationId}`
+      );
+    } else {
+      // Register global built-in plugin
+      if (this.plugins.has(plugin.metadata.id)) {
+        console.warn(
+          `[PluginRegistry] Plugin ${plugin.metadata.id} is already registered. Skipping.`
+        );
+        return;
+      }
+
+      console.log(
+        `[PluginRegistry] Registering plugin: ${plugin.metadata.name} (${plugin.metadata.id})`
+      );
+
+      // Store plugin instance
+      this.plugins.set(plugin.metadata.id, plugin);
+
+      // Set up event listener for form.submitted
+      eventBus.on('form.submitted', async (event: any) => {
+        await plugin.execute(event);
+      });
+
+      console.log(
+        `[PluginRegistry] Plugin ${plugin.metadata.id} is now listening to form.submitted events`
+      );
     }
-
-    console.log(
-      `[PluginRegistry] Registering plugin: ${plugin.metadata.name} (${plugin.metadata.id})`
-    );
-
-    // Store plugin instance
-    this.plugins.set(plugin.metadata.id, plugin);
-
-    // Set up event listener for form.submitted
-    eventBus.on('form.submitted', async (event: any) => {
-      await plugin.execute(event);
-    });
-
-    console.log(
-      `[PluginRegistry] Plugin ${plugin.metadata.id} is now listening to form.submitted events`
-    );
   }
 
   /**
@@ -80,28 +120,48 @@ class PluginRegistry {
   }
 
   /**
-   * Unregister a plugin (mainly for testing/hot-reload)
+   * Unregister a plugin
+   * @param pluginId - Plugin ID to unregister
+   * @param organizationId - Optional organization ID for scoped external plugins
    */
-  unregister(pluginId: string): void {
-    const plugin = this.plugins.get(pluginId);
-    if (plugin) {
-      // Remove all event listeners for this plugin
-      eventBus.removeAllListeners();
+  unregister(pluginId: string, organizationId?: string): void {
+    if (organizationId) {
+      // Unregister organization-scoped external plugin
+      const orgPlugins = this.organizationPlugins.get(organizationId);
+      if (orgPlugins && orgPlugins.has(pluginId)) {
+        orgPlugins.delete(pluginId);
 
-      // Re-register remaining plugins
-      const remainingPlugins = Array.from(this.plugins.values()).filter(
-        (p) => p.metadata.id !== pluginId
-      );
+        // Clean up empty organization map
+        if (orgPlugins.size === 0) {
+          this.organizationPlugins.delete(organizationId);
+        }
 
-      this.plugins.delete(pluginId);
+        console.log(`[PluginRegistry] Unregistered plugin ${pluginId} for org ${organizationId}`);
+      } else {
+        console.warn(`[PluginRegistry] Plugin ${pluginId} not found for org ${organizationId}`);
+      }
+    } else {
+      // Unregister global built-in plugin
+      const plugin = this.plugins.get(pluginId);
+      if (plugin) {
+        // Remove all event listeners for this plugin
+        eventBus.removeAllListeners();
 
-      remainingPlugins.forEach((p) => {
-        eventBus.on('form.submitted', async (event: any) => {
-          await p.execute(event);
+        // Re-register remaining plugins
+        const remainingPlugins = Array.from(this.plugins.values()).filter(
+          (p) => p.metadata.id !== pluginId
+        );
+
+        this.plugins.delete(pluginId);
+
+        remainingPlugins.forEach((p) => {
+          eventBus.on('form.submitted', async (event: any) => {
+            await p.execute(event);
+          });
         });
-      });
 
-      console.log(`[PluginRegistry] Unregistered plugin: ${pluginId}`);
+        console.log(`[PluginRegistry] Unregistered plugin: ${pluginId}`);
+      }
     }
   }
 
@@ -186,3 +246,6 @@ class PluginRegistry {
 
 // Export singleton instance
 export const pluginRegistry = new PluginRegistry();
+
+// Also export class for type checking
+export { PluginRegistry };
