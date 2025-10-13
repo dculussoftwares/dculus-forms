@@ -114,7 +114,7 @@ export function useNumberFieldForm({ field, onSave, onCancel }: UseNumberFieldFo
   const validationSchema = useMemo(() => numberFieldValidationSchema, []);
 
   const form = useForm<NumberFieldFormData>({
-    resolver: zodResolver(validationSchema),
+    resolver: zodResolver(validationSchema as any),
     mode: 'onChange',
     reValidateMode: 'onChange',
     criteriaMode: 'all',

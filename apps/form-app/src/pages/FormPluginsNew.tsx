@@ -63,7 +63,6 @@ const FormPluginsNew: React.FC = () => {
   const {
     data: pluginsData,
     loading: pluginsLoading,
-    refetch: refetchPlugins,
   } = useQuery(GET_AVAILABLE_PLUGINS);
 
   const {

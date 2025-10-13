@@ -165,7 +165,7 @@ export function useSelectionFieldForm({ field, onSave, onCancel }: UseSelectionF
   const validationSchema = useMemo(() => selectionFieldValidationSchema, []);
 
   const form = useForm<SelectionFieldFormData>({
-    resolver: zodResolver(validationSchema),
+    resolver: zodResolver(validationSchema as any),
     mode: 'onChange',
     reValidateMode: 'onChange',
     criteriaMode: 'all',

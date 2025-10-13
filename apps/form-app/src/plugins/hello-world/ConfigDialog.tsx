@@ -5,7 +5,7 @@
  * that will be logged on the backend when a form is submitted.
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,

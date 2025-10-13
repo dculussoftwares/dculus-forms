@@ -72,7 +72,7 @@ export function useRichTextFieldForm({ field, onSave, onCancel }: UseRichTextFie
 
   // Create form with stable default values
   const form = useForm<RichTextFieldFormData>({
-    resolver: zodResolver(validationSchema),
+    resolver: zodResolver(validationSchema as any),
     mode: 'onChange',
     reValidateMode: 'onChange',
     criteriaMode: 'all',

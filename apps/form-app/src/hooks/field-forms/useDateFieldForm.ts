@@ -151,7 +151,7 @@ export function useDateFieldForm({ field, onSave, onCancel }: UseDateFieldFormPr
   const validationSchema = useMemo(() => dateFieldValidationSchema, []);
 
   const form = useForm<DateFieldFormData>({
-    resolver: zodResolver(validationSchema),
+    resolver: zodResolver(validationSchema as any),
     mode: 'onChange',
     reValidateMode: 'onChange',
     criteriaMode: 'all',

@@ -133,7 +133,7 @@ export function useTextFieldForm({
   const validationSchema = useMemo(() => textFieldValidationSchema, []);
 
   const form = useForm<TextFieldFormData>({
-    resolver: zodResolver(validationSchema),
+    resolver: zodResolver(validationSchema as any),
     mode: 'onChange',
     reValidateMode: 'onChange',
     criteriaMode: 'all',

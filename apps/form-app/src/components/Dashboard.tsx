@@ -36,7 +36,6 @@ import {
 import Templates from '../pages/Templates';
 import FormDashboard from '../pages/FormDashboard';
 import { FilterChip } from './ui/FilterChip';
-import { f } from 'node_modules/better-auth/dist/shared/better-auth.CUMpWXN6';
 
 export function Dashboard() {
   return (
