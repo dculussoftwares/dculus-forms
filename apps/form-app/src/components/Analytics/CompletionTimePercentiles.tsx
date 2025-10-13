@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@dculus/ui';
 import { Clock, TrendingUp } from 'lucide-react';
 import { CompletionTimePercentiles as PercentilesData } from '../../hooks/useFormAnalytics';
+import { useTranslation } from 'react-i18next';
 
 interface CompletionTimePercentilesProps {
   data: PercentilesData | null;
@@ -60,13 +61,14 @@ export const CompletionTimePercentiles: React.FC<CompletionTimePercentilesProps>
   averageTime,
   loading = false
 }) => {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Completion Time Statistics
+            {t('analytics:completionTimeStatistics')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -92,12 +94,12 @@ export const CompletionTimePercentiles: React.FC<CompletionTimePercentilesProps>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Completion Time Statistics
+            {t('analytics:completionTimeStatistics')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-gray-500">
-            No completion time data available
+            {t('analytics:noCompletionTimeData')}
           </div>
         </CardContent>
       </Card>
@@ -106,37 +108,37 @@ export const CompletionTimePercentiles: React.FC<CompletionTimePercentilesProps>
 
   const percentiles = [
     {
-      label: 'Average',
+      label: t('analytics:average'),
       value: averageTime,
-      description: 'Mean completion time',
+      description: t('analytics:meanCompletionTime'),
       color: 'text-blue-700',
       bgColor: 'bg-blue-50'
     },
     {
-      label: '50th Percentile (Median)',
+      label: t('analytics:percentile50'),
       value: data?.p50 || null,
-      description: '50% complete faster',
+      description: t('analytics:completeFaster50'),
       color: 'text-green-700',
       bgColor: 'bg-green-50'
     },
     {
-      label: '75th Percentile',
+      label: t('analytics:percentile75'),
       value: data?.p75 || null,
-      description: '75% complete faster',
+      description: t('analytics:completeFaster75'),
       color: 'text-yellow-700',
       bgColor: 'bg-yellow-50'
     },
     {
-      label: '90th Percentile',
+      label: t('analytics:percentile90'),
       value: data?.p90 || null,
-      description: '90% complete faster',
+      description: t('analytics:completeFaster90'),
       color: 'text-orange-700',
       bgColor: 'bg-orange-50'
     },
     {
-      label: '95th Percentile',
+      label: t('analytics:percentile95'),
       value: data?.p95 || null,
-      description: '95% complete faster',
+      description: t('analytics:completeFaster95'),
       color: 'text-red-700',
       bgColor: 'bg-red-50'
     }
@@ -147,7 +149,7 @@ export const CompletionTimePercentiles: React.FC<CompletionTimePercentilesProps>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5" />
-          Completion Time Statistics
+          {t('analytics:completionTimeStatistics')}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -162,22 +164,25 @@ export const CompletionTimePercentiles: React.FC<CompletionTimePercentilesProps>
         
         {/* Insights */}
         <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <h4 className="font-medium text-gray-900 mb-2">Insights</h4>
+          <h4 className="font-medium text-gray-900 mb-2">{t('analytics:insights')}</h4>
           <div className="text-sm text-gray-600 space-y-1">
             {averageTime && data?.p50 && (
               <p>
-                • The median completion time ({formatCompletionTime(data.p50)}) is{' '}
-                {averageTime > data.p50 ? 'shorter' : 'longer'} than the average ({formatCompletionTime(averageTime)})
+                • {t('analytics:medianCompletionTimeIs', {
+                  median: formatCompletionTime(data.p50),
+                  comparison: averageTime > data.p50 ? 'shorter' : 'longer',
+                  average: formatCompletionTime(averageTime)
+                })}
               </p>
             )}
             {data?.p90 && data?.p50 && (
               <p>
-                • 90% of users complete in {formatCompletionTime(data.p90)} or less
+                • {t('analytics:ninetyPercentCompleteIn', { time: formatCompletionTime(data.p90) })}
               </p>
             )}
             {data?.p95 && data?.p90 && (
               <p>
-                • The slowest 5% take {formatCompletionTime(data.p95)} or more to complete
+                • {t('analytics:slowest5PercentTake', { time: formatCompletionTime(data.p95) })}
               </p>
             )}
           </div>

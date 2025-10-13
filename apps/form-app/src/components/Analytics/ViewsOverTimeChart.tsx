@@ -2,6 +2,7 @@ import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
 import { TrendingUp, Calendar } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface ViewsOverTimeData {
   date: string;
@@ -80,13 +81,14 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
   loading = false,
   timeRange = '30d'
 }) => {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center text-base">
             <TrendingUp className="h-4 w-4 mr-2 text-blue-600" />
-            Views Over Time
+            {t('analytics:viewsOverTime')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -139,15 +141,15 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center text-base">
             <TrendingUp className="h-4 w-4 mr-2 text-blue-600" />
-            Views & Submissions Over Time
+            {t('analytics:viewsAndSubmissionsOverTime')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-64 flex flex-col items-center justify-center text-gray-500">
             <Calendar className="h-12 w-12 mb-3 text-gray-300" />
-            <p className="text-sm font-medium">No time-series data available</p>
+            <p className="text-sm font-medium">{t('analytics:noTimeSeriesData')}</p>
             <p className="text-xs text-gray-400 mt-1">
-              Data will appear once your form receives more activity
+              {t('analytics:timeSeriesDataMessage')}
             </p>
           </div>
         </CardContent>
@@ -164,10 +166,10 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
 
   const getTimeRangeLabel = () => {
     switch (timeRange) {
-      case '7d': return 'Past 7 days';
-      case '30d': return 'Past 30 days';
-      case '90d': return 'Past 90 days';
-      default: return 'Custom range';
+      case '7d': return t('analytics:past7Days');
+      case '30d': return t('analytics:past30Days');
+      case '90d': return t('analytics:past90Days');
+      default: return t('analytics:customRange');
     }
   };
 
@@ -177,7 +179,7 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
         <CardTitle className="flex items-center justify-between text-base">
           <div className="flex items-center">
             <TrendingUp className="h-4 w-4 mr-2 text-blue-600" />
-            Views & Submissions Over Time
+            {t('analytics:viewsAndSubmissionsOverTime')}
           </div>
           <span className="text-sm text-gray-500">{getTimeRangeLabel()}</span>
         </CardTitle>
@@ -289,19 +291,19 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
         <div className="flex flex-wrap items-center justify-center gap-4 mt-4 pt-2 border-t">
           <div className="flex items-center">
             <div className="w-3 h-3 bg-blue-500 rounded mr-2"></div>
-            <span className="text-sm text-gray-600">Views</span>
+            <span className="text-sm text-gray-600">{t('analytics:views')}</span>
           </div>
           <div className="flex items-center">
             <div className="w-3 h-3 bg-green-500 rounded mr-2"></div>
-            <span className="text-sm text-gray-600">View Sessions</span>
+            <span className="text-sm text-gray-600">{t('analytics:viewSessions')}</span>
           </div>
           <div className="flex items-center">
             <div className="w-3 h-3 bg-orange-500 rounded mr-2"></div>
-            <span className="text-sm text-gray-600">Submissions</span>
+            <span className="text-sm text-gray-600">{t('analytics:submissions')}</span>
           </div>
           <div className="flex items-center">
             <div className="w-3 h-3 bg-purple-500 rounded mr-2"></div>
-            <span className="text-sm text-gray-600">Submission Sessions</span>
+            <span className="text-sm text-gray-600">{t('analytics:submissionSessionsLegend')}</span>
           </div>
         </div>
       </CardContent>

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, Button } from '@dculus/ui';
 import { Globe, TrendingUp } from 'lucide-react';
 import { CountryStats } from '../../hooks/useFormAnalytics';
 import ISO31661 from 'iso-3166-1';
+import { useTranslation } from 'react-i18next';
 
 type DataMode = 'views' | 'submissions';
 
@@ -33,9 +34,10 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
   onDataModeChange,
   loading = false
 }) => {
+  const { t } = useTranslation();
   // Get current data based on mode
   const currentData = dataMode === 'submissions' ? submissionData : data;
-  const metricLabel = dataMode === 'submissions' ? 'submissions' : 'views';
+  const metricLabel = dataMode === 'submissions' ? t('analytics:submissions') : t('analytics:views');
 
   if (loading) {
     return (
@@ -44,7 +46,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
           <CardTitle className="flex items-center justify-between text-base">
             <div className="flex items-center">
               <Globe className="h-4 w-4 mr-2 text-blue-600" />
-              World Map Distribution
+              {t('analytics:geographicDistribution')}
             </div>
             {onDataModeChange && (
               <DataModeToggle dataMode={dataMode} onDataModeChange={onDataModeChange} />
@@ -61,17 +63,17 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
   }
 
   if (!currentData || currentData.length === 0) {
-    const emptyMessage = dataMode === 'submissions' 
-      ? 'Data will appear once visitors submit your form'
-      : 'Data will appear once visitors access your form';
-    
+    const emptyMessage = dataMode === 'submissions'
+      ? t('analytics:geographicDataSubmissionsMessage')
+      : t('analytics:geographicDataViewsMessage');
+
     return (
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between text-base">
             <div className="flex items-center">
               <Globe className="h-4 w-4 mr-2 text-blue-600" />
-              World Map Distribution
+              {t('analytics:geographicDistribution')}
             </div>
             {onDataModeChange && (
               <DataModeToggle dataMode={dataMode} onDataModeChange={onDataModeChange} />
@@ -81,7 +83,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
         <CardContent>
           <div className="h-80 flex flex-col items-center justify-center text-gray-500">
             <Globe className="h-12 w-12 mb-3 text-gray-300" />
-            <p className="text-sm">No geographic data available</p>
+            <p className="text-sm">{t('analytics:noGeographicData')}</p>
             <p className="text-xs text-gray-400 mt-1">
               {emptyMessage}
             </p>
@@ -109,12 +111,12 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
         <CardTitle className="flex items-center justify-between text-base">
           <div className="flex items-center">
             <Globe className="h-4 w-4 mr-2 text-blue-600" />
-            World Map Distribution
+            {t('analytics:worldMapDistribution')}
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center text-sm text-green-600">
               <TrendingUp className="h-3 w-3 mr-1" />
-              {currentData.length} countries
+              {currentData.length} {t('analytics:countries')}
             </div>
             {onDataModeChange && (
               <DataModeToggle dataMode={dataMode} onDataModeChange={onDataModeChange} />
@@ -147,23 +149,23 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded-sm bg-slate-200 border border-slate-400"></div>
-                  <span className="text-xs text-gray-600 font-medium">None</span>
+                  <span className="text-xs text-gray-600 font-medium">{t('analytics:none')}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className={`w-3 h-3 rounded-sm border ${
-                    dataMode === 'submissions' 
-                      ? 'bg-orange-300 border-orange-500' 
+                    dataMode === 'submissions'
+                      ? 'bg-orange-300 border-orange-500'
                       : 'bg-blue-300 border-blue-500'
                   }`}></div>
-                  <span className="text-xs text-gray-600 font-medium">Low</span>
+                  <span className="text-xs text-gray-600 font-medium">{t('analytics:low')}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className={`w-3 h-3 rounded-sm border ${
-                    dataMode === 'submissions' 
-                      ? 'bg-orange-600 border-orange-700' 
+                    dataMode === 'submissions'
+                      ? 'bg-orange-600 border-orange-700'
                       : 'bg-blue-600 border-blue-700'
                   }`}></div>
-                  <span className="text-xs text-gray-600 font-medium">High</span>
+                  <span className="text-xs text-gray-600 font-medium">{t('analytics:high')}</span>
                 </div>
               </div>
             </div>
@@ -186,7 +188,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                   <Globe className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-blue-900">Top Performing Country</p>
+                  <p className="text-sm font-medium text-blue-900">{t('analytics:topPerformingCountry')}</p>
                   <p className="text-xl font-bold text-blue-800">{topCountry.name}</p>
                 </div>
               </div>
@@ -200,7 +202,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                   <span className="text-lg font-semibold text-green-600">
                     {topCountry.percentage.toFixed(1)}%
                   </span>
-                  <span className="text-xs text-gray-500">of total</span>
+                  <span className="text-xs text-gray-500">{t('analytics:ofTotal')}</span>
                 </div>
               </div>
             </div>
@@ -212,10 +214,10 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-base font-semibold text-gray-800 flex items-center gap-2">
               <Globe className="h-4 w-4 text-blue-600" />
-              Country Breakdown
+              {t('analytics:countryBreakdown')}
             </h4>
             <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-              {currentData.length} total
+              {currentData.length} {t('analytics:total_label')}
             </div>
           </div>
           

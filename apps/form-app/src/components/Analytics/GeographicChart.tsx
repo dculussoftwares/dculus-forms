@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, Button } from '@dculus/ui';
 import { Globe, TrendingUp, BarChart3, Map } from 'lucide-react';
 import { CountryStats } from '../../hooks/useFormAnalytics';
 import { WorldMapVisualization } from './WorldMapVisualization';
+import { useTranslation } from 'react-i18next';
 
 interface GeographicChartProps {
   data: CountryStats[];
@@ -25,9 +26,10 @@ const COLORS = [
 ];
 
 const CustomTooltip = ({ active, payload, dataMode }: any) => {
+  const { t } = useTranslation();
   if (active && payload && payload.length) {
     const data = payload[0].payload;
-    const metricLabel = dataMode === 'submissions' ? 'Submissions' : 'Views';
+    const metricLabel = dataMode === 'submissions' ? t('analytics:submissions') : t('analytics:views');
     return (
       <div className="bg-white p-3 border rounded-lg shadow-lg">
         <p className="font-semibold text-gray-900">{data.name}</p>
@@ -72,6 +74,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
   totalSubmissions = 0,
   loading = false
 }) => {
+  const { t } = useTranslation();
   const [viewType, setViewType] = useState<ViewType>('map');
   const [dataMode, setDataMode] = useState<DataMode>('views');
   // Get current data based on mode
@@ -100,7 +103,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
           <CardTitle className="flex items-center justify-between text-base">
             <div className="flex items-center">
               <Globe className="h-4 w-4 mr-2 text-blue-600" />
-              Geographic Distribution
+              {t('analytics:geographicDistribution')}
             </div>
             <div className="flex items-center gap-2">
               <DataModeToggle dataMode={dataMode} onDataModeChange={setDataMode} />
@@ -118,17 +121,17 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
   }
 
   if (!currentData || currentData.length === 0) {
-    const emptyMessage = dataMode === 'submissions' 
-      ? 'Data will appear once visitors submit your form'
-      : 'Data will appear once visitors access your form';
-    
+    const emptyMessage = dataMode === 'submissions'
+      ? t('analytics:geographicDataSubmissionsMessage')
+      : t('analytics:geographicDataViewsMessage');
+
     return (
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between text-base">
             <div className="flex items-center">
               <Globe className="h-4 w-4 mr-2 text-blue-600" />
-              Geographic Distribution
+              {t('analytics:geographicDistribution')}
             </div>
             <div className="flex items-center gap-2">
               <DataModeToggle dataMode={dataMode} onDataModeChange={setDataMode} />
@@ -139,7 +142,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
         <CardContent>
           <div className="h-64 flex flex-col items-center justify-center text-gray-500">
             <Globe className="h-12 w-12 mb-3 text-gray-300" />
-            <p className="text-sm">No geographic data available</p>
+            <p className="text-sm">{t('analytics:noGeographicData')}</p>
             <p className="text-xs text-gray-400 mt-1">
               {emptyMessage}
             </p>
@@ -178,12 +181,12 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
           <CardTitle className="flex items-center justify-between text-base">
             <div className="flex items-center">
               <Globe className="h-4 w-4 mr-2 text-blue-600" />
-              Geographic Distribution
+              {t('analytics:geographicDistribution')}
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center text-sm text-green-600">
                 <TrendingUp className="h-3 w-3 mr-1" />
-                {currentData.length} countries
+                {currentData.length} {t('analytics:countries')}
               </div>
               <DataModeToggle dataMode={dataMode} onDataModeChange={setDataMode} />
               <ViewToggleButtons viewType={viewType} onViewTypeChange={setViewType} />
@@ -218,12 +221,12 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
           <div className="mt-4 p-3 bg-blue-50 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-blue-900">Top Country</p>
+                <p className="text-sm font-medium text-blue-900">{t('analytics:topCountry')}</p>
                 <p className="text-lg font-bold text-blue-800">{topCountry.name}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-blue-600">
-                  {topCountry.count} {dataMode === 'submissions' ? 'submissions' : 'views'}
+                  {topCountry.count} {dataMode === 'submissions' ? t('analytics:submissions') : t('analytics:views')}
                 </p>
                 <p className="text-lg font-bold text-blue-800">
                   {topCountry.percentage.toFixed(1)}%

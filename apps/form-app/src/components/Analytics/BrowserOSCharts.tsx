@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Card, CardContent, CardHeader, CardTitle, Button } from '@dculus/ui';
 import { Monitor, Globe } from 'lucide-react';
 import { OSStats, BrowserStats } from '../../hooks/useFormAnalytics';
+import { useTranslation } from 'react-i18next';
 
 type DataMode = 'views' | 'submissions' | 'combined';
 
@@ -80,6 +81,7 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
   browserSubmissionData = [],
   loading = false
 }) => {
+  const { t } = useTranslation();
   const [dataMode, setDataMode] = useState<DataMode>('views');
 
   // Helper function to merge view and submission data
@@ -135,7 +137,7 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
     <div className="space-y-6">
       {/* Shared Header with Data Mode Toggle */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">Browser & Operating System Analytics</h3>
+        <h3 className="text-lg font-semibold text-gray-900">{t('analytics:browserAndOsAnalytics')}</h3>
         <DataModeToggle dataMode={dataMode} onDataModeChange={setDataMode} />
       </div>
       
@@ -146,10 +148,10 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
             <CardTitle className="flex items-center justify-between text-base">
               <div className="flex items-center">
                 <Monitor className="h-4 w-4 mr-2 text-green-600" />
-                Operating Systems
+                {t('analytics:operatingSystems')}
               </div>
               {currentOSData && currentOSData.length > 0 && (
-                <span className="text-sm text-gray-500">{currentOSData.length} systems</span>
+                <span className="text-sm text-gray-500">{currentOSData.length} {t('analytics:systems')}</span>
               )}
             </CardTitle>
           </CardHeader>
@@ -157,10 +159,10 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
           {loading ? (
             <LoadingState />
           ) : !currentOSData || currentOSData.length === 0 ? (
-            <EmptyState 
+            <EmptyState
               icon={Monitor}
-              title="No OS data available"
-              subtitle={`${dataMode === 'submissions' ? 'Submission' : 'View'} operating system data will appear here`}
+              title={t('analytics:subtitles.noOsData')}
+              subtitle={t('analytics:subtitles.osDataSubtitle', { dataMode: dataMode === 'submissions' ? t('analytics:submissions') : t('analytics:views') })}
             />
           ) : (
             <>
@@ -243,23 +245,23 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between text-base">
-            <div className="flex items-center">
-              <Globe className="h-4 w-4 mr-2 text-blue-600" />
-              Browsers
-            </div>
-            {currentBrowserData && currentBrowserData.length > 0 && (
-              <span className="text-sm text-gray-500">{currentBrowserData.length} browsers</span>
-            )}
+              <div className="flex items-center">
+                <Globe className="h-4 w-4 mr-2 text-blue-600" />
+                {t('analytics:browsers')}
+              </div>
+              {currentBrowserData && currentBrowserData.length > 0 && (
+              <span className="text-sm text-gray-500">{currentBrowserData.length} {t('analytics:browsers')}</span>
+              )}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
             <LoadingState />
           ) : !currentBrowserData || currentBrowserData.length === 0 ? (
-            <EmptyState 
+            <EmptyState
               icon={Globe}
-              title="No browser data available"
-              subtitle={`${dataMode === 'submissions' ? 'Submission' : 'View'} browser usage data will appear here`}
+              title={t('analytics:subtitles.noBrowserData')}
+              subtitle={t('analytics:subtitles.browserDataSubtitle', { dataMode: dataMode === 'submissions' ? t('analytics:submissions') : t('analytics:views') })}
             />
           ) : (
             <>
@@ -349,6 +351,7 @@ interface DataModeToggleProps {
 }
 
 const DataModeToggle: React.FC<DataModeToggleProps> = ({ dataMode, onDataModeChange }) => {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center bg-gray-100 rounded-lg p-1 border shadow-sm">
       <Button
@@ -356,36 +359,36 @@ const DataModeToggle: React.FC<DataModeToggleProps> = ({ dataMode, onDataModeCha
         variant={dataMode === 'views' ? 'default' : 'ghost'}
         onClick={() => onDataModeChange('views')}
         className={`h-8 px-3 text-xs font-medium transition-all duration-200 ${
-          dataMode === 'views' 
-            ? 'bg-white shadow-sm text-blue-700 border-0' 
+          dataMode === 'views'
+            ? 'bg-white shadow-sm text-blue-700 border-0'
             : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
         }`}
       >
-        Views
+        {t('analytics:views')}
       </Button>
       <Button
         size="sm"
         variant={dataMode === 'submissions' ? 'default' : 'ghost'}
         onClick={() => onDataModeChange('submissions')}
         className={`h-8 px-3 text-xs font-medium transition-all duration-200 ${
-          dataMode === 'submissions' 
-            ? 'bg-white shadow-sm text-orange-700 border-0' 
+          dataMode === 'submissions'
+            ? 'bg-white shadow-sm text-orange-700 border-0'
             : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
         }`}
       >
-        Submissions
+        {t('analytics:submissions')}
       </Button>
       <Button
         size="sm"
         variant={dataMode === 'combined' ? 'default' : 'ghost'}
         onClick={() => onDataModeChange('combined')}
         className={`h-8 px-3 text-xs font-medium transition-all duration-200 ${
-          dataMode === 'combined' 
-            ? 'bg-white shadow-sm text-purple-700 border-0' 
+          dataMode === 'combined'
+            ? 'bg-white shadow-sm text-purple-700 border-0'
             : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
         }`}
       >
-        Combined
+        {t('analytics:combined')}
       </Button>
     </div>
   );

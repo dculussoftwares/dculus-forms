@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '@dculus/ui';
 import { Users, Monitor, Globe, TrendingUp, TrendingDown, FileCheck, Target, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { FormAnalyticsData, FormSubmissionAnalyticsData } from '../../hooks/useFormAnalytics';
+import { useTranslation } from 'react-i18next';
 
 interface AnalyticsOverviewProps {
   data: FormAnalyticsData | null;
@@ -115,6 +116,7 @@ export const AnalyticsOverview: React.FC<AnalyticsOverviewProps> = ({
   topSubmissionCountry,
   loading
 }) => {
+  const { t } = useTranslation();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
@@ -153,64 +155,64 @@ export const AnalyticsOverview: React.FC<AnalyticsOverviewProps> = ({
 
   const metrics = [
     {
-      title: 'Total Views',
+      title: t('analytics:totalViews'),
       value: data?.totalViews || 0,
-      subtitle: 'Total form impressions',
+      subtitle: t('analytics:subtitles.totalViews'),
       icon: Users,
       iconColor: 'text-blue-600',
       iconBgColor: 'bg-blue-100',
       trend: undefined // TODO: Add trend calculation when we have historical data
     },
     {
-      title: 'Total Submissions',
+      title: t('analytics:totalSubmissions'),
       value: submissionData?.totalSubmissions || 0,
-      subtitle: `${submissionConversionRate}% conversion rate`,
+      subtitle: t('analytics:subtitles.totalSubmissions', { rate: submissionConversionRate }),
       icon: FileCheck,
       iconColor: 'text-green-600',
       iconBgColor: 'bg-green-100'
     },
     {
-      title: 'View Sessions',
+      title: t('analytics:viewSessions'),
       value: data?.uniqueSessions || 0,
-      subtitle: `${conversionRate}% unique view rate`,
+      subtitle: t('analytics:subtitles.viewSessions', { rate: conversionRate }),
       icon: Monitor,
       iconColor: 'text-purple-600',
       iconBgColor: 'bg-purple-100'
     },
     {
-      title: 'Submission Sessions',
+      title: t('analytics:submissionSessions'),
       value: submissionData?.uniqueSessions || 0,
-      subtitle: 'Unique submission sessions',
+      subtitle: t('analytics:subtitles.submissionSessions'),
       icon: Target,
       iconColor: 'text-indigo-600',
       iconBgColor: 'bg-indigo-100'
     },
     {
-      title: 'Top View Country',
-      value: topCountry?.name || 'Unknown',
-      subtitle: topCountry 
-        ? `${topCountry.count} views (${topCountry.percentage.toFixed(1)}%)`
-        : 'No view data available',
+      title: t('analytics:topViewCountry'),
+      value: topCountry?.name || t('analytics:subtitles.unknown'),
+      subtitle: topCountry
+        ? t('analytics:subtitles.topViewCountry', { count: topCountry.count, percentage: topCountry.percentage.toFixed(1) })
+        : t('analytics:subtitles.noData', { type: t('analytics:viewSessions') }),
       icon: Globe,
       iconColor: 'text-orange-600',
       iconBgColor: 'bg-orange-100'
     },
     {
-      title: 'Top Submission Country',
-      value: topSubmissionCountry?.name || 'Unknown',
-      subtitle: topSubmissionCountry 
-        ? `${topSubmissionCountry.count} submissions (${topSubmissionCountry.percentage.toFixed(1)}%)`
-        : 'No submission data available',
+      title: t('analytics:topSubmissionCountry'),
+      value: topSubmissionCountry?.name || t('analytics:subtitles.unknown'),
+      subtitle: topSubmissionCountry
+        ? t('analytics:subtitles.topSubmissionCountry', { count: topSubmissionCountry.count, percentage: topSubmissionCountry.percentage.toFixed(1) })
+        : t('analytics:subtitles.noData', { type: t('analytics:submissionSessions') }),
       icon: Globe,
       iconColor: 'text-red-600',
       iconBgColor: 'bg-red-100'
     },
     {
-      title: 'Avg Completion Time',
+      title: t('analytics:avgCompletionTime'),
       value: formatCompletionTime(submissionData?.averageCompletionTime || null),
-      subtitle: submissionData?.averageCompletionTime 
-        ? 'Time to complete form'
-        : 'No completion data available',
+      subtitle: submissionData?.averageCompletionTime
+        ? t('analytics:subtitles.avgCompletionTime')
+        : t('analytics:subtitles.avgCompletionTime_noData'),
       icon: Clock,
       iconColor: 'text-cyan-600',
       iconBgColor: 'bg-cyan-100'

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -11,6 +11,7 @@ import {
 } from '@dculus/ui';
 import { Calendar, RefreshCw } from 'lucide-react';
 import { TimeRangePreset, TimeRange } from '../../hooks/useFormAnalytics';
+import { useTranslation } from 'react-i18next';
 
 interface TimeRangeSelectorProps {
   value: TimeRangePreset;
@@ -27,6 +28,7 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   onRefresh,
   loading = false
 }) => {
+  const { t } = useTranslation();
   const [showCustomPicker, setShowCustomPicker] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -41,10 +43,10 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   }, [value, customRange]);
 
   const timeRangeOptions = [
-    { value: '7d', label: 'Last 7 days' },
-    { value: '30d', label: 'Last 30 days' },
-    { value: '90d', label: 'Last 90 days' },
-    { value: 'custom', label: 'Custom range' }
+    { value: '7d', label: t('analytics:last7Days') },
+    { value: '30d', label: t('analytics:last30Days') },
+    { value: '90d', label: t('analytics:last90Days') },
+    { value: 'custom', label: t('analytics:customRange') }
   ];
 
   const handlePresetChange = (preset: string) => {
@@ -71,22 +73,22 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   };
 
   const validateDateRange = (start: string, end: string): string => {
-    if (!start || !end) return 'Please select both start and end dates';
-    
+    if (!start || !end) return t('analytics:pleaseSelectBothDates');
+
     const startDate = new Date(start);
     const endDate = new Date(end);
     const today = new Date();
-    
-    if (startDate > endDate) return 'Start date must be before end date';
-    if (endDate > today) return 'End date cannot be in the future';
-    
+
+    if (startDate > endDate) return t('analytics:startDateMustBeBeforeEnd');
+    if (endDate > today) return t('analytics:endDateCannotBeInFuture');
+
     const maxDaysAgo = new Date();
     maxDaysAgo.setFullYear(maxDaysAgo.getFullYear() - 2); // 2 years max
-    if (startDate < maxDaysAgo) return 'Start date cannot be more than 2 years ago';
-    
+    if (startDate < maxDaysAgo) return t('analytics:startDateCannotBeMoreThan2YearsAgo');
+
     const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    if (daysDiff > 365) return 'Date range cannot exceed 1 year';
-    
+    if (daysDiff > 365) return t('analytics:dateRangeCannotExceed1Year');
+
     return '';
   };
 
@@ -143,7 +145,7 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
     <div className="flex items-center gap-3 relative">
       <div className="flex items-center gap-2">
         <Calendar className="h-4 w-4 text-gray-500" />
-        <span className="text-sm font-medium text-gray-700">Time Range:</span>
+        <span className="text-sm font-medium text-gray-700">{t('analytics:timeRange')}</span>
       </div>
       
       <div className="relative">
@@ -168,7 +170,7 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
             <Card className="w-96 shadow-lg border">
               <CardContent className="p-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-gray-900">Select Custom Date Range</h4>
+                  <h4 className="text-sm font-semibold text-gray-900">{t('analytics:selectCustomDateRange')}</h4>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -181,14 +183,14 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                 
                 {/* Quick Presets */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Quick Presets</label>
+                  <label className="text-sm font-medium text-gray-700">{t('analytics:quickPresets')}</label>
                   <div className="flex flex-wrap gap-2">
                     {[
-                      { label: 'Last 7 days', days: 7 },
-                      { label: 'Last 14 days', days: 14 },
-                      { label: 'Last 30 days', days: 30 },
-                      { label: 'Last 60 days', days: 60 },
-                      { label: 'Last 90 days', days: 90 }
+                      { label: t('analytics:last7Days'), days: 7 },
+                      { label: t('analytics:last14Days'), days: 14 },
+                      { label: t('analytics:last30Days'), days: 30 },
+                      { label: t('analytics:last60Days'), days: 60 },
+                      { label: t('analytics:last90Days'), days: 90 }
                     ].map((preset) => (
                       <Button
                         key={preset.days}
@@ -205,7 +207,7 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Start Date</label>
+                    <label className="text-sm font-medium text-gray-700">{t('analytics:startDate')}</label>
                     <input
                       type="date"
                       value={startDate}
@@ -218,7 +220,7 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                   </div>
                   
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">End Date</label>
+                    <label className="text-sm font-medium text-gray-700">{t('analytics:endDate')}</label>
                     <input
                       type="date"
                       value={endDate}
@@ -243,8 +245,8 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                 {startDate && endDate && !dateError && (
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
                     <p className="text-sm text-blue-700">
-                      Selected range: <strong>
-                        {Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1} days
+                      {t('analytics:selectedRange')}: <strong>
+                        {Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1} {t('analytics:days')}
                       </strong>
                     </p>
                   </div>
