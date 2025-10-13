@@ -1,0 +1,62 @@
+{
+  "dashboard": {
+    "title": "Admin Dashboard",
+    "totalUsers": "Total Users",
+    "totalOrganizations": "Total Organizations",
+    "activeUsers": "Active Users",
+    "recentActivity": "Recent Activity"
+  },
+  "organizations": {
+    "title": "Organizations",
+    "addOrganization": "Add Organization",
+    "name": "Organization Name",
+    "description": "Description",
+    "members": "Members",
+    "forms": "Forms",
+    "created": "Created",
+    "actions": "Actions",
+    "noOrganizations": "No organizations found",
+    "search": "Search organizations...",
+    "editOrganization": "Edit Organization",
+    "deleteOrganization": "Delete Organization"
+  },
+  "users": {
+    "title": "Users",
+    "addUser": "Add User",
+    "name": "Name",
+    "email": "Email",
+    "organization": "Organization",
+    "role": "Role",
+    "status": "Status",
+    "lastLogin": "Last Login",
+    "created": "Created",
+    "actions": "Actions",
+    "noUsers": "No users found",
+    "search": "Search users...",
+    "editUser": "Edit User",
+    "deleteUser": "Delete User",
+    "inviteUser": "Invite User",
+    "roles": {
+      "admin": "Admin",
+      "user": "User",
+      "organizationOwner": "Organization Owner"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "pending": "Pending"
+    }
+  },
+  "templates": {
+    "title": "Templates",
+    "addTemplate": "Add Template",
+    "name": "Template Name",
+    "description": "Description",
+    "category": "Category",
+    "createdBy": "Created By",
+    "created": "Created",
+    "actions": "Actions",
+    "noTemplates": "No templates found",
+    "search": "Search templates..."
+  }
+}

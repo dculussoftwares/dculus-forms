@@ -1,0 +1,31 @@
+{
+  "buttons": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous"
+  },
+  "form": {
+    "required": "This field is required",
+    "minLength": "Must be at least {{min}} characters",
+    "maxLength": "Must not exceed {{max}} characters",
+    "email": "Please enter a valid email address",
+    "url": "Please enter a valid URL",
+    "number": "Please enter a valid number",
+    "min": "Must be at least {{min}}",
+    "max": "Must not exceed {{max}}",
+    "pattern": "Invalid format"
+  },
+  "messages": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Form submitted successfully",
+    "thankYou": "Thank you for your submission!"
+  },
+  "navigation": {
+    "back": "Back to Forms",
+    "home": "Home"
+  }
+}

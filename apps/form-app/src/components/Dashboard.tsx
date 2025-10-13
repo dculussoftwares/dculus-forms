@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from '@dculus/ui';
 import { MainLayout } from './MainLayout';
+import { useTranslation } from 'react-i18next';
 import {
   FileText,
   Eye,
@@ -69,6 +70,7 @@ function FormsListDashboard() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const contentRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation('dashboard');
 
   // P0: Persist state in URL params
   const urlPage = parseInt(searchParams.get('page') || '1', 10);
@@ -332,16 +334,16 @@ function FormsListDashboard() {
 
   return (
     <MainLayout
-      title="My Forms"
+      title={t('navigation.breadcrumb')}
       subtitle="Create, manage, and analyze your forms"
-      breadcrumbs={[{ label: 'Dashboard', isActive: true }]}
+      breadcrumbs={[{ label: t('navigation.breadcrumb'), isActive: true }]}
     >
       <div className="space-y-8" ref={contentRef}>
         {/* Header with Create Form Button */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <TypographyH3 className="text-2xl font-bold tracking-tight">
-              Your Forms
+              {t('forms.myForms')}
             </TypographyH3>
           </div>
           <Button
@@ -350,7 +352,7 @@ function FormsListDashboard() {
             size="lg"
           >
             <Plus className="mr-2 h-5 w-5" />
-            Create Form
+            {t('forms.actions.createForm')}
           </Button>
         </div>
 
@@ -361,14 +363,14 @@ function FormsListDashboard() {
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Search forms by name or description..."
+                  placeholder={t('forms.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 pr-10"
                 />
                 {isTyping && (
                   <div className="absolute right-10 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                    Searching...
+                    {t('forms.searching')}
                   </div>
                 )}
                 {searchTerm && (
@@ -413,7 +415,7 @@ function FormsListDashboard() {
               {/* Page Size Selector - P1 */}
               <div className="flex items-center gap-2 ml-auto">
                 <TypographySmall className="text-muted-foreground">
-                  Show:
+                  {t('forms.filters.show')}:
                 </TypographySmall>
                 <Select
                   value={pageSize.toString()}
@@ -432,7 +434,7 @@ function FormsListDashboard() {
                   </SelectContent>
                 </Select>
                 <TypographySmall className="text-muted-foreground">
-                  per page
+                  {t('forms.filters.perPage')}
                 </TypographySmall>
               </div>
             </div>
@@ -460,10 +462,10 @@ function FormsListDashboard() {
           <div className="text-center py-12">
             <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-8 max-w-md mx-auto">
               <div className="text-destructive font-medium mb-2">
-                Error loading forms
+                {t('errors.loadingError')}
               </div>
               <div className="text-muted-foreground text-sm">
-                Please try refreshing the page
+                {t('errors.loadingErrorDescription')}
               </div>
             </div>
           </div>
@@ -518,7 +520,7 @@ function FormsListDashboard() {
                   <div className="flex flex-col items-center gap-2">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     <TypographySmall className="text-muted-foreground">
-                      Loading page {currentPage}...
+                      {t('forms.pagination.loadingPage', { page: currentPage })}
                     </TypographySmall>
                   </div>
                 </div>
@@ -561,7 +563,7 @@ function FormsListDashboard() {
                         <div className="w-px h-6 bg-border" />
                         <div className="flex items-center gap-2">
                           <TypographySmall className="text-muted-foreground">
-                            Go to:
+                            {t('forms.pagination.goTo')}:
                           </TypographySmall>
                           <Input
                             type="number"
@@ -615,6 +617,8 @@ function FormCard({
   onNavigate,
   showPermissionBadge = false,
 }: FormCardProps) {
+  const { t } = useTranslation('forms');
+
   // Use metadata if available, otherwise fallback to defaults
   const metadata = form.metadata;
   const primaryColor = '#3b82f6';
@@ -685,7 +689,7 @@ function FormCard({
                 : 'bg-yellow-100 text-yellow-700 border border-yellow-200'
             }`}
           >
-            {form.isPublished ? 'Published' : 'Draft'}
+            {form.isPublished ? t('status.published') : t('status.draft')}
           </div>
           {showPermissionBadge && form.userPermission && (
             <div
@@ -700,12 +704,12 @@ function FormCard({
               }`}
             >
               {form.userPermission === 'OWNER'
-                ? 'Owner'
+                ? t('permissions.owner')
                 : form.userPermission === 'EDITOR'
-                ? 'Editor'
+                ? t('permissions.editor')
                 : form.userPermission === 'VIEWER'
-                ? 'Viewer'
-                : 'No Access'}
+                ? t('permissions.viewer')
+                : t('permissions.noAccess')}
             </div>
           )}
         </div>

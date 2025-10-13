@@ -1,0 +1,37 @@
+{
+  "title": "Filter responses",
+  "subtitle": "Show me all responses where the following conditions are met",
+  "addFilter": "Add filter",
+  "empty": "No filters applied",
+  "emptyDescription": "Add filters to show specific responses",
+  "clearAll": "Clear all",
+  "apply": "Apply",
+  "cancel": "Cancel",
+  "applied": "Applied",
+  "operators": {
+    "equals": "equals \"{{value}}\"",
+    "not_equals": "not equals \"{{value}}\"",
+    "contains": "contains \"{{value}}\"",
+    "not_contains": "doesn't contain \"{{value}}\"",
+    "starts_with": "starts with \"{{value}}\"",
+    "ends_with": "ends with \"{{value}}\"",
+    "is_empty": "is empty",
+    "is_not_empty": "is not empty",
+    "greater_than": "> {{value}}",
+    "less_than": "< {{value}}",
+    "between": "between {{min}} and {{max}}",
+    "date_equals": "date equals {{value}}",
+    "date_before": "before {{value}}",
+    "date_after": "after {{value}}",
+    "date_between": "between {{from}} and {{to}}",
+    "in": "is {{values}}",
+    "in_more": "is {{values}} +{{extra}} more",
+    "not_in": "is not {{values}}",
+    "not_in_more": "is not {{values}} +{{extra}} more",
+    "filtered": "filtered"
+  },
+  "remove": "Remove filter",
+  "srOnly": {
+    "removeFilter": "Remove filter"
+  }
+}

@@ -27,10 +27,12 @@
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "graphql": "^16.8.1",
+    "i18next": "25.6.0",
     "lucide-react": "0.534.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "react-hook-form": "7.62.0",
+    "react-i18next": "16.0.0",
     "react-router-dom": "^6.20.1",
     "tailwind-merge": "3.3.1",
     "zustand": "5.0.7"

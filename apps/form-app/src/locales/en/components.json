@@ -1,0 +1,44 @@
+{
+  "modals": {
+    "confirm": {
+      "title": "Confirm Action",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "delete": {
+      "title": "Delete Item",
+      "message": "Are you sure you want to delete this item? This action cannot be undone.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    },
+    "share": {
+      "title": "Share Form",
+      "copyLink": "Copy Link",
+      "linkCopied": "Link copied to clipboard"
+    }
+  },
+  "filters": {
+    "title": "Filters",
+    "apply": "Apply Filters",
+    "clear": "Clear Filters",
+    "dateRange": "Date Range",
+    "status": "Status",
+    "type": "Type"
+  },
+  "pagination": {
+    "showing": "Showing {{start}} to {{end}} of {{total}}",
+    "page": "Page {{current}}",
+    "perPage": "Per page"
+  },
+  "table": {
+    "noData": "No data available",
+    "loading": "Loading...",
+    "sortBy": "Sort by",
+    "ascending": "Ascending",
+    "descending": "Descending"
+  },
+  "sidebar": {
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar"
+  }
+}
