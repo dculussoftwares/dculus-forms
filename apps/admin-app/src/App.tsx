@@ -4,6 +4,9 @@ import AdminLayout from './components/AdminLayout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import OrganizationsPage from './pages/OrganizationsPage';
+import { OrganizationDetailPage } from './pages/organizations/OrganizationDetailPage';
+import { UsersPage } from './pages/users/UsersPage';
+import { UserDetailPage } from './pages/users/UserDetailPage';
 import TemplatesPage from './pages/TemplatesPage';
 import { LoadingSpinner } from '@dculus/ui';
 
@@ -39,6 +42,9 @@ function App() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/organizations" element={<OrganizationsPage />} />
+        <Route path="/organizations/:orgId" element={<OrganizationDetailPage />} />
+        <Route path="/users" element={<UsersPage />} />
+        <Route path="/users/:userId" element={<UserDetailPage />} />
         <Route path="/templates" element={<TemplatesPage />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>

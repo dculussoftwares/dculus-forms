@@ -12,6 +12,20 @@ export interface AdminOrganizationArgs {
   id: string;
 }
 
+export interface AdminUsersArgs {
+  page?: number;
+  limit?: number;
+  search?: string;
+}
+
+export interface AdminUserByIdArgs {
+  id: string;
+}
+
+export interface AdminOrganizationByIdArgs {
+  id: string;
+}
+
 // Initialize S3 client for storage stats
 const s3Client = new S3Client({
   region: 'auto',
@@ -267,6 +281,187 @@ export const adminResolvers = {
       } catch (error) {
         console.error('Error fetching admin stats:', error);
         throw new GraphQLError('Failed to fetch admin statistics');
+      }
+    },
+
+    adminUsers: async (_: any, args: AdminUsersArgs, context: any) => {
+      // Check admin privileges
+      requireAdminRole(context);
+
+      try {
+        const { page = 1, limit = 20, search } = args;
+        const skip = (page - 1) * limit;
+
+        // Build where clause for search
+        const whereClause: any = {};
+        if (search) {
+          whereClause.OR = [
+            { name: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+          ];
+        }
+
+        const [users, totalCount] = await Promise.all([
+          prisma.user.findMany({
+            where: whereClause,
+            skip,
+            take: limit,
+            include: {
+              members: {
+                include: {
+                  organization: {
+                    select: {
+                      id: true,
+                      name: true,
+                      slug: true,
+                    },
+                  },
+                },
+              },
+            },
+            orderBy: {
+              createdAt: 'desc',
+            },
+          }),
+          prisma.user.count({ where: whereClause }),
+        ]);
+
+        const totalPages = Math.ceil(totalCount / limit);
+
+        return {
+          users: users.map(user => ({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            emailVerified: user.emailVerified,
+            image: user.image,
+            createdAt: user.createdAt.toISOString(),
+            updatedAt: user.updatedAt.toISOString(),
+            organizations: user.members.map((m: any) => ({
+              organizationId: m.organization.id,
+              organizationName: m.organization.name,
+              organizationSlug: m.organization.slug,
+              role: m.role,
+              createdAt: m.createdAt.toISOString(),
+            })),
+          })),
+          totalCount,
+          currentPage: page,
+          totalPages,
+        };
+      } catch (error) {
+        console.error('Error fetching admin users:', error);
+        throw new GraphQLError('Failed to fetch users');
+      }
+    },
+
+    adminUserById: async (_: any, args: AdminUserByIdArgs, context: any) => {
+      // Check admin privileges
+      requireAdminRole(context);
+
+      try {
+        const user = await prisma.user.findUnique({
+          where: { id: args.id },
+          include: {
+            members: {
+              include: {
+                organization: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        if (!user) {
+          throw new GraphQLError('User not found');
+        }
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          emailVerified: user.emailVerified,
+          image: user.image,
+          createdAt: user.createdAt.toISOString(),
+          updatedAt: user.updatedAt.toISOString(),
+          organizations: user.members.map((m: any) => ({
+            organizationId: m.organization.id,
+            organizationName: m.organization.name,
+            organizationSlug: m.organization.slug,
+            role: m.role,
+            createdAt: m.createdAt.toISOString(),
+          })),
+        };
+      } catch (error) {
+        console.error('Error fetching admin user:', error);
+        throw new GraphQLError('Failed to fetch user');
+      }
+    },
+
+    adminOrganizationById: async (_: any, args: AdminOrganizationByIdArgs, context: any) => {
+      // Check admin privileges
+      requireAdminRole(context);
+
+      try {
+        const organization = await prisma.organization.findUnique({
+          where: { id: args.id },
+          include: {
+            members: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    image: true,
+                  },
+                },
+              },
+            },
+            forms: true,
+          },
+        });
+
+        if (!organization) {
+          throw new GraphQLError('Organization not found');
+        }
+
+        // Count total responses for this organization
+        const totalResponses = await prisma.response.count({
+          where: {
+            form: {
+              organizationId: organization.id,
+            },
+          },
+        });
+
+        return {
+          id: organization.id,
+          name: organization.name,
+          slug: organization.slug,
+          logo: organization.logo,
+          createdAt: organization.createdAt.toISOString(),
+          members: organization.members.map(m => ({
+            userId: m.user.id,
+            userName: m.user.name,
+            userEmail: m.user.email,
+            userImage: m.user.image,
+            role: m.role,
+            createdAt: m.createdAt.toISOString(),
+          })),
+          stats: {
+            totalForms: organization.forms.length,
+            totalResponses,
+          },
+        };
+      } catch (error) {
+        console.error('Error fetching admin organization by id:', error);
+        throw new GraphQLError('Failed to fetch organization');
       }
     },
   },

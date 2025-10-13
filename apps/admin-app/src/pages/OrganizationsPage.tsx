@@ -1,9 +1,11 @@
 import { useQuery } from '@apollo/client';
+import { useNavigate } from 'react-router-dom';
 import { Card, LoadingSpinner } from '@dculus/ui';
 import { Building2, Users, FileText, Calendar } from 'lucide-react';
 import { ADMIN_ORGANIZATIONS_QUERY } from '../graphql/organizations';
 
 export default function OrganizationsPage() {
+  const navigate = useNavigate();
   const { data, loading, error, refetch } = useQuery(ADMIN_ORGANIZATIONS_QUERY, {
     variables: {
       limit: 50,
@@ -89,7 +91,10 @@ export default function OrganizationsPage() {
 
             <div className="mt-6 pt-6 border-t border-gray-200">
               <div className="flex justify-between">
-                <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                <button 
+                  onClick={() => navigate(`/organizations/${org.id}`)}
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                >
                   View Details
                 </button>
                 <button className="text-sm text-gray-600 hover:text-gray-800">
@@ -167,7 +172,10 @@ export default function OrganizationsPage() {
                       {new Date(org.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button className="text-blue-600 hover:text-blue-900 mr-4">
+                      <button 
+                        onClick={() => navigate(`/organizations/${org.id}`)}
+                        className="text-blue-600 hover:text-blue-900 mr-4"
+                      >
                         View
                       </button>
                       <button className="text-gray-600 hover:text-gray-900">

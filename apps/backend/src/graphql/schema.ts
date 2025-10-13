@@ -411,6 +411,57 @@ export const typeDefs = gql`
     mongoCollectionCount: Int!
   }
 
+  # Admin Users Types
+  type AdminUsersResponse {
+    users: [AdminUserDetail!]!
+    totalCount: Int!
+    currentPage: Int!
+    totalPages: Int!
+  }
+
+  type AdminUserDetail {
+    id: ID!
+    name: String!
+    email: String!
+    emailVerified: Boolean!
+    image: String
+    createdAt: String!
+    updatedAt: String!
+    organizations: [UserOrganizationMembership!]!
+  }
+
+  type UserOrganizationMembership {
+    organizationId: ID!
+    organizationName: String!
+    organizationSlug: String
+    role: String!
+    createdAt: String!
+  }
+
+  type AdminOrganizationDetail {
+    id: ID!
+    name: String!
+    slug: String
+    logo: String
+    createdAt: String!
+    members: [OrganizationMember!]!
+    stats: OrganizationStats!
+  }
+
+  type OrganizationMember {
+    userId: ID!
+    userName: String!
+    userEmail: String!
+    userImage: String
+    role: String!
+    createdAt: String!
+  }
+
+  type OrganizationStats {
+    totalForms: Int!
+    totalResponses: Int!
+  }
+
   # Analytics Types
   type FormAnalytics {
     totalViews: Int!
@@ -831,6 +882,9 @@ export const typeDefs = gql`
     adminOrganizations(limit: Int, offset: Int): AdminOrganizationsResult!
     adminOrganization(id: ID!): AdminOrganization!
     adminStats: AdminStats!
+    adminUsers(page: Int, limit: Int, search: String): AdminUsersResponse!
+    adminUserById(id: String!): AdminUserDetail!
+    adminOrganizationById(id: String!): AdminOrganizationDetail!
 
     # Analytics Queries
     formAnalytics(formId: ID!, timeRange: TimeRangeInput): FormAnalytics!
