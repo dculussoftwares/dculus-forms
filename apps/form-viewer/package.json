@@ -16,10 +16,8 @@
     "@dculus/ui": "workspace:*",
     "@dculus/utils": "workspace:*",
     "graphql": "^16.8.1",
-    "i18next": "25.6.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-i18next": "16.0.0",
     "react-router-dom": "^6.28.0"
   },
   "devDependencies": {

@@ -6,7 +6,6 @@ import App from './App.tsx';
 import { AuthProvider } from './hooks/useAuth';
 import { client } from './services/apolloClient';
 import './index.css';
-import './i18n';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
