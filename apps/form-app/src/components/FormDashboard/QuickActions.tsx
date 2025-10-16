@@ -4,7 +4,6 @@ import {
   Users,
   Database,
   LineChart,
-  Puzzle,
   Settings,
   ArrowRight,
 } from 'lucide-react';
@@ -87,15 +86,6 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId }) => {
       iconColor: 'text-purple-600',
       hoverColor: 'group-hover:text-purple-600',
       path: `/dashboard/form/${formId}/analytics`,
-    },
-    {
-      title: 'Plugins',
-      description: 'Extend with integrations',
-      icon: Puzzle,
-      iconBg: 'bg-orange-50',
-      iconColor: 'text-orange-600',
-      hoverColor: 'group-hover:text-orange-600',
-      path: `/dashboard/form/${formId}/plugins`,
     },
     {
       title: 'Settings',
