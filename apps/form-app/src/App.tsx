@@ -22,6 +22,7 @@ import FormDashboard from './pages/FormDashboard';
 import FormAnalytics from './pages/FormAnalytics';
 import FormSettings from './pages/FormSettings';
 import CollaborativeFormBuilder from './pages/CollaborativeFormBuilder';
+import Plugins from './pages/Plugins';
 
 
 function App() {
@@ -65,6 +66,11 @@ function App() {
           <Route path="/dashboard/form/:formId/settings" element={
             <ProtectedRoute>
               <FormSettings />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/form/:formId/plugins" element={
+            <ProtectedRoute>
+              <Plugins />
             </ProtectedRoute>
           } />
 
