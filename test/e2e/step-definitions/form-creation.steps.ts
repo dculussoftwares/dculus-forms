@@ -16,7 +16,6 @@ Then('I should see the dashboard with forms content', async function (this: E2EW
   
   // Check for forms dashboard specific content
   const hasDashboardContent = await this.pageContainsText('My Forms') ||
-                             await this.pageContainsText('Your Forms') ||
                              await this.pageContainsText('Create Form');
   
   if (!hasDashboardContent) {

@@ -338,12 +338,7 @@ function FormsListDashboard() {
     >
       <div className="space-y-8" ref={contentRef}>
         {/* Header with Create Form Button */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <TypographyH3 className="text-2xl font-bold tracking-tight">
-              Your Forms
-            </TypographyH3>
-          </div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4">
           <Button
             onClick={() => navigate('/dashboard/templates')}
             className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
