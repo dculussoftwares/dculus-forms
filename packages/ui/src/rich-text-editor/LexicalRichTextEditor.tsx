@@ -16,10 +16,11 @@ import { $getRoot, $insertNodes, type EditorState } from 'lexical';
 import { HeadingNode, QuoteNode } from '@lexical/rich-text';
 import { ListItemNode, ListNode } from '@lexical/list';
 import { LinkNode, AutoLinkNode } from '@lexical/link';
-import { 
-  BeautifulMentionsPlugin, 
-  BeautifulMentionNode, 
-  type BeautifulMentionsItem, 
+import {
+  BeautifulMentionsPlugin,
+  BeautifulMentionNode,
+  type BeautifulMentionsItem,
+  type BeautifulMentionsMenuProps,
   type BeautifulMentionsMenuItemProps,
   type BeautifulMentionComponentProps,
   createBeautifulMentionNode
@@ -185,12 +186,28 @@ interface MentionField {
   label: string;
 }
 
+// Custom menu component that fixes the loading prop warning
+const CustomMentionMenu = forwardRef<HTMLUListElement, BeautifulMentionsMenuProps>(
+  ({ loading, ...props }, ref) => {
+    // Don't pass loading as a prop to the ul element, just use it for logic if needed
+    return (
+      <ul
+        {...props}
+        ref={ref}
+        className="beautiful-mentions-menu"
+      />
+    );
+  }
+);
+
+CustomMentionMenu.displayName = 'CustomMentionMenu';
+
 // Custom menu item component that shows the label instead of field ID
 const CustomMentionMenuItem = forwardRef<HTMLLIElement, BeautifulMentionsMenuItemProps>(
-  ({ selected, item: { value, data }, ...props }, ref) => {
-    // Access label from nested data object
-    const displayText = (data as any)?.data?.label || (data as any)?.label || value;
-    
+  ({ selected, item, ...props }, ref) => {
+    // Use displayValue from the BeautifulMentionsMenuItem interface
+    const displayText = item?.displayValue || item?.value || '';
+
     return (
       <li
         {...props}
@@ -206,18 +223,20 @@ const CustomMentionMenuItem = forwardRef<HTMLLIElement, BeautifulMentionsMenuIte
 
 CustomMentionMenuItem.displayName = 'CustomMentionMenuItem';
 
-// Custom mention component that displays labels in the editor but stores field IDs
+// Custom mention component that displays labels in the editor
 const CustomMentionComponent = forwardRef<HTMLSpanElement, BeautifulMentionComponentProps>(
   ({ value, data, trigger, ...props }, ref) => {
-    // Display the label to users, but the value (field ID) is still stored
-    const displayText = (data as any)?.data?.label || (data as any)?.label || value;
-    
+    // value is already the label from our item configuration
+    // data contains fieldId if we need it
+    const displayText = value;
+    const fieldId = (data as any)?.fieldId || value;
+
     return (
       <span
         {...props}
         ref={ref}
         className="editor-mention bg-blue-100 text-blue-800 px-2 py-1 rounded-md border border-blue-200 mx-1 inline-block"
-        data-field-id={value} // Store the field ID in a data attribute
+        data-field-id={fieldId}
       >
         {trigger}{displayText}
       </span>
@@ -246,15 +265,18 @@ export const LexicalRichTextEditor: React.FC<LexicalRichTextEditorProps> = ({
 }) => {
   const mentionItems = useMemo((): Record<string, BeautifulMentionsItem[]> => {
     if (mentionFields.length === 0) return {};
-    
+
     return {
-      '@': mentionFields.map((field) => ({
-        value: field.fieldId, // This gets saved to HTML as the mention value
-        data: {
-          label: field.label, // This gets displayed to users  
-          fieldId: field.fieldId, // Additional property for access
-        }
-      } as unknown as BeautifulMentionsItem)),
+      '@': mentionFields.map((field) => {
+        // The library uses displayValue for menu display and filtering
+        // Value is what gets stored in the mention node
+        const item: BeautifulMentionsItem = {
+          value: field.label, // Use label as the value so it's searchable and displayed
+          fieldId: field.fieldId, // Store the actual field ID in data
+          label: field.label, // Keep label for reference
+        };
+        return item;
+      }),
     };
   }, [mentionFields]);
 
@@ -305,8 +327,11 @@ export const LexicalRichTextEditor: React.FC<LexicalRichTextEditorProps> = ({
         {editable && mentionFields.length > 0 && (
           <>
             <style>{`
-              .beautiful-mentions-menu {
-                background: white !important;
+              /* Force white opaque background on mention menu */
+              .beautiful-mentions-menu,
+              ul.beautiful-mentions-menu {
+                background: rgb(255, 255, 255) !important;
+                background-color: rgb(255, 255, 255) !important;
                 border: 1px solid #e5e7eb !important;
                 border-radius: 8px !important;
                 box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
@@ -315,9 +340,11 @@ export const LexicalRichTextEditor: React.FC<LexicalRichTextEditorProps> = ({
                 overflow-y: auto !important;
                 z-index: 9999 !important;
                 min-width: 220px !important;
-                backdrop-filter: blur(8px) !important;
                 animation: fadeInUp 0.15s ease-out !important;
-                position: fixed !important;
+                position: absolute !important;
+                opacity: 1 !important;
+                list-style: none !important;
+                margin: 0 !important;
               }
               
               @keyframes fadeInUp {
@@ -331,7 +358,8 @@ export const LexicalRichTextEditor: React.FC<LexicalRichTextEditorProps> = ({
                 }
               }
               
-              .beautiful-mentions-menu-item {
+              .beautiful-mentions-menu-item,
+              li.beautiful-mentions-menu-item {
                 padding: 10px 14px !important;
                 font-size: 14px !important;
                 color: #374151 !important;
@@ -340,11 +368,13 @@ export const LexicalRichTextEditor: React.FC<LexicalRichTextEditorProps> = ({
                 display: flex !important;
                 align-items: center !important;
                 border: none !important;
-                background: transparent !important;
+                background: rgb(255, 255, 255) !important;
+                background-color: rgb(255, 255, 255) !important;
                 width: 100% !important;
                 text-align: left !important;
                 position: relative !important;
                 line-height: 1.4 !important;
+                list-style: none !important;
               }
               
               .beautiful-mentions-menu-item .mention-prefix,
@@ -357,7 +387,8 @@ export const LexicalRichTextEditor: React.FC<LexicalRichTextEditorProps> = ({
                 flex-shrink: 0 !important;
               }
               
-              .mention-menu-item {
+              .mention-menu-item,
+              li.mention-menu-item {
                 padding: 10px 14px !important;
                 font-size: 14px !important;
                 color: #374151 !important;
@@ -366,7 +397,8 @@ export const LexicalRichTextEditor: React.FC<LexicalRichTextEditorProps> = ({
                 display: flex !important;
                 align-items: center !important;
                 border: none !important;
-                background: transparent !important;
+                background: rgb(255, 255, 255) !important;
+                background-color: rgb(255, 255, 255) !important;
                 width: 100% !important;
                 text-align: left !important;
                 position: relative !important;
@@ -452,8 +484,9 @@ export const LexicalRichTextEditor: React.FC<LexicalRichTextEditorProps> = ({
                 position: relative !important;
               }
             `}</style>
-            <BeautifulMentionsPlugin 
+            <BeautifulMentionsPlugin
               items={mentionItems}
+              menuComponent={CustomMentionMenu}
               menuItemComponent={CustomMentionMenuItem}
             />
           </>
