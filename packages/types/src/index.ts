@@ -790,9 +790,11 @@ export interface PaginatedResponse<T> {
 // Re-export validation schemas and types
 export * from './validation.js';
 
-
 // Re-export React Hook Form utilities
 export * from './formHookUtils.js';
+
+// Re-export plugin types
+export * from './plugins.js';
 
 /**
  * 📋 INTEGRATION CHECKLIST - When adding new field types or properties:

@@ -756,6 +756,35 @@ export const typeDefs = gql`
     percentage: Float!
   }
 
+  # Plugin System Types
+  type FormPlugin {
+    id: ID!
+    formId: ID!
+    type: String!
+    name: String!
+    enabled: Boolean!
+    config: JSON!
+    events: [String!]!
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  type PluginDelivery {
+    id: ID!
+    pluginId: ID!
+    eventType: String!
+    status: String!
+    payload: JSON!
+    response: JSON
+    errorMessage: String
+    deliveredAt: String!
+  }
+
+  type PluginMutationResponse {
+    success: Boolean!
+    message: String!
+  }
+
   type TrackFormViewResponse {
     success: Boolean!
   }
@@ -846,6 +875,23 @@ export const typeDefs = gql`
     hasPreviousPage: Boolean!
   }
 
+  # Plugin System Input Types
+  input CreateFormPluginInput {
+    formId: ID!
+    type: String!
+    name: String!
+    config: JSON!
+    events: [String!]!
+    enabled: Boolean
+  }
+
+  input UpdateFormPluginInput {
+    name: String
+    config: JSON
+    events: [String!]
+    enabled: Boolean
+  }
+
   type Query {
     # Auth Queries
     me: User
@@ -895,7 +941,10 @@ export const typeDefs = gql`
     allFieldsAnalytics(formId: ID!): AllFieldsAnalytics!
     fieldAnalyticsCacheStats: FieldAnalyticsCacheStats!
 
-
+    # Plugin Queries
+    formPlugins(formId: ID!): [FormPlugin!]!
+    formPlugin(id: ID!): FormPlugin
+    pluginDeliveries(pluginId: ID!, limit: Int): [PluginDelivery!]!
 
   }
 
@@ -940,7 +989,11 @@ export const typeDefs = gql`
     # Field Analytics Cache Mutations
     invalidateFieldAnalyticsCache(formId: ID!): CacheInvalidationResponse!
 
-
+    # Plugin Mutations
+    createFormPlugin(input: CreateFormPluginInput!): FormPlugin!
+    updateFormPlugin(id: ID!, input: UpdateFormPluginInput!): FormPlugin!
+    deleteFormPlugin(id: ID!): PluginMutationResponse!
+    testFormPlugin(id: ID!): PluginMutationResponse!
 
   }
 

@@ -22,6 +22,7 @@ import { createBetterAuthContext } from './middleware/better-auth-middleware.js'
 import { prisma } from './lib/prisma.js';
 import { createHocuspocusServer } from './services/hocuspocus.js';
 import { appConfig } from './lib/env.js';
+import { initializePluginSystem } from './plugins/index.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -184,6 +185,11 @@ const server = new ApolloServer({
 });
 
 async function startServer() {
+  // Initialize plugin system
+  console.log('🔌 Initializing plugin system...');
+  initializePluginSystem();
+  console.log('✅ Plugin system initialized');
+
   await server.start();
 
   // Dynamically import graphql-upload (ESM module)

@@ -18,6 +18,7 @@ import {
 } from '@dculus/utils';
 import { deserializeFormSchema } from '@dculus/types';
 import { analyticsService } from '../../services/analyticsService.js';
+import { emitFormSubmitted } from '../../plugins/events.js';
 
 export const responsesResolvers = {
   Query: {
@@ -225,7 +226,17 @@ export const responsesResolvers = {
         }
       }
 
-
+      // Emit plugin event for form submission
+      try {
+        emitFormSubmitted(input.formId, form.organizationId, {
+          responseId: response.id,
+          submittedAt: response.submittedAt.toISOString(),
+          ...input.data,
+        });
+      } catch (error) {
+        // Log error but don't fail the response submission
+        console.error('Error emitting form.submitted event:', error);
+      }
 
       return {
         ...response,

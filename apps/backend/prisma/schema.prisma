@@ -147,6 +147,7 @@ model Form {
   analytics              FormViewAnalytics[]
   submissionAnalytics    FormSubmissionAnalytics[]
   permissions            FormPermission[]
+  plugins                FormPlugin[]
 
   @@map("form")
 }
@@ -345,4 +346,45 @@ model ResponseFieldChange {
   @@map("response_field_change")
 }
 
+// Plugin System Models
 
+model FormPlugin {
+  id        String   @id @map("_id")
+  formId    String   // Reference to Form
+  type      String   // Plugin type: "webhook", "email", "slack", etc.
+  name      String   // User-friendly name
+  enabled   Boolean  @default(true)
+  config    Json     // Plugin-specific configuration (flexible JSON)
+  events    String[] // Events that trigger this plugin: ["form.submitted", "plugin.test"]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  form       Form             @relation(fields: [formId], references: [id], onDelete: Cascade)
+  deliveries PluginDelivery[]
+
+  @@index([formId])
+  @@index([type])
+  @@index([enabled])
+  @@map("form_plugin")
+}
+
+model PluginDelivery {
+  id           String   @id @map("_id")
+  pluginId     String   // Reference to FormPlugin
+  eventType    String   // "form.submitted", "plugin.test", etc.
+  status       String   // "success", "failed"
+  payload      Json     // Event data sent to plugin
+  response     Json?    // Response from plugin (if applicable)
+  errorMessage String?  // Error details if failed
+  deliveredAt  DateTime @default(now())
+
+  // Relations
+  plugin FormPlugin @relation(fields: [pluginId], references: [id], onDelete: Cascade)
+
+  @@index([pluginId])
+  @@index([eventType])
+  @@index([status])
+  @@index([deliveredAt])
+  @@map("plugin_delivery")
+}
