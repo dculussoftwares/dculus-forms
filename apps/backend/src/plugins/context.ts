@@ -5,6 +5,7 @@ import {
   getResponseById,
   getAllResponsesByFormId,
 } from '../services/responseService.js';
+import { sendEmail, type EmailOptions } from '../services/emailService.js';
 
 /**
  * Plugin context interface
@@ -24,6 +25,9 @@ export interface PluginContext {
 
   // User helpers
   getUserById: (userId: string) => Promise<any>;
+
+  // Email helper
+  sendEmail: (options: EmailOptions) => Promise<void>;
 
   // Logger (automatically prefixed with [Plugin])
   logger: {
@@ -69,6 +73,9 @@ export const createPluginContext = (): PluginContext => {
         where: { id: userId },
       });
     },
+
+    // Email helper
+    sendEmail,
 
     // Logger with plugin context prefix
     logger: {

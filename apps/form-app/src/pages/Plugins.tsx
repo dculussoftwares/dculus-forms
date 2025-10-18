@@ -1,38 +1,25 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { useQuery, useMutation } from '@apollo/client';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@apollo/client';
 import { Card, LoadingSpinner, Button } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { GET_FORM_BY_ID } from '../graphql/queries';
-import { GET_FORM_PLUGINS, CREATE_FORM_PLUGIN, UPDATE_FORM_PLUGIN } from '../graphql/plugins';
+import { GET_FORM_PLUGINS } from '../graphql/plugins';
 import { AlertCircle, Plus, Plug } from 'lucide-react';
 import { AddPluginDialog } from '../components/plugins/AddPluginDialog';
-import { WebhookPluginDialog } from '../components/plugins/WebhookPluginDialog';
-import { EmailPluginDialog } from '../components/plugins/EmailPluginDialog';
-import { SlackPluginDialog } from '../components/plugins/SlackPluginDialog';
 import { PluginCard } from '../components/plugins/PluginCard';
 import { PluginDeliveryLog } from '../components/plugins/PluginDeliveryLog';
 import { PluginType } from '../components/plugins/PluginGallery';
-
-interface WebhookConfig {
-  url: string;
-  secret?: string;
-  headers?: Record<string, string>;
-}
 
 /**
  * Plugins Page - displays and manages plugins for form enhancements.
  */
 const Plugins: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
+  const navigate = useNavigate();
 
   // Dialog states
   const [isAddPluginDialogOpen, setIsAddPluginDialogOpen] = useState(false);
-  const [isWebhookDialogOpen, setIsWebhookDialogOpen] = useState(false);
-  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
-  const [isSlackDialogOpen, setIsSlackDialogOpen] = useState(false);
-
-  const [editingPlugin, setEditingPlugin] = useState<any | null>(null);
   const [deliveryLogPlugin, setDeliveryLogPlugin] = useState<{
     id: string;
     name: string;
@@ -51,93 +38,17 @@ const Plugins: React.FC = () => {
     }
   );
 
-  const [createPlugin] = useMutation(CREATE_FORM_PLUGIN, {
-    refetchQueries: [{ query: GET_FORM_PLUGINS, variables: { formId } }],
-  });
-
-  const [updatePlugin] = useMutation(UPDATE_FORM_PLUGIN, {
-    refetchQueries: [{ query: GET_FORM_PLUGINS, variables: { formId } }],
-  });
-
   const handlePluginSelected = (pluginType: PluginType) => {
     // Close the gallery dialog
     setIsAddPluginDialogOpen(false);
 
-    // Open the appropriate configuration dialog
-    switch (pluginType.id) {
-      case 'webhook':
-        setIsWebhookDialogOpen(true);
-        break;
-      case 'email':
-        setIsEmailDialogOpen(true);
-        break;
-      case 'slack':
-        setIsSlackDialogOpen(true);
-        break;
-      default:
-        break;
-    }
-  };
-
-  const handleCreateWebhook = async (data: {
-    type: string;
-    name: string;
-    config: WebhookConfig;
-    events: string[];
-  }) => {
-    await createPlugin({
-      variables: {
-        input: {
-          formId,
-          ...data,
-        },
-      },
-    });
-  };
-
-  const handleUpdateWebhook = async (data: {
-    type: string;
-    name: string;
-    config: WebhookConfig;
-    events: string[];
-  }) => {
-    if (!editingPlugin) return;
-
-    await updatePlugin({
-      variables: {
-        id: editingPlugin.id,
-        input: {
-          name: data.name,
-          config: data.config,
-          events: data.events,
-        },
-      },
-    });
-    setEditingPlugin(null);
+    // Navigate to configuration page
+    navigate(`/dashboard/form/${formId}/plugins/configure/${pluginType.id}`);
   };
 
   const handleEditPlugin = (plugin: any) => {
-    setEditingPlugin(plugin);
-
-    // Open appropriate dialog based on plugin type
-    switch (plugin.type) {
-      case 'webhook':
-        setIsWebhookDialogOpen(true);
-        break;
-      case 'email':
-        setIsEmailDialogOpen(true);
-        break;
-      case 'slack':
-        setIsSlackDialogOpen(true);
-        break;
-      default:
-        break;
-    }
-  };
-
-  const handleCloseWebhookDialog = () => {
-    setIsWebhookDialogOpen(false);
-    setEditingPlugin(null);
+    // Navigate to edit page
+    navigate(`/dashboard/form/${formId}/plugins/${plugin.id}/edit`);
   };
 
   const handleViewDeliveries = (plugin: any) => {
@@ -267,27 +178,6 @@ const Plugins: React.FC = () => {
         open={isAddPluginDialogOpen}
         onOpenChange={setIsAddPluginDialogOpen}
         onPluginSelected={handlePluginSelected}
-      />
-
-      {/* Webhook Configuration Dialog */}
-      <WebhookPluginDialog
-        open={isWebhookDialogOpen}
-        onOpenChange={handleCloseWebhookDialog}
-        onSave={editingPlugin ? handleUpdateWebhook : handleCreateWebhook}
-        initialData={editingPlugin}
-        mode={editingPlugin ? 'edit' : 'create'}
-      />
-
-      {/* Email Configuration Dialog (Coming Soon) */}
-      <EmailPluginDialog
-        open={isEmailDialogOpen}
-        onOpenChange={setIsEmailDialogOpen}
-      />
-
-      {/* Slack Configuration Dialog (Coming Soon) */}
-      <SlackPluginDialog
-        open={isSlackDialogOpen}
-        onOpenChange={setIsSlackDialogOpen}
       />
 
       {/* Delivery Log Dialog */}

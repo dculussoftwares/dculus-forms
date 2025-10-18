@@ -23,6 +23,7 @@ import FormAnalytics from './pages/FormAnalytics';
 import FormSettings from './pages/FormSettings';
 import CollaborativeFormBuilder from './pages/CollaborativeFormBuilder';
 import Plugins from './pages/Plugins';
+import PluginConfiguration from './pages/PluginConfiguration';
 
 
 function App() {
@@ -71,6 +72,16 @@ function App() {
           <Route path="/dashboard/form/:formId/plugins" element={
             <ProtectedRoute>
               <Plugins />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/form/:formId/plugins/configure/:pluginType" element={
+            <ProtectedRoute>
+              <PluginConfiguration />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/form/:formId/plugins/:pluginId/edit" element={
+            <ProtectedRoute>
+              <PluginConfiguration />
             </ProtectedRoute>
           } />
 

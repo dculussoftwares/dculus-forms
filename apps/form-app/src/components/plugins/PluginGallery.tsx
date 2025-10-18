@@ -28,13 +28,12 @@ export const AVAILABLE_PLUGIN_TYPES: PluginType[] = [
   {
     id: 'email',
     name: 'Email Notification',
-    description: 'Send email notifications to team members or submitters when form events occur.',
+    description: 'Send custom email notifications with rich text and @ mentions when form events occur.',
     icon: Mail,
     iconColor: 'text-blue-600',
     iconBgColor: 'bg-blue-100',
     category: 'Notification',
-    available: false,
-    comingSoon: true,
+    available: true,
   },
   {
     id: 'slack',

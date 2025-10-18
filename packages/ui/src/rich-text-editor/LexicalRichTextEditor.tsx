@@ -276,10 +276,10 @@ export const LexicalRichTextEditor: React.FC<LexicalRichTextEditorProps> = ({
 
 
   return (
-    <div className={cn('border border-gray-200 rounded-lg overflow-hidden relative mention-editor-container', className)}>
+    <div className={cn('border border-gray-200 rounded-lg relative mention-editor-container', className)} style={{ overflow: 'visible' }}>
       <LexicalComposer initialConfig={initialConfig}>
         {editable && <ToolbarPlugin />}
-        <div className="relative">
+        <div className="relative" style={{ overflow: 'visible' }}>
           <RichTextPlugin
             contentEditable={
               <ContentEditable
@@ -313,10 +313,11 @@ export const LexicalRichTextEditor: React.FC<LexicalRichTextEditorProps> = ({
                 padding: 4px 0 !important;
                 max-height: 200px !important;
                 overflow-y: auto !important;
-                z-index: 1000 !important;
+                z-index: 9999 !important;
                 min-width: 220px !important;
                 backdrop-filter: blur(8px) !important;
                 animation: fadeInUp 0.15s ease-out !important;
+                position: fixed !important;
               }
               
               @keyframes fadeInUp {
@@ -443,7 +444,12 @@ export const LexicalRichTextEditor: React.FC<LexicalRichTextEditorProps> = ({
               /* Ensure proper positioning */
               .beautiful-mentions-menu-container {
                 position: relative !important;
-                z-index: 1000 !important;
+                z-index: 9999 !important;
+              }
+
+              /* Ensure parent containers don't clip the menu */
+              .mention-editor-container {
+                position: relative !important;
               }
             `}</style>
             <BeautifulMentionsPlugin 

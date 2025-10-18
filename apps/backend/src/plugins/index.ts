@@ -13,9 +13,13 @@ export * from './events.js';
 // Webhook plugin
 export * from './webhooks/index.js';
 
+// Email plugin
+export * from './email/index.js';
+
 // Plugin initialization function
 import { initializePluginEvents } from './events.js';
 import { registerWebhookPlugin } from './webhooks/index.js';
+import { registerEmailPlugin } from './email/index.js';
 
 /**
  * Initialize the complete plugin system
@@ -26,6 +30,7 @@ export const initializePluginSystem = (): void => {
 
   // Register all available plugins
   registerWebhookPlugin();
+  registerEmailPlugin();
 
   // Initialize event system
   initializePluginEvents();

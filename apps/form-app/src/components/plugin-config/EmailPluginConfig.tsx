@@ -1,47 +1,43 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
   Button,
   Input,
   Label,
   Checkbox,
-  Card,
   RichTextEditor,
-  toastSuccess,
   toastError,
 } from '@dculus/ui';
-import { Mail, Loader2 } from 'lucide-react';
+import { Mail, Loader2, Save, X } from 'lucide-react';
 import { deserializeFormSchema, FillableFormField } from '@dculus/types';
 
 interface EmailConfig {
   recipientEmail: string;
   subject: string;
   message: string;
-  sendToSubmitter?: boolean;
 }
 
-interface EmailPluginDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface EmailPluginConfigProps {
+  form: any;
+  initialData?: {
+    name: string;
+    config: EmailConfig;
+    events: string[];
+  };
+  mode: 'create' | 'edit';
+  isSaving: boolean;
   onSave: (data: {
     type: string;
     name: string;
     config: EmailConfig;
     events: string[];
   }) => Promise<void>;
-  initialData?: {
-    name: string;
-    config: EmailConfig;
-    events: string[];
-  };
-  mode?: 'create' | 'edit';
-  form?: any; // Form object containing formSchema for mention fields
+  onCancel: () => void;
 }
 
 const AVAILABLE_EVENTS = [
@@ -83,15 +79,14 @@ const extractMentionFields = (form: any) => {
   }
 };
 
-export const EmailPluginDialog: React.FC<EmailPluginDialogProps> = ({
-  open,
-  onOpenChange,
-  onSave,
-  initialData,
-  mode = 'create',
+export const EmailPluginConfig: React.FC<EmailPluginConfigProps> = ({
   form,
+  initialData,
+  mode,
+  isSaving,
+  onSave,
+  onCancel,
 }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState(initialData?.config?.message || '');
   const [selectedEvents, setSelectedEvents] = useState<string[]>(
     initialData?.events || ['form.submitted']
@@ -113,18 +108,17 @@ export const EmailPluginDialog: React.FC<EmailPluginDialogProps> = ({
   // Extract mention fields from form schema
   const mentionFields = useMemo(() => extractMentionFields(form), [form]);
 
-  // Reset form when dialog opens with new data
   useEffect(() => {
-    if (open) {
+    if (initialData) {
       reset({
-        name: initialData?.name || '',
-        recipientEmail: initialData?.config?.recipientEmail || '',
-        subject: initialData?.config?.subject || '',
+        name: initialData.name,
+        recipientEmail: initialData.config.recipientEmail,
+        subject: initialData.config.subject,
       });
-      setMessage(initialData?.config?.message || '');
-      setSelectedEvents(initialData?.events || ['form.submitted']);
+      setMessage(initialData.config.message);
+      setSelectedEvents(initialData.events);
     }
-  }, [open, initialData, reset]);
+  }, [initialData, reset]);
 
   const toggleEvent = (eventId: string) => {
     if (selectedEvents.includes(eventId)) {
@@ -145,58 +139,45 @@ export const EmailPluginDialog: React.FC<EmailPluginDialogProps> = ({
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      await onSave({
-        type: 'email',
-        name: data.name,
-        config: {
-          recipientEmail: data.recipientEmail,
-          subject: data.subject,
-          message: message,
-        },
-        events: selectedEvents,
-      });
-
-      toastSuccess(
-        mode === 'create' ? 'Email Plugin Created' : 'Email Plugin Updated',
-        `"${data.name}" has been ${mode === 'create' ? 'created' : 'updated'} successfully`
-      );
-
-      reset();
-      setMessage('');
-      setSelectedEvents(['form.submitted']);
-      onOpenChange(false);
-    } catch (error: any) {
-      toastError(
-        mode === 'create' ? 'Failed to Create Email Plugin' : 'Failed to Update Email Plugin',
-        error.message || 'An unexpected error occurred'
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+    await onSave({
+      type: 'email',
+      name: data.name,
+      config: {
+        recipientEmail: data.recipientEmail,
+        subject: data.subject,
+        message: message,
+      },
+      events: selectedEvents,
+    });
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center gap-3 mb-2">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {/* Header Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Mail className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <DialogTitle>
+              <CardTitle>
                 {mode === 'create' ? 'Configure Email Notification' : 'Edit Email Notification'}
-              </DialogTitle>
+              </CardTitle>
+              <CardDescription>
+                Send custom email notifications when form events occur. Use @ mentions to include form data.
+              </CardDescription>
             </div>
           </div>
-          <DialogDescription>
-            Send custom email notifications when form events occur. Use @ mentions to include form data in your message.
-          </DialogDescription>
-        </DialogHeader>
+        </CardHeader>
+      </Card>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {/* Basic Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Basic Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
           {/* Plugin Name */}
           <div className="space-y-2">
             <Label htmlFor="name">
@@ -210,6 +191,9 @@ export const EmailPluginDialog: React.FC<EmailPluginDialogProps> = ({
             {errors.name && (
               <p className="text-sm text-red-500">{errors.name.message}</p>
             )}
+            <p className="text-xs text-gray-500">
+              A descriptive name to identify this plugin
+            </p>
           </div>
 
           {/* Recipient Email */}
@@ -232,7 +216,7 @@ export const EmailPluginDialog: React.FC<EmailPluginDialogProps> = ({
             {errors.recipientEmail && (
               <p className="text-sm text-red-500">{errors.recipientEmail.message}</p>
             )}
-            <p className="text-sm text-gray-500">
+            <p className="text-xs text-gray-500">
               Email address to receive notifications
             </p>
           </div>
@@ -251,22 +235,31 @@ export const EmailPluginDialog: React.FC<EmailPluginDialogProps> = ({
               <p className="text-sm text-red-500">{errors.subject.message}</p>
             )}
           </div>
+        </CardContent>
+      </Card>
 
-          {/* Email Message */}
+      {/* Email Message */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Email Message</CardTitle>
+          <CardDescription>
+            Compose your email message with rich formatting and @ mentions
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="message">
-              Email Message <span className="text-red-500">*</span>
+              Message Content <span className="text-red-500">*</span>
             </Label>
             <RichTextEditor
               value={message}
               onChange={setMessage}
               placeholder="Enter your email message here..."
-              className="w-full min-h-[200px]"
+              className="w-full"
               mentionFields={mentionFields}
             />
             <p className="text-xs text-gray-500">
-              This message will be sent via email. You can use rich formatting including{' '}
-              <strong>bold</strong>, <em>italic</em>, headings, lists, quotes, and links.
+              Use rich formatting including <strong>bold</strong>, <em>italic</em>, headings, lists, quotes, and links.
               {mentionFields.length > 0 ? (
                 <>
                   {' '}Type <strong>@</strong> to mention form fields ({mentionFields.length} available) and reference user responses.
@@ -278,55 +271,61 @@ export const EmailPluginDialog: React.FC<EmailPluginDialogProps> = ({
               )}
             </p>
           </div>
+        </CardContent>
+      </Card>
 
-          {/* Events */}
-          <div className="space-y-2">
-            <Label>
-              Trigger Events <span className="text-red-500">*</span>
-            </Label>
-            <Card className="p-4 space-y-3">
-              {AVAILABLE_EVENTS.map((event) => (
-                <div key={event.id} className="flex items-start space-x-3">
-                  <Checkbox
-                    id={event.id}
-                    checked={selectedEvents.includes(event.id)}
-                    onCheckedChange={() => toggleEvent(event.id)}
-                  />
-                  <div className="flex-1">
-                    <Label
-                      htmlFor={event.id}
-                      className="font-medium cursor-pointer"
-                    >
-                      {event.label}
-                    </Label>
-                    <p className="text-sm text-gray-500">{event.description}</p>
-                  </div>
-                </div>
-              ))}
-            </Card>
-            {selectedEvents.length === 0 && (
-              <p className="text-sm text-red-500">
-                Please select at least one event
-              </p>
-            )}
-          </div>
+      {/* Events */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Trigger Events</CardTitle>
+          <CardDescription>
+            Select when this plugin should be triggered
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {AVAILABLE_EVENTS.map((event) => (
+            <div key={event.id} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+              <Checkbox
+                id={event.id}
+                checked={selectedEvents.includes(event.id)}
+                onCheckedChange={() => toggleEvent(event.id)}
+              />
+              <div className="flex-1">
+                <Label
+                  htmlFor={event.id}
+                  className="font-medium cursor-pointer"
+                >
+                  {event.label}
+                </Label>
+                <p className="text-sm text-gray-500">{event.description}</p>
+              </div>
+            </div>
+          ))}
+          {selectedEvents.length === 0 && (
+            <p className="text-sm text-red-500 mt-2">
+              Please select at least one event
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {mode === 'create' ? 'Create Email Plugin' : 'Update Email Plugin'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+      {/* Action Buttons */}
+      <div className="flex items-center justify-end gap-3 pt-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={isSaving}
+        >
+          <X className="h-4 w-4 mr-2" />
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isSaving} className="bg-blue-600 hover:bg-blue-700">
+          {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {!isSaving && <Save className="mr-2 h-4 w-4" />}
+          {mode === 'create' ? 'Create Plugin' : 'Update Plugin'}
+        </Button>
+      </div>
+    </form>
   );
 };
