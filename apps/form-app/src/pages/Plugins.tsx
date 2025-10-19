@@ -55,6 +55,10 @@ const Plugins: React.FC = () => {
     setDeliveryLogPlugin({ id: plugin.id, name: plugin.name });
   };
 
+  const handleCloseDeliveryLog = () => {
+    setDeliveryLogPlugin(null);
+  };
+
   if (formLoading) {
     return (
       <MainLayout
@@ -183,8 +187,12 @@ const Plugins: React.FC = () => {
       {/* Delivery Log Dialog */}
       {deliveryLogPlugin && (
         <PluginDeliveryLog
-          open={!!deliveryLogPlugin}
-          onOpenChange={(open) => !open && setDeliveryLogPlugin(null)}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) {
+              handleCloseDeliveryLog();
+            }
+          }}
           pluginId={deliveryLogPlugin.id}
           pluginName={deliveryLogPlugin.name}
         />

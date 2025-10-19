@@ -93,7 +93,11 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col" onCloseAutoFocus={(e) => {
+        // Ensure body pointer-events is reset when dialog closes
+        e.preventDefault();
+        document.body.style.pointerEvents = '';
+      }}>
         <DialogHeader>
           <DialogTitle>Delivery Log - {pluginName}</DialogTitle>
           <DialogDescription>
