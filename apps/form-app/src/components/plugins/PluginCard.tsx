@@ -11,6 +11,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
 } from '@dculus/ui';
 import {
   Webhook,
@@ -56,6 +64,7 @@ export const PluginCard: React.FC<PluginCardProps> = ({
   const [isTogglingEnabled, setIsTogglingEnabled] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const [updatePlugin] = useMutation(UPDATE_FORM_PLUGIN);
   const [deletePlugin] = useMutation(DELETE_FORM_PLUGIN);
@@ -96,15 +105,12 @@ export const PluginCard: React.FC<PluginCardProps> = ({
     }
   };
 
-  const handleDelete = async () => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete "${plugin.name}"? This action cannot be undone.`
-      )
-    ) {
-      return;
-    }
+  const handleDeleteClick = () => {
+    setShowDeleteDialog(true);
+  };
 
+  const handleDeleteConfirm = async () => {
+    setShowDeleteDialog(false);
     setIsDeleting(true);
     try {
       await deletePlugin({
@@ -254,7 +260,7 @@ export const PluginCard: React.FC<PluginCardProps> = ({
                 Edit
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={handleDelete}
+                onClick={handleDeleteClick}
                 disabled={isDeleting}
                 className="text-red-600 focus:text-red-600"
               >
@@ -269,6 +275,30 @@ export const PluginCard: React.FC<PluginCardProps> = ({
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Plugin</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{plugin.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              variant="destructive"
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };
