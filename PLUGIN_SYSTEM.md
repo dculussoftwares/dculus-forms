@@ -999,6 +999,425 @@ apps/form-app/src/plugins/
 
 ---
 
+## Plugin Metadata System
+
+### Overview
+
+Plugins can store execution results and custom data in form response records using a **generic metadata system**. This allows any plugin to persist data without requiring database schema changes.
+
+### Metadata Storage Structure
+
+Response metadata is stored as a JSON field where each plugin type has its own key:
+
+```json
+{
+  "metadata": {
+    "quiz-grading": {
+      "quizScore": 10,
+      "totalMarks": 15,
+      "percentage": 66.7,
+      "fieldResults": [...],
+      "gradedAt": "2025-01-15T10:30:00Z"
+    },
+    "email": {
+      "deliveryStatus": "sent",
+      "sentAt": "2025-01-15T10:30:05Z"
+    },
+    "custom-plugin": {
+      "customData": {...}
+    }
+  }
+}
+```
+
+**Key Benefits:**
+- ✅ **Extensible** - Any plugin can add metadata without schema changes
+- ✅ **Isolated** - Each plugin's data is separate under its own key
+- ✅ **Type-Safe** - Plugin-specific TypeScript interfaces for compile-time safety
+- ✅ **Flexible** - Runtime JSON storage for flexibility
+- ✅ **Backward Compatible** - Metadata field is optional
+
+### Storing Metadata from Plugin Handler
+
+Plugins can update response metadata using the PluginContext:
+
+```typescript
+export const myPluginHandler: PluginHandler = async (plugin, event, context) => {
+  const config = plugin.config as MyPluginConfig;
+  const METADATA_KEY = 'my-plugin';
+
+  // 1. Get response
+  const response = await context.getResponseById(event.data.responseId);
+
+  // 2. Perform plugin action
+  const result = await performMyPluginAction(config, event);
+
+  // 3. Store metadata using plugin type as key
+  const existingMetadata = (response.metadata as any) || {};
+  const updatedMetadata = {
+    ...existingMetadata,
+    [METADATA_KEY]: {
+      // Your plugin-specific metadata
+      customField1: result.data,
+      customField2: new Date().toISOString(),
+      // ... any JSON-serializable data
+    },
+  };
+
+  // 4. Update response
+  await context.prisma.response.update({
+    where: { id: response.id },
+    data: { metadata: updatedMetadata },
+  });
+
+  context.logger.info('Metadata stored successfully');
+
+  return result;
+};
+```
+
+### TypeScript Type Definitions
+
+Define plugin-specific metadata interfaces for type safety:
+
+```typescript
+// Generic plugin metadata type (packages/types/src/index.ts)
+export type PluginMetadata = Record<string, any>;
+
+// Plugin-specific metadata interface
+export interface MyPluginMetadata {
+  customField1: string;
+  customField2: string;
+  processedAt: string;
+  success: boolean;
+}
+
+// Update FormResponse interface
+export interface FormResponse {
+  id: string;
+  formId: string;
+  data: Record<string, any>;
+  metadata?: PluginMetadata;  // Generic metadata for all plugins
+  submittedAt: Date;
+  // ... other fields
+}
+```
+
+### GraphQL Schema
+
+The Response type includes a generic metadata field:
+
+```graphql
+type Response {
+  id: ID!
+  formId: ID!
+  data: JSON!
+  metadata: JSON  # Generic JSON for all plugin metadata
+  submittedAt: DateTime!
+  # ... other fields
+}
+```
+
+**No plugin-specific types in GraphQL** - keeps schema generic and extensible.
+
+### Frontend Metadata Viewer Registry
+
+Create a registry system to map plugin types to viewer components:
+
+```typescript
+// apps/form-app/src/components/response-metadata/MetadataViewerRegistry.tsx
+
+import React from 'react';
+import { QuizGradingMetadataViewer } from './QuizGradingMetadataViewer';
+import { EmailMetadataViewer } from './EmailMetadataViewer';
+
+// Registry mapping plugin types to viewer components
+const METADATA_VIEWERS: Record<string, React.ComponentType<any>> = {
+  'quiz-grading': QuizGradingMetadataViewer,
+  'email': EmailMetadataViewer,
+  // Add your custom plugin viewers here
+};
+
+interface MetadataViewerProps {
+  metadata: Record<string, any>;
+}
+
+export const MetadataViewer: React.FC<MetadataViewerProps> = ({ metadata }) => {
+  if (!metadata || Object.keys(metadata).length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-4">
+      {Object.entries(metadata).map(([pluginType, pluginMetadata]) => {
+        const ViewerComponent = METADATA_VIEWERS[pluginType];
+
+        if (!ViewerComponent) {
+          // Fallback for unknown plugin types
+          return (
+            <Card key={pluginType}>
+              <CardHeader>
+                <CardTitle>Plugin Metadata: {pluginType}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <pre className="text-xs bg-gray-100 p-3 rounded overflow-auto">
+                  {JSON.stringify(pluginMetadata, null, 2)}
+                </pre>
+              </CardContent>
+            </Card>
+          );
+        }
+
+        return <ViewerComponent key={pluginType} metadata={pluginMetadata} />;
+      })}
+    </div>
+  );
+};
+```
+
+### Plugin-Specific Metadata Viewer
+
+Create a viewer component for each plugin type:
+
+```typescript
+// apps/form-app/src/components/response-metadata/MyPluginMetadataViewer.tsx
+
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
+
+interface MyPluginMetadataViewerProps {
+  metadata: {
+    customField1: string;
+    customField2: string;
+    processedAt: string;
+    success: boolean;
+  };
+}
+
+export const MyPluginMetadataViewer: React.FC<MyPluginMetadataViewerProps> = ({
+  metadata,
+}) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>My Plugin Results</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          <p><strong>Status:</strong> {metadata.success ? 'Success' : 'Failed'}</p>
+          <p><strong>Field 1:</strong> {metadata.customField1}</p>
+          <p><strong>Field 2:</strong> {metadata.customField2}</p>
+          <p><strong>Processed:</strong> {new Date(metadata.processedAt).toLocaleString()}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+```
+
+### Using Metadata Viewer in Response Pages
+
+Display metadata in response viewer:
+
+```typescript
+// apps/form-app/src/pages/ResponsesIndividual.tsx
+
+import { MetadataViewer } from '../components/response-metadata/MetadataViewerRegistry';
+
+export const ResponsesIndividual = () => {
+  const { data: response } = useQuery(GET_RESPONSE_BY_ID, { ... });
+
+  return (
+    <div>
+      {/* Response Data */}
+      <ResponseDataCard response={response} />
+
+      {/* Plugin Metadata (dynamically rendered) */}
+      {response.metadata && (
+        <MetadataViewer metadata={response.metadata} />
+      )}
+    </div>
+  );
+};
+```
+
+### Dynamic Table Columns
+
+Add metadata-based columns to responses table:
+
+```typescript
+// apps/form-app/src/pages/Responses.tsx
+
+const columns = [
+  // ... existing columns
+
+  // Dynamic metadata column
+  {
+    accessorKey: 'metadata',
+    header: 'Plugin Results',
+    cell: ({ row }) => {
+      const metadata = row.original.metadata;
+
+      // Example: Show quiz score if quiz-grading metadata exists
+      if (metadata && metadata['quiz-grading']) {
+        const quiz = metadata['quiz-grading'];
+        return (
+          <Badge variant={quiz.percentage >= 60 ? 'success' : 'destructive'}>
+            {quiz.quizScore} / {quiz.totalMarks}
+          </Badge>
+        );
+      }
+
+      return <span className="text-muted-foreground">-</span>;
+    },
+  },
+];
+```
+
+### Best Practices
+
+**DO:**
+- ✅ Use plugin type as metadata key for isolation
+- ✅ Define TypeScript interfaces for metadata structure
+- ✅ Preserve existing metadata when updating
+- ✅ Log metadata updates with context.logger
+- ✅ Validate metadata before storage
+- ✅ Register metadata viewer in MetadataViewerRegistry
+- ✅ Handle missing/corrupted metadata gracefully
+
+**DON'T:**
+- ❌ Overwrite entire metadata object (preserve other plugins' data)
+- ❌ Store sensitive data in metadata (use encrypted storage)
+- ❌ Store large binary data (use file storage)
+- ❌ Assume metadata structure without validation
+- ❌ Hard-code metadata keys across plugins
+
+### Example: Quiz Grading Plugin
+
+Complete example of metadata usage in quiz grading plugin:
+
+**Backend Handler:**
+```typescript
+// apps/backend/src/plugins/quiz/handler.ts
+
+export const quizGradingHandler: PluginHandler = async (plugin, event, context) => {
+  const config = plugin.config as QuizGradingPluginConfig;
+  const METADATA_KEY = 'quiz-grading';
+
+  // Get response
+  const response = await context.getResponseById(event.data.responseId);
+
+  // Grade quiz
+  const quizMetadata = gradeQuizResponse(config.quizFields, response.data);
+
+  // Update metadata
+  const existingMetadata = (response.metadata as any) || {};
+  await context.prisma.response.update({
+    where: { id: response.id },
+    data: {
+      metadata: {
+        ...existingMetadata,
+        [METADATA_KEY]: {
+          quizScore: quizMetadata.quizScore,
+          totalMarks: quizMetadata.totalMarks,
+          percentage: quizMetadata.percentage,
+          fieldResults: quizMetadata.fieldResults,
+          gradedAt: new Date().toISOString(),
+          gradedBy: 'plugin',
+        },
+      },
+    },
+  });
+
+  return { success: true };
+};
+```
+
+**Frontend Viewer:**
+```typescript
+// apps/form-app/src/components/response-metadata/QuizGradingMetadataViewer.tsx
+
+export const QuizGradingMetadataViewer: React.FC<Props> = ({ metadata }) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Quiz Results</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-center mb-4">
+          <div className="text-5xl font-bold">
+            {metadata.quizScore} / {metadata.totalMarks}
+          </div>
+          <div className="text-2xl text-muted-foreground">
+            {metadata.percentage.toFixed(1)}%
+          </div>
+          <Badge variant={metadata.percentage >= 60 ? 'success' : 'destructive'}>
+            {metadata.percentage >= 60 ? 'PASSED' : 'FAILED'}
+          </Badge>
+        </div>
+
+        {/* Field results breakdown */}
+        {metadata.fieldResults.map((result, idx) => (
+          <div key={idx} className="border rounded p-3 mb-2">
+            <div className="font-medium">{result.fieldLabel}</div>
+            <div className={result.isCorrect ? 'text-green-600' : 'text-red-600'}>
+              Your answer: {result.userAnswer}
+            </div>
+            {!result.isCorrect && (
+              <div className="text-green-600">
+                Correct: {result.correctAnswer}
+              </div>
+            )}
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+};
+```
+
+**Registry:**
+```typescript
+// apps/form-app/src/components/response-metadata/MetadataViewerRegistry.tsx
+
+const METADATA_VIEWERS = {
+  'quiz-grading': QuizGradingMetadataViewer,
+  // ... other viewers
+};
+```
+
+See [QUIZ_GRADING_PLUGIN.md](./QUIZ_GRADING_PLUGIN.md) for complete implementation details.
+
+### Multiple Plugins with Metadata
+
+Multiple plugins can store metadata for the same response:
+
+```json
+{
+  "metadata": {
+    "quiz-grading": {
+      "quizScore": 8,
+      "totalMarks": 10,
+      "percentage": 80
+    },
+    "email": {
+      "notificationSent": true,
+      "recipientEmail": "teacher@school.com",
+      "sentAt": "2025-01-15T10:30:05Z"
+    },
+    "custom-analytics": {
+      "completionTime": 120,
+      "deviceType": "mobile",
+      "location": "USA"
+    }
+  }
+}
+```
+
+Each plugin's metadata is isolated and doesn't interfere with others.
+
+---
+
 ## Support & Resources
 
 ### Documentation
@@ -1032,11 +1451,20 @@ apps/form-app/src/plugins/
 - Delivery log tracking
 - Frontend UI for webhook configuration
 
+### v1.1 (Generic Metadata System)
+- **Generic plugin metadata storage** - Response.metadata JSON field
+- **Plugin-type-based metadata keys** - Each plugin stores under own key
+- **Metadata viewer registry** - Dynamic frontend rendering by plugin type
+- **Type-safe yet flexible** - TypeScript interfaces + runtime JSON storage
+- **Backward compatible** - Metadata is optional
+- Email plugin implementation
+- Quiz auto-grading plugin (see QUIZ_GRADING_PLUGIN.md)
+
 ### Future Releases
 - **Frontend PluginContext** for UI plugins
 - **Additional events**: form.created, form.updated, response.edited, etc.
-- Email plugin
 - Slack plugin
 - Retry logic (optional)
 - Conditional execution
 - Plugin marketplace
+- Metadata export/analytics

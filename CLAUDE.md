@@ -535,3 +535,165 @@ toastSuccess('Copied to clipboard', 'Form link has been copied');
 ```
 
 The toast system provides immediate user feedback for all major operations including form creation, sharing, permission management, authentication, and collaboration features.
+
+## Quiz Auto-Grading Plugin
+
+The system includes a powerful quiz auto-grading plugin that allows form creators to build assessments with automatic scoring:
+
+### Overview
+
+The **Quiz Auto-Grading Plugin** automatically grades form responses containing quiz questions (dropdown and radio fields). It compares user answers with configured correct answers, calculates scores, and stores results in response metadata.
+
+**Plugin Type:** `quiz-grading`
+**Category:** Workflow Automation
+**Events:** `form.submitted`, `plugin.test`
+
+### Key Features
+
+- ✅ **Automatic Grading** - Grade responses on submission
+- ✅ **Centralized Configuration** - All quiz settings in plugin UI (not field settings)
+- ✅ **Field Selection** - Configure quiz from existing dropdown/radio fields
+- ✅ **Custom Marks** - Assign points per question (supports decimals)
+- ✅ **Pass Threshold** - Configurable pass percentage (default: 60%)
+- ✅ **Binary Scoring** - Full marks for correct, 0 for incorrect
+- ✅ **Generic Metadata System** - Results stored in `Response.metadata['quiz-grading']`
+- ✅ **Visual Results** - Quiz results card with pass/fail badge and breakdown
+- ✅ **Table Display** - Score column in responses table
+
+### How It Works
+
+#### 1. Plugin Configuration (Not Field Settings)
+
+Quiz settings are configured in the **plugin UI**, not in individual field settings:
+
+1. **Form Creation**
+   - Create form with SelectField and RadioField as usual
+   - No special "quiz mode" configuration needed in field settings
+
+2. **Plugin Installation**
+   - Navigate to Forms → [Form] → Plugins
+   - Install "Quiz Auto-Grading" plugin
+   - Configure:
+     - Select fields to include in quiz
+     - Set correct answer for each field (from field options)
+     - Assign marks per question
+     - Set pass threshold percentage
+
+3. **Plugin Config Structure**
+   ```json
+   {
+     "quizFields": [
+       { "fieldId": "field_1", "correctAnswer": "4", "marks": 1 },
+       { "fieldId": "field_2", "correctAnswer": "Paris", "marks": 2 }
+     ],
+     "passThreshold": 60
+   }
+   ```
+
+#### 2. Auto-Grading Flow
+
+```
+User Submits Form
+    ↓
+Response Saved to DB
+    ↓
+form.submitted Event Emitted
+    ↓
+Quiz Plugin Handler Executes
+    ↓
+1. Fetch response and form schema
+2. Grade based on plugin configuration
+3. Calculate score and percentage
+4. Update Response.metadata with results
+5. Log to PluginDelivery
+    ↓
+Results Available Immediately
+```
+
+#### 3. Metadata Storage
+
+Results stored in generic metadata system:
+
+```typescript
+Response.metadata = {
+  'quiz-grading': {
+    quizScore: 8,
+    totalMarks: 10,
+    percentage: 80,
+    fieldResults: [
+      {
+        fieldId: 'field_1',
+        fieldLabel: 'What is 2+2?',
+        userAnswer: '4',
+        correctAnswer: '4',
+        isCorrect: true,
+        marksAwarded: 1,
+        maxMarks: 1
+      },
+      // ... more results
+    ],
+    gradedAt: '2025-01-15T10:30:00Z',
+    gradedBy: 'plugin'
+  }
+}
+```
+
+#### 4. Results Display
+
+- **Responses Table:** Score column with badge (e.g., `8 / 10 (80%)`)
+- **Individual Response Viewer:** Detailed quiz results card showing:
+  - Large score display
+  - Percentage with progress bar
+  - Pass/Fail badge (color-coded)
+  - Per-question breakdown with correct/incorrect indicators
+
+### Generic Plugin Metadata System
+
+The quiz plugin uses a **generic metadata system** that allows any plugin to store execution results:
+
+```typescript
+// Generic structure
+Response.metadata = {
+  'quiz-grading': { /* quiz results */ },
+  'email': { /* email delivery status */ },
+  'webhook': { /* webhook response */ },
+  // ... any plugin can add data
+}
+```
+
+**Benefits:**
+- ✅ No database schema changes needed for new plugins
+- ✅ Each plugin's data is isolated under its own key
+- ✅ Type-safe with TypeScript interfaces
+- ✅ Dynamic metadata viewers based on plugin type
+- ✅ Extensible for future plugins
+
+### Documentation
+
+- **Complete Plugin Documentation:** [QUIZ_GRADING_PLUGIN.md](./QUIZ_GRADING_PLUGIN.md)
+- **Plugin System Architecture:** [PLUGIN_SYSTEM.md](./PLUGIN_SYSTEM.md)
+- **Implementation Checklist:** [QUIZ_GRADING_IMPLEMENTATION_CHECKLIST.md](./QUIZ_GRADING_IMPLEMENTATION_CHECKLIST.md)
+
+### Development Commands
+
+```bash
+# Test quiz plugin
+pnpm test:integration:quiz
+
+# Check plugin registration
+pnpm backend:dev  # Check server logs for "Quiz grading plugin registered"
+
+# View quiz results in database
+pnpm db:studio  # Check Response.metadata in Prisma Studio
+```
+
+### Usage Example
+
+**Quick Start:**
+```bash
+# 1. Create form with dropdown/radio fields
+# 2. Install quiz grading plugin from Forms → Plugins
+# 3. Configure correct answers and marks
+# 4. Users submit responses
+# 5. View graded results in responses table
+```
