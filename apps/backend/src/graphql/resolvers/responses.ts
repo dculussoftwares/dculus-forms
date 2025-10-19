@@ -203,6 +203,10 @@ export const responsesResolvers = {
 
         // Apply mention substitution if we have a custom message
         try {
+          console.log('[submitResponse] Starting mention substitution process...');
+          console.log('[submitResponse] Original thank you message:', thankYouMessage);
+          console.log('[submitResponse] User response data:', input.data);
+
           // Create field labels map from form schema for better fallback display
           let fieldLabels: Record<string, string> = {};
 
@@ -211,17 +215,26 @@ export const responsesResolvers = {
               formWithSettings.formSchema
             );
             fieldLabels = createFieldLabelsMap(deserializedSchema);
+            console.log('[submitResponse] Field labels extracted:', fieldLabels);
           }
 
           // Apply mention substitution to replace field IDs with actual user responses
-          thankYouMessage = substituteMentions(
+          const substitutedMessage = substituteMentions(
             thankYouMessage,
             input.data, // User responses as field_id: value pairs
             fieldLabels // Field labels for fallback display
           );
+
+          console.log('[submitResponse] Substitution complete!');
+          console.log('[submitResponse] Original message length:', thankYouMessage.length);
+          console.log('[submitResponse] Substituted message length:', substitutedMessage.length);
+          console.log('[submitResponse] Substituted message:', substitutedMessage);
+
+          thankYouMessage = substitutedMessage;
         } catch (error) {
           // If substitution fails, log error but continue with original message
-          console.error('Failed to apply mention substitution:', error);
+          console.error('[submitResponse] ❌ Failed to apply mention substitution:', error);
+          console.error('[submitResponse] Error stack:', (error as Error).stack);
           // thankYouMessage remains the original HTML with mentions
         }
       }

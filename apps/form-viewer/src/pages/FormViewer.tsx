@@ -45,13 +45,14 @@ const FormViewer: React.FC = () => {
   };
 
   const handleFormSubmit = async (formId: string, responses: Record<string, unknown>) => {
+    console.log('[FormViewer] Starting form submission...', { formId, responses });
     setSubmissionState('submitting');
     setSubmissionMessage('');
-    
+
     try {
       // Get analytics data for submission tracking
       const analyticsData = getSubmissionAnalyticsData();
-      
+
       // Calculate completion time if we have form start time
       let completionTimeSeconds = null;
       if (analyticsData) {
@@ -61,14 +62,15 @@ const FormViewer: React.FC = () => {
           const startTime = new Date(startTimeStr);
           const endTime = new Date();
           completionTimeSeconds = Math.round((endTime.getTime() - startTime.getTime()) / 1000);
-          
+
           // Clean up the stored start time
           localStorage.removeItem(startTimeKey);
-          
-          console.log('Form completion time calculated:', { completionTimeSeconds });
+
+          console.log('[FormViewer] Form completion time calculated:', { completionTimeSeconds });
         }
       }
 
+      console.log('[FormViewer] Submitting to GraphQL backend...');
       const result = await submitResponse({
         variables: {
           input: {
@@ -85,16 +87,31 @@ const FormViewer: React.FC = () => {
           },
         },
       });
-      
+
       const { thankYouMessage, showCustomThankYou } = result.data.submitResponse;
-      
+
+      console.log('[FormViewer] ✅ Form submitted successfully!');
+      console.log('[FormViewer] Thank you message received:', {
+        showCustomThankYou,
+        messageLength: thankYouMessage?.length,
+        messagePreview: thankYouMessage?.substring(0, 200)
+      });
+
+      // Check if mentions were properly substituted
+      const unsubstitutedMentions = thankYouMessage?.match(/<span[^>]*data-lexical-beautiful-mention[^>]*>/g);
+      if (unsubstitutedMentions) {
+        console.warn('[FormViewer] ⚠️ Received thank you message with unsubstituted mentions:', unsubstitutedMentions);
+      } else {
+        console.log('[FormViewer] ✅ All mentions appear to be substituted');
+      }
+
       setSubmissionState('success');
       setThankYouData({
         message: thankYouMessage,
         isCustom: showCustomThankYou
       });
     } catch (err: unknown) {
-      console.error('Form submission error:', err);
+      console.error('[FormViewer] ❌ Form submission error:', err);
       setSubmissionState('error');
       setSubmissionMessage(
         (err instanceof Error ? err.message : null) || 'An error occurred while submitting the form. Please try again.'

@@ -112,6 +112,14 @@ function OnChangeHandler({ onChange }: { onChange?: (html: string) => void }) {
       onChange={(editorState: EditorState) => {
         editorState.read(() => {
           const htmlString = $generateHtmlFromNodes(editor, null);
+          console.log('[OnChangeHandler] Generated HTML:', htmlString);
+
+          // Extract and log mention data for debugging
+          const mentionMatches = htmlString.match(/<span[^>]*data-lexical-beautiful-mention[^>]*>/g);
+          if (mentionMatches) {
+            console.log('[OnChangeHandler] Found mentions in HTML:', mentionMatches);
+          }
+
           onChange?.(htmlString);
         });
       }}
@@ -205,8 +213,15 @@ CustomMentionMenu.displayName = 'CustomMentionMenu';
 // Custom menu item component that shows the label instead of field ID
 const CustomMentionMenuItem = forwardRef<HTMLLIElement, BeautifulMentionsMenuItemProps>(
   ({ selected, item, ...props }, ref) => {
-    // Use displayValue from the BeautifulMentionsMenuItem interface
-    const displayText = item?.displayValue || item?.value || '';
+    // item.value is now the fieldId, so we need to show the label from item data
+    const displayText = (item?.data as any)?.label || item?.value || '';
+
+    console.log('[CustomMentionMenuItem] Rendering menu item:', {
+      selected,
+      displayText,
+      itemValue: item?.value,
+      itemData: item?.data
+    });
 
     return (
       <li
@@ -226,10 +241,18 @@ CustomMentionMenuItem.displayName = 'CustomMentionMenuItem';
 // Custom mention component that displays labels in the editor
 const CustomMentionComponent = forwardRef<HTMLSpanElement, BeautifulMentionComponentProps>(
   ({ value, data, trigger, ...props }, ref) => {
-    // value is already the label from our item configuration
-    // data contains fieldId if we need it
-    const displayText = value;
-    const fieldId = (data as any)?.fieldId || value;
+    // value is now the fieldId (for substitution)
+    // data contains label for display
+    const fieldId = value;
+    const displayText = (data as any)?.label || value;
+
+    console.log('[CustomMentionComponent] Rendering mention:', {
+      fieldId,
+      displayText,
+      value,
+      data,
+      trigger
+    });
 
     return (
       <span
@@ -266,18 +289,28 @@ export const LexicalRichTextEditor: React.FC<LexicalRichTextEditorProps> = ({
   const mentionItems = useMemo((): Record<string, BeautifulMentionsItem[]> => {
     if (mentionFields.length === 0) return {};
 
-    return {
+    const items = {
       '@': mentionFields.map((field) => {
-        // The library uses displayValue for menu display and filtering
-        // Value is what gets stored in the mention node
+        // CRITICAL: value must be fieldId for proper substitution
+        // The Beautiful Mentions library stores 'value' in data-lexical-beautiful-mention-value
+        // Our substitution logic uses this to lookup user responses by fieldId
         const item: BeautifulMentionsItem = {
-          value: field.label, // Use label as the value so it's searchable and displayed
-          fieldId: field.fieldId, // Store the actual field ID in data
-          label: field.label, // Keep label for reference
+          value: field.fieldId,   // ✅ Store fieldId as value for substitution lookup
+          fieldId: field.fieldId, // Keep fieldId in data for reference
+          label: field.label,     // Label for display purposes
         };
+        console.log('[LexicalRichTextEditor] Created mention item:', {
+          fieldId: field.fieldId,
+          label: field.label,
+          value: item.value,
+          fullItem: item
+        });
         return item;
       }),
     };
+
+    console.log('[LexicalRichTextEditor] Total mention items created:', items['@'].length);
+    return items;
   }, [mentionFields]);
 
   const initialConfig = {

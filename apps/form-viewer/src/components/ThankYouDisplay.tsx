@@ -10,8 +10,21 @@ const ThankYouDisplay: React.FC<ThankYouDisplayProps> = ({
   message,
   isCustom
 }) => {
+  console.log('[ThankYouDisplay] Rendering thank you page:', {
+    isCustom,
+    messageLength: message?.length,
+    messagePreview: message?.substring(0, 200)
+  });
+
+  // Check if message contains any unsubstituted mentions
+  const unsubstitutedMentions = message?.match(/<span[^>]*data-lexical-beautiful-mention[^>]*>/g);
+  if (unsubstitutedMentions) {
+    console.warn('[ThankYouDisplay] ⚠️ Found unsubstituted mentions in message:', unsubstitutedMentions);
+  }
+
   if (isCustom) {
     // Display custom rich text message
+    console.log('[ThankYouDisplay] Displaying custom thank you message');
     return (
       <div className="text-center p-8 max-w-2xl mx-auto">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">

@@ -31,12 +31,17 @@ interface ThankYouSettingsProps {
 
 // Utility function to extract mention fields from form schema
 const extractMentionFields = (form: any) => {
-  if (!form?.formSchema) return [];
-  
+  console.log('[ThankYouSettings] Extracting mention fields from form...');
+
+  if (!form?.formSchema) {
+    console.log('[ThankYouSettings] No form schema found');
+    return [];
+  }
+
   try {
     const schema = deserializeFormSchema(form.formSchema);
     const mentionFields: { fieldId: string; label: string }[] = [];
-    
+
     for (const page of schema.pages) {
       for (const field of page.fields) {
         if (field instanceof FillableFormField && field.label) {
@@ -44,13 +49,18 @@ const extractMentionFields = (form: any) => {
             fieldId: field.id,
             label: field.label
           });
+          console.log('[ThankYouSettings] Added mention field:', {
+            fieldId: field.id,
+            label: field.label
+          });
         }
       }
     }
-    
+
+    console.log('[ThankYouSettings] Total mention fields extracted:', mentionFields.length);
     return mentionFields;
   } catch (error) {
-    console.error('Error extracting mention fields:', error);
+    console.error('[ThankYouSettings] ❌ Error extracting mention fields:', error);
     return [];
   }
 };
@@ -65,6 +75,30 @@ const ThankYouSettings: React.FC<ThankYouSettingsProps> = ({
 }) => {
   // Extract mention fields from the form schema
   const mentionFields = useMemo(() => extractMentionFields(form), [form]);
+
+  // Wrap onMessageChange with logging
+  const handleMessageChange = React.useCallback((message: string) => {
+    console.log('[ThankYouSettings] Message changed:', {
+      messageLength: message.length,
+      messagePreview: message.substring(0, 200)
+    });
+
+    // Extract mention tags for debugging
+    const mentionMatches = message.match(/<span[^>]*data-lexical-beautiful-mention[^>]*>/g);
+    if (mentionMatches) {
+      console.log('[ThankYouSettings] Found mentions in message:', mentionMatches);
+    }
+
+    onMessageChange(message);
+  }, [onMessageChange]);
+
+  // Log when save is clicked
+  const handleSave = React.useCallback(() => {
+    console.log('[ThankYouSettings] Save clicked!');
+    console.log('[ThankYouSettings] Current settings:', settings);
+    onSave();
+  }, [settings, onSave]);
+
   return (
     <Card>
       <CardHeader>
@@ -107,7 +141,7 @@ const ThankYouSettings: React.FC<ThankYouSettingsProps> = ({
               </Label>
               <RichTextEditor
                 value={settings.message}
-                onChange={onMessageChange}
+                onChange={handleMessageChange}
                 placeholder="Thank you! Your response has been submitted."
                 className="w-full"
                 mentionFields={mentionFields}
@@ -132,8 +166,8 @@ const ThankYouSettings: React.FC<ThankYouSettingsProps> = ({
         )}
 
         <div className="pt-4">
-          <Button 
-            onClick={onSave}
+          <Button
+            onClick={handleSave}
             disabled={isSaving}
             className="bg-green-600 hover:bg-green-700 text-white"
           >
