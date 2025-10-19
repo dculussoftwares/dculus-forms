@@ -67,6 +67,7 @@ export const PluginCard: React.FC<PluginCardProps> = ({
           id: plugin.id,
           input: { enabled },
         },
+        refetchQueries: ['GetFormPlugins'],
       });
       toastSuccess(
         enabled ? 'Plugin Enabled' : 'Plugin Disabled',

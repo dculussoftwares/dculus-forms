@@ -68,6 +68,7 @@ const PluginConfiguration: React.FC = () => {
             ...data,
           },
         },
+        refetchQueries: ['GetFormPlugins'],
       });
 
       toastSuccess(
@@ -104,6 +105,7 @@ const PluginConfiguration: React.FC = () => {
             events: data.events,
           },
         },
+        refetchQueries: ['GetFormPlugins'],
       });
 
       toastSuccess(
