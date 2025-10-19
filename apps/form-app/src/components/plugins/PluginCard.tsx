@@ -14,6 +14,8 @@ import {
 } from '@dculus/ui';
 import {
   Webhook,
+  Mail,
+  MessageSquare,
   MoreVertical,
   Edit,
   Trash2,
@@ -121,8 +123,38 @@ export const PluginCard: React.FC<PluginCardProps> = ({
     switch (plugin.type) {
       case 'webhook':
         return <Webhook className="h-5 w-5" />;
+      case 'email':
+        return <Mail className="h-5 w-5" />;
+      case 'slack':
+        return <MessageSquare className="h-5 w-5" />;
       default:
         return <Webhook className="h-5 w-5" />;
+    }
+  };
+
+  const getPluginIconColor = () => {
+    switch (plugin.type) {
+      case 'webhook':
+        return 'text-orange-600';
+      case 'email':
+        return 'text-blue-600';
+      case 'slack':
+        return 'text-purple-600';
+      default:
+        return 'text-orange-600';
+    }
+  };
+
+  const getPluginIconBgColor = () => {
+    switch (plugin.type) {
+      case 'webhook':
+        return 'bg-orange-100';
+      case 'email':
+        return 'bg-blue-100';
+      case 'slack':
+        return 'bg-purple-100';
+      default:
+        return 'bg-orange-100';
     }
   };
 
@@ -130,6 +162,10 @@ export const PluginCard: React.FC<PluginCardProps> = ({
     switch (plugin.type) {
       case 'webhook':
         return 'Webhook';
+      case 'email':
+        return 'Email Notification';
+      case 'slack':
+        return 'Slack';
       default:
         return plugin.type;
     }
@@ -140,7 +176,7 @@ export const PluginCard: React.FC<PluginCardProps> = ({
       <div className="flex items-start justify-between">
         {/* Left Section - Icon and Info */}
         <div className="flex items-start gap-4 flex-1">
-          <div className="p-2 bg-orange-100 rounded-lg text-orange-600">
+          <div className={`p-2 rounded-lg ${getPluginIconBgColor()} ${getPluginIconColor()}`}>
             {getPluginIcon()}
           </div>
 
