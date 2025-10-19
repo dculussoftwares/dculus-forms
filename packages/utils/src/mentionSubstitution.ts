@@ -30,12 +30,6 @@ export function substituteMentions(
   responses: Record<string, any>,
   fieldLabels?: Record<string, string>
 ): string {
-  console.log('[substituteMentions] Starting substitution...');
-  console.log('[substituteMentions] Input HTML length:', html?.length);
-  console.log('[substituteMentions] Input HTML preview:', html?.substring(0, 500));
-  console.log('[substituteMentions] Responses:', responses);
-  console.log('[substituteMentions] Field labels:', fieldLabels);
-
   if (!html) return html;
 
   let result = html;
@@ -70,15 +64,7 @@ export function substituteMentions(
   // First try the standard format with data-value or data-lexical-beautiful-mention-value
   const mentionRegex = /<span[^>]+data-(?:lexical-)?beautiful-mention="true"[^>]+data-(?:lexical-beautiful-mention-)?value="([^"]+)"[^>]*>([^<]*)<\/span>/gi;
 
-  let substitutionCount = 0;
   result = result.replace(mentionRegex, (match, fieldId, originalContent) => {
-    console.log('[substituteMentions] Processing mention span:', {
-      match,
-      fieldId,
-      originalContent,
-      hasResponse: fieldId in responses
-    });
-
     // Get the actual response value for this field ID
     const responseValue = responses[fieldId];
 
@@ -86,27 +72,19 @@ export function substituteMentions(
       // Convert response value to string and escape HTML special characters
       const valueStr = String(responseValue);
       const escapedValue = escapeHtml(valueStr);
-      substitutionCount++;
-      console.log('[substituteMentions] ✅ Substituted:', { fieldId, responseValue, escapedValue });
       return escapedValue;
     }
 
     // Fallback: try to show field label if available
     if (fieldLabels && fieldLabels[fieldId]) {
       const labelFallback = `[${fieldLabels[fieldId]}]`;
-      console.log('[substituteMentions] ⚠️ Using label fallback:', { fieldId, label: fieldLabels[fieldId] });
       return escapeHtml(labelFallback);
     }
 
     // Final fallback: show field ID in brackets
     const fieldIdFallback = `[${fieldId}]`;
-    console.log('[substituteMentions] ⚠️ Using fieldId fallback:', { fieldId });
     return escapeHtml(fieldIdFallback);
   });
-
-  console.log('[substituteMentions] Substitution complete!');
-  console.log('[substituteMentions] Total substitutions:', substitutionCount);
-  console.log('[substituteMentions] Result HTML preview:', result?.substring(0, 500));
 
   return result;
 }

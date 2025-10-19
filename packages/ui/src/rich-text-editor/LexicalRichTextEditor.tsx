@@ -112,14 +112,6 @@ function OnChangeHandler({ onChange }: { onChange?: (html: string) => void }) {
       onChange={(editorState: EditorState) => {
         editorState.read(() => {
           const htmlString = $generateHtmlFromNodes(editor, null);
-          console.log('[OnChangeHandler] Generated HTML:', htmlString);
-
-          // Extract and log mention data for debugging
-          const mentionMatches = htmlString.match(/<span[^>]*data-lexical-beautiful-mention[^>]*>/g);
-          if (mentionMatches) {
-            console.log('[OnChangeHandler] Found mentions in HTML:', mentionMatches);
-          }
-
           onChange?.(htmlString);
         });
       }}
@@ -216,13 +208,6 @@ const CustomMentionMenuItem = forwardRef<HTMLLIElement, BeautifulMentionsMenuIte
     // item.value is now the fieldId, so we need to show the label from item data
     const displayText = (item?.data as any)?.label || item?.value || '';
 
-    console.log('[CustomMentionMenuItem] Rendering menu item:', {
-      selected,
-      displayText,
-      itemValue: item?.value,
-      itemData: item?.data
-    });
-
     return (
       <li
         {...props}
@@ -245,14 +230,6 @@ const CustomMentionComponent = forwardRef<HTMLSpanElement, BeautifulMentionCompo
     // data contains label for display
     const fieldId = value;
     const displayText = (data as any)?.label || value;
-
-    console.log('[CustomMentionComponent] Rendering mention:', {
-      fieldId,
-      displayText,
-      value,
-      data,
-      trigger
-    });
 
     return (
       <span
@@ -289,7 +266,7 @@ export const LexicalRichTextEditor: React.FC<LexicalRichTextEditorProps> = ({
   const mentionItems = useMemo((): Record<string, BeautifulMentionsItem[]> => {
     if (mentionFields.length === 0) return {};
 
-    const items = {
+    return {
       '@': mentionFields.map((field) => {
         // CRITICAL: value must be fieldId for proper substitution
         // The Beautiful Mentions library stores 'value' in data-lexical-beautiful-mention-value
@@ -299,18 +276,9 @@ export const LexicalRichTextEditor: React.FC<LexicalRichTextEditorProps> = ({
           fieldId: field.fieldId, // Keep fieldId in data for reference
           label: field.label,     // Label for display purposes
         };
-        console.log('[LexicalRichTextEditor] Created mention item:', {
-          fieldId: field.fieldId,
-          label: field.label,
-          value: item.value,
-          fullItem: item
-        });
         return item;
       }),
     };
-
-    console.log('[LexicalRichTextEditor] Total mention items created:', items['@'].length);
-    return items;
   }, [mentionFields]);
 
   const initialConfig = {
