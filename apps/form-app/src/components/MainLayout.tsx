@@ -1,5 +1,6 @@
 import React from "react"
 import { AppSidebar } from "../components/app-sidebar"
+import { UserProfileMenu } from "../components/UserProfileMenu"
 import { PageWrapper, SidebarProvider, SidebarInset } from "@dculus/ui"
 
 interface MainLayoutProps {
@@ -14,7 +15,12 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children, title, subtitl
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <PageWrapper title={title ?? ""} subtitle={subtitle} breadcrumbs={breadcrumbs}>
+        <PageWrapper
+          title={title ?? ""}
+          subtitle={subtitle}
+          breadcrumbs={breadcrumbs}
+          userProfile={<UserProfileMenu />}
+        >
           {children}
         </PageWrapper>
       </SidebarInset>

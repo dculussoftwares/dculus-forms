@@ -40,6 +40,8 @@ export interface PageWrapperProps {
   actions?: React.ReactNode;
   /** Additional CSS classes for the content area */
   className?: string;
+  /** Optional user profile menu component to show on the right side of the header */
+  userProfile?: React.ReactNode;
 }
 
 /**
@@ -54,6 +56,7 @@ export function PageWrapper({
   breadcrumbs,
   actions,
   className = '',
+  userProfile,
 }: PageWrapperProps) {
   return (
     <>
@@ -99,6 +102,11 @@ export function PageWrapper({
           </div>
           {actions && (
             <div className="ml-auto flex items-center gap-2">{actions}</div>
+          )}
+          {userProfile && (
+            <div className={`flex items-center gap-2 ${actions ? 'ml-2' : 'ml-auto'}`}>
+              {userProfile}
+            </div>
           )}
         </div>
       </header>

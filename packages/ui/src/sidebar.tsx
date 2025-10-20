@@ -80,7 +80,7 @@ const Sidebar = React.forwardRef<
       data-side={side}
       data-state={open ? "open" : "closed"}
       className={cn(
-        "group peer hidden md:block sticky top-0",
+        "group peer hidden md:block sticky top-0 flex flex-col",
         variant === "sidebar" && "h-screen bg-sidebar text-sidebar-foreground",
         variant === "floating" && "h-screen bg-sidebar text-sidebar-foreground rounded-lg border border-sidebar-border shadow-lg",
         variant === "inset" && "h-[calc(100vh-2rem)] bg-sidebar text-sidebar-foreground rounded-lg",
