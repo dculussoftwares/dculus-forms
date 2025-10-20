@@ -1,16 +1,14 @@
 import React from "react"
-import { useLocation, useNavigate } from "react-router-dom"
+import { useLocation } from "react-router-dom"
 import {
   LayoutDashboard,
   Settings,
-  Plus,
   ChevronsUpDown,
   LogOut,
   User,
   Mail,
   Bell,
   Search,
-  FileText,
   Layers,
 } from "lucide-react"
 
@@ -32,7 +30,6 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
@@ -46,7 +43,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { open } = useSidebar()
   const { user, activeOrganization } = useAuth()
   const location = useLocation()
-  const navigate = useNavigate()
 
   const navigationData = {
     navMain: [
@@ -55,12 +51,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         url: "/dashboard",
         icon: LayoutDashboard,
         isActive: location.pathname === "/" || location.pathname === "/dashboard" || location.pathname.startsWith("/dashboard"),
-      },
-      {
-        title: "Forms",
-        url: "/forms",
-        icon: FileText,
-        isActive: location.pathname === "/forms" || location.pathname.startsWith("/forms/"),
       },
       {
         title: "Templates",
@@ -174,56 +164,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenu>
         </SidebarGroup>
         
-        <SidebarGroup>
-          <SidebarGroupLabel>Recent Forms</SidebarGroupLabel>
-          <SidebarMenu>
-            {navigationData.recentForms.map((item: any) => (
-              <SidebarMenuItem key={item.name}>
-                <SidebarMenuButton asChild>
-                  <a href={item.url}>
-                    {React.createElement(item.icon, { className: open ? undefined : "size-6" })}
-                    {open && <span>{item.name}</span>}
-                  </a>
-                </SidebarMenuButton>
-                {open && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <SidebarMenuAction showOnHover>
-                        <Plus />
-                        <span className="sr-only">More</span>
-                      </SidebarMenuAction>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      className="w-48 rounded-lg"
-                      side="bottom"
-                      align="end"
-                    >
-                      <DropdownMenuItem>
-                        <span>Edit Form</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <span>Duplicate Form</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>
-                        <span>Archive Form</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </SidebarMenuItem>
-            ))}
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                className="text-sidebar-foreground/70"
-                onClick={() => navigate('/dashboard/templates')}
-              >
-                <Plus className={open ? undefined : "size-6"} />
-                {open && <span>Create new form</span>}
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroup>
       </SidebarContent>
       
       <SidebarFooter>
