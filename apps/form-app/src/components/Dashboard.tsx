@@ -387,21 +387,21 @@ function FormsListDashboard() {
                   onClick={() => handleFilterChange('all')}
                   variant="default"
                 >
-                  All Forms ({allFormsTotalCount})
+                  All Forms
                 </FilterChip>
                 <FilterChip
                   selected={activeFilter === 'my-forms'}
                   onClick={() => handleFilterChange('my-forms')}
                   variant="default"
                 >
-                  My Forms ({myFormsTotalCount})
+                  My Forms
                 </FilterChip>
                 <FilterChip
                   selected={activeFilter === 'shared-with-me'}
                   onClick={() => handleFilterChange('shared-with-me')}
                   variant="default"
                 >
-                  Shared With Me ({sharedFormsTotalCount})
+                  Shared With Me
                 </FilterChip>
               </div>
 
