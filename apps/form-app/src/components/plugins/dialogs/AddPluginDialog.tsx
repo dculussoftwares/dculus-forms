@@ -11,7 +11,7 @@ import {
   TabsTrigger,
 } from '@dculus/ui';
 import { Search } from 'lucide-react';
-import { PluginGallery, AVAILABLE_PLUGIN_TYPES, PluginType } from './PluginGallery';
+import { PluginGallery, AVAILABLE_PLUGIN_TYPES, PluginType } from '../shared/PluginGallery';
 
 interface AddPluginDialogProps {
   open: boolean;

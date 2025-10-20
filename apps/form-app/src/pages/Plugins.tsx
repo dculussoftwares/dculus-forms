@@ -6,10 +6,10 @@ import { MainLayout } from '../components/MainLayout';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { GET_FORM_PLUGINS } from '../graphql/plugins';
 import { AlertCircle, Plus, Plug } from 'lucide-react';
-import { AddPluginDialog } from '../components/plugins/AddPluginDialog';
-import { PluginCard } from '../components/plugins/PluginCard';
-import { PluginDeliveryLog } from '../components/plugins/PluginDeliveryLog';
-import { PluginType } from '../components/plugins/PluginGallery';
+import { AddPluginDialog } from '../components/plugins/dialogs/AddPluginDialog';
+import { PluginCard } from '../components/plugins/shared/PluginCard';
+import { PluginDeliveryLog } from '../components/plugins/shared/PluginDeliveryLog';
+import { PluginType } from '../components/plugins/shared/PluginGallery';
 
 /**
  * Plugins Page - displays and manages plugins for form enhancements.

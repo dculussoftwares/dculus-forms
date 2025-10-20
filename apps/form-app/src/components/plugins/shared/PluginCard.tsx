@@ -37,7 +37,7 @@ import {
   UPDATE_FORM_PLUGIN,
   DELETE_FORM_PLUGIN,
   TEST_FORM_PLUGIN,
-} from '../../graphql/plugins';
+} from '../../../graphql/plugins';
 
 interface PluginCardProps {
   plugin: {

@@ -19,7 +19,8 @@ import {
 } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { FilterChip, FilterModal, FilterState } from '../components/Filters';
-import { QuizResultsDialog } from '../components/response-metadata/QuizResultsDialog';
+import { QuizResultsDialog } from '../components/plugins/response-table/quiz/QuizResultsDialog';
+import { QuizScoreCell } from '../components/plugins/response-table/quiz/QuizScoreCell';
 import {
   GENERATE_FORM_RESPONSE_REPORT,
   GET_FORM_BY_ID,
@@ -413,37 +414,17 @@ const Responses: React.FC = () => {
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Quiz Score" />
         ),
-        cell: ({ row }) => {
-          const metadata = row.original.metadata as any;
-
-          // Check if quiz-grading metadata exists
-          if (metadata && metadata['quiz-grading']) {
-            const quiz = metadata['quiz-grading'];
-            const passThreshold = quiz.passThreshold ?? 60; // Fallback to 60 for old responses
-            const passed = quiz.percentage >= passThreshold;
-
-            return (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedQuizMetadata(quiz);
-                  setSelectedResponseId(row.original.id);
-                  setShowQuizResults(true);
-                }}
-                className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
-              >
-                <Badge variant={passed ? 'default' : 'destructive'}>
-                  {quiz.quizScore} / {quiz.totalMarks}
-                </Badge>
-                <span className="text-sm text-muted-foreground">
-                  ({quiz.percentage.toFixed(0)}%)
-                </span>
-              </button>
-            );
-          }
-
-          return <span className="text-muted-foreground">-</span>;
-        },
+        cell: ({ row }) => (
+          <QuizScoreCell
+            metadata={row.original.metadata}
+            responseId={row.original.id}
+            onViewResults={(quizMetadata, responseId) => {
+              setSelectedQuizMetadata(quizMetadata);
+              setSelectedResponseId(responseId);
+              setShowQuizResults(true);
+            }}
+          />
+        ),
         enableSorting: false,
         size: 160,
       },

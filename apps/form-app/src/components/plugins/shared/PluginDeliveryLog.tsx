@@ -11,7 +11,7 @@ import {
   LoadingSpinner,
 } from '@dculus/ui';
 import { CheckCircle2, XCircle, Clock, ChevronDown, ChevronUp } from 'lucide-react';
-import { GET_PLUGIN_DELIVERIES } from '../../graphql/plugins';
+import { GET_PLUGIN_DELIVERIES } from '../../../graphql/plugins';
 import { formatDistanceToNow } from 'date-fns';
 
 interface PluginDeliveryLogProps {

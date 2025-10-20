@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
-import { QuizGradingMetadataViewer } from './QuizGradingMetadataViewer';
+import { QuizGradingMetadataViewer } from '../plugins/response-table/quiz/QuizGradingMetadataViewer';
 
 // Registry mapping plugin types to viewer components
 const METADATA_VIEWERS: Record<string, React.ComponentType<any>> = {

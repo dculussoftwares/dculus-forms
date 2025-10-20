@@ -17,9 +17,9 @@ import {
   UPDATE_FORM_PLUGIN
 } from '../graphql/plugins';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
-import { EmailPluginConfig } from '../components/plugin-config/EmailPluginConfig';
-import { WebhookPluginConfig } from '../components/plugin-config/WebhookPluginConfig';
-import { QuizGradingPluginConfig } from '../components/plugin-config/QuizGradingPluginConfig';
+import { EmailPluginConfig } from '../components/plugins/config/email/EmailPluginConfig';
+import { WebhookPluginConfig } from '../components/plugins/config/webhook/WebhookPluginConfig';
+import { QuizGradingPluginConfig } from '../components/plugins/config/quiz/QuizGradingPluginConfig';
 
 /**
  * Plugin Configuration Page
