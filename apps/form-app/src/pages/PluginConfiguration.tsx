@@ -19,6 +19,7 @@ import {
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import { EmailPluginConfig } from '../components/plugin-config/EmailPluginConfig';
 import { WebhookPluginConfig } from '../components/plugin-config/WebhookPluginConfig';
+import { QuizGradingPluginConfig } from '../components/plugin-config/QuizGradingPluginConfig';
 
 /**
  * Plugin Configuration Page
@@ -185,6 +186,18 @@ const PluginConfiguration: React.FC = () => {
       case 'webhook':
         return (
           <WebhookPluginConfig
+            initialData={existingPlugin}
+            mode={mode}
+            isSaving={isSaving}
+            onSave={handleSave}
+            onCancel={() => navigate(`/dashboard/form/${formId}/plugins`)}
+          />
+        );
+
+      case 'quiz-grading':
+        return (
+          <QuizGradingPluginConfig
+            form={form}
             initialData={existingPlugin}
             mode={mode}
             isSaving={isSaving}

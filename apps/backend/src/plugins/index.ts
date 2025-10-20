@@ -16,10 +16,14 @@ export * from './webhooks/index.js';
 // Email plugin
 export * from './email/index.js';
 
+// Quiz grading plugin
+export * from './quiz/index.js';
+
 // Plugin initialization function
 import { initializePluginEvents } from './events.js';
 import { registerWebhookPlugin } from './webhooks/index.js';
 import { registerEmailPlugin } from './email/index.js';
+import { registerQuizGradingPlugin } from './quiz/index.js';
 
 /**
  * Initialize the complete plugin system
@@ -31,6 +35,7 @@ export const initializePluginSystem = (): void => {
   // Register all available plugins
   registerWebhookPlugin();
   registerEmailPlugin();
+  registerQuizGradingPlugin();
 
   // Initialize event system
   initializePluginEvents();

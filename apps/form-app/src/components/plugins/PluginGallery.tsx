@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Badge } from '@dculus/ui';
-import { Webhook, Mail, MessageSquare, LucideIcon } from 'lucide-react';
+import { Webhook, Mail, MessageSquare, GraduationCap, LucideIcon } from 'lucide-react';
 
 export interface PluginType {
   id: string;
@@ -33,6 +33,16 @@ export const AVAILABLE_PLUGIN_TYPES: PluginType[] = [
     iconColor: 'text-blue-600',
     iconBgColor: 'bg-blue-100',
     category: 'Notification',
+    available: true,
+  },
+  {
+    id: 'quiz-grading',
+    name: 'Quiz Auto-Grading',
+    description: 'Automatically grade quiz responses with correct answers and scoring',
+    icon: GraduationCap,
+    iconColor: 'text-green-600',
+    iconBgColor: 'bg-green-100',
+    category: 'Workflow',
     available: true,
   },
   {

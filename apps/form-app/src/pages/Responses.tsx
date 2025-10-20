@@ -19,6 +19,7 @@ import {
 } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { FilterChip, FilterModal, FilterState } from '../components/Filters';
+import { QuizResultsDialog } from '../components/response-metadata/QuizResultsDialog';
 import {
   GENERATE_FORM_RESPONSE_REPORT,
   GET_FORM_BY_ID,
@@ -90,6 +91,11 @@ const Responses: React.FC = () => {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filters, setFilters] = useState<Record<string, FilterState>>({});
+
+  // Quiz results dialog state
+  const [showQuizResults, setShowQuizResults] = useState(false);
+  const [selectedQuizMetadata, setSelectedQuizMetadata] = useState<any>(null);
+  const [selectedResponseId, setSelectedResponseId] = useState<string | null>(null);
 
   // Use formId if available, otherwise fall back to id for backward compatibility
   const actualFormId = formId || id;
@@ -401,6 +407,45 @@ const Responses: React.FC = () => {
         },
         enableSorting: true,
         size: 200,
+      },
+      {
+        accessorKey: 'metadata',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Quiz Score" />
+        ),
+        cell: ({ row }) => {
+          const metadata = row.original.metadata as any;
+
+          // Check if quiz-grading metadata exists
+          if (metadata && metadata['quiz-grading']) {
+            const quiz = metadata['quiz-grading'];
+            const passThreshold = quiz.passThreshold ?? 60; // Fallback to 60 for old responses
+            const passed = quiz.percentage >= passThreshold;
+
+            return (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedQuizMetadata(quiz);
+                  setSelectedResponseId(row.original.id);
+                  setShowQuizResults(true);
+                }}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
+              >
+                <Badge variant={passed ? 'default' : 'destructive'}>
+                  {quiz.quizScore} / {quiz.totalMarks}
+                </Badge>
+                <span className="text-sm text-muted-foreground">
+                  ({quiz.percentage.toFixed(0)}%)
+                </span>
+              </button>
+            );
+          }
+
+          return <span className="text-muted-foreground">-</span>;
+        },
+        enableSorting: false,
+        size: 160,
       },
     ];
 
@@ -974,6 +1019,16 @@ const Responses: React.FC = () => {
         onClearAllFilters={handleClearAllFilters}
         onApplyFilters={handleApplyFilters}
       />
+
+      {/* Quiz Results Dialog */}
+      {selectedQuizMetadata && (
+        <QuizResultsDialog
+          open={showQuizResults}
+          onOpenChange={setShowQuizResults}
+          metadata={selectedQuizMetadata}
+          responseId={selectedResponseId || undefined}
+        />
+      )}
     </MainLayout>
   );
 };

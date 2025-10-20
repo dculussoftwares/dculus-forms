@@ -153,6 +153,7 @@ export const typeDefs = gql`
     id: ID!
     formId: ID!
     data: JSON!
+    metadata: JSON
     submittedAt: String!
     thankYouMessage: String!
     showCustomThankYou: Boolean!

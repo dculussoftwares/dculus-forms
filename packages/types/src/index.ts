@@ -694,11 +694,36 @@ export const deserializeFormSchema = (data: any): FormSchema => {
 };
 
 
+// Plugin Metadata Types
+export type PluginMetadata = Record<string, any>;
+
+// Quiz-specific metadata (stored under 'quiz-grading' key)
+export interface QuizFieldResult {
+  fieldId: string;
+  fieldLabel: string;
+  userAnswer: string;
+  correctAnswer: string;
+  isCorrect: boolean;
+  marksAwarded: number;
+  maxMarks: number;
+}
+
+export interface QuizGradingMetadata {
+  quizScore: number;
+  totalMarks: number;
+  percentage: number;
+  passThreshold: number;
+  fieldResults: QuizFieldResult[];
+  gradedAt: string;
+  gradedBy: 'plugin' | 'manual';
+}
+
 // Response types
 export interface FormResponse {
   id: string;
   formId: string;
   data: Record<string, any>;
+  metadata?: PluginMetadata;
   submittedAt: Date;
   hasBeenEdited?: boolean;
   lastEditedAt?: string;

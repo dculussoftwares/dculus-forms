@@ -202,6 +202,7 @@ export const GET_FORM_RESPONSES = gql`
         id
         formId
         data
+        metadata
         submittedAt
         hasBeenEdited
         totalEdits
@@ -251,6 +252,7 @@ export const GET_RESPONSE_BY_ID = gql`
       id
       formId
       data
+      metadata
       submittedAt
     }
   }

@@ -19,6 +19,7 @@ export const getAllResponses = async (organizationId?: string): Promise<FormResp
     id: response.id,
     formId: response.formId,
     data: (response.data as Record<string, any>) || {},
+    metadata: (response.metadata as any) || undefined,
     submittedAt: response.submittedAt,
   }));
 };
@@ -38,6 +39,7 @@ export const getResponseById = async (id: string): Promise<FormResponse | null> 
       id: response.id,
       formId: response.formId,
       data: (response.data as Record<string, any>) || {},
+      metadata: (response.metadata as any) || undefined,
       submittedAt: response.submittedAt,
     };
   } catch (error) {
@@ -160,6 +162,7 @@ export const getResponsesByFormId = async (
     id: response.id,
     formId: response.formId,
     data: (response.data as Record<string, any>) || {},
+    metadata: (response.metadata as any) || undefined,
     submittedAt: response.submittedAt,
   }));
 
@@ -189,6 +192,7 @@ export const getAllResponsesByFormId = async (formId: string): Promise<FormRespo
       id: response.id,
       formId: response.formId,
       data: (response.data as Record<string, any>) || {},
+      metadata: response.metadata,
       submittedAt: response.submittedAt,
     }));
   } catch (error) {
@@ -211,6 +215,7 @@ export const submitResponse = async (responseData: Partial<FormResponse>): Promi
     id: newResponse.id,
     formId: newResponse.formId,
     data: (newResponse.data as Record<string, any>) || {},
+    metadata: (newResponse.metadata as any) || undefined,
     submittedAt: newResponse.submittedAt,
   };
 };
@@ -263,6 +268,7 @@ export const updateResponse = async (
         id: updatedResponse.id,
         formId: updatedResponse.formId,
         data: (updatedResponse.data as Record<string, any>) || {},
+        metadata: (updatedResponse.metadata as any) || undefined,
         submittedAt: updatedResponse.submittedAt,
       };
     } else {
@@ -276,6 +282,7 @@ export const updateResponse = async (
         id: updatedResponse.id,
         formId: updatedResponse.formId,
         data: (updatedResponse.data as Record<string, any>) || {},
+        metadata: (updatedResponse.metadata as any) || undefined,
         submittedAt: updatedResponse.submittedAt,
       };
     }

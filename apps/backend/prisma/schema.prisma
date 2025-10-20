@@ -156,6 +156,7 @@ model Response {
   id          String   @id @map("_id")
   formId      String
   data        Json
+  metadata    Json?    // Generic plugin metadata storage
   submittedAt DateTime @default(now())
 
   form                       Form                        @relation(fields: [formId], references: [id], onDelete: Cascade)
