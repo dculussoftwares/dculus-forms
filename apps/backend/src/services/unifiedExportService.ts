@@ -1,5 +1,9 @@
 import * as XLSX from 'xlsx';
 import { FormResponse, FormSchema, FillableFormField, FieldType } from '@dculus/types';
+import { getPluginTypesWithData, getPluginExport } from '../plugins/exportRegistry.js';
+
+// Import plugin export registrations
+import '../plugins/quiz/export.js';
 
 export type ExportFormat = 'excel' | 'csv';
 
@@ -116,24 +120,38 @@ const generateCsvContent = (data: UnifiedExportData): string => {
   const { formTitle, responses, formSchema } = data;
   const { fieldInfo, orderedFieldIds } = extractFieldInfo(formSchema, responses);
 
+  // Get plugin types that have data in any response
+  const activePluginTypes = getPluginTypesWithData(responses);
+
   // Build CSV header
   const headers = ['Response ID', 'Submitted At'];
+
+  // Add plugin columns
+  activePluginTypes.forEach(pluginType => {
+    const pluginExport = getPluginExport(pluginType);
+    if (pluginExport) {
+      const pluginColumns = pluginExport.getColumns();
+      pluginColumns.forEach(col => headers.push(escapeCsvFieldName(col)));
+    }
+  });
+
+  // Add form field columns
   orderedFieldIds.forEach(fieldId => {
     headers.push(escapeCsvFieldName(fieldInfo[fieldId]));
   });
-  
+
   // Start CSV content with header row
   let csvContent = headers.join(',') + '\n';
 
   // Add data rows
   responses.forEach(response => {
     const row: string[] = [];
-    
+
     // Add basic fields
     row.push(escapeCsvFieldName(response.id));
     row.push(escapeCsvFieldName(new Date(
-      typeof response.submittedAt === 'string' 
-        ? parseInt(response.submittedAt, 10) 
+      typeof response.submittedAt === 'string'
+        ? parseInt(response.submittedAt, 10)
         : response.submittedAt
     ).toLocaleString('en-US', {
       timeZone: 'UTC',
@@ -146,10 +164,22 @@ const generateCsvContent = (data: UnifiedExportData): string => {
       hour12: false
     })));
 
+    // Add plugin data
+    activePluginTypes.forEach(pluginType => {
+      const pluginExport = getPluginExport(pluginType);
+      if (pluginExport) {
+        const pluginMetadata = response.metadata?.[pluginType];
+        const values = pluginExport.getValues(pluginMetadata);
+        values.forEach(value => {
+          row.push(escapeCsvFieldName(value !== null && value !== undefined ? String(value) : ''));
+        });
+      }
+    });
+
     // Add form field data in consistent order
     orderedFieldIds.forEach(fieldId => {
       const value = response.data[fieldId];
-      
+
       // Find field type if available from schema
       let fieldType: FieldType | undefined;
       if (formSchema.pages.length > 0) {
@@ -161,14 +191,20 @@ const generateCsvContent = (data: UnifiedExportData): string => {
           }
         }
       }
-      
+
       row.push(formatFieldValue(value, fieldType, 'csv'));
     });
 
     csvContent += row.join(',') + '\n';
   });
 
-  console.log(`Unified Export - Generated CSV with ${responses.length} rows and ${headers.length} columns`);
+  // Calculate plugin column count for logging
+  const pluginColumnCount = activePluginTypes.reduce((count, pluginType) => {
+    const pluginExport = getPluginExport(pluginType);
+    return count + (pluginExport ? pluginExport.getColumns().length : 0);
+  }, 0);
+
+  console.log(`Unified Export - Generated CSV with ${responses.length} rows and ${headers.length} columns (${pluginColumnCount} plugin columns)`);
   return csvContent;
 };
 
@@ -177,13 +213,16 @@ const generateExcelContent = (data: UnifiedExportData): Buffer => {
   const { formTitle, responses, formSchema } = data;
   const { fieldInfo, orderedFieldIds } = extractFieldInfo(formSchema, responses);
 
+  // Get plugin types that have data in any response
+  const activePluginTypes = getPluginTypesWithData(responses);
+
   // Prepare data for Excel export
   const excelData = responses.map((response: FormResponse) => {
     const row: any = {
       'Response ID': response.id,
       'Submitted At': new Date(
-        typeof response.submittedAt === 'string' 
-          ? parseInt(response.submittedAt, 10) 
+        typeof response.submittedAt === 'string'
+          ? parseInt(response.submittedAt, 10)
           : response.submittedAt
       ).toLocaleString('en-US', {
         timeZone: 'UTC',
@@ -197,10 +236,26 @@ const generateExcelContent = (data: UnifiedExportData): Buffer => {
       }),
     };
 
+    // Add plugin data
+    activePluginTypes.forEach(pluginType => {
+      const pluginExport = getPluginExport(pluginType);
+      if (pluginExport) {
+        const pluginMetadata = response.metadata?.[pluginType];
+        const columns = pluginExport.getColumns();
+        const values = pluginExport.getValues(pluginMetadata);
+
+        // Add each plugin column with its value
+        columns.forEach((columnName, index) => {
+          const value = values[index];
+          row[columnName] = value !== null && value !== undefined ? String(value) : '';
+        });
+      }
+    });
+
     // Add form field data in consistent order
     orderedFieldIds.forEach(fieldId => {
       const value = response.data[fieldId];
-      
+
       // Find field type if available from schema
       let fieldType: FieldType | undefined;
       if (formSchema.pages.length > 0) {
@@ -212,7 +267,7 @@ const generateExcelContent = (data: UnifiedExportData): Buffer => {
           }
         }
       }
-      
+
       row[fieldInfo[fieldId]] = formatFieldValue(value, fieldType, 'excel') || '';
     });
 
@@ -251,7 +306,14 @@ const generateExcelContent = (data: UnifiedExportData): Buffer => {
     compression: true
   });
 
-  console.log(`Unified Export - Generated Excel with ${responses.length} rows and ${orderedFieldIds.length + 2} columns`);
+  // Calculate total columns (basic + plugin + form fields)
+  const pluginColumnCount = activePluginTypes.reduce((count, pluginType) => {
+    const pluginExport = getPluginExport(pluginType);
+    return count + (pluginExport ? pluginExport.getColumns().length : 0);
+  }, 0);
+  const totalColumns = 2 + pluginColumnCount + orderedFieldIds.length; // 2 for Response ID + Submitted At
+
+  console.log(`Unified Export - Generated Excel with ${responses.length} rows and ${totalColumns} columns (${pluginColumnCount} plugin columns)`);
   return Buffer.from(buffer);
 };
 
