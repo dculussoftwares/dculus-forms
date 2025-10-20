@@ -20,12 +20,13 @@ import {
 import { MainLayout } from '../components/MainLayout';
 import { FilterChip, FilterModal, FilterState } from '../components/Filters';
 import { QuizResultsDialog } from '../components/plugins/response-table/quiz/QuizResultsDialog';
-import { QuizScoreCell } from '../components/plugins/response-table/quiz/QuizScoreCell';
+import { getPluginColumns } from '../components/plugins/response-table';
 import {
   GENERATE_FORM_RESPONSE_REPORT,
   GET_FORM_BY_ID,
   GET_FORM_RESPONSES,
 } from '../graphql/queries';
+import { GET_FORM_PLUGINS } from '../graphql/plugins';
 import {
   deserializeFormSchema,
   FieldType,
@@ -93,10 +94,16 @@ const Responses: React.FC = () => {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filters, setFilters] = useState<Record<string, FilterState>>({});
 
-  // Quiz results dialog state
-  const [showQuizResults, setShowQuizResults] = useState(false);
-  const [selectedQuizMetadata, setSelectedQuizMetadata] = useState<any>(null);
-  const [selectedResponseId, setSelectedResponseId] = useState<string | null>(null);
+  // Plugin metadata dialog state (quiz, email, webhook, etc.)
+  const [pluginDialogState, setPluginDialogState] = useState<{
+    pluginType: string | null;
+    metadata: any;
+    responseId: string | null;
+  }>({
+    pluginType: null,
+    metadata: null,
+    responseId: null,
+  });
 
   // Use formId if available, otherwise fall back to id for backward compatibility
   const actualFormId = formId || id;
@@ -143,6 +150,12 @@ const Responses: React.FC = () => {
     error: formError,
   } = useQuery(GET_FORM_BY_ID, {
     variables: { id: actualFormId },
+    skip: !actualFormId,
+  });
+
+  // Fetch form plugins to determine which plugin columns to show
+  const { data: pluginsData } = useQuery(GET_FORM_PLUGINS, {
+    variables: { formId: actualFormId },
     skip: !actualFormId,
   });
 
@@ -409,25 +422,6 @@ const Responses: React.FC = () => {
         enableSorting: true,
         size: 200,
       },
-      {
-        accessorKey: 'metadata',
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Quiz Score" />
-        ),
-        cell: ({ row }) => (
-          <QuizScoreCell
-            metadata={row.original.metadata}
-            responseId={row.original.id}
-            onViewResults={(quizMetadata, responseId) => {
-              setSelectedQuizMetadata(quizMetadata);
-              setSelectedResponseId(responseId);
-              setShowQuizResults(true);
-            }}
-          />
-        ),
-        enableSorting: false,
-        size: 160,
-      },
     ];
 
     // Generate columns for form fields
@@ -569,8 +563,25 @@ const Responses: React.FC = () => {
       size: 80,
     };
 
-    return [...baseColumns, ...fieldColumns, actionsColumn];
-  }, [formData, sortBy, sortOrder]);
+    // Get enabled plugin types from plugins data
+    const enabledPluginTypes = pluginsData?.formPlugins
+      ?.filter((plugin: any) => plugin.enabled)
+      ?.map((plugin: any) => plugin.type) || [];
+
+    // Generate plugin columns dynamically based on enabled plugins
+    const pluginColumns = getPluginColumns<FormResponse>(
+      enabledPluginTypes,
+      (pluginType, metadata, responseId) => {
+        setPluginDialogState({
+          pluginType,
+          metadata,
+          responseId,
+        });
+      }
+    );
+
+    return [...baseColumns, ...fieldColumns, ...pluginColumns, actionsColumn];
+  }, [formData, pluginsData, sortBy, sortOrder]);
 
   const loading = formLoading;
   const error = formError || responsesError;
@@ -1001,15 +1012,24 @@ const Responses: React.FC = () => {
         onApplyFilters={handleApplyFilters}
       />
 
-      {/* Quiz Results Dialog */}
-      {selectedQuizMetadata && (
+      {/* Plugin-specific dialogs */}
+      {pluginDialogState.pluginType === 'quiz-grading' && pluginDialogState.metadata && (
         <QuizResultsDialog
-          open={showQuizResults}
-          onOpenChange={setShowQuizResults}
-          metadata={selectedQuizMetadata}
-          responseId={selectedResponseId || undefined}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) {
+              setPluginDialogState({
+                pluginType: null,
+                metadata: null,
+                responseId: null,
+              });
+            }
+          }}
+          metadata={pluginDialogState.metadata}
+          responseId={pluginDialogState.responseId || undefined}
         />
       )}
+      {/* Add other plugin dialogs here */}
     </MainLayout>
   );
 };
