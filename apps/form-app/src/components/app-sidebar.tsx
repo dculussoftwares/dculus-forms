@@ -1,5 +1,5 @@
 import React from "react"
-import { useLocation } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import {
   LayoutDashboard,
   Settings,
@@ -10,11 +10,13 @@ import {
   Mail,
   Bell,
   Search,
+  FileText,
+  Layers,
 } from "lucide-react"
 
-import { 
-  Avatar, 
-  AvatarFallback, 
+import {
+  Avatar,
+  AvatarFallback,
   AvatarImage,
   DropdownMenu,
   DropdownMenuContent,
@@ -44,14 +46,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { open } = useSidebar()
   const { user, activeOrganization } = useAuth()
   const location = useLocation()
-  
+  const navigate = useNavigate()
+
   const navigationData = {
     navMain: [
       {
         title: "Dashboard",
-        url: "/",
+        url: "/dashboard",
         icon: LayoutDashboard,
-        isActive: location.pathname === "/" || location.pathname === "/dashboard",
+        isActive: location.pathname === "/" || location.pathname === "/dashboard" || location.pathname.startsWith("/dashboard"),
+      },
+      {
+        title: "Forms",
+        url: "/forms",
+        icon: FileText,
+        isActive: location.pathname === "/forms" || location.pathname.startsWith("/forms/"),
+      },
+      {
+        title: "Templates",
+        url: "/dashboard/templates",
+        icon: Layers,
+        isActive: location.pathname === "/dashboard/templates",
       },
       {
         title: "Settings",
@@ -199,7 +214,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </SidebarMenuItem>
             ))}
             <SidebarMenuItem>
-              <SidebarMenuButton className="text-sidebar-foreground/70">
+              <SidebarMenuButton
+                className="text-sidebar-foreground/70"
+                onClick={() => navigate('/dashboard/templates')}
+              >
                 <Plus className={open ? undefined : "size-6"} />
                 {open && <span>Create new form</span>}
               </SidebarMenuButton>
