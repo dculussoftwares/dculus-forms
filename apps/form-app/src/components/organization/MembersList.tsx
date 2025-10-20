@@ -83,13 +83,12 @@ export const MembersList: React.FC<MembersListProps> = ({ organization }) => {
           >
             <div className="flex items-center space-x-3">
               <Avatar>
-                <AvatarImage src={member.user.image} alt={member.user.name} />
-                <AvatarFallback>
-                  {member.user.name
-                    .split(' ')
-                    .map(n => n[0])
-                    .join('')
-                    .toUpperCase()}
+                <AvatarImage
+                  src={member.user.image || "https://github.com/shadcn.png"}
+                  alt={member.user.name}
+                />
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  {member.user.email.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div>
