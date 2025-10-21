@@ -4,6 +4,7 @@ import { organization, bearer, admin, emailOTP } from 'better-auth/plugins';
 import { prisma } from './prisma.js';
 import { authConfig } from './env.js';
 import { sendOTPEmail, sendResetPasswordEmail, sendInvitationEmail } from '../services/emailService.js';
+import { createChargebeeCustomer, createFreeSubscription } from '../services/chargebeeService.js';
 
 export const auth: ReturnType<typeof betterAuth> = betterAuth({
   database: prismaAdapter(prisma, {
@@ -123,6 +124,46 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
           }
 
           return { data: member };
+        },
+      },
+    },
+    organization: {
+      create: {
+        after: async (organization: any) => {
+          // Auto-create free subscription for new organization
+          try {
+            console.log('[Organization Hook] Creating Chargebee customer and free subscription...');
+
+            // Get the user who created the organization (owner)
+            const owner = await prisma.member.findFirst({
+              where: {
+                organizationId: organization.id,
+                role: 'owner',
+              },
+              include: {
+                user: true,
+              },
+            });
+
+            if (!owner) {
+              console.error('[Organization Hook] ⚠️  Could not find owner for organization:', organization.id);
+              return;
+            }
+
+            const customerId = await createChargebeeCustomer(
+              organization.id,
+              organization.name,
+              owner.user.email
+            );
+
+            await createFreeSubscription(organization.id, customerId);
+
+            console.log(`[Organization Hook] ✅ Created free subscription for "${organization.name}"`);
+          } catch (error: any) {
+            console.error('[Organization Hook] ⚠️  Failed to create subscription:', error.message);
+            // Don't throw - organization is already created
+            // User can still use the system, admin can manually fix subscription later
+          }
         },
       },
     },

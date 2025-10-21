@@ -24,6 +24,7 @@ export const typeDefs = gql`
     createdAt: String!
     updatedAt: String!
     members: [Member!]!
+    subscription: Subscription
   }
 
   type Member {
@@ -33,6 +34,46 @@ export const typeDefs = gql`
     role: String!
     createdAt: String!
     updatedAt: String!
+  }
+
+  # Subscription Types
+  type Subscription {
+    id: ID!
+    organizationId: ID!
+    chargebeeCustomerId: String!
+    chargebeeSubscriptionId: String
+    planId: String!
+    status: SubscriptionStatus!
+    viewsUsed: Int!
+    submissionsUsed: Int!
+    viewsLimit: Int
+    submissionsLimit: Int
+    currentPeriodStart: String!
+    currentPeriodEnd: String!
+    createdAt: String!
+    updatedAt: String!
+    organization: Organization!
+    usage: SubscriptionUsage!
+  }
+
+  type SubscriptionUsage {
+    views: UsageInfo!
+    submissions: UsageInfo!
+  }
+
+  type UsageInfo {
+    used: Int!
+    limit: Int
+    unlimited: Boolean!
+    percentage: Float
+    exceeded: Boolean!
+  }
+
+  enum SubscriptionStatus {
+    ACTIVE
+    CANCELLED
+    EXPIRED
+    PAST_DUE
   }
 
   # Invitation Types
@@ -947,12 +988,48 @@ export const typeDefs = gql`
     formPlugin(id: ID!): FormPlugin
     pluginDeliveries(pluginId: ID!, limit: Int): [PluginDelivery!]!
 
+    # Subscription Queries
+    availablePlans: [AvailablePlan!]!
+
+  }
+
+  # Subscription Mutation Response Types
+  type CheckoutSessionResponse {
+    url: String!
+    hostedPageId: String!
+  }
+
+  type PortalSessionResponse {
+    url: String!
+  }
+
+  type PlanPrice {
+    id: String!
+    currency: String!
+    amount: Int!
+    period: String!
+  }
+
+  type PlanFeatures {
+    views: Int
+    submissions: Int
+  }
+
+  type AvailablePlan {
+    id: String!
+    name: String!
+    prices: [PlanPrice!]!
+    features: PlanFeatures!
   }
 
   type Mutation {
     # Auth Mutations
     createOrganization(name: String!): Organization
     setActiveOrganization(organizationId: ID!): Organization
+
+    # Subscription Mutations
+    createCheckoutSession(itemPriceId: String!): CheckoutSessionResponse!
+    createPortalSession: PortalSessionResponse!
     
     
     # Form Mutations

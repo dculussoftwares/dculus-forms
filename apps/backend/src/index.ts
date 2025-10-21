@@ -17,12 +17,14 @@ import { formsRouter } from './routes/forms.js';
 import { responsesRouter } from './routes/responses.js';
 import templatesRouter from './routes/templates.js';
 import { uploadRouter } from './routes/upload.js';
+import { chargebeeWebhookRouter } from './routes/chargebee-webhooks.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { createBetterAuthContext } from './middleware/better-auth-middleware.js';
 import { prisma } from './lib/prisma.js';
 import { createHocuspocusServer } from './services/hocuspocus.js';
 import { appConfig } from './lib/env.js';
 import { initializePluginSystem } from './plugins/index.js';
+import { initializeSubscriptionSystem } from './subscriptions/index.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -147,6 +149,7 @@ app.use('/api/forms', formsRouter);
 app.use('/api/responses', responsesRouter);
 app.use('/api/templates', templatesRouter);
 app.use('/', uploadRouter);
+app.use('/api', chargebeeWebhookRouter);
 
 // Add favicon route to prevent 404 errors
 app.get('/favicon.ico', (req, res) => {
@@ -189,6 +192,11 @@ async function startServer() {
   console.log('🔌 Initializing plugin system...');
   initializePluginSystem();
   console.log('✅ Plugin system initialized');
+
+  // Initialize subscription system
+  console.log('💳 Initializing subscription system...');
+  initializeSubscriptionSystem();
+  console.log('✅ Subscription system initialized');
 
   await server.start();
 

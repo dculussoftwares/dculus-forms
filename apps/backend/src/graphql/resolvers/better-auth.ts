@@ -8,6 +8,10 @@ import { nanoid } from 'nanoid';
 import { auth } from '../../lib/better-auth.js';
 import { fromNodeHeaders } from 'better-auth/node';
 import { GraphQLError } from 'graphql';
+import {
+  createChargebeeCustomer,
+  createFreeSubscription,
+} from '../../services/chargebeeService.js';
 
 export const betterAuthResolvers = {
   User: {
@@ -129,6 +133,26 @@ export const betterAuthResolvers = {
           role: 'owner',
         },
       });
+
+      // Auto-create free subscription for new organization
+      try {
+        console.log('[Organization] Creating Chargebee customer and free subscription...');
+
+        const customerId = await createChargebeeCustomer(
+          organization.id,
+          organization.name,
+          context.auth.user!.email
+        );
+
+        await createFreeSubscription(organization.id, customerId);
+
+        console.log(`[Organization] ✅ Created free subscription for "${organization.name}"`);
+      } catch (error: any) {
+        console.error('[Organization] ⚠️  Failed to create subscription:', error.message);
+        // Don't throw - organization is already created
+        // User can still use the system, admin can manually fix subscription later
+        // This prevents organization creation from failing due to Chargebee issues
+      }
 
       return await prisma.organization.findUnique({
         where: { id: organization.id },

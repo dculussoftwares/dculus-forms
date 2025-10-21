@@ -12,6 +12,7 @@ import { fieldAnalyticsResolvers } from './resolvers/fieldAnalytics.js';
 import { invitationResolvers } from './resolvers/invitations.js';
 import { formSharingResolvers } from './resolvers/formSharing.js';
 import { pluginsResolvers } from './resolvers/plugins.js';
+import { subscriptionResolvers } from './resolvers/subscriptions.js';
 import { GraphQLJSON } from 'graphql-type-json';
 
 
@@ -19,6 +20,9 @@ export const resolvers = {
   JSON: GraphQLJSON,
   User: {
     ...betterAuthResolvers.User,
+  },
+  Organization: {
+    ...subscriptionResolvers.Organization,
   },
   Query: {
     ...betterAuthResolvers.Query,
@@ -32,6 +36,7 @@ export const resolvers = {
     ...invitationResolvers.Query,
     ...formSharingResolvers.Query,
     ...pluginsResolvers.Query,
+    ...subscriptionResolvers.Query,
   },
   Mutation: {
     ...betterAuthResolvers.Mutation,
@@ -44,6 +49,7 @@ export const resolvers = {
     ...fieldAnalyticsResolvers.Mutation,
     ...formSharingResolvers.Mutation,
     ...pluginsResolvers.Mutation,
+    ...subscriptionResolvers.Mutation,
   },
   Form: {
     ...formsResolvers.Form,
@@ -60,6 +66,9 @@ export const resolvers = {
   },
   PluginDelivery: {
     ...pluginsResolvers.PluginDelivery,
+  },
+  Subscription: {
+    ...subscriptionResolvers.Subscription,
   },
 };
  

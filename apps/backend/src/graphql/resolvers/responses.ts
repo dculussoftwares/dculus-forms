@@ -19,6 +19,8 @@ import {
 import { deserializeFormSchema } from '@dculus/types';
 import { analyticsService } from '../../services/analyticsService.js';
 import { emitFormSubmitted } from '../../plugins/events.js';
+import { checkUsageExceeded } from '../../subscriptions/usageService.js';
+import { emitFormSubmitted as emitSubscriptionFormSubmitted } from '../../subscriptions/events.js';
 
 export const responsesResolvers = {
   Query: {
@@ -99,6 +101,12 @@ export const responsesResolvers = {
       // Check if form is published - critical business rule
       if (!form.isPublished) {
         throw new Error('Form is not published and cannot accept responses');
+      }
+
+      // Check subscription usage limits
+      const usageExceeded = await checkUsageExceeded(form.organizationId);
+      if (usageExceeded.submissionsExceeded) {
+        throw new Error('Form submission limit exceeded for this organization subscription plan');
       }
 
       // Check submission limits if they exist
@@ -236,6 +244,13 @@ export const responsesResolvers = {
       } catch (error) {
         // Log error but don't fail the response submission
         console.error('Error emitting form.submitted event:', error);
+      }
+
+      // Emit subscription event for usage tracking
+      try {
+        emitSubscriptionFormSubmitted(form.organizationId, input.formId, response.id);
+      } catch (error) {
+        console.error('Error emitting subscription event:', error);
       }
 
       return {

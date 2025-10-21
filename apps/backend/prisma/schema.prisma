@@ -80,9 +80,10 @@ model Organization {
   updatedAt DateTime @updatedAt
 
   // Relations
-  members     Member[]
-  invitations Invitation[]
-  forms       Form[]
+  members      Member[]
+  invitations  Invitation[]
+  forms        Form[]
+  subscription Subscription?
 
   metadata String?
 
@@ -388,4 +389,39 @@ model PluginDelivery {
   @@index([status])
   @@index([deliveredAt])
   @@map("plugin_delivery")
+}
+
+// Subscription Management Models
+
+model Subscription {
+  id                      String   @id @map("_id")
+  organizationId          String   @unique
+  chargebeeCustomerId     String   // Chargebee customer ID
+  chargebeeSubscriptionId String?  // Chargebee subscription ID (null for free plan)
+
+  // Plan information
+  planId                  String   // 'free', 'starter', 'advanced'
+  status                  String   // 'active', 'cancelled', 'expired', 'past_due'
+
+  // Usage tracking (local cache for performance)
+  viewsUsed               Int      @default(0)
+  submissionsUsed         Int      @default(0)
+  viewsLimit              Int?     // null = unlimited
+  submissionsLimit        Int?     // null = unlimited
+
+  // Billing period (resets usage counters)
+  currentPeriodStart      DateTime
+  currentPeriodEnd        DateTime
+
+  // Metadata
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Indexes
+  @@index([status])
+  @@index([planId])
+  @@map("subscription")
 }

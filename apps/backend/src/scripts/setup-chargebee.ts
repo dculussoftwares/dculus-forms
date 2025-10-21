@@ -1,0 +1,469 @@
+#!/usr/bin/env tsx
+/**
+ * Chargebee Setup Script
+ *
+ * This script configures Chargebee with all required plans, features, and pricing
+ * for the Dculus Forms subscription system.
+ *
+ * Run with: npx tsx src/scripts/setup-chargebee.ts
+ */
+
+import Chargebee from 'chargebee';
+import * as dotenv from 'dotenv';
+import { resolve } from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// ES module __dirname equivalent
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load environment variables
+dotenv.config({ path: resolve(__dirname, '../../.env') });
+
+// Configure Chargebee
+const CHARGEBEE_SITE = process.env.CHARGEBEE_SITE;
+const CHARGEBEE_API_KEY = process.env.CHARGEBEE_API_KEY;
+
+if (!CHARGEBEE_SITE || !CHARGEBEE_API_KEY) {
+  console.error('❌ Missing Chargebee credentials!');
+  console.error('Please set CHARGEBEE_SITE and CHARGEBEE_API_KEY in apps/backend/.env');
+  process.exit(1);
+}
+
+// Initialize Chargebee SDK
+const chargebee = new Chargebee({
+  site: CHARGEBEE_SITE,
+  apiKey: CHARGEBEE_API_KEY
+});
+
+console.log('🚀 Chargebee Setup Script Starting...\n');
+console.log(`📍 Site: ${CHARGEBEE_SITE}\n`);
+
+/**
+ * Helper function to handle Chargebee API errors
+ */
+function handleError(error: any, context: string) {
+  // Check for "already exists" errors (multiple error codes)
+  const alreadyExistsErrors = [
+    'resource_already_exists',
+    'operation_not_supported' // When resource already exists
+  ];
+
+  if (error.type === 'invalid_request' &&
+      (alreadyExistsErrors.includes(error.api_error_code) ||
+       error.message?.includes('already exists'))) {
+    console.log(`  ⚠️  ${context} already exists (skipping)\n`);
+    return { alreadyExists: true };
+  }
+  console.error(`  ❌ Error in ${context}:`, error.message || error);
+  throw error;
+}
+
+/**
+ * Step 0: Create Item Family
+ */
+async function createItemFamily() {
+  console.log('🏢 Step 0: Creating Item Family...\n');
+
+  try {
+    const result = await chargebee.itemFamily.create({
+      id: 'dculus-forms',
+      name: 'Dculus Forms Plans',
+      description: 'All subscription plans for Dculus Forms'
+    });
+    console.log('  ✅ Created item family: dculus-forms\n');
+  } catch (error: any) {
+    const result = handleError(error, 'dculus-forms item family');
+    if (!result?.alreadyExists) throw error;
+  }
+}
+
+/**
+ * Step 1: Create Features
+ */
+async function createFeatures() {
+  console.log('📦 Step 1: Creating Features...\n');
+
+  // Feature 1: Form Views
+  try {
+    const result = await chargebee.feature.create({
+      id: 'form_views',
+      name: 'Form Views',
+      type: 'quantity',
+      unit: 'view',
+      levels: [
+        {
+          value: '10000',
+          name: '10,000 views',
+          level: 0
+        },
+        {
+          is_unlimited: true,
+          name: 'Unlimited',
+          level: 1
+        }
+      ]
+    });
+    console.log('  ✅ Created feature: form_views');
+  } catch (error: any) {
+    const result = handleError(error, 'form_views feature');
+    if (!result?.alreadyExists) throw error;
+  }
+
+  // Feature 2: Form Submissions
+  try {
+    const result = await chargebee.feature.create({
+      id: 'form_submissions',
+      name: 'Form Submissions',
+      type: 'quantity',
+      unit: 'submission',
+      levels: [
+        {
+          value: '1000',
+          name: '1,000 submissions',
+          level: 0
+        },
+        {
+          value: '10000',
+          name: '10,000 submissions',
+          level: 1
+        },
+        {
+          value: '100000',
+          name: '100,000 submissions',
+          level: 2
+        },
+        {
+          is_unlimited: true,
+          name: 'Unlimited',
+          level: 3
+        }
+      ]
+    });
+    console.log('  ✅ Created feature: form_submissions\n');
+  } catch (error: any) {
+    const result = handleError(error, 'form_submissions feature');
+    if (!result?.alreadyExists) throw error;
+  }
+}
+
+/**
+ * Step 2: Create Plan Items
+ */
+async function createPlanItems() {
+  console.log('📋 Step 2: Creating Plan Items...\n');
+
+  const plans = [
+    { id: 'free', name: 'Free Plan' },
+    { id: 'starter', name: 'Starter Plan' },
+    { id: 'advanced', name: 'Advanced Plan' }
+  ];
+
+  for (const plan of plans) {
+    try {
+      const result = await chargebee.item.create({
+        id: plan.id,
+        name: plan.name,
+        type: 'plan',
+        item_family_id: 'dculus-forms',
+        item_applicability: 'all'
+      });
+      console.log(`  ✅ Created plan item: ${plan.id}`);
+    } catch (error: any) {
+      const result = handleError(error, `${plan.id} plan item`);
+      if (!result?.alreadyExists) throw error;
+    }
+  }
+  console.log('');
+}
+
+/**
+ * Step 3: Create Item Prices (Multi-Currency)
+ */
+async function createItemPrices() {
+  console.log('💰 Step 3: Creating Item Prices...\n');
+
+  const itemPrices = [
+    // Free Plan
+    {
+      id: 'free-usd-monthly',
+      item_id: 'free',
+      name: 'Free Plan USD Monthly',
+      pricing_model: 'per_unit',
+      currency_code: 'USD',
+      price: 0,
+      period_unit: 'month',
+      period: 1
+    },
+    {
+      id: 'free-inr-monthly',
+      item_id: 'free',
+      name: 'Free Plan INR Monthly',
+      pricing_model: 'per_unit',
+      currency_code: 'INR',
+      price: 0,
+      period_unit: 'month',
+      period: 1
+    },
+    // Starter Plan - Monthly
+    {
+      id: 'starter-usd-monthly',
+      item_id: 'starter',
+      name: 'Starter Plan USD Monthly',
+      pricing_model: 'per_unit',
+      currency_code: 'USD',
+      price: 600, // $6.00 in cents
+      period_unit: 'month',
+      period: 1
+    },
+    {
+      id: 'starter-inr-monthly',
+      item_id: 'starter',
+      name: 'Starter Plan INR Monthly',
+      pricing_model: 'per_unit',
+      currency_code: 'INR',
+      price: 48900, // ₹489.00 in paise
+      period_unit: 'month',
+      period: 1
+    },
+    // Starter Plan - Yearly
+    {
+      id: 'starter-usd-yearly',
+      item_id: 'starter',
+      name: 'Starter Plan USD Yearly',
+      pricing_model: 'per_unit',
+      currency_code: 'USD',
+      price: 6600, // $66.00/year ($5.50/month) in cents
+      period_unit: 'year',
+      period: 1
+    },
+    {
+      id: 'starter-inr-yearly',
+      item_id: 'starter',
+      name: 'Starter Plan INR Yearly',
+      pricing_model: 'per_unit',
+      currency_code: 'INR',
+      price: 540000, // ₹5,400/year (₹450/month) in paise
+      period_unit: 'year',
+      period: 1
+    },
+    // Advanced Plan - Monthly
+    {
+      id: 'advanced-usd-monthly',
+      item_id: 'advanced',
+      name: 'Advanced Plan USD Monthly',
+      pricing_model: 'per_unit',
+      currency_code: 'USD',
+      price: 1500, // $15.00 in cents
+      period_unit: 'month',
+      period: 1
+    },
+    {
+      id: 'advanced-inr-monthly',
+      item_id: 'advanced',
+      name: 'Advanced Plan INR Monthly',
+      pricing_model: 'per_unit',
+      currency_code: 'INR',
+      price: 128900, // ₹1,289.00 in paise
+      period_unit: 'month',
+      period: 1
+    },
+    // Advanced Plan - Yearly
+    {
+      id: 'advanced-usd-yearly',
+      item_id: 'advanced',
+      name: 'Advanced Plan USD Yearly',
+      pricing_model: 'per_unit',
+      currency_code: 'USD',
+      price: 16800, // $168.00/year ($14/month) in cents
+      period_unit: 'year',
+      period: 1
+    },
+    {
+      id: 'advanced-inr-yearly',
+      item_id: 'advanced',
+      name: 'Advanced Plan INR Yearly',
+      pricing_model: 'per_unit',
+      currency_code: 'INR',
+      price: 1426800, // ₹14,268/year (₹1,189/month) in paise
+      period_unit: 'year',
+      period: 1
+    }
+  ];
+
+  for (const priceData of itemPrices) {
+    try {
+      const result = await chargebee.itemPrice.create(priceData as any);
+      const displayPrice = priceData.currency_code === 'USD'
+        ? `$${(priceData.price / 100).toFixed(2)}`
+        : `₹${(priceData.price / 100).toFixed(2)}`;
+      const period = priceData.period_unit === 'year' ? 'year' : 'month';
+      console.log(`  ✅ Created price: ${priceData.id} (${displayPrice}/${period})`);
+    } catch (error: any) {
+      const result = handleError(error, `${priceData.id} item price`);
+      if (!result?.alreadyExists) throw error;
+    }
+  }
+  console.log('');
+}
+
+/**
+ * Step 4: Link Features to Plans via Entitlements
+ */
+async function createEntitlements() {
+  console.log('🔗 Step 4: Linking Features to Plans (Entitlements)...\n');
+
+  const entitlementConfigs = [
+    // Free Plan (USD)
+    {
+      planPriceId: 'free-usd-monthly',
+      planName: 'Free (USD) - Monthly',
+      entitlements: [
+        { feature_id: 'form_views', value: '10000' },
+        { feature_id: 'form_submissions', value: '1000' }
+      ]
+    },
+    // Free Plan (INR)
+    {
+      planPriceId: 'free-inr-monthly',
+      planName: 'Free (INR) - Monthly',
+      entitlements: [
+        { feature_id: 'form_views', value: '10000' },
+        { feature_id: 'form_submissions', value: '1000' }
+      ]
+    },
+    // Starter Plan (USD) - Monthly
+    {
+      planPriceId: 'starter-usd-monthly',
+      planName: 'Starter (USD) - Monthly',
+      entitlements: [
+        { feature_id: 'form_views', value: 'unlimited' },
+        { feature_id: 'form_submissions', value: '10000' }
+      ]
+    },
+    // Starter Plan (INR) - Monthly
+    {
+      planPriceId: 'starter-inr-monthly',
+      planName: 'Starter (INR) - Monthly',
+      entitlements: [
+        { feature_id: 'form_views', value: 'unlimited' },
+        { feature_id: 'form_submissions', value: '10000' }
+      ]
+    },
+    // Starter Plan (USD) - Yearly
+    {
+      planPriceId: 'starter-usd-yearly',
+      planName: 'Starter (USD) - Yearly',
+      entitlements: [
+        { feature_id: 'form_views', value: 'unlimited' },
+        { feature_id: 'form_submissions', value: '10000' }
+      ]
+    },
+    // Starter Plan (INR) - Yearly
+    {
+      planPriceId: 'starter-inr-yearly',
+      planName: 'Starter (INR) - Yearly',
+      entitlements: [
+        { feature_id: 'form_views', value: 'unlimited' },
+        { feature_id: 'form_submissions', value: '10000' }
+      ]
+    },
+    // Advanced Plan (USD) - Monthly
+    {
+      planPriceId: 'advanced-usd-monthly',
+      planName: 'Advanced (USD) - Monthly',
+      entitlements: [
+        { feature_id: 'form_views', value: 'unlimited' },
+        { feature_id: 'form_submissions', value: '100000' }
+      ]
+    },
+    // Advanced Plan (INR) - Monthly
+    {
+      planPriceId: 'advanced-inr-monthly',
+      planName: 'Advanced (INR) - Monthly',
+      entitlements: [
+        { feature_id: 'form_views', value: 'unlimited' },
+        { feature_id: 'form_submissions', value: '100000' }
+      ]
+    },
+    // Advanced Plan (USD) - Yearly
+    {
+      planPriceId: 'advanced-usd-yearly',
+      planName: 'Advanced (USD) - Yearly',
+      entitlements: [
+        { feature_id: 'form_views', value: 'unlimited' },
+        { feature_id: 'form_submissions', value: '100000' }
+      ]
+    },
+    // Advanced Plan (INR) - Yearly
+    {
+      planPriceId: 'advanced-inr-yearly',
+      planName: 'Advanced (INR) - Yearly',
+      entitlements: [
+        { feature_id: 'form_views', value: 'unlimited' },
+        { feature_id: 'form_submissions', value: '100000' }
+      ]
+    }
+  ];
+
+  for (const config of entitlementConfigs) {
+    try {
+      const entitlementsData = config.entitlements.map(e => ({
+        entity_id: config.planPriceId,
+        entity_type: 'plan_price' as any,
+        feature_id: e.feature_id,
+        value: e.value
+      }));
+
+      const result = await chargebee.entitlement.create({
+        action: 'upsert',
+        entitlements: entitlementsData
+      } as any);
+
+      console.log(`  ✅ Configured entitlements for ${config.planName}:`);
+      config.entitlements.forEach(e => {
+        const displayValue = e.value === 'unlimited' ? 'Unlimited' : parseInt(e.value).toLocaleString();
+        console.log(`     - ${e.feature_id}: ${displayValue}`);
+      });
+    } catch (error: any) {
+      console.error(`  ❌ Error configuring entitlements for ${config.planName}:`, error.message || error);
+      // Continue with other plans even if one fails
+    }
+  }
+  console.log('');
+}
+
+/**
+ * Main execution function
+ */
+async function main() {
+  try {
+    await createItemFamily();
+    await createFeatures();
+    await createPlanItems();
+    await createItemPrices();
+    await createEntitlements();
+
+    console.log('✅ Chargebee setup complete!\n');
+    console.log('📊 Summary:');
+    console.log('  • Features created: form_views, form_submissions');
+    console.log('  • Plans created: free, starter, advanced');
+    console.log('  • Item prices created: 10 total');
+    console.log('    - Free: 2 (USD/INR monthly)');
+    console.log('    - Starter: 4 (USD/INR monthly + yearly)');
+    console.log('    - Advanced: 4 (USD/INR monthly + yearly)');
+    console.log('  • Entitlements configured: 10 plan prices\n');
+    console.log('💰 Pricing:');
+    console.log('  • Starter: $6/mo or $66/yr ($5.50/mo)');
+    console.log('  • Advanced: $15/mo or $168/yr ($14/mo)\n');
+    console.log('🎉 You can now view your plans in the Chargebee dashboard!');
+    console.log(`   https://${CHARGEBEE_SITE}.chargebee.com/\n`);
+  } catch (error) {
+    console.error('\n❌ Setup failed:', error);
+    process.exit(1);
+  }
+}
+
+// Run the setup
+main();

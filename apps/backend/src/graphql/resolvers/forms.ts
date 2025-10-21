@@ -17,6 +17,7 @@ import { constructCdnUrl } from '../../utils/cdn.js';
 import { prisma } from '../../lib/prisma.js';
 import { randomUUID } from 'crypto';
 import { GraphQLError } from 'graphql';
+import { checkUsageExceeded } from '../../subscriptions/usageService.js';
 
 export const formsResolvers = {
   Query: {
@@ -35,7 +36,13 @@ export const formsResolvers = {
       const form = await getFormByShortUrl(shortUrl);
       if (!form) throw new Error("Form not found");
       if (!form.isPublished) throw new Error("Form is not published");
-      
+
+      // Check subscription usage limits
+      const usageExceeded = await checkUsageExceeded(form.organizationId);
+      if (usageExceeded.viewsExceeded) {
+        throw new Error("Form view limit exceeded for this organization's subscription plan");
+      }
+
       // Check submission limits
       if (form.settings?.submissionLimits) {
         const limits = form.settings.submissionLimits;
