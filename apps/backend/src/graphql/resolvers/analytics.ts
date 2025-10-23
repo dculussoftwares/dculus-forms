@@ -1,6 +1,7 @@
 import { GraphQLError } from 'graphql';
 import { analyticsService } from '../../services/analyticsService.js';
 import { prisma } from '../../lib/prisma.js';
+import { emitFormViewed } from '../../subscriptions/events.js';
 
 export const analyticsResolvers = {
   Mutation: {
@@ -15,17 +16,17 @@ export const analyticsResolvers = {
         // Verify form exists and is published
         const form = await prisma.form.findUnique({
           where: { id: input.formId },
-          select: { id: true, isPublished: true }
+          select: { id: true, isPublished: true, organizationId: true }
         });
-        
+
         if (!form) {
           throw new GraphQLError('Form not found');
         }
-        
+
         if (!form.isPublished) {
           throw new GraphQLError('Form is not published');
         }
-        
+
         // Track the analytics
         await analyticsService.trackFormView({
           formId: input.formId,
@@ -34,7 +35,19 @@ export const analyticsResolvers = {
           timezone: input.timezone,
           language: input.language
         }, clientIP);
-        
+
+        // Emit subscription event for usage tracking
+        try {
+          emitFormViewed(
+            form.organizationId,
+            input.formId,
+            input.sessionId,
+            input.userAgent
+          );
+        } catch (error) {
+          console.error('Error emitting subscription event:', error);
+        }
+
         return {
           success: true
         };
