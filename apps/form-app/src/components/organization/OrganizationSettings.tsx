@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Tabs, TabsContent, TabsList, TabsTrigger, Alert, AlertDescription, toastError } from '@dculus/ui';
 import { Users, UserPlus, Settings as SettingsIcon, AlertTriangle, CreditCard } from 'lucide-react';
 import { useAuthContext } from '../../contexts/AuthContext';
@@ -8,10 +9,15 @@ import { InviteUserDialog } from './InviteUserDialog';
 import { SubscriptionDashboard } from '../subscription/SubscriptionDashboard';
 import { organization } from '../../lib/auth-client';
 
-export const OrganizationSettings: React.FC = () => {
+interface OrganizationSettingsProps {
+  initialTab?: string;
+}
+
+export const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ initialTab }) => {
   const { activeOrganization, organizationError } = useAuthContext();
+  const navigate = useNavigate();
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('members');
+  const [activeTab, setActiveTab] = useState(initialTab && ['team', 'subscription'].includes(initialTab) ? initialTab : 'team');
   const [pendingInvitations, setPendingInvitations] = useState<Array<{
     id: string;
     email: string;
@@ -79,6 +85,11 @@ export const OrganizationSettings: React.FC = () => {
     fetchInvitations();
   }, [activeOrganization?.id]);
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    navigate(`/settings/${value}`);
+  };
+
   // Show error state if there's an organization error
   if (organizationError) {
     return (
@@ -126,7 +137,7 @@ export const OrganizationSettings: React.FC = () => {
                 {activeOrganization.name}
               </CardTitle>
               <CardDescription>
-                Manage your organization members, invitations, and subscription
+                Manage your organization team and subscription
               </CardDescription>
             </div>
             <Button onClick={() => setIsInviteDialogOpen(true)} className="flex items-center gap-2">
@@ -136,15 +147,11 @@ export const OrganizationSettings: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="members" className="flex items-center gap-2">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="team" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                Members ({activeOrganization.members?.length || 0})
-              </TabsTrigger>
-              <TabsTrigger value="invitations" className="flex items-center gap-2">
-                <UserPlus className="h-4 w-4" />
-                Pending Invitations ({Array.isArray(pendingInvitations) ? pendingInvitations.length : 0})
+                Team ({(activeOrganization.members?.length || 0) + (Array.isArray(pendingInvitations) ? pendingInvitations.length : 0)})
               </TabsTrigger>
               <TabsTrigger value="subscription" className="flex items-center gap-2">
                 <CreditCard className="h-4 w-4" />
@@ -152,15 +159,14 @@ export const OrganizationSettings: React.FC = () => {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="members" className="mt-6">
+            <TabsContent value="team" className="mt-6 space-y-8">
               <MembersList organization={activeOrganization as any} />
-            </TabsContent>
-
-            <TabsContent value="invitations" className="mt-6">
-              <InvitationsList
-                invitations={pendingInvitations}
-                onInvitationAction={fetchInvitations}
-              />
+              <div className="border-t pt-8">
+                <InvitationsList
+                  invitations={pendingInvitations}
+                  onInvitationAction={fetchInvitations}
+                />
+              </div>
             </TabsContent>
 
             <TabsContent value="subscription" className="mt-6">
@@ -176,7 +182,7 @@ export const OrganizationSettings: React.FC = () => {
         organizationId={activeOrganization.id}
         onInviteSent={() => {
           fetchInvitations();
-          setActiveTab('invitations');
+          handleTabChange('team');
         }}
       />
     </div>

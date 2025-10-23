@@ -85,7 +85,7 @@ function App() {
             </ProtectedRoute>
           } />
 
-          <Route path="/settings" element={
+          <Route path="/settings/:tab?" element={
             <ProtectedRoute>
               <Settings />
             </ProtectedRoute>
