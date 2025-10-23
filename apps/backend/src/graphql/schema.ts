@@ -70,10 +70,10 @@ export const typeDefs = gql`
   }
 
   enum SubscriptionStatus {
-    ACTIVE
-    CANCELLED
-    EXPIRED
-    PAST_DUE
+    active
+    cancelled
+    expired
+    past_due
   }
 
   # Invitation Types
@@ -1003,6 +1003,12 @@ export const typeDefs = gql`
     url: String!
   }
 
+  type SubscriptionInitResult {
+    success: Boolean!
+    subscription: Subscription
+    message: String
+  }
+
   type PlanPrice {
     id: String!
     currency: String!
@@ -1030,8 +1036,9 @@ export const typeDefs = gql`
     # Subscription Mutations
     createCheckoutSession(itemPriceId: String!): CheckoutSessionResponse!
     createPortalSession: PortalSessionResponse!
-    
-    
+    initializeOrganizationSubscription(organizationId: ID!): SubscriptionInitResult!
+
+
     # Form Mutations
     createForm(input: CreateFormInput!): Form!
     updateForm(id: ID!, input: UpdateFormInput!): Form!

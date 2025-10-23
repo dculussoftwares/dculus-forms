@@ -79,3 +79,20 @@ export const CREATE_PORTAL_SESSION = gql`
     }
   }
 `;
+
+// Initialize organization subscription (called after signup)
+export const INITIALIZE_ORGANIZATION_SUBSCRIPTION = gql`
+  mutation InitializeOrganizationSubscription($organizationId: ID!) {
+    initializeOrganizationSubscription(organizationId: $organizationId) {
+      success
+      message
+      subscription {
+        id
+        planId
+        status
+        viewsLimit
+        submissionsLimit
+      }
+    }
+  }
+`;

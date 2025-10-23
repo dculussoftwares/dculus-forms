@@ -4,6 +4,8 @@ import {
   createCheckoutHostedPage,
   createPortalSession,
   getAvailablePlans,
+  createChargebeeCustomer,
+  createFreeSubscription,
 } from '../../services/chargebeeService.js';
 import { requireAuth, type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 import { GraphQLError } from 'graphql';
@@ -99,6 +101,97 @@ export const subscriptionResolvers = {
       } catch (error: any) {
         console.error('[Subscription Resolver] Error creating portal session:', error);
         throw new GraphQLError(`Failed to create portal session: ${error.message}`);
+      }
+    },
+
+    /**
+     * Initialize free subscription for a new organization
+     * Called from the frontend after organization creation
+     */
+    initializeOrganizationSubscription: async (
+      _: any,
+      { organizationId }: { organizationId: string },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+
+      console.log('[Subscription Resolver] Initializing subscription for organization:', organizationId);
+
+      try {
+        // Check if subscription already exists (idempotency)
+        const existingSubscription = await prisma.subscription.findUnique({
+          where: { organizationId },
+        });
+
+        if (existingSubscription) {
+          console.log('[Subscription Resolver] Subscription already exists for organization:', organizationId);
+          return {
+            success: true,
+            subscription: existingSubscription,
+            message: 'Subscription already exists',
+          };
+        }
+
+        // Get organization details
+        const organization = await prisma.organization.findUnique({
+          where: { id: organizationId },
+        });
+
+        if (!organization) {
+          throw new GraphQLError('Organization not found');
+        }
+
+        // Get the organization owner to get email
+        const member = await prisma.member.findFirst({
+          where: {
+            organizationId,
+            role: 'owner',
+          },
+          include: {
+            user: true,
+          },
+        });
+
+        if (!member) {
+          throw new GraphQLError('Organization owner not found');
+        }
+
+        // Verify the authenticated user is the owner
+        if (member.userId !== context.auth.user?.id) {
+          throw new GraphQLError('Only organization owner can initialize subscription');
+        }
+
+        // Create Chargebee customer
+        const customerId = await createChargebeeCustomer(
+          organizationId,
+          organization.name,
+          member.user.email
+        );
+
+        // Create free subscription
+        await createFreeSubscription(organizationId, customerId);
+
+        // Fetch the created subscription
+        const subscription = await prisma.subscription.findUnique({
+          where: { organizationId },
+        });
+
+        console.log('[Subscription Resolver] ✅ Subscription initialized successfully for organization:', organizationId);
+
+        return {
+          success: true,
+          subscription,
+          message: 'Free subscription created successfully',
+        };
+      } catch (error: any) {
+        console.error('[Subscription Resolver] Error initializing subscription:', error);
+
+        // Return error without throwing to allow signup to continue
+        return {
+          success: false,
+          subscription: null,
+          message: error.message || 'Failed to initialize subscription',
+        };
       }
     },
   },

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useMutation } from '@apollo/client';
 import {
   Button,
   Input,
@@ -17,6 +18,7 @@ import { slugify } from '@dculus/utils';
 import { authClient, signUp, emailOtp, signIn, organization } from '../lib/auth-client';
 import { OTPInput } from '../components/OTPInput';
 import { ArrowLeft, Mail, Timer } from 'lucide-react';
+import { INITIALIZE_ORGANIZATION_SUBSCRIPTION } from '../graphql/subscription';
 
 export const SignUp = () => {
   const [step, setStep] = useState<'form' | 'verify'>('form');
@@ -33,7 +35,10 @@ export const SignUp = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const location = useLocation();
-  
+
+  // GraphQL mutation for initializing organization subscription
+  const [initializeSubscription] = useMutation(INITIALIZE_ORGANIZATION_SUBSCRIPTION);
+
   // Check for invitation context
   const invitationEmail = location.state?.email;
   const pendingInvitationId = typeof window !== 'undefined' ? sessionStorage.getItem('pendingInvitationId') : null;
@@ -211,11 +216,30 @@ export const SignUp = () => {
       // Create the organization if not accepting an invitation
       if (!pendingInvitationId) {
         const organizationSlug = slugify(formData.organizationName);
-        await authClient.organization.create({
+        const orgResult = await authClient.organization.create({
           name: formData.organizationName,
           slug: organizationSlug,
           keepCurrentActiveOrganization: false,
         });
+
+        // Initialize free subscription for the new organization
+        if (orgResult?.data?.id) {
+          try {
+            console.log('[SignUp] Initializing subscription for organization:', orgResult.data.id);
+            const subscriptionResult = await initializeSubscription({
+              variables: { organizationId: orgResult.data.id },
+            });
+
+            if (subscriptionResult.data?.initializeOrganizationSubscription?.success) {
+              console.log('[SignUp] ✅ Subscription initialized successfully');
+            } else {
+              console.error('[SignUp] ⚠️ Subscription initialization failed:', subscriptionResult.data?.initializeOrganizationSubscription?.message);
+            }
+          } catch (subscriptionError) {
+            // Log error but don't block signup flow
+            console.error('[SignUp] ⚠️ Error initializing subscription:', subscriptionError);
+          }
+        }
       }
 
       // Navigate to dashboard

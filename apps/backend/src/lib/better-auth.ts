@@ -1,10 +1,13 @@
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
-import { organization, bearer, admin, emailOTP } from 'better-auth/plugins';
+import { admin, bearer, emailOTP, organization } from 'better-auth/plugins';
 import { prisma } from './prisma.js';
 import { authConfig } from './env.js';
-import { sendOTPEmail, sendResetPasswordEmail, sendInvitationEmail } from '../services/emailService.js';
-import { createChargebeeCustomer, createFreeSubscription } from '../services/chargebeeService.js';
+import {
+  sendInvitationEmail,
+  sendOTPEmail,
+  sendResetPasswordEmail,
+} from '../services/emailService.js';
 
 export const auth: ReturnType<typeof betterAuth> = betterAuth({
   database: prismaAdapter(prisma, {
@@ -49,7 +52,12 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
       organizationLimit: 1, // Restrict users to only one organization
       creatorRole: 'owner',
       membershipLimit: 100,
-      sendInvitationEmail: async ({ email, invitation, organization, inviter }) => {
+      sendInvitationEmail: async ({
+        email,
+        invitation,
+        organization,
+        inviter,
+      }) => {
         await sendInvitationEmail({
           to: email,
           invitationId: invitation.id,
@@ -119,51 +127,12 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
           if (existingMembership) {
             const { APIError } = await import('better-auth/api');
             throw new APIError('BAD_REQUEST', {
-              message: 'User can only belong to one organization. You are already a member of an organization.',
+              message:
+                'User can only belong to one organization. You are already a member of an organization.',
             });
           }
 
           return { data: member };
-        },
-      },
-    },
-    organization: {
-      create: {
-        after: async (organization: any) => {
-          // Auto-create free subscription for new organization
-          try {
-            console.log('[Organization Hook] Creating Chargebee customer and free subscription...');
-
-            // Get the user who created the organization (owner)
-            const owner = await prisma.member.findFirst({
-              where: {
-                organizationId: organization.id,
-                role: 'owner',
-              },
-              include: {
-                user: true,
-              },
-            });
-
-            if (!owner) {
-              console.error('[Organization Hook] ⚠️  Could not find owner for organization:', organization.id);
-              return;
-            }
-
-            const customerId = await createChargebeeCustomer(
-              organization.id,
-              organization.name,
-              owner.user.email
-            );
-
-            await createFreeSubscription(organization.id, customerId);
-
-            console.log(`[Organization Hook] ✅ Created free subscription for "${organization.name}"`);
-          } catch (error: any) {
-            console.error('[Organization Hook] ⚠️  Failed to create subscription:', error.message);
-            // Don't throw - organization is already created
-            // User can still use the system, admin can manually fix subscription later
-          }
         },
       },
     },
