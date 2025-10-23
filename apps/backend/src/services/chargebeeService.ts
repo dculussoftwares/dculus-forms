@@ -103,16 +103,16 @@ export const createCheckoutHostedPage = async (
   itemPriceId: string
 ): Promise<{ url: string; id: string }> => {
   try {
-    const result = await chargebee.hostedPage.checkoutNew({
+    // Use checkoutNewForItems for Product Catalog 2.0
+    const result = await chargebee.hostedPage.checkoutNewForItems({
+      subscription_items: [
+        {
+          item_price_id: itemPriceId,
+          quantity: 1,
+        },
+      ],
       customer: {
         id: customerId,
-      },
-      subscription: {
-        subscription_items: [
-          {
-            item_price_id: itemPriceId,
-          },
-        ],
       },
     } as any);
 
