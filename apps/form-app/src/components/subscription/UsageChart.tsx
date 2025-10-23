@@ -22,8 +22,9 @@ export const UsageChart = ({
   // Generate mock daily usage data for visualization
   // In a real implementation, this would come from backend historical data
   const generateUsageData = () => {
-    const start = new Date(currentPeriodStart);
-    const end = new Date(currentPeriodEnd);
+    // Convert epoch timestamp strings to numbers (milliseconds)
+    const start = new Date(Number(currentPeriodStart));
+    const end = new Date(Number(currentPeriodEnd));
     const now = new Date();
     const currentDate = now > end ? end : now;
 
@@ -91,8 +92,8 @@ export const UsageChart = ({
       <div className="mb-6">
         <h3 className="text-lg font-semibold mb-1">Usage Trends</h3>
         <p className="text-sm text-gray-500">
-          Daily usage from {new Date(currentPeriodStart).toLocaleDateString()} to{' '}
-          {new Date(currentPeriodEnd).toLocaleDateString()}
+          Daily usage from {new Date(Number(currentPeriodStart)).toLocaleDateString()} to{' '}
+          {new Date(Number(currentPeriodEnd)).toLocaleDateString()}
         </p>
       </div>
 

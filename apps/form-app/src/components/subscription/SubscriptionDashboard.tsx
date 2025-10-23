@@ -92,7 +92,8 @@ export const SubscriptionDashboard = () => {
 
   // Calculate days remaining in billing period
   const getDaysRemaining = () => {
-    const end = new Date(currentPeriodEnd);
+    // Convert epoch timestamp string to number (milliseconds)
+    const end = new Date(Number(currentPeriodEnd));
     const now = new Date();
     const diff = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     return Math.max(0, diff);
@@ -325,8 +326,8 @@ export const SubscriptionDashboard = () => {
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-600">Current billing period</span>
             <span className="font-medium">
-              {new Date(currentPeriodStart).toLocaleDateString()} -{' '}
-              {new Date(currentPeriodEnd).toLocaleDateString()}
+              {new Date(Number(currentPeriodStart)).toLocaleDateString()} -{' '}
+              {new Date(Number(currentPeriodEnd)).toLocaleDateString()}
             </span>
           </div>
         </div>
