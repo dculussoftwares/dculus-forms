@@ -6,6 +6,7 @@ import {
   GET_MY_FORMS_WITH_CATEGORY,
   GET_SHARED_FORMS_WITH_CATEGORY,
 } from '../graphql/queries';
+import { useTranslate } from '../i18n';
 
 export type FilterCategory = 'all' | 'my-forms' | 'shared-with-me';
 
@@ -87,6 +88,7 @@ type FormsWithCategoryData = {
 export const useFormsDashboard = ({
   organizationId,
 }: UseFormsDashboardOptions): UseFormsDashboardResult => {
+  const t = useTranslate();
   const [searchParams, setSearchParams] = useSearchParams();
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -193,9 +195,10 @@ export const useFormsDashboard = ({
   useEffect(() => {
     if (formsError) {
       const message =
-        formsError.message || 'Something went wrong while loading forms.';
+        formsError.message ||
+        t('dashboard.toast.loadError.descriptionFallback');
       if (lastErrorMessageRef.current !== message) {
-        toast('Unable to load forms', {
+        toast(t('dashboard.toast.loadError.title'), {
           description: message,
         });
         lastErrorMessageRef.current = message;
@@ -203,7 +206,7 @@ export const useFormsDashboard = ({
     } else {
       lastErrorMessageRef.current = null;
     }
-  }, [formsError]);
+  }, [formsError, t]);
 
   const isTyping =
     searchTerm !== debouncedSearchTerm && searchTerm.trim().length > 0;

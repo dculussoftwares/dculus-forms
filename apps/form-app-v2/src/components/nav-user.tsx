@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 import {
   BadgeCheck,
@@ -7,8 +7,8 @@ import {
   CreditCard,
   LogOut,
   Sparkles,
-} from "lucide-react"
-import { useNavigate } from "react-router-dom"
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 import {
   Avatar,
@@ -26,45 +26,47 @@ import {
   SidebarMenuItem,
   useSidebar,
   toast,
-} from "@dculus/ui-v2"
-import { signOut } from "../lib/auth-client"
+} from '@dculus/ui-v2';
+import { signOut } from '../lib/auth-client';
+import { useTranslate } from '../i18n';
 
 export function NavUser({
   user,
 }: {
   user: {
-    name: string
-    email: string
-    avatar: string
-  }
+    name: string;
+    email: string;
+    avatar: string;
+  };
 }) {
-  const { isMobile } = useSidebar()
-  const navigate = useNavigate()
+  const { isMobile } = useSidebar();
+  const navigate = useNavigate();
+  const t = useTranslate();
 
   const handleLogout = async () => {
     try {
-      await signOut()
-      toast("Logged out successfully", {
-        description: "You have been signed out of your account",
-      })
-      navigate("/signin")
+      await signOut();
+      toast(t('navUser.toast.logoutSuccess.title'), {
+        description: t('navUser.toast.logoutSuccess.description'),
+      });
+      navigate('/signin');
     } catch (error) {
-      console.error("Logout error:", error)
-      toast("Error", {
-        description: "Failed to log out. Please try again.",
-      })
+      console.error('Logout error:', error);
+      toast(t('common.errorTitle'), {
+        description: t('navUser.toast.logoutError.description'),
+      });
     }
-  }
+  };
 
   // Get user initials for avatar fallback
   const getUserInitials = (name: string) => {
     return name
       .split(' ')
-      .map(n => n[0])
+      .map((n) => n[0])
       .join('')
       .toUpperCase()
-      .slice(0, 2)
-  }
+      .slice(0, 2);
+  };
 
   return (
     <SidebarMenu>
@@ -77,7 +79,9 @@ export function NavUser({
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">{getUserInitials(user.name)}</AvatarFallback>
+                <AvatarFallback className="rounded-lg">
+                  {getUserInitials(user.name)}
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{user.name}</span>
@@ -88,7 +92,7 @@ export function NavUser({
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-            side={isMobile ? "bottom" : "right"}
+            side={isMobile ? 'bottom' : 'right'}
             align="end"
             sideOffset={4}
           >
@@ -96,7 +100,9 @@ export function NavUser({
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">{getUserInitials(user.name)}</AvatarFallback>
+                  <AvatarFallback className="rounded-lg">
+                    {getUserInitials(user.name)}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">{user.name}</span>
@@ -108,32 +114,32 @@ export function NavUser({
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <Sparkles />
-                Upgrade to Pro
+                {t('navUser.menu.upgrade')}
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <BadgeCheck />
-                Account
+                {t('navUser.menu.account')}
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <CreditCard />
-                Billing
+                {t('navUser.menu.billing')}
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <Bell />
-                Notifications
+                {t('navUser.menu.notifications')}
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut />
-              Log out
+              {t('navUser.menu.logout')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
-  )
+  );
 }

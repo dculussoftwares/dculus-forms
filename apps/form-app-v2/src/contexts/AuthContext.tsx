@@ -3,6 +3,7 @@ import { useQuery } from '@apollo/client';
 import { useSession } from '../lib/auth-client';
 import { ACTIVE_ORGANIZATION } from '../graphql/queries';
 import { toast } from '@dculus/ui-v2';
+import { useTranslate } from '../i18n';
 
 // Better-Auth user type
 interface AuthUser {
@@ -40,6 +41,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({
   children
 }: { children: ReactNode }): React.ReactElement => {
+  const t = useTranslate();
   const { data: session, isPending } = useSession();
   const [isLoading, setIsLoading] = useState(true);
   const [organizationError, setOrganizationError] = useState<string | null>(null);
@@ -56,23 +58,24 @@ export const AuthProvider = ({
   // Handle organization query errors
   useEffect(() => {
     if (orgError) {
-      const errorMessage = orgError.graphQLErrors?.[0]?.message || orgError.message || 'Failed to load organization';
+      const fallbackMessage = t('auth.organization.loadError');
+      const errorMessage = orgError.graphQLErrors?.[0]?.message || orgError.message || fallbackMessage;
       setOrganizationError(errorMessage);
 
       // Show user-friendly error messages for specific authorization errors
       if (errorMessage.includes('Access denied') || errorMessage.includes('not a member')) {
-        toast('Organization Access Denied', {
-          description: 'You are not a member of this organization',
+        toast(t('auth.organization.accessDenied.title'), {
+          description: t('auth.organization.accessDenied.description'),
         });
       } else if (errorMessage.includes('Authentication required')) {
-        toast('Authentication Required', {
-          description: 'Please sign in to access organizations',
+        toast(t('auth.organization.authRequired.title'), {
+          description: t('auth.organization.authRequired.description'),
         });
       }
     } else {
       setOrganizationError(null);
     }
-  }, [orgError]);
+  }, [orgError, t]);
 
   const value: AuthContextType = {
     user: session?.user || null,

@@ -4,6 +4,8 @@ import { MemoryRouter, useNavigate } from 'react-router-dom';
 import { SignIn } from '../SignIn';
 import { signIn } from '../../lib/auth-client';
 import { toast } from '@dculus/ui-v2';
+import { enTranslations } from '../../i18n/translations/en';
+import { TranslationProvider } from '../../i18n';
 
 jest.mock('../../lib/auth-client', () => ({
   signIn: {
@@ -22,7 +24,9 @@ jest.mock('react-router-dom', () => {
 const renderWithRouter = () =>
   render(
     <MemoryRouter>
-      <SignIn />
+      <TranslationProvider>
+        <SignIn />
+      </TranslationProvider>
     </MemoryRouter>
   );
 
@@ -58,9 +62,12 @@ describe('SignIn page', () => {
       });
     });
 
-    expect(toastMock).toHaveBeenCalledWith('Login successful', {
-      description: 'Welcome back!',
-    });
+    expect(toastMock).toHaveBeenCalledWith(
+      enTranslations['auth.signIn.toast.success.title'],
+      {
+      description: enTranslations['auth.signIn.toast.success.description'],
+    },
+    );
     expect(navigateMock).toHaveBeenCalledWith('/');
   });
 
@@ -81,9 +88,12 @@ describe('SignIn page', () => {
       expect(signInEmailMock).toHaveBeenCalled();
     });
 
-    expect(toastMock).toHaveBeenCalledWith('Login failed', {
+    expect(toastMock).toHaveBeenCalledWith(
+      enTranslations['auth.signIn.toast.failure.title'],
+      {
       description: 'Invalid credentials',
-    });
+    },
+    );
     expect(navigateMock).not.toHaveBeenCalled();
   });
 
@@ -105,9 +115,12 @@ describe('SignIn page', () => {
       expect(signInEmailMock).toHaveBeenCalled();
     });
 
-    expect(toastMock).toHaveBeenCalledWith('Error', {
-      description: 'An unexpected error occurred. Please try again.',
-    });
+    expect(toastMock).toHaveBeenCalledWith(
+      enTranslations['common.errorTitle'],
+      {
+        description: enTranslations['auth.signIn.toast.error.description'],
+      },
+    );
     expect(navigateMock).not.toHaveBeenCalled();
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       'Sign in error:',

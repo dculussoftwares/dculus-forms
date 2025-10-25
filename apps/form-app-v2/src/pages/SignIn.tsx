@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -17,16 +18,26 @@ import {
   toast,
 } from '@dculus/ui-v2';
 import { signIn } from '../lib/auth-client';
+import { useTranslate } from '../i18n';
 
-// Validation schema
-const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
+type LoginFormData = {
+  email: string;
+  password: string;
+};
 
 export const SignIn = () => {
+  const t = useTranslate();
+  const loginSchema = useMemo(
+    () =>
+      z.object({
+        email: z.string().email(t('auth.signIn.validation.email')),
+        password: z
+          .string()
+          .min(8, t('auth.signIn.validation.passwordMin')),
+      }),
+    [t],
+  );
+
   const navigate = useNavigate();
 
   const form = useForm<LoginFormData>({
@@ -48,19 +59,21 @@ export const SignIn = () => {
       });
 
       if (response.error) {
-        toast('Login failed', {
-          description: response.error.message || 'Invalid email or password',
+        toast(t('auth.signIn.toast.failure.title'), {
+          description:
+            response.error.message ||
+            t('auth.signIn.toast.failure.description'),
         });
       } else {
-        toast('Login successful', {
-          description: 'Welcome back!',
+        toast(t('auth.signIn.toast.success.title'), {
+          description: t('auth.signIn.toast.success.description'),
         });
         navigate('/');
       }
     } catch (error) {
       console.error('Sign in error:', error);
-      toast('Error', {
-        description: 'An unexpected error occurred. Please try again.',
+      toast(t('common.errorTitle'), {
+        description: t('auth.signIn.toast.error.description'),
       });
     }
   };
@@ -85,14 +98,16 @@ export const SignIn = () => {
             <path d="M2 3h6" />
             <path d="M6 3v5" />
           </svg>
-          Dculus Forms V2
+          {t('common.brandName')}
         </div>
         <div className="relative z-20 mt-auto">
           <blockquote className="space-y-2">
             <p className="text-lg">
-              &ldquo;Build beautiful forms collaboratively with your team. Create, share, and analyze responses all in one place.&rdquo;
+              &ldquo;{t('common.brandQuote')}&rdquo;
             </p>
-            <footer className="text-sm">Team Dculus</footer>
+            <footer className="text-sm">
+              {t('common.brandQuoteAttribution')}
+            </footer>
           </blockquote>
         </div>
       </div>
@@ -102,18 +117,20 @@ export const SignIn = () => {
         <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
           <div className="flex flex-col space-y-2 text-center">
             <h1 className="text-2xl font-semibold tracking-tight">
-              Welcome back
+              {t('auth.signIn.title')}
             </h1>
             <p className="text-sm text-muted-foreground">
-              Enter your credentials to access your account
+              {t('auth.signIn.subtitle')}
             </p>
           </div>
 
           <Card>
             <CardHeader className="space-y-1">
-              <CardTitle className="text-xl">Sign in</CardTitle>
+              <CardTitle className="text-xl">
+                {t('auth.signIn.cardTitle')}
+              </CardTitle>
               <CardDescription>
-                Enter your email and password to continue
+                {t('auth.signIn.cardDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -124,12 +141,14 @@ export const SignIn = () => {
                   control={control}
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor="email">Email</FieldLabel>
+                      <FieldLabel htmlFor="email">
+                        {t('common.emailLabel')}
+                      </FieldLabel>
                       <Input
                         {...field}
                         id="email"
                         type="email"
-                        placeholder="john@example.com"
+                        placeholder={t('common.emailPlaceholder')}
                         disabled={isSubmitting}
                         aria-invalid={fieldState.invalid}
                       />
@@ -146,12 +165,14 @@ export const SignIn = () => {
                   control={control}
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor="password">Password</FieldLabel>
+                      <FieldLabel htmlFor="password">
+                        {t('common.passwordLabel')}
+                      </FieldLabel>
                       <Input
                         {...field}
                         id="password"
                         type="password"
-                        placeholder="••••••••"
+                        placeholder={t('common.passwordPlaceholder')}
                         disabled={isSubmitting}
                         aria-invalid={fieldState.invalid}
                       />
@@ -170,10 +191,10 @@ export const SignIn = () => {
                   {isSubmitting ? (
                     <>
                       <Spinner className="mr-2" />
-                      Signing in...
+                      {t('auth.signIn.submitting')}
                     </>
                   ) : (
-                    'Sign in'
+                    t('auth.signIn.submit')
                   )}
                 </Button>
               </form>
@@ -181,12 +202,12 @@ export const SignIn = () => {
           </Card>
 
           <p className="text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{' '}
+            {t('auth.signIn.footerPrompt')}{' '}
             <Link
               to="/signup"
               className="underline underline-offset-4 hover:text-primary"
             >
-              Sign up
+              {t('auth.signIn.footerCta')}
             </Link>
           </p>
         </div>

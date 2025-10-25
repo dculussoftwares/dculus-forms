@@ -39,14 +39,10 @@ import {
   type FormsListItem,
 } from '../hooks/useFormsDashboard';
 import { getFormViewerUrl } from '../lib/config';
-
-const FILTER_OPTIONS: Array<{ label: string; value: FilterCategory }> = [
-  { label: 'All Forms', value: 'all' },
-  { label: 'My Forms', value: 'my-forms' },
-  { label: 'Shared with Me', value: 'shared-with-me' },
-];
+import { useTranslate } from '../i18n';
 
 export const Dashboard = () => {
+  const t = useTranslate();
   const navigate = useNavigate();
   const { user, activeOrganization } = useAuth();
   const {
@@ -65,6 +61,16 @@ export const Dashboard = () => {
   } = useFormsDashboard({
     organizationId: activeOrganization?.id,
   });
+  const filterOptions = useMemo<
+    Array<{ label: string; value: FilterCategory }>
+  >(
+    () => [
+      { label: t('dashboard.filters.all'), value: 'all' },
+      { label: t('dashboard.filters.mine'), value: 'my-forms' },
+      { label: t('dashboard.filters.shared'), value: 'shared-with-me' },
+    ],
+    [t],
+  );
 
   const isOrgReady = Boolean(activeOrganization);
   const hasForms = displayForms.forms.length > 0;
@@ -128,8 +134,8 @@ export const Dashboard = () => {
 
   const handleOpenPreview = (form: FormsListItem) => {
     if (!form.shortUrl) {
-      toast('Preview unavailable', {
-        description: 'This form does not have a published short link yet.',
+      toast(t('formCard.button.previewUnavailable'), {
+        description: t('dashboard.previewUnavailable.description'),
       });
       return;
     }
@@ -149,11 +155,15 @@ export const Dashboard = () => {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
+                  <BreadcrumbLink href="/">
+                    {t('dashboard.breadcrumb.root')}
+                  </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Forms</BreadcrumbPage>
+                  <BreadcrumbPage>
+                    {t('dashboard.breadcrumb.forms')}
+                  </BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
@@ -169,13 +179,15 @@ export const Dashboard = () => {
               <div className="space-y-1">
                 <CardTitle className="text-xl font-semibold">
                   {user?.name
-                    ? `Welcome back, ${user.name}!`
-                    : 'Welcome to Dculus Forms'}
+                    ? t('dashboard.welcome.titleWithName', { name: user.name })
+                    : t('dashboard.welcome.title')}
                 </CardTitle>
                 <CardDescription>
                   {activeOrganization
-                    ? `You are working inside ${activeOrganization.name}. Pick up where you left off or create something new.`
-                    : 'Join or create an organization to start building forms.'}
+                    ? t('dashboard.welcome.descriptionWithOrg', {
+                        organization: activeOrganization.name,
+                      })
+                    : t('dashboard.welcome.descriptionNoOrg')}
                 </CardDescription>
               </div>
               <Button
@@ -184,7 +196,7 @@ export const Dashboard = () => {
                 onClick={() => navigate('/dashboard/templates')}
               >
                 <Plus className="h-4 w-4" />
-                Create Form
+                {t('dashboard.welcome.createButton')}
               </Button>
             </CardHeader>
           </Card>
@@ -194,7 +206,7 @@ export const Dashboard = () => {
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="flex items-center gap-2 whitespace-nowrap">
-                    {FILTER_OPTIONS.map((option) => (
+                    {filterOptions.map((option) => (
                       <Button
                         key={option.value}
                         size="sm"
@@ -229,13 +241,13 @@ export const Dashboard = () => {
                     <Input
                       value={searchTerm}
                       onChange={(event) => setSearchTerm(event.target.value)}
-                      placeholder="Search forms by title or description"
+                      placeholder={t('dashboard.search.placeholder')}
                       className="pl-9"
                       disabled={!isOrgReady}
                     />
                     {isTyping && (
                       <div className="absolute right-10 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                        Searching…
+                        {t('dashboard.search.typingIndicator')}
                       </div>
                     )}
                     {searchTerm && isOrgReady && (
@@ -245,7 +257,9 @@ export const Dashboard = () => {
                         className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
                         onClick={clearSearch}
                       >
-                        <span className="sr-only">Clear search</span>
+                        <span className="sr-only">
+                          {t('dashboard.search.clear')}
+                        </span>
                         <X className="h-4 w-4" />
                       </Button>
                     )}
@@ -268,16 +282,14 @@ export const Dashboard = () => {
                   <Filter className="h-10 w-10 text-muted-foreground" />
                   <div className="space-y-2">
                     <h3 className="text-lg font-semibold">
-                      No organization selected
+                      {t('dashboard.organizationNotice.title')}
                     </h3>
                     <p className="max-w-md text-sm text-muted-foreground">
-                      Join an existing organization or create a new one to start
-                      managing forms. Organization access controls collaboration
-                      and permissions.
+                      {t('dashboard.organizationNotice.description')}
                     </p>
                   </div>
                   <Button onClick={() => navigate('/dashboard/templates')}>
-                    Explore templates
+                    {t('dashboard.organizationNotice.cta')}
                   </Button>
                 </div>
               )}
@@ -286,15 +298,15 @@ export const Dashboard = () => {
                 <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border/70 bg-muted/20 p-12 text-center">
                   <FileText className="h-10 w-10 text-primary" />
                   <div className="space-y-2">
-                    <h3 className="text-lg font-semibold">No forms yet</h3>
+                    <h3 className="text-lg font-semibold">
+                      {t('dashboard.emptyState.title')}
+                    </h3>
                     <p className="max-w-md text-sm text-muted-foreground">
-                      Create your first form or import an existing workflow to
-                      begin collecting responses. You can always revisit
-                      templates for inspiration.
+                      {t('dashboard.emptyState.description')}
                     </p>
                   </div>
                   <Button onClick={() => navigate('/dashboard/templates')}>
-                    Create your first form
+                    {t('dashboard.emptyState.cta')}
                   </Button>
                 </div>
               )}
@@ -382,8 +394,10 @@ export const Dashboard = () => {
                       </PaginationContent>
                     </Pagination>
                     <span className="text-xs text-muted-foreground">
-                      Page {displayForms.pagination.page} of{' '}
-                      {displayForms.pagination.totalPages}
+                      {t('dashboard.pagination.label', {
+                        page: displayForms.pagination.page,
+                        total: displayForms.pagination.totalPages,
+                      })}
                     </span>
                   </div>
                 )}

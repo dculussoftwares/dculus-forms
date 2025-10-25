@@ -16,6 +16,7 @@ import {
   Users,
 } from 'lucide-react';
 import type { FormsListItem } from '../../hooks/useFormsDashboard';
+import { useTranslate } from '../../i18n';
 
 interface FormCardProps {
   form: FormsListItem;
@@ -25,10 +26,10 @@ interface FormCardProps {
   onOpenPreview: (form: FormsListItem) => void;
 }
 
-const formatDate = (value: string) => {
+const formatDate = (value: string, fallback: string) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return 'Unknown';
+    return fallback;
   }
   return new Intl.DateTimeFormat(undefined, {
     month: 'short',
@@ -44,10 +45,13 @@ export const FormCard = ({
   onOpenBuilder,
   onOpenPreview,
 }: FormCardProps) => {
+  const t = useTranslate();
+
   const pageCount = form.metadata?.pageCount ?? 0;
   const fieldCount = form.metadata?.fieldCount ?? 0;
   const lastUpdated = form.metadata?.lastUpdated ?? form.updatedAt;
   const backgroundImageUrl = form.metadata?.backgroundImageUrl ?? null;
+  const formattedDate = formatDate(lastUpdated, t('formCard.unknownDate'));
 
   return (
     <Card
@@ -61,7 +65,7 @@ export const FormCard = ({
         }
       }}
       className="group relative flex h-full cursor-pointer flex-col overflow-hidden border border-border/70 bg-background/60 shadow-sm outline-none transition hover:border-primary/40 hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-      aria-label={`Open dashboard for ${form.title}`}
+      aria-label={t('formCard.openDashboardAria', { title: form.title })}
     >
       <div className="relative h-40 w-full">
         <div className="absolute inset-0">
@@ -85,7 +89,9 @@ export const FormCard = ({
                 : 'bg-amber-500/90 text-white'
             }`}
           >
-            {form.isPublished ? 'Published' : 'Draft'}
+            {form.isPublished
+              ? t('formCard.statusPublished')
+              : t('formCard.statusDraft')}
           </span>
           {showPermissionBadge && form.userPermission && (
             <span className="inline-flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-1 text-xs font-medium text-slate-700 backdrop-blur">
@@ -103,7 +109,7 @@ export const FormCard = ({
               event.stopPropagation();
               onOpenDashboard(form.id);
             }}
-            aria-label="Open dashboard"
+            aria-label={t('formCard.button.openDashboard')}
           >
             <ArrowUpRight className="h-4 w-4" />
           </Button>
@@ -115,7 +121,7 @@ export const FormCard = ({
               event.stopPropagation();
               onOpenBuilder(form.id);
             }}
-            aria-label="Edit form"
+            aria-label={t('formCard.button.editForm')}
           >
             <PenSquare className="h-4 w-4" />
           </Button>
@@ -127,7 +133,11 @@ export const FormCard = ({
               event.stopPropagation();
               onOpenPreview(form);
             }}
-            aria-label={form.isPublished ? 'Preview form' : 'Preview unavailable'}
+            aria-label={
+              form.isPublished
+                ? t('formCard.button.previewForm')
+                : t('formCard.button.previewUnavailable')
+            }
             disabled={!form.isPublished}
           >
             <ExternalLink className="h-4 w-4" />
@@ -152,17 +162,20 @@ export const FormCard = ({
         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-2">
             <Calendar className="h-3.5 w-3.5" />
-            Updated {formatDate(lastUpdated)}
+            {t('formCard.updatedLabel', { date: formattedDate })}
           </span>
           <Separator orientation="vertical" className="hidden h-4 md:block" />
           <span className="inline-flex items-center gap-2">
             <Users className="h-3.5 w-3.5" />
-            {form.responseCount} responses
+            {t('formCard.responsesCount', { count: form.responseCount })}
           </span>
           <Separator orientation="vertical" className="hidden h-4 md:block" />
           <span className="inline-flex items-center gap-2">
             <BarChart3 className="h-3.5 w-3.5" />
-            {pageCount} pages · {fieldCount} fields
+            {t('formCard.structureSummary', {
+              pages: pageCount,
+              fields: fieldCount,
+            })}
           </span>
         </div>
       </CardHeader>

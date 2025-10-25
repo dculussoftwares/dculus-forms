@@ -1,4 +1,4 @@
-import * as React from "react"
+import { useMemo } from 'react';
 import {
   AudioWaveform,
   BookOpen,
@@ -10,169 +10,183 @@ import {
   PieChart,
   Settings2,
   SquareTerminal,
-} from "lucide-react"
+} from 'lucide-react';
 
-import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
-import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
+import { NavMain } from '@/components/nav-main';
+import { NavProjects } from '@/components/nav-projects';
+import { NavUser } from '@/components/nav-user';
+import { TeamSwitcher } from '@/components/team-switcher';
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-} from "@dculus/ui-v2"
-import { useAuth } from "../contexts/AuthContext"
+} from '@dculus/ui-v2';
+import { useAuth } from '../contexts/AuthContext';
+import { useTranslate } from '../i18n';
 
-// This is sample data.
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
-  ],
-  navMain: [
-    {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
-}
+export function AppSidebar({
+  ...props
+}: React.ComponentProps<typeof Sidebar>) {
+  const t = useTranslate();
+  const { user, activeOrganization } = useAuth();
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user, activeOrganization } = useAuth()
+  const navMainItems = useMemo(
+    () => [
+      {
+        title: t('sidebar.nav.playground'),
+        url: '#',
+        icon: SquareTerminal,
+        isActive: true,
+        items: [
+          {
+            title: t('sidebar.nav.history'),
+            url: '#',
+          },
+          {
+            title: t('sidebar.nav.starred'),
+            url: '#',
+          },
+          {
+            title: t('sidebar.nav.settings'),
+            url: '#',
+          },
+        ],
+      },
+      {
+        title: t('sidebar.nav.models'),
+        url: '#',
+        icon: Bot,
+        items: [
+          {
+            title: t('sidebar.nav.genesis'),
+            url: '#',
+          },
+          {
+            title: t('sidebar.nav.explorer'),
+            url: '#',
+          },
+          {
+            title: t('sidebar.nav.quantum'),
+            url: '#',
+          },
+        ],
+      },
+      {
+        title: t('sidebar.nav.documentation'),
+        url: '#',
+        icon: BookOpen,
+        items: [
+          {
+            title: t('sidebar.nav.introduction'),
+            url: '#',
+          },
+          {
+            title: t('sidebar.nav.getStarted'),
+            url: '#',
+          },
+          {
+            title: t('sidebar.nav.tutorials'),
+            url: '#',
+          },
+          {
+            title: t('sidebar.nav.changelog'),
+            url: '#',
+          },
+        ],
+      },
+      {
+        title: t('sidebar.nav.settings'),
+        url: '#',
+        icon: Settings2,
+        items: [
+          {
+            title: t('sidebar.nav.general'),
+            url: '#',
+          },
+          {
+            title: t('sidebar.nav.team'),
+            url: '#',
+          },
+          {
+            title: t('sidebar.nav.billing'),
+            url: '#',
+          },
+          {
+            title: t('sidebar.nav.limits'),
+            url: '#',
+          },
+        ],
+      },
+    ],
+    [t],
+  );
 
-  // Use real user data with fallbacks
-  const userData = {
-    name: user?.name || "User",
-    email: user?.email || "user@example.com",
-    avatar: user?.image || "",
-  }
+  const projectItems = useMemo(
+    () => [
+      {
+        name: t('sidebar.projects.designEngineering'),
+        url: '#',
+        icon: Frame,
+      },
+      {
+        name: t('sidebar.projects.salesMarketing'),
+        url: '#',
+        icon: PieChart,
+      },
+      {
+        name: t('sidebar.projects.travel'),
+        url: '#',
+        icon: Map,
+      },
+    ],
+    [t],
+  );
 
-  // Add organization to teams data
-  const teams = activeOrganization
-    ? [{
-        name: activeOrganization.name,
+  const fallbackTeams = useMemo(
+    () => [
+      {
+        name: t('sidebar.team.sample.acmeInc'),
         logo: GalleryVerticalEnd,
-        plan: "Free",
-      }]
-    : data.teams
+        plan: t('sidebar.team.plan.enterprise'),
+      },
+      {
+        name: t('sidebar.team.sample.acmeCorp'),
+        logo: AudioWaveform,
+        plan: t('sidebar.team.plan.startup'),
+      },
+      {
+        name: t('sidebar.team.sample.evilCorp'),
+        logo: Command,
+        plan: t('sidebar.team.plan.free'),
+      },
+    ],
+    [t],
+  );
+
+  const userData = useMemo(
+    () => ({
+      name: user?.name || t('sidebar.team.fallbackName'),
+      email: user?.email || t('sidebar.team.fallbackEmail'),
+      avatar: user?.image || '',
+    }),
+    [t, user?.email, user?.image, user?.name],
+  );
+
+  const teams = useMemo(() => {
+    if (activeOrganization) {
+      return [
+        {
+          name: activeOrganization.name,
+          logo: GalleryVerticalEnd,
+          plan: t('sidebar.team.plan.free'),
+        },
+      ];
+    }
+
+    return fallbackTeams;
+  }, [activeOrganization, fallbackTeams, t]);
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -180,13 +194,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <TeamSwitcher teams={teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        <NavMain items={navMainItems} />
+        <NavProjects projects={projectItems} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={userData} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }
