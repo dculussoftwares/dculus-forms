@@ -44,6 +44,15 @@ export { Input } from './components/input'
 export { Label } from './components/label'
 export { Separator } from './components/separator'
 export {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationEllipsis,
+} from './components/pagination'
+export {
   Sheet,
   SheetPortal,
   SheetOverlay,

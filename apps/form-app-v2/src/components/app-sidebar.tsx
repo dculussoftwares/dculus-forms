@@ -158,16 +158,6 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, activeOrganization } = useAuth()
 
-  // Get user initials for avatar fallback
-  const getUserInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
-  }
-
   // Use real user data with fallbacks
   const userData = {
     name: user?.name || "User",

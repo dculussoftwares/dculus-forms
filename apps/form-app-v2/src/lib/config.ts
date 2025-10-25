@@ -16,3 +16,15 @@ export function getApiBaseUrl(): string {
 export function getGraphQLUrl(): string {
   return import.meta.env.VITE_GRAPHQL_URL || `${getApiBaseUrl()}/graphql`;
 }
+
+/**
+ * Get the public form viewer URL for a given short code.
+ * Falls back to the local viewer server when not configured.
+ */
+export function getFormViewerUrl(shortUrl: string): string {
+  const base =
+    import.meta.env.VITE_FORM_VIEWER_URL || 'http://localhost:5173';
+  const normalizedBase = base.endsWith('/') ? base.slice(0, -1) : base;
+  const sanitizedShortUrl = shortUrl.replace(/^\/+/, '');
+  return `${normalizedBase}/f/${sanitizedShortUrl}`;
+}
