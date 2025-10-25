@@ -29,13 +29,7 @@ import {
   cn,
   toast,
 } from '@dculus/ui-v2';
-import {
-  FileText,
-  Filter,
-  Plus,
-  Search,
-  X,
-} from 'lucide-react';
+import { FileText, Filter, Plus, Search, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { FormCard } from '../components/dashboard';
 import { useAuth } from '../contexts/AuthContext';
@@ -198,12 +192,8 @@ export const Dashboard = () => {
           <Card className="border border-border/70 shadow-sm">
             <CardHeader className="space-y-4 border-b bg-muted/30">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="inline-flex items-center rounded-md border bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                    <Filter className="mr-2 h-3.5 w-3.5" />
-                    Filters
-                  </div>
-                  <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-2 whitespace-nowrap">
                     {FILTER_OPTIONS.map((option) => (
                       <Button
                         key={option.value}
@@ -264,7 +254,7 @@ export const Dashboard = () => {
               </div>
             </CardHeader>
 
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 p-6">
               {formsLoading && (
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {Array.from({ length: 6 }).map((_, index) => (
@@ -310,22 +300,24 @@ export const Dashboard = () => {
               )}
 
               {!formsLoading && hasForms && (
-                <div
-                  className={cn(
-                    'grid gap-4 md:grid-cols-2 xl:grid-cols-3',
-                    isPageChanging && 'opacity-50 transition-opacity'
-                  )}
-                >
-                  {displayForms.forms.map((form) => (
-                    <FormCard
-                      key={form.id}
-                      form={form}
-                      showPermissionBadge={displayForms.showPermissionBadge}
-                      onOpenDashboard={handleOpenDashboard}
-                      onOpenBuilder={handleOpenBuilder}
-                      onOpenPreview={handleOpenPreview}
-                    />
-                  ))}
+                <div>
+                  <div
+                    className={cn(
+                      'grid gap-4 md:grid-cols-2 xl:grid-cols-3',
+                      isPageChanging && 'opacity-50 transition-opacity'
+                    )}
+                  >
+                    {displayForms.forms.map((form) => (
+                      <FormCard
+                        key={form.id}
+                        form={form}
+                        showPermissionBadge={displayForms.showPermissionBadge}
+                        onOpenDashboard={handleOpenDashboard}
+                        onOpenBuilder={handleOpenBuilder}
+                        onOpenPreview={handleOpenPreview}
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -358,7 +350,9 @@ export const Dashboard = () => {
                               <PaginationLink
                                 href="#"
                                 isActive={item === currentPage}
-                                onClick={(event: MouseEvent<HTMLAnchorElement>) => {
+                                onClick={(
+                                  event: MouseEvent<HTMLAnchorElement>
+                                ) => {
                                   event.preventDefault();
                                   if (item !== currentPage) {
                                     handlePageChange(item);
