@@ -5,9 +5,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Common Development Commands
 
 ### Development Workflow
-- **Start all services**: `pnpm dev` - Starts backend, form-app, form-viewer, and admin-app concurrently
+- **Start all services**: `pnpm dev` - Starts backend, form-app, form-viewer, admin-app, and form-app-v2 concurrently
 - **Backend only**: `pnpm backend:dev` - Express.js + GraphQL API on :4000
 - **Form builder only**: `pnpm form-app:dev` - React form builder app on :3000
+- **Form app v2 only**: `pnpm form-app-v2:dev` - New React app with Shadcn UI on :3001
 - **Form viewer only**: `pnpm form-viewer:dev` - React form viewer app on :5173
 - **Admin dashboard only**: `pnpm admin-app:dev` - React admin dashboard on :3002
 
@@ -32,11 +33,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-This is a **pnpm monorepo** with four main applications and shared packages:
+This is a **pnpm monorepo** with five main applications and shared packages:
 
 ### Applications (`apps/`)
 - **`backend/`**: Express.js + Apollo GraphQL server with Prisma ORM and MongoDB
-- **`form-app/`**: React form builder application using shadcn/ui components  
+- **`form-app/`**: React form builder application using shadcn/ui components from `@dculus/ui` package
+- **`form-app-v2/`**: New React application with Shadcn UI (local components, not using shared packages) - **See dedicated README in `apps/form-app-v2/README.md`**
 - **`form-viewer/`**: React form viewing and submission application
 - **`admin-app/`**: React admin dashboard for system administration and cross-organization management
 
@@ -205,7 +207,8 @@ Additional field-specific constraints:
 
 **Access points**:
 - Form Builder: http://localhost:3000
-- Form Viewer: http://localhost:5173  
+- Form App V2: http://localhost:3001
+- Form Viewer: http://localhost:5173
 - Admin Dashboard: http://localhost:3002
 - GraphQL API: http://localhost:4000/graphql
 - Database Management: `pnpm db:studio` (Prisma Studio)
@@ -246,6 +249,116 @@ The **Admin Dashboard** (`admin-app`) provides system-wide administration capabi
 - Shares UI components and utilities with other apps
 - GraphQL resolvers in `apps/backend/src/graphql/resolvers/admin.ts`
 - Admin-specific React components in `apps/admin-app/src/components/`
+
+## Form App V2
+
+The **Form App V2** (`form-app-v2`) is a standalone React application built with Shadcn UI's sidebar-07 block pattern.
+
+### Key Characteristics
+
+**IMPORTANT**: Form App V2 is architecturally different from other apps in this monorepo:
+
+| Feature | form-app-v2 | Other Apps (form-app, admin-app) |
+|---------|------------|-----------------------------------|
+| **UI Components** | Local Shadcn UI components | `@dculus/ui` shared package |
+| **Utilities** | Local `@/lib/utils` | `@dculus/utils` shared package |
+| **Types** | Local TypeScript types | `@dculus/types` shared package |
+| **Dependencies** | Self-contained | Depends on shared packages |
+| **Import Style** | `@/components/ui/button` | `@dculus/ui` |
+
+### Technology Stack
+- React 18.3.1 + TypeScript 5.9.3
+- Vite 7.1.12 build tool
+- Tailwind CSS 3.4.17
+- Shadcn UI (locally installed, not from @dculus/ui)
+- Lucide React icons
+- Radix UI primitives
+
+### Port Configuration
+- **Development**: Port 3001
+- **URL**: http://localhost:3001
+
+### Features
+- **Sidebar-07 Layout**: Professional collapsible sidebar with icon mode
+- **Responsive Design**: Mobile, tablet, and desktop support
+- **Dark Mode Ready**: CSS variables configured for light/dark themes
+- **Team Switcher**: Organization/team dropdown in header
+- **Navigation**: Collapsible navigation sections with icons
+- **Breadcrumb**: Page navigation breadcrumb system
+
+### Development Commands
+
+**From monorepo root:**
+```bash
+pnpm form-app-v2:dev    # Start development server
+pnpm form-app-v2:build  # Build for production
+pnpm form-app-v2:preview # Preview production build
+```
+
+**From `apps/form-app-v2` directory:**
+```bash
+pnpm dev       # Start development server
+pnpm build     # Build for production
+pnpm preview   # Preview production build
+pnpm lint      # Run ESLint
+```
+
+### Adding Shadcn Components
+
+From `apps/form-app-v2` directory:
+```bash
+# Add individual components
+npx shadcn@latest add <component-name>
+
+# Examples
+npx shadcn@latest add card
+npx shadcn@latest add dialog
+npx shadcn@latest add form
+npx shadcn@latest add table
+
+# Add blocks (pre-built layouts)
+npx shadcn@latest add sidebar-01
+npx shadcn@latest add login-01
+npx shadcn@latest add dashboard-01
+```
+
+### Customizing Navigation
+
+Edit `apps/form-app-v2/src/components/app-sidebar.tsx` and modify the `data` object to customize:
+- Navigation items and sections
+- Team/organization switcher
+- User profile section
+- Project list
+
+### Path Aliases
+
+TypeScript aliases configured for clean imports:
+```typescript
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import { AppSidebar } from "@/components/app-sidebar"
+```
+
+Alias mappings:
+- `@/*` → `./src/*`
+- `@/components/*` → `./src/components/*`
+- `@/lib/*` → `./src/lib/*`
+- `@/hooks/*` → `./src/hooks/*`
+
+### Documentation
+
+**Complete documentation**: See `apps/form-app-v2/README.md` for:
+- Detailed project structure
+- Component architecture
+- Customization guide
+- Common tasks and troubleshooting
+- Integration patterns
+- Resources and next steps
+
+### When to Use form-app-v2 vs form-app
+
+- **Use form-app-v2**: For new standalone features that don't need shared packages, or when you want a clean Shadcn UI setup
+- **Use form-app**: For features that need integration with existing form builder, shared components, or form schema types
 
 ## Better-Auth Roles & Permissions
 
