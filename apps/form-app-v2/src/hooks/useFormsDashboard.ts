@@ -35,6 +35,8 @@ export interface FormsListItem {
     pageCount?: number | null;
     fieldCount?: number | null;
     lastUpdated?: string | null;
+    backgroundImageUrl?: string | null;
+    backgroundImageKey?: string | null;
   };
   userPermission?: string | null;
 }

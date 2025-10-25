@@ -1,6 +1,5 @@
 import {
   Card,
-  CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
@@ -49,6 +48,7 @@ export const FormCard = ({
   const pageCount = form.metadata?.pageCount ?? 0;
   const fieldCount = form.metadata?.fieldCount ?? 0;
   const lastUpdated = form.metadata?.lastUpdated ?? form.updatedAt;
+  const backgroundImageUrl = form.metadata?.backgroundImageUrl ?? null;
 
   return (
     <Card
@@ -61,9 +61,81 @@ export const FormCard = ({
           onOpenDashboard(form.id);
         }
       }}
-      className="group flex h-full cursor-pointer flex-col border border-border/70 bg-background/60 shadow-sm outline-none transition hover:border-primary/40 hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+      className="group relative flex h-full cursor-pointer flex-col overflow-hidden border border-border/70 bg-background/60 shadow-sm outline-none transition hover:border-primary/40 hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       aria-label={`Open dashboard for ${form.title}`}
     >
+      <div className="relative h-40 w-full">
+        <div className="absolute inset-0">
+          {backgroundImageUrl ? (
+            <div
+              className="h-full w-full bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
+              style={{ backgroundImage: `url(${backgroundImageUrl})` }}
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/10 via-primary/5 to-background transition-colors duration-300">
+              <FileText className="h-10 w-10 text-primary/70" />
+            </div>
+          )}
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
+        <div className="absolute top-3 left-3 flex flex-wrap items-center gap-2">
+          <span
+            className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm ${
+              form.isPublished
+                ? 'bg-emerald-500/90 text-white'
+                : 'bg-amber-500/90 text-white'
+            }`}
+          >
+            {form.isPublished ? 'Published' : 'Draft'}
+          </span>
+          {showPermissionBadge && form.userPermission && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-1 text-xs font-medium text-slate-700 backdrop-blur">
+              <Users className="h-3.5 w-3.5" />
+              {form.userPermission.toLowerCase()}
+            </span>
+          )}
+        </div>
+        <div className="absolute top-3 right-3 flex gap-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+          <Button
+            variant="secondary"
+            size="icon"
+            className="h-9 w-9 bg-white/80 backdrop-blur hover:bg-primary hover:text-primary-foreground"
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenDashboard(form.id);
+            }}
+            aria-label="Open dashboard"
+          >
+            <ArrowUpRight className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="secondary"
+            size="icon"
+            className="h-9 w-9 bg-white/80 backdrop-blur hover:bg-primary hover:text-primary-foreground"
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenBuilder(form.id);
+            }}
+            aria-label="Edit form"
+          >
+            <PenSquare className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="secondary"
+            size="icon"
+            className="h-9 w-9 bg-white/80 backdrop-blur hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenPreview(form);
+            }}
+            aria-label={form.isPublished ? 'Preview form' : 'Preview unavailable'}
+            disabled={!form.isPublished}
+          >
+            <ExternalLink className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
       <CardHeader className="space-y-4 pb-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-col gap-1">
@@ -75,23 +147,6 @@ export const FormCard = ({
               <CardDescription className="line-clamp-2">
                 {form.description}
               </CardDescription>
-            )}
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <span
-              className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
-                form.isPublished
-                  ? 'bg-emerald-100 text-emerald-700'
-                  : 'bg-amber-100 text-amber-700'
-              }`}
-            >
-              {form.isPublished ? 'Published' : 'Draft'}
-            </span>
-            {showPermissionBadge && form.userPermission && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                <Users className="h-3.5 w-3.5" />
-                {form.userPermission.toLowerCase()}
-              </span>
             )}
           </div>
         </div>
@@ -112,59 +167,6 @@ export const FormCard = ({
           </span>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 space-y-4 text-sm text-muted-foreground">
-        <div className="rounded-lg bg-muted/40 p-3">
-          <p className="font-medium text-foreground">Short link</p>
-          <p className="truncate font-mono text-xs text-primary">
-            {form.shortUrl}
-          </p>
-        </div>
-      </CardContent>
-      <CardFooter className="flex flex-col gap-2 border-t bg-muted/30 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex w-full flex-col gap-2 sm:flex-row sm:w-auto">
-          <Button
-            size="sm"
-            className="gap-2"
-            onClick={(event) => {
-              event.stopPropagation();
-              onOpenDashboard(form.id);
-            }}
-          >
-            View Dashboard
-            <ArrowUpRight className="h-4 w-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            className="gap-2"
-            onClick={(event) => {
-              event.stopPropagation();
-              onOpenBuilder(form.id);
-            }}
-          >
-            <PenSquare className="h-4 w-4" />
-            Edit Form
-          </Button>
-        </div>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="w-full justify-start gap-2 sm:w-auto"
-          onClick={(event) => {
-            event.stopPropagation();
-            onOpenPreview(form);
-          }}
-          disabled={!form.isPublished}
-          title={
-            form.isPublished
-              ? 'Open form in viewer'
-              : 'Publish the form to generate a preview link'
-          }
-        >
-          <ExternalLink className="h-4 w-4" />
-          {form.isPublished ? 'Preview' : 'Preview unavailable'}
-        </Button>
-      </CardFooter>
     </Card>
   );
 };

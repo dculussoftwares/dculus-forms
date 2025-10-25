@@ -256,7 +256,7 @@ export const Dashboard = () => {
 
             <CardContent className="space-y-6 p-6">
               {formsLoading && (
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {Array.from({ length: 6 }).map((_, index) => (
                     <Skeleton key={index} className="h-64 rounded-xl" />
                   ))}
@@ -303,7 +303,7 @@ export const Dashboard = () => {
                 <div>
                   <div
                     className={cn(
-                      'grid gap-4 md:grid-cols-2 xl:grid-cols-3',
+                      'grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
                       isPageChanging && 'opacity-50 transition-opacity'
                     )}
                   >

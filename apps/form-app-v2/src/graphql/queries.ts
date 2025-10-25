@@ -57,6 +57,8 @@ export const GET_MY_FORMS_WITH_CATEGORY = gql`
           pageCount
           fieldCount
           lastUpdated
+          backgroundImageKey
+          backgroundImageUrl
         }
         userPermission
       }
@@ -107,6 +109,8 @@ export const GET_SHARED_FORMS_WITH_CATEGORY = gql`
           pageCount
           fieldCount
           lastUpdated
+          backgroundImageKey
+          backgroundImageUrl
         }
         userPermission
       }
