@@ -23,6 +23,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@dculus/ui-v2"
+import { useAuth } from "../contexts/AuthContext"
 
 // This is sample data.
 const data = {
@@ -155,17 +156,45 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user, activeOrganization } = useAuth()
+
+  // Get user initials for avatar fallback
+  const getUserInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
+
+  // Use real user data with fallbacks
+  const userData = {
+    name: user?.name || "User",
+    email: user?.email || "user@example.com",
+    avatar: user?.image || "",
+  }
+
+  // Add organization to teams data
+  const teams = activeOrganization
+    ? [{
+        name: activeOrganization.name,
+        logo: GalleryVerticalEnd,
+        plan: "Free",
+      }]
+    : data.teams
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <TeamSwitcher teams={teams} />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
         <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={userData} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
