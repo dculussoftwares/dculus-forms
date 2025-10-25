@@ -16,6 +16,7 @@ module.exports = {
     ],
   },
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
+  // collectCoverageFrom: ['src/pages/SignIn.tsx'],
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',

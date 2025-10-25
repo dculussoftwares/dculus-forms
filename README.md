@@ -245,6 +245,8 @@ pnpm form-app:preview # Preview built form-app
 pnpm form-viewer:dev     # Start form-viewer in development
 pnpm form-viewer:build   # Build form-viewer
 pnpm form-viewer:preview # Preview built form-viewer
+pnpm --filter form-app-v2 test -- --runInBand        # Run form-app tests
+pnpm --filter form-app-v2 exec -- jest --coverage --runInBand # Run form-app tests with coverage
 ```
 
 ### Code Structure
