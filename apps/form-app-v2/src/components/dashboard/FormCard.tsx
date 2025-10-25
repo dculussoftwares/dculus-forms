@@ -1,11 +1,10 @@
 import {
+  Button,
   Card,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
-  Button,
-  Separator,
+  Separator
 } from '@dculus/ui-v2';
 import {
   ArrowUpRight,
