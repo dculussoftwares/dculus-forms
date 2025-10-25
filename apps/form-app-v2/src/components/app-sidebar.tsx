@@ -22,7 +22,7 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-} from "@/components/ui/sidebar"
+} from "@dculus/ui-v2"
 
 // This is sample data.
 const data = {

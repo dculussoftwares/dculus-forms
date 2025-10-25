@@ -38,12 +38,13 @@ This is a **pnpm monorepo** with five main applications and shared packages:
 ### Applications (`apps/`)
 - **`backend/`**: Express.js + Apollo GraphQL server with Prisma ORM and MongoDB
 - **`form-app/`**: React form builder application using shadcn/ui components from `@dculus/ui` package
-- **`form-app-v2/`**: New React application with Shadcn UI (local components, not using shared packages) - **See dedicated README in `apps/form-app-v2/README.md`**
+- **`form-app-v2/`**: New React application with Shadcn UI using `@dculus/ui-v2` shared package - **See dedicated README in `apps/form-app-v2/README.md`**
 - **`form-viewer/`**: React form viewing and submission application
 - **`admin-app/`**: React admin dashboard for system administration and cross-organization management
 
 ### Shared Packages (`packages/`)
-- **`@dculus/ui`**: All UI components (shadcn/ui), rich text editor components, and layouts
+- **`@dculus/ui`**: All UI components (shadcn/ui), rich text editor components, and layouts (for V1 apps)
+- **`@dculus/ui-v2`**: Shared UI components for V2 applications with Shadcn UI sidebar-07 pattern, Tailwind preset, and dark mode support
 - **`@dculus/utils`**: Shared utilities, constants, helper functions, and API utilities
 - **`@dculus/types`**: TypeScript type definitions and form field classes
 
@@ -64,12 +65,15 @@ This is a **pnpm monorepo** with five main applications and shared packages:
 - Separate YJS documents stored in MongoDB for each form's collaborative state
 
 ### UI Component Architecture
-- **Centralized UI components** in `@dculus/ui` package
+- **Centralized UI components** in `@dculus/ui` package (for V1 apps)
+- **V2 UI components** in `@dculus/ui-v2` package (for V2 apps with Shadcn sidebar-07 pattern)
 - **Shared utilities** in `@dculus/utils` package for constants, helpers, and API utilities
-- All applications import shadcn/ui components from `@dculus/ui`
+- All applications import shadcn/ui components from their respective UI packages
 - **No component duplication** across apps - everything imports from respective packages
 
 ### Import Patterns
+
+**V1 Applications** (form-app, form-viewer, admin-app):
 ```typescript
 // Shared UI components
 import { Button, Card, SidebarProvider } from '@dculus/ui';
@@ -77,12 +81,31 @@ import { Button, Card, SidebarProvider } from '@dculus/ui';
 // Shared utilities and constants
 import { generateId, API_ENDPOINTS, cn } from '@dculus/utils';
 
-// Shared types and form field classes  
+// Shared types and form field classes
 import type { Form, FormSchema } from '@dculus/types';
 import { TextInputField, EmailField } from '@dculus/types';
 
 // GraphQL with Apollo Client
 import { useQuery, useMutation } from '@apollo/client';
+```
+
+**V2 Applications** (form-app-v2):
+```typescript
+// V2 UI components with Shadcn sidebar-07 pattern
+import {
+  Button,
+  Card,
+  Sidebar,
+  SidebarProvider,
+  cn,
+  useIsMobile
+} from '@dculus/ui-v2';
+
+// Shared utilities and constants (if needed)
+import { generateId, API_ENDPOINTS } from '@dculus/utils';
+
+// Shared types (if needed)
+import type { Form, FormSchema } from '@dculus/types';
 ```
 
 ## Form Schema & Collaborative Form Builder System
@@ -252,25 +275,27 @@ The **Admin Dashboard** (`admin-app`) provides system-wide administration capabi
 
 ## Form App V2
 
-The **Form App V2** (`form-app-v2`) is a standalone React application built with Shadcn UI's sidebar-07 block pattern.
+The **Form App V2** (`form-app-v2`) is a new React application built with Shadcn UI's sidebar-07 block pattern, using the shared `@dculus/ui-v2` component library.
 
 ### Key Characteristics
 
-**IMPORTANT**: Form App V2 is architecturally different from other apps in this monorepo:
+**V2 Apps Architecture**: Form App V2 uses a dedicated UI package separate from V1 apps:
 
-| Feature | form-app-v2 | Other Apps (form-app, admin-app) |
-|---------|------------|-----------------------------------|
-| **UI Components** | Local Shadcn UI components | `@dculus/ui` shared package |
-| **Utilities** | Local `@/lib/utils` | `@dculus/utils` shared package |
-| **Types** | Local TypeScript types | `@dculus/types` shared package |
-| **Dependencies** | Self-contained | Depends on shared packages |
-| **Import Style** | `@/components/ui/button` | `@dculus/ui` |
+| Feature | form-app-v2 | form-app / admin-app (V1) |
+|---------|------------|---------------------------|
+| **UI Components** | `@dculus/ui-v2` shared package | `@dculus/ui` shared package |
+| **Utilities** | `@dculus/ui-v2` (cn, hooks) | `@dculus/utils` shared package |
+| **Types** | `@dculus/types` (if needed) | `@dculus/types` shared package |
+| **Design Pattern** | Shadcn sidebar-07 block | Custom sidebar implementation |
+| **Import Style** | `import { Button } from '@dculus/ui-v2'` | `import { Button } from '@dculus/ui'` |
+| **Tailwind Config** | Extends `@dculus/ui-v2` preset | Custom configuration |
+| **Theme CSS** | `@dculus/ui-v2/styles/theme.css` | Local theme files |
 
 ### Technology Stack
 - React 18.3.1 + TypeScript 5.9.3
 - Vite 7.1.12 build tool
 - Tailwind CSS 3.4.17
-- Shadcn UI (locally installed, not from @dculus/ui)
+- Shadcn UI components from `@dculus/ui-v2` package
 - Lucide React icons
 - Radix UI primitives
 
@@ -303,24 +328,32 @@ pnpm preview   # Preview production build
 pnpm lint      # Run ESLint
 ```
 
-### Adding Shadcn Components
+### Adding New Shadcn Components
 
-From `apps/form-app-v2` directory:
+**IMPORTANT**: Add new components to the `@dculus/ui-v2` package, not directly to form-app-v2:
+
 ```bash
+# Navigate to the ui-v2 package
+cd packages/ui-v2
+
 # Add individual components
 npx shadcn@latest add <component-name>
 
 # Examples
-npx shadcn@latest add card
+npx shadcn@latest add select
 npx shadcn@latest add dialog
 npx shadcn@latest add form
 npx shadcn@latest add table
 
-# Add blocks (pre-built layouts)
-npx shadcn@latest add sidebar-01
-npx shadcn@latest add login-01
-npx shadcn@latest add dashboard-01
+# Rebuild the package after adding components
+cd ../..
+pnpm --filter @dculus/ui-v2 build
+
+# The component is now available in all V2 apps via:
+import { Select } from '@dculus/ui-v2'
 ```
+
+**Complete documentation**: See `packages/ui-v2/README.md` for adding components.
 
 ### Customizing Navigation
 
@@ -330,35 +363,40 @@ Edit `apps/form-app-v2/src/components/app-sidebar.tsx` and modify the `data` obj
 - User profile section
 - Project list
 
-### Path Aliases
+### Import Patterns
 
-TypeScript aliases configured for clean imports:
+Import UI components from the shared `@dculus/ui-v2` package:
 ```typescript
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { AppSidebar } from "@/components/app-sidebar"
+// UI components, utilities, and hooks from shared package
+import {
+  Button,
+  Card,
+  Sidebar,
+  SidebarProvider,
+  cn,
+  useIsMobile
+} from '@dculus/ui-v2'
+
+// Application-specific components (local)
+import { AppSidebar } from '@/components/app-sidebar'
+import { TeamSwitcher } from '@/components/team-switcher'
 ```
 
-Alias mappings:
+Alias mappings for local application code:
 - `@/*` → `./src/*`
-- `@/components/*` → `./src/components/*`
-- `@/lib/*` → `./src/lib/*`
-- `@/hooks/*` → `./src/hooks/*`
+- `@/components/*` → `./src/components/*` (application-specific components only)
 
 ### Documentation
 
-**Complete documentation**: See `apps/form-app-v2/README.md` for:
-- Detailed project structure
-- Component architecture
-- Customization guide
-- Common tasks and troubleshooting
-- Integration patterns
-- Resources and next steps
+**Complete documentation**:
+- **Form App V2**: `apps/form-app-v2/README.md` - Application setup, customization, and usage
+- **UI Package**: `packages/ui-v2/README.md` - Component library documentation, adding components, theming
 
 ### When to Use form-app-v2 vs form-app
 
-- **Use form-app-v2**: For new standalone features that don't need shared packages, or when you want a clean Shadcn UI setup
-- **Use form-app**: For features that need integration with existing form builder, shared components, or form schema types
+- **Use form-app-v2**: For new V2 features using modern Shadcn sidebar-07 pattern, shared `@dculus/ui-v2` components
+- **Use form-app**: For existing form builder features, V1 architecture with `@dculus/ui` components
+- **Future V2 apps**: Will share `@dculus/ui-v2` package for consistency across V2 applications
 
 ## Better-Auth Roles & Permissions
 

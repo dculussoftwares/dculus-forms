@@ -4,7 +4,7 @@ A modern React application built with Vite, TypeScript, and Shadcn UI components
 
 ## Overview
 
-Form App V2 is a standalone React application that uses Shadcn UI's sidebar-07 block pattern for navigation. Unlike the original form-app, this version **does not use shared packages** (`@dculus/ui`, `@dculus/utils`, `@dculus/types`) and implements its own local UI components.
+Form App V2 is a React application that uses Shadcn UI's sidebar-07 block pattern for navigation. This is the first V2 application in the monorepo and uses the **shared `@dculus/ui-v2` component library** for all UI components, providing a consistent design system across V2 applications.
 
 ## Technology Stack
 
@@ -12,9 +12,9 @@ Form App V2 is a standalone React application that uses Shadcn UI's sidebar-07 b
 - **Build Tool**: Vite 7.1.12
 - **Language**: TypeScript 5.9.3
 - **Styling**: Tailwind CSS 3.4.17
-- **UI Components**: Shadcn UI (local components, not from @dculus/ui)
+- **UI Components**: Shadcn UI from `@dculus/ui-v2` shared package
 - **Icons**: Lucide React 0.548.0
-- **Component Library**: Radix UI primitives
+- **Component Library**: Radix UI primitives (via @dculus/ui-v2)
 
 ## Project Structure
 
@@ -22,33 +22,17 @@ Form App V2 is a standalone React application that uses Shadcn UI's sidebar-07 b
 apps/form-app-v2/
 ├── src/
 │   ├── components/
-│   │   ├── ui/                    # Shadcn UI components (locally installed)
-│   │   │   ├── avatar.tsx
-│   │   │   ├── breadcrumb.tsx
-│   │   │   ├── button.tsx
-│   │   │   ├── collapsible.tsx
-│   │   │   ├── dropdown-menu.tsx
-│   │   │   ├── input.tsx
-│   │   │   ├── separator.tsx
-│   │   │   ├── sheet.tsx
-│   │   │   ├── sidebar.tsx
-│   │   │   ├── skeleton.tsx
-│   │   │   └── tooltip.tsx
 │   │   ├── app-sidebar.tsx        # Main sidebar component
 │   │   ├── nav-main.tsx           # Main navigation with collapsible sections
 │   │   ├── nav-projects.tsx       # Projects navigation list
 │   │   ├── nav-user.tsx           # User profile in sidebar footer
-│   │   └── team-switcher.tsx      # Organization/team switcher dropdown
-│   ├── hooks/
-│   │   └── use-mobile.tsx         # Mobile detection hook
-│   ├── lib/
-│   │   └── utils.ts               # Utility functions (cn helper)
+│   │   ├── team-switcher.tsx      # Organization/team switcher dropdown
+│   │   └── login-form.tsx         # Example login form component
 │   ├── App.tsx                    # Main application with sidebar layout
 │   ├── main.tsx                   # Application entry point
-│   └── index.css                  # Global styles + Tailwind + CSS variables
+│   └── index.css                  # Imports theme CSS from @dculus/ui-v2
 ├── public/                        # Static assets
-├── components.json                # Shadcn UI configuration
-├── tailwind.config.js             # Tailwind CSS configuration
+├── tailwind.config.js             # Extends @dculus/ui-v2 Tailwind preset
 ├── tsconfig.json                  # TypeScript root config
 ├── tsconfig.app.json              # TypeScript app config (with path aliases)
 ├── tsconfig.node.json             # TypeScript node config
@@ -56,6 +40,24 @@ apps/form-app-v2/
 ├── package.json                   # Project dependencies
 └── README.md                      # This file
 ```
+
+**Note**: UI components (Button, Card, Sidebar, etc.) are imported from `@dculus/ui-v2` package, not stored locally.
+
+## Dependencies
+
+### Direct Dependencies
+- `@dculus/ui-v2`: Shared UI component library with Shadcn components
+- `lucide-react`: Icon library
+- `react` & `react-dom`: React framework
+
+### Shared Package Contents
+The `@dculus/ui-v2` package provides:
+- All Shadcn UI components (Avatar, Breadcrumb, Button, Card, Dialog, Dropdown, Input, Separator, Sidebar, etc.)
+- Radix UI primitives for accessibility
+- Utility functions (cn helper for className merging)
+- React hooks (useIsMobile for responsive design)
+- Tailwind CSS preset with theme tokens
+- CSS theme file with light/dark mode variables
 
 ## Port Configuration
 
@@ -118,54 +120,66 @@ pnpm preview
 pnpm lint
 ```
 
-## Shadcn UI Configuration
+## Using UI Components
 
-### Configuration File
-`components.json` contains the Shadcn UI setup:
+### Importing Components
 
-```json
-{
-  "style": "default",
-  "rsc": false,
-  "tsx": true,
-  "tailwind": {
-    "config": "tailwind.config.js",
-    "css": "src/index.css",
-    "baseColor": "slate",
-    "cssVariables": true,
-    "prefix": ""
-  },
-  "aliases": {
-    "components": "@/components",
-    "utils": "@/lib/utils",
-    "ui": "@/components/ui",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
-  }
-}
+All UI components are imported from the `@dculus/ui-v2` shared package:
+
+```tsx
+import {
+  Button,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  Input,
+  Label,
+  Sidebar,
+  SidebarProvider,
+  SidebarInset,
+  cn,
+  useIsMobile
+} from '@dculus/ui-v2'
+
+// Application-specific components (local)
+import { AppSidebar } from '@/components/app-sidebar'
+import { TeamSwitcher } from '@/components/team-switcher'
 ```
 
-### Adding New Components
+### Adding New Shadcn Components
 
-To add more Shadcn UI components:
-```bash
-npx shadcn@latest add <component-name>
-```
+**IMPORTANT**: Add new UI components to the `@dculus/ui-v2` package, not to this app:
 
-Examples:
 ```bash
-npx shadcn@latest add card
+# Navigate to the ui-v2 package from monorepo root
+cd packages/ui-v2
+
+# Add a new component
+npx shadcn@latest add select
 npx shadcn@latest add dialog
 npx shadcn@latest add form
 npx shadcn@latest add table
+
+# Rebuild the package
+cd ../..
+pnpm --filter @dculus/ui-v2 build
+
+# The component is now available in form-app-v2:
+import { Select } from '@dculus/ui-v2'
 ```
 
-To add blocks (pre-built layouts):
-```bash
-npx shadcn@latest add sidebar-01  # Different sidebar style
-npx shadcn@latest add login-01    # Login form
-npx shadcn@latest add dashboard-01 # Dashboard layout
-```
+**Why add to the package?**
+- Ensures consistency across all V2 applications
+- Single source of truth for UI components
+- Automatic availability in future V2 apps
+- Centralized theme and styling
+
+**Complete documentation**: See `packages/ui-v2/README.md` for:
+- Full list of available components
+- Adding new components
+- Theming and customization
+- Troubleshooting
 
 ## Sidebar Architecture (sidebar-07)
 
@@ -272,63 +286,106 @@ Browse icons at: https://lucide.dev/icons
 
 ### CSS Variables
 
-Theme colors are defined in `src/index.css` using CSS variables:
+Theme colors are imported from `@dculus/ui-v2/styles/theme.css`:
 - Supports light and dark mode
 - Color scheme: Slate
+- CSS variables for all theme tokens
 - Fully customizable via HSL values
+
+The `src/index.css` file imports the shared theme:
+```css
+@import '@dculus/ui-v2/styles/theme.css';
+```
 
 ### Dark Mode
 
-Dark mode is configured but not yet toggled. To add dark mode toggle:
+Dark mode is configured in the shared theme. To add dark mode toggle:
 
-1. Install theme toggle component:
-```bash
-npx shadcn@latest add theme-toggle
+```tsx
+// Toggle dark mode
+document.documentElement.classList.toggle('dark')
+
+// Check current theme
+const isDark = document.documentElement.classList.contains('dark')
 ```
 
-2. Add to your layout or sidebar
+For a complete theme toggle component, see the `@dculus/ui-v2` package documentation.
 
 ### Customizing Colors
 
-Edit `src/index.css` to modify color variables:
+**Option 1: Override CSS variables** in your app's CSS:
 ```css
+/* Add to src/index.css after the import */
+@import '@dculus/ui-v2/styles/theme.css';
+
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  /* ... more variables */
+  --primary: 210 100% 50%; /* Custom blue primary */
+  --primary-foreground: 0 0% 100%;
 }
 ```
 
-Or use Tailwind's configuration in `tailwind.config.js`.
+**Option 2: Extend Tailwind config**:
+```javascript
+// tailwind.config.js
+import uiV2Config from '@dculus/ui-v2/tailwind.config.js'
 
-## Path Aliases
-
-TypeScript path aliases are configured in `tsconfig.json` and `tsconfig.app.json`:
-
-```typescript
-// Import examples
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { AppSidebar } from "@/components/app-sidebar"
+export default {
+  ...uiV2Config,
+  theme: {
+    extend: {
+      colors: {
+        // Add custom colors
+      }
+    }
+  }
+}
 ```
 
-Alias mapping:
+## Import Patterns
+
+### UI Components from Shared Package
+
+All UI components, utilities, and hooks come from `@dculus/ui-v2`:
+
+```typescript
+import {
+  Button,
+  Card,
+  Input,
+  Label,
+  Sidebar,
+  SidebarProvider,
+  cn,
+  useIsMobile
+} from '@dculus/ui-v2'
+```
+
+### Application-Specific Components
+
+Use path aliases for local components:
+
+```typescript
+import { AppSidebar } from '@/components/app-sidebar'
+import { TeamSwitcher } from '@/components/team-switcher'
+import { NavMain } from '@/components/nav-main'
+```
+
+**Path alias mapping**:
 - `@/*` → `./src/*`
-- `@/components/*` → `./src/components/*`
-- `@/lib/*` → `./src/lib/*`
-- `@/hooks/*` → `./src/hooks/*`
+- `@/components/*` → `./src/components/*` (application-specific only)
 
-## Key Differences from Other Apps
+## Architecture Comparison
 
-| Feature | form-app-v2 | form-app / admin-app |
-|---------|------------|---------------------|
-| **UI Components** | Local Shadcn UI | `@dculus/ui` package |
-| **Utilities** | Local `@/lib/utils` | `@dculus/utils` package |
-| **Types** | Local types | `@dculus/types` package |
+| Feature | form-app-v2 (V2) | form-app / admin-app (V1) |
+|---------|------------------|---------------------------|
+| **UI Components** | `@dculus/ui-v2` package | `@dculus/ui` package |
+| **Utilities** | `@dculus/ui-v2` (cn, hooks) | `@dculus/utils` package |
+| **Types** | Local or `@dculus/types` | `@dculus/types` package |
 | **Port** | 3001 | 3000 / 3002 |
 | **React Version** | 18.3.1 | 18.3.1 |
-| **Layout** | Sidebar-07 block | Custom layouts |
-| **Dependencies** | Self-contained | Shared packages |
+| **Design Pattern** | Shadcn sidebar-07 | Custom layouts |
+| **Theme System** | CSS variables from ui-v2 | Local theme files |
+| **Tailwind Config** | Extends ui-v2 preset | Custom configuration |
 
 ## Adding Features
 
