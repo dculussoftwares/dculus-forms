@@ -67,7 +67,7 @@ export const FormCard = ({
       className="group relative flex h-full cursor-pointer flex-col overflow-hidden border border-border/70 bg-background/60 shadow-sm outline-none transition hover:border-primary/40 hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       aria-label={t('formCard.openDashboardAria', { title: form.title })}
     >
-      <div className="relative h-40 w-full">
+      <div className="relative h-40 w-full overflow-hidden">
         <div className="absolute inset-0">
           {backgroundImageUrl ? (
             <div
@@ -80,7 +80,7 @@ export const FormCard = ({
             </div>
           )}
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
         <div className="absolute top-3 left-3 flex flex-wrap items-center gap-2">
           <span
             className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm ${
