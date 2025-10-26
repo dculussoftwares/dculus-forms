@@ -34,7 +34,7 @@ jest.mock('../../../graphql/formSharing', () => {
 
 import { useQuery, useMutation } from '@apollo/client';
 import { toast } from '@dculus/ui-v2';
-import { ShareModal } from '../ShareModal';
+import { ShareModal, permissionIconFor, permissionLabelFor } from '../ShareModal';
 import { useTranslate } from '../../../i18n';
 import { useAuth } from '../../../contexts/AuthContext';
 import { getFormViewerUrl } from '../../../lib/config';
@@ -44,6 +44,26 @@ import {
   type FormPermission,
   type User,
 } from '../../../graphql/formSharing';
+
+describe('permission helpers', () => {
+  it('returns icons for known permissions and null for unknown', () => {
+    const ownerIcon = permissionIconFor(PermissionLevel.OWNER);
+    expect(ownerIcon).toBeTruthy();
+    expect((ownerIcon as { props: { className: string } }).props.className).toContain(
+      'text-yellow-500',
+    );
+
+    expect(permissionIconFor('NO_ACCESS' as PermissionLevel)).toBeNull();
+  });
+
+  it('returns translated labels with fallback', () => {
+    const translate = ((key: string) => key) as unknown as ReturnType<typeof useTranslate>;
+    expect(permissionLabelFor(PermissionLevel.OWNER, translate)).toBe(
+      'shareModal.permissions.owner',
+    );
+    expect(permissionLabelFor('NO_ACCESS', translate)).toBe('No Access');
+  });
+});
 
 const mockUseQuery = useQuery as jest.MockedFunction<typeof useQuery>;
 const mockUseMutation = useMutation as jest.MockedFunction<typeof useMutation>;
@@ -111,6 +131,8 @@ describe('ShareModal', () => {
   let shareShouldError: boolean;
   let updateShouldError: boolean;
   let removeShouldError: boolean;
+  let shareLoadingState: boolean;
+  let members: User[];
 
   const renderModal = (props: Partial<ShareModalProps> = {}) =>
     render(<ShareModal {...baseProps} {...props} />);
@@ -161,9 +183,19 @@ describe('ShareModal', () => {
           email: 'collab@example.com',
         },
       }),
+      makePermission({
+        id: 'perm-current',
+        userId: 'current-user',
+        permission: PermissionLevel.EDITOR,
+        user: {
+          id: 'current-user',
+          name: 'Current User',
+          email: 'self@example.com',
+        },
+      }),
     ];
 
-    const members: User[] = [
+    members = [
       makeMember({ id: 'current-user', name: 'Current User', email: 'self@example.com' }),
       makeMember({ id: 'member-1', name: 'Helena Harper', email: 'helena@example.com' }),
       makeMember({ id: 'member-2', name: 'Evan Lee', email: 'evan@example.com' }),
@@ -193,6 +225,7 @@ describe('ShareModal', () => {
     shareShouldError = false;
     updateShouldError = false;
     removeShouldError = false;
+    shareLoadingState = false;
 
     baseMutationImplementation = (
       mutation: unknown,
@@ -209,7 +242,7 @@ describe('ShareModal', () => {
             }
             options?.onCompleted?.({});
           }),
-          { loading: false },
+          { loading: shareLoadingState },
         ];
       }
       if (mutation === 'UPDATE_FORM_PERMISSION') {
@@ -292,6 +325,13 @@ describe('ShareModal', () => {
     expect(screen.getByText('Helena Harper')).toBeInTheDocument();
     expect(screen.getByText('shareModal.addMembers.toBeAdded')).toBeInTheDocument();
 
+    const queueContainer = screen.getByText('shareModal.addMembers.toBeAdded').nextElementSibling as HTMLElement;
+    const queueSelectTrigger = within(queueContainer)
+      .getAllByRole('button')
+      .find((button) => !button.querySelector('.lucide-x'))!;
+    await user.click(queueSelectTrigger);
+    await user.click(screen.getAllByText('shareModal.permissions.editor')[0]);
+
     await user.click(screen.getByText('shareModal.footer.share'));
 
     expect(shareMutation).toHaveBeenCalledWith({
@@ -303,7 +343,7 @@ describe('ShareModal', () => {
           userPermissions: [
             {
               userId: 'member-1',
-              permission: PermissionLevel.VIEWER,
+              permission: PermissionLevel.EDITOR,
             },
           ],
         },
@@ -319,6 +359,12 @@ describe('ShareModal', () => {
     expect(
       screen.queryByText('shareModal.addMembers.toBeAdded'),
     ).not.toBeInTheDocument();
+  });
+
+  it('marks current user access in the permissions list', () => {
+    renderModal();
+
+    expect(screen.getByText('shareModal.currentAccess.youBadge')).toBeInTheDocument();
   });
 
   it('allows removing a queued member before sharing', async () => {
@@ -350,6 +396,63 @@ describe('ShareModal', () => {
     await waitFor(() =>
       expect(screen.queryByText('shareModal.addMembers.toBeAdded')).not.toBeInTheDocument(),
     );
+  });
+
+  it('falls back to placeholder data when a queued member is missing', async () => {
+    const view = renderModal();
+
+    await user.click(
+      screen.getByRole('button', {
+        name: /shareModal.scopeSection.specific.title/i,
+      }),
+    );
+
+    await user.type(
+      screen.getByPlaceholderText('shareModal.addMembers.placeholder'),
+      'Helena',
+    );
+
+    await user.click(screen.getByText('Helena Harper'));
+
+    members.splice(
+      members.findIndex((member) => member.id === 'member-1'),
+      1,
+    );
+
+    await act(async () => {
+      view.rerender(<ShareModal {...baseProps} />);
+    });
+
+    expect(screen.getByText('Unknown member')).toBeInTheDocument();
+  });
+
+  it('handles missing query payloads safely', () => {
+    const originalImplementation = mockUseQuery.getMockImplementation();
+
+    mockUseQuery.mockImplementation(((query: unknown) => {
+      if (query === 'GET_FORM_PERMISSIONS') {
+        return {
+          data: undefined,
+          loading: false,
+          refetch: refetchPermissions,
+        } as any;
+      }
+      if (query === 'GET_ORGANIZATION_MEMBERS') {
+        return {
+          data: undefined,
+          loading: false,
+        } as any;
+      }
+      return originalImplementation ? (originalImplementation as any)(query) : { data: undefined, loading: false };
+    }) as any);
+
+    renderModal();
+
+    expect(screen.queryByText('Existing Collaborator')).not.toBeInTheDocument();
+
+    if (originalImplementation) {
+      mockUseQuery.mockImplementation(originalImplementation as any);
+    }
   });
 
   it('updates existing permission level and removes access', async () => {
@@ -435,6 +538,16 @@ describe('ShareModal', () => {
     );
   });
 
+  it('shows the sharing state while the share mutation is loading', () => {
+    shareLoadingState = true;
+
+    renderModal();
+
+    const loadingLabel = screen.getByText('shareModal.footer.sharing');
+    expect(loadingLabel).toBeInTheDocument();
+    expect(loadingLabel.closest('button')).toBeDisabled();
+  });
+
   it('shows an error toast when share mutation fails', async () => {
     shareShouldError = true;
 
@@ -495,5 +608,14 @@ describe('ShareModal', () => {
       }),
     );
     expect(refetchPermissions).not.toHaveBeenCalled();
+  });
+
+  it('closes the modal when cancel is clicked', async () => {
+    const onOpenChange = jest.fn();
+    renderModal({ onOpenChange });
+
+    await user.click(screen.getByText('shareModal.footer.cancel'));
+
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 });

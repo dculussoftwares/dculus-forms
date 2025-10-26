@@ -25,18 +25,7 @@ import {
   Card,
   CardContent,
 } from '@dculus/ui-v2';
-import {
-  Search,
-  X,
-  Users,
-  Lock,
-  Globe,
-  Crown,
-  Edit,
-  Eye,
-  Check,
-  Copy,
-} from 'lucide-react';
+import { Search, X, Users, Lock, Globe, Crown, Edit, Eye, Check, Copy } from 'lucide-react';
 import { useTranslate } from '../../i18n';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -52,6 +41,39 @@ import {
   type UserPermissionInput,
 } from '../../graphql/formSharing';
 import { getFormViewerUrl } from '../../lib/config';
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const permissionIconFor = (permission: PermissionLevel) => {
+  switch (permission) {
+    case PermissionLevel.OWNER:
+      return <Crown className="h-4 w-4 text-yellow-500" />;
+    case PermissionLevel.EDITOR:
+      return <Edit className="h-4 w-4 text-blue-500" />;
+    case PermissionLevel.VIEWER:
+      return <Eye className="h-4 w-4 text-gray-500" />;
+    default:
+      return null;
+  }
+};
+
+type TranslateFn = ReturnType<typeof useTranslate>;
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const permissionLabelFor = (
+  permission: PermissionLevel | string,
+  translate: TranslateFn,
+) => {
+  switch (permission) {
+    case PermissionLevel.OWNER:
+      return translate('shareModal.permissions.owner');
+    case PermissionLevel.EDITOR:
+      return translate('shareModal.permissions.editor');
+    case PermissionLevel.VIEWER:
+      return translate('shareModal.permissions.viewer');
+    default:
+      return 'No Access';
+  }
+};
 
 interface ShareModalProps {
   open: boolean;
@@ -291,34 +313,6 @@ export const ShareModal = ({
     }
   };
 
-  // Get permission icon
-  const getPermissionIcon = (permission: PermissionLevel) => {
-    switch (permission) {
-      case PermissionLevel.OWNER:
-        return <Crown className="h-4 w-4 text-yellow-500" />;
-      case PermissionLevel.EDITOR:
-        return <Edit className="h-4 w-4 text-blue-500" />;
-      case PermissionLevel.VIEWER:
-        return <Eye className="h-4 w-4 text-gray-500" />;
-      default:
-        return null;
-    }
-  };
-
-  // Get permission label
-  const getPermissionLabel = (permission: PermissionLevel) => {
-    switch (permission) {
-      case PermissionLevel.OWNER:
-        return t('shareModal.permissions.owner');
-      case PermissionLevel.EDITOR:
-        return t('shareModal.permissions.editor');
-      case PermissionLevel.VIEWER:
-        return t('shareModal.permissions.viewer');
-      default:
-        return 'No Access';
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0">
@@ -426,22 +420,22 @@ export const ShareModal = ({
                 >
                   <SelectTrigger>
                     <div className="flex items-center gap-2">
-                      {getPermissionIcon(defaultPermission)}
+                      {permissionIconFor(defaultPermission)}
                       <SelectValue>
-                        {getPermissionLabel(defaultPermission)}
+                      {permissionLabelFor(defaultPermission, t)}
                       </SelectValue>
                     </div>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={PermissionLevel.VIEWER}>
                       <div className="flex items-center gap-2">
-                        {getPermissionIcon(PermissionLevel.VIEWER)}
+                        {permissionIconFor(PermissionLevel.VIEWER)}
                         {t('shareModal.permissions.viewer')}
                       </div>
                     </SelectItem>
                     <SelectItem value={PermissionLevel.EDITOR}>
                       <div className="flex items-center gap-2">
-                        {getPermissionIcon(PermissionLevel.EDITOR)}
+                        {permissionIconFor(PermissionLevel.EDITOR)}
                         {t('shareModal.permissions.editor')}
                       </div>
                     </SelectItem>
@@ -477,10 +471,13 @@ export const ShareModal = ({
                     <div className="space-y-2">
                       {Array.from(selectedUsers.entries()).map(
                         ([userId, permission]) => {
-                          const user = organizationMembers.find(
-                            (m) => m.id === userId
-                          );
-                          if (!user) return null;
+                          const user =
+                            organizationMembers.find((m) => m.id === userId) ?? {
+                              id: userId,
+                              name: 'Unknown member',
+                              email: '',
+                              image: '',
+                            };
 
                           return (
                             <div
@@ -512,20 +509,20 @@ export const ShareModal = ({
                                 >
                                   <SelectTrigger className="w-32">
                                     <div className="flex items-center gap-2">
-                                      {getPermissionIcon(permission)}
+                                      {permissionIconFor(permission)}
                                       <SelectValue />
                                     </div>
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value={PermissionLevel.VIEWER}>
                                       <div className="flex items-center gap-2">
-                                        {getPermissionIcon(PermissionLevel.VIEWER)}
+                                        {permissionIconFor(PermissionLevel.VIEWER)}
                                         {t('shareModal.permissions.viewer')}
                                       </div>
                                     </SelectItem>
                                     <SelectItem value={PermissionLevel.EDITOR}>
                                       <div className="flex items-center gap-2">
-                                        {getPermissionIcon(PermissionLevel.EDITOR)}
+                                        {permissionIconFor(PermissionLevel.EDITOR)}
                                         {t('shareModal.permissions.editor')}
                                       </div>
                                     </SelectItem>
@@ -651,20 +648,20 @@ export const ShareModal = ({
                               >
                                 <SelectTrigger className="w-32">
                                   <div className="flex items-center gap-2">
-                                    {getPermissionIcon(permission.permission)}
+                                    {permissionIconFor(permission.permission)}
                                     <SelectValue />
                                   </div>
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value={PermissionLevel.VIEWER}>
                                     <div className="flex items-center gap-2">
-                                      {getPermissionIcon(PermissionLevel.VIEWER)}
+                                      {permissionIconFor(PermissionLevel.VIEWER)}
                                       {t('shareModal.permissions.viewer')}
                                     </div>
                                   </SelectItem>
                                   <SelectItem value={PermissionLevel.EDITOR}>
                                     <div className="flex items-center gap-2">
-                                      {getPermissionIcon(PermissionLevel.EDITOR)}
+                                      {permissionIconFor(PermissionLevel.EDITOR)}
                                       {t('shareModal.permissions.editor')}
                                     </div>
                                   </SelectItem>
