@@ -4,9 +4,10 @@
     "module": "CommonJS",
     "moduleResolution": "node",
     "esModuleInterop": true,
+    "types": ["jest", "vite/client"],
+    "jsx": "react-jsx",
     "allowImportingTsExtensions": false,
-    "verbatimModuleSyntax": false,
-    "jsx": "react-jsx"
+    "verbatimModuleSyntax": false
   },
   "include": ["src"]
 }
