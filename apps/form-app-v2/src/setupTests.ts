@@ -72,6 +72,7 @@ jest.mock('@dculus/ui-v2', () => {
     CardTitle: createElement('h3'),
     CardDescription: createElement('p'),
     CardContent: createElement('div'),
+    Separator: createElement('hr'),
     Field: createElement('div'),
     FieldLabel: createElement('label'),
     FieldError: ({ errors = [], ...props }: any) =>
