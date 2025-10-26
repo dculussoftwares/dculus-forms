@@ -123,3 +123,42 @@ export const GET_SHARED_FORMS_WITH_CATEGORY = gql`
     }
   }
 `;
+
+export const GET_FORM_BY_ID = gql`
+  query GetFormById($id: ID!) {
+    form(id: $id) {
+      id
+      title
+      description
+      shortUrl
+      isPublished
+      responseCount
+      createdAt
+      updatedAt
+      organization {
+        id
+        name
+        slug
+      }
+      createdBy {
+        id
+        name
+        email
+      }
+      metadata {
+        pageCount
+        fieldCount
+        lastUpdated
+        backgroundImageKey
+        backgroundImageUrl
+      }
+      dashboardStats {
+        averageCompletionTime
+        responseRate
+        responsesToday
+        responsesThisWeek
+        responsesThisMonth
+      }
+    }
+  }
+`;

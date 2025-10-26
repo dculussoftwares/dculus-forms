@@ -161,6 +161,94 @@ export const enTranslations = {
   'loginForm.loginWithGitHub': 'Login with GitHub',
   'loginForm.noAccountPrompt': "Don't have an account?",
   'loginForm.signUpLink': 'Sign up',
+  // Form Dashboard
+  'formDashboard.breadcrumb.root': 'Dashboard',
+  'formDashboard.breadcrumb.dashboard': 'Forms',
+  'formDashboard.breadcrumb.loading': 'Loading...',
+  'formDashboard.breadcrumb.error': 'Error',
+  'formDashboard.error.title': 'Form Not Found',
+  'formDashboard.error.description':
+    "The form you're looking for doesn't exist or you don't have permission to view it.",
+  'formDashboard.header.statusLive': 'Live',
+  'formDashboard.header.statusDraft': 'Draft',
+  'formDashboard.header.dateUnavailable': 'Date unavailable',
+  'formDashboard.header.descriptionPlaceholder':
+    'Monitor your form performance and responses',
+  'formDashboard.header.publish': 'Publish',
+  'formDashboard.header.publishing': 'Publishing...',
+  'formDashboard.header.unpublish': 'Unpublish',
+  'formDashboard.header.unpublishing': 'Unpublishing...',
+  'formDashboard.header.getLink': 'Get Link',
+  'formDashboard.header.share': 'Share',
+  'formDashboard.header.preview': 'Preview',
+  'formDashboard.header.analytics': 'Analytics',
+  'formDashboard.header.moreActions': 'More actions',
+  'formDashboard.header.delete': 'Delete',
+  'formDashboard.header.deleting': 'Deleting...',
+  'formDashboard.sections.stats.title': 'Performance Overview',
+  'formDashboard.sections.stats.description':
+    "Track your form's key metrics and engagement",
+  'formDashboard.stats.totalResponses.title': 'Total Responses',
+  'formDashboard.stats.totalResponses.subtitle': '+{{count}} from today',
+  'formDashboard.stats.responseRate.title': 'Response Rate',
+  'formDashboard.stats.responseRate.subtitle': 'Views converted to responses',
+  'formDashboard.stats.avgCompletionTime.title': 'Avg. Completion Time',
+  'formDashboard.stats.avgCompletionTime.subtitle': 'Average time to complete',
+  'formDashboard.stats.thisWeek.title': 'This Week',
+  'formDashboard.stats.thisWeek.subtitle': 'Responses this week',
+  'formDashboard.quickActions.sectionTitle': 'Quick Actions',
+  'formDashboard.quickActions.sectionDescription':
+    'Manage your form with powerful tools',
+  'formDashboard.quickActions.collaborate.title': 'Collaborate',
+  'formDashboard.quickActions.collaborate.description':
+    'Real-time collaborative editing',
+  'formDashboard.quickActions.responses.title': 'Responses',
+  'formDashboard.quickActions.responses.description':
+    'View and manage all submissions',
+  'formDashboard.quickActions.analytics.title': 'Analytics',
+  'formDashboard.quickActions.analytics.description':
+    'Detailed insights and reports',
+  'formDashboard.quickActions.plugins.title': 'Plugins',
+  'formDashboard.quickActions.plugins.description':
+    'Enhance with powerful integrations',
+  'formDashboard.quickActions.settings.title': 'Settings',
+  'formDashboard.quickActions.settings.description':
+    'Configure form preferences',
+  'formDashboard.dialogs.delete.title': 'Delete Form',
+  'formDashboard.dialogs.delete.description':
+    'Are you sure you want to delete "{{formTitle}}"? This action cannot be undone and will permanently delete the form and all its responses.',
+  'formDashboard.dialogs.delete.cancel': 'Cancel',
+  'formDashboard.dialogs.delete.confirm': 'Delete Form',
+  'formDashboard.dialogs.delete.deleting': 'Deleting...',
+  'formDashboard.dialogs.unpublish.title': 'Unpublish Form',
+  'formDashboard.dialogs.unpublish.description':
+    'Are you sure you want to unpublish "{{formTitle}}"? This will make the form unavailable to users and stop accepting new responses.',
+  'formDashboard.dialogs.unpublish.cancel': 'Cancel',
+  'formDashboard.dialogs.unpublish.confirm': 'Unpublish Form',
+  'formDashboard.dialogs.unpublish.unpublishing': 'Unpublishing...',
+  'formDashboard.dialogs.collectResponses.title': 'Collect Responses',
+  'formDashboard.dialogs.collectResponses.description':
+    'Share this link to collect responses for "{{formTitle}}"',
+  'formDashboard.dialogs.collectResponses.close': 'Close',
+  'formDashboard.dialogs.collectResponses.openForm': 'Open Form',
+  'formDashboard.toast.deleteSuccess.title': 'Form deleted',
+  'formDashboard.toast.deleteSuccess.description':
+    'The form has been deleted successfully',
+  'formDashboard.toast.deleteError.title': 'Failed to delete form',
+  'formDashboard.toast.deleteError.descriptionFallback':
+    'An error occurred while deleting the form',
+  'formDashboard.toast.publishSuccess.title': 'Form published',
+  'formDashboard.toast.publishSuccess.description':
+    'Your form is now live and ready to collect responses',
+  'formDashboard.toast.unpublishSuccess.title': 'Form unpublished',
+  'formDashboard.toast.unpublishSuccess.description':
+    'Your form is no longer accepting responses',
+  'formDashboard.toast.updateError.title': 'Failed to update form',
+  'formDashboard.toast.updateError.descriptionFallback':
+    'An error occurred while updating the form',
+  'formDashboard.toast.copySuccess.title': 'Copied to clipboard',
+  'formDashboard.toast.copySuccess.description':
+    'Form link has been copied to your clipboard',
 } as const;
 
 export type EnTranslationKey = keyof typeof enTranslations;
