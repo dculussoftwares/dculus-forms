@@ -63,10 +63,98 @@ jest.mock('@dculus/ui-v2', () => {
   );
   Input.displayName = 'InputMock';
 
+  const Anchor = React.forwardRef(
+    ({ children, ...props }: any, ref: React.Ref<HTMLAnchorElement>) =>
+      React.createElement('a', { ...props, ref }, children)
+  );
+  Anchor.displayName = 'AnchorMock';
+
+  const SidebarProvider = ({
+    children,
+    defaultOpen: _defaultOpen,
+    ...props
+  }: any) =>
+    React.createElement(
+      'div',
+      { ...props, 'data-testid': 'sidebar-provider' },
+      children
+    );
+
+  const SidebarInset = ({ children, ...props }: any) =>
+    React.createElement('div', props, children);
+
+  const SidebarTrigger = React.forwardRef(
+    ({ children, ...props }: any, ref: React.Ref<HTMLButtonElement>) =>
+      React.createElement('button', { ...props, ref }, children ?? 'toggle sidebar')
+  );
+  SidebarTrigger.displayName = 'SidebarTriggerMock';
+
+  const Pagination = ({ children, ...props }: any) =>
+    React.createElement('nav', props, children);
+  const PaginationContent = ({ children, ...props }: any) =>
+    React.createElement('div', props, children);
+  const PaginationItem = ({ children, ...props }: any) =>
+    React.createElement('div', props, children);
+  const PaginationLink = ({ children, isActive, ...props }: any) =>
+    React.createElement(
+      'a',
+      { ...props, 'data-active': isActive ? 'true' : 'false' },
+      children
+    );
+  const PaginationPrevious = React.forwardRef(
+    ({ children, ...props }: any, ref: React.Ref<HTMLAnchorElement>) =>
+      React.createElement('a', { ...props, ref }, children ?? 'Prev')
+  );
+  PaginationPrevious.displayName = 'PaginationPreviousMock';
+  const PaginationNext = React.forwardRef(
+    ({ children, ...props }: any, ref: React.Ref<HTMLAnchorElement>) =>
+      React.createElement('a', { ...props, ref }, children ?? 'Next')
+  );
+  PaginationNext.displayName = 'PaginationNextMock';
+  const PaginationEllipsis = (props: any) =>
+    React.createElement('span', { ...props }, '…');
+
+  const Breadcrumb = ({ children, ...props }: any) =>
+    React.createElement('nav', props, children);
+  const BreadcrumbList = ({ children, ...props }: any) =>
+    React.createElement('ol', props, children);
+  const BreadcrumbItem = ({ children, ...props }: any) =>
+    React.createElement('li', props, children);
+  const BreadcrumbLink = ({ children, ...props }: any) =>
+    React.createElement('a', props, children);
+  const BreadcrumbPage = ({ children, ...props }: any) =>
+    React.createElement('span', props, children);
+  const BreadcrumbSeparator = ({ children, ...props }: any) =>
+    React.createElement('span', props, children ?? '/');
+
+  const Skeleton = ({ children, ...props }: any) =>
+    React.createElement('div', { ...props, 'data-testid': 'skeleton' }, children);
+
+  const cn = (...values: any[]) =>
+    values.filter(Boolean).join(' ');
+
   return {
     __esModule: true,
     Button,
     Input,
+    Anchor,
+    SidebarProvider,
+    SidebarInset,
+    SidebarTrigger,
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink,
+    PaginationPrevious,
+    PaginationNext,
+    PaginationEllipsis,
+    Breadcrumb,
+    BreadcrumbList,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
+    Skeleton,
     Card: createElement('div'),
     CardHeader: createElement('div'),
     CardTitle: createElement('h3'),
@@ -82,6 +170,7 @@ jest.mock('@dculus/ui-v2', () => {
         errors.map((error: any) => error?.message).join(', ')
       ),
     Spinner: createElement('div'),
+    cn,
     toast: toastMock,
   };
 });

@@ -31,6 +31,7 @@ module.exports = {
   },
   moduleNameMapper: {
     '^@dculus/(.*)$': '<rootDir>/../../packages/$1/dist',
+    '^@/(.*)$': '<rootDir>/src/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
   moduleFileExtensions: ['js', 'jsx', 'ts', 'tsx', 'json', 'node'],
