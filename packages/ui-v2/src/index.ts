@@ -24,6 +24,18 @@ export {
   CollapsibleContent,
 } from './components/collapsible'
 export {
+  Dialog,
+  DialogPortal,
+  DialogOverlay,
+  DialogTrigger,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from './components/dialog'
+export {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
@@ -55,6 +67,7 @@ export {
 } from './components/alert-dialog'
 export { Badge, badgeVariants } from './components/badge'
 export { Input } from './components/input'
+export { ScrollArea, ScrollBar } from './components/scroll-area'
 export { Label } from './components/label'
 export { Separator } from './components/separator'
 export {

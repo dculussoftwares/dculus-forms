@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AppSidebar } from '@/components/app-sidebar';
 import {
@@ -24,6 +25,7 @@ import {
   StatsGrid,
   UnpublishDialog,
 } from '../components/form-dashboard';
+import { ShareModal } from '../components/form-dashboard/ShareModal';
 import { useFormDashboard } from '../hooks/useFormDashboard';
 import { useTranslate } from '../i18n';
 import { getFormViewerUrl } from '../lib/config';
@@ -32,6 +34,7 @@ export const FormDashboard = () => {
   const t = useTranslate();
   const { formId } = useParams<{ formId: string }>();
   const navigate = useNavigate();
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const {
     form,
@@ -205,6 +208,7 @@ export const FormDashboard = () => {
             onViewAnalytics={() => {
               navigate(`/dashboard/form/${formId}/analytics`);
             }}
+            onShare={() => setShowShareModal(true)}
             updateLoading={updateLoading}
             deleteLoading={deleteLoading}
           />
@@ -250,6 +254,14 @@ export const FormDashboard = () => {
           formTitle={form.title}
           onCopyLink={handleCopyLink}
           onOpenForm={handleOpenFormViewer}
+        />
+
+        <ShareModal
+          open={showShareModal}
+          onOpenChange={setShowShareModal}
+          formId={formId!}
+          formTitle={form.title}
+          shortUrl={form.shortUrl}
         />
       </SidebarInset>
     </SidebarProvider>

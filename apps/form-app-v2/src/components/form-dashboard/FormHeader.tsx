@@ -149,7 +149,7 @@ export const FormHeader = ({
           <Button
             variant="outline"
             onClick={onShare}
-            className="gap-2 border-purple-200 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
+            className="gap-2 border-primary/20 hover:border-primary/40 hover:bg-primary/5"
           >
             <Share2 className="h-4 w-4" />
             {t('formDashboard.header.share')}

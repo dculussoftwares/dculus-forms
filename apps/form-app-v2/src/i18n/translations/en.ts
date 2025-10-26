@@ -249,6 +249,57 @@ export const enTranslations = {
   'formDashboard.toast.copySuccess.title': 'Copied to clipboard',
   'formDashboard.toast.copySuccess.description':
     'Form link has been copied to your clipboard',
+  // Share Modal
+  'shareModal.title': 'Share Form',
+  'shareModal.description': 'Manage access and permissions for "{{formTitle}}"',
+  'shareModal.linkSection.label': 'Form Link',
+  'shareModal.linkSection.copyButton': 'Copy',
+  'shareModal.linkSection.copiedButton': 'Copied',
+  'shareModal.scopeSection.label': 'Who has access',
+  'shareModal.scopeSection.private.title': 'Private',
+  'shareModal.scopeSection.private.description':
+    'Only people with access can view',
+  'shareModal.scopeSection.specific.title': 'Specific Members',
+  'shareModal.scopeSection.specific.description':
+    'Only invited members can access',
+  'shareModal.scopeSection.allOrg.title': 'All Organization Members',
+  'shareModal.scopeSection.allOrg.description':
+    'Everyone in your organization can access',
+  'shareModal.defaultPermission.label': 'Default Permission',
+  'shareModal.permissions.owner': 'Owner',
+  'shareModal.permissions.editor': 'Editor',
+  'shareModal.permissions.viewer': 'Viewer',
+  'shareModal.addMembers.label': 'Add Members',
+  'shareModal.addMembers.placeholder': 'Search members by email...',
+  'shareModal.addMembers.selectPermission': 'Select role',
+  'shareModal.addMembers.toBeAdded': 'To be added:',
+  'shareModal.addMembers.noResults': 'No members found',
+  'shareModal.currentAccess.label': 'People with Access',
+  'shareModal.currentAccess.youBadge': 'You',
+  'shareModal.toast.updateSuccess.title': 'Sharing settings updated',
+  'shareModal.toast.updateSuccess.description':
+    'Form sharing settings have been updated successfully',
+  'shareModal.toast.updateError.title': 'Failed to update sharing settings',
+  'shareModal.toast.updateError.descriptionFallback':
+    'An error occurred while updating sharing settings',
+  'shareModal.toast.permissionUpdated.title': 'Permission updated',
+  'shareModal.toast.permissionUpdated.description':
+    'User permission has been updated successfully',
+  'shareModal.toast.permissionError.title': 'Failed to update permission',
+  'shareModal.toast.permissionError.descriptionFallback':
+    'An error occurred while updating permission',
+  'shareModal.toast.accessRemoved.title': 'Access removed',
+  'shareModal.toast.accessRemoved.description':
+    'User access has been removed successfully',
+  'shareModal.toast.removeError.title': 'Failed to remove access',
+  'shareModal.toast.removeError.descriptionFallback':
+    'An error occurred while removing access',
+  'shareModal.toast.linkCopied.title': 'Link copied',
+  'shareModal.toast.linkCopied.description':
+    'Form link has been copied to your clipboard',
+  'shareModal.footer.cancel': 'Cancel',
+  'shareModal.footer.share': 'Share',
+  'shareModal.footer.sharing': 'Sharing...',
 } as const;
 
 export type EnTranslationKey = keyof typeof enTranslations;
