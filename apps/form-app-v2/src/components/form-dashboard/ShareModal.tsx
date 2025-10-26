@@ -26,7 +26,6 @@ import {
   CardContent,
 } from '@dculus/ui-v2';
 import {
-  Link,
   Search,
   X,
   Users,

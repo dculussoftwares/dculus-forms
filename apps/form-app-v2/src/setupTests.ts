@@ -44,7 +44,7 @@ const toastMock = jest.fn();
 
 // Mock @dculus/ui-v2 primitives used across tests with lightweight HTML elements
 jest.mock('@dculus/ui-v2', () => {
-  const React = require('react');
+  const React = require('react') as typeof import('react');
 
   const createElement =
     (tag: string) =>
@@ -133,6 +133,114 @@ jest.mock('@dculus/ui-v2', () => {
   const cn = (...values: any[]) =>
     values.filter(Boolean).join(' ');
 
+  const SelectContext = React.createContext<{
+    onValueChange?: (value: string) => void;
+  } | null>(null);
+
+  const Select = ({
+    children,
+    onValueChange,
+  }: {
+    children: React.ReactNode;
+    onValueChange?: (value: string) => void;
+  }) =>
+    React.createElement(
+      SelectContext.Provider,
+      { value: { onValueChange } },
+      children,
+    );
+
+  const SelectTrigger = React.forwardRef(
+    ({ children, ...props }: any, ref: React.Ref<HTMLButtonElement>) =>
+      React.createElement(
+        'button',
+        { type: 'button', ...props, ref },
+        children,
+      ),
+  );
+  SelectTrigger.displayName = 'SelectTriggerMock';
+
+  const SelectContent = ({ children, ...props }: any) =>
+    React.createElement('div', { ...props, 'data-testid': 'select-content' }, children);
+
+  const SelectItem = ({
+    children,
+    value,
+    onSelect,
+    ...props
+  }: {
+    children: React.ReactNode;
+    value: string;
+    onSelect?: (value: string) => void;
+  }) => {
+    const ctx = React.useContext(SelectContext);
+    const handleClick = () => {
+      ctx?.onValueChange?.(value);
+      onSelect?.(value);
+    };
+    return React.createElement(
+      'button',
+      { type: 'button', ...props, onClick: handleClick },
+      children,
+    );
+  };
+
+  const SelectValue = ({ children, ...props }: any) =>
+    React.createElement('span', props, children);
+
+  const Dialog = ({ open, children, onOpenChange: _onOpenChange, ...props }: any) =>
+    open ? React.createElement('div', props, children) : null;
+  const DialogContent = ({ children, ...props }: any) =>
+    React.createElement('div', props, children);
+  const DialogHeader = ({ children, ...props }: any) =>
+    React.createElement('div', props, children);
+  const DialogTitle = ({ children, ...props }: any) =>
+    React.createElement('h3', props, children);
+  const DialogDescription = ({ children, ...props }: any) =>
+    React.createElement('p', props, children);
+  const DialogFooter = ({ children, ...props }: any) =>
+    React.createElement('div', props, children);
+
+  const AlertDialog = ({ open, children, onOpenChange: _onOpenChange }: any) =>
+    open ? React.createElement(React.Fragment, null, children) : null;
+  const AlertDialogContent = ({ children, ...props }: any) =>
+    React.createElement('div', props, children);
+  const AlertDialogHeader = ({ children, ...props }: any) =>
+    React.createElement('div', props, children);
+  const AlertDialogTitle = ({ children, ...props }: any) =>
+    React.createElement('h3', props, children);
+  const AlertDialogDescription = ({ children, ...props }: any) =>
+    React.createElement('p', props, children);
+  const AlertDialogFooter = ({ children, ...props }: any) =>
+    React.createElement('div', props, children);
+  const AlertDialogCancel = Button;
+  const AlertDialogAction = Button;
+
+  const DropdownMenu = ({ children, ...props }: any) =>
+    React.createElement('div', props, children);
+  const DropdownMenuTrigger = ({ children }: any) =>
+    React.createElement(React.Fragment, null, children);
+  const DropdownMenuContent = ({ children, ...props }: any) =>
+    React.createElement('div', props, children);
+  const DropdownMenuItem = React.forwardRef(
+    ({ children, ...props }: any, ref: React.Ref<HTMLButtonElement>) =>
+      React.createElement('button', { type: 'button', ...props, ref }, children),
+  );
+  DropdownMenuItem.displayName = 'DropdownMenuItemMock';
+
+  const ScrollArea = ({ children, ...props }: any) =>
+    React.createElement('div', props, children);
+  const Avatar = ({ children, ...props }: any) =>
+    React.createElement('div', props, children);
+  const AvatarImage = (props: any) =>
+    React.createElement('img', { alt: '', ...props });
+  const AvatarFallback = ({ children, ...props }: any) =>
+    React.createElement('div', props, children);
+  const Label = ({ children, ...props }: any) =>
+    React.createElement('label', props, children);
+  const Badge = ({ children, ...props }: any) =>
+    React.createElement('span', props, children);
+
   return {
     __esModule: true,
     Button,
@@ -155,6 +263,35 @@ jest.mock('@dculus/ui-v2', () => {
     BreadcrumbPage,
     BreadcrumbSeparator,
     Skeleton,
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogCancel,
+    AlertDialogAction,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+    Select,
+    SelectTrigger,
+    SelectContent,
+    SelectItem,
+    SelectValue,
+    ScrollArea,
+    Avatar,
+    AvatarImage,
+    AvatarFallback,
+    Badge,
+    Label,
     Card: createElement('div'),
     CardHeader: createElement('div'),
     CardTitle: createElement('h3'),
