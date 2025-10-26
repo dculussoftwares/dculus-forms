@@ -12,23 +12,17 @@ module.exports = {
       'ts-jest',
       {
         tsconfig: '<rootDir>/tsconfig.test.json',
+        useESM: true,
       },
     ],
   },
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
-  // collectCoverageFrom: ['src/pages/SignIn.tsx'],
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
     '!src/main.tsx',
     '!src/vite-env.d.ts',
   ],
-  globals: {
-    'ts-jest': {
-      tsconfig: '<rootDir>/tsconfig.app.json',
-      useESM: true,
-    },
-  },
   moduleNameMapper: {
     '^@dculus/(.*)$': '<rootDir>/../../packages/$1/dist',
     '^@/(.*)$': '<rootDir>/src/$1',

@@ -175,6 +175,19 @@ jest.mock('@dculus/ui-v2', () => {
   };
 });
 
+// Suppress console warnings from Apollo MockedProvider for unmocked queries in tests
+const originalConsoleWarn = console.warn;
+beforeEach(() => {
+  console.warn = jest.fn((message: string, ...args: unknown[]) => {
+    // Suppress Apollo MockedProvider warnings about missing mocks
+    if (typeof message === 'string' && message.includes('No more mocked responses')) {
+      return;
+    }
+    originalConsoleWarn(message, ...args);
+  });
+});
+
 afterEach(() => {
   toastMock.mockClear();
+  console.warn = originalConsoleWarn;
 });
