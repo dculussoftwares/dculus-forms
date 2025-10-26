@@ -100,7 +100,7 @@ export const FormCard = ({
             </span>
           )}
         </div>
-        <div className="absolute top-3 right-3 flex gap-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+        <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
           <Button
             variant="secondary"
             size="icon"
