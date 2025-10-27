@@ -45,6 +45,24 @@ export function getGraphQLUrl(): string {
 }
 
 /**
+ * Get the WebSocket collaboration URL
+ */
+export function getWebSocketUrl(): string {
+  const baseUrl = getApiBaseUrl();
+  // Convert http to ws protocol
+  const wsUrl = baseUrl.replace(/^https?:/, baseUrl.startsWith('https:') ? 'wss:' : 'ws:');
+  return `${wsUrl}/collaboration`;
+}
+
+/**
+ * Get the CDN endpoint for images
+ */
+export function getCdnEndpoint(): string {
+  const env = resolveEnv();
+  return env.VITE_CDN_ENDPOINT || '';
+}
+
+/**
  * Get the public form viewer URL for a given short code.
  * Falls back to the local viewer server when not configured.
  */
