@@ -55,14 +55,3 @@ export function getFormViewerUrl(shortUrl: string): string {
   const sanitizedShortUrl = shortUrl.replace(/^\/+/, '');
   return `${normalizedBase}/f/${sanitizedShortUrl}`;
 }
-
-/**
- * Get the WebSocket collaboration URL
- * Converts http(s) to ws(s) and appends /collaboration path
- */
-export function getWebSocketUrl(): string {
-  const baseUrl = getApiBaseUrl();
-  // Convert http to ws protocol
-  const wsUrl = baseUrl.replace(/^https?:/, baseUrl.startsWith('https:') ? 'wss:' : 'ws:');
-  return `${wsUrl}/collaboration`;
-}
