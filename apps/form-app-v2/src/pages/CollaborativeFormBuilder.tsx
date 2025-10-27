@@ -20,6 +20,7 @@ import { useFormBuilderStore } from '@/store/useFormBuilderStore';
 import { FormPermissionProvider, type PermissionLevel } from '@/contexts/FormPermissionContext';
 import { GET_FORM_BY_ID } from '@/graphql/formBuilder';
 import { Card } from '@dculus/ui-v2';
+import { LayoutTab } from '@/components/collaborative-builder/layout';
 
 type BuilderTab = 'layout' | 'page-builder' | 'preview' | 'settings';
 const VALID_TABS: readonly BuilderTab[] = ['layout', 'page-builder', 'preview', 'settings'] as const;
@@ -164,29 +165,35 @@ const CollaborativeFormBuilder: React.FC = () => {
           </header>
 
           {/* Tab Content */}
-          <main className="container mx-auto px-4 py-6">
-            <Card className="p-6">
-              <div className="text-center space-y-4">
-                <h2 className="text-xl font-semibold">Active Tab: {activeTab}</h2>
-                <p className="text-muted-foreground">
-                  Form ID: {formId}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Pages loaded: {pages.length}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Your permission: {userPermission}
-                </p>
-                <div className="mt-6">
-                  <p className="text-sm text-muted-foreground">
-                    Phase 1 Complete! 🎉
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Foundation is ready. Next: Implement tab components in Phase 2-6.
-                  </p>
-                </div>
+          <main className="h-[calc(100vh-180px)]">
+            {activeTab === 'layout' && <LayoutTab />}
+            
+            {activeTab !== 'layout' && (
+              <div className="container mx-auto px-4 py-6 h-full flex items-center justify-center">
+                <Card className="p-6 max-w-2xl w-full">
+                  <div className="text-center space-y-4">
+                    <h2 className="text-xl font-semibold">Active Tab: {activeTab}</h2>
+                    <p className="text-muted-foreground">
+                      Form ID: {formId}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Pages loaded: {pages.length}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Your permission: {userPermission}
+                    </p>
+                    <div className="mt-6">
+                      <p className="text-sm text-muted-foreground">
+                        Phase 2 In Progress! 🎉
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Layout Tab implemented. Next: Page Builder, Preview, Settings tabs.
+                      </p>
+                    </div>
+                  </div>
+                </Card>
               </div>
-            </Card>
+            )}
           </main>
 
           {/* Tab Navigation (Placeholder) */}

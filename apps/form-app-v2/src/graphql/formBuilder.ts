@@ -47,10 +47,27 @@ export const UPDATE_FORM_TITLE = gql`
  * Used to toggle form visibility to respondents
  */
 export const TOGGLE_FORM_PUBLISH = gql`
-  mutation ToggleFormPublish($id: ID!, $isPublished: Boolean!) {
-    updateForm(id: $id, input: { isPublished: $isPublished }) {
+  mutation ToggleFormPublish($id: ID!) {
+    toggleFormPublish(id: $id) {
       id
       isPublished
+      publishedAt
+    }
+  }
+`;
+
+export const GET_FORM_FILES = gql`
+  query GetFormFiles($formId: ID!, $type: String) {
+    getFormFiles(formId: $formId, type: $type) {
+      id
+      key
+      type
+      formId
+      originalName
+      url
+      size
+      mimeType
+      createdAt
       updatedAt
     }
   }
