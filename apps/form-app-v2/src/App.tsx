@@ -3,7 +3,6 @@ import { SignIn } from './pages/SignIn';
 import { SignUp } from './pages/SignUp';
 import { Dashboard } from './pages/Dashboard';
 import { FormDashboard } from './pages/FormDashboard';
-import CollaborativeFormBuilder from './pages/CollaborativeFormBuilder';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
@@ -35,14 +34,6 @@ function App() {
         element={
           <ProtectedRoute>
             <FormDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/form/:formId/collaborate/:tab"
-        element={
-          <ProtectedRoute>
-            <CollaborativeFormBuilder />
           </ProtectedRoute>
         }
       />

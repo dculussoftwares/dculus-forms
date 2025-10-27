@@ -582,30 +582,9 @@ importers:
       '@apollo/client':
         specifier: ^3.13.8
         version: 3.13.9(@types/react@18.3.23)(graphql@16.11.0)(react-dom@18.3.1)(react@18.3.1)
-      '@dculus/types':
-        specifier: workspace:*
-        version: link:../../packages/types
-      '@dculus/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@dculus/ui-v2':
         specifier: workspace:*
         version: link:../../packages/ui-v2
-      '@dculus/utils':
-        specifier: workspace:*
-        version: link:../../packages/utils
-      '@dnd-kit/core':
-        specifier: ^6.1.0
-        version: 6.3.1(react-dom@18.3.1)(react@18.3.1)
-      '@dnd-kit/sortable':
-        specifier: ^8.0.0
-        version: 8.0.0(@dnd-kit/core@6.3.1)(react@18.3.1)
-      '@dnd-kit/utilities':
-        specifier: ^3.2.2
-        version: 3.2.2(react@18.3.1)
-      '@hocuspocus/provider':
-        specifier: ^2.13.5
-        version: 2.15.3(y-protocols@1.0.6)(yjs@13.6.27)
       '@hookform/resolvers':
         specifier: 5.2.2
         version: 5.2.2(react-hook-form@7.62.0)
@@ -630,15 +609,9 @@ importers:
       react-router-dom:
         specifier: 7.9.4
         version: 7.9.4(react-dom@18.3.1)(react@18.3.1)
-      yjs:
-        specifier: ^13.6.18
-        version: 13.6.27
       zod:
         specifier: 4.1.12
         version: 4.1.12
-      zustand:
-        specifier: ^5.0.2
-        version: 5.0.7(@types/react@18.3.23)(react@18.3.1)
     devDependencies:
       '@eslint/js':
         specifier: ^9.36.0
@@ -3468,18 +3441,6 @@ packages:
       tslib: 2.8.1
     dev: false
 
-  /@dnd-kit/sortable@8.0.0(@dnd-kit/core@6.3.1)(react@18.3.1):
-    resolution: {integrity: sha512-U3jk5ebVXe1Lr7c2wU7SBZjcWdQP+j7peHJfCspnA81enlu88Mgd7CC8Q+pub9ubP7eKVETzJW+IBAhsqbSu/g==}
-    peerDependencies:
-      '@dnd-kit/core': ^6.1.0
-      react: ^18.3.0
-    dependencies:
-      '@dnd-kit/core': 6.3.1(react-dom@18.3.1)(react@18.3.1)
-      '@dnd-kit/utilities': 3.2.2(react@18.3.1)
-      react: 18.3.1
-      tslib: 2.8.1
-    dev: false
-
   /@dnd-kit/utilities@3.2.2(react@18.3.1):
     resolution: {integrity: sha512-+MKAJEOfaBe5SmV6t34p80MMKhjvUz0vRrvVJbPT0WElzaOJ/1xs+D+KDv+tD/NE5ujfrChEcshd4fLn0wpiqg==}
     peerDependencies:
@@ -4231,12 +4192,6 @@ packages:
   /@hexagon/base64@1.1.28:
     resolution: {integrity: sha512-lhqDEAvWixy3bZ+UOYbPwUbBkwBq5C1LAJ/xPC8Oi+lL54oyakv/npbA0aU2hgCsx/1NUd4IBvV03+aUBWxerw==}
 
-  /@hocuspocus/common@2.15.3:
-    resolution: {integrity: sha512-Rzh1HF0a2o/tf90A3w2XNdXd9Ym3aQzMDfD3lAUONCX9B9QOdqdyiORrj6M25QEaJrEIbXFy8LtAFcL0wRdWzA==}
-    dependencies:
-      lib0: 0.2.114
-    dev: false
-
   /@hocuspocus/common@3.2.3:
     resolution: {integrity: sha512-P8COsx2HVXS7NbDEKe9KSt5Hd1A95hZhyTabiNPlU/Pi+7K1RJuHqIkIRr4oIxGzujvpLq/LSwBHP4NYUk+cGA==}
     dependencies:
@@ -4254,23 +4209,6 @@ packages:
       - bufferutil
       - utf-8-validate
       - y-protocols
-    dev: false
-
-  /@hocuspocus/provider@2.15.3(y-protocols@1.0.6)(yjs@13.6.27):
-    resolution: {integrity: sha512-oadN05m+KL4ylNKVo5YspNG4MXkT2Y+FUFzrgigpQeTjQibkPUwCNmUnkUxMgrGRgxb+O0lJCfirFIJMxedctA==}
-    peerDependencies:
-      y-protocols: ^1.0.6
-      yjs: ^13.6.8
-    dependencies:
-      '@hocuspocus/common': 2.15.3
-      '@lifeomic/attempt': 3.1.0
-      lib0: 0.2.114
-      ws: 8.18.3
-      y-protocols: 1.0.6(yjs@13.6.27)
-      yjs: 13.6.27
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
     dev: false
 
   /@hocuspocus/provider@3.2.3(y-protocols@1.0.6)(yjs@13.6.27):
