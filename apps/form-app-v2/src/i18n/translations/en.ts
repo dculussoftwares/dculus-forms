@@ -295,6 +295,8 @@ export const enTranslations = {
   'collaborate.settings.title': 'Collaboration settings coming soon',
   'collaborate.settings.description':
     'Advanced collaboration controls for "{{title}}" will arrive shortly.',
+  'collaborate.footer.collaborators': '{{count}} collaborators',
+  'collaborate.footer.collaborator': '{{count}} collaborator',
   // Share Modal
   'shareModal.title': 'Share Form',
   'shareModal.description': 'Manage access and permissions for "{{formTitle}}"',

@@ -4,37 +4,30 @@ import { useQuery } from '@apollo/client';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import {
   Badge,
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
   Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  Separator,
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
   Spinner,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
 } from '@dculus/ui-v2';
-import { AppSidebar } from '@/components/app-sidebar';
 import { FormPermissionProvider, type PermissionLevel } from '@/contexts/FormPermissionContext';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useFormBuilderStore } from '@/store/useFormBuilderStore';
-import { LayoutTab, PageBuilderTab, PreviewTab, SettingsTab } from '@/components/collaborate/tabs';
+import {
+  LayoutTab,
+  PageBuilderTab,
+  PreviewTab,
+  SettingsTab,
+} from '@/components/collaborate/tabs';
+import {
+  TabKeyboardShortcuts,
+  TabNavigation,
+  type BuilderTab,
+} from '@/components/collaborate/TabNavigation';
 import { GET_FORM_BY_ID } from '@/graphql/queries';
 import { useTranslate } from '@/i18n';
 import { getFormViewerUrl } from '@/lib/config';
-
-type BuilderTab = 'layout' | 'page-builder' | 'preview' | 'settings';
 
 const VALID_TABS: BuilderTab[] = ['layout', 'page-builder', 'preview', 'settings'];
 const DEFAULT_TAB: BuilderTab = 'page-builder';
@@ -124,10 +117,10 @@ export const CollaborativeFormBuilder = () => {
   const userPermission: PermissionLevel = (form?.userPermission as PermissionLevel) ?? 'VIEWER';
 
   const handleTabChange = useCallback(
-    (nextTab: string) => {
+    (nextTab: BuilderTab) => {
       if (!formId) return;
-      const target = VALID_TABS.includes(nextTab as BuilderTab) ? nextTab : DEFAULT_TAB;
-      navigate(`/dashboard/form/${formId}/collaborate/${target}`, { replace: true });
+      const target = VALID_TABS.includes(nextTab) ? nextTab : DEFAULT_TAB;
+      navigate(`/dashboard/form/${formId}/collaborate/${target}`);
     },
     [formId, navigate],
   );
@@ -175,12 +168,9 @@ export const CollaborativeFormBuilder = () => {
 
   if (formLoading || isLoading) {
     return (
-      <SidebarProvider defaultOpen={false}>
-        <AppSidebar />
-        <SidebarInset className="flex flex-1 flex-col">
-          <LoadingView />
-        </SidebarInset>
-      </SidebarProvider>
+      <div className="flex min-h-screen flex-col bg-gradient-to-br from-slate-50 via-background to-blue-50/50">
+        <LoadingView />
+      </div>
     );
   }
 
@@ -192,34 +182,41 @@ export const CollaborativeFormBuilder = () => {
 
   return (
     <FormPermissionProvider userPermission={userPermission}>
-      <SidebarProvider defaultOpen={false}>
-        <AppSidebar />
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background/80 backdrop-blur">
-            <div className="flex flex-1 items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator orientation="vertical" className="mr-2 h-6" />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="/">
-                      {t('collaborate.breadcrumb.root')}
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem className="hidden sm:block">
-                    <BreadcrumbLink href="/dashboard">
-                      {t('collaborate.breadcrumb.dashboard')}
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden sm:block" />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>{form.title}</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
+      <div className="relative flex min-h-screen flex-col bg-gradient-to-br from-slate-50 via-background to-blue-50/50 dark:from-slate-900 dark:via-background dark:to-blue-950/40">
+        <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur">
+          <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+            <div className="flex flex-1 items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBack}
+                className="shrink-0"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                {t('collaborate.header.back')}
+              </Button>
+              <div className="min-w-0">
+                <h1 className="truncate text-xl font-semibold sm:text-2xl">
+                  {form.title || t('collaborate.header.titleFallback')}
+                </h1>
+                <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                  {form.description
+                    ? form.description
+                    : t('collaborate.header.subtitle')}
+                </p>
+              </div>
             </div>
-            <div className="hidden items-center gap-2 pr-4 sm:flex">
+            <div className="flex shrink-0 items-center gap-2">
+              {user?.name ? (
+                <Badge variant="outline" className="hidden sm:inline-flex">
+                  {user.name}
+                </Badge>
+              ) : null}
+              <Badge variant={form.isPublished ? 'default' : 'secondary'}>
+                {form.isPublished
+                  ? t('collaborate.header.statusLive')
+                  : t('collaborate.header.statusDraft')}
+              </Badge>
               <Badge variant="outline">
                 {t('collaborate.header.permissionBadge', { level: userPermission })}
               </Badge>
@@ -228,98 +225,43 @@ export const CollaborativeFormBuilder = () => {
                   ? t('collaborate.status.connected')
                   : t('collaborate.status.connecting')}
               </Badge>
-              <Button variant="ghost" size="sm" onClick={handleBack}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                {t('collaborate.header.back')}
-              </Button>
             </div>
-          </header>
-
-          <div className="flex flex-1 flex-col overflow-hidden bg-gradient-to-br from-muted/30 via-background to-muted/20">
-            <div className="px-4 py-6 sm:px-6 lg:px-8">
-              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h1 className="text-2xl font-semibold tracking-tight">
-                    {form.title || t('collaborate.header.titleFallback')}
-                  </h1>
-                  <p className="text-sm text-muted-foreground">
-                    {form.description
-                      ? form.description
-                      : t('collaborate.header.subtitle')}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={form.isPublished ? 'default' : 'secondary'}>
-                    {form.isPublished
-                      ? t('collaborate.header.statusLive')
-                      : t('collaborate.header.statusDraft')}
-                  </Badge>
-                  {user?.name ? (
-                    <Badge variant="outline">{user.name}</Badge>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-
-            <Tabs value={activeTab} onValueChange={handleTabChange} className="flex flex-1 flex-col">
-              <div className="sticky top-16 z-10 border-b border-border/60 bg-background/90 backdrop-blur">
-                <div className="px-4 sm:px-6 lg:px-8">
-                  <TabsList className="h-12 justify-start gap-2 overflow-x-auto">
-                    <TabsTrigger value="layout">
-                      {t('collaborate.tabs.layout')}
-                    </TabsTrigger>
-                    <TabsTrigger value="page-builder">
-                      {t('collaborate.tabs.pageBuilder')}
-                    </TabsTrigger>
-                    <TabsTrigger value="preview">
-                      {t('collaborate.tabs.preview')}
-                    </TabsTrigger>
-                    <TabsTrigger value="settings">
-                      {t('collaborate.tabs.settings')}
-                    </TabsTrigger>
-                  </TabsList>
-                </div>
-              </div>
-
-              <TabsContent
-                value="layout"
-                className="flex-1 overflow-hidden px-4 py-6 sm:px-6 lg:px-8"
-              >
-                <LayoutTab
-                  pages={pages}
-                  isConnected={isConnected}
-                  selectedPageId={selectedPageId}
-                  onSelectPage={(pageId) => {
-                    setSelectedPage(pageId);
-                    setSelectedField(null);
-                  }}
-                />
-              </TabsContent>
-
-              <TabsContent
-                value="page-builder"
-                className="flex-1 overflow-hidden px-4 py-6 sm:px-6 lg:px-8"
-              >
-                <PageBuilderTab isConnected={isConnected} />
-              </TabsContent>
-
-              <TabsContent
-                value="preview"
-                className="flex-1 overflow-hidden px-4 py-6 sm:px-6 lg:px-8"
-              >
-                <PreviewTab viewerUrl={viewerUrl} shortUrl={form.shortUrl ?? null} />
-              </TabsContent>
-
-              <TabsContent
-                value="settings"
-                className="flex-1 overflow-hidden px-4 py-6 sm:px-6 lg:px-8"
-              >
-                <SettingsTab formTitle={form.title} />
-              </TabsContent>
-            </Tabs>
           </div>
-        </SidebarInset>
-      </SidebarProvider>
+        </header>
+
+        <main className="relative flex-1 overflow-y-auto">
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 pb-32 sm:px-6 lg:px-8">
+            {activeTab === 'layout' ? (
+              <LayoutTab
+                pages={pages}
+                isConnected={isConnected}
+                selectedPageId={selectedPageId}
+                onSelectPage={(pageId) => {
+                  setSelectedPage(pageId);
+                  setSelectedField(null);
+                }}
+              />
+            ) : null}
+
+            {activeTab === 'page-builder' ? (
+              <PageBuilderTab isConnected={isConnected} />
+            ) : null}
+
+            {activeTab === 'preview' ? (
+              <PreviewTab viewerUrl={viewerUrl} shortUrl={form.shortUrl ?? null} />
+            ) : null}
+
+            {activeTab === 'settings' ? <SettingsTab formTitle={form.title} /> : null}
+          </div>
+        </main>
+
+        <TabNavigation
+          activeTab={activeTab}
+          isConnected={isConnected}
+          collaboratorCount={0}
+        />
+        <TabKeyboardShortcuts onTabChange={handleTabChange} />
+      </div>
     </FormPermissionProvider>
   );
 };
