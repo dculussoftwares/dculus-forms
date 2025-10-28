@@ -73,21 +73,46 @@ export {
 export { Separator } from "./separator"
 export {
   Sidebar,
-  SidebarProvider,
-  SidebarInset,
-  SidebarTrigger,
-  SidebarHeader,
   SidebarContent,
   SidebarFooter,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarMenuAction,
   SidebarGroup,
-  SidebarGroupLabel,
+  SidebarGroupAction,
   SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInput,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuAction,
+  SidebarMenuBadge,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSkeleton,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  SidebarProvider,
+  SidebarRail,
+  SidebarSeparator,
+  SidebarTrigger,
   useSidebar,
 } from "./sidebar"
+export { Collapsible, CollapsibleTrigger, CollapsibleContent } from "./components/collapsible"
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "./components/tooltip"
+export {
+  Sheet,
+  SheetPortal,
+  SheetOverlay,
+  SheetTrigger,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetFooter,
+  SheetTitle,
+  SheetDescription,
+} from "./components/sheet"
+export { Skeleton } from "./skeleton"
+export { useIsMobile } from "./hooks/use-mobile"
 export {
   TypographyH1,
   TypographyH2,
