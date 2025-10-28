@@ -3,11 +3,9 @@ import { devtools, subscribeWithSelector } from 'zustand/middleware';
 import * as Y from 'yjs';
 import { HocuspocusProvider } from '@hocuspocus/provider';
 import { getWebSocketUrl } from '../lib/config';
-import { 
+import {
   FieldType,
   FormField,
-  FormPage,
-  FormLayout,
   TextInputField,
   TextAreaField,
   EmailField,
@@ -24,9 +22,9 @@ import {
   deserializeFormField,
   ThemeType,
   SpacingType,
-  LayoutCode,
-  PageModeType
+  PageModeType,
 } from '@dculus/types';
+import type { FormPage, FormLayout, LayoutCode } from '@dculus/types';
 
 type FieldData = {
   id: string;
