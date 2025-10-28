@@ -159,7 +159,6 @@ export const GET_FORM_BY_ID = gql`
         responsesThisWeek
         responsesThisMonth
       }
-      userPermission
     }
   }
 `;

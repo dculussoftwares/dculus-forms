@@ -249,52 +249,6 @@ export const enTranslations = {
   'formDashboard.toast.copySuccess.title': 'Copied to clipboard',
   'formDashboard.toast.copySuccess.description':
     'Form link has been copied to your clipboard',
-  // Collaborative Builder
-  'collaborate.breadcrumb.root': 'Home',
-  'collaborate.breadcrumb.dashboard': 'Forms',
-  'collaborate.tabs.layout': 'Layout',
-  'collaborate.tabs.pageBuilder': 'Page Builder',
-  'collaborate.tabs.preview': 'Preview',
-  'collaborate.tabs.settings': 'Settings',
-  'collaborate.status.connected': 'Collaboration live',
-  'collaborate.status.connecting': 'Connecting...',
-  'collaborate.loading.title': 'Preparing collaborative workspace...',
-  'collaborate.loading.subtitle': 'Syncing form pages and real-time sessions.',
-  'collaborate.error.title': 'Unable to open form',
-  'collaborate.error.generic': 'Something went wrong while loading the form.',
-  'collaborate.error.notFound': "We can't find this form or you lack access.",
-  'collaborate.error.missingFormId':
-    'Missing form reference. Try navigating from the dashboard.',
-  'collaborate.header.permissionBadge': 'Role: {{level}}',
-  'collaborate.header.back': 'Return to dashboard',
-  'collaborate.header.titleFallback': 'Untitled form',
-  'collaborate.header.subtitle':
-    'Collaborate with your team to design and publish your form.',
-  'collaborate.header.statusLive': 'Live',
-  'collaborate.header.statusDraft': 'Draft',
-  'collaborate.layout.title': 'Form structure overview',
-  'collaborate.layout.description':
-    'Understand how pages are organized before diving into granular edits.',
-  'collaborate.layout.structureTitle': 'Pages',
-  'collaborate.layout.structureDescription':
-    'Select a page to focus on. Reordering and editing will arrive in the next step.',
-  'collaborate.layout.emptyState':
-    'Your collaborative document is ready. Add the first page to get started.',
-  'collaborate.layout.pageCount': '{{count}} pages',
-  'collaborate.layout.untitledPage': 'Untitled page {{index}}',
-  'collaborate.layout.fieldCount': '{{count}} fields',
-  'collaborate.pageBuilder.placeholderTitle': 'Page builder coming soon',
-  'collaborate.pageBuilder.placeholderDescription':
-    'The interactive drag-and-drop builder is on its way. Layout data is already syncing in real time.',
-  'collaborate.preview.title': 'Preview your form',
-  'collaborate.preview.description':
-    'Open the live form viewer to validate the experience with collaborators.',
-  'collaborate.preview.emptyDescription':
-    'Publish the form or generate a short link to enable live previews.',
-  'collaborate.preview.openButton': 'Open form preview',
-  'collaborate.settings.title': 'Collaboration settings coming soon',
-  'collaborate.settings.description':
-    'Advanced collaboration controls for "{{title}}" will arrive shortly.',
   // Share Modal
   'shareModal.title': 'Share Form',
   'shareModal.description': 'Manage access and permissions for "{{formTitle}}"',

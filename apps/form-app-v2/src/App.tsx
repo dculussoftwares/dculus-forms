@@ -1,9 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { SignIn } from './pages/SignIn';
 import { SignUp } from './pages/SignUp';
-import { FormDashboard } from './pages/FormDashboard';
 import { Dashboard } from './pages/Dashboard';
-import { CollaborativeFormBuilder } from './pages/CollaborativeFormBuilder';
+import { FormDashboard } from './pages/FormDashboard';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
@@ -35,14 +34,6 @@ function App() {
         element={
           <ProtectedRoute>
             <FormDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/form/:formId/collaborate/:tab?"
-        element={
-          <ProtectedRoute>
-            <CollaborativeFormBuilder />
           </ProtectedRoute>
         }
       />
