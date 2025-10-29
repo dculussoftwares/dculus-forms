@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Tabs, TabsContent, TabsList, TabsTrigger, Alert, AlertDescription, toastError } from '@dculus/ui';
 import { Users, UserPlus, Settings as SettingsIcon, AlertTriangle, CreditCard } from 'lucide-react';
@@ -8,6 +8,7 @@ import { InvitationsList } from './InvitationsList';
 import { InviteUserDialog } from './InviteUserDialog';
 import { SubscriptionDashboard } from '../subscription/SubscriptionDashboard';
 import { organization } from '../../lib/auth-client';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface OrganizationSettingsProps {
   initialTab?: string;
@@ -35,8 +36,9 @@ export const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ init
       name: string;
     };
   }>>([]);
+  const { t } = useTranslation('settings');
 
-  const fetchInvitations = async () => {
+  const fetchInvitations = useCallback(async () => {
     if (!activeOrganization?.id) return;
     
     try {
@@ -74,16 +76,16 @@ export const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ init
 
       // Show user-friendly error for authorization failures
       if (error?.message?.includes('Access denied') || error?.message?.includes('not a member')) {
-        toastError('Access Denied', 'You do not have permission to view organization invitations');
+        toastError(t('toasts.accessDenied.title'), t('toasts.accessDenied.description'));
       } else if (error?.message?.includes('Authentication required')) {
-        toastError('Authentication Required', 'Please sign in to view invitations');
+        toastError(t('toasts.authRequired.title'), t('toasts.authRequired.description'));
       }
     }
-  };
+  }, [activeOrganization?.id, t]);
 
   useEffect(() => {
     fetchInvitations();
-  }, [activeOrganization?.id]);
+  }, [fetchInvitations]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -95,15 +97,15 @@ export const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ init
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Organization Settings</CardTitle>
-          <CardDescription>Error accessing organization</CardDescription>
+          <CardTitle>{t('organization.heading')}</CardTitle>
+          <CardDescription>{t('organization.errorDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
               {organizationError.includes('Access denied') || organizationError.includes('not a member')
-                ? 'You do not have access to this organization. Please contact an organization owner for access.'
+                ? t('organization.alerts.accessDenied')
                 : organizationError}
             </AlertDescription>
           </Alert>
@@ -116,15 +118,18 @@ export const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ init
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Organization Settings</CardTitle>
-          <CardDescription>No active organization selected</CardDescription>
+          <CardTitle>{t('organization.heading')}</CardTitle>
+          <CardDescription>{t('organization.noOrganizationDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">Please select an organization to manage settings.</p>
+          <p className="text-muted-foreground">{t('organization.noOrganizationHint')}</p>
         </CardContent>
       </Card>
     );
   }
+
+  const totalTeamMembers = (activeOrganization.members?.length || 0) + (Array.isArray(pendingInvitations) ? pendingInvitations.length : 0);
+  const teamTabLabel = t('organization.tabs.teamWithCount', { values: { count: totalTeamMembers } });
 
   return (
     <div className="space-y-6">
@@ -137,12 +142,12 @@ export const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ init
                 {activeOrganization.name}
               </CardTitle>
               <CardDescription>
-                Manage your organization team and subscription
+                {t('organization.cardDescription')}
               </CardDescription>
             </div>
             <Button onClick={() => setIsInviteDialogOpen(true)} className="flex items-center gap-2">
               <UserPlus className="h-4 w-4" />
-              Invite Member
+              {t('organization.inviteButton')}
             </Button>
           </div>
         </CardHeader>
@@ -151,11 +156,11 @@ export const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ init
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="team" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                Team ({(activeOrganization.members?.length || 0) + (Array.isArray(pendingInvitations) ? pendingInvitations.length : 0)})
+                {teamTabLabel}
               </TabsTrigger>
               <TabsTrigger value="subscription" className="flex items-center gap-2">
                 <CreditCard className="h-4 w-4" />
-                Subscription
+                {t('organization.tabs.subscription')}
               </TabsTrigger>
             </TabsList>
 

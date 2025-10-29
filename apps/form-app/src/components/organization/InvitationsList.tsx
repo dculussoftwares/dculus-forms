@@ -4,6 +4,7 @@ import { Mail, Clock, X, Crown, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { parseDate, isDateExpired } from '../../utils/dateHelpers';
 import { organization } from '../../lib/auth-client';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface Invitation {
   id: string;
@@ -33,6 +34,7 @@ export const InvitationsList: React.FC<InvitationsListProps> = ({
   onInvitationAction,
 }) => {
   const [cancelLoading, setCancelLoading] = React.useState(false);
+  const { t } = useTranslation('settings');
 
   const handleCancelInvitation = async (invitationId: string) => {
     setCancelLoading(true);
@@ -42,11 +44,14 @@ export const InvitationsList: React.FC<InvitationsListProps> = ({
         invitationId,
       });
       
-      toastSuccess('Invitation cancelled', 'The invitation has been cancelled successfully.');
+      toastSuccess(t('toasts.invitationCancelled.title'), t('toasts.invitationCancelled.description'));
       onInvitationAction();
     } catch (error: any) {
       console.error('Error cancelling invitation:', error);
-      toastError('Error cancelling invitation', error.message || 'Failed to cancel invitation');
+      toastError(
+        t('toasts.invitationCancelError.title'),
+        error?.message || t('toasts.invitationCancelError.description'),
+      );
     } finally {
       setCancelLoading(false);
     }
@@ -60,9 +65,9 @@ export const InvitationsList: React.FC<InvitationsListProps> = ({
     return (
       <div className="text-center py-8">
         <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-        <h3 className="text-lg font-medium">No pending invitations</h3>
+        <h3 className="text-lg font-medium">{t('invitations.emptyTitle')}</h3>
         <p className="text-muted-foreground">
-          All invitations have been responded to or there are no pending invitations.
+          {t('invitations.emptyDescription')}
         </p>
       </div>
     );
@@ -80,11 +85,11 @@ export const InvitationsList: React.FC<InvitationsListProps> = ({
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'owner':
-        return 'Owner';
+        return t('members.roles.owner');
       case 'member':
-        return 'Member';
+        return t('members.roles.member');
       default:
-        return role;
+        return t('members.roles.default', { values: { role } });
     }
   };
 
@@ -103,9 +108,11 @@ export const InvitationsList: React.FC<InvitationsListProps> = ({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Pending Invitations</h3>
+        <h3 className="text-lg font-medium">{t('invitations.title')}</h3>
         <Badge variant="outline">
-          {invitationArray.length} pending invitation{invitationArray.length !== 1 ? 's' : ''}
+          {invitationArray.length === 1
+            ? t('invitations.count.one')
+            : t('invitations.count.other', { values: { count: invitationArray.length } })}
         </Badge>
       </div>
       
@@ -124,15 +131,25 @@ export const InvitationsList: React.FC<InvitationsListProps> = ({
               <div>
                 <div className="font-medium">{invitation.email}</div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>Invited by {invitation.inviter?.name || 'Unknown'}</span>
+                  <span>
+                    {t('invitations.invitedBy', {
+                      values: {
+                        name: invitation.inviter?.name || t('invitations.unknownInviter'),
+                      },
+                    })}
+                  </span>
                   <span>•</span>
                   <div className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
                     {isDateExpired(invitation.expiresAt) ? (
-                      <span className="text-destructive">Expired</span>
+                      <span className="text-destructive">{t('invitations.expired')}</span>
                     ) : (
                       <span>
-                        Expires {formatDistanceToNow(parseDate(invitation.expiresAt), { addSuffix: true })}
+                        {t('invitations.expires', {
+                          values: {
+                            time: formatDistanceToNow(parseDate(invitation.expiresAt), { addSuffix: true }),
+                          },
+                        })}
                       </span>
                     )}
                   </div>
@@ -155,7 +172,7 @@ export const InvitationsList: React.FC<InvitationsListProps> = ({
                   className="flex items-center gap-1"
                 >
                   <X className="h-3 w-3" />
-                  Cancel
+                  {t('invitations.cancel')}
                 </Button>
               )}
             </div>

@@ -19,6 +19,7 @@ import {
 } from '@dculus/ui';
 import { Mail, UserPlus } from 'lucide-react';
 import { organization } from '../../lib/auth-client';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface InviteUserDialogProps {
   isOpen: boolean;
@@ -26,6 +27,55 @@ interface InviteUserDialogProps {
   organizationId: string;
   onInviteSent: () => void;
 }
+
+interface ErrorMessageMapping {
+  titleKey: string;
+  descriptionKey?: string;
+  fallbackMessage?: string;
+}
+
+const errorMappings: Record<string, { titleKey: string; descriptionKey: string }> = {
+  YOU_ARE_NOT_ALLOWED_TO_INVITE_USERS_TO_THIS_ORGANIZATION: {
+    titleKey: 'inviteDialog.errors.permission.title',
+    descriptionKey: 'inviteDialog.errors.permission.description',
+  },
+  USER_IS_ALREADY_INVITED_TO_THIS_ORGANIZATION: {
+    titleKey: 'inviteDialog.errors.alreadyInvited.title',
+    descriptionKey: 'inviteDialog.errors.alreadyInvited.description',
+  },
+  ORGANIZATION_MEMBERSHIP_LIMIT_REACHED: {
+    titleKey: 'inviteDialog.errors.membershipLimit.title',
+    descriptionKey: 'inviteDialog.errors.membershipLimit.description',
+  },
+  YOU_ARE_NOT_ALLOWED_TO_INVITE_USER_WITH_THIS_ROLE: {
+    titleKey: 'inviteDialog.errors.rolePermission.title',
+    descriptionKey: 'inviteDialog.errors.rolePermission.description',
+  },
+  INVITER_IS_NO_LONGER_A_MEMBER_OF_THE_ORGANIZATION: {
+    titleKey: 'inviteDialog.errors.permissionExpired.title',
+    descriptionKey: 'inviteDialog.errors.permissionExpired.description',
+  },
+  'You are not allowed to invite users to this organization': {
+    titleKey: 'inviteDialog.errors.belongsToOtherOrg.title',
+    descriptionKey: 'inviteDialog.errors.belongsToOtherOrg.description',
+  },
+  'User is already invited to this organization': {
+    titleKey: 'inviteDialog.errors.alreadyInvited.title',
+    descriptionKey: 'inviteDialog.errors.alreadyInvited.description',
+  },
+  'Organization membership limit reached': {
+    titleKey: 'inviteDialog.errors.membershipLimit.title',
+    descriptionKey: 'inviteDialog.errors.membershipLimit.description',
+  },
+  'you are not allowed to invite user with this role': {
+    titleKey: 'inviteDialog.errors.rolePermission.title',
+    descriptionKey: 'inviteDialog.errors.rolePermission.description',
+  },
+  'Inviter is no longer a member of the organization': {
+    titleKey: 'inviteDialog.errors.permissionExpired.title',
+    descriptionKey: 'inviteDialog.errors.permissionExpired.description',
+  },
+};
 
 export const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
   isOpen,
@@ -36,15 +86,12 @@ export const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('member');
   const [isLoading, setIsLoading] = useState(false);
+  const { t } = useTranslation('settings');
 
-
-  // Error message mapping for better user experience
-  const getErrorMessage = (error: any) => {
-    // Extract error message from different possible structures
+  const mapErrorToMessage = (error: any): ErrorMessageMapping => {
     let errorMessage = '';
     let errorCode = '';
 
-    // Handle better-auth error structure: { code: "ERROR_CODE", message: "Error message" }
     if (error?.code && error?.message) {
       errorCode = error.code;
       errorMessage = error.message;
@@ -57,90 +104,50 @@ export const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
       errorMessage = error.error.message;
     } else if (typeof error === 'string') {
       errorMessage = error;
-    } else {
-      errorMessage = 'Failed to send invitation';
     }
 
-    // Map specific better-auth error codes and messages to user-friendly messages
-    const errorMappings: Record<string, { title: string; message: string }> = {
-      // Error codes
-      'YOU_ARE_NOT_ALLOWED_TO_INVITE_USERS_TO_THIS_ORGANIZATION': {
-        title: 'Cannot invite user',
-        message: 'You do not have permission to invite users to this organization.'
-      },
-      'USER_IS_ALREADY_INVITED_TO_THIS_ORGANIZATION': {
-        title: 'Already invited',
-        message: 'This user has already been invited to your organization.'
-      },
-      'ORGANIZATION_MEMBERSHIP_LIMIT_REACHED': {
-        title: 'Membership limit reached',
-        message: 'Your organization has reached its maximum member capacity.'
-      },
-      'YOU_ARE_NOT_ALLOWED_TO_INVITE_USER_WITH_THIS_ROLE': {
-        title: 'Role permission denied',
-        message: 'You do not have permission to invite users with this role.'
-      },
-      'INVITER_IS_NO_LONGER_A_MEMBER_OF_THE_ORGANIZATION': {
-        title: 'Permission expired',
-        message: 'You are no longer a member of this organization and cannot send invitations.'
-      },
-      // Error messages (fallback)
-      'You are not allowed to invite users to this organization': {
-        title: 'Cannot invite user',
-        message: 'This user already belongs to another organization. Users can only be members of one organization at a time.'
-      },
-      'User is already invited to this organization': {
-        title: 'Already invited',
-        message: 'This user has already been invited to your organization.'
-      },
-      'Organization membership limit reached': {
-        title: 'Membership limit reached',
-        message: 'Your organization has reached its maximum member capacity.'
-      },
-      'you are not allowed to invite user with this role': {
-        title: 'Role permission denied',
-        message: 'You do not have permission to invite users with this role.'
-      },
-      'Inviter is no longer a member of the organization': {
-        title: 'Permission expired',
-        message: 'You are no longer a member of this organization and cannot send invitations.'
-      }
-    };
-
-    // Check error code first (more reliable)
     if (errorCode && errorMappings[errorCode]) {
       return errorMappings[errorCode];
     }
 
-    // Check for message matches as fallback
     for (const [key, value] of Object.entries(errorMappings)) {
-      if (errorMessage.includes(key)) {
+      if (errorMessage && errorMessage.includes(key)) {
         return value;
       }
     }
 
-    // Default error handling
     return {
-      title: 'Error sending invitation',
-      message: errorMessage || 'Failed to send invitation'
+      titleKey: 'inviteDialog.errors.default.title',
+      descriptionKey: errorMessage ? undefined : 'inviteDialog.errors.default.description',
+      fallbackMessage: errorMessage,
     };
   };
 
-  const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
+  const showErrorToast = (mapping: ErrorMessageMapping) => {
+    const title = t(mapping.titleKey);
+    const description = mapping.descriptionKey ? t(mapping.descriptionKey) : mapping.fallbackMessage || t('inviteDialog.errors.default.description');
+    toastError(title, description);
+  };
 
+  const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
     if (e) {
       e.preventDefault();
     }
 
     if (!email.trim()) {
-      toastError('Email required', 'Please enter an email address.');
+      toastError(
+        t('inviteDialog.errors.emailRequired.title'),
+        t('inviteDialog.errors.emailRequired.description'),
+      );
       return;
     }
 
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      toastError('Invalid email', 'Please enter a valid email address.');
+      toastError(
+        t('inviteDialog.errors.invalidEmail.title'),
+        t('inviteDialog.errors.invalidEmail.description'),
+      );
       return;
     }
 
@@ -149,30 +156,27 @@ export const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
     try {
       const result = await organization.inviteMember({
         email: email.trim(),
-        role: role as "member" | "admin" | "owner",
-        organizationId, // Optional if using active organization
+        role: role as 'member' | 'admin' | 'owner',
+        organizationId,
       });
 
-      // Check if result contains an error (some better-auth methods return errors instead of throwing)
       if (result && result.error) {
         console.error('Error inviting user (from result):', result.error);
-        const { title, message } = getErrorMessage(result.error);
-        toastError(title, message);
+        showErrorToast(mapErrorToMessage(result.error));
         return;
       }
 
-      // Only show success toast if we reach this point (no exception thrown and no error in result)
-      toastSuccess('Invitation sent successfully', `An invitation has been sent to ${email}.`);
+      toastSuccess(
+        t('inviteDialog.success.title'),
+        t('inviteDialog.success.description', { values: { email } }),
+      );
       setEmail('');
       setRole('member');
       onInviteSent();
       onClose();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error inviting user (caught exception):', error);
-
-      // Use enhanced error handling
-      const { title, message } = getErrorMessage(error);
-      toastError(title, message);
+      showErrorToast(mapErrorToMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -192,22 +196,20 @@ export const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5" />
-            Invite Team Member
+            {t('inviteDialog.title')}
           </DialogTitle>
-          <DialogDescription>
-            Send an invitation to join your organization. They'll receive an email with instructions to sign up and join.
-          </DialogDescription>
+          <DialogDescription>{t('inviteDialog.description')}</DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
+            <Label htmlFor="email">{t('inviteDialog.emailLabel')}</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 id="email"
                 type="email"
-                placeholder="colleague@company.com"
+                placeholder={t('inviteDialog.emailPlaceholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="pl-10"
@@ -216,9 +218,9 @@ export const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
               />
             </div>
           </div>
-          
+
           <div className="space-y-2">
-            <Label htmlFor="role">Role</Label>
+            <Label htmlFor="role">{t('inviteDialog.roleLabel')}</Label>
             <Select value={role} onValueChange={setRole} disabled={isLoading}>
               <SelectTrigger>
                 <SelectValue />
@@ -226,17 +228,17 @@ export const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
               <SelectContent>
                 <SelectItem value="member">
                   <div className="flex flex-col">
-                    <span>Member</span>
+                    <span>{t('inviteDialog.roles.member.label')}</span>
                     <span className="text-xs text-muted-foreground">
-                      Can view and create forms within the organization
+                      {t('inviteDialog.roles.member.description')}
                     </span>
                   </div>
                 </SelectItem>
                 <SelectItem value="owner">
                   <div className="flex flex-col">
-                    <span>Owner</span>
+                    <span>{t('inviteDialog.roles.owner.label')}</span>
                     <span className="text-xs text-muted-foreground">
-                      Full access including member management
+                      {t('inviteDialog.roles.owner.description')}
                     </span>
                   </div>
                 </SelectItem>
@@ -247,22 +249,22 @@ export const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose} disabled={isLoading}>
-            Cancel
+            {t('inviteDialog.actions.cancel')}
           </Button>
-          <Button 
-            onClick={handleSubmit} 
+          <Button
+            onClick={handleSubmit}
             disabled={isLoading || !email.trim()}
             className="flex items-center gap-2"
           >
             {isLoading ? (
               <>
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                Sending...
+                {t('inviteDialog.actions.submitting')}
               </>
             ) : (
               <>
                 <Mail className="h-4 w-4" />
-                Send Invitation
+                {t('inviteDialog.actions.submit')}
               </>
             )}
           </Button>

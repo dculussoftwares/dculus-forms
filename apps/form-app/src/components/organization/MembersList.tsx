@@ -1,6 +1,7 @@
 import React from 'react';
 import { Badge, Avatar, AvatarFallback, AvatarImage } from '@dculus/ui';
 import { Crown, User } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface Member {
   id: string;
@@ -26,13 +27,14 @@ interface MembersListProps {
 
 export const MembersList: React.FC<MembersListProps> = ({ organization }) => {
   const members = organization.members || [];
+  const { t } = useTranslation('settings');
 
   if (members.length === 0) {
     return (
       <div className="text-center py-8">
         <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-        <h3 className="text-lg font-medium">No members found</h3>
-        <p className="text-muted-foreground">This organization doesn't have any members yet.</p>
+        <h3 className="text-lg font-medium">{t('members.emptyTitle')}</h3>
+        <p className="text-muted-foreground">{t('members.emptyDescription')}</p>
       </div>
     );
   }
@@ -49,11 +51,11 @@ export const MembersList: React.FC<MembersListProps> = ({ organization }) => {
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'owner':
-        return 'Owner';
+        return t('members.roles.owner');
       case 'member':
-        return 'Member';
+        return t('members.roles.member');
       default:
-        return role;
+        return t('members.roles.default', { values: { role } });
     }
   };
 
@@ -71,8 +73,12 @@ export const MembersList: React.FC<MembersListProps> = ({ organization }) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Organization Members</h3>
-        <Badge variant="outline">{members.length} member{members.length !== 1 ? 's' : ''}</Badge>
+        <h3 className="text-lg font-medium">{t('members.title')}</h3>
+        <Badge variant="outline">
+          {members.length === 1
+            ? t('members.count.one')
+            : t('members.count.other', { values: { count: members.length } })}
+        </Badge>
       </div>
       
       <div className="space-y-3">

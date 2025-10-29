@@ -1,0 +1,131 @@
+{
+  "page": {
+    "title": "Settings",
+    "subtitle": "Manage your organization and preferences"
+  },
+  "organization": {
+    "heading": "Organization Settings",
+    "errorDescription": "Error accessing organization",
+    "noOrganizationDescription": "No active organization selected",
+    "noOrganizationHint": "Please select an organization to manage settings.",
+    "cardDescription": "Manage your organization team and subscription",
+    "inviteButton": "Invite Member",
+    "tabs": {
+      "teamWithCount": "Team ({{count}})",
+      "subscription": "Subscription"
+    },
+    "alerts": {
+      "accessDenied": "You do not have access to this organization. Please contact an organization owner for access."
+    }
+  },
+  "toasts": {
+    "accessDenied": {
+      "title": "Access Denied",
+      "description": "You do not have permission to view organization invitations"
+    },
+    "authRequired": {
+      "title": "Authentication Required",
+      "description": "Please sign in to view invitations"
+    },
+    "invitationCancelled": {
+      "title": "Invitation cancelled",
+      "description": "The invitation has been cancelled successfully."
+    },
+    "invitationCancelError": {
+      "title": "Error cancelling invitation",
+      "description": "Failed to cancel invitation"
+    }
+  },
+  "members": {
+    "title": "Organization Members",
+    "emptyTitle": "No members found",
+    "emptyDescription": "This organization doesn't have any members yet.",
+    "count": {
+      "one": "1 member",
+      "other": "{{count}} members"
+    },
+    "roles": {
+      "owner": "Owner",
+      "member": "Member",
+      "default": "{{role}}"
+    }
+  },
+  "invitations": {
+    "title": "Pending Invitations",
+    "emptyTitle": "No pending invitations",
+    "emptyDescription": "All invitations have been responded to or there are no pending invitations.",
+    "count": {
+      "one": "1 pending invitation",
+      "other": "{{count}} pending invitations"
+    },
+    "invitedBy": "Invited by {{name}}",
+    "unknownInviter": "Unknown",
+    "expired": "Expired",
+    "expires": "Expires {{time}}",
+    "cancel": "Cancel"
+  },
+  "inviteDialog": {
+    "title": "Invite Team Member",
+    "description": "Send an invitation to join your organization. They'll receive an email with instructions to sign up and join.",
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "colleague@company.com",
+    "roleLabel": "Role",
+    "roles": {
+      "member": {
+        "label": "Member",
+        "description": "Can view and create forms within the organization"
+      },
+      "owner": {
+        "label": "Owner",
+        "description": "Full access including member management"
+      }
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "submit": "Send Invitation",
+      "submitting": "Sending..."
+    },
+    "success": {
+      "title": "Invitation sent successfully",
+      "description": "An invitation has been sent to {{email}}."
+    },
+    "errors": {
+      "emailRequired": {
+        "title": "Email required",
+        "description": "Please enter an email address."
+      },
+      "invalidEmail": {
+        "title": "Invalid email",
+        "description": "Please enter a valid email address."
+      },
+      "default": {
+        "title": "Error sending invitation",
+        "description": "Failed to send invitation"
+      },
+      "permission": {
+        "title": "Cannot invite user",
+        "description": "You do not have permission to invite users to this organization."
+      },
+      "alreadyInvited": {
+        "title": "Already invited",
+        "description": "This user has already been invited to your organization."
+      },
+      "membershipLimit": {
+        "title": "Membership limit reached",
+        "description": "Your organization has reached its maximum member capacity."
+      },
+      "rolePermission": {
+        "title": "Role permission denied",
+        "description": "You do not have permission to invite users with this role."
+      },
+      "permissionExpired": {
+        "title": "Permission expired",
+        "description": "You are no longer a member of this organization and cannot send invitations."
+      },
+      "belongsToOtherOrg": {
+        "title": "Cannot invite user",
+        "description": "This user already belongs to another organization. Users can only be members of one organization at a time."
+      }
+    }
+  }
+}
