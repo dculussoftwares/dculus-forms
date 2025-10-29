@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button, Input, Label, Card, CardContent, CardDescription, CardHeader, CardTitle, TypographyH2, TypographyP, TypographySmall, OTPInput } from "@dculus/ui";
 import { emailOtp, signIn } from "../lib/auth-client";
 import { ArrowLeft, Mail, Timer } from "lucide-react";
+import { useTranslation } from "../hooks/useTranslation";
 
 export const SignInOTP = () => {
   const [searchParams] = useSearchParams();
@@ -13,6 +14,7 @@ export const SignInOTP = () => {
   const [countdown, setCountdown] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
+  const { t } = useTranslation('signInOtp');
 
   // Initialize email from URL params
   useEffect(() => {
@@ -32,15 +34,15 @@ export const SignInOTP = () => {
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  const validateEmail = (emailValue: string) => {
+  const validateEmail = useCallback((emailValue: string) => {
     if (!emailValue.trim()) {
-      return "Email is required";
+      return t('form.email.errors.required');
     }
     if (!/\S+@\S+\.\S+/.test(emailValue)) {
-      return "Please enter a valid email";
+      return t('form.email.errors.invalid');
     }
     return null;
-  };
+  }, [t]);
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +64,7 @@ export const SignInOTP = () => {
 
       if (response.error) {
         setErrors({ 
-          submit: response.error.message || "Failed to send OTP" 
+          submit: response.error.message || t('messages.sendOtpFailed') 
         });
       } else {
         setStep('otp');
@@ -72,7 +74,7 @@ export const SignInOTP = () => {
     } catch (error) {
       console.error("Send OTP error:", error);
       setErrors({ 
-        submit: "An unexpected error occurred. Please try again." 
+        submit: t('messages.unexpectedError') 
       });
     } finally {
       setIsLoading(false);
@@ -83,7 +85,7 @@ export const SignInOTP = () => {
     e.preventDefault();
     
     if (otp.length !== 6) {
-      setErrors({ otp: "Please enter the complete 6-digit code" });
+      setErrors({ otp: t('form.otp.errors.incomplete') });
       return;
     }
 
@@ -98,7 +100,7 @@ export const SignInOTP = () => {
 
       if (response.error) {
         setErrors({ 
-          otp: response.error.message || "Invalid or expired code" 
+          otp: response.error.message || t('form.otp.errors.invalid') 
         });
       } else {
         // Successful signin, redirect to dashboard
@@ -107,7 +109,7 @@ export const SignInOTP = () => {
     } catch (error) {
       console.error("Verify OTP error:", error);
       setErrors({ 
-        otp: "An unexpected error occurred. Please try again." 
+        otp: t('messages.unexpectedError') 
       });
     } finally {
       setIsLoading(false);
@@ -128,7 +130,7 @@ export const SignInOTP = () => {
 
       if (response.error) {
         setErrors({ 
-          submit: response.error.message || "Failed to resend OTP" 
+          submit: response.error.message || t('messages.resendOtpFailed') 
         });
       } else {
         setCountdown(60);
@@ -137,7 +139,7 @@ export const SignInOTP = () => {
     } catch (error) {
       console.error("Resend OTP error:", error);
       setErrors({ 
-        submit: "Failed to resend OTP. Please try again." 
+        submit: t('messages.resendOtpGenericFailed') 
       });
     } finally {
       setIsLoading(false);
@@ -170,14 +172,14 @@ export const SignInOTP = () => {
             <path d="M2 3h6" />
             <path d="M6 3v5" />
           </svg>
-          Dculus Forms
+          {t('hero.productName')}
         </div>
         <div className="relative z-20 mt-auto">
           <div className="mt-6 border-l-2 pl-6 italic">
             <TypographyP>
-              &ldquo;Sign in securely with just your email. No passwords to remember, just a simple verification code.&rdquo;
+              &ldquo;{t('hero.tagline')}&rdquo;
             </TypographyP>
-            <footer className="text-sm">Secure Authentication</footer>
+            <footer className="text-sm">{t('hero.attribution')}</footer>
           </div>
         </div>
       </div>
@@ -185,12 +187,12 @@ export const SignInOTP = () => {
         <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[400px]">
           <div className="flex flex-col space-y-2 text-center">
             <TypographyH2>
-              {step === 'email' ? 'Sign in with OTP' : 'Verify your email'}
+              {step === 'email' ? t('steps.email.title') : t('steps.otp.title')}
             </TypographyH2>
             <TypographySmall className="text-muted-foreground">
               {step === 'email' 
-                ? 'Enter your email to receive a verification code'
-                : `We sent a 6-digit code to ${email}`
+                ? t('steps.email.subtitle')
+                : t('steps.otp.subtitle', { values: { email } })
               }
             </TypographySmall>
           </div>
@@ -209,12 +211,12 @@ export const SignInOTP = () => {
                   </Button>
                 )}
                 <Mail className="w-5 h-5" />
-                {step === 'email' ? 'Enter Email' : 'Enter Code'}
+                {step === 'email' ? t('steps.email.cardTitle') : t('steps.otp.cardTitle')}
               </CardTitle>
               <CardDescription>
                 {step === 'email' 
-                  ? 'We\'ll send you a secure verification code'
-                  : 'Enter the 6-digit code we sent to your email'
+                  ? t('steps.email.cardDescription')
+                  : t('steps.otp.cardDescription')
                 }
               </CardDescription>
             </CardHeader>
@@ -222,12 +224,12 @@ export const SignInOTP = () => {
               {step === 'email' ? (
                 <form onSubmit={handleSendOTP} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email address</Label>
+                    <Label htmlFor="email">{t('form.email.label')}</Label>
                     <Input
                       id="email"
                       name="email"
                       type="email"
-                      placeholder="john@example.com"
+                      placeholder={t('form.email.placeholder')}
                       value={email}
                       onChange={(e) => {
                         setEmail(e.target.value);
@@ -254,14 +256,14 @@ export const SignInOTP = () => {
                     className="w-full"
                     disabled={isLoading}
                   >
-                    {isLoading ? "Sending..." : "Send Verification Code"}
+                    {isLoading ? t('steps.email.action.loading') : t('steps.email.action.idle')}
                   </Button>
                 </form>
               ) : (
                 <form onSubmit={handleVerifyOTP} className="space-y-6">
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-center block">Verification Code</Label>
+                      <Label className="text-center block">{t('steps.otp.otpLabel')}</Label>
                       <OTPInput
                         value={otp}
                         onChange={(value) => {
@@ -284,7 +286,7 @@ export const SignInOTP = () => {
                       {countdown > 0 ? (
                         <TypographySmall className="text-muted-foreground flex items-center justify-center gap-2">
                           <Timer className="w-4 h-4" />
-                          Resend code in {countdown}s
+                          {t('steps.otp.countdown', { values: { seconds: countdown } })}
                         </TypographySmall>
                       ) : (
                         <Button
@@ -294,7 +296,7 @@ export const SignInOTP = () => {
                           disabled={isLoading}
                           className="text-sm"
                         >
-                          Didn't receive the code? Resend
+                          {t('steps.otp.resend')}
                         </Button>
                       )}
                     </div>
@@ -311,7 +313,7 @@ export const SignInOTP = () => {
                     className="w-full"
                     disabled={isLoading || otp.length !== 6}
                   >
-                    {isLoading ? "Verifying..." : "Sign In"}
+                    {isLoading ? t('steps.otp.action.loading') : t('steps.otp.action.idle')}
                   </Button>
                 </form>
               )}
@@ -319,22 +321,22 @@ export const SignInOTP = () => {
           </Card>
 
           <TypographySmall className="text-center">
-            Want to use password instead?{" "}
+            {t('links.passwordSignInPrompt')}{" "}
             <Link
               to="/signin"
               className="underline underline-offset-4 hover:text-primary"
             >
-              Sign in with password
+              {t('links.passwordSignIn')}
             </Link>
           </TypographySmall>
           
           <TypographySmall className="text-center">
-            Don't have an account?{" "}
+            {t('links.signUpPrompt')}{" "}
             <Link
               to="/signup"
               className="underline underline-offset-4 hover:text-primary"
             >
-              Sign up
+              {t('links.signUp')}
             </Link>
           </TypographySmall>
         </div>

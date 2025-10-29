@@ -8,6 +8,7 @@ import { parseDate, isDateExpired } from '../utils/dateHelpers';
 import { authClient, organization } from '../lib/auth-client';
 import { useQuery } from '@apollo/client';
 import { GET_INVITATION_PUBLIC } from '../graphql/queries';
+import { useTranslation } from '../hooks/useTranslation';
 
 const InviteAcceptance: React.FC = () => {
   const { invitationId } = useParams<{ invitationId: string }>();
@@ -15,6 +16,7 @@ const InviteAcceptance: React.FC = () => {
   const { user, isLoading: authLoading } = useAuthContext();
   const [error, setError] = useState<string | null>(null);
   const [acceptLoading, setAcceptLoading] = useState(false);
+  const { t } = useTranslation('inviteAcceptance');
 
   // Fetch invitation details using GraphQL (public endpoint)
   const { 
@@ -46,12 +48,16 @@ const InviteAcceptance: React.FC = () => {
       navigate('/dashboard', { 
         replace: true,
         state: { 
-          message: `Welcome to ${invitation?.organization?.name}! You have successfully joined the organization.` 
+          message: t('messages.joinSuccess', {
+            values: {
+              organization: invitation?.organization?.name ?? t('fallbacks.organization'),
+            },
+          }),
         }
       });
     } catch (error: any) {
       console.error('Error accepting invitation:', error);
-      setError(error.message || 'Failed to accept invitation');
+      setError(error.message || t('messages.acceptFailed'));
     } finally {
       setAcceptLoading(false);
     }
@@ -88,9 +94,12 @@ const InviteAcceptance: React.FC = () => {
   if (authLoading || invitationLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-md" aria-busy="true">
           <CardContent className="flex items-center justify-center p-8">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <div
+              className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"
+              aria-label={t('loading.spinnerLabel')}
+            />
           </CardContent>
         </Card>
       </div>
@@ -105,21 +114,21 @@ const InviteAcceptance: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-destructive">
               <AlertCircle className="h-5 w-5" />
-              Invalid Invitation
+              {t('errors.invalid.title')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                {invitationError?.message || 'This invitation link is invalid or has been removed. Please contact the organization administrator for a new invitation.'}
+                {invitationError?.message || t('errors.invalid.description')}
               </AlertDescription>
             </Alert>
             <Button 
               className="w-full mt-4" 
               onClick={() => navigate('/signin')}
             >
-              Go to Sign In
+              {t('buttons.goToSignIn')}
             </Button>
           </CardContent>
         </Card>
@@ -129,28 +138,34 @@ const InviteAcceptance: React.FC = () => {
 
   // Expired invitation
   if (isExpired) {
+    const timeAgo = formatDistanceToNow(parseDate(invitation.expiresAt), { addSuffix: true });
+    const inviterName = invitation.inviter?.name ?? t('fallbacks.inviter');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-destructive">
               <AlertCircle className="h-5 w-5" />
-              Invitation Expired
+              {t('errors.expired.title')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                This invitation expired {formatDistanceToNow(parseDate(invitation.expiresAt), { addSuffix: true })}. 
-                Please contact {invitation.inviter?.name || 'the inviter'} for a new invitation.
+                {t('errors.expired.description', {
+                  values: {
+                    timeAgo,
+                    inviter: inviterName,
+                  },
+                })}
               </AlertDescription>
             </Alert>
             <Button 
               className="w-full mt-4" 
               onClick={() => navigate('/signin')}
             >
-              Go to Sign In
+              {t('buttons.goToSignIn')}
             </Button>
           </CardContent>
         </Card>
@@ -160,6 +175,12 @@ const InviteAcceptance: React.FC = () => {
 
   // User not authenticated - show sign up option
   if (!user) {
+    const organizationName = invitation.organization?.name;
+    const inviterName = invitation.inviter?.name;
+    const roleLabel =
+      invitation.role === 'owner'
+        ? t('guestView.details.roleOwner')
+        : t('guestView.details.roleMember');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Card className="w-full max-w-lg">
@@ -167,9 +188,15 @@ const InviteAcceptance: React.FC = () => {
             <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
               <Users className="h-8 w-8 text-primary" />
             </div>
-            <CardTitle>You're Invited to Join {invitation.organization?.name || 'Organization'}</CardTitle>
+            <CardTitle>
+              {organizationName
+                ? t('guestView.title', { values: { organization: organizationName } })
+                : t('guestView.titleFallback')}
+            </CardTitle>
             <CardDescription>
-              {invitation.inviter?.name || 'Someone'} has invited you to collaborate on forms and manage responses together.
+              {inviterName
+                ? t('guestView.description', { values: { inviter: inviterName } })
+                : t('guestView.descriptionFallback')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -177,12 +204,12 @@ const InviteAcceptance: React.FC = () => {
               <div className="flex items-center gap-3">
                 <Mail className="h-5 w-5 text-muted-foreground" />
                 <div>
-                  <div className="font-medium">Invitation Details</div>
+                  <div className="font-medium">{t('guestView.details.title')}</div>
                   <div className="text-sm text-muted-foreground">
-                    Invited to: {invitation.email}
+                    {t('guestView.details.email', { values: { email: invitation.email } })}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Role: {invitation.role === 'owner' ? 'Organization Owner' : 'Team Member'}
+                    {roleLabel}
                   </div>
                 </div>
               </div>
@@ -201,7 +228,7 @@ const InviteAcceptance: React.FC = () => {
                 onClick={handleSignUp}
                 size="lg"
               >
-                Create Account & Join Organization
+                {t('buttons.createAccountAndJoin')}
               </Button>
               <Button 
                 variant="outline" 
@@ -210,12 +237,12 @@ const InviteAcceptance: React.FC = () => {
                   state: { redirectUrl: `/invite/${invitationId}` } 
                 })}
               >
-                I Already Have an Account
+                {t('buttons.alreadyHaveAccount')}
               </Button>
             </div>
 
             <div className="text-xs text-muted-foreground text-center">
-              By creating an account, you'll be able to collaborate on forms, manage responses, and work with your team on Dculus Forms.
+              {t('guestView.footer')}
             </div>
           </CardContent>
         </Card>
@@ -231,15 +258,19 @@ const InviteAcceptance: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-destructive">
               <AlertCircle className="h-5 w-5" />
-              Email Mismatch
+              {t('errors.mismatch.title')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                This invitation was sent to {invitation.email}, but you're signed in as {user.email}. 
-                Please sign out and create an account with the invited email address.
+                {t('errors.mismatch.description', {
+                  values: {
+                    invitedEmail: invitation.email,
+                    currentEmail: user.email ?? '',
+                  },
+                })}
               </AlertDescription>
             </Alert>
             <div className="space-y-2 mt-4">
@@ -247,14 +278,14 @@ const InviteAcceptance: React.FC = () => {
                 className="w-full" 
                 onClick={handleSignOut}
               >
-                Sign Out & Create New Account
+                {t('buttons.signOutAndCreate')}
               </Button>
               <Button 
                 variant="outline" 
                 className="w-full" 
                 onClick={() => navigate('/dashboard')}
               >
-                Go to Dashboard
+                {t('buttons.goToDashboard')}
               </Button>
             </div>
           </CardContent>
@@ -264,6 +295,12 @@ const InviteAcceptance: React.FC = () => {
   }
 
   // User authenticated and email matches - show accept invitation option
+  const organizationName = invitation.organization?.name;
+  const inviterName = invitation.inviter?.name;
+  const roleLabel =
+    invitation.role === 'owner'
+      ? t('authenticatedView.summary.roleOwner')
+      : t('authenticatedView.summary.roleMember');
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Card className="w-full max-w-lg">
@@ -271,27 +308,41 @@ const InviteAcceptance: React.FC = () => {
           <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
             <CheckCircle className="h-8 w-8 text-green-600" />
           </div>
-          <CardTitle>Welcome to {invitation.organization?.name || 'the Organization'}!</CardTitle>
+          <CardTitle>
+            {organizationName
+              ? t('authenticatedView.title', { values: { organization: organizationName } })
+              : t('authenticatedView.titleFallback')}
+          </CardTitle>
           <CardDescription>
-            You've been invited by {invitation.inviter?.name || 'someone'} to join their organization.
+            {inviterName
+              ? t('authenticatedView.description', { values: { inviter: inviterName } })
+              : t('authenticatedView.descriptionFallback')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="bg-muted/50 rounded-lg p-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Organization</span>
-                <span className="font-medium">{invitation.organization?.name || 'Organization'}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Your Role</span>
+                <span className="text-sm text-muted-foreground">
+                  {t('authenticatedView.summary.organization')}
+                </span>
                 <span className="font-medium">
-                  {invitation.role === 'owner' ? 'Organization Owner' : 'Team Member'}
+                  {organizationName ?? t('fallbacks.organization')}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Invited By</span>
-                <span className="font-medium">{invitation.inviter?.name || 'Someone'}</span>
+                <span className="text-sm text-muted-foreground">
+                  {t('authenticatedView.summary.role')}
+                </span>
+                <span className="font-medium">{roleLabel}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  {t('authenticatedView.summary.invitedBy')}
+                </span>
+                <span className="font-medium">
+                  {inviterName ?? t('fallbacks.inviterShort')}
+                </span>
               </div>
             </div>
           </div>
@@ -313,12 +364,12 @@ const InviteAcceptance: React.FC = () => {
               {acceptLoading ? (
                 <>
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
-                  Joining Organization...
+                  {t('buttons.acceptInvitationLoading')}
                 </>
               ) : (
                 <>
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  Accept Invitation & Join
+                  {t('buttons.acceptInvitation')}
                 </>
               )}
             </Button>
@@ -327,12 +378,12 @@ const InviteAcceptance: React.FC = () => {
               className="w-full" 
               onClick={() => navigate('/dashboard')}
             >
-              Maybe Later
+              {t('buttons.maybeLater')}
             </Button>
           </div>
 
           <div className="text-xs text-muted-foreground text-center">
-            By accepting this invitation, you'll gain access to collaborate on forms and manage responses with your team.
+            {t('authenticatedView.footer')}
           </div>
         </CardContent>
       </Card>

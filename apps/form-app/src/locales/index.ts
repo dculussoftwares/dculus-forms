@@ -2,6 +2,8 @@ import enCommon from './en/common.json';
 import enSignIn from './en/signIn.json';
 import enSignUp from './en/signUp.json';
 import enForgotPassword from './en/forgotPassword.json';
+import enSignInOtp from './en/signInOtp.json';
+import enInviteAcceptance from './en/inviteAcceptance.json';
 
 export const translations = {
   en: {
@@ -9,6 +11,8 @@ export const translations = {
     signIn: enSignIn,
     signUp: enSignUp,
     forgotPassword: enForgotPassword,
+    signInOtp: enSignInOtp,
+    inviteAcceptance: enInviteAcceptance,
   },
 } as const;
 

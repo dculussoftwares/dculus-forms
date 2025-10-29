@@ -1,0 +1,60 @@
+{
+  "hero": {
+    "productName": "Dculus Forms",
+    "tagline": "Sign in securely with just your email. No passwords to remember, just a simple verification code.",
+    "attribution": "Secure Authentication"
+  },
+  "steps": {
+    "email": {
+      "title": "Sign in with OTP",
+      "subtitle": "Enter your email to receive a verification code",
+      "cardTitle": "Enter Email",
+      "cardDescription": "We'll send you a secure verification code",
+      "action": {
+        "idle": "Send Verification Code",
+        "loading": "Sending..."
+      }
+    },
+    "otp": {
+      "title": "Verify your email",
+      "subtitle": "We sent a 6-digit code to {{email}}",
+      "cardTitle": "Enter Code",
+      "cardDescription": "Enter the 6-digit code we sent to your email",
+      "action": {
+        "idle": "Sign In",
+        "loading": "Verifying..."
+      },
+      "countdown": "Resend code in {{seconds}}s",
+      "resend": "Didn't receive the code? Resend",
+      "otpLabel": "Verification Code"
+    }
+  },
+  "form": {
+    "email": {
+      "label": "Email address",
+      "placeholder": "john@example.com",
+      "errors": {
+        "required": "Email is required",
+        "invalid": "Please enter a valid email"
+      }
+    },
+    "otp": {
+      "errors": {
+        "incomplete": "Please enter the complete 6-digit code",
+        "invalid": "Invalid or expired code"
+      }
+    }
+  },
+  "messages": {
+    "unexpectedError": "An unexpected error occurred. Please try again.",
+    "sendOtpFailed": "Failed to send OTP",
+    "resendOtpFailed": "Failed to resend OTP",
+    "resendOtpGenericFailed": "Failed to resend OTP. Please try again."
+  },
+  "links": {
+    "passwordSignInPrompt": "Want to use password instead?",
+    "passwordSignIn": "Sign in with password",
+    "signUpPrompt": "Don't have an account?",
+    "signUp": "Sign up"
+  }
+}

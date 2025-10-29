@@ -1,0 +1,65 @@
+{
+  "errors": {
+    "invalid": {
+      "title": "Invalid Invitation",
+      "description": "This invitation link is invalid or has been removed. Please contact the organization administrator for a new invitation."
+    },
+    "expired": {
+      "title": "Invitation Expired",
+      "description": "This invitation expired {{timeAgo}}. Please contact {{inviter}} for a new invitation."
+    },
+    "mismatch": {
+      "title": "Email Mismatch",
+      "description": "This invitation was sent to {{invitedEmail}}, but you're signed in as {{currentEmail}}. Please sign out and create an account with the invited email address."
+    }
+  },
+  "buttons": {
+    "goToSignIn": "Go to Sign In",
+    "createAccountAndJoin": "Create Account & Join Organization",
+    "alreadyHaveAccount": "I Already Have an Account",
+    "signOutAndCreate": "Sign Out & Create New Account",
+    "goToDashboard": "Go to Dashboard",
+    "acceptInvitation": "Accept Invitation & Join",
+    "acceptInvitationLoading": "Joining Organization...",
+    "maybeLater": "Maybe Later"
+  },
+  "guestView": {
+    "title": "You're Invited to Join {{organization}}",
+    "titleFallback": "You're Invited to Join the Organization",
+    "description": "{{inviter}} has invited you to collaborate on forms and manage responses together.",
+    "descriptionFallback": "You've been invited to collaborate on forms and manage responses together.",
+    "details": {
+      "title": "Invitation Details",
+      "email": "Invited to: {{email}}",
+      "roleOwner": "Role: Organization Owner",
+      "roleMember": "Role: Team Member"
+    },
+    "footer": "By creating an account, you'll be able to collaborate on forms, manage responses, and work with your team on Dculus Forms."
+  },
+  "authenticatedView": {
+    "title": "Welcome to {{organization}}!",
+    "titleFallback": "Welcome to the Organization!",
+    "description": "You've been invited by {{inviter}} to join their organization.",
+    "descriptionFallback": "You've been invited to join this organization.",
+    "summary": {
+      "organization": "Organization",
+      "role": "Your Role",
+      "invitedBy": "Invited By",
+      "roleOwner": "Organization Owner",
+      "roleMember": "Team Member"
+    },
+    "footer": "By accepting this invitation, you'll gain access to collaborate on forms and manage responses with your team."
+  },
+  "messages": {
+    "joinSuccess": "Welcome to {{organization}}! You have successfully joined the organization.",
+    "acceptFailed": "Failed to accept invitation"
+  },
+  "loading": {
+    "spinnerLabel": "Loading invitation details..."
+  },
+  "fallbacks": {
+    "organization": "the Organization",
+    "inviter": "the inviter",
+    "inviterShort": "someone"
+  }
+}
