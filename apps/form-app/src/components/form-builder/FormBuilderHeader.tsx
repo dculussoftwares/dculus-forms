@@ -92,11 +92,10 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                                         autoFocus
                                     />
                                 ) : (
-                                    <button
+                                    <Button
+                                        variant="ghost"
                                         onClick={() => permissions.canEdit && setIsEditingTitle(true)}
-                                        className={`text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-1 ${
-                                            permissions.canEdit ? 'hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer' : 'cursor-default'
-                                        }`}
+                                        className="text-lg font-semibold hover:text-gray-600 dark:hover:text-gray-300 flex items-center space-x-1 h-auto p-0"
                                         disabled={!permissions.canEdit}
                                         title={!permissions.canEdit ? "You don't have permission to edit the form title" : ""}
                                     >
@@ -104,7 +103,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                                         {permissions.canEdit && (
                                             <Edit3 className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                                         )}
-                                    </button>
+                                    </Button>
                                 )}
                             </div>
                         </div>

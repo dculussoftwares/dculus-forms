@@ -72,13 +72,14 @@ export const PageCard: React.FC<PageCardProps> = ({
                                     autoFocus
                                 />
                             ) : (
-                                <button
+                                <Button
+                                    variant="ghost"
                                     onClick={() => setIsEditingTitle(true)}
                                     disabled={!isConnected}
-                                    className="text-lg font-semibold text-gray-900 dark:text-white hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+                                    className="text-lg font-semibold hover:text-purple-600 dark:hover:text-purple-400 h-auto p-0"
                                 >
                                     {page.title || `Page ${index + 1}`}
-                                </button>
+                                </Button>
                             )}
                             <div className="text-sm text-gray-500 dark:text-gray-400">
                                 {page.fields?.length || 0} {(page.fields?.length || 0) === 1 ? 'field' : 'fields'}

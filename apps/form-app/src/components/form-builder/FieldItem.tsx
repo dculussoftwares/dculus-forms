@@ -64,14 +64,15 @@ export const FieldItem: React.FC<FieldItemProps> = ({
                                 autoFocus
                             />
                         ) : (
-                            <button
+                            <Button
+                                variant="ghost"
                                 onClick={() => setIsEditing(true)}
                                 disabled={!isConnected}
-                                className="text-left text-base font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors disabled:cursor-not-allowed"
+                                className="text-left text-base font-medium hover:text-blue-600 dark:hover:text-blue-400 h-auto p-0 justify-start"
                             >
                                 {getFieldLabel(field)}
                                 {isFieldRequired(field) && <span className="text-red-500 ml-1">*</span>}
-                            </button>
+                            </Button>
                         )}
                         
                         {/* Field Type and Description */}

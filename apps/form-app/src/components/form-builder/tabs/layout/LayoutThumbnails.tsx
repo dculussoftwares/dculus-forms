@@ -1,6 +1,8 @@
 import React from 'react';
 import { Check } from 'lucide-react';
 import { LayoutCode } from '@dculus/types';
+import { Button } from '@dculus/ui';
+import { cn } from '@dculus/utils';
 
 // Layout templates with accurate visual representations
 const LAYOUT_TEMPLATES: Array<{
@@ -188,43 +190,41 @@ export const LayoutThumbnails: React.FC<LayoutThumbnailsProps> = ({
     <div className="h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
       <div className="grid grid-cols-2 gap-2 pr-2">
         {LAYOUT_TEMPLATES.map((template) => (
-        <button
-          key={template.code}
-          onClick={() => !disabled && onLayoutSelect(template.code)}
-          disabled={disabled}
-          className={`text-left p-2 rounded-lg border-2 transition-all duration-200 h-20 ${
-            disabled 
-              ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 opacity-50 cursor-not-allowed'
-              : currentLayoutCode === template.code
-                ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 shadow-lg ring-2 ring-purple-200 dark:ring-purple-800'
-                : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 bg-white dark:bg-gray-800 hover:shadow-lg hover:scale-[1.02]'
-          }`}
-        >
-          {/* Header with name and check */}
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs font-semibold text-gray-900 dark:text-white truncate">
-              {template.name}
-            </span>
-            {currentLayoutCode === template.code && (
-              <Check className="w-3 h-3 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+          <Button
+            key={template.code}
+            variant={currentLayoutCode === template.code ? "default" : "outline"}
+            onClick={() => onLayoutSelect(template.code)}
+            disabled={disabled}
+            className={cn(
+              "text-left p-2 h-auto justify-start flex-col items-start gap-0",
+              currentLayoutCode === template.code && "ring-2 ring-purple-200 dark:ring-purple-800"
             )}
-          </div>
-          
-          {/* Preview - Enhanced */}
-          <div className="bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 h-6 flex items-center justify-center p-0.5 mb-1.5 overflow-hidden">
-            <div className="w-full h-full flex items-center justify-center">
-              {template.preview}
+          >
+            {/* Header with name and check */}
+            <div className="flex items-center justify-between w-full mb-1.5">
+              <span className="text-xs font-semibold text-gray-900 dark:text-white truncate">
+                {template.name}
+              </span>
+              {currentLayoutCode === template.code && (
+                <Check className="w-3 h-3 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+              )}
             </div>
-          </div>
-          
-          {/* Layout Code Badge and Description */}
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-full text-gray-600 dark:text-gray-400 border">
-              {template.code}
-            </span>
-            <div className="w-1 h-1 bg-purple-400 rounded-full opacity-60" />
-          </div>
-        </button>
+
+            {/* Preview - Enhanced */}
+            <div className="bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 h-6 flex items-center justify-center p-0.5 mb-1.5 overflow-hidden w-full">
+              <div className="w-full h-full flex items-center justify-center">
+                {template.preview}
+              </div>
+            </div>
+
+            {/* Layout Code Badge and Description */}
+            <div className="flex items-center justify-between w-full">
+              <span className="text-xs font-mono bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-full text-gray-600 dark:text-gray-400 border">
+                {template.code}
+              </span>
+              <div className="w-1 h-1 bg-purple-400 rounded-full opacity-60" />
+            </div>
+          </Button>
         ))}
       </div>
     </div>
