@@ -1,0 +1,97 @@
+{
+  "hero": {
+    "productName": "Dculus Forms",
+    "tagline": "Build beautiful forms collaboratively with your team. Create, share, and analyze responses all in one place.",
+    "attribution": "Team Dculus"
+  },
+  "headings": {
+    "form": "Create an account",
+    "formInvitation": "Complete your invitation",
+    "verify": "Verify your email"
+  },
+  "descriptions": {
+    "form": "Enter your details below to create your account",
+    "formInvitation": "Create your account to join the organization",
+    "verify": "We sent a 6-digit verification code to {{email}}"
+  },
+  "card": {
+    "title": {
+      "form": "Get started",
+      "verify": "Enter verification code"
+    },
+    "description": {
+      "form": "Create your account and organization to start building forms",
+      "verify": "Enter the 6-digit code we sent to verify your email address"
+    }
+  },
+  "form": {
+    "fields": {
+      "name": {
+        "label": "Full Name",
+        "placeholder": "John Doe",
+        "errors": {
+          "required": "Full name is required"
+        }
+      },
+      "email": {
+        "label": "Email",
+        "placeholder": "john@example.com",
+        "errors": {
+          "required": "Email is required",
+          "invalid": "Please enter a valid email"
+        },
+        "invitationNotice": "Email address is pre-filled from your invitation"
+      },
+      "organizationName": {
+        "label": "Organization Name",
+        "placeholder": "Acme Inc.",
+        "errors": {
+          "required": "Organization name is required"
+        }
+      },
+      "password": {
+        "label": "Password",
+        "placeholder": "••••••••",
+        "errors": {
+          "required": "Password is required",
+          "length": "Password must be at least 8 characters"
+        }
+      },
+      "confirmPassword": {
+        "label": "Confirm Password",
+        "placeholder": "••••••••",
+        "errors": {
+          "mismatch": "Passwords don't match"
+        }
+      }
+    },
+    "actions": {
+      "submit": "Create account",
+      "submitting": "Creating account..."
+    }
+  },
+  "verify": {
+    "otpLabel": "Verification Code",
+    "countdown": "Resend code in {{seconds}}s",
+    "resend": "Didn't receive the code? Resend",
+    "actions": {
+      "submit": "Complete Sign Up",
+      "submitting": "Verifying..."
+    }
+  },
+  "messages": {
+    "submitFailed": "Failed to create account",
+    "sendOtpFailed": "Failed to send verification code",
+    "unexpectedError": "An unexpected error occurred. Please try again.",
+    "otpIncomplete": "Please enter the complete 6-digit code",
+    "otpInvalid": "Invalid or expired code",
+    "signInFailed": "Verification successful, but sign-in failed. Please sign in manually.",
+    "resendFailed": "Failed to resend verification code. Please try again.",
+    "resendGenericFailed": "Failed to resend verification code",
+    "joinSuccess": "Welcome! You have successfully joined the organization."
+  },
+  "links": {
+    "signInPrompt": "Already have an account?",
+    "signIn": "Sign in"
+  }
+}

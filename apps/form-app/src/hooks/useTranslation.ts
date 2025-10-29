@@ -2,8 +2,11 @@ import { useCallback } from 'react';
 import { useLocale } from '../contexts/LocaleContext';
 import type { Namespace } from '../locales';
 
+type TranslateValues = Record<string, string | number>;
+
 type TranslateOptions = {
   defaultValue?: string;
+  values?: TranslateValues;
 };
 
 type TranslationNode = Record<string, unknown> | string;
@@ -23,6 +26,17 @@ const resolveMessage = (node: TranslationNode, segments: string[]): unknown => {
   }, node);
 };
 
+const formatMessage = (template: string, values?: TranslateValues) => {
+  if (!values) {
+    return template;
+  }
+
+  return Object.entries(values).reduce((output, [token, value]) => {
+    const pattern = new RegExp(`{{\\s*${token}\\s*}}`, 'g');
+    return output.replace(pattern, String(value));
+  }, template);
+};
+
 export function useTranslation(namespace?: Namespace) {
   const { messages, locale } = useLocale();
 
@@ -32,10 +46,14 @@ export function useTranslation(namespace?: Namespace) {
       const result = resolveMessage(messages, segments);
 
       if (typeof result === 'string') {
-        return result;
+        return formatMessage(result, options.values);
       }
 
-      return options.defaultValue ?? key;
+      if (options.defaultValue) {
+        return formatMessage(options.defaultValue, options.values);
+      }
+
+      return key;
     },
     [messages, namespace],
   );

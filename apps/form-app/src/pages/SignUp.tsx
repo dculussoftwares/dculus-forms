@@ -19,6 +19,7 @@ import { slugify } from '@dculus/utils';
 import { authClient, signUp, emailOtp, signIn, organization } from '../lib/auth-client';
 import { ArrowLeft, Mail, Timer } from 'lucide-react';
 import { INITIALIZE_ORGANIZATION_SUBSCRIPTION } from '../graphql/subscription';
+import { useTranslation } from '../hooks/useTranslation';
 
 export const SignUp = () => {
   const [step, setStep] = useState<'form' | 'verify'>('form');
@@ -35,6 +36,7 @@ export const SignUp = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation('signUp');
 
   // GraphQL mutation for initializing organization subscription
   const [initializeSubscription] = useMutation(INITIALIZE_ORGANIZATION_SUBSCRIPTION);
@@ -72,28 +74,28 @@ export const SignUp = () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Full name is required';
+      newErrors.name = t('form.fields.name.errors.required');
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('form.fields.email.errors.required');
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
+      newErrors.email = t('form.fields.email.errors.invalid');
     }
 
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('form.fields.password.errors.required');
     } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
+      newErrors.password = t('form.fields.password.errors.length');
     }
 
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords don't match";
+      newErrors.confirmPassword = t('form.fields.confirmPassword.errors.mismatch');
     }
 
     // Organization name is only required if not joining via invitation
     if (!pendingInvitationId && !formData.organizationName.trim()) {
-      newErrors.organizationName = 'Organization name is required';
+      newErrors.organizationName = t('form.fields.organizationName.errors.required');
     }
 
     setErrors(newErrors);
@@ -120,7 +122,7 @@ export const SignUp = () => {
 
       if (signUpResponse.error) {
         setErrors({
-          submit: signUpResponse.error.message || 'Failed to create account',
+          submit: signUpResponse.error.message || t('messages.submitFailed'),
         });
         return;
       }
@@ -133,7 +135,7 @@ export const SignUp = () => {
 
       if (otpResponse.error) {
         setErrors({
-          submit: otpResponse.error.message || 'Failed to send verification code',
+          submit: otpResponse.error.message || t('messages.sendOtpFailed'),
         });
         return;
       }
@@ -145,7 +147,7 @@ export const SignUp = () => {
     } catch (error) {
       console.error('Signup error:', error);
       setErrors({
-        submit: 'An unexpected error occurred. Please try again.',
+        submit: t('messages.unexpectedError'),
       });
     } finally {
       setIsLoading(false);
@@ -156,7 +158,7 @@ export const SignUp = () => {
     e.preventDefault();
     
     if (otp.length !== 6) {
-      setErrors({ otp: 'Please enter the complete 6-digit code' });
+      setErrors({ otp: t('messages.otpIncomplete') });
       return;
     }
 
@@ -172,7 +174,7 @@ export const SignUp = () => {
 
       if (verifyResponse.error) {
         setErrors({
-          otp: verifyResponse.error.message || 'Invalid or expired code',
+          otp: verifyResponse.error.message || t('messages.otpInvalid'),
         });
         return;
       }
@@ -185,7 +187,7 @@ export const SignUp = () => {
 
       if (signInResponse.error) {
         setErrors({
-          otp: 'Verification successful, but sign-in failed. Please sign in manually.',
+          otp: t('messages.signInFailed'),
         });
         return;
       }
@@ -203,7 +205,7 @@ export const SignUp = () => {
           // Navigate to dashboard with success message
           navigate('/', { 
             state: { 
-              message: 'Welcome! You have successfully joined the organization.' 
+              message: t('messages.joinSuccess') 
             } 
           });
           return;
@@ -247,7 +249,7 @@ export const SignUp = () => {
     } catch (error) {
       console.error('OTP verification error:', error);
       setErrors({
-        otp: 'An unexpected error occurred. Please try again.',
+        otp: t('messages.unexpectedError'),
       });
     } finally {
       setIsLoading(false);
@@ -268,7 +270,7 @@ export const SignUp = () => {
 
       if (response.error) {
         setErrors({ 
-          submit: response.error.message || 'Failed to resend verification code' 
+          submit: response.error.message || t('messages.resendGenericFailed') 
         });
       } else {
         setCountdown(60);
@@ -277,7 +279,7 @@ export const SignUp = () => {
     } catch (error) {
       console.error('Resend OTP error:', error);
       setErrors({ 
-        submit: 'Failed to resend verification code. Please try again.' 
+        submit: t('messages.resendFailed') 
       });
     } finally {
       setIsLoading(false);
@@ -290,6 +292,19 @@ export const SignUp = () => {
     setErrors({});
     setCountdown(0);
   };
+  const heading =
+    step === 'form'
+      ? pendingInvitationId
+        ? t('headings.formInvitation')
+        : t('headings.form')
+      : t('headings.verify');
+
+  const description =
+    step === 'form'
+      ? pendingInvitationId
+        ? t('descriptions.formInvitation')
+        : t('descriptions.form')
+      : t('descriptions.verify', { values: { email: formData.email } });
 
   return (
     <div className="container relative h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
@@ -310,35 +325,23 @@ export const SignUp = () => {
             <path d="M2 3h6" />
             <path d="M6 3v5" />
           </svg>
-          Dculus Forms
+          {t('hero.productName')}
         </div>
         <div className="relative z-20 mt-auto">
           <div className="mt-6 border-l-2 pl-6 italic">
             <TypographyP>
-              &ldquo;Build beautiful forms collaboratively with your team.
-              Create, share, and analyze responses all in one place.&rdquo;
+              &ldquo;{t('hero.tagline')}&rdquo;
             </TypographyP>
-            <footer className="text-sm">Team Dculus</footer>
+            <footer className="text-sm">{t('hero.attribution')}</footer>
           </div>
         </div>
       </div>
       <div className="lg:p-8">
         <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
           <div className="flex flex-col space-y-2 text-center">
-            <TypographyH2>
-              {step === 'form' 
-                ? (pendingInvitationId ? 'Complete your invitation' : 'Create an account')
-                : 'Verify your email'
-              }
-            </TypographyH2>
+            <TypographyH2>{heading}</TypographyH2>
             <TypographySmall className="text-muted-foreground">
-              {step === 'form' 
-                ? (pendingInvitationId 
-                    ? 'Create your account to join the organization'
-                    : 'Enter your details below to create your account'
-                  )
-                : `We sent a 6-digit verification code to ${formData.email}`
-              }
+              {description}
             </TypographySmall>
           </div>
 
@@ -356,25 +359,24 @@ export const SignUp = () => {
                   </Button>
                 )}
                 <Mail className="w-5 h-5" />
-                {step === 'form' ? 'Get started' : 'Enter verification code'}
+                {step === 'form' ? t('card.title.form') : t('card.title.verify')}
               </CardTitle>
               <CardDescription>
                 {step === 'form'
-                  ? 'Create your account and organization to start building forms'
-                  : 'Enter the 6-digit code we sent to verify your email address'
-                }
+                  ? t('card.description.form')
+                  : t('card.description.verify')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {step === 'form' ? (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="name">{t('form.fields.name.label')}</Label>
                     <Input
                       id="name"
                       name="name"
                       type="text"
-                      placeholder="John Doe"
+                      placeholder={t('form.fields.name.placeholder')}
                       value={formData.name}
                       onChange={handleInputChange}
                       disabled={isLoading}
@@ -388,12 +390,12 @@ export const SignUp = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">{t('form.fields.email.label')}</Label>
                     <Input
                       id="email"
                       name="email"
                       type="email"
-                      placeholder="john@example.com"
+                      placeholder={t('form.fields.email.placeholder')}
                       value={formData.email}
                       onChange={handleInputChange}
                       disabled={isLoading || !!pendingInvitationId}
@@ -406,7 +408,7 @@ export const SignUp = () => {
                     )}
                     {pendingInvitationId && (
                       <TypographySmall className="text-muted-foreground">
-                        Email address is pre-filled from your invitation
+                        {t('form.fields.email.invitationNotice')}
                       </TypographySmall>
                     )}
                   </div>
@@ -414,12 +416,12 @@ export const SignUp = () => {
                   {/* Only show organization name field if not joining via invitation */}
                   {!pendingInvitationId && (
                     <div className="space-y-2">
-                      <Label htmlFor="organizationName">Organization Name</Label>
+                      <Label htmlFor="organizationName">{t('form.fields.organizationName.label')}</Label>
                       <Input
                         id="organizationName"
                         name="organizationName"
                         type="text"
-                        placeholder="Acme Inc."
+                        placeholder={t('form.fields.organizationName.placeholder')}
                         value={formData.organizationName}
                         onChange={handleInputChange}
                         disabled={isLoading}
@@ -434,12 +436,12 @@ export const SignUp = () => {
                   )}
 
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password">{t('form.fields.password.label')}</Label>
                     <Input
                       id="password"
                       name="password"
                       type="password"
-                      placeholder="••••••••"
+                      placeholder={t('form.fields.password.placeholder')}
                       value={formData.password}
                       onChange={handleInputChange}
                       disabled={isLoading}
@@ -453,12 +455,12 @@ export const SignUp = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <Label htmlFor="confirmPassword">{t('form.fields.confirmPassword.label')}</Label>
                     <Input
                       id="confirmPassword"
                       name="confirmPassword"
                       type="password"
-                      placeholder="••••••••"
+                      placeholder={t('form.fields.confirmPassword.placeholder')}
                       value={formData.confirmPassword}
                       onChange={handleInputChange}
                       disabled={isLoading}
@@ -478,14 +480,14 @@ export const SignUp = () => {
                   )}
 
                   <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? 'Creating account...' : 'Create account'}
+                    {isLoading ? t('form.actions.submitting') : t('form.actions.submit')}
                   </Button>
                 </form>
               ) : (
                 <form onSubmit={handleVerifyOTP} className="space-y-6">
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-center block">Verification Code</Label>
+                      <Label className="text-center block">{t('verify.otpLabel')}</Label>
                       <OTPInput
                         value={otp}
                         onChange={(value) => {
@@ -508,7 +510,7 @@ export const SignUp = () => {
                       {countdown > 0 ? (
                         <TypographySmall className="text-muted-foreground flex items-center justify-center gap-2">
                           <Timer className="w-4 h-4" />
-                          Resend code in {countdown}s
+                          {t('verify.countdown', { values: { seconds: countdown } })}
                         </TypographySmall>
                       ) : (
                         <Button
@@ -518,7 +520,7 @@ export const SignUp = () => {
                           disabled={isLoading}
                           className="text-sm"
                         >
-                          Didn't receive the code? Resend
+                          {t('verify.resend')}
                         </Button>
                       )}
                     </div>
@@ -535,7 +537,7 @@ export const SignUp = () => {
                     className="w-full"
                     disabled={isLoading || otp.length !== 6}
                   >
-                    {isLoading ? 'Verifying...' : 'Complete Sign Up'}
+                    {isLoading ? t('verify.actions.submitting') : t('verify.actions.submit')}
                   </Button>
                 </form>
               )}
@@ -543,12 +545,12 @@ export const SignUp = () => {
           </Card>
 
           <TypographySmall className="text-center">
-            Already have an account?{' '}
+            {t('links.signInPrompt')}{' '}
             <Link
               to="/signin"
               className="underline underline-offset-4 hover:text-primary"
             >
-              Sign in
+              {t('links.signIn')}
             </Link>
           </TypographySmall>
         </div>
