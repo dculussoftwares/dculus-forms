@@ -1,0 +1,49 @@
+{
+  "hero": {
+    "title": "Form Templates",
+    "subtitle": "Choose from our professionally designed templates to get started quickly. Each template is fully customizable to match your needs."
+  },
+  "status": {
+    "loadingAria": "Loading templates",
+    "errorTitle": "Unable to load templates",
+    "errorMessage": "Please try refreshing the page",
+    "emptyTitle": "No templates found",
+    "emptyMessage": "Check back later for new templates"
+  },
+  "card": {
+    "fallbackLabel": "Form Template",
+    "fallbackDescription": "A professionally designed form template ready for customization.",
+    "useTemplate": "Use Template",
+    "ready": "Ready to use"
+  },
+  "popover": {
+    "title": "Create Form from Template",
+    "subtitle": "Create a new form based on \"{{template}}\" template.",
+    "fields": {
+      "title": {
+        "label": "Form Title *",
+        "placeholder": "Enter form title",
+        "error": "Form title is required"
+      },
+      "description": {
+        "label": "Description (optional)",
+        "placeholder": "Enter form description"
+      }
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "submit": "Create Form",
+      "submitting": "Creating..."
+    },
+    "success": {
+      "title": "Form created successfully",
+      "description": "\"{{title}}\" is ready for editing"
+    },
+    "errors": {
+      "createTitle": "Failed to create form from template",
+      "organizationMissing": "Organization not found. Please refresh and try again.",
+      "default": "Failed to create form. Please try again."
+    },
+    "defaultTitleSuffix": "Copy"
+  }
+}

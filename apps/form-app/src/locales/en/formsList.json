@@ -1,0 +1,20 @@
+{
+  "loading": "Loading forms...",
+  "error": "Error loading forms: {{error}}",
+  "header": {
+    "title": "Forms",
+    "create": "+ Create Form"
+  },
+  "card": {
+    "managed": "Form fields managed via collaboration",
+    "buttons": {
+      "dashboard": "Dashboard",
+      "view": "View",
+      "edit": "Edit"
+    }
+  },
+  "empty": {
+    "title": "No forms created yet",
+    "action": "+ Create Your First Form"
+  }
+}

@@ -5,6 +5,8 @@ import enForgotPassword from './en/forgotPassword.json';
 import enSignInOtp from './en/signInOtp.json';
 import enInviteAcceptance from './en/inviteAcceptance.json';
 import enSettings from './en/settings.json';
+import enFormsList from './en/formsList.json';
+import enTemplates from './en/templates.json';
 
 export const translations = {
   en: {
@@ -15,6 +17,8 @@ export const translations = {
     signInOtp: enSignInOtp,
     inviteAcceptance: enInviteAcceptance,
     settings: enSettings,
+    formsList: enFormsList,
+    templates: enTemplates,
   },
 } as const;
 

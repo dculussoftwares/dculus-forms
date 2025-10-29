@@ -4,10 +4,12 @@ import { useQuery } from '@apollo/client';
 import { Button, Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, TypographyH1, TypographyH2, TypographyLarge, TypographySmall } from '@dculus/ui';
 import { GET_MY_FORMS_WITH_CATEGORY, GET_SHARED_FORMS_WITH_CATEGORY } from '../graphql/queries';
 import { useAppConfig } from '@/hooks';
+import { useTranslation } from '../hooks/useTranslation';
 
 const FormsList: React.FC = () => {
   const navigate = useNavigate();
   const { organizationId } = useAppConfig();
+  const { t } = useTranslation('formsList');
   const { loading: myFormsLoading, error: myFormsError, data: myFormsData } = useQuery(GET_MY_FORMS_WITH_CATEGORY, {
     variables: { organizationId },
     skip: !organizationId
@@ -29,22 +31,24 @@ const FormsList: React.FC = () => {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
-      <TypographyLarge className="text-muted-foreground">Loading forms...</TypographyLarge>
+      <TypographyLarge className="text-muted-foreground">{t('loading')}</TypographyLarge>
     </div>
   );
   
   if (error) return (
     <div className="flex items-center justify-center min-h-[400px]">
-      <TypographyLarge className="text-destructive">Error loading forms: {error.message}</TypographyLarge>
+      <TypographyLarge className="text-destructive">
+        {t('error', { values: { error: error.message } })}
+      </TypographyLarge>
     </div>
   );
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <TypographyH1>Forms</TypographyH1>
+        <TypographyH1>{t('header.title')}</TypographyH1>
         <Button onClick={() => navigate('/forms/new')}>
-          + Create Form
+          {t('header.create')}
         </Button>
       </div>
 
@@ -59,7 +63,7 @@ const FormsList: React.FC = () => {
             </CardHeader>
             <CardContent>
               <TypographySmall className="text-muted-foreground">
-                Form fields managed via collaboration
+                {t('card.managed')}
               </TypographySmall>
             </CardContent>
             <CardFooter className="flex gap-2">
@@ -68,21 +72,21 @@ const FormsList: React.FC = () => {
                 size="sm"
                 onClick={() => navigate(`/dashboard/form/${form.id}`)}
               >
-                � Dashboard
+                {t('card.buttons.dashboard')}
               </Button>
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => navigate(`/forms/${form.id}`)}
               >
-                👁 View
+                {t('card.buttons.view')}
               </Button>
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => navigate(`/forms/${form.id}/edit`)}
               >
-                ✏️ Edit
+                {t('card.buttons.edit')}
               </Button>
             </CardFooter>
           </Card>
@@ -92,9 +96,9 @@ const FormsList: React.FC = () => {
       {allForms.length === 0 && (
         <Card className="text-center py-12">
           <CardContent>
-            <TypographyH2 className="mb-4">No forms created yet</TypographyH2>
+            <TypographyH2 className="mb-4">{t('empty.title')}</TypographyH2>
             <Button onClick={() => navigate('/forms/new')}>
-              + Create Your First Form
+              {t('empty.action')}
             </Button>
           </CardContent>
         </Card>

@@ -10,6 +10,7 @@ import {
 import { useQuery } from '@apollo/client';
 import { GET_TEMPLATES } from '../graphql/templates';
 import { UseTemplatePopover } from '../components/UseTemplatePopover';
+import { useTranslation } from '../hooks/useTranslation';
 
 /**
  * Templates Page - displays available form templates for selection.
@@ -18,6 +19,7 @@ import { UseTemplatePopover } from '../components/UseTemplatePopover';
 const Templates: React.FC = () => {
   const { data, loading, error } = useQuery(GET_TEMPLATES);
   const cdnEndpoint = (import.meta as any).env.VITE_CDN_ENDPOINT;
+  const { t, locale } = useTranslation('templates');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100/50">
@@ -26,11 +28,10 @@ const Templates: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 py-12">
           <div className="text-center">
             <TypographyH1 className="mb-4 text-slate-900">
-              Form Templates
+              {t('hero.title')}
             </TypographyH1>
             <TypographyP className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Choose from our professionally designed templates to get started quickly. 
-              Each template is fully customizable to match your needs.
+              {t('hero.subtitle')}
             </TypographyP>
           </div>
         </div>
@@ -40,15 +41,15 @@ const Templates: React.FC = () => {
       <div className="max-w-7xl mx-auto px-6 py-12">
         {loading && (
           <div className="flex items-center justify-center py-20">
-            <LoadingSpinner />
+            <LoadingSpinner aria-label={t('status.loadingAria')} />
           </div>
         )}
         
         {error && (
           <div className="text-center py-20">
             <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
-              <div className="text-red-600 font-medium mb-2">Unable to load templates</div>
-              <div className="text-red-500 text-sm">Please try refreshing the page</div>
+              <div className="text-red-600 font-medium mb-2">{t('status.errorTitle')}</div>
+              <div className="text-red-500 text-sm">{t('status.errorMessage')}</div>
             </div>
           </div>
         )}
@@ -58,8 +59,8 @@ const Templates: React.FC = () => {
             {data?.templates?.length === 0 ? (
               <div className="text-center py-20">
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-8 max-w-md mx-auto">
-                  <div className="text-slate-600 font-medium mb-2">No templates found</div>
-                  <div className="text-slate-500 text-sm">Check back later for new templates</div>
+                  <div className="text-slate-600 font-medium mb-2">{t('status.emptyTitle')}</div>
+                  <div className="text-slate-500 text-sm">{t('status.emptyMessage')}</div>
                 </div>
               </div>
             ) : (
@@ -94,7 +95,7 @@ const Templates: React.FC = () => {
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                               </div>
-                              <span className="text-sm font-medium">Form Template</span>
+                              <span className="text-sm font-medium">{t('card.fallbackLabel')}</span>
                             </div>
                           </div>
                         )}
@@ -109,7 +110,7 @@ const Templates: React.FC = () => {
                             templateName={template.name}
                           >
                             <Button variant="secondary" className="px-6 py-2 font-medium shadow-lg hover:shadow-xl transition-shadow duration-200">
-                              Use Template
+                              {t('card.useTemplate')}
                             </Button>
                           </UseTemplatePopover>
                         </div>
@@ -134,7 +135,7 @@ const Templates: React.FC = () => {
                           WebkitBoxOrient: 'vertical',
                           overflow: 'hidden'
                         }}>
-                          {template.description || 'A professionally designed form template ready for customization.'}
+                          {template.description || t('card.fallbackDescription')}
                         </p>
                         
                         <div className="flex items-center justify-between text-xs text-slate-500">
@@ -142,7 +143,7 @@ const Templates: React.FC = () => {
                             <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            {new Date(template.createdAt).toLocaleDateString('en-US', { 
+                            {new Date(template.createdAt).toLocaleDateString(locale, { 
                               month: 'short', 
                               day: 'numeric',
                               year: 'numeric'
@@ -152,7 +153,7 @@ const Templates: React.FC = () => {
                             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
-                            Ready to use
+                            {t('card.ready')}
                           </div>
                         </div>
                       </div>

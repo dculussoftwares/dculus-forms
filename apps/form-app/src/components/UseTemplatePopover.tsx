@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMutation } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -15,6 +15,7 @@ import {
 } from '@dculus/ui';
 import { CREATE_FORM } from '../graphql/mutations';
 import { useAppConfig } from '../hooks/useAppConfig';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface UseTemplatePopoverProps {
   templateId: string;
@@ -32,9 +33,11 @@ export const UseTemplatePopover: React.FC<UseTemplatePopoverProps> = ({
   templateName,
   children,
 }) => {
+  const { t } = useTranslation('templates');
+  const defaultTitle = `${templateName} ${t('popover.defaultTitleSuffix')}`;
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<FormData>({
-    title: `${templateName} Copy`,
+    title: defaultTitle,
     description: '',
   });
   const [errors, setErrors] = useState<Partial<FormData>>({});
@@ -42,6 +45,15 @@ export const UseTemplatePopover: React.FC<UseTemplatePopoverProps> = ({
   const navigate = useNavigate();
   const { organizationId } = useAppConfig();
   const [createForm, { loading }] = useMutation(CREATE_FORM);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setFormData(prev => ({
+        ...prev,
+        title: defaultTitle,
+      }));
+    }
+  }, [defaultTitle, isOpen]);
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -55,7 +67,7 @@ export const UseTemplatePopover: React.FC<UseTemplatePopoverProps> = ({
     const newErrors: Partial<FormData> = {};
     
     if (!formData.title.trim()) {
-      newErrors.title = 'Form title is required';
+      newErrors.title = t('popover.fields.title.error');
     }
     
     setErrors(newErrors);
@@ -68,7 +80,7 @@ export const UseTemplatePopover: React.FC<UseTemplatePopoverProps> = ({
     if (!validateForm()) return;
     
     if (!organizationId) {
-      setErrors({ title: 'Organization not found. Please refresh and try again.' });
+      setErrors({ title: t('popover.errors.organizationMissing') });
       return;
     }
 
@@ -85,20 +97,24 @@ export const UseTemplatePopover: React.FC<UseTemplatePopoverProps> = ({
       });
 
       if (data?.createForm) {
-        toastSuccess('Form created successfully', `"${data.createForm.title}" is ready for editing`);
+        toastSuccess(
+          t('popover.success.title'),
+          t('popover.success.description', { values: { title: data.createForm.title } }),
+        );
         // Navigate to the new Form Dashboard page
         navigate(`/dashboard/form/${data.createForm.id}`);
         setIsOpen(false);
         // Reset form data
         setFormData({
-          title: `${templateName} Copy`,
+          title: defaultTitle,
           description: '',
         });
       }
     } catch (error) {
       console.error('Error creating form:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create form. Please try again.';
-      toastError('Failed to create form from template', errorMessage);
+      const errorMessage =
+        error instanceof Error ? error.message : t('popover.errors.default');
+      toastError(t('popover.errors.createTitle'), errorMessage);
       setErrors({ 
         title: errorMessage
       });
@@ -110,7 +126,7 @@ export const UseTemplatePopover: React.FC<UseTemplatePopoverProps> = ({
     if (!open) {
       // Reset form when closing
       setFormData({
-        title: `${templateName} Copy`,
+        title: defaultTitle,
         description: '',
       });
       setErrors({});
@@ -126,20 +142,20 @@ export const UseTemplatePopover: React.FC<UseTemplatePopoverProps> = ({
         <div className="space-y-4">
           <div className="space-y-2">
             <h3 className="text-lg font-semibold text-slate-900">
-              Create Form from Template
+              {t('popover.title')}
             </h3>
             <p className="text-sm text-slate-600">
-              Create a new form based on "{templateName}" template.
+              {t('popover.subtitle', { values: { template: templateName } })}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="form-title">Form Title *</Label>
+              <Label htmlFor="form-title">{t('popover.fields.title.label')}</Label>
               <Input
                 id="form-title"
                 type="text"
-                placeholder="Enter form title"
+                placeholder={t('popover.fields.title.placeholder')}
                 value={formData.title}
                 onChange={(e) => handleInputChange('title', e.target.value)}
                 className={errors.title ? 'border-red-500' : ''}
@@ -151,10 +167,10 @@ export const UseTemplatePopover: React.FC<UseTemplatePopoverProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="form-description">Description (optional)</Label>
+              <Label htmlFor="form-description">{t('popover.fields.description.label')}</Label>
               <Textarea
                 id="form-description"
-                placeholder="Enter form description"
+                placeholder={t('popover.fields.description.placeholder')}
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 rows={3}
@@ -172,7 +188,7 @@ export const UseTemplatePopover: React.FC<UseTemplatePopoverProps> = ({
                 onClick={() => setIsOpen(false)}
                 disabled={loading}
               >
-                Cancel
+                {t('popover.actions.cancel')}
               </Button>
               <Button
                 type="submit"
@@ -182,10 +198,10 @@ export const UseTemplatePopover: React.FC<UseTemplatePopoverProps> = ({
                 {loading ? (
                   <div className="flex items-center gap-2">
                     <LoadingSpinner />
-                    <span>Creating...</span>
+                    <span>{t('popover.actions.submitting')}</span>
                   </div>
                 ) : (
-                  'Create Form'
+                  t('popover.actions.submit')
                 )}
               </Button>
             </div>
