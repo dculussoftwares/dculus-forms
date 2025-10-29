@@ -1,6 +1,22 @@
 export { Button, buttonVariants } from "./button"
 export { Badge } from "./badge"
 export { Chip } from "./chip"
+export { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "./accordion"
+export { Progress } from "./progress"
+export { Slider } from "./slider"
+export { HoverCard, HoverCardTrigger, HoverCardContent } from "./hover-card"
+export {
+  Drawer,
+  DrawerPortal,
+  DrawerOverlay,
+  DrawerTrigger,
+  DrawerClose,
+  DrawerContent,
+  DrawerHeader,
+  DrawerFooter,
+  DrawerTitle,
+  DrawerDescription,
+} from "./drawer"
 export { Calendar } from "./calendar"
 export { DatePicker, DateRangePicker } from "./date-picker"
 export { Switch } from "./switch"
