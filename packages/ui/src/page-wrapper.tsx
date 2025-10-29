@@ -1,6 +1,7 @@
 import React from 'react';
 import { SidebarTrigger } from './sidebar';
 import { TypographyH3 } from './typography';
+import { Separator } from './separator';
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -61,10 +62,10 @@ export function PageWrapper({
   return (
     <>
       {/* Header */}
-      <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center gap-2 px-4 bg-background border-b border-border">
-        <div className="flex items-center gap-2 w-full">
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background/80 backdrop-blur transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+        <div className="flex flex-1 items-center gap-2 px-4">
           <SidebarTrigger className="-ml-1" />
-          <div className="h-4 w-px bg-border mx-2" />
+          <Separator orientation="vertical" className="mr-2 h-6" />
           {/* Breadcrumb */}
           <div className="flex-1">
             <Breadcrumb>
