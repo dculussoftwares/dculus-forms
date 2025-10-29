@@ -8,7 +8,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "pnpm --parallel --filter backend --filter form-app --filter form-viewer --filter admin-app --filter form-app-v2 run dev",
+    "dev": "pnpm --parallel --filter backend --filter form-app --filter form-viewer --filter admin-app run dev",
     "build": "pnpm run --recursive build",
     "clean": "pnpm run --recursive clean",
     "lint": "pnpm run --recursive lint",
@@ -20,9 +20,6 @@
     "form-app:dev": "pnpm --filter form-app dev",
     "form-app:build": "pnpm --filter form-app build",
     "form-app:preview": "pnpm --filter form-app preview",
-    "form-app-v2:dev": "pnpm --filter form-app-v2 dev",
-    "form-app-v2:build": "pnpm --filter form-app-v2 build",
-    "form-app-v2:preview": "pnpm --filter form-app-v2 preview",
     "form-viewer:dev": "pnpm --filter form-viewer dev",
     "form-viewer:build": "pnpm --filter form-viewer build",
     "form-viewer:preview": "pnpm --filter form-viewer preview",
