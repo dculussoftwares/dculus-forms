@@ -10,6 +10,7 @@ import enTemplates from './en/templates.json';
 import enDashboard from './en/dashboard.json';
 import enFormDashboard from './en/formDashboard.json';
 import enSharing from './en/sharing.json';
+import enResponses from './en/responses.json';
 
 export const translations = {
   en: {
@@ -25,6 +26,7 @@ export const translations = {
     dashboard: enDashboard,
     formDashboard: enFormDashboard,
     sharing: enSharing,
+    responses: enResponses,
   },
 } as const;
 

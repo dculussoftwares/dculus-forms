@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@apollo/client';
 import { ColumnDef, VisibilityState } from '@tanstack/react-table';
 import { formatDistanceToNow } from 'date-fns';
+import { useTranslation } from '../hooks/useTranslation';
 import {
   Badge,
   Button,
@@ -79,6 +80,7 @@ const formatFieldValue = (value: any, fieldType: FieldType): string => {
 const Responses: React.FC = () => {
   const { formId, id } = useParams<{ formId?: string; id?: string }>();
   const navigate = useNavigate();
+  const { t, locale } = useTranslation('responses');
 
   // Pagination and sorting state
   const [currentPage, setCurrentPage] = useState(1);
@@ -306,7 +308,7 @@ const Responses: React.FC = () => {
       {
         accessorKey: 'id',
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Response ID" />
+          <DataTableColumnHeader column={column} title={t('table.columns.responseId')} />
         ),
         cell: ({ row }) => {
           const id = row.getValue('id') as string;
@@ -326,7 +328,7 @@ const Responses: React.FC = () => {
       {
         accessorKey: 'submittedAt',
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Submitted At" />
+          <DataTableColumnHeader column={column} title={t('table.columns.submittedAt')} />
         ),
         cell: ({ row }) => {
           const submittedAt = row.getValue('submittedAt') as string | number;
@@ -340,7 +342,7 @@ const Responses: React.FC = () => {
             return (
               <div className="flex items-center space-x-2 text-muted-foreground">
                 <Calendar className="h-4 w-4" />
-                <span className="text-sm">Invalid date</span>
+                <span className="text-sm">{t('errors.invalidDate')}</span>
               </div>
             );
           }
@@ -350,14 +352,14 @@ const Responses: React.FC = () => {
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <div className="flex flex-col">
                 <span className="text-sm font-medium">
-                  {date.toLocaleDateString(undefined, {
+                  {date.toLocaleDateString(locale, {
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric',
                   })}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {date.toLocaleTimeString(undefined, {
+                  {date.toLocaleTimeString(locale, {
                     hour: '2-digit',
                     minute: '2-digit',
                   })}
@@ -372,7 +374,7 @@ const Responses: React.FC = () => {
       {
         accessorKey: 'hasBeenEdited',
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Edit Status" />
+          <DataTableColumnHeader column={column} title={t('table.columns.editStatus')} />
         ),
         cell: ({ row }) => {
           const response = row.original;
@@ -385,7 +387,7 @@ const Responses: React.FC = () => {
             return (
               <div className="flex items-center space-x-2">
                 <div className="h-2 w-2 bg-green-500 rounded-full" />
-                <span className="text-sm text-muted-foreground">Original</span>
+                <span className="text-sm text-muted-foreground">{t('table.editStatus.original')}</span>
               </div>
             );
           }
@@ -397,7 +399,7 @@ const Responses: React.FC = () => {
                 <div className="flex items-center space-x-1">
                   <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
                     <History className="h-3 w-3 mr-1" />
-                    {totalEdits} edit{totalEdits !== 1 ? 's' : ''}
+                    {totalEdits === 1 ? t('table.editStatus.editBadge', { values: { count: totalEdits } }) : t('table.editStatus.editBadgePlural', { values: { count: totalEdits } })}
                   </Badge>
                 </div>
                 {lastEditedAt && (
@@ -407,7 +409,7 @@ const Responses: React.FC = () => {
                     </span>
                     {lastEditedBy && (
                       <>
-                        <span className="text-xs text-muted-foreground">by</span>
+                        <span className="text-xs text-muted-foreground">{t('table.editStatus.editedBy')}</span>
                         <span className="text-xs font-medium text-muted-foreground">
                           {lastEditedBy.name}
                         </span>
@@ -465,7 +467,7 @@ const Responses: React.FC = () => {
                 return (
                   <div className="flex items-center space-x-2 text-muted-foreground">
                     {getFieldIcon(field.type)}
-                    <span className="text-sm italic">No response</span>
+                    <span className="text-sm italic">{t('table.fieldResponses.noResponse')}</span>
                   </div>
                 );
               }
@@ -497,7 +499,7 @@ const Responses: React.FC = () => {
     // Actions column
     const actionsColumn: ColumnDef<FormResponse> = {
       id: 'actions',
-      header: () => <div className="text-center">Actions</div>,
+      header: () => <div className="text-center">{t('table.columns.actions')}</div>,
       cell: ({ row }) => (
         <div className="flex items-center justify-center gap-1">
           <Button
@@ -511,7 +513,7 @@ const Responses: React.FC = () => {
             }}
           >
             <Eye className="h-4 w-4" />
-            <span className="sr-only">View response</span>
+            <span className="sr-only">{t('table.actions.viewResponse')}</span>
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -522,7 +524,7 @@ const Responses: React.FC = () => {
                 onClick={(e) => e.stopPropagation()}
               >
                 <MoreHorizontal className="h-4 w-4" />
-                <span className="sr-only">More actions</span>
+                <span className="sr-only">{t('table.actions.moreActions')}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -541,7 +543,7 @@ const Responses: React.FC = () => {
                 disabled={!row.original.hasBeenEdited}
               >
                 <History className="mr-2 h-4 w-4" />
-                Edit History
+                {t('table.actions.editHistory')}
                 {(row.original.totalEdits || 0) > 0 && (
                   <Badge variant="outline" className="ml-2 bg-orange-50 text-orange-700 border-orange-200 text-xs">
                     {row.original.totalEdits}
@@ -552,7 +554,7 @@ const Responses: React.FC = () => {
                 onClick={() => console.log('Delete response:', row.original.id)}
               >
                 <X className="mr-2 h-4 w-4" />
-                Delete
+                {t('table.actions.delete')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -602,12 +604,12 @@ const Responses: React.FC = () => {
   if (loading) {
     return (
       <MainLayout
-        title="Responses"
+        title={t('layout.breadcrumbResponses')}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
+          { label: t('layout.breadcrumbDashboard'), href: '/dashboard' },
           { label: 'Form Dashboard', href: `/dashboard/form/${actualFormId}` },
           {
-            label: 'Responses',
+            label: t('layout.breadcrumbResponses'),
             href: `/dashboard/form/${actualFormId}/responses`,
           },
         ]}
@@ -622,12 +624,12 @@ const Responses: React.FC = () => {
   if (error || !formData?.form) {
     return (
       <MainLayout
-        title="Responses"
+        title={t('layout.breadcrumbResponses')}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Form Dashboard', href: `/dashboard/form/${actualFormId}` },
+          { label: t('layout.breadcrumbDashboard'), href: '/dashboard' },
+          { label: t('layout.breadcrumbFormDashboard'), href: `/dashboard/form/${actualFormId}` },
           {
-            label: 'Responses',
+            label: t('layout.breadcrumbResponses'),
             href: `/dashboard/form/${actualFormId}/responses`,
           },
         ]}
@@ -636,12 +638,12 @@ const Responses: React.FC = () => {
           <div className="max-w-md text-center p-8 bg-white rounded-lg shadow-sm border border-slate-200/60">
             <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
             <h3 className="mb-2 text-xl font-semibold">
-              {formData?.form ? 'Error Loading Responses' : 'Form Not Found'}
+              {formData?.form ? t('errors.loadingResponses') : t('errors.formNotFound')}
             </h3>
             <p className="text-slate-600">
               {formData?.form
-                ? 'There was an error loading the form responses. Please try again.'
-                : "The form you're looking for doesn't exist or you don't have permission to view it."}
+                ? t('errors.loadingResponsesMessage')
+                : t('errors.formNotFoundMessage')}
             </p>
           </div>
         </div>
@@ -674,7 +676,7 @@ const Responses: React.FC = () => {
           <div className="relative w-full sm:w-80 sm:max-w-[320px] min-w-0">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search responses..."
+              placeholder={t('toolbar.search.placeholder')}
               value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
               className="pl-9 h-10 w-full"
@@ -687,7 +689,7 @@ const Responses: React.FC = () => {
                 onClick={() => setGlobalFilter('')}
               >
                 <X className="h-4 w-4" />
-                <span className="sr-only">Clear search</span>
+                <span className="sr-only">{t('toolbar.search.clearLabel')}</span>
               </Button>
             )}
           </div>
@@ -700,7 +702,7 @@ const Responses: React.FC = () => {
             className="flex-shrink-0"
           >
             <Filter className="h-4 w-4 mr-2" />
-            Filters
+            {t('toolbar.filters.buttonLabel')}
             {Object.values(filters).some((f) => f.active) && (
               <span className="ml-2 px-2 py-0.5 bg-blue-100/80 text-blue-800 text-xs rounded-full font-medium border border-blue-200/40">
                 {Object.values(filters).filter((f) => f.active).length}
@@ -714,8 +716,7 @@ const Responses: React.FC = () => {
             {globalFilter && (
               <div className="flex items-center gap-1 px-2 py-1 bg-blue-50/80 text-blue-700 text-sm rounded-md border border-blue-200/60">
                 <span className="truncate max-w-32">
-                  Search: "{globalFilter.slice(0, 15)}
-                  {globalFilter.length > 15 ? '...' : ''}"
+                  {t('table.searchIndicator', { values: { query: `${globalFilter.slice(0, 15)}${globalFilter.length > 15 ? '...' : ''}` } })}
                 </span>
                 <Button
                   variant="ghost"
@@ -754,10 +755,10 @@ const Responses: React.FC = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="flex-shrink-0">
                 <Settings2 className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Columns</span>
+                <span className="hidden sm:inline">{t('toolbar.columns.buttonLabel')}</span>
                 {hiddenColumns.length > 0 && (
                   <span className="ml-2 px-2 py-0.5 bg-slate-100/80 text-slate-700 text-xs rounded-full font-medium border border-slate-200/40">
-                    {hiddenColumns.length} hidden
+                    {t('toolbar.columns.hiddenCount', { values: { count: hiddenColumns.length } })}
                   </span>
                 )}
               </Button>
@@ -765,7 +766,7 @@ const Responses: React.FC = () => {
             <DropdownMenuContent align="end" className="w-64">
               <div className="flex flex-col max-h-80">
                 <div className="flex items-center justify-between p-3 pb-2 border-b flex-shrink-0">
-                  <span className="text-sm font-medium">Toggle columns</span>
+                  <span className="text-sm font-medium">{t('toolbar.columns.toggle')}</span>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -773,13 +774,13 @@ const Responses: React.FC = () => {
                     onClick={() => setColumnVisibility({})}
                   >
                     <RotateCcw className="h-3 w-3 mr-1" />
-                    Reset
+                    {t('toolbar.columns.reset')}
                   </Button>
                 </div>
                 <div className="overflow-y-auto flex-1 p-2">
                   {columns.length === 0 ? (
                     <div className="text-center text-slate-500 text-sm py-4">
-                      No columns available
+                      {t('toolbar.columns.noColumnsAvailable')}
                     </div>
                   ) : (
                     <div className="space-y-1">
@@ -851,12 +852,12 @@ const Responses: React.FC = () => {
                 {exportLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
-                    Exporting...
+                    {t('toolbar.export.exporting')}
                   </>
                 ) : (
                   <>
                     <Download className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Export</span>
+                    <span className="hidden sm:inline">{t('toolbar.export.buttonLabel')}</span>
                     <ChevronDown className="h-4 w-4 ml-2" />
                   </>
                 )}
@@ -865,11 +866,11 @@ const Responses: React.FC = () => {
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={exportToExcel} disabled={isExporting}>
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Export as Excel
+                {t('toolbar.export.excel')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={exportToCsv} disabled={isExporting}>
                 <FileText className="h-4 w-4 mr-2" />
-                Export as CSV
+                {t('toolbar.export.csv')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -880,12 +881,12 @@ const Responses: React.FC = () => {
 
   return (
     <MainLayout
-      title={`${form.title} - Responses`}
+      title={t('layout.title', { values: { formTitle: form.title } })}
       breadcrumbs={[
-        { label: 'Dashboard', href: '/dashboard' },
+        { label: t('layout.breadcrumbDashboard'), href: '/dashboard' },
         { label: form.title, href: `/dashboard/form/${actualFormId}` },
         {
-          label: 'Responses',
+          label: t('layout.breadcrumbResponses'),
           href: `/dashboard/form/${actualFormId}/responses`,
         },
       ]}
@@ -903,7 +904,7 @@ const Responses: React.FC = () => {
             className="hover:bg-slate-100 flex-shrink-0"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            {t('header.backButton')}
           </Button>
           <div className="h-4 w-px bg-slate-300 flex-shrink-0" />
           <h1 className="text-lg font-semibold text-slate-900 truncate flex-1">
@@ -914,7 +915,7 @@ const Responses: React.FC = () => {
               <div className="w-4 h-4 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin"></div>
             )}
             <span className="text-sm text-muted-foreground">
-              {responsePagination?.total || 0} responses
+              {t('header.responseCount', { values: { count: responsePagination?.total || 0 } })}
             </span>
           </div>
         </div>
@@ -926,18 +927,17 @@ const Responses: React.FC = () => {
               <div className="text-center p-8">
                 <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
                 <TypographyH3 className="text-gray-900 mb-2">
-                  Error Loading Responses
+                  {t('errors.loadingResponses')}
                 </TypographyH3>
                 <TypographyP className="text-gray-600 mb-6">
-                  There was an error loading the form responses. Please try
-                  again.
+                  {t('errors.loadingResponsesMessage')}
                 </TypographyP>
                 <Button
                   onClick={() => window.location.reload()}
                   variant="outline"
                 >
                   <RotateCcw className="h-4 w-4 mr-2" />
-                  Refresh Page
+                  {t('table.refreshPage')}
                 </Button>
               </div>
             </div>
@@ -979,7 +979,7 @@ const Responses: React.FC = () => {
                         String(value).toLowerCase().includes(searchText)
                       );
                     })}
-                    searchPlaceholder="Search responses..."
+                    searchPlaceholder={t('table.searchPlaceholder')}
                     onRowClick={(row) => {
                       console.log('Row clicked:', row.id);
                     }}

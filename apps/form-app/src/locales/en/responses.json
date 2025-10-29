@@ -1,0 +1,113 @@
+{
+  "layout": {
+    "title": "{{formTitle}} - Responses",
+    "breadcrumbDashboard": "Dashboard",
+    "breadcrumbFormDashboard": "Form Dashboard",
+    "breadcrumbResponses": "Responses"
+  },
+  "header": {
+    "backButton": "Back",
+    "responseCount": "{{count}} responses",
+    "responseCountPlural": "{{count}} responses"
+  },
+  "toolbar": {
+    "search": {
+      "placeholder": "Search responses...",
+      "clearLabel": "Clear search"
+    },
+    "filters": {
+      "buttonLabel": "Filters",
+      "activeFilters": "{{count}} active filters",
+      "activeFilter": "{{count}} active filter"
+    },
+    "columns": {
+      "buttonLabel": "Columns",
+      "hiddenCount": "{{count}} hidden",
+      "toggle": "Toggle columns",
+      "reset": "Reset",
+      "noColumnsAvailable": "No columns available"
+    },
+    "export": {
+      "buttonLabel": "Export",
+      "exporting": "Exporting...",
+      "excel": "Export as Excel", 
+      "csv": "Export as CSV"
+    }
+  },
+  "table": {
+    "columns": {
+      "responseId": "Response ID",
+      "submittedAt": "Submitted At",
+      "editStatus": "Edit Status",
+      "actions": "Actions"
+    },
+    "editStatus": {
+      "original": "Original",
+      "editBadge": "{{count}} edit",
+      "editBadgePlural": "{{count}} edits",
+      "editedBy": "by"
+    },
+    "actions": {
+      "view": "View",
+      "viewResponse": "View response",
+      "edit": "Edit",
+      "editHistory": "Edit History",
+      "delete": "Delete",
+      "moreActions": "More actions"
+    },
+    "fieldResponses": {
+      "noResponse": "No response"
+    },
+    "emptyState": {
+      "title": "No responses yet",
+      "description": "No one has submitted this form yet. Once you receive responses, they'll appear here."
+    },
+    "loadingState": "Loading responses...",
+    "searchPlaceholder": "Search responses...",
+    "searchIndicator": "Search: \"{{query}}\"",
+    "refreshPage": "Refresh Page"
+  },
+  "filters": {
+    "modal": {
+      "title": "Filter Responses",
+      "description": "Filter responses by field values",
+      "noFiltersActive": "No filters active",
+      "clearAll": "Clear All",
+      "apply": "Apply Filters",
+      "cancel": "Cancel"
+    },
+    "fieldTypes": {
+      "text": "Text",
+      "email": "Email", 
+      "number": "Number",
+      "date": "Date",
+      "select": "Select",
+      "radio": "Radio",
+      "checkbox": "Checkbox"
+    },
+    "operators": {
+      "equals": "Equals",
+      "contains": "Contains",
+      "startsWith": "Starts with",
+      "endsWith": "Ends with",
+      "greaterThan": "Greater than",
+      "lessThan": "Less than",
+      "between": "Between",
+      "in": "In",
+      "notIn": "Not in"
+    }
+  },
+  "errors": {
+    "loadingForm": "Failed to load form",
+    "loadingResponses": "Error Loading Responses",
+    "loadingResponsesMessage": "There was an error loading the form responses. Please try again.",
+    "formNotFound": "Form Not Found",
+    "formNotFoundMessage": "The form you're looking for doesn't exist or you don't have permission to view it.",
+    "exportFailed": "Export failed. Please try again.",
+    "invalidDate": "Invalid date"
+  },
+  "success": {
+    "exportStarted": "Export started. Download will begin shortly.",
+    "filtersApplied": "Filters applied successfully"
+  }
+}
