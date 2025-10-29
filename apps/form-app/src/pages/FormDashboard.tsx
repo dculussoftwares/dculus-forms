@@ -16,6 +16,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAppConfig } from '@/hooks';
 import { AlertCircle } from 'lucide-react';
 import { toastSuccess } from '@dculus/ui';
+import { useTranslation } from '../hooks/useTranslation';
 
 const FormDashboard: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
@@ -23,6 +24,7 @@ const FormDashboard: React.FC = () => {
   const { user } = useAuth();
   const { organizationId } = useAppConfig();
   const [showShareModal, setShowShareModal] = useState(false);
+  const { t } = useTranslation('formDashboard');
 
   const {
     form,
@@ -55,7 +57,7 @@ const FormDashboard: React.FC = () => {
   // Handle copy link from animation
   const handleAnimationCopyLink = () => {
     handleCopyLink();
-    toastSuccess('Copied to clipboard', 'Form link has been copied');
+    toastSuccess(t('toast.copied.title'), t('toast.copied.description'));
   };
 
   // Handle view form from animation
@@ -66,10 +68,10 @@ const FormDashboard: React.FC = () => {
   if (formLoading) {
     return (
       <MainLayout
-        title="Form Dashboard"
+        title={t('layout.title')}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Form Dashboard', href: `/dashboard/form/${formId}` },
+          { label: t('layout.breadcrumbRoot'), href: '/dashboard' },
+          { label: t('layout.breadcrumbSelf'), href: `/dashboard/form/${formId}` },
         ]}
       >
         <div className="flex justify-center items-center min-h-96">
@@ -82,19 +84,18 @@ const FormDashboard: React.FC = () => {
   if (formError || !form) {
     return (
       <MainLayout
-        title="Form Dashboard"
+        title={t('layout.title')}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Form Dashboard', href: `/dashboard/form/${formId}` },
+          { label: t('layout.breadcrumbRoot'), href: '/dashboard' },
+          { label: t('layout.breadcrumbSelf'), href: `/dashboard/form/${formId}` },
         ]}
       >
         <div className="max-w-4xl mx-auto px-4 py-12">
           <Card className="p-8 text-center">
             <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-            <h3 className="mb-2 text-xl font-semibold">Form Not Found</h3>
+            <h3 className="mb-2 text-xl font-semibold">{t('error.title')}</h3>
             <p className="text-slate-600">
-              The form you're looking for doesn't exist or you don't have
-              permission to view it.
+              {t('error.description')}
             </p>
           </Card>
         </div>
@@ -104,9 +105,9 @@ const FormDashboard: React.FC = () => {
 
   return (
     <MainLayout
-      title={`${form.title} - Dashboard`}
+      title={`${form.title} - ${t('layout.title')}`}
       breadcrumbs={[
-        { label: 'Dashboard', href: '/dashboard' },
+        { label: t('layout.breadcrumbRoot'), href: '/dashboard' },
         { label: form.title, href: `/dashboard/form/${formId}` },
       ]}
     >
@@ -135,10 +136,10 @@ const FormDashboard: React.FC = () => {
           <div>
             <div className="mb-6">
               <h2 className="text-xl font-semibold text-slate-900 mb-1">
-                Performance Overview
+                {t('overview.heading')}
               </h2>
               <p className="text-sm text-slate-600">
-                Track your form's key metrics and engagement
+                {t('overview.description')}
               </p>
             </div>
             <StatsGrid stats={dashboardStats} />

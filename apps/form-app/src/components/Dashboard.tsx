@@ -36,19 +36,23 @@ import {
 } from '../graphql/queries';
 import Templates from '../pages/Templates';
 import FormDashboard from '../pages/FormDashboard';
+import { useTranslation } from '../hooks/useTranslation';
 
 export function Dashboard() {
+  const { t: tTemplates } = useTranslation('templates');
+  const { t: tDashboard } = useTranslation('dashboard');
+
   return (
     <Routes>
       <Route
         path="templates"
         element={
           <MainLayout
-            title="Templates"
-            subtitle="Browse and select a template to start a new form"
+            title={tTemplates('hero.title')}
+            subtitle={tTemplates('hero.subtitle')}
             breadcrumbs={[
-              { label: 'Dashboard', href: '/dashboard' },
-              { label: 'Templates', isActive: true },
+              { label: tDashboard('layout.breadcrumbRoot'), href: '/dashboard' },
+              { label: tTemplates('layout.breadcrumb'), isActive: true },
             ]}
           >
             <Templates />
@@ -69,6 +73,7 @@ function FormsListDashboard() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const contentRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation('dashboard');
 
   // P0: Persist state in URL params
   const urlPage = parseInt(searchParams.get('page') || '1', 10);
@@ -332,9 +337,9 @@ function FormsListDashboard() {
 
   return (
     <MainLayout
-      title="My Forms"
-      subtitle="Create, manage, and analyze your forms"
-      breadcrumbs={[{ label: 'Dashboard', isActive: true }]}
+      title={t('layout.title')}
+      subtitle={t('layout.subtitle')}
+      breadcrumbs={[{ label: t('layout.breadcrumbRoot'), isActive: true }]}
     >
       <div className="space-y-8" ref={contentRef}>
         {/* Header with Create Form Button */}
@@ -345,7 +350,7 @@ function FormsListDashboard() {
             size="lg"
           >
             <Plus className="mr-2 h-5 w-5" />
-            Create Form
+            {t('actions.create')}
           </Button>
         </div>
 
@@ -356,14 +361,14 @@ function FormsListDashboard() {
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Search forms by name or description..."
+                  placeholder={t('search.placeholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 pr-10"
                 />
                 {isTyping && (
                   <div className="absolute right-10 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                    Searching...
+                    {t('search.typing')}
                   </div>
                 )}
                 {searchTerm && (
@@ -372,6 +377,7 @@ function FormsListDashboard() {
                     size="sm"
                     onClick={clearSearch}
                     className="absolute right-1 top-1/2 h-7 w-7 p-0 -translate-y-1/2 hover:bg-muted"
+                    aria-label={t('search.clear')}
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -387,28 +393,28 @@ function FormsListDashboard() {
                   onClick={() => handleFilterChange('all')}
                   variant="default"
                 >
-                  All Forms
+                  {t('filters.all')}
                 </Chip>
                 <Chip
                   selected={activeFilter === 'my-forms'}
                   onClick={() => handleFilterChange('my-forms')}
                   variant="default"
                 >
-                  My Forms
+                  {t('filters.mine')}
                 </Chip>
                 <Chip
                   selected={activeFilter === 'shared-with-me'}
                   onClick={() => handleFilterChange('shared-with-me')}
                   variant="default"
                 >
-                  Shared With Me
+                  {t('filters.shared')}
                 </Chip>
               </div>
 
               {/* Page Size Selector - P1 */}
               <div className="flex items-center gap-2 ml-auto">
                 <TypographySmall className="text-muted-foreground">
-                  Show:
+                  {t('pageSize.label')}
                 </TypographySmall>
                 <Select
                   value={pageSize.toString()}
@@ -427,7 +433,7 @@ function FormsListDashboard() {
                   </SelectContent>
                 </Select>
                 <TypographySmall className="text-muted-foreground">
-                  per page
+                  {t('pageSize.suffix')}
                 </TypographySmall>
               </div>
             </div>
@@ -455,10 +461,10 @@ function FormsListDashboard() {
           <div className="text-center py-12">
             <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-8 max-w-md mx-auto">
               <div className="text-destructive font-medium mb-2">
-                Error loading forms
+                {t('error.title')}
               </div>
               <div className="text-muted-foreground text-sm">
-                Please try refreshing the page
+                {t('error.description')}
               </div>
             </div>
           </div>
@@ -469,11 +475,10 @@ function FormsListDashboard() {
                 <FileText className="w-8 h-8 text-primary" />
               </div>
               <TypographyH3 className="text-xl font-semibold mb-3">
-                No forms yet
+                {t('empty.title')}
               </TypographyH3>
               <TypographyMuted className="text-muted-foreground mb-6 max-w-sm mx-auto">
-                Get started by creating your first form from one of our
-                beautiful templates
+                {t('empty.description')}
               </TypographyMuted>
               <Button
                 onClick={() => navigate('/dashboard/templates')}
@@ -481,7 +486,7 @@ function FormsListDashboard() {
                 className="bg-primary hover:bg-primary/90"
               >
                 <Plus className="mr-2 h-5 w-5" />
-                Create Your First Form
+                {t('actions.createPrimary')}
               </Button>
             </div>
           </div>
@@ -492,15 +497,14 @@ function FormsListDashboard() {
                 <Search className="w-8 h-8 text-primary" />
               </div>
               <TypographyH3 className="text-xl font-semibold mb-3">
-                No forms found
+                {t('searchEmpty.title')}
               </TypographyH3>
               <TypographyMuted className="text-muted-foreground mb-6 max-w-sm mx-auto">
-                No forms match your search for "{searchTerm}". Try a different
-                search term.
+                {t('searchEmpty.description', { values: { term: searchTerm } })}
               </TypographyMuted>
               <Button onClick={clearSearch} variant="outline" size="lg">
                 <X className="mr-2 h-4 w-4" />
-                Clear Search
+                {t('search.clear')}
               </Button>
             </div>
           </div>
@@ -513,7 +517,7 @@ function FormsListDashboard() {
                   <div className="flex flex-col items-center gap-2">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     <TypographySmall className="text-muted-foreground">
-                      Loading page {currentPage}...
+                      {t('loading.page', { values: { page: currentPage } })}
                     </TypographySmall>
                   </div>
                 </div>
@@ -556,7 +560,7 @@ function FormsListDashboard() {
                         <div className="w-px h-6 bg-border" />
                         <div className="flex items-center gap-2">
                           <TypographySmall className="text-muted-foreground">
-                            Go to:
+                            {t('pagination.goto')}
                           </TypographySmall>
                           <Input
                             type="number"
@@ -610,6 +614,7 @@ function FormCard({
   onNavigate,
   showPermissionBadge = false,
 }: FormCardProps) {
+  const { t, locale } = useTranslation('dashboard');
   // Use metadata if available, otherwise fallback to defaults
   const metadata = form.metadata;
   const primaryColor = '#3b82f6';
@@ -621,6 +626,55 @@ function FormCard({
   // Get real counts from metadata or show placeholders
   const pageCount = metadata?.pageCount ?? 0;
   const fieldCount = metadata?.fieldCount ?? 0;
+
+  const pageCountLabel =
+    pageCount === 0
+      ? t('counts.pages.zero')
+      : pageCount === 1
+      ? t('counts.pages.one')
+      : t('counts.pages.other', { values: { count: pageCount } });
+
+  const fieldCountLabel =
+    fieldCount === 0
+      ? t('counts.fields.zero')
+      : fieldCount === 1
+      ? t('counts.fields.one')
+      : t('counts.fields.other', { values: { count: fieldCount } });
+
+  const permissionLabel = (() => {
+    switch (form.userPermission) {
+      case 'OWNER':
+        return t('permissions.owner');
+      case 'EDITOR':
+        return t('permissions.editor');
+      case 'VIEWER':
+        return t('permissions.viewer');
+      default:
+        return t('permissions.none');
+    }
+  })();
+
+  const formattedCreatedAt = (() => {
+    if (!form.createdAt) {
+      return t('created.unknown');
+    }
+
+    const timestamp =
+      typeof form.createdAt === 'string' && /^\d+$/.test(form.createdAt)
+        ? parseInt(form.createdAt, 10)
+        : form.createdAt;
+    const date = new Date(timestamp);
+
+    if (isNaN(date.getTime())) {
+      return t('created.unknown');
+    }
+
+    return date.toLocaleDateString(locale, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  })();
 
   const handleCardClick = () => {
     onNavigate(`/dashboard/form/${form.id}`);
@@ -680,7 +734,7 @@ function FormCard({
                 : 'bg-yellow-100 text-yellow-700 border border-yellow-200'
             }`}
           >
-            {form.isPublished ? 'Published' : 'Draft'}
+            {form.isPublished ? t('status.published') : t('status.draft')}
           </div>
           {showPermissionBadge && form.userPermission && (
             <div
@@ -694,13 +748,7 @@ function FormCard({
                   : 'bg-red-100 text-red-700 border border-red-200'
               }`}
             >
-              {form.userPermission === 'OWNER'
-                ? 'Owner'
-                : form.userPermission === 'EDITOR'
-                ? 'Editor'
-                : form.userPermission === 'VIEWER'
-                ? 'Viewer'
-                : 'No Access'}
+              {permissionLabel}
             </div>
           )}
         </div>
@@ -746,40 +794,19 @@ function FormCard({
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1">
                 <FileText className="h-3 w-3" />
-                {pageCount > 0
-                  ? `${pageCount} page${pageCount !== 1 ? 's' : ''}`
-                  : 'No pages'}
+                {pageCountLabel}
               </span>
               <span className="flex items-center gap-1">
                 <Users2 className="h-3 w-3" />
-                {fieldCount > 0
-                  ? `${fieldCount} field${fieldCount !== 1 ? 's' : ''}`
-                  : 'No fields'}
+                {fieldCountLabel}
               </span>
             </div>
           </div>
 
           <div className="flex items-center justify-between pt-2">
             <TypographySmall className="text-muted-foreground">
-              Created{' '}
-              {form.createdAt
-                ? (() => {
-                    // Handle timestamp strings (milliseconds as string) and ISO date strings
-                    const timestamp =
-                      typeof form.createdAt === 'string' &&
-                      /^\d+$/.test(form.createdAt)
-                        ? parseInt(form.createdAt, 10)
-                        : form.createdAt;
-                    const date = new Date(timestamp);
-                    return !isNaN(date.getTime())
-                      ? date.toLocaleDateString(undefined, {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })
-                      : 'Date unavailable';
-                  })()
-                : 'Date unavailable'}
+              {t('created.label')}{' '}
+              {formattedCreatedAt}
             </TypographySmall>
             <div
               className="w-3 h-3 rounded-full"

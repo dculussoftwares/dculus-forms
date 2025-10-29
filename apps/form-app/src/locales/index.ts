@@ -7,6 +7,8 @@ import enInviteAcceptance from './en/inviteAcceptance.json';
 import enSettings from './en/settings.json';
 import enFormsList from './en/formsList.json';
 import enTemplates from './en/templates.json';
+import enDashboard from './en/dashboard.json';
+import enFormDashboard from './en/formDashboard.json';
 
 export const translations = {
   en: {
@@ -19,6 +21,8 @@ export const translations = {
     settings: enSettings,
     formsList: enFormsList,
     templates: enTemplates,
+    dashboard: enDashboard,
+    formDashboard: enFormDashboard,
   },
 } as const;
 

@@ -1,0 +1,69 @@
+{
+  "layout": {
+    "title": "My Forms",
+    "subtitle": "Create, manage, and analyze your forms",
+    "breadcrumb": "Dashboard"
+  },
+  "actions": {
+    "create": "Create Form",
+    "createPrimary": "Create Your First Form"
+  },
+  "search": {
+    "placeholder": "Search forms by name or description...",
+    "typing": "Searching...",
+    "clear": "Clear Search"
+  },
+  "filters": {
+    "all": "All Forms",
+    "mine": "My Forms",
+    "shared": "Shared With Me"
+  },
+  "pageSize": {
+    "label": "Show:",
+    "suffix": "per page"
+  },
+  "error": {
+    "title": "Error loading forms",
+    "description": "Please try refreshing the page"
+  },
+  "empty": {
+    "title": "No forms yet",
+    "description": "Get started by creating your first form from one of our beautiful templates"
+  },
+  "searchEmpty": {
+    "title": "No forms found",
+    "description": "No forms match your search for \"{{term}}\". Try a different search term."
+  },
+  "status": {
+    "published": "Published",
+    "draft": "Draft"
+  },
+  "permissions": {
+    "owner": "Owner",
+    "editor": "Editor",
+    "viewer": "Viewer",
+    "none": "No Access"
+  },
+  "counts": {
+    "pages": {
+      "zero": "No pages",
+      "one": "1 page",
+      "other": "{{count}} pages"
+    },
+    "fields": {
+      "zero": "No fields",
+      "one": "1 field",
+      "other": "{{count}} fields"
+    }
+  },
+  "created": {
+    "label": "Created",
+    "unknown": "Date unavailable"
+  },
+  "loading": {
+    "page": "Loading page {{page}}..."
+  },
+  "pagination": {
+    "goto": "Go to:"
+  }
+}

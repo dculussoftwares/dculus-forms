@@ -1,0 +1,21 @@
+{
+  "layout": {
+    "title": "Form Dashboard",
+    "breadcrumbRoot": "Dashboard",
+    "breadcrumbSelf": "Form Dashboard"
+  },
+  "error": {
+    "title": "Form Not Found",
+    "description": "The form you're looking for doesn't exist or you don't have permission to view it."
+  },
+  "overview": {
+    "heading": "Performance Overview",
+    "description": "Track your form's key metrics and engagement"
+  },
+  "toast": {
+    "copied": {
+      "title": "Copied to clipboard",
+      "description": "Form link has been copied"
+    }
+  }
+}
