@@ -1,5 +1,11 @@
 export { Button, buttonVariants } from "./button"
 export { Badge } from "./badge"
+export { Chip } from "./chip"
+export { Calendar } from "./calendar"
+export { DatePicker, DateRangePicker } from "./date-picker"
+export { Switch } from "./switch"
+export { Toggle, toggleVariants } from "./toggle"
+export { ToggleGroup, ToggleGroupItem } from "./toggle-group"
 export { 
   Pagination,
   PaginationRoot,

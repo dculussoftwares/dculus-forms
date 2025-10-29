@@ -12,6 +12,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Chip,
 } from '@dculus/ui';
 import { MainLayout } from './MainLayout';
 import {
@@ -35,7 +36,6 @@ import {
 } from '../graphql/queries';
 import Templates from '../pages/Templates';
 import FormDashboard from '../pages/FormDashboard';
-import { FilterChip } from './ui/FilterChip';
 
 export function Dashboard() {
   return (
@@ -382,27 +382,27 @@ function FormsListDashboard() {
             {/* Filter Chips */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex flex-wrap gap-2">
-                <FilterChip
+                <Chip
                   selected={activeFilter === 'all'}
                   onClick={() => handleFilterChange('all')}
                   variant="default"
                 >
                   All Forms
-                </FilterChip>
-                <FilterChip
+                </Chip>
+                <Chip
                   selected={activeFilter === 'my-forms'}
                   onClick={() => handleFilterChange('my-forms')}
                   variant="default"
                 >
                   My Forms
-                </FilterChip>
-                <FilterChip
+                </Chip>
+                <Chip
                   selected={activeFilter === 'shared-with-me'}
                   onClick={() => handleFilterChange('shared-with-me')}
                   variant="default"
                 >
                   Shared With Me
-                </FilterChip>
+                </Chip>
               </div>
 
               {/* Page Size Selector - P1 */}
