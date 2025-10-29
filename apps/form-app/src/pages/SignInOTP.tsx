@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Button, Input, Label, Card, CardContent, CardDescription, CardHeader, CardTitle, TypographyH2, TypographyP, TypographySmall } from "@dculus/ui";
+import { Button, Input, Label, Card, CardContent, CardDescription, CardHeader, CardTitle, TypographyH2, TypographyP, TypographySmall, OTPInput } from "@dculus/ui";
 import { emailOtp, signIn } from "../lib/auth-client";
-import { OTPInput } from "../components/OTPInput";
 import { ArrowLeft, Mail, Timer } from "lucide-react";
 
 export const SignInOTP = () => {

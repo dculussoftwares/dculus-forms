@@ -17,6 +17,7 @@ export {
   CommandSeparator,
   CommandShortcut,
 } from "./command"
+export { OTPInput } from "./otp-input"
 export { 
   Pagination,
   PaginationRoot,

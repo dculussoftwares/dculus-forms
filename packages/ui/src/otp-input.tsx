@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import { Input } from '@dculus/ui';
+import { Input } from './input';
 import { cn } from '@dculus/utils';
 
 interface OTPInputProps {
@@ -11,10 +11,32 @@ interface OTPInputProps {
   autoFocus?: boolean;
 }
 
-export const OTPInput = ({ 
-  length = 6, 
-  value, 
-  onChange, 
+/**
+ * OTPInput Component
+ *
+ * A one-time password (OTP) input component with full keyboard navigation support.
+ *
+ * Features:
+ * - Auto-focus and auto-advance between inputs
+ * - Keyboard navigation (Arrow keys, Backspace, Delete)
+ * - Paste support for quick entry
+ * - Enter key to submit when complete
+ * - Fully accessible with proper input modes
+ *
+ * @example
+ * const [otp, setOtp] = useState('')
+ *
+ * <OTPInput
+ *   length={6}
+ *   value={otp}
+ *   onChange={setOtp}
+ *   hasError={error}
+ * />
+ */
+export const OTPInput = ({
+  length = 6,
+  value,
+  onChange,
   disabled = false,
   hasError = false,
   autoFocus = true
@@ -46,15 +68,15 @@ export const OTPInput = ({
   const handleInputChange = (index: number, inputValue: string) => {
     // Only allow digits
     const digit = inputValue.replace(/[^0-9]/g, '').slice(-1);
-    
+
     const newValue = value.split('');
     newValue[index] = digit;
-    
+
     // Remove empty slots at the end
     while (newValue.length > 0 && newValue[newValue.length - 1] === undefined) {
       newValue.pop();
     }
-    
+
     const updatedValue = newValue.join('').slice(0, length);
     onChange(updatedValue);
 
@@ -115,7 +137,7 @@ export const OTPInput = ({
     const pastedData = e.clipboardData.getData('text');
     const digits = pastedData.replace(/[^0-9]/g, '').slice(0, length);
     onChange(digits);
-    
+
     // Focus the next empty input or last input
     const nextIndex = Math.min(digits.length, length - 1);
     inputRefs.current[nextIndex]?.focus();
@@ -123,7 +145,7 @@ export const OTPInput = ({
   };
 
   return (
-    <div className="flex items-center justify-center gap-3">
+    <div className="flex items-center justify-center gap-3" role="group" aria-label="One-time password input">
       {Array.from({ length }, (_, index) => (
         <Input
           key={index}
@@ -149,6 +171,7 @@ export const OTPInput = ({
             value[index] && "border-green-500 bg-green-50"
           )}
           autoComplete="one-time-code"
+          aria-label={`Digit ${index + 1} of ${length}`}
           data-testid={`otp-input-${index}`}
         />
       ))}

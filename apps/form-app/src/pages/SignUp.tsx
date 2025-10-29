@@ -13,10 +13,10 @@ import {
   TypographyH2,
   TypographyP,
   TypographySmall,
+  OTPInput,
 } from '@dculus/ui';
 import { slugify } from '@dculus/utils';
 import { authClient, signUp, emailOtp, signIn, organization } from '../lib/auth-client';
-import { OTPInput } from '../components/OTPInput';
 import { ArrowLeft, Mail, Timer } from 'lucide-react';
 import { INITIALIZE_ORGANIZATION_SUBSCRIPTION } from '../graphql/subscription';
 
