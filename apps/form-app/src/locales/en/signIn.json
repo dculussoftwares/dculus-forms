@@ -1,0 +1,48 @@
+{
+  "hero": {
+    "productName": "Dculus Forms",
+    "tagline": "Build beautiful forms collaboratively with your team. Create, share, and analyze responses all in one place.",
+    "attribution": "Team Dculus"
+  },
+  "messages": {
+    "passwordResetSuccess": "Password reset successful! Please sign in with your new password.",
+    "unexpectedError": "An unexpected error occurred. Please try again.",
+    "invalidCredentials": "Invalid credentials"
+  },
+  "meta": {
+    "heading": "Welcome back",
+    "subheading": "Enter your credentials to access your account"
+  },
+  "form": {
+    "title": "Sign in",
+    "description": "Enter your email and password to continue",
+    "fields": {
+      "email": {
+        "label": "Email",
+        "placeholder": "john@example.com",
+        "errors": {
+          "required": "Email is required",
+          "invalid": "Please enter a valid email"
+        }
+      },
+      "password": {
+        "label": "Password",
+        "placeholder": "••••••••",
+        "errors": {
+          "required": "Password is required"
+        }
+      }
+    },
+    "actions": {
+      "submit": "Sign in",
+      "submitting": "Signing in...",
+      "useOtp": "Sign in with Email Code"
+    },
+    "divider": "Or"
+  },
+  "links": {
+    "forgotPassword": "Forgot your password?",
+    "signUpPrompt": "Don't have an account?",
+    "signUp": "Sign up"
+  }
+}

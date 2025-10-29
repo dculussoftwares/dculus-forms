@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button, Input, Label, Card, CardContent, CardDescription, CardHeader, CardTitle, TypographyH2, TypographyP, TypographySmall } from "@dculus/ui";
 import { signIn } from "../lib/auth-client";
+import { useTranslation } from "../hooks/useTranslation";
 
 export const SignIn = () => {
   const [searchParams] = useSearchParams();
@@ -13,14 +14,15 @@ export const SignIn = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
+  const { t } = useTranslation('signIn');
 
   // Check for success messages from URL params
   React.useEffect(() => {
     const message = searchParams.get('message');
     if (message === 'password-reset-success') {
-      setSuccessMessage('Password reset successful! Please sign in with your new password.');
+      setSuccessMessage(t('messages.passwordResetSuccess'));
     }
-  }, [searchParams]);
+  }, [searchParams, t]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -35,13 +37,13 @@ export const SignIn = () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
+      newErrors.email = t('form.fields.email.errors.required');
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email";
+      newErrors.email = t('form.fields.email.errors.invalid');
     }
 
     if (!formData.password) {
-      newErrors.password = "Password is required";
+      newErrors.password = t('form.fields.password.errors.required');
     }
 
     setErrors(newErrors);
@@ -66,7 +68,7 @@ export const SignIn = () => {
 
       if (response.error) {
         setErrors({ 
-          submit: response.error.message || "Invalid credentials" 
+          submit: response.error.message || t('messages.invalidCredentials') 
         });
       } else {
         // Successful signin, redirect to dashboard
@@ -75,7 +77,7 @@ export const SignIn = () => {
     } catch (error) {
       console.error("Signin error:", error);
       setErrors({ 
-        submit: "An unexpected error occurred. Please try again." 
+        submit: t('messages.unexpectedError') 
       });
     } finally {
       setIsLoading(false);
@@ -101,42 +103,42 @@ export const SignIn = () => {
             <path d="M2 3h6" />
             <path d="M6 3v5" />
           </svg>
-          Dculus Forms
+          {t('hero.productName')}
         </div>
         <div className="relative z-20 mt-auto">
           <div className="mt-6 border-l-2 pl-6 italic">
             <TypographyP>
-              &ldquo;Build beautiful forms collaboratively with your team. Create, share, and analyze responses all in one place.&rdquo;
+              &ldquo;{t('hero.tagline')}&rdquo;
             </TypographyP>
-            <footer className="text-sm">Team Dculus</footer>
+            <footer className="text-sm">{t('hero.attribution')}</footer>
           </div>
         </div>
       </div>
       <div className="lg:p-8">
         <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
           <div className="flex flex-col space-y-2 text-center">
-            <TypographyH2>Welcome back</TypographyH2>
+            <TypographyH2>{t('meta.heading')}</TypographyH2>
             <TypographySmall className="text-muted-foreground">
-              Enter your credentials to access your account
+              {t('meta.subheading')}
             </TypographySmall>
           </div>
           
           <Card>
             <CardHeader className="space-y-1">
-              <CardTitle className="text-xl">Sign in</CardTitle>
+              <CardTitle className="text-xl">{t('form.title')}</CardTitle>
               <CardDescription>
-                Enter your email and password to continue
+                {t('form.description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t('form.fields.email.label')}</Label>
                   <Input
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="john@example.com"
+                    placeholder={t('form.fields.email.placeholder')}
                     value={formData.email}
                     onChange={handleInputChange}
                     disabled={isLoading}
@@ -148,12 +150,12 @@ export const SignIn = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">{t('form.fields.password.label')}</Label>
                   <Input
                     id="password"
                     name="password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder={t('form.fields.password.placeholder')}
                     value={formData.password}
                     onChange={handleInputChange}
                     disabled={isLoading}
@@ -181,7 +183,7 @@ export const SignIn = () => {
                   className="w-full"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Signing in..." : "Sign in"}
+                  {isLoading ? t('form.actions.submitting') : t('form.actions.submit')}
                 </Button>
               </form>
               
@@ -191,7 +193,7 @@ export const SignIn = () => {
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
                   <span className="bg-background px-2 text-muted-foreground">
-                    Or
+                    {t('form.divider')}
                   </span>
                 </div>
               </div>
@@ -203,7 +205,7 @@ export const SignIn = () => {
                 onClick={() => navigate('/signin/otp')}
                 disabled={isLoading}
               >
-                Sign in with Email Code
+                {t('form.actions.useOtp')}
               </Button>
             </CardContent>
           </Card>
@@ -213,17 +215,17 @@ export const SignIn = () => {
               to="/forgot-password"
               className="underline underline-offset-4 hover:text-primary"
             >
-              Forgot your password?
+              {t('links.forgotPassword')}
             </Link>
           </TypographySmall>
 
           <TypographySmall className="text-center">
-            Don't have an account?{" "}
+            {t('links.signUpPrompt')}{" "}
             <Link
               to="/signup"
               className="underline underline-offset-4 hover:text-primary"
             >
-              Sign up
+              {t('links.signUp')}
             </Link>
           </TypographySmall>
         </div>

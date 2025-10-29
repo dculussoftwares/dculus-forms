@@ -1,6 +1,7 @@
 
 import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { LocaleProvider } from './contexts/LocaleContext';
 import { Toaster } from '@dculus/ui';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Dashboard } from './components/Dashboard';
@@ -28,9 +29,10 @@ import PluginConfiguration from './pages/PluginConfiguration';
 
 function App() {
   return (
-    <AuthProvider>
-      <div className="min-h-screen bg-background">
-        <Routes>
+    <LocaleProvider>
+      <AuthProvider>
+        <div className="min-h-screen bg-background">
+          <Routes>
           {/* Public routes */}
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signin/otp" element={<SignInOTP />} />
@@ -146,10 +148,11 @@ function App() {
             </ProtectedRoute>
           } />
           {/* Templates is now nested under Dashboard */}
-        </Routes>
-        <Toaster />
-      </div>
-    </AuthProvider>
+          </Routes>
+          <Toaster />
+        </div>
+      </AuthProvider>
+    </LocaleProvider>
   );
 }
 
