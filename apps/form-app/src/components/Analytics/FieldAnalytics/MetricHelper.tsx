@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { HelpCircle, Info } from 'lucide-react';
+import { Button } from '@dculus/ui';
 
 interface MetricHelperProps {
   title: string;
@@ -17,16 +18,18 @@ export const MetricHelper: React.FC<MetricHelperProps> = ({
   if (compact) {
     return (
       <div className="relative inline-block">
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onMouseEnter={() => setIsVisible(true)}
           onMouseLeave={() => setIsVisible(false)}
           onClick={() => setIsVisible(!isVisible)}
-          className="text-gray-400 hover:text-gray-600 transition-colors ml-1"
+          className="text-gray-400 hover:text-gray-600 ml-1 h-auto w-auto p-0"
           aria-label={`Help: ${title}`}
         >
           <HelpCircle className="h-4 w-4" />
-        </button>
-        
+        </Button>
+
         {isVisible && (
           <div className="absolute z-20 left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-72 p-3 bg-gray-900 text-white text-sm rounded-lg shadow-lg">
             <div className="font-medium mb-1">{title}</div>

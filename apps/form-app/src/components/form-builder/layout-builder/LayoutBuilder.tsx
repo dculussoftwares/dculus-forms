@@ -287,18 +287,19 @@ export const LayoutBuilder: React.FC<LayoutBuilderProps> = ({
               const isSelected = currentLayout.code === layout.code;
 
               return (
-                <button
+                <Button
                   key={index}
-                  className={`relative p-3 rounded-lg border-2 transition-all hover:scale-[1.02] text-left ${
+                  variant={isSelected ? "default" : "outline"}
+                  className={`relative p-3 h-auto justify-start transition-all hover:scale-[1.02] ${
                     isSelected
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                      ? 'ring-2 ring-blue-200'
+                      : ''
                   }`}
                 >
                   <div className="flex items-start space-x-3">
                     <p>{layout.code}</p>
                   </div>
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -334,26 +335,28 @@ export const LayoutBuilder: React.FC<LayoutBuilderProps> = ({
         <div className="p-4">
           {/* Category Tabs */}
           <div className="flex space-x-1 mb-4">
-            <button
+            <Button
+              variant={activeTab === 'suggested' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('suggested')}
-              className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+              className={`px-3 py-1 h-auto text-xs font-medium rounded-full ${
                 activeTab === 'suggested'
-                  ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-                  : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900 hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-gray-900'
+                  : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
               }`}
             >
               Suggested
-            </button>
-            <button
+            </Button>
+            <Button
+              variant={activeTab === 'customized' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('customized')}
-              className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+              className={`px-3 py-1 h-auto text-xs font-medium rounded-full ${
                 activeTab === 'customized'
-                  ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-                  : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900 hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-gray-900'
+                  : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
               }`}
             >
               Customized
-            </button>
+            </Button>
           </div>
 
           {/* Background Images Grid */}
@@ -363,13 +366,14 @@ export const LayoutBuilder: React.FC<LayoutBuilderProps> = ({
                 currentLayout.backgroundImageKey === background.id;
 
               return (
-                <button
+                <Button
                   key={background.id}
+                  variant="outline"
                   onClick={() => handleBackgroundSelect(background.id)}
-                  className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${
+                  className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all hover:scale-105 p-0 h-auto ${
                     isSelected
-                      ? 'border-blue-500'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                      ? 'border-blue-500 ring-2 ring-blue-200'
+                      : ''
                   }`}
                 >
                   <img
@@ -380,7 +384,7 @@ export const LayoutBuilder: React.FC<LayoutBuilderProps> = ({
                   {isSelected && (
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white" />
                   )}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -399,10 +403,11 @@ export const LayoutBuilder: React.FC<LayoutBuilderProps> = ({
                 Background music
               </span>
             </div>
-            <button
+            <Button
+              variant="ghost"
               onClick={() => setBackgroundMusic(!backgroundMusic)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                backgroundMusic ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+              className={`relative inline-flex h-6 w-11 items-center rounded-full p-0 transition-colors ${
+                backgroundMusic ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'
               }`}
             >
               <span
@@ -410,7 +415,7 @@ export const LayoutBuilder: React.FC<LayoutBuilderProps> = ({
                   backgroundMusic ? 'translate-x-6' : 'translate-x-1'
                 }`}
               />
-            </button>
+            </Button>
           </div>
         </div>
       </div>

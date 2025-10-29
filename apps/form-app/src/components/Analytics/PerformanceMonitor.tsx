@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
+import { Card, CardContent, CardHeader, CardTitle, Button } from '@dculus/ui';
 import { useFieldAnalyticsCacheStats } from '../../hooks/useFieldAnalytics';
 import { Activity, Database, Zap, RefreshCw } from 'lucide-react';
 
@@ -28,14 +28,16 @@ export const PerformanceMonitor: React.FC = () => {
           <Activity className="h-5 w-5" />
           Field Analytics Performance
         </CardTitle>
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={refreshStats}
           disabled={loading}
-          className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50"
+          className="flex items-center gap-1 text-sm hover:text-blue-800"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh
-        </button>
+        </Button>
       </CardHeader>
       <CardContent>
         {loading && !stats ? (

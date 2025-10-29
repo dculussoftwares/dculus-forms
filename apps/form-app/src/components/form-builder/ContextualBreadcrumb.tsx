@@ -57,11 +57,12 @@ export const ContextualBreadcrumb: React.FC<ContextualBreadcrumbProps> = ({
           
           return (
             <React.Fragment key={index}>
-              <button
+              <Button
+                variant="ghost"
                 onClick={item.onClick}
                 disabled={!item.onClick}
                 className={`
-                  flex items-center space-x-2 px-2 py-1 rounded-md text-sm transition-colors
+                  flex items-center space-x-2 px-2 py-1 h-auto text-sm
                   ${item.isActive
                     ? 'text-blue-600 dark:text-blue-400 font-medium'
                     : item.onClick
@@ -72,7 +73,7 @@ export const ContextualBreadcrumb: React.FC<ContextualBreadcrumbProps> = ({
               >
                 {Icon && <Icon className="w-4 h-4 flex-shrink-0" />}
                 <span className="truncate max-w-32">{item.label}</span>
-              </button>
+              </Button>
               {!isLast && (
                 <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
               )}

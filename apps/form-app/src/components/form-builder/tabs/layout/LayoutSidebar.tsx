@@ -202,12 +202,12 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
                     
                     {/* Apply button for custom images */}
                     {selectedImageKey && selectedImageKey !== layout.backgroundImageKey && (
-                      <button
+                      <Button
                         onClick={handleApplyBackgroundImage}
-                        className="w-full px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors"
+                        className="w-full bg-purple-600 hover:bg-purple-700"
                       >
                         Apply Background Image
-                      </button>
+                      </Button>
                     )}
                     
                     <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -244,13 +244,14 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
             </Tabs>
             
             {layout.backgroundImageKey && (
-              <button
+              <Button
+                variant="outline"
                 onClick={() => canEditLayout && onLayoutUpdate({ backgroundImageKey: '' })}
                 disabled={!canEditLayout}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full"
               >
                 Clear Background
-              </button>
+              </Button>
             )}
           </div>
         </div>

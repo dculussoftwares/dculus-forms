@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Check, Trash2 } from 'lucide-react';
+import { Button } from '@dculus/ui';
 
 interface FormFile {
   id: string;
@@ -65,15 +66,17 @@ export const BackgroundImageGallery: React.FC<BackgroundImageGalleryProps> = ({
               
               {/* Delete button */}
               {onImageDelete && hoveredImage === image.id && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={(e) => {
                     e.stopPropagation();
                     onImageDelete(image.key);
                   }}
-                  className="absolute top-1 left-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                  className="absolute top-1 left-1 bg-red-500 text-white rounded-full p-1 h-6 w-6 hover:bg-red-600"
                 >
                   <Trash2 className="w-3 h-3" />
-                </button>
+                </Button>
               )}
               
               {/* Overlay */}

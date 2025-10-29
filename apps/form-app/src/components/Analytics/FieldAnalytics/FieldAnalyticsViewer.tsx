@@ -424,15 +424,17 @@ const FieldSelectionGrid: React.FC<{
                   <div className="h-full bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 flex flex-col">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-semibold text-gray-900">Data Preview</h3>
-                      <button
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
                           onFieldSelect(field.fieldId);
                         }}
-                        className="text-xs text-gray-600 bg-white px-3 py-1.5 rounded-full hover:bg-gray-50 hover:text-gray-800 transition-colors cursor-pointer border border-gray-200"
+                        className="text-xs rounded-full"
                       >
                         Click to explore →
-                      </button>
+                      </Button>
                     </div>
                     <div className="flex-1 flex items-center justify-center min-h-[200px]">
                       <MiniPreviewChart field={field} />

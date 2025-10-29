@@ -8,6 +8,7 @@ import {
   ArrowRight,
   Plug,
 } from 'lucide-react';
+import { Button } from '@dculus/ui';
 
 interface QuickActionsProps {
   formId: string;
@@ -33,11 +34,12 @@ const ActionCard: React.FC<ActionCardProps> = ({
   onClick,
 }) => {
   return (
-    <button
+    <Button
+      variant="outline"
       onClick={onClick}
-      className="group relative text-left w-full rounded-2xl bg-white border border-slate-200 p-6 transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400"
+      className="group relative text-left w-full h-auto rounded-2xl bg-white border-slate-200 p-6 transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-slate-300 justify-start"
     >
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-4 w-full">
         <div className={`${iconBg} p-3 rounded-xl transition-all duration-300 group-hover:scale-110`}>
           <Icon className={`w-5 h-5 ${iconColor}`} />
         </div>
@@ -53,7 +55,7 @@ const ActionCard: React.FC<ActionCardProps> = ({
           </p>
         </div>
       </div>
-    </button>
+    </Button>
   );
 };
 

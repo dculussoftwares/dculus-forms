@@ -13,7 +13,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
+import { Card, CardContent, CardHeader, CardTitle, Button } from '@dculus/ui';
 import { HelpCircle } from 'lucide-react';
 
 // Color palettes for different chart types
@@ -61,14 +61,16 @@ const HelpTooltip: React.FC<HelpTooltipProps> = ({ title, description }) => {
 
   return (
     <div className="relative inline-block">
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onMouseEnter={() => setIsVisible(true)}
         onMouseLeave={() => setIsVisible(false)}
-        className="text-gray-400 hover:text-gray-600 transition-colors"
+        className="text-gray-400 hover:text-gray-600 h-auto w-auto p-0"
         aria-label={`Help: ${title}`}
       >
         <HelpCircle className="h-4 w-4" />
-      </button>
+      </Button>
 
       {isVisible && (
         <div className="absolute z-10 left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-64 p-3 bg-gray-900 text-white text-sm rounded-lg shadow-lg">

@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Plus } from 'lucide-react';
+import { Button } from '@dculus/ui';
 import { uploadFileHTTP } from '../../../../services/fileUploadService';
 
 interface BackgroundImageUploadProps {
@@ -40,10 +41,11 @@ export const BackgroundImageUpload: React.FC<BackgroundImageUploadProps> = ({
 
   return (
     <div className="space-y-2">
-      <button
+      <Button
+        variant="outline"
         onClick={handleClick}
         disabled={loading}
-        className="w-full p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-purple-400 dark:hover:border-purple-500 transition-colors bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50"
+        className="w-full p-4 h-auto border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-purple-400 dark:hover:border-purple-500 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
       >
         <div className="flex flex-col items-center space-y-2">
           {loading ? (
@@ -55,8 +57,8 @@ export const BackgroundImageUpload: React.FC<BackgroundImageUploadProps> = ({
             {loading ? 'Uploading...' : 'Upload Image'}
           </span>
         </div>
-      </button>
-      
+      </Button>
+
       <input
         ref={fileInputRef}
         type="file"

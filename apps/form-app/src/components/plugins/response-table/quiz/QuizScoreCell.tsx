@@ -1,5 +1,5 @@
 import React from 'react';
-import { Badge } from '@dculus/ui';
+import { Badge, Button } from '@dculus/ui';
 
 interface QuizScoreCellProps {
   metadata: any;
@@ -26,12 +26,13 @@ export const QuizScoreCell: React.FC<QuizScoreCellProps> = ({
   const passed = quiz.percentage >= passThreshold;
 
   return (
-    <button
+    <Button
+      variant="ghost"
       onClick={(e) => {
         e.stopPropagation();
         onViewResults(quiz, responseId);
       }}
-      className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
+      className="flex items-center gap-2 hover:opacity-80 h-auto p-0"
     >
       <Badge variant={passed ? 'default' : 'destructive'}>
         {quiz.quizScore} / {quiz.totalMarks}
@@ -39,6 +40,6 @@ export const QuizScoreCell: React.FC<QuizScoreCellProps> = ({
       <span className="text-sm text-muted-foreground">
         ({quiz.percentage.toFixed(0)}%)
       </span>
-    </button>
+    </Button>
   );
 };

@@ -45,13 +45,14 @@ export const AddFieldPopover: React.FC<AddFieldPopoverProps> = ({
                             </TypographyP>
                             <div className="grid grid-cols-1 gap-1">
                                 {fields.map((fieldType) => (
-                                    <button
+                                    <Button
                                         key={fieldType.type}
+                                        variant="ghost"
                                         onClick={() => {
                                             onAddField(pageId, fieldType);
                                             setIsOpen(false);
                                         }}
-                                        className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left w-full"
+                                        className="flex items-center space-x-3 p-3 h-auto justify-start w-full"
                                     >
                                         <div className="w-8 h-8 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg flex items-center justify-center flex-shrink-0">
                                             <fieldType.icon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -64,7 +65,7 @@ export const AddFieldPopover: React.FC<AddFieldPopoverProps> = ({
                                                 {fieldType.description}
                                             </div>
                                         </div>
-                                    </button>
+                                    </Button>
                                 ))}
                             </div>
                         </div>

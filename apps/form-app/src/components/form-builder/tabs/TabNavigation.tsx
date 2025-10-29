@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Palette, FileText, Settings, Eye, Users } from 'lucide-react';
+import { Button } from '@dculus/ui';
+import { cn } from '@dculus/utils';
 
 export type BuilderTab = 'layout' | 'page-builder' | 'settings' | 'preview';
 
@@ -111,31 +113,31 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                 
                 return (
                   <div key={tab.id} className="relative group">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleTabChange(tab.id)}
                       onKeyDown={(e) => handleKeyDown(e, tab.id)}
                       onMouseEnter={() => setHoveredTab(tab.id)}
                       onMouseLeave={() => setHoveredTab(null)}
-                      className={`
-                        relative flex items-center justify-center w-12 h-12 rounded-xl
-                        transition-all duration-300 ease-out transform
-                        focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2
-                        ${isActive
-                          ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg scale-110'
+                      className={cn(
+                        "relative w-12 h-12 rounded-xl transition-all duration-300 ease-out transform",
+                        isActive
+                          ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg scale-110 hover:from-blue-600 hover:to-purple-700'
                           : isHovered
                           ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 scale-105'
                           : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                        }
-                      `}
+                      )}
                       aria-label={`Switch to ${tab.label} tab - ${tab.description}`}
                       role="tab"
                       aria-selected={isActive}
                     >
-                      <Icon className={`w-5 h-5 transition-all duration-300 ${
-                        isActive ? 'drop-shadow-sm' : ''
-                      }`} />
-                      
-                    </button>
+                      <Icon className={cn(
+                        "w-5 h-5 transition-all duration-300",
+                        isActive && 'drop-shadow-sm'
+                      )} />
+
+                    </Button>
                     
                     {/* Tooltip */}
                     <div className={`
@@ -164,25 +166,24 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                   const isActive = activeTab === tab.id;
                   
                   return (
-                    <button
+                    <Button
                       key={tab.id}
+                      variant={isActive ? "default" : "ghost"}
                       onClick={() => handleTabChange(tab.id)}
                       onKeyDown={(e) => handleKeyDown(e, tab.id)}
-                      className={`
-                        flex items-center space-x-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
-                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-                        ${isActive
-                          ? 'bg-blue-50 text-blue-700 border-2 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800'
+                      className={cn(
+                        "flex items-center space-x-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                        isActive
+                          ? 'bg-blue-50 text-blue-700 border-2 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800 hover:bg-blue-100'
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 border-2 border-transparent dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800'
-                        }
-                      `}
+                      )}
                       aria-label={`Switch to ${tab.label} tab - ${tab.description}`}
                       role="tab"
                       aria-selected={isActive}
                     >
-                      <Icon className={`w-4 h-4 ${isActive ? 'text-blue-600 dark:text-blue-400' : ''}`} />
+                      <Icon className={cn("w-4 h-4", isActive && 'text-blue-600 dark:text-blue-400')} />
                       <span>{tab.label}</span>
-                    </button>
+                    </Button>
                   );
                 })}
               </div>

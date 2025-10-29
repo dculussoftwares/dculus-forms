@@ -288,10 +288,13 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
           
           {currentData.length > 5 && (
             <div className="pt-4 mt-4 border-t border-gray-200">
-              <button className="w-full text-sm text-gray-600 hover:text-blue-600 transition-colors duration-200 flex items-center justify-center gap-1 py-2">
+              <Button
+                variant="ghost"
+                className="w-full text-sm hover:text-blue-600 flex items-center justify-center gap-1"
+              >
                 <span>Show {currentData.length - 5} more countries</span>
                 <TrendingUp className="h-3 w-3" />
-              </button>
+              </Button>
             </div>
           )}
         </div>

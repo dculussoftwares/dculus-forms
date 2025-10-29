@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Card } from '@dculus/ui';
+import { Card, Button } from '@dculus/ui';
 import { Users, Monitor, Globe, TrendingUp, TrendingDown, FileCheck, Target, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { FormAnalyticsData, FormSubmissionAnalyticsData } from '../../hooks/useFormAnalytics';
 
@@ -221,24 +221,28 @@ export const AnalyticsOverview: React.FC<AnalyticsOverviewProps> = ({
     <div className="relative">
       {/* Left Arrow */}
       {showLeftArrow && (
-        <button
+        <Button
+          variant="outline"
+          size="icon"
           onClick={() => scroll('left')}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-full p-2 shadow-lg hover:bg-gray-50 transition-colors"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 rounded-full shadow-lg"
           aria-label="Scroll left"
         >
           <ChevronLeft className="h-5 w-5 text-gray-600" />
-        </button>
+        </Button>
       )}
 
       {/* Right Arrow */}
       {showRightArrow && (
-        <button
+        <Button
+          variant="outline"
+          size="icon"
           onClick={() => scroll('right')}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-full p-2 shadow-lg hover:bg-gray-50 transition-colors"
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 rounded-full shadow-lg"
           aria-label="Scroll right"
         >
           <ChevronRight className="h-5 w-5 text-gray-600" />
-        </button>
+        </Button>
       )}
 
       {/* Scrollable Container */}

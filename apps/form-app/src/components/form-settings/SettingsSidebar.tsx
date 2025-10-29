@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CheckCircle, ChevronDown, Globe, Mail, Shield } from 'lucide-react';
+import { Button } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 
 interface GeneralSetting {
@@ -47,13 +48,14 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
 
           return (
             <div key={setting.id}>
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => onSectionChange(setting.id)}
                 className={cn(
-                  'w-full flex items-center justify-between px-3 py-2 text-sm rounded-lg transition-colors',
+                  'w-full flex items-center justify-between px-3 py-2 h-auto text-sm rounded-lg',
                   isSelected
-                    ? 'bg-green-50 text-green-700 border border-green-200'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-50 hover:text-green-700'
+                    : 'text-gray-700'
                 )}
               >
                 <div className="flex items-center space-x-3">
@@ -68,7 +70,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                     )}
                   />
                 )}
-              </button>
+              </Button>
             </div>
           );
         })}
