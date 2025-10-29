@@ -6,6 +6,17 @@ export { DatePicker, DateRangePicker } from "./date-picker"
 export { Switch } from "./switch"
 export { Toggle, toggleVariants } from "./toggle"
 export { ToggleGroup, ToggleGroupItem } from "./toggle-group"
+export {
+  Command,
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandSeparator,
+  CommandShortcut,
+} from "./command"
 export { 
   Pagination,
   PaginationRoot,

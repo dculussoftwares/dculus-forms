@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -7,7 +7,9 @@ import {
   SelectValue,
   Button,
   Card,
-  CardContent
+  CardContent,
+  DatePicker,
+  Label
 } from '@dculus/ui';
 import { Calendar, RefreshCw } from 'lucide-react';
 import { TimeRangePreset, TimeRange } from '../../hooks/useFormAnalytics';
@@ -28,14 +30,14 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   loading = false
 }) => {
   const [showCustomPicker, setShowCustomPicker] = useState(false);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
   const [dateError, setDateError] = useState('');
 
   useEffect(() => {
     if (value === 'custom' && customRange) {
-      setStartDate(customRange.start.split('T')[0]);
-      setEndDate(customRange.end.split('T')[0]);
+      setStartDate(new Date(customRange.start));
+      setEndDate(new Date(customRange.end));
       setShowCustomPicker(false);
     }
   }, [value, customRange]);
@@ -49,18 +51,18 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 
   const handlePresetChange = (preset: string) => {
     const typedPreset = preset as TimeRangePreset;
-    
+
     if (typedPreset === 'custom') {
       // Initialize with current custom range if it exists, or default to last 30 days
       if (customRange) {
-        setStartDate(customRange.start.split('T')[0]);
-        setEndDate(customRange.end.split('T')[0]);
+        setStartDate(new Date(customRange.start));
+        setEndDate(new Date(customRange.end));
       } else {
         const end = new Date();
         const start = new Date();
         start.setDate(end.getDate() - 30);
-        setStartDate(start.toISOString().split('T')[0]);
-        setEndDate(end.toISOString().split('T')[0]);
+        setStartDate(start);
+        setEndDate(end);
       }
       setDateError('');
       setShowCustomPicker(true);
@@ -70,27 +72,26 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
     }
   };
 
-  const validateDateRange = (start: string, end: string): string => {
+  const validateDateRange = (start: Date | undefined, end: Date | undefined): string => {
     if (!start || !end) return 'Please select both start and end dates';
-    
-    const startDate = new Date(start);
-    const endDate = new Date(end);
+
     const today = new Date();
-    
-    if (startDate > endDate) return 'Start date must be before end date';
-    if (endDate > today) return 'End date cannot be in the future';
-    
+    today.setHours(23, 59, 59, 999); // End of today
+
+    if (start > end) return 'Start date must be before end date';
+    if (end > today) return 'End date cannot be in the future';
+
     const maxDaysAgo = new Date();
     maxDaysAgo.setFullYear(maxDaysAgo.getFullYear() - 2); // 2 years max
-    if (startDate < maxDaysAgo) return 'Start date cannot be more than 2 years ago';
-    
-    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    if (start < maxDaysAgo) return 'Start date cannot be more than 2 years ago';
+
+    const daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
     if (daysDiff > 365) return 'Date range cannot exceed 1 year';
-    
+
     return '';
   };
 
-  const handleDateChange = (type: 'start' | 'end', date: string) => {
+  const handleDateChange = (type: 'start' | 'end', date: Date | undefined) => {
     if (type === 'start') {
       setStartDate(date);
       const error = validateDateRange(date, endDate);
@@ -109,9 +110,15 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
       return;
     }
 
+    if (!startDate || !endDate) return;
+
+    // Set end date to end of day
+    const endOfDay = new Date(endDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
     const customRange: TimeRange = {
-      start: new Date(startDate).toISOString(),
-      end: new Date(endDate + 'T23:59:59').toISOString() // Include the full end day
+      start: startDate.toISOString(),
+      end: endOfDay.toISOString()
     };
     onChange('custom', customRange);
     setShowCustomPicker(false);
@@ -122,9 +129,9 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
     const end = new Date();
     const start = new Date();
     start.setDate(end.getDate() - days);
-    
-    setStartDate(start.toISOString().split('T')[0]);
-    setEndDate(end.toISOString().split('T')[0]);
+
+    setStartDate(start);
+    setEndDate(end);
     setDateError('');
   };
 
@@ -205,29 +212,25 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Start Date</label>
-                    <input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => handleDateChange('start', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        dateError ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                      }`}
-                      max={new Date().toISOString().split('T')[0]}
+                    <Label className="text-sm font-medium text-gray-700">Start Date</Label>
+                    <DatePicker
+                      date={startDate}
+                      onDateChange={(date) => handleDateChange('start', date)}
+                      maxDate={new Date()}
+                      placeholder="Select start date"
+                      error={!!dateError}
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">End Date</label>
-                    <input
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => handleDateChange('end', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        dateError ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                      }`}
-                      min={startDate}
-                      max={new Date().toISOString().split('T')[0]}
+                    <Label className="text-sm font-medium text-gray-700">End Date</Label>
+                    <DatePicker
+                      date={endDate}
+                      onDateChange={(date) => handleDateChange('end', date)}
+                      minDate={startDate}
+                      maxDate={new Date()}
+                      placeholder="Select end date"
+                      error={!!dateError}
                     />
                   </div>
                 </div>
@@ -244,7 +247,7 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
                     <p className="text-sm text-blue-700">
                       Selected range: <strong>
-                        {Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1} days
+                        {Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1} days
                       </strong>
                     </p>
                   </div>
