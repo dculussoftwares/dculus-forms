@@ -1,3 +1,9 @@
 {
-  "appName": "Dculus Forms"
+  "appName": "Dculus Forms",
+  "language": {
+    "label": "Language",
+    "options": {
+      "en": "English"
+    }
+  }
 }
