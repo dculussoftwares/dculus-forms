@@ -9,8 +9,11 @@ import {
   Badge,
   Card,
   LoadingSpinner,
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
 } from '@dculus/ui';
-import { CheckCircle2, XCircle, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, ChevronDown } from 'lucide-react';
 import { GET_PLUGIN_DELIVERIES } from '../../../graphql/plugins';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -27,10 +30,6 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
   pluginId,
   pluginName,
 }) => {
-  const [expandedDeliveries, setExpandedDeliveries] = React.useState<Set<string>>(
-    new Set()
-  );
-
   const { data, loading, error, refetch } = useQuery(GET_PLUGIN_DELIVERIES, {
     variables: { pluginId, limit: 50 },
     skip: !open,
@@ -42,16 +41,6 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
       refetch();
     }
   }, [open, refetch]);
-
-  const toggleExpanded = (deliveryId: string) => {
-    const newExpanded = new Set(expandedDeliveries);
-    if (newExpanded.has(deliveryId)) {
-      newExpanded.delete(deliveryId);
-    } else {
-      newExpanded.add(deliveryId);
-    }
-    setExpandedDeliveries(newExpanded);
-  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -133,87 +122,79 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
 
           {!loading && !error && data?.pluginDeliveries?.length > 0 && (
             <div className="space-y-3">
-              {data.pluginDeliveries.map((delivery: any) => {
-                const isExpanded = expandedDeliveries.has(delivery.id);
+              {data.pluginDeliveries.map((delivery: any) => (
+                <Collapsible key={delivery.id}>
+                  <Card className="p-4">
+                    <CollapsibleTrigger className="w-full">
+                      <div className="flex items-start gap-4">
+                        {/* Status Icon */}
+                        <div className="mt-1">{getStatusIcon(delivery.status)}</div>
 
-                return (
-                  <Card key={delivery.id} className="p-4">
-                    <div
-                      className="flex items-start gap-4 cursor-pointer"
-                      onClick={() => toggleExpanded(delivery.id)}
-                    >
-                      {/* Status Icon */}
-                      <div className="mt-1">{getStatusIcon(delivery.status)}</div>
+                        {/* Main Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold text-gray-900">
+                                {delivery.eventType}
+                              </h4>
+                              {getStatusBadge(delivery.status)}
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                              <span>{formatTimestamp(delivery.deliveredAt)}</span>
+                              <ChevronDown className="h-4 w-4 transition-transform duration-200 data-[state=open]:rotate-180" />
+                            </div>
+                          </div>
 
-                      {/* Main Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-semibold text-gray-900">
-                              {delivery.eventType}
-                            </h4>
-                            {getStatusBadge(delivery.status)}
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <span>{formatTimestamp(delivery.deliveredAt)}</span>
-                            {isExpanded ? (
-                              <ChevronUp className="h-4 w-4" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4" />
-                            )}
-                          </div>
+                          {/* Error Message (if failed) */}
+                          {delivery.status === 'failed' && delivery.errorMessage && (
+                            <div className="mb-2 text-sm text-red-600 bg-red-50 px-3 py-2 rounded">
+                              {delivery.errorMessage}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CollapsibleTrigger>
+
+                    <CollapsibleContent>
+                      <div className="mt-4 space-y-4 pl-9">
+                        {/* Payload */}
+                        <div>
+                          <h5 className="text-sm font-semibold text-gray-700 mb-2">
+                            Payload
+                          </h5>
+                          <pre className="text-xs bg-gray-50 p-3 rounded overflow-x-auto border">
+                            {JSON.stringify(delivery.payload, null, 2)}
+                          </pre>
                         </div>
 
-                        {/* Error Message (if failed) */}
-                        {delivery.status === 'failed' && delivery.errorMessage && (
-                          <div className="mb-2 text-sm text-red-600 bg-red-50 px-3 py-2 rounded">
-                            {delivery.errorMessage}
+                        {/* Response */}
+                        {delivery.response && (
+                          <div>
+                            <h5 className="text-sm font-semibold text-gray-700 mb-2">
+                              Response
+                            </h5>
+                            <pre className="text-xs bg-gray-50 p-3 rounded overflow-x-auto border">
+                              {typeof delivery.response === 'string'
+                                ? delivery.response
+                                : JSON.stringify(delivery.response, null, 2)}
+                            </pre>
                           </div>
                         )}
 
-                        {/* Expanded Details */}
-                        {isExpanded && (
-                          <div className="mt-4 space-y-4">
-                            {/* Payload */}
-                            <div>
-                              <h5 className="text-sm font-semibold text-gray-700 mb-2">
-                                Payload
-                              </h5>
-                              <pre className="text-xs bg-gray-50 p-3 rounded overflow-x-auto border">
-                                {JSON.stringify(delivery.payload, null, 2)}
-                              </pre>
-                            </div>
-
-                            {/* Response */}
-                            {delivery.response && (
-                              <div>
-                                <h5 className="text-sm font-semibold text-gray-700 mb-2">
-                                  Response
-                                </h5>
-                                <pre className="text-xs bg-gray-50 p-3 rounded overflow-x-auto border">
-                                  {typeof delivery.response === 'string'
-                                    ? delivery.response
-                                    : JSON.stringify(delivery.response, null, 2)}
-                                </pre>
-                              </div>
-                            )}
-
-                            {/* Delivery ID */}
-                            <div>
-                              <h5 className="text-sm font-semibold text-gray-700 mb-1">
-                                Delivery ID
-                              </h5>
-                              <code className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">
-                                {delivery.id}
-                              </code>
-                            </div>
-                          </div>
-                        )}
+                        {/* Delivery ID */}
+                        <div>
+                          <h5 className="text-sm font-semibold text-gray-700 mb-1">
+                            Delivery ID
+                          </h5>
+                          <code className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">
+                            {delivery.id}
+                          </code>
+                        </div>
                       </div>
-                    </div>
+                    </CollapsibleContent>
                   </Card>
-                );
-              })}
+                </Collapsible>
+              ))}
             </div>
           )}
         </div>
