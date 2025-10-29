@@ -1,6 +1,6 @@
 import React from 'react';
 import { ApolloError } from '@apollo/client';
-import { Alert, AlertDescription, Card, CardContent, CardHeader, CardTitle, Button } from '@dculus/ui';
+import { Alert, AlertDescription, Card, CardContent, CardHeader, CardTitle, Button, ScrollArea } from '@dculus/ui';
 import { AlertTriangle, RefreshCw, LogIn, Home } from 'lucide-react';
 
 interface AuthorizationErrorBoundaryProps {
@@ -88,9 +88,11 @@ export const AuthorizationErrorBoundary: React.FC<AuthorizationErrorBoundaryProp
             <summary className="cursor-pointer hover:text-foreground">
               Technical Details (Development Only)
             </summary>
-            <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto">
-              {errorMessage}
-            </pre>
+            <ScrollArea className="mt-2 max-h-40">
+              <pre className="p-2 bg-muted rounded text-xs">
+                {errorMessage}
+              </pre>
+            </ScrollArea>
           </details>
         )}
 

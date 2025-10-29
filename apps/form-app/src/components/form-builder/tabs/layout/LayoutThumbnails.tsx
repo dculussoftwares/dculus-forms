@@ -1,7 +1,7 @@
 import React from 'react';
 import { Check } from 'lucide-react';
 import { LayoutCode } from '@dculus/types';
-import { Button } from '@dculus/ui';
+import { Button, ScrollArea } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 
 // Layout templates with accurate visual representations
@@ -187,7 +187,7 @@ export const LayoutThumbnails: React.FC<LayoutThumbnailsProps> = ({
   disabled = false
 }) => {
   return (
-    <div className="h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+    <ScrollArea className="h-40">
       <div className="grid grid-cols-2 gap-2 pr-2">
         {LAYOUT_TEMPLATES.map((template) => (
           <Button
@@ -227,6 +227,6 @@ export const LayoutThumbnails: React.FC<LayoutThumbnailsProps> = ({
           </Button>
         ))}
       </div>
-    </div>
+    </ScrollArea>
   );
 };

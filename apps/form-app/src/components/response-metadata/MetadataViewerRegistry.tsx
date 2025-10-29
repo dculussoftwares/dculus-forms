@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
+import { Card, CardContent, CardHeader, CardTitle, ScrollArea } from '@dculus/ui';
 import { QuizGradingMetadataViewer } from '../plugins/response-table/quiz/QuizGradingMetadataViewer';
 
 // Registry mapping plugin types to viewer components
@@ -30,9 +30,11 @@ export const MetadataViewer: React.FC<MetadataViewerProps> = ({ metadata }) => {
                 <CardTitle>Plugin Metadata: {pluginType}</CardTitle>
               </CardHeader>
               <CardContent>
-                <pre className="text-xs bg-gray-100 p-3 rounded overflow-auto">
-                  {JSON.stringify(pluginMetadata, null, 2)}
-                </pre>
+                <ScrollArea className="max-h-60">
+                  <pre className="text-xs bg-gray-100 p-3 rounded">
+                    {JSON.stringify(pluginMetadata, null, 2)}
+                  </pre>
+                </ScrollArea>
               </CardContent>
             </Card>
           );

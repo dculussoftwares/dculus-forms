@@ -3,6 +3,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+import { ScrollArea } from '@dculus/ui';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { FieldTypesPanel } from '../FieldTypesPanel';
 import { PagesSidebar } from '../PagesSidebar';
@@ -62,38 +63,40 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col">
         {/* Main Editor */}
-        <div className="flex-1 overflow-auto p-6">
-          {pages.length === 0 ? (
-            <EmptyFormState 
-              onCreatePage={addEmptyPage}
-              isConnected={isConnected}
-            />
-          ) : selectedPage ? (
-            <div className="max-w-4xl mx-auto">
-              <DroppablePage
-                page={selectedPage}
-                index={pages.findIndex(p => p.id === selectedPage.id)}
-                isSelected={true}
+        <ScrollArea className="flex-1">
+          <div className="p-6">
+            {pages.length === 0 ? (
+              <EmptyFormState
+                onCreatePage={addEmptyPage}
                 isConnected={isConnected}
-                selectedFieldId={selectedFieldId}
-                pages={pages}
-                onSelect={() => {}}
-                onUpdateField={updateField}
-                onRemoveField={removeField}
-                onDuplicateField={duplicateField}
-                onEditField={onFieldEdit}
-                onMoveFieldBetweenPages={moveFieldBetweenPages}
-                onCopyFieldToPage={copyFieldToPage}
               />
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-gray-600 dark:text-gray-400">
-                Select a page to start editing
-              </p>
-            </div>
-          )}
-        </div>
+            ) : selectedPage ? (
+              <div className="max-w-4xl mx-auto">
+                <DroppablePage
+                  page={selectedPage}
+                  index={pages.findIndex(p => p.id === selectedPage.id)}
+                  isSelected={true}
+                  isConnected={isConnected}
+                  selectedFieldId={selectedFieldId}
+                  pages={pages}
+                  onSelect={() => {}}
+                  onUpdateField={updateField}
+                  onRemoveField={removeField}
+                  onDuplicateField={duplicateField}
+                  onEditField={onFieldEdit}
+                  onMoveFieldBetweenPages={moveFieldBetweenPages}
+                  onCopyFieldToPage={copyFieldToPage}
+                />
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-gray-600 dark:text-gray-400">
+                  Select a page to start editing
+                </p>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
       </div>
 
       {/* Right Sidebar - Pages Sidebar */}

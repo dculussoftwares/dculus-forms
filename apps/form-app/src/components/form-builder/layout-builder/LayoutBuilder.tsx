@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FormLayout, ThemeType, SpacingType, LayoutCode, PageModeType } from '@dculus/types';
-import { Button, RichTextEditor } from '@dculus/ui';
+import { Button, RichTextEditor, ScrollArea } from '@dculus/ui';
 import { X, Volume2, VolumeX } from 'lucide-react';
 
 export interface LayoutTemplate {
@@ -276,7 +276,7 @@ export const LayoutBuilder: React.FC<LayoutBuilderProps> = ({
         )}
       </div>
 
-      <div className="flex-1 overflow-auto">
+      <ScrollArea className="flex-1">
         {/* Layouts Section */}
         <div className="p-4">
           <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3 uppercase">
@@ -418,7 +418,7 @@ export const LayoutBuilder: React.FC<LayoutBuilderProps> = ({
             </Button>
           </div>
         </div>
-      </div>
+      </ScrollArea>
     </div>
   );
 };
