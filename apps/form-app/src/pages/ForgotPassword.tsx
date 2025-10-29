@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button, Input, Label, Card, CardContent, CardDescription, CardHeader, CardTitle, TypographyH2, TypographyP, TypographySmall } from "@dculus/ui";
 import { forgetPassword, authClient } from "../lib/auth-client";
 import { CheckCircle, KeyRound } from "lucide-react";
+import { useTranslation } from "../hooks/useTranslation";
 
 export const ForgotPassword = () => {
   const [searchParams] = useSearchParams();
@@ -14,6 +15,7 @@ export const ForgotPassword = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [token, setToken] = useState('');
   const navigate = useNavigate();
+  const { t } = useTranslation('forgotPassword');
 
   // Check for reset token in URL
   useEffect(() => {
@@ -24,25 +26,25 @@ export const ForgotPassword = () => {
     }
   }, [searchParams]);
 
-  const validateEmail = (emailValue: string) => {
+  const validateEmail = useCallback((emailValue: string) => {
     if (!emailValue.trim()) {
-      return "Email is required";
+      return t('form.email.errors.required');
     }
     if (!/\S+@\S+\.\S+/.test(emailValue)) {
-      return "Please enter a valid email";
+      return t('form.email.errors.invalid');
     }
     return null;
-  };
+  }, [t]);
 
-  const validatePassword = (password: string) => {
+  const validatePassword = useCallback((password: string) => {
     if (!password) {
-      return "Password is required";
+      return t('form.newPassword.errors.required');
     }
     if (password.length < 8) {
-      return "Password must be at least 8 characters";
+      return t('form.newPassword.errors.length');
     }
     return null;
-  };
+  }, [t]);
 
   const handleSendResetEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,19 +66,19 @@ export const ForgotPassword = () => {
 
       if (response.error) {
         setErrors({ 
-          submit: response.error.message || "Failed to send reset email" 
+          submit: response.error.message || t('messages.resetEmailFailed') 
         });
       } else {
         // Show success message
         setStep('email');
         setErrors({});
         // You could also show a success state here
-        alert('Reset email sent! Please check your email for the reset link.');
+        alert(t('messages.resetEmailSuccess'));
       }
     } catch (error) {
       console.error("Send reset email error:", error);
       setErrors({ 
-        submit: "An unexpected error occurred. Please try again." 
+        submit: t('messages.unexpectedError') 
       });
     } finally {
       setIsLoading(false);
@@ -93,12 +95,12 @@ export const ForgotPassword = () => {
     }
 
     if (newPassword !== confirmPassword) {
-      setErrors({ confirmPassword: "Passwords don't match" });
+      setErrors({ confirmPassword: t('form.confirmPassword.errors.mismatch') });
       return;
     }
 
     if (!token) {
-      setErrors({ submit: "Invalid reset token" });
+      setErrors({ submit: t('messages.invalidToken') });
       return;
     }
 
@@ -113,7 +115,7 @@ export const ForgotPassword = () => {
 
       if (response.error) {
         setErrors({ 
-          submit: response.error.message || "Failed to reset password" 
+          submit: response.error.message || t('messages.resetFailed') 
         });
       } else {
         // Password reset successful, redirect to sign-in
@@ -122,7 +124,7 @@ export const ForgotPassword = () => {
     } catch (error) {
       console.error("Reset password error:", error);
       setErrors({ 
-        submit: "An unexpected error occurred. Please try again." 
+        submit: t('messages.unexpectedError') 
       });
     } finally {
       setIsLoading(false);
@@ -132,19 +134,19 @@ export const ForgotPassword = () => {
   const getStepInfo = () => {
     if (step === 'reset') {
       return {
-        title: 'Set new password',
-        subtitle: 'Choose a strong password for your account',
-        cardTitle: 'Reset Password',
-        cardDescription: 'Enter your new password below',
+        title: t('steps.reset.title'),
+        subtitle: t('steps.reset.subtitle'),
+        cardTitle: t('steps.reset.cardTitle'),
+        cardDescription: t('steps.reset.cardDescription'),
         icon: <CheckCircle className="w-5 h-5" />
       };
     }
     
     return {
-      title: 'Reset your password',
-      subtitle: 'Enter your email to receive a reset link',
-      cardTitle: 'Forgot Password',
-      cardDescription: 'We\'ll send you a secure reset link',
+      title: t('steps.email.title'),
+      subtitle: t('steps.email.subtitle'),
+      cardTitle: t('steps.email.cardTitle'),
+      cardDescription: t('steps.email.cardDescription'),
       icon: <KeyRound className="w-5 h-5" />
     };
   };
@@ -170,14 +172,14 @@ export const ForgotPassword = () => {
             <path d="M2 3h6" />
             <path d="M6 3v5" />
           </svg>
-          Dculus Forms
+          {t('hero.productName')}
         </div>
         <div className="relative z-20 mt-auto">
           <div className="mt-6 border-l-2 pl-6 italic">
             <TypographyP>
-              &ldquo;Secure password reset with email verification. We'll help you regain access to your account safely.&rdquo;
+              &ldquo;{t('hero.tagline')}&rdquo;
             </TypographyP>
-            <footer className="text-sm">Account Security</footer>
+            <footer className="text-sm">{t('hero.attribution')}</footer>
           </div>
         </div>
       </div>
@@ -204,12 +206,12 @@ export const ForgotPassword = () => {
               {step === 'email' && (
                 <form onSubmit={handleSendResetEmail} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email address</Label>
+                    <Label htmlFor="email">{t('form.email.label')}</Label>
                     <Input
                       id="email"
                       name="email"
                       type="email"
-                      placeholder="john@example.com"
+                      placeholder={t('form.email.placeholder')}
                       value={email}
                       onChange={(e) => {
                         setEmail(e.target.value);
@@ -236,7 +238,7 @@ export const ForgotPassword = () => {
                     className="w-full"
                     disabled={isLoading}
                   >
-                    {isLoading ? "Sending..." : "Send Reset Link"}
+                    {isLoading ? t('steps.email.action.loading') : t('steps.email.action.idle')}
                   </Button>
                 </form>
               )}
@@ -244,12 +246,12 @@ export const ForgotPassword = () => {
               {step === 'reset' && (
                 <form onSubmit={handleResetPassword} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="newPassword">New Password</Label>
+                    <Label htmlFor="newPassword">{t('form.newPassword.label')}</Label>
                     <Input
                       id="newPassword"
                       name="newPassword"
                       type="password"
-                      placeholder="••••••••"
+                      placeholder={t('form.newPassword.placeholder')}
                       value={newPassword}
                       onChange={(e) => {
                         setNewPassword(e.target.value);
@@ -266,12 +268,12 @@ export const ForgotPassword = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                    <Label htmlFor="confirmPassword">{t('form.confirmPassword.label')}</Label>
                     <Input
                       id="confirmPassword"
                       name="confirmPassword"
                       type="password"
-                      placeholder="••••••••"
+                      placeholder={t('form.confirmPassword.placeholder')}
                       value={confirmPassword}
                       onChange={(e) => {
                         setConfirmPassword(e.target.value);
@@ -298,7 +300,7 @@ export const ForgotPassword = () => {
                     className="w-full"
                     disabled={isLoading}
                   >
-                    {isLoading ? "Updating..." : "Update Password"}
+                    {isLoading ? t('steps.reset.action.loading') : t('steps.reset.action.idle')}
                   </Button>
                 </form>
               )}
@@ -306,12 +308,12 @@ export const ForgotPassword = () => {
           </Card>
 
           <TypographySmall className="text-center">
-            Remember your password?{" "}
+            {t('links.signInPrompt')}{" "}
             <Link
               to="/signin"
               className="underline underline-offset-4 hover:text-primary"
             >
-              Sign in
+              {t('links.signIn')}
             </Link>
           </TypographySmall>
         </div>

@@ -1,12 +1,14 @@
 import enCommon from './en/common.json';
 import enSignIn from './en/signIn.json';
 import enSignUp from './en/signUp.json';
+import enForgotPassword from './en/forgotPassword.json';
 
 export const translations = {
   en: {
     common: enCommon,
     signIn: enSignIn,
     signUp: enSignUp,
+    forgotPassword: enForgotPassword,
   },
 } as const;
 
