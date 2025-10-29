@@ -14,6 +14,7 @@ import {
   toastError,
 } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
+import { useTranslation } from '../hooks/useTranslation';
 import { FormSettingsContainer } from '../components/form-settings';
 import { useFormSettings } from '../hooks/useFormSettings';
 import { GET_FORM_BY_ID } from '../graphql/queries';
@@ -27,6 +28,7 @@ import {
 const FormSettings: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation('formSettings');
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -66,12 +68,12 @@ const FormSettings: React.FC = () => {
       setIsSaving(false);
       setErrors({});
       refetch();
-      toastSuccess('Form settings saved successfully');
+      toastSuccess(t('toasts.settingsSaved'));
     },
     onError: (error) => {
       setIsSaving(false);
       setErrors({ general: error.message });
-      toastError('Failed to save form settings', error.message);
+      toastError(t('toasts.settingsSaveError'), error.message);
     },
   });
 
@@ -80,12 +82,12 @@ const FormSettings: React.FC = () => {
       setIsSaving(false);
       setErrors({});
       refetch();
-      toastSuccess('Short URL regenerated successfully');
+      toastSuccess(t('toasts.shortUrlRegenerated'));
     },
     onError: (error) => {
       setIsSaving(false);
       setErrors({ general: error.message });
-      toastError('Failed to regenerate short URL', error.message);
+      toastError(t('toasts.shortUrlRegenerateError'), error.message);
     },
   });
 
@@ -103,10 +105,10 @@ const FormSettings: React.FC = () => {
     const description = descriptionInput?.value.trim();
 
     // Basic validation
-    if (!title) {
-      setErrors({ title: 'Form title is required' });
+    if (!titleInput.value.trim()) {
+      setErrors({ title: t('errors.formTitleRequired') });
       setIsSaving(false);
-      toastError('Validation Error', 'Form title is required');
+      toastError(t('errors.validationError'), t('errors.formTitleRequired'));
       return;
     }
 
@@ -149,11 +151,11 @@ const FormSettings: React.FC = () => {
   if (formLoading) {
     return (
       <MainLayout
-        title="Form Settings"
+        title={t('layout.title')}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Form Dashboard', href: `/dashboard/form/${formId}` },
-          { label: 'Settings', href: `/dashboard/form/${formId}/settings` },
+          { label: t('layout.breadcrumbDashboard'), href: '/dashboard' },
+          { label: t('layout.breadcrumbFormDashboard'), href: `/dashboard/form/${formId}` },
+          { label: t('layout.breadcrumbSettings'), href: `/dashboard/form/${formId}/settings` },
         ]}
       >
         <div className="flex justify-center items-center min-h-96">
@@ -166,11 +168,11 @@ const FormSettings: React.FC = () => {
   if (formError || !formData?.form) {
     return (
       <MainLayout
-        title="Form Settings"
+        title={t('layout.title')}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
+          { label: t('layout.breadcrumbDashboard'), href: '/dashboard' },
           {
-            label: 'Form Settings',
+            label: t('layout.title'),
             href: `/dashboard/form/${formId}/settings`,
           },
         ]}
@@ -178,10 +180,9 @@ const FormSettings: React.FC = () => {
         <div className="max-w-4xl mx-auto px-4 py-12">
           <Card className="p-8 text-center">
             <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-            <TypographyH3 className="mb-2">Form Not Found</TypographyH3>
+            <TypographyH3 className="mb-2">{t('errors.formNotFound')}</TypographyH3>
             <TypographyP className="text-slate-600">
-              The form you're looking for doesn't exist or you don't have
-              permission to view it.
+              {t('errors.formNotFoundMessage')}
             </TypographyP>
           </Card>
         </div>
@@ -193,11 +194,11 @@ const FormSettings: React.FC = () => {
 
   return (
     <MainLayout
-      title={`${form.title} - Settings`}
+      title={t('layout.titleWithForm', { values: { formTitle: form.title } })}
       breadcrumbs={[
-        { label: 'Dashboard', href: '/dashboard' },
+        { label: t('layout.breadcrumbDashboard'), href: '/dashboard' },
         { label: form.title, href: `/dashboard/form/${formId}` },
-        { label: 'Settings', href: `/dashboard/form/${formId}/settings` },
+        { label: t('layout.breadcrumbSettings'), href: `/dashboard/form/${formId}/settings` },
       ]}
     >
       <div className="px-4 py-8 space-y-8">
@@ -212,15 +213,15 @@ const FormSettings: React.FC = () => {
                 className="mr-2"
               >
                 <ArrowLeft className="h-4 w-4 mr-1" />
-                Back to Dashboard
+                {t('header.backButton')}
               </Button>
             </div>
             <TypographyH1 className="mb-2 flex items-center">
               <Settings className="mr-3 h-8 w-8" />
-              Form Settings
+              {t('header.title')}
             </TypographyH1>
             <TypographyP className="text-slate-600">
-              Configure settings and preferences for "{form.title}"
+              {t('header.description', { values: { formTitle: form.title } })}
             </TypographyP>
           </div>
         </div>

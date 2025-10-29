@@ -1,0 +1,27 @@
+{
+  "layout": {
+    "title": "Form Settings",
+    "titleWithForm": "{{formTitle}} - Settings",
+    "breadcrumbDashboard": "Dashboard",
+    "breadcrumbFormDashboard": "Form Dashboard",
+    "breadcrumbSettings": "Settings"
+  },
+  "header": {
+    "backButton": "Back to Dashboard",
+    "title": "Form Settings",
+    "description": "Configure settings and preferences for \"{{formTitle}}\""
+  },
+  "errors": {
+    "formNotFound": "Form Not Found",
+    "formNotFoundMessage": "The form you're looking for doesn't exist or you don't have permission to view it.",
+    "formTitleRequired": "Form title is required",
+    "validationError": "Validation Error",
+    "general": "An error occurred while processing your request."
+  },
+  "toasts": {
+    "settingsSaved": "Form settings saved successfully",
+    "settingsSaveError": "Failed to save form settings",
+    "shortUrlRegenerated": "Short URL regenerated successfully",
+    "shortUrlRegenerateError": "Failed to regenerate short URL"
+  }
+}
