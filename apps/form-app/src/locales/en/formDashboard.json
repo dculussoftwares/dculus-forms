@@ -12,6 +12,75 @@
     "heading": "Performance Overview",
     "description": "Track your form's key metrics and engagement"
   },
+  "header": {
+    "status": {
+      "live": "Live",
+      "draft": "Draft"
+    },
+    "dateUnavailable": "Date unavailable",
+    "descriptionFallback": "Monitor your form performance and responses",
+    "actions": {
+      "publish": "Publish",
+      "publishing": "Publishing...",
+      "unpublish": "Unpublish",
+      "unpublishing": "Unpublishing...",
+      "getLink": "Get Link",
+      "share": "Share",
+      "preview": "Preview",
+      "analytics": "Analytics",
+      "more": "More actions",
+      "delete": "Delete Form",
+      "deleting": "Deleting..."
+    }
+  },
+  "stats": {
+    "totalResponses": {
+      "title": "Total Responses",
+      "subtitle": "+{{count}} from today"
+    },
+    "responseRate": {
+      "title": "Response Rate",
+      "subtitle": "Views converted to responses"
+    },
+    "averageCompletionTime": {
+      "title": "Avg. Completion Time",
+      "subtitle": "Average time to complete"
+    },
+    "thisWeek": {
+      "title": "This Week",
+      "subtitle": "Responses this week"
+    }
+  },
+  "quickActions": {
+    "heading": "Quick Actions",
+    "description": "Manage your form with powerful tools",
+    "items": {
+      "collaborate": {
+        "title": "Collaborate",
+        "description": "Real-time collaborative editing"
+      },
+      "responses": {
+        "title": "Responses",
+        "description": "View and manage all submissions"
+      },
+      "analytics": {
+        "title": "Analytics",
+        "description": "Detailed insights and reports"
+      },
+      "plugins": {
+        "title": "Plugins",
+        "description": "Enhance with powerful integrations"
+      },
+      "settings": {
+        "title": "Settings",
+        "description": "Configure form preferences"
+      }
+    }
+  },
+  "statsTrend": {
+    "positive": "{{value}}%",
+    "negative": "{{value}}%"
+  },
   "toast": {
     "copied": {
       "title": "Copied to clipboard",

@@ -9,6 +9,7 @@ import {
   Plug,
 } from 'lucide-react';
 import { Button } from '@dculus/ui';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface QuickActionsProps {
   formId: string;
@@ -61,11 +62,12 @@ const ActionCard: React.FC<ActionCardProps> = ({
 
 export const QuickActions: React.FC<QuickActionsProps> = ({ formId }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation('formDashboard');
 
   const actions = [
     {
-      title: 'Collaborate',
-      description: 'Real-time collaborative editing',
+      title: t('quickActions.items.collaborate.title'),
+      description: t('quickActions.items.collaborate.description'),
       icon: Users,
       iconBg: 'bg-emerald-50',
       iconColor: 'text-emerald-600',
@@ -73,8 +75,8 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId }) => {
       path: `/dashboard/form/${formId}/collaborate`,
     },
     {
-      title: 'Responses',
-      description: 'View and manage all submissions',
+      title: t('quickActions.items.responses.title'),
+      description: t('quickActions.items.responses.description'),
       icon: Database,
       iconBg: 'bg-blue-50',
       iconColor: 'text-blue-600',
@@ -82,8 +84,8 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId }) => {
       path: `/dashboard/form/${formId}/responses`,
     },
     {
-      title: 'Analytics',
-      description: 'Detailed insights and reports',
+      title: t('quickActions.items.analytics.title'),
+      description: t('quickActions.items.analytics.description'),
       icon: LineChart,
       iconBg: 'bg-purple-50',
       iconColor: 'text-purple-600',
@@ -91,8 +93,8 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId }) => {
       path: `/dashboard/form/${formId}/analytics`,
     },
     {
-      title: 'Plugins',
-      description: 'Enhance with powerful integrations',
+      title: t('quickActions.items.plugins.title'),
+      description: t('quickActions.items.plugins.description'),
       icon: Plug,
       iconBg: 'bg-orange-50',
       iconColor: 'text-orange-600',
@@ -100,8 +102,8 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId }) => {
       path: `/dashboard/form/${formId}/plugins`,
     },
     {
-      title: 'Settings',
-      description: 'Configure form preferences',
+      title: t('quickActions.items.settings.title'),
+      description: t('quickActions.items.settings.description'),
       icon: Settings,
       iconBg: 'bg-slate-50',
       iconColor: 'text-slate-600',
@@ -114,10 +116,10 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId }) => {
     <div className="space-y-4">
       <div>
         <h2 className="text-xl font-semibold text-slate-900 mb-1">
-          Quick Actions
+          {t('quickActions.heading')}
         </h2>
         <p className="text-sm text-slate-600">
-          Manage your form with powerful tools
+          {t('quickActions.description')}
         </p>
       </div>
 

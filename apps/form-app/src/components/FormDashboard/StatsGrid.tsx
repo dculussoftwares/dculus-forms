@@ -7,6 +7,7 @@ import {
   ArrowUp,
   ArrowDown,
 } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface DashboardStats {
   totalResponses: number;
@@ -30,6 +31,7 @@ interface StatCardProps {
   trend?: {
     value: number;
     isPositive: boolean;
+    label?: string;
   };
 }
 
@@ -63,7 +65,7 @@ const StatCard: React.FC<StatCardProps> = ({
               ) : (
                 <ArrowDown className="w-3 h-3" />
               )}
-              {Math.abs(trend.value)}%
+              {trend.label ?? `${Math.abs(trend.value)}%`}
             </div>
           )}
         </div>
@@ -84,45 +86,57 @@ const StatCard: React.FC<StatCardProps> = ({
 };
 
 export const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
+  const { t } = useTranslation('formDashboard');
+
+  const positiveTrend = (value: number) => ({
+    value,
+    isPositive: true,
+    label: t('statsTrend.positive', { values: { value: Math.abs(value) } }),
+  });
+
   return (
     <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
       <StatCard
-        title="Total Responses"
+        title={t('stats.totalResponses.title')}
         value={stats.totalResponses}
-        subtitle={`+${stats.responsesToday} from today`}
+        subtitle={t('stats.totalResponses.subtitle', { values: { count: stats.responsesToday } })}
         icon={<FileText className="w-5 h-5" />}
         iconBgColor="bg-blue-50"
         iconColor="text-blue-600"
-        trend={stats.responsesToday > 0 ? { value: 12, isPositive: true } : undefined}
+        trend={
+          stats.responsesToday > 0
+            ? positiveTrend(12)
+            : undefined
+        }
       />
 
       <StatCard
-        title="Response Rate"
+        title={t('stats.responseRate.title')}
         value={stats.responseRate}
-        subtitle="Views converted to responses"
+        subtitle={t('stats.responseRate.subtitle')}
         icon={<TrendingUp className="w-5 h-5" />}
         iconBgColor="bg-emerald-50"
         iconColor="text-emerald-600"
-        trend={{ value: 8, isPositive: true }}
+        trend={positiveTrend(8)}
       />
 
       <StatCard
-        title="Avg. Completion Time"
+        title={t('stats.averageCompletionTime.title')}
         value={stats.averageCompletionTime}
-        subtitle="Average time to complete"
+        subtitle={t('stats.averageCompletionTime.subtitle')}
         icon={<Clock className="w-5 h-5" />}
         iconBgColor="bg-purple-50"
         iconColor="text-purple-600"
       />
 
       <StatCard
-        title="This Week"
+        title={t('stats.thisWeek.title')}
         value={stats.responsesThisWeek}
-        subtitle="Responses this week"
+        subtitle={t('stats.thisWeek.subtitle')}
         icon={<Calendar className="w-5 h-5" />}
         iconBgColor="bg-orange-50"
         iconColor="text-orange-600"
-        trend={{ value: 15, isPositive: true }}
+        trend={positiveTrend(15)}
       />
     </div>
   );
