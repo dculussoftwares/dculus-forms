@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { Button, Card, LoadingSpinner } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
+import { useTranslation } from '../hooks/useTranslation';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { AlertCircle, BarChart3, ExternalLink, TrendingUp } from 'lucide-react';
 import { useFormAnalytics } from '../hooks/useFormAnalytics';
@@ -18,6 +19,7 @@ import { FieldAnalyticsViewer } from '../components/Analytics/FieldAnalytics/Fie
 const FormAnalytics: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { t } = useTranslation('formAnalytics');
   
   // Get tab from URL, default to 'overview'
   const activeTab = (searchParams.get('tab') as 'overview' | 'fields') || 'overview';
@@ -54,11 +56,11 @@ const FormAnalytics: React.FC = () => {
   if (loading) {
     return (
       <MainLayout
-        title="Form Analytics"
+        title={t('layout.title')}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Form Dashboard', href: `/dashboard/form/${formId}` },
-          { label: 'Analytics', href: `/dashboard/form/${formId}/analytics` },
+          { label: t('layout.breadcrumbDashboard'), href: '/dashboard' },
+          { label: t('layout.breadcrumbFormDashboard'), href: `/dashboard/form/${formId}` },
+          { label: t('layout.breadcrumbAnalytics'), href: `/dashboard/form/${formId}/analytics` },
         ]}
       >
         <div className="flex justify-center items-center min-h-96">
@@ -71,20 +73,19 @@ const FormAnalytics: React.FC = () => {
   if (error || !data?.form) {
     return (
       <MainLayout
-        title="Form Analytics"
+        title={t('layout.title')}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Form Dashboard', href: `/dashboard/form/${formId}` },
-          { label: 'Analytics', href: `/dashboard/form/${formId}/analytics` },
+          { label: t('layout.breadcrumbDashboard'), href: '/dashboard' },
+          { label: t('layout.breadcrumbFormDashboard'), href: `/dashboard/form/${formId}` },
+          { label: t('layout.breadcrumbAnalytics'), href: `/dashboard/form/${formId}/analytics` },
         ]}
       >
         <div className="max-w-4xl mx-auto px-4 py-12">
           <Card className="p-8 text-center">
             <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-            <h3 className="mb-2 text-xl font-semibold">Form Not Found</h3>
+            <h3 className="mb-2 text-xl font-semibold">{t('errors.formNotFound')}</h3>
             <p className="text-slate-600">
-              The form you're looking for doesn't exist or you don't have
-              permission to view its analytics.
+              {t('errors.formNotFoundMessage')}
             </p>
           </Card>
         </div>
@@ -111,11 +112,11 @@ const FormAnalytics: React.FC = () => {
 
   return (
     <MainLayout
-      title={`${form.title} - Analytics`}
+      title={t('layout.titleWithForm', { values: { formTitle: form.title } })}
       breadcrumbs={[
-        { label: 'Dashboard', href: '/dashboard' },
+        { label: t('layout.breadcrumbDashboard'), href: '/dashboard' },
         { label: form.title, href: `/dashboard/form/${formId}` },
-        { label: 'Analytics', href: `/dashboard/form/${formId}/analytics` },
+        { label: t('layout.breadcrumbAnalytics'), href: `/dashboard/form/${formId}/analytics` },
       ]}
     >
       {/* Container with consistent styling */}
@@ -123,10 +124,9 @@ const FormAnalytics: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Form Analytics</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t('header.title')}</h1>
             <p className="text-gray-600 mt-1">
-              Detailed insights and reports for{' '}
-              <span className="font-medium">{form.title}</span>
+              {t('header.description', { values: { formTitle: form.title } })}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -142,7 +142,7 @@ const FormAnalytics: React.FC = () => {
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={handleViewForm}>
                 <ExternalLink className="w-4 h-4 mr-2" />
-                View Form
+                {t('header.viewFormButton')}
               </Button>
             </div>
           </div>
@@ -161,7 +161,7 @@ const FormAnalytics: React.FC = () => {
             >
               <div className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4" />
-                Form Overview
+                {t('tabs.overview')}
               </div>
             </button>
             <button
@@ -174,7 +174,7 @@ const FormAnalytics: React.FC = () => {
             >
               <div className="flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />
-                Field Insights
+                {t('tabs.fields')}
               </div>
             </button>
           </nav>
@@ -200,11 +200,10 @@ const FormAnalytics: React.FC = () => {
                 <div className="text-center text-red-600">
                   <AlertCircle className="h-12 w-12 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">
-                    Unable to Load Analytics
+                    {t('errors.unableToLoadAnalytics')}
                   </h3>
                   <p className="text-sm">
-                    {analyticsError.message ||
-                      'There was an error loading the analytics data.'}
+                    {analyticsError.message || t('errors.analyticsLoadError')}
                   </p>
                   <Button
                     variant="outline"
@@ -212,7 +211,7 @@ const FormAnalytics: React.FC = () => {
                     className="mt-4"
                     onClick={refreshData}
                   >
-                    Try Again
+                    {t('errors.tryAgain')}
                   </Button>
                 </div>
               </Card>
@@ -225,12 +224,10 @@ const FormAnalytics: React.FC = () => {
                     <AlertCircle className="h-8 w-8 text-yellow-600" />
                   </div>
                   <h3 className="mt-4 text-lg font-semibold text-gray-900">
-                    Authentication Required
+                    {t('states.authenticationRequired')}
                   </h3>
                   <p className="mt-2 text-gray-600 max-w-2xl mx-auto">
-                    You need to be logged in to view form analytics. Please sign
-                    in to access detailed insights about your form's
-                    performance.
+                    {t('states.authenticationMessage')}
                   </p>
                 </div>
               </Card>
@@ -243,25 +240,21 @@ const FormAnalytics: React.FC = () => {
                     <BarChart3 className="h-8 w-8 text-blue-600" />
                   </div>
                   <h3 className="mt-4 text-lg font-semibold text-gray-900">
-                    No Analytics Data Yet
+                    {t('states.noDataYet')}
                   </h3>
                   <p className="mt-2 text-gray-600 max-w-2xl mx-auto">
-                    Your form analytics will appear here once visitors start
-                    accessing your form. Share your form to start collecting
-                    valuable insights about your audience.
+                    {t('states.noDataMessage')}
                   </p>
                   <div className="mt-6">
                     <Button onClick={handleViewForm}>
                       <ExternalLink className="w-4 h-4 mr-2" />
-                      View Your Form
+                      {t('states.viewYourForm')}
                     </Button>
                   </div>
 
                   <div className="mt-8 p-4 bg-blue-50 rounded-lg">
                     <p className="text-sm text-blue-800">
-                      <strong>Privacy First:</strong> Our analytics system is
-                      designed with privacy in mind. We collect only anonymous
-                      data without storing personal information or IP addresses.
+                      {t('states.privacyNotice')}
                     </p>
                   </div>
                 </div>

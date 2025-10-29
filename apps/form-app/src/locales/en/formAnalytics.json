@@ -1,0 +1,33 @@
+{
+  "layout": {
+    "title": "Form Analytics",
+    "titleWithForm": "{{formTitle}} - Analytics",
+    "breadcrumbDashboard": "Dashboard",
+    "breadcrumbFormDashboard": "Form Dashboard",
+    "breadcrumbAnalytics": "Analytics"
+  },
+  "header": {
+    "title": "Form Analytics",
+    "description": "Detailed insights and reports for {{formTitle}}",
+    "viewFormButton": "View Form"
+  },
+  "tabs": {
+    "overview": "Form Overview",
+    "fields": "Field Insights"
+  },
+  "errors": {
+    "formNotFound": "Form Not Found",
+    "formNotFoundMessage": "The form you're looking for doesn't exist or you don't have permission to view its analytics.",
+    "unableToLoadAnalytics": "Unable to Load Analytics",
+    "analyticsLoadError": "There was an error loading the analytics data.",
+    "tryAgain": "Try Again"
+  },
+  "states": {
+    "authenticationRequired": "Authentication Required",
+    "authenticationMessage": "You need to be logged in to view form analytics. Please sign in to access detailed insights about your form's performance.",
+    "noDataYet": "No Analytics Data Yet",
+    "noDataMessage": "Your form analytics will appear here once visitors start accessing your form. Share your form to start collecting valuable insights about your audience.",
+    "viewYourForm": "View Your Form",
+    "privacyNotice": "Privacy First: Our analytics system is designed with privacy in mind. We collect only anonymous data without storing personal information or IP addresses."
+  }
+}

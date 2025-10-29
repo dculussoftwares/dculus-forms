@@ -12,6 +12,7 @@ import enFormDashboard from './en/formDashboard.json';
 import enSharing from './en/sharing.json';
 import enResponses from './en/responses.json';
 import enFormSettings from './en/formSettings.json';
+import enFormAnalytics from './en/formAnalytics.json';
 
 export const translations = {
   en: {
@@ -29,6 +30,7 @@ export const translations = {
     sharing: enSharing,
     responses: enResponses,
     formSettings: enFormSettings,
+    formAnalytics: enFormAnalytics,
   },
 } as const;
 
