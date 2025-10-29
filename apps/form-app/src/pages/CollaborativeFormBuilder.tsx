@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { useAuthContext } from '../contexts/AuthContext';
 import { FormPermissionProvider, PermissionLevel } from '../contexts/FormPermissionContext';
+import { useTranslation } from '../hooks/useTranslation';
 import {
   DndContext,
   DragOverlay,
@@ -42,6 +43,7 @@ const DEFAULT_SIDEBAR_WIDTH = 320;
 const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ className }) => {
   const { formId, tab } = useParams<{ formId: string; tab?: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation('collaborativeFormBuilder');
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
   const { user } = useAuthContext();
   
@@ -261,8 +263,8 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
   if (!formId) {
     return (
       <ErrorState 
-        title="Form ID Required" 
-        description="Please provide a valid form ID to continue." 
+        title={t('errors.formIdRequired')} 
+        description={t('errors.formIdRequiredDescription')} 
       />
     );
   }
@@ -270,19 +272,19 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
   if (formError) {
     return (
       <ErrorState 
-        title="Error Loading Form" 
-        description={formError.message || "Failed to load form data."} 
+        title={t('errors.errorLoadingForm')} 
+        description={formError.message || t('errors.errorLoadingFormDescription')} 
       />
     );
   }
 
   if (isLoading || formLoading) {
     const statusTitle = isConnected ? 
-      "Loading form data..." : 
-      "Connecting to collaboration...";
+      t('loading.loadingFormData') : 
+      t('loading.connectingCollaboration');
     const statusDescription = isConnected ? 
-      "Setting up your form builder interface." :
-      "Establishing real-time collaboration connection.";
+      t('loading.loadingFormDataDescription') :
+      t('loading.connectingCollaborationDescription');
         
     return (
       <LoadingState 

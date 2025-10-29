@@ -1,0 +1,14 @@
+{
+  "errors": {
+    "formIdRequired": "Form ID Required",
+    "formIdRequiredDescription": "Please provide a valid form ID to continue.",
+    "errorLoadingForm": "Error Loading Form",
+    "errorLoadingFormDescription": "Failed to load form data."
+  },
+  "loading": {
+    "loadingFormData": "Loading form data...",
+    "loadingFormDataDescription": "Setting up your form builder interface.",
+    "connectingCollaboration": "Connecting to collaboration...",
+    "connectingCollaborationDescription": "Establishing real-time collaboration connection."
+  }
+}
