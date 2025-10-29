@@ -23,6 +23,7 @@ import {
   toastSuccess,
   toastError
 } from '@dculus/ui';
+import { useTranslation } from '../../hooks/useTranslation';
 import {
   Users,
   X,
@@ -69,6 +70,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   currentUserId,
   formShortUrl
 }) => {
+  const { t } = useTranslation('sharing');
   const [sharingScope, setSharingScope] = useState<SharingScope>(SharingScope.PRIVATE);
   const [defaultPermission, setDefaultPermission] = useState<PermissionLevel>(PermissionLevel.VIEWER);
   const [selectedUsers, setSelectedUsers] = useState<Map<string, PermissionLevel>>(new Map());
@@ -94,31 +96,31 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   const [shareForm, { loading: sharing }] = useMutation(SHARE_FORM, {
     onCompleted: () => {
-      toastSuccess('Form sharing settings updated successfully');
+      toastSuccess(t('toast.success.settingsUpdated'));
       refetchPermissions();
     },
     onError: (error) => {
-      toastError('Failed to update sharing settings', error.message);
+      toastError(t('toast.error.settingsUpdateFailed'), error.message);
     }
   });
 
   const [updatePermission] = useMutation(UPDATE_FORM_PERMISSION, {
     onCompleted: () => {
-      toastSuccess('User permission updated successfully');
+      toastSuccess(t('toast.success.permissionUpdated'));
       refetchPermissions();
     },
     onError: (error) => {
-      toastError('Failed to update user permission', error.message);
+      toastError(t('toast.error.permissionUpdateFailed'), error.message);
     }
   });
 
   const [removeAccess] = useMutation(REMOVE_FORM_ACCESS, {
     onCompleted: () => {
-      toastSuccess('User access removed successfully');
+      toastSuccess(t('toast.success.accessRemoved'));
       refetchPermissions();
     },
     onError: (error) => {
-      toastError('Failed to remove user access', error.message);
+      toastError(t('toast.error.accessRemovalFailed'), error.message);
     }
   });
 
@@ -197,10 +199,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     try {
       await navigator.clipboard.writeText(formUrl);
       setLinkCopied(true);
-      toastSuccess('Form link copied to clipboard');
+      toastSuccess(t('toast.success.linkCopied'));
       setTimeout(() => setLinkCopied(false), 2000);
     } catch (error) {
-      toastError('Failed to copy link', 'Unable to access clipboard');
+      toastError(t('toast.error.copyFailed'), t('toast.error.clipboardUnavailable'));
     }
   };
 
@@ -221,13 +223,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const getPermissionLabel = (permission: PermissionLevel) => {
     switch (permission) {
       case PermissionLevel.OWNER:
-        return 'Owner';
+        return t('modal.permissions.owner');
       case PermissionLevel.EDITOR:
-        return 'Editor';
+        return t('modal.permissions.editor');
       case PermissionLevel.VIEWER:
-        return 'Viewer';
+        return t('modal.permissions.viewer');
       default:
-        return 'No Access';
+        return t('modal.permissions.noAccess');
     }
   };
 
@@ -237,7 +239,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="w-5 h-5" />
-            Share "{formTitle}"
+            {t('modal.title', { values: { formTitle } })}
           </DialogTitle>
         </DialogHeader>
 
@@ -247,9 +249,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <Label className="text-sm font-medium">Form Link</Label>
+                  <Label className="text-sm font-medium">{t('modal.copyLink.label')}</Label>
                   <p className="text-sm text-gray-500 mt-1">
-                    Anyone with this link can view the form
+                    {t('modal.copyLink.description')}
                   </p>
                 </div>
                 <Button
@@ -259,7 +261,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                   className="ml-4"
                 >
                   {linkCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  {linkCopied ? 'Copied' : 'Copy link'}
+                  {linkCopied ? t('modal.copyLink.copiedButton') : t('modal.copyLink.copyButton')}
                 </Button>
               </div>
             </CardContent>
@@ -267,7 +269,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
           {/* Sharing Scope */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium">Sharing Scope</Label>
+            <Label className="text-sm font-medium">{t('modal.scope.label')}</Label>
             <Select value={sharingScope} onValueChange={(value) => setSharingScope(value as SharingScope)}>
               <SelectTrigger>
                 <SelectValue />
@@ -276,19 +278,19 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 <SelectItem value={SharingScope.PRIVATE}>
                   <div className="flex items-center gap-2">
                     <Lock className="w-4 h-4" />
-                    Private - Only specific people
+                    {t('modal.scope.private')}
                   </div>
                 </SelectItem>
                 <SelectItem value={SharingScope.SPECIFIC_MEMBERS}>
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4" />
-                    Specific members
+                    {t('modal.scope.specificMembers')}
                   </div>
                 </SelectItem>
                 <SelectItem value={SharingScope.ALL_ORG_MEMBERS}>
                   <div className="flex items-center gap-2">
                     <Globe className="w-4 h-4" />
-                    All organization members
+                    {t('modal.scope.allOrgMembers')}
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -298,14 +300,14 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           {/* Default Permission for Organization Members */}
           {sharingScope === SharingScope.ALL_ORG_MEMBERS && (
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Default Permission for Organization Members</Label>
+              <Label className="text-sm font-medium">{t('modal.defaultPermission.label')}</Label>
               <Select value={defaultPermission} onValueChange={(value) => setDefaultPermission(value as PermissionLevel)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={PermissionLevel.VIEWER}>Viewer - Can view form</SelectItem>
-                  <SelectItem value={PermissionLevel.EDITOR}>Editor - Can edit form</SelectItem>
+                  <SelectItem value={PermissionLevel.VIEWER}>{t('modal.defaultPermission.viewer')}</SelectItem>
+                  <SelectItem value={PermissionLevel.EDITOR}>{t('modal.defaultPermission.editor')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -314,10 +316,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           {/* Add People Section */}
           {(sharingScope === SharingScope.SPECIFIC_MEMBERS || sharingScope === SharingScope.ALL_ORG_MEMBERS) && (
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Add People</Label>
+              <Label className="text-sm font-medium">{t('modal.addPeople.label')}</Label>
               <div className="space-y-3">
                 <Input
-                  placeholder="Search by name or email..."
+                  placeholder={t('modal.addPeople.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full"
@@ -326,7 +328,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 {/* Selected users to be added */}
                 {selectedUsers.size > 0 && (
                   <div className="space-y-2">
-                    <Label className="text-xs text-gray-500">To be added:</Label>
+                    <Label className="text-xs text-gray-500">{t('modal.addPeople.toBeAdded')}</Label>
                     {Array.from(selectedUsers.entries()).map(([userId, permission]) => {
                       const user = organizationMembers.find((m: User) => m.id === userId);
                       if (!user) return null;
@@ -352,8 +354,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value={PermissionLevel.VIEWER}>Viewer</SelectItem>
-                                <SelectItem value={PermissionLevel.EDITOR}>Editor</SelectItem>
+                                <SelectItem value={PermissionLevel.VIEWER}>{t('modal.permissions.viewer')}</SelectItem>
+                                <SelectItem value={PermissionLevel.EDITOR}>{t('modal.permissions.editor')}</SelectItem>
                               </SelectContent>
                             </Select>
                             <Button
@@ -395,7 +397,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                   ))}
                   {filteredMembers.length === 0 && searchQuery && (
                     <p className="text-sm text-gray-500 text-center py-4">
-                      No members found matching "{searchQuery}"
+                      {t('modal.addPeople.noResults', { values: { query: searchQuery } })}
                     </p>
                   )}
                 </div>
@@ -406,7 +408,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           {/* Current Permissions */}
           {currentPermissions.length > 0 && (
             <div className="space-y-3">
-              <Label className="text-sm font-medium">People with access</Label>
+              <Label className="text-sm font-medium">{t('modal.currentPermissions.label')}</Label>
               <div className="space-y-2">
                 {currentPermissions.map((permission: FormPermission) => (
                   <div key={permission.id} className="flex items-center justify-between p-3 border rounded-lg">
@@ -421,7 +423,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                       </div>
                       {permission.permission === PermissionLevel.OWNER && (
                         <Badge variant="secondary" className="text-xs">
-                          Owner
+                          {t('modal.permissions.owner')}
                         </Badge>
                       )}
                     </div>
@@ -435,8 +437,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value={PermissionLevel.VIEWER}>Viewer</SelectItem>
-                            <SelectItem value={PermissionLevel.EDITOR}>Editor</SelectItem>
+                            <SelectItem value={PermissionLevel.VIEWER}>{t('modal.permissions.viewer')}</SelectItem>
+                            <SelectItem value={PermissionLevel.EDITOR}>{t('modal.permissions.editor')}</SelectItem>
                           </SelectContent>
                         </Select>
                       ) : (
@@ -466,14 +468,14 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           {/* Action Buttons */}
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={onClose}>
-              Cancel
+              {t('modal.actions.cancel')}
             </Button>
             <Button
               onClick={handleShare}
               disabled={sharing}
               className="min-w-[100px]"
             >
-              {sharing ? 'Sharing...' : 'Share'}
+              {sharing ? t('modal.actions.sharing') : t('modal.actions.share')}
             </Button>
           </div>
         </div>

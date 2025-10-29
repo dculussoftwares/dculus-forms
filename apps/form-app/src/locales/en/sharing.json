@@ -1,0 +1,57 @@
+{
+  "modal": {
+    "title": "Share \"{{formTitle}}\"",
+    "copyLink": {
+      "label": "Form Link",
+      "description": "Anyone with this link can view the form",
+      "copyButton": "Copy link",
+      "copiedButton": "Copied"
+    },
+    "scope": {
+      "label": "Sharing Scope",
+      "private": "Private - Only specific people",
+      "specificMembers": "Specific members",
+      "allOrgMembers": "All organization members"
+    },
+    "defaultPermission": {
+      "label": "Default Permission for Organization Members",
+      "viewer": "Viewer - Can view form",
+      "editor": "Editor - Can edit form"
+    },
+    "addPeople": {
+      "label": "Add People",
+      "searchPlaceholder": "Search by name or email...",
+      "toBeAdded": "To be added:",
+      "noResults": "No members found matching \"{{query}}\""
+    },
+    "currentPermissions": {
+      "label": "People with access"
+    },
+    "permissions": {
+      "owner": "Owner",
+      "editor": "Editor",
+      "viewer": "Viewer",
+      "noAccess": "No Access"
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "share": "Share",
+      "sharing": "Sharing..."
+    }
+  },
+  "toast": {
+    "success": {
+      "settingsUpdated": "Form sharing settings updated successfully",
+      "permissionUpdated": "User permission updated successfully",
+      "accessRemoved": "User access removed successfully",
+      "linkCopied": "Form link copied to clipboard"
+    },
+    "error": {
+      "settingsUpdateFailed": "Failed to update sharing settings",
+      "permissionUpdateFailed": "Failed to update user permission",
+      "accessRemovalFailed": "Failed to remove user access",
+      "copyFailed": "Failed to copy link",
+      "clipboardUnavailable": "Unable to access clipboard"
+    }
+  }
+}

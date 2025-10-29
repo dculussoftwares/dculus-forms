@@ -16,6 +16,7 @@ import {
   FileText,
   CheckCircle,
 } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface Response {
   id: string;
@@ -33,15 +34,16 @@ interface FormStructureProps {
 
 export const FormStructure: React.FC<FormStructureProps> = ({ formId }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation('formDashboard');
 
   return (
     <Card className="lg:col-span-4">
       <CardHeader>
         <CardTitle className="flex items-center">
           <CheckCircle className="mr-2 h-5 w-5" />
-          Form Structure
+          {t('formStructure.title')}
         </CardTitle>
-        <CardDescription>Overview of your form pages and fields</CardDescription>
+        <CardDescription>{t('formStructure.description')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="text-center py-8">
@@ -49,17 +51,16 @@ export const FormStructure: React.FC<FormStructureProps> = ({ formId }) => {
             <CheckCircle className="w-8 h-8 text-blue-600" />
           </div>
           <TypographyH3 className="text-lg font-semibold mb-2">
-            Form structure is now collaborative
+            {t('formStructure.collaborative.title')}
           </TypographyH3>
           <TypographyP className="text-muted-foreground mb-4">
-            Form pages and fields are managed through real-time collaboration.
-            Use the form builder to edit your form structure.
+            {t('formStructure.collaborative.description')}
           </TypographyP>
           <Button
             onClick={() => navigate(`/dashboard/form/${formId}/builder`)}
             className="bg-primary hover:bg-primary/90"
           >
-            Open Form Builder
+            {t('formStructure.collaborative.action')}
           </Button>
         </div>
       </CardContent>
@@ -71,14 +72,16 @@ export const RecentResponses: React.FC<RecentResponsesProps> = ({
   responses,
   totalResponses,
 }) => {
+  const { t, locale } = useTranslation('formDashboard');
+
   return (
     <Card className="lg:col-span-3">
       <CardHeader>
         <CardTitle className="flex items-center">
           <Activity className="mr-2 h-5 w-5" />
-          Recent Responses
+          {t('recentResponses.title')}
         </CardTitle>
-        <CardDescription>Latest form submissions</CardDescription>
+        <CardDescription>{t('recentResponses.description')}</CardDescription>
       </CardHeader>
       <CardContent>
         {responses.length > 0 ? (
@@ -90,10 +93,10 @@ export const RecentResponses: React.FC<RecentResponsesProps> = ({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">
-                    Response #{totalResponses - index}
+                    {t('recentResponses.response', { values: { number: totalResponses - index } })}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(response.submittedAt).toLocaleString()}
+                    {new Date(response.submittedAt).toLocaleString(locale)}
                   </p>
                 </div>
               </div>
@@ -103,7 +106,7 @@ export const RecentResponses: React.FC<RecentResponsesProps> = ({
           <div className="text-center py-8">
             <FileText className="mx-auto h-12 w-12 text-gray-300" />
             <TypographyP className="mt-2 text-sm text-muted-foreground">
-              No responses yet
+              {t('recentResponses.noResponses')}
             </TypographyP>
           </div>
         )}

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { CheckCircle, Sparkles, Eye, Link as LinkIcon } from 'lucide-react';
 import { Button } from '@dculus/ui';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface PublishSuccessAnimationProps {
   formTitle: string;
@@ -18,6 +19,7 @@ export const PublishSuccessAnimation: React.FC<PublishSuccessAnimationProps> = (
   onCopyLink,
   onViewForm,
 }) => {
+  const { t } = useTranslation('formDashboard');
   const [visible, setVisible] = useState(false);
   const [animationPhase, setAnimationPhase] = useState<'entering' | 'showing' | 'exiting'>('entering');
 
@@ -154,17 +156,17 @@ export const PublishSuccessAnimation: React.FC<PublishSuccessAnimationProps> = (
           {/* Success Message */}
           <div className="space-y-3">
             <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
-              🎉 Form Published!
+              {t('publishSuccess.title')}
             </h2>
             <p className="text-lg text-slate-600">
-              <span className="font-semibold text-emerald-600">{formTitle}</span> is now live and ready to collect responses
+              {t('publishSuccess.description', { values: { formTitle } })}
             </p>
           </div>
 
           {/* Form URL Display */}
           <div className="bg-slate-50 rounded-2xl p-4 border-2 border-slate-200">
             <p className="text-xs text-slate-500 uppercase tracking-wide mb-2 font-semibold">
-              Your Form Link
+              {t('publishSuccess.linkLabel')}
             </p>
             <p className="text-sm text-slate-700 font-mono break-all bg-white px-3 py-2 rounded-lg border border-slate-200">
               {formUrl}
@@ -179,7 +181,7 @@ export const PublishSuccessAnimation: React.FC<PublishSuccessAnimationProps> = (
               className="flex-1 h-12 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
             >
               <LinkIcon className="mr-2 h-5 w-5" />
-              Copy Link
+              {t('publishSuccess.actions.copyLink')}
             </Button>
             <Button
               onClick={handleViewForm}
@@ -187,13 +189,13 @@ export const PublishSuccessAnimation: React.FC<PublishSuccessAnimationProps> = (
               className="flex-1 h-12 border-2 border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50 text-emerald-700 font-semibold rounded-xl transition-all transform hover:scale-105"
             >
               <Eye className="mr-2 h-5 w-5" />
-              View Form
+              {t('publishSuccess.actions.viewForm')}
             </Button>
           </div>
 
           {/* Close hint */}
           <p className="text-xs text-slate-400 pt-2">
-            Click anywhere to close • Auto-closes in 5s
+            {t('publishSuccess.autoCloseHint')}
           </p>
         </div>
 

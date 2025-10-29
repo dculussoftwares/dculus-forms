@@ -81,6 +81,70 @@
     "positive": "{{value}}%",
     "negative": "{{value}}%"
   },
+  "dialogs": {
+    "delete": {
+      "title": "Delete Form",
+      "description": "Are you sure you want to delete \"{{formTitle}}\"? This action cannot be undone and will permanently delete the form and all its responses.",
+      "cancel": "Cancel",
+      "confirm": "Delete Form",
+      "confirming": "Deleting..."
+    },
+    "unpublish": {
+      "title": "Unpublish Form",
+      "description": "Are you sure you want to unpublish \"{{formTitle}}\"? This will make the form unavailable to users and stop accepting new responses.",
+      "cancel": "Cancel",
+      "confirm": "Unpublish Form",
+      "confirming": "Unpublishing..."
+    },
+    "collectResponses": {
+      "title": "Collect Responses",
+      "description": "Share this link to collect responses for \"{{formTitle}}\"",
+      "close": "Close",
+      "openForm": "Open Form"
+    }
+  },
+  "publishSuccess": {
+    "title": "🎉 Form Published!",
+    "description": "{{formTitle}} is now live and ready to collect responses",
+    "linkLabel": "Your Form Link",
+    "actions": {
+      "copyLink": "Copy Link",
+      "viewForm": "View Form"
+    },
+    "autoCloseHint": "Click anywhere to close • Auto-closes in 5s"
+  },
+  "responseTable": {
+    "title": "Response Overview",
+    "description": "Detailed view of all form responses",
+    "headers": {
+      "responseId": "Response ID",
+      "submitted": "Submitted",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "completed": "Completed"
+    },
+    "actions": {
+      "viewDetails": "View Details",
+      "viewAllResponses": "View All Responses ({{total}})"
+    }
+  },
+  "formStructure": {
+    "title": "Form Structure",
+    "description": "Overview of your form pages and fields",
+    "collaborative": {
+      "title": "Form structure is now collaborative",
+      "description": "Form pages and fields are managed through real-time collaboration. Use the form builder to edit your form structure.",
+      "action": "Open Form Builder"
+    }
+  },
+  "recentResponses": {
+    "title": "Recent Responses",
+    "description": "Latest form submissions",
+    "response": "Response #{{number}}",
+    "noResponses": "No responses yet"
+  },
   "toast": {
     "copied": {
       "title": "Copied to clipboard",

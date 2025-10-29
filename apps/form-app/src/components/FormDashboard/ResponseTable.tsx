@@ -11,6 +11,7 @@ import {
   TypographyTableRow,
   TypographyTableCell,
 } from '@dculus/ui';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface Response {
   id: string;
@@ -26,6 +27,8 @@ export const ResponseTable: React.FC<ResponseTableProps> = ({
   responses,
   totalResponses,
 }) => {
+  const { t, locale } = useTranslation('formDashboard');
+
   if (totalResponses === 0) {
     return null;
   }
@@ -33,17 +36,17 @@ export const ResponseTable: React.FC<ResponseTableProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Response Overview</CardTitle>
-        <CardDescription>Detailed view of all form responses</CardDescription>
+        <CardTitle>{t('responseTable.title')}</CardTitle>
+        <CardDescription>{t('responseTable.description')}</CardDescription>
       </CardHeader>
       <CardContent>
         <TypographyTable>
           <thead>
             <TypographyTableRow>
-              <TypographyTableHead>Response ID</TypographyTableHead>
-              <TypographyTableHead>Submitted</TypographyTableHead>
-              <TypographyTableHead>Status</TypographyTableHead>
-              <TypographyTableHead>Actions</TypographyTableHead>
+              <TypographyTableHead>{t('responseTable.headers.responseId')}</TypographyTableHead>
+              <TypographyTableHead>{t('responseTable.headers.submitted')}</TypographyTableHead>
+              <TypographyTableHead>{t('responseTable.headers.status')}</TypographyTableHead>
+              <TypographyTableHead>{t('responseTable.headers.actions')}</TypographyTableHead>
             </TypographyTableRow>
           </thead>
           <tbody>
@@ -53,16 +56,16 @@ export const ResponseTable: React.FC<ResponseTableProps> = ({
                   #{index + 1}
                 </TypographyTableCell>
                 <TypographyTableCell>
-                  {new Date(response.submittedAt).toLocaleString()}
+                  {new Date(response.submittedAt).toLocaleString(locale)}
                 </TypographyTableCell>
                 <TypographyTableCell>
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Completed
+                    {t('responseTable.status.completed')}
                   </span>
                 </TypographyTableCell>
                 <TypographyTableCell>
                   <Button variant="ghost" size="sm">
-                    View Details
+                    {t('responseTable.actions.viewDetails')}
                   </Button>
                 </TypographyTableCell>
               </TypographyTableRow>
@@ -72,7 +75,7 @@ export const ResponseTable: React.FC<ResponseTableProps> = ({
         {responses.length > 10 && (
           <div className="mt-4 text-center">
             <Button variant="outline">
-              View All Responses ({totalResponses})
+              {t('responseTable.actions.viewAllResponses', { values: { total: totalResponses } })}
             </Button>
           </div>
         )}

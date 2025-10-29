@@ -11,6 +11,7 @@ import {
   Button,
 } from '@dculus/ui';
 import { Copy, ExternalLink } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface DeleteDialogProps {
   open: boolean;
@@ -44,26 +45,27 @@ export const DeleteDialog: React.FC<DeleteDialogProps> = ({
   formTitle,
   loading,
 }) => {
+  const { t } = useTranslation('formDashboard');
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Form</AlertDialogTitle>
+          <AlertDialogTitle>{t('dialogs.delete.title')}</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete "{formTitle}"? This action cannot be
-            undone and will permanently delete the form and all its responses.
+            {t('dialogs.delete.description', { values: { formTitle } })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('dialogs.delete.cancel')}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             variant="destructive"
             className="bg-red-600 hover:bg-red-700"
           >
-            {loading ? 'Deleting...' : 'Delete Form'}
+            {loading ? t('dialogs.delete.confirming') : t('dialogs.delete.confirm')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -78,25 +80,26 @@ export const UnpublishDialog: React.FC<UnpublishDialogProps> = ({
   formTitle,
   loading,
 }) => {
+  const { t } = useTranslation('formDashboard');
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Unpublish Form</AlertDialogTitle>
+          <AlertDialogTitle>{t('dialogs.unpublish.title')}</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to unpublish "{formTitle}"? This will make the
-            form unavailable to users and stop accepting new responses.
+            {t('dialogs.unpublish.description', { values: { formTitle } })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('dialogs.unpublish.cancel')}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             className="bg-orange-600 hover:bg-orange-700"
           >
-            {loading ? 'Unpublishing...' : 'Unpublish Form'}
+            {loading ? t('dialogs.unpublish.confirming') : t('dialogs.unpublish.confirm')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -112,13 +115,15 @@ export const CollectResponsesDialog: React.FC<CollectResponsesDialogProps> = ({
   onCopyLink,
   onOpenForm,
 }) => {
+  const { t } = useTranslation('formDashboard');
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader>
-          <AlertDialogTitle>Collect Responses</AlertDialogTitle>
+          <AlertDialogTitle>{t('dialogs.collectResponses.title')}</AlertDialogTitle>
           <AlertDialogDescription>
-            Share this link to collect responses for "{formTitle}"
+            {t('dialogs.collectResponses.description', { values: { formTitle } })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="py-4">
@@ -140,14 +145,14 @@ export const CollectResponsesDialog: React.FC<CollectResponsesDialogProps> = ({
         </div>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={() => onOpenChange(false)}>
-            Close
+            {t('dialogs.collectResponses.close')}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={onOpenForm}
             className="bg-blue-600 hover:bg-blue-700"
           >
             <ExternalLink className="mr-2 h-4 w-4" />
-            Open Form
+            {t('dialogs.collectResponses.openForm')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
