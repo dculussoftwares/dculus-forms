@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { format } from 'date-fns';
+import { useTranslation } from '../hooks/useTranslation';
 import { GET_FORM_BY_ID, GET_RESPONSE_BY_ID } from '../graphql/queries';
 import { useResponseEditHistory } from '../hooks/useResponseEditHistory';
 import {
@@ -33,6 +34,7 @@ const safeFormatDate = (dateString: string | null | undefined, formatString: str
 };
 
 export const ResponseEditHistory: React.FC = () => {
+  const { t } = useTranslation('responseEditHistory');
   const { formId, responseId } = useParams<{
     formId: string;
     responseId: string;
@@ -87,12 +89,12 @@ export const ResponseEditHistory: React.FC = () => {
   if (isLoading) {
     return (
       <MainLayout
-        title="Edit History"
+        title={t('layout.title')}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Form Dashboard', href: `/dashboard/form/${formId}` },
-          { label: 'Responses', href: `/dashboard/form/${formId}/responses` },
-          { label: 'Edit History', href: `/dashboard/form/${formId}/responses/${responseId}/history` },
+          { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
+          { label: t('layout.breadcrumbs.formDashboard'), href: `/dashboard/form/${formId}` },
+          { label: t('layout.breadcrumbs.responses'), href: `/dashboard/form/${formId}/responses` },
+          { label: t('layout.breadcrumbs.editHistory'), href: `/dashboard/form/${formId}/responses/${responseId}/history` },
         ]}
       >
         <div className="flex justify-center items-center min-h-96">
@@ -105,20 +107,20 @@ export const ResponseEditHistory: React.FC = () => {
   if (!form || !response) {
     return (
       <MainLayout
-        title="Edit History"
+        title={t('layout.title')}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Form Dashboard', href: `/dashboard/form/${formId}` },
-          { label: 'Responses', href: `/dashboard/form/${formId}/responses` },
-          { label: 'Edit History', href: `/dashboard/form/${formId}/responses/${responseId}/history` },
+          { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
+          { label: t('layout.breadcrumbs.formDashboard'), href: `/dashboard/form/${formId}` },
+          { label: t('layout.breadcrumbs.responses'), href: `/dashboard/form/${formId}/responses` },
+          { label: t('layout.breadcrumbs.editHistory'), href: `/dashboard/form/${formId}/responses/${responseId}/history` },
         ]}
       >
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="max-w-md text-center p-8 bg-white rounded-lg shadow-sm border border-slate-200/60">
             <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-            <h3 className="mb-2 text-xl font-semibold">Not Found</h3>
+            <h3 className="mb-2 text-xl font-semibold">{t('errors.notFound.title')}</h3>
             <p className="text-slate-600">
-              Response or form not found. Please check the URL and try again.
+              {t('errors.notFound.description')}
             </p>
           </div>
         </div>
@@ -128,12 +130,12 @@ export const ResponseEditHistory: React.FC = () => {
 
   return (
     <MainLayout
-      title={`${form.title} - Edit History`}
+      title={t('layout.dynamicTitle', { values: { formTitle: form.title } })}
       breadcrumbs={[
-        { label: 'Dashboard', href: '/dashboard' },
+        { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
         { label: form.title, href: `/dashboard/form/${formId}` },
-        { label: 'Responses', href: `/dashboard/form/${formId}/responses` },
-        { label: 'Edit History', href: `/dashboard/form/${formId}/responses/${responseId}/history` },
+        { label: t('layout.breadcrumbs.responses'), href: `/dashboard/form/${formId}/responses` },
+        { label: t('layout.breadcrumbs.editHistory'), href: `/dashboard/form/${formId}/responses/${responseId}/history` },
       ]}
     >
       <div className="flex flex-col h-full w-full overflow-x-hidden">
@@ -146,18 +148,18 @@ export const ResponseEditHistory: React.FC = () => {
             className="hover:bg-slate-100 flex-shrink-0"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Responses
+            {t('navigation.backToResponses')}
           </Button>
           <div className="h-4 w-px bg-slate-300 flex-shrink-0" />
           <div className="flex items-center space-x-2 flex-1">
             <History className="h-5 w-5 text-slate-600" />
             <h1 className="text-lg font-semibold text-slate-900 truncate">
-              Response Edit History
+              {t('header.title')}
             </h1>
           </div>
           <Button onClick={handleGoToEdit} className="flex-shrink-0">
             <Edit3 className="h-4 w-4 mr-2" />
-            Edit Response
+            {t('header.editResponse')}
           </Button>
         </div>
 
@@ -167,27 +169,27 @@ export const ResponseEditHistory: React.FC = () => {
           {/* Response Info */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Response Information</CardTitle>
+              <CardTitle className="text-lg">{t('responseInfo.title')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div>
-                  <span className="font-medium text-gray-500">Response ID:</span>
+                  <span className="font-medium text-gray-500">{t('responseInfo.responseId')}</span>
                   <div className="font-mono text-xs text-gray-700 mt-1">
                     {responseId}
                   </div>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-500">Submitted:</span>
+                  <span className="font-medium text-gray-500">{t('responseInfo.submitted')}</span>
                   <div className="text-gray-700 mt-1">
                     {safeFormatDate(response.submittedAt, 'MMM dd, yyyy \'at\' h:mm a')}
                   </div>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-500">Total Edits:</span>
+                  <span className="font-medium text-gray-500">{t('responseInfo.totalEdits')}</span>
                   <div className="text-gray-700 mt-1">
                     <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                      {editHistory.length} edit{editHistory.length !== 1 ? 's' : ''}
+                      {editHistory.length === 1 ? t('responseInfo.editsCount', { values: { count: editHistory.length } }) : t('responseInfo.editsCountPlural', { values: { count: editHistory.length } })}
                     </Badge>
                   </div>
                 </div>
@@ -200,7 +202,7 @@ export const ResponseEditHistory: React.FC = () => {
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Failed to load edit history. Some functionality may be limited.
+                {t('errors.historyLoadError')}
               </AlertDescription>
             </Alert>
           )}
@@ -209,14 +211,19 @@ export const ResponseEditHistory: React.FC = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">
-                Edit Timeline ({editHistory.length} {editHistory.length === 1 ? 'edit' : 'edits'})
+                {t('timeline.title', { 
+                  values: { 
+                    count: editHistory.length,
+                    editText: editHistory.length === 1 ? t('timeline.editSingular') : t('timeline.editPlural')
+                  }
+                })}
               </h2>
 
               {editHistory.length > 0 && (
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <Clock className="h-4 w-4" />
                   <span>
-                    Last edited {safeFormatDate(editHistory[0].editedAt, 'MMM dd, yyyy', 'unknown date')}
+                    {t('timeline.lastEdited', { values: { date: safeFormatDate(editHistory[0].editedAt, 'MMM dd, yyyy', 'unknown date') } })}
                   </span>
                 </div>
               )}

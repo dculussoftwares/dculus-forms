@@ -1,0 +1,40 @@
+{
+  "layout": {
+    "title": "Edit History",
+    "dynamicTitle": "{{formTitle}} - Edit History",
+    "breadcrumbs": {
+      "dashboard": "Dashboard",
+      "formDashboard": "Form Dashboard",
+      "responses": "Responses",
+      "editHistory": "Edit History"
+    }
+  },
+  "errors": {
+    "notFound": {
+      "title": "Not Found",
+      "description": "Response or form not found. Please check the URL and try again."
+    },
+    "historyLoadError": "Failed to load edit history. Some functionality may be limited."
+  },
+  "navigation": {
+    "backToResponses": "Back to Responses"
+  },
+  "header": {
+    "title": "Response Edit History",
+    "editResponse": "Edit Response"
+  },
+  "responseInfo": {
+    "title": "Response Information",
+    "responseId": "Response ID:",
+    "submitted": "Submitted:",
+    "totalEdits": "Total Edits:",
+    "editsCount": "{{count}} edit",
+    "editsCountPlural": "{{count}} edits"
+  },
+  "timeline": {
+    "title": "Edit Timeline ({{count}} {{editText}})",
+    "editSingular": "edit",
+    "editPlural": "edits",
+    "lastEdited": "Last edited {{date}}"
+  }
+}
