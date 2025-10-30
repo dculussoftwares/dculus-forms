@@ -1,6 +1,7 @@
 import React from 'react';
 import { FormPage, FormSchema, FormLayout, serializeFormSchema } from '@dculus/types';
 import { Button } from '@dculus/ui';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface JSONPreviewProps {
   pages: FormPage[];
@@ -9,6 +10,8 @@ interface JSONPreviewProps {
 }
 
 export const JSONPreview: React.FC<JSONPreviewProps> = ({ pages, layout, isShuffleEnabled }) => {
+  const { t } = useTranslation('jsonPreview');
+  
   console.log('🔍 JSONPreview received props:', {
     pages: pages?.length || 0,
     layout: !!layout,
@@ -34,7 +37,7 @@ export const JSONPreview: React.FC<JSONPreviewProps> = ({ pages, layout, isShuff
     <div className="p-4 h-full flex flex-col w-full">
       <div className="flex items-center justify-between mb-3">
         <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-          FormSchema JSON
+          {t('title')}
         </h4>
         <Button
           size="sm"
@@ -42,7 +45,7 @@ export const JSONPreview: React.FC<JSONPreviewProps> = ({ pages, layout, isShuff
           onClick={handleCopyToClipboard}
           className="h-7 px-2 text-xs"
         >
-          Copy
+          {t('copyButton')}
         </Button>
       </div>
       
@@ -55,7 +58,7 @@ export const JSONPreview: React.FC<JSONPreviewProps> = ({ pages, layout, isShuff
       </div>
       
       <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-        Total fields: {pages.reduce((sum, page) => sum + page.fields.length, 0)}
+        {t('totalFields', { values: { count: pages.reduce((sum, page) => sum + page.fields.length, 0) } })}
       </div>
     </div>
   );

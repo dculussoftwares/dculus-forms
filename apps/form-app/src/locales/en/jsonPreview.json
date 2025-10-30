@@ -1,0 +1,5 @@
+{
+  "title": "FormSchema JSON",
+  "copyButton": "Copy",
+  "totalFields": "Total fields: {{count}}"
+}

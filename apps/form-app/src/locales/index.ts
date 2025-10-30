@@ -36,6 +36,8 @@ import enFieldItem from './en/fieldItem.json';
 import enPageActionsSelector from './en/pageActionsSelector.json';
 import enLoadingState from './en/loadingState.json';
 import enEmptyFormState from './en/emptyFormState.json';
+import enEmptyDropZone from './en/emptyDropZone.json';
+import enJsonPreview from './en/jsonPreview.json';
 
 export const translations = {
   en: {
@@ -77,6 +79,8 @@ export const translations = {
     pageActionsSelector: enPageActionsSelector,
     loadingState: enLoadingState,
     emptyFormState: enEmptyFormState,
+    emptyDropZone: enEmptyDropZone,
+    jsonPreview: enJsonPreview,
   },
 } as const;
 
