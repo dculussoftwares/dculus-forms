@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
+import { useTranslation } from '../hooks/useTranslation';
 import {
   Button,
   Card,
@@ -22,6 +23,7 @@ import {
 } from 'lucide-react';
 
 const ResponsesIndividual: React.FC = () => {
+  const { t } = useTranslation('responsesIndividual');
   const { formId, id } = useParams<{ formId?: string; id?: string }>();
   const navigate = useNavigate();
   
@@ -84,12 +86,12 @@ const ResponsesIndividual: React.FC = () => {
   if (formLoading) {
     return (
       <MainLayout
-        title="Individual Responses"
+        title={t('layout.title')}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Form Dashboard', href: `/dashboard/form/${actualFormId}` },
-          { label: 'Responses', href: `/dashboard/form/${actualFormId}/responses` },
-          { label: 'Individual', href: `/dashboard/form/${actualFormId}/responses/individual` },
+          { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
+          { label: t('layout.breadcrumbs.formDashboard'), href: `/dashboard/form/${actualFormId}` },
+          { label: t('layout.breadcrumbs.responses'), href: `/dashboard/form/${actualFormId}/responses` },
+          { label: t('layout.breadcrumbs.individual'), href: `/dashboard/form/${actualFormId}/responses/individual` },
         ]}
       >
         <div className="flex justify-center items-center min-h-96">
@@ -102,21 +104,20 @@ const ResponsesIndividual: React.FC = () => {
   if (formError || !formData?.form) {
     return (
       <MainLayout
-        title="Individual Responses"
+        title={t('layout.title')}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Form Dashboard', href: `/dashboard/form/${actualFormId}` },
-          { label: 'Responses', href: `/dashboard/form/${actualFormId}/responses` },
-          { label: 'Individual', href: `/dashboard/form/${actualFormId}/responses/individual` },
+          { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
+          { label: t('layout.breadcrumbs.formDashboard'), href: `/dashboard/form/${actualFormId}` },
+          { label: t('layout.breadcrumbs.responses'), href: `/dashboard/form/${actualFormId}/responses` },
+          { label: t('layout.breadcrumbs.individual'), href: `/dashboard/form/${actualFormId}/responses/individual` },
         ]}
       >
         <div className="max-w-4xl mx-auto px-4 py-12">
           <Card className="p-8 text-center">
             <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-            <h3 className="mb-2 text-xl font-semibold">Form Not Found</h3>
+            <h3 className="mb-2 text-xl font-semibold">{t('errors.formNotFound.title')}</h3>
             <p className="text-slate-600">
-              The form you're looking for doesn't exist or you don't have
-              permission to view it.
+              {t('errors.formNotFound.description')}
             </p>
           </Card>
         </div>
@@ -128,12 +129,12 @@ const ResponsesIndividual: React.FC = () => {
 
   return (
     <MainLayout
-      title={`${form.title} - Individual Responses`}
+      title={t('layout.dynamicTitle', { values: { formTitle: form.title } })}
       breadcrumbs={[
-        { label: 'Dashboard', href: '/dashboard' },
+        { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
         { label: form.title, href: `/dashboard/form/${actualFormId}` },
-        { label: 'Responses', href: `/dashboard/form/${actualFormId}/responses` },
-        { label: 'Individual', href: `/dashboard/form/${actualFormId}/responses/individual` },
+        { label: t('layout.breadcrumbs.responses'), href: `/dashboard/form/${actualFormId}/responses` },
+        { label: t('layout.breadcrumbs.individual'), href: `/dashboard/form/${actualFormId}/responses/individual` },
       ]}
     >
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
@@ -147,7 +148,7 @@ const ResponsesIndividual: React.FC = () => {
               className="text-slate-600 hover:text-slate-900"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Responses
+              {t('navigation.backToResponses')}
             </Button>
           </div>
         </div>
@@ -157,10 +158,10 @@ const ResponsesIndividual: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <UserCheck className="h-5 w-5" />
-              Individual Response Details
+              {t('content.individualResponseDetails.title')}
             </CardTitle>
             <CardDescription>
-              View detailed information for each form submission
+              {t('content.individualResponseDetails.description')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -168,11 +169,10 @@ const ResponsesIndividual: React.FC = () => {
               <div className="text-center py-12">
                 <UserCheck className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                 <TypographyH3 className="text-gray-900 mb-2">
-                  No individual responses yet
+                  {t('content.emptyState.title')}
                 </TypographyH3>
                 <TypographyP className="text-gray-600 mb-6">
-                  Individual response details will appear here once forms are
-                  submitted.
+                  {t('content.emptyState.description')}
                 </TypographyP>
               </div>
             ) : (
@@ -186,10 +186,10 @@ const ResponsesIndividual: React.FC = () => {
                       <div className="flex justify-between items-start">
                         <div>
                           <CardTitle className="text-lg">
-                            Response #{response.id}
+                            {t('content.response.responseNumber', { values: { id: response.id } })}
                           </CardTitle>
                           <CardDescription>
-                            Submitted on {formatDate(response.submittedAt)}
+                            {t('content.response.submittedOn', { values: { date: formatDate(response.submittedAt) } })}
                           </CardDescription>
                         </div>
                         <div className="flex items-center gap-2">
@@ -198,7 +198,7 @@ const ResponsesIndividual: React.FC = () => {
                           </span>
                           <Button variant="outline" size="sm">
                             <Eye className="h-4 w-4 mr-1" />
-                            View Details
+                            {t('content.response.viewDetails')}
                           </Button>
                         </div>
                       </div>
@@ -208,7 +208,7 @@ const ResponsesIndividual: React.FC = () => {
                         <div className="grid gap-4 md:grid-cols-2">
                           <div>
                             <label className="text-sm font-medium text-gray-500">
-                              Name
+                              {t('content.fields.name')}
                             </label>
                             <p className="mt-1 text-sm text-gray-900">
                               {response.data.name}
@@ -216,7 +216,7 @@ const ResponsesIndividual: React.FC = () => {
                           </div>
                           <div>
                             <label className="text-sm font-medium text-gray-500">
-                              Email
+                              {t('content.fields.email')}
                             </label>
                             <p className="mt-1 text-sm text-gray-900">
                               {response.data.email}
@@ -225,7 +225,7 @@ const ResponsesIndividual: React.FC = () => {
                         </div>
                         <div>
                           <label className="text-sm font-medium text-gray-500">
-                            Message
+                            {t('content.fields.message')}
                           </label>
                           <p className="mt-1 text-sm text-gray-900 bg-gray-50 p-3 rounded-md">
                             {response.data.message}

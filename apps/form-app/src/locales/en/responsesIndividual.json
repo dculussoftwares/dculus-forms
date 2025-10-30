@@ -1,0 +1,41 @@
+{
+  "layout": {
+    "title": "Individual Responses",
+    "dynamicTitle": "{{formTitle}} - Individual Responses",
+    "breadcrumbs": {
+      "dashboard": "Dashboard",
+      "formDashboard": "Form Dashboard",
+      "responses": "Responses",
+      "individual": "Individual"
+    }
+  },
+  "errors": {
+    "formNotFound": {
+      "title": "Form Not Found",
+      "description": "The form you're looking for doesn't exist or you don't have permission to view it."
+    }
+  },
+  "navigation": {
+    "backToResponses": "Back to Responses"
+  },
+  "content": {
+    "individualResponseDetails": {
+      "title": "Individual Response Details",
+      "description": "View detailed information for each form submission"
+    },
+    "emptyState": {
+      "title": "No individual responses yet",
+      "description": "Individual response details will appear here once forms are submitted."
+    },
+    "response": {
+      "responseNumber": "Response #{{id}}",
+      "submittedOn": "Submitted on {{date}}",
+      "viewDetails": "View Details"
+    },
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "message": "Message"
+    }
+  }
+}
