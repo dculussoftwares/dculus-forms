@@ -26,6 +26,9 @@ import enFieldTypesPanel from './en/fieldTypesPanel.json';
 import enDraggablePageItem from './en/draggablePageItem.json';
 import enDraggableField from './en/draggableField.json';
 import enPagesSidebar from './en/pagesSidebar.json';
+import enFormBuilderHeader from './en/formBuilderHeader.json';
+import enDroppablePage from './en/droppablePage.json';
+import enFieldSettings from './en/fieldSettings.json';
 
 export const translations = {
   en: {
@@ -57,6 +60,9 @@ export const translations = {
     draggablePageItem: enDraggablePageItem,
     draggableField: enDraggableField,
     pagesSidebar: enPagesSidebar,
+    formBuilderHeader: enFormBuilderHeader,
+    droppablePage: enDroppablePage,
+    fieldSettings: enFieldSettings,
   },
 } as const;
 

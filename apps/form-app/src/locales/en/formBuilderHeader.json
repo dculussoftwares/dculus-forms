@@ -1,0 +1,23 @@
+{
+  "defaultTitle": "Untitled Form",
+  "status": {
+    "connecting": "Connecting...",
+    "live": "Live",
+    "offline": "Offline"
+  },
+  "buttons": {
+    "preview": "Preview",
+    "share": "Share",
+    "save": "Save"
+  },
+  "menu": {
+    "formSettings": "Form Settings",
+    "design": "Design",
+    "duplicateForm": "Duplicate Form"
+  },
+  "tooltips": {
+    "noEditPermission": "You don't have permission to edit the form title",
+    "noSharePermission": "You need access to this form to manage sharing",
+    "noSavePermission": "You don't have permission to save changes"
+  }
+}

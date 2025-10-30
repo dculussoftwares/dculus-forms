@@ -7,6 +7,7 @@ import {
 import { FormPage } from '@dculus/types';
 import { Card, TypographyH3, Button } from '@dculus/ui';
 import { Eye, MoreVertical } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { DraggableField } from './DraggableField';
 import { EmptyDropZone } from './EmptyDropZone';
 import { DropIndicator } from './DropIndicator';
@@ -42,6 +43,14 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
   onMoveFieldBetweenPages,
   onCopyFieldToPage,
 }) => {
+  const { t } = useTranslation('droppablePage');
+
+  // Helper function for field count with proper pluralization
+  const getFieldCountText = (count: number) => {
+    const fieldLabel = count === 1 ? t('fieldCount.singular') : t('fieldCount.plural');
+    return `${count} ${fieldLabel}`;
+  };
+
   const {
     isOver,
     setNodeRef: setDroppableRef,
@@ -121,7 +130,7 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
             
             {!isConnected && (
               <div className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 rounded-full">
-                Offline
+                {t('status.offline')}
               </div>
             )}
           </div>
@@ -137,7 +146,7 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
         </div>
 
         <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          {page.fields.length} {page.fields.length === 1 ? 'field' : 'fields'}
+          {getFieldCountText(page.fields.length)}
         </div>
       </div>
 

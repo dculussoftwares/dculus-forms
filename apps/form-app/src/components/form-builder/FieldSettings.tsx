@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { FormField, FieldType, FillableFormField } from '@dculus/types';
 import { Settings } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 import { useFieldEditor } from '../../hooks/useFieldEditor';
 import {
   ValidationSummary,
@@ -51,8 +52,8 @@ export const FieldSettings: React.FC<FieldSettingsProps> = ({
   field,
   isConnected,
   onUpdate,
-  onFieldSwitch: _onFieldSwitch,
 }) => {
+  const { t } = useTranslation('fieldSettings');
   const {
     form,
     isSaving,
@@ -105,7 +106,7 @@ export const FieldSettings: React.FC<FieldSettingsProps> = ({
       <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
         <div className="text-center">
           <Settings className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">Select a field to edit its settings</p>
+          <p className="text-sm">{t('emptyState.title')}</p>
         </div>
       </div>
     );

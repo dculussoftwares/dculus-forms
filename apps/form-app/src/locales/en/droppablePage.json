@@ -1,0 +1,9 @@
+{
+  "fieldCount": {
+    "singular": "field",
+    "plural": "fields"
+  },
+  "status": {
+    "offline": "Offline"
+  }
+}

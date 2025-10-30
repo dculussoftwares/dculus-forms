@@ -24,6 +24,7 @@ import {
 import { ShareModal } from '../sharing/ShareModal';
 import { PermissionBadge } from './PermissionBadge';
 import { useFormPermissions } from '../../hooks/useFormPermissions';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface FormBuilderHeaderProps {
     formId: string;
@@ -48,7 +49,8 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
     onAddPage: _onAddPage,
     onNavigateBack
 }) => {
-    const [formTitle, setFormTitle] = useState(initialFormTitle || 'Untitled Form');
+    const { t } = useTranslation('formBuilderHeader');
+    const [formTitle, setFormTitle] = useState(initialFormTitle || t('defaultTitle'));
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
     const permissions = useFormPermissions();
@@ -97,7 +99,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                                         onClick={() => permissions.canEdit && setIsEditingTitle(true)}
                                         className="text-lg font-semibold hover:text-gray-600 dark:hover:text-gray-300 flex items-center space-x-1 h-auto p-0"
                                         disabled={!permissions.canEdit}
-                                        title={!permissions.canEdit ? "You don't have permission to edit the form title" : ""}
+                                        title={!permissions.canEdit ? t('tooltips.noEditPermission') : ""}
                                     >
                                         <span>{formTitle}</span>
                                         {permissions.canEdit && (
@@ -115,18 +117,18 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                                 {isLoading ? (
                                     <>
                                         <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
-                                        <span className="text-sm text-gray-600 dark:text-gray-400">Connecting...</span>
+                                        <span className="text-sm text-gray-600 dark:text-gray-400">{t('status.connecting')}</span>
                                     </>
                                 ) : isConnected ? (
                                     <>
                                         <div className="w-2 h-2 bg-green-400 rounded-full" />
-                                        <span className="text-sm text-gray-600 dark:text-gray-400">Live</span>
+                                        <span className="text-sm text-gray-600 dark:text-gray-400">{t('status.live')}</span>
                                         <Users className="w-4 h-4 text-gray-400" />
                                     </>
                                 ) : (
                                     <>
                                         <div className="w-2 h-2 bg-red-400 rounded-full" />
-                                        <span className="text-sm text-gray-600 dark:text-gray-400">Offline</span>
+                                        <span className="text-sm text-gray-600 dark:text-gray-400">{t('status.offline')}</span>
                                     </>
                                 )}
                             </div>
@@ -137,7 +139,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                     <div className="flex items-center space-x-3">
                         <Button variant="ghost" size="sm" className="text-gray-600 dark:text-gray-400">
                             <Eye className="w-4 h-4 mr-2" />
-                            Preview
+                            {t('buttons.preview')}
                         </Button>
                         {permissions.canShareForm() && (
                             <Button 
@@ -146,20 +148,20 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                                 className="text-gray-600 dark:text-gray-400"
                                 onClick={() => setShowShareModal(true)}
                                 disabled={!organizationId || !currentUserId || !formShortUrl}
-                                title={!permissions.canShareForm() ? "You need access to this form to manage sharing" : ""}
+                                title={!permissions.canShareForm() ? t('tooltips.noSharePermission') : ""}
                             >
                                 <Share2 className="w-4 h-4 mr-2" />
-                                Share
+                                {t('buttons.share')}
                             </Button>
                         )}
                         {permissions.canSaveForm() && (
                             <Button 
                                 size="sm" 
                                 disabled={!isConnected}
-                                title={!permissions.canSaveForm() ? "You don't have permission to save changes" : ""}
+                                title={!permissions.canSaveForm() ? t('tooltips.noSavePermission') : ""}
                             >
                                 <Save className="w-4 h-4 mr-2" />
-                                Save
+                                {t('buttons.save')}
                             </Button>
                         )}
                         
@@ -172,16 +174,16 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                             <DropdownMenuContent align="end">
                                 <DropdownMenuItem>
                                     <Settings className="w-4 h-4 mr-2" />
-                                    Form Settings
+                                    {t('menu.formSettings')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem>
                                     <Palette className="w-4 h-4 mr-2" />
-                                    Design
+                                    {t('menu.design')}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem>
                                     <Copy className="w-4 h-4 mr-2" />
-                                    Duplicate Form
+                                    {t('menu.duplicateForm')}
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
