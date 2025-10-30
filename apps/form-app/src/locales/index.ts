@@ -29,6 +29,9 @@ import enPagesSidebar from './en/pagesSidebar.json';
 import enFormBuilderHeader from './en/formBuilderHeader.json';
 import enDroppablePage from './en/droppablePage.json';
 import enFieldSettings from './en/fieldSettings.json';
+import enPageThumbnail from './en/pageThumbnail.json';
+import enPageCard from './en/pageCard.json';
+import enContextualBreadcrumb from './en/contextualBreadcrumb.json';
 
 export const translations = {
   en: {
@@ -63,6 +66,9 @@ export const translations = {
     formBuilderHeader: enFormBuilderHeader,
     droppablePage: enDroppablePage,
     fieldSettings: enFieldSettings,
+    pageThumbnail: enPageThumbnail,
+    pageCard: enPageCard,
+    contextualBreadcrumb: enContextualBreadcrumb,
   },
 } as const;
 

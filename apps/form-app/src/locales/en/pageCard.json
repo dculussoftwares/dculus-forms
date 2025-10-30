@@ -1,0 +1,15 @@
+{
+  "defaultPageTitle": "Page {{number}}",
+  "fieldCount": {
+    "singular": "field",
+    "plural": "fields"
+  },
+  "menu": {
+    "pageSettings": "Page Settings",
+    "duplicatePage": "Duplicate Page",
+    "deletePage": "Delete Page"
+  },
+  "emptyState": {
+    "message": "This page doesn't have any fields yet"
+  }
+}

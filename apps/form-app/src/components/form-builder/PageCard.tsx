@@ -17,6 +17,7 @@ import {
     FileText
 } from 'lucide-react';
 import { FormField, FormPage } from '@dculus/types';
+import { useTranslation } from '../../hooks/useTranslation';
 import { FieldItem } from './FieldItem';
 import { AddFieldPopover } from './AddFieldPopover';
 import { FieldTypeConfig } from './types';
@@ -38,8 +39,15 @@ export const PageCard: React.FC<PageCardProps> = ({
     onRemoveField,
     onAddField
 }) => {
+    const { t } = useTranslation('pageCard');
     const [isEditingTitle, setIsEditingTitle] = useState(false);
-    const [pageTitle, setPageTitle] = useState(page.title || `Page ${index + 1}`);
+    const [pageTitle, setPageTitle] = useState(page.title || t('defaultPageTitle', { values: { number: index + 1 } }));
+
+    // Helper function for field count with proper pluralization
+    const getFieldCountText = (count: number) => {
+        const fieldLabel = count === 1 ? t('fieldCount.singular') : t('fieldCount.plural');
+        return `${count} ${fieldLabel}`;
+    };
     
     const handleTitleSave = () => {
         // TODO: Implement page title update
@@ -64,7 +72,7 @@ export const PageCard: React.FC<PageCardProps> = ({
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') handleTitleSave();
                                         if (e.key === 'Escape') {
-                                            setPageTitle(page.title || `Page ${index + 1}`);
+                                            setPageTitle(page.title || t('defaultPageTitle', { values: { number: index + 1 } }));
                                             setIsEditingTitle(false);
                                         }
                                     }}
@@ -78,11 +86,11 @@ export const PageCard: React.FC<PageCardProps> = ({
                                     disabled={!isConnected}
                                     className="text-lg font-semibold hover:text-purple-600 dark:hover:text-purple-400 h-auto p-0"
                                 >
-                                    {page.title || `Page ${index + 1}`}
+                                    {page.title || t('defaultPageTitle', { values: { number: index + 1 } })}
                                 </Button>
                             )}
                             <div className="text-sm text-gray-500 dark:text-gray-400">
-                                {page.fields?.length || 0} {(page.fields?.length || 0) === 1 ? 'field' : 'fields'}
+                                {getFieldCountText(page.fields?.length || 0)}
                             </div>
                         </div>
                     </div>
@@ -96,16 +104,16 @@ export const PageCard: React.FC<PageCardProps> = ({
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem>
                                 <Settings className="w-4 h-4 mr-2" />
-                                Page Settings
+                                {t('menu.pageSettings')}
                             </DropdownMenuItem>
                             <DropdownMenuItem>
                                 <Copy className="w-4 h-4 mr-2" />
-                                Duplicate Page
+                                {t('menu.duplicatePage')}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-red-600 dark:text-red-400">
                                 <Trash2 className="w-4 h-4 mr-2" />
-                                Delete Page
+                                {t('menu.deletePage')}
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -133,7 +141,7 @@ export const PageCard: React.FC<PageCardProps> = ({
                                 <FileText className="w-8 h-8 text-gray-400" />
                             </div>
                             <TypographyP className="text-gray-500 dark:text-gray-400 mb-4">
-                                This page doesn't have any fields yet
+                                {t('emptyState.message')}
                             </TypographyP>
                         </div>
                     )}

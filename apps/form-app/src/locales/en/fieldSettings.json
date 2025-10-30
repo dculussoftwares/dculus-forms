@@ -1,5 +1,9 @@
 {
   "emptyState": {
     "title": "Select a field to edit its settings"
+  },
+  "unsupportedField": {
+    "title": "Unsupported field type: {{fieldType}}",
+    "subtitle": "Please select a different field or contact support"
   }
 }

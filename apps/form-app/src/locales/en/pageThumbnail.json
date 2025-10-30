@@ -1,0 +1,12 @@
+{
+  "fieldCount": {
+    "singular": "field",
+    "plural": "fields"
+  },
+  "emptyState": "Empty",
+  "moreFields": "+{{count}} more",
+  "dropIndicators": {
+    "moveHere": "Move here",
+    "addHere": "Add here"
+  }
+}

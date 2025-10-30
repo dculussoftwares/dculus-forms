@@ -3,6 +3,7 @@ import { useDroppable, useDndContext } from '@dnd-kit/core';
 import { FormPage } from '@dculus/types';
 import { Card } from '@dculus/ui';
 import { Plus } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface PageThumbnailProps {
   page: FormPage;
@@ -19,7 +20,14 @@ export const PageThumbnail: React.FC<PageThumbnailProps> = ({
   isConnected,
   onSelect,
 }) => {
+  const { t } = useTranslation('pageThumbnail');
   const { active, over } = useDndContext();
+
+  // Helper function for field count with proper pluralization
+  const getFieldCountText = (count: number) => {
+    const fieldLabel = count === 1 ? t('fieldCount.singular') : t('fieldCount.plural');
+    return `${count} ${fieldLabel}`;
+  };
   
   const {
     isOver,
@@ -84,7 +92,7 @@ export const PageThumbnail: React.FC<PageThumbnailProps> = ({
               {page.title}
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400">
-              {page.fields.length} {page.fields.length === 1 ? 'field' : 'fields'}
+              {getFieldCountText(page.fields.length)}
             </div>
           </div>
         </div>
@@ -95,7 +103,7 @@ export const PageThumbnail: React.FC<PageThumbnailProps> = ({
             <div className="flex items-center justify-center py-4 text-gray-400 dark:text-gray-600">
               <div className="text-center">
                 <Plus className="w-4 h-4 mx-auto mb-1" />
-                <div className="text-xs">Empty</div>
+                <div className="text-xs">{t('emptyState')}</div>
               </div>
             </div>
           ) : (
@@ -114,7 +122,7 @@ export const PageThumbnail: React.FC<PageThumbnailProps> = ({
               {/* Show "more" indicator if there are additional fields */}
               {page.fields.length > 4 && (
                 <div className="text-xs text-gray-500 dark:text-gray-400 text-center pt-1">
-                  +{page.fields.length - 4} more
+                  {t('moreFields', { values: { count: page.fields.length - 4 } })}
                 </div>
               )}
             </>
@@ -135,7 +143,7 @@ export const PageThumbnail: React.FC<PageThumbnailProps> = ({
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
               </svg>
-              <span>Move here</span>
+              <span>{t('dropIndicators.moveHere')}</span>
             </div>
           </div>
         )}
@@ -144,7 +152,7 @@ export const PageThumbnail: React.FC<PageThumbnailProps> = ({
           <div className="absolute inset-0 bg-blue-400/10 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center">
             <div className="bg-blue-500 text-white px-2 py-1 rounded text-xs font-medium shadow-lg flex items-center space-x-1">
               <Plus className="w-3 h-3" />
-              <span>Add here</span>
+              <span>{t('dropIndicators.addHere')}</span>
             </div>
           </div>
         )}

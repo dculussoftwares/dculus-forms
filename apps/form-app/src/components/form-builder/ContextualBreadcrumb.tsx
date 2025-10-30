@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@dculus/ui';
 import { ChevronRight, Home, FileText, Palette, Eye } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 export type BuilderMode = 'content' | 'layout';
 
@@ -22,18 +23,19 @@ interface ContextualBreadcrumbProps {
 export const ContextualBreadcrumb: React.FC<ContextualBreadcrumbProps> = ({
   currentMode,
   onModeChange,
-  formTitle = 'Untitled Form',
+  formTitle,
   currentPageTitle,
   onPreview
 }) => {
+  const { t } = useTranslation('contextualBreadcrumb');
   const breadcrumbs: BreadcrumbItem[] = [
     {
-      label: formTitle,
+      label: formTitle || t('defaultFormTitle'),
       icon: Home,
       onClick: () => {}, // Could navigate to form settings
     },
     {
-      label: currentMode === 'content' ? 'Content Editor' : 'Design Editor',
+      label: currentMode === 'content' ? t('modes.contentEditor') : t('modes.designEditor'),
       icon: currentMode === 'content' ? FileText : Palette,
       isActive: true
     }
@@ -93,7 +95,7 @@ export const ContextualBreadcrumb: React.FC<ContextualBreadcrumbProps> = ({
             className="text-xs px-3 py-1.5"
           >
             <FileText className="w-3 h-3 mr-1.5" />
-            Content
+            {t('modes.content')}
           </Button>
           <Button
             onClick={() => onModeChange('layout')}
@@ -102,7 +104,7 @@ export const ContextualBreadcrumb: React.FC<ContextualBreadcrumbProps> = ({
             className="text-xs px-3 py-1.5"
           >
             <Palette className="w-3 h-3 mr-1.5" />
-            Design
+            {t('modes.design')}
           </Button>
         </div>
 
@@ -110,7 +112,7 @@ export const ContextualBreadcrumb: React.FC<ContextualBreadcrumbProps> = ({
         {onPreview && (
           <Button onClick={onPreview} variant="outline" size="sm">
             <Eye className="w-4 h-4 mr-2" />
-            Preview
+            {t('buttons.preview')}
           </Button>
         )}
       </div>

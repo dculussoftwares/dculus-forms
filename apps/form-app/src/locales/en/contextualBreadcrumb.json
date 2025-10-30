@@ -1,0 +1,12 @@
+{
+  "defaultFormTitle": "Untitled Form",
+  "modes": {
+    "contentEditor": "Content Editor",
+    "designEditor": "Design Editor",
+    "content": "Content",
+    "design": "Design"
+  },
+  "buttons": {
+    "preview": "Preview"
+  }
+}

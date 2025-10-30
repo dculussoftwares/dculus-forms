@@ -1,6 +1,7 @@
 import React from 'react';
 import { FormField, FieldType } from '@dculus/types';
 import { Settings } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 import {
   TextFieldSettings,
   NumberFieldSettings,
@@ -25,15 +26,15 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
   field,
   isConnected,
   onUpdate,
-  onFieldSwitch,
 }) => {
+  const { t } = useTranslation('fieldSettings');
   // Show empty state if no field is selected
   if (!field) {
     return (
       <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
         <div className="text-center">
           <Settings className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">Select a field to edit its settings</p>
+          <p className="text-sm">{t('emptyState.title')}</p>
         </div>
       </div>
     );
@@ -49,7 +50,6 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
           field={field as any}
           isConnected={isConnected}
           onUpdate={onUpdate}
-          onFieldSwitch={onFieldSwitch}
         />
       );
 
@@ -59,7 +59,6 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
           field={field as any}
           isConnected={isConnected}
           onUpdate={onUpdate}
-          onFieldSwitch={onFieldSwitch}
         />
       );
 
@@ -71,7 +70,6 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
           field={field as any}
           isConnected={isConnected}
           onUpdate={onUpdate}
-          onFieldSwitch={onFieldSwitch}
         />
       );
 
@@ -81,7 +79,6 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
           field={field as any}
           isConnected={isConnected}
           onUpdate={onUpdate}
-          onFieldSwitch={onFieldSwitch}
         />
       );
 
@@ -91,7 +88,6 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
           field={field as any}
           isConnected={isConnected}
           onUpdate={onUpdate}
-          onFieldSwitch={onFieldSwitch}
         />
       );
 
@@ -100,8 +96,8 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
         <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
           <div className="text-center">
             <Settings className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Unsupported field type: {field.type}</p>
-            <p className="text-xs mt-1">Please select a different field or contact support</p>
+            <p className="text-sm">{t('unsupportedField.title', { values: { fieldType: field.type } })}</p>
+            <p className="text-xs mt-1">{t('unsupportedField.subtitle')}</p>
           </div>
         </div>
       );
