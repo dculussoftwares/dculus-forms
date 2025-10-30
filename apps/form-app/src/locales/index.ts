@@ -32,6 +32,8 @@ import enFieldSettings from './en/fieldSettings.json';
 import enPageThumbnail from './en/pageThumbnail.json';
 import enPageCard from './en/pageCard.json';
 import enContextualBreadcrumb from './en/contextualBreadcrumb.json';
+import enFieldItem from './en/fieldItem.json';
+import enPageActionsSelector from './en/pageActionsSelector.json';
 
 export const translations = {
   en: {
@@ -69,6 +71,8 @@ export const translations = {
     pageThumbnail: enPageThumbnail,
     pageCard: enPageCard,
     contextualBreadcrumb: enContextualBreadcrumb,
+    fieldItem: enFieldItem,
+    pageActionsSelector: enPageActionsSelector,
   },
 } as const;
 

@@ -8,6 +8,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator
 } from '@dculus/ui';
+import { useTranslation } from '../../hooks/useTranslation';
 import { FileText, ArrowRight, Copy, MoreVertical } from 'lucide-react';
 
 interface PageActionsSelectorProps {
@@ -27,6 +28,7 @@ export const PageActionsSelector: React.FC<PageActionsSelectorProps> = ({
   onCopyToPage,
   disabled = false,
 }) => {
+  const { t } = useTranslation('pageActionsSelector');
   const availablePages = pages.filter(page => page.id !== currentPageId);
 
   if (availablePages.length === 0) {
@@ -42,7 +44,7 @@ export const PageActionsSelector: React.FC<PageActionsSelectorProps> = ({
         <div className="sticky top-0 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-700 z-10">
           <DropdownMenuLabel className="flex items-center space-x-2">
             <MoreVertical className="w-4 h-4" />
-            <span>Page Actions</span>
+            <span>{t('header')}</span>
           </DropdownMenuLabel>
         </div>
         
@@ -50,7 +52,7 @@ export const PageActionsSelector: React.FC<PageActionsSelectorProps> = ({
           {/* Move to Page Section */}
           <DropdownMenuLabel className="flex items-center space-x-2 text-sm font-medium text-gray-500 dark:text-gray-400 px-2 py-1">
             <ArrowRight className="w-3 h-3" />
-            <span>Move to Page</span>
+            <span>{t('sections.moveToPage')}</span>
           </DropdownMenuLabel>
           {availablePages.map((page, index) => (
             <DropdownMenuItem
@@ -67,7 +69,7 @@ export const PageActionsSelector: React.FC<PageActionsSelectorProps> = ({
                   <span className="font-medium text-sm">{page.title}</span>
                 </div>
                 <div className="text-xs text-gray-500 mt-1">
-                  {page.fields.length} {page.fields.length === 1 ? 'field' : 'fields'}
+                  {page.fields.length} {page.fields.length === 1 ? t('fieldCount.singular') : t('fieldCount.plural')}
                 </div>
               </div>
             </DropdownMenuItem>
@@ -78,7 +80,7 @@ export const PageActionsSelector: React.FC<PageActionsSelectorProps> = ({
           {/* Copy to Page Section */}
           <DropdownMenuLabel className="flex items-center space-x-2 text-sm font-medium text-gray-500 dark:text-gray-400 px-2 py-1">
             <Copy className="w-3 h-3" />
-            <span>Copy to Page</span>
+            <span>{t('sections.copyToPage')}</span>
           </DropdownMenuLabel>
           {availablePages.map((page, index) => (
             <DropdownMenuItem
@@ -95,7 +97,7 @@ export const PageActionsSelector: React.FC<PageActionsSelectorProps> = ({
                   <span className="font-medium text-sm">{page.title}</span>
                 </div>
                 <div className="text-xs text-gray-500 mt-1">
-                  {page.fields.length} {page.fields.length === 1 ? 'field' : 'fields'}
+                  {page.fields.length} {page.fields.length === 1 ? t('fieldCount.singular') : t('fieldCount.plural')}
                 </div>
               </div>
             </DropdownMenuItem>

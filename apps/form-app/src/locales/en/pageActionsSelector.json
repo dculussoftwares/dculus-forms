@@ -1,0 +1,11 @@
+{
+  "header": "Page Actions",
+  "sections": {
+    "moveToPage": "Move to Page",
+    "copyToPage": "Copy to Page"
+  },
+  "fieldCount": {
+    "singular": "field",
+    "plural": "fields"
+  }
+}

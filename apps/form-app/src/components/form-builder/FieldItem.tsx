@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button, Input, TypographyP } from '@dculus/ui';
 import { Settings, Trash2 } from 'lucide-react';
 import { FormField } from '@dculus/types';
+import { useTranslation } from '../../hooks/useTranslation';
 import { fieldTypes } from './types';
 import { getFieldLabel, isFieldRequired } from './utils';
 
@@ -22,6 +23,7 @@ export const FieldItem: React.FC<FieldItemProps> = ({
     onRemove,
     index
 }) => {
+    const { t } = useTranslation('fieldItem');
     const [isEditing, setIsEditing] = useState(false);
     const [label, setLabel] = useState(getFieldLabel(field));
     const fieldIcon = fieldTypes.find(ft => ft.type === field.type)?.icon;
@@ -84,7 +86,7 @@ export const FieldItem: React.FC<FieldItemProps> = ({
                                 <span className="text-xs text-gray-400">#{index + 1}</span>
                             </div>
                             <TypographyP className="text-xs text-gray-500 dark:text-gray-400">
-                                {fieldType?.description || 'Custom field'}
+                                {fieldType?.description || t('fallback.customField')}
                             </TypographyP>
                         </div>
                     </div>
