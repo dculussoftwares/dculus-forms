@@ -1,0 +1,49 @@
+{
+  "header": {
+    "title": "Layout Templates",
+    "editableDescription": "Choose a layout style",
+    "viewOnlyDescription": "View-only mode"
+  },
+  "customCTA": {
+    "label": "Custom CTA Button",
+    "placeholder": "Get Started",
+    "helpText": "Button text to start filling the form (e.g., \"Get Started\", \"Begin Survey\")"
+  },
+  "backgroundColor": {
+    "label": "Background Color",
+    "toggleLabel": "Use custom background color",
+    "colorLabel": "Background Color",
+    "placeholder": "#000000",
+    "helpTextEnabled": "Custom color will be used for the background layer",
+    "helpTextDisabled": "Default gradient will be used for the background"
+  },
+  "backgroundImages": {
+    "label": "Background Images",
+    "tabs": {
+      "custom": "Custom Images",
+      "pixabay": "Image Browser"
+    },
+    "customTab": {
+      "applyButton": "Apply Background Image",
+      "helpText": "Upload and manage your own background images",
+      "viewOnlyTitle": "View-only mode",
+      "viewOnlyDescription": "Background image upload disabled"
+    },
+    "pixabayTab": {
+      "browseButton": "Browse Images from Pixabay",
+      "helpTextEnabled": "Search and select from thousands of free background images",
+      "helpTextDisabled": "View-only mode - image browsing disabled"
+    },
+    "clearButton": "Clear Background"
+  },
+  "comingSoon": {
+    "title": "More Options Soon",
+    "description": "Advanced customization features coming soon.",
+    "features": [
+      "Color themes",
+      "Typography", 
+      "Custom CSS",
+      "Animations"
+    ]
+  }
+}

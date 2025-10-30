@@ -3,6 +3,7 @@ import { Palette, Image, Search } from 'lucide-react';
 import { FormLayout, LayoutCode } from '@dculus/types';
 import { Tabs, TabsList, TabsTrigger, TabsContent, Button, Checkbox } from '@dculus/ui';
 import { useQuery } from '@apollo/client';
+import { useTranslation } from '../../../../hooks/useTranslation';
 import { LayoutThumbnails } from './LayoutThumbnails';
 import { LayoutOptions } from './LayoutOptions';
 import { ComingSoonCard } from './ComingSoonCard';
@@ -33,6 +34,7 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
 }) => {
   const [selectedImageKey, setSelectedImageKey] = useState<string | null>(layout.backgroundImageKey || null);
   const [isPixabayModalOpen, setIsPixabayModalOpen] = useState(false);
+  const { t } = useTranslation('layoutSidebar');
   
   // Fetch form background images
   const { data: formFilesData, refetch: refetchFormFiles } = useQuery(GET_FORM_FILES, {
@@ -66,10 +68,10 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
           </div>
           <div>
             <h3 className="font-medium text-gray-900 dark:text-white">
-              Layout Templates
+              {t('header.title')}
             </h3>
             <p className="text-xs text-gray-600 dark:text-gray-400">
-              {canEditLayout ? "Choose a layout style" : "View-only mode"}
+              {canEditLayout ? t('header.editableDescription') : t('header.viewOnlyDescription')}
             </p>
           </div>
         </div>
@@ -90,18 +92,18 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Custom CTA Button
+              {t('customCTA.label')}
             </label>
             <input
               type="text"
               value={layout.customCTAButtonName || ''}
               onChange={(e) => canEditLayout && onLayoutUpdate({ customCTAButtonName: e.target.value })}
-              placeholder="Get Started"
+              placeholder={t('customCTA.placeholder')}
               disabled={!canEditLayout}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Button text to start filling the form (e.g., "Get Started", "Begin Survey")
+              {t('customCTA.helpText')}
             </p>
           </div>
         </div>
@@ -110,7 +112,7 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="space-y-3">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Background Color
+              {t('backgroundColor.label')}
             </label>
             
             {/* Toggle for custom background color */}
@@ -122,7 +124,7 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
                 disabled={!canEditLayout}
               />
               <label htmlFor="isCustomBackgroundColorEnabled" className="text-sm text-gray-700 dark:text-gray-300">
-                Use custom background color
+                {t('backgroundColor.toggleLabel')}
               </label>
             </div>
             
@@ -130,7 +132,7 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
             {layout.isCustomBackgroundColorEnabled && (
               <div className="space-y-2">
                 <label className="block text-xs text-gray-600 dark:text-gray-400">
-                  Background Color
+                  {t('backgroundColor.colorLabel')}
                 </label>
                 <div className="flex items-center space-x-2">
                   <input
@@ -144,7 +146,7 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
                     type="text"
                     value={layout.customBackGroundColor || '#000000'}
                     onChange={(e) => canEditLayout && onLayoutUpdate({ customBackGroundColor: e.target.value })}
-                    placeholder="#000000"
+                    placeholder={t('backgroundColor.placeholder')}
                     disabled={!canEditLayout}
                     className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   />
@@ -154,8 +156,8 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
             
             <p className="text-xs text-gray-500 dark:text-gray-400">
               {layout.isCustomBackgroundColorEnabled 
-                ? "Custom color will be used for the background layer" 
-                : "Default gradient will be used for the background"}
+                ? t('backgroundColor.helpTextEnabled')
+                : t('backgroundColor.helpTextDisabled')}
             </p>
           </div>
         </div>
@@ -166,17 +168,17 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
             <div className="flex items-center space-x-2">
               <Image className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Background Images
+                {t('backgroundImages.label')}
               </label>
             </div>
             
             <Tabs defaultValue="custom" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="custom" className="text-xs">
-                  Custom Images
+                  {t('backgroundImages.tabs.custom')}
                 </TabsTrigger>
                 <TabsTrigger value="pixabay" className="text-xs">
-                  Image Browser
+                  {t('backgroundImages.tabs.pixabay')}
                 </TabsTrigger>
               </TabsList>
               
@@ -206,18 +208,18 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
                         onClick={handleApplyBackgroundImage}
                         className="w-full bg-purple-600 hover:bg-purple-700"
                       >
-                        Apply Background Image
+                        {t('backgroundImages.customTab.applyButton')}
                       </Button>
                     )}
                     
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Upload and manage your own background images
+                      {t('backgroundImages.customTab.helpText')}
                     </p>
                   </>
                 ) : (
                   <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                    <p className="text-sm">View-only mode</p>
-                    <p className="text-xs mt-1">Background image upload disabled</p>
+                    <p className="text-sm">{t('backgroundImages.customTab.viewOnlyTitle')}</p>
+                    <p className="text-xs mt-1">{t('backgroundImages.customTab.viewOnlyDescription')}</p>
                   </div>
                 )}
               </TabsContent>
@@ -231,12 +233,12 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
                     disabled={!canEditLayout}
                   >
                     <Search className="w-4 h-4 mr-2" />
-                    Browse Images from Pixabay
+                    {t('backgroundImages.pixabayTab.browseButton')}
                   </Button>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {canEditLayout 
-                      ? "Search and select from thousands of free background images"
-                      : "View-only mode - image browsing disabled"
+                      ? t('backgroundImages.pixabayTab.helpTextEnabled')
+                      : t('backgroundImages.pixabayTab.helpTextDisabled')
                     }
                   </p>
                 </div>
@@ -250,7 +252,7 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
                 disabled={!canEditLayout}
                 className="w-full"
               >
-                Clear Background
+                {t('backgroundImages.clearButton')}
               </Button>
             )}
           </div>
@@ -266,14 +268,9 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
             />
 
             <ComingSoonCard
-              title="More Options Soon"
-              description="Advanced customization features coming soon."
-              features={[
-                'Color themes',
-                'Typography',
-                'Custom CSS',
-                'Animations'
-              ]}
+              title={t('comingSoon.title')}
+              description={t('comingSoon.description')}
+              features={t('comingSoon.features') as any as string[]}
               size="small"
             />
 

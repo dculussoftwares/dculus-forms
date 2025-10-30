@@ -21,6 +21,7 @@ import enResponseEditHistory from './en/responseEditHistory.json';
 import enResponseEdit from './en/responseEdit.json';
 import enPlugins from './en/plugins.json';
 import enTabNavigation from './en/tabNavigation.json';
+import enLayoutSidebar from './en/layoutSidebar.json';
 
 export const translations = {
   en: {
@@ -47,6 +48,7 @@ export const translations = {
     responseEdit: enResponseEdit,
     plugins: enPlugins,
     tabNavigation: enTabNavigation,
+    layoutSidebar: enLayoutSidebar,
   },
 } as const;
 
