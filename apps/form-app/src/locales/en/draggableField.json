@@ -1,0 +1,21 @@
+{
+  "fieldTypes": {
+    "shortText": "Short Text",
+    "longText": "Long Text",
+    "email": "Email",
+    "number": "Number",
+    "dropdown": "Dropdown",
+    "radio": "Radio",
+    "checkbox": "Checkbox",
+    "date": "Date",
+    "richText": "Rich Text",
+    "formField": "Form Field",
+    "fallback": "Field"
+  },
+  "tooltips": {
+    "fieldSettings": "Field settings",
+    "duplicateField": "Duplicate field",
+    "pageActions": "Page actions",
+    "deleteField": "Delete field"
+  }
+}

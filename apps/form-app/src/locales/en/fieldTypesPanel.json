@@ -1,0 +1,50 @@
+{
+  "header": {
+    "title": "Field Types",
+    "description": "Drag and drop to add fields"
+  },
+  "categories": {
+    "input": "Input Fields",
+    "choice": "Choice Fields", 
+    "content": "Content",
+    "advanced": "Advanced"
+  },
+  "fieldTypes": {
+    "shortText": {
+      "label": "Short Text",
+      "description": "Single line text input"
+    },
+    "longText": {
+      "label": "Long Text",
+      "description": "Multi-line text area"
+    },
+    "email": {
+      "label": "Email",
+      "description": "Email address input"
+    },
+    "number": {
+      "label": "Number",
+      "description": "Numeric input"
+    },
+    "date": {
+      "label": "Date",
+      "description": "Date picker"
+    },
+    "dropdown": {
+      "label": "Dropdown",
+      "description": "Select from options"
+    },
+    "radio": {
+      "label": "Radio",
+      "description": "Select one option"
+    },
+    "checkbox": {
+      "label": "Checkbox",
+      "description": "Select multiple options"
+    },
+    "richText": {
+      "label": "Rich Text",
+      "description": "Formatted text content (read-only)"
+    }
+  }
+}

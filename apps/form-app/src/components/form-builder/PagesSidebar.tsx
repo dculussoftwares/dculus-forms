@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { FormPage, FormLayout, FormField } from '@dculus/types';
 import { Button } from '@dculus/ui';
 import { useFormPermissions } from '../../hooks/useFormPermissions';
+import { useTranslation } from '../../hooks/useTranslation';
 import {
   Plus,
   FileText,
@@ -47,8 +48,25 @@ export const PagesSidebar: React.FC<PagesSidebarProps> = ({
   width = 320,
   onWidthChange,
 }) => {
+  const { t } = useTranslation('pagesSidebar');
   const permissions = useFormPermissions();
   const [activeTab, setActiveTab] = useState<'pages' | 'json' | 'field-settings'>('pages');
+
+  // Helper function to get tab description text
+  const getTabDescription = () => {
+    if (activeTab === 'pages') {
+      if (pages.length > 1) {
+        return t('descriptions.pagesMultiple', { values: { count: pages.length } });
+      } else {
+        const key = pages.length === 1 ? 'descriptions.pagesSingle' : 'descriptions.pagesPlural';
+        return t(key, { values: { count: pages.length } });
+      }
+    } else if (activeTab === 'json') {
+      return t('descriptions.jsonPreview');
+    } else {
+      return t('descriptions.fieldProperties');
+    }
+  };
   const [isResizing, setIsResizing] = useState(false);
   const [newlyCreatedPageId, setNewlyCreatedPageId] = useState<string | null>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -158,7 +176,7 @@ export const PagesSidebar: React.FC<PagesSidebarProps> = ({
               className="h-8 px-3"
             >
               <FileText className="w-4 h-4 mr-1" />
-              Pages
+              {t('tabs.pages')}
             </Button>
             <Button
               size="sm"
@@ -167,7 +185,7 @@ export const PagesSidebar: React.FC<PagesSidebarProps> = ({
               className="h-8 px-3"
             >
               <Code className="w-4 h-4 mr-1" />
-              JSON
+              {t('tabs.json')}
             </Button>
             <Button
               size="sm"
@@ -175,22 +193,15 @@ export const PagesSidebar: React.FC<PagesSidebarProps> = ({
               onClick={() => handleTabSwitch('field-settings')}
               className="h-8 px-3"
               disabled={!selectedField || !permissions.canEditFields()}
-              title={!permissions.canEditFields() ? "View-only mode - field editing disabled" : ""}
+              title={!permissions.canEditFields() ? t('tooltips.viewOnlyMode') : ""}
             >
               <Settings className="w-4 h-4 mr-1" />
-              Field
+              {t('tabs.field')}
             </Button>
           </div>
         </div>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          {activeTab === 'pages' 
-            ? pages.length > 1 
-              ? `${pages.length} pages • Drag fields here to move between pages`
-              : `${pages.length} ${pages.length === 1 ? 'page' : 'pages'}`
-            : activeTab === 'json'
-            ? 'Form Schema Preview'
-            : 'Field Properties'
-          }
+          {getTabDescription()}
         </p>
       </div>
 
@@ -220,10 +231,10 @@ export const PagesSidebar: React.FC<PagesSidebarProps> = ({
                   <FileText className="w-6 h-6 text-gray-400" />
                 </div>
                 <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                  No pages yet
+                  {t('emptyState.title')}
                 </h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                  Start by creating your first page
+                  {t('emptyState.description')}
                 </p>
               </div>
             )}
@@ -258,7 +269,7 @@ export const PagesSidebar: React.FC<PagesSidebarProps> = ({
             data-testid="add-page-button"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Add Page
+            {t('addPageButton')}
           </Button>
         </div>
       )}

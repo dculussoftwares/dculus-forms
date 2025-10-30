@@ -1,0 +1,22 @@
+{
+  "tabs": {
+    "pages": "Pages",
+    "json": "JSON",
+    "field": "Field"
+  },
+  "descriptions": {
+    "pagesMultiple": "{{count}} pages • Drag fields here to move between pages",
+    "pagesSingle": "{{count}} page",
+    "pagesPlural": "{{count}} pages",
+    "jsonPreview": "Form Schema Preview",
+    "fieldProperties": "Field Properties"
+  },
+  "emptyState": {
+    "title": "No pages yet",
+    "description": "Start by creating your first page"
+  },
+  "addPageButton": "Add Page",
+  "tooltips": {
+    "viewOnlyMode": "View-only mode - field editing disabled"
+  }
+}

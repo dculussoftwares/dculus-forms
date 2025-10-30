@@ -22,6 +22,10 @@ import enResponseEdit from './en/responseEdit.json';
 import enPlugins from './en/plugins.json';
 import enTabNavigation from './en/tabNavigation.json';
 import enLayoutSidebar from './en/layoutSidebar.json';
+import enFieldTypesPanel from './en/fieldTypesPanel.json';
+import enDraggablePageItem from './en/draggablePageItem.json';
+import enDraggableField from './en/draggableField.json';
+import enPagesSidebar from './en/pagesSidebar.json';
 
 export const translations = {
   en: {
@@ -49,6 +53,10 @@ export const translations = {
     plugins: enPlugins,
     tabNavigation: enTabNavigation,
     layoutSidebar: enLayoutSidebar,
+    fieldTypesPanel: enFieldTypesPanel,
+    draggablePageItem: enDraggablePageItem,
+    draggableField: enDraggableField,
+    pagesSidebar: enPagesSidebar,
   },
 } as const;
 

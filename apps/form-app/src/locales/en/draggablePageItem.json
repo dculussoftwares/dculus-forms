@@ -1,0 +1,12 @@
+{
+  "fieldCount": {
+    "singular": "field",
+    "plural": "fields"
+  },
+  "deleteDialog": {
+    "title": "Delete Page",
+    "message": "Are you sure you want to delete \"{{pageTitle}}\"? This action cannot be undone.",
+    "confirmLabel": "Delete",
+    "cancelLabel": "Cancel"
+  }
+}

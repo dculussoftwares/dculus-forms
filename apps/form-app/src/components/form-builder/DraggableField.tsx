@@ -4,6 +4,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { FormField, FieldType, FormPage } from '@dculus/types';
 import { Card, Button, FieldPreview } from '@dculus/ui';
 import { useFormPermissions } from '../../hooks/useFormPermissions';
+import { useTranslation } from '../../hooks/useTranslation';
 import {
   GripVertical,
   Type,
@@ -35,18 +36,7 @@ const FIELD_ICONS: Partial<Record<FieldType, React.ReactNode>> = {
   [FieldType.FORM_FIELD]: <Type className="w-4 h-4" />,
 };
 
-const FIELD_TYPE_LABELS: Partial<Record<FieldType, string>> = {
-  [FieldType.TEXT_INPUT_FIELD]: 'Short Text',
-  [FieldType.TEXT_AREA_FIELD]: 'Long Text',
-  [FieldType.EMAIL_FIELD]: 'Email',
-  [FieldType.NUMBER_FIELD]: 'Number',
-  [FieldType.SELECT_FIELD]: 'Dropdown',
-  [FieldType.RADIO_FIELD]: 'Radio',
-  [FieldType.CHECKBOX_FIELD]: 'Checkbox',
-  [FieldType.DATE_FIELD]: 'Date',
-  [FieldType.RICH_TEXT_FIELD]: 'Rich Text',
-  [FieldType.FORM_FIELD]: 'Form Field',
-};
+
 
 interface DraggableFieldProps {
   field: FormField;
@@ -77,7 +67,25 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
   onMoveToPage,
   onCopyToPage,
 }) => {
+  const { t } = useTranslation('draggableField');
   const permissions = useFormPermissions();
+
+  // Function to get translated field type labels
+  const getFieldTypeLabel = (fieldType: FieldType): string => {
+    const labelMap: Partial<Record<FieldType, string>> = {
+      [FieldType.TEXT_INPUT_FIELD]: t('fieldTypes.shortText'),
+      [FieldType.TEXT_AREA_FIELD]: t('fieldTypes.longText'),
+      [FieldType.EMAIL_FIELD]: t('fieldTypes.email'),
+      [FieldType.NUMBER_FIELD]: t('fieldTypes.number'),
+      [FieldType.SELECT_FIELD]: t('fieldTypes.dropdown'),
+      [FieldType.RADIO_FIELD]: t('fieldTypes.radio'),
+      [FieldType.CHECKBOX_FIELD]: t('fieldTypes.checkbox'),
+      [FieldType.DATE_FIELD]: t('fieldTypes.date'),
+      [FieldType.RICH_TEXT_FIELD]: t('fieldTypes.richText'),
+      [FieldType.FORM_FIELD]: t('fieldTypes.formField'),
+    };
+    return labelMap[fieldType] || t('fieldTypes.fallback');
+  };
 
   const {
     attributes,
@@ -186,7 +194,7 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
                   <div className="mb-3">
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                       {FIELD_ICONS[field.type]}
-                      <span className="ml-1">{FIELD_TYPE_LABELS[field.type] || 'Field'}</span>
+                      <span className="ml-1">{getFieldTypeLabel(field.type)}</span>
                     </span>
                   </div>
 
@@ -222,7 +230,7 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
                         onClick={onEdit}
                         disabled={!isConnected}
                         className="h-8 w-8 text-gray-500 hover:text-blue-600"
-                        title="Field settings"
+                        title={t('tooltips.fieldSettings')}
                       >
                         <Settings className="w-4 h-4" />
                       </Button>
@@ -234,7 +242,7 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
                         onClick={onDuplicate}
                         disabled={!isConnected}
                         className="h-8 w-8 text-gray-500 hover:text-blue-600"
-                        title="Duplicate field"
+                        title={t('tooltips.duplicateField')}
                       >
                         <Copy className="w-4 h-4" />
                       </Button>
@@ -252,7 +260,7 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
                             variant="ghost"
                             disabled={!isConnected}
                             className="h-8 w-8 text-gray-500 hover:text-blue-600"
-                            title="Page actions"
+                            title={t('tooltips.pageActions')}
                           >
                             <MoreVertical className="w-4 h-4" />
                           </Button>
@@ -266,7 +274,7 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
                         onClick={onRemove}
                         disabled={!isConnected}
                         className="h-8 w-8 text-gray-500 hover:text-red-600"
-                        title="Delete field"
+                        title={t('tooltips.deleteField')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

@@ -3,6 +3,7 @@ import { useDraggable } from '@dnd-kit/core';
 import { FieldType } from '@dculus/types';
 import { Card, TypographyH3 } from '@dculus/ui';
 import { useFormPermissions } from '../../hooks/useFormPermissions';
+import { useTranslation } from '../../hooks/useTranslation';
 import {
   Type,
   FileText,
@@ -23,40 +24,40 @@ export interface FieldTypeConfig {
   category: 'input' | 'choice' | 'content' | 'advanced';
 }
 
-export const FIELD_TYPES: FieldTypeConfig[] = [
+const getFieldTypesConfig = (t: (key: string) => string): FieldTypeConfig[] => [
   // Input Fields
   {
     type: FieldType.TEXT_INPUT_FIELD,
-    label: 'Short Text',
-    description: 'Single line text input',
+    label: t('fieldTypes.shortText.label'),
+    description: t('fieldTypes.shortText.description'),
     icon: <Type className="w-5 h-5" />,
     category: 'input'
   },
   {
     type: FieldType.TEXT_AREA_FIELD,
-    label: 'Long Text',
-    description: 'Multi-line text area',
+    label: t('fieldTypes.longText.label'),
+    description: t('fieldTypes.longText.description'),
     icon: <FileText className="w-5 h-5" />,
     category: 'input'
   },
   {
     type: FieldType.EMAIL_FIELD,
-    label: 'Email',
-    description: 'Email address input',
+    label: t('fieldTypes.email.label'),
+    description: t('fieldTypes.email.description'),
     icon: <Mail className="w-5 h-5" />,
     category: 'input'
   },
   {
     type: FieldType.NUMBER_FIELD,
-    label: 'Number',
-    description: 'Numeric input',
+    label: t('fieldTypes.number.label'),
+    description: t('fieldTypes.number.description'),
     icon: <Hash className="w-5 h-5" />,
     category: 'input'
   },
   {
     type: FieldType.DATE_FIELD,
-    label: 'Date',
-    description: 'Date picker',
+    label: t('fieldTypes.date.label'),
+    description: t('fieldTypes.date.description'),
     icon: <Calendar className="w-5 h-5" />,
     category: 'input'
   },
@@ -64,22 +65,22 @@ export const FIELD_TYPES: FieldTypeConfig[] = [
   // Choice Fields
   {
     type: FieldType.SELECT_FIELD,
-    label: 'Dropdown',
-    description: 'Select from options',
+    label: t('fieldTypes.dropdown.label'),
+    description: t('fieldTypes.dropdown.description'),
     icon: <ChevronDown className="w-5 h-5" />,
     category: 'choice'
   },
   {
     type: FieldType.RADIO_FIELD,
-    label: 'Radio',
-    description: 'Select one option',
+    label: t('fieldTypes.radio.label'),
+    description: t('fieldTypes.radio.description'),
     icon: <Circle className="w-5 h-5" />,
     category: 'choice'
   },
   {
     type: FieldType.CHECKBOX_FIELD,
-    label: 'Checkbox',
-    description: 'Select multiple options',
+    label: t('fieldTypes.checkbox.label'),
+    description: t('fieldTypes.checkbox.description'),
     icon: <CheckSquare className="w-5 h-5" />,
     category: 'choice'
   },
@@ -87,28 +88,29 @@ export const FIELD_TYPES: FieldTypeConfig[] = [
   // Content Fields
   {
     type: FieldType.RICH_TEXT_FIELD,
-    label: 'Rich Text',
-    description: 'Formatted text content (read-only)',
+    label: t('fieldTypes.richText.label'),
+    description: t('fieldTypes.richText.description'),
     icon: <FileCode className="w-5 h-5" />,
     category: 'content'
   }
 ];
 
-const CATEGORIES = {
-  input: { label: 'Input Fields', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-  choice: { label: 'Choice Fields', color: 'bg-purple-50 text-purple-700 border-purple-200' },
-  content: { label: 'Content', color: 'bg-green-50 text-green-700 border-green-200' },
-  advanced: { label: 'Advanced', color: 'bg-orange-50 text-orange-700 border-orange-200' }
-};
+const getCategoriesConfig = (t: (key: string) => string) => ({
+  input: { label: t('categories.input'), color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  choice: { label: t('categories.choice'), color: 'bg-purple-50 text-purple-700 border-purple-200' },
+  content: { label: t('categories.content'), color: 'bg-green-50 text-green-700 border-green-200' },
+  advanced: { label: t('categories.advanced'), color: 'bg-orange-50 text-orange-700 border-orange-200' }
+});
 
 // Shared component for displaying field type content
 interface FieldTypeDisplayProps {
   fieldType: FieldTypeConfig;
   isDragging?: boolean;
   isOverlay?: boolean;
+  categories?: ReturnType<typeof getCategoriesConfig>;
 }
 
-const FieldTypeDisplay: React.FC<FieldTypeDisplayProps> = ({ fieldType, isDragging = false, isOverlay = false }) => {
+const FieldTypeDisplay: React.FC<FieldTypeDisplayProps> = ({ fieldType, isDragging = false, isOverlay = false, categories }) => {
   return (
     <Card className={`
       p-4 border-2 border-dashed
@@ -125,7 +127,7 @@ const FieldTypeDisplay: React.FC<FieldTypeDisplayProps> = ({ fieldType, isDraggi
           p-2 rounded-lg
           ${isOverlay 
             ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400' 
-            : `${CATEGORIES[fieldType.category].color}
+            : `${categories?.[fieldType.category as keyof typeof categories]?.color || 'bg-gray-100'}
                ${isDragging ? 'scale-110 transition-none' : 'group-hover:scale-110 transition-transform duration-200'}`
           }
         `}>
@@ -154,9 +156,10 @@ const FieldTypeDisplay: React.FC<FieldTypeDisplayProps> = ({ fieldType, isDraggi
 
 interface DraggableFieldTypeProps {
   fieldType: FieldTypeConfig;
+  categories: ReturnType<typeof getCategoriesConfig>;
 }
 
-const DraggableFieldType: React.FC<DraggableFieldTypeProps> = ({ fieldType }) => {
+const DraggableFieldType: React.FC<DraggableFieldTypeProps> = ({ fieldType, categories }) => {
   const {
     attributes,
     listeners,
@@ -199,7 +202,7 @@ const DraggableFieldType: React.FC<DraggableFieldTypeProps> = ({ fieldType }) =>
           isDragging ? 'scale-102' : 'hover:scale-102'
         }`}
       >
-        <FieldTypeDisplay fieldType={fieldType} isDragging={isDragging} />
+        <FieldTypeDisplay fieldType={fieldType} isDragging={isDragging} categories={categories} />
       </div>
     </>
   );
@@ -213,11 +216,15 @@ export { FieldTypeDisplay };
 
 export const FieldTypesPanel: React.FC<FieldTypesPanelProps> = ({ className = '' }) => {
   const permissions = useFormPermissions();
+  const { t } = useTranslation('fieldTypesPanel');
   
   // Hide field types panel for viewers as they can't add fields
   if (!permissions.canAddFields()) {
     return null;
   }
+  
+  const FIELD_TYPES = getFieldTypesConfig(t);
+  const CATEGORIES = getCategoriesConfig(t);
   
   const groupedFields = FIELD_TYPES.reduce((acc, field) => {
     if (!acc[field.category]) {
@@ -231,10 +238,10 @@ export const FieldTypesPanel: React.FC<FieldTypesPanelProps> = ({ className = ''
     <div className={`h-full overflow-y-auto ${className}`}>
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
         <TypographyH3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Field Types
+          {t('header.title')}
         </TypographyH3>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Drag and drop to add fields
+          {t('header.description')}
         </p>
       </div>
 
@@ -255,6 +262,7 @@ export const FieldTypesPanel: React.FC<FieldTypesPanelProps> = ({ className = ''
                 <DraggableFieldType
                   key={fieldType.type}
                   fieldType={fieldType}
+                  categories={CATEGORIES}
                 />
               ))}
             </div>

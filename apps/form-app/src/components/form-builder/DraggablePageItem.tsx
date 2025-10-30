@@ -5,6 +5,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { FormPage } from '@dculus/types';
 import { Button, Card } from '@dculus/ui';
 import { useFormPermissions } from '../../hooks/useFormPermissions';
+import { useTranslation } from '../../hooks/useTranslation';
 import {
   GripVertical,
   Trash2,
@@ -34,10 +35,17 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
   onDuplicate,
   shouldScrollIntoView = false,
 }) => {
+  const { t } = useTranslation('draggablePageItem');
   const permissions = useFormPermissions();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const pageItemRef = useRef<HTMLDivElement>(null);
   const { active, over } = useDndContext();
+
+  // Helper function for field count with proper pluralization
+  const getFieldCountText = (count: number) => {
+    const fieldLabel = count === 1 ? t('fieldCount.singular') : t('fieldCount.plural');
+    return `${count} ${fieldLabel}`;
+  };
   
   const {
     attributes,
@@ -199,7 +207,7 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
                   }
                 `}
               >
-                {page.fields.length} {page.fields.length === 1 ? 'field' : 'fields'}
+                {getFieldCountText(page.fields.length)}
               </div>
 
               {/* Field Preview Bars (Thumbnail Style) */}
@@ -302,10 +310,10 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
         {/* Delete Confirmation Dialog */}
         <ConfirmationDialog
           isOpen={showDeleteDialog}
-          title="Delete Page"
-          message={`Are you sure you want to delete "${page.title}"? This action cannot be undone.`}
-          confirmLabel="Delete"
-          cancelLabel="Cancel"
+          title={t('deleteDialog.title')}
+          message={t('deleteDialog.message', { values: { pageTitle: page.title } })}
+          confirmLabel={t('deleteDialog.confirmLabel')}
+          cancelLabel={t('deleteDialog.cancelLabel')}
           variant="destructive"
           onConfirm={() => {
             onRemove?.();
