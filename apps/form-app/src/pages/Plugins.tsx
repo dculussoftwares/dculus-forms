@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
+import { useTranslation } from '../hooks/useTranslation';
 import { Card, LoadingSpinner, Button } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { GET_FORM_BY_ID } from '../graphql/queries';
@@ -17,6 +18,7 @@ import { PluginType } from '../components/plugins/shared/PluginGallery';
 const Plugins: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation('plugins');
 
   // Dialog states
   const [isAddPluginDialogOpen, setIsAddPluginDialogOpen] = useState(false);
@@ -62,11 +64,11 @@ const Plugins: React.FC = () => {
   if (formLoading) {
     return (
       <MainLayout
-        title="Plugins"
+        title={t('layout.title')}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Form Dashboard', href: `/dashboard/form/${formId}` },
-          { label: 'Plugins', href: `/dashboard/form/${formId}/plugins` },
+          { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
+          { label: t('layout.breadcrumbs.formDashboard'), href: `/dashboard/form/${formId}` },
+          { label: t('layout.breadcrumbs.plugins'), href: `/dashboard/form/${formId}/plugins` },
         ]}
       >
         <div className="flex justify-center items-center min-h-96">
@@ -79,20 +81,19 @@ const Plugins: React.FC = () => {
   if (formError || !formData?.form) {
     return (
       <MainLayout
-        title="Plugins"
+        title={t('layout.title')}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Form Dashboard', href: `/dashboard/form/${formId}` },
-          { label: 'Plugins', href: `/dashboard/form/${formId}/plugins` },
+          { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
+          { label: t('layout.breadcrumbs.formDashboard'), href: `/dashboard/form/${formId}` },
+          { label: t('layout.breadcrumbs.plugins'), href: `/dashboard/form/${formId}/plugins` },
         ]}
       >
         <div className="max-w-4xl mx-auto px-4 py-12">
           <Card className="p-8 text-center">
             <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-            <h3 className="mb-2 text-xl font-semibold">Form Not Found</h3>
+            <h3 className="mb-2 text-xl font-semibold">{t('errors.formNotFound.title')}</h3>
             <p className="text-slate-600">
-              The form you're looking for doesn't exist or you don't have
-              permission to view its plugins.
+              {t('errors.formNotFound.description')}
             </p>
           </Card>
         </div>
@@ -105,11 +106,11 @@ const Plugins: React.FC = () => {
 
   return (
     <MainLayout
-      title={`${form.title} - Plugins`}
+      title={t('layout.dynamicTitle', { values: { formTitle: form.title } })}
       breadcrumbs={[
-        { label: 'Dashboard', href: '/dashboard' },
+        { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
         { label: form.title, href: `/dashboard/form/${formId}` },
-        { label: 'Plugins', href: `/dashboard/form/${formId}/plugins` },
+        { label: t('layout.breadcrumbs.plugins'), href: `/dashboard/form/${formId}/plugins` },
       ]}
     >
       {/* Container with consistent styling */}
@@ -117,16 +118,16 @@ const Plugins: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Integrations</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t('header.title')}</h1>
             <p className="text-gray-600 mt-1">
-              Connect <span className="font-medium">{form.title}</span> with external services and automate workflows
+              {t('header.description', { values: { formTitle: form.title } })}
             </p>
           </div>
 
           {/* Add Integration Button */}
           <Button onClick={() => setIsAddPluginDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Integration
+            {t('buttons.addIntegration')}
           </Button>
         </div>
 
@@ -143,14 +144,14 @@ const Plugins: React.FC = () => {
                 <Plug className="h-8 w-8 text-orange-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                No Integrations Yet
+                {t('emptyState.title')}
               </h3>
               <p className="text-gray-600 max-w-2xl mx-auto mb-6">
-                Connect your forms to external services. Automate workflows, send data to CRMs, trigger notifications, and more with our growing collection of integrations.
+                {t('emptyState.description')}
               </p>
               <Button onClick={() => setIsAddPluginDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Browse Integrations
+                {t('buttons.browseIntegrations')}
               </Button>
             </div>
           </Card>
@@ -159,7 +160,7 @@ const Plugins: React.FC = () => {
           <div>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">
-                Active Integrations ({plugins.length})
+                {t('activeIntegrations.title', { values: { count: plugins.length } })}
               </h2>
             </div>
             <div className="space-y-4">

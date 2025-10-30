@@ -1,0 +1,32 @@
+{
+  "layout": {
+    "title": "Plugins",
+    "dynamicTitle": "{{formTitle}} - Plugins",
+    "breadcrumbs": {
+      "dashboard": "Dashboard",
+      "formDashboard": "Form Dashboard",
+      "plugins": "Plugins"
+    }
+  },
+  "errors": {
+    "formNotFound": {
+      "title": "Form Not Found",
+      "description": "The form you're looking for doesn't exist or you don't have permission to view its plugins."
+    }
+  },
+  "header": {
+    "title": "Integrations",
+    "description": "Connect {{formTitle}} with external services and automate workflows"
+  },
+  "buttons": {
+    "addIntegration": "Add Integration",
+    "browseIntegrations": "Browse Integrations"
+  },
+  "emptyState": {
+    "title": "No Integrations Yet",
+    "description": "Connect your forms to external services. Automate workflows, send data to CRMs, trigger notifications, and more with our growing collection of integrations."
+  },
+  "activeIntegrations": {
+    "title": "Active Integrations ({{count}})"
+  }
+}
