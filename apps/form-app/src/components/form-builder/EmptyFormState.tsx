@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@dculus/ui';
 import { Plus } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface EmptyFormStateProps {
   onCreatePage: () => void;
@@ -8,6 +9,8 @@ interface EmptyFormStateProps {
 }
 
 export const EmptyFormState: React.FC<EmptyFormStateProps> = ({ onCreatePage, isConnected }) => {
+  const { t } = useTranslation('emptyFormState');
+  
   return (
     <div className="flex flex-col items-center justify-center h-full">
       <div className="text-center max-w-md">
@@ -15,10 +18,10 @@ export const EmptyFormState: React.FC<EmptyFormStateProps> = ({ onCreatePage, is
           <Plus className="w-10 h-10 text-blue-600 dark:text-blue-400" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-          Start Building Your Form
+          {t('heading')}
         </h2>
         <p className="text-gray-600 dark:text-gray-400 mb-6">
-          Create your first page to begin adding fields. You can drag and drop field types from the left panel.
+          {t('description')}
         </p>
         <Button 
           onClick={onCreatePage}
@@ -26,7 +29,7 @@ export const EmptyFormState: React.FC<EmptyFormStateProps> = ({ onCreatePage, is
           size="lg"
         >
           <Plus className="w-5 h-5 mr-2" />
-          Create First Page
+          {t('createButton')}
         </Button>
       </div>
     </div>

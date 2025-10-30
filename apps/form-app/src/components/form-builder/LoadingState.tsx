@@ -1,6 +1,7 @@
 import React from 'react';
 import { TypographyH1, TypographyP } from '@dculus/ui';
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface LoadingStateProps {
   title?: string;
@@ -29,10 +30,14 @@ interface LoadingStateProps {
  * <LoadingState variant="skeleton" />
  */
 export const LoadingState: React.FC<LoadingStateProps> = ({
-  title = 'Loading',
-  description = 'Please wait...',
+  title,
+  description,
   variant = 'fullscreen',
 }) => {
+  const { t } = useTranslation('loadingState');
+  
+  const displayTitle = title ?? t('defaults.title');
+  const displayDescription = description ?? t('defaults.description');
   // Skeleton variant - shows loading skeleton with cards
   if (variant === 'skeleton') {
     return (
@@ -42,10 +47,10 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
             <Loader2 className="w-6 h-6 text-blue-600 dark:text-blue-400 animate-spin" />
           </div>
           <TypographyH1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
-            {title}
+            {displayTitle}
           </TypographyH1>
           <TypographyP className="text-gray-600 dark:text-gray-400">
-            {description}
+            {displayDescription}
           </TypographyP>
         </div>
 
@@ -84,9 +89,9 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
       <div className="text-center py-8">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400 mx-auto mb-4" />
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-          {title}
+          {displayTitle}
         </h2>
-        <p className="text-gray-600 dark:text-gray-400">{description}</p>
+        <p className="text-gray-600 dark:text-gray-400">{displayDescription}</p>
       </div>
     );
   }
@@ -97,9 +102,9 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
       <div className="text-center">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
         <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-          {title}
+          {displayTitle}
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">{description}</p>
+        <p className="text-gray-600 dark:text-gray-400">{displayDescription}</p>
       </div>
     </div>
   );

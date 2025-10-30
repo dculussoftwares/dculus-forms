@@ -34,6 +34,8 @@ import enPageCard from './en/pageCard.json';
 import enContextualBreadcrumb from './en/contextualBreadcrumb.json';
 import enFieldItem from './en/fieldItem.json';
 import enPageActionsSelector from './en/pageActionsSelector.json';
+import enLoadingState from './en/loadingState.json';
+import enEmptyFormState from './en/emptyFormState.json';
 
 export const translations = {
   en: {
@@ -73,6 +75,8 @@ export const translations = {
     contextualBreadcrumb: enContextualBreadcrumb,
     fieldItem: enFieldItem,
     pageActionsSelector: enPageActionsSelector,
+    loadingState: enLoadingState,
+    emptyFormState: enEmptyFormState,
   },
 } as const;
 
