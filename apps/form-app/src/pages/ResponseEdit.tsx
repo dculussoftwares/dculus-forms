@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
+import { useTranslation } from '../hooks/useTranslation';
 import { FormRenderer } from '@dculus/ui';
 import { RendererMode } from '@dculus/utils';
 import { deserializeFormSchema } from '@dculus/types';
@@ -10,6 +11,7 @@ import { Button, LoadingSpinner, toastSuccess, toastError } from '@dculus/ui';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 
 const ResponseEdit: React.FC = () => {
+  const { t } = useTranslation('responseEdit');
   const { formId, responseId } = useParams<{ formId: string; responseId: string }>();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,11 +58,11 @@ const ResponseEdit: React.FC = () => {
         }
       });
 
-      toastSuccess('Response updated successfully', 'Your changes have been saved');
-      navigate(`/dashboard/form/${formId}/responses`);
+      toastSuccess(t('toasts.updateSuccess.title'), t('toasts.updateSuccess.description'));
+      navigate(`/dashboard/form/${formId}/responses/${responseId}/history`);
     } catch (error: any) {
-      console.error('Failed to update response:', error);
-      toastError('Failed to update response', error.message || 'An error occurred while updating the response');
+      console.error('Error updating response:', error);
+      toastError(t('toasts.updateError.title'), error.message || t('toasts.updateError.description'));
     } finally {
       setIsSubmitting(false);
     }
@@ -69,12 +71,12 @@ const ResponseEdit: React.FC = () => {
   if (formLoading || responseLoading) {
     return (
       <MainLayout
-        title="Edit Response"
+        title={t('layout.title')}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Form Dashboard', href: `/dashboard/form/${formId}` },
-          { label: 'Responses', href: `/dashboard/form/${formId}/responses` },
-          { label: 'Edit Response', href: `/dashboard/form/${formId}/responses/${responseId}/edit` },
+          { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
+          { label: t('layout.breadcrumbs.formDashboard'), href: `/dashboard/form/${formId}` },
+          { label: t('layout.breadcrumbs.responses'), href: `/dashboard/form/${formId}/responses` },
+          { label: t('layout.breadcrumbs.editResponse'), href: `/dashboard/form/${formId}/responses/${responseId}/edit` },
         ]}
       >
         <div className="flex justify-center items-center min-h-96">
@@ -87,31 +89,31 @@ const ResponseEdit: React.FC = () => {
   if (formError || responseError || !formData?.form || !responseData?.response) {
     return (
       <MainLayout
-        title="Edit Response"
+        title={t('layout.title')}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Form Dashboard', href: `/dashboard/form/${formId}` },
-          { label: 'Responses', href: `/dashboard/form/${formId}/responses` },
-          { label: 'Edit Response', href: `/dashboard/form/${formId}/responses/${responseId}/edit` },
+          { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
+          { label: t('layout.breadcrumbs.formDashboard'), href: `/dashboard/form/${formId}` },
+          { label: t('layout.breadcrumbs.responses'), href: `/dashboard/form/${formId}/responses` },
+          { label: t('layout.breadcrumbs.editResponse'), href: `/dashboard/form/${formId}/responses/${responseId}/edit` },
         ]}
       >
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="max-w-md text-center p-8 bg-white rounded-lg shadow-sm border border-slate-200/60">
             <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
             <h3 className="mb-2 text-xl font-semibold">
-              {!formData?.form ? 'Form Not Found' : 'Response Not Found'}
+              {!formData?.form ? t('errors.formNotFound.title') : t('errors.responseNotFound.title')}
             </h3>
             <p className="text-slate-600 mb-4">
               {!formData?.form
-                ? "The form you're looking for doesn't exist or you don't have permission to view it."
-                : "The response you're trying to edit doesn't exist or you don't have permission to edit it."}
+                ? t('errors.formNotFound.description')
+                : t('errors.responseNotFound.description')}
             </p>
             <Button
               onClick={() => navigate(`/dashboard/form/${formId}/responses`)}
               variant="outline"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Responses
+              {t('navigation.backToResponses')}
             </Button>
           </div>
         </div>
@@ -126,27 +128,27 @@ const ResponseEdit: React.FC = () => {
   if (!form.formSchema) {
     return (
       <MainLayout
-        title="Edit Response"
+        title={t('layout.title')}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Form Dashboard', href: `/dashboard/form/${formId}` },
-          { label: 'Responses', href: `/dashboard/form/${formId}/responses` },
-          { label: 'Edit Response', href: `/dashboard/form/${formId}/responses/${responseId}/edit` },
+          { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
+          { label: t('layout.breadcrumbs.formDashboard'), href: `/dashboard/form/${formId}` },
+          { label: t('layout.breadcrumbs.responses'), href: `/dashboard/form/${formId}/responses` },
+          { label: t('layout.breadcrumbs.editResponse'), href: `/dashboard/form/${formId}/responses/${responseId}/edit` },
         ]}
       >
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="max-w-md text-center p-8 bg-white rounded-lg shadow-sm border border-slate-200/60">
             <AlertCircle className="mx-auto h-12 w-12 text-orange-500 mb-4" />
-            <h3 className="mb-2 text-xl font-semibold">Form Not Ready</h3>
+            <h3 className="mb-2 text-xl font-semibold">{t('errors.formNotReady.title')}</h3>
             <p className="text-slate-600 mb-4">
-              This form is not yet configured. Please try again later.
+              {t('errors.formNotReady.description')}
             </p>
             <Button
               onClick={() => navigate(`/dashboard/form/${formId}/responses`)}
               variant="outline"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Responses
+              {t('navigation.backToResponses')}
             </Button>
           </div>
         </div>
@@ -160,13 +162,13 @@ const ResponseEdit: React.FC = () => {
 
   return (
     <MainLayout
-      title={`Edit Response - ${form.title}`}
+      title={t('layout.dynamicTitle', { values: { formTitle: form.title } })}
       breadcrumbs={[
-        { label: 'Dashboard', href: '/dashboard' },
+        { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
         { label: form.title, href: `/dashboard/form/${formId}` },
-        { label: 'Responses', href: `/dashboard/form/${formId}/responses` },
-        { label: 'Table View', href: `/dashboard/form/${formId}/responses` },
-        { label: 'Edit Response', href: `/dashboard/form/${formId}/responses/${responseId}/edit` },
+        { label: t('layout.breadcrumbs.responses'), href: `/dashboard/form/${formId}/responses` },
+        { label: t('layout.breadcrumbs.tableView'), href: `/dashboard/form/${formId}/responses` },
+        { label: t('layout.breadcrumbs.editResponse'), href: `/dashboard/form/${formId}/responses/${responseId}/edit` },
       ]}
     >
       {/* Header with back button */}
@@ -179,11 +181,11 @@ const ResponseEdit: React.FC = () => {
           disabled={isSubmitting}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Responses
+          {t('navigation.backToResponses')}
         </Button>
         <div className="h-4 w-px bg-slate-300 flex-shrink-0" />
         <h1 className="text-lg font-semibold text-slate-900 truncate flex-1">
-          Editing Response {response.id.slice(-6)}
+          {t('header.editingResponse', { values: { responseId: response.id.slice(-6) } })}
         </h1>
       </div>
 
@@ -207,8 +209,8 @@ const ResponseEdit: React.FC = () => {
               <div className="flex items-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
                 <div>
-                  <p className="text-lg font-medium text-gray-900">Updating...</p>
-                  <p className="text-sm text-gray-500">Please wait while we save your changes.</p>
+                  <p className="text-lg font-medium text-gray-900">{t('loading.updating')}</p>
+                  <p className="text-sm text-gray-500">{t('loading.pleaseWait')}</p>
                 </div>
               </div>
             </div>

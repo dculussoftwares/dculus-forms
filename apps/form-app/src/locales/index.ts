@@ -18,6 +18,7 @@ import enPluginConfiguration from './en/pluginConfiguration.json';
 import enResponsesAnalytics from './en/responsesAnalytics.json';
 import enResponsesIndividual from './en/responsesIndividual.json';
 import enResponseEditHistory from './en/responseEditHistory.json';
+import enResponseEdit from './en/responseEdit.json';
 
 export const translations = {
   en: {
@@ -41,6 +42,7 @@ export const translations = {
     responsesAnalytics: enResponsesAnalytics,
     responsesIndividual: enResponsesIndividual,
     responseEditHistory: enResponseEditHistory,
+    responseEdit: enResponseEdit,
   },
 } as const;
 

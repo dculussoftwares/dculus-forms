@@ -1,0 +1,47 @@
+{
+  "layout": {
+    "title": "Edit Response",
+    "dynamicTitle": "Edit Response - {{formTitle}}",
+    "breadcrumbs": {
+      "dashboard": "Dashboard",
+      "formDashboard": "Form Dashboard",
+      "responses": "Responses",
+      "tableView": "Table View",
+      "editResponse": "Edit Response"
+    }
+  },
+  "errors": {
+    "formNotFound": {
+      "title": "Form Not Found",
+      "description": "The form you're looking for doesn't exist or you don't have permission to view it."
+    },
+    "responseNotFound": {
+      "title": "Response Not Found",
+      "description": "The response you're trying to edit doesn't exist or you don't have permission to edit it."
+    },
+    "formNotReady": {
+      "title": "Form Not Ready",
+      "description": "This form is not yet configured. Please try again later."
+    }
+  },
+  "navigation": {
+    "backToResponses": "Back to Responses"
+  },
+  "header": {
+    "editingResponse": "Editing Response {{responseId}}"
+  },
+  "loading": {
+    "updating": "Updating...",
+    "pleaseWait": "Please wait while we save your changes."
+  },
+  "toasts": {
+    "updateSuccess": {
+      "title": "Response updated successfully",
+      "description": "Your changes have been saved"
+    },
+    "updateError": {
+      "title": "Failed to update response",
+      "description": "An error occurred while updating the response"
+    }
+  }
+}
