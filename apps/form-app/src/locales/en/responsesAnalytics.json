@@ -1,0 +1,43 @@
+{
+  "layout": {
+    "title": "Analytics - Responses",
+    "dynamicTitle": "{{formTitle}} - Response Analytics",
+    "breadcrumbs": {
+      "dashboard": "Dashboard",
+      "formDashboard": "Form Dashboard",
+      "responses": "Responses",
+      "analytics": "Analytics"
+    }
+  },
+  "errors": {
+    "formNotFound": {
+      "title": "Form Not Found",
+      "description": "The form you're looking for doesn't exist or you don't have permission to view it."
+    }
+  },
+  "navigation": {
+    "backToResponses": "Back to Responses"
+  },
+  "charts": {
+    "responseTrends": {
+      "title": "Response Trends",
+      "description": "Response submission patterns over time",
+      "placeholder": "Response trends chart",
+      "comingSoon": "Chart visualization coming soon"
+    },
+    "fieldAnalytics": {
+      "title": "Field Analytics",
+      "description": "Most common responses and field completion rates",
+      "nameFieldCompletion": "Name field completion",
+      "emailFieldCompletion": "Email field completion",
+      "messageFieldCompletion": "Message field completion"
+    },
+    "responseSummary": {
+      "title": "Response Summary",
+      "description": "Key insights from form submissions",
+      "totalSubmissions": "Total Submissions",
+      "completionRate": "Completion Rate",
+      "avgTimeToComplete": "Avg. Time to Complete"
+    }
+  }
+}

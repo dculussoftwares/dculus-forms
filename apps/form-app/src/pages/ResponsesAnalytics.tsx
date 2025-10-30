@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
+import { useTranslation } from '../hooks/useTranslation';
 import {
   Button,
   Card,
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 
 const ResponsesAnalytics: React.FC = () => {
+  const { t } = useTranslation('responsesAnalytics');
   const { formId, id } = useParams<{ formId?: string; id?: string }>();
   const navigate = useNavigate();
   
@@ -72,12 +74,12 @@ const ResponsesAnalytics: React.FC = () => {
   if (formLoading) {
     return (
       <MainLayout
-        title="Analytics - Responses"
+        title={t('layout.title')}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Form Dashboard', href: `/dashboard/form/${actualFormId}` },
-          { label: 'Responses', href: `/dashboard/form/${actualFormId}/responses` },
-          { label: 'Analytics', href: `/dashboard/form/${actualFormId}/responses/analytics` },
+          { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
+          { label: t('layout.breadcrumbs.formDashboard'), href: `/dashboard/form/${actualFormId}` },
+          { label: t('layout.breadcrumbs.responses'), href: `/dashboard/form/${actualFormId}/responses` },
+          { label: t('layout.breadcrumbs.analytics'), href: `/dashboard/form/${actualFormId}/responses/analytics` },
         ]}
       >
         <div className="flex justify-center items-center min-h-96">
@@ -90,21 +92,20 @@ const ResponsesAnalytics: React.FC = () => {
   if (formError || !formData?.form) {
     return (
       <MainLayout
-        title="Analytics - Responses"
+        title={t('layout.title')}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Form Dashboard', href: `/dashboard/form/${actualFormId}` },
-          { label: 'Responses', href: `/dashboard/form/${actualFormId}/responses` },
-          { label: 'Analytics', href: `/dashboard/form/${actualFormId}/responses/analytics` },
+          { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
+          { label: t('layout.breadcrumbs.formDashboard'), href: `/dashboard/form/${actualFormId}` },
+          { label: t('layout.breadcrumbs.responses'), href: `/dashboard/form/${actualFormId}/responses` },
+          { label: t('layout.breadcrumbs.analytics'), href: `/dashboard/form/${actualFormId}/responses/analytics` },
         ]}
       >
         <div className="max-w-4xl mx-auto px-4 py-12">
           <Card className="p-8 text-center">
             <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-            <h3 className="mb-2 text-xl font-semibold">Form Not Found</h3>
+            <h3 className="mb-2 text-xl font-semibold">{t('errors.formNotFound.title')}</h3>
             <p className="text-slate-600">
-              The form you're looking for doesn't exist or you don't have
-              permission to view it.
+              {t('errors.formNotFound.description')}
             </p>
           </Card>
         </div>
@@ -116,12 +117,12 @@ const ResponsesAnalytics: React.FC = () => {
 
   return (
     <MainLayout
-      title={`${form.title} - Response Analytics`}
+      title={t('layout.dynamicTitle', { values: { formTitle: form.title } })}
       breadcrumbs={[
-        { label: 'Dashboard', href: '/dashboard' },
+        { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
         { label: form.title, href: `/dashboard/form/${actualFormId}` },
-        { label: 'Responses', href: `/dashboard/form/${actualFormId}/responses` },
-        { label: 'Analytics', href: `/dashboard/form/${actualFormId}/responses/analytics` },
+        { label: t('layout.breadcrumbs.responses'), href: `/dashboard/form/${actualFormId}/responses` },
+        { label: t('layout.breadcrumbs.analytics'), href: `/dashboard/form/${actualFormId}/responses/analytics` },
       ]}
     >
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
@@ -135,7 +136,7 @@ const ResponsesAnalytics: React.FC = () => {
               className="text-slate-600 hover:text-slate-900"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Responses
+              {t('navigation.backToResponses')}
             </Button>
           </div>
         </div>
@@ -147,19 +148,19 @@ const ResponsesAnalytics: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
-                  Response Trends
+                  {t('charts.responseTrends.title')}
                 </CardTitle>
                 <CardDescription>
-                  Response submission patterns over time
+                  {t('charts.responseTrends.description')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
                   <div className="text-center">
                     <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-600">Response trends chart</p>
+                    <p className="text-gray-600">{t('charts.responseTrends.placeholder')}</p>
                     <p className="text-sm text-gray-500">
-                      Chart visualization coming soon
+                      {t('charts.responseTrends.comingSoon')}
                     </p>
                   </div>
                 </div>
@@ -170,17 +171,17 @@ const ResponsesAnalytics: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <PieChart className="h-5 w-5" />
-                  Field Analytics
+                  {t('charts.fieldAnalytics.title')}
                 </CardTitle>
                 <CardDescription>
-                  Most common responses and field completion rates
+                  {t('charts.fieldAnalytics.description')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">
-                      Name field completion
+                      {t('charts.fieldAnalytics.nameFieldCompletion')}
                     </span>
                     <span className="text-sm font-semibold">100%</span>
                   </div>
@@ -193,7 +194,7 @@ const ResponsesAnalytics: React.FC = () => {
 
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">
-                      Email field completion
+                      {t('charts.fieldAnalytics.emailFieldCompletion')}
                     </span>
                     <span className="text-sm font-semibold">100%</span>
                   </div>
@@ -206,7 +207,7 @@ const ResponsesAnalytics: React.FC = () => {
 
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">
-                      Message field completion
+                      {t('charts.fieldAnalytics.messageFieldCompletion')}
                     </span>
                     <span className="text-sm font-semibold">85%</span>
                   </div>
@@ -223,9 +224,9 @@ const ResponsesAnalytics: React.FC = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Response Summary</CardTitle>
+              <CardTitle>{t('charts.responseSummary.title')}</CardTitle>
               <CardDescription>
-                Key insights from form submissions
+                {t('charts.responseSummary.description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -235,7 +236,7 @@ const ResponsesAnalytics: React.FC = () => {
                     {mockResponses.length}
                   </div>
                   <div className="text-sm text-blue-800">
-                    Total Submissions
+                    {t('charts.responseSummary.totalSubmissions')}
                   </div>
                 </div>
                 <div className="p-4 bg-green-50 rounded-lg">
@@ -243,7 +244,7 @@ const ResponsesAnalytics: React.FC = () => {
                     100%
                   </div>
                   <div className="text-sm text-green-800">
-                    Completion Rate
+                    {t('charts.responseSummary.completionRate')}
                   </div>
                 </div>
                 <div className="p-4 bg-orange-50 rounded-lg">
@@ -251,7 +252,7 @@ const ResponsesAnalytics: React.FC = () => {
                     2.5 min
                   </div>
                   <div className="text-sm text-orange-800">
-                    Avg. Time to Complete
+                    {t('charts.responseSummary.avgTimeToComplete')}
                   </div>
                 </div>
               </div>

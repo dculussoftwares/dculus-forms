@@ -15,6 +15,7 @@ import enFormSettings from './en/formSettings.json';
 import enFormAnalytics from './en/formAnalytics.json';
 import enCollaborativeFormBuilder from './en/collaborativeFormBuilder.json';
 import enPluginConfiguration from './en/pluginConfiguration.json';
+import enResponsesAnalytics from './en/responsesAnalytics.json';
 
 export const translations = {
   en: {
@@ -35,6 +36,7 @@ export const translations = {
     formAnalytics: enFormAnalytics,
     collaborativeFormBuilder: enCollaborativeFormBuilder,
     pluginConfiguration: enPluginConfiguration,
+    responsesAnalytics: enResponsesAnalytics,
   },
 } as const;
 
