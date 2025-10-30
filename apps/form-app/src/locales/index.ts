@@ -20,6 +20,7 @@ import enResponsesIndividual from './en/responsesIndividual.json';
 import enResponseEditHistory from './en/responseEditHistory.json';
 import enResponseEdit from './en/responseEdit.json';
 import enPlugins from './en/plugins.json';
+import enTabNavigation from './en/tabNavigation.json';
 
 export const translations = {
   en: {
@@ -45,6 +46,7 @@ export const translations = {
     responseEditHistory: enResponseEditHistory,
     responseEdit: enResponseEdit,
     plugins: enPlugins,
+    tabNavigation: enTabNavigation,
   },
 } as const;
 

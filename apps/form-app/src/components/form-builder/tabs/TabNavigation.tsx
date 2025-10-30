@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Palette, FileText, Settings, Eye, Users } from 'lucide-react';
 import { Button } from '@dculus/ui';
 import { cn } from '@dculus/utils';
+import { useTranslation } from '../../../hooks/useTranslation';
 
 export type BuilderTab = 'layout' | 'page-builder' | 'settings' | 'preview';
 
@@ -13,30 +14,30 @@ interface TabConfig {
   description: string;
 }
 
-const TABS: TabConfig[] = [
+const getTabsConfig = (t: (key: string) => string): TabConfig[] => [
   {
     id: 'layout',
-    label: 'Layout',
+    label: t('tabs.layout.label'),
     icon: Palette,
-    description: 'Design and customize form layout'
+    description: t('tabs.layout.description')
   },
   {
     id: 'page-builder',
-    label: 'Builder',
+    label: t('tabs.pageBuilder.label'),
     icon: FileText,
-    description: 'Build form pages with drag & drop'
+    description: t('tabs.pageBuilder.description')
   },
   {
     id: 'preview',
-    label: 'Preview',
+    label: t('tabs.preview.label'),
     icon: Eye,
-    description: 'Preview form before publishing'
+    description: t('tabs.preview.description')
   },
   {
     id: 'settings',
-    label: 'Settings',
+    label: t('tabs.settings.label'),
     icon: Settings,
-    description: 'Configure form settings and options'
+    description: t('tabs.settings.description')
   }
 ];
 
@@ -59,6 +60,8 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
   const { formId } = useParams<{ formId: string }>();
   const [hoveredTab, setHoveredTab] = useState<BuilderTab | null>(null);
   const [isVisible, setIsVisible] = useState(true);
+  const { t } = useTranslation('tabNavigation');
+  const TABS = getTabsConfig(t);
 
   const handleTabChange = (tabId: BuilderTab) => {
     if (formId) {
@@ -128,7 +131,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                           ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 scale-105'
                           : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                       )}
-                      aria-label={`Switch to ${tab.label} tab - ${tab.description}`}
+                      aria-label={t('aria.switchToTab', { values: { label: tab.label, description: tab.description } })}
                       role="tab"
                       aria-selected={isActive}
                     >
@@ -177,7 +180,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                           ? 'bg-blue-50 text-blue-700 border-2 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800 hover:bg-blue-100'
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 border-2 border-transparent dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800'
                       )}
-                      aria-label={`Switch to ${tab.label} tab - ${tab.description}`}
+                      aria-label={t('aria.switchToTab', { values: { label: tab.label, description: tab.description } })}
                       role="tab"
                       aria-selected={isActive}
                     >
@@ -194,12 +197,15 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                   <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
                     <div className="flex items-center space-x-1">
                       <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                      <span>Live</span>
+                      <span>{t('collaboration.live')}</span>
                     </div>
                     {collaboratorCount > 0 && (
                       <div className="flex items-center space-x-1">
                         <Users className="w-4 h-4" />
-                        <span>{collaboratorCount} collaborator{collaboratorCount !== 1 ? 's' : ''}</span>
+                        <span>{collaboratorCount === 1 
+                          ? t('collaboration.collaborators.single', { values: { count: collaboratorCount } })
+                          : t('collaboration.collaborators.multiple', { values: { count: collaboratorCount } })
+                        }</span>
                       </div>
                     )}
                   </div>
@@ -208,7 +214,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                 {!isConnected && (
                   <div className="flex items-center space-x-2 text-sm text-yellow-600 dark:text-yellow-400">
                     <div className="w-2 h-2 bg-yellow-500 rounded-full" />
-                    <span>Connecting...</span>
+                    <span>{t('collaboration.connecting')}</span>
                   </div>
                 )}
               </div>

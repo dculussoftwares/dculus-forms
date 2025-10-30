@@ -1,0 +1,31 @@
+{
+  "tabs": {
+    "layout": {
+      "label": "Layout",
+      "description": "Design and customize form layout"
+    },
+    "pageBuilder": {
+      "label": "Builder",
+      "description": "Build form pages with drag & drop"
+    },
+    "preview": {
+      "label": "Preview",
+      "description": "Preview form before publishing"
+    },
+    "settings": {
+      "label": "Settings",
+      "description": "Configure form settings and options"
+    }
+  },
+  "collaboration": {
+    "live": "Live",
+    "connecting": "Connecting...",
+    "collaborators": {
+      "single": "{{count}} collaborator",
+      "multiple": "{{count}} collaborators"
+    }
+  },
+  "aria": {
+    "switchToTab": "Switch to {{label}} tab - {{description}}"
+  }
+}
