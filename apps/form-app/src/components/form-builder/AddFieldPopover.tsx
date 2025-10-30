@@ -7,7 +7,82 @@ import {
     PopoverContent
 } from '@dculus/ui';
 import { Plus } from 'lucide-react';
-import { fieldCategories, FieldTypeConfig } from './types';
+import { FieldTypeConfig } from './types';
+import { useTranslation } from '../../hooks/useTranslation';
+import { FieldType } from '@dculus/types';
+import {
+    Type,
+    FileText,
+    Mail,
+    Hash,
+    Check,
+    Radio,
+    Calendar
+} from 'lucide-react';
+
+const getFieldTypesConfig = (t: (key: string) => string): FieldTypeConfig[] => [
+    {
+        type: FieldType.TEXT_INPUT_FIELD,
+        label: t('fieldTypes.shortText.label'),
+        description: t('fieldTypes.shortText.description'),
+        icon: Type,
+        category: 'Input'
+    },
+    {
+        type: FieldType.TEXT_AREA_FIELD,
+        label: t('fieldTypes.longText.label'),
+        description: t('fieldTypes.longText.description'),
+        icon: FileText,
+        category: 'Input'
+    },
+    {
+        type: FieldType.EMAIL_FIELD,
+        label: t('fieldTypes.email.label'),
+        description: t('fieldTypes.email.description'),
+        icon: Mail,
+        category: 'Input'
+    },
+    {
+        type: FieldType.NUMBER_FIELD,
+        label: t('fieldTypes.number.label'),
+        description: t('fieldTypes.number.description'),
+        icon: Hash,
+        category: 'Input'
+    },
+    {
+        type: FieldType.DATE_FIELD,
+        label: t('fieldTypes.date.label'),
+        description: t('fieldTypes.date.description'),
+        icon: Calendar,
+        category: 'Input'
+    },
+    {
+        type: FieldType.SELECT_FIELD,
+        label: t('fieldTypes.dropdown.label'),
+        description: t('fieldTypes.dropdown.description'),
+        icon: Check,
+        category: 'Choice'
+    },
+    {
+        type: FieldType.RADIO_FIELD,
+        label: t('fieldTypes.radio.label'),
+        description: t('fieldTypes.radio.description'),
+        icon: Radio,
+        category: 'Choice'
+    },
+    {
+        type: FieldType.CHECKBOX_FIELD,
+        label: t('fieldTypes.checkbox.label'),
+        description: t('fieldTypes.checkbox.description'),
+        icon: Check,
+        category: 'Choice'
+    }
+];
+
+const getCategoriesConfig = (t: (key: string) => string) => ({
+    Input: t('categories.input'),
+    Choice: t('categories.choice')
+});
 
 interface AddFieldPopoverProps {
     pageId: string;
@@ -21,6 +96,20 @@ export const AddFieldPopover: React.FC<AddFieldPopoverProps> = ({
     onAddField 
 }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const { t } = useTranslation('addFieldPopover');
+    const { t: fieldT } = useTranslation('fieldTypesPanel');
+    
+    const fieldTypes = getFieldTypesConfig(fieldT);
+    const categories = getCategoriesConfig(fieldT);
+    
+    // Group fields by category
+    const groupedFields = fieldTypes.reduce((acc, field) => {
+        if (!acc[field.category]) {
+            acc[field.category] = [];
+        }
+        acc[field.category].push(field);
+        return acc;
+    }, {} as Record<string, FieldTypeConfig[]>);
     
     return (
         <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -31,17 +120,17 @@ export const AddFieldPopover: React.FC<AddFieldPopoverProps> = ({
                     disabled={!isConnected}
                 >
                     <Plus className="w-4 h-4 mr-2" />
-                    Add field
+                    {t('addButton')}
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80 p-0" align="start">
                 <div className="p-4">
-                    <TypographyP className="font-medium text-sm mb-3">Choose a field type</TypographyP>
+                    <TypographyP className="font-medium text-sm mb-3">{t('chooseFieldType')}</TypographyP>
                     
-                    {Object.entries(fieldCategories).map(([category, fields]) => (
+                    {Object.entries(groupedFields).map(([category, fields]) => (
                         <div key={category} className="mb-4 last:mb-0">
                             <TypographyP className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-                                {category}
+                                {categories[category as keyof typeof categories]}
                             </TypographyP>
                             <div className="grid grid-cols-1 gap-1">
                                 {fields.map((fieldType) => (
