@@ -1,0 +1,40 @@
+{
+  "layout": {
+    "title": "Configure Plugin",
+    "dynamicTitle": "{{mode}} {{pluginType}}",
+    "breadcrumbs": {
+      "dashboard": "Dashboard",
+      "plugins": "Plugins",
+      "configure": "Configure",
+      "edit": "Edit"
+    },
+    "pluginFallback": "Plugin"
+  },
+  "errors": {
+    "formNotFound": {
+      "title": "Form Not Found",
+      "description": "The form you're looking for doesn't exist or you don't have permission to configure plugins."
+    },
+    "unknownPluginType": {
+      "title": "Unknown Plugin Type",
+      "description": "The plugin type \"{{pluginType}}\" is not recognized."
+    }
+  },
+  "toasts": {
+    "pluginCreated": {
+      "title": "Plugin Created",
+      "description": "\"{{name}}\" has been created successfully",
+      "error": "Failed to Create Plugin",
+      "errorDescription": "An unexpected error occurred"
+    },
+    "pluginUpdated": {
+      "title": "Plugin Updated",
+      "description": "\"{{name}}\" has been updated successfully",
+      "error": "Failed to Update Plugin",
+      "errorDescription": "An unexpected error occurred"
+    }
+  },
+  "actions": {
+    "backToPlugins": "Back to Plugins"
+  }
+}

@@ -10,6 +10,7 @@ import {
   toastError
 } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
+import { useTranslation } from '../hooks/useTranslation';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import {
   GET_FORM_PLUGIN,
@@ -26,6 +27,7 @@ import { QuizGradingPluginConfig } from '../components/plugins/config/quiz/QuizG
  * Unified page for configuring all plugin types (Email, Webhook, Slack, etc.)
  */
 const PluginConfiguration: React.FC = () => {
+  const { t } = useTranslation('pluginConfiguration');
   const { formId, pluginId, pluginType } = useParams<{
     formId: string;
     pluginId?: string;
@@ -73,14 +75,14 @@ const PluginConfiguration: React.FC = () => {
       });
 
       toastSuccess(
-        'Plugin Created',
-        `"${data.name}" has been created successfully`
+        t('toasts.pluginCreated.title'),
+        t('toasts.pluginCreated.description', { values: { name: data.name } })
       );
 
       // Navigate back to plugins page
       navigate(`/dashboard/form/${formId}/plugins`);
     } catch (error: any) {
-      toastError('Failed to Create Plugin', error.message || 'An unexpected error occurred');
+      toastError(t('toasts.pluginCreated.error'), error.message || t('toasts.pluginCreated.errorDescription'));
     } finally {
       setIsSaving(false);
     }
@@ -110,14 +112,14 @@ const PluginConfiguration: React.FC = () => {
       });
 
       toastSuccess(
-        'Plugin Updated',
-        `"${data.name}" has been updated successfully`
+        t('toasts.pluginUpdated.title'),
+        t('toasts.pluginUpdated.description', { values: { name: data.name } })
       );
 
       // Navigate back to plugins page
       navigate(`/dashboard/form/${formId}/plugins`);
     } catch (error: any) {
-      toastError('Failed to Update Plugin', error.message || 'An unexpected error occurred');
+      toastError(t('toasts.pluginUpdated.error'), error.message || t('toasts.pluginUpdated.errorDescription'));
     } finally {
       setIsSaving(false);
     }
@@ -128,11 +130,11 @@ const PluginConfiguration: React.FC = () => {
   if (formLoading || (pluginId && pluginLoading)) {
     return (
       <MainLayout
-        title="Configure Plugin"
+        title={t('layout.title')}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Plugins', href: `/dashboard/form/${formId}/plugins` },
-          { label: 'Configure', href: '#' },
+          { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
+          { label: t('layout.breadcrumbs.plugins'), href: `/dashboard/form/${formId}/plugins` },
+          { label: t('layout.breadcrumbs.configure'), href: '#' },
         ]}
       >
         <div className="flex justify-center items-center min-h-96">
@@ -145,19 +147,19 @@ const PluginConfiguration: React.FC = () => {
   if (formError || !formData?.form) {
     return (
       <MainLayout
-        title="Configure Plugin"
+        title={t('layout.title')}
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Plugins', href: `/dashboard/form/${formId}/plugins` },
-          { label: 'Configure', href: '#' },
+          { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
+          { label: t('layout.breadcrumbs.plugins'), href: `/dashboard/form/${formId}/plugins` },
+          { label: t('layout.breadcrumbs.configure'), href: '#' },
         ]}
       >
         <div className="max-w-4xl mx-auto px-4 py-12">
           <Card className="p-8 text-center">
             <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-            <h3 className="mb-2 text-xl font-semibold">Form Not Found</h3>
+            <h3 className="mb-2 text-xl font-semibold">{t('errors.formNotFound.title')}</h3>
             <p className="text-slate-600">
-              The form you're looking for doesn't exist or you don't have permission to configure plugins.
+              {t('errors.formNotFound.description')}
             </p>
           </Card>
         </div>
@@ -212,14 +214,14 @@ const PluginConfiguration: React.FC = () => {
             <CardContent className="p-12 text-center">
               <AlertCircle className="mx-auto h-12 w-12 text-orange-500 mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Unknown Plugin Type
+                {t('errors.unknownPluginType.title')}
               </h3>
               <p className="text-gray-600 mb-6">
-                The plugin type "{currentPluginType}" is not recognized.
+                {t('errors.unknownPluginType.description', { values: { pluginType: currentPluginType } })}
               </p>
               <Button onClick={() => navigate(`/dashboard/form/${formId}/plugins`)}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Plugins
+                {t('actions.backToPlugins')}
               </Button>
             </CardContent>
           </Card>
@@ -229,12 +231,17 @@ const PluginConfiguration: React.FC = () => {
 
   return (
     <MainLayout
-      title={`${mode === 'edit' ? 'Edit' : 'Configure'} ${currentPluginType ? currentPluginType.charAt(0).toUpperCase() + currentPluginType.slice(1) : 'Plugin'}`}
+      title={t('layout.dynamicTitle', { 
+        values: { 
+          mode: mode === 'edit' ? t('layout.breadcrumbs.edit') : t('layout.breadcrumbs.configure'),
+          pluginType: currentPluginType ? currentPluginType.charAt(0).toUpperCase() + currentPluginType.slice(1) : t('layout.pluginFallback')
+        }
+      })}
       breadcrumbs={[
-        { label: 'Dashboard', href: '/dashboard' },
+        { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
         { label: form.title, href: `/dashboard/form/${formId}` },
-        { label: 'Plugins', href: `/dashboard/form/${formId}/plugins` },
-        { label: mode === 'edit' ? 'Edit' : 'Configure', href: '#' },
+        { label: t('layout.breadcrumbs.plugins'), href: `/dashboard/form/${formId}/plugins` },
+        { label: mode === 'edit' ? t('layout.breadcrumbs.edit') : t('layout.breadcrumbs.configure'), href: '#' },
       ]}
     >
       <div className="max-w-4xl mx-auto px-4 py-8">
