@@ -1,0 +1,16 @@
+{
+  "activeOrganization": "Active Organization",
+  "organizationsLabel": "Organizations", 
+  "addOrganization": "Add Organization",
+  "switchSuccess": {
+    "title": "Organization switched",
+    "message": "You are now working in the new organization"
+  },
+  "switchError": {
+    "title": "Failed to switch organization"
+  },
+  "comingSoon": {
+    "title": "Coming soon",
+    "message": "Organization creation will be available soon"
+  }
+}

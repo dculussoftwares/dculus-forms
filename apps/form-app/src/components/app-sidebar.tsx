@@ -11,27 +11,29 @@ import {
   SidebarHeader,
   SidebarRail,
 } from '@dculus/ui';
+import { useTranslation } from '../hooks/useTranslation';
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { t } = useTranslation('appSidebar');
   const navMainItems = useMemo(
     () => [
       {
-        title: 'Dashboard',
+        title: t('navigation.dashboard'),
         url: '/dashboard',
         icon: LayoutDashboard,
       },
       {
-        title: 'Templates',
+        title: t('navigation.templates'),
         url: '/dashboard/templates',
         icon: Layers,
       },
       {
-        title: 'Settings',
+        title: t('navigation.settings'),
         url: '/settings',
         icon: Settings,
       },
     ],
-    [],
+    [t],
   );
 
   return (

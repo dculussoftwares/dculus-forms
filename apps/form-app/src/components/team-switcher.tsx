@@ -18,6 +18,7 @@ import {
   toastError,
 } from '@dculus/ui';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from '../hooks/useTranslation';
 
 const GET_USER_ORGANIZATIONS = gql`
   query GetUserOrganizations {
@@ -47,6 +48,7 @@ const SET_ACTIVE_ORGANIZATION = gql`
 export function TeamSwitcher() {
   const { isMobile } = useSidebar();
   const { activeOrganization } = useAuth();
+  const { t } = useTranslation('teamSwitcher');
   const [isLoading, setIsLoading] = useState(false);
 
   // Query user's organizations
@@ -59,11 +61,11 @@ export function TeamSwitcher() {
     refetchQueries: ['ActiveOrganization'],
     onCompleted: () => {
       setIsLoading(false);
-      toastSuccess('Organization switched', 'You are now working in the new organization');
+      toastSuccess(t('switchSuccess.title'), t('switchSuccess.message'));
     },
     onError: (error) => {
       setIsLoading(false);
-      toastError('Failed to switch organization', error.message);
+      toastError(t('switchError.title'), error.message);
     },
   });
 
@@ -109,7 +111,7 @@ export function TeamSwitcher() {
                 <span className="truncate font-semibold">
                   {activeOrganization.name}
                 </span>
-                <span className="truncate text-xs">Active Organization</span>
+                <span className="truncate text-xs">{t('activeOrganization')}</span>
               </div>
               <ChevronsUpDown className="ml-auto" />
             </SidebarMenuButton>
@@ -121,7 +123,7 @@ export function TeamSwitcher() {
             sideOffset={4}
           >
             <DropdownMenuLabel className="text-xs text-muted-foreground">
-              Organizations
+              {t('organizationsLabel')}
             </DropdownMenuLabel>
             {organizations.map((org: any, index: number) => (
               <DropdownMenuItem
@@ -152,14 +154,14 @@ export function TeamSwitcher() {
               className="gap-2 p-2"
               onClick={() => {
                 // TODO: Navigate to create organization page
-                toastError('Coming soon', 'Organization creation will be available soon');
+                toastError(t('comingSoon.title'), t('comingSoon.message'));
               }}
             >
               <div className="flex size-6 items-center justify-center rounded-md border bg-background">
                 <Plus className="size-4" />
               </div>
               <div className="font-medium text-muted-foreground">
-                Add Organization
+                {t('addOrganization')}
               </div>
             </DropdownMenuItem>
           </DropdownMenuContent>

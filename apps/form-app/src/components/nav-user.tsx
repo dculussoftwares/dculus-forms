@@ -26,19 +26,21 @@ import {
 } from '@dculus/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { signOut } from '../lib/auth-client';
+import { useTranslation } from '../hooks/useTranslation';
 
 export function NavUser() {
   const { isMobile } = useSidebar();
   const { user } = useAuth();
+  const { t } = useTranslation('navUser');
 
   const handleLogout = async () => {
     try {
       await signOut();
-      toastSuccess('Signed out successfully', 'You have been signed out of your account');
+      toastSuccess(t('signOut.success.title'), t('signOut.success.message'));
       window.location.href = '/signin';
     } catch (error) {
       console.error('Logout error:', error);
-      toastError('Sign out failed', 'There was an error signing you out. Please try again.');
+      toastError(t('signOut.error.title'), t('signOut.error.message'));
     }
   };
 
@@ -54,8 +56,8 @@ export function NavUser() {
 
   // Use authenticated user data or fallback to default
   const userData = {
-    name: user?.name || 'Guest User',
-    email: user?.email || 'guest@example.com',
+    name: user?.name || t('userInfo.guestUser'),
+    email: user?.email || t('userInfo.guestEmail'),
     avatar: user?.image || 'https://github.com/shadcn.png',
   };
 
@@ -105,28 +107,28 @@ export function NavUser() {
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <Sparkles />
-                Upgrade to Pro
+                {t('menu.upgradeToPro')}
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <BadgeCheck />
-                Account
+                {t('menu.account')}
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <CreditCard />
-                Billing
+                {t('menu.billing')}
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <Bell />
-                Notifications
+                {t('menu.notifications')}
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut />
-              Log out
+              {t('menu.logout')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

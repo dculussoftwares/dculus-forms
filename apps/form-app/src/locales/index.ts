@@ -56,6 +56,9 @@ import enHeader from './en/header.json';
 import enCreateFormPopover from './en/createFormPopover.json';
 import enUserProfileMenu from './en/userProfileMenu.json';
 import enNavMain from './en/navMain.json';
+import enTeamSwitcher from './en/teamSwitcher.json';
+import enNavUser from './en/navUser.json';
+import enAppSidebar from './en/appSidebar.json';
 
 export const translations = {
   en: {
@@ -117,6 +120,9 @@ export const translations = {
     createFormPopover: enCreateFormPopover,
     userProfileMenu: enUserProfileMenu,
     navMain: enNavMain,
+    teamSwitcher: enTeamSwitcher,
+    navUser: enNavUser,
+    appSidebar: enAppSidebar,
   },
 } as const;
 
