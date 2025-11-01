@@ -1,7 +1,9 @@
 import { useFormPermission, PermissionLevel } from '../contexts/FormPermissionContext';
+import { useTranslation } from './useTranslation';
 
 export const useFormPermissions = () => {
   const permission = useFormPermission();
+  const { t } = useTranslation('permissions');
 
   // Permission checking utilities
   const hasPermission = (requiredLevel: PermissionLevel): boolean => {
@@ -36,26 +38,26 @@ export const useFormPermissions = () => {
   const getPermissionMessage = (): string => {
     switch (permission.userPermission) {
       case 'VIEWER':
-        return 'You have view-only access to this form. Contact the form owner to request editing permissions.';
+        return t('messages.viewerAccess');
       case 'EDITOR':
-        return 'You can edit this form but cannot delete it or manage sharing settings.';
+        return t('messages.editorAccess');
       case 'OWNER':
-        return 'You have full control over this form.';
+        return t('messages.ownerAccess');
       default:
-        return 'You do not have access to this form.';
+        return t('messages.noAccessToForm');
     }
   };
 
   const getPermissionLabel = (): string => {
     switch (permission.userPermission) {
       case 'VIEWER':
-        return 'View Only';
+        return t('roles.viewer');
       case 'EDITOR':
-        return 'Editor';
+        return t('roles.editor');
       case 'OWNER':
-        return 'Owner';
+        return t('roles.owner');
       default:
-        return 'No Access';
+        return t('roles.noAccess');
     }
   };
 

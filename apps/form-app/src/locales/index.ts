@@ -39,6 +39,7 @@ import enEmptyFormState from './en/emptyFormState.json';
 import enEmptyDropZone from './en/emptyDropZone.json';
 import enJsonPreview from './en/jsonPreview.json';
 import enAddFieldPopover from './en/addFieldPopover.json';
+import enPermissions from './en/permissions.json';
 
 export const translations = {
   en: {
@@ -83,6 +84,7 @@ export const translations = {
     emptyDropZone: enEmptyDropZone,
     jsonPreview: enJsonPreview,
     addFieldPopover: enAddFieldPopover,
+    permissions: enPermissions,
   },
 } as const;
 

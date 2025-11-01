@@ -1,0 +1,14 @@
+{
+  "roles": {
+    "viewer": "View Only",
+    "editor": "Editor", 
+    "owner": "Owner",
+    "noAccess": "No Access"
+  },
+  "messages": {
+    "noAccessToForm": "You do not have access to this form.",
+    "viewerAccess": "You have view-only access to this form. Contact the form owner to request editing permissions.",
+    "editorAccess": "You can edit this form but cannot delete it or manage sharing settings.",
+    "ownerAccess": "You have full control over this form."
+  }
+}
