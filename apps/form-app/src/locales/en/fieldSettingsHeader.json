@@ -1,0 +1,17 @@
+{
+  "fieldTypes": {
+    "shortText": "Short Text",
+    "longText": "Long Text",
+    "email": "Email",
+    "number": "Number",
+    "dropdown": "Dropdown",
+    "radio": "Radio",
+    "checkbox": "Checkbox",
+    "date": "Date",
+    "formField": "Form Field"
+  },
+  "header": {
+    "settings": "Settings",
+    "configure": "Configure field properties and validation"
+  }
+}

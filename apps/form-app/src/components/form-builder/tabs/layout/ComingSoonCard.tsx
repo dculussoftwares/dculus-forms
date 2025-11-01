@@ -32,7 +32,7 @@ export const ComingSoonCard: React.FC<ComingSoonCardProps> = ({
         </p>
 
         <div className={`grid grid-cols-${isSmall ? '1' : '2 md:grid-cols-3'} gap-${isSmall ? '1' : '2'} text-xs`}>
-          {features.map((feature, index) => (
+          {Array.isArray(features) && features.map((feature, index) => (
             <div key={index} className="flex items-center space-x-1">
               <div className="w-1 h-1 bg-purple-400 rounded-full" />
               <span className="text-gray-600 dark:text-gray-400">{feature}</span>

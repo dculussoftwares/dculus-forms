@@ -1,8 +1,10 @@
 import React from 'react';
-import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { Settings, Cog, Info } from 'lucide-react';
+import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
+import { useTranslation } from '../../../hooks';
 
 export const SettingsTab: React.FC = () => {
+  const { t } = useTranslation('settingsTab');
   const { pages, isShuffleEnabled, isConnected } = useFormBuilderStore();
 
   return (
@@ -14,10 +16,10 @@ export const SettingsTab: React.FC = () => {
         </div>
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Form Settings
+            {t('header.title')}
           </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Configure form behavior and options
+            {t('header.description')}
           </p>
         </div>
       </div>
@@ -33,11 +35,11 @@ export const SettingsTab: React.FC = () => {
               </div>
               
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                Settings Panel Coming Soon
+                {t('comingSoon.title')}
               </h3>
               
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Advanced form settings and configuration options will be available here.
+                {t('comingSoon.description')}
               </p>
 
               {/* Current Settings Info */}
@@ -45,24 +47,24 @@ export const SettingsTab: React.FC = () => {
                 <div className="flex items-center space-x-2 mb-3">
                   <Info className="w-4 h-4 text-blue-500" />
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    Current Form State
+                    {t('currentState.title')}
                   </span>
                 </div>
                 <div className="space-y-2 text-sm text-left">
                   <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Total Pages:</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t('currentState.totalPages')}:</span>
                     <span className="text-gray-900 dark:text-white">{pages.length}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Shuffle Enabled:</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t('currentState.shuffleEnabled')}:</span>
                     <span className="text-gray-900 dark:text-white">
-                      {isShuffleEnabled ? 'Yes' : 'No'}
+                      {isShuffleEnabled ? t('currentState.yes') : t('currentState.no')}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Total Fields:</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t('currentState.totalFields')}:</span>
                     <span className="text-gray-900 dark:text-white">
-                      {pages.reduce((total, page) => total + page.fields.length, 0)}
+                      {pages.reduce((total: number, page: any) => total + page.fields.length, 0)}
                     </span>
                   </div>
                 </div>

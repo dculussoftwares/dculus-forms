@@ -1,6 +1,7 @@
 import React from 'react';
 import { Type } from 'lucide-react';
 import { FormField, FieldType } from '@dculus/types';
+import { useTranslation } from '../../../hooks';
 
 const FIELD_ICONS: Partial<Record<FieldType, React.ReactNode>> = {
   [FieldType.TEXT_INPUT_FIELD]: <Type className="w-4 h-4" />,
@@ -14,17 +15,17 @@ const FIELD_ICONS: Partial<Record<FieldType, React.ReactNode>> = {
   [FieldType.FORM_FIELD]: <Type className="w-4 h-4" />,
 };
 
-const FIELD_TYPE_LABELS: Partial<Record<FieldType, string>> = {
-  [FieldType.TEXT_INPUT_FIELD]: 'Short Text',
-  [FieldType.TEXT_AREA_FIELD]: 'Long Text',
-  [FieldType.EMAIL_FIELD]: 'Email',
-  [FieldType.NUMBER_FIELD]: 'Number',
-  [FieldType.SELECT_FIELD]: 'Dropdown',
-  [FieldType.RADIO_FIELD]: 'Radio',
-  [FieldType.CHECKBOX_FIELD]: 'Checkbox',
-  [FieldType.DATE_FIELD]: 'Date',
-  [FieldType.FORM_FIELD]: 'Form Field',
-};
+const getFieldTypeLabels = (t: any) => ({
+  [FieldType.TEXT_INPUT_FIELD]: t('fieldTypes.shortText'),
+  [FieldType.TEXT_AREA_FIELD]: t('fieldTypes.longText'),
+  [FieldType.EMAIL_FIELD]: t('fieldTypes.email'),
+  [FieldType.NUMBER_FIELD]: t('fieldTypes.number'),
+  [FieldType.SELECT_FIELD]: t('fieldTypes.dropdown'),
+  [FieldType.RADIO_FIELD]: t('fieldTypes.radio'),
+  [FieldType.CHECKBOX_FIELD]: t('fieldTypes.checkbox'),
+  [FieldType.DATE_FIELD]: t('fieldTypes.date'),
+  [FieldType.FORM_FIELD]: t('fieldTypes.formField'),
+});
 
 interface FieldSettingsHeaderProps {
   field: FormField;
@@ -32,6 +33,9 @@ interface FieldSettingsHeaderProps {
 }
 
 export const FieldSettingsHeader: React.FC<FieldSettingsHeaderProps> = ({ field, isDirty }) => {
+  const { t } = useTranslation('fieldSettingsHeader');
+  const fieldTypeLabels = getFieldTypeLabels(t);
+  
   return (
     <div className={`flex-shrink-0 border-b border-gray-200 dark:border-gray-700 p-4 transition-colors duration-200 ${
       isDirty 
@@ -45,10 +49,10 @@ export const FieldSettingsHeader: React.FC<FieldSettingsHeaderProps> = ({ field,
           </div>
           <div>
             <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-              {FIELD_TYPE_LABELS[field.type] || 'Field'} Settings
+              {(fieldTypeLabels as any)[field.type] || 'Field'} {t('header.settings')}
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Configure field properties and validation
+              {t('header.configure')}
             </p>
           </div>
         </div>

@@ -1,0 +1,18 @@
+{
+  "header": {
+    "title": "Form Settings",
+    "description": "Configure form behavior and options"
+  },
+  "comingSoon": {
+    "title": "Settings Panel Coming Soon",
+    "description": "Advanced form settings and configuration options will be available here."
+  },
+  "currentState": {
+    "title": "Current Form State",
+    "totalPages": "Total Pages:",
+    "shuffleEnabled": "Shuffle Enabled:",
+    "totalFields": "Total Fields:",
+    "yes": "Yes",
+    "no": "No"
+  }
+}

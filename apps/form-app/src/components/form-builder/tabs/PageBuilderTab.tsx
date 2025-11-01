@@ -5,6 +5,7 @@ import {
 } from '@dnd-kit/sortable';
 import { ScrollArea } from '@dculus/ui';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
+import { useTranslation } from '../../../hooks';
 import { FieldTypesPanel } from '../FieldTypesPanel';
 import { PagesSidebar } from '../PagesSidebar';
 import { DroppablePage } from '../DroppablePage';
@@ -27,6 +28,7 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
   onFieldUpdate,
   onFieldDeselect,
 }) => {
+  const { t } = useTranslation('pageBuilderTab');
   const {
     pages,
     layout,
@@ -91,7 +93,7 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
             ) : (
               <div className="flex items-center justify-center h-full">
                 <p className="text-gray-600 dark:text-gray-400">
-                  Select a page to start editing
+                  {t('noPageSelected')}
                 </p>
               </div>
             )}

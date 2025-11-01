@@ -44,6 +44,9 @@ import enPageSelector from './en/pageSelector.json';
 import enPageThumbnailsSidebar from './en/pageThumbnailsSidebar.json';
 import enEmptyStates from './en/emptyStates.json';
 import enConfirmationDialog from './en/confirmationDialog.json';
+import enSettingsTab from './en/settingsTab.json';
+import enPageBuilderTab from './en/pageBuilderTab.json';
+import enFieldSettingsHeader from './en/fieldSettingsHeader.json';
 
 export const translations = {
   en: {
@@ -93,6 +96,9 @@ export const translations = {
     pageThumbnailsSidebar: enPageThumbnailsSidebar,
     emptyStates: enEmptyStates,
     confirmationDialog: enConfirmationDialog,
+    settingsTab: enSettingsTab,
+    pageBuilderTab: enPageBuilderTab,
+    fieldSettingsHeader: enFieldSettingsHeader,
   },
 } as const;
 
