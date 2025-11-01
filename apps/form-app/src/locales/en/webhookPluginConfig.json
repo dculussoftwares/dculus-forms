@@ -1,0 +1,61 @@
+{
+  "header": {
+    "titleCreate": "Configure Webhook",
+    "titleEdit": "Edit Webhook",
+    "description": "Send HTTP POST requests to external services when form events occur"
+  },
+  "basicInformation": {
+    "title": "Basic Information",
+    "name": {
+      "label": "Plugin Name",
+      "placeholder": "e.g., Send to Zapier, API Integration",
+      "required": "Plugin name is required",
+      "hint": "A descriptive name to identify this webhook"
+    },
+    "url": {
+      "label": "Webhook URL",
+      "placeholder": "https://example.com/webhook",
+      "required": "Webhook URL is required",
+      "invalid": "Please enter a valid URL",
+      "hint": "The endpoint that will receive POST requests"
+    },
+    "secret": {
+      "label": "Signing Secret (Optional)",
+      "placeholder": "Enter secret for HMAC signature",
+      "hint": "If provided, requests will include an HMAC signature header for verification"
+    }
+  },
+  "customHeaders": {
+    "title": "Custom Headers",
+    "description": "Add custom HTTP headers to your webhook requests",
+    "keyPlaceholder": "Header name (e.g., X-API-Key)",
+    "valuePlaceholder": "Header value",
+    "addButton": "Add Header",
+    "empty": "No custom headers added"
+  },
+  "triggerEvents": {
+    "title": "Trigger Events",
+    "description": "Select when this webhook should be triggered",
+    "formSubmitted": {
+      "label": "Form Submitted",
+      "description": "Triggered when a user submits a response"
+    },
+    "testEvent": {
+      "label": "Test Event",
+      "description": "Manual test trigger"
+    },
+    "validation": "Please select at least one event"
+  },
+  "actions": {
+    "cancel": "Cancel",
+    "create": "Create Plugin",
+    "update": "Update Plugin"
+  },
+  "validation": {
+    "noEvents": "Please select at least one event"
+  },
+  "toasts": {
+    "validationErrorTitle": "Validation Error"
+  },
+  "required": "*"
+}

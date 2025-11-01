@@ -1,0 +1,64 @@
+{
+  "header": {
+    "titleCreate": "Configure Email Notification",
+    "titleEdit": "Edit Email Notification",
+    "description": "Send custom email notifications when form events occur. Use @ mentions to include form data in your message."
+  },
+  "fields": {
+    "name": {
+      "label": "Plugin Name",
+      "placeholder": "e.g., Notify Team, Admin Alert",
+      "required": "Plugin name is required"
+    },
+    "recipientEmail": {
+      "label": "Recipient Email",
+      "placeholder": "admin@example.com",
+      "required": "Recipient email is required",
+      "invalid": "Invalid email address",
+      "hint": "Email address to receive notifications"
+    },
+    "subject": {
+      "label": "Email Subject",
+      "placeholder": "New Form Submission",
+      "required": "Email subject is required"
+    },
+    "message": {
+      "label": "Email Message",
+      "placeholder": "Enter your email message here...",
+      "hintStart": "This message will be sent via email. You can use rich formatting including <strong>bold</strong>, <em>italic</em>, headings, lists, quotes, and links.",
+      "hintWithFields": " Type <strong>@</strong> to mention form fields ({{count}} available) and reference user responses.",
+      "hintWithoutFields": " Add some fields to your form to enable @ mentions for personalizing messages."
+    },
+    "triggerEvents": {
+      "label": "Trigger Events",
+      "formSubmitted": {
+        "label": "Form Submitted",
+        "description": "Triggered when a user submits a response"
+      },
+      "testEvent": {
+        "label": "Test Event",
+        "description": "Manual test trigger"
+      },
+      "validation": "Please select at least one event"
+    }
+  },
+  "actions": {
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "validation": {
+    "noEvents": "Please select at least one event",
+    "noMessage": "Please enter an email message"
+  },
+  "toasts": {
+    "validationErrorTitle": "Validation Error",
+    "createSuccessTitle": "Email Plugin Created",
+    "createSuccessMessage": "\"{{name}}\" has been created successfully",
+    "updateSuccessTitle": "Email Plugin Updated",
+    "updateSuccessMessage": "\"{{name}}\" has been updated successfully",
+    "createErrorTitle": "Failed to Create Email Plugin",
+    "updateErrorTitle": "Failed to Update Email Plugin",
+    "unexpectedError": "An unexpected error occurred"
+  },
+  "required": "*"
+}

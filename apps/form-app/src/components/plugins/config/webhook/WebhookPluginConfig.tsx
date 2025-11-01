@@ -13,6 +13,7 @@ import {
   toastError,
 } from '@dculus/ui';
 import { Webhook, Loader2, Save, X, Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from '../../../../hooks/useTranslation';
 
 interface WebhookConfig {
   url: string;
@@ -42,19 +43,6 @@ interface CustomHeader {
   value: string;
 }
 
-const AVAILABLE_EVENTS = [
-  {
-    id: 'form.submitted',
-    label: 'Form Submitted',
-    description: 'Triggered when a user submits a response',
-  },
-  {
-    id: 'plugin.test',
-    label: 'Test Event',
-    description: 'Manual test trigger',
-  },
-];
-
 export const WebhookPluginConfig: React.FC<WebhookPluginConfigProps> = ({
   initialData,
   mode,
@@ -62,6 +50,7 @@ export const WebhookPluginConfig: React.FC<WebhookPluginConfigProps> = ({
   onSave,
   onCancel,
 }) => {
+  const { t } = useTranslation('webhookPluginConfig');
   const [customHeaders, setCustomHeaders] = useState<CustomHeader[]>(
     initialData?.config?.headers
       ? Object.entries(initialData.config.headers).map(([key, value]) => ({
@@ -134,7 +123,7 @@ export const WebhookPluginConfig: React.FC<WebhookPluginConfigProps> = ({
 
   const onSubmit = async (data: any) => {
     if (selectedEvents.length === 0) {
-      toastError('Validation Error', 'Please select at least one event');
+      toastError(t('toasts.validationErrorTitle'), t('validation.noEvents'));
       return;
     }
 
@@ -169,10 +158,10 @@ export const WebhookPluginConfig: React.FC<WebhookPluginConfigProps> = ({
             </div>
             <div>
               <CardTitle>
-                {mode === 'create' ? 'Configure Webhook' : 'Edit Webhook'}
+                {mode === 'create' ? t('header.titleCreate') : t('header.titleEdit')}
               </CardTitle>
               <CardDescription>
-                Send HTTP POST requests to external URLs when form events occur
+                {t('header.description')}
               </CardDescription>
             </div>
           </div>
@@ -182,38 +171,41 @@ export const WebhookPluginConfig: React.FC<WebhookPluginConfigProps> = ({
       {/* Basic Information */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Basic Information</CardTitle>
+          <CardTitle className="text-lg">{t('basicInformation.title')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Plugin Name */}
           <div className="space-y-2">
             <Label htmlFor="name">
-              Plugin Name <span className="text-red-500">*</span>
+              {t('basicInformation.name.label')} <span className="text-red-500">{t('required')}</span>
             </Label>
             <Input
               id="name"
-              placeholder="e.g., CRM Integration, Slack Notification"
-              {...register('name', { required: 'Plugin name is required' })}
+              placeholder={t('basicInformation.name.placeholder')}
+              {...register('name', { required: t('basicInformation.name.required') })}
             />
             {errors.name && (
               <p className="text-sm text-red-500">{errors.name.message}</p>
             )}
+            <p className="text-xs text-gray-500">
+              {t('basicInformation.name.hint')}
+            </p>
           </div>
 
           {/* Webhook URL */}
           <div className="space-y-2">
             <Label htmlFor="url">
-              Webhook URL <span className="text-red-500">*</span>
+              {t('basicInformation.url.label')} <span className="text-red-500">{t('required')}</span>
             </Label>
             <Input
               id="url"
               type="url"
-              placeholder="https://example.com/webhook"
+              placeholder={t('basicInformation.url.placeholder')}
               {...register('url', {
-                required: 'Webhook URL is required',
+                required: t('basicInformation.url.required'),
                 pattern: {
                   value: /^https:\/\/.+/,
-                  message: 'URL must start with https://',
+                  message: t('basicInformation.url.invalid'),
                 },
               })}
             />
@@ -221,21 +213,21 @@ export const WebhookPluginConfig: React.FC<WebhookPluginConfigProps> = ({
               <p className="text-sm text-red-500">{errors.url.message}</p>
             )}
             <p className="text-xs text-gray-500">
-              Only HTTPS URLs are allowed for security
+              {t('basicInformation.url.hint')}
             </p>
           </div>
 
           {/* Secret */}
           <div className="space-y-2">
-            <Label htmlFor="secret">Secret (Optional)</Label>
+            <Label htmlFor="secret">{t('basicInformation.secret.label')}</Label>
             <Input
               id="secret"
               type="password"
-              placeholder="Enter secret for HMAC signature"
+              placeholder={t('basicInformation.secret.placeholder')}
               {...register('secret')}
             />
             <p className="text-xs text-gray-500">
-              Used to generate HMAC-SHA256 signature in X-Webhook-Signature header
+              {t('basicInformation.secret.hint')}
             </p>
           </div>
         </CardContent>
@@ -244,16 +236,16 @@ export const WebhookPluginConfig: React.FC<WebhookPluginConfigProps> = ({
       {/* Custom Headers */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Custom Headers</CardTitle>
+          <CardTitle className="text-lg">{t('customHeaders.title')}</CardTitle>
           <CardDescription>
-            Add custom HTTP headers (e.g., API keys, authorization tokens)
+            {t('customHeaders.description')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {customHeaders.map((header, index) => (
             <div key={index} className="flex gap-2">
               <Input
-                placeholder="Header name (e.g., X-API-Key)"
+                placeholder={t('customHeaders.keyPlaceholder')}
                 value={header.key}
                 onChange={(e) =>
                   updateCustomHeader(index, 'key', e.target.value)
@@ -261,7 +253,7 @@ export const WebhookPluginConfig: React.FC<WebhookPluginConfigProps> = ({
                 className="flex-1"
               />
               <Input
-                placeholder="Header value"
+                placeholder={t('customHeaders.valuePlaceholder')}
                 value={header.value}
                 onChange={(e) =>
                   updateCustomHeader(index, 'value', e.target.value)
@@ -285,7 +277,7 @@ export const WebhookPluginConfig: React.FC<WebhookPluginConfigProps> = ({
             className="w-full"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Add Header
+            {t('customHeaders.addButton')}
           </Button>
         </CardContent>
       </Card>
@@ -293,33 +285,47 @@ export const WebhookPluginConfig: React.FC<WebhookPluginConfigProps> = ({
       {/* Events */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Trigger Events</CardTitle>
+          <CardTitle className="text-lg">{t('triggerEvents.title')}</CardTitle>
           <CardDescription>
-            Select when this webhook should be triggered
+            {t('triggerEvents.description')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {AVAILABLE_EVENTS.map((event) => (
-            <div key={event.id} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-              <Checkbox
-                id={event.id}
-                checked={selectedEvents.includes(event.id)}
-                onCheckedChange={() => toggleEvent(event.id)}
-              />
-              <div className="flex-1">
-                <Label
-                  htmlFor={event.id}
-                  className="font-medium cursor-pointer"
-                >
-                  {event.label}
-                </Label>
-                <p className="text-sm text-gray-500">{event.description}</p>
-              </div>
+          <div className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+            <Checkbox
+              id="form.submitted"
+              checked={selectedEvents.includes('form.submitted')}
+              onCheckedChange={() => toggleEvent('form.submitted')}
+            />
+            <div className="flex-1">
+              <Label
+                htmlFor="form.submitted"
+                className="font-medium cursor-pointer"
+              >
+                {t('triggerEvents.formSubmitted.label')}
+              </Label>
+              <p className="text-sm text-gray-500">{t('triggerEvents.formSubmitted.description')}</p>
             </div>
-          ))}
+          </div>
+          <div className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+            <Checkbox
+              id="plugin.test"
+              checked={selectedEvents.includes('plugin.test')}
+              onCheckedChange={() => toggleEvent('plugin.test')}
+            />
+            <div className="flex-1">
+              <Label
+                htmlFor="plugin.test"
+                className="font-medium cursor-pointer"
+              >
+                {t('triggerEvents.testEvent.label')}
+              </Label>
+              <p className="text-sm text-gray-500">{t('triggerEvents.testEvent.description')}</p>
+            </div>
+          </div>
           {selectedEvents.length === 0 && (
             <p className="text-sm text-red-500 mt-2">
-              Please select at least one event
+              {t('triggerEvents.validation')}
             </p>
           )}
         </CardContent>
@@ -334,12 +340,12 @@ export const WebhookPluginConfig: React.FC<WebhookPluginConfigProps> = ({
           disabled={isSaving}
         >
           <X className="h-4 w-4 mr-2" />
-          Cancel
+          {t('actions.cancel')}
         </Button>
         <Button type="submit" disabled={isSaving} className="bg-orange-600 hover:bg-orange-700">
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {!isSaving && <Save className="mr-2 h-4 w-4" />}
-          {mode === 'create' ? 'Create Webhook' : 'Update Webhook'}
+          {mode === 'create' ? t('actions.create') : t('actions.update')}
         </Button>
       </div>
     </form>

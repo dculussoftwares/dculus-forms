@@ -1,0 +1,33 @@
+{
+  "actions": {
+    "viewDeliveries": "View Deliveries",
+    "edit": "Edit",
+    "test": "Test",
+    "delete": "Delete"
+  },
+  "types": {
+    "email": "Email",
+    "webhook": "Webhook",
+    "slack": "Slack"
+  },
+  "testDialog": {
+    "title": "Test Plugin",
+    "description": "This will trigger the plugin with test data to verify it's working correctly.",
+    "testing": "Testing plugin...",
+    "successTitle": "Plugin Test Successful",
+    "successMessage": "\"{{name}}\" executed successfully",
+    "errorTitle": "Plugin Test Failed",
+    "cancel": "Cancel",
+    "test": "Test Plugin"
+  },
+  "deleteDialog": {
+    "title": "Delete Plugin",
+    "description": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+    "deleting": "Deleting...",
+    "successTitle": "Plugin Deleted",
+    "successMessage": "\"{{name}}\" has been deleted successfully",
+    "errorTitle": "Failed to Delete Plugin",
+    "cancel": "Cancel",
+    "delete": "Delete"
+  }
+}

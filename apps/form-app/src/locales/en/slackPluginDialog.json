@@ -1,0 +1,20 @@
+{
+  "header": {
+    "title": "Slack Integration",
+    "description": "Connect your forms to Slack"
+  },
+  "comingSoon": {
+    "title": "Coming Soon",
+    "message": "Slack integration is currently under development",
+    "features": {
+      "title": "Planned Features",
+      "channelPost": "Post form submissions to Slack channels",
+      "messageTemplate": "Customize message templates with form data",
+      "directMessages": "Send direct messages to team members",
+      "formatting": "Include rich formatting and attachments"
+    }
+  },
+  "actions": {
+    "close": "Close"
+  }
+}

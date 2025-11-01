@@ -1,0 +1,62 @@
+{
+  "header": {
+    "titleCreate": "Configure Email Notification",
+    "titleEdit": "Edit Email Notification",
+    "description": "Send custom email notifications when form events occur. Use @ mentions to include form data."
+  },
+  "basicInformation": {
+    "title": "Basic Information",
+    "name": {
+      "label": "Plugin Name",
+      "placeholder": "e.g., Notify Team, Admin Alert",
+      "required": "Plugin name is required",
+      "hint": "A descriptive name to identify this plugin"
+    },
+    "recipientEmail": {
+      "label": "Recipient Email",
+      "placeholder": "admin@example.com",
+      "required": "Recipient email is required",
+      "invalid": "Invalid email address",
+      "hint": "Email address to receive notifications"
+    },
+    "subject": {
+      "label": "Email Subject",
+      "placeholder": "New Form Submission",
+      "required": "Email subject is required"
+    }
+  },
+  "emailMessage": {
+    "title": "Email Message",
+    "description": "Compose your email message with rich formatting and @ mentions",
+    "label": "Message Content",
+    "placeholder": "Enter your email message here...",
+    "hintWithFields": "Use rich formatting including <strong>bold</strong>, <em>italic</em>, headings, lists, quotes, and links. Type <strong>@</strong> to mention form fields ({{count}} available) and reference user responses.",
+    "hintWithoutFields": "Use rich formatting including <strong>bold</strong>, <em>italic</em>, headings, lists, quotes, and links. Add some fields to your form to enable @ mentions for personalizing messages."
+  },
+  "triggerEvents": {
+    "title": "Trigger Events",
+    "description": "Select when this plugin should be triggered",
+    "formSubmitted": {
+      "label": "Form Submitted",
+      "description": "Triggered when a user submits a response"
+    },
+    "testEvent": {
+      "label": "Test Event",
+      "description": "Manual test trigger"
+    },
+    "validation": "Please select at least one event"
+  },
+  "actions": {
+    "cancel": "Cancel",
+    "create": "Create Plugin",
+    "update": "Update Plugin"
+  },
+  "validation": {
+    "noEvents": "Please select at least one event",
+    "noMessage": "Please enter an email message"
+  },
+  "toasts": {
+    "validationErrorTitle": "Validation Error"
+  },
+  "required": "*"
+}

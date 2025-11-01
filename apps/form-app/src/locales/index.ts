@@ -66,6 +66,13 @@ import enFormBuilder from './en/formBuilder.json';
 import enResponseHistory from './en/responseHistory.json';
 import enMetadataViewer from './en/metadataViewer.json';
 import enPerformanceMonitor from './en/performanceMonitor.json';
+import enEmailPluginConfig from './en/emailPluginConfig.json';
+import enEmailPluginDialog from './en/emailPluginDialog.json';
+import enWebhookPluginConfig from './en/webhookPluginConfig.json';
+import enWebhookPluginDialog from './en/webhookPluginDialog.json';
+import enSlackPluginDialog from './en/slackPluginDialog.json';
+import enPluginCard from './en/pluginCard.json';
+import enPluginDeliveryLog from './en/pluginDeliveryLog.json';
 
 export const translations = {
   en: {
@@ -137,6 +144,13 @@ export const translations = {
     responseHistory: enResponseHistory,
     metadataViewer: enMetadataViewer,
     performanceMonitor: enPerformanceMonitor,
+    emailPluginConfig: enEmailPluginConfig,
+    emailPluginDialog: enEmailPluginDialog,
+    webhookPluginConfig: enWebhookPluginConfig,
+    webhookPluginDialog: enWebhookPluginDialog,
+    slackPluginDialog: enSlackPluginDialog,
+    pluginCard: enPluginCard,
+    pluginDeliveryLog: enPluginDeliveryLog,
   },
 } as const;
 

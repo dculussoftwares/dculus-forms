@@ -1,0 +1,46 @@
+{
+  "header": {
+    "title": "Delivery History",
+    "subtitle": "{{pluginName}} - Recent deliveries and their status"
+  },
+  "status": {
+    "success": "Success",
+    "failed": "Failed",
+    "pending": "Pending",
+    "unknown": "Unknown"
+  },
+  "table": {
+    "timestamp": "Timestamp",
+    "event": "Event",
+    "status": "Status",
+    "details": "Details"
+  },
+  "responseDetails": {
+    "title": "Response Details",
+    "statusCode": "Status Code",
+    "headers": "Headers",
+    "body": "Body"
+  },
+  "errorDetails": {
+    "title": "Error Details",
+    "message": "Message",
+    "code": "Code"
+  },
+  "loading": {
+    "title": "Loading Deliveries...",
+    "message": "Please wait while we fetch the delivery history"
+  },
+  "error": {
+    "title": "Error Loading Deliveries",
+    "message": "Failed to load delivery history. Please try again.",
+    "retry": "Retry"
+  },
+  "empty": {
+    "title": "No Deliveries Yet",
+    "message": "This plugin hasn't been triggered yet. Deliveries will appear here once the plugin starts executing."
+  },
+  "actions": {
+    "close": "Close",
+    "viewDetails": "View Details"
+  }
+}

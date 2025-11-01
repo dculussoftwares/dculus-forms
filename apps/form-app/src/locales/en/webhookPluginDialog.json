@@ -1,0 +1,62 @@
+{
+  "header": {
+    "titleCreate": "Configure Webhook",
+    "titleEdit": "Edit Webhook",
+    "description": "Send HTTP POST requests to external services when form events occur"
+  },
+  "fields": {
+    "name": {
+      "label": "Plugin Name",
+      "placeholder": "e.g., Send to Zapier, API Integration",
+      "required": "Plugin name is required"
+    },
+    "url": {
+      "label": "Webhook URL",
+      "placeholder": "https://example.com/webhook",
+      "required": "Webhook URL is required",
+      "invalid": "Please enter a valid URL",
+      "hint": "The endpoint that will receive POST requests"
+    },
+    "secret": {
+      "label": "Signing Secret (Optional)",
+      "placeholder": "Enter secret for HMAC signature",
+      "hint": "If provided, requests will include an HMAC signature header"
+    },
+    "customHeaders": {
+      "label": "Custom Headers (Optional)",
+      "keyPlaceholder": "Header name (e.g., X-API-Key)",
+      "valuePlaceholder": "Header value",
+      "addButton": "Add Header"
+    },
+    "triggerEvents": {
+      "label": "Trigger Events",
+      "formSubmitted": {
+        "label": "Form Submitted",
+        "description": "Triggered when a user submits a response"
+      },
+      "testEvent": {
+        "label": "Test Event",
+        "description": "Manual test trigger"
+      },
+      "validation": "Please select at least one event"
+    }
+  },
+  "actions": {
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "validation": {
+    "noEvents": "Please select at least one event"
+  },
+  "toasts": {
+    "validationErrorTitle": "Validation Error",
+    "createSuccessTitle": "Webhook Created",
+    "createSuccessMessage": "\"{{name}}\" has been created successfully",
+    "updateSuccessTitle": "Webhook Updated",
+    "updateSuccessMessage": "\"{{name}}\" has been updated successfully",
+    "createErrorTitle": "Failed to Create Webhook",
+    "updateErrorTitle": "Failed to Update Webhook",
+    "unexpectedError": "An unexpected error occurred"
+  },
+  "required": "*"
+}

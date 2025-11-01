@@ -15,6 +15,7 @@ import {
 } from '@dculus/ui';
 import { Mail, Loader2, Save, X } from 'lucide-react';
 import { deserializeFormSchema, FillableFormField } from '@dculus/types';
+import { useTranslation } from '../../../../hooks/useTranslation';
 
 interface EmailConfig {
   recipientEmail: string;
@@ -39,19 +40,6 @@ interface EmailPluginConfigProps {
   }) => Promise<void>;
   onCancel: () => void;
 }
-
-const AVAILABLE_EVENTS = [
-  {
-    id: 'form.submitted',
-    label: 'Form Submitted',
-    description: 'Triggered when a user submits a response',
-  },
-  {
-    id: 'plugin.test',
-    label: 'Test Event',
-    description: 'Manual test trigger',
-  },
-];
 
 // Utility function to extract mention fields from form schema
 const extractMentionFields = (form: any) => {
@@ -87,6 +75,7 @@ export const EmailPluginConfig: React.FC<EmailPluginConfigProps> = ({
   onSave,
   onCancel,
 }) => {
+  const { t } = useTranslation('emailPluginConfig');
   const [message, setMessage] = useState(initialData?.config?.message || '');
   const [selectedEvents, setSelectedEvents] = useState<string[]>(
     initialData?.events || ['form.submitted']
@@ -130,12 +119,12 @@ export const EmailPluginConfig: React.FC<EmailPluginConfigProps> = ({
 
   const onSubmit = async (data: any) => {
     if (selectedEvents.length === 0) {
-      toastError('Validation Error', 'Please select at least one event');
+      toastError(t('toasts.validationErrorTitle'), t('validation.noEvents'));
       return;
     }
 
     if (!message || message === '<p></p>' || message === '<p class="editor-paragraph"><br></p>') {
-      toastError('Validation Error', 'Please enter an email message');
+      toastError(t('toasts.validationErrorTitle'), t('validation.noMessage'));
       return;
     }
 
@@ -162,10 +151,10 @@ export const EmailPluginConfig: React.FC<EmailPluginConfigProps> = ({
             </div>
             <div>
               <CardTitle>
-                {mode === 'create' ? 'Configure Email Notification' : 'Edit Email Notification'}
+                {mode === 'create' ? t('header.titleCreate') : t('header.titleEdit')}
               </CardTitle>
               <CardDescription>
-                Send custom email notifications when form events occur. Use @ mentions to include form data.
+                {t('header.description')}
               </CardDescription>
             </div>
           </div>
@@ -175,41 +164,41 @@ export const EmailPluginConfig: React.FC<EmailPluginConfigProps> = ({
       {/* Basic Information */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Basic Information</CardTitle>
+          <CardTitle className="text-lg">{t('basicInformation.title')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Plugin Name */}
           <div className="space-y-2">
             <Label htmlFor="name">
-              Plugin Name <span className="text-red-500">*</span>
+              {t('basicInformation.name.label')} <span className="text-red-500">{t('required')}</span>
             </Label>
             <Input
               id="name"
-              placeholder="e.g., Notify Team, Admin Alert"
-              {...register('name', { required: 'Plugin name is required' })}
+              placeholder={t('basicInformation.name.placeholder')}
+              {...register('name', { required: t('basicInformation.name.required') })}
             />
             {errors.name && (
               <p className="text-sm text-red-500">{errors.name.message}</p>
             )}
             <p className="text-xs text-gray-500">
-              A descriptive name to identify this plugin
+              {t('basicInformation.name.hint')}
             </p>
           </div>
 
           {/* Recipient Email */}
           <div className="space-y-2">
             <Label htmlFor="recipientEmail">
-              Recipient Email <span className="text-red-500">*</span>
+              {t('basicInformation.recipientEmail.label')} <span className="text-red-500">{t('required')}</span>
             </Label>
             <Input
               id="recipientEmail"
               type="email"
-              placeholder="admin@example.com"
+              placeholder={t('basicInformation.recipientEmail.placeholder')}
               {...register('recipientEmail', {
-                required: 'Recipient email is required',
+                required: t('basicInformation.recipientEmail.required'),
                 pattern: {
                   value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: 'Invalid email address',
+                  message: t('basicInformation.recipientEmail.invalid'),
                 },
               })}
             />
@@ -217,19 +206,19 @@ export const EmailPluginConfig: React.FC<EmailPluginConfigProps> = ({
               <p className="text-sm text-red-500">{errors.recipientEmail.message}</p>
             )}
             <p className="text-xs text-gray-500">
-              Email address to receive notifications
+              {t('basicInformation.recipientEmail.hint')}
             </p>
           </div>
 
           {/* Subject */}
           <div className="space-y-2">
             <Label htmlFor="subject">
-              Email Subject <span className="text-red-500">*</span>
+              {t('basicInformation.subject.label')} <span className="text-red-500">{t('required')}</span>
             </Label>
             <Input
               id="subject"
-              placeholder="New Form Submission"
-              {...register('subject', { required: 'Email subject is required' })}
+              placeholder={t('basicInformation.subject.placeholder')}
+              {...register('subject', { required: t('basicInformation.subject.required') })}
             />
             {errors.subject && (
               <p className="text-sm text-red-500">{errors.subject.message}</p>
@@ -241,35 +230,28 @@ export const EmailPluginConfig: React.FC<EmailPluginConfigProps> = ({
       {/* Email Message */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Email Message</CardTitle>
+          <CardTitle className="text-lg">{t('emailMessage.title')}</CardTitle>
           <CardDescription>
-            Compose your email message with rich formatting and @ mentions
+            {t('emailMessage.description')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="message">
-              Message Content <span className="text-red-500">*</span>
+              {t('emailMessage.label')} <span className="text-red-500">{t('required')}</span>
             </Label>
             <RichTextEditor
               value={message}
               onChange={setMessage}
-              placeholder="Enter your email message here..."
+              placeholder={t('emailMessage.placeholder')}
               className="w-full"
               mentionFields={mentionFields}
             />
-            <p className="text-xs text-gray-500">
-              Use rich formatting including <strong>bold</strong>, <em>italic</em>, headings, lists, quotes, and links.
-              {mentionFields.length > 0 ? (
-                <>
-                  {' '}Type <strong>@</strong> to mention form fields ({mentionFields.length} available) and reference user responses.
-                </>
-              ) : (
-                <>
-                  {' '}Add some fields to your form to enable @ mentions for personalizing messages.
-                </>
-              )}
-            </p>
+            <p className="text-xs text-gray-500" dangerouslySetInnerHTML={{ 
+              __html: mentionFields.length > 0 
+                ? t('emailMessage.hintWithFields', { values: { count: mentionFields.length } })
+                : t('emailMessage.hintWithoutFields')
+            }} />
           </div>
         </CardContent>
       </Card>
@@ -277,33 +259,47 @@ export const EmailPluginConfig: React.FC<EmailPluginConfigProps> = ({
       {/* Events */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Trigger Events</CardTitle>
+          <CardTitle className="text-lg">{t('triggerEvents.title')}</CardTitle>
           <CardDescription>
-            Select when this plugin should be triggered
+            {t('triggerEvents.description')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {AVAILABLE_EVENTS.map((event) => (
-            <div key={event.id} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-              <Checkbox
-                id={event.id}
-                checked={selectedEvents.includes(event.id)}
-                onCheckedChange={() => toggleEvent(event.id)}
-              />
-              <div className="flex-1">
-                <Label
-                  htmlFor={event.id}
-                  className="font-medium cursor-pointer"
-                >
-                  {event.label}
-                </Label>
-                <p className="text-sm text-gray-500">{event.description}</p>
-              </div>
+          <div className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+            <Checkbox
+              id="form.submitted"
+              checked={selectedEvents.includes('form.submitted')}
+              onCheckedChange={() => toggleEvent('form.submitted')}
+            />
+            <div className="flex-1">
+              <Label
+                htmlFor="form.submitted"
+                className="font-medium cursor-pointer"
+              >
+                {t('triggerEvents.formSubmitted.label')}
+              </Label>
+              <p className="text-sm text-gray-500">{t('triggerEvents.formSubmitted.description')}</p>
             </div>
-          ))}
+          </div>
+          <div className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+            <Checkbox
+              id="plugin.test"
+              checked={selectedEvents.includes('plugin.test')}
+              onCheckedChange={() => toggleEvent('plugin.test')}
+            />
+            <div className="flex-1">
+              <Label
+                htmlFor="plugin.test"
+                className="font-medium cursor-pointer"
+              >
+                {t('triggerEvents.testEvent.label')}
+              </Label>
+              <p className="text-sm text-gray-500">{t('triggerEvents.testEvent.description')}</p>
+            </div>
+          </div>
           {selectedEvents.length === 0 && (
             <p className="text-sm text-red-500 mt-2">
-              Please select at least one event
+              {t('triggerEvents.validation')}
             </p>
           )}
         </CardContent>
@@ -318,12 +314,12 @@ export const EmailPluginConfig: React.FC<EmailPluginConfigProps> = ({
           disabled={isSaving}
         >
           <X className="h-4 w-4 mr-2" />
-          Cancel
+          {t('actions.cancel')}
         </Button>
         <Button type="submit" disabled={isSaving} className="bg-blue-600 hover:bg-blue-700">
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {!isSaving && <Save className="mr-2 h-4 w-4" />}
-          {mode === 'create' ? 'Create Plugin' : 'Update Plugin'}
+          {mode === 'create' ? t('actions.create') : t('actions.update')}
         </Button>
       </div>
     </form>
