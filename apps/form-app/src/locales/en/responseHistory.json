@@ -1,0 +1,39 @@
+{
+  "editHistoryTimeline": {
+    "empty": {
+      "title": "No Edit History",
+      "description": "This response hasn't been edited yet. Any changes will appear here."
+    },
+    "badges": {
+      "latest": "Latest"
+    },
+    "buttons": {
+      "view": "View",
+      "show": "Show",
+      "hide": "Hide"
+    },
+    "labels": {
+      "reason": "Reason:",
+      "unknownTime": "Unknown time",
+      "unknownDate": "Unknown date",
+      "fieldChanges_one": "{{count}} field change",
+      "fieldChanges_other": "{{count}} field changes",
+      "modifiedFields_one": "Modified {{count}} field",
+      "modifiedFields_other": "Modified {{count}} fields"
+    }
+  },
+  "fieldChangeCard": {
+    "empty": "(empty)",
+    "yes": "Yes",
+    "no": "No",
+    "labels": {
+      "before": "Before",
+      "after": "After",
+      "addedValue": "Added Value",
+      "removedValue": "Removed Value",
+      "fieldId": "Field ID:",
+      "type": "Type:",
+      "chars": "{{count}} chars"
+    }
+  }
+}

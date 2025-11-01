@@ -63,6 +63,8 @@ import enUpgradeModal from './en/upgradeModal.json';
 import enAuthorizationError from './en/authorizationError.json';
 import enFormViewer from './en/formViewer.json';
 import enFormBuilder from './en/formBuilder.json';
+import enResponseHistory from './en/responseHistory.json';
+import enMetadataViewer from './en/metadataViewer.json';
 
 export const translations = {
   en: {
@@ -131,6 +133,8 @@ export const translations = {
     authorizationError: enAuthorizationError,
     formViewer: enFormViewer,
     formBuilder: enFormBuilder,
+    responseHistory: enResponseHistory,
+    metadataViewer: enMetadataViewer,
   },
 } as const;
 

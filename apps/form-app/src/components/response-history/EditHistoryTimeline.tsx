@@ -20,6 +20,7 @@ import {
   Eye
 } from 'lucide-react';
 import { FieldChangeCard } from './FieldChangeCard';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface EditHistoryTimelineProps {
   editHistory: ResponseEditHistory[];
@@ -32,6 +33,7 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
   onViewSnapshot,
   isLoading = false
 }) => {
+  const { t } = useTranslation('responseHistory');
   const [expandedEdits, setExpandedEdits] = useState<Set<string>>(new Set());
 
   const toggleExpanded = (editId: string) => {
@@ -105,9 +107,9 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
       <Card className="text-center py-12">
         <CardContent>
           <Edit3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Edit History</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{t('editHistoryTimeline.empty.title')}</h3>
           <p className="text-gray-500">
-            This response hasn't been edited yet. Any changes will appear here.
+            {t('editHistoryTimeline.empty.description')}
           </p>
         </CardContent>
       </Card>
@@ -162,7 +164,7 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
                       </Badge>
                       {isLatest && (
                         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                          Latest
+                          {t('editHistoryTimeline.badges.latest')}
                         </Badge>
                       )}
                     </div>
@@ -175,7 +177,7 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
                         className="text-gray-500 hover:text-gray-700"
                       >
                         <Eye className="h-4 w-4" />
-                        View
+                        {t('editHistoryTimeline.buttons.view')}
                       </Button>
                     </div>
                   </div>
@@ -186,14 +188,14 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
                     <span>
                       {edit.editedAt
                         ? formatDistanceToNow(new Date(edit.editedAt), { addSuffix: true })
-                        : 'Unknown time'
+                        : t('editHistoryTimeline.labels.unknownTime')
                       }
                     </span>
                     <span>•</span>
                     <span>
                       {edit.editedAt
                         ? format(new Date(edit.editedAt), 'MMM dd, yyyy \'at\' h:mm a')
-                        : 'Unknown date'
+                        : t('editHistoryTimeline.labels.unknownDate')
                       }
                     </span>
                   </div>
@@ -201,11 +203,11 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
                   {/* Changes Summary */}
                   <div className="mb-3">
                     <p className="text-gray-700">
-                      {edit.changesSummary || `Modified ${edit.totalChanges} field${edit.totalChanges !== 1 ? 's' : ''}`}
+                      {edit.changesSummary || t('editHistoryTimeline.labels.modifiedFields', { values: { count: edit.totalChanges } })}
                     </p>
                     {edit.editReason && (
                       <p className="text-sm text-gray-600 mt-1">
-                        <span className="font-medium">Reason:</span> {edit.editReason}
+                        <span className="font-medium">{t('editHistoryTimeline.labels.reason')}</span> {edit.editReason}
                       </p>
                     )}
                   </div>
@@ -224,7 +226,7 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
                         ) : (
                           <ChevronRight className="h-4 w-4 mr-1" />
                         )}
-                        {isExpanded ? 'Hide' : 'Show'} {edit.fieldChanges.length} field change{edit.fieldChanges.length !== 1 ? 's' : ''}
+                        {isExpanded ? t('editHistoryTimeline.buttons.hide') : t('editHistoryTimeline.buttons.show')} {t('editHistoryTimeline.labels.fieldChanges', { values: { count: edit.fieldChanges.length } })}
                       </Button>
 
                       {isExpanded && (

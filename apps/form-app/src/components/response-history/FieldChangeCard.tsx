@@ -19,6 +19,7 @@ import {
   Square,
   Type
 } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface FieldChangeCardProps {
   fieldChange: ResponseFieldChange;
@@ -27,6 +28,8 @@ interface FieldChangeCardProps {
 export const FieldChangeCard: React.FC<FieldChangeCardProps> = ({
   fieldChange
 }) => {
+  const { t } = useTranslation('responseHistory');
+  
   const getChangeTypeColor = (changeType: ChangeType) => {
     switch (changeType) {
       case ChangeType.ADD:
@@ -79,11 +82,11 @@ export const FieldChangeCard: React.FC<FieldChangeCardProps> = ({
 
   const formatValue = (value: any, fieldType: string): string => {
     if (value === null || value === undefined) {
-      return '(empty)';
+      return t('fieldChangeCard.empty');
     }
 
     if (Array.isArray(value)) {
-      return value.length > 0 ? value.join(', ') : '(empty)';
+      return value.length > 0 ? value.join(', ') : t('fieldChangeCard.empty');
     }
 
     if (typeof value === 'object') {
@@ -91,11 +94,11 @@ export const FieldChangeCard: React.FC<FieldChangeCardProps> = ({
     }
 
     if (typeof value === 'boolean') {
-      return value ? 'Yes' : 'No';
+      return value ? t('fieldChangeCard.yes') : t('fieldChangeCard.no');
     }
 
     if (typeof value === 'string' && value.trim() === '') {
-      return '(empty)';
+      return t('fieldChangeCard.empty');
     }
 
     // Format based on field type
@@ -141,7 +144,7 @@ export const FieldChangeCard: React.FC<FieldChangeCardProps> = ({
     const formattedValue = formatValue(value, fieldType);
     const displayClass = getValueDisplayClass(changeType, isOldValue);
 
-    if (formattedValue === '(empty)') {
+    if (formattedValue === t('fieldChangeCard.empty')) {
       return (
         <span className={`italic text-gray-400 ${displayClass}`}>
           {formattedValue}
@@ -187,7 +190,7 @@ export const FieldChangeCard: React.FC<FieldChangeCardProps> = ({
           {fieldChange.valueChangeSize !== undefined && fieldChange.valueChangeSize > 0 && (
             <Badge variant="outline" className="text-xs">
               {fieldChange.changeType === ChangeType.UPDATE ? '±' : ''}
-              {fieldChange.valueChangeSize} chars
+              {t('fieldChangeCard.labels.chars', { values: { count: fieldChange.valueChangeSize } })}
             </Badge>
           )}
         </div>
@@ -199,7 +202,7 @@ export const FieldChangeCard: React.FC<FieldChangeCardProps> = ({
               {/* Before Value */}
               <div>
                 <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-                  Before
+                  {t('fieldChangeCard.labels.before')}
                 </div>
                 {renderValue(
                   fieldChange.previousValue,
@@ -214,7 +217,7 @@ export const FieldChangeCard: React.FC<FieldChangeCardProps> = ({
               {/* After Value */}
               <div>
                 <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-                  After
+                  {t('fieldChangeCard.labels.after')}
                 </div>
                 {renderValue(
                   fieldChange.newValue,
@@ -229,7 +232,7 @@ export const FieldChangeCard: React.FC<FieldChangeCardProps> = ({
           {fieldChange.changeType === ChangeType.ADD && (
             <div>
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-                Added Value
+                {t('fieldChangeCard.labels.addedValue')}
               </div>
               {renderValue(
                 fieldChange.newValue,
@@ -243,7 +246,7 @@ export const FieldChangeCard: React.FC<FieldChangeCardProps> = ({
           {fieldChange.changeType === ChangeType.DELETE && (
             <div>
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-                Removed Value
+                {t('fieldChangeCard.labels.removedValue')}
               </div>
               {renderValue(
                 fieldChange.previousValue,
@@ -258,9 +261,9 @@ export const FieldChangeCard: React.FC<FieldChangeCardProps> = ({
         {/* Field metadata */}
         <div className="mt-3 pt-2 border-t border-gray-100">
           <div className="text-xs text-gray-500">
-            Field ID: <code className="bg-gray-100 px-1 rounded">{fieldChange.fieldId}</code>
+            {t('fieldChangeCard.labels.fieldId')} <code className="bg-gray-100 px-1 rounded">{fieldChange.fieldId}</code>
             <span className="mx-2">•</span>
-            Type: <span className="capitalize">{fieldChange.fieldType.replace('_', ' ')}</span>
+            {t('fieldChangeCard.labels.type')} <span className="capitalize">{fieldChange.fieldType.replace('_', ' ')}</span>
           </div>
         </div>
       </CardContent>
