@@ -1,0 +1,23 @@
+{
+  "titles": {
+    "authenticationRequired": "Authentication Required",
+    "accessDenied": "Access Denied",
+    "permissionDenied": "Permission Denied",
+    "fallback": "Access Error"
+  },
+  "descriptions": {
+    "authenticationRequired": "You need to sign in to access this resource.",
+    "accessDenied": "You are not a member of this organization or do not have access to this resource.",
+    "permissionDenied": "You don't have permission to perform this action.",
+    "fallback": "An error occurred while accessing this resource."
+  },
+  "actions": {
+    "retry": "Try Again",
+    "goHome": "Go to Homepage",
+    "signIn": "Sign In"
+  },
+  "labels": {
+    "errorDetails": "Error Details",
+    "technicalError": "Technical Error"
+  }
+}

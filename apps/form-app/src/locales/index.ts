@@ -60,6 +60,7 @@ import enTeamSwitcher from './en/teamSwitcher.json';
 import enNavUser from './en/navUser.json';
 import enAppSidebar from './en/appSidebar.json';
 import enUpgradeModal from './en/upgradeModal.json';
+import enAuthorizationError from './en/authorizationError.json';
 
 export const translations = {
   en: {
@@ -125,6 +126,7 @@ export const translations = {
     navUser: enNavUser,
     appSidebar: enAppSidebar,
     upgradeModal: enUpgradeModal,
+    authorizationError: enAuthorizationError,
   },
 } as const;
 

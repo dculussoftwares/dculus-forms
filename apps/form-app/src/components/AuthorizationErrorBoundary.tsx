@@ -2,6 +2,7 @@ import React from 'react';
 import { ApolloError } from '@apollo/client';
 import { Alert, AlertDescription, Card, CardContent, CardHeader, CardTitle, Button, ScrollArea } from '@dculus/ui';
 import { AlertTriangle, RefreshCw, LogIn, Home } from 'lucide-react';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface AuthorizationErrorBoundaryProps {
   children: React.ReactNode;
@@ -15,9 +16,11 @@ export const AuthorizationErrorBoundary: React.FC<AuthorizationErrorBoundaryProp
   children,
   error,
   onRetry,
-  fallbackTitle = 'Access Error',
-  fallbackDescription = 'An error occurred while accessing this resource.'
+  fallbackTitle,
+  fallbackDescription
 }) => {
+  const { t } = useTranslation('authorizationError');
+  
   if (!error) {
     return <>{children}</>;
   }
@@ -34,23 +37,23 @@ export const AuthorizationErrorBoundary: React.FC<AuthorizationErrorBoundaryProp
   };
 
   const getErrorTitle = () => {
-    if (isAuthError) return 'Authentication Required';
-    if (isAccessError) return 'Access Denied';
-    if (isForbiddenError) return 'Permission Denied';
-    return fallbackTitle;
+    if (isAuthError) return t('titles.authenticationRequired');
+    if (isAccessError) return t('titles.accessDenied');
+    if (isForbiddenError) return t('titles.permissionDenied');
+    return fallbackTitle || t('titles.fallback');
   };
 
   const getErrorDescription = () => {
     if (isAuthError) {
-      return 'You need to sign in to access this resource.';
+      return t('descriptions.authenticationRequired');
     }
     if (isAccessError) {
-      return 'You are not a member of this organization or do not have access to this resource.';
+      return t('descriptions.accessDenied');
     }
     if (isForbiddenError) {
-      return 'You do not have the required permissions to perform this action.';
+      return t('descriptions.permissionDenied');
     }
-    return fallbackDescription;
+    return fallbackDescription || t('descriptions.fallback');
   };
 
   const getErrorVariant = (): "destructive" | "default" => {
@@ -86,7 +89,7 @@ export const AuthorizationErrorBoundary: React.FC<AuthorizationErrorBoundaryProp
         {process.env.NODE_ENV === 'development' && (
           <details className="text-sm text-muted-foreground">
             <summary className="cursor-pointer hover:text-foreground">
-              Technical Details (Development Only)
+              {t('labels.technicalError')}
             </summary>
             <ScrollArea className="mt-2 max-h-40">
               <pre className="p-2 bg-muted rounded text-xs">
@@ -100,20 +103,20 @@ export const AuthorizationErrorBoundary: React.FC<AuthorizationErrorBoundaryProp
           {isAuthError && (
             <Button onClick={handleSignIn} className="flex items-center gap-2">
               <LogIn className="h-4 w-4" />
-              Sign In
+              {t('actions.signIn')}
             </Button>
           )}
 
           {onRetry && (
             <Button variant="outline" onClick={onRetry} className="flex items-center gap-2">
               <RefreshCw className="h-4 w-4" />
-              Try Again
+              {t('actions.retry')}
             </Button>
           )}
 
           <Button variant="outline" onClick={handleGoHome} className="flex items-center gap-2">
             <Home className="h-4 w-4" />
-            Go Home
+            {t('actions.goHome')}
           </Button>
         </div>
       </CardContent>
