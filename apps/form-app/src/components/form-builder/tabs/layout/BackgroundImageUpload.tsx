@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@dculus/ui';
 import { uploadFileHTTP } from '../../../../services/fileUploadService';
+import { useTranslation } from '../../../../hooks';
 
 interface BackgroundImageUploadProps {
   formId: string;
@@ -12,6 +13,7 @@ export const BackgroundImageUpload: React.FC<BackgroundImageUploadProps> = ({
   formId,
   onUploadSuccess
 }) => {
+  const { t } = useTranslation('backgroundImage');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
 
@@ -54,7 +56,7 @@ export const BackgroundImageUpload: React.FC<BackgroundImageUploadProps> = ({
             <Plus className="w-6 h-6 text-gray-500 dark:text-gray-400" />
           )}
           <span className="text-sm text-gray-600 dark:text-gray-400">
-            {loading ? 'Uploading...' : 'Upload Image'}
+            {loading ? t('upload.uploading') : t('upload.uploadImage')}
           </span>
         </div>
       </Button>

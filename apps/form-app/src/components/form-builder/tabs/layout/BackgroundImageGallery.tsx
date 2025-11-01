@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Check, Trash2 } from 'lucide-react';
 import { Button } from '@dculus/ui';
+import { useTranslation } from '../../../../hooks';
 
 interface FormFile {
   id: string;
@@ -23,13 +24,14 @@ export const BackgroundImageGallery: React.FC<BackgroundImageGalleryProps> = ({
   onImageSelect,
   onImageDelete
 }) => {
+  const { t } = useTranslation('backgroundImage');
   const [hoveredImage, setHoveredImage] = useState<string | null>(null);
 
   if (images.length === 0) {
     return (
       <div className="text-center py-6">
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          No background images uploaded yet
+          {t('gallery.noImages')}
         </p>
       </div>
     );

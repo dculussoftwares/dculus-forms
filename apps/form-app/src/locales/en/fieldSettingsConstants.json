@@ -1,0 +1,76 @@
+{
+  "errorMessages": {
+    "requiredField": "This field is required",
+    "labelRequired": "Field label is required",
+    "labelTooLong": "Label is too long",
+    "hintTooLong": "Help text is too long",
+    "placeholderTooLong": "Placeholder is too long",
+    "defaultValueTooLong": "Default value is too long",
+    "prefixTooLong": "Prefix is too long",
+    "minLengthInvalid": "Minimum length must be 0 or greater",
+    "maxLengthInvalid": "Maximum length must be 1 or greater",
+    "characterLimitExceeded": "Cannot exceed 5000 characters",
+    "minGreaterThanMax": "Minimum length must be less than or equal to maximum length",
+    "minValueGreaterThanMax": "Minimum value must be less than or equal to maximum value",
+    "defaultBelowMin": "Default value must be greater than or equal to minimum value",
+    "defaultAboveMax": "Default value must be less than or equal to maximum value",
+    "invalidNumber": "Must be a valid number",
+    "invalidDate": "Invalid date format",
+    "minDateAfterMax": "Minimum date must be before or equal to maximum date",
+    "defaultDateBelowMin": "Default date must be after or equal to minimum date",
+    "defaultDateAboveMax": "Default date must be before or equal to maximum date",
+    "optionEmpty": "Option text cannot be empty",
+    "duplicateOptions": "Duplicate options are not allowed",
+    "minOptionsRequired": "Add at least one option",
+    "minRadioOptionsRequired": "Radio fields need at least 2 options to choose from",
+    "defaultValuesInvalid": "Default values must be from the available options"
+  },
+  "placeholders": {
+    "fieldLabel": "Field label",
+    "helpText": "Help text for this field",
+    "defaultValue": "Default value",
+    "placeholderText": "Placeholder text",
+    "prefixText": "e.g., $, @",
+    "noMinimum": "No minimum",
+    "noMaximum": "No maximum",
+    "minPlaceholder": "Min",
+    "maxPlaceholder": "Max",
+    "optionPlaceholder": "Option {{index}}",
+    "selectDefaultOption": "Select default option"
+  },
+  "sectionTitles": {
+    "basicSettings": "Basic Settings",
+    "validation": "Validation",
+    "options": "Options",
+    "characterLimits": "Character Limits",
+    "numberRange": "Number Range",
+    "dateRange": "Date Range",
+    "prefixSettings": "Prefix Settings"
+  },
+  "labels": {
+    "label": "Label",
+    "helpText": "Help Text",
+    "defaultValue": "Default Value",
+    "placeholder": "Placeholder",
+    "prefix": "Prefix",
+    "requiredField": "Required field",
+    "minimum": "Minimum",
+    "maximum": "Maximum",
+    "minimumLength": "Minimum Length",
+    "maximumLength": "Maximum Length",
+    "minimumDate": "Minimum Date",
+    "maximumDate": "Maximum Date"
+  },
+  "buttons": {
+    "add": "Add",
+    "save": "Save",
+    "cancel": "Cancel",
+    "reset": "Reset"
+  },
+  "infoMessages": {
+    "noOptionsAvailable": "No options available. Add options first to set default values.",
+    "selectedCount": "{{count}} option{{plural}} selected as default",
+    "selectedCountPlural": "s",
+    "selectFieldToEdit": "Select a field to edit its settings"
+  }
+}

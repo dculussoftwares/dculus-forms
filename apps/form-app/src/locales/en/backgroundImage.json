@@ -1,0 +1,9 @@
+{
+  "gallery": {
+    "noImages": "No background images uploaded yet"
+  },
+  "upload": {
+    "uploading": "Uploading...",
+    "uploadImage": "Upload Image"
+  }
+}

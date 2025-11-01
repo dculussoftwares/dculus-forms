@@ -2,7 +2,7 @@ import React from 'react';
 import { Label } from '@dculus/ui';
 import { FormInputField } from './FormInputField';
 import { DefaultValueInput } from './DefaultValueInput';
-import { FIELD_SETTINGS_CONSTANTS } from './constants';
+import { useFieldSettingsConstants } from './useFieldSettingsConstants';
 import { WatchableSettingsProps } from './types';
 import { FormField } from '@dculus/types';
 
@@ -26,17 +26,19 @@ export const BasicSettings: React.FC<BasicSettingsProps> = ({
   watch,
   setValue
 }) => {
+  const constants = useFieldSettingsConstants();
+  
   return (
-    <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_SPACING}>
-      <h4 className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_TITLE}>
-        {FIELD_SETTINGS_CONSTANTS.SECTION_TITLES.BASIC_SETTINGS}
+    <div className={constants.CSS_CLASSES.SECTION_SPACING}>
+      <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
+        {constants.SECTION_TITLES.BASIC_SETTINGS}
       </h4>
       
       {/* Label */}
       <FormInputField
         name="label"
-        label={FIELD_SETTINGS_CONSTANTS.LABELS.LABEL}
-        placeholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.FIELD_LABEL}
+        label={constants.LABELS.LABEL}
+        placeholder={constants.PLACEHOLDERS.FIELD_LABEL}
         control={control}
         error={errors.label}
         disabled={!isConnected}
@@ -45,8 +47,8 @@ export const BasicSettings: React.FC<BasicSettingsProps> = ({
       {/* Hint */}
       <FormInputField
         name="hint"
-        label={FIELD_SETTINGS_CONSTANTS.LABELS.HELP_TEXT}
-        placeholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.HELP_TEXT}
+        label={constants.LABELS.HELP_TEXT}
+        placeholder={constants.PLACEHOLDERS.HELP_TEXT}
         multiline={true}
         rows={2}
         control={control}
@@ -55,12 +57,12 @@ export const BasicSettings: React.FC<BasicSettingsProps> = ({
       />
 
       {/* Default Value */}
-      <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.INPUT_SPACING}>
+      <div className={constants.CSS_CLASSES.INPUT_SPACING}>
         <Label 
           htmlFor="field-default" 
-          className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.LABEL_STYLE}
+          className={constants.CSS_CLASSES.LABEL_STYLE}
         >
-          {FIELD_SETTINGS_CONSTANTS.LABELS.DEFAULT_VALUE}
+          {constants.LABELS.DEFAULT_VALUE}
         </Label>
         <DefaultValueInput
           field={field}

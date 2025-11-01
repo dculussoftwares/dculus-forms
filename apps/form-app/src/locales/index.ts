@@ -47,6 +47,9 @@ import enConfirmationDialog from './en/confirmationDialog.json';
 import enSettingsTab from './en/settingsTab.json';
 import enPageBuilderTab from './en/pageBuilderTab.json';
 import enFieldSettingsHeader from './en/fieldSettingsHeader.json';
+import enFieldSettingsConstants from './en/fieldSettingsConstants.json';
+import enCollaborationStatus from './en/collaborationStatus.json';
+import enBackgroundImage from './en/backgroundImage.json';
 
 export const translations = {
   en: {
@@ -99,6 +102,9 @@ export const translations = {
     settingsTab: enSettingsTab,
     pageBuilderTab: enPageBuilderTab,
     fieldSettingsHeader: enFieldSettingsHeader,
+    fieldSettingsConstants: enFieldSettingsConstants,
+    collaborationStatus: enCollaborationStatus,
+    backgroundImage: enBackgroundImage,
   },
 } as const;
 
