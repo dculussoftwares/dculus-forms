@@ -1,0 +1,23 @@
+{
+  "title": "Form Viewer",
+  "subtitle": "Complete the Form",
+  "description": "Form viewer functionality will be implemented here. Form ID: {{formId}}",
+  "fields": {
+    "name": {
+      "label": "Name",
+      "placeholder": "Enter your name"
+    },
+    "email": {
+      "label": "Email",
+      "placeholder": "Enter your email"
+    },
+    "message": {
+      "label": "Message",
+      "placeholder": "Enter your message"
+    }
+  },
+  "actions": {
+    "submit": "Submit",
+    "cancel": "Cancel"
+  }
+}

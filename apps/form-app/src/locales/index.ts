@@ -61,6 +61,8 @@ import enNavUser from './en/navUser.json';
 import enAppSidebar from './en/appSidebar.json';
 import enUpgradeModal from './en/upgradeModal.json';
 import enAuthorizationError from './en/authorizationError.json';
+import enFormViewer from './en/formViewer.json';
+import enFormBuilder from './en/formBuilder.json';
 
 export const translations = {
   en: {
@@ -127,6 +129,8 @@ export const translations = {
     appSidebar: enAppSidebar,
     upgradeModal: enUpgradeModal,
     authorizationError: enAuthorizationError,
+    formViewer: enFormViewer,
+    formBuilder: enFormBuilder,
   },
 } as const;
 

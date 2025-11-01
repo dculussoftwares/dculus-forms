@@ -1,0 +1,19 @@
+{
+  "title": "Form Builder",
+  "subtitle": "Create New Form",
+  "description": "Form builder functionality will be implemented here.",
+  "fields": {
+    "title": {
+      "label": "Form Title",
+      "placeholder": "Enter form title"
+    },
+    "description": {
+      "label": "Form Description",
+      "placeholder": "Enter form description"
+    }
+  },
+  "actions": {
+    "save": "Save Form",
+    "cancel": "Cancel"
+  }
+}
