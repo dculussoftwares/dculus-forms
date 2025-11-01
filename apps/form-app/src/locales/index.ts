@@ -42,6 +42,8 @@ import enAddFieldPopover from './en/addFieldPopover.json';
 import enPermissions from './en/permissions.json';
 import enPageSelector from './en/pageSelector.json';
 import enPageThumbnailsSidebar from './en/pageThumbnailsSidebar.json';
+import enEmptyStates from './en/emptyStates.json';
+import enConfirmationDialog from './en/confirmationDialog.json';
 
 export const translations = {
   en: {
@@ -89,6 +91,8 @@ export const translations = {
     permissions: enPermissions,
     pageSelector: enPageSelector,
     pageThumbnailsSidebar: enPageThumbnailsSidebar,
+    emptyStates: enEmptyStates,
+    confirmationDialog: enConfirmationDialog,
   },
 } as const;
 

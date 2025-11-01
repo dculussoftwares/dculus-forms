@@ -1,0 +1,12 @@
+{
+  "missingFormId": {
+    "title": "Form ID Required",
+    "message": "Please provide a valid form ID to start building your form."
+  },
+  "emptyForm": {
+    "title": "Create your first page",
+    "message": "Start building your form by adding your first page. You can add questions, collect responses, and collaborate in real-time.",
+    "addButton": "Add your first page",
+    "connectionMessage": "Waiting for connection to enable editing..."
+  }
+}

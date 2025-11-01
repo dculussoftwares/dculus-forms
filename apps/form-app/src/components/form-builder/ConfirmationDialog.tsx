@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button, Card } from '@dculus/ui';
 import { X } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface ConfirmationDialogProps {
   isOpen: boolean;
@@ -17,13 +18,18 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   isOpen,
   title,
   message,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel,
+  cancelLabel,
   onConfirm,
   onCancel,
   variant = 'default',
 }) => {
+  const { t } = useTranslation('confirmationDialog');
+  
   if (!isOpen) return null;
+  
+  const displayConfirmLabel = confirmLabel ?? t('defaultLabels.confirm');
+  const displayCancelLabel = cancelLabel ?? t('defaultLabels.cancel');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -62,14 +68,14 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
             variant="ghost"
             onClick={onCancel}
           >
-            {cancelLabel}
+            {displayCancelLabel}
           </Button>
           <Button
             size="sm"
             variant={variant === 'destructive' ? 'destructive' : 'default'}
             onClick={onConfirm}
           >
-            {confirmLabel}
+            {displayConfirmLabel}
           </Button>
         </div>
       </Card>
