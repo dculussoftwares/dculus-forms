@@ -51,7 +51,7 @@ export function Dashboard() {
             title={tTemplates('hero.title')}
             subtitle={tTemplates('hero.subtitle')}
             breadcrumbs={[
-              { label: tDashboard('layout.breadcrumbRoot'), href: '/dashboard' },
+              { label: tDashboard('layout.breadcrumb'), href: '/dashboard' },
               { label: tTemplates('layout.breadcrumb'), isActive: true },
             ]}
           >
@@ -339,7 +339,7 @@ function FormsListDashboard() {
     <MainLayout
       title={t('layout.title')}
       subtitle={t('layout.subtitle')}
-      breadcrumbs={[{ label: t('layout.breadcrumbRoot'), isActive: true }]}
+  breadcrumbs={[{ label: t('layout.breadcrumb'), isActive: true }]}
     >
       <div className="space-y-8" ref={contentRef}>
         {/* Header with Create Form Button */}
