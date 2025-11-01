@@ -14,6 +14,7 @@ import { deserializeFormSchema, FillableFormField } from '@dculus/types';
 
 // Use RichTextEditor which is LexicalRichTextEditor exported from @dculus/ui
 import { RichTextEditor } from '@dculus/ui';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface ThankYouSettingsData {
   enabled: boolean;
@@ -63,6 +64,7 @@ const ThankYouSettings: React.FC<ThankYouSettingsProps> = ({
   onMessageChange,
   onSave,
 }) => {
+  const { t } = useTranslation('formSettings');
   // Extract mention fields from the form schema
   const mentionFields = useMemo(() => extractMentionFields(form), [form]);
 
@@ -71,10 +73,10 @@ const ThankYouSettings: React.FC<ThankYouSettingsProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center">
           <CheckCircle className="mr-2 h-5 w-5" />
-          Thank You Page
+          {t('thankYouSettings.title')}
         </CardTitle>
         <CardDescription>
-          Configure what happens after form submission
+          {t('thankYouSettings.description')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -89,10 +91,10 @@ const ThankYouSettings: React.FC<ThankYouSettingsProps> = ({
               htmlFor="thank-you-enabled"
               className="text-sm font-medium cursor-pointer"
             >
-              Enable Thank You Page
+              {t('thankYouSettings.enabled')}
             </Label>
             <p className="text-sm text-gray-600">
-              Show a custom thank you message after form submission
+              {t('thankYouSettings.enabledDescription')}
             </p>
           </div>
         </div>
@@ -104,27 +106,24 @@ const ThankYouSettings: React.FC<ThankYouSettingsProps> = ({
                 htmlFor="thank-you-message"
                 className="text-sm font-medium"
               >
-                Thank You Message
+                {t('thankYouSettings.messageLabel')}
               </Label>
               <RichTextEditor
                 value={settings.message}
                 onChange={onMessageChange}
-                placeholder="Thank you! Your response has been submitted."
+                placeholder={t('thankYouSettings.messagePlaceholder')}
                 className="w-full"
                 mentionFields={mentionFields}
               />
               <p className="text-xs text-gray-500">
-                This message will be displayed to users after they submit the
-                form. You can use rich formatting including{' '}
-                <strong>bold</strong>, <em>italic</em>, headings, lists, quotes,
-                and links.
+                {t('thankYouSettings.messageHelp')}
                 {mentionFields.length > 0 ? (
                   <>
-                    {' '}Type <strong>@</strong> to mention form fields ({mentionFields.length} available) and reference user responses.
+                    {' '}{t('thankYouSettings.mentionHelp', { values: { count: mentionFields.length } })}
                   </>
                 ) : (
                   <>
-                    {' '}Add some fields to your form to enable @ mentions for personalizing messages.
+                    {' '}{t('thankYouSettings.noFieldsHelp')}
                   </>
                 )}
               </p>
@@ -139,7 +138,7 @@ const ThankYouSettings: React.FC<ThankYouSettingsProps> = ({
             className="bg-green-600 hover:bg-green-700 text-white"
           >
             <Save className="mr-2 h-4 w-4" />
-            {isSaving ? 'Saving...' : 'Save Thank You Settings'}
+            {isSaving ? t('thankYouSettings.saving') : t('thankYouSettings.saveButton')}
           </Button>
         </div>
       </CardContent>

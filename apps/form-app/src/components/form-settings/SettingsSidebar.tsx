@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CheckCircle, ChevronDown, Globe, Mail, Shield } from 'lucide-react';
 import { Button } from '@dculus/ui';
 import { cn } from '@dculus/utils';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface GeneralSetting {
   id: string;
@@ -9,15 +10,7 @@ interface GeneralSetting {
   icon: React.ElementType;
 }
 
-const generalSettings: GeneralSetting[] = [
-  { id: 'general', label: 'General Settings', icon: Globe },
-  { id: 'thank-you', label: 'Thank You Page', icon: CheckCircle },
-  { id: 'submission-limits', label: 'Submission Limits', icon: Shield },
-];
-
-const emailNotificationSettings = [
-  { id: 'email-notifications', label: 'Email & Notifications', icon: Mail },
-];
+// Move these inside the component to access t function
 
 interface SettingsSidebarProps {
   selectedSection: string;
@@ -28,9 +21,20 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
   selectedSection,
   onSectionChange,
 }) => {
+  const { t } = useTranslation('formSettings');
   const [collapsedSections] = useState<Set<string>>(
     new Set(['email-notifications'])
   );
+
+  const generalSettings: GeneralSetting[] = [
+    { id: 'general', label: t('sidebar.settings.general'), icon: Globe },
+    { id: 'thank-you', label: t('sidebar.settings.thankYou'), icon: CheckCircle },
+    { id: 'submission-limits', label: t('sidebar.settings.submissionLimits'), icon: Shield },
+  ];
+
+  const emailNotificationSettings = [
+    { id: 'email-notifications', label: t('sidebar.settings.emailNotifications'), icon: Mail },
+  ];
 
   const SidebarSection = ({
     settings,
@@ -80,10 +84,10 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
 
   return (
     <>
-      <SidebarSection settings={generalSettings} title="General" />
+      <SidebarSection settings={generalSettings} title={t('sidebar.sections.general')} />
       <SidebarSection
         settings={emailNotificationSettings}
-        title="Email & Notifications"
+        title={t('sidebar.sections.emailNotifications')}
       />
     </>
   );

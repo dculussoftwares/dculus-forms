@@ -59,6 +59,7 @@ import enNavMain from './en/navMain.json';
 import enTeamSwitcher from './en/teamSwitcher.json';
 import enNavUser from './en/navUser.json';
 import enAppSidebar from './en/appSidebar.json';
+import enUpgradeModal from './en/upgradeModal.json';
 
 export const translations = {
   en: {
@@ -123,6 +124,7 @@ export const translations = {
     teamSwitcher: enTeamSwitcher,
     navUser: enNavUser,
     appSidebar: enAppSidebar,
+    upgradeModal: enUpgradeModal,
   },
 } as const;
 

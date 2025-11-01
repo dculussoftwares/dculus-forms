@@ -1,0 +1,80 @@
+{
+  "header": {
+    "title": "Upgrade Your Plan",
+    "subtitle": "Choose the perfect plan for your needs"
+  },
+  "billing": {
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "save": "Save 8%",
+    "usd": "USD ($)",
+    "inr": "INR (₹)",
+    "perMonth": "/month",
+    "perYear": "/year",
+    "billedAnnually": "/month billed annually"
+  },
+  "plans": {
+    "free": "Free",
+    "forever": "Forever",
+    "recommended": "Recommended",
+    "currentPlan": "Current Plan",
+    "priceNotAvailable": "Price not available",
+    "features": {
+      "free": {
+        "formViews": "10,000 form views per month",
+        "submissions": "1,000 form submissions per month",
+        "unlimitedForms": "Unlimited forms",
+        "collaboration": "Real-time collaboration", 
+        "analytics": "Basic analytics",
+        "support": "Community support"
+      },
+      "starter": {
+        "formViews": "Unlimited form views",
+        "submissions": "10,000 form submissions per month",
+        "unlimitedForms": "Unlimited forms",
+        "collaboration": "Real-time collaboration",
+        "analytics": "Advanced analytics",
+        "support": "Email support",
+        "customDomain": "Custom domain",
+        "apiAccess": "API access"
+      },
+      "advanced": {
+        "formViews": "Unlimited form views",
+        "submissions": "100,000 form submissions per month",
+        "unlimitedForms": "Unlimited forms",
+        "collaboration": "Real-time collaboration",
+        "analytics": "Advanced analytics + Export",
+        "support": "Priority support",
+        "customDomain": "Custom domain",
+        "apiAccess": "API access",
+        "whiteLabel": "White-label options"
+      }
+    }
+  },
+  "buttons": {
+    "currentPlan": "Current Plan",
+    "downgradeNotAvailable": "Downgrade not available",
+    "upgradeTo": "Upgrade to {{planName}}",
+    "processing": "Processing..."
+  },
+  "footer": {
+    "note": "All plans include unlimited forms, real-time collaboration, and our plugin system.",
+    "flexibility": "You can upgrade or downgrade at any time. No long-term contracts."
+  },
+  "loading": {
+    "plans": "Loading plans..."
+  },
+  "messages": {
+    "priceNotFound": {
+      "title": "Price not found", 
+      "message": "Unable to find pricing for selected plan"
+    },
+    "checkoutSuccess": {
+      "title": "Redirecting to checkout",
+      "message": "Please complete payment to upgrade"
+    },
+    "checkoutError": {
+      "title": "Checkout failed"
+    }
+  }
+}

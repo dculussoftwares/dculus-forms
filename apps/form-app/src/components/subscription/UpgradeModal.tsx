@@ -9,6 +9,7 @@ import {
 } from '@dculus/ui';
 import { X, Check, TrendingUp, Zap, Sparkles } from 'lucide-react';
 import { GET_AVAILABLE_PLANS, CREATE_CHECKOUT_SESSION } from '../../graphql/subscription';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface UpgradeModalProps {
   onClose: () => void;
@@ -19,6 +20,7 @@ type BillingCycle = 'monthly' | 'yearly';
 type Currency = 'USD' | 'INR';
 
 export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
+  const { t } = useTranslation('upgradeModal');
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
   const [currency, setCurrency] = useState<Currency>('USD');
 
@@ -39,46 +41,46 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
       icon: Zap,
       color: 'gray',
       gradient: 'from-gray-500 to-gray-600',
-      features: [
-        '10,000 form views per month',
-        '1,000 form submissions per month',
-        'Unlimited forms',
-        'Real-time collaboration',
-        'Basic analytics',
-        'Community support',
-      ],
+        features: [
+          t('plans.features.free.formViews'),
+          t('plans.features.free.submissions'), 
+          t('plans.features.free.unlimitedForms'),
+          t('plans.features.free.collaboration'),
+          t('plans.features.free.analytics'),
+          t('plans.features.free.support')
+        ],
     },
     starter: {
       icon: TrendingUp,
       color: 'blue',
       gradient: 'from-blue-500 to-blue-600',
-      features: [
-        'Unlimited form views',
-        '10,000 form submissions per month',
-        'Unlimited forms',
-        'Real-time collaboration',
-        'Advanced analytics',
-        'Email support',
-        'Custom domain',
-        'API access',
-      ],
+        features: [
+          t('plans.features.starter.formViews'),
+          t('plans.features.starter.submissions'),
+          t('plans.features.starter.unlimitedForms'),
+          t('plans.features.starter.collaboration'),
+          t('plans.features.starter.analytics'),
+          t('plans.features.starter.support'),
+          t('plans.features.starter.customDomain'),
+          t('plans.features.starter.apiAccess')
+        ],
       recommended: true,
     },
     advanced: {
       icon: Sparkles,
       color: 'purple',
       gradient: 'from-purple-500 to-purple-600',
-      features: [
-        'Unlimited form views',
-        '100,000 form submissions per month',
-        'Unlimited forms',
-        'Real-time collaboration',
-        'Advanced analytics + Export',
-        'Priority support',
-        'Custom domain',
-        'API access',
-        'White-label options',
-      ],
+        features: [
+          t('plans.features.advanced.formViews'),
+          t('plans.features.advanced.submissions'),
+          t('plans.features.advanced.unlimitedForms'),
+          t('plans.features.advanced.collaboration'),
+          t('plans.features.advanced.analytics'),
+          t('plans.features.advanced.support'),
+          t('plans.features.advanced.customDomain'),
+          t('plans.features.advanced.apiAccess'),
+          t('plans.features.advanced.whiteLabel')
+        ],
     },
   };
 
@@ -107,7 +109,7 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
   const handleUpgrade = async (planId: string) => {
     const price = getPriceForPlan(planId);
     if (!price) {
-      toastError('Price not found', 'Unable to find pricing for selected plan');
+      toastError(t('messages.priceNotFound.title'), t('messages.priceNotFound.message'));
       return;
     }
 
@@ -119,10 +121,10 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
       if (data?.createCheckoutSession?.url) {
         // Redirect to Chargebee checkout
         window.location.href = data.createCheckoutSession.url;
-        toastSuccess('Redirecting to checkout', 'Please complete payment to upgrade');
+        toastSuccess(t('messages.checkoutSuccess.title'), t('messages.checkoutSuccess.message'));
       }
     } catch (error: any) {
-      toastError('Checkout failed', error.message);
+      toastError(t('messages.checkoutError.title'), error.message);
     }
   };
 
@@ -132,9 +134,9 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
           <div>
-            <h2 className="text-2xl font-bold">Upgrade Your Plan</h2>
+            <h2 className="text-2xl font-bold">{t('header.title')}</h2>
             <p className="text-sm text-gray-500 mt-1">
-              Choose the perfect plan for your needs
+              {t('header.subtitle')}
             </p>
           </div>
           <Button variant="ghost" onClick={onClose} className="h-8 w-8 p-0">
@@ -152,16 +154,16 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
                 onClick={() => setBillingCycle('monthly')}
                 className="flex-1"
               >
-                Monthly
+                {t('billing.monthly')}
               </Button>
               <Button
                 variant={billingCycle === 'yearly' ? 'default' : 'ghost'}
                 onClick={() => setBillingCycle('yearly')}
                 className="flex-1 relative"
               >
-                Yearly
+                {t('billing.yearly')}
                 <Badge className="ml-2 bg-green-500 text-white text-xs">
-                  Save 8%
+                  {t('billing.save')}
                 </Badge>
               </Button>
             </div>
@@ -173,14 +175,14 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
                 onClick={() => setCurrency('USD')}
                 className="flex-1"
               >
-                USD ($)
+                {t('billing.usd')}
               </Button>
               <Button
                 variant={currency === 'INR' ? 'default' : 'ghost'}
                 onClick={() => setCurrency('INR')}
                 className="flex-1"
               >
-                INR (₹)
+                {t('billing.inr')}
               </Button>
             </div>
           </div>
@@ -188,7 +190,7 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
           {/* Plans Grid */}
           {loading ? (
             <div className="text-center py-12">
-              <p className="text-gray-500">Loading plans...</p>
+              <p className="text-gray-500">{t('loading.plans')}</p>
             </div>
           ) : (
             <div className="grid md:grid-cols-3 gap-6">
@@ -212,7 +214,7 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
                     {isRecommended && !isCurrentPlan && (
                       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                         <Badge className="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-3 py-1">
-                          Recommended
+                          {t('plans.recommended')}
                         </Badge>
                       </div>
                     )}
@@ -221,7 +223,7 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
                     {isCurrentPlan && (
                       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                         <Badge className="bg-gradient-to-r from-gray-600 to-gray-500 text-white px-3 py-1">
-                          Current Plan
+                          {t('plans.currentPlan')}
                         </Badge>
                       </div>
                     )}
@@ -241,8 +243,8 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
                     {/* Pricing */}
                     {plan.id === 'free' ? (
                       <div className="mb-6">
-                        <div className="text-4xl font-bold">Free</div>
-                        <div className="text-sm text-gray-500">Forever</div>
+                        <div className="text-4xl font-bold">{t('plans.free')}</div>
+                        <div className="text-sm text-gray-500">{t('plans.forever')}</div>
                       </div>
                     ) : price ? (
                       <div className="mb-6">
@@ -251,19 +253,19 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
                             {formatPrice(price.amount, currency)}
                           </span>
                           <span className="text-gray-500">
-                            /{billingCycle === 'monthly' ? 'month' : 'year'}
+                            {billingCycle === 'monthly' ? t('billing.perMonth') : t('billing.perYear')}
                           </span>
                         </div>
                         {billingCycle === 'yearly' && (
                           <div className="text-sm text-gray-500 mt-1">
-                            {currency === 'USD' ? '$' : '₹'}{getMonthlyEquivalent(price.amount, 'year')}/month billed annually
+                            {currency === 'USD' ? '$' : '₹'}{getMonthlyEquivalent(price.amount, 'year')}{t('billing.billedAnnually')}
                           </div>
                         )}
                       </div>
                     ) : (
                       <div className="mb-6">
                         <div className="text-lg text-gray-500">
-                          Price not available
+                          {t('plans.priceNotAvailable')}
                         </div>
                       </div>
                     )}
@@ -283,11 +285,11 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
                     {/* Action Button */}
                     {isCurrentPlan ? (
                       <Button disabled variant="outline" className="w-full">
-                        Current Plan
+                        {t('buttons.currentPlan')}
                       </Button>
                     ) : plan.id === 'free' ? (
                       <Button disabled variant="outline" className="w-full">
-                        Downgrade not available
+                        {t('buttons.downgradeNotAvailable')}
                       </Button>
                     ) : (
                       <Button
@@ -295,7 +297,7 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
                         disabled={checkoutLoading || !price}
                         className="w-full"
                       >
-                        {checkoutLoading ? 'Processing...' : `Upgrade to ${plan.name}`}
+                        {checkoutLoading ? t('buttons.processing') : t('buttons.upgradeTo', { values: { planName: plan.name } })}
                       </Button>
                     )}
                   </Card>
@@ -307,9 +309,9 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
           {/* Footer Note */}
           <div className="mt-8 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-              All plans include unlimited forms, real-time collaboration, and our plugin system.
+              {t('footer.note')}
               <br />
-              You can upgrade or downgrade at any time. No long-term contracts.
+              {t('footer.flexibility')}
             </p>
           </div>
         </div>

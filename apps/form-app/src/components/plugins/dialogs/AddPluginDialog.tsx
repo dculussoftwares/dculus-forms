@@ -12,6 +12,7 @@ import {
 } from '@dculus/ui';
 import { Search } from 'lucide-react';
 import { PluginGallery, AVAILABLE_PLUGIN_TYPES, PluginType } from '../shared/PluginGallery';
+import { useTranslation } from '../../../hooks/useTranslation';
 
 interface AddPluginDialogProps {
   open: boolean;
@@ -24,6 +25,7 @@ export const AddPluginDialog: React.FC<AddPluginDialogProps> = ({
   onOpenChange,
   onPluginSelected,
 }) => {
+  const { t } = useTranslation('plugins');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
@@ -46,9 +48,9 @@ export const AddPluginDialog: React.FC<AddPluginDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Add Integration</DialogTitle>
+          <DialogTitle className="text-2xl">{t('addPluginDialog.title')}</DialogTitle>
           <DialogDescription>
-            Choose from our collection of integrations to enhance your forms
+            {t('addPluginDialog.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -57,7 +59,7 @@ export const AddPluginDialog: React.FC<AddPluginDialogProps> = ({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Search integrations..."
+              placeholder={t('addPluginDialog.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -69,7 +71,7 @@ export const AddPluginDialog: React.FC<AddPluginDialogProps> = ({
             <TabsList>
               {categories.map((category) => (
                 <TabsTrigger key={category} value={category} className="capitalize">
-                  {category}
+                  {category === 'all' ? t('addPluginDialog.categories.all') : category}
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -85,7 +87,7 @@ export const AddPluginDialog: React.FC<AddPluginDialogProps> = ({
             ) : (
               <div className="text-center py-12">
                 <p className="text-gray-500">
-                  No integrations found matching "{searchQuery}"
+                  {t('addPluginDialog.noResults.message', { values: { searchQuery } })}
                 </p>
               </div>
             )}

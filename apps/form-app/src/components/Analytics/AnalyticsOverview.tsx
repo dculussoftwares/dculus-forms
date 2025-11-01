@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card, Button } from '@dculus/ui';
 import { Users, Monitor, Globe, TrendingUp, TrendingDown, FileCheck, Target, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { FormAnalyticsData, FormSubmissionAnalyticsData } from '../../hooks/useFormAnalytics';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface AnalyticsOverviewProps {
   data: FormAnalyticsData | null;
@@ -28,19 +29,23 @@ interface MetricCardProps {
 }
 
 // Helper function to format completion time from seconds to human-readable format
-const formatCompletionTime = (seconds: number | null): string => {
-  if (!seconds || seconds <= 0) return 'N/A';
+const formatCompletionTime = (seconds: number | null, t: (key: string, options?: any) => string): string => {
+  if (!seconds || seconds <= 0) return t('overview.metrics.avgCompletionTime.notAvailable');
   
   if (seconds < 60) {
-    return `${Math.round(seconds)}s`;
+    return t('overview.metrics.avgCompletionTime.formatSeconds', { values: { seconds: Math.round(seconds) } });
   } else if (seconds < 3600) {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.round(seconds % 60);
-    return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
+    return remainingSeconds > 0 
+      ? t('overview.metrics.avgCompletionTime.formatMinutesSeconds', { values: { minutes, seconds: remainingSeconds } })
+      : t('overview.metrics.avgCompletionTime.formatMinutes', { values: { minutes } });
   } else {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.round((seconds % 3600) / 60);
-    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+    return minutes > 0 
+      ? t('overview.metrics.avgCompletionTime.formatHoursMinutes', { values: { hours, minutes } })
+      : t('overview.metrics.avgCompletionTime.formatHours', { values: { hours } });
   }
 };
 
@@ -115,6 +120,7 @@ export const AnalyticsOverview: React.FC<AnalyticsOverviewProps> = ({
   topSubmissionCountry,
   loading
 }) => {
+  const { t } = useTranslation('formAnalytics');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
@@ -153,64 +159,74 @@ export const AnalyticsOverview: React.FC<AnalyticsOverviewProps> = ({
 
   const metrics = [
     {
-      title: 'Total Views',
+      title: t('overview.metrics.totalViews.title'),
       value: data?.totalViews || 0,
-      subtitle: 'Total form impressions',
+      subtitle: t('overview.metrics.totalViews.subtitle'),
       icon: Users,
       iconColor: 'text-blue-600',
       iconBgColor: 'bg-blue-100',
       trend: undefined // TODO: Add trend calculation when we have historical data
     },
     {
-      title: 'Total Submissions',
+      title: t('overview.metrics.totalSubmissions.title'),
       value: submissionData?.totalSubmissions || 0,
-      subtitle: `${submissionConversionRate}% conversion rate`,
+      subtitle: t('overview.metrics.totalSubmissions.subtitle', { values: { rate: submissionConversionRate } }),
       icon: FileCheck,
       iconColor: 'text-green-600',
       iconBgColor: 'bg-green-100'
     },
     {
-      title: 'View Sessions',
+      title: t('overview.metrics.viewSessions.title'),
       value: data?.uniqueSessions || 0,
-      subtitle: `${conversionRate}% unique view rate`,
+      subtitle: t('overview.metrics.viewSessions.subtitle', { values: { rate: conversionRate } }),
       icon: Monitor,
       iconColor: 'text-purple-600',
       iconBgColor: 'bg-purple-100'
     },
     {
-      title: 'Submission Sessions',
+      title: t('overview.metrics.submissionSessions.title'),
       value: submissionData?.uniqueSessions || 0,
-      subtitle: 'Unique submission sessions',
+      subtitle: t('overview.metrics.submissionSessions.subtitle'),
       icon: Target,
       iconColor: 'text-indigo-600',
       iconBgColor: 'bg-indigo-100'
     },
     {
-      title: 'Top View Country',
-      value: topCountry?.name || 'Unknown',
+      title: t('overview.metrics.topViewCountry.title'),
+      value: topCountry?.name || t('overview.metrics.topViewCountry.unknown'),
       subtitle: topCountry 
-        ? `${topCountry.count} views (${topCountry.percentage.toFixed(1)}%)`
-        : 'No view data available',
+        ? t('overview.metrics.topViewCountry.subtitle', { 
+            values: { 
+              count: topCountry.count, 
+              percentage: topCountry.percentage.toFixed(1) 
+            } 
+          })
+        : t('overview.metrics.topViewCountry.noData'),
       icon: Globe,
       iconColor: 'text-orange-600',
       iconBgColor: 'bg-orange-100'
     },
     {
-      title: 'Top Submission Country',
-      value: topSubmissionCountry?.name || 'Unknown',
+      title: t('overview.metrics.topSubmissionCountry.title'),
+      value: topSubmissionCountry?.name || t('overview.metrics.topSubmissionCountry.unknown'),
       subtitle: topSubmissionCountry 
-        ? `${topSubmissionCountry.count} submissions (${topSubmissionCountry.percentage.toFixed(1)}%)`
-        : 'No submission data available',
+        ? t('overview.metrics.topSubmissionCountry.subtitle', { 
+            values: { 
+              count: topSubmissionCountry.count, 
+              percentage: topSubmissionCountry.percentage.toFixed(1) 
+            } 
+          })
+        : t('overview.metrics.topSubmissionCountry.noData'),
       icon: Globe,
       iconColor: 'text-red-600',
       iconBgColor: 'bg-red-100'
     },
     {
-      title: 'Avg Completion Time',
-      value: formatCompletionTime(submissionData?.averageCompletionTime || null),
+      title: t('overview.metrics.avgCompletionTime.title'),
+      value: formatCompletionTime(submissionData?.averageCompletionTime || null, t),
       subtitle: submissionData?.averageCompletionTime 
-        ? 'Time to complete form'
-        : 'No completion data available',
+        ? t('overview.metrics.avgCompletionTime.subtitle')
+        : t('overview.metrics.avgCompletionTime.noData'),
       icon: Clock,
       iconColor: 'text-cyan-600',
       iconBgColor: 'bg-cyan-100'
@@ -226,7 +242,7 @@ export const AnalyticsOverview: React.FC<AnalyticsOverviewProps> = ({
           size="icon"
           onClick={() => scroll('left')}
           className="absolute left-0 top-1/2 -translate-y-1/2 z-10 rounded-full shadow-lg"
-          aria-label="Scroll left"
+          aria-label={t('overview.scrollLeft')}
         >
           <ChevronLeft className="h-5 w-5 text-gray-600" />
         </Button>
@@ -239,7 +255,7 @@ export const AnalyticsOverview: React.FC<AnalyticsOverviewProps> = ({
           size="icon"
           onClick={() => scroll('right')}
           className="absolute right-0 top-1/2 -translate-y-1/2 z-10 rounded-full shadow-lg"
-          aria-label="Scroll right"
+          aria-label={t('overview.scrollRight')}
         >
           <ChevronRight className="h-5 w-5 text-gray-600" />
         </Button>

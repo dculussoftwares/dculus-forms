@@ -23,5 +23,47 @@
     "settingsSaveError": "Failed to save form settings",
     "shortUrlRegenerated": "Short URL regenerated successfully",
     "shortUrlRegenerateError": "Failed to regenerate short URL"
+  },
+  "generalSettings": {
+    "title": "General Settings",
+    "description": "Basic form information and display settings",
+    "formTitle": "Form Title",
+    "formTitlePlaceholder": "Enter form title",
+    "formDescription": "Description",
+    "formDescriptionPlaceholder": "Enter form description",
+    "shortUrl": "Short URL",
+    "shortUrlPrefix": "forms.dculus.com/",
+    "regenerateUrlTooltip": "Generate new short URL",
+    "shortUrlHelp": "Short URL is automatically generated. Click the refresh button to generate a new one.",
+    "publicationStatus": "Publication Status",
+    "published": "Published",
+    "draft": "Draft",
+    "saveChanges": "Save Changes",
+    "saving": "Saving..."
+  },
+  "sidebar": {
+    "sections": {
+      "general": "General",
+      "emailNotifications": "Email & Notifications"
+    },
+    "settings": {
+      "general": "General Settings",
+      "thankYou": "Thank You Page",
+      "submissionLimits": "Submission Limits",
+      "emailNotifications": "Email & Notifications"
+    }
+  },
+  "thankYouSettings": {
+    "title": "Thank You Page",
+    "description": "Customize the message displayed after form submission",
+    "enabled": "Enable thank you page",
+    "enabledDescription": "Show a custom message to users after they submit the form",
+    "messageLabel": "Thank You Message",
+    "messagePlaceholder": "Thank you! Your response has been submitted.",
+    "messageHelp": "This message will be displayed to users after they submit the form. You can use rich formatting including bold, italic, headings, lists, quotes, and links.",
+    "mentionHelp": "Type @ to mention form fields ({{count}} available) and reference user responses.",
+    "noFieldsHelp": "Add some fields to your form to enable @ mentions for personalizing messages.",
+    "saveButton": "Save Thank You Settings",
+    "saving": "Saving..."
   }
 }

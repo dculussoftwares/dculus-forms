@@ -12,6 +12,7 @@ import {
   TypographyMuted,
 } from '@dculus/ui';
 import { Globe, RefreshCw, Save } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface GeneralSettingsProps {
   form: any;
@@ -28,24 +29,25 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
   onSave,
   onRegenerateShortUrl,
 }) => {
+  const { t } = useTranslation('formSettings');
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center">
           <Globe className="mr-2 h-5 w-5" />
-          General Settings
+          {t('generalSettings.title')}
         </CardTitle>
         <CardDescription>
-          Basic form information and display settings
+          {t('generalSettings.description')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="form-title">Form Title</Label>
+          <Label htmlFor="form-title">{t('generalSettings.formTitle')}</Label>
           <Input
             id="form-title"
             defaultValue={form.title}
-            placeholder="Enter form title"
+            placeholder={t('generalSettings.formTitlePlaceholder')}
             className={errors.title ? 'border-red-500' : ''}
           />
           {errors.title && (
@@ -53,19 +55,19 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="form-description">Description</Label>
+          <Label htmlFor="form-description">{t('generalSettings.formDescription')}</Label>
           <Textarea
             id="form-description"
             defaultValue={form.description || ''}
-            placeholder="Enter form description"
+            placeholder={t('generalSettings.formDescriptionPlaceholder')}
             rows={3}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="form-short-url">Short URL</Label>
+          <Label htmlFor="form-short-url">{t('generalSettings.shortUrl')}</Label>
           <div className="flex items-center space-x-2">
             <span className="text-sm text-slate-500">
-              forms.dculus.com/
+              {t('generalSettings.shortUrlPrefix')}
             </span>
             <Input
               id="form-short-url"
@@ -79,7 +81,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
               size="sm"
               onClick={onRegenerateShortUrl}
               disabled={isSaving}
-              title="Generate new short URL"
+              title={t('generalSettings.regenerateUrlTooltip')}
             >
               <RefreshCw
                 className={`h-4 w-4 ${isSaving ? 'animate-spin' : ''}`}
@@ -87,12 +89,11 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
             </Button>
           </div>
           <TypographyMuted className="text-xs">
-            Short URL is automatically generated. Click the refresh button
-            to generate a new one.
+            {t('generalSettings.shortUrlHelp')}
           </TypographyMuted>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="form-status">Publication Status</Label>
+          <Label htmlFor="form-status">{t('generalSettings.publicationStatus')}</Label>
           <div className="flex items-center space-x-2">
             <div
               className={`w-3 h-3 rounded-full ${
@@ -100,7 +101,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
               }`}
             />
             <span className="text-sm">
-              {form.isPublished ? 'Published' : 'Draft'}
+              {form.isPublished ? t('generalSettings.published') : t('generalSettings.draft')}
             </span>
           </div>
         </div>
@@ -111,7 +112,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
             className="bg-green-600 hover:bg-green-700 text-white"
           >
             <Save className="mr-2 h-4 w-4" />
-            {isSaving ? 'Saving...' : 'Save Changes'}
+            {isSaving ? t('generalSettings.saving') : t('generalSettings.saveChanges')}
           </Button>
         </div>
       </CardContent>

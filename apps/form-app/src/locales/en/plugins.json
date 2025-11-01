@@ -28,5 +28,16 @@
   },
   "activeIntegrations": {
     "title": "Active Integrations ({{count}})"
+  },
+  "addPluginDialog": {
+    "title": "Add Integration",
+    "description": "Choose from our collection of integrations to enhance your forms",
+    "searchPlaceholder": "Search integrations...",
+    "categories": {
+      "all": "All"
+    },
+    "noResults": {
+      "message": "No integrations found matching \"{{searchQuery}}\""
+    }
   }
 }

@@ -29,5 +29,50 @@
     "noDataMessage": "Your form analytics will appear here once visitors start accessing your form. Share your form to start collecting valuable insights about your audience.",
     "viewYourForm": "View Your Form",
     "privacyNotice": "Privacy First: Our analytics system is designed with privacy in mind. We collect only anonymous data without storing personal information or IP addresses."
+  },
+  "overview": {
+    "scrollLeft": "Scroll left",
+    "scrollRight": "Scroll right",
+    "metrics": {
+      "totalViews": {
+        "title": "Total Views",
+        "subtitle": "Total form impressions"
+      },
+      "totalSubmissions": {
+        "title": "Total Submissions",
+        "subtitle": "{{rate}}% conversion rate"
+      },
+      "viewSessions": {
+        "title": "View Sessions",
+        "subtitle": "{{rate}}% unique view rate"
+      },
+      "submissionSessions": {
+        "title": "Submission Sessions",
+        "subtitle": "Unique submission sessions"
+      },
+      "topViewCountry": {
+        "title": "Top View Country",
+        "subtitle": "{{count}} views ({{percentage}}%)",
+        "noData": "No view data available",
+        "unknown": "Unknown"
+      },
+      "topSubmissionCountry": {
+        "title": "Top Submission Country", 
+        "subtitle": "{{count}} submissions ({{percentage}}%)",
+        "noData": "No submission data available",
+        "unknown": "Unknown"
+      },
+      "avgCompletionTime": {
+        "title": "Avg Completion Time",
+        "subtitle": "Time to complete form",
+        "noData": "No completion data available",
+        "formatSeconds": "{{seconds}}s",
+        "formatMinutesSeconds": "{{minutes}}m {{seconds}}s",
+        "formatMinutes": "{{minutes}}m",
+        "formatHoursMinutes": "{{hours}}h {{minutes}}m",
+        "formatHours": "{{hours}}h",
+        "notAvailable": "N/A"
+      }
+    }
   }
 }
