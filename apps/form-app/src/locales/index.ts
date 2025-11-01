@@ -65,6 +65,7 @@ import enFormViewer from './en/formViewer.json';
 import enFormBuilder from './en/formBuilder.json';
 import enResponseHistory from './en/responseHistory.json';
 import enMetadataViewer from './en/metadataViewer.json';
+import enPerformanceMonitor from './en/performanceMonitor.json';
 
 export const translations = {
   en: {
@@ -135,6 +136,7 @@ export const translations = {
     formBuilder: enFormBuilder,
     responseHistory: enResponseHistory,
     metadataViewer: enMetadataViewer,
+    performanceMonitor: enPerformanceMonitor,
   },
 } as const;
 

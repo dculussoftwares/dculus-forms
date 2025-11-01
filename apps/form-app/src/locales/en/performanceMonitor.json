@@ -1,0 +1,33 @@
+{
+  "error": {
+    "title": "Performance Monitoring Error",
+    "description": "Unable to load performance statistics. Admin privileges may be required."
+  },
+  "title": "Field Analytics Performance",
+  "buttons": {
+    "refresh": "Refresh"
+  },
+  "cards": {
+    "hitRatio": {
+      "title": "Hit Ratio",
+      "description": "Cache effectiveness",
+      "value": "{{value}}%"
+    },
+    "cacheEntries": {
+      "title": "Cache Entries",
+      "expired": "{{count}} expired"
+    },
+    "memory": {
+      "title": "Memory",
+      "description": "Cache memory usage"
+    }
+  },
+  "tips": {
+    "title": "Performance Tips",
+    "list": {
+      "hitRatio": "Hit ratios above 80% indicate good cache performance",
+      "memory": "High memory usage may require cache cleanup",
+      "expiredEntries": "Many expired entries suggest longer TTL might be needed"
+    }
+  }
+}
