@@ -1,0 +1,23 @@
+{
+  "title": "Layout Options",
+  "labels": {
+    "current": "Current:",
+    "theme": "Theme:",
+    "spacing": "Spacing:",
+    "layout": "Layout:"
+  },
+  "values": {
+    "light": "light",
+    "dark": "dark", 
+    "auto": "auto",
+    "compact": "compact",
+    "normal": "normal",
+    "spacious": "spacious"
+  },
+  "infoCard": {
+    "title": "Current Layout Configuration",
+    "preview": "Preview",
+    "layoutSuffix": "Layout",
+    "collaborationActive": "Real-time collaboration active"
+  }
+}

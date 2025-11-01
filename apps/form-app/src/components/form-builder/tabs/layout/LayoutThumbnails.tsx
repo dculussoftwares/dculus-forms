@@ -3,18 +3,15 @@ import { Check } from 'lucide-react';
 import { LayoutCode } from '@dculus/types';
 import { Button, ScrollArea } from '@dculus/ui';
 import { cn } from '@dculus/utils';
+import { useTranslation } from '../../../../hooks/useTranslation';
 
 // Layout templates with accurate visual representations
 const LAYOUT_TEMPLATES: Array<{
   code: LayoutCode;
-  name: string;
-  description: string;
   preview: React.ReactNode;
 }> = [
   {
     code: 'L1',
-    name: 'Split',
-    description: 'Two-chunk layout with image + content',
     preview: (
       <div className="flex space-x-0.5 h-6">
         {/* Image chunk */}
@@ -32,8 +29,6 @@ const LAYOUT_TEMPLATES: Array<{
   },
   {
     code: 'L2',
-    name: 'Grid',
-    description: 'Clean two-column grid layout',
     preview: (
       <div className="grid grid-cols-2 gap-0.5 h-6">
         <div className="bg-white border border-gray-300 rounded p-0.5 space-y-0.5">
@@ -49,8 +44,6 @@ const LAYOUT_TEMPLATES: Array<{
   },
   {
     code: 'L3',
-    name: 'Cards',
-    description: 'Compact card-based design',
     preview: (
       <div className="space-y-0.5 h-6">
         <div className="bg-white border border-gray-300 rounded px-1 py-0.5 shadow-sm">
@@ -66,8 +59,6 @@ const LAYOUT_TEMPLATES: Array<{
   },
   {
     code: 'L4',
-    name: 'Clean',
-    description: 'Spacious minimal single column',
     preview: (
       <div className="bg-white border border-gray-200 rounded p-1 h-6 flex flex-col justify-center space-y-1">
         <div className="h-0.5 bg-gray-300 rounded w-full" />
@@ -78,8 +69,6 @@ const LAYOUT_TEMPLATES: Array<{
   },
   {
     code: 'L5',
-    name: 'Dual',
-    description: 'Left-right split with image & content',
     preview: (
       <div className="flex space-x-0.5 h-6">
         {/* Content chunk */}
@@ -97,8 +86,6 @@ const LAYOUT_TEMPLATES: Array<{
   },
   {
     code: 'L6',
-    name: 'Steps',
-    description: 'Step-by-step wizard with progress',
     preview: (
       <div className="bg-white border border-gray-300 rounded p-0.5 h-6 space-y-0.5">
         {/* Progress dots */}
@@ -122,8 +109,6 @@ const LAYOUT_TEMPLATES: Array<{
   },
   {
     code: 'L7',
-    name: 'Wide',
-    description: 'Full-width content section only',
     preview: (
       <div className="h-6">
         {/* Single full-width content chunk */}
@@ -140,8 +125,6 @@ const LAYOUT_TEMPLATES: Array<{
   },
   {
     code: 'L8',
-    name: 'Hero',
-    description: 'Full-width image with floating CTA',
     preview: (
       <div className="relative h-6">
         {/* Full image background */}
@@ -155,8 +138,6 @@ const LAYOUT_TEMPLATES: Array<{
   },
   {
     code: 'L9',
-    name: 'Direct',
-    description: 'Direct form pages without intro',
     preview: (
       <div className="space-y-0.5 h-6">
         {/* Header */}
@@ -186,6 +167,7 @@ export const LayoutThumbnails: React.FC<LayoutThumbnailsProps> = ({
   onLayoutSelect,
   disabled = false
 }) => {
+  const { t } = useTranslation('layoutThumbnails');
   return (
     <ScrollArea className="h-40">
       <div className="grid grid-cols-2 gap-2 pr-2">
@@ -203,7 +185,7 @@ export const LayoutThumbnails: React.FC<LayoutThumbnailsProps> = ({
             {/* Header with name and check */}
             <div className="flex items-center justify-between w-full mb-1.5">
               <span className="text-xs font-semibold text-gray-900 dark:text-white truncate">
-                {template.name}
+                {t(`layouts.${template.code}.name`)}
               </span>
               {currentLayoutCode === template.code && (
                 <Check className="w-3 h-3 text-purple-600 dark:text-purple-400 flex-shrink-0" />

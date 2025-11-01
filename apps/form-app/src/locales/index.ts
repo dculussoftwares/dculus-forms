@@ -50,6 +50,8 @@ import enFieldSettingsHeader from './en/fieldSettingsHeader.json';
 import enFieldSettingsConstants from './en/fieldSettingsConstants.json';
 import enCollaborationStatus from './en/collaborationStatus.json';
 import enBackgroundImage from './en/backgroundImage.json';
+import enLayoutOptions from './en/layoutOptions.json';
+import enLayoutThumbnails from './en/layoutThumbnails.json';
 
 export const translations = {
   en: {
@@ -105,6 +107,8 @@ export const translations = {
     fieldSettingsConstants: enFieldSettingsConstants,
     collaborationStatus: enCollaborationStatus,
     backgroundImage: enBackgroundImage,
+    layoutOptions: enLayoutOptions,
+    layoutThumbnails: enLayoutThumbnails,
   },
 } as const;
 

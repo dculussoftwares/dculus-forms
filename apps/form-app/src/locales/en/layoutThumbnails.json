@@ -1,0 +1,40 @@
+{
+  "layouts": {
+    "L1": {
+      "name": "Split",
+      "description": "Two-chunk layout with image + content"
+    },
+    "L2": {
+      "name": "Grid", 
+      "description": "Clean two-column grid layout"
+    },
+    "L3": {
+      "name": "Cards",
+      "description": "Compact card-based design"
+    },
+    "L4": {
+      "name": "Clean",
+      "description": "Spacious minimal single column"
+    },
+    "L5": {
+      "name": "Dual",
+      "description": "Left-right split with image & content"
+    },
+    "L6": {
+      "name": "Steps", 
+      "description": "Step-by-step wizard with progress"
+    },
+    "L7": {
+      "name": "Wide",
+      "description": "Full-width content section only"
+    },
+    "L8": {
+      "name": "Hero",
+      "description": "Full-width image with floating CTA"
+    },
+    "L9": {
+      "name": "Direct",
+      "description": "Direct form pages without intro"
+    }
+  }
+}
