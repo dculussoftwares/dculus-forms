@@ -1,0 +1,9 @@
+{
+  "title": "Pages",
+  "description": "Drag fields to page thumbnails",
+  "emptyState": {
+    "title": "No pages yet",
+    "description": "Create your first page to start building"
+  },
+  "addButton": "Add Page"
+}

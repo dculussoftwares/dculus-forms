@@ -40,6 +40,8 @@ import enEmptyDropZone from './en/emptyDropZone.json';
 import enJsonPreview from './en/jsonPreview.json';
 import enAddFieldPopover from './en/addFieldPopover.json';
 import enPermissions from './en/permissions.json';
+import enPageSelector from './en/pageSelector.json';
+import enPageThumbnailsSidebar from './en/pageThumbnailsSidebar.json';
 
 export const translations = {
   en: {
@@ -85,6 +87,8 @@ export const translations = {
     jsonPreview: enJsonPreview,
     addFieldPopover: enAddFieldPopover,
     permissions: enPermissions,
+    pageSelector: enPageSelector,
+    pageThumbnailsSidebar: enPageThumbnailsSidebar,
   },
 } as const;
 

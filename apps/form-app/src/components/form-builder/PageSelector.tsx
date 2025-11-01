@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator
 } from '@dculus/ui';
 import { FileText, ArrowRight } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface PageSelectorProps {
   pages: FormPage[];
@@ -26,10 +27,12 @@ export const PageSelector: React.FC<PageSelectorProps> = ({
   triggerElement,
   onPageSelect,
   disabled = false,
-  label = "Move to Page",
+  label,
   icon = <ArrowRight className="w-4 h-4" />,
 }) => {
+  const { t } = useTranslation('pageSelector');
   const availablePages = pages.filter(page => page.id !== currentPageId);
+  const displayLabel = label ?? t('defaultLabel');
 
   if (availablePages.length === 0) {
     return null; // Don't render if there are no other pages to move to
@@ -43,7 +46,7 @@ export const PageSelector: React.FC<PageSelectorProps> = ({
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="flex items-center space-x-2">
           {icon}
-          <span>{label}</span>
+          <span>{displayLabel}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {availablePages.map((page, index) => (
@@ -61,7 +64,7 @@ export const PageSelector: React.FC<PageSelectorProps> = ({
                 <span className="font-medium">{page.title}</span>
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                {page.fields.length} {page.fields.length === 1 ? 'field' : 'fields'}
+                {page.fields.length} {page.fields.length === 1 ? t('fieldCount.singular') : t('fieldCount.plural')}
               </div>
             </div>
           </DropdownMenuItem>

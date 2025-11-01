@@ -3,6 +3,7 @@ import { FormPage } from '@dculus/types';
 import { PageThumbnail } from './PageThumbnail';
 import { Button } from '@dculus/ui';
 import { Plus, Layout } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface PageThumbnailsSidebarProps {
   pages: FormPage[];
@@ -21,6 +22,8 @@ export const PageThumbnailsSidebar: React.FC<PageThumbnailsSidebarProps> = ({
   onAddPage,
   width = 200,
 }) => {
+  const { t } = useTranslation('pageThumbnailsSidebar');
+  
   return (
     <div 
       className="h-full bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 flex flex-col"
@@ -32,7 +35,7 @@ export const PageThumbnailsSidebar: React.FC<PageThumbnailsSidebarProps> = ({
           <div className="flex items-center space-x-2">
             <Layout className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             <h3 className="font-semibold text-sm text-gray-900 dark:text-white">
-              Pages
+              {t('title')}
             </h3>
           </div>
           <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -40,7 +43,7 @@ export const PageThumbnailsSidebar: React.FC<PageThumbnailsSidebarProps> = ({
           </span>
         </div>
         <p className="text-xs text-gray-500 dark:text-gray-400">
-          Drag fields to page thumbnails
+          {t('description')}
         </p>
       </div>
 
@@ -66,10 +69,10 @@ export const PageThumbnailsSidebar: React.FC<PageThumbnailsSidebarProps> = ({
               <Layout className="w-6 h-6 text-gray-400" />
             </div>
             <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-              No pages yet
+              {t('emptyState.title')}
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-              Create your first page to start building
+              {t('emptyState.description')}
             </p>
           </div>
         )}
@@ -85,7 +88,7 @@ export const PageThumbnailsSidebar: React.FC<PageThumbnailsSidebarProps> = ({
           variant="outline"
         >
           <Plus className="w-4 h-4 mr-1" />
-          Add Page
+          {t('addButton')}
         </Button>
       </div>
     </div>
