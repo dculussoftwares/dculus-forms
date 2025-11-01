@@ -1,9 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@dculus/ui';
+import { useTranslation } from '../hooks/useTranslation';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation('header');
 
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -14,7 +16,7 @@ const Header: React.FC = () => {
               onClick={() => navigate('/')}
               className="text-2xl font-bold text-foreground cursor-pointer hover:text-primary transition-colors"
             >
-              Dculus Forms
+              {t('appTitle')}
             </h1>
           </div>
           <div className="flex items-center space-x-4">
@@ -22,18 +24,18 @@ const Header: React.FC = () => {
               variant="ghost" 
               onClick={() => navigate('/forms')}
             >
-              Forms
+              {t('navigation.forms')}
             </Button>
             <Button 
               variant="ghost" 
               onClick={() => navigate('/demo')}
             >
-              Demo
+              {t('navigation.demo')}
             </Button>
             <Button 
               onClick={() => navigate('/forms/new')}
             >
-              + New Form
+              + {t('navigation.newForm')}
             </Button>
           </div>
         </div>

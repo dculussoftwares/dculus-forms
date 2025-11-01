@@ -52,6 +52,7 @@ import enCollaborationStatus from './en/collaborationStatus.json';
 import enBackgroundImage from './en/backgroundImage.json';
 import enLayoutOptions from './en/layoutOptions.json';
 import enLayoutThumbnails from './en/layoutThumbnails.json';
+import enHeader from './en/header.json';
 
 export const translations = {
   en: {
@@ -109,6 +110,7 @@ export const translations = {
     backgroundImage: enBackgroundImage,
     layoutOptions: enLayoutOptions,
     layoutThumbnails: enLayoutThumbnails,
+    header: enHeader,
   },
 } as const;
 
