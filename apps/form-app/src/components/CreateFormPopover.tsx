@@ -17,6 +17,7 @@ import { Plus, Loader2 } from 'lucide-react';
 import { CREATE_FORM } from '../graphql/mutations';
 import { useNavigate } from 'react-router-dom';
 import { useAppConfig } from '@/hooks';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface CreateFormData {
   title: string;
@@ -29,6 +30,7 @@ interface CreateFormPopoverProps {
 
 export const CreateFormPopover: React.FC<CreateFormPopoverProps> = ({ onFormCreated }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation('createFormPopover');
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<CreateFormData>({
     title: '',
@@ -42,13 +44,13 @@ export const CreateFormPopover: React.FC<CreateFormPopoverProps> = ({ onFormCrea
       setFormData({ title: '', description: '' });
       setErrors({});
       onFormCreated?.();
-      toastSuccess('Form created successfully', `"${data.createForm.title}" is ready for editing`);
+      toastSuccess(t('success.title'), t('success.message', { values: { title: data.createForm.title } }));
       // Navigate to form builder with the new form ID
       navigate(`/forms/${data.createForm.id}/edit`);
     },
     onError: (error) => {
       setErrors({ submit: error.message });
-      toastError('Failed to create form', error.message);
+      toastError(t('error.title'), error.message);
     },
   });
 
@@ -66,11 +68,11 @@ export const CreateFormPopover: React.FC<CreateFormPopoverProps> = ({ onFormCrea
     const newErrors: Record<string, string> = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = 'Form title is required';
+      newErrors.title = t('validation.titleRequired');
     }
 
     if (!organizationId) {
-      newErrors.submit = 'No active organization found. Please contact support.';
+      newErrors.submit = t('validation.organizationError');
     }
 
     setErrors(newErrors);
@@ -131,25 +133,25 @@ export const CreateFormPopover: React.FC<CreateFormPopoverProps> = ({ onFormCrea
       <PopoverTrigger asChild>
         <Button className="w-full justify-start">
           <Plus className="mr-2 h-4 w-4" />
-          Create New Form
+          {t('triggerButton')}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-96" align="start">
         <div className="space-y-4">
           <div className="space-y-2">
-            <TypographyH3>Create New Form</TypographyH3>
+            <TypographyH3>{t('title')}</TypographyH3>
             <TypographySmall className="text-muted-foreground">
-              Enter the details for your new form
+              {t('subtitle')}
             </TypographySmall>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="form-title">Form Title *</Label>
+              <Label htmlFor="form-title">{t('form.titleLabel')}</Label>
               <Input
                 id="form-title"
                 name="title"
-                placeholder="e.g., Contact Form, Survey, Registration"
+                placeholder={t('form.titlePlaceholder')}
                 value={formData.title}
                 onChange={handleInputChange}
                 className={errors.title ? 'border-red-500' : ''}
@@ -163,11 +165,11 @@ export const CreateFormPopover: React.FC<CreateFormPopoverProps> = ({ onFormCrea
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="form-description">Description</Label>
+              <Label htmlFor="form-description">{t('form.descriptionLabel')}</Label>
               <Textarea
                 id="form-description"
                 name="description"
-                placeholder="Brief description of your form (optional)"
+                placeholder={t('form.descriptionPlaceholder')}
                 value={formData.description}
                 onChange={handleInputChange}
                 rows={3}
@@ -191,10 +193,10 @@ export const CreateFormPopover: React.FC<CreateFormPopoverProps> = ({ onFormCrea
                 {isCreating ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
+                    {t('buttons.creating')}
                   </>
                 ) : (
-                  'Create Form'
+                  t('buttons.create')
                 )}
               </Button>
               <Button
@@ -204,7 +206,7 @@ export const CreateFormPopover: React.FC<CreateFormPopoverProps> = ({ onFormCrea
                 onClick={() => setIsOpen(false)}
                 disabled={isCreating}
               >
-                Cancel
+                {t('buttons.cancel')}
               </Button>
             </div>
           </form>

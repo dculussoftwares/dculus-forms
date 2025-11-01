@@ -20,26 +20,28 @@ import {
 } from "lucide-react"
 import { useAuth } from "../contexts/AuthContext"
 import { signOut } from "../lib/auth-client"
+import { useTranslation } from "../hooks/useTranslation"
 
 export function UserProfileMenu() {
   const { user } = useAuth()
+  const { t } = useTranslation('userProfileMenu')
 
   // Handle sign out
   const handleSignOut = async () => {
     try {
       await signOut()
-      toastSuccess('Signed out successfully', 'You have been signed out of your account')
+      toastSuccess(t('signOut.success.title'), t('signOut.success.message'))
       window.location.href = '/signin'
     } catch (error) {
       console.error('Error signing out:', error)
-      toastError('Sign out failed', 'There was an error signing you out. Please try again.')
+      toastError(t('signOut.error.title'), t('signOut.error.message'))
     }
   }
 
   // Use authenticated user data or fallback to default
   const userData = {
-    name: user?.name || "Guest User",
-    email: user?.email || "guest@example.com",
+    name: user?.name || t('userInfo.guestUser'),
+    email: user?.email || t('userInfo.guestEmail'),
     avatar: user?.image || "https://github.com/shadcn.png",
   }
 
@@ -83,20 +85,20 @@ export function UserProfileMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem>
           <User className="mr-2 h-4 w-4" />
-          <span>Profile</span>
+          <span>{t('menu.profile')}</span>
         </DropdownMenuItem>
         <DropdownMenuItem>
           <Mail className="mr-2 h-4 w-4" />
-          <span>Messages</span>
+          <span>{t('menu.messages')}</span>
         </DropdownMenuItem>
         <DropdownMenuItem>
           <Bell className="mr-2 h-4 w-4" />
-          <span>Notifications</span>
+          <span>{t('menu.notifications')}</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
+          <span>{t('menu.logout')}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

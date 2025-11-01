@@ -53,6 +53,9 @@ import enBackgroundImage from './en/backgroundImage.json';
 import enLayoutOptions from './en/layoutOptions.json';
 import enLayoutThumbnails from './en/layoutThumbnails.json';
 import enHeader from './en/header.json';
+import enCreateFormPopover from './en/createFormPopover.json';
+import enUserProfileMenu from './en/userProfileMenu.json';
+import enNavMain from './en/navMain.json';
 
 export const translations = {
   en: {
@@ -111,6 +114,9 @@ export const translations = {
     layoutOptions: enLayoutOptions,
     layoutThumbnails: enLayoutThumbnails,
     header: enHeader,
+    createFormPopover: enCreateFormPopover,
+    userProfileMenu: enUserProfileMenu,
+    navMain: enNavMain,
   },
 } as const;
 

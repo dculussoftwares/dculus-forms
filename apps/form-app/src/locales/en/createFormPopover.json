@@ -1,0 +1,27 @@
+{
+  "triggerButton": "Create New Form",
+  "title": "Create New Form",
+  "subtitle": "Enter the details for your new form",
+  "form": {
+    "titleLabel": "Form Title *",
+    "titlePlaceholder": "e.g., Contact Form, Survey, Registration",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Brief description of your form (optional)"
+  },
+  "validation": {
+    "titleRequired": "Form title is required",
+    "organizationError": "No active organization found. Please contact support."
+  },
+  "buttons": {
+    "create": "Create Form",
+    "creating": "Creating...",
+    "cancel": "Cancel"
+  },
+  "success": {
+    "title": "Form created successfully",
+    "message": "\"{title}\" is ready for editing"
+  },
+  "error": {
+    "title": "Failed to create form"
+  }
+}

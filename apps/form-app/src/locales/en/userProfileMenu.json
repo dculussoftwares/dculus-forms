@@ -1,0 +1,22 @@
+{
+  "userInfo": {
+    "guestUser": "Guest User",
+    "guestEmail": "guest@example.com"
+  },
+  "menu": {
+    "profile": "Profile",
+    "messages": "Messages", 
+    "notifications": "Notifications",
+    "logout": "Log out"
+  },
+  "signOut": {
+    "success": {
+      "title": "Signed out successfully",
+      "message": "You have been signed out of your account"
+    },
+    "error": {
+      "title": "Sign out failed",
+      "message": "There was an error signing you out. Please try again."
+    }
+  }
+}

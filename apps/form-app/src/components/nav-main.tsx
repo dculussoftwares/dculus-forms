@@ -13,6 +13,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from '@dculus/ui';
+import { useTranslation } from '../hooks/useTranslation';
 
 export interface NavItem {
   title: string;
@@ -27,10 +28,11 @@ export interface NavItem {
 
 export function NavMain({ items }: { items: NavItem[] }) {
   const location = useLocation();
+  const { t } = useTranslation('navMain');
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+      <SidebarGroupLabel>{t('navigationLabel')}</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => {
           const isActive = location.pathname === item.url ||
