@@ -36,7 +36,8 @@
     "minPlaceholder": "Min",
     "maxPlaceholder": "Max",
     "optionPlaceholder": "Option {{index}}",
-    "selectDefaultOption": "Select default option"
+    "selectDefaultOption": "Select default option",
+    "richTextContent": "Enter rich text content..."
   },
   "sectionTitles": {
     "basicSettings": "Basic Settings",
@@ -59,7 +60,8 @@
     "minimumLength": "Minimum Length",
     "maximumLength": "Maximum Length",
     "minimumDate": "Minimum Date",
-    "maximumDate": "Maximum Date"
+    "maximumDate": "Maximum Date",
+    "none": "None"
   },
   "buttons": {
     "add": "Add",

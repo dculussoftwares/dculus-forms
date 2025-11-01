@@ -2,6 +2,7 @@ import React from 'react';
 import { Controller, Control } from 'react-hook-form';
 import { Input, Label } from '@dculus/ui';
 import { ErrorMessage } from './ErrorMessage';
+import { useFieldSettingsConstants } from './useFieldSettingsConstants';
 
 interface SelectionLimitSettingsProps {
   control: Control<any>;
@@ -14,6 +15,8 @@ export const SelectionLimitSettings: React.FC<SelectionLimitSettingsProps> = ({
   errors,
   isConnected
 }) => {
+  const constants = useFieldSettingsConstants();
+  
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -29,7 +32,7 @@ export const SelectionLimitSettings: React.FC<SelectionLimitSettingsProps> = ({
               id="field-min-selections"
               type="number"
               min="0"
-              placeholder="No minimum"
+              placeholder={constants.PLACEHOLDERS.NO_MINIMUM}
               disabled={!isConnected}
               className="text-sm"
               value={field.value || ''}
@@ -56,7 +59,7 @@ export const SelectionLimitSettings: React.FC<SelectionLimitSettingsProps> = ({
               id="field-max-selections"
               type="number"
               min="1"
-              placeholder="No maximum"
+              placeholder={constants.PLACEHOLDERS.NO_MAXIMUM}
               disabled={!isConnected}
               className="text-sm"
               value={field.value || ''}

@@ -65,7 +65,7 @@ export const FieldSettingsHeader: React.FC<FieldSettingsHeaderProps> = ({ field,
               : 'opacity-0 transform translate-x-2 pointer-events-none'
           }`}>
             <div className="w-2 h-2 bg-orange-600 rounded-full animate-pulse"></div>
-            <span className="font-medium">Unsaved changes</span>
+            <span className="font-medium">{t('header.unsavedChanges')}</span>
           </div>
         </div>
       </div>

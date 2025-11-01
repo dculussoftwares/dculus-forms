@@ -18,7 +18,7 @@ import {
   FieldSettingsFooter,
   FormInputField,
   OptionsSettings,
-  FIELD_SETTINGS_CONSTANTS
+  useFieldSettingsConstants
 } from '../field-settings';
 
 interface SelectionFieldSettingsProps {
@@ -38,6 +38,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
   onUpdate,
   onFieldSwitch: _onFieldSwitch,
 }) => {
+  const constants = useFieldSettingsConstants();
   const {
     form,
     isSaving,
@@ -85,7 +86,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
       <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
         <div className="text-center">
           <Settings className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">Select a choice field to edit its settings</p>
+          <p className="text-sm">{constants.INFO_MESSAGES.SELECT_FIELD_TO_EDIT}</p>
         </div>
       </div>
     );
@@ -109,16 +110,16 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
           )}
 
           {/* Basic Settings */}
-          <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_SPACING}>
-            <h4 className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_TITLE}>
-              {FIELD_SETTINGS_CONSTANTS.SECTION_TITLES.BASIC_SETTINGS}
+          <div className={constants.CSS_CLASSES.SECTION_SPACING}>
+            <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
+              {constants.SECTION_TITLES.BASIC_SETTINGS}
             </h4>
             
             {/* Label */}
             <FormInputField
               name="label"
-              label={FIELD_SETTINGS_CONSTANTS.LABELS.LABEL}
-              placeholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.FIELD_LABEL}
+              label={constants.LABELS.LABEL}
+              placeholder={constants.PLACEHOLDERS.FIELD_LABEL}
               control={control}
               error={errors.label}
               disabled={!isConnected}
@@ -127,8 +128,8 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
             {/* Hint */}
             <FormInputField
               name="hint"
-              label={FIELD_SETTINGS_CONSTANTS.LABELS.HELP_TEXT}
-              placeholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.HELP_TEXT}
+              label={constants.LABELS.HELP_TEXT}
+              placeholder={constants.PLACEHOLDERS.HELP_TEXT}
               multiline={true}
               rows={2}
               control={control}
@@ -140,8 +141,8 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
             {/* Default Value - Dropdown for single selection fields (Radio and Select) */}
             {isSingleSelectionField && (
               <div className="space-y-2">
-                <Label className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.LABEL_STYLE}>
-                  {FIELD_SETTINGS_CONSTANTS.LABELS.DEFAULT_VALUE}
+                <Label className={constants.CSS_CLASSES.LABEL_STYLE}>
+                  {constants.LABELS.DEFAULT_VALUE}
                 </Label>
                 <Controller
                   name="defaultValue"
@@ -157,10 +158,10 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                       disabled={!isConnected}
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="No default selection" />
+                        <SelectValue placeholder={constants.PLACEHOLDERS.SELECT_DEFAULT_OPTION} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="__no_default__">No default selection</SelectItem>
+                        <SelectItem value="__no_default__">{constants.PLACEHOLDERS.SELECT_DEFAULT_OPTION}</SelectItem>
                         {options.length === 0 ? (
                           <SelectItem value="__no_options__" disabled>
                             Add options first to set default value
@@ -199,8 +200,8 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
             {/* Default Value - Multiple selection for Checkbox fields */}
             {field.type === 'checkbox_field' && (
               <div className="space-y-2">
-                <Label className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.LABEL_STYLE}>
-                  {FIELD_SETTINGS_CONSTANTS.LABELS.DEFAULT_VALUE}
+                <Label className={constants.CSS_CLASSES.LABEL_STYLE}>
+                  {constants.LABELS.DEFAULT_VALUE}
                 </Label>
                 <Controller
                   name="defaultValue"
@@ -267,7 +268,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
           </div>
 
           {/* Options Management */}
-          <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_SPACING}>
+          <div className={constants.CSS_CLASSES.SECTION_SPACING}>
             <OptionsSettings
               control={control}
               errors={errors}
@@ -289,8 +290,8 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
 
           {/* Selection Limits (for checkbox fields) */}
           {isCheckboxField && (
-            <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_SPACING}>
-              <h4 className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_TITLE}>
+            <div className={constants.CSS_CLASSES.SECTION_SPACING}>
+              <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
                 Selection Limits
               </h4>
               
@@ -298,8 +299,8 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                 {/* Minimum Selections */}
                 <FormInputField
                   name="validation.minSelections"
-                  label="Minimum Selections"
-                  placeholder="No minimum"
+                  label={constants.LABELS.MINIMUM}
+                  placeholder={constants.PLACEHOLDERS.NO_MINIMUM}
                   type="number"
                   min="0"
                   control={control}
@@ -313,8 +314,8 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                 {/* Maximum Selections */}
                 <FormInputField
                   name="validation.maxSelections"
-                  label="Maximum Selections"
-                  placeholder="No maximum"
+                  label={constants.LABELS.MAXIMUM}
+                  placeholder={constants.PLACEHOLDERS.NO_MAXIMUM}
                   type="number"
                   min="1"
                   control={control}
@@ -329,9 +330,9 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
           )}
 
           {/* Validation Settings */}
-          <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_SPACING}>
-            <h4 className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_TITLE}>
-              {FIELD_SETTINGS_CONSTANTS.SECTION_TITLES.VALIDATION}
+          <div className={constants.CSS_CLASSES.SECTION_SPACING}>
+            <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
+              {constants.SECTION_TITLES.VALIDATION}
             </h4>
             
             {/* Required field toggle */}
@@ -350,9 +351,9 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
               />
               <Label 
                 htmlFor="field-required" 
-                className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.LABEL_STYLE}
+                className={constants.CSS_CLASSES.LABEL_STYLE}
               >
-                {FIELD_SETTINGS_CONSTANTS.LABELS.REQUIRED_FIELD}
+                {constants.LABELS.REQUIRED_FIELD}
               </Label>
             </div>
           </div>

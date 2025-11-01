@@ -1,6 +1,6 @@
 import React from 'react';
 import { RangeSettings } from './RangeSettings';
-import { FIELD_SETTINGS_CONSTANTS } from './constants';
+import { useFieldSettingsConstants } from './useFieldSettingsConstants';
 import { BaseFieldSettingsProps } from './types';
 
 /**
@@ -8,15 +8,17 @@ import { BaseFieldSettingsProps } from './types';
  * Used by DATE field type
  */
 export const DateRangeSettings: React.FC<BaseFieldSettingsProps> = (props) => {
+  const constants = useFieldSettingsConstants();
+  
   return (
     <RangeSettings
       {...props}
       rangeType="date"
       minFieldName="minDate"
       maxFieldName="maxDate"
-      title={FIELD_SETTINGS_CONSTANTS.SECTION_TITLES.DATE_RANGE}
-      minLabel={FIELD_SETTINGS_CONSTANTS.LABELS.MINIMUM_DATE}
-      maxLabel={FIELD_SETTINGS_CONSTANTS.LABELS.MAXIMUM_DATE}
+      title={constants.SECTION_TITLES.DATE_RANGE}
+      minLabel={constants.LABELS.MINIMUM_DATE}
+      maxLabel={constants.LABELS.MAXIMUM_DATE}
       useGridLayout={false}
     />
   );

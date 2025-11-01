@@ -25,6 +25,7 @@ export { RangeSettings } from './RangeSettings';
 // Configuration and utilities
 export { getFieldSettingsConfig, fieldSupportsFeature, FIELD_SETTINGS_CONFIG } from './fieldSettingsConfig';
 export { FIELD_SETTINGS_CONSTANTS } from './constants';
+export { useFieldSettingsConstants } from './useFieldSettingsConstants';
 
 // Types
 export type {

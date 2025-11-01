@@ -2,7 +2,7 @@ import React from 'react';
 import { Controller, Control } from 'react-hook-form';
 import { Input, Label, Textarea } from '@dculus/ui';
 import { ErrorMessage } from './ErrorMessage';
-import { FIELD_SETTINGS_CONSTANTS } from './constants';
+import { useFieldSettingsConstants } from './useFieldSettingsConstants';
 import { FieldValidationError } from './types';
 
 interface FormInputFieldProps {
@@ -56,18 +56,19 @@ export const FormInputField: React.FC<FormInputFieldProps> = ({
   className = '',
   transform,
 }) => {
+  const constants = useFieldSettingsConstants();
   const hasError = Boolean(error);
-  const inputClassName = `${FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.TEXT_SMALL} ${
-    hasError ? FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.ERROR_INPUT : ''
+  const inputClassName = `${constants.CSS_CLASSES.TEXT_SMALL} ${
+    hasError ? constants.CSS_CLASSES.ERROR_INPUT : ''
   } ${className}`;
 
   const inputId = `field-${name}`;
 
   return (
-    <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.INPUT_SPACING}>
+    <div className={constants.CSS_CLASSES.INPUT_SPACING}>
       <Label 
         htmlFor={inputId} 
-        className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.LABEL_STYLE}
+        className={constants.CSS_CLASSES.LABEL_STYLE}
       >
         {label}
       </Label>

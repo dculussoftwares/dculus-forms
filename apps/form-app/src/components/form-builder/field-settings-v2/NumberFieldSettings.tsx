@@ -9,7 +9,7 @@ import {
   FieldSettingsHeader,
   FieldSettingsFooter,
   FormInputField,
-  FIELD_SETTINGS_CONSTANTS
+  useFieldSettingsConstants
 } from '../field-settings';
 
 interface NumberFieldSettingsProps {
@@ -29,6 +29,7 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
   onUpdate,
   onFieldSwitch: _onFieldSwitch,
 }) => {
+  const constants = useFieldSettingsConstants();
   const {
     form,
     isSaving,
@@ -72,7 +73,7 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
       <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
         <div className="text-center">
           <Settings className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">Select a number field to edit its settings</p>
+          <p className="text-sm">{constants.INFO_MESSAGES.SELECT_FIELD_TO_EDIT}</p>
         </div>
       </div>
     );
@@ -93,16 +94,16 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
           )}
 
           {/* Basic Settings */}
-          <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_SPACING}>
-            <h4 className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_TITLE}>
-              {FIELD_SETTINGS_CONSTANTS.SECTION_TITLES.BASIC_SETTINGS}
+          <div className={constants.CSS_CLASSES.SECTION_SPACING}>
+            <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
+              {constants.SECTION_TITLES.BASIC_SETTINGS}
             </h4>
             
             {/* Label */}
             <FormInputField
               name="label"
-              label={FIELD_SETTINGS_CONSTANTS.LABELS.LABEL}
-              placeholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.FIELD_LABEL}
+              label={constants.LABELS.LABEL}
+              placeholder={constants.PLACEHOLDERS.FIELD_LABEL}
               control={control}
               error={errors.label}
               disabled={!isConnected}
@@ -111,8 +112,8 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
             {/* Hint */}
             <FormInputField
               name="hint"
-              label={FIELD_SETTINGS_CONSTANTS.LABELS.HELP_TEXT}
-              placeholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.HELP_TEXT}
+              label={constants.LABELS.HELP_TEXT}
+              placeholder={constants.PLACEHOLDERS.HELP_TEXT}
               multiline={true}
               rows={2}
               control={control}
@@ -123,8 +124,8 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
             {/* Placeholder */}
             <FormInputField
               name="placeholder"
-              label={FIELD_SETTINGS_CONSTANTS.LABELS.PLACEHOLDER}
-              placeholder="Enter placeholder for number input"
+              label={constants.LABELS.PLACEHOLDER}
+              placeholder={constants.PLACEHOLDERS.PLACEHOLDER_TEXT}
               control={control}
               error={errors.placeholder}
               disabled={!isConnected}
@@ -133,8 +134,8 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
             {/* Prefix */}
             <FormInputField
               name="prefix"
-              label={FIELD_SETTINGS_CONSTANTS.LABELS.PREFIX}
-              placeholder="e.g., $, €, #"
+              label={constants.LABELS.PREFIX}
+              placeholder={constants.PLACEHOLDERS.PREFIX_TEXT}
               control={control}
               error={errors.prefix}
               disabled={!isConnected}
@@ -143,8 +144,8 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
             {/* Default Value */}
             <FormInputField
               name="defaultValue"
-              label={FIELD_SETTINGS_CONSTANTS.LABELS.DEFAULT_VALUE}
-              placeholder="Enter default number"
+              label={constants.LABELS.DEFAULT_VALUE}
+              placeholder={constants.PLACEHOLDERS.DEFAULT_VALUE}
               type="number"
               control={control}
               error={errors.defaultValue}
@@ -156,17 +157,17 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
           </div>
 
           {/* Number Range Settings */}
-          <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_SPACING}>
-            <h4 className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_TITLE}>
-              Number Constraints
+          <div className={constants.CSS_CLASSES.SECTION_SPACING}>
+            <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
+              {constants.SECTION_TITLES.NUMBER_RANGE}
             </h4>
             
             <div className="grid grid-cols-2 gap-4">
               {/* Minimum Value */}
               <FormInputField
                 name="min"
-                label="Minimum Value"
-                placeholder="No minimum"
+                label={constants.LABELS.MINIMUM}
+                placeholder={constants.PLACEHOLDERS.NO_MINIMUM}
                 type="number"
                 control={control}
                 error={errors.min}
@@ -179,8 +180,8 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
               {/* Maximum Value */}
               <FormInputField
                 name="max"
-                label="Maximum Value"
-                placeholder="No maximum"
+                label={constants.LABELS.MAXIMUM}
+                placeholder={constants.PLACEHOLDERS.NO_MAXIMUM}
                 type="number"
                 control={control}
                 error={errors.max}
@@ -193,9 +194,9 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
           </div>
 
           {/* Validation Settings */}
-          <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_SPACING}>
-            <h4 className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_TITLE}>
-              {FIELD_SETTINGS_CONSTANTS.SECTION_TITLES.VALIDATION}
+          <div className={constants.CSS_CLASSES.SECTION_SPACING}>
+            <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
+              {constants.SECTION_TITLES.VALIDATION}
             </h4>
             
             {/* Required field toggle */}
@@ -214,9 +215,9 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
               />
               <Label 
                 htmlFor="field-required" 
-                className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.LABEL_STYLE}
+                className={constants.CSS_CLASSES.LABEL_STYLE}
               >
-                {FIELD_SETTINGS_CONSTANTS.LABELS.REQUIRED_FIELD}
+                {constants.LABELS.REQUIRED_FIELD}
               </Label>
             </div>
           </div>

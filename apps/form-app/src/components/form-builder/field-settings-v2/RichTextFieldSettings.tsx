@@ -7,7 +7,7 @@ import {
   FieldSettingsHeader,
   FieldSettingsFooter,
   RichTextSettings,
-  FIELD_SETTINGS_CONSTANTS
+  useFieldSettingsConstants
 } from '../field-settings';
 
 interface RichTextFieldSettingsProps {
@@ -27,6 +27,7 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
   onUpdate,
   onFieldSwitch: _onFieldSwitch,
 }) => {
+  const constants = useFieldSettingsConstants();
   const {
     form,
     isSaving,
@@ -71,7 +72,7 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
       <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
         <div className="text-center">
           <Settings className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">Select a rich text field to edit its content</p>
+          <p className="text-sm">{constants.INFO_MESSAGES.SELECT_FIELD_TO_EDIT}</p>
         </div>
       </div>
     );
@@ -103,8 +104,8 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
 
           {/* Rich Text Content Settings */}
           {!isContentLoading && (
-            <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_SPACING}>
-              <h4 className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_TITLE}>
+            <div className={constants.CSS_CLASSES.SECTION_SPACING}>
+              <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
                 Content
               </h4>
               
@@ -117,8 +118,8 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
           )}
 
           {/* Field Information */}
-          <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_SPACING}>
-            <h4 className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_TITLE}>
+          <div className={constants.CSS_CLASSES.SECTION_SPACING}>
+            <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
               Field Information
             </h4>
             
@@ -136,8 +137,8 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
           </div>
 
           {/* Content Guidelines */}
-          <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_SPACING}>
-            <h4 className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_TITLE}>
+          <div className={constants.CSS_CLASSES.SECTION_SPACING}>
+            <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
               Content Guidelines
             </h4>
             

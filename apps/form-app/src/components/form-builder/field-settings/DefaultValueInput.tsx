@@ -11,6 +11,7 @@ import {
   Checkbox
 } from '@dculus/ui';
 import { FormField, FieldType } from '@dculus/types';
+import { useFieldSettingsConstants } from './useFieldSettingsConstants';
 
 interface DefaultValueInputProps {
   field: FormField | null;
@@ -29,6 +30,7 @@ export const DefaultValueInput: React.FC<DefaultValueInputProps> = ({
   watch,
   setValue
 }) => {
+  const constants = useFieldSettingsConstants();
   // For SelectField, RadioField, and CheckboxField, automatically reset default value if it's no longer in options
   useEffect(() => {
     if ((field?.type === FieldType.SELECT_FIELD || field?.type === FieldType.RADIO_FIELD || field?.type === FieldType.CHECKBOX_FIELD) && setValue) {
@@ -104,7 +106,7 @@ export const DefaultValueInput: React.FC<DefaultValueInputProps> = ({
             <div className={`space-y-2 ${errors.defaultValue ? 'border border-red-300 rounded-md p-2' : ''}`}>
               {options.length === 0 ? (
                 <div className="text-sm text-gray-500 dark:text-gray-400 italic">
-                  No options available. Add options first to set default values.
+                  {constants.INFO_MESSAGES.NO_OPTIONS_AVAILABLE}
                 </div>
               ) : (
                 <>
@@ -147,11 +149,11 @@ export const DefaultValueInput: React.FC<DefaultValueInputProps> = ({
               disabled={!isConnected}
             >
               <SelectTrigger className={`text-sm ${errors.defaultValue ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}>
-                <SelectValue placeholder="Select default option" />
+                <SelectValue placeholder={constants.PLACEHOLDERS.SELECT_DEFAULT_OPTION} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__none__">
-                  None
+                  {constants.LABELS.NONE}
                 </SelectItem>
                 {options
                   .map((option: string, originalIndex: number) => {
@@ -172,7 +174,7 @@ export const DefaultValueInput: React.FC<DefaultValueInputProps> = ({
           <Input
             {...controlField}
             id="field-default"
-            placeholder="Default value"
+            placeholder={constants.PLACEHOLDERS.DEFAULT_VALUE}
             disabled={!isConnected}
             className={`text-sm ${errors.defaultValue ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
             value={controlField.value || ''}

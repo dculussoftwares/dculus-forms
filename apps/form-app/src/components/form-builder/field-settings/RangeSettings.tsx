@@ -1,6 +1,6 @@
 import React from 'react';
 import { FormInputField } from './FormInputField';
-import { FIELD_SETTINGS_CONSTANTS } from './constants';
+import { useFieldSettingsConstants } from './useFieldSettingsConstants';
 import { BaseFieldSettingsProps } from './types';
 
 interface RangeSettingsProps extends BaseFieldSettingsProps {
@@ -42,13 +42,14 @@ export const RangeSettings: React.FC<RangeSettingsProps> = ({
   maxPlaceholder,
   useGridLayout = false,
 }) => {
+  const constants = useFieldSettingsConstants();
   const containerClass = useGridLayout 
     ? "grid grid-cols-2 gap-3"
     : "space-y-3";
 
   return (
-    <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_SPACING}>
-      <h4 className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_TITLE}>
+    <div className={constants.CSS_CLASSES.SECTION_SPACING}>
+      <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
         {title}
       </h4>
       

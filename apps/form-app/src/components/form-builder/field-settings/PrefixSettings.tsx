@@ -1,6 +1,6 @@
 import React from 'react';
 import { FormInputField } from './FormInputField';
-import { FIELD_SETTINGS_CONSTANTS } from './constants';
+import { useFieldSettingsConstants } from './useFieldSettingsConstants';
 import { BaseFieldSettingsProps } from './types';
 
 /**
@@ -12,11 +12,13 @@ export const PrefixSettings: React.FC<BaseFieldSettingsProps> = ({
   errors,
   isConnected
 }) => {
+  const constants = useFieldSettingsConstants();
+  
   return (
     <FormInputField
       name="prefix"
-      label={FIELD_SETTINGS_CONSTANTS.LABELS.PREFIX}
-      placeholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.PREFIX_TEXT}
+      label={constants.LABELS.PREFIX}
+      placeholder={constants.PLACEHOLDERS.PREFIX_TEXT}
       control={control}
       error={errors.prefix}
       disabled={!isConnected}

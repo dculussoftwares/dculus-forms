@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Controller, useWatch } from 'react-hook-form';
 import { RichTextEditor } from '@dculus/ui';
-import { FIELD_SETTINGS_CONSTANTS } from './constants';
+import { useFieldSettingsConstants } from './useFieldSettingsConstants';
 import { BaseFieldSettingsProps } from './types';
 
 /**
@@ -16,6 +16,7 @@ export const RichTextSettings: React.FC<BaseFieldSettingsProps> = ({
   errors,
   isConnected
 }) => {
+  const constants = useFieldSettingsConstants();
   const [isFormReady, setIsFormReady] = useState(false);
   
   // Watch the content value to track form initialization
@@ -38,8 +39,8 @@ export const RichTextSettings: React.FC<BaseFieldSettingsProps> = ({
 
   if (!isFormReady) {
     return (
-      <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_SPACING}>
-        <h4 className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_TITLE}>
+      <div className={constants.CSS_CLASSES.SECTION_SPACING}>
+        <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
           Rich Text Content
         </h4>
         <div className="space-y-2">
@@ -55,8 +56,8 @@ export const RichTextSettings: React.FC<BaseFieldSettingsProps> = ({
   }
 
   return (
-    <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_SPACING}>
-      <h4 className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_TITLE}>
+    <div className={constants.CSS_CLASSES.SECTION_SPACING}>
+      <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
         Rich Text Content
       </h4>
       
@@ -76,7 +77,7 @@ export const RichTextSettings: React.FC<BaseFieldSettingsProps> = ({
                 <RichTextEditor
                   value={editorValue}
                   onChange={field.onChange}
-                  placeholder="Enter rich text content..."
+                  placeholder={constants.PLACEHOLDERS.RICH_TEXT_CONTENT}
                   editable={isConnected}
                   className="min-h-32"
                 />

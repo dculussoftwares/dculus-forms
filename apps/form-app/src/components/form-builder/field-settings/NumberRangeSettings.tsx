@@ -1,6 +1,6 @@
 import React from 'react';
 import { RangeSettings } from './RangeSettings';
-import { FIELD_SETTINGS_CONSTANTS } from './constants';
+import { useFieldSettingsConstants } from './useFieldSettingsConstants';
 import { BaseFieldSettingsProps } from './types';
 
 /**
@@ -8,17 +8,19 @@ import { BaseFieldSettingsProps } from './types';
  * Used by NUMBER field type
  */
 export const NumberRangeSettings: React.FC<BaseFieldSettingsProps> = (props) => {
+  const constants = useFieldSettingsConstants();
+  
   return (
     <RangeSettings
       {...props}
       rangeType="number"
       minFieldName="min"
       maxFieldName="max"
-      title={FIELD_SETTINGS_CONSTANTS.SECTION_TITLES.NUMBER_RANGE}
-      minLabel={FIELD_SETTINGS_CONSTANTS.LABELS.MINIMUM}
-      maxLabel={FIELD_SETTINGS_CONSTANTS.LABELS.MAXIMUM}
-      minPlaceholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.MIN_PLACEHOLDER}
-      maxPlaceholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.MAX_PLACEHOLDER}
+      title={constants.SECTION_TITLES.NUMBER_RANGE}
+      minLabel={constants.LABELS.MINIMUM}
+      maxLabel={constants.LABELS.MAXIMUM}
+      minPlaceholder={constants.PLACEHOLDERS.MIN_PLACEHOLDER}
+      maxPlaceholder={constants.PLACEHOLDERS.MAX_PLACEHOLDER}
       useGridLayout={true}
     />
   );

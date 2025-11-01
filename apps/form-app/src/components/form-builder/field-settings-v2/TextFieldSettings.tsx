@@ -9,7 +9,7 @@ import {
   FieldSettingsHeader,
   FieldSettingsFooter,
   FormInputField,
-  FIELD_SETTINGS_CONSTANTS
+  useFieldSettingsConstants
 } from '../field-settings';
 
 interface TextFieldSettingsProps {
@@ -29,6 +29,7 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
   onUpdate,
   onFieldSwitch: _onFieldSwitch,
 }) => {
+  const constants = useFieldSettingsConstants();
   const {
     form,
     isSaving,
@@ -72,7 +73,7 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
       <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
         <div className="text-center">
           <Settings className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">Select a text field to edit its settings</p>
+          <p className="text-sm">{constants.INFO_MESSAGES.SELECT_FIELD_TO_EDIT}</p>
         </div>
       </div>
     );
@@ -93,16 +94,16 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
           )}
 
           {/* Basic Settings */}
-          <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_SPACING}>
-            <h4 className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_TITLE}>
-              {FIELD_SETTINGS_CONSTANTS.SECTION_TITLES.BASIC_SETTINGS}
+          <div className={constants.CSS_CLASSES.SECTION_SPACING}>
+            <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
+              {constants.SECTION_TITLES.BASIC_SETTINGS}
             </h4>
             
             {/* Label */}
             <FormInputField
               name="label"
-              label={FIELD_SETTINGS_CONSTANTS.LABELS.LABEL}
-              placeholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.FIELD_LABEL}
+              label={constants.LABELS.LABEL}
+              placeholder={constants.PLACEHOLDERS.FIELD_LABEL}
               control={control}
               error={errors.label}
               disabled={!isConnected}
@@ -111,8 +112,8 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
             {/* Hint */}
             <FormInputField
               name="hint"
-              label={FIELD_SETTINGS_CONSTANTS.LABELS.HELP_TEXT}
-              placeholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.HELP_TEXT}
+              label={constants.LABELS.HELP_TEXT}
+              placeholder={constants.PLACEHOLDERS.HELP_TEXT}
               multiline={true}
               rows={2}
               control={control}
@@ -123,8 +124,8 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
             {/* Placeholder */}
             <FormInputField
               name="placeholder"
-              label={FIELD_SETTINGS_CONSTANTS.LABELS.PLACEHOLDER}
-              placeholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.PLACEHOLDER_TEXT}
+              label={constants.LABELS.PLACEHOLDER}
+              placeholder={constants.PLACEHOLDERS.PLACEHOLDER_TEXT}
               control={control}
               error={errors.placeholder}
               disabled={!isConnected}
@@ -133,8 +134,8 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
             {/* Prefix (if supported) */}
             <FormInputField
               name="prefix"
-              label={FIELD_SETTINGS_CONSTANTS.LABELS.PREFIX}
-              placeholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.PREFIX_TEXT}
+              label={constants.LABELS.PREFIX}
+              placeholder={constants.PLACEHOLDERS.PREFIX_TEXT}
               control={control}
               error={errors.prefix}
               disabled={!isConnected}
@@ -143,8 +144,8 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
             {/* Default Value */}
             <FormInputField
               name="defaultValue"
-              label={FIELD_SETTINGS_CONSTANTS.LABELS.DEFAULT_VALUE}
-              placeholder="Enter default value"
+              label={constants.LABELS.DEFAULT_VALUE}
+              placeholder={constants.PLACEHOLDERS.DEFAULT_VALUE}
               control={control}
               error={errors.defaultValue}
               disabled={!isConnected}
@@ -152,9 +153,9 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
           </div>
 
           {/* Validation Settings */}
-          <div className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_SPACING}>
-            <h4 className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.SECTION_TITLE}>
-              {FIELD_SETTINGS_CONSTANTS.SECTION_TITLES.VALIDATION}
+          <div className={constants.CSS_CLASSES.SECTION_SPACING}>
+            <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
+              {constants.SECTION_TITLES.VALIDATION}
             </h4>
             
             {/* Required field toggle */}
@@ -173,9 +174,9 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
               />
               <Label 
                 htmlFor="field-required" 
-                className={FIELD_SETTINGS_CONSTANTS.CSS_CLASSES.LABEL_STYLE}
+                className={constants.CSS_CLASSES.LABEL_STYLE}
               >
-                {FIELD_SETTINGS_CONSTANTS.LABELS.REQUIRED_FIELD}
+                {constants.LABELS.REQUIRED_FIELD}
               </Label>
             </div>
 
@@ -184,8 +185,8 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
               <>
                 <FormInputField
                   name="validation.minLength"
-                  label={FIELD_SETTINGS_CONSTANTS.LABELS.MINIMUM_LENGTH}
-                  placeholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.NO_MINIMUM}
+                  label={constants.LABELS.MINIMUM_LENGTH}
+                  placeholder={constants.PLACEHOLDERS.NO_MINIMUM}
                   type="number"
                   min="0"
                   control={control}
@@ -198,8 +199,8 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
 
                 <FormInputField
                   name="validation.maxLength"
-                  label={FIELD_SETTINGS_CONSTANTS.LABELS.MAXIMUM_LENGTH}
-                  placeholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.NO_MAXIMUM}
+                  label={constants.LABELS.MAXIMUM_LENGTH}
+                  placeholder={constants.PLACEHOLDERS.NO_MAXIMUM}
                   type="number"
                   min="1"
                   control={control}

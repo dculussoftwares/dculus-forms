@@ -81,6 +81,7 @@ export const useFieldSettingsConstants = () => {
       MAX_PLACEHOLDER: t('placeholders.maxPlaceholder'),
       OPTION_PLACEHOLDER: (index: number) => t('placeholders.optionPlaceholder', { values: { index: index + 1 } }),
       SELECT_DEFAULT_OPTION: t('placeholders.selectDefaultOption'),
+      RICH_TEXT_CONTENT: t('placeholders.richTextContent'),
     },
 
     // Field type configurations (unchanged as they're not user-facing)
@@ -167,6 +168,7 @@ export const useFieldSettingsConstants = () => {
       MAXIMUM_LENGTH: t('labels.maximumLength'),
       MINIMUM_DATE: t('labels.minimumDate'),
       MAXIMUM_DATE: t('labels.maximumDate'),
+      NONE: t('labels.none'),
     },
 
     // Button texts (translated)

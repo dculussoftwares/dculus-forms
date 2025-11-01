@@ -1,6 +1,6 @@
 import React from 'react';
 import { FormInputField } from './FormInputField';
-import { FIELD_SETTINGS_CONSTANTS } from './constants';
+import { useFieldSettingsConstants } from './useFieldSettingsConstants';
 import { BaseFieldSettingsProps } from './types';
 
 /**
@@ -12,11 +12,13 @@ export const TextInputSettings: React.FC<BaseFieldSettingsProps> = ({
   errors,
   isConnected
 }) => {
+  const constants = useFieldSettingsConstants();
+  
   return (
     <FormInputField
       name="placeholder"
-      label={FIELD_SETTINGS_CONSTANTS.LABELS.PLACEHOLDER}
-      placeholder={FIELD_SETTINGS_CONSTANTS.PLACEHOLDERS.PLACEHOLDER_TEXT}
+      label={constants.LABELS.PLACEHOLDER}
+      placeholder={constants.PLACEHOLDERS.PLACEHOLDER_TEXT}
       control={control}
       error={errors.placeholder}
       disabled={!isConnected}
