@@ -45,20 +45,18 @@
     "percentage": "Percentage"
   },
   "summary": {
-    "title": "Email Analysis Summary",
-    "validationTitle": "Validation",
-    "validRate": "Valid rate:",
-    "invalidCount": "Invalid:",
-    "qualityScore": "Quality:",
-    "domainDiversityTitle": "Domain Diversity",
-    "uniqueDomains": "Unique domains:",
-    "topDomain": "Top domain:",
-    "emailTypesTitle": "Email Types",
-    "corporate": "Corporate:",
-    "personal": "Personal:",
-    "dataQualityTitle": "Data Quality",
-    "totalEmails": "Total emails:",
-    "completeness": "Completeness:"
+    "title": "Analysis Summary",
+    "validationRate": "Validation Rate:",
+    "emailQuality": "Email Quality:",
+    "domainDiversity": "Domain Diversity:",
+    "corporateRatio": "Corporate Ratio:",
+    "topProvider": "Top Provider:",
+    "analysisDepth": "Analysis Depth:",
+    "uniqueDomains": "unique domains",
+    "providers": "providers"
+  },
+  "charts": {
+    "yAxisLabel": "Number of Emails"
   },
   "validation": {
     "title": "Email Validation",

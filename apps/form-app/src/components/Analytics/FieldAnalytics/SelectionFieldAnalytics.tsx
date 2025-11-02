@@ -20,6 +20,8 @@ const DistributionIndicator: React.FC<{
   distributionType: string;
   options: Array<{ option: string; count: number; percentage: number }>;
 }> = ({ distributionType, options }) => {
+  const { t } = useTranslation('selectionFieldAnalytics');
+  
   const getDistributionColor = (type: string) => {
     switch (type) {
       case 'concentrated': return 'bg-red-100 text-red-800';
@@ -32,13 +34,15 @@ const DistributionIndicator: React.FC<{
   const getDistributionDescription = (type: string) => {
     switch (type) {
       case 'concentrated':
-        return `One option dominates with ${options[0]?.percentage.toFixed(1)}% of responses`;
+        return t('distributionDescriptions.concentrated', { 
+          values: { percentage: options[0]?.percentage.toFixed(1) } 
+        });
       case 'even':
-        return 'Responses are fairly distributed across all options';
+        return t('distributionDescriptions.even');
       case 'polarized':
-        return 'Responses are split between a few popular options';
+        return t('distributionDescriptions.polarized');
       default:
-        return 'Distribution analysis unavailable';
+        return t('distributionDescriptions.unavailable');
     }
   };
 

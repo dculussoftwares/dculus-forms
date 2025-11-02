@@ -67,5 +67,11 @@
   },
   "trendsOverTime": {
     "title": "Selection Trends Over Time"
+  },
+  "distributionDescriptions": {
+    "concentrated": "One option dominates with {{percentage}}% of responses",
+    "even": "Responses are fairly distributed across all options",
+    "polarized": "Responses are split between a few popular options",
+    "unavailable": "Distribution analysis unavailable"
   }
 }

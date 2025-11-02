@@ -248,7 +248,7 @@ const TopLevelDomainsChart: React.FC<{
               interval={0}
             />
             <YAxis 
-              label={{ value: 'Number of Emails', angle: -90, position: 'insideLeft' }}
+              label={{ value: t('charts.yAxisLabel'), angle: -90, position: 'insideLeft' }}
             />
             <Tooltip 
               content={({ active, payload, label: _label }) => {
@@ -485,7 +485,7 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
                     textAnchor="end"
                   />
                   <YAxis 
-                    label={{ value: 'Number of Emails', angle: -90, position: 'insideLeft' }}
+                    label={{ value: t('charts.yAxisLabel'), angle: -90, position: 'insideLeft' }}
                   />
                   <Tooltip 
                     content={({ active, payload, label: _label }) => {

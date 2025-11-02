@@ -648,7 +648,7 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
                 <div className="flex justify-between">
                   <span className="text-gray-600">{t('summary.temporalSpread')}</span>
                   <span className="font-medium">
-                    {data.seasonalPatterns.length === 4 ? 'All seasons' : 'Partial'}
+                    {data.seasonalPatterns.length === 4 ? t('summary.allSeasons') : t('summary.partial')}
                   </span>
                 </div>
               </div>
