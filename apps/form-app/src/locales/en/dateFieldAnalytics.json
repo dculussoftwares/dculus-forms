@@ -4,6 +4,73 @@
     "title": "No date data available",
     "subtitle": "This date field hasn't received any responses yet."
   },
+  "stats": {
+    "totalResponses": "Total Responses",
+    "dateRange": "Date Range",
+    "popularDay": "Popular Day",
+    "popularMonth": "Popular Month",
+    "dateSelectionsMade": "Date selections made",
+    "fromEarliestToLatest": "From earliest to latest"
+  },
+  "calendar": {
+    "title": "Date Selection Calendar",
+    "noDateData": "No date data available",
+    "intensityScale": "Intensity scale (selections per day)",
+    "less": "Less",
+    "more": "More"
+  },
+  "seasonal": {
+    "title": "Seasonal Patterns",
+    "peak": "Peak",
+    "selections": "selections",
+    "insightsTitle": "Seasonal Insights",
+    "mostPopularSeason": "{{season}} is the most popular season with {{percentage}}% of selections",
+    "totalCoverage": "Total seasonal data covers {{count}} dated responses",
+    "evenDistribution": "Even across seasons",
+    "somePreferences": "Some seasonal preferences"
+  },
+  "rangeOverview": {
+    "title": "Date Range Overview",
+    "earliest": "Earliest",
+    "latest": "Latest",
+    "mostCommon": "Most Common",
+    "timeSpan": "Time Span",
+    "days": "days"
+  },
+  "dayOfWeek": {
+    "title": "Day of Week Distribution",
+    "day": "Day",
+    "selections": "Selections"
+  },
+  "monthly": {
+    "title": "Monthly Distribution",
+    "month": "Month",
+    "count": "Count"
+  },
+  "summary": {
+    "title": "Date Analysis Summary",
+    "rangeTitle": "Date Range",
+    "span": "Span:",
+    "earliest": "Earliest:",
+    "latest": "Latest:",
+    "patternsTitle": "Patterns",
+    "popularDay": "Popular day:",
+    "popularMonth": "Popular month:",
+    "mostCommon": "Most common:",
+    "distributionTitle": "Distribution",
+    "responses": "Responses:",
+    "uniqueDates": "Unique dates:",
+    "concentration": "Concentration:",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
+    "dataQualityTitle": "Data Quality",
+    "completeness": "Completeness:",
+    "temporalSpread": "Temporal spread:",
+    "wide": "Wide",
+    "moderate": "Moderate",
+    "narrow": "Narrow"
+  },
   "timeline": {
     "title": "Date Distribution",
     "date": "Date",

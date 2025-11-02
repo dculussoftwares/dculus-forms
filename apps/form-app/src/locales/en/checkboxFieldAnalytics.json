@@ -4,11 +4,56 @@
     "title": "No checkbox data available",
     "subtitle": "This checkbox field hasn't received any responses yet."
   },
-  "selectionPattern": {
+  "stats": {
+    "totalSelections": "Total Selections",
+    "averageSelected": "Average Selected",
+    "mostPopular": "Most Popular",
+    "uniqueCombos": "Unique Combos",
+    "acrossAllOptions": "Across all options",
+    "optionsPerResponse": "Options per response",
+    "differentCombinationsUsed": "Different combinations used"
+  },
+  "correlations": {
+    "title": "Option Correlations",
+    "noSignificantCorrelations": "No significant correlations found",
+    "strength": {
+      "veryStrong": "Very Strong",
+      "strong": "Strong",
+      "moderate": "Moderate",
+      "weak": "Weak",
+      "veryWeak": "Very Weak"
+    },
+    "correlation": "correlation",
+    "moreLikelyTogether": "more likely together",
+    "understandingTitle": "Understanding Correlations",
+    "strongDescription": "Strong (2.0x+): Options frequently selected together",
+    "moderateDescription": "Moderate (1.5x+): Options sometimes selected together",
+    "weakDescription": "Weak (<1.5x): Options rarely selected together"
+  },
+  "combinations": {
+    "title": "Popular Combinations",
+    "mostPopularTitle": "Most Popular Combinations",
+    "noCombinationData": "No combination data available",
+    "option": "option",
+    "options": "options",
+    "times": "times",
+    "showingTopOf": "Showing top 10 of {{total}} unique combinations"
+  },
+  "selectionDistribution": {
+    "title": "Selection Count Distribution",
+    "numberOfResponses": "Number of Responses",
+    "average": "Average"
+  },
+  "patterns": {
     "title": "Selection Patterns",
     "avgSelected": "Avg Selections",
     "mostSelected": "Most Selected",
     "leastSelected": "Least Selected"
+  },
+  "charts": {
+    "selectionPatterns": "Selection Patterns",
+    "individualPopularity": "Individual Option Popularity",
+    "multiSelectionSummary": "Multi-Selection Analysis Summary"
   },
   "distribution": {
     "title": "Option Distribution",

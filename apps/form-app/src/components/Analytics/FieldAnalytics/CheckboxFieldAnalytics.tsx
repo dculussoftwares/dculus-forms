@@ -20,11 +20,13 @@ const CorrelationMatrix: React.FC<{
   options: string[];
   loading?: boolean;
 }> = ({ correlations, options: _options, loading }) => {
+  const { t } = useTranslation('checkboxFieldAnalytics');
+  
   if (loading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Option Correlations</CardTitle>
+          <CardTitle>{t('correlations.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="animate-pulse">
@@ -39,11 +41,11 @@ const CorrelationMatrix: React.FC<{
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Option Correlations</CardTitle>
+          <CardTitle>{t('correlations.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center text-gray-500 py-8">
-            No significant correlations found
+            {t('correlations.noSignificantCorrelations')}
           </div>
         </CardContent>
       </Card>
@@ -57,15 +59,15 @@ const CorrelationMatrix: React.FC<{
   };
 
   const getCorrelationDescription = (correlation: number) => {
-    if (correlation >= 2.0) return 'Very Strong';
-    if (correlation >= 1.5) return 'Strong';
-    return 'Moderate';
+    if (correlation >= 2.0) return t('correlations.strength.veryStrong');
+    if (correlation >= 1.5) return t('correlations.strength.strong');
+    return t('correlations.strength.moderate');
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Option Correlations</CardTitle>
+        <CardTitle>{t('correlations.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -80,7 +82,7 @@ const CorrelationMatrix: React.FC<{
                     "{corr.option1}" ↔ "{corr.option2}"
                   </div>
                   <div className="text-sm text-gray-600">
-                    {getCorrelationDescription(corr.correlation)} correlation
+                    {getCorrelationDescription(corr.correlation)} {t('correlations.correlation')}
                   </div>
                 </div>
               </div>
@@ -89,7 +91,7 @@ const CorrelationMatrix: React.FC<{
                   {corr.correlation.toFixed(1)}x
                 </div>
                 <div className="text-xs text-gray-500">
-                  more likely together
+                  {t('correlations.moreLikelyTogether')}
                 </div>
               </div>
             </div>
@@ -97,11 +99,11 @@ const CorrelationMatrix: React.FC<{
         </div>
         
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h4 className="font-medium text-blue-900 mb-2">Understanding Correlations</h4>
+          <h4 className="font-medium text-blue-900 mb-2">{t('correlations.understandingTitle')}</h4>
           <div className="text-sm text-blue-800 space-y-1">
-            <p>• <span className="font-medium">Strong (2.0x+):</span> Options frequently selected together</p>
-            <p>• <span className="font-medium">Moderate (1.5x+):</span> Options sometimes selected together</p>
-            <p>• <span className="font-medium">Weak (&lt;1.5x):</span> Options rarely selected together</p>
+            <p>• {t('correlations.strongDescription')}</p>
+            <p>• {t('correlations.moderateDescription')}</p>
+            <p>• {t('correlations.weakDescription')}</p>
           </div>
         </div>
       </CardContent>
@@ -114,11 +116,13 @@ const PopularCombinations: React.FC<{
   combinations: Array<{ combination: string[]; count: number; percentage: number }>;
   loading?: boolean;
 }> = ({ combinations, loading }) => {
+  const { t } = useTranslation('checkboxFieldAnalytics');
+  
   if (loading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Popular Combinations</CardTitle>
+          <CardTitle>{t('combinations.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-3">
@@ -135,11 +139,11 @@ const PopularCombinations: React.FC<{
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Popular Combinations</CardTitle>
+          <CardTitle>{t('combinations.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center text-gray-500 py-8">
-            No combination data available
+            {t('combinations.noCombinationData')}
           </div>
         </CardContent>
       </Card>
@@ -155,7 +159,7 @@ const PopularCombinations: React.FC<{
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Most Popular Combinations</CardTitle>
+        <CardTitle>{t('combinations.mostPopularTitle')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
@@ -171,7 +175,7 @@ const PopularCombinations: React.FC<{
                       {index + 1}
                     </span>
                     <span className="text-sm text-gray-600">
-                      {combo.combination.length} option{combo.combination.length !== 1 ? 's' : ''}
+                      {combo.combination.length} {combo.combination.length !== 1 ? t('combinations.options') : t('combinations.option')}
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -190,7 +194,7 @@ const PopularCombinations: React.FC<{
                     {combo.percentage.toFixed(1)}%
                   </div>
                   <div className="text-sm text-gray-600">
-                    {combo.count} times
+                    {combo.count} {t('combinations.times')}
                   </div>
                 </div>
               </div>
@@ -200,7 +204,7 @@ const PopularCombinations: React.FC<{
         
         {combinations.length > 10 && (
           <div className="mt-4 text-center text-sm text-gray-500">
-            Showing top 10 of {combinations.length} unique combinations
+            {t('combinations.showingTopOf', { values: { total: combinations.length } })}
           </div>
         )}
       </CardContent>
@@ -214,15 +218,17 @@ const SelectionDistribution: React.FC<{
   averageSelections: number;
   loading?: boolean;
 }> = ({ distribution, averageSelections, loading }) => {
+  const { t } = useTranslation('checkboxFieldAnalytics');
+  
   const chartData = useMemo(() => {
     if (!distribution) return [];
     return distribution.map(item => ({
-      name: `${item.selectionCount} option${item.selectionCount !== 1 ? 's' : ''}`,
+      name: `${item.selectionCount} ${item.selectionCount !== 1 ? t('combinations.options') : t('combinations.option')}`,
       value: item.responseCount,
       percentage: item.percentage,
       selectionCount: item.selectionCount
     }));
-  }, [distribution]);
+  }, [distribution, t]);
 
   if (loading || !distribution || distribution.length === 0) {
     return null;
@@ -232,7 +238,7 @@ const SelectionDistribution: React.FC<{
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>Selection Count Distribution</CardTitle>
+          <CardTitle>{t('selectionDistribution.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
@@ -250,7 +256,7 @@ const SelectionDistribution: React.FC<{
                 height={80}
               />
               <YAxis 
-                label={{ value: 'Number of Responses', angle: -90, position: 'insideLeft' }}
+                label={{ value: t('selectionDistribution.numberOfResponses'), angle: -90, position: 'insideLeft' }}
               />
               <Tooltip 
                 content={({ active, payload, label }) => {
@@ -263,11 +269,11 @@ const SelectionDistribution: React.FC<{
                         <div className="flex items-center gap-2 text-sm">
                           <div className="w-3 h-3 rounded-full bg-blue-600" />
                           <span className="text-gray-700">
-                            Responses: {data.value} ({data.percentage.toFixed(1)}%)
+                            {t('selectionCount.responses')}: {data.value} ({data.percentage.toFixed(1)}%)
                           </span>
                           {isAverage && (
                             <span className="text-xs text-blue-600 font-medium bg-blue-50 px-1 rounded">
-                              Average
+                              {t('selectionDistribution.average')}
                             </span>
                           )}
                         </div>
@@ -298,7 +304,7 @@ const SelectionDistribution: React.FC<{
       
       <Card>
         <CardHeader>
-          <CardTitle>Selection Patterns</CardTitle>
+          <CardTitle>{t('patterns.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -344,6 +350,7 @@ const IndividualOptionAnalysis: React.FC<{
   totalResponses: number;
   loading?: boolean;
 }> = ({ options, totalResponses: _totalResponses, loading }) => {
+  const { t } = useTranslation('checkboxFieldAnalytics');
 
   if (loading || !options || options.length === 0) {
     return null;
@@ -352,7 +359,7 @@ const IndividualOptionAnalysis: React.FC<{
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Individual Option Popularity</CardTitle>
+        <CardTitle>{t('charts.individualPopularity')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
@@ -381,7 +388,7 @@ const IndividualOptionAnalysis: React.FC<{
                     {option.count}
                   </div>
                   <div className="text-xs text-gray-500">
-                    times
+                    {t('combinations.times')}
                   </div>
                 </div>
               </div>
@@ -444,19 +451,19 @@ export const CheckboxFieldAnalytics: React.FC<CheckboxFieldAnalyticsProps> = ({
       {/* Key Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total Selections"
+          title={t('stats.totalSelections')}
           value={totalSelections}
-          subtitle="Across all options"
+          subtitle={t('stats.acrossAllOptions')}
           icon={<CheckSquare className="h-5 w-5" />}
         />
         <StatCard
-          title="Average Selected"
+          title={t('stats.averageSelected')}
           value={data.averageSelections.toFixed(1)}
-          subtitle="Options per response"
+          subtitle={t('stats.optionsPerResponse')}
           icon={<BarChart3 className="h-5 w-5" />}
         />
         <StatCard
-          title="Most Popular"
+          title={t('stats.mostPopular')}
           value={`${mostPopularOption.percentage.toFixed(1)}%`}
           subtitle={mostPopularOption.option.length > 20 ? 
             `${mostPopularOption.option.substring(0, 20)}...` : 
@@ -465,9 +472,9 @@ export const CheckboxFieldAnalytics: React.FC<CheckboxFieldAnalyticsProps> = ({
           icon={<TrendingUp className="h-5 w-5" />}
         />
         <StatCard
-          title="Unique Combos"
+          title={t('stats.uniqueCombos')}
           value={uniqueCombinations}
-          subtitle="Different combinations used"
+          subtitle={t('stats.differentCombinationsUsed')}
           icon={<Link className="h-5 w-5" />}
         />
       </div>
@@ -505,7 +512,7 @@ export const CheckboxFieldAnalytics: React.FC<CheckboxFieldAnalyticsProps> = ({
       {/* Insights Summary */}
       <Card>
         <CardHeader>
-          <CardTitle>Multi-Selection Analysis Summary</CardTitle>
+          <CardTitle>{t('charts.multiSelectionSummary')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">

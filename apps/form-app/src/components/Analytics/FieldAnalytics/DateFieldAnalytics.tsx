@@ -19,6 +19,8 @@ const CalendarHeatmap: React.FC<{
   dateDistribution: Array<{ date: string; count: number }>;
   loading?: boolean;
 }> = ({ dateDistribution, loading }) => {
+  const { t } = useTranslation('dateFieldAnalytics');
+  
   const heatmapData = useMemo(() => {
     if (!dateDistribution || dateDistribution.length === 0) return { months: [], maxCount: 0 };
 
@@ -73,7 +75,7 @@ const CalendarHeatmap: React.FC<{
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Date Selection Calendar</CardTitle>
+          <CardTitle>{t('calendar.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="animate-pulse">
@@ -88,11 +90,11 @@ const CalendarHeatmap: React.FC<{
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Date Selection Calendar</CardTitle>
+          <CardTitle>{t('calendar.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center text-gray-500 py-8">
-            No date data available
+            {t('calendar.noDateData')}
           </div>
         </CardContent>
       </Card>
@@ -102,7 +104,7 @@ const CalendarHeatmap: React.FC<{
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Date Selection Calendar</CardTitle>
+        <CardTitle>{t('calendar.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
@@ -141,16 +143,16 @@ const CalendarHeatmap: React.FC<{
         
         <div className="mt-6 flex items-center justify-between">
           <div className="text-sm text-gray-600">
-            Intensity scale (selections per day)
+            {t('calendar.intensityScale')}
           </div>
           <div className="flex items-center gap-1">
-            <span className="text-xs text-gray-500">Less</span>
+            <span className="text-xs text-gray-500">{t('calendar.less')}</span>
             <div className="flex gap-1">
               {['bg-gray-100', 'bg-blue-200', 'bg-blue-400', 'bg-blue-600', 'bg-blue-800'].map((color, index) => (
                 <div key={index} className={`w-3 h-3 ${color} rounded`} />
               ))}
             </div>
-            <span className="text-xs text-gray-500">More</span>
+            <span className="text-xs text-gray-500">{t('calendar.more')}</span>
           </div>
         </div>
       </CardContent>
@@ -163,6 +165,8 @@ const SeasonalAnalysis: React.FC<{
   seasonalPatterns: Array<{ season: string; count: number; percentage: number }>;
   loading?: boolean;
 }> = ({ seasonalPatterns, loading }) => {
+  const { t } = useTranslation('dateFieldAnalytics');
+  
   const getSeasonIcon = (season: string) => {
     switch (season.toLowerCase()) {
       case 'spring': return <Flower className="h-6 w-6 text-green-500" />;
@@ -194,7 +198,7 @@ const SeasonalAnalysis: React.FC<{
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Seasonal Patterns</CardTitle>
+        <CardTitle>{t('seasonal.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -214,7 +218,7 @@ const SeasonalAnalysis: React.FC<{
                   </div>
                   {isTopSeason && (
                     <div className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
-                      Peak
+                      {t('seasonal.peak')}
                     </div>
                   )}
                 </div>
@@ -222,7 +226,7 @@ const SeasonalAnalysis: React.FC<{
                   {season.percentage.toFixed(1)}%
                 </div>
                 <div className="text-sm text-gray-600">
-                  {season.count} selections
+                  {season.count} {t('seasonal.selections')}
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                   <div 
@@ -244,17 +248,17 @@ const SeasonalAnalysis: React.FC<{
         <div className="p-4 bg-gray-50 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp className="h-4 w-4 text-blue-600" />
-            <span className="font-medium text-gray-900">Seasonal Insights</span>
+            <span className="font-medium text-gray-900">{t('seasonal.insightsTitle')}</span>
           </div>
           <div className="text-sm text-gray-700 space-y-1">
-            <p>• <strong>{topSeason.season}</strong> is the most popular season with {topSeason.percentage.toFixed(1)}% of selections</p>
-            <p>• Total seasonal data covers {totalSeasonalResponses} dated responses</p>
+            <p>• {t('seasonal.mostPopularSeason', { values: { season: topSeason.season, percentage: topSeason.percentage.toFixed(1) } })}</p>
+            <p>• {t('seasonal.totalCoverage', { values: { count: totalSeasonalResponses } })}</p>
             {seasonalPatterns.length === 4 && (
-              <p>• Distribution: {
+              <p>• {t('seasonal.' + (
                 Math.max(...seasonalPatterns.map(s => s.percentage)) - 
                 Math.min(...seasonalPatterns.map(s => s.percentage)) < 15 ? 
-                'Even across seasons' : 'Some seasonal preferences'
-              }</p>
+                'evenDistribution' : 'somePreferences'
+              ))}</p>
             )}
           </div>
         </div>
@@ -270,6 +274,8 @@ const DateRangeAnalysis: React.FC<{
   mostCommonDate: string;
   totalResponses: number;
 }> = ({ earliestDate, latestDate, mostCommonDate, totalResponses }) => {
+  const { t } = useTranslation('dateFieldAnalytics');
+  
   const dateRange = useMemo(() => {
     const earliest = new Date(earliestDate);
     const latest = new Date(latestDate);
@@ -294,35 +300,35 @@ const DateRangeAnalysis: React.FC<{
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Date Range Overview</CardTitle>
+        <CardTitle>{t('rangeOverview.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <Calendar className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-              <div className="text-sm font-medium text-gray-600 mb-1">Earliest Date</div>
+              <div className="text-sm font-medium text-gray-600 mb-1">{t('rangeOverview.earliest')}</div>
               <div className="text-sm text-gray-900">{dateRange.earliest}</div>
             </div>
             
             <div className="text-center p-4 bg-green-50 rounded-lg">
               <Sunrise className="h-8 w-8 mx-auto mb-2 text-green-600" />
-              <div className="text-sm font-medium text-gray-600 mb-1">Most Common</div>
+              <div className="text-sm font-medium text-gray-600 mb-1">{t('rangeOverview.mostCommon')}</div>
               <div className="text-sm text-gray-900">{dateRange.common}</div>
             </div>
             
             <div className="text-center p-4 bg-purple-50 rounded-lg">
               <Clock className="h-8 w-8 mx-auto mb-2 text-purple-600" />
-              <div className="text-sm font-medium text-gray-600 mb-1">Latest Date</div>
+              <div className="text-sm font-medium text-gray-600 mb-1">{t('rangeOverview.latest')}</div>
               <div className="text-sm text-gray-900">{dateRange.latest}</div>
             </div>
           </div>
           
           <div className="p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Date Range Span:</span>
+              <span className="text-gray-600">{t('rangeOverview.timeSpan')}:</span>
               <span className="font-medium text-gray-900">
-                {dateRange.daysDifference} days
+                {dateRange.daysDifference} {t('rangeOverview.days')}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm mt-2">
@@ -422,27 +428,27 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
       {/* Key Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total Responses"
+          title={t('stats.totalResponses')}
           value={totalDateResponses}
-          subtitle="Date selections made"
+          subtitle={t('stats.dateSelectionsMade')}
           icon={<Calendar className="h-5 w-5" />}
         />
         <StatCard
-          title="Date Range"
-          value={`${dateRange} days`}
-          subtitle="From earliest to latest"
+          title={t('stats.dateRange')}
+          value={`${dateRange} ${t('rangeOverview.days')}`}
+          subtitle={t('stats.fromEarliestToLatest')}
           icon={<Clock className="h-5 w-5" />}
         />
         <StatCard
-          title="Popular Day"
+          title={t('stats.popularDay')}
           value={mostPopularWeekday.weekday}
           subtitle={`${mostPopularWeekday.percentage.toFixed(1)}% of selections`}
           icon={<Sunrise className="h-5 w-5" />}
         />
         <StatCard
-          title="Popular Month"
+          title={t('stats.popularMonth')}
           value={mostPopularMonth.month.substring(0, 3)}
-          subtitle={`${mostPopularMonth.count} selections`}
+          subtitle={`${mostPopularMonth.count} ${t('seasonal.selections')}`}
           icon={<TrendingUp className="h-5 w-5" />}
         />
       </div>
@@ -467,7 +473,7 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
           <MetricHelper {...METRIC_HELPERS.WEEKDAY_PATTERNS} compact />
           <Card>
             <CardHeader>
-              <CardTitle>Day of Week Distribution</CardTitle>
+              <CardTitle>{t('dayOfWeek.title')}</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
@@ -482,7 +488,7 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
                     interval={0}
                   />
                   <YAxis 
-                    label={{ value: 'Number of Selections', angle: -90, position: 'insideLeft' }}
+                    label={{ value: t('dayOfWeek.selections'), angle: -90, position: 'insideLeft' }}
                   />
                   <Tooltip 
                     content={({ active, payload, label: _label }) => {
@@ -496,7 +502,7 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
                             <div className="flex items-center gap-2 text-sm">
                               <div className="w-3 h-3 rounded-full bg-blue-600" />
                               <span className="text-gray-700">
-                                Selections: {data.value} ({data.percentage.toFixed(1)}%)
+                                {t('dayOfWeek.selections')}: {data.value} ({data.percentage.toFixed(1)}%)
                               </span>
                             </div>
                           </div>
@@ -522,7 +528,7 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
           <MetricHelper {...METRIC_HELPERS.MONTHLY_TRENDS} compact />
           <Card>
             <CardHeader>
-              <CardTitle>Monthly Distribution</CardTitle>
+              <CardTitle>{t('monthly.title')}</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
@@ -537,7 +543,7 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
                     interval={0}
                   />
                   <YAxis 
-                    label={{ value: 'Number of Selections', angle: -90, position: 'insideLeft' }}
+                    label={{ value: t('monthly.count'), angle: -90, position: 'insideLeft' }}
                   />
                   <Tooltip 
                     content={({ active, payload, label: _label }) => {
@@ -551,7 +557,7 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
                             <div className="flex items-center gap-2 text-sm">
                               <div className="w-3 h-3 rounded-full bg-green-600" />
                               <span className="text-gray-700">
-                                Selections: {data.value} ({data.percentage.toFixed(1)}%)
+                                {t('dayOfWeek.selections')}: {data.value} ({data.percentage.toFixed(1)}%)
                               </span>
                             </div>
                           </div>
@@ -584,63 +590,63 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
       {/* Summary Statistics */}
       <Card>
         <CardHeader>
-          <CardTitle>Date Analysis Summary</CardTitle>
+          <CardTitle>{t('summary.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">Time Range</h4>
+              <h4 className="font-medium text-gray-900">{t('summary.rangeTitle')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Span:</span>
-                  <span className="font-medium">{dateRange} days</span>
+                  <span className="text-gray-600">{t('summary.span')}</span>
+                  <span className="font-medium">{dateRange} {t('rangeOverview.days')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Earliest:</span>
+                  <span className="text-gray-600">{t('summary.earliest')}</span>
                   <span className="font-medium">{new Date(data.earliestDate).toLocaleDateString()}</span>
                 </div>
               </div>
             </div>
             
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">Popular Periods</h4>
+              <h4 className="font-medium text-gray-900">{t('summary.patternsTitle')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Weekday:</span>
+                  <span className="text-gray-600">{t('summary.popularDay')}</span>
                   <span className="font-medium">{mostPopularWeekday.weekday}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Month:</span>
+                  <span className="text-gray-600">{t('summary.popularMonth')}</span>
                   <span className="font-medium">{mostPopularMonth.month}</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">Response Patterns</h4>
+              <h4 className="font-medium text-gray-900">{t('summary.distributionTitle')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total dates:</span>
+                  <span className="text-gray-600">{t('summary.responses')}</span>
                   <span className="font-medium">{data.dateDistribution.length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Unique dates:</span>
+                  <span className="text-gray-600">{t('summary.uniqueDates')}</span>
                   <span className="font-medium">{data.dateDistribution.filter(d => d.count > 0).length}</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">Data Quality</h4>
+              <h4 className="font-medium text-gray-900">{t('summary.dataQualityTitle')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Response rate:</span>
+                  <span className="text-gray-600">{t('summary.completeness')}</span>
                   <span className="font-medium">
                     {totalResponses > 0 ? ((totalDateResponses / totalResponses) * 100).toFixed(1) : '0'}%
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Distribution:</span>
+                  <span className="text-gray-600">{t('summary.temporalSpread')}</span>
                   <span className="font-medium">
                     {data.seasonalPatterns.length === 4 ? 'All seasons' : 'Partial'}
                   </span>

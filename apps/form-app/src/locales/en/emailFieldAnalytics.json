@@ -4,6 +4,62 @@
     "title": "No email data available",
     "subtitle": "This email field hasn't received any responses yet."
   },
+  "stats": {
+    "totalEmails": "Total Emails",
+    "validEmails": "Valid Emails",
+    "topDomain": "Top Domain",
+    "topProvider": "Top Provider",
+    "noDomains": "No domains",
+    "noProviders": "No providers"
+  },
+  "validationStatus": {
+    "title": "Email Validation Status",
+    "valid": "Valid",
+    "validEmails": "Valid Emails",
+    "invalidEmails": "Invalid Emails",
+    "qualityScore": "Quality Score:",
+    "excellent": "Excellent",
+    "good": "Good",
+    "needsAttention": "Needs Attention"
+  },
+  "corporatePersonal": {
+    "title": "Corporate vs Personal Distribution",
+    "corporate": "Corporate",
+    "personal": "Personal",
+    "unknown": "Unknown"
+  },
+  "topDomains": {
+    "title": "Top Level Domains",
+    "domain": "Domain",
+    "count": "Count"
+  },
+  "providers": {
+    "title": "Popular Email Providers",
+    "provider": "Provider",
+    "emails": "Emails"
+  },
+  "commonDomains": {
+    "title": "Most Common Email Domains",
+    "domain": "Domain",
+    "count": "Count",
+    "percentage": "Percentage"
+  },
+  "summary": {
+    "title": "Email Analysis Summary",
+    "validationTitle": "Validation",
+    "validRate": "Valid rate:",
+    "invalidCount": "Invalid:",
+    "qualityScore": "Quality:",
+    "domainDiversityTitle": "Domain Diversity",
+    "uniqueDomains": "Unique domains:",
+    "topDomain": "Top domain:",
+    "emailTypesTitle": "Email Types",
+    "corporate": "Corporate:",
+    "personal": "Personal:",
+    "dataQualityTitle": "Data Quality",
+    "totalEmails": "Total emails:",
+    "completeness": "Completeness:"
+  },
   "validation": {
     "title": "Email Validation",
     "valid": "Valid",
