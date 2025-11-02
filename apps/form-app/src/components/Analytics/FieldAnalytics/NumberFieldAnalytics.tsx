@@ -377,7 +377,7 @@ export const NumberFieldAnalytics: React.FC<NumberFieldAnalyticsProps> = ({
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Value Distribution</CardTitle>
+              <CardTitle>{t('valueDistribution.chartTitle')}</CardTitle>
               <MetricHelper {...METRIC_HELPERS.VALUE_DISTRIBUTION} compact />
             </div>
           </CardHeader>

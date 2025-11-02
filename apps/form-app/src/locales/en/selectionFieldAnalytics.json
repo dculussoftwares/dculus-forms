@@ -64,5 +64,8 @@
     "title": "{{fieldType}} Distribution",
     "selection": "Selection",
     "choice": "Choice"
+  },
+  "trendsOverTime": {
+    "title": "Selection Trends Over Time"
   }
 }

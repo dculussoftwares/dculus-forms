@@ -170,6 +170,8 @@ const SelectionTrend: React.FC<{
   topOptions: string[];
   loading?: boolean;
 }> = ({ trend, topOptions, loading }) => {
+  const { t } = useTranslation('selectionFieldAnalytics');
+  
   const chartData = useMemo(() => {
     if (!trend || trend.length === 0) return [];
     
@@ -199,7 +201,7 @@ const SelectionTrend: React.FC<{
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Selection Trends Over Time</CardTitle>
+          <CardTitle>{t('trendsOverTime.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="animate-pulse">
@@ -213,7 +215,7 @@ const SelectionTrend: React.FC<{
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Selection Trends Over Time</CardTitle>
+        <CardTitle>{t('trendsOverTime.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-80">

@@ -832,19 +832,24 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
               variant="outline"
               size="sm"
               disabled={!canNavigatePrev()}
-              title="Previous field"
+              title={t('navigation.previousField')}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <span className="text-sm text-gray-600 px-2">
-              {getCurrentFieldIndex() + 1} of {allFields.length}
+              {t('navigation.fieldOfTotal', { 
+                values: { 
+                  current: getCurrentFieldIndex() + 1, 
+                  total: allFields.length 
+                } 
+              })}
             </span>
             <Button
               onClick={handleNextField}
               variant="outline"
               size="sm"
               disabled={!canNavigateNext()}
-              title="Next field"
+              title={t('navigation.nextField')}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -859,7 +864,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
             disabled={allFieldsLoading || selectedFieldLoading || isRefreshing}
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${(allFieldsLoading || selectedFieldLoading || isRefreshing) ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('buttons.refresh')}
           </Button>
           
           {process.env.NODE_ENV === 'development' && (
@@ -867,16 +872,16 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
               onClick={handleInvalidateCache}
               variant="outline"
               size="sm"
-              title="Clear cache and refresh data"
+              title={t('buttons.clearCacheTitle')}
             >
-              Clear Cache
+              {t('buttons.clearCache')}
             </Button>
           )}
           
           {totalResponses > 0 && (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm">
               <Eye className="h-4 w-4" />
-              {totalResponses} responses
+              {t('responseCount', { values: { count: totalResponses } })}
             </div>
           )}
         </div>

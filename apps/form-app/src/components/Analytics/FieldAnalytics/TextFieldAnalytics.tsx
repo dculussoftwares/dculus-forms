@@ -102,11 +102,13 @@ const RecentResponses: React.FC<{
   responses: Array<{ value: string; submittedAt: string; responseId: string }>;
   loading?: boolean;
 }> = ({ responses, loading }) => {
+  const { t } = useTranslation('textFieldAnalytics');
+  
   if (loading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Recent Responses</CardTitle>
+          <CardTitle>{t('recentResponses.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-3">
@@ -123,11 +125,11 @@ const RecentResponses: React.FC<{
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Recent Responses</CardTitle>
+          <CardTitle>{t('recentResponses.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-32 text-gray-500">
-            No responses available
+            {t('recentResponses.noData')}
           </div>
         </CardContent>
       </Card>
@@ -183,6 +185,8 @@ const CommonPhrases: React.FC<{
   phrases: Array<{ phrase: string; count: number }>;
   loading?: boolean;
 }> = ({ phrases, loading }) => {
+  const { t } = useTranslation('textFieldAnalytics');
+  
   if (loading || !phrases || phrases.length === 0) {
     return null;
   }
@@ -197,7 +201,7 @@ const CommonPhrases: React.FC<{
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Common Phrases</CardTitle>
+          <CardTitle>{t('commonPhrases.title')}</CardTitle>
           <MetricHelper {...METRIC_HELPERS.COMMON_PHRASES} compact />
         </div>
       </CardHeader>
@@ -352,7 +356,7 @@ export const TextFieldAnalytics: React.FC<TextFieldAnalyticsProps> = ({
       {/* Summary Card */}
       <Card>
         <CardHeader>
-          <CardTitle>Text Analysis Summary</CardTitle>
+          <CardTitle>{t('summary.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">

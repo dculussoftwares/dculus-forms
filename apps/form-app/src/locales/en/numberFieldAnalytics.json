@@ -47,7 +47,8 @@
     "title": "Average Values Over Time"
   },
   "valueDistribution": {
-    "title": "Value Distribution"
+    "title": "Value Distribution",
+    "chartTitle": "Value Distribution"
   },
   "summary": {
     "title": "Statistical Summary",

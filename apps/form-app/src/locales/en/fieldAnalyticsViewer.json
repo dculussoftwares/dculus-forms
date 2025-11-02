@@ -42,5 +42,16 @@
     "description": "This form doesn't have any analyzable fields yet.",
     "addFields": "Add fields to your form to see analytics here."
   },
-  "refresh": "Refresh Analytics"
+  "refresh": "Refresh Analytics",
+  "navigation": {
+    "previousField": "Previous field",
+    "nextField": "Next field",
+    "fieldOfTotal": "{{current}} of {{total}}"
+  },
+  "buttons": {
+    "refresh": "Refresh",
+    "clearCache": "Clear Cache",
+    "clearCacheTitle": "Clear cache and refresh data"
+  },
+  "responseCount": "{{count}} responses"
 }

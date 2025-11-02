@@ -33,5 +33,20 @@
   "topWords": {
     "title": "Top Words",
     "count": "Count"
+  },
+  "recentResponses": {
+    "title": "Recent Responses",
+    "noData": "No responses available"
+  },
+  "commonPhrases": {
+    "title": "Common Phrases"
+  },
+  "summary": {
+    "title": "Text Analysis Summary",
+    "responseRate": "Response Rate:",
+    "avgLength": "Avg. Length:",
+    "wordCount": "Word Count:",
+    "characters": "characters",
+    "words": "words"
   }
 }
