@@ -1,0 +1,55 @@
+{
+  "loadingSubscription": "Loading subscription...",
+  "unlimited": "Unlimited",
+  "noSubscription": {
+    "title": "No subscription found",
+    "description": "Your organization doesn't have an active subscription.",
+    "choosePlan": "Choose a Plan"
+  },
+  "toast": {
+    "openingPortal": "Opening subscription portal",
+    "manageInNewTab": "Manage your subscription in the new tab",
+    "failedToOpenPortal": "Failed to open portal"
+  },
+  "alerts": {
+    "exceeded": {
+      "title": "Usage Limit Exceeded",
+      "description": "You've exceeded your plan limits. Upgrade now to restore access to your forms.",
+      "upgradePlan": "Upgrade Plan"
+    },
+    "approaching": {
+      "title": "Approaching Usage Limits",
+      "description": "You're approaching your plan limits. Consider upgrading to avoid interruptions.",
+      "viewPlans": "View Plans"
+    }
+  },
+  "planOverview": {
+    "plan": "{{planName}} Plan",
+    "upgradePlan": "Upgrade Plan",
+    "manageSubscription": "Manage Subscription",
+    "processing": "Processing..."
+  },
+  "usage": {
+    "formViews": "Form Views",
+    "formSubmissions": "Form Submissions",
+    "ofThisPeriod": "of {{limit}} this period",
+    "percentageUsed": "{{percentage}}% used",
+    "limitExceeded": "Limit exceeded!",
+    "unlimitedViews": "✓ Unlimited views",
+    "unlimitedSubmissions": "✓ Unlimited submissions"
+  },
+  "billing": {
+    "period": "Billing Period",
+    "daysCount": "{{days}} days",
+    "remainingInPeriod": "remaining in current period",
+    "currentPeriod": "Current billing period"
+  },
+  "badges": {
+    "exceeded": "Exceeded"
+  },
+  "planComparison": {
+    "title": "Compare Plans",
+    "show": "Show Plan Comparison",
+    "hide": "Hide Plan Comparison"
+  }
+}

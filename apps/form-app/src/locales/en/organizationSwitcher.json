@@ -1,0 +1,12 @@
+{
+  "organizationError": "Organization Error",
+  "loading": "Loading...",
+  "noOrganizations": "No Organizations",
+  "selectOrganization": "Select Organization",
+  "organizations": "Organizations",
+  "createOrganization": "Create Organization",
+  "roles": {
+    "owner": "Owner",
+    "member": "Member"
+  }
+}

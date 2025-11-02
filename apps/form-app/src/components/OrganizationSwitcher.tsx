@@ -21,6 +21,7 @@ import {
 import { ChevronDown, Building2, Check, Plus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { GET_USER_ORGANIZATIONS } from '../graphql/queries';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface Organization {
   id: string;
@@ -39,6 +40,7 @@ interface Organization {
 }
 
 export const OrganizationSwitcher: React.FC = () => {
+  const { t } = useTranslation('organizationSwitcher');
   const { activeOrganization, user, organizationError } = useAuth();
   const [isLoading] = useState(false);
 
@@ -59,7 +61,7 @@ export const OrganizationSwitcher: React.FC = () => {
     return (
       <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-destructive/10 text-destructive">
         <Building2 className="h-4 w-4" />
-        <span className="text-sm font-medium">Organization Error</span>
+        <span className="text-sm font-medium">{t('organizationError')}</span>
       </div>
     );
   }
@@ -69,7 +71,7 @@ export const OrganizationSwitcher: React.FC = () => {
     return (
       <div className="flex items-center gap-2 px-2 py-1">
         <Building2 className="h-4 w-4 animate-pulse" />
-        <span className="text-sm">Loading...</span>
+        <span className="text-sm">{t('loading')}</span>
       </div>
     );
   }
@@ -79,7 +81,7 @@ export const OrganizationSwitcher: React.FC = () => {
     return (
       <div className="flex items-center gap-2 px-2 py-1">
         <Building2 className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">No Organizations</span>
+        <span className="text-sm text-muted-foreground">{t('noOrganizations')}</span>
       </div>
     );
   }
@@ -94,16 +96,16 @@ export const OrganizationSwitcher: React.FC = () => {
   };
 
   const getUserRole = (org: Organization): string => {
-    if (!user || !org.members) return 'Member';
+    if (!user || !org.members) return t('roles.member');
 
     const membership = org.members.find(member => member.user.id === user.id);
-    if (!membership) return 'Member';
+    if (!membership) return t('roles.member');
 
     switch (membership.role) {
       case 'owner':
-        return 'Owner';
+        return t('roles.owner');
       case 'member':
-        return 'Member';
+        return t('roles.member');
       default:
         return membership.role;
     }
@@ -140,7 +142,7 @@ export const OrganizationSwitcher: React.FC = () => {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="start" className="w-[240px]">
-        <DropdownMenuLabel>Organizations</DropdownMenuLabel>
+        <DropdownMenuLabel>{t('organizations')}</DropdownMenuLabel>
         <DropdownMenuSeparator />
 
         {organizations.map((org) => (
@@ -179,7 +181,7 @@ export const OrganizationSwitcher: React.FC = () => {
           className="flex items-center gap-2 p-2"
         >
           <Plus className="h-4 w-4" />
-          <span className="text-sm">Create Organization</span>
+          <span className="text-sm">{t('createOrganization')}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

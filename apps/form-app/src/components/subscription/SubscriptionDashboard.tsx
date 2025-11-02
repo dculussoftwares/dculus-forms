@@ -6,8 +6,10 @@ import { useState } from 'react';
 import { UpgradeModal } from './UpgradeModal';
 import { UsageChart } from './UsageChart';
 import { PlanComparison } from './PlanComparison';
+import { useTranslation } from '../../hooks/useTranslation';
 
 export const SubscriptionDashboard = () => {
+  const { t } = useTranslation('subscriptionDashboard');
   const { data, loading } = useQuery(GET_SUBSCRIPTION);
   const [createPortalSession, { loading: portalLoading }] = useMutation(CREATE_PORTAL_SESSION);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -20,10 +22,10 @@ export const SubscriptionDashboard = () => {
       const { data } = await createPortalSession();
       if (data?.createPortalSession?.url) {
         window.open(data.createPortalSession.url, '_blank');
-        toastSuccess('Opening subscription portal', 'Manage your subscription in the new tab');
+        toastSuccess(t('toast.openingPortal'), t('toast.manageInNewTab'));
       }
     } catch (error: any) {
-      toastError('Failed to open portal', error.message);
+      toastError(t('toast.failedToOpenPortal'), error.message);
     }
   };
 
@@ -32,7 +34,7 @@ export const SubscriptionDashboard = () => {
       <div className="flex items-center justify-center p-12">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading subscription...</p>
+          <p className="text-gray-500">{t('loadingSubscription')}</p>
         </div>
       </div>
     );
@@ -43,13 +45,13 @@ export const SubscriptionDashboard = () => {
       <Card className="p-6">
         <div className="text-center py-8">
           <AlertTriangle className="h-12 w-12 text-orange-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No subscription found</h3>
+          <h3 className="text-lg font-semibold mb-2">{t('noSubscription.title')}</h3>
           <p className="text-gray-500 mb-4">
-            Your organization doesn't have an active subscription.
+            {t('noSubscription.description')}
           </p>
           <Button onClick={() => setShowUpgradeModal(true)}>
             <TrendingUp className="h-4 w-4 mr-2" />
-            Choose a Plan
+            {t('noSubscription.choosePlan')}
           </Button>
         </div>
       </Card>
@@ -77,7 +79,7 @@ export const SubscriptionDashboard = () => {
 
   // Format usage text
   const formatUsage = (used: number, limit: number | null, unlimited: boolean) => {
-    if (unlimited) return `${used.toLocaleString()} / Unlimited`;
+    if (unlimited) return `${used.toLocaleString()} / ${t('unlimited')}`;
     if (limit) return `${used.toLocaleString()} / ${limit.toLocaleString()}`;
     return used.toLocaleString();
   };
@@ -111,10 +113,10 @@ export const SubscriptionDashboard = () => {
           <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
             <p className="text-sm font-medium text-red-800 mb-1">
-              Usage Limit Exceeded
+              {t('alerts.exceeded.title')}
             </p>
             <p className="text-sm text-red-700 mb-3">
-              You've exceeded your plan limits. Upgrade now to restore access to your forms.
+              {t('alerts.exceeded.description')}
             </p>
             <Button
               size="sm"
@@ -122,7 +124,7 @@ export const SubscriptionDashboard = () => {
               className="bg-red-600 hover:bg-red-700"
             >
               <TrendingUp className="h-3 w-3 mr-2" />
-              Upgrade Plan
+              {t('alerts.exceeded.upgradePlan')}
             </Button>
           </div>
         </div>
@@ -133,10 +135,10 @@ export const SubscriptionDashboard = () => {
           <Info className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
             <p className="text-sm font-medium text-orange-800 mb-1">
-              Approaching Usage Limits
+              {t('alerts.approaching.title')}
             </p>
             <p className="text-sm text-orange-700">
-              You're approaching your plan limits. Consider upgrading to avoid interruptions.
+              {t('alerts.approaching.description')}
             </p>
           </div>
           <Button
@@ -145,7 +147,7 @@ export const SubscriptionDashboard = () => {
             onClick={() => setShowUpgradeModal(true)}
             className="border-orange-300 text-orange-700 hover:bg-orange-100"
           >
-            View Plans
+            {t('alerts.approaching.viewPlans')}
           </Button>
         </div>
       )}
@@ -154,7 +156,7 @@ export const SubscriptionDashboard = () => {
       <Card className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold">{planName} Plan</h2>
+            <h2 className="text-2xl font-bold">{t('planOverview.plan', { values: { planName } })}</h2>
             <Badge className={getPlanBadgeColor()}>{planName}</Badge>
             <Badge className={getStatusBadgeColor()}>
               {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -164,7 +166,7 @@ export const SubscriptionDashboard = () => {
             {planId !== 'advanced' && (
               <Button onClick={() => setShowUpgradeModal(true)}>
                 <TrendingUp className="h-4 w-4 mr-2" />
-                Upgrade Plan
+                {t('planOverview.upgradePlan')}
               </Button>
             )}
             <Button
@@ -173,11 +175,11 @@ export const SubscriptionDashboard = () => {
               disabled={portalLoading}
             >
               {portalLoading ? (
-                <>Processing...</>
+                <>{t('planOverview.processing')}</>
               ) : (
                 <>
                   <CreditCard className="h-4 w-4 mr-2" />
-                  Manage Subscription
+                  {t('planOverview.manageSubscription')}
                   <ExternalLink className="h-3 w-3 ml-2" />
                 </>
               )}
@@ -192,12 +194,12 @@ export const SubscriptionDashboard = () => {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Eye className="h-5 w-5 text-blue-600" />
-                <span className="font-medium text-sm">Form Views</span>
+                <span className="font-medium text-sm">{t('usage.formViews')}</span>
               </div>
               {usage.views.unlimited ? (
-                <Badge className="bg-green-100 text-green-800 text-xs">Unlimited</Badge>
+                <Badge className="bg-green-100 text-green-800 text-xs">{t('unlimited')}</Badge>
               ) : usage.views.exceeded ? (
-                <Badge className="bg-red-100 text-red-800 text-xs">Exceeded</Badge>
+                <Badge className="bg-red-100 text-red-800 text-xs">{t('badges.exceeded')}</Badge>
               ) : (
                 <span className="text-xs font-medium text-blue-600">
                   {usage.views.percentage?.toFixed(0)}%
@@ -209,7 +211,7 @@ export const SubscriptionDashboard = () => {
             </div>
             {!usage.views.unlimited && (
               <div className="text-sm text-blue-700 dark:text-blue-300">
-                of {usage.views.limit?.toLocaleString()} this period
+                {t('usage.ofThisPeriod', { values: { limit: usage.views.limit?.toLocaleString() } })}
               </div>
             )}
           </div>
@@ -219,12 +221,12 @@ export const SubscriptionDashboard = () => {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-purple-600" />
-                <span className="font-medium text-sm">Form Submissions</span>
+                <span className="font-medium text-sm">{t('usage.formSubmissions')}</span>
               </div>
               {usage.submissions.unlimited ? (
-                <Badge className="bg-green-100 text-green-800 text-xs">Unlimited</Badge>
+                <Badge className="bg-green-100 text-green-800 text-xs">{t('unlimited')}</Badge>
               ) : usage.submissions.exceeded ? (
-                <Badge className="bg-red-100 text-red-800 text-xs">Exceeded</Badge>
+                <Badge className="bg-red-100 text-red-800 text-xs">{t('badges.exceeded')}</Badge>
               ) : (
                 <span className="text-xs font-medium text-purple-600">
                   {usage.submissions.percentage?.toFixed(0)}%
@@ -236,7 +238,7 @@ export const SubscriptionDashboard = () => {
             </div>
             {!usage.submissions.unlimited && (
               <div className="text-sm text-purple-700 dark:text-purple-300">
-                of {usage.submissions.limit?.toLocaleString()} this period
+                {t('usage.ofThisPeriod', { values: { limit: usage.submissions.limit?.toLocaleString() } })}
               </div>
             )}
           </div>
@@ -245,13 +247,13 @@ export const SubscriptionDashboard = () => {
           <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
             <div className="flex items-center gap-2 mb-2">
               <Calendar className="h-5 w-5 text-gray-600" />
-              <span className="font-medium text-sm">Billing Period</span>
+              <span className="font-medium text-sm">{t('billing.period')}</span>
             </div>
             <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              {daysRemaining} days
+              {t('billing.daysCount', { values: { days: daysRemaining } })}
             </div>
             <div className="text-sm text-gray-700 dark:text-gray-300">
-              remaining in current period
+              {t('billing.remainingInPeriod')}
             </div>
           </div>
         </div>
@@ -261,7 +263,7 @@ export const SubscriptionDashboard = () => {
           {/* Views Progress */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="font-medium">Form Views</span>
+              <span className="font-medium">{t('usage.formViews')}</span>
               <span className="text-gray-600">
                 {formatUsage(usage.views.used, usage.views.limit, usage.views.unlimited)}
               </span>
@@ -275,22 +277,22 @@ export const SubscriptionDashboard = () => {
                   />
                 </div>
                 <div className="flex justify-between text-xs text-gray-500">
-                  <span>{usage.views.percentage?.toFixed(1)}% used</span>
+                  <span>{t('usage.percentageUsed', { values: { percentage: usage.views.percentage?.toFixed(1) } })}</span>
                   {usage.views.exceeded && (
-                    <span className="text-red-600 font-medium">Limit exceeded!</span>
+                    <span className="text-red-600 font-medium">{t('usage.limitExceeded')}</span>
                   )}
                 </div>
               </div>
             )}
             {usage.views.unlimited && (
-              <p className="text-sm text-green-600">✓ Unlimited views</p>
+              <p className="text-sm text-green-600">{t('usage.unlimitedViews')}</p>
             )}
           </div>
 
           {/* Submissions Progress */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="font-medium">Form Submissions</span>
+              <span className="font-medium">{t('usage.formSubmissions')}</span>
               <span className="text-gray-600">
                 {formatUsage(
                   usage.submissions.used,
@@ -308,15 +310,15 @@ export const SubscriptionDashboard = () => {
                   />
                 </div>
                 <div className="flex justify-between text-xs text-gray-500">
-                  <span>{usage.submissions.percentage?.toFixed(1)}% used</span>
+                  <span>{t('usage.percentageUsed', { values: { percentage: usage.submissions.percentage?.toFixed(1) } })}</span>
                   {usage.submissions.exceeded && (
-                    <span className="text-red-600 font-medium">Limit exceeded!</span>
+                    <span className="text-red-600 font-medium">{t('usage.limitExceeded')}</span>
                   )}
                 </div>
               </div>
             )}
             {usage.submissions.unlimited && (
-              <p className="text-sm text-green-600">✓ Unlimited submissions</p>
+              <p className="text-sm text-green-600">{t('usage.unlimitedSubmissions')}</p>
             )}
           </div>
         </div>
@@ -324,7 +326,7 @@ export const SubscriptionDashboard = () => {
         {/* Billing Period Details */}
         <div className="mt-6 pt-6 border-t border-gray-200">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Current billing period</span>
+            <span className="text-gray-600">{t('billing.currentPeriod')}</span>
             <span className="font-medium">
               {new Date(Number(currentPeriodStart)).toLocaleDateString()} -{' '}
               {new Date(Number(currentPeriodEnd)).toLocaleDateString()}
@@ -345,12 +347,12 @@ export const SubscriptionDashboard = () => {
 
       {/* Plan Comparison */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">Compare Plans</h3>
+        <h3 className="text-lg font-semibold">{t('planComparison.title')}</h3>
         <Button
           variant="outline"
           onClick={() => setShowPlanComparison(!showPlanComparison)}
         >
-          {showPlanComparison ? 'Hide' : 'Show'} Plan Comparison
+          {showPlanComparison ? t('planComparison.hide') : t('planComparison.show')}
         </Button>
       </div>
 
