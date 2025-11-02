@@ -5,5 +5,19 @@
     "viewSessions": "View Sessions",
     "submissions": "Submissions",
     "subSessions": "Sub Sessions"
+  },
+  "stats": {
+    "totalViews": "Total Views",
+    "viewSessions": "View Sessions",
+    "submissions": "Submissions",
+    "submissionSessions": "Sub Sessions",
+    "avgViewsPerDay": "Avg Views/Day",
+    "avgSubsPerDay": "Avg Subs/Day"
+  },
+  "legendItems": {
+    "views": "Views",
+    "viewSessions": "View Sessions",
+    "submissions": "Submissions",
+    "submissionSessions": "Submission Sessions"
   }
 }

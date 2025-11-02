@@ -264,27 +264,27 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
         <div className="grid grid-cols-2 md:grid-cols-6 gap-4 pt-4 border-t">
           <div className="text-center">
             <p className="text-xl font-bold text-blue-600">{totalViews}</p>
-            <p className="text-xs text-gray-500">Total Views</p>
+            <p className="text-xs text-gray-500">{t('stats.totalViews')}</p>
           </div>
           <div className="text-center">
             <p className="text-xl font-bold text-green-600">{totalSessions}</p>
-            <p className="text-xs text-gray-500">View Sessions</p>
+            <p className="text-xs text-gray-500">{t('stats.viewSessions')}</p>
           </div>
           <div className="text-center">
             <p className="text-xl font-bold text-orange-600">{totalSubmissions}</p>
-            <p className="text-xs text-gray-500">Submissions</p>
+            <p className="text-xs text-gray-500">{t('stats.submissions')}</p>
           </div>
           <div className="text-center">
             <p className="text-xl font-bold text-purple-600">{totalSubmissionSessions}</p>
-            <p className="text-xs text-gray-500">Sub Sessions</p>
+            <p className="text-xs text-gray-500">{t('stats.submissionSessions')}</p>
           </div>
           <div className="text-center">
             <p className="text-xl font-bold text-gray-900">{avgViewsPerDay}</p>
-            <p className="text-xs text-gray-500">Avg Views/Day</p>
+            <p className="text-xs text-gray-500">{t('stats.avgViewsPerDay')}</p>
           </div>
           <div className="text-center">
             <p className="text-xl font-bold text-gray-900">{avgSubmissionsPerDay}</p>
-            <p className="text-xs text-gray-500">Avg Subs/Day</p>
+            <p className="text-xs text-gray-500">{t('stats.avgSubsPerDay')}</p>
           </div>
         </div>
 
@@ -292,19 +292,19 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
         <div className="flex flex-wrap items-center justify-center gap-4 mt-4 pt-2 border-t">
           <div className="flex items-center">
             <div className="w-3 h-3 bg-blue-500 rounded mr-2"></div>
-            <span className="text-sm text-gray-600">Views</span>
+            <span className="text-sm text-gray-600">{t('legendItems.views')}</span>
           </div>
           <div className="flex items-center">
             <div className="w-3 h-3 bg-green-500 rounded mr-2"></div>
-            <span className="text-sm text-gray-600">View Sessions</span>
+            <span className="text-sm text-gray-600">{t('legendItems.viewSessions')}</span>
           </div>
           <div className="flex items-center">
             <div className="w-3 h-3 bg-orange-500 rounded mr-2"></div>
-            <span className="text-sm text-gray-600">Submissions</span>
+            <span className="text-sm text-gray-600">{t('legendItems.submissions')}</span>
           </div>
           <div className="flex items-center">
             <div className="w-3 h-3 bg-purple-500 rounded mr-2"></div>
-            <span className="text-sm text-gray-600">Submission Sessions</span>
+            <span className="text-sm text-gray-600">{t('legendItems.submissionSessions')}</span>
           </div>
         </div>
       </CardContent>

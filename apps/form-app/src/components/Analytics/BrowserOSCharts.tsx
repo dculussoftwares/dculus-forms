@@ -137,7 +137,7 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
     <div className="space-y-6">
       {/* Shared Header with Data Mode Toggle */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">Browser & Operating System Analytics</h3>
+        <h3 className="text-lg font-semibold text-gray-900">{t('title')}</h3>
         <DataModeToggle dataMode={dataMode} onDataModeChange={setDataMode} />
       </div>
       
