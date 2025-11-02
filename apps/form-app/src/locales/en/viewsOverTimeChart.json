@@ -1,0 +1,9 @@
+{
+  "title": "Views & Submissions Over Time",
+  "legend": {
+    "totalViews": "Total Views",
+    "viewSessions": "View Sessions",
+    "submissions": "Submissions",
+    "subSessions": "Sub Sessions"
+  }
+}

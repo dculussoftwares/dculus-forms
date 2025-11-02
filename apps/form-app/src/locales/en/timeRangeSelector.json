@@ -1,0 +1,30 @@
+{
+  "label": "Time Range:",
+  "presets": {
+    "last7Days": "Last 7 days",
+    "last14Days": "Last 14 days",
+    "last30Days": "Last 30 days",
+    "last60Days": "Last 60 days",
+    "last90Days": "Last 90 days",
+    "customRange": "Custom range"
+  },
+  "customPicker": {
+    "title": "Select Custom Date Range",
+    "quickPresetsLabel": "Quick Presets",
+    "startDateLabel": "Start Date",
+    "endDateLabel": "End Date",
+    "startDatePlaceholder": "Select start date",
+    "endDatePlaceholder": "Select end date",
+    "selectedRange": "Selected range: <strong>{{days}} days</strong>",
+    "applyButton": "Apply Range",
+    "cancelButton": "Cancel"
+  },
+  "validation": {
+    "selectBothDates": "Please select both start and end dates",
+    "startBeforeEnd": "Start date must be before end date",
+    "endNotFuture": "End date cannot be in the future",
+    "startNotTooOld": "Start date cannot be more than 2 years ago",
+    "rangeNotExceed": "Date range cannot exceed 1 year"
+  },
+  "refreshButton": "Refresh data"
+}

@@ -73,6 +73,12 @@ import enWebhookPluginDialog from './en/webhookPluginDialog.json';
 import enSlackPluginDialog from './en/slackPluginDialog.json';
 import enPluginCard from './en/pluginCard.json';
 import enPluginDeliveryLog from './en/pluginDeliveryLog.json';
+import enTimeRangeSelector from './en/timeRangeSelector.json';
+import enCompletionTimeChart from './en/completionTimeChart.json';
+import enGeographicChart from './en/geographicChart.json';
+import enWorldMapVisualization from './en/worldMapVisualization.json';
+import enViewsOverTimeChart from './en/viewsOverTimeChart.json';
+import enBrowserOSCharts from './en/browserOSCharts.json';
 
 export const translations = {
   en: {
@@ -151,6 +157,12 @@ export const translations = {
     slackPluginDialog: enSlackPluginDialog,
     pluginCard: enPluginCard,
     pluginDeliveryLog: enPluginDeliveryLog,
+    timeRangeSelector: enTimeRangeSelector,
+    completionTimeChart: enCompletionTimeChart,
+    geographicChart: enGeographicChart,
+    worldMapVisualization: enWorldMapVisualization,
+    viewsOverTimeChart: enViewsOverTimeChart,
+    browserOSCharts: enBrowserOSCharts,
   },
 } as const;
 

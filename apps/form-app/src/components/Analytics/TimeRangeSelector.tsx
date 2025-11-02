@@ -13,6 +13,7 @@ import {
 } from '@dculus/ui';
 import { Calendar, RefreshCw } from 'lucide-react';
 import { TimeRangePreset, TimeRange } from '../../hooks/useFormAnalytics';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface TimeRangeSelectorProps {
   value: TimeRangePreset;
@@ -29,6 +30,7 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   onRefresh,
   loading = false
 }) => {
+  const { t } = useTranslation('timeRangeSelector');
   const [showCustomPicker, setShowCustomPicker] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
@@ -43,10 +45,10 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   }, [value, customRange]);
 
   const timeRangeOptions = [
-    { value: '7d', label: 'Last 7 days' },
-    { value: '30d', label: 'Last 30 days' },
-    { value: '90d', label: 'Last 90 days' },
-    { value: 'custom', label: 'Custom range' }
+    { value: '7d', label: t('presets.last7Days') },
+    { value: '30d', label: t('presets.last30Days') },
+    { value: '90d', label: t('presets.last90Days') },
+    { value: 'custom', label: t('presets.customRange') }
   ];
 
   const handlePresetChange = (preset: string) => {
@@ -73,20 +75,20 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   };
 
   const validateDateRange = (start: Date | undefined, end: Date | undefined): string => {
-    if (!start || !end) return 'Please select both start and end dates';
+    if (!start || !end) return t('validation.selectBothDates');
 
     const today = new Date();
     today.setHours(23, 59, 59, 999); // End of today
 
-    if (start > end) return 'Start date must be before end date';
-    if (end > today) return 'End date cannot be in the future';
+    if (start > end) return t('validation.startBeforeEnd');
+    if (end > today) return t('validation.endNotFuture');
 
     const maxDaysAgo = new Date();
     maxDaysAgo.setFullYear(maxDaysAgo.getFullYear() - 2); // 2 years max
-    if (start < maxDaysAgo) return 'Start date cannot be more than 2 years ago';
+    if (start < maxDaysAgo) return t('validation.startNotTooOld');
 
     const daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    if (daysDiff > 365) return 'Date range cannot exceed 1 year';
+    if (daysDiff > 365) return t('validation.rangeNotExceed');
 
     return '';
   };
@@ -143,14 +145,14 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
     }
     
     const option = timeRangeOptions.find(opt => opt.value === value);
-    return option?.label || 'Last 30 days';
+    return option?.label || t('presets.last30Days');
   };
 
   return (
     <div className="flex items-center gap-3 relative">
       <div className="flex items-center gap-2">
         <Calendar className="h-4 w-4 text-gray-500" />
-        <span className="text-sm font-medium text-gray-700">Time Range:</span>
+        <span className="text-sm font-medium text-gray-700">{t('label')}</span>
       </div>
       
       <div className="relative">
@@ -175,7 +177,7 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
             <Card className="w-96 shadow-lg border">
               <CardContent className="p-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-gray-900">Select Custom Date Range</h4>
+                  <h4 className="text-sm font-semibold text-gray-900">{t('customPicker.title')}</h4>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -188,14 +190,14 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                 
                 {/* Quick Presets */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Quick Presets</label>
+                  <label className="text-sm font-medium text-gray-700">{t('customPicker.quickPresetsLabel')}</label>
                   <div className="flex flex-wrap gap-2">
                     {[
-                      { label: 'Last 7 days', days: 7 },
-                      { label: 'Last 14 days', days: 14 },
-                      { label: 'Last 30 days', days: 30 },
-                      { label: 'Last 60 days', days: 60 },
-                      { label: 'Last 90 days', days: 90 }
+                      { label: t('presets.last7Days'), days: 7 },
+                      { label: t('presets.last14Days'), days: 14 },
+                      { label: t('presets.last30Days'), days: 30 },
+                      { label: t('presets.last60Days'), days: 60 },
+                      { label: t('presets.last90Days'), days: 90 }
                     ].map((preset) => (
                       <Button
                         key={preset.days}
@@ -212,24 +214,24 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">Start Date</Label>
+                    <Label className="text-sm font-medium text-gray-700">{t('customPicker.startDateLabel')}</Label>
                     <DatePicker
                       date={startDate}
                       onDateChange={(date) => handleDateChange('start', date)}
                       maxDate={new Date()}
-                      placeholder="Select start date"
+                      placeholder={t('customPicker.startDatePlaceholder')}
                       error={!!dateError}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">End Date</Label>
+                    <Label className="text-sm font-medium text-gray-700">{t('customPicker.endDateLabel')}</Label>
                     <DatePicker
                       date={endDate}
                       onDateChange={(date) => handleDateChange('end', date)}
                       minDate={startDate}
                       maxDate={new Date()}
-                      placeholder="Select end date"
+                      placeholder={t('customPicker.endDatePlaceholder')}
                       error={!!dateError}
                     />
                   </div>
@@ -245,11 +247,16 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                 {/* Date Range Info */}
                 {startDate && endDate && !dateError && (
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-sm text-blue-700">
-                      Selected range: <strong>
-                        {Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1} days
-                      </strong>
-                    </p>
+                    <p 
+                      className="text-sm text-blue-700"
+                      dangerouslySetInnerHTML={{ 
+                        __html: t('customPicker.selectedRange', { 
+                          values: { 
+                            days: Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1 
+                          } 
+                        }) 
+                      }}
+                    />
                   </div>
                 )}
                 
@@ -259,14 +266,14 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                     size="sm"
                     onClick={() => setShowCustomPicker(false)}
                   >
-                    Cancel
+                    {t('customPicker.cancelButton')}
                   </Button>
                   <Button
                     size="sm"
                     onClick={handleCustomApply}
                     disabled={!startDate || !endDate || !!dateError}
                   >
-                    Apply Range
+                    {t('customPicker.applyButton')}
                   </Button>
                 </div>
               </CardContent>
@@ -283,7 +290,7 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
         className="h-9"
       >
         <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-        <span className="sr-only">Refresh data</span>
+        <span className="sr-only">{t('refreshButton')}</span>
       </Button>
     </div>
   );

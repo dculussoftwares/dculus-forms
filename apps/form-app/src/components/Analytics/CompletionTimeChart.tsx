@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@dculus/ui';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { CompletionTimeRange } from '../../hooks/useFormAnalytics';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface CompletionTimeChartProps {
   data: CompletionTimeRange[];
@@ -51,27 +52,29 @@ export const CompletionTimeChart: React.FC<CompletionTimeChartProps> = ({
   data, 
   loading = false 
 }) => {
+  const { t } = useTranslation('completionTimeChart');
+  
   if (loading) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Completion Time Distribution</CardTitle>
+            <CardTitle>{t('distributionTitle')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-64 flex items-center justify-center">
-              <div className="animate-pulse text-gray-400">Loading chart...</div>
+              <div className="animate-pulse text-gray-400">{t('loading')}</div>
             </div>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader>
-            <CardTitle>Completion Time Breakdown</CardTitle>
+            <CardTitle>{t('breakdownTitle')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-64 flex items-center justify-center">
-              <div className="animate-pulse text-gray-400">Loading chart...</div>
+              <div className="animate-pulse text-gray-400">{t('loading')}</div>
             </div>
           </CardContent>
         </Card>
@@ -84,22 +87,22 @@ export const CompletionTimeChart: React.FC<CompletionTimeChartProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Completion Time Distribution</CardTitle>
+            <CardTitle>{t('distributionTitle')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-64 flex items-center justify-center text-gray-500">
-              No completion time data available
+              {t('noData')}
             </div>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader>
-            <CardTitle>Completion Time Breakdown</CardTitle>
+            <CardTitle>{t('breakdownTitle')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-64 flex items-center justify-center text-gray-500">
-              No completion time data available
+              {t('noData')}
             </div>
           </CardContent>
         </Card>
@@ -118,7 +121,7 @@ export const CompletionTimeChart: React.FC<CompletionTimeChartProps> = ({
       {/* Bar Chart */}
       <Card>
         <CardHeader>
-          <CardTitle>Completion Time Distribution</CardTitle>
+          <CardTitle>{t('distributionTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-64">
@@ -149,7 +152,7 @@ export const CompletionTimeChart: React.FC<CompletionTimeChartProps> = ({
       {/* Pie Chart */}
       <Card>
         <CardHeader>
-          <CardTitle>Completion Time Breakdown</CardTitle>
+          <CardTitle>{t('breakdownTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-64">
