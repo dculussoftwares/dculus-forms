@@ -9,5 +9,10 @@
   "loading": "Loading...",
   "uploading": "Uploading...",
   "apply": "Apply",
-  "noDataAvailable": "No data available"
+  "noDataAvailable": "No data available",
+  "search": "Search",
+  "searchPlaceholder": "Search for background images...",
+  "loadMore": "Load More",
+  "selectedImage": "Selected Image",
+  "by": "by"
 }

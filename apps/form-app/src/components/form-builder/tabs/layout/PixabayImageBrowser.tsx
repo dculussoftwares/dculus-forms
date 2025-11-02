@@ -79,14 +79,14 @@ export function PixabayImageBrowser({ formId, onImageApplied, onUploadSuccess }:
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Search for background images..."
+            placeholder={tCommon('searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
           />
         </div>
         <Button type="submit" disabled={loading || !searchQuery.trim()}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Search'}
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : tCommon('search')}
         </Button>
       </form>
 
@@ -125,7 +125,7 @@ export function PixabayImageBrowser({ formId, onImageApplied, onUploadSuccess }:
               </div>
               <div className="p-2">
                 <p className="text-xs text-gray-600 truncate">{image.tags}</p>
-                <p className="text-xs text-gray-500">by {image.user}</p>
+                <p className="text-xs text-gray-500">{tCommon('by')} {image.user}</p>
               </div>
             </Card>
           ))}
@@ -138,7 +138,7 @@ export function PixabayImageBrowser({ formId, onImageApplied, onUploadSuccess }:
           onClick={handleLoadMore}
           className="w-full"
         >
-          Load More
+          {tCommon('loadMore')}
         </Button>
       )}
 
@@ -146,7 +146,7 @@ export function PixabayImageBrowser({ formId, onImageApplied, onUploadSuccess }:
         <div className="border-t pt-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-sm">Selected Image</p>
+              <p className="font-medium text-sm">{tCommon('selectedImage')}</p>
               <p className="text-xs text-gray-500">{selectedImage.tags}</p>
             </div>
             <Button 
