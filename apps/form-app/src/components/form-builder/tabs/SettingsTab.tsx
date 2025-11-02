@@ -74,7 +74,7 @@ export const SettingsTab: React.FC = () => {
               {isConnected && (
                 <div className="mt-4 flex items-center justify-center space-x-2 text-sm text-green-600 dark:text-green-400">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span>Real-time collaboration ready</span>
+                  <span>{t('collaboration.ready')}</span>
                 </div>
               )}
             </div>
@@ -83,16 +83,16 @@ export const SettingsTab: React.FC = () => {
           {/* Feature Preview */}
           <div className="mt-8">
             <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-4">
-              Upcoming Settings:
+              {t('upcomingFeatures.title')}
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
-                'Form submission settings',
-                'Email notifications',
-                'Access permissions',
-                'Response validation',
-                'Export options',
-                'Integration settings'
+                t('upcomingFeatures.features.formSubmission'),
+                t('upcomingFeatures.features.emailNotifications'),
+                t('upcomingFeatures.features.accessPermissions'),
+                t('upcomingFeatures.features.responseValidation'),
+                t('upcomingFeatures.features.exportOptions'),
+                t('upcomingFeatures.features.integrationSettings')
               ].map((feature, index) => (
                 <div key={index} className="flex items-center space-x-2">
                   <div className="w-1.5 h-1.5 bg-gray-400 rounded-full" />

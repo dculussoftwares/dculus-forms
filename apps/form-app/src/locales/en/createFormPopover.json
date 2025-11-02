@@ -23,5 +23,6 @@
   },
   "error": {
     "title": "Failed to create form"
-  }
+  },
+  "defaultPageTitle": "Page 1"
 }

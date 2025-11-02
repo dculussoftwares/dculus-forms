@@ -14,5 +14,19 @@
     "totalFields": "Total Fields:",
     "yes": "Yes",
     "no": "No"
+  },
+  "upcomingFeatures": {
+    "title": "Upcoming Settings:",
+    "features": {
+      "formSubmission": "Form submission settings",
+      "emailNotifications": "Email notifications",
+      "accessPermissions": "Access permissions",
+      "responseValidation": "Response validation",
+      "exportOptions": "Export options",
+      "integrationSettings": "Integration settings"
+    }
+  },
+  "collaboration": {
+    "ready": "Real-time collaboration ready"
   }
 }

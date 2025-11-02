@@ -95,7 +95,7 @@ export const CreateFormPopover: React.FC<CreateFormPopoverProps> = ({ onFormCrea
             formSchema: {
               pages: [{
                 id: `page-${Date.now()}`,
-                title: 'Page 1',
+                title: t('defaultPageTitle'),
                 fields: [], // Start with empty fields
                 order: 1
               }],
