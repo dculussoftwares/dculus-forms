@@ -96,6 +96,8 @@ import enOrganizationSwitcher from './en/organizationSwitcher.json';
 import enSubscriptionDashboard from './en/subscriptionDashboard.json';
 import enFieldSettingsFooter from './en/fieldSettingsFooter.json';
 import enRichTextFieldSettings from './en/richTextFieldSettings.json';
+import enUsageChart from './en/usageChart.json';
+import enPlanComparison from './en/planComparison.json';
 
 export const translations = {
   en: {
@@ -197,6 +199,8 @@ export const translations = {
     subscriptionDashboard: enSubscriptionDashboard,
     fieldSettingsFooter: enFieldSettingsFooter,
     richTextFieldSettings: enRichTextFieldSettings,
+    usageChart: enUsageChart,
+    planComparison: enPlanComparison,
   },
 } as const;
 

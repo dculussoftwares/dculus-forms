@@ -1,0 +1,60 @@
+{
+  "title": "Plan Comparison",
+  "subtitle": "Compare features across all available plans",
+  "table": {
+    "feature": "Feature",
+    "currentPlan": "Current Plan"
+  },
+  "plans": {
+    "free": {
+      "name": "Free",
+      "features": {
+        "views": "10,000 / month",
+        "submissions": "1,000 / month",
+        "forms": "Unlimited",
+        "analytics": "Basic",
+        "support": "Community"
+      }
+    },
+    "starter": {
+      "name": "Starter",
+      "features": {
+        "views": "Unlimited",
+        "submissions": "10,000 / month",
+        "forms": "Unlimited",
+        "analytics": "Advanced",
+        "support": "Email"
+      }
+    },
+    "advanced": {
+      "name": "Advanced",
+      "features": {
+        "views": "Unlimited",
+        "submissions": "100,000 / month",
+        "forms": "Unlimited",
+        "analytics": "Advanced + Export",
+        "support": "Priority"
+      }
+    }
+  },
+  "features": {
+    "formViews": "Form Views",
+    "formSubmissions": "Form Submissions",
+    "forms": "Forms",
+    "collaboration": "Real-time Collaboration",
+    "analytics": "Analytics",
+    "support": "Support",
+    "customDomain": "Custom Domain",
+    "apiAccess": "API Access"
+  },
+  "allPlansInclude": {
+    "title": "All plans include:",
+    "items": {
+      "unlimitedForms": "• Unlimited forms and collaborators",
+      "realtimeEditing": "• Real-time collaborative editing",
+      "analytics": "• Form analytics and insights",
+      "plugins": "• Plugin system (webhooks, email, quiz grading)",
+      "responseManagement": "• Response management and editing"
+    }
+  }
+}

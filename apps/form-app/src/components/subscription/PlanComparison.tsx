@@ -1,50 +1,53 @@
 import { Card, Badge } from '@dculus/ui';
 import { Check, X, Eye, FileText, Zap, Shield } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface PlanComparisonProps {
   currentPlan: string;
 }
 
 export const PlanComparison = ({ currentPlan }: PlanComparisonProps) => {
+  const { t } = useTranslation('planComparison');
+  
   const plans = [
     {
       id: 'free',
-      name: 'Free',
+      name: t('plans.free.name'),
       features: {
-        views: '10,000 / month',
-        submissions: '1,000 / month',
-        forms: 'Unlimited',
+        views: t('plans.free.features.views'),
+        submissions: t('plans.free.features.submissions'),
+        forms: t('plans.free.features.forms'),
         collaboration: true,
-        analytics: 'Basic',
-        support: 'Community',
+        analytics: t('plans.free.features.analytics'),
+        support: t('plans.free.features.support'),
         customDomain: false,
         apiAccess: false,
       },
     },
     {
       id: 'starter',
-      name: 'Starter',
+      name: t('plans.starter.name'),
       features: {
-        views: 'Unlimited',
-        submissions: '10,000 / month',
-        forms: 'Unlimited',
+        views: t('plans.starter.features.views'),
+        submissions: t('plans.starter.features.submissions'),
+        forms: t('plans.starter.features.forms'),
         collaboration: true,
-        analytics: 'Advanced',
-        support: 'Email',
+        analytics: t('plans.starter.features.analytics'),
+        support: t('plans.starter.features.support'),
         customDomain: true,
         apiAccess: true,
       },
     },
     {
       id: 'advanced',
-      name: 'Advanced',
+      name: t('plans.advanced.name'),
       features: {
-        views: 'Unlimited',
-        submissions: '100,000 / month',
-        forms: 'Unlimited',
+        views: t('plans.advanced.features.views'),
+        submissions: t('plans.advanced.features.submissions'),
+        forms: t('plans.advanced.features.forms'),
         collaboration: true,
-        analytics: 'Advanced + Export',
-        support: 'Priority',
+        analytics: t('plans.advanced.features.analytics'),
+        support: t('plans.advanced.features.support'),
         customDomain: true,
         apiAccess: true,
       },
@@ -52,14 +55,14 @@ export const PlanComparison = ({ currentPlan }: PlanComparisonProps) => {
   ];
 
   const featureRows = [
-    { key: 'views', label: 'Form Views', icon: Eye },
-    { key: 'submissions', label: 'Form Submissions', icon: FileText },
-    { key: 'forms', label: 'Forms', icon: Zap },
-    { key: 'collaboration', label: 'Real-time Collaboration', icon: Users },
-    { key: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { key: 'support', label: 'Support', icon: HelpCircle },
-    { key: 'customDomain', label: 'Custom Domain', icon: Globe },
-    { key: 'apiAccess', label: 'API Access', icon: Shield },
+    { key: 'views', label: t('features.formViews'), icon: Eye },
+    { key: 'submissions', label: t('features.formSubmissions'), icon: FileText },
+    { key: 'forms', label: t('features.forms'), icon: Zap },
+    { key: 'collaboration', label: t('features.collaboration'), icon: Users },
+    { key: 'analytics', label: t('features.analytics'), icon: BarChart3 },
+    { key: 'support', label: t('features.support'), icon: HelpCircle },
+    { key: 'customDomain', label: t('features.customDomain'), icon: Globe },
+    { key: 'apiAccess', label: t('features.apiAccess'), icon: Shield },
   ];
 
   const renderFeatureValue = (value: string | boolean | number) => {
@@ -76,9 +79,9 @@ export const PlanComparison = ({ currentPlan }: PlanComparisonProps) => {
   return (
     <Card className="p-6">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold mb-1">Plan Comparison</h3>
+        <h3 className="text-lg font-semibold mb-1">{t('title')}</h3>
         <p className="text-sm text-gray-500">
-          Compare features across all available plans
+          {t('subtitle')}
         </p>
       </div>
 
@@ -87,7 +90,7 @@ export const PlanComparison = ({ currentPlan }: PlanComparisonProps) => {
           <thead>
             <tr className="border-b-2 border-gray-200">
               <th className="text-left py-3 px-4 font-medium text-gray-600">
-                Feature
+                {t('table.feature')}
               </th>
               {plans.map((plan) => (
                 <th key={plan.id} className="text-center py-3 px-4">
@@ -95,7 +98,7 @@ export const PlanComparison = ({ currentPlan }: PlanComparisonProps) => {
                     <span className="font-semibold text-base">{plan.name}</span>
                     {currentPlan === plan.id && (
                       <Badge className="bg-blue-100 text-blue-800 text-xs">
-                        Current Plan
+                        {t('table.currentPlan')}
                       </Badge>
                     )}
                   </div>
@@ -141,14 +144,14 @@ export const PlanComparison = ({ currentPlan }: PlanComparisonProps) => {
           <Shield className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
           <div>
             <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
-              All plans include:
+              {t('allPlansInclude.title')}
             </p>
             <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-              <li>• Unlimited forms and collaborators</li>
-              <li>• Real-time collaborative editing</li>
-              <li>• Form analytics and insights</li>
-              <li>• Plugin system (webhooks, email, quiz grading)</li>
-              <li>• Response management and editing</li>
+              <li>{t('allPlansInclude.items.unlimitedForms')}</li>
+              <li>{t('allPlansInclude.items.realtimeEditing')}</li>
+              <li>{t('allPlansInclude.items.analytics')}</li>
+              <li>{t('allPlansInclude.items.plugins')}</li>
+              <li>{t('allPlansInclude.items.responseManagement')}</li>
             </ul>
           </div>
         </div>

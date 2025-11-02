@@ -1,0 +1,17 @@
+{
+  "title": "Usage Trends",
+  "subtitle": "Daily usage from {{startDate}} to {{endDate}}",
+  "tooltip": {
+    "views": "Views:",
+    "submissions": "Submissions:"
+  },
+  "legend": {
+    "formViews": "Form Views",
+    "formSubmissions": "Form Submissions"
+  },
+  "totals": {
+    "views": "Total Views",
+    "submissions": "Total Submissions",
+    "ofLimit": "of {{limit}} limit"
+  }
+}

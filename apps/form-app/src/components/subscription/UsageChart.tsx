@@ -1,6 +1,7 @@
 import { Card } from '@dculus/ui';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Eye, FileText } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface UsageChartProps {
   viewsUsed: number;
@@ -19,6 +20,8 @@ export const UsageChart = ({
   currentPeriodStart,
   currentPeriodEnd,
 }: UsageChartProps) => {
+  const { t } = useTranslation('usageChart');
+  
   // Generate mock daily usage data for visualization
   // In a real implementation, this would come from backend historical data
   const generateUsageData = () => {
@@ -62,7 +65,7 @@ export const UsageChart = ({
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-sm">
               <Eye className="h-3 w-3 text-blue-500" />
-              <span className="text-gray-600 dark:text-gray-400">Views:</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('tooltip.views')}</span>
               <span className="font-medium">{payload[0].value.toLocaleString()}</span>
               {viewsLimit && (
                 <span className="text-xs text-gray-500">
@@ -72,7 +75,7 @@ export const UsageChart = ({
             </div>
             <div className="flex items-center gap-2 text-sm">
               <FileText className="h-3 w-3 text-purple-500" />
-              <span className="text-gray-600 dark:text-gray-400">Submissions:</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('tooltip.submissions')}</span>
               <span className="font-medium">{payload[1].value.toLocaleString()}</span>
               {submissionsLimit && (
                 <span className="text-xs text-gray-500">
@@ -90,10 +93,14 @@ export const UsageChart = ({
   return (
     <Card className="p-6">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold mb-1">Usage Trends</h3>
+        <h3 className="text-lg font-semibold mb-1">{t('title')}</h3>
         <p className="text-sm text-gray-500">
-          Daily usage from {new Date(Number(currentPeriodStart)).toLocaleDateString()} to{' '}
-          {new Date(Number(currentPeriodEnd)).toLocaleDateString()}
+          {t('subtitle', { 
+            values: { 
+              startDate: new Date(Number(currentPeriodStart)).toLocaleDateString(),
+              endDate: new Date(Number(currentPeriodEnd)).toLocaleDateString()
+            } 
+          })}
         </p>
       </div>
 
@@ -143,7 +150,7 @@ export const UsageChart = ({
             strokeWidth={2}
             fillOpacity={1}
             fill="url(#colorViews)"
-            name="Form Views"
+            name={t('legend.formViews')}
           />
           <Area
             type="monotone"
@@ -152,7 +159,7 @@ export const UsageChart = ({
             strokeWidth={2}
             fillOpacity={1}
             fill="url(#colorSubmissions)"
-            name="Form Submissions"
+            name={t('legend.formSubmissions')}
           />
         </AreaChart>
       </ResponsiveContainer>
@@ -162,28 +169,28 @@ export const UsageChart = ({
           <div>
             <div className="flex items-center gap-2 mb-1">
               <div className="h-3 w-3 rounded-full bg-blue-500"></div>
-              <span className="font-medium">Total Views</span>
+              <span className="font-medium">{t('totals.views')}</span>
             </div>
             <p className="text-2xl font-bold text-blue-600">
               {viewsUsed.toLocaleString()}
             </p>
             {viewsLimit && (
               <p className="text-xs text-gray-500">
-                of {viewsLimit.toLocaleString()} limit
+                {t('totals.ofLimit', { values: { limit: viewsLimit.toLocaleString() } })}
               </p>
             )}
           </div>
           <div>
             <div className="flex items-center gap-2 mb-1">
               <div className="h-3 w-3 rounded-full bg-purple-500"></div>
-              <span className="font-medium">Total Submissions</span>
+              <span className="font-medium">{t('totals.submissions')}</span>
             </div>
             <p className="text-2xl font-bold text-purple-600">
               {submissionsUsed.toLocaleString()}
             </p>
             {submissionsLimit && (
               <p className="text-xs text-gray-500">
-                of {submissionsLimit.toLocaleString()} limit
+                {t('totals.ofLimit', { values: { limit: submissionsLimit.toLocaleString() } })}
               </p>
             )}
           </div>
