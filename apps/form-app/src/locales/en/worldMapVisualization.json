@@ -1,8 +1,25 @@
 {
+  "title": "World Map Distribution",
   "legend": {
     "none": "None",
     "low": "Low",
     "high": "High"
   },
-  "topPerformingCountry": "Top Performing Country"
+  "topPerformingCountry": "Top Performing Country",
+  "dataMode": {
+    "views": "Views",
+    "submissions": "Submissions"
+  },
+  "loading": "Loading map data...",
+  "noData": "No geographic data available",
+  "emptyMessage": {
+    "submissions": "Data will appear once visitors submit your form",
+    "views": "Data will appear once visitors access your form"
+  },
+  "countryCount": "{{count}} countries",
+  "totalMetric": "{{total}} total {{metric}}",
+  "countryBreakdown": "Country Breakdown",
+  "totalLabel": "{{count}} total",
+  "ofTotal": "of total",
+  "showMoreCountries": "Show {{count}} more countries"
 }

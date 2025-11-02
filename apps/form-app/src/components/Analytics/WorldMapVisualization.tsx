@@ -38,7 +38,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
   
   // Get current data based on mode
   const currentData = dataMode === 'submissions' ? submissionData : data;
-  const metricLabel = dataMode === 'submissions' ? 'submissions' : 'views';
+  const metricLabel = dataMode === 'submissions' ? t('dataMode.submissions') : t('dataMode.views');
 
   if (loading) {
     return (
@@ -47,10 +47,10 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
           <CardTitle className="flex items-center justify-between text-base">
             <div className="flex items-center">
               <Globe className="h-4 w-4 mr-2 text-blue-600" />
-              World Map Distribution
+              {t('title')}
             </div>
             {onDataModeChange && (
-              <DataModeToggle dataMode={dataMode} onDataModeChange={onDataModeChange} />
+              <DataModeToggle dataMode={dataMode} onDataModeChange={onDataModeChange} t={t} />
             )}
           </CardTitle>
         </CardHeader>
@@ -65,8 +65,8 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
 
   if (!currentData || currentData.length === 0) {
     const emptyMessage = dataMode === 'submissions' 
-      ? 'Data will appear once visitors submit your form'
-      : 'Data will appear once visitors access your form';
+      ? t('emptyMessage.submissions')
+      : t('emptyMessage.views');
     
     return (
       <Card>
@@ -74,17 +74,17 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
           <CardTitle className="flex items-center justify-between text-base">
             <div className="flex items-center">
               <Globe className="h-4 w-4 mr-2 text-blue-600" />
-              World Map Distribution
+              {t('title')}
             </div>
             {onDataModeChange && (
-              <DataModeToggle dataMode={dataMode} onDataModeChange={onDataModeChange} />
+              <DataModeToggle dataMode={dataMode} onDataModeChange={onDataModeChange} t={t} />
             )}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-80 flex flex-col items-center justify-center text-gray-500">
             <Globe className="h-12 w-12 mb-3 text-gray-300" />
-            <p className="text-sm">No geographic data available</p>
+            <p className="text-sm">{t('noData')}</p>
             <p className="text-xs text-gray-400 mt-1">
               {emptyMessage}
             </p>
@@ -112,15 +112,15 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
         <CardTitle className="flex items-center justify-between text-base">
           <div className="flex items-center">
             <Globe className="h-4 w-4 mr-2 text-blue-600" />
-            World Map Distribution
+            {t('title')}
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center text-sm text-green-600">
               <TrendingUp className="h-3 w-3 mr-1" />
-              {currentData.length} countries
+              {t('countryCount', { values: { count: currentData.length } })}
             </div>
             {onDataModeChange && (
-              <DataModeToggle dataMode={dataMode} onDataModeChange={onDataModeChange} />
+              <DataModeToggle dataMode={dataMode} onDataModeChange={onDataModeChange} t={t} />
             )}
           </div>
         </CardTitle>
@@ -175,7 +175,12 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
           {/* Total Metric Badge */}
           <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm rounded-full px-4 py-2 shadow-md border">
             <span className="text-sm font-semibold text-gray-700">
-              {mapData.reduce((sum, item) => sum + item.value, 0)} total {metricLabel}
+              {t('totalMetric', { 
+                values: { 
+                  total: mapData.reduce((sum, item) => sum + item.value, 0), 
+                  metric: metricLabel.toLowerCase() 
+                } 
+              })}
             </span>
           </div>
         </div>
@@ -196,14 +201,14 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
               <div className="text-right">
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-bold text-blue-800">{topCountry.count}</span>
-                  <span className="text-sm text-blue-600">{metricLabel}</span>
+                  <span className="text-sm text-blue-600">{metricLabel.toLowerCase()}</span>
                 </div>
                 <div className="flex items-center gap-1 mt-1">
                   <TrendingUp className="h-3 w-3 text-green-500" />
                   <span className="text-lg font-semibold text-green-600">
                     {topCountry.percentage.toFixed(1)}%
                   </span>
-                  <span className="text-xs text-gray-500">of total</span>
+                  <span className="text-xs text-gray-500">{t('ofTotal')}</span>
                 </div>
               </div>
             </div>
@@ -215,10 +220,10 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-base font-semibold text-gray-800 flex items-center gap-2">
               <Globe className="h-4 w-4 text-blue-600" />
-              Country Breakdown
+              {t('countryBreakdown')}
             </h4>
             <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-              {currentData.length} total
+              {t('totalLabel', { values: { count: currentData.length } })}
             </div>
           </div>
           
@@ -295,7 +300,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                 variant="ghost"
                 className="w-full text-sm hover:text-blue-600 flex items-center justify-center gap-1"
               >
-                <span>Show {currentData.length - 5} more countries</span>
+                <span>{t('showMoreCountries', { values: { count: currentData.length - 5 } })}</span>
                 <TrendingUp className="h-3 w-3" />
               </Button>
             </div>
@@ -310,9 +315,10 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
 interface DataModeToggleProps {
   dataMode: DataMode;
   onDataModeChange: (mode: DataMode) => void;
+  t: (key: string) => string;
 }
 
-const DataModeToggle: React.FC<DataModeToggleProps> = ({ dataMode, onDataModeChange }) => {
+const DataModeToggle: React.FC<DataModeToggleProps> = ({ dataMode, onDataModeChange, t }) => {
   return (
     <div className="flex items-center bg-gray-100 rounded-lg p-1 border shadow-sm">
       <Button
@@ -325,7 +331,7 @@ const DataModeToggle: React.FC<DataModeToggleProps> = ({ dataMode, onDataModeCha
             : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
         }`}
       >
-        Views
+        {t('dataMode.views')}
       </Button>
       <Button
         size="sm"
@@ -337,7 +343,7 @@ const DataModeToggle: React.FC<DataModeToggleProps> = ({ dataMode, onDataModeCha
             : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
         }`}
       >
-        Submissions
+        {t('dataMode.submissions')}
       </Button>
     </div>
   );
