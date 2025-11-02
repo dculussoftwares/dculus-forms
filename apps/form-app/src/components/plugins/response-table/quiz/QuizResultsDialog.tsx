@@ -8,6 +8,7 @@ import {
   Badge,
 } from '@dculus/ui';
 import { CheckCircle2, XCircle, Award, TrendingUp } from 'lucide-react';
+import { useTranslation } from '../../../../hooks/useTranslation';
 
 interface QuizResultsDialogProps {
   open: boolean;
@@ -38,6 +39,7 @@ export const QuizResultsDialog: React.FC<QuizResultsDialogProps> = ({
   metadata,
   responseId,
 }) => {
+  const { t } = useTranslation('quizResultsDialog');
   const passThreshold = metadata.passThreshold ?? 60; // Fallback to 60 for old responses
   const passed = metadata.percentage >= passThreshold;
   const correctAnswers = metadata.fieldResults.filter((r) => r.isCorrect).length;
@@ -52,10 +54,10 @@ export const QuizResultsDialog: React.FC<QuizResultsDialogProps> = ({
               <Award className={`h-6 w-6 ${passed ? 'text-green-600' : 'text-red-600'}`} />
             </div>
             <div>
-              <DialogTitle>Quiz Results</DialogTitle>
+              <DialogTitle>{t('title')}</DialogTitle>
               <DialogDescription>
-                {responseId && `Response ${responseId.slice(-6)} • `}
-                Graded {new Date(metadata.gradedAt).toLocaleDateString()}
+                {responseId && `${t('response')} ${responseId.slice(-6)} • `}
+                {t('graded')} {new Date(metadata.gradedAt).toLocaleDateString()}
               </DialogDescription>
             </div>
           </div>
@@ -67,13 +69,13 @@ export const QuizResultsDialog: React.FC<QuizResultsDialogProps> = ({
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <TrendingUp className="h-5 w-5 text-slate-600" />
-                <h3 className="font-semibold text-slate-900">Overall Score</h3>
+                <h3 className="font-semibold text-slate-900">{t('overallScore')}</h3>
               </div>
               <Badge
                 variant={passed ? 'default' : 'destructive'}
                 className="text-base px-4 py-1.5"
               >
-                {passed ? 'PASSED' : 'FAILED'}
+                {passed ? t('status.passed') : t('status.failed')}
               </Badge>
             </div>
 
@@ -82,19 +84,19 @@ export const QuizResultsDialog: React.FC<QuizResultsDialogProps> = ({
                 <div className="text-3xl font-bold text-slate-900">
                   {metadata.quizScore}
                 </div>
-                <div className="text-sm text-slate-600 mt-1">Points Earned</div>
+                <div className="text-sm text-slate-600 mt-1">{t('pointsEarned')}</div>
               </div>
               <div className="text-center border-x border-slate-300">
                 <div className="text-3xl font-bold text-slate-900">
                   {metadata.percentage.toFixed(1)}%
                 </div>
-                <div className="text-sm text-slate-600 mt-1">Percentage</div>
+                <div className="text-sm text-slate-600 mt-1">{t('percentage')}</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-slate-900">
                   {correctAnswers}/{totalQuestions}
                 </div>
-                <div className="text-sm text-slate-600 mt-1">Correct</div>
+                <div className="text-sm text-slate-600 mt-1">{t('correct')}</div>
               </div>
             </div>
 
@@ -165,12 +167,12 @@ export const QuizResultsDialog: React.FC<QuizResultsDialogProps> = ({
                             : 'bg-red-100 text-red-800'
                         }`}
                       >
-                        <span className="font-medium">Your answer: </span>
+                        <span className="font-medium">{t('yourAnswer')} </span>
                         {result.userAnswer}
                       </div>
                       {!result.isCorrect && (
                         <div className="text-sm p-3 rounded-md bg-green-100 text-green-800">
-                          <span className="font-medium">Correct answer: </span>
+                          <span className="font-medium">{t('correctAnswer')} </span>
                           {result.correctAnswer}
                         </div>
                       )}

@@ -1,0 +1,15 @@
+{
+  "title": "Quiz Results",
+  "response": "Response",
+  "graded": "Graded",
+  "overallScore": "Overall Score",
+  "pointsEarned": "Points Earned",
+  "percentage": "Percentage",
+  "correct": "Correct",
+  "yourAnswer": "Your answer:",
+  "correctAnswer": "Correct answer:",
+  "status": {
+    "passed": "PASSED",
+    "failed": "FAILED"
+  }
+}

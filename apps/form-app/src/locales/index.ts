@@ -89,6 +89,9 @@ import enDateFieldAnalytics from './en/dateFieldAnalytics.json';
 import enEmailFieldAnalytics from './en/emailFieldAnalytics.json';
 import enSubmissionLimitsSettings from './en/submissionLimitsSettings.json';
 import enMetricHelper from './en/metricHelper.json';
+import enQuizGradingMetadataViewer from './en/quizGradingMetadataViewer.json';
+import enQuizResultsDialog from './en/quizResultsDialog.json';
+import enQuizGradingPluginConfig from './en/quizGradingPluginConfig.json';
 
 export const translations = {
   en: {
@@ -183,6 +186,9 @@ export const translations = {
     emailFieldAnalytics: enEmailFieldAnalytics,
     submissionLimitsSettings: enSubmissionLimitsSettings,
     metricHelper: enMetricHelper,
+    quizGradingMetadataViewer: enQuizGradingMetadataViewer,
+    quizResultsDialog: enQuizResultsDialog,
+    quizGradingPluginConfig: enQuizGradingPluginConfig,
   },
 } as const;
 

@@ -22,6 +22,7 @@ import {
 import { GraduationCap, AlertCircle } from 'lucide-react';
 import type { Form } from '@dculus/types';
 import { deserializeFormSchema, SelectField, RadioField } from '@dculus/types';
+import { useTranslation } from '../../../../hooks/useTranslation';
 
 interface QuizGradingPluginConfigProps {
   form: Form;
@@ -75,6 +76,7 @@ export const QuizGradingPluginConfig: React.FC<QuizGradingPluginConfigProps> = (
   onSave,
   onCancel,
 }) => {
+  const { t } = useTranslation('quizGradingPluginConfig');
   const { register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
       name: initialData?.name || '',
@@ -203,9 +205,9 @@ export const QuizGradingPluginConfig: React.FC<QuizGradingPluginConfigProps> = (
                 <GraduationCap className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <CardTitle>Quiz Auto-Grading Plugin</CardTitle>
+                <CardTitle>{t('title')}</CardTitle>
                 <CardDescription>
-                  Automatically grade quiz responses with correct answers and scoring
+                  {t('description')}
                 </CardDescription>
               </div>
             </div>
@@ -215,26 +217,26 @@ export const QuizGradingPluginConfig: React.FC<QuizGradingPluginConfigProps> = (
         {/* Basic Settings */}
         <Card>
           <CardHeader>
-            <CardTitle>Basic Settings</CardTitle>
+            <CardTitle>{t('basicSettings.title')}</CardTitle>
             <CardDescription>
-              Configure plugin name and pass threshold
+              {t('basicSettings.description')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Plugin Name *</Label>
+              <Label htmlFor="name">{t('basicSettings.pluginName')}</Label>
               <Input
                 id="name"
-                placeholder="e.g., Math Quiz Grading"
+                placeholder={t('basicSettings.pluginNamePlaceholder')}
                 {...register('name', { required: true })}
               />
               {errors.name && (
-                <p className="text-sm text-destructive">Plugin name is required</p>
+                <p className="text-sm text-destructive">{t('basicSettings.pluginNameRequired')}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="passThreshold">Pass Threshold (%) *</Label>
+              <Label htmlFor="passThreshold">{t('basicSettings.passThreshold')}</Label>
               <Input
                 id="passThreshold"
                 type="number"
@@ -249,10 +251,10 @@ export const QuizGradingPluginConfig: React.FC<QuizGradingPluginConfigProps> = (
                 })}
               />
               {errors.passThreshold && (
-                <p className="text-sm text-destructive">Pass threshold must be between 0 and 100</p>
+                <p className="text-sm text-destructive">{t('basicSettings.passThresholdError')}</p>
               )}
               <p className="text-sm text-muted-foreground">
-                Minimum percentage required to pass the quiz
+                {t('basicSettings.passThresholdHelp')}
               </p>
             </div>
           </CardContent>
@@ -261,7 +263,7 @@ export const QuizGradingPluginConfig: React.FC<QuizGradingPluginConfigProps> = (
         {/* Quiz Questions */}
         <Card>
           <CardHeader>
-            <CardTitle>Quiz Questions</CardTitle>
+            <CardTitle>{t('quizQuestions.title')}</CardTitle>
             <CardDescription>
               Select fields to include in quiz and configure correct answers
             </CardDescription>

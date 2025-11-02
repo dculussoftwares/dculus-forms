@@ -1,0 +1,12 @@
+{
+  "title": "Quiz Results",
+  "gradedOn": "Graded automatically on {{date}}",
+  "answerBreakdown": "Answer Breakdown",
+  "questionLabel": "Question {{number}}: {{label}}",
+  "yourAnswer": "Your answer:",
+  "correctAnswer": "Correct answer:",
+  "status": {
+    "passed": "PASSED",
+    "failed": "FAILED"
+  }
+}

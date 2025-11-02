@@ -8,6 +8,7 @@ import {
   Badge,
 } from '@dculus/ui';
 import { CheckCircle2, XCircle, Award } from 'lucide-react';
+import { useTranslation } from '../../../../hooks/useTranslation';
 
 interface QuizGradingMetadataViewerProps {
   metadata: {
@@ -31,6 +32,7 @@ interface QuizGradingMetadataViewerProps {
 export const QuizGradingMetadataViewer: React.FC<QuizGradingMetadataViewerProps> = ({
   metadata,
 }) => {
+  const { t } = useTranslation('quizGradingMetadataViewer');
   const passed = metadata.percentage >= 60;
 
   return (
@@ -38,10 +40,10 @@ export const QuizGradingMetadataViewer: React.FC<QuizGradingMetadataViewerProps>
       <CardHeader>
         <div className="flex items-center gap-2">
           <Award className="h-5 w-5 text-primary" />
-          <CardTitle>Quiz Results</CardTitle>
+          <CardTitle>{t('title')}</CardTitle>
         </div>
         <CardDescription>
-          Graded automatically on {new Date(metadata.gradedAt).toLocaleString()}
+          {t('gradedOn', { values: { date: new Date(metadata.gradedAt).toLocaleString() } })}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -71,7 +73,7 @@ export const QuizGradingMetadataViewer: React.FC<QuizGradingMetadataViewerProps>
                 variant={passed ? 'default' : 'destructive'}
                 className="text-sm px-4 py-1"
               >
-                {passed ? 'PASSED' : 'FAILED'}
+                {passed ? t('status.passed') : t('status.failed')}
               </Badge>
             </div>
           </div>
@@ -80,7 +82,7 @@ export const QuizGradingMetadataViewer: React.FC<QuizGradingMetadataViewerProps>
         {/* Answer Breakdown */}
         <div className="space-y-3">
           <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-            Answer Breakdown
+            {t('answerBreakdown')}
           </h4>
 
           {metadata.fieldResults.map((result, idx) => (
@@ -103,7 +105,7 @@ export const QuizGradingMetadataViewer: React.FC<QuizGradingMetadataViewerProps>
                   </div>
                   <div className="flex-1">
                     <div className="font-medium text-gray-900 mb-2">
-                      Question {idx + 1}: {result.fieldLabel}
+                      {t('questionLabel', { values: { number: idx + 1, label: result.fieldLabel } })}
                     </div>
                     <div className="space-y-1">
                       <div
@@ -111,11 +113,11 @@ export const QuizGradingMetadataViewer: React.FC<QuizGradingMetadataViewerProps>
                           result.isCorrect ? 'text-green-700' : 'text-red-700'
                         }`}
                       >
-                        <span className="font-medium">Your answer:</span> {result.userAnswer}
+                        <span className="font-medium">{t('yourAnswer')}</span> {result.userAnswer}
                       </div>
                       {!result.isCorrect && (
                         <div className="text-sm text-green-700">
-                          <span className="font-medium">Correct answer:</span>{' '}
+                          <span className="font-medium">{t('correctAnswer')}</span>{' '}
                           {result.correctAnswer}
                         </div>
                       )}

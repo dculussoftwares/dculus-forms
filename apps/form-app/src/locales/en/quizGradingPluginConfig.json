@@ -1,0 +1,17 @@
+{
+  "title": "Quiz Auto-Grading Plugin",
+  "description": "Automatically grade quiz responses with correct answers and scoring",
+  "basicSettings": {
+    "title": "Basic Settings",
+    "description": "Configure plugin name and pass threshold",
+    "pluginName": "Plugin Name *",
+    "pluginNamePlaceholder": "e.g., Math Quiz Grading",
+    "pluginNameRequired": "Plugin name is required",
+    "passThreshold": "Pass Threshold (%) *",
+    "passThresholdError": "Pass threshold must be between 0 and 100",
+    "passThresholdHelp": "Minimum percentage required to pass the quiz"
+  },
+  "quizQuestions": {
+    "title": "Quiz Questions"
+  }
+}
