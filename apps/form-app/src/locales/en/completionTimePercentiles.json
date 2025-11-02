@@ -1,0 +1,32 @@
+{
+  "title": "Completion Time Statistics",
+  "noData": "No completion time data available",
+  "average": {
+    "label": "Average",
+    "description": "Mean completion time"
+  },
+  "p50": {
+    "label": "50th Percentile (Median)",
+    "description": "50% complete faster"
+  },
+  "p75": {
+    "label": "75th Percentile",
+    "description": "75% complete faster"
+  },
+  "p90": {
+    "label": "90th Percentile",
+    "description": "90% complete faster"
+  },
+  "p95": {
+    "label": "95th Percentile",
+    "description": "95% complete faster"
+  },
+  "insights": {
+    "title": "Insights",
+    "medianVsAverage": "The median completion time ({{median}}) is {{comparison}} than the average ({{average}})",
+    "shorter": "shorter",
+    "longer": "longer",
+    "p90Insight": "90% of users complete in {{time}} or less",
+    "p95Insight": "The slowest 5% take {{time}} or more to complete"
+  }
+}

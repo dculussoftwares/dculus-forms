@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, Button } from '@dculus/ui';
 import { Globe, TrendingUp } from 'lucide-react';
 import { CountryStats } from '../../hooks/useFormAnalytics';
 import ISO31661 from 'iso-3166-1';
+import { useTranslation } from '../../hooks/useTranslation';
 
 type DataMode = 'views' | 'submissions';
 
@@ -33,6 +34,8 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
   onDataModeChange,
   loading = false
 }) => {
+  const { t } = useTranslation('worldMapVisualization');
+  
   // Get current data based on mode
   const currentData = dataMode === 'submissions' ? submissionData : data;
   const metricLabel = dataMode === 'submissions' ? 'submissions' : 'views';
@@ -147,7 +150,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded-sm bg-slate-200 border border-slate-400"></div>
-                  <span className="text-xs text-gray-600 font-medium">None</span>
+                  <span className="text-xs text-gray-600 font-medium">{t('legend.none')}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className={`w-3 h-3 rounded-sm border ${
@@ -155,7 +158,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                       ? 'bg-orange-300 border-orange-500' 
                       : 'bg-blue-300 border-blue-500'
                   }`}></div>
-                  <span className="text-xs text-gray-600 font-medium">Low</span>
+                  <span className="text-xs text-gray-600 font-medium">{t('legend.low')}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className={`w-3 h-3 rounded-sm border ${
@@ -163,7 +166,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                       ? 'bg-orange-600 border-orange-700' 
                       : 'bg-blue-600 border-blue-700'
                   }`}></div>
-                  <span className="text-xs text-gray-600 font-medium">High</span>
+                  <span className="text-xs text-gray-600 font-medium">{t('legend.high')}</span>
                 </div>
               </div>
             </div>
@@ -186,7 +189,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                   <Globe className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-blue-900">Top Performing Country</p>
+                  <p className="text-sm font-medium text-blue-900">{t('topPerformingCountry')}</p>
                   <p className="text-xl font-bold text-blue-800">{topCountry.name}</p>
                 </div>
               </div>

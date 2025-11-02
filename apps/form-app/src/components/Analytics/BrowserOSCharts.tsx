@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Card, CardContent, CardHeader, CardTitle, Button } from '@dculus/ui';
 import { Monitor, Globe } from 'lucide-react';
 import { OSStats, BrowserStats } from '../../hooks/useFormAnalytics';
+import { useTranslation } from '../../hooks/useTranslation';
 
 type DataMode = 'views' | 'submissions' | 'combined';
 
@@ -81,6 +82,7 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
   loading = false
 }) => {
   const [dataMode, setDataMode] = useState<DataMode>('views');
+  const { t } = useTranslation('browserOSCharts');
 
   // Helper function to merge view and submission data
   const mergeData = (viewData: (OSStats | BrowserStats)[], submissionData: (OSStats | BrowserStats)[]) => {
@@ -159,7 +161,7 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
           ) : !currentOSData || currentOSData.length === 0 ? (
             <EmptyState 
               icon={Monitor}
-              title="No OS data available"
+              title={t('noOSData')}
               subtitle={`${dataMode === 'submissions' ? 'Submission' : 'View'} operating system data will appear here`}
             />
           ) : (
@@ -258,7 +260,7 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
           ) : !currentBrowserData || currentBrowserData.length === 0 ? (
             <EmptyState 
               icon={Globe}
-              title="No browser data available"
+              title={t('noBrowserData')}
               subtitle={`${dataMode === 'submissions' ? 'Submission' : 'View'} browser usage data will appear here`}
             />
           ) : (

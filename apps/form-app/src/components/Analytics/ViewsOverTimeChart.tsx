@@ -2,6 +2,7 @@ import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
 import { TrendingUp, Calendar } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface ViewsOverTimeData {
   date: string;
@@ -22,7 +23,7 @@ interface ViewsOverTimeChartProps {
   timeRange?: string;
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label, t }: any) => {
   if (active && payload && payload.length) {
     const date = new Date(label).toLocaleDateString('en-US', {
       month: 'short',
@@ -41,16 +42,16 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             // Customize labels and colors
             if (entry.dataKey === 'views') {
               color = '#3b82f6';
-              label = 'Views';
+              label = t('legend.totalViews');
             } else if (entry.dataKey === 'sessions') {
               color = '#10b981';
-              label = 'View Sessions';
+              label = t('legend.viewSessions');
             } else if (entry.dataKey === 'submissions') {
               color = '#f59e0b';
-              label = 'Submissions';
+              label = t('legend.submissions');
             } else if (entry.dataKey === 'submissionSessions') {
               color = '#8b5cf6';
-              label = 'Submission Sessions';
+              label = t('legend.subSessions');
             }
             
             return (
@@ -80,6 +81,8 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
   loading = false,
   timeRange = '30d'
 }) => {
+  const { t } = useTranslation('viewsOverTimeChart');
+  
   if (loading) {
     return (
       <Card>
@@ -139,7 +142,7 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center text-base">
             <TrendingUp className="h-4 w-4 mr-2 text-blue-600" />
-            Views & Submissions Over Time
+            {t('title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -177,7 +180,7 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
         <CardTitle className="flex items-center justify-between text-base">
           <div className="flex items-center">
             <TrendingUp className="h-4 w-4 mr-2 text-blue-600" />
-            Views & Submissions Over Time
+            {t('title')}
           </div>
           <span className="text-sm text-gray-500">{getTimeRangeLabel()}</span>
         </CardTitle>
@@ -220,7 +223,7 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
                 axisLine={false}
                 tickLine={false}
               />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<CustomTooltip t={t} />} />
               <Area
                 type="monotone"
                 dataKey="views"

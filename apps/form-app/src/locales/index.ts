@@ -79,6 +79,7 @@ import enGeographicChart from './en/geographicChart.json';
 import enWorldMapVisualization from './en/worldMapVisualization.json';
 import enViewsOverTimeChart from './en/viewsOverTimeChart.json';
 import enBrowserOSCharts from './en/browserOSCharts.json';
+import enCompletionTimePercentiles from './en/completionTimePercentiles.json';
 
 export const translations = {
   en: {
@@ -163,6 +164,7 @@ export const translations = {
     worldMapVisualization: enWorldMapVisualization,
     viewsOverTimeChart: enViewsOverTimeChart,
     browserOSCharts: enBrowserOSCharts,
+    completionTimePercentiles: enCompletionTimePercentiles,
   },
 } as const;
 

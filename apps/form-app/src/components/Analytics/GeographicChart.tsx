@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, Button } from '@dculus/ui';
 import { Globe, TrendingUp, BarChart3, Map } from 'lucide-react';
 import { CountryStats } from '../../hooks/useFormAnalytics';
 import { WorldMapVisualization } from './WorldMapVisualization';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface GeographicChartProps {
   data: CountryStats[];
@@ -24,10 +25,10 @@ const COLORS = [
   '#f97316', // orange-500
 ];
 
-const CustomTooltip = ({ active, payload, dataMode }: any) => {
+const CustomTooltip = ({ active, payload, dataMode, t }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
-    const metricLabel = dataMode === 'submissions' ? 'Submissions' : 'Views';
+    const metricLabel = dataMode === 'submissions' ? t('submissions') : t('views');
     return (
       <div className="bg-white p-3 border rounded-lg shadow-lg">
         <p className="font-semibold text-gray-900">{data.name}</p>
@@ -72,6 +73,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
   totalSubmissions = 0,
   loading = false
 }) => {
+  const { t } = useTranslation('geographicChart');
   const [viewType, setViewType] = useState<ViewType>('map');
   const [dataMode, setDataMode] = useState<DataMode>('views');
   // Get current data based on mode
@@ -100,7 +102,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
           <CardTitle className="flex items-center justify-between text-base">
             <div className="flex items-center">
               <Globe className="h-4 w-4 mr-2 text-blue-600" />
-              Geographic Distribution
+              {t('title')}
             </div>
             <div className="flex items-center gap-2">
               <DataModeToggle dataMode={dataMode} onDataModeChange={setDataMode} />
@@ -128,7 +130,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
           <CardTitle className="flex items-center justify-between text-base">
             <div className="flex items-center">
               <Globe className="h-4 w-4 mr-2 text-blue-600" />
-              Geographic Distribution
+              {t('title')}
             </div>
             <div className="flex items-center gap-2">
               <DataModeToggle dataMode={dataMode} onDataModeChange={setDataMode} />
@@ -139,7 +141,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
         <CardContent>
           <div className="h-64 flex flex-col items-center justify-center text-gray-500">
             <Globe className="h-12 w-12 mb-3 text-gray-300" />
-            <p className="text-sm">No geographic data available</p>
+            <p className="text-sm">{t('noData')}</p>
             <p className="text-xs text-gray-400 mt-1">
               {emptyMessage}
             </p>
@@ -178,7 +180,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
           <CardTitle className="flex items-center justify-between text-base">
             <div className="flex items-center">
               <Globe className="h-4 w-4 mr-2 text-blue-600" />
-              Geographic Distribution
+              {t('title')}
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center text-sm text-green-600">
@@ -208,7 +210,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip content={<CustomTooltip dataMode={dataMode} />} />
+              <Tooltip content={<CustomTooltip dataMode={dataMode} t={t} />} />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -218,12 +220,12 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
           <div className="mt-4 p-3 bg-blue-50 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-blue-900">Top Country</p>
+                <p className="text-sm font-medium text-blue-900">{t('topCountry')}</p>
                 <p className="text-lg font-bold text-blue-800">{topCountry.name}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-blue-600">
-                  {topCountry.count} {dataMode === 'submissions' ? 'submissions' : 'views'}
+                  {topCountry.count} {dataMode === 'submissions' ? t('submissions') : t('views')}
                 </p>
                 <p className="text-lg font-bold text-blue-800">
                   {topCountry.percentage.toFixed(1)}%
