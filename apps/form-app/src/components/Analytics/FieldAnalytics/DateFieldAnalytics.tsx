@@ -19,7 +19,7 @@ const CalendarHeatmap: React.FC<{
   dateDistribution: Array<{ date: string; count: number }>;
   loading?: boolean;
 }> = ({ dateDistribution, loading }) => {
-  const { t } = useTranslation('dateFieldAnalytics');
+  const { t, locale } = useTranslation('dateFieldAnalytics');
   
   const heatmapData = useMemo(() => {
     if (!dateDistribution || dateDistribution.length === 0) return { months: [], maxCount: 0 };
@@ -53,7 +53,7 @@ const CalendarHeatmap: React.FC<{
     const months = Array.from(monthsMap.entries())
       .map(([monthKey, days]) => ({
         month: monthKey,
-        monthName: new Date(monthKey + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+        monthName: new Date(monthKey + '-01').toLocaleDateString(locale, { month: 'long', year: 'numeric' }),
         days: days.sort((a, b) => a.day - b.day)
       }))
       .sort((a, b) => a.month.localeCompare(b.month));
@@ -274,7 +274,7 @@ const DateRangeAnalysis: React.FC<{
   mostCommonDate: string;
   totalResponses: number;
 }> = ({ earliestDate, latestDate, mostCommonDate, totalResponses }) => {
-  const { t } = useTranslation('dateFieldAnalytics');
+  const { t, locale } = useTranslation('dateFieldAnalytics');
   
   const dateRange = useMemo(() => {
     const earliest = new Date(earliestDate);
@@ -284,18 +284,18 @@ const DateRangeAnalysis: React.FC<{
     const daysDifference = Math.ceil((latest.getTime() - earliest.getTime()) / (1000 * 60 * 60 * 24));
     
     return {
-      earliest: earliest.toLocaleDateString('en-US', { 
+      earliest: earliest.toLocaleDateString(locale, { 
         weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
       }),
-      latest: latest.toLocaleDateString('en-US', { 
+      latest: latest.toLocaleDateString(locale, { 
         weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
       }),
-      common: common.toLocaleDateString('en-US', { 
+      common: common.toLocaleDateString(locale, { 
         weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
       }),
       daysDifference
     };
-  }, [earliestDate, latestDate, mostCommonDate]);
+  }, [earliestDate, latestDate, mostCommonDate, locale]);
 
   return (
     <Card>
@@ -352,7 +352,15 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
   
   const weekdayChartData = useMemo(() => {
     if (!data?.weekdayDistribution) return [];
-    const weekdayOrder = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const weekdayOrder = [
+      t('daysOfWeek.sunday'),
+      t('daysOfWeek.monday'),
+      t('daysOfWeek.tuesday'),
+      t('daysOfWeek.wednesday'),
+      t('daysOfWeek.thursday'),
+      t('daysOfWeek.friday'),
+      t('daysOfWeek.saturday')
+    ];
     return weekdayOrder.map(weekday => {
       const found = data.weekdayDistribution.find(item => item.weekday === weekday);
       return {
@@ -362,13 +370,23 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
         fullName: weekday
       };
     });
-  }, [data?.weekdayDistribution]);
+  }, [data?.weekdayDistribution, t]);
 
   const monthlyChartData = useMemo(() => {
     if (!data?.monthlyDistribution) return [];
     const monthOrder = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      t('months.january'),
+      t('months.february'),
+      t('months.march'),
+      t('months.april'),
+      t('months.may'),
+      t('months.june'),
+      t('months.july'),
+      t('months.august'),
+      t('months.september'),
+      t('months.october'),
+      t('months.november'),
+      t('months.december')
     ];
     return monthOrder.map(month => {
       const found = data.monthlyDistribution.find(item => item.month === month);
@@ -379,7 +397,7 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
         fullName: month
       };
     });
-  }, [data?.monthlyDistribution]);
+  }, [data?.monthlyDistribution, t]);
 
   if (loading) {
     return (

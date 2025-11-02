@@ -98,11 +98,12 @@ const SimpleWordCloud: React.FC<{
 };
 
 // Recent Responses Component
-const RecentResponses: React.FC<{ 
+const RecentResponses: React.FC<{
   responses: Array<{ value: string; submittedAt: string; responseId: string }>;
+  fieldLabel: string;
   loading?: boolean;
-}> = ({ responses, loading }) => {
-  const { t } = useTranslation('textFieldAnalytics');
+}> = ({ responses, fieldLabel: _fieldLabel, loading }) => {
+  const { t, locale } = useTranslation('textFieldAnalytics');
   
   if (loading) {
     return (
@@ -138,7 +139,7 @@ const RecentResponses: React.FC<{
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
+    return new Intl.DateTimeFormat(locale, {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -243,7 +244,7 @@ const CommonPhrases: React.FC<{
 
 export const TextFieldAnalytics: React.FC<TextFieldAnalyticsProps> = ({
   data,
-  fieldLabel: _fieldLabel,
+  fieldLabel,
   totalResponses,
   loading
 }) => {
@@ -350,7 +351,7 @@ export const TextFieldAnalytics: React.FC<TextFieldAnalyticsProps> = ({
       {/* Additional Insights */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <CommonPhrases phrases={data.commonPhrases} />
-        <RecentResponses responses={data.recentResponses} />
+        <RecentResponses responses={data.recentResponses} fieldLabel={fieldLabel} />
       </div>
 
       {/* Summary Card */}

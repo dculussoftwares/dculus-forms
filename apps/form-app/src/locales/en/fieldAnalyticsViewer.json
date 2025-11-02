@@ -53,5 +53,13 @@
     "clearCache": "Clear Cache",
     "clearCacheTitle": "Clear cache and refresh data"
   },
-  "responseCount": "{{count}} responses"
+  "responseCount": "{{count}} responses",
+  "errors": {
+    "loadingAnalytics": "There was an error loading the field analytics data.",
+    "loadingFieldAnalytics": "There was an error loading this field's analytics."
+  },
+  "titles": {
+    "fieldAnalytics": "Field Analytics",
+    "fieldInsights": "Field Insights"
+  }
 }

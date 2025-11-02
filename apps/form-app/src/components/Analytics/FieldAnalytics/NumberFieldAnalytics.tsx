@@ -233,18 +233,18 @@ const TrendAnalysis: React.FC<{
   trend: Array<{ date: string; average: number; count: number }>;
   loading?: boolean;
 }> = ({ trend, loading: _loading }) => {
-  const { t } = useTranslation('numberFieldAnalytics');
+  const { t, locale } = useTranslation('numberFieldAnalytics');
   
   const chartData = useMemo(() => {
     if (!trend || trend.length === 0) return [];
     
     return trend.map(item => ({
-      name: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      name: new Date(item.date).toLocaleDateString(locale, { month: 'short', day: 'numeric' }),
       value: parseFloat(item.average.toFixed(2)),
       count: item.count,
       fullDate: item.date
     }));
-  }, [trend]);
+  }, [trend, locale]);
 
   if (!trend || trend.length === 0) {
     return null;

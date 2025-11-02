@@ -785,13 +785,13 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
           <div className="text-red-600 mb-4">
             <BarChart3 className="h-12 w-12 mx-auto" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Field Analytics</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{t('error.loadingTitle')}</h3>
           <p className="text-gray-600 mb-4">
-            {allFieldsError.message || 'There was an error loading the field analytics data.'}
+            {allFieldsError.message || t('errors.loadingAnalytics')}
           </p>
           <Button onClick={refreshAll} variant="outline">
             <RefreshCw className="h-4 w-4 mr-2" />
-            Try Again
+            {t('error.tryAgain')}
           </Button>
         </CardContent>
       </Card>
@@ -815,7 +815,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
             </Button>
           )}
           <h1 className="text-2xl font-bold text-gray-900 w-40">
-            {view === 'grid' ? 'Field Analytics' : 'Field Insights'}
+            {view === 'grid' ? t('titles.fieldAnalytics') : t('titles.fieldInsights')}
           </h1>
           {view === 'grid' && (
             <p className="text-gray-600 mt-1">
@@ -984,13 +984,13 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
             <div className="text-red-600 mb-4">
               <BarChart3 className="h-12 w-12 mx-auto" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Field Data</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('error.loadingData')}</h3>
             <p className="text-gray-600 mb-4">
-              {selectedFieldError.message || 'There was an error loading this field\'s analytics.'}
+              {selectedFieldError.message || t('errors.loadingFieldAnalytics')}
             </p>
             <Button onClick={refreshAll} variant="outline">
               <RefreshCw className="h-4 w-4 mr-2" />
-              Retry
+              {t('error.tryAgain')}
             </Button>
           </CardContent>
         </Card>

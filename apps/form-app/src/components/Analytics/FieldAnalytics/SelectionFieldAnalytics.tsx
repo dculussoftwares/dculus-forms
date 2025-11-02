@@ -174,13 +174,13 @@ const SelectionTrend: React.FC<{
   topOptions: string[];
   loading?: boolean;
 }> = ({ trend, topOptions, loading }) => {
-  const { t } = useTranslation('selectionFieldAnalytics');
+  const { t, locale } = useTranslation('selectionFieldAnalytics');
   
   const chartData = useMemo(() => {
     if (!trend || trend.length === 0) return [];
     
     return trend.map(item => {
-      const date = new Date(item.date).toLocaleDateString('en-US', { 
+      const date = new Date(item.date).toLocaleDateString(locale, { 
         month: 'short', 
         day: 'numeric' 
       });
@@ -195,7 +195,7 @@ const SelectionTrend: React.FC<{
       
       return dataPoint;
     });
-  }, [trend, topOptions]);
+  }, [trend, topOptions, locale]);
 
   if (!trend || trend.length <= 1) {
     return null;
