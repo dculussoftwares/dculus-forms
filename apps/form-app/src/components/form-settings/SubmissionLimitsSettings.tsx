@@ -72,7 +72,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
   const handleStartDateChange = (value: string) => {
     const endDate = settings.timeWindow?.endDate;
     if (endDate && value && new Date(value) > new Date(endDate)) {
-      toastError('Invalid Date Range', 'Start date must be before end date');
+      toastError(t('validation.invalidDateRange'), t('validation.endAfterStart'));
       return;
     }
     onUpdateTimeWindow(
@@ -85,7 +85,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
   const handleEndDateChange = (value: string) => {
     const startDate = settings.timeWindow?.startDate;
     if (startDate && value && new Date(value) < new Date(startDate)) {
-      toastError('Invalid Date Range', 'End date must be after start date');
+      toastError(t('validation.invalidDateRange'), t('validation.endAfterStart'));
       return;
     }
     onUpdateTimeWindow(
@@ -115,10 +115,10 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center">
           <Shield className="mr-2 h-5 w-5" />
-          Submission Limits
+          {t('title')}
         </CardTitle>
         <CardDescription>
-          Control when and how many responses your form can receive
+          {t('description')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -137,10 +137,10 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
                 className="text-sm font-medium cursor-pointer flex items-center"
               >
                 <Users className="mr-1 h-4 w-4" />
-                Maximum Responses
+                {t('maxResponses.title')}
               </Label>
               <p className="text-sm text-gray-600">
-                Stop accepting responses after a certain number is reached
+                {t('maxResponses.description')}
               </p>
             </div>
           </div>
@@ -149,7 +149,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
             <div className="ml-6 space-y-3">
               <div className="flex items-center space-x-2">
                 <Label htmlFor="max-responses-limit" className="text-sm">
-                  Response limit:
+                  {t('maxResponses.label')}
                 </Label>
                 <Input
                   id="max-responses-limit"
@@ -162,10 +162,15 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
                 />
               </div>
               <div className="text-sm text-gray-500">
-                Current responses: <strong>{currentResponseCount}</strong> / {settings.maxResponses?.limit || 100}
+                {t('maxResponses.responses', { 
+                  values: { 
+                    current: currentResponseCount, 
+                    limit: settings.maxResponses?.limit || 100 
+                  } 
+                })}
                 {isMaxResponsesReached && (
                   <span className="ml-2 text-red-600 font-medium">
-                    ⚠️ Limit reached
+                    ⚠️ {t('maxResponses.reached')}
                   </span>
                 )}
               </div>
@@ -187,10 +192,10 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
                 className="text-sm font-medium cursor-pointer flex items-center"
               >
                 <Calendar className="mr-1 h-4 w-4" />
-                Time Window
+                {t('timeWindow.title')}
               </Label>
               <p className="text-sm text-gray-600">
-                Set start and end dates for when the form accepts responses
+                {t('timeWindow.description')}
               </p>
             </div>
           </div>
@@ -200,7 +205,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label htmlFor="start-date" className="text-sm">
-                    Start Date
+                    {t('timeWindow.startDate')}
                   </Label>
                   <Input
                     id="start-date"
@@ -211,7 +216,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="end-date" className="text-sm">
-                    End Date
+                    {t('timeWindow.endDate')}
                   </Label>
                   <Input
                     id="end-date"
@@ -224,12 +229,12 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
               <div className="text-sm text-gray-500">
                 {isOutsideTimeWindow && (
                   <span className="text-red-600 font-medium">
-                    ⚠️ Form is currently {isBeforeStart ? 'not yet open' : 'closed'}
+                    ⚠️ {isBeforeStart ? t('timeWindow.notStarted') : t('timeWindow.ended')}
                   </span>
                 )}
                 {!isOutsideTimeWindow && settings.timeWindow?.startDate && settings.timeWindow?.endDate && (
                   <span className="text-green-600 font-medium">
-                    ✓ Form is currently accepting responses
+                    ✓ {t('timeWindow.active')}
                   </span>
                 )}
               </div>
@@ -240,17 +245,24 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
         {/* Status Summary */}
         {(settings.maxResponses?.enabled || settings.timeWindow?.enabled) && (
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h4 className="text-sm font-medium mb-2">Current Status</h4>
+            <h4 className="text-sm font-medium mb-2">{t('maxResponses.currentStatus')}</h4>
             <div className="space-y-1 text-sm">
               {settings.maxResponses?.enabled && (
                 <div className={isMaxResponsesReached ? 'text-red-600' : 'text-green-600'}>
-                  • Response limit: {currentResponseCount}/{settings.maxResponses?.limit} 
-                  {isMaxResponsesReached ? ' (Limit reached)' : ' (Active)'}
+                  • {t('maxResponses.responses', { 
+                      values: { 
+                        current: currentResponseCount, 
+                        limit: settings.maxResponses?.limit || 100 
+                      } 
+                    })} 
+                  {isMaxResponsesReached ? ` (${t('maxResponses.reached')})` : ` (${t('maxResponses.active')})`}
                 </div>
               )}
               {settings.timeWindow?.enabled && (
                 <div className={isOutsideTimeWindow ? 'text-red-600' : 'text-green-600'}>
-                  • Time window: {isOutsideTimeWindow ? 'Outside window' : 'Active'}
+                  • {t('timeWindow.title')}: {isOutsideTimeWindow 
+                    ? (isBeforeStart ? t('timeWindow.notStarted') : t('timeWindow.ended'))
+                    : t('timeWindow.active')}
                   {settings.timeWindow?.startDate && settings.timeWindow?.endDate && (
                     <span className="text-gray-500 ml-1">
                       ({settings.timeWindow.startDate} to {settings.timeWindow.endDate})
@@ -269,7 +281,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
             className="bg-green-600 hover:bg-green-700 text-white"
           >
             <Save className="mr-2 h-4 w-4" />
-            {isSaving ? 'Saving...' : 'Save Submission Limits'}
+            {isSaving ? t('saving') : t('save')}
           </Button>
         </div>
       </CardContent>

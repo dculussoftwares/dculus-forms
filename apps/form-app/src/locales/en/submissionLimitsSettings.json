@@ -42,5 +42,7 @@
     "maxResponses": "Form closed: Maximum responses reached",
     "beforeStart": "Form not open yet: Will open on {{date}}",
     "afterEnd": "Form closed: Time window ended on {{date}}"
-  }
+  },
+  "save": "Save Submission Limits",
+  "saving": "Saving..."
 }

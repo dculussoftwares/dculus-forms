@@ -4,18 +4,6 @@
     "title": "No number data available",
     "subtitle": "This number field hasn't received any responses yet."
   },
-  "distribution": {
-    "title": "Number Distribution",
-    "value": "Value",
-    "frequency": "Frequency"
-  },
-  "rangeAnalysis": {
-    "title": "Range Analysis",
-    "min": "Minimum",
-    "max": "Maximum",
-    "range": "Range",
-    "median": "Median"
-  },
   "stats": {
     "average": "Average",
     "median": "Median",
@@ -29,6 +17,67 @@
     "middleValue": "Middle value",
     "highestValue": "Highest value",
     "dataSpread": "Data spread"
+  },
+  "percentiles": {
+    "title": "Percentiles Analysis",
+    "25th": "25th",
+    "50thMedian": "50th (Median)",
+    "75th": "75th",
+    "90th": "90th",
+    "95th": "95th",
+    "label25": "25% of responses are below this value",
+    "labelMedian": "Middle value (median)",
+    "label75": "75% of responses are below this value",
+    "label90": "90% of responses are below this value",
+    "label95": "95% of responses are below this value"
+  },
+  "boxPlot": {
+    "title": "Statistical Distribution (Box Plot)",
+    "scale": "Scale",
+    "min": "Min",
+    "25percent": "25%",
+    "median": "Median",
+    "75percent": "75%",
+    "max": "Max",
+    "explanation1": "The box represents the middle 50% of responses (25th to 75th percentile)",
+    "explanation2": "The vertical line inside the box shows the median value",
+    "explanation3": "The whiskers extend to the minimum and maximum values"
+  },
+  "trend": {
+    "title": "Average Values Over Time"
+  },
+  "valueDistribution": {
+    "title": "Value Distribution"
+  },
+  "summary": {
+    "title": "Statistical Summary",
+    "centralTendency": "Central Tendency",
+    "mean": "Mean:",
+    "median": "Median:",
+    "spread": "Spread",
+    "range": "Range:",
+    "stdDev": "Std Dev:",
+    "quartiles": "Quartiles",
+    "q1": "Q1 (25%):",
+    "q3": "Q3 (75%):",
+    "dataQuality": "Data Quality",
+    "responses": "Responses:",
+    "skewness": "Skewness:",
+    "right": "Right",
+    "left": "Left",
+    "symmetric": "Symmetric"
+  },
+  "distribution": {
+    "title": "Number Distribution",
+    "value": "Value",
+    "frequency": "Frequency"
+  },
+  "rangeAnalysis": {
+    "title": "Range Analysis",
+    "min": "Minimum",
+    "max": "Maximum",
+    "range": "Range",
+    "median": "Median"
   },
   "insights": {
     "title": "Insights",

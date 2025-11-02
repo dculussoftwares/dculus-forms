@@ -88,6 +88,7 @@ import enCheckboxFieldAnalytics from './en/checkboxFieldAnalytics.json';
 import enDateFieldAnalytics from './en/dateFieldAnalytics.json';
 import enEmailFieldAnalytics from './en/emailFieldAnalytics.json';
 import enSubmissionLimitsSettings from './en/submissionLimitsSettings.json';
+import enMetricHelper from './en/metricHelper.json';
 
 export const translations = {
   en: {
@@ -181,6 +182,7 @@ export const translations = {
     dateFieldAnalytics: enDateFieldAnalytics,
     emailFieldAnalytics: enEmailFieldAnalytics,
     submissionLimitsSettings: enSubmissionLimitsSettings,
+    metricHelper: enMetricHelper,
   },
 } as const;
 

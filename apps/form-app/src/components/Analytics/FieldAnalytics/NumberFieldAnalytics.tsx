@@ -25,19 +25,21 @@ const PercentilesChart: React.FC<{
   };
   loading?: boolean;
 }> = ({ percentiles, loading }) => {
+  const { t } = useTranslation('numberFieldAnalytics');
+  
   const data = useMemo(() => [
-    { name: '25th', value: percentiles.p25, label: '25% of responses are below this value' },
-    { name: '50th (Median)', value: percentiles.p50, label: 'Middle value (median)' },
-    { name: '75th', value: percentiles.p75, label: '75% of responses are below this value' },
-    { name: '90th', value: percentiles.p90, label: '90% of responses are below this value' },
-    { name: '95th', value: percentiles.p95, label: '95% of responses are below this value' },
-  ], [percentiles]);
+    { name: t('percentiles.25th'), value: percentiles.p25, label: t('percentiles.label25') },
+    { name: t('percentiles.50thMedian'), value: percentiles.p50, label: t('percentiles.labelMedian') },
+    { name: t('percentiles.75th'), value: percentiles.p75, label: t('percentiles.label75') },
+    { name: t('percentiles.90th'), value: percentiles.p90, label: t('percentiles.label90') },
+    { name: t('percentiles.95th'), value: percentiles.p95, label: t('percentiles.label95') },
+  ], [percentiles, t]);
 
   if (loading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Percentiles Analysis</CardTitle>
+          <CardTitle>{t('percentiles.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="animate-pulse">
@@ -52,7 +54,7 @@ const PercentilesChart: React.FC<{
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Percentiles Analysis</CardTitle>
+          <CardTitle>{t('percentiles.title')}</CardTitle>
           <MetricHelper {...METRIC_HELPERS.PERCENTILES} compact />
         </div>
       </CardHeader>
@@ -101,11 +103,13 @@ const BoxPlot: React.FC<{
   };
   loading?: boolean;
 }> = ({ data, loading }) => {
+  const { t } = useTranslation('numberFieldAnalytics');
+  
   if (loading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Statistical Distribution</CardTitle>
+          <CardTitle>{t('boxPlot.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="animate-pulse">
@@ -126,7 +130,7 @@ const BoxPlot: React.FC<{
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Statistical Distribution (Box Plot)</CardTitle>
+          <CardTitle>{t('boxPlot.title')}</CardTitle>
           <MetricHelper {...METRIC_HELPERS.STATISTICAL_SUMMARY} compact />
         </div>
       </CardHeader>
@@ -135,11 +139,11 @@ const BoxPlot: React.FC<{
           {/* Scale */}
           <div className="flex justify-between text-xs text-gray-500 mb-4">
             <span>{data.min.toFixed(1)}</span>
-            <span>Min</span>
-            <span>25%</span>
-            <span>Median</span>
-            <span>75%</span>
-            <span>Max</span>
+            <span>{t('boxPlot.min')}</span>
+            <span>{t('boxPlot.25percent')}</span>
+            <span>{t('boxPlot.median')}</span>
+            <span>{t('boxPlot.75percent')}</span>
+            <span>{t('boxPlot.max')}</span>
             <span>{data.max.toFixed(1)}</span>
           </div>
           
@@ -215,9 +219,9 @@ const BoxPlot: React.FC<{
         </div>
         
         <div className="mt-4 text-sm text-gray-600 space-y-1">
-          <p>• The box represents the middle 50% of responses (25th to 75th percentile)</p>
-          <p>• The vertical line inside the box shows the median value</p>
-          <p>• The whiskers extend to the minimum and maximum values</p>
+          <p>• {t('boxPlot.explanation1')}</p>
+          <p>• {t('boxPlot.explanation2')}</p>
+          <p>• {t('boxPlot.explanation3')}</p>
         </div>
       </CardContent>
     </Card>
@@ -229,6 +233,8 @@ const TrendAnalysis: React.FC<{
   trend: Array<{ date: string; average: number; count: number }>;
   loading?: boolean;
 }> = ({ trend, loading: _loading }) => {
+  const { t } = useTranslation('numberFieldAnalytics');
+  
   const chartData = useMemo(() => {
     if (!trend || trend.length === 0) return [];
     
@@ -248,7 +254,7 @@ const TrendAnalysis: React.FC<{
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Average Values Over Time</CardTitle>
+          <CardTitle>{t('trend.title')}</CardTitle>
           <MetricHelper {...METRIC_HELPERS.TREND_ANALYSIS} compact />
         </div>
       </CardHeader>
@@ -409,66 +415,66 @@ export const NumberFieldAnalytics: React.FC<NumberFieldAnalyticsProps> = ({
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Statistical Summary</CardTitle>
+            <CardTitle>{t('summary.title')}</CardTitle>
             <MetricHelper {...METRIC_HELPERS.STATISTICAL_SUMMARY} compact />
           </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">Central Tendency</h4>
+              <h4 className="font-medium text-gray-900">{t('summary.centralTendency')}</h4>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Mean:</span>
+                  <span className="text-gray-600">{t('summary.mean')}</span>
                   <span className="font-medium">{formatNumber(data.average)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Median:</span>
+                  <span className="text-gray-600">{t('summary.median')}</span>
                   <span className="font-medium">{formatNumber(data.median)}</span>
                 </div>
               </div>
             </div>
             
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">Spread</h4>
+              <h4 className="font-medium text-gray-900">{t('summary.spread')}</h4>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Range:</span>
+                  <span className="text-gray-600">{t('summary.range')}</span>
                   <span className="font-medium">{formatNumber(data.max - data.min)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Std Dev:</span>
+                  <span className="text-gray-600">{t('summary.stdDev')}</span>
                   <span className="font-medium">{formatNumber(data.standardDeviation)}</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">Quartiles</h4>
+              <h4 className="font-medium text-gray-900">{t('summary.quartiles')}</h4>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Q1 (25%):</span>
+                  <span className="text-gray-600">{t('summary.q1')}</span>
                   <span className="font-medium">{formatNumber(data.percentiles.p25)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Q3 (75%):</span>
+                  <span className="text-gray-600">{t('summary.q3')}</span>
                   <span className="font-medium">{formatNumber(data.percentiles.p75)}</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">Data Quality</h4>
+              <h4 className="font-medium text-gray-900">{t('summary.dataQuality')}</h4>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Responses:</span>
+                  <span className="text-gray-600">{t('summary.responses')}</span>
                   <span className="font-medium">{totalResponses}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Skewness:</span>
+                  <span className="text-gray-600">{t('summary.skewness')}</span>
                   <span className="font-medium">
-                    {data.average > data.median ? 'Right' : 
-                     data.average < data.median ? 'Left' : 'Symmetric'}
+                    {data.average > data.median ? t('summary.skewnessRight') : 
+                     data.average < data.median ? t('summary.skewnessLeft') : t('summary.skewnessSymmetric')}
                   </span>
                 </div>
               </div>
