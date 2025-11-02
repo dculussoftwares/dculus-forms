@@ -370,6 +370,7 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
   loading
 }) => {
   const { t } = useTranslation('emailFieldAnalytics');
+  const { t: tCommon } = useTranslation('common');
   
   const domainChartData = useMemo(() => {
     if (!data?.domains) return [];
@@ -388,7 +389,7 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
           {[...Array(4)].map((_, i) => (
             <StatCard 
               key={i}
-              title="Loading..." 
+              title={tCommon('loading')} 
               value="--" 
               loading={true} 
             />

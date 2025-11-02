@@ -249,6 +249,7 @@ export const TextFieldAnalytics: React.FC<TextFieldAnalyticsProps> = ({
   loading
 }) => {
   const { t } = useTranslation('textFieldAnalytics');
+  const { t: tCommon } = useTranslation('common');
   
   const lengthChartData = useMemo(() => {
     if (!data?.lengthDistribution) return [];
@@ -265,7 +266,7 @@ export const TextFieldAnalytics: React.FC<TextFieldAnalyticsProps> = ({
           {[...Array(4)].map((_, i) => (
             <StatCard 
               key={i}
-              title="Loading..." 
+              title={tCommon('loading')} 
               value="--" 
               loading={true} 
             />

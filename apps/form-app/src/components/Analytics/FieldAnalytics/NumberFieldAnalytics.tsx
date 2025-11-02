@@ -286,6 +286,7 @@ export const NumberFieldAnalytics: React.FC<NumberFieldAnalyticsProps> = ({
   loading
 }) => {
   const { t } = useTranslation('numberFieldAnalytics');
+  const { t: tCommon } = useTranslation('common');
   
   const distributionData = useMemo(() => {
     if (!data?.distribution) return [];
@@ -303,7 +304,7 @@ export const NumberFieldAnalytics: React.FC<NumberFieldAnalyticsProps> = ({
           {[...Array(5)].map((_, i) => (
             <StatCard 
               key={i}
-              title="Loading..." 
+              title={tCommon('loading')} 
               value="--" 
               loading={true} 
             />

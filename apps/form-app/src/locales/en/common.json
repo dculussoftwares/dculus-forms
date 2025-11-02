@@ -5,5 +5,9 @@
     "options": {
       "en": "English"
     }
-  }
+  },
+  "loading": "Loading...",
+  "uploading": "Uploading...",
+  "apply": "Apply",
+  "noDataAvailable": "No data available"
 }

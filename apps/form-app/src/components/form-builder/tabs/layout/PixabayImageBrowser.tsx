@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Input, Button, Card } from '@dculus/ui';
 import { Search, Download, Eye, Heart, Loader2 } from 'lucide-react';
 import { searchPixabayImages, downloadPixabayImage, type PixabayImage } from '../../../../services/pixabayService';
+import { useTranslation } from '../../../../hooks/useTranslation';
 // Using console.log for now since toast library is not available
 
 interface PixabayImageBrowserProps {
@@ -11,6 +12,7 @@ interface PixabayImageBrowserProps {
 }
 
 export function PixabayImageBrowser({ formId, onImageApplied, onUploadSuccess }: PixabayImageBrowserProps) {
+  const { t: tCommon } = useTranslation('common');
   const [searchQuery, setSearchQuery] = useState('');
   const [images, setImages] = useState<PixabayImage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -155,10 +157,10 @@ export function PixabayImageBrowser({ formId, onImageApplied, onUploadSuccess }:
               {uploading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Uploading...
+                  {tCommon('uploading')}
                 </>
               ) : (
-                'Apply'
+                tCommon('apply')
               )}
             </Button>
           </div>

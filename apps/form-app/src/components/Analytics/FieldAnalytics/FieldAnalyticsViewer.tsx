@@ -209,6 +209,8 @@ const MiniPieChart: React.FC<{ data: Array<{ name: string; value: number }> }> =
 };
 
 const MiniPreviewChart: React.FC<{ field: FieldAnalyticsData }> = ({ field }) => {
+  const { t: tCommon } = useTranslation('common');
+  
   // Get real preview data from analytics data
   const getRealPreviewData = (field: FieldAnalyticsData) => {
     switch (field.fieldType) {
@@ -296,7 +298,7 @@ const MiniPreviewChart: React.FC<{ field: FieldAnalyticsData }> = ({ field }) =>
   if (!previewData) {
     return (
       <div className="flex items-center justify-center h-16 text-gray-400 text-sm">
-        No data available
+        {tCommon('noDataAvailable')}
       </div>
     );
   }

@@ -335,6 +335,7 @@ export const SelectionFieldAnalytics: React.FC<SelectionFieldAnalyticsProps> = (
   loading
 }) => {
   const { t } = useTranslation('selectionFieldAnalytics');
+  const { t: tCommon } = useTranslation('common');
   
   const pieChartData = useMemo(() => {
     if (!data?.options) return [];
@@ -353,7 +354,7 @@ export const SelectionFieldAnalytics: React.FC<SelectionFieldAnalyticsProps> = (
           {[...Array(4)].map((_, i) => (
             <StatCard 
               key={i}
-              title="Loading..." 
+              title={tCommon('loading')} 
               value="--" 
               loading={true} 
             />

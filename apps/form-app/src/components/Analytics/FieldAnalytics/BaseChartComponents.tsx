@@ -15,6 +15,7 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, Button } from '@dculus/ui';
 import { HelpCircle } from 'lucide-react';
+import { useTranslation } from '../../../hooks/useTranslation';
 
 // Color palettes for different chart types
 export const CHART_COLORS = {
@@ -208,9 +209,12 @@ export const EnhancedPieChart: React.FC<EnhancedPieChartProps> = ({
   showPercentage = true,
   colorPalette = CHART_COLORS.primary,
   loading,
-  emptyMessage = 'No data available',
+  emptyMessage,
   helpText: _helpText,
 }) => {
+  const { t: tCommon } = useTranslation('common');
+  const finalEmptyMessage = emptyMessage ?? tCommon('noDataAvailable');
+  
   if (loading) {
     return (
       <Card>
@@ -234,7 +238,7 @@ export const EnhancedPieChart: React.FC<EnhancedPieChartProps> = ({
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-64 text-gray-500">
-            {emptyMessage}
+            {finalEmptyMessage}
           </div>
         </CardContent>
       </Card>
@@ -306,11 +310,14 @@ export const EnhancedBarChart: React.FC<EnhancedBarChartProps> = ({
   horizontal = false,
   colorPalette = CHART_COLORS.primary,
   loading,
-  emptyMessage = 'No data available',
+  emptyMessage,
   yAxisLabel,
   xAxisLabel,
   showGrid = true,
 }) => {
+  const { t: tCommon } = useTranslation('common');
+  const finalEmptyMessage = emptyMessage ?? tCommon('noDataAvailable');
+  
   if (loading) {
     return (
       <Card>
@@ -334,7 +341,7 @@ export const EnhancedBarChart: React.FC<EnhancedBarChartProps> = ({
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-64 text-gray-500">
-            {emptyMessage}
+            {finalEmptyMessage}
           </div>
         </CardContent>
       </Card>
@@ -436,12 +443,15 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
   height = 300,
   color = CHART_COLORS.primary[0],
   loading,
-  emptyMessage = 'No data available',
+  emptyMessage,
   yAxisLabel,
   xAxisLabel,
   showGrid = true,
   showDots = true,
 }) => {
+  const { t: tCommon } = useTranslation('common');
+  const finalEmptyMessage = emptyMessage ?? tCommon('noDataAvailable');
+  
   if (loading) {
     return (
       <Card>
@@ -465,7 +475,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-64 text-gray-500">
-            {emptyMessage}
+            {finalEmptyMessage}
           </div>
         </CardContent>
       </Card>
@@ -532,9 +542,12 @@ export const Histogram: React.FC<HistogramProps> = ({
   height = 300,
   color = CHART_COLORS.primary[0],
   loading,
-  emptyMessage = 'No data available',
+  emptyMessage,
   showPercentage = false,
 }) => {
+  const { t: tCommon } = useTranslation('common');
+  const finalEmptyMessage = emptyMessage ?? tCommon('noDataAvailable');
+  
   if (loading) {
     return (
       <Card>
@@ -558,7 +571,7 @@ export const Histogram: React.FC<HistogramProps> = ({
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-64 text-gray-500">
-            {emptyMessage}
+            {finalEmptyMessage}
           </div>
         </CardContent>
       </Card>
@@ -617,9 +630,12 @@ export const MultiBarChart: React.FC<MultiBarChartProps> = ({
   title,
   height = 300,
   loading,
-  emptyMessage = 'No data available',
+  emptyMessage,
   stacked = false,
 }) => {
+  const { t: tCommon } = useTranslation('common');
+  const finalEmptyMessage = emptyMessage ?? tCommon('noDataAvailable');
+  
   if (loading) {
     return (
       <Card>
@@ -643,7 +659,7 @@ export const MultiBarChart: React.FC<MultiBarChartProps> = ({
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-64 text-gray-500">
-            {emptyMessage}
+            {finalEmptyMessage}
           </div>
         </CardContent>
       </Card>

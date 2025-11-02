@@ -407,6 +407,7 @@ export const CheckboxFieldAnalytics: React.FC<CheckboxFieldAnalyticsProps> = ({
   loading
 }) => {
   const { t } = useTranslation('checkboxFieldAnalytics');
+  const { t: tCommon } = useTranslation('common');
   
   if (loading) {
     return (
@@ -415,7 +416,7 @@ export const CheckboxFieldAnalytics: React.FC<CheckboxFieldAnalyticsProps> = ({
           {[...Array(4)].map((_, i) => (
             <StatCard 
               key={i}
-              title="Loading..." 
+              title={tCommon('loading')} 
               value="--" 
               loading={true} 
             />

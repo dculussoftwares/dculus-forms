@@ -349,6 +349,7 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
   loading
 }) => {
   const { t } = useTranslation('dateFieldAnalytics');
+  const { t: tCommon } = useTranslation('common');
   
   const weekdayChartData = useMemo(() => {
     if (!data?.weekdayDistribution) return [];
@@ -406,7 +407,7 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
           {[...Array(4)].map((_, i) => (
             <StatCard 
               key={i}
-              title="Loading..." 
+              title={tCommon('loading')} 
               value="--" 
               loading={true} 
             />
