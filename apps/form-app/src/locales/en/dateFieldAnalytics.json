@@ -1,0 +1,40 @@
+{
+  "title": "Date Analytics",
+  "emptyState": {
+    "title": "No date data available",
+    "subtitle": "This date field hasn't received any responses yet."
+  },
+  "timeline": {
+    "title": "Date Distribution",
+    "date": "Date",
+    "responses": "Responses"
+  },
+  "dateRange": {
+    "title": "Date Range",
+    "earliest": "Earliest",
+    "latest": "Latest",
+    "span": "Span",
+    "days": "days"
+  },
+  "patterns": {
+    "title": "Patterns",
+    "mostCommon": "Most common date:",
+    "dayOfWeek": "Most popular day:",
+    "monthDistribution": "Month distribution:"
+  },
+  "insights": {
+    "title": "Insights",
+    "dateSpan": "Dates span {{days}} days",
+    "mostCommonDate": "Most common: {{date}}",
+    "peakPeriod": "Peak period: {{period}}"
+  },
+  "daysOfWeek": {
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday",
+    "sunday": "Sunday"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "title": "Submission Limits",
+  "description": "Control when and how many responses your form can receive",
+  "maxResponses": {
+    "title": "Maximum Responses",
+    "description": "Automatically close the form after reaching a specific number of responses",
+    "enable": "Enable maximum responses limit",
+    "label": "Maximum number of responses",
+    "placeholder": "Enter limit (e.g., 100)",
+    "currentStatus": "Current Status",
+    "responses": "{{current}} / {{limit}} responses",
+    "reached": "Limit Reached",
+    "reachedMessage": "This form has reached its maximum number of responses and is now closed",
+    "active": "Active"
+  },
+  "timeWindow": {
+    "title": "Time Window",
+    "description": "Limit form submissions to a specific date and time range",
+    "enable": "Enable time window",
+    "startDate": "Start Date & Time",
+    "endDate": "End Date & Time",
+    "startPlaceholder": "Select start date",
+    "endPlaceholder": "Select end date",
+    "currentStatus": "Current Status",
+    "notStarted": "Not Started",
+    "notStartedMessage": "Form will open on {{date}}",
+    "active": "Active",
+    "activeMessage": "Form closes on {{date}}",
+    "ended": "Ended",
+    "endedMessage": "Form closed on {{date}}"
+  },
+  "validation": {
+    "invalidLimit": "Invalid Limit",
+    "limitMustBePositive": "Response limit must be a positive number",
+    "limitExceeded": "Response limit cannot exceed 10,000",
+    "invalidDateRange": "Invalid Date Range",
+    "endAfterStart": "End date must be after start date",
+    "startDateRequired": "Start date is required",
+    "endDateRequired": "End date is required"
+  },
+  "closedReason": {
+    "maxResponses": "Form closed: Maximum responses reached",
+    "beforeStart": "Form not open yet: Will open on {{date}}",
+    "afterEnd": "Form closed: Time window ended on {{date}}"
+  }
+}

@@ -80,6 +80,14 @@ import enWorldMapVisualization from './en/worldMapVisualization.json';
 import enViewsOverTimeChart from './en/viewsOverTimeChart.json';
 import enBrowserOSCharts from './en/browserOSCharts.json';
 import enCompletionTimePercentiles from './en/completionTimePercentiles.json';
+import enFieldAnalyticsViewer from './en/fieldAnalyticsViewer.json';
+import enTextFieldAnalytics from './en/textFieldAnalytics.json';
+import enSelectionFieldAnalytics from './en/selectionFieldAnalytics.json';
+import enNumberFieldAnalytics from './en/numberFieldAnalytics.json';
+import enCheckboxFieldAnalytics from './en/checkboxFieldAnalytics.json';
+import enDateFieldAnalytics from './en/dateFieldAnalytics.json';
+import enEmailFieldAnalytics from './en/emailFieldAnalytics.json';
+import enSubmissionLimitsSettings from './en/submissionLimitsSettings.json';
 
 export const translations = {
   en: {
@@ -165,6 +173,14 @@ export const translations = {
     viewsOverTimeChart: enViewsOverTimeChart,
     browserOSCharts: enBrowserOSCharts,
     completionTimePercentiles: enCompletionTimePercentiles,
+    fieldAnalyticsViewer: enFieldAnalyticsViewer,
+    textFieldAnalytics: enTextFieldAnalytics,
+    selectionFieldAnalytics: enSelectionFieldAnalytics,
+    numberFieldAnalytics: enNumberFieldAnalytics,
+    checkboxFieldAnalytics: enCheckboxFieldAnalytics,
+    dateFieldAnalytics: enDateFieldAnalytics,
+    emailFieldAnalytics: enEmailFieldAnalytics,
+    submissionLimitsSettings: enSubmissionLimitsSettings,
   },
 } as const;
 

@@ -1,0 +1,32 @@
+{
+  "title": "Checkbox Analytics",
+  "emptyState": {
+    "title": "No checkbox data available",
+    "subtitle": "This checkbox field hasn't received any responses yet."
+  },
+  "selectionPattern": {
+    "title": "Selection Patterns",
+    "avgSelected": "Avg Selections",
+    "mostSelected": "Most Selected",
+    "leastSelected": "Least Selected"
+  },
+  "distribution": {
+    "title": "Option Distribution",
+    "option": "Option",
+    "selected": "Selected"
+  },
+  "insights": {
+    "title": "Insights",
+    "avgSelections": "Users select {{count}} options on average",
+    "topOption": "Top option: {{option}} ({{percentage}}%)",
+    "engagementLevel": "Engagement level: {{level}}",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low"
+  },
+  "selectionCount": {
+    "title": "Number of Selections",
+    "count": "Selections",
+    "responses": "Responses"
+  }
+}

@@ -5,6 +5,7 @@ import { CheckboxFieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
 import { CheckSquare, Link, BarChart3, TrendingUp } from 'lucide-react';
 import { MetricHelper, METRIC_HELPERS } from './MetricHelper';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { useTranslation } from '../../../hooks/useTranslation';
 
 interface CheckboxFieldAnalyticsProps {
   data: CheckboxFieldAnalyticsData;
@@ -398,6 +399,8 @@ export const CheckboxFieldAnalytics: React.FC<CheckboxFieldAnalyticsProps> = ({
   totalResponses,
   loading
 }) => {
+  const { t } = useTranslation('checkboxFieldAnalytics');
+  
   if (loading) {
     return (
       <div className="space-y-6">
@@ -424,8 +427,8 @@ export const CheckboxFieldAnalytics: React.FC<CheckboxFieldAnalyticsProps> = ({
       <div className="flex items-center justify-center h-64 text-gray-500">
         <div className="text-center">
           <CheckSquare className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-          <p className="text-lg font-medium">No checkbox data available</p>
-          <p className="text-sm">This checkbox field hasn't received any responses yet.</p>
+          <p className="text-lg font-medium">{t('emptyState.title')}</p>
+          <p className="text-sm">{t('emptyState.subtitle')}</p>
         </div>
       </div>
     );

@@ -5,6 +5,7 @@ import { StatCard, EnhancedPieChart, CHART_COLORS } from './BaseChartComponents'
 import { SelectionFieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
 import { CheckCircle, BarChart2, Target, Crown } from 'lucide-react';
 import { MetricHelper, METRIC_HELPERS } from './MetricHelper';
+import { useTranslation } from '../../../hooks/useTranslation';
 
 interface SelectionFieldAnalyticsProps {
   data: SelectionFieldAnalyticsData;
@@ -71,16 +72,17 @@ const DistributionIndicator: React.FC<{
 const OptionPerformanceTable: React.FC<{
   options: Array<{ option: string; count: number; percentage: number }>;
   topOption: string;
-}> = ({ options, topOption }) => {
+  t: (key: string, options?: { values?: Record<string, any> }) => string;
+}> = ({ options, topOption, t }) => {
   if (!options || options.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Option Performance</CardTitle>
+          <CardTitle>{t('optionPerformance.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center text-gray-500 py-8">
-            No options data available
+            {t('emptyState.title')}
           </div>
         </CardContent>
       </Card>
@@ -90,7 +92,7 @@ const OptionPerformanceTable: React.FC<{
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Option Performance Ranking</CardTitle>
+        <CardTitle>{t('optionPerformance.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
@@ -127,7 +129,7 @@ const OptionPerformanceTable: React.FC<{
                       )}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {option.count} responses
+                      {t('optionPerformance.responses', { values: { count: option.count } })}
                     </div>
                   </div>
                 </div>
@@ -154,7 +156,7 @@ const OptionPerformanceTable: React.FC<{
         
         {options.length > 5 && (
           <div className="mt-4 text-center text-sm text-gray-500">
-            Showing all {options.length} options
+            {t('optionPerformance.showingAll', { values: { count: options.length } })}
           </div>
         )}
       </CardContent>
@@ -248,7 +250,8 @@ const SelectionTrend: React.FC<{
 const QuickInsights: React.FC<{
   data: SelectionFieldAnalyticsData;
   totalFormResponses: number;
-}> = ({ data, totalFormResponses }) => {
+  t: (key: string, options?: { values?: Record<string, any> }) => string;
+}> = ({ data, totalFormResponses, t }) => {
   const insights = useMemo(() => {
     const results = [];
     
@@ -258,9 +261,9 @@ const QuickInsights: React.FC<{
       
       results.push({
         icon: '👑',
-        title: 'Most Popular',
+        title: t('quickInsights.mostPopular'),
         value: topOption.option,
-        subtitle: `${topOption.percentage.toFixed(1)}% of responses`
+        subtitle: t('quickInsights.ofResponses', { values: { percentage: topOption.percentage.toFixed(1) } })
       });
       
       if (data.options.length >= 2) {
@@ -268,37 +271,37 @@ const QuickInsights: React.FC<{
         const gap = topOption.percentage - secondOption.percentage;
         results.push({
           icon: gap > 20 ? '📏' : '⚔️',
-          title: gap > 20 ? 'Clear Winner' : 'Close Competition',
+          title: gap > 20 ? t('quickInsights.clearWinner') : t('quickInsights.closeCompetition'),
           value: `${gap.toFixed(1)}%`,
-          subtitle: gap > 20 ? 'margin ahead' : 'difference between top options'
+          subtitle: gap > 20 ? t('quickInsights.marginAhead') : t('quickInsights.differenceBetweenTopOptions')
         });
       }
       
       results.push({
         icon: '📊',
-        title: 'Response Rate',
+        title: t('quickInsights.responseRate'),
         value: `${responseRate.toFixed(1)}%`,
-        subtitle: 'of form submissions'
+        subtitle: t('quickInsights.ofFormSubmissions')
       });
       
       const lowPerformingOptions = data.options.filter(opt => opt.percentage < 5);
       if (lowPerformingOptions.length > 0) {
         results.push({
           icon: '⚠️',
-          title: 'Low Performing',
+          title: t('quickInsights.lowPerforming'),
           value: lowPerformingOptions.length.toString(),
-          subtitle: `option${lowPerformingOptions.length !== 1 ? 's' : ''} under 5%`
+          subtitle: lowPerformingOptions.length !== 1 ? t('quickInsights.optionsUnder5') : t('quickInsights.optionUnder5')
         });
       }
     }
     
     return results;
-  }, [data, totalFormResponses]);
+  }, [data, totalFormResponses, t]);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Quick Insights</CardTitle>
+        <CardTitle>{t('quickInsights.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -325,6 +328,8 @@ export const SelectionFieldAnalytics: React.FC<SelectionFieldAnalyticsProps> = (
   totalResponses,
   loading
 }) => {
+  const { t } = useTranslation('selectionFieldAnalytics');
+  
   const pieChartData = useMemo(() => {
     if (!data?.options) return [];
     return data.options.map(option => ({
@@ -361,8 +366,8 @@ export const SelectionFieldAnalytics: React.FC<SelectionFieldAnalyticsProps> = (
       <div className="flex items-center justify-center h-64 text-gray-500">
         <div className="text-center">
           <CheckCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-          <p className="text-lg font-medium">No selection data available</p>
-          <p className="text-sm">This {fieldType} field hasn't received any responses yet.</p>
+          <p className="text-lg font-medium">{t('emptyState.title')}</p>
+          <p className="text-sm">{t('emptyState.subtitle', { values: { fieldType } })}</p>
         </div>
       </div>
     );
@@ -378,19 +383,19 @@ export const SelectionFieldAnalytics: React.FC<SelectionFieldAnalyticsProps> = (
       {/* Key Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total Selections"
+          title={t('distribution.totalSelections')}
           value={totalSelections}
-          subtitle={`From ${totalResponses} form responses`}
+          subtitle={t('distribution.fromResponses', { values: { count: totalResponses } })}
           icon={<CheckCircle className="h-5 w-5" />}
         />
         <StatCard
-          title="Available Options"
+          title={t('distribution.availableOptions')}
           value={data.options.length}
-          subtitle="Choices provided"
+          subtitle={t('distribution.choicesProvided')}
           icon={<BarChart2 className="h-5 w-5" />}
         />
         <StatCard
-          title="Top Option"
+          title={t('topChoices.topOption')}
           value={`${mostPopularOption.percentage.toFixed(1)}%`}
           subtitle={mostPopularOption.option.length > 20 ? 
             `${mostPopularOption.option.substring(0, 20)}...` : 
@@ -399,9 +404,9 @@ export const SelectionFieldAnalytics: React.FC<SelectionFieldAnalyticsProps> = (
           icon={<Crown className="h-5 w-5" />}
         />
         <StatCard
-          title="Selection Rate"
+          title={t('distribution.selectionRate')}
           value={`${((totalSelections / Math.max(totalResponses, 1)) * 100).toFixed(1)}%`}
-          subtitle="Response completion rate"
+          subtitle={t('distribution.completionRate')}
           icon={<Target className="h-5 w-5" />}
         />
       </div>
@@ -418,7 +423,7 @@ export const SelectionFieldAnalytics: React.FC<SelectionFieldAnalyticsProps> = (
           <MetricHelper {...METRIC_HELPERS.RESPONSE_DISTRIBUTION} compact />
           <EnhancedPieChart
             data={pieChartData}
-            title={`${fieldType === 'select' ? 'Selection' : 'Choice'} Distribution`}
+            title={t('pieChart.title', { values: { fieldType: fieldType === 'select' ? t('pieChart.selection') : t('pieChart.choice') } })}
             height={350}
           />
         </div>
@@ -426,7 +431,7 @@ export const SelectionFieldAnalytics: React.FC<SelectionFieldAnalyticsProps> = (
           <MetricHelper {...METRIC_HELPERS.OPTION_POPULARITY} compact />
           <Card>
             <CardHeader>
-              <CardTitle>Option Popularity</CardTitle>
+              <CardTitle>{t('distribution.optionPopularity')}</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={350}>
@@ -449,7 +454,7 @@ export const SelectionFieldAnalytics: React.FC<SelectionFieldAnalyticsProps> = (
                     height={80}
                   />
                   <YAxis 
-                    label={{ value: 'Number of Selections', angle: -90, position: 'insideLeft' }}
+                    label={{ value: t('distribution.numberOfSelections'), angle: -90, position: 'insideLeft' }}
                   />
                   <Tooltip 
                     content={({ active, payload, label: _label }) => {
@@ -463,7 +468,7 @@ export const SelectionFieldAnalytics: React.FC<SelectionFieldAnalyticsProps> = (
                             <div className="flex items-center gap-2 text-sm">
                               <div className="w-3 h-3 rounded-full bg-blue-600" />
                               <span className="text-gray-700">
-                                Selections: {data.value} ({data.percentage.toFixed(1)}%)
+                                {t('distribution.selectionsCount', { values: { count: data.value, percentage: data.percentage.toFixed(1) } })}
                               </span>
                             </div>
                           </div>
@@ -492,10 +497,12 @@ export const SelectionFieldAnalytics: React.FC<SelectionFieldAnalyticsProps> = (
         <OptionPerformanceTable 
           options={data.options}
           topOption={data.topOption}
+          t={t}
         />
         <QuickInsights 
           data={data}
           totalFormResponses={totalResponses}
+          t={t}
         />
       </div>
 
@@ -513,64 +520,66 @@ export const SelectionFieldAnalytics: React.FC<SelectionFieldAnalyticsProps> = (
       {/* Summary Statistics */}
       <Card>
         <CardHeader>
-          <CardTitle>Selection Analysis Summary</CardTitle>
+          <CardTitle>{t('insights.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">Popular Choices</h4>
+              <h4 className="font-medium text-gray-900">{t('insights.popularChoices')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Most popular:</span>
+                  <span className="text-gray-600">{t('insights.mostPopular')}</span>
                   <span className="font-medium">{mostPopularOption.percentage.toFixed(1)}%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Least popular:</span>
+                  <span className="text-gray-600">{t('insights.leastPopular')}</span>
                   <span className="font-medium">{leastPopularOption.percentage.toFixed(1)}%</span>
                 </div>
               </div>
             </div>
             
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">Distribution</h4>
+              <h4 className="font-medium text-gray-900">{t('insights.distribution')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Type:</span>
-                  <span className="font-medium capitalize">{data.responseDistribution}</span>
+                  <span className="text-gray-600">{t('insights.type')}</span>
+                  <span className="font-medium capitalize">
+                    {data.responseDistribution === 'balanced' ? t('insights.balanced') : t('insights.skewed')}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Avg expected:</span>
+                  <span className="text-gray-600">{t('distribution.title')}</span>
                   <span className="font-medium">{averagePercentage.toFixed(1)}%</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">Performance</h4>
+              <h4 className="font-medium text-gray-900">{t('insights.performance')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Options used:</span>
+                  <span className="text-gray-600">{t('insights.optionsUsed')}</span>
                   <span className="font-medium">{data.options.filter(opt => opt.count > 0).length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Unused options:</span>
+                  <span className="text-gray-600">{t('insights.unusedOptions')}</span>
                   <span className="font-medium">{data.options.filter(opt => opt.count === 0).length}</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">Insights</h4>
+              <h4 className="font-medium text-gray-900">{t('insights.title')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Low performers:</span>
+                  <span className="text-gray-600">{t('topChoices.leastPopular')}</span>
                   <span className="font-medium">{data.options.filter(opt => opt.percentage < 5).length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Competition level:</span>
+                  <span className="text-gray-600">{t('insights.competitionLevel')}</span>
                   <span className="font-medium">
-                    {data.responseDistribution === 'concentrated' ? 'Low' : 
-                     data.responseDistribution === 'even' ? 'High' : 'Medium'}
+                    {data.responseDistribution === 'concentrated' ? t('insights.low') : 
+                     data.responseDistribution === 'even' ? t('insights.high') : t('insights.medium')}
                   </span>
                 </div>
               </div>

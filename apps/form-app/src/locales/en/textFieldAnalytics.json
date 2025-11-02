@@ -1,0 +1,37 @@
+{
+  "wordCloud": {
+    "title": "Word Cloud",
+    "mostCommon": "Most Common Words",
+    "noData": "No words to display"
+  },
+  "responseLength": {
+    "title": "Response Length Distribution",
+    "xAxis": "Characters",
+    "yAxis": "Responses"
+  },
+  "stats": {
+    "averageLength": "Average Length",
+    "averageLengthSubtitle": "Characters per response",
+    "shortestResponse": "Shortest Response",
+    "longestResponse": "Longest Response",
+    "totalWords": "Total Words",
+    "uniqueWords": "Unique words found",
+    "chars": "chars",
+    "minLength": "Minimum length recorded",
+    "maxLength": "Maximum length recorded"
+  },
+  "insights": {
+    "title": "Insights",
+    "avgWordsPerResponse": "Average {{count}} words per response",
+    "vocabularyDiversity": "Vocabulary diversity: {{percentage}}%",
+    "commonLength": "Most common length: {{length}} characters"
+  },
+  "emptyState": {
+    "title": "No text data available",
+    "subtitle": "This field hasn't received any responses yet."
+  },
+  "topWords": {
+    "title": "Top Words",
+    "count": "Count"
+  }
+}

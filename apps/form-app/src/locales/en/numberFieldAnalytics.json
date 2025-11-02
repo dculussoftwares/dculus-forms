@@ -1,0 +1,43 @@
+{
+  "title": "Number Analytics",
+  "emptyState": {
+    "title": "No number data available",
+    "subtitle": "This number field hasn't received any responses yet."
+  },
+  "distribution": {
+    "title": "Number Distribution",
+    "value": "Value",
+    "frequency": "Frequency"
+  },
+  "rangeAnalysis": {
+    "title": "Range Analysis",
+    "min": "Minimum",
+    "max": "Maximum",
+    "range": "Range",
+    "median": "Median"
+  },
+  "stats": {
+    "average": "Average",
+    "median": "Median",
+    "mode": "Mode",
+    "stdDev": "Std Deviation",
+    "total": "Total Sum",
+    "minimum": "Minimum",
+    "maximum": "Maximum",
+    "lowestValue": "Lowest value",
+    "meanValue": "Mean value",
+    "middleValue": "Middle value",
+    "highestValue": "Highest value",
+    "dataSpread": "Data spread"
+  },
+  "insights": {
+    "title": "Insights",
+    "avgValue": "Average value: {{value}}",
+    "range": "Range: {{min}} to {{max}}",
+    "mostCommon": "Most common: {{value}}",
+    "variability": "Variability: {{level}}",
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High"
+  }
+}

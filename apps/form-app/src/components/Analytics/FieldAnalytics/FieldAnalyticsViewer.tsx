@@ -9,6 +9,7 @@ import { SelectionFieldAnalytics } from './SelectionFieldAnalytics';
 import { CheckboxFieldAnalytics } from './CheckboxFieldAnalytics';
 import { DateFieldAnalytics } from './DateFieldAnalytics';
 import { EmailFieldAnalytics } from './EmailFieldAnalytics';
+import { useTranslation } from '../../../hooks/useTranslation';
 import { 
   FileText, 
   Hash, 
@@ -57,17 +58,17 @@ const getFieldTypeIcon = (fieldType: string) => {
 };
 
 // Field Type Display Names
-const getFieldTypeDisplayName = (fieldType: string) => {
+const getFieldTypeDisplayName = (fieldType: string, t: (key: string) => string) => {
   switch (fieldType) {
-    case 'text_input_field': return 'Text Input';
-    case 'text_area_field': return 'Text Area';
-    case 'number_field': return 'Number';
-    case 'email_field': return 'Email';
-    case 'date_field': return 'Date';
-    case 'select_field': return 'Select Dropdown';
-    case 'radio_field': return 'Radio Buttons';
-    case 'checkbox_field': return 'Checkboxes';
-    default: return 'Unknown Field';
+    case 'text_input_field': return t('fieldAnalyticsViewer.fieldTypes.text_input_field');
+    case 'text_area_field': return t('fieldAnalyticsViewer.fieldTypes.text_area_field');
+    case 'number_field': return t('fieldAnalyticsViewer.fieldTypes.number_field');
+    case 'email_field': return t('fieldAnalyticsViewer.fieldTypes.email_field');
+    case 'date_field': return t('fieldAnalyticsViewer.fieldTypes.date_field');
+    case 'select_field': return t('fieldAnalyticsViewer.fieldTypes.select_field');
+    case 'radio_field': return t('fieldAnalyticsViewer.fieldTypes.radio_field');
+    case 'checkbox_field': return t('fieldAnalyticsViewer.fieldTypes.checkbox_field');
+    default: return t('fieldAnalyticsViewer.fieldTypes.unknown');
   }
 };
 
@@ -318,7 +319,8 @@ const FieldSelectionGrid: React.FC<{
   selectedFieldId: string | null;
   onFieldSelect: (fieldId: string) => void;
   totalFormResponses: number;
-}> = ({ fields, selectedFieldId, onFieldSelect, totalFormResponses: _totalFormResponses }) => {
+  t: (key: string) => string;
+}> = ({ fields, selectedFieldId, onFieldSelect, totalFormResponses: _totalFormResponses, t }) => {
   if (fields.length === 0) {
     return (
       <Card>
@@ -371,7 +373,7 @@ const FieldSelectionGrid: React.FC<{
                         {field.fieldLabel || `Field ${field.fieldId}`}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {getFieldTypeDisplayName(field.fieldType)}
+                        {getFieldTypeDisplayName(field.fieldType, t)}
                       </div>
                     </div>
                   </div>
@@ -455,7 +457,8 @@ const AnalyticsContent: React.FC<{
   field: FieldAnalyticsData;
   totalFormResponses: number;
   loading: boolean;
-}> = ({ field, totalFormResponses, loading }) => {
+  t: (key: string) => string;
+}> = ({ field, totalFormResponses, loading, t }) => {
   const renderAnalytics = () => {
     switch (field.fieldType) {
       case 'text_input_field':
@@ -569,7 +572,7 @@ const AnalyticsContent: React.FC<{
               {field.fieldLabel || `Field ${field.fieldId}`}
             </h2>
             <p className="text-sm text-gray-600">
-              {getFieldTypeDisplayName(field.fieldType)} • {field.totalResponses} responses • {field.responseRate.toFixed(1)}% response rate
+              {getFieldTypeDisplayName(field.fieldType, t)} • {field.totalResponses} responses • {field.responseRate.toFixed(1)}% response rate
             </p>
           </div>
         </div>
@@ -583,6 +586,7 @@ const AnalyticsContent: React.FC<{
 
 // Main Component
 export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ formId, initialSelectedFieldId }) => {
+  const { t } = useTranslation('fieldAnalyticsViewer');
   const [searchParams, setSearchParams] = useSearchParams();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   
@@ -952,6 +956,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
             selectedFieldId={selectedFieldIdFromUrl}
             onFieldSelect={handleFieldSelect}
             totalFormResponses={totalResponses}
+            t={t}
           />
         </>
       ) : selectedField ? (
@@ -959,6 +964,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
           field={selectedField}
           totalFormResponses={totalResponses}
           loading={selectedFieldLoading}
+          t={t}
         />
       ) : (
         <div className="text-center py-8 text-gray-500">

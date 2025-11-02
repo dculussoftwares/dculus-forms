@@ -5,6 +5,7 @@ import { NumberFieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
 import { Calculator, TrendingUp, BarChart3, Target, Hash } from 'lucide-react';
 import { MetricHelper, METRIC_HELPERS } from './MetricHelper';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useTranslation } from '../../../hooks/useTranslation';
 
 interface NumberFieldAnalyticsProps {
   data: NumberFieldAnalyticsData;
@@ -278,6 +279,8 @@ export const NumberFieldAnalytics: React.FC<NumberFieldAnalyticsProps> = ({
   totalResponses,
   loading
 }) => {
+  const { t } = useTranslation('numberFieldAnalytics');
+  
   const distributionData = useMemo(() => {
     if (!data?.distribution) return [];
     return data.distribution.map(item => ({
@@ -313,8 +316,8 @@ export const NumberFieldAnalytics: React.FC<NumberFieldAnalyticsProps> = ({
       <div className="flex items-center justify-center h-64 text-gray-500">
         <div className="text-center">
           <Calculator className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-          <p className="text-lg font-medium">No number data available</p>
-          <p className="text-sm">This field hasn't received any numeric responses yet.</p>
+          <p className="text-lg font-medium">{t('emptyState.title')}</p>
+          <p className="text-sm">{t('emptyState.subtitle')}</p>
         </div>
       </div>
     );
@@ -332,33 +335,33 @@ export const NumberFieldAnalytics: React.FC<NumberFieldAnalyticsProps> = ({
       {/* Key Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
-          title="Minimum"
+          title={t('stats.minimum')}
           value={formatNumber(data.min)}
-          subtitle="Lowest value"
+          subtitle={t('stats.lowestValue')}
           icon={<Hash className="h-5 w-5" />}
         />
         <StatCard
-          title="Average"
+          title={t('stats.average')}
           value={formatNumber(data.average)}
-          subtitle="Mean value"
+          subtitle={t('stats.meanValue')}
           icon={<Target className="h-5 w-5" />}
         />
         <StatCard
-          title="Median"
+          title={t('stats.median')}
           value={formatNumber(data.median)}
-          subtitle="Middle value"
+          subtitle={t('stats.middleValue')}
           icon={<BarChart3 className="h-5 w-5" />}
         />
         <StatCard
-          title="Maximum"
+          title={t('stats.maximum')}
           value={formatNumber(data.max)}
-          subtitle="Highest value"
+          subtitle={t('stats.highestValue')}
           icon={<Hash className="h-5 w-5" />}
         />
         <StatCard
-          title="Std. Deviation"
+          title={t('stats.stdDev')}
           value={formatNumber(data.standardDeviation)}
-          subtitle="Data spread"
+          subtitle={t('stats.dataSpread')}
           icon={<TrendingUp className="h-5 w-5" />}
         />
       </div>

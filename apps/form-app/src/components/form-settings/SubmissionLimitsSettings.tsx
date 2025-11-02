@@ -13,6 +13,7 @@ import {
 } from '@dculus/ui';
 import { Shield, Save, Calendar, Users } from 'lucide-react';
 import type { SubmissionLimitsSettings as SubmissionLimitsSettingsType } from '@dculus/types';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface SubmissionLimitsSettingsProps {
   settings: SubmissionLimitsSettingsType;
@@ -31,6 +32,8 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
   onUpdateTimeWindow,
   onSave,
 }) => {
+  const { t } = useTranslation('submissionLimitsSettings');
+  
   const handleMaxResponsesToggle = (enabled: boolean) => {
     if (enabled) {
       onUpdateMaxResponses(true, settings.maxResponses?.limit || 100);
@@ -42,11 +45,11 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
   const handleMaxResponsesLimitChange = (value: string) => {
     const limit = parseInt(value, 10);
     if (isNaN(limit) || limit < 1) {
-      toastError('Invalid Limit', 'Response limit must be a positive number');
+      toastError(t('validation.invalidLimit'), t('validation.limitMustBePositive'));
       return;
     }
     if (limit > 10000) {
-      toastError('Invalid Limit', 'Response limit cannot exceed 10,000');
+      toastError(t('validation.invalidLimit'), t('validation.limitExceeded'));
       return;
     }
     onUpdateMaxResponses(true, limit);

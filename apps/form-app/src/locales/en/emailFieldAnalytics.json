@@ -1,0 +1,45 @@
+{
+  "title": "Email Analytics",
+  "emptyState": {
+    "title": "No email data available",
+    "subtitle": "This email field hasn't received any responses yet."
+  },
+  "validation": {
+    "title": "Email Validation",
+    "valid": "Valid",
+    "invalid": "Invalid",
+    "validEmails": "Valid Emails",
+    "invalidEmails": "Invalid Emails",
+    "qualityScore": "Quality Score:"
+  },
+  "domainAnalysis": {
+    "title": "Domain Analysis",
+    "topDomains": "Top Domains",
+    "domain": "Domain",
+    "count": "Count",
+    "uniqueDomains": "Unique domains:"
+  },
+  "emailTypes": {
+    "title": "Email Type Insights",
+    "corporate": "Corporate:",
+    "personal": "Personal:",
+    "other": "Other:"
+  },
+  "insights": {
+    "title": "Email Quality",
+    "validationRate": "Validation rate:",
+    "invalidEmails": "Invalid emails:",
+    "domainDiversity": "Domain Diversity",
+    "uniqueDomains": "Unique domains:",
+    "topDomain": "Top domain:",
+    "emailTypes": "Email Types",
+    "corporate": "Corporate:",
+    "personal": "Personal:"
+  },
+  "distribution": {
+    "title": "Email Distribution by Type",
+    "corporate": "Corporate",
+    "personal": "Personal",
+    "other": "Other"
+  }
+}

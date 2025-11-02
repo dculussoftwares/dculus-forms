@@ -5,6 +5,7 @@ import { DateFieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
 import { Calendar, Clock, TrendingUp, Sunrise, Snowflake, Flower, Sun, Leaf } from 'lucide-react';
 import { MetricHelper, METRIC_HELPERS } from './MetricHelper';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { useTranslation } from '../../../hooks/useTranslation';
 
 interface DateFieldAnalyticsProps {
   data: DateFieldAnalyticsData;
@@ -341,6 +342,8 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
   totalResponses,
   loading
 }) => {
+  const { t } = useTranslation('dateFieldAnalytics');
+  
   const weekdayChartData = useMemo(() => {
     if (!data?.weekdayDistribution) return [];
     const weekdayOrder = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -398,8 +401,8 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
       <div className="flex items-center justify-center h-64 text-gray-500">
         <div className="text-center">
           <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-          <p className="text-lg font-medium">No date data available</p>
-          <p className="text-sm">This date field hasn't received any responses yet.</p>
+          <p className="text-lg font-medium">{t('emptyState.title')}</p>
+          <p className="text-sm">{t('emptyState.subtitle')}</p>
         </div>
       </div>
     );

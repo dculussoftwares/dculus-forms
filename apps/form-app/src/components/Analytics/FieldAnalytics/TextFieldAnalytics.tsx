@@ -5,6 +5,7 @@ import { TextFieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
 import { FileText, Hash, Type, MessageSquare } from 'lucide-react';
 import { MetricHelper, METRIC_HELPERS } from './MetricHelper';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useTranslation } from '../../../hooks/useTranslation';
 
 interface TextFieldAnalyticsProps {
   data: TextFieldAnalyticsData;
@@ -17,12 +18,13 @@ interface TextFieldAnalyticsProps {
 const SimpleWordCloud: React.FC<{ 
   words: Array<{ word: string; count: number; weight: number }>;
   loading?: boolean;
-}> = ({ words, loading }) => {
+  t: (key: string) => string;
+}> = ({ words, loading, t }) => {
   if (loading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Word Cloud</CardTitle>
+          <CardTitle>{t('wordCloud.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="animate-pulse">
@@ -37,11 +39,11 @@ const SimpleWordCloud: React.FC<{
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Word Cloud</CardTitle>
+          <CardTitle>{t('wordCloud.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-64 text-gray-500">
-            No words to display
+            {t('wordCloud.noData')}
           </div>
         </CardContent>
       </Card>
@@ -65,7 +67,7 @@ const SimpleWordCloud: React.FC<{
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Most Common Words</CardTitle>
+          <CardTitle>{t('wordCloud.mostCommon')}</CardTitle>
           <MetricHelper {...METRIC_HELPERS.WORD_CLOUD} compact />
         </div>
       </CardHeader>
@@ -241,6 +243,8 @@ export const TextFieldAnalytics: React.FC<TextFieldAnalyticsProps> = ({
   totalResponses,
   loading
 }) => {
+  const { t } = useTranslation('textFieldAnalytics');
+  
   const lengthChartData = useMemo(() => {
     if (!data?.lengthDistribution) return [];
     return data.lengthDistribution.map(item => ({
@@ -263,8 +267,8 @@ export const TextFieldAnalytics: React.FC<TextFieldAnalyticsProps> = ({
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <SimpleWordCloud words={[]} loading={true} />
-          <Histogram data={[]} title="Response Length Distribution" loading={true} />
+          <SimpleWordCloud words={[]} loading={true} t={t} />
+          <Histogram data={[]} title={t('responseLength.title')} loading={true} />
         </div>
       </div>
     );
@@ -275,8 +279,8 @@ export const TextFieldAnalytics: React.FC<TextFieldAnalyticsProps> = ({
       <div className="flex items-center justify-center h-64 text-gray-500">
         <div className="text-center">
           <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-          <p className="text-lg font-medium">No text data available</p>
-          <p className="text-sm">This field hasn't received any responses yet.</p>
+          <p className="text-lg font-medium">{t('emptyState.title')}</p>
+          <p className="text-sm">{t('emptyState.subtitle')}</p>
         </div>
       </div>
     );
@@ -287,27 +291,27 @@ export const TextFieldAnalytics: React.FC<TextFieldAnalyticsProps> = ({
       {/* Statistics Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Average Length"
-          value={`${Math.round(data.averageLength)} chars`}
-          subtitle="Characters per response"
+          title={t('stats.averageLength')}
+          value={`${Math.round(data.averageLength)} ${t('stats.chars')}`}
+          subtitle={t('stats.averageLengthSubtitle')}
           icon={<Type className="h-5 w-5" />}
         />
         <StatCard
-          title="Shortest Response"
-          value={`${data.minLength} chars`}
-          subtitle="Minimum length recorded"
+          title={t('stats.shortestResponse')}
+          value={`${data.minLength} ${t('stats.chars')}`}
+          subtitle={t('stats.minLength')}
           icon={<Hash className="h-5 w-5" />}
         />
         <StatCard
-          title="Longest Response"
-          value={`${data.maxLength} chars`}
-          subtitle="Maximum length recorded"
+          title={t('stats.longestResponse')}
+          value={`${data.maxLength} ${t('stats.chars')}`}
+          subtitle={t('stats.maxLength')}
           icon={<Hash className="h-5 w-5" />}
         />
         <StatCard
-          title="Total Words"
+          title={t('stats.totalWords')}
           value={data.wordCloud.reduce((sum, word) => sum + word.count, 0)}
-          subtitle="Unique words found"
+          subtitle={t('stats.uniqueWords')}
           icon={<MessageSquare className="h-5 w-5" />}
         />
       </div>
@@ -315,12 +319,13 @@ export const TextFieldAnalytics: React.FC<TextFieldAnalyticsProps> = ({
       {/* Main Visualizations */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SimpleWordCloud 
-          words={data.wordCloud} 
+          words={data.wordCloud}
+          t={t}
         />
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Response Length Distribution</CardTitle>
+              <CardTitle>{t('responseLength.title')}</CardTitle>
               <MetricHelper {...METRIC_HELPERS.LENGTH_DISTRIBUTION} compact />
             </div>
           </CardHeader>

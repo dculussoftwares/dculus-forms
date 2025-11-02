@@ -1,0 +1,68 @@
+{
+  "title": "Selection Analytics",
+  "emptyState": {
+    "title": "No responses yet",
+    "subtitle": "This {{fieldType}} field hasn't received any responses yet."
+  },
+  "distribution": {
+    "title": "Response Distribution",
+    "option": "Option",
+    "responses": "Responses",
+    "totalSelections": "Total Selections",
+    "fromResponses": "from {{count}} responses",
+    "availableOptions": "Available Options",
+    "choicesProvided": "choices provided",
+    "selectionRate": "Selection Rate",
+    "completionRate": "completion rate",
+    "optionPopularity": "Option Popularity",
+    "numberOfSelections": "Number of Selections",
+    "selectionsCount": "{{count}} selections ({{percentage}}%)"
+  },
+  "topChoices": {
+    "title": "Top Choices",
+    "mostPopular": "Most popular",
+    "leastPopular": "Least popular",
+    "topOption": "Top Option"
+  },
+  "insights": {
+    "title": "Insights",
+    "popularChoices": "Popular Choices",
+    "distribution": "Distribution",
+    "performance": "Performance",
+    "mostPopular": "Most popular:",
+    "leastPopular": "Least popular:",
+    "type": "Type:",
+    "balanced": "Balanced",
+    "skewed": "Skewed",
+    "optionsUsed": "Options used:",
+    "unusedOptions": "Unused options:",
+    "competitionLevel": "Competition level:",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low"
+  },
+  "quickInsights": {
+    "title": "Quick Insights",
+    "mostPopular": "Most Popular",
+    "ofResponses": "{{percentage}}% of responses",
+    "clearWinner": "Clear Winner",
+    "closeCompetition": "Close Competition",
+    "marginAhead": "margin ahead",
+    "differenceBetweenTopOptions": "difference between top options",
+    "responseRate": "Response Rate",
+    "ofFormSubmissions": "of form submissions",
+    "lowPerforming": "Low Performing",
+    "optionUnder5": "option under 5%",
+    "optionsUnder5": "options under 5%"
+  },
+  "optionPerformance": {
+    "title": "Option Performance",
+    "showingAll": "Showing all {{count}} options",
+    "responses": "{{count}} responses"
+  },
+  "pieChart": {
+    "title": "{{fieldType}} Distribution",
+    "selection": "Selection",
+    "choice": "Choice"
+  }
+}

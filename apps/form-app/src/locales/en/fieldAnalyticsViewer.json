@@ -1,0 +1,46 @@
+{
+  "title": "Field Analytics",
+  "loading": "Loading field data...",
+  "backToOverview": "Back to Overview",
+  "fieldTypes": {
+    "text_input_field": "Text Input",
+    "text_area_field": "Text Area",
+    "number_field": "Number",
+    "email_field": "Email",
+    "date_field": "Date",
+    "select_field": "Select Dropdown",
+    "radio_field": "Radio Buttons",
+    "checkbox_field": "Checkboxes",
+    "unknown": "Unknown Field"
+  },
+  "miniChart": {
+    "noData": "No word data",
+    "noDistribution": "No distribution",
+    "noOptions": "No options",
+    "noDates": "No dates"
+  },
+  "stats": {
+    "responses": "Responses",
+    "responseRate": "Response Rate",
+    "lastUpdated": "Last Updated",
+    "analyzableFields": "Analyzable Fields",
+    "highEngagement": "High Engagement",
+    "formResponses": "Form Responses"
+  },
+  "dataPreview": {
+    "title": "Data Preview",
+    "fieldType": "Field type"
+  },
+  "error": {
+    "loadingTitle": "Error Loading Field Analytics",
+    "loadingData": "Error Loading Field Data",
+    "tryAgain": "Try again",
+    "backToList": "Back to field list"
+  },
+  "emptyState": {
+    "title": "No Fields Available",
+    "description": "This form doesn't have any analyzable fields yet.",
+    "addFields": "Add fields to your form to see analytics here."
+  },
+  "refresh": "Refresh Analytics"
+}
