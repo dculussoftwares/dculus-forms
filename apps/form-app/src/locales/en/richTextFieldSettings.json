@@ -1,0 +1,21 @@
+{
+  "loadingContent": "Loading content...",
+  "sections": {
+    "content": "Content",
+    "fieldInformation": "Field Information",
+    "contentGuidelines": "Content Guidelines"
+  },
+  "fieldInfo": {
+    "fieldId": "Field ID:",
+    "fieldType": "Field Type:",
+    "richText": "Rich Text",
+    "contentLength": "Content Length:",
+    "characters": "{{count}} characters"
+  },
+  "guidelines": {
+    "supportFormatting": "Rich text fields support formatting, links, and basic HTML",
+    "autoSanitized": "Content is automatically sanitized for security",
+    "useRichText": "Use rich text for instructions, descriptions, and formatted content",
+    "autoSave": "Changes are auto-saved after 1 second of inactivity"
+  }
+}

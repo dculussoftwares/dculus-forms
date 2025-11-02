@@ -94,6 +94,8 @@ import enQuizResultsDialog from './en/quizResultsDialog.json';
 import enQuizGradingPluginConfig from './en/quizGradingPluginConfig.json';
 import enOrganizationSwitcher from './en/organizationSwitcher.json';
 import enSubscriptionDashboard from './en/subscriptionDashboard.json';
+import enFieldSettingsFooter from './en/fieldSettingsFooter.json';
+import enRichTextFieldSettings from './en/richTextFieldSettings.json';
 
 export const translations = {
   en: {
@@ -193,6 +195,8 @@ export const translations = {
     quizGradingPluginConfig: enQuizGradingPluginConfig,
     organizationSwitcher: enOrganizationSwitcher,
     subscriptionDashboard: enSubscriptionDashboard,
+    fieldSettingsFooter: enFieldSettingsFooter,
+    richTextFieldSettings: enRichTextFieldSettings,
   },
 } as const;
 

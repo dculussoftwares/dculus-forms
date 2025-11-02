@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@dculus/ui';
 import { RotateCcw, Save, AlertCircle } from 'lucide-react';
+import { useTranslation } from '../../../hooks/useTranslation';
 
 interface FieldSettingsFooterProps {
   isDirty: boolean;
@@ -23,6 +24,8 @@ export const FieldSettingsFooter: React.FC<FieldSettingsFooterProps> = ({
   onCancel,
   onSave
 }) => {
+  const { t } = useTranslation('fieldSettingsFooter');
+  
   return (
     <div 
       data-testid="field-settings-footer"
@@ -43,7 +46,7 @@ export const FieldSettingsFooter: React.FC<FieldSettingsFooterProps> = ({
             className="text-gray-500 hover:text-gray-700"
           >
             <RotateCcw className="w-4 h-4 mr-1" />
-            Reset
+            {t('reset')}
           </Button>
         </div>
 
@@ -55,7 +58,7 @@ export const FieldSettingsFooter: React.FC<FieldSettingsFooterProps> = ({
             onClick={onCancel}
             disabled={!isDirty || !isConnected}
           >
-            Cancel
+            {t('cancel')}
           </Button>
           <div className="relative group">
             <Button
@@ -72,12 +75,12 @@ export const FieldSettingsFooter: React.FC<FieldSettingsFooterProps> = ({
               {isSaving ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>
-                  Saving...
+                  {t('saving')}
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4 mr-1" />
-                  Save
+                  {t('save')}
                 </>
               )}
             </Button>
@@ -86,7 +89,7 @@ export const FieldSettingsFooter: React.FC<FieldSettingsFooterProps> = ({
               <div className="absolute bottom-full right-0 mb-2 p-2 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
                 <div className="flex items-center space-x-1">
                   <AlertCircle className="w-3 h-3" />
-                  <span>Fix validation errors to save</span>
+                  <span>{t('fixValidationErrors')}</span>
                 </div>
                 <div className="absolute top-full right-3 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
               </div>
@@ -99,7 +102,7 @@ export const FieldSettingsFooter: React.FC<FieldSettingsFooterProps> = ({
       {!isConnected && (
         <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
           <p className="text-xs text-yellow-800 dark:text-yellow-300">
-            Changes are disabled while offline
+            {t('offlineWarning')}
           </p>
         </div>
       )}
@@ -112,11 +115,11 @@ export const FieldSettingsFooter: React.FC<FieldSettingsFooterProps> = ({
       }`}>
         <div className="flex items-center justify-between">
           <span className={isDirty ? 'font-medium' : ''}>
-            {isDirty ? 'Save your changes:' : 'Keyboard shortcuts:'}
+            {isDirty ? t('shortcuts.saveYourChanges') : t('shortcuts.keyboardShortcuts')}
           </span>
           <div className="flex items-center space-x-4">
-            <span className={isDirty ? 'font-medium animate-pulse' : ''}>⌘/Ctrl + S to save</span>
-            <span>Esc to cancel</span>
+            <span className={isDirty ? 'font-medium animate-pulse' : ''}>{t('shortcuts.cmdSToSave')}</span>
+            <span>{t('shortcuts.escToCancel')}</span>
           </div>
         </div>
       </div>

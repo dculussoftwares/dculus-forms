@@ -1,0 +1,14 @@
+{
+  "reset": "Reset",
+  "cancel": "Cancel",
+  "saving": "Saving...",
+  "save": "Save",
+  "fixValidationErrors": "Fix validation errors to save",
+  "offlineWarning": "Changes are disabled while offline",
+  "shortcuts": {
+    "saveYourChanges": "Save your changes:",
+    "keyboardShortcuts": "Keyboard shortcuts:",
+    "cmdSToSave": "⌘/Ctrl + S to save",
+    "escToCancel": "Esc to cancel"
+  }
+}

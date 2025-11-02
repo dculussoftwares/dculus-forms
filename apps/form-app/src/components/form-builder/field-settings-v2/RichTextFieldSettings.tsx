@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { RichTextFormField } from '@dculus/types';
 import { Settings } from 'lucide-react';
 import { useRichTextFieldForm } from '../../../hooks/field-forms';
+import { useTranslation } from '../../../hooks/useTranslation';
 import {
   ValidationSummary,
   FieldSettingsHeader,
@@ -27,6 +28,7 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
   onUpdate,
   onFieldSwitch: _onFieldSwitch,
 }) => {
+  const { t } = useTranslation('richTextFieldSettings');
   const constants = useFieldSettingsConstants();
   const {
     form,
@@ -97,7 +99,7 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
             <div className="flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-300">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-                <span className="text-sm">Loading content...</span>
+                <span className="text-sm">{t('loadingContent')}</span>
               </div>
             </div>
           )}
@@ -106,7 +108,7 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
           {!isContentLoading && (
             <div className={constants.CSS_CLASSES.SECTION_SPACING}>
               <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
-                Content
+                {t('sections.content')}
               </h4>
               
               <RichTextSettings
@@ -120,18 +122,18 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
           {/* Field Information */}
           <div className={constants.CSS_CLASSES.SECTION_SPACING}>
             <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
-              Field Information
+              {t('sections.fieldInformation')}
             </h4>
             
             <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
               <p>
-                <span className="font-medium">Field ID:</span> {field.id}
+                <span className="font-medium">{t('fieldInfo.fieldId')}</span> {field.id}
               </p>
               <p>
-                <span className="font-medium">Field Type:</span> Rich Text
+                <span className="font-medium">{t('fieldInfo.fieldType')}</span> {t('fieldInfo.richText')}
               </p>
               <p>
-                <span className="font-medium">Content Length:</span> {field.content?.length || 0} characters
+                <span className="font-medium">{t('fieldInfo.contentLength')}</span> {t('fieldInfo.characters', { values: { count: field.content?.length || 0 } })}
               </p>
             </div>
           </div>
@@ -139,15 +141,15 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
           {/* Content Guidelines */}
           <div className={constants.CSS_CLASSES.SECTION_SPACING}>
             <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
-              Content Guidelines
+              {t('sections.contentGuidelines')}
             </h4>
             
             <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
               <ul className="list-disc list-inside space-y-1">
-                <li>Rich text fields support formatting, links, and basic HTML</li>
-                <li>Content is automatically sanitized for security</li>
-                <li>Use rich text for instructions, descriptions, and formatted content</li>
-                <li>Changes are auto-saved after 1 second of inactivity</li>
+                <li>{t('guidelines.supportFormatting')}</li>
+                <li>{t('guidelines.autoSanitized')}</li>
+                <li>{t('guidelines.useRichText')}</li>
+                <li>{t('guidelines.autoSave')}</li>
               </ul>
             </div>
           </div>

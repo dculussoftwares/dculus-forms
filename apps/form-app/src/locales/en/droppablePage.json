@@ -5,5 +5,7 @@
   },
   "status": {
     "offline": "Offline"
-  }
+  },
+  "dropNewField": "Drop new field here",
+  "moveFieldToPage": "Move field to this page"
 }

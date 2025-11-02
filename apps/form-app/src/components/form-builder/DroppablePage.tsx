@@ -211,7 +211,7 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
         {isOver && isDraggingFieldType && (
           <div className="absolute inset-2 pointer-events-none border-2 border-dashed border-blue-400 rounded-lg bg-blue-50/10 dark:bg-blue-950/10 flex items-center justify-center z-10">
             <div className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-lg">
-              Drop new field here
+              {t('dropNewField')}
             </div>
           </div>
         )}
@@ -223,7 +223,7 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
               </svg>
-              <span>Move field to this page</span>
+              <span>{t('moveFieldToPage')}</span>
             </div>
           </div>
         )}

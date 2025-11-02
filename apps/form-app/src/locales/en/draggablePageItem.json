@@ -3,6 +3,9 @@
     "singular": "field",
     "plural": "fields"
   },
+  "empty": "Empty",
+  "moveHere": "Move here",
+  "addHere": "Add here",
   "deleteDialog": {
     "title": "Delete Page",
     "message": "Are you sure you want to delete \"{{pageTitle}}\"? This action cannot be undone.",
