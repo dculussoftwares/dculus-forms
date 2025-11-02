@@ -363,7 +363,7 @@ export const TextFieldAnalytics: React.FC<TextFieldAnalyticsProps> = ({
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-600">Response Rate:</span>
+              <span className="text-gray-600">{t('summary.responseRate')}</span>
               <span className="font-medium">
                 {totalResponses > 0 ? 
                   `${((data.recentResponses.length / totalResponses) * 100).toFixed(1)}%` : 
@@ -372,11 +372,11 @@ export const TextFieldAnalytics: React.FC<TextFieldAnalyticsProps> = ({
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Unique Words:</span>
+              <span className="text-gray-600">{t('summary.uniqueWords')}</span>
               <span className="font-medium">{data.wordCloud.length}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Common Phrases:</span>
+              <span className="text-gray-600">{t('summary.commonPhrases')}</span>
               <span className="font-medium">{data.commonPhrases.length}</span>
             </div>
           </div>

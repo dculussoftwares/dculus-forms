@@ -518,28 +518,28 @@ export const CheckboxFieldAnalytics: React.FC<CheckboxFieldAnalyticsProps> = ({
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">Selection Behavior</h4>
+              <h4 className="font-medium text-gray-900">{t('summary.selectionBehavior')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Response rate:</span>
+                  <span className="text-gray-600">{t('summary.responseRate')}</span>
                   <span className="font-medium">{responseRate.toFixed(1)}%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Avg selections:</span>
+                  <span className="text-gray-600">{t('summary.avgSelections')}</span>
                   <span className="font-medium">{data.averageSelections.toFixed(1)}</span>
                 </div>
               </div>
             </div>
             
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">Option Performance</h4>
+              <h4 className="font-medium text-gray-900">{t('summary.optionPerformance')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Available options:</span>
+                  <span className="text-gray-600">{t('summary.availableOptions')}</span>
                   <span className="font-medium">{data.individualOptions.length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Used options:</span>
+                  <span className="text-gray-600">{t('summary.usedOptions')}</span>
                   <span className="font-medium">
                     {data.individualOptions.filter(opt => opt.count > 0).length}
                   </span>
@@ -548,14 +548,14 @@ export const CheckboxFieldAnalytics: React.FC<CheckboxFieldAnalyticsProps> = ({
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">Combination Patterns</h4>
+              <h4 className="font-medium text-gray-900">{t('summary.combinationPatterns')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Unique combos:</span>
+                  <span className="text-gray-600">{t('summary.uniqueCombos')}</span>
                   <span className="font-medium">{uniqueCombinations}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Strong correlations:</span>
+                  <span className="text-gray-600">{t('summary.strongCorrelations')}</span>
                   <span className="font-medium">
                     {data.correlations.filter(corr => corr.correlation >= 2.0).length}
                   </span>
@@ -564,17 +564,17 @@ export const CheckboxFieldAnalytics: React.FC<CheckboxFieldAnalyticsProps> = ({
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">Data Quality</h4>
+              <h4 className="font-medium text-gray-900">{t('summary.dataQuality')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total responses:</span>
+                  <span className="text-gray-600">{t('summary.totalResponses')}</span>
                   <span className="font-medium">{totalResponses}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Selection variety:</span>
+                  <span className="text-gray-600">{t('summary.selectionVariety')}</span>
                   <span className="font-medium">
-                    {data.selectionDistribution.length > 3 ? 'High' : 
-                     data.selectionDistribution.length > 1 ? 'Medium' : 'Low'}
+                    {data.selectionDistribution.length > 3 ? t('summary.varietyHigh') : 
+                     data.selectionDistribution.length > 1 ? t('summary.varietyMedium') : t('summary.varietyLow')}
                   </span>
                 </div>
               </div>

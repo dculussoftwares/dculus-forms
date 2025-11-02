@@ -196,12 +196,12 @@ const CorporatePersonalBreakdown: React.FC<{
         <div className="mt-6 p-4 bg-gray-50 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
             <Shield className="h-4 w-4 text-blue-600" />
-            <span className="font-medium text-gray-900">Email Type Insights</span>
+            <span className="font-medium text-gray-900">{t('emailTypeComparison.insights')}</span>
           </div>
           <div className="text-sm text-gray-700 space-y-1">
-            <p>• Corporate emails typically indicate business or professional context</p>
-            <p>• Personal emails suggest individual consumer responses</p>
-            <p>• This data can help understand your audience composition</p>
+            <p>• {t('emailTypeComparison.corporateInfo')}</p>
+            <p>• {t('emailTypeComparison.personalInfo')}</p>
+            <p>• {t('emailTypeComparison.audienceInfo')}</p>
           </div>
         </div>
       </CardContent>
@@ -575,7 +575,7 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
                   <span className="font-medium">{data.domains.length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">TLD types:</span>
+                  <span className="text-gray-600">{t('summary.tldTypes')}</span>
                   <span className="font-medium">{data.topLevelDomains.length}</span>
                 </div>
               </div>

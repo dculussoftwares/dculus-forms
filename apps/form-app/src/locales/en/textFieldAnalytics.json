@@ -44,6 +44,8 @@
   "summary": {
     "title": "Text Analysis Summary",
     "responseRate": "Response Rate:",
+    "uniqueWords": "Unique Words:",
+    "commonPhrases": "Common Phrases:",
     "avgLength": "Avg. Length:",
     "wordCount": "Word Count:",
     "characters": "characters",

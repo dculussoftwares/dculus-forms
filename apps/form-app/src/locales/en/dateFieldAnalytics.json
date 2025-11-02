@@ -35,6 +35,7 @@
     "latest": "Latest",
     "mostCommon": "Most Common",
     "timeSpan": "Time Span",
+    "totalDateResponses": "Total Date Responses",
     "days": "days"
   },
   "dayOfWeek": {

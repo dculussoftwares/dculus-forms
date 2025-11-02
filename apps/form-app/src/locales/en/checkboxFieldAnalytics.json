@@ -73,5 +73,22 @@
     "title": "Number of Selections",
     "count": "Selections",
     "responses": "Responses"
+  },
+  "summary": {
+    "selectionBehavior": "Selection Behavior",
+    "responseRate": "Response rate:",
+    "avgSelections": "Avg selections:",
+    "optionPerformance": "Option Performance",
+    "availableOptions": "Available options:",
+    "usedOptions": "Used options:",
+    "combinationPatterns": "Combination Patterns",
+    "uniqueCombos": "Unique combos:",
+    "strongCorrelations": "Strong correlations:",
+    "dataQuality": "Data Quality",
+    "totalResponses": "Total responses:",
+    "selectionVariety": "Selection variety:",
+    "varietyHigh": "High",
+    "varietyMedium": "Medium",
+    "varietyLow": "Low"
   }
 }

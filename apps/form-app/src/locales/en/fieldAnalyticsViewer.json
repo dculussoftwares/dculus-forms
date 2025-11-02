@@ -61,5 +61,33 @@
   "titles": {
     "fieldAnalytics": "Field Analytics",
     "fieldInsights": "Field Insights"
+  },
+  "miniCharts": {
+    "noWordData": "No word data",
+    "noChartData": "No chart data",
+    "noSelectionData": "No selection data"
+  },
+  "fieldList": {
+    "noFieldsTitle": "No Fields Available",
+    "noFieldsDescription": "This form doesn't have any fields that support analytics, or no responses have been submitted yet.",
+    "responses": "Responses",
+    "responseRate": "Response Rate",
+    "lastUpdated": "Last Updated",
+    "dataPreview": "Data Preview",
+    "clickToExplore": "Click to explore →"
+  },
+  "detailView": {
+    "notSupported": "Analytics not supported for this field type",
+    "fieldType": "Field type"
+  },
+  "header": {
+    "title": "Field Analytics",
+    "loading": "Loading field data..."
+  },
+  "overviewStats": {
+    "analyzableFields": "Analyzable Fields",
+    "highEngagement": "High Engagement",
+    "avgResponseRate": "Avg Response Rate",
+    "formResponses": "Form Responses"
   }
 }

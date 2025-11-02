@@ -332,7 +332,7 @@ const DateRangeAnalysis: React.FC<{
               </span>
             </div>
             <div className="flex items-center justify-between text-sm mt-2">
-              <span className="text-gray-600">Total Date Responses:</span>
+              <span className="text-gray-600">{t('rangeOverview.totalDateResponses')}:</span>
               <span className="font-medium text-gray-900">{totalResponses}</span>
             </div>
           </div>

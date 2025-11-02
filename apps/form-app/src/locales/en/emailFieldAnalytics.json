@@ -52,7 +52,11 @@
     "corporateRatio": "Corporate Ratio:",
     "topProvider": "Top Provider:",
     "analysisDepth": "Analysis Depth:",
-    "uniqueDomains": "unique domains",
+    "uniqueDomains": "Unique domains:",
+    "tldTypes": "TLD types:",
+    "domainDiversityTitle": "Domain Diversity",
+    "emailTypesTitle": "Email Types",
+    "corporate": "Corporate:",
     "providers": "providers"
   },
   "charts": {
@@ -95,5 +99,11 @@
     "corporate": "Corporate",
     "personal": "Personal",
     "other": "Other"
+  },
+  "emailTypeComparison": {
+    "insights": "Email Type Insights",
+    "corporateInfo": "Corporate emails typically indicate business or professional context",
+    "personalInfo": "Personal emails suggest individual consumer responses",
+    "audienceInfo": "This data can help understand your audience composition"
   }
 }

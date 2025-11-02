@@ -81,7 +81,7 @@ const MiniWordCloud: React.FC<{ words: Array<{ word: string; count: number }> }>
     <div className="flex items-center justify-center h-full text-gray-400">
       <div className="text-center">
         <FileText className="h-12 w-12 mx-auto mb-2" />
-        <p className="text-sm">No word data</p>
+        <p className="text-sm">{useTranslation('fieldAnalyticsViewer').t('miniCharts.noWordData')}</p>
       </div>
     </div>
   );
@@ -117,7 +117,7 @@ const MiniBarChart: React.FC<{ data: Array<{ name: string; value: number }> }> =
     <div className="flex items-center justify-center h-full text-gray-400">
       <div className="text-center">
         <BarChart3 className="h-12 w-12 mx-auto mb-2" />
-        <p className="text-sm">No chart data</p>
+        <p className="text-sm">{useTranslation('fieldAnalyticsViewer').t('miniCharts.noChartData')}</p>
       </div>
     </div>
   );
@@ -154,7 +154,7 @@ const MiniPieChart: React.FC<{ data: Array<{ name: string; value: number }> }> =
     <div className="flex items-center justify-center h-full text-gray-400">
       <div className="text-center">
         <CircleDot className="h-12 w-12 mx-auto mb-2" />
-        <p className="text-sm">No selection data</p>
+        <p className="text-sm">{useTranslation('fieldAnalyticsViewer').t('miniCharts.noSelectionData')}</p>
       </div>
     </div>
   );
@@ -328,9 +328,9 @@ const FieldSelectionGrid: React.FC<{
       <Card>
         <CardContent className="p-8 text-center">
           <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Fields Available</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{t('fieldList.noFieldsTitle')}</h3>
           <p className="text-gray-600">
-            This form doesn't have any fields that support analytics, or no responses have been submitted yet.
+            {t('fieldList.noFieldsDescription')}
           </p>
         </CardContent>
       </Card>
@@ -385,7 +385,7 @@ const FieldSelectionGrid: React.FC<{
                     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm text-gray-700">Responses</span>
+                        <span className="text-sm text-gray-700">{t('fieldList.responses')}</span>
                       </div>
                       <div className="font-bold text-lg text-gray-900">
                         {field.totalResponses}
@@ -395,7 +395,7 @@ const FieldSelectionGrid: React.FC<{
                     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center gap-2">
                         <TrendingUp className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm text-gray-700">Response Rate</span>
+                        <span className="text-sm text-gray-700">{t('fieldList.responseRate')}</span>
                       </div>
                       <div className={`px-3 py-1 rounded-full text-sm font-bold ${
                         getResponseRateColor(field.responseRate)
@@ -407,7 +407,7 @@ const FieldSelectionGrid: React.FC<{
                     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center gap-2">
                         <Eye className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm text-gray-700">Last Updated</span>
+                        <span className="text-sm text-gray-700">{t('fieldList.lastUpdated')}</span>
                       </div>
                       <div className="font-medium text-sm text-gray-900">
                         {new Date(field.lastUpdated).toLocaleDateString('en-US', { 
@@ -427,7 +427,7 @@ const FieldSelectionGrid: React.FC<{
                 >
                   <div className="h-full bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 flex flex-col">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Data Preview</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">{t('fieldList.dataPreview')}</h3>
                       <Button
                         variant="outline"
                         size="sm"
@@ -437,7 +437,7 @@ const FieldSelectionGrid: React.FC<{
                         }}
                         className="text-xs rounded-full"
                       >
-                        Click to explore →
+                        {t('fieldList.clickToExplore')}
                       </Button>
                     </div>
                     <div className="flex-1 flex items-center justify-center min-h-[200px]">
@@ -554,8 +554,8 @@ const AnalyticsContent: React.FC<{
         return (
           <div className="text-center py-8 text-gray-500">
             <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-            <p>Analytics not supported for this field type</p>
-            <p className="text-sm mt-2">Field type: {field.fieldType}</p>
+            <p>{t('detailView.notSupported')}</p>
+            <p className="text-sm mt-2">{t('detailView.fieldType')}: {field.fieldType}</p>
           </div>
         );
     }
@@ -753,8 +753,8 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Field Analytics</h1>
-            <p className="text-gray-600">Loading field data...</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t('header.title')}</h1>
+            <p className="text-gray-600">{t('header.loading')}</p>
           </div>
         </div>
         
@@ -903,7 +903,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-gray-900">{allFields.length}</div>
-                      <div className="text-sm text-gray-600">Analyzable Fields</div>
+                      <div className="text-sm text-gray-600">{t('overviewStats.analyzableFields')}</div>
                     </div>
                   </div>
                 </CardContent>
@@ -919,7 +919,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
                       <div className="text-2xl font-bold text-gray-900">
                         {allFields.filter(f => f.responseRate >= 80).length}
                       </div>
-                      <div className="text-sm text-gray-600">High Engagement</div>
+                      <div className="text-sm text-gray-600">{t('overviewStats.highEngagement')}</div>
                     </div>
                   </div>
                 </CardContent>
@@ -935,7 +935,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
                       <div className="text-2xl font-bold text-gray-900">
                         {Math.round(allFields.reduce((sum, f) => sum + f.responseRate, 0) / allFields.length) || 0}%
                       </div>
-                      <div className="text-sm text-gray-600">Avg Response Rate</div>
+                      <div className="text-sm text-gray-600">{t('overviewStats.avgResponseRate')}</div>
                     </div>
                   </div>
                 </CardContent>
@@ -949,7 +949,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-gray-900">{totalResponses}</div>
-                      <div className="text-sm text-gray-600">Form Responses</div>
+                      <div className="text-sm text-gray-600">{t('overviewStats.formResponses')}</div>
                     </div>
                   </div>
                 </CardContent>
