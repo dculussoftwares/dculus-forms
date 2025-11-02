@@ -8,6 +8,7 @@ import {
   Card,
 } from '@dculus/ui';
 import { MessageSquare, Sparkles } from 'lucide-react';
+import { useTranslation } from '../../../hooks/useTranslation';
 
 interface SlackPluginDialogProps {
   open: boolean;
@@ -18,6 +19,8 @@ export const SlackPluginDialog: React.FC<SlackPluginDialogProps> = ({
   open,
   onOpenChange,
 }) => {
+  const { t } = useTranslation('slackPluginDialog');
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -27,11 +30,11 @@ export const SlackPluginDialog: React.FC<SlackPluginDialogProps> = ({
               <MessageSquare className="h-5 w-5 text-purple-600" />
             </div>
             <div>
-              <DialogTitle>Slack Integration</DialogTitle>
+              <DialogTitle>{t('header.title')}</DialogTitle>
             </div>
           </div>
           <DialogDescription>
-            Post messages to Slack channels when form submissions or other events occur.
+            {t('header.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -41,28 +44,18 @@ export const SlackPluginDialog: React.FC<SlackPluginDialogProps> = ({
               <Sparkles className="h-8 w-8 text-purple-600" />
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              Coming Soon
+              {t('comingSoon.title')}
             </h3>
             <p className="text-gray-600 max-w-md mx-auto">
-              Slack integration is currently in development. Soon you'll be able to:
+              {t('comingSoon.message')}
             </p>
             <ul className="mt-4 text-left max-w-md mx-auto space-y-2 text-sm text-gray-600">
-              <li className="flex items-start gap-2">
-                <span className="text-purple-600 mt-0.5">•</span>
-                <span>Post form submissions to Slack channels</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-purple-600 mt-0.5">•</span>
-                <span>Customize message templates with form data</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-purple-600 mt-0.5">•</span>
-                <span>Send direct messages to team members</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-purple-600 mt-0.5">•</span>
-                <span>Include rich formatting and attachments</span>
-              </li>
+              {[0, 1, 2, 3].map((index) => (
+                <li key={index} className="flex items-start gap-2">
+                  <span className="text-purple-600 mt-0.5">•</span>
+                  <span>{t(`comingSoon.features.${index}`)}</span>
+                </li>
+              ))}
             </ul>
           </div>
         </Card>

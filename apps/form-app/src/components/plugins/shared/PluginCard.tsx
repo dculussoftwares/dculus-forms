@@ -38,6 +38,7 @@ import {
   DELETE_FORM_PLUGIN,
   TEST_FORM_PLUGIN,
 } from '../../../graphql/plugins';
+import { useTranslation } from '../../../hooks/useTranslation';
 
 interface PluginCardProps {
   plugin: {
@@ -61,6 +62,7 @@ export const PluginCard: React.FC<PluginCardProps> = ({
   onViewDeliveries,
   onDeleted,
 }) => {
+  const { t } = useTranslation('pluginCard');
   const [isTogglingEnabled, setIsTogglingEnabled] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -81,11 +83,11 @@ export const PluginCard: React.FC<PluginCardProps> = ({
         refetchQueries: ['GetFormPlugins'],
       });
       toastSuccess(
-        enabled ? 'Plugin Enabled' : 'Plugin Disabled',
-        `"${plugin.name}" has been ${enabled ? 'enabled' : 'disabled'}`
+        enabled ? t('toasts.enabledTitle') : t('toasts.disabledTitle'),
+        t(enabled ? 'toasts.enabledMessage' : 'toasts.disabledMessage', { values: { name: plugin.name } })
       );
     } catch (error: any) {
-      toastError('Failed to Update Plugin', error.message);
+      toastError(t('toasts.updateErrorTitle'), error.message);
     } finally {
       setIsTogglingEnabled(false);
     }
@@ -97,9 +99,9 @@ export const PluginCard: React.FC<PluginCardProps> = ({
       const { data } = await testPlugin({
         variables: { id: plugin.id },
       });
-      toastSuccess('Test Triggered', data.testFormPlugin.message);
+      toastSuccess(t('toasts.testTriggeredTitle'), data.testFormPlugin.message);
     } catch (error: any) {
-      toastError('Test Failed', error.message);
+      toastError(t('toasts.testFailedTitle'), error.message);
     } finally {
       setIsTesting(false);
     }
@@ -116,10 +118,10 @@ export const PluginCard: React.FC<PluginCardProps> = ({
       await deletePlugin({
         variables: { id: plugin.id },
       });
-      toastSuccess('Plugin Deleted', `"${plugin.name}" has been deleted`);
+      toastSuccess(t('toasts.deletedTitle'), t('toasts.deletedMessage', { values: { name: plugin.name } }));
       onDeleted();
     } catch (error: any) {
-      toastError('Failed to Delete Plugin', error.message);
+      toastError(t('toasts.deleteErrorTitle'), error.message);
     } finally {
       setIsDeleting(false);
     }
@@ -167,11 +169,11 @@ export const PluginCard: React.FC<PluginCardProps> = ({
   const getPluginTypeLabel = () => {
     switch (plugin.type) {
       case 'webhook':
-        return 'Webhook';
+        return t('types.webhook');
       case 'email':
-        return 'Email Notification';
+        return t('types.email');
       case 'slack':
-        return 'Slack';
+        return t('types.slack');
       default:
         return plugin.type;
     }
@@ -192,13 +194,12 @@ export const PluginCard: React.FC<PluginCardProps> = ({
                 {plugin.name}
               </h3>
               <Badge variant={plugin.enabled ? 'default' : 'secondary'}>
-                {plugin.enabled ? 'Enabled' : 'Disabled'}
+                {plugin.enabled ? t('status.enabled') : t('status.disabled')}
               </Badge>
             </div>
 
             <p className="text-sm text-gray-500 mb-3">
-              {getPluginTypeLabel()} • {plugin.events.length} event
-              {plugin.events.length !== 1 ? 's' : ''}
+              {getPluginTypeLabel()} • {plugin.events.length} {t('eventsCount', { values: { count: plugin.events.length } })}
             </p>
 
             {/* Event Badges */}
@@ -240,7 +241,7 @@ export const PluginCard: React.FC<PluginCardProps> = ({
                 ) : (
                   <Power className="mr-2 h-4 w-4" />
                 )}
-                {plugin.enabled ? 'Disable' : 'Enable'}
+                {plugin.enabled ? t('actions.disable') : t('actions.enable')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleTest} disabled={isTesting}>
                 {isTesting ? (
@@ -248,16 +249,16 @@ export const PluginCard: React.FC<PluginCardProps> = ({
                 ) : (
                   <PlayCircle className="mr-2 h-4 w-4" />
                 )}
-                Test Plugin
+                {t('actions.test')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onViewDeliveries}>
                 <History className="mr-2 h-4 w-4" />
-                View Deliveries
+                {t('actions.viewDeliveries')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onEdit}>
                 <Edit className="mr-2 h-4 w-4" />
-                Edit
+                {t('actions.edit')}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={handleDeleteClick}
@@ -269,7 +270,7 @@ export const PluginCard: React.FC<PluginCardProps> = ({
                 ) : (
                   <Trash2 className="mr-2 h-4 w-4" />
                 )}
-                Delete
+                {t('actions.delete')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -280,21 +281,21 @@ export const PluginCard: React.FC<PluginCardProps> = ({
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Plugin</AlertDialogTitle>
+            <AlertDialogTitle>{t('deleteDialog.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{plugin.name}"? This action cannot be undone.
+              {t('deleteDialog.description', { values: { name: plugin.name } })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setShowDeleteDialog(false)}>
-              Cancel
+              {t('deleteDialog.cancel')}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               variant="destructive"
               className="bg-red-600 hover:bg-red-700"
             >
-              Delete
+              {t('deleteDialog.confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

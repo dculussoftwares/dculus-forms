@@ -16,6 +16,7 @@ import {
 import { CheckCircle2, XCircle, Clock, ChevronDown } from 'lucide-react';
 import { GET_PLUGIN_DELIVERIES } from '../../../graphql/plugins';
 import { formatDistanceToNow } from 'date-fns';
+import { useTranslation } from '../../../hooks/useTranslation';
 
 interface PluginDeliveryLogProps {
   open: boolean;
@@ -30,6 +31,7 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
   pluginId,
   pluginName,
 }) => {
+  const { t } = useTranslation('pluginDeliveryLog');
   const { data, loading, error, refetch } = useQuery(GET_PLUGIN_DELIVERIES, {
     variables: { pluginId, limit: 50 },
     skip: !open,
@@ -58,17 +60,17 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
       case 'success':
         return (
           <Badge variant="default" className="bg-green-100 text-green-800">
-            Success
+            {t('status.success')}
           </Badge>
         );
       case 'failed':
         return (
           <Badge variant="default" className="bg-red-100 text-red-800">
-            Failed
+            {t('status.failed')}
           </Badge>
         );
       default:
-        return <Badge variant="secondary">Unknown</Badge>;
+        return <Badge variant="secondary">{t('status.unknown')}</Badge>;
     }
   };
 
@@ -88,9 +90,9 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
         document.body.style.pointerEvents = '';
       }}>
         <DialogHeader>
-          <DialogTitle>Delivery Log - {pluginName}</DialogTitle>
+          <DialogTitle>{t('header.title', { values: { name: pluginName } })}</DialogTitle>
           <DialogDescription>
-            View execution history and debug plugin deliveries
+            {t('header.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -104,7 +106,7 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
           {error && (
             <Card className="p-8 text-center">
               <XCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-              <h3 className="mb-2 text-xl font-semibold">Error Loading Deliveries</h3>
+              <h3 className="mb-2 text-xl font-semibold">{t('error.title')}</h3>
               <p className="text-slate-600">{error.message}</p>
             </Card>
           )}
@@ -112,10 +114,9 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
           {!loading && !error && data?.pluginDeliveries?.length === 0 && (
             <Card className="p-8 text-center">
               <Clock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="mb-2 text-xl font-semibold">No Deliveries Yet</h3>
+              <h3 className="mb-2 text-xl font-semibold">{t('empty.title')}</h3>
               <p className="text-slate-600">
-                This plugin hasn't been triggered yet. Test it or wait for an event to
-                occur.
+                {t('empty.message')}
               </p>
             </Card>
           )}
@@ -160,7 +161,7 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
                         {/* Payload */}
                         <div>
                           <h5 className="text-sm font-semibold text-gray-700 mb-2">
-                            Payload
+                            {t('details.payload')}
                           </h5>
                           <pre className="text-xs bg-gray-50 p-3 rounded overflow-x-auto border">
                             {JSON.stringify(delivery.payload, null, 2)}
@@ -171,7 +172,7 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
                         {delivery.response && (
                           <div>
                             <h5 className="text-sm font-semibold text-gray-700 mb-2">
-                              Response
+                              {t('details.response')}
                             </h5>
                             <pre className="text-xs bg-gray-50 p-3 rounded overflow-x-auto border">
                               {typeof delivery.response === 'string'
@@ -184,7 +185,7 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
                         {/* Delivery ID */}
                         <div>
                           <h5 className="text-sm font-semibold text-gray-700 mb-1">
-                            Delivery ID
+                            {t('details.deliveryId')}
                           </h5>
                           <code className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">
                             {delivery.id}
