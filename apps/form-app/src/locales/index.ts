@@ -98,6 +98,8 @@ import enFieldSettingsFooter from './en/fieldSettingsFooter.json';
 import enRichTextFieldSettings from './en/richTextFieldSettings.json';
 import enUsageChart from './en/usageChart.json';
 import enPlanComparison from './en/planComparison.json';
+import enValidationSummary from './en/validationSummary.json';
+import enAuthContext from './en/authContext.json';
 
 export const translations = {
   en: {
@@ -201,6 +203,8 @@ export const translations = {
     richTextFieldSettings: enRichTextFieldSettings,
     usageChart: enUsageChart,
     planComparison: enPlanComparison,
+    validationSummary: enValidationSummary,
+    authContext: enAuthContext,
   },
 } as const;
 

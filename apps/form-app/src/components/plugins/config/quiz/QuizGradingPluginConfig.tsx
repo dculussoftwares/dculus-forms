@@ -155,18 +155,18 @@ export const QuizGradingPluginConfig: React.FC<QuizGradingPluginConfigProps> = (
     // Validate at least one field is included
     const includedFields = Object.values(quizFields).filter(qf => qf.included);
     if (includedFields.length === 0) {
-      alert('Please include at least one field in the quiz');
+      alert(t('validation.noFieldsIncluded'));
       return;
     }
 
     // Validate all included fields have correct answer and marks
     for (const qf of includedFields) {
       if (!qf.correctAnswer) {
-        alert(`Please select a correct answer for all included fields`);
+        alert(t('validation.missingCorrectAnswer'));
         return;
       }
       if (qf.marks <= 0) {
-        alert(`Please set marks > 0 for all included fields`);
+        alert(t('validation.invalidMarks'));
         return;
       }
     }
@@ -273,7 +273,7 @@ export const QuizGradingPluginConfig: React.FC<QuizGradingPluginConfigProps> = (
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  No selection fields (Dropdown or Radio) found in this form. Please add selection fields to create a quiz.
+                  {t('emptyState.noSelectionFields')}
                 </AlertDescription>
               </Alert>
             ) : (

@@ -3,6 +3,7 @@ import { useQuery } from '@apollo/client';
 import { useSession } from '../lib/auth-client';
 import { gql } from '@apollo/client';
 import { toastError } from '@dculus/ui';
+import { useTranslation } from '../hooks/useTranslation';
 
 // Better-Auth user type (based on the auth configuration)
 interface AuthUser {
@@ -61,6 +62,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({
   children
 }: { children: ReactNode }): React.ReactElement => {
+  const { t } = useTranslation('authContext');
   const { data: session, isPending } = useSession();
   const [isLoading, setIsLoading] = useState(true);
   const [organizationError, setOrganizationError] = useState<string | null>(null);
@@ -83,9 +85,9 @@ export const AuthProvider = ({
 
       // Show user-friendly error messages for specific authorization errors
       if (errorMessage.includes('Access denied') || errorMessage.includes('not a member')) {
-        toastError('Organization Access Denied', 'You are not a member of this organization');
+        toastError(t('errors.accessDenied.title'), t('errors.accessDenied.message'));
       } else if (errorMessage.includes('Authentication required')) {
-        toastError('Authentication Required', 'Please sign in to access organizations');
+        toastError(t('errors.authRequired.title'), t('errors.authRequired.message'));
       }
     } else {
       setOrganizationError(null);

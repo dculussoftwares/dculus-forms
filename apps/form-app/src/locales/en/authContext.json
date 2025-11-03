@@ -1,0 +1,12 @@
+{
+  "errors": {
+    "accessDenied": {
+      "title": "Organization Access Denied",
+      "message": "You are not a member of this organization"
+    },
+    "authRequired": {
+      "title": "Authentication Required",
+      "message": "Please sign in to access organizations"
+    }
+  }
+}
