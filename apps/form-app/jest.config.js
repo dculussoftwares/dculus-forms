@@ -18,7 +18,11 @@ module.exports = {
   ],
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
   moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@shared/(.*)$': '<rootDir>/../../packages/shared/src/$1',
     '^@dculus/(.*)$': '<rootDir>/../../packages/$1/dist',
+    '^@dculus/type$': '<rootDir>/../../packages/types/src/index',
+    '^(\\.{1,2}/.*)\\.js$': '$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy'
   },
   moduleFileExtensions: [

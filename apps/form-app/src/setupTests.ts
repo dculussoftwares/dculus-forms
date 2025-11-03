@@ -37,6 +37,7 @@ jest.mock('@apollo/client', () => ({
   from: jest.fn(),
 }));
 
+
 // Mock @dculus/ui components
 jest.mock('@dculus/ui', () => {
   const React = require('react');

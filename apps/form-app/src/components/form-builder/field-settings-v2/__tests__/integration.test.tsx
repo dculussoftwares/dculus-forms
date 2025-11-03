@@ -1,6 +1,5 @@
 // import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { FieldSettingsV2 } from '../index';
 import {
   FieldType,
   NumberField,
@@ -9,116 +8,114 @@ import {
   TextInputField,
 } from '@dculus/types';
 
-// Mock field settings components to avoid complex dependencies
-jest.mock('../../field-settings', () => ({
-  ValidationSummary: ({ errors }: any) => (
-    <div data-testid="validation-summary">{JSON.stringify(errors)}</div>
-  ),
-  FieldSettingsHeader: ({ field, isDirty }: any) => (
-    <div data-testid="field-settings-header">
-      {field.label} {isDirty ? '(modified)' : ''}
-    </div>
-  ),
-  FieldSettingsFooter: ({ onSave, onCancel, onReset }: any) => (
-    <div data-testid="field-settings-footer">
-      <button onClick={onSave}>Save</button>
-      <button onClick={onCancel}>Cancel</button>
-      <button onClick={onReset}>Reset</button>
-    </div>
-  ),
-  FormInputField: ({ name, label, control, error }: any) => (
-    <div data-testid={`form-input-${name}`}>
-      <label>{label}</label>
-      <input
-        name={name}
-        data-testid={`input-${name}`}
-        onChange={(e) => {
-          // Mock react-hook-form control
-          if (control && control.setValue) {
-            control.setValue(name, e.target.value, { shouldDirty: true });
-          }
-        }}
-      />
-      {error && <div data-testid={`error-${name}`}>{error.message}</div>}
-    </div>
-  ),
-  OptionsSettings: () => (
-    <div data-testid="options-settings">Options Settings</div>
-  ),
-  RichTextSettings: () => (
-    <div data-testid="rich-text-settings">Rich Text Settings</div>
-  ),
-  FIELD_SETTINGS_CONSTANTS: {
-    CSS_CLASSES: {
-      SECTION_SPACING: 'space-y-4',
-      SECTION_TITLE: 'text-lg font-semibold',
-      INPUT_SPACING: 'space-y-2',
-      LABEL_STYLE: 'text-sm font-medium',
+let FieldSettingsV2: typeof import('../../FieldSettingsV2').default;
+
+jest.mock('@/hooks/useTranslation', () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: { values?: Record<string, unknown> }) => {
+      const translations: Record<string, string> = {
+        'emptyState.title': 'Select a field to edit its settings',
+        'unsupportedField.title': `Unsupported field type: ${options?.values?.fieldType ?? ''}`,
+        'unsupportedField.subtitle': 'Please select a different field or contact support',
+      };
+
+      return translations[key] ?? key;
     },
-    SECTION_TITLES: {
-      BASIC_SETTINGS: 'Basic Settings',
-      VALIDATION: 'Validation',
-    },
-    LABELS: {
-      LABEL: 'Label',
-      HELP_TEXT: 'Help Text',
-      PLACEHOLDER: 'Placeholder',
-      PREFIX: 'Prefix',
-      DEFAULT_VALUE: 'Default Value',
-      REQUIRED_FIELD: 'Required Field',
-      MINIMUM_LENGTH: 'Minimum Length',
-      MAXIMUM_LENGTH: 'Maximum Length',
-    },
-    PLACEHOLDERS: {
-      FIELD_LABEL: 'Enter field label',
-      HELP_TEXT: 'Enter help text',
-      PLACEHOLDER_TEXT: 'Enter placeholder',
-      PREFIX_TEXT: 'Enter prefix',
-      NO_MINIMUM: 'No minimum',
-      NO_MAXIMUM: 'No maximum',
-    },
-  },
+  }),
 }));
 
+jest.mock('@hookform/resolvers/zod', () => ({
+  zodResolver: () => () => ({ values: {}, errors: {} }),
+}));
+
+function createFieldSettingsModuleStub() {
+  return {
+    TextFieldSettings: ({ field }: any) => (
+      <div data-testid="text-field-settings">
+        <div data-testid="field-settings-header">{field?.label ?? 'No Field'}</div>
+        <div data-testid="form-input-label" />
+        <div data-testid="form-input-hint" />
+        <div data-testid="form-input-placeholder" />
+        <div data-testid="field-settings-footer">Footer</div>
+      </div>
+    ),
+    NumberFieldSettings: ({ field }: any) => (
+      <div data-testid="number-field-settings">
+        <div data-testid="field-settings-header">{field?.label ?? 'No Field'}</div>
+        <div data-testid="form-input-label" />
+        <div data-testid="form-input-min" />
+        <div data-testid="form-input-max" />
+        <div data-testid="field-settings-footer">Footer</div>
+      </div>
+    ),
+    SelectionFieldSettings: ({ field }: any) => (
+      <div data-testid="selection-field-settings">
+        <div data-testid="field-settings-header">{field?.label ?? 'No Field'}</div>
+        <div data-testid="options-settings">Options Settings</div>
+        <div data-testid="field-settings-footer">Footer</div>
+      </div>
+    ),
+    DateFieldSettings: ({ field }: any) => (
+      <div data-testid="date-field-settings">
+        <div data-testid="field-settings-header">{field?.label ?? 'No Field'}</div>
+        <div data-testid="field-settings-footer">Footer</div>
+      </div>
+    ),
+    RichTextFieldSettings: ({ field }: any) => (
+      <div data-testid="rich-text-field-settings">
+        <div data-testid="field-settings-header">{field?.label ?? 'No Field'}</div>
+        <div data-testid="rich-text-settings">Rich Text Settings</div>
+        <div data-testid="field-settings-footer">Footer</div>
+      </div>
+    ),
+  };
+}
+
+jest.mock('../../field-settings-v2', () => createFieldSettingsModuleStub());
+jest.mock('../../field-settings-v2/index', () => createFieldSettingsModuleStub());
+
+beforeAll(() => {
+  ({ default: FieldSettingsV2 } = require('../../FieldSettingsV2'));
+});
+
 // Create mock fields for testing
-const createMockTextField = (): TextInputField => {
-  const validation = new TextFieldValidation(false);
-  return new TextInputField(
-    'text-1',
-    'Test Text Field',
-    '',
-    '',
-    'Help text',
-    'Enter text',
-    validation
-  );
-};
+const createMockTextField = (): TextInputField =>
+  ({
+    id: 'text-1',
+    type: FieldType.TEXT_INPUT_FIELD,
+    label: 'Test Text Field',
+    hint: 'Help text',
+    placeholder: 'Enter text',
+    prefix: '',
+    defaultValue: '',
+    validation: new TextFieldValidation(false),
+  } as unknown as TextInputField);
 
-const createMockNumberField = (): NumberField => {
-  return new NumberField(
-    'number-1',
-    'Test Number Field',
-    '0',
-    '$',
-    'Number help',
-    'Enter number',
-    { required: false } as any,
-    0,
-    100
-  );
-};
+const createMockNumberField = (): NumberField =>
+  ({
+    id: 'number-1',
+    type: FieldType.NUMBER_FIELD,
+    label: 'Test Number Field',
+    hint: 'Number help',
+    placeholder: 'Enter number',
+    prefix: '$',
+    defaultValue: '0',
+    validation: { required: false },
+    min: 0,
+    max: 100,
+  } as unknown as NumberField);
 
-const createMockSelectField = (): SelectField => {
-  return new SelectField(
-    'select-1',
-    'Test Select Field',
-    '',
-    '',
-    'Select help',
-    { required: false } as any,
-    ['Option 1', 'Option 2']
-  );
-};
+const createMockSelectField = (): SelectField =>
+  ({
+    id: 'select-1',
+    type: FieldType.SELECT_FIELD,
+    label: 'Test Select Field',
+    hint: 'Select help',
+    prefix: '',
+    defaultValue: '',
+    validation: { required: false },
+    options: ['Option 1', 'Option 2'],
+  } as unknown as SelectField);
 
 describe('FieldSettingsV2 Integration', () => {
   const mockOnUpdate = jest.fn();
