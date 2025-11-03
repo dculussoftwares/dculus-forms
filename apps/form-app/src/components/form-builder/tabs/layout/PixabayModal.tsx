@@ -106,10 +106,10 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onUpload
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Browse Background Images
+              {t('title')}
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Search and select images from Pixabay
+              {t('subtitle')}
             </p>
           </div>
           <Button
@@ -136,7 +136,7 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onUpload
               />
             </div>
             <Button type="submit" disabled={loading || !searchQuery.trim()}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Search'}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t('searchButton')}
             </Button>
           </form>
 
@@ -185,10 +185,10 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onUpload
                             {uploading && selectedImage?.id === image.id ? (
                               <>
                                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                Applying...
+                                {t('applyingButton')}
                               </>
                             ) : (
-                              'Apply Background'
+                              t('applyBackgroundButton')
                             )}
                           </Button>
                         </div>
@@ -197,7 +197,7 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onUpload
                     
                     <div className="p-3">
                       <p className="text-xs text-gray-600 dark:text-gray-400 truncate font-medium">{image.tags}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-500">by {image.user}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-500">{t('byAuthor', { values: { author: image.user } })}</p>
                     </div>
                   </Card>
                 ))}
@@ -210,7 +210,7 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onUpload
                   variant="outline" 
                   onClick={handleLoadMore}
                 >
-                  Load More
+                  {t('loadMoreButton')}
                 </Button>
               </div>
             )}
