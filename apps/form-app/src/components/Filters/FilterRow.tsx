@@ -13,6 +13,7 @@ import {
 import { FillableFormField, FieldType, SelectField, RadioField, CheckboxField } from '@dculus/types';
 import { FilterState } from './FilterPanel';
 import { getFieldIcon } from '../utils/fieldIcons';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface FilterRowProps {
   fields: FillableFormField[];
@@ -22,10 +23,10 @@ interface FilterRowProps {
   isFirst?: boolean;
 }
 
-const getOperatorOptions = (fieldType: FieldType) => {
+const getOperatorOptions = (fieldType: FieldType, t: (key: string) => string) => {
   const baseOptions = [
-    { value: 'IS_EMPTY', label: 'Is empty' },
-    { value: 'IS_NOT_EMPTY', label: 'Is not empty' },
+    { value: 'IS_EMPTY', label: t('operators.isEmpty') },
+    { value: 'IS_NOT_EMPTY', label: t('operators.isNotEmpty') },
   ];
 
   switch (fieldType) {
@@ -33,31 +34,31 @@ const getOperatorOptions = (fieldType: FieldType) => {
     case FieldType.TEXT_AREA_FIELD:
     case FieldType.EMAIL_FIELD:
       return [
-        { value: 'CONTAINS', label: 'Contains' },
-        { value: 'NOT_CONTAINS', label: 'Does not contain' },
-        { value: 'EQUALS', label: 'Equals' },
-        { value: 'NOT_EQUALS', label: 'Does not equal' },
-        { value: 'STARTS_WITH', label: 'Starts with' },
-        { value: 'ENDS_WITH', label: 'Ends with' },
+        { value: 'CONTAINS', label: t('operators.contains') },
+        { value: 'NOT_CONTAINS', label: t('operators.notContains') },
+        { value: 'EQUALS', label: t('operators.equals') },
+        { value: 'NOT_EQUALS', label: t('operators.notEquals') },
+        { value: 'STARTS_WITH', label: t('operators.startsWith') },
+        { value: 'ENDS_WITH', label: t('operators.endsWith') },
         ...baseOptions,
       ];
 
     case FieldType.NUMBER_FIELD:
       return [
-        { value: 'EQUALS', label: 'Equals' },
-        { value: 'NOT_EQUALS', label: 'Does not equal' },
-        { value: 'GREATER_THAN', label: 'Greater than' },
-        { value: 'LESS_THAN', label: 'Less than' },
-        { value: 'BETWEEN', label: 'Between' },
+        { value: 'EQUALS', label: t('operators.equals') },
+        { value: 'NOT_EQUALS', label: t('operators.notEquals') },
+        { value: 'GREATER_THAN', label: t('operators.greaterThan') },
+        { value: 'LESS_THAN', label: t('operators.lessThan') },
+        { value: 'BETWEEN', label: t('operators.between') },
         ...baseOptions,
       ];
 
     case FieldType.DATE_FIELD:
       return [
-        { value: 'DATE_EQUALS', label: 'Equals' },
-        { value: 'DATE_BEFORE', label: 'Before' },
-        { value: 'DATE_AFTER', label: 'After' },
-        { value: 'DATE_BETWEEN', label: 'Between' },
+        { value: 'DATE_EQUALS', label: t('operators.equals') },
+        { value: 'DATE_BEFORE', label: t('operators.before') },
+        { value: 'DATE_AFTER', label: t('operators.after') },
+        { value: 'DATE_BETWEEN', label: t('operators.between') },
         ...baseOptions,
       ];
 
@@ -65,8 +66,8 @@ const getOperatorOptions = (fieldType: FieldType) => {
     case FieldType.RADIO_FIELD:
     case FieldType.CHECKBOX_FIELD:
       return [
-        { value: 'IN', label: 'Is any of' },
-        { value: 'NOT_IN', label: 'Is not any of' },
+        { value: 'IN', label: t('operators.includes') },
+        { value: 'NOT_IN', label: t('operators.notIncludes') },
         ...baseOptions,
       ];
 
@@ -82,7 +83,8 @@ const truncateLabel = (label: string, maxLength = 50): string => {
 const renderFilterInput = (
   field: FillableFormField,
   filter: FilterState,
-  onChange: (filter: Partial<FilterState>) => void
+  onChange: (filter: Partial<FilterState>) => void,
+  t: (key: string) => string
 ) => {
   if (!filter.operator || filter.operator === 'IS_EMPTY' || filter.operator === 'IS_NOT_EMPTY') {
     return null;
@@ -128,7 +130,7 @@ const renderFilterInput = (
     case FieldType.EMAIL_FIELD:
       return (
         <Input
-          placeholder="Enter value"
+          placeholder={t('placeholders.enterValue')}
           value={filter.value || ''}
           onChange={(e) => handleValueChange(e.target.value)}
           className="h-9 min-w-[200px]"
@@ -141,7 +143,7 @@ const renderFilterInput = (
           <div className="flex items-center gap-2">
             <Input
               type="number"
-              placeholder="Min"
+              placeholder={t('placeholders.min')}
               value={filter.numberRange?.min ?? ''}
               onChange={(e) => handleNumberRangeChange('min', e.target.value)}
               className="h-9 w-24"
@@ -149,7 +151,7 @@ const renderFilterInput = (
             <span className="text-slate-500">and</span>
             <Input
               type="number"
-              placeholder="Max"
+              placeholder={t('placeholders.max')}
               value={filter.numberRange?.max ?? ''}
               onChange={(e) => handleNumberRangeChange('max', e.target.value)}
               className="h-9 w-24"
@@ -160,7 +162,7 @@ const renderFilterInput = (
       return (
         <Input
           type="number"
-          placeholder="Enter number"
+          placeholder={t('placeholders.enterNumber')}
           value={filter.value || ''}
           onChange={(e) => handleValueChange(e.target.value)}
           className="h-9 min-w-[200px]"
@@ -263,8 +265,9 @@ export const FilterRow: React.FC<FilterRowProps> = ({
   onRemove,
   isFirst = false,
 }) => {
+  const { t } = useTranslation('filterRow');
   const currentField = fields.find(f => f.id === filter.fieldId);
-  const operatorOptions = currentField ? getOperatorOptions(currentField.type) : [];
+  const operatorOptions = currentField ? getOperatorOptions(currentField.type, t) : [];
 
   const handleFieldChange = (fieldId: string) => {
     const field = fields.find(f => f.id === fieldId);
@@ -319,7 +322,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
       <div>
         <Select value={filter.fieldId || ''} onValueChange={handleFieldChange}>
           <SelectTrigger className="h-10 w-full bg-blue-50 border-blue-200 hover:bg-blue-100">
-            <SelectValue placeholder="Select a field">
+            <SelectValue placeholder={t('placeholders.selectField')}>
               {currentField && (
                 <div className="flex items-center gap-2">
                   <div className="text-blue-700 flex-shrink-0">
@@ -356,7 +359,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
           <div className="min-w-0 flex-shrink-0">
             <Select value={filter.operator || ''} onValueChange={handleOperatorChange}>
               <SelectTrigger className="h-10 min-w-[140px]">
-                <SelectValue placeholder="includes" />
+                <SelectValue placeholder={t('placeholders.selectCondition')} />
               </SelectTrigger>
               <SelectContent>
                 {operatorOptions.map((option) => (
@@ -371,7 +374,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
           {/* Value Input */}
           {filter.operator && (
             <div className="flex-1 min-w-0">
-              {renderFilterInput(currentField, filter, onChange)}
+              {renderFilterInput(currentField, filter, onChange, t)}
             </div>
           )}
         </div>

@@ -100,6 +100,9 @@ import enUsageChart from './en/usageChart.json';
 import enPlanComparison from './en/planComparison.json';
 import enValidationSummary from './en/validationSummary.json';
 import enAuthContext from './en/authContext.json';
+import enFieldFilter from './en/fieldFilter.json';
+import enFilterRow from './en/filterRow.json';
+import enPixabayImageBrowser from './en/pixabayImageBrowser.json';
 
 export const translations = {
   en: {
@@ -205,6 +208,9 @@ export const translations = {
     planComparison: enPlanComparison,
     validationSummary: enValidationSummary,
     authContext: enAuthContext,
+    fieldFilter: enFieldFilter,
+    filterRow: enFilterRow,
+    pixabayImageBrowser: enPixabayImageBrowser,
   },
 } as const;
 

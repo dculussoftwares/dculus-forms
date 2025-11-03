@@ -13,6 +13,7 @@ import {
 import { FillableFormField, FieldType, SelectField, RadioField, CheckboxField } from '@dculus/types';
 import { FilterState } from './FilterPanel';
 import { getFieldIcon } from '../utils/fieldIcons';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface FieldFilterProps {
   field: FillableFormField;
@@ -20,10 +21,10 @@ interface FieldFilterProps {
   onChange: (filter: Partial<FilterState>) => void;
 }
 
-const getOperatorOptions = (fieldType: FieldType) => {
+const getOperatorOptions = (fieldType: FieldType, t: (key: string) => string) => {
   const baseOptions = [
-    { value: 'IS_EMPTY', label: 'Is empty' },
-    { value: 'IS_NOT_EMPTY', label: 'Is not empty' },
+    { value: 'IS_EMPTY', label: t('operators.isEmpty') },
+    { value: 'IS_NOT_EMPTY', label: t('operators.isNotEmpty') },
   ];
 
   switch (fieldType) {
@@ -31,31 +32,31 @@ const getOperatorOptions = (fieldType: FieldType) => {
     case FieldType.TEXT_AREA_FIELD:
     case FieldType.EMAIL_FIELD:
       return [
-        { value: 'CONTAINS', label: 'Contains' },
-        { value: 'NOT_CONTAINS', label: 'Does not contain' },
-        { value: 'EQUALS', label: 'Equals' },
-        { value: 'NOT_EQUALS', label: 'Does not equal' },
-        { value: 'STARTS_WITH', label: 'Starts with' },
-        { value: 'ENDS_WITH', label: 'Ends with' },
+        { value: 'CONTAINS', label: t('operators.contains') },
+        { value: 'NOT_CONTAINS', label: t('operators.notContains') },
+        { value: 'EQUALS', label: t('operators.equals') },
+        { value: 'NOT_EQUALS', label: t('operators.notEquals') },
+        { value: 'STARTS_WITH', label: t('operators.startsWith') },
+        { value: 'ENDS_WITH', label: t('operators.endsWith') },
         ...baseOptions,
       ];
 
     case FieldType.NUMBER_FIELD:
       return [
-        { value: 'EQUALS', label: 'Equals' },
-        { value: 'NOT_EQUALS', label: 'Does not equal' },
-        { value: 'GREATER_THAN', label: 'Greater than' },
-        { value: 'LESS_THAN', label: 'Less than' },
-        { value: 'BETWEEN', label: 'Between' },
+        { value: 'EQUALS', label: t('operators.equals') },
+        { value: 'NOT_EQUALS', label: t('operators.notEquals') },
+        { value: 'GREATER_THAN', label: t('operators.greaterThan') },
+        { value: 'LESS_THAN', label: t('operators.lessThan') },
+        { value: 'BETWEEN', label: t('operators.between') },
         ...baseOptions,
       ];
 
     case FieldType.DATE_FIELD:
       return [
-        { value: 'DATE_EQUALS', label: 'Equals' },
-        { value: 'DATE_BEFORE', label: 'Before' },
-        { value: 'DATE_AFTER', label: 'After' },
-        { value: 'DATE_BETWEEN', label: 'Between' },
+        { value: 'DATE_EQUALS', label: t('operators.equals') },
+        { value: 'DATE_BEFORE', label: t('operators.before') },
+        { value: 'DATE_AFTER', label: t('operators.after') },
+        { value: 'DATE_BETWEEN', label: t('operators.between') },
         ...baseOptions,
       ];
 
@@ -63,8 +64,8 @@ const getOperatorOptions = (fieldType: FieldType) => {
     case FieldType.RADIO_FIELD:
     case FieldType.CHECKBOX_FIELD:
       return [
-        { value: 'IN', label: 'Is any of' },
-        { value: 'NOT_IN', label: 'Is not any of' },
+        { value: 'IN', label: t('operators.includes') },
+        { value: 'NOT_IN', label: t('operators.notIncludes') },
         ...baseOptions,
       ];
 
@@ -76,7 +77,8 @@ const getOperatorOptions = (fieldType: FieldType) => {
 const renderFilterInput = (
   field: FillableFormField,
   filter: FilterState | undefined,
-  onChange: (filter: Partial<FilterState>) => void
+  onChange: (filter: Partial<FilterState>) => void,
+  t: (key: string) => string
 ) => {
   if (!filter?.operator || filter.operator === 'IS_EMPTY' || filter.operator === 'IS_NOT_EMPTY') {
     return null;
@@ -113,7 +115,7 @@ const renderFilterInput = (
     case FieldType.EMAIL_FIELD:
       return (
         <Input
-          placeholder="Enter value"
+          placeholder={t('placeholders.enterValue')}
           value={filter.value || ''}
           onChange={(e) => handleValueChange(e.target.value)}
           className="h-8 text-sm"
@@ -126,14 +128,14 @@ const renderFilterInput = (
           <div className="space-y-2">
             <Input
               type="number"
-              placeholder="Min value"
+              placeholder={t('placeholders.minValue')}
               value={filter.numberRange?.min ?? ''}
               onChange={(e) => handleNumberRangeChange('min', e.target.value)}
               className="h-8 text-sm"
             />
             <Input
               type="number"
-              placeholder="Max value"
+              placeholder={t('placeholders.maxValue')}
               value={filter.numberRange?.max ?? ''}
               onChange={(e) => handleNumberRangeChange('max', e.target.value)}
               className="h-8 text-sm"
@@ -144,7 +146,7 @@ const renderFilterInput = (
       return (
         <Input
           type="number"
-          placeholder="Enter number"
+          placeholder={t('placeholders.enterNumber')}
           value={filter.value || ''}
           onChange={(e) => handleValueChange(e.target.value)}
           className="h-8 text-sm"
@@ -157,14 +159,14 @@ const renderFilterInput = (
           <div className="space-y-2">
             <Input
               type="date"
-              placeholder="From date"
+              placeholder={t('placeholders.fromDate')}
               value={filter.dateRange?.from || ''}
               onChange={(e) => handleDateRangeChange('from', e.target.value)}
               className="h-8 text-sm"
             />
             <Input
               type="date"
-              placeholder="To date"
+              placeholder={t('placeholders.toDate')}
               value={filter.dateRange?.to || ''}
               onChange={(e) => handleDateRangeChange('to', e.target.value)}
               className="h-8 text-sm"
@@ -233,8 +235,9 @@ export const FieldFilter: React.FC<FieldFilterProps> = ({
   filter,
   onChange,
 }) => {
+  const { t } = useTranslation('fieldFilter');
   const [isExpanded, setIsExpanded] = useState(false);
-  const operatorOptions = getOperatorOptions(field.type);
+  const operatorOptions = getOperatorOptions(field.type, t);
 
   const handleOperatorChange = (operator: string) => {
     onChange({ 
@@ -280,7 +283,7 @@ export const FieldFilter: React.FC<FieldFilterProps> = ({
             </label>
             <Select value={filter?.operator || ''} onValueChange={handleOperatorChange}>
               <SelectTrigger className="h-8 text-sm">
-                <SelectValue placeholder="Select condition" />
+                <SelectValue placeholder={t('placeholders.selectCondition')} />
               </SelectTrigger>
               <SelectContent>
                 {operatorOptions.map((option) => (
@@ -297,7 +300,7 @@ export const FieldFilter: React.FC<FieldFilterProps> = ({
               <label className="text-xs font-medium text-slate-600 mb-2 block">
                 Value
               </label>
-              {renderFilterInput(field, filter, onChange)}
+              {renderFilterInput(field, filter, onChange, t)}
             </div>
           )}
         </div>

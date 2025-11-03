@@ -12,7 +12,15 @@
     "passThresholdHelp": "Minimum percentage required to pass the quiz"
   },
   "quizQuestions": {
-    "title": "Quiz Questions"
+    "title": "Quiz Questions",
+    "description": "Select fields to include in quiz and configure correct answers",
+    "correctAnswer": "Correct Answer *",
+    "marks": "Marks *",
+    "selectCorrectAnswer": "Select correct answer",
+    "fieldTypes": {
+      "dropdown": "Dropdown",
+      "radio": "Radio"
+    }
   },
   "validation": {
     "noFieldsIncluded": "Please include at least one field in the quiz",

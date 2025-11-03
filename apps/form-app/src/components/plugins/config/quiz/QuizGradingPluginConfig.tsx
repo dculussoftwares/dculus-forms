@@ -265,7 +265,7 @@ export const QuizGradingPluginConfig: React.FC<QuizGradingPluginConfigProps> = (
           <CardHeader>
             <CardTitle>{t('quizQuestions.title')}</CardTitle>
             <CardDescription>
-              Select fields to include in quiz and configure correct answers
+              {t('quizQuestions.description')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -293,7 +293,7 @@ export const QuizGradingPluginConfig: React.FC<QuizGradingPluginConfigProps> = (
                             {field.label}
                           </Label>
                           <Badge variant="outline" className="text-xs">
-                            {field.type === 'SelectField' ? 'Dropdown' : 'Radio'}
+                            {field.type === 'SelectField' ? t('quizQuestions.fieldTypes.dropdown') : t('quizQuestions.fieldTypes.radio')}
                           </Badge>
                         </div>
 
@@ -301,13 +301,13 @@ export const QuizGradingPluginConfig: React.FC<QuizGradingPluginConfigProps> = (
                           <div className="mt-3 space-y-3">
                             <div className="grid grid-cols-2 gap-3">
                               <div className="space-y-2">
-                                <Label htmlFor={`correct-${field.id}`}>Correct Answer *</Label>
+                                <Label htmlFor={`correct-${field.id}`}>{t('quizQuestions.correctAnswer')}</Label>
                                 <Select
                                   value={qf.correctAnswer}
                                   onValueChange={(value) => updateCorrectAnswer(field.id, value)}
                                 >
                                   <SelectTrigger id={`correct-${field.id}`}>
-                                    <SelectValue placeholder="Select correct answer" />
+                                    <SelectValue placeholder={t('quizQuestions.selectCorrectAnswer')} />
                                   </SelectTrigger>
                                   <SelectContent>
                                     {field.options.map((option) => (
@@ -320,7 +320,7 @@ export const QuizGradingPluginConfig: React.FC<QuizGradingPluginConfigProps> = (
                               </div>
 
                               <div className="space-y-2">
-                                <Label htmlFor={`marks-${field.id}`}>Marks *</Label>
+                                <Label htmlFor={`marks-${field.id}`}>{t('quizQuestions.marks')}</Label>
                                 <Input
                                   id={`marks-${field.id}`}
                                   type="number"

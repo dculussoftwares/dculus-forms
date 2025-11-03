@@ -1,0 +1,28 @@
+{
+  "operators": {
+    "isEmpty": "Is empty",
+    "isNotEmpty": "Is not empty",
+    "contains": "Contains",
+    "notContains": "Does not contain",
+    "equals": "Equals",
+    "notEquals": "Does not equal",
+    "startsWith": "Starts with",
+    "endsWith": "Ends with",
+    "greaterThan": "Greater than",
+    "lessThan": "Less than",
+    "between": "Between",
+    "before": "Before",
+    "after": "After",
+    "includes": "Includes",
+    "notIncludes": "Does not include"
+  },
+  "placeholders": {
+    "enterValue": "Enter value",
+    "minValue": "Min value",
+    "maxValue": "Max value",
+    "enterNumber": "Enter number",
+    "fromDate": "From date",
+    "toDate": "To date",
+    "selectCondition": "Select condition"
+  }
+}

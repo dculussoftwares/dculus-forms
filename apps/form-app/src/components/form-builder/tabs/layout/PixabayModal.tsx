@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useTranslation } from '../../../../hooks/useTranslation';
 import { Input, Button, Card } from '@dculus/ui';
 import { Search, Download, Eye, Heart, Loader2, X } from 'lucide-react';
 import { searchPixabayImages, downloadPixabayImage, type PixabayImage } from '../../../../services/pixabayService';
@@ -12,6 +13,7 @@ interface PixabayModalProps {
 }
 
 export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onUploadSuccess }: PixabayModalProps) {
+  const { t } = useTranslation('pixabayImageBrowser');
   const [searchQuery, setSearchQuery] = useState('');
   const [images, setImages] = useState<PixabayImage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -127,7 +129,7 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onUpload
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search for background images..."
+                placeholder={t('searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
