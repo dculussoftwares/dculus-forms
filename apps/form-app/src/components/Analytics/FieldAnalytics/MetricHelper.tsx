@@ -4,15 +4,15 @@ import { Button } from '@dculus/ui';
 import { useTranslation } from '../../../hooks/useTranslation';
 
 interface MetricHelperProps {
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   compact?: boolean;
   translationKey?: string;
 }
 
 export const MetricHelper: React.FC<MetricHelperProps> = ({ 
-  title, 
-  description, 
+  title = '', 
+  description = '', 
   compact = false,
   translationKey
 }) => {

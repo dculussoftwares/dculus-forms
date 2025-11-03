@@ -150,7 +150,7 @@ const RecentResponses: React.FC<{
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Recent Responses ({responses.length})</CardTitle>
+        <CardTitle>{t('recentResponses.title')} ({responses.length})</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-3 max-h-96 overflow-y-auto">

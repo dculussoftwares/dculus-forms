@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Plus } from 'lucide-react';
 import { Button } from '@dculus/ui';
+import { useTranslation } from '../../hooks/useTranslation';
 import { FilterRow } from './FilterRow';
 import { FillableFormField } from '@dculus/types';
 import { FilterState } from './FilterPanel';
@@ -26,6 +27,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
   onClearAllFilters,
   onApplyFilters,
 }) => {
+  const { t } = useTranslation('filterModal');
   const activeFilters = Object.entries(filters);
 
   const handleAddFilter = () => {
@@ -68,10 +70,10 @@ export const FilterModal: React.FC<FilterModalProps> = ({
         <div className="flex items-center justify-between p-6 border-b">
           <div>
             <h2 className="text-2xl font-semibold text-slate-900">
-              Filter responses
+              {t('title')}
             </h2>
             <p className="text-sm text-slate-500 mt-1">
-              Show me all responses where the following conditions are met
+              {t('subtitle')}
             </p>
           </div>
           <Button
@@ -102,9 +104,9 @@ export const FilterModal: React.FC<FilterModalProps> = ({
               </div>
             ) : (
               <div className="text-center py-12">
-                <div className="text-slate-500 text-lg mb-4">No filters applied</div>
+                <div className="text-slate-500 text-lg mb-4">{t('emptyState.title')}</div>
                 <p className="text-slate-400 text-sm mb-6">
-                  Add filters to show specific responses
+                  {t('emptyState.description')}
                 </p>
               </div>
             )}
@@ -117,7 +119,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                 className="text-slate-600 hover:text-slate-900 border-dashed border-2 hover:border-solid hover:border-slate-300"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add filter
+                {t('buttons.addFilter')}
               </Button>
             </div>
 
@@ -133,7 +135,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                 onClick={onClearAllFilters}
                 className="text-slate-600 hover:text-slate-900"
               >
-                Clear all
+                {t('buttons.clearAll')}
               </Button>
             )}
           </div>
@@ -143,14 +145,14 @@ export const FilterModal: React.FC<FilterModalProps> = ({
               variant="outline"
               onClick={onClose}
             >
-              Cancel
+              {t('buttons.cancel')}
             </Button>
             <Button
               onClick={handleApply}
               className="bg-slate-900 hover:bg-slate-800 text-white"
               disabled={activeFilterCount === 0}
             >
-              Apply {activeFilterCount > 0 && `(${activeFilterCount})`}
+              {t('buttons.apply')} {activeFilterCount > 0 && `(${activeFilterCount})`}
             </Button>
           </div>
         </div>

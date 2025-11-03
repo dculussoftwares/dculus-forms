@@ -1,6 +1,7 @@
 import React from 'react';
-import { X, Filter } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button, Card, CardHeader, CardTitle, CardContent } from '@dculus/ui';
+import { useTranslation } from '../../hooks/useTranslation';
 import { FieldFilter } from './FieldFilter';
 import { FillableFormField } from '@dculus/types';
 
@@ -29,16 +30,16 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   onClearAllFilters,
   onClose,
 }) => {
+  const { t } = useTranslation('filterPanel');
   const activeFiltersCount = Object.values(filters).filter(f => f.active).length;
 
   return (
     <Card className="w-80 h-full overflow-hidden border-r border-slate-200 rounded-none shadow-sm flex flex-col">
-      <CardHeader className="pb-3 border-b border-slate-100 flex-shrink-0">
+            <CardHeader className="p-4 border-b border-slate-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Filter className="h-5 w-5 text-slate-600" />
             <CardTitle className="text-lg font-semibold text-slate-900">
-              Filters
+              {t('title')}
             </CardTitle>
             {activeFiltersCount > 0 && (
               <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
@@ -53,7 +54,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             className="h-8 w-8 p-0 hover:bg-slate-100"
           >
             <X className="h-4 w-4" />
-            <span className="sr-only">Close filters</span>
+            <span className="sr-only">{t('closeFilters')}</span>
           </Button>
         </div>
         {activeFiltersCount > 0 && (
@@ -64,7 +65,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               onClick={onClearAllFilters}
               className="h-7 text-xs"
             >
-              Clear all filters
+              {t('clearAllFilters')}
             </Button>
           </div>
         )}
@@ -74,7 +75,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
         <div className="min-h-0">
           {fields.length === 0 ? (
             <div className="p-4 text-center text-slate-500 text-sm">
-              No filterable fields available
+              {t('noFilterableFields')}
             </div>
           ) : (
             <div className="divide-y divide-slate-100">

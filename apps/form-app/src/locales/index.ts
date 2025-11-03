@@ -102,6 +102,8 @@ import enValidationSummary from './en/validationSummary.json';
 import enAuthContext from './en/authContext.json';
 import enFieldFilter from './en/fieldFilter.json';
 import enFilterRow from './en/filterRow.json';
+import enFilterModal from './en/filterModal.json';
+import enFilterPanel from './en/filterPanel.json';
 import enPixabayImageBrowser from './en/pixabayImageBrowser.json';
 
 export const translations = {
@@ -210,6 +212,8 @@ export const translations = {
     authContext: enAuthContext,
     fieldFilter: enFieldFilter,
     filterRow: enFilterRow,
+    filterModal: enFilterModal,
+    filterPanel: enFilterPanel,
     pixabayImageBrowser: enPixabayImageBrowser,
   },
 } as const;

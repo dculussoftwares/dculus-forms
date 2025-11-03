@@ -1,0 +1,14 @@
+{
+  "title": "Filter responses",
+  "subtitle": "Show me all responses where the following conditions are met",
+  "emptyState": {
+    "title": "No filters applied",
+    "description": "Add filters to show specific responses"
+  },
+  "buttons": {
+    "addFilter": "Add filter",
+    "clearAll": "Clear all",
+    "cancel": "Cancel",
+    "apply": "Apply"
+  }
+}
