@@ -1,0 +1,27 @@
+{
+  "title": "Users",
+  "subtitle": "Manage all users in the system",
+  "name": "Name",
+  "email": "Email",
+  "role": "Role",
+  "organization": "Organization",
+  "createdAt": "Created At",
+  "status": "Status",
+  "actions": "Actions",
+  "viewDetails": "View Details",
+  "error": {
+    "unableToLoad": "Unable to load users",
+    "checkConnection": "Please check your connection and try again."
+  },
+  "userDetail": {
+    "title": "User Details",
+    "overview": "Overview",
+    "activity": "Activity",
+    "settings": "Settings",
+    "userName": "User Name",
+    "userEmail": "Email",
+    "userRole": "Role",
+    "joinedAt": "Joined At",
+    "lastActive": "Last Active"
+  }
+}

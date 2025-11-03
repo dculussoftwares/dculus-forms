@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Card, LoadingSpinner } from '@dculus/ui';
 import { Building2, Users, FileText, Calendar } from 'lucide-react';
 import { ADMIN_ORGANIZATIONS_QUERY } from '../graphql/organizations';
+import { useTranslation } from '../hooks/useTranslation';
 
 export default function OrganizationsPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation('organizations');
   const { data, loading, error, refetch } = useQuery(ADMIN_ORGANIZATIONS_QUERY, {
     variables: {
       limit: 50,
@@ -19,15 +21,15 @@ export default function OrganizationsPage() {
     return (
       <div className="min-h-64 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-lg font-medium text-gray-900 mb-2">Unable to load organizations</h2>
+          <h2 className="text-lg font-medium text-gray-900 mb-2">{t('error.unableToLoad')}</h2>
           <p className="text-sm text-gray-500 mb-4">
-            {error.message || 'Please check your connection and try again.'}
+            {error.message || t('error.checkConnection')}
           </p>
           <button
             onClick={() => refetch()}
             className="text-blue-600 hover:text-blue-800 font-medium"
           >
-            Try again
+            {t('common.tryAgain', { defaultValue: 'Try again' })}
           </button>
         </div>
       </div>
@@ -36,9 +38,9 @@ export default function OrganizationsPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Organizations</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         <p className="mt-1 text-sm text-gray-600">
-          Manage all organizations in the system
+          {t('subtitle')}
         </p>
       </div>
 
@@ -77,15 +79,15 @@ export default function OrganizationsPage() {
             <div className="mt-6 space-y-4">
               <div className="flex items-center text-sm text-gray-600">
                 <Users className="h-4 w-4 mr-2" />
-                <span>{org.memberCount} members</span>
+                <span>{org.memberCount} {t('members')}</span>
               </div>
               <div className="flex items-center text-sm text-gray-600">
                 <FileText className="h-4 w-4 mr-2" />
-                <span>{org.formCount} forms</span>
+                <span>{org.formCount} {t('forms')}</span>
               </div>
               <div className="flex items-center text-sm text-gray-600">
                 <Calendar className="h-4 w-4 mr-2" />
-                <span>Created {new Date(org.createdAt).toLocaleDateString()}</span>
+                <span>{t('created')} {new Date(org.createdAt).toLocaleDateString()}</span>
               </div>
             </div>
 
@@ -95,7 +97,7 @@ export default function OrganizationsPage() {
                   onClick={() => navigate(`/organizations/${org.id}`)}
                   className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                 >
-                  View Details
+                  {t('viewDetails')}
                 </button>
                 <button className="text-sm text-gray-600 hover:text-gray-800">
                   Manage

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
+import { useTranslation } from '../hooks/useTranslation';
 import { Button, Card, LoadingSpinner } from '@dculus/ui';
 import { FileText, Plus, Edit2, Trash2, Eye } from 'lucide-react';
 import { GET_TEMPLATES, DELETE_TEMPLATE } from '../graphql/templates';
@@ -16,6 +17,7 @@ interface Template {
 }
 
 export default function TemplatesPage() {
+  const { t } = useTranslation('templates');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('create');

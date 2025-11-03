@@ -1,0 +1,12 @@
+{
+  "title": "Admin Login",
+  "subtitle": "Sign in to access the admin dashboard",
+  "email": "Email",
+  "password": "Password",
+  "signIn": "Sign In",
+  "signingIn": "Signing in...",
+  "error": {
+    "invalidCredentials": "Invalid email or password",
+    "loginFailed": "Login failed. Please try again."
+  }
+}

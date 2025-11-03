@@ -1,0 +1,17 @@
+{
+  "sidebar": {
+    "title": "Admin Dashboard",
+    "subtitle": "Dculus Forms"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "organizations": "Organizations",
+    "users": "Users",
+    "templates": "Templates",
+    "settings": "Settings"
+  },
+  "userMenu": {
+    "signOut": "Sign Out",
+    "superAdmin": "Super Admin"
+  }
+}

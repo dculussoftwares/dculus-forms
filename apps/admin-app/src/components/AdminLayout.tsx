@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useTranslation } from '../hooks/useTranslation';
 import { Button } from '@dculus/ui';
 import { 
   LayoutDashboard, 
@@ -27,34 +28,35 @@ interface NavItem {
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const { user, signOut, isSuperAdmin } = useAuth();
   const location = useLocation();
+  const { t } = useTranslation('layout');
 
   const navigation: NavItem[] = [
     {
-      name: 'Dashboard',
+      name: t('navigation.dashboard'),
       href: '/dashboard',
       icon: LayoutDashboard,
       current: location.pathname === '/dashboard',
     },
     {
-      name: 'Organizations',
+      name: t('navigation.organizations'),
       href: '/organizations',
       icon: Building2,
       current: location.pathname === '/organizations',
     },
     {
-      name: 'Users',
+      name: t('navigation.users'),
       href: '/users',
       icon: Users,
       current: location.pathname === '/users',
     },
     {
-      name: 'Templates',
+      name: t('navigation.templates'),
       href: '/templates',
       icon: FileText,
       current: location.pathname === '/templates',
     },
     {
-      name: 'Settings',
+      name: t('navigation.settings'),
       href: '/settings',
       icon: Settings,
       current: location.pathname === '/settings',
@@ -73,8 +75,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <div className="flex items-center">
             <Crown className="h-8 w-8 text-blue-600 mr-3" />
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="text-xs text-gray-500">Dculus Forms</p>
+              <h1 className="text-xl font-bold text-gray-900">{t('sidebar.title')}</h1>
+              <p className="text-xs text-gray-500">{t('sidebar.subtitle')}</p>
             </div>
           </div>
         </div>
@@ -122,7 +124,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 <p className="text-xs text-gray-500">{user?.email}</p>
                 {isSuperAdmin && (
                   <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                    Super Admin
+                    {t('userMenu.superAdmin')}
                   </span>
                 )}
               </div>
@@ -135,7 +137,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             className="w-full justify-start"
           >
             <LogOut className="h-4 w-4 mr-2" />
-            Sign out
+            {t('userMenu.signOut')}
           </Button>
         </div>
       </div>

@@ -1,0 +1,27 @@
+{
+  "title": "Organizations",
+  "subtitle": "Manage all organizations in the system",
+  "members": "members",
+  "forms": "forms",
+  "created": "Created",
+  "viewDetails": "View Details",
+  "error": {
+    "unableToLoad": "Unable to load organizations",
+    "checkConnection": "Please check your connection and try again."
+  },
+  "organizationDetail": {
+    "title": "Organization Details",
+    "overview": "Overview",
+    "members": "Members",
+    "forms": "Forms",
+    "settings": "Settings",
+    "organizationName": "Organization Name",
+    "slug": "Slug",
+    "createdAt": "Created At",
+    "memberCount": "Member Count",
+    "formCount": "Form Count",
+    "owner": "Owner",
+    "adminUsers": "Admin Users",
+    "regularUsers": "Regular Users"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "title": "Dashboard",
+  "welcome": "Welcome to the Dculus Forms admin dashboard",
+  "stats": {
+    "totalOrganizations": "Total Organizations",
+    "totalUsers": "Total Users",
+    "totalForms": "Total Forms",
+    "formResponses": "Form Responses"
+  },
+  "storage": {
+    "title": "Storage Overview",
+    "s3Storage": "S3 Storage",
+    "mongoDB": "MongoDB",
+    "files": "files",
+    "collections": "collections"
+  },
+  "recentActivity": {
+    "recentOrganizations": "Recent Organizations",
+    "noOrganizations": "No organizations data available yet",
+    "connectBackend": "Connect your GraphQL backend to see real data"
+  },
+  "systemHealth": {
+    "title": "System Health",
+    "database": "Database",
+    "graphqlApi": "GraphQL API",
+    "authentication": "Authentication",
+    "connected": "Connected",
+    "online": "Online",
+    "working": "Working"
+  },
+  "error": {
+    "unableToLoad": "Unable to load dashboard",
+    "checkConnection": "Please check your connection and try again.",
+    "backendRunning": "Make sure the backend server is running and GraphQL endpoint is accessible."
+  }
+}

@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useTranslation } from '../hooks/useTranslation';
 import { Button, Input, Label } from '@dculus/ui';
 import { Crown, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const { signIn } = useAuth();
+  const { t } = useTranslation('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -19,7 +21,7 @@ export default function LoginPage() {
     const result = await signIn(email, password);
     
     if (!result.success) {
-      setError(result.error || 'Sign in failed');
+      setError(result.error || t('error.loginFailed'));
     }
     
     setIsLoading(false);
@@ -31,12 +33,12 @@ export default function LoginPage() {
         <div className="flex justify-center items-center mb-6">
           <Crown className="h-12 w-12 text-blue-600 mr-3" />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Admin Portal</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
             <p className="text-sm text-gray-500">Dculus Forms</p>
           </div>
         </div>
         <h2 className="text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
-          Sign in to your admin account
+          {t('subtitle')}
         </h2>
       </div>
 
@@ -50,7 +52,7 @@ export default function LoginPage() {
             )}
 
             <div>
-              <Label htmlFor="email">Email address</Label>
+              <Label htmlFor="email">{t('email')}</Label>
               <div className="mt-2">
                 <Input
                   id="email"
@@ -60,13 +62,13 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
+                  placeholder={t('email')}
                 />
               </div>
             </div>
 
             <div>
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t('password')}</Label>
               <div className="mt-2 relative">
                 <Input
                   id="password"
@@ -76,7 +78,7 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder={t('password')}
                 />
                 <button
                   type="button"
@@ -98,7 +100,7 @@ export default function LoginPage() {
                 className="w-full"
                 disabled={isLoading}
               >
-                {isLoading ? 'Signing in...' : 'Sign in'}
+                {isLoading ? t('signingIn') : t('signIn')}
               </Button>
             </div>
           </form>

@@ -1,0 +1,21 @@
+{
+  "appName": "Dculus Forms",
+  "language": {
+    "label": "Language",
+    "options": {
+      "en": "English"
+    }
+  },
+  "loading": "Loading...",
+  "error": "Error",
+  "success": "Success",
+  "tryAgain": "Try again",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "save": "Save",
+  "delete": "Delete",
+  "edit": "Edit",
+  "close": "Close",
+  "viewDetails": "View Details",
+  "noDataAvailable": "No data available"
+}
