@@ -35,7 +35,7 @@ describe('Real Short Text Validation Schema', () => {
 
     expect(result.success).toBe(false);
     expect(
-      result.error.issues.some((issue: any) =>
+      result?.error?.issues.some((issue: any) =>
         issue.message.includes('5000')
       )
     ).toBe(true);
