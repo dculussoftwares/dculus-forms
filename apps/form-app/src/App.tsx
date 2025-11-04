@@ -6,8 +6,6 @@ import { Toaster } from '@dculus/ui';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Dashboard } from './components/Dashboard';
 import FormsList from './pages/FormsList';
-import FormBuilder from './pages/FormBuilder';
-import FormViewer from './pages/FormViewer';
 import Responses from './pages/Responses';
 import ResponseEdit from './pages/ResponseEdit';
 import { ResponseEditHistory } from './pages/ResponseEditHistory';
@@ -95,21 +93,6 @@ function App() {
           <Route path="/forms" element={
             <ProtectedRoute>
               <FormsList />
-            </ProtectedRoute>
-          } />
-          <Route path="/forms/new" element={
-            <ProtectedRoute>
-              <FormBuilder />
-            </ProtectedRoute>
-          } />
-          <Route path="/forms/:id" element={
-            <ProtectedRoute>
-              <FormViewer />
-            </ProtectedRoute>
-          } />
-          <Route path="/forms/:id/edit" element={
-            <ProtectedRoute>
-              <FormBuilder />
             </ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/responses" element={

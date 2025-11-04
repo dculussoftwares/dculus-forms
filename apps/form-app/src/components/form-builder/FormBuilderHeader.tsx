@@ -1,10 +1,17 @@
 import {
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
     Button,
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
     Input,
+    Progress,
     toastError,
     toastSuccess
 } from '@dculus/ui';
@@ -52,6 +59,8 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
     const [formTitle, setFormTitle] = useState(initialFormTitle || t('defaultTitle'));
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
+    const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+    const [duplicateProgress, setDuplicateProgress] = useState(0);
     const permissions = useFormPermissions();
     const navigate = useNavigate();
     const [duplicateFormMutation, { loading: isDuplicating }] = useMutation(DUPLICATE_FORM);
@@ -63,8 +72,46 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
         }
     }, [initialFormTitle]);
 
-    const handleDuplicateForm = async () => {
+    useEffect(() => {
+        if (!isDuplicating) {
+            return undefined;
+        }
+
+        setDuplicateProgress(10);
+        const interval = setInterval(() => {
+            setDuplicateProgress((prev) => {
+                if (prev >= 90) {
+                    return prev;
+                }
+                return prev + Math.random() * 12;
+            });
+        }, 300);
+
+        return () => clearInterval(interval);
+    }, [isDuplicating]);
+
+    useEffect(() => {
+        if (!isDuplicating && duplicateProgress > 0 && duplicateProgress < 100) {
+            setDuplicateProgress(100);
+        }
+    }, [isDuplicating, duplicateProgress]);
+
+    useEffect(() => {
+        if (!showDuplicateDialog && !isDuplicating) {
+            setDuplicateProgress(0);
+        }
+    }, [showDuplicateDialog, isDuplicating]);
+
+    const handleDuplicateForm = () => {
         if (!permissions.canEdit) {
+            return;
+        }
+        setDuplicateProgress(0);
+        setShowDuplicateDialog(true);
+    };
+
+    const performDuplicate = async () => {
+        if (!permissions.canEdit || isDuplicating) {
             return;
         }
 
@@ -74,12 +121,14 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
             });
 
             if (data?.duplicateForm) {
+                setDuplicateProgress(100);
                 toastSuccess(
                     t('toasts.duplicateSuccess.title'),
                     t('toasts.duplicateSuccess.description', {
                         values: { title: data.duplicateForm.title }
                     })
                 );
+                setShowDuplicateDialog(false);
                 navigate(`/dashboard/form/${data.duplicateForm.id}`);
             }
         } catch (error) {
@@ -88,6 +137,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                 t('toasts.duplicateError.title'),
                 t('toasts.duplicateError.description')
             );
+            setDuplicateProgress(0);
         }
     };
     
@@ -186,7 +236,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                             <DropdownMenuContent align="end">
                                 <DropdownMenuItem
                                     onClick={handleDuplicateForm}
-                                    disabled={!permissions.canEdit || isDuplicating}
+                                    disabled={!permissions.canEdit}
                                 >
                                     <Copy className="w-4 h-4 mr-2" />
                                     {t('menu.duplicateForm')}
@@ -209,6 +259,45 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                     currentUserId={currentUserId}
                 />
             )}
+
+            <AlertDialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t('duplicateDialog.title')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('duplicateDialog.description')}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    {isDuplicating && (
+                        <div className="space-y-2">
+                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                                {t('duplicateDialog.progressLabel')}
+                            </div>
+                            <Progress value={Math.min(duplicateProgress, 100)} />
+                        </div>
+                    )}
+                    <AlertDialogFooter>
+                        <div className="flex w-full justify-end space-x-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    if (isDuplicating) {
+                                        return;
+                                    }
+                                    setShowDuplicateDialog(false);
+                                    setDuplicateProgress(0);
+                                }}
+                                disabled={isDuplicating}
+                            >
+                                {t('duplicateDialog.cancel')}
+                            </Button>
+                            <Button onClick={performDuplicate} disabled={isDuplicating}>
+                                {isDuplicating ? t('duplicateDialog.working') : t('duplicateDialog.confirm')}
+                            </Button>
+                        </div>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };
