@@ -328,91 +328,86 @@ function FormsListDashboard() {
           </Button>
         </div>
 
-        {/* Search Bar - Show during loading or when forms exist */}
-        {(formsLoading || currentTotalCount > 0) && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder={t('search.placeholder')}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-10"
-                />
-                {isTyping && (
-                  <div className="absolute right-10 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                    {t('search.typing')}
-                  </div>
-                )}
-                {searchTerm && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearSearch}
-                    className="absolute right-1 top-1/2 h-7 w-7 p-0 -translate-y-1/2 hover:bg-muted"
-                    aria-label={t('search.clear')}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* Filter Chips */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <div className="flex flex-wrap gap-2">
-                <Chip
-                  selected={activeFilter === 'all'}
-                  onClick={() => handleFilterChange('all')}
-                  variant="default"
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder={t('search.placeholder')}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-10"
+              />
+              {isTyping && (
+                <div className="absolute right-10 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                  {t('search.typing')}
+                </div>
+              )}
+              {searchTerm && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearSearch}
+                  className="absolute right-1 top-1/2 h-7 w-7 p-0 -translate-y-1/2 hover:bg-muted"
+                  aria-label={t('search.clear')}
                 >
-                  {t('filters.all')}
-                </Chip>
-                <Chip
-                  selected={activeFilter === 'my-forms'}
-                  onClick={() => handleFilterChange('my-forms')}
-                  variant="default"
-                >
-                  {t('filters.mine')}
-                </Chip>
-                <Chip
-                  selected={activeFilter === 'shared-with-me'}
-                  onClick={() => handleFilterChange('shared-with-me')}
-                  variant="default"
-                >
-                  {t('filters.shared')}
-                </Chip>
-              </div>
-
-              {/* Page Size Selector - P1 */}
-              <div className="flex items-center gap-2 ml-auto">
-                <TypographySmall className="text-muted-foreground">
-                  {t('pageSize.label')}
-                </TypographySmall>
-                <Select
-                  value={pageSize.toString()}
-                  onValueChange={handlePageSizeChange}
-                  disabled={formsLoading}
-                >
-                  <SelectTrigger className="w-20 h-8">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PAGE_SIZE_OPTIONS.map((size) => (
-                      <SelectItem key={size} value={size.toString()}>
-                        {size}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <TypographySmall className="text-muted-foreground">
-                  {t('pageSize.suffix')}
-                </TypographySmall>
-              </div>
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
-        )}
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex flex-wrap gap-2">
+              <Chip
+                selected={activeFilter === 'all'}
+                onClick={() => handleFilterChange('all')}
+                variant="default"
+              >
+                {t('filters.all')}
+              </Chip>
+              <Chip
+                selected={activeFilter === 'my-forms'}
+                onClick={() => handleFilterChange('my-forms')}
+                variant="default"
+              >
+                {t('filters.mine')}
+              </Chip>
+              <Chip
+                selected={activeFilter === 'shared-with-me'}
+                onClick={() => handleFilterChange('shared-with-me')}
+                variant="default"
+              >
+                {t('filters.shared')}
+              </Chip>
+            </div>
+
+            <div className="flex items-center gap-2 ml-auto">
+              <TypographySmall className="text-muted-foreground">
+                {t('pageSize.label')}
+              </TypographySmall>
+              <Select
+                value={pageSize.toString()}
+                onValueChange={handlePageSizeChange}
+                disabled={formsLoading}
+              >
+                <SelectTrigger className="w-20 h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAGE_SIZE_OPTIONS.map((size) => (
+                    <SelectItem key={size} value={size.toString()}>
+                      {size}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <TypographySmall className="text-muted-foreground">
+                {t('pageSize.suffix')}
+              </TypographySmall>
+            </div>
+          </div>
+        </div>
 
         {/* Forms Grid */}
         {formsLoading ? (
