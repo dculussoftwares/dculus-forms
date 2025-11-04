@@ -3,7 +3,6 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
     Input
 } from '@dculus/ui';
@@ -12,8 +11,6 @@ import {
     Copy,
     Edit3,
     MoreVertical,
-    Palette,
-    Settings,
     Share2,
     Users
 } from 'lucide-react';
@@ -152,15 +149,6 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
-                                    <Settings className="w-4 h-4 mr-2" />
-                                    {t('menu.formSettings')}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                    <Palette className="w-4 h-4 mr-2" />
-                                    {t('menu.design')}
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
                                 <DropdownMenuItem>
                                     <Copy className="w-4 h-4 mr-2" />
                                     {t('menu.duplicateForm')}
