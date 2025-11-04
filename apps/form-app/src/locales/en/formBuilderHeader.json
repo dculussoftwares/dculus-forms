@@ -19,5 +19,15 @@
     "noEditPermission": "You don't have permission to edit the form title",
     "noSharePermission": "You need access to this form to manage sharing",
     "noSavePermission": "You don't have permission to save changes"
+  },
+  "toasts": {
+    "duplicateSuccess": {
+      "title": "Form duplicated",
+      "description": "\"{{title}}\" has been copied"
+    },
+    "duplicateError": {
+      "title": "Unable to duplicate",
+      "description": "Something went wrong while duplicating this form. Please try again."
+    }
   }
 }

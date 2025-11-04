@@ -115,3 +115,26 @@ export const REGENERATE_SHORT_URL = gql`
   }
 `;
 
+export const DUPLICATE_FORM = gql`
+  mutation DuplicateForm($id: ID!) {
+    duplicateForm(id: $id) {
+      id
+      title
+      description
+      shortUrl
+      isPublished
+      organization {
+        id
+        name
+        slug
+      }
+      createdBy {
+        id
+        name
+        email
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;

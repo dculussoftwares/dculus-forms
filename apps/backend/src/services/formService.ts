@@ -11,10 +11,12 @@ import {
   PageModeType
 } from '@dculus/types';
 import { initializeHocuspocusDocument } from './hocuspocus.js';
-import { generateShortUrl } from '@dculus/utils';
+import { generateShortUrl, generateId } from '@dculus/utils';
 import { sendFormPublishedNotification } from './emailService.js';
 import { checkFormAccess, PermissionLevel } from '../graphql/resolvers/formSharing.js';
 import { randomUUID } from 'crypto';
+import { getFormSchemaFromHocuspocus } from './hocuspocus.js';
+import { copyFileForForm } from './fileUploadService.js';
 
 export interface Form extends Omit<IForm, 'formSchema'> {
   formSchema: any; // JsonValue from Prisma
@@ -113,6 +115,21 @@ export const createForm = async (
   formData: Omit<Form, 'createdAt' | 'updatedAt' | 'formSchema'>, 
   templateFormSchema?: FormSchema
 ): Promise<Form> => {
+  const normalizedSettings = (() => {
+    if (formData.settings === undefined || formData.settings === null) {
+      return undefined;
+    }
+    if (typeof formData.settings === 'string') {
+      try {
+        return JSON.parse(formData.settings);
+      } catch (error) {
+        console.warn(`⚠️ Failed to parse form settings for form ${formData.id ?? 'new'}`, error);
+        return formData.settings;
+      }
+    }
+    return formData.settings;
+  })();
+
   // Create a default form schema if no template is provided
   const defaultFormSchema: FormSchema = {
     pages: [],
@@ -144,6 +161,7 @@ export const createForm = async (
       isPublished: formData.isPublished || false,
       organizationId: formData.organizationId,
       createdById: formData.createdById,
+      settings: normalizedSettings,
     },
     include: {
       organization: true,
@@ -185,6 +203,76 @@ export const createForm = async (
   }
 
   return result;
+};
+
+export const duplicateForm = async (formId: string, userId: string): Promise<Form> => {
+  const existingForm = await prisma.form.findUnique({
+    where: { id: formId },
+    include: {
+      organization: true,
+      createdBy: true,
+    },
+  });
+
+  if (!existingForm) {
+    throw new Error('Form not found');
+  }
+
+  // Retrieve the latest schema from Hocuspocus
+  const existingSchema = await getFormSchemaFromHocuspocus(formId);
+  const schemaClone = existingSchema ? JSON.parse(JSON.stringify(existingSchema)) : undefined;
+
+  const newFormId = generateId();
+
+  // If form has background image, copy it for the new form
+  if (schemaClone?.layout?.backgroundImageKey) {
+    try {
+      const copiedFile = await copyFileForForm(schemaClone.layout.backgroundImageKey, newFormId);
+      schemaClone.layout.backgroundImageKey = copiedFile.key;
+
+      await prisma.formFile.create({
+        data: {
+          id: randomUUID(),
+          key: copiedFile.key,
+          type: 'FormBackground',
+          formId: newFormId,
+          originalName: copiedFile.originalName,
+          url: copiedFile.url,
+          size: copiedFile.size,
+          mimeType: copiedFile.mimeType,
+        },
+      });
+    } catch (error) {
+      console.error(`❌ Failed to copy background image for duplicated form ${formId}:`, error);
+      if (schemaClone?.layout) {
+        schemaClone.layout.backgroundImageKey = '';
+      }
+    }
+  }
+
+  const duplicateTitle = existingForm.title
+    ? `${existingForm.title} (Copy)`
+    : 'Untitled Form (Copy)';
+
+  const newForm = await createForm(
+    {
+      id: newFormId,
+      title: duplicateTitle,
+      description: existingForm.description || undefined,
+      shortUrl: '',
+      isPublished: false,
+      organizationId: existingForm.organizationId,
+      createdById: userId,
+      settings: existingForm.settings || undefined,
+    },
+    schemaClone
+  );
+
+  return {
+    ...newForm,
+    description: newForm.description || undefined,
+    settings: existingForm.settings || undefined,
+  };
 };
 
 export const updateForm = async (id: string, formData: Partial<Omit<Form, 'id' | 'createdAt' | 'updatedAt' | 'organizationId' | 'createdById' | 'shortUrl'>>, userId?: string): Promise<Form | null> => {

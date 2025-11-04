@@ -4,7 +4,9 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-    Input
+    Input,
+    toastError,
+    toastSuccess
 } from '@dculus/ui';
 import {
     ArrowLeft,
@@ -15,10 +17,13 @@ import {
     Users
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+import { useMutation } from '@apollo/client';
+import { useNavigate } from 'react-router-dom';
 import { useFormPermissions } from '../../hooks/useFormPermissions';
 import { useTranslation } from '../../hooks/useTranslation';
 import { ShareModal } from '../sharing/ShareModal';
 import { PermissionBadge } from './PermissionBadge';
+import { DUPLICATE_FORM } from '../../graphql/mutations';
 
 interface FormBuilderHeaderProps {
     formId: string;
@@ -48,6 +53,8 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
     const permissions = useFormPermissions();
+    const navigate = useNavigate();
+    const [duplicateFormMutation, { loading: isDuplicating }] = useMutation(DUPLICATE_FORM);
     
     // Update local state when prop changes
     useEffect(() => {
@@ -55,6 +62,34 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
             setFormTitle(initialFormTitle);
         }
     }, [initialFormTitle]);
+
+    const handleDuplicateForm = async () => {
+        if (!permissions.canEdit) {
+            return;
+        }
+
+        try {
+            const { data } = await duplicateFormMutation({
+                variables: { id: _formId }
+            });
+
+            if (data?.duplicateForm) {
+                toastSuccess(
+                    t('toasts.duplicateSuccess.title'),
+                    t('toasts.duplicateSuccess.description', {
+                        values: { title: data.duplicateForm.title }
+                    })
+                );
+                navigate(`/dashboard/form/${data.duplicateForm.id}`);
+            }
+        } catch (error) {
+            console.error('Failed to duplicate form', error);
+            toastError(
+                t('toasts.duplicateError.title'),
+                t('toasts.duplicateError.description')
+            );
+        }
+    };
     
     return (
         <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50">
@@ -149,7 +184,10 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={handleDuplicateForm}
+                                    disabled={!permissions.canEdit || isDuplicating}
+                                >
                                     <Copy className="w-4 h-4 mr-2" />
                                     {t('menu.duplicateForm')}
                                 </DropdownMenuItem>

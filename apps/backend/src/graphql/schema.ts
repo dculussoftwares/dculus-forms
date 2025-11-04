@@ -1045,6 +1045,7 @@ export const typeDefs = gql`
     updateForm(id: ID!, input: UpdateFormInput!): Form!
     deleteForm(id: ID!): Boolean!
     regenerateShortUrl(id: ID!): Form!
+    duplicateForm(id: ID!): Form!
     submitResponse(input: SubmitResponseInput!): FormResponse!
     updateResponse(input: UpdateResponseInput!): FormResponse!
     deleteResponse(id: ID!): Boolean!

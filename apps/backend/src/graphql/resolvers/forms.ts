@@ -4,7 +4,8 @@ import {
   createForm,
   updateForm,
   deleteForm,
-  regenerateShortUrl
+  regenerateShortUrl,
+  duplicateForm as duplicateFormService,
 } from '../../services/formService.js';
 import { getTemplateById } from '../../services/templateService.js';
 import { getFormMetadata, constructBackgroundImageUrl } from '../../services/formMetadataService.js';
@@ -335,6 +336,17 @@ export const formsResolvers = {
       }
       
       return await regenerateShortUrl(id);
+    },
+    duplicateForm: async (_: any, { id }: { id: string }, context: { auth: BetterAuthContext }) => {
+      requireAuth(context.auth);
+
+      // Duplicating requires edit access to the source form
+      const accessCheck = await checkFormAccess(context.auth.user!.id, id, PermissionLevel.EDITOR);
+      if (!accessCheck.hasAccess) {
+        throw new GraphQLError('Access denied: You do not have permission to duplicate this form');
+      }
+
+      return await duplicateFormService(id, context.auth.user!.id);
     },
   },
 };
