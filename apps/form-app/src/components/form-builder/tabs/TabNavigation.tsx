@@ -126,7 +126,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                       className={cn(
                         "relative w-12 h-12 rounded-xl transition-all duration-300 ease-out transform",
                         isActive
-                          ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg scale-110 hover:from-blue-600 hover:to-purple-700'
+                          ? 'bg-primary text-primary-foreground hover:text-primary-foreground shadow-lg scale-110 hover:bg-primary/90'
                           : isHovered
                           ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 scale-105'
                           : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
