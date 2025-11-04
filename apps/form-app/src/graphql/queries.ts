@@ -10,76 +10,57 @@ export const GET_ACTIVE_ORGANIZATION = gql`
   }
 `;
 
-
-export const GET_FORMS_WITH_CATEGORY = gql`
-  query GetFormsWithCategory($organizationId: ID!, $category: FormCategory!) {
-    formsWithCategory(organizationId: $organizationId, category: $category) {
+export const FORM_LIST_FIELDS = gql`
+  fragment FormListFields on Form {
+    id
+    title
+    description
+    shortUrl
+    isPublished
+    sharingScope
+    defaultPermission
+    userPermission
+    category
+    responseCount
+    createdAt
+    updatedAt
+    organization {
       id
-      title
-      description
-      shortUrl
-      isPublished
-      sharingScope
-      defaultPermission
-      userPermission
-      category
-      responseCount
-      createdAt
-      updatedAt
-      organization {
-        id
-        name
-        slug
-      }
-      createdBy {
-        id
-        name
-        email
-      }
-      metadata {
-        pageCount
-        fieldCount
-        backgroundImageKey
-        backgroundImageUrl
-        lastUpdated
-      }
+      name
+      slug
+    }
+    createdBy {
+      id
+      name
+      email
+    }
+    metadata {
+      pageCount
+      fieldCount
+      backgroundImageKey
+      backgroundImageUrl
+      lastUpdated
     }
   }
 `;
 
-export const GET_MY_FORMS_WITH_CATEGORY = gql`
-  query GetMyFormsWithCategory($organizationId: ID!, $page: Int = 1, $limit: Int = 10, $filters: FormsFilterInput) {
-    formsWithCategory(organizationId: $organizationId, category: MY_FORMS, page: $page, limit: $limit, filters: $filters) {
+export const GET_FORMS = gql`
+  query GetForms(
+    $organizationId: ID!
+    $category: FormCategory!
+    $page: Int = 1
+    $limit: Int = 10
+    $filters: FormsFilterInput
+  ) {
+    forms(
+      organizationId: $organizationId
+      category: $category
+      page: $page
+      limit: $limit
+      filters: $filters
+    ) {
       forms {
-        id
-        title
-        description
-        shortUrl
-        isPublished
-        sharingScope
-        defaultPermission
-        userPermission
-        category
-        responseCount
-        createdAt
-        updatedAt
-        organization {
-          id
-          name
-          slug
-        }
-        createdBy {
-          id
-          name
-          email
-        }
-        metadata {
-          pageCount
-          fieldCount
-          backgroundImageKey
-          backgroundImageUrl
-          lastUpdated
-        }
+        ...FormListFields
       }
       totalCount
       page
@@ -89,50 +70,7 @@ export const GET_MY_FORMS_WITH_CATEGORY = gql`
       hasPreviousPage
     }
   }
-`;
-
-export const GET_SHARED_FORMS_WITH_CATEGORY = gql`
-  query GetSharedFormsWithCategory($organizationId: ID!, $page: Int = 1, $limit: Int = 10, $filters: FormsFilterInput) {
-    formsWithCategory(organizationId: $organizationId, category: SHARED_WITH_ME, page: $page, limit: $limit, filters: $filters) {
-      forms {
-        id
-        title
-        description
-        shortUrl
-        isPublished
-        sharingScope
-        defaultPermission
-        userPermission
-        category
-        responseCount
-        createdAt
-        updatedAt
-        organization {
-          id
-          name
-          slug
-        }
-        createdBy {
-          id
-          name
-          email
-        }
-        metadata {
-          pageCount
-          fieldCount
-          backgroundImageKey
-          backgroundImageUrl
-          lastUpdated
-        }
-      }
-      totalCount
-      page
-      limit
-      totalPages
-      hasNextPage
-      hasPreviousPage
-    }
-  }
+  ${FORM_LIST_FIELDS}
 `;
 
 export const GET_FORM_BY_ID = gql`

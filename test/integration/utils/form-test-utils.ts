@@ -532,10 +532,10 @@ export class FormTestUtils {
   /**
    * Get forms with specific category (recommended approach)
    */
-  async getFormsWithCategory(token: string, organizationId: string, category: 'MY_FORMS' | 'SHARED_WITH_ME'): Promise<Form[]> {
+  async getForms(token: string, organizationId: string, category: 'OWNER' | 'SHARED' | 'ALL'): Promise<Form[]> {
     const query = `
-      query GetFormsWithCategory($organizationId: ID!, $category: FormCategory!) {
-        formsWithCategory(organizationId: $organizationId, category: $category) {
+      query GetForms($organizationId: ID!, $category: FormCategory!) {
+        forms(organizationId: $organizationId, category: $category) {
           id
           title
           description
@@ -575,21 +575,21 @@ export class FormTestUtils {
       throw new Error(`Failed to get forms with category: ${response.data.errors[0].message}`);
     }
 
-    return response.data.data.formsWithCategory;
+    return response.data.data.forms;
   }
 
   /**
    * Get forms owned by the current user
    */
   async getMyForms(token: string, organizationId: string): Promise<Form[]> {
-    return this.getFormsWithCategory(token, organizationId, 'MY_FORMS');
+    return this.getForms(token, organizationId, 'OWNER');
   }
 
   /**
    * Get forms shared with the current user (not owned by them)
    */
   async getSharedForms(token: string, organizationId: string): Promise<Form[]> {
-    return this.getFormsWithCategory(token, organizationId, 'SHARED_WITH_ME');
+    return this.getForms(token, organizationId, 'SHARED');
   }
 
 

@@ -120,7 +120,7 @@ export const formSharingResolvers = {
     },
 
 
-    formsWithCategory: async (
+    forms: async (
       _: any,
       {
         organizationId,
@@ -149,77 +149,77 @@ export const formSharingResolvers = {
       const pageLimit = Math.min(Math.max(1, limit), 100); // Max 100 items per page
       const skip = (currentPage - 1) * pageLimit;
 
+      const sharedAccessConditions = [
+        {
+          permissions: {
+            some: {
+              userId,
+              permission: { not: PermissionLevel.NO_ACCESS }
+            }
+          }
+        },
+        {
+          sharingScope: SharingScope.ALL_ORG_MEMBERS,
+          defaultPermission: { not: PermissionLevel.NO_ACCESS }
+        }
+      ];
+
+      const searchTerm = filters?.search?.trim();
+      const searchFilter = searchTerm
+        ? {
+            OR: [
+              { title: { contains: searchTerm, mode: 'insensitive' } },
+              { description: { contains: searchTerm, mode: 'insensitive' } }
+            ]
+          }
+        : null;
+
       let whereCondition: any;
 
-      if (category === 'MY_FORMS') {
-        // Return only forms owned by the user
-        whereCondition = {
-          organizationId,
-          createdById: userId
-        };
-      } else if (category === 'SHARED_WITH_ME') {
-        // Return only forms shared with the user (not owned by user)
-        whereCondition = {
-          organizationId,
-          createdById: { not: userId },
-          OR: [
-            // Forms with explicit permissions for the user
-            {
-              permissions: {
-                some: {
-                  userId,
-                  permission: { not: PermissionLevel.NO_ACCESS }
-                }
+      switch (category) {
+        case 'OWNER': {
+          whereCondition = {
+            organizationId,
+            createdById: userId,
+            ...(searchFilter ? { AND: [searchFilter] } : {})
+          };
+          break;
+        }
+        case 'SHARED': {
+          whereCondition = {
+            organizationId,
+            createdById: { not: userId },
+            AND: [
+              { OR: sharedAccessConditions },
+              ...(searchFilter ? [searchFilter] : [])
+            ]
+          };
+          break;
+        }
+        case 'ALL': {
+          const ownerClause = searchFilter
+            ? {
+                createdById: userId,
+                AND: [searchFilter]
               }
-            },
-            // Forms shared with all organization members
-            {
-              sharingScope: SharingScope.ALL_ORG_MEMBERS,
-              defaultPermission: { not: PermissionLevel.NO_ACCESS }
-            }
-          ]
-        };
-      } else {
-        throw new GraphQLError(`Invalid category: ${category}. Must be MY_FORMS or SHARED_WITH_ME`);
-      }
+            : { createdById: userId };
 
-      // Add search filter if provided
-      if (filters?.search && filters.search.trim()) {
-        const searchTerm = filters.search.trim();
-        whereCondition.OR = [
-          ...(whereCondition.OR || []),
-          { title: { contains: searchTerm, mode: 'insensitive' } },
-          { description: { contains: searchTerm, mode: 'insensitive' } }
-        ];
+          const sharedClause = {
+            createdById: { not: userId },
+            AND: [
+              { OR: sharedAccessConditions },
+              ...(searchFilter ? [searchFilter] : [])
+            ]
+          };
 
-        // If we already have OR conditions from category filtering, we need to combine them properly
-        if (category === 'SHARED_WITH_ME') {
-          // For shared forms, we need both the category OR conditions AND the search OR conditions
-          whereCondition.AND = [
-            {
-              OR: [
-                {
-                  permissions: {
-                    some: {
-                      userId,
-                      permission: { not: PermissionLevel.NO_ACCESS }
-                    }
-                  }
-                },
-                {
-                  sharingScope: SharingScope.ALL_ORG_MEMBERS,
-                  defaultPermission: { not: PermissionLevel.NO_ACCESS }
-                }
-              ]
-            },
-            {
-              OR: [
-                { title: { contains: searchTerm, mode: 'insensitive' } },
-                { description: { contains: searchTerm, mode: 'insensitive' } }
-              ]
-            }
-          ];
-          delete whereCondition.OR;
+          whereCondition = {
+            organizationId,
+            OR: [ownerClause, sharedClause]
+          };
+          break;
+        }
+        default: {
+          throw new GraphQLError(`Invalid category: ${category}. Must be OWNER, SHARED, or ALL`);
         }
       }
 
@@ -464,7 +464,7 @@ export const formSharingResolvers = {
       const userId = context.auth?.user?.id;
       if (!userId || !parent.createdById) return null;
 
-      return parent.createdById === userId ? 'MY_FORMS' : 'SHARED_WITH_ME';
+      return parent.createdById === userId ? 'OWNER' : 'SHARED';
     }
   },
 

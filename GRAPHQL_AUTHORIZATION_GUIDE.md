@@ -37,7 +37,7 @@ The system implements several levels of authorization:
 | `regenerateShortUrl` | Mutation | Form Permissions | EDITOR or higher | Regenerates public URL |
 | **Form Sharing & Lists** |
 | `formPermissions` | Query | Form Permissions | VIEWER or higher | View form permissions |
-| `formsWithCategory` | Query | Organization Member | Member of specified org | Secure categorized form lists (MY_FORMS/SHARED_WITH_ME) |
+| `forms` | Query | Organization Member | Member of specified org | Secure categorized form lists (OWNER/SHARED/ALL) |
 | `organizationMembers` | Query | Organization Member | Member of specified org | List org members for sharing |
 | `shareForm` | Mutation | Form Permissions | OWNER only | Configure form sharing |
 | `updateFormPermission` | Mutation | Form Permissions | OWNER only | Update user permissions |
@@ -372,25 +372,26 @@ export const AuthorizationErrorBoundary: React.FC = ({ error, children }) => {
 
 ## Form Categorization System
 
-The `formsWithCategory` query implements secure form access through categorization:
+The `forms` query implements secure form access through categorization:
 
 ### Categories
 
 | Category | Description | Access Rules |
 |----------|-------------|--------------|
-| **MY_FORMS** | Forms owned by the current user | Returns only forms where `createdById = userId` |
-| **SHARED_WITH_ME** | Forms shared with the current user | Returns forms with explicit permissions or org-wide sharing (excludes owned forms) |
+| **OWNER** | Forms owned by the current user | Returns only forms where `createdById = userId` |
+| **SHARED** | Forms shared with the current user | Returns forms with explicit permissions or org-wide sharing (excludes owned forms) |
+| **ALL** | All accessible forms | Combines OWNER + SHARED results into a single paginated list |
 
 ### Security Implementation
 
 ```typescript
-// MY_FORMS category - only user's own forms
+// OWNER category - only user's own forms
 whereCondition = {
   organizationId,
   createdById: userId
 };
 
-// SHARED_WITH_ME category - shared forms only
+// SHARED category - shared forms only
 whereCondition = {
   organizationId,
   createdById: { not: userId },
@@ -399,6 +400,21 @@ whereCondition = {
     { permissions: { some: { userId, permission: { not: 'NO_ACCESS' } } } },
     // Forms shared with all org members
     { sharingScope: 'ALL_ORG_MEMBERS', defaultPermission: { not: 'NO_ACCESS' } }
+  ]
+};
+
+// ALL category - owned and shared forms
+whereCondition = {
+  organizationId,
+  OR: [
+    { createdById: userId },
+    {
+      createdById: { not: userId },
+      OR: [
+        { permissions: { some: { userId, permission: { not: 'NO_ACCESS' } } } },
+        { sharingScope: 'ALL_ORG_MEMBERS', defaultPermission: { not: 'NO_ACCESS' } }
+      ]
+    }
   ]
 };
 ```
@@ -437,7 +453,7 @@ whereCondition = {
 
 ### Backend Security
 1. **Always check form access** before performing form operations
-2. **Use categorized form queries** - Use `formsWithCategory` with appropriate category (MY_FORMS/SHARED_WITH_ME)
+2. **Use categorized form queries** - Use `forms` with appropriate category (OWNER/SHARED/ALL)
 3. **Use appropriate permission levels** for different operation types
 4. **Validate organization membership** for org-scoped operations using `requireOrganizationMembership()`
 5. **Handle public operations carefully** with proper form state validation

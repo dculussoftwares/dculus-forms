@@ -29,11 +29,7 @@ import {
 import { useNavigate, Routes, Route, useSearchParams } from 'react-router-dom';
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from '@apollo/client';
-import {
-  GET_ACTIVE_ORGANIZATION,
-  GET_MY_FORMS_WITH_CATEGORY,
-  GET_SHARED_FORMS_WITH_CATEGORY,
-} from '../graphql/queries';
+import { GET_ACTIVE_ORGANIZATION, GET_FORMS } from '../graphql/queries';
 import Templates from '../pages/Templates';
 import FormDashboard from '../pages/FormDashboard';
 import { useTranslation } from '../hooks/useTranslation';
@@ -128,79 +124,84 @@ function FormsListDashboard() {
     setCurrentPage(1);
   }, [activeFilter]);
 
-  // P0 FIX: Properly fetch both queries for "all" filter
-  const shouldFetchMyForms =
-    activeFilter === 'my-forms' || activeFilter === 'all';
-  const shouldFetchSharedForms =
-    activeFilter === 'shared-with-me' || activeFilter === 'all';
+  const organizationId = orgData?.activeOrganization?.id;
 
-  // For "all" filter, we need to fetch ALL results up to current page * pageSize
-  // This ensures we have enough data to display the correct page after merging
-  const getQueryVariables = useCallback(() => {
-    if (activeFilter !== 'all') {
-      // Single query mode - fetch normally
-      return {
-        page: currentPage,
-        limit: pageSize,
-      };
-    }
+  const filtersInput = debouncedSearchTerm.trim()
+    ? { search: debouncedSearchTerm.trim() }
+    : undefined;
 
-    // Combined mode - fetch ALL results up to current page * pageSize
-    // This ensures we have enough data to display the correct page
-    return {
-      page: 1,
-      limit: currentPage * pageSize,
-    };
-  }, [activeFilter, currentPage, pageSize]);
-
-  // Separate queries for each category with pagination
   const {
-    data: myFormsData,
-    loading: myFormsLoading,
-    error: myFormsError,
-  } = useQuery(GET_MY_FORMS_WITH_CATEGORY, {
+    data: ownerFormsData,
+    loading: ownerFormsLoading,
+    error: ownerFormsError,
+  } = useQuery(GET_FORMS, {
     variables: {
-      organizationId: orgData?.activeOrganization?.id,
-      ...getQueryVariables(),
-      filters: debouncedSearchTerm.trim()
-        ? { search: debouncedSearchTerm.trim() }
-        : undefined,
+      organizationId,
+      category: 'OWNER',
+      page: currentPage,
+      limit: pageSize,
+      filters: filtersInput,
     },
-    skip: !orgData?.activeOrganization?.id || !shouldFetchMyForms,
-    notifyOnNetworkStatusChange: true, // Important for loading states
+    skip: !organizationId || activeFilter !== 'my-forms',
+    notifyOnNetworkStatusChange: true,
   });
 
   const {
     data: sharedFormsData,
     loading: sharedFormsLoading,
     error: sharedFormsError,
-  } = useQuery(GET_SHARED_FORMS_WITH_CATEGORY, {
+  } = useQuery(GET_FORMS, {
     variables: {
-      organizationId: orgData?.activeOrganization?.id,
-      ...getQueryVariables(),
-      filters: debouncedSearchTerm.trim()
-        ? { search: debouncedSearchTerm.trim() }
-        : undefined,
+      organizationId,
+      category: 'SHARED',
+      page: currentPage,
+      limit: pageSize,
+      filters: filtersInput,
     },
-    skip: !orgData?.activeOrganization?.id || !shouldFetchSharedForms,
+    skip: !organizationId || activeFilter !== 'shared-with-me',
+    notifyOnNetworkStatusChange: true,
+  });
+
+  const {
+    data: allFormsData,
+    loading: allFormsLoading,
+    error: allFormsError,
+  } = useQuery(GET_FORMS, {
+    variables: {
+      organizationId,
+      category: 'ALL',
+      page: currentPage,
+      limit: pageSize,
+      filters: filtersInput,
+    },
+    skip: !organizationId || activeFilter !== 'all',
     notifyOnNetworkStatusChange: true,
   });
 
   // Extract forms and pagination info from responses
-  const myForms = myFormsData?.formsWithCategory?.forms || [];
-  const myFormsPagination = myFormsData?.formsWithCategory;
+  const ownerForms = ownerFormsData?.forms?.forms || [];
+  const ownerFormsPagination = ownerFormsData?.forms;
 
-  const sharedForms = sharedFormsData?.formsWithCategory?.forms || [];
-  const sharedFormsPagination = sharedFormsData?.formsWithCategory;
+  const sharedForms = sharedFormsData?.forms?.forms || [];
+  const sharedFormsPagination = sharedFormsData?.forms;
 
-  // Total counts for filter chips
-  const myFormsTotalCount = myFormsPagination?.totalCount || 0;
-  const sharedFormsTotalCount = sharedFormsPagination?.totalCount || 0;
-  const allFormsTotalCount = myFormsTotalCount + sharedFormsTotalCount;
+  const allForms = allFormsData?.forms?.forms || [];
+  const allFormsPagination = allFormsData?.forms;
 
-  // Loading and error states
-  const formsLoading = myFormsLoading || sharedFormsLoading;
-  const formsError = myFormsError || sharedFormsError;
+  // Loading and error states scoped to active filter
+  const formsLoading =
+    activeFilter === 'my-forms'
+      ? ownerFormsLoading
+      : activeFilter === 'shared-with-me'
+      ? sharedFormsLoading
+      : allFormsLoading;
+
+  const formsError =
+    activeFilter === 'my-forms'
+      ? ownerFormsError
+      : activeFilter === 'shared-with-me'
+      ? sharedFormsError
+      : allFormsError;
 
   // Show typing indicator when user is typing but query hasn't fired yet
   const isTyping = searchTerm !== debouncedSearchTerm && searchTerm.length > 0;
@@ -209,63 +210,36 @@ function FormsListDashboard() {
   const displayForms = useMemo(() => {
     if (activeFilter === 'my-forms') {
       return {
-        forms: myForms,
-        pagination: myFormsPagination,
+        forms: ownerForms,
+        pagination: ownerFormsPagination,
         showPermissionBadge: false,
       };
-    } else if (activeFilter === 'shared-with-me') {
+    }
+
+    if (activeFilter === 'shared-with-me') {
       return {
         forms: sharedForms,
         pagination: sharedFormsPagination,
         showPermissionBadge: true,
       };
-    } else {
-      // P0 FIX: Properly merge and paginate "all" results
-      const allForms = [...myForms, ...sharedForms];
-
-      // Sort by creation date (newest first)
-      allForms.sort((a, b) => {
-        const dateA = new Date(a.createdAt).getTime();
-        const dateB = new Date(b.createdAt).getTime();
-        return dateB - dateA;
-      });
-
-      // Client-side pagination for merged results
-      const startIndex = (currentPage - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      const paginatedForms = allForms.slice(startIndex, endIndex);
-
-      const totalCount = myFormsTotalCount + sharedFormsTotalCount;
-      const totalPages = Math.ceil(totalCount / pageSize);
-
-      // Create combined pagination info
-      const combinedPagination = {
-        forms: paginatedForms,
-        totalCount,
-        page: currentPage,
-        limit: pageSize,
-        totalPages,
-        hasNextPage: currentPage < totalPages,
-        hasPreviousPage: currentPage > 1,
-      };
-
-      return {
-        forms: paginatedForms,
-        pagination: combinedPagination,
-        showPermissionBadge: true, // Show badges to distinguish form ownership
-      };
     }
+
+    return {
+      forms: allForms,
+      pagination: allFormsPagination,
+      showPermissionBadge: true, // Show badges to distinguish form ownership
+    };
   }, [
     activeFilter,
-    myForms,
+    ownerForms,
+    ownerFormsPagination,
     sharedForms,
-    myFormsPagination,
     sharedFormsPagination,
-    myFormsTotalCount,
-    sharedFormsTotalCount,
-    currentPage,
-    pageSize,
+    allForms,
+    allFormsPagination,
   ]);
+
+  const currentTotalCount = displayForms.pagination?.totalCount ?? 0;
 
   // P0 & P1: Smooth page change with loading overlay
   const handlePageChange = useCallback((page: number) => {
@@ -355,7 +329,7 @@ function FormsListDashboard() {
         </div>
 
         {/* Search Bar - Show during loading or when forms exist */}
-        {(formsLoading || allFormsTotalCount > 0) && (
+        {(formsLoading || currentTotalCount > 0) && (
           <div className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="relative flex-1 max-w-md">
@@ -468,7 +442,7 @@ function FormsListDashboard() {
               </div>
             </div>
           </div>
-        ) : allFormsTotalCount === 0 ? (
+        ) : currentTotalCount === 0 ? (
           <div className="text-center py-20">
             <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-xl p-12 max-w-lg mx-auto">
               <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">

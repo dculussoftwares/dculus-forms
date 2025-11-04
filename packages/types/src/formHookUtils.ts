@@ -4,7 +4,7 @@ import { FormPage, FormField, CheckboxField, FieldType } from './index.js';
  * Create a React Hook Form resolver for a specific form page
  * Note: Validation has been removed - returns undefined (no resolver)
  */
-export function createPageResolver(page: FormPage) {
+export function createPageResolver(_page: FormPage) {
   return undefined;
 }
 
@@ -76,7 +76,7 @@ function getDefaultValueForField(field: FormField): any {
  * Create field registration options for React Hook Form
  * Note: Validation has been removed - returns empty object
  */
-export function createFieldRegistration(field: FormField) {
+export function createFieldRegistration(_field: FormField) {
   return {};
 }
 

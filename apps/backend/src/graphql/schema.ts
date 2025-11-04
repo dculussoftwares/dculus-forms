@@ -169,8 +169,9 @@ export const typeDefs = gql`
   }
 
   enum FormCategory {
-    MY_FORMS
-    SHARED_WITH_ME
+    OWNER
+    SHARED
+    ALL
   }
 
   type FormPermission {
@@ -954,7 +955,7 @@ export const typeDefs = gql`
 
     # Form Sharing Queries
     formPermissions(formId: ID!): [FormPermission!]!
-    formsWithCategory(organizationId: ID!, category: FormCategory!, page: Int = 1, limit: Int = 10, filters: FormsFilterInput): PaginatedForms!
+    forms(organizationId: ID!, category: FormCategory!, page: Int = 1, limit: Int = 10, filters: FormsFilterInput): PaginatedForms!
     organizationMembers(organizationId: ID!): [User!]!
 
     # Template Queries
