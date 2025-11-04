@@ -58,14 +58,15 @@ export async function requireOrganizationMembership(
 ): Promise<any> {
   requireAuth(context);
 
+  // ⚡ PERFORMANCE: Select only the 'role' field - it's the only field used by callers
+  // All other callers only use this function for membership validation (throw if null)
   const membership = await prisma.member.findFirst({
     where: {
       organizationId,
       userId: context.user!.id
     },
-    include: {
-      organization: true,
-      user: true
+    select: {
+      role: true  // Only field accessed by requireOrganizationRole()
     }
   });
 
