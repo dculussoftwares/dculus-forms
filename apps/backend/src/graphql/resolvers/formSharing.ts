@@ -48,16 +48,17 @@ export const checkFormAccess = async (userId: string, formId: string, requiredPe
     throw new GraphQLError('Form not found');
   }
 
-  // Check if user is the form owner
-  if (form.createdById === userId) {
-    return { hasAccess: true, permission: PermissionLevel.OWNER, form };
-  }
-
-  // Check if user is a member of the form's organization
+  // 🔒 SECURITY: Check organization membership FIRST (before owner check)
+  // This ensures even form owners must be organization members to access forms
   const userMembership = form.organization.members.find(member => member.userId === userId);
   if (!userMembership) {
-    // No access if user is not a member of the organization
+    // User is not a member of this organization - deny access even if they're the owner
     return { hasAccess: false, permission: PermissionLevel.NO_ACCESS, form };
+  }
+
+  // Check if user is the form owner (only reachable if user is org member)
+  if (form.createdById === userId) {
+    return { hasAccess: true, permission: PermissionLevel.OWNER, form };
   }
 
   // Check explicit permissions
