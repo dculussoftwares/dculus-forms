@@ -11,10 +11,8 @@ import {
     ArrowLeft,
     Copy,
     Edit3,
-    Eye,
     MoreVertical,
     Palette,
-    Save,
     Settings,
     Share2,
     Users
@@ -133,10 +131,6 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
 
                     {/* Right side - Actions */}
                     <div className="flex items-center space-x-3">
-                        <Button variant="ghost" size="sm" className="text-gray-600 dark:text-gray-400">
-                            <Eye className="w-4 h-4 mr-2" />
-                            {t('buttons.preview')}
-                        </Button>
                         {permissions.canShareForm() && (
                             <Button 
                                 variant="ghost" 
@@ -148,16 +142,6 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                             >
                                 <Share2 className="w-4 h-4 mr-2" />
                                 {t('buttons.share')}
-                            </Button>
-                        )}
-                        {permissions.canSaveForm() && (
-                            <Button 
-                                size="sm" 
-                                disabled={!isConnected}
-                                title={!permissions.canSaveForm() ? t('tooltips.noSavePermission') : ""}
-                            >
-                                <Save className="w-4 h-4 mr-2" />
-                                {t('buttons.save')}
                             </Button>
                         )}
                         
