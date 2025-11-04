@@ -1,30 +1,29 @@
-import React, { useState, useEffect } from 'react';
 import {
     Button,
-    Input,
     DropdownMenu,
-    DropdownMenuTrigger,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuSeparator
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+    Input
 } from '@dculus/ui';
 import {
-    Users,
-    Save,
-    Eye,
-    Share2,
-    MoreVertical,
-    Edit3,
+    ArrowLeft,
     Copy,
-    Settings,
+    Edit3,
+    Eye,
+    MoreVertical,
     Palette,
-    Zap,
-    ArrowLeft
+    Save,
+    Settings,
+    Share2,
+    Users
 } from 'lucide-react';
-import { ShareModal } from '../sharing/ShareModal';
-import { PermissionBadge } from './PermissionBadge';
+import React, { useEffect, useState } from 'react';
 import { useFormPermissions } from '../../hooks/useFormPermissions';
 import { useTranslation } from '../../hooks/useTranslation';
+import { ShareModal } from '../sharing/ShareModal';
+import { PermissionBadge } from './PermissionBadge';
 
 interface FormBuilderHeaderProps {
     formId: string;
@@ -80,9 +79,6 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                             </Button>
                         )}
                         <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                <Zap className="w-4 h-4 text-white" />
-                            </div>
                             <div>
                                 {isEditingTitle && permissions.canEdit ? (
                                     <Input
