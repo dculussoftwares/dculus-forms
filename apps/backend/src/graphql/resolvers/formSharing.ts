@@ -121,8 +121,8 @@ export const formSharingResolvers = {
 
     formsWithCategory: async (
       _: any,
-      { 
-        organizationId, 
+      {
+        organizationId,
         category,
         page = 1,
         limit = 10,
@@ -138,7 +138,9 @@ export const formSharingResolvers = {
       },
       context: { auth: BetterAuthContext }
     ) => {
-      requireAuth(context.auth);
+      // 🔒 SECURITY: Verify user is a member of the target organization
+      await requireOrganizationMembership(context.auth, organizationId);
+
       const userId = context.auth.user!.id;
 
       // Validate pagination parameters

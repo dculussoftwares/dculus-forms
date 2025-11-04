@@ -171,9 +171,8 @@ export const betterAuthResolvers = {
       { organizationId }: { organizationId: string },
       context: { auth: BetterAuthContext }
     ) => {
-      requireAuth(context.auth);
-
-      // Verify user is a member of the requested organization
+      // 🔒 SECURITY: Verify user is a member of the requested organization
+      // (requireOrganizationMembership internally calls requireAuth, so no need to call it separately)
       const membership = await requireOrganizationMembership(context.auth, organizationId);
 
       // Update user's session to set the active organization

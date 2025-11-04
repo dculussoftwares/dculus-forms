@@ -8,7 +8,7 @@ import {
 } from '../../services/formService.js';
 import { getTemplateById } from '../../services/templateService.js';
 import { getFormMetadata, constructBackgroundImageUrl } from '../../services/formMetadataService.js';
-import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
+import { BetterAuthContext, requireAuth, requireOrganizationMembership } from '../../middleware/better-auth-middleware.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import { generateId } from '@dculus/utils';
 import { copyFileForForm } from '../../services/fileUploadService.js';
@@ -205,7 +205,9 @@ export const formsResolvers = {
       { input }: { input: { templateId: string; title: string; description?: string; organizationId: string } },
       context: { auth: BetterAuthContext }
     ) => {
-      requireAuth(context.auth);
+      // 🔒 SECURITY: Verify user is a member of the target organization
+      await requireOrganizationMembership(context.auth, input.organizationId);
+
       // Fetch the template by templateId
       const template = await getTemplateById(input.templateId);
       if (!template) {

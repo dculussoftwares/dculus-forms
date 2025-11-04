@@ -10,6 +10,7 @@ import { getFormById } from '../../services/formService.js';
 import {
   BetterAuthContext,
   requireAuth,
+  requireOrganizationMembership,
 } from '../../middleware/better-auth-middleware.js';
 import {
   createFieldLabelsMap,
@@ -29,7 +30,9 @@ export const responsesResolvers = {
       { organizationId }: { organizationId: string },
       context: { auth: BetterAuthContext }
     ) => {
-      requireAuth(context.auth);
+      // 🔒 SECURITY: Verify user is a member of the target organization
+      await requireOrganizationMembership(context.auth, organizationId);
+
       return await getAllResponses(organizationId);
     },
     response: async (
