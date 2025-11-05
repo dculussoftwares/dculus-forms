@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useDroppable, useDndContext } from '@dnd-kit/core';
 import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { FormPage } from '@dculus/types';
-import { Card, TypographyH3, Button } from '@dculus/ui';
+import { Card, TypographyH3, Button, Input } from '@dculus/ui';
 import { Eye, MoreVertical } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
+import { useFormPermissions } from '../../hooks/useFormPermissions';
 import { DraggableField } from './DraggableField';
 import { EmptyDropZone } from './EmptyDropZone';
 import { DropIndicator } from './DropIndicator';
@@ -26,6 +27,7 @@ interface DroppablePageProps {
   onEditField?: (fieldId: string) => void;
   onMoveFieldBetweenPages: (sourcePageId: string, targetPageId: string, fieldId: string) => void;
   onCopyFieldToPage: (sourcePageId: string, targetPageId: string, fieldId: string) => void;
+  onUpdatePageTitle?: (title: string) => void;
 }
 
 export const DroppablePage: React.FC<DroppablePageProps> = ({
@@ -42,19 +44,62 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
   onEditField,
   onMoveFieldBetweenPages,
   onCopyFieldToPage,
+  onUpdatePageTitle,
 }) => {
   const { t } = useTranslation('droppablePage');
-  const [displayTitle, setDisplayTitle] = useState(page.title);
+  const permissions = useFormPermissions();
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(page.title);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Sync displayTitle when page.title changes (from YJS or props)
+  // Update editedTitle when page.title changes (from collaboration)
   useEffect(() => {
-    setDisplayTitle(page.title);
+    setEditedTitle(page.title);
   }, [page.title]);
+
+  // Auto-focus input when entering edit mode
+  useEffect(() => {
+    if (isEditingTitle && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditingTitle]);
 
   // Helper function for field count with proper pluralization
   const getFieldCountText = (count: number) => {
     const fieldLabel = count === 1 ? t('fieldCount.singular') : t('fieldCount.plural');
     return `${count} ${fieldLabel}`;
+  };
+
+  const handleSaveTitle = () => {
+    const trimmedTitle = editedTitle.trim();
+
+    if (!trimmedTitle) {
+      // Revert to original title if empty
+      setEditedTitle(page.title);
+      setIsEditingTitle(false);
+      return;
+    }
+
+    if (trimmedTitle !== page.title && onUpdatePageTitle) {
+      // Save the new title
+      onUpdatePageTitle(trimmedTitle);
+      // Keep editedTitle as is - it will be synced via useEffect when YJS updates
+    }
+
+    setIsEditingTitle(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditedTitle(page.title);
+    setIsEditingTitle(false);
+  };
+
+  const handleTitleClick = (e: React.MouseEvent) => {
+    if (!isEditingTitle && permissions.canEditFields() && isConnected) {
+      e.stopPropagation();
+      setIsEditingTitle(true);
+    }
   };
 
   const {
@@ -129,9 +174,37 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
               <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center text-sm font-semibold">
                 {index + 1}
               </div>
-              <TypographyH3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {displayTitle}
-              </TypographyH3>
+              {isEditingTitle ? (
+                <Input
+                  ref={inputRef}
+                  value={editedTitle}
+                  onChange={(e) => setEditedTitle(e.target.value)}
+                  onBlur={handleSaveTitle}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSaveTitle();
+                    } else if (e.key === 'Escape') {
+                      e.preventDefault();
+                      handleCancelEdit();
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-lg font-semibold h-auto py-1 px-2 border-blue-500 focus:ring-2 focus:ring-blue-500"
+                  data-testid={`droppable-page-title-input-${index + 1}`}
+                />
+              ) : (
+                <TypographyH3
+                  className={`
+                    text-lg font-semibold text-gray-900 dark:text-white
+                    ${permissions.canEditFields() && isConnected ? 'cursor-text hover:text-blue-600 dark:hover:text-blue-400' : ''}
+                  `}
+                  onClick={handleTitleClick}
+                  title={permissions.canEditFields() && isConnected ? t('editTitle') : undefined}
+                >
+                  {editedTitle}
+                </TypographyH3>
+              )}
             </div>
             
             {!isConnected && (

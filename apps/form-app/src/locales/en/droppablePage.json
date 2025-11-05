@@ -7,5 +7,6 @@
     "offline": "Offline"
   },
   "dropNewField": "Drop new field here",
-  "moveFieldToPage": "Move field to this page"
+  "moveFieldToPage": "Move field to this page",
+  "editTitle": "Click to edit page name"
 }

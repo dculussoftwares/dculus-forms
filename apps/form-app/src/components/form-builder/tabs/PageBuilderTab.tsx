@@ -90,6 +90,7 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
                   onEditField={onFieldEdit}
                   onMoveFieldBetweenPages={moveFieldBetweenPages}
                   onCopyFieldToPage={copyFieldToPage}
+                  onUpdatePageTitle={(title) => updatePageTitle(selectedPage.id, title)}
                 />
               </div>
             ) : (
