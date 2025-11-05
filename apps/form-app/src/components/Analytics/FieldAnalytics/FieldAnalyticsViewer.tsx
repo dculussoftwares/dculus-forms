@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, Button } from '@dculus/ui';
-import { useFieldAnalyticsManager, FieldAnalyticsData, useFieldAnalyticsCache } from '@/hooks/useFieldAnalytics.ts';
+import { useFieldAnalyticsManager, FieldAnalyticsData } from '@/hooks/useFieldAnalytics.ts';
 import { usePerformanceMonitor, useMemoryTracker } from '@/hooks/usePerformanceMonitor.ts';
 import { TextFieldAnalytics } from './TextFieldAnalytics';
 import { NumberFieldAnalytics } from './NumberFieldAnalytics';
@@ -649,17 +649,6 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
     }
   }, [selectedFieldIdFromUrl, selectedFieldId, selectField, clearSelection, allFields]);
   
-  const { invalidateFormCache } = useFieldAnalyticsCache();
-
-  // Debug field labels
-  console.log('🔍 FieldAnalyticsViewer - All Fields Data:', allFields.map(field => ({
-    fieldId: field.fieldId,
-    fieldType: field.fieldType,
-    fieldLabel: field.fieldLabel,
-    hasFieldLabel: !!field.fieldLabel,
-    fallback: `Field ${field.fieldId}`
-  })));
-  
   // Performance monitoring (only in development and limited logging)
   const { markLoadComplete, getPerformanceSummary: _getPerformanceSummary } = usePerformanceMonitor({
     componentName: 'FieldAnalyticsViewer',
@@ -685,17 +674,6 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
   //     setHasLoggedPerformance(true);
   //   }
   // }, [loading, allFields.length, hasLoggedPerformance, getPerformanceSummary, getMemoryPressure]);
-  
-  // Handle cache invalidation
-  const handleInvalidateCache = async () => {
-    try {
-      await invalidateFormCache(formId);
-      // Refresh data after cache invalidation
-      refreshAll();
-    } catch (err) {
-      console.error('Failed to invalidate cache:', err);
-    }
-  };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -801,7 +779,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex-1 min-w-0">
@@ -868,18 +846,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
             <RefreshCw className={`h-4 w-4 mr-2 ${(allFieldsLoading || selectedFieldLoading || isRefreshing) ? 'animate-spin' : ''}`} />
             {t('buttons.refresh')}
           </Button>
-          
-          {process.env.NODE_ENV === 'development' && (
-            <Button
-              onClick={handleInvalidateCache}
-              variant="outline"
-              size="sm"
-              title={t('buttons.clearCacheTitle')}
-            >
-              {t('buttons.clearCache')}
-            </Button>
-          )}
-          
+
           {totalResponses > 0 && (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm">
               <Eye className="h-4 w-4" />

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useQuery, gql, useMutation } from '@apollo/client';
-import { usePerformanceMonitor, useAsyncPerformanceTracker } from './usePerformanceMonitor';
+import { useQuery, gql } from '@apollo/client';
+import { usePerformanceMonitor } from './usePerformanceMonitor';
 
 // GraphQL queries for field analytics
 const GET_FIELD_ANALYTICS = gql`
@@ -315,28 +315,6 @@ const GET_ALL_FIELDS_ANALYTICS = gql`
   }
 `;
 
-// Cache management queries
-const INVALIDATE_FIELD_ANALYTICS_CACHE = gql`
-  mutation InvalidateFieldAnalyticsCache($formId: ID!) {
-    invalidateFieldAnalyticsCache(formId: $formId) {
-      success
-      message
-    }
-  }
-`;
-
-const GET_FIELD_ANALYTICS_CACHE_STATS = gql`
-  query GetFieldAnalyticsCacheStats {
-    fieldAnalyticsCacheStats {
-      totalEntries
-      expiredEntries
-      totalMemoryUsage
-      memoryUsageFormatted
-      hitRatio
-    }
-  }
-`;
-
 // TypeScript types
 export interface FieldAnalyticsData {
   fieldId: string;
@@ -554,47 +532,3 @@ export const useFieldAnalyticsManager = (formId: string) => {
   };
 };
 
-/**
- * Hook for managing field analytics cache
- */
-export const useFieldAnalyticsCache = () => {
-  const [invalidateCache] = useMutation(INVALIDATE_FIELD_ANALYTICS_CACHE);
-  const { measureAsync } = useAsyncPerformanceTracker();
-
-  const invalidateFormCache = useCallback(async (formId: string) => {
-    const { result } = await measureAsync(
-      () => invalidateCache({ variables: { formId } }),
-      `InvalidateCache-${formId}`,
-      true
-    );
-    
-    return result;
-  }, [invalidateCache, measureAsync]);
-
-  return {
-    invalidateFormCache,
-  };
-};
-
-/**
- * Hook for monitoring field analytics cache performance
- */
-export const useFieldAnalyticsCacheStats = () => {
-  const { data, loading, error, refetch } = useQuery(GET_FIELD_ANALYTICS_CACHE_STATS, {
-    fetchPolicy: 'network-only', // Always fetch fresh cache stats
-    pollInterval: 30000, // Poll every 30 seconds for real-time monitoring
-  });
-
-  const refreshStats = useCallback(() => {
-    if (refetch) {
-      refetch();
-    }
-  }, [refetch]);
-
-  return {
-    stats: data?.fieldAnalyticsCacheStats,
-    loading,
-    error,
-    refreshStats,
-  };
-};

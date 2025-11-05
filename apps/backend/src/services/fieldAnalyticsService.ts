@@ -1,50 +1,5 @@
 import { FieldType } from '@dculus/types';
 import { prisma } from '../lib/prisma.js';
-import { createHash } from 'crypto';
-
-// Cache configuration
-const CACHE_TTL = 30 * 60 * 1000; // 30 minutes in milliseconds
-const CACHE_PREFIX = 'field_analytics:';
-const FORM_CACHE_PREFIX = 'form_responses:';
-
-// Simple in-memory cache (could be replaced with Redis in production)
-const cache = new Map<string, { data: any; expires: number }>();
-
-// Cache utilities
-const getCacheKey = (type: string, ...keys: string[]): string => {
-  const keyString = keys.join(':');
-  return `${type}${createHash('md5').update(keyString).digest('hex')}`;
-};
-
-const getFromCache = <T>(key: string): T | null => {
-  const cached = cache.get(key);
-  if (cached && cached.expires > Date.now()) {
-    return cached.data as T;
-  }
-  if (cached) {
-    cache.delete(key); // Clean up expired entries
-  }
-  return null;
-};
-
-const setCache = <T>(key: string, data: T, ttl: number = CACHE_TTL): void => {
-  cache.set(key, {
-    data,
-    expires: Date.now() + ttl,
-  });
-};
-
-const invalidateFormCache = (formId: string): void => {
-  const formCachePattern = getCacheKey(FORM_CACHE_PREFIX, formId);
-  const fieldCachePattern = getCacheKey(CACHE_PREFIX, formId);
-  
-  // Remove all cache entries for this form
-  for (const [key] of cache) {
-    if (key.includes(formId)) {
-      cache.delete(key);
-    }
-  }
-};
 
 export interface FieldResponse {
   value: any;
@@ -193,27 +148,13 @@ export type FieldAnalytics = FieldAnalyticsBase & (
 );
 
 /**
- * Get all responses for a specific form and extract field values (with caching)
+ * Get all responses for a specific form and extract field values
  */
 export const getFormResponses = async (formId: string): Promise<Array<{
   responseId: string;
   data: Record<string, any>;
   submittedAt: Date;
 }>> => {
-  const cacheKey = getCacheKey(FORM_CACHE_PREFIX, formId);
-  
-  // Check cache first
-  const cached = getFromCache<Array<{
-    responseId: string;
-    data: Record<string, any>;
-    submittedAt: Date;
-  }>>(cacheKey);
-  
-  if (cached) {
-    return cached;
-  }
-
-  // If not cached, fetch from database
   const responses = await prisma.response.findMany({
     where: { formId },
     select: {
@@ -224,16 +165,11 @@ export const getFormResponses = async (formId: string): Promise<Array<{
     orderBy: { submittedAt: 'desc' },
   });
 
-  const result = responses.map(response => ({
+  return responses.map(response => ({
     responseId: response.id,
     data: response.data as Record<string, any>,
     submittedAt: response.submittedAt,
   }));
-
-  // Cache the result
-  setCache(cacheKey, result);
-  
-  return result;
 };
 
 /**
@@ -912,7 +848,7 @@ export const processEmailFieldAnalytics = (
 };
 
 /**
- * Main function to get field analytics for any field type (with caching)
+ * Main function to get field analytics for any field type
  */
 export const getFieldAnalytics = async (
   formId: string,
@@ -920,18 +856,10 @@ export const getFieldAnalytics = async (
   fieldType: FieldType,
   fieldLabel: string
 ): Promise<FieldAnalytics> => {
-  const cacheKey = getCacheKey(CACHE_PREFIX, formId, fieldId, fieldType.toString());
-  
-  // Check cache first
-  const cached = getFromCache<FieldAnalytics>(cacheKey);
-  if (cached) {
-    return cached;
-  }
-
   // Get all form responses
   const responses = await getFormResponses(formId);
   const totalFormResponses = responses.length;
-  
+
   // Extract field values
   const fieldResponses = extractFieldValues(responses, fieldId);
 
@@ -975,9 +903,6 @@ export const getFieldAnalytics = async (
       throw new Error(`Unsupported field type: ${fieldType}`);
   }
 
-  // Cache the result
-  setCache(cacheKey, result);
-  
   return result;
 };
 
@@ -988,26 +913,13 @@ export const getFieldAnalytics = async (
 import { getFormSchemaFromHocuspocus } from './hocuspocus.js';
 
 /**
- * Get analytics for all fields in a form (with caching and optimizations)
+ * Get analytics for all fields in a form
  */
 export const getAllFieldsAnalytics = async (formId: string): Promise<{
   formId: string;
   totalResponses: number;
   fields: FieldAnalytics[];
 }> => {
-  const cacheKey = getCacheKey(CACHE_PREFIX, formId, 'all_fields');
-  
-  // Check cache first
-  const cached = getFromCache<{
-    formId: string;
-    totalResponses: number;
-    fields: FieldAnalytics[];
-  }>(cacheKey);
-  
-  if (cached) {
-    return cached;
-  }
-
   // First, get the form to extract field information
   const form = await prisma.form.findUnique({
     where: { id: formId },
@@ -1019,18 +931,13 @@ export const getAllFieldsAnalytics = async (formId: string): Promise<{
   }
 
   // Always try to get schema from YJS collaborative document first
-  console.log(`🔍 Attempting to get form schema from YJS collaborative document for form ${formId}...`);
   let formSchema = await getFormSchemaFromHocuspocus(formId);
-  
-  if (formSchema) {
-    console.log(`✅ Successfully retrieved form schema from YJS collaborative document for form ${formId}`);
-  } else {
+
+  if (!formSchema) {
     // Fallback to database schema if YJS document doesn't exist
-    console.log(`❌ No YJS collaborative document found, falling back to database schema for form ${formId}`);
     formSchema = form.formSchema as any;
-    
+
     if (!formSchema || Object.keys(formSchema).length === 0) {
-      console.log(`❌ Database schema is also empty for form ${formId}`);
       return {
         formId,
         totalResponses: 0,
@@ -1038,13 +945,13 @@ export const getAllFieldsAnalytics = async (formId: string): Promise<{
       };
     }
   }
-  
-  const responses = await getFormResponses(formId); // This is cached
+
+  const responses = await getFormResponses(formId);
   const totalResponses = responses.length;
 
   // Extract all fields from all pages
   const allFields: Array<{ id: string; type: FieldType; label: string }> = [];
-  
+
   if (formSchema.pages) {
     formSchema.pages.forEach((page: any) => {
       if (page.fields) {
@@ -1066,7 +973,7 @@ export const getAllFieldsAnalytics = async (formId: string): Promise<{
   // Process fields in batches to avoid overwhelming the system
   const batchSize = 5;
   const fieldAnalytics: FieldAnalytics[] = [];
-  
+
   for (let i = 0; i < allFields.length; i += batchSize) {
     const batch = allFields.slice(i, i + batchSize);
     const batchResults = await Promise.all(
@@ -1077,69 +984,9 @@ export const getAllFieldsAnalytics = async (formId: string): Promise<{
     fieldAnalytics.push(...batchResults);
   }
 
-  const result = {
+  return {
     formId,
     totalResponses,
     fields: fieldAnalytics,
   };
-
-  // Cache the result
-  setCache(cacheKey, result);
-
-  return result;
 };
-
-/**
- * Invalidate all cache entries for a specific form
- * Call this when form responses are updated
- */
-export const invalidateFieldAnalyticsCache = (formId: string): void => {
-  invalidateFormCache(formId);
-};
-
-/**
- * Get cache statistics for monitoring
- */
-export const getCacheStats = (): {
-  totalEntries: number;
-  expiredEntries: number;
-  totalMemoryUsage: number;
-} => {
-  const now = Date.now();
-  let expiredEntries = 0;
-  let totalMemoryUsage = 0;
-  
-  for (const [key, value] of cache) {
-    if (value.expires <= now) {
-      expiredEntries++;
-    }
-    // Rough estimate of memory usage
-    totalMemoryUsage += JSON.stringify(value).length;
-  }
-  
-  return {
-    totalEntries: cache.size,
-    expiredEntries,
-    totalMemoryUsage,
-  };
-};
-
-/**
- * Clear expired cache entries (run periodically)
- */
-export const cleanupCache = (): number => {
-  const now = Date.now();
-  let cleanedCount = 0;
-  
-  for (const [key, value] of cache) {
-    if (value.expires <= now) {
-      cache.delete(key);
-      cleanedCount++;
-    }
-  }
-  
-  return cleanedCount;
-};
-
-// Set up periodic cache cleanup (every 10 minutes)
-setInterval(cleanupCache, 10 * 60 * 1000);

@@ -1,11 +1,9 @@
 import { GraphQLError } from 'graphql';
 import { FieldType } from '@dculus/types';
-import { 
-  getFieldAnalytics, 
+import {
+  getFieldAnalytics,
   getAllFieldsAnalytics,
-  invalidateFieldAnalyticsCache,
-  getCacheStats,
-  type FieldAnalytics 
+  type FieldAnalytics
 } from '../../services/fieldAnalyticsService.js';
 import { prisma } from '../../lib/prisma.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
@@ -319,89 +317,5 @@ export const fieldAnalyticsResolvers = {
       }
     },
 
-    /**
-     * Get cache statistics for monitoring performance
-     */
-    fieldAnalyticsCacheStats: async (
-      _: any,
-      __: any,
-      context: any
-    ) => {
-      if (!context.user) {
-        throw new GraphQLError('Authentication required', {
-          extensions: { code: 'UNAUTHENTICATED' }
-        });
-      }
-
-      // Only allow admins or super admins to view cache stats
-      const userRole = context.user.role;
-      if (userRole !== 'admin' && userRole !== 'superAdmin') {
-        throw new GraphQLError('Admin privileges required', {
-          extensions: { code: 'FORBIDDEN' }
-        });
-      }
-
-      try {
-        const stats = getCacheStats();
-        return {
-          totalEntries: stats.totalEntries,
-          expiredEntries: stats.expiredEntries,
-          totalMemoryUsage: stats.totalMemoryUsage,
-          memoryUsageFormatted: `${Math.round(stats.totalMemoryUsage / 1024)}KB`,
-          hitRatio: stats.totalEntries > 0 
-            ? Math.round(((stats.totalEntries - stats.expiredEntries) / stats.totalEntries) * 100)
-            : 0
-        };
-      } catch (error) {
-        console.error('Error getting cache stats:', error);
-        throw new GraphQLError('Failed to get cache statistics', {
-          extensions: { code: 'INTERNAL_ERROR' }
-        });
-      }
-    },
-  },
-
-  Mutation: {
-    /**
-     * Invalidate cache for a specific form
-     * Useful when form responses are updated
-     */
-    invalidateFieldAnalyticsCache: async (
-      _: any,
-      { formId }: { formId: string },
-      context: any
-    ) => {
-      console.log('🧹 Cache invalidation requested for form:', formId);
-      try {
-        if (!context.user) {
-          console.log('❌ No user context found');
-          return {
-            success: false,
-            message: 'Authentication required'
-          };
-        }
-
-        console.log('✅ User authenticated:', context.user.email);
-
-        // Check form access
-        await checkFormAccess(formId, context.user.id, false);
-        console.log('✅ Form access verified');
-
-        // Invalidate cache
-        invalidateFieldAnalyticsCache(formId);
-        console.log('✅ Cache invalidated successfully');
-        
-        return {
-          success: true,
-          message: `Cache invalidated for form ${formId}`
-        };
-      } catch (error) {
-        console.error('❌ Error invalidating cache:', error);
-        return {
-          success: false,
-          message: `Failed to invalidate cache: ${error instanceof Error ? error.message : 'Unknown error'}`
-        };
-      }
-    },
   },
 };

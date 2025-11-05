@@ -774,19 +774,6 @@ export const typeDefs = gql`
     fields: [FieldAnalytics!]!
   }
 
-  type FieldAnalyticsCacheStats {
-    totalEntries: Int!
-    expiredEntries: Int!
-    totalMemoryUsage: Int!
-    memoryUsageFormatted: String!
-    hitRatio: Int!
-  }
-
-  type CacheInvalidationResponse {
-    success: Boolean!
-    message: String!
-  }
-
   type OSStats {
     name: String!
     count: Int!
@@ -982,7 +969,6 @@ export const typeDefs = gql`
     # Field Analytics Queries
     fieldAnalytics(formId: ID!, fieldId: ID!): FieldAnalytics!
     allFieldsAnalytics(formId: ID!): AllFieldsAnalytics!
-    fieldAnalyticsCacheStats: FieldAnalyticsCacheStats!
 
     # Plugin Queries
     formPlugins(formId: ID!): [FormPlugin!]!
@@ -1072,9 +1058,6 @@ export const typeDefs = gql`
     trackFormView(input: TrackFormViewInput!): TrackFormViewResponse!
     updateFormStartTime(input: UpdateFormStartTimeInput!): TrackFormViewResponse!
     trackFormSubmission(input: TrackFormSubmissionInput!): TrackFormViewResponse!
-    
-    # Field Analytics Cache Mutations
-    invalidateFieldAnalyticsCache(formId: ID!): CacheInvalidationResponse!
 
     # Plugin Mutations
     createFormPlugin(input: CreateFormPluginInput!): FormPlugin!

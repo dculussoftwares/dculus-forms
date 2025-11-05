@@ -474,8 +474,8 @@ export const NumberFieldAnalytics: React.FC<NumberFieldAnalyticsProps> = ({
                 <div className="flex justify-between">
                   <span className="text-gray-600">{t('summary.skewness')}</span>
                   <span className="font-medium">
-                    {data.average > data.median ? t('summary.skewnessRight') : 
-                     data.average < data.median ? t('summary.skewnessLeft') : t('summary.skewnessSymmetric')}
+                    {data.average > data.median ? t('summary.right') :
+                     data.average < data.median ? t('summary.left') : t('summary.symmetric')}
                   </span>
                 </div>
               </div>
