@@ -77,18 +77,20 @@ const MINI_CHART_COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444'
 
 // Mini Preview Charts
 const MiniWordCloud: React.FC<{ words: Array<{ word: string; count: number }> }> = ({ words }) => {
+  const { t } = useTranslation('fieldAnalyticsViewer');
+
   if (!words || words.length === 0) return (
     <div className="flex items-center justify-center h-full text-gray-400">
       <div className="text-center">
         <FileText className="h-12 w-12 mx-auto mb-2" />
-        <p className="text-sm">{useTranslation('fieldAnalyticsViewer').t('miniCharts.noWordData')}</p>
+        <p className="text-sm">{t('miniCharts.noWordData')}</p>
       </div>
     </div>
   );
-  
+
   const topWords = words.slice(0, 10);
   const maxCount = Math.max(...topWords.map(w => w.count));
-  
+
   return (
     <div className="flex flex-wrap gap-3 items-center justify-center h-full p-4">
       {topWords.map((word) => {
@@ -98,11 +100,11 @@ const MiniWordCloud: React.FC<{ words: Array<{ word: string; count: number }> }>
           <span
             key={word.word}
             className="px-2 py-1 text-blue-600 font-semibold hover:scale-110 transition-transform cursor-default"
-            style={{ 
+            style={{
               fontSize: `${size}px`,
               opacity: opacity
             }}
-            title={`"${word.word}" appears ${word.count} times`}
+            title={t('tooltips.wordAppears', { values: { word: word.word, count: word.count } })}
           >
             {word.word}
           </span>
@@ -352,7 +354,7 @@ const FieldSelectionGrid: React.FC<{
         return (
           <Card
             key={field.fieldId}
-            className={`cursor-pointer transition-all hover:shadow-lg ${
+            className={`cursor-pointer transition-all hover:shadow-lg overflow-hidden ${
               isSelected ? 'ring-2 ring-blue-500 shadow-lg' : 'hover:ring-1 hover:ring-gray-300'
             }`}
             onClick={() => onFieldSelect(field.fieldId)}
@@ -372,11 +374,11 @@ const FieldSelectionGrid: React.FC<{
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <div className="font-semibold text-gray-900 text-base truncate cursor-help">
-                              {field.fieldLabel || `Field ${field.fieldId}`}
+                              {field.fieldLabel || `${t('fieldHeader.fieldPrefix')} ${field.fieldId}`}
                             </div>
                           </TooltipTrigger>
                           <TooltipContent side="top" className="max-w-xs">
-                            <p className="text-sm">{field.fieldLabel || `Field ${field.fieldId}`}</p>
+                            <p className="text-sm">{field.fieldLabel || `${t('fieldHeader.fieldPrefix')} ${field.fieldId}`}</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -395,9 +397,9 @@ const FieldSelectionGrid: React.FC<{
                         </div>
                       </TooltipTrigger>
                       <TooltipContent side="top" className="max-w-xs">
-                        <p className="text-sm font-semibold mb-1">Response Rate</p>
+                        <p className="text-sm font-semibold mb-1">{t('tooltips.responseRate.title')}</p>
                         <p className="text-xs opacity-90">
-                          Percentage of form submissions that included a response for this field
+                          {t('tooltips.responseRate.description')}
                         </p>
                       </TooltipContent>
                     </Tooltip>
@@ -407,7 +409,7 @@ const FieldSelectionGrid: React.FC<{
 
               {/* Chart Preview */}
               <div className="bg-gradient-to-br from-blue-50/50 to-purple-50/50 p-4">
-                <div className="h-48 flex items-center justify-center bg-white rounded-lg shadow-sm">
+                <div className="h-48 flex items-center justify-center bg-white rounded-xl shadow-sm">
                   <MiniPreviewChart field={field} />
                 </div>
               </div>
@@ -465,7 +467,7 @@ const AnalyticsContent: React.FC<{
           />
         ) : (
           <div className="text-center py-8 text-gray-500">
-            No text analytics data available
+            {t('noDataMessages.textAnalytics')}
           </div>
         );
 
@@ -479,7 +481,7 @@ const AnalyticsContent: React.FC<{
           />
         ) : (
           <div className="text-center py-8 text-gray-500">
-            No number analytics data available
+            {t('noDataMessages.numberAnalytics')}
           </div>
         );
 
@@ -495,7 +497,7 @@ const AnalyticsContent: React.FC<{
           />
         ) : (
           <div className="text-center py-8 text-gray-500">
-            No selection analytics data available
+            {t('noDataMessages.selectionAnalytics')}
           </div>
         );
 
@@ -509,7 +511,7 @@ const AnalyticsContent: React.FC<{
           />
         ) : (
           <div className="text-center py-8 text-gray-500">
-            No checkbox analytics data available
+            {t('noDataMessages.checkboxAnalytics')}
           </div>
         );
 
@@ -523,7 +525,7 @@ const AnalyticsContent: React.FC<{
           />
         ) : (
           <div className="text-center py-8 text-gray-500">
-            No date analytics data available
+            {t('noDataMessages.dateAnalytics')}
           </div>
         );
 
@@ -537,7 +539,7 @@ const AnalyticsContent: React.FC<{
           />
         ) : (
           <div className="text-center py-8 text-gray-500">
-            No email analytics data available
+            {t('noDataMessages.emailAnalytics')}
           </div>
         );
 
@@ -562,10 +564,10 @@ const AnalyticsContent: React.FC<{
           </div>
           <div>
             <h2 className="text-xl font-bold text-gray-900">
-              {field.fieldLabel || `Field ${field.fieldId}`}
+              {field.fieldLabel || `${t('fieldHeader.fieldPrefix')} ${field.fieldId}`}
             </h2>
             <p className="text-sm text-gray-600">
-              {getFieldTypeDisplayName(field.fieldType, t)} • {field.totalResponses} responses • {field.responseRate.toFixed(1)}% response rate
+              {getFieldTypeDisplayName(field.fieldType, t)} • {t('fieldHeader.responsesCount', { values: { count: field.totalResponses } })} • {t('fieldHeader.responseRateText', { values: { rate: field.responseRate.toFixed(1) } })}
             </p>
           </div>
         </div>
@@ -782,7 +784,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
               className="mb-4 text-gray-600 hover:text-gray-900 p-0 h-auto font-normal"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
-              All Fields
+              {t('navigation.allFields')}
             </Button>
           )}
           <h1 className="text-2xl font-bold text-gray-900 w-40">
@@ -790,7 +792,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
           </h1>
           {view === 'grid' && (
             <p className="text-gray-600 mt-1">
-              Analyze individual field performance across {totalResponses} form responses
+              {t('description.analyzePerformance', { values: { count: totalResponses } })}
             </p>
           )}
         </div>
@@ -933,7 +935,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
         />
       ) : (
         <div className="text-center py-8 text-gray-500">
-          Loading field analytics...
+          {t('loading.fieldAnalytics')}
         </div>
       )}
 

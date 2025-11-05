@@ -89,5 +89,34 @@
     "highEngagement": "High Engagement",
     "avgResponseRate": "Avg Response Rate",
     "formResponses": "Form Responses"
+  },
+  "tooltips": {
+    "responseRate": {
+      "title": "Response Rate",
+      "description": "Percentage of form submissions that included a response for this field"
+    },
+    "wordAppears": "\"{{word}}\" appears {{count}} times"
+  },
+  "noDataMessages": {
+    "textAnalytics": "No text analytics data available",
+    "numberAnalytics": "No number analytics data available",
+    "selectionAnalytics": "No selection analytics data available",
+    "checkboxAnalytics": "No checkbox analytics data available",
+    "dateAnalytics": "No date analytics data available",
+    "emailAnalytics": "No email analytics data available"
+  },
+  "fieldHeader": {
+    "responsesCount": "{{count}} responses",
+    "responseRateText": "{{rate}}% response rate",
+    "fieldPrefix": "Field"
+  },
+  "navigation": {
+    "allFields": "All Fields"
+  },
+  "description": {
+    "analyzePerformance": "Analyze individual field performance across {{count}} form responses"
+  },
+  "loading": {
+    "fieldAnalytics": "Loading field analytics..."
   }
 }

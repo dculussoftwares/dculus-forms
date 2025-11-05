@@ -189,10 +189,132 @@ Additional field-specific constraints:
 - Business logic in `apps/backend/src/services/`
 - Prisma client configured in `apps/backend/src/lib/prisma.ts`
 
-### Frontend Patterns  
+### Frontend Patterns
 - Apollo Client setup in `apps/form-app/src/services/apolloClient.ts`
 - GraphQL queries/mutations in `apps/form-app/src/graphql/`
 - Page components in respective `pages/` directories
+
+### Internationalization & Translation Guidelines
+
+**IMPORTANT**: All user-facing strings MUST be internationalized using the translation system.
+
+#### Translation System Architecture
+- **Translation files location**: `apps/form-app/src/locales/en/*.json`
+- **Namespace pattern**: One JSON file per component/feature (e.g., `fieldAnalyticsViewer.json`)
+- **Translation hook**: `useTranslation('namespaceName')` returns `{ t }` function
+- **Variable interpolation**: Use `{{variableName}}` syntax in JSON, pass via `values` parameter
+
+#### Never Hardcode Strings
+**❌ WRONG** - Hardcoded strings:
+```typescript
+<p>Loading field analytics...</p>
+<h1>Field Analytics</h1>
+<div title={`"${word}" appears ${count} times`}>
+```
+
+**✅ CORRECT** - Using translations:
+```typescript
+<p>{t('loading.fieldAnalytics')}</p>
+<h1>{t('titles.fieldAnalytics')}</h1>
+<div title={t('tooltips.wordAppears', { values: { word, count } })}>
+```
+
+#### Translation File Structure
+Organize translations logically with nested objects:
+```json
+{
+  "titles": {
+    "main": "Field Analytics",
+    "details": "Field Insights"
+  },
+  "buttons": {
+    "refresh": "Refresh",
+    "save": "Save"
+  },
+  "tooltips": {
+    "responseRate": {
+      "title": "Response Rate",
+      "description": "Percentage of form submissions..."
+    }
+  },
+  "errors": {
+    "loadingFailed": "Failed to load data"
+  }
+}
+```
+
+#### Using Translations in Components
+```typescript
+// 1. Import translation hook
+import { useTranslation } from '../../hooks/useTranslation';
+
+// 2. Use hook with namespace
+const { t } = useTranslation('fieldAnalyticsViewer');
+
+// 3. Simple translation
+<h1>{t('titles.main')}</h1>
+
+// 4. Translation with variables
+<p>{t('description.count', { values: { count: 10 } })}</p>
+
+// 5. Nested translation keys
+<p>{t('tooltips.responseRate.description')}</p>
+```
+
+#### When Adding New Components
+1. **Create translation file**: `apps/form-app/src/locales/en/yourComponent.json`
+2. **Import in index.ts**: Add import and export in `apps/form-app/src/locales/index.ts`
+3. **Register namespace**: Add to translations object with camelCase key
+4. **Use in component**: `useTranslation('yourComponent')`
+
+#### Translation Best Practices
+- **Use descriptive keys**: `error.loadingFailed` not `err1`
+- **Group related strings**: Use nested objects for organization
+- **Variable interpolation**: Use `{{varName}}` for dynamic content
+- **Reusable strings**: Share common strings under `common` namespace
+- **No UI logic in translations**: Keep translations as pure text, no HTML
+- **Consistent naming**: Use camelCase for keys, match component structure
+
+#### Example: Complete Translation Setup
+**File**: `apps/form-app/src/locales/en/userProfile.json`
+```json
+{
+  "title": "User Profile",
+  "fields": {
+    "name": "Full Name",
+    "email": "Email Address"
+  },
+  "buttons": {
+    "save": "Save Changes",
+    "cancel": "Cancel"
+  },
+  "messages": {
+    "saveSuccess": "Profile updated successfully",
+    "saveError": "Failed to update profile"
+  }
+}
+```
+
+**Component**: `apps/form-app/src/components/UserProfile.tsx`
+```typescript
+import { useTranslation } from '../hooks/useTranslation';
+
+export const UserProfile = () => {
+  const { t } = useTranslation('userProfile');
+
+  return (
+    <div>
+      <h1>{t('title')}</h1>
+      <input placeholder={t('fields.name')} />
+      <input placeholder={t('fields.email')} />
+      <button>{t('buttons.save')}</button>
+      <button>{t('buttons.cancel')}</button>
+    </div>
+  );
+};
+```
+
+**Key Rule**: If a user can see it on screen, it MUST be translated. No exceptions.
 
 ## Environment Setup
 
