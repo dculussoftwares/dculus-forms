@@ -25,7 +25,7 @@ export const createFormViewAnalyticsRepository = (
   ) => prisma.formViewAnalytics.findMany(args);
 
   const createViewEvent = async (
-    data: Prisma.FormViewAnalyticsCreateArgs['data']
+    data: Prisma.FormViewAnalyticsUncheckedCreateInput
   ) =>
     prisma.formViewAnalytics.create({
       data,

@@ -484,6 +484,57 @@ export const useAllFieldsAnalytics = (formId: string) => {
 };
 
 // Hook for managing field selection and analytics display
+export interface FieldAnalyticsCacheStats {
+  hitRatio: number;
+  totalEntries: number;
+  expiredEntries: number;
+  memoryUsageFormatted: string;
+}
+
+export const useFieldAnalyticsCacheStats = () => {
+  const monitor = usePerformanceMonitor({
+    componentName: 'useFieldAnalyticsCacheStats',
+    trackDataFetching: false,
+  });
+
+  const [stats, setStats] = useState<FieldAnalyticsCacheStats | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const loadStats = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    monitor.startDataFetch();
+
+    try {
+      // Placeholder implementation: replace with real analytics cache stats once available.
+      setStats({
+        hitRatio: 0,
+        totalEntries: 0,
+        expiredEntries: 0,
+        memoryUsageFormatted: '0 KB',
+      });
+      monitor.markLoadComplete();
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      monitor.endDataFetch();
+      setLoading(false);
+    }
+  }, [monitor]);
+
+  useEffect(() => {
+    void loadStats();
+  }, [loadStats]);
+
+  return {
+    stats,
+    loading,
+    error,
+    refreshStats: loadStats,
+  };
+};
+
 export const useFieldAnalyticsManager = (formId: string) => {
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   
@@ -531,4 +582,3 @@ export const useFieldAnalyticsManager = (formId: string) => {
     error: allFieldsQuery.error || fieldQuery.error,
   };
 };
-

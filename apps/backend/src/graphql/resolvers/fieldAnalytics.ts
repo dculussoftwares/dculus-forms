@@ -318,4 +318,5 @@ export const fieldAnalyticsResolvers = {
     },
 
   },
+  Mutation: {},
 };

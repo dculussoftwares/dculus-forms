@@ -21,7 +21,7 @@ export const createFormSubmissionAnalyticsRepository = (
   ) => prisma.formSubmissionAnalytics.findMany(args);
 
   const createSubmissionEvent = async (
-    data: Prisma.FormSubmissionAnalyticsCreateArgs['data']
+    data: Prisma.FormSubmissionAnalyticsUncheckedCreateInput
   ) =>
     prisma.formSubmissionAnalytics.create({
       data,

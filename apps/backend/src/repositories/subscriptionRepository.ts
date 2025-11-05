@@ -21,7 +21,7 @@ export const createSubscriptionRepository = (context?: RepositoryContext) => {
   ) => prisma.subscription.update(args);
 
   const createSubscription = async (
-    data: Prisma.SubscriptionCreateArgs['data']
+    data: Prisma.SubscriptionUncheckedCreateInput
   ) =>
     prisma.subscription.create({
       data,
@@ -29,8 +29,8 @@ export const createSubscriptionRepository = (context?: RepositoryContext) => {
 
   const upsertForOrganization = async (
     organizationId: string,
-    updateData: Prisma.SubscriptionUpdateArgs['data'],
-    createData: Prisma.SubscriptionCreateArgs['data']
+    updateData: Prisma.SubscriptionUncheckedUpdateInput,
+    createData: Prisma.SubscriptionUncheckedCreateInput
   ) =>
     prisma.subscription.upsert({
       where: { organizationId },
