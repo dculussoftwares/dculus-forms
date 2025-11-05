@@ -799,8 +799,6 @@ export const useFormBuilderStore = create<FormBuilderState>()(
 
           const pageMap = pagesArray.get(pageIndex);
           pageMap.set('title', title);
-
-          console.log(`Updated page ${pageId} title to: ${title}`);
         },
 
         moveFieldBetweenPages: (sourcePageId: string, targetPageId: string, fieldId: string, insertIndex?: number) => {

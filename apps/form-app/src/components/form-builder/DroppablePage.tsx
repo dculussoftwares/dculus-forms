@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDroppable, useDndContext } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -44,6 +44,12 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
   onCopyFieldToPage,
 }) => {
   const { t } = useTranslation('droppablePage');
+  const [displayTitle, setDisplayTitle] = useState(page.title);
+
+  // Sync displayTitle when page.title changes (from YJS or props)
+  useEffect(() => {
+    setDisplayTitle(page.title);
+  }, [page.title]);
 
   // Helper function for field count with proper pluralization
   const getFieldCountText = (count: number) => {
@@ -124,7 +130,7 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
                 {index + 1}
               </div>
               <TypographyH3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {page.title}
+                {displayTitle}
               </TypographyH3>
             </div>
             

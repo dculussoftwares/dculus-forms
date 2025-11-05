@@ -67,6 +67,7 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
 
   const handleSaveTitle = () => {
     const trimmedTitle = editedTitle.trim();
+
     if (!trimmedTitle) {
       // Revert to original title if empty
       setEditedTitle(page.title);

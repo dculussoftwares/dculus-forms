@@ -274,13 +274,22 @@ export class CollaborationManager {
     if (!pagesArray) return;
 
     const pagesObserver = (_event: Y.YArrayEvent<Y.Map<any>>) => {
-      console.log('📡 Pages array changed');
       this.updateFromYJS();
       this.setupFieldObservers();
     };
 
     pagesArray.observe(pagesObserver);
     this.observerCleanups.push(() => pagesArray.unobserve(pagesObserver));
+
+    // Add observers for each individual page map to detect property changes (e.g., title)
+    pagesArray.toArray().forEach(pageMap => {
+      const pageMapObserver = () => {
+        this.updateFromYJS();
+      };
+
+      pageMap.observe(pageMapObserver);
+      this.observerCleanups.push(() => pageMap.unobserve(pageMapObserver));
+    });
 
     this.setupFieldObservers();
   }

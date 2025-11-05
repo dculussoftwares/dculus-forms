@@ -76,6 +76,7 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
             ) : selectedPage ? (
               <div className="max-w-4xl mx-auto">
                 <DroppablePage
+                  key={`${selectedPage.id}-${selectedPage.title}`}
                   page={selectedPage}
                   index={pages.findIndex(p => p.id === selectedPage.id)}
                   isSelected={true}
