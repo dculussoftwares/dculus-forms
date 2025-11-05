@@ -60,15 +60,15 @@ const getFieldTypeIcon = (fieldType: string) => {
 // Field Type Display Names
 const getFieldTypeDisplayName = (fieldType: string, t: (key: string) => string) => {
   switch (fieldType) {
-    case 'text_input_field': return t('fieldAnalyticsViewer.fieldTypes.text_input_field');
-    case 'text_area_field': return t('fieldAnalyticsViewer.fieldTypes.text_area_field');
-    case 'number_field': return t('fieldAnalyticsViewer.fieldTypes.number_field');
-    case 'email_field': return t('fieldAnalyticsViewer.fieldTypes.email_field');
-    case 'date_field': return t('fieldAnalyticsViewer.fieldTypes.date_field');
-    case 'select_field': return t('fieldAnalyticsViewer.fieldTypes.select_field');
-    case 'radio_field': return t('fieldAnalyticsViewer.fieldTypes.radio_field');
-    case 'checkbox_field': return t('fieldAnalyticsViewer.fieldTypes.checkbox_field');
-    default: return t('fieldAnalyticsViewer.fieldTypes.unknown');
+    case 'text_input_field': return t('fieldTypes.text_input_field');
+    case 'text_area_field': return t('fieldTypes.text_area_field');
+    case 'number_field': return t('fieldTypes.number_field');
+    case 'email_field': return t('fieldTypes.email_field');
+    case 'date_field': return t('fieldTypes.date_field');
+    case 'select_field': return t('fieldTypes.select_field');
+    case 'radio_field': return t('fieldTypes.radio_field');
+    case 'checkbox_field': return t('fieldTypes.checkbox_field');
+    default: return t('fieldTypes.unknown');
   }
 };
 
