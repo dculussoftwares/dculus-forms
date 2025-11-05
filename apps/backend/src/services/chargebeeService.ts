@@ -70,21 +70,19 @@ export const createFreeSubscription = async (
     const periodEnd = new Date();
     periodEnd.setMonth(periodEnd.getMonth() + 1); // Free plan is monthly
 
-    await subscriptionRepository.create({
-      data: {
-        id: `sub_${organizationId}`,
-        organizationId,
-        chargebeeCustomerId,
-        chargebeeSubscriptionId: null, // No Chargebee subscription for free plan
-        planId: 'free',
-        status: 'active',
-        viewsUsed: 0,
-        submissionsUsed: 0,
-        viewsLimit: PLAN_LIMITS.free.views,
-        submissionsLimit: PLAN_LIMITS.free.submissions,
-        currentPeriodStart: now,
-        currentPeriodEnd: periodEnd,
-      },
+    await subscriptionRepository.createSubscription({
+      id: `sub_${organizationId}`,
+      organizationId,
+      chargebeeCustomerId,
+      chargebeeSubscriptionId: null, // No Chargebee subscription for free plan
+      planId: 'free',
+      status: 'active',
+      viewsUsed: 0,
+      submissionsUsed: 0,
+      viewsLimit: PLAN_LIMITS.free.views,
+      submissionsLimit: PLAN_LIMITS.free.submissions,
+      currentPeriodStart: now,
+      currentPeriodEnd: periodEnd,
     });
 
     console.log('[Chargebee Service] Created free subscription for organization:', organizationId);
@@ -224,18 +222,20 @@ export const syncSubscriptionFromWebhook = async (
     else if (subscriptionData.status === 'paused') status = 'expired';
 
     // Update or create subscription
-    await subscriptionRepository.upsert({
-      where: { organizationId },
-      update: {
+    await subscriptionRepository.upsertForOrganization(
+      organizationId,
+      {
         chargebeeSubscriptionId: subscriptionData.id,
         planId,
         status,
         viewsLimit: limits.views,
         submissionsLimit: limits.submissions,
-        currentPeriodStart: new Date(subscriptionData.current_term_start * 1000),
+        currentPeriodStart: new Date(
+          subscriptionData.current_term_start * 1000
+        ),
         currentPeriodEnd: new Date(subscriptionData.current_term_end * 1000),
       },
-      create: {
+      {
         id: `sub_${organizationId}`,
         organizationId,
         chargebeeCustomerId: customerId,
@@ -246,10 +246,12 @@ export const syncSubscriptionFromWebhook = async (
         submissionsUsed: 0,
         viewsLimit: limits.views,
         submissionsLimit: limits.submissions,
-        currentPeriodStart: new Date(subscriptionData.current_term_start * 1000),
+        currentPeriodStart: new Date(
+          subscriptionData.current_term_start * 1000
+        ),
         currentPeriodEnd: new Date(subscriptionData.current_term_end * 1000),
-      },
-    });
+      }
+    );
 
     console.log('[Chargebee Service] Synced subscription for organization:', organizationId);
   } catch (error: any) {

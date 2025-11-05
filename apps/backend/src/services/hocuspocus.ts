@@ -58,10 +58,10 @@ export const createHocuspocusServer = () => {
           try {
             console.log(`🔍 [Hocuspocus] Fetching document: ${documentName}`);
             
-            const document = await collaborativeDocumentRepository.findUnique({
-              where: { documentName },
-              select: { state: true, id: true, updatedAt: true }
-            });
+            const document =
+              await collaborativeDocumentRepository.fetchDocumentWithState(
+                documentName
+              );
 
             if (document && document.state) {
               console.log(`✅ [Hocuspocus] Document found for ${documentName}:`);
@@ -75,9 +75,7 @@ export const createHocuspocusServer = () => {
             console.log(`❌ [Hocuspocus] Document not found for: ${documentName}`);
             
             // List all documents for debugging
-            const allDocs = await collaborativeDocumentRepository.findMany({
-              select: { documentName: true, id: true }
-            });
+            const allDocs = await collaborativeDocumentRepository.listDocumentNames();
             console.log(`📋 [Hocuspocus] Available documents:`, allDocs.map((d: {documentName: string}) => d.documentName));
             
             return null;
@@ -91,30 +89,11 @@ export const createHocuspocusServer = () => {
             console.log(`[Hocuspocus] Storing document ${documentName} with state length: ${state.length}`);
             
             // Try to find existing document first
-            const existingDoc = await collaborativeDocumentRepository.findUnique({
-              where: { documentName }
-            });
-
-            if (existingDoc) {
-              // Update existing document
-              await collaborativeDocumentRepository.update({
-                where: { documentName },
-                data: {
-                  state: Buffer.from(state),
-                  updatedAt: new Date()
-                }
-              });
-            } else {
-              // Create new document
-              await collaborativeDocumentRepository.create({
-                data: {
-                  id: `collab-${documentName}`,
-                  documentName,
-                  state: Buffer.from(state),
-                  updatedAt: new Date()
-                }
-              });
-            }
+            await collaborativeDocumentRepository.saveDocumentState(
+              documentName,
+              Buffer.from(state),
+              (name) => `collab-${name}`
+            );
 
             console.log(`[Hocuspocus] Document ${documentName} stored successfully`);
           } catch (error) {
@@ -277,10 +256,8 @@ export const getFormSchemaFromHocuspocus = async (formId: string): Promise<any |
     console.log(`🔍 Getting form schema from Hocuspocus for form: ${formId}`);
     
     // Get the collaborative document from database
-    const collabDoc = await collaborativeDocumentRepository.findUnique({
-      where: { documentName: formId },
-      select: { state: true }
-    });
+    const collabDoc =
+      await collaborativeDocumentRepository.fetchDocumentWithState(formId);
     
     if (!collabDoc || !collabDoc.state) {
       console.log(`❌ No collaborative document found for form: ${formId}`);
@@ -527,14 +504,11 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
     console.log(`💾 Storing document state to MongoDB for form: ${formId}, update size: ${fullUpdate.length} bytes`);
     
     // Create the collaborative document
-    await collaborativeDocumentRepository.create({
-      data: {
-        id: `collab-${formId}`,
-        documentName: formId,
-        state: Buffer.from(fullUpdate),
-        updatedAt: new Date()
-      }
-    });
+    await collaborativeDocumentRepository.saveDocumentState(
+      formId,
+      Buffer.from(fullUpdate),
+      (name) => `collab-${name}`
+    );
     
     console.log(`✅ Hocuspocus document initialized successfully for form: ${formId}`);
     

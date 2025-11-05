@@ -35,9 +35,7 @@ const generateUniqueShortUrl = async (): Promise<string> => {
     shortUrl = await generateShortUrl(8); // Generate 8-character short URL
     
     // Check if this short URL already exists
-    const existingForm = await formRepository.findUnique({
-      where: { shortUrl },
-    });
+    const existingForm = await formRepository.findByShortUrl(shortUrl);
     
     if (!existingForm) {
       isUnique = true;
@@ -52,14 +50,7 @@ const generateUniqueShortUrl = async (): Promise<string> => {
 };
 
 export const getAllForms = async (organizationId?: string): Promise<Form[]> => {
-  const forms = await formRepository.findMany({
-    ...(organizationId ? { where: { organizationId } } : {}),
-    orderBy: { createdAt: 'desc' },
-    include: {
-      organization: true,
-      createdBy: true,
-    },
-  });
+  const forms = await formRepository.listByOrganization(organizationId);
   
   return forms.map((form: any) => ({
     ...form,
@@ -69,13 +60,7 @@ export const getAllForms = async (organizationId?: string): Promise<Form[]> => {
 
 export const getFormById = async (id: string): Promise<Form | null> => {
   try {
-    const form = await formRepository.findUnique({
-      where: { id },
-      include: {
-        organization: true,
-        createdBy: true,
-      },
-    });
+    const form = await formRepository.findById(id);
     
     if (!form) return null;
     
@@ -91,13 +76,7 @@ export const getFormById = async (id: string): Promise<Form | null> => {
 
 export const getFormByShortUrl = async (shortUrl: string): Promise<Form | null> => {
   try {
-    const form = await formRepository.findUnique({
-      where: { shortUrl },
-      include: {
-        organization: true,
-        createdBy: true,
-      },
-    });
+    const form = await formRepository.findByShortUrl(shortUrl);
     
     if (!form) return null;
     
@@ -151,22 +130,16 @@ export const createForm = async (
   const shortUrl = await generateUniqueShortUrl();
   
   // Create form without formSchema field in database
-  const newForm = await formRepository.create({
-    data: {
-      id: formData.id,
-      title: formData.title,
-      description: formData.description,
-      shortUrl,
-      formSchema: {}, // Store empty object as placeholder
-      isPublished: formData.isPublished || false,
-      organizationId: formData.organizationId,
-      createdById: formData.createdById,
-      settings: normalizedSettings,
-    },
-    include: {
-      organization: true,
-      createdBy: true,
-    },
+  const newForm = await formRepository.createForm({
+    id: formData.id,
+    title: formData.title,
+    description: formData.description,
+    shortUrl,
+    formSchema: {}, // Store empty object as placeholder
+    isPublished: formData.isPublished || false,
+    organizationId: formData.organizationId,
+    createdById: formData.createdById,
+    settings: normalizedSettings,
   });
   
   const result = {
@@ -176,14 +149,12 @@ export const createForm = async (
 
   // Create OWNER permission for the form creator
   try {
-    await formRepository.createPermission({
-      data: {
-        id: randomUUID(),
-        formId: result.id,
-        userId: formData.createdById,
-        permission: 'OWNER',
-        grantedById: formData.createdById, // Self-granted
-      }
+    await formRepository.createOwnerPermission({
+      id: randomUUID(),
+      formId: result.id,
+      userId: formData.createdById,
+      permission: 'OWNER',
+      grantedById: formData.createdById, // Self-granted
     });
     console.log(`✅ Created OWNER permission for form creator: ${result.id}`);
   } catch (error) {
@@ -206,13 +177,7 @@ export const createForm = async (
 };
 
 export const duplicateForm = async (formId: string, userId: string): Promise<Form> => {
-  const existingForm = await formRepository.findUnique({
-    where: { id: formId },
-    include: {
-      organization: true,
-      createdBy: true,
-    },
-  });
+  const existingForm = await formRepository.findById(formId);
 
   if (!existingForm) {
     throw new Error('Form not found');
@@ -230,17 +195,15 @@ export const duplicateForm = async (formId: string, userId: string): Promise<For
       const copiedFile = await copyFileForForm(schemaClone.layout.backgroundImageKey, newFormId);
       schemaClone.layout.backgroundImageKey = copiedFile.key;
 
-      await formRepository.createFile({
-        data: {
-          id: randomUUID(),
-          key: copiedFile.key,
-          type: 'FormBackground',
-          formId: newFormId,
-          originalName: copiedFile.originalName,
-          url: copiedFile.url,
-          size: copiedFile.size,
-          mimeType: copiedFile.mimeType,
-        },
+      await formRepository.createFormAsset({
+        id: randomUUID(),
+        key: copiedFile.key,
+        type: 'FormBackground',
+        formId: newFormId,
+        originalName: copiedFile.originalName,
+        url: copiedFile.url,
+        size: copiedFile.size,
+        mimeType: copiedFile.mimeType,
       });
     } catch (error) {
       console.error(`❌ Failed to copy background image for duplicated form ${formId}:`, error);
@@ -278,13 +241,7 @@ export const duplicateForm = async (formId: string, userId: string): Promise<For
 export const updateForm = async (id: string, formData: Partial<Omit<Form, 'id' | 'createdAt' | 'updatedAt' | 'organizationId' | 'createdById' | 'shortUrl'>>, userId?: string): Promise<Form | null> => {
   try {
     // First, get the current form state to check if it's being published
-    const currentForm = await formRepository.findUnique({
-      where: { id },
-      include: {
-        organization: true,
-        createdBy: true,
-      },
-    });
+    const currentForm = await formRepository.findById(id);
     
     if (!currentForm) {
       throw new Error('Form not found');
@@ -327,14 +284,7 @@ export const updateForm = async (id: string, formData: Partial<Omit<Form, 'id' |
     if (formData.isPublished !== undefined) updateData.isPublished = formData.isPublished;
     if (formData.settings !== undefined) updateData.settings = formData.settings;
     
-    const updatedForm = await formRepository.update({
-      where: { id },
-      data: updateData,
-      include: {
-        organization: true,
-        createdBy: true,
-      },
-    });
+    const updatedForm = await formRepository.updateForm(id, updateData);
     
     // Check if form is being published (changed from false to true)
     const isBeingPublished = !currentForm.isPublished && formData.isPublished === true;
@@ -373,14 +323,7 @@ export const regenerateShortUrl = async (id: string): Promise<Form | null> => {
     // Generate a new unique short URL
     const newShortUrl = await generateUniqueShortUrl();
     
-    const updatedForm = await formRepository.update({
-      where: { id },
-      data: { shortUrl: newShortUrl },
-      include: {
-        organization: true,
-        createdBy: true,
-      },
-    });
+    const updatedForm = await formRepository.updateForm(id, { shortUrl: newShortUrl });
     
     return {
       ...updatedForm,
@@ -405,9 +348,7 @@ export const deleteForm = async (id: string, userId?: string): Promise<boolean> 
       console.log(`✅ Permission validated for user ${userId} to delete form ${id}: OWNER`);
     }
     
-    await formRepository.delete({
-      where: { id },
-    });
+    await formRepository.deleteForm(id);
     return true;
   } catch (error) {
     console.error('Error deleting form:', error);

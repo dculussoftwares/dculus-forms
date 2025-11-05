@@ -1,7 +1,7 @@
-import { 
-  FormSchema, 
-  serializeFormSchema, 
-  deserializeFormSchema 
+import {
+  FormSchema,
+  serializeFormSchema,
+  deserializeFormSchema,
 } from '@dculus/types';
 import { randomUUID } from 'crypto';
 import { formTemplateRepository } from '../repositories/index.js';
@@ -35,14 +35,10 @@ export interface UpdateTemplateInput {
 /**
  * Get all active templates, optionally filtered by category
  */
-export const getAllTemplates = async (category?: string): Promise<FormTemplate[]> => {
-  const templates = await formTemplateRepository.findMany({
-    where: {
-      isActive: true,
-      ...(category && { category }),
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+export const getAllTemplates = async (
+  category?: string
+): Promise<FormTemplate[]> => {
+  const templates = await formTemplateRepository.listActive(category);
 
   return templates.map((template: any) => ({
     ...template,
@@ -57,9 +53,7 @@ export const getAllTemplates = async (category?: string): Promise<FormTemplate[]
  */
 export const getTemplateById = async (id: string): Promise<FormTemplate | null> => {
   try {
-    const template = await formTemplateRepository.findUnique({
-      where: { id },
-    });
+    const template = await formTemplateRepository.fetchById(id);
 
     if (!template) return null;
 
@@ -79,15 +73,13 @@ export const getTemplateById = async (id: string): Promise<FormTemplate | null> 
  * Create a new form template
  */
 export const createTemplate = async (templateData: CreateTemplateInput): Promise<FormTemplate> => {
-  const newTemplate = await formTemplateRepository.create({
-    data: {
-      id: randomUUID(),
-      name: templateData.name,
-      description: templateData.description,
-      category: templateData.category,
-      formSchema: serializeFormSchema(templateData.formSchema) as any,
-      isActive: true,
-    },
+  const newTemplate = await formTemplateRepository.createTemplate({
+    id: randomUUID(),
+    name: templateData.name,
+    description: templateData.description,
+    category: templateData.category,
+    formSchema: serializeFormSchema(templateData.formSchema) as any,
+    isActive: true,
   });
 
   return {
@@ -114,10 +106,10 @@ export const updateTemplate = async (
     if (templateData.formSchema) updateData.formSchema = serializeFormSchema(templateData.formSchema);
     if (templateData.isActive !== undefined) updateData.isActive = templateData.isActive;
     
-    const updatedTemplate = await formTemplateRepository.update({
-      where: { id },
-      data: updateData,
-    });
+    const updatedTemplate = await formTemplateRepository.updateTemplate(
+      id,
+      updateData
+    );
 
     return {
       ...updatedTemplate,
@@ -136,10 +128,7 @@ export const updateTemplate = async (
  */
 export const deleteTemplate = async (id: string): Promise<boolean> => {
   try {
-    await formTemplateRepository.update({
-      where: { id },
-      data: { isActive: false },
-    });
+    await formTemplateRepository.softDeleteTemplate(id);
     return true;
   } catch (error) {
     console.error('Error deleting template:', error);
@@ -152,9 +141,7 @@ export const deleteTemplate = async (id: string): Promise<boolean> => {
  */
 export const hardDeleteTemplate = async (id: string): Promise<boolean> => {
   try {
-    await formTemplateRepository.delete({
-      where: { id },
-    });
+    await formTemplateRepository.hardDeleteTemplate(id);
     return true;
   } catch (error) {
     console.error('Error hard deleting template:', error);
@@ -185,11 +172,7 @@ export const getTemplatesByCategory = async (): Promise<Record<string, FormTempl
  * Get template categories
  */
 export const getTemplateCategories = async (): Promise<string[]> => {
-  const templates = await formTemplateRepository.findMany({
-    where: { isActive: true },
-    select: { category: true },
-    distinct: ['category'],
-  });
+  const templates = await formTemplateRepository.listCategories();
 
   return templates
     .map((t: {category: string | null}) => t.category)

@@ -91,9 +91,7 @@ export const getResponsesByFormId = async (
   
   if (needsMemoryProcessing) {
     // Get all responses for filtering/sorting in memory
-    allResponses = await responseRepository.findMany({
-      where: { formId },
-    });
+    allResponses = await responseRepository.listByForm(formId);
     
     // Apply filters first
     filteredResponses = applyResponseFilters(allResponses, filters);
@@ -181,10 +179,7 @@ export const getAllResponsesByFormId = async (formId: string): Promise<FormRespo
   try {
     console.log(`Fetching ALL responses for form: ${formId}`);
     
-    const responses = await responseRepository.findMany({
-      where: { formId },
-      orderBy: { submittedAt: 'desc' },
-    });
+    const responses = await responseRepository.listByForm(formId);
     
     console.log(`Found ${responses.length} total responses for form: ${formId}`);
     

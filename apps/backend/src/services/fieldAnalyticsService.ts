@@ -158,15 +158,7 @@ export const getFormResponses = async (formId: string): Promise<Array<{
   data: Record<string, any>;
   submittedAt: Date;
 }>> => {
-  const responses = await responseRepository.findMany({
-    where: { formId },
-    select: {
-      id: true,
-      data: true,
-      submittedAt: true,
-    },
-    orderBy: { submittedAt: 'desc' },
-  });
+  const responses = await responseRepository.listByForm(formId);
 
   return responses.map(response => ({
     responseId: response.id,

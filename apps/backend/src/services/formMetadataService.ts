@@ -81,22 +81,13 @@ export const updateFormMetadata = async (
   stats: FormMetadataStats
 ): Promise<void> => {
   try {
-    await formMetadataRepository.upsert({
-      where: { formId },
-      update: {
-        pageCount: stats.pageCount,
-        fieldCount: stats.fieldCount,
-        backgroundImageKey: stats.backgroundImageKey,
-        lastUpdated: new Date(),
-      },
-      create: {
-        id: `metadata-${formId}`,
-        formId,
-        pageCount: stats.pageCount,
-        fieldCount: stats.fieldCount,
-        backgroundImageKey: stats.backgroundImageKey,
-        lastUpdated: new Date(),
-      },
+    await formMetadataRepository.upsertMetadata(formId, {
+      id: `metadata-${formId}`,
+      formId,
+      pageCount: stats.pageCount,
+      fieldCount: stats.fieldCount,
+      backgroundImageKey: stats.backgroundImageKey,
+      lastUpdated: new Date(),
     });
 
     console.log(`✅ Updated metadata for form ${formId}:`, stats);
@@ -114,10 +105,9 @@ export const computeFormMetadata = async (
 ): Promise<FormMetadataStats | null> => {
   try {
     // Fetch the collaborative document
-    const collaborativeDoc = await collaborativeDocumentRepository.findUnique({
-      where: { documentName: formId },
-      select: { state: true },
-    });
+    const collaborativeDoc = await collaborativeDocumentRepository.fetchDocumentWithState(
+      formId
+    );
 
     if (!collaborativeDoc || !collaborativeDoc.state) {
       console.warn(`No collaborative document found for form: ${formId}`);
@@ -177,15 +167,7 @@ export const getFormMetadata = async (
 ): Promise<FormMetadataWithTimestamp | null> => {
   try {
     // Try to get from cache first
-    const cachedMetadata = await formMetadataRepository.findUnique({
-      where: { formId },
-      select: {
-        pageCount: true,
-        fieldCount: true,
-        backgroundImageKey: true,
-        lastUpdated: true,
-      },
-    });
+    const cachedMetadata = await formMetadataRepository.findByFormId(formId);
 
     if (cachedMetadata) {
       return cachedMetadata;
@@ -226,16 +208,12 @@ export const constructBackgroundImageUrl = (
  */
 export const getFormsNeedingMetadataUpdate = async (): Promise<string[]> => {
   try {
+    const cachedIds = await formMetadataRepository.listCachedFormIds();
+
     const formsWithoutMetadata = await formRepository.findMany({
       where: {
         id: {
-          notIn: await formMetadataRepository
-            .findMany({
-              select: { formId: true },
-            })
-            .then((metadata: { formId: string }[]) =>
-              metadata.map((m: { formId: string }) => m.formId)
-            ),
+          notIn: cachedIds.map((m) => m.formId),
         },
       },
       select: { id: true },

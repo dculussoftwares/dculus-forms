@@ -184,22 +184,20 @@ const trackFormView = async (data: AnalyticsData, clientIP?: string): Promise<vo
     const countryCode = await detectCountryCode(data, clientIP);
     const analyticsId = generateAnalyticsId();
 
-    await formViewAnalyticsRepository.create({
-      data: {
-        id: analyticsId,
-        formId: data.formId,
-        sessionId: data.sessionId,
-        userAgent: data.userAgent,
-        operatingSystem: userAgentData.operatingSystem,
-        browser: userAgentData.browser,
-        browserVersion: userAgentData.browserVersion,
-        countryCode,
-        regionCode: null, // TODO: Add region detection
-        city: null,       // TODO: Add city detection
-        timezone: data.timezone,
-        language: data.language,
-        viewedAt: new Date()
-      }
+    await formViewAnalyticsRepository.createViewEvent({
+      id: analyticsId,
+      formId: data.formId,
+      sessionId: data.sessionId,
+      userAgent: data.userAgent,
+      operatingSystem: userAgentData.operatingSystem,
+      browser: userAgentData.browser,
+      browserVersion: userAgentData.browserVersion,
+      countryCode,
+      regionCode: null, // TODO: Add region detection
+      city: null, // TODO: Add city detection
+      timezone: data.timezone,
+      language: data.language,
+      viewedAt: new Date(),
     });
     
     console.log(`Analytics tracked for form ${data.formId}, session ${data.sessionId}, country: ${countryCode || 'unknown'}`);
@@ -212,16 +210,16 @@ const trackFormView = async (data: AnalyticsData, clientIP?: string): Promise<vo
 // Update form start time when user first interacts with form
 const updateFormStartTime = async (data: UpdateFormStartTimeData): Promise<void> => {
   try {
-    await formViewAnalyticsRepository.updateMany({
-      where: {
+    await formViewAnalyticsRepository.updateSessionMetrics(
+      {
         formId: data.formId,
         sessionId: data.sessionId,
-        startedAt: null // Only update if not already set
+        startedAt: null, // Only update if not already set
       },
-      data: {
-        startedAt: new Date(data.startedAt)
+      {
+        startedAt: new Date(data.startedAt),
       }
-    });
+    );
     
     console.log(`Form start time updated for form ${data.formId}, session ${data.sessionId}`);
   } catch (error) {
@@ -236,24 +234,22 @@ const trackFormSubmission = async (data: SubmissionAnalyticsData, clientIP?: str
     const countryCode = await detectCountryCode(data, clientIP);
     const analyticsId = generateAnalyticsId();
 
-    await formSubmissionAnalyticsRepository.create({
-      data: {
-        id: analyticsId,
-        formId: data.formId,
-        responseId: data.responseId,
-        sessionId: data.sessionId,
-        userAgent: data.userAgent,
-        operatingSystem: userAgentData.operatingSystem,
-        browser: userAgentData.browser,
-        browserVersion: userAgentData.browserVersion,
-        countryCode,
-        regionCode: null, // TODO: Add region detection
-        city: null,       // TODO: Add city detection
-        timezone: data.timezone,
-        language: data.language,
-        submittedAt: new Date(),
-        completionTimeSeconds: data.completionTimeSeconds
-      }
+    await formSubmissionAnalyticsRepository.createSubmissionEvent({
+      id: analyticsId,
+      formId: data.formId,
+      responseId: data.responseId,
+      sessionId: data.sessionId,
+      userAgent: data.userAgent,
+      operatingSystem: userAgentData.operatingSystem,
+      browser: userAgentData.browser,
+      browserVersion: userAgentData.browserVersion,
+      countryCode,
+      regionCode: null, // TODO: Add region detection
+      city: null, // TODO: Add city detection
+      timezone: data.timezone,
+      language: data.language,
+      submittedAt: new Date(),
+      completionTimeSeconds: data.completionTimeSeconds ?? null,
     });
     
     console.log(`Submission analytics tracked for form ${data.formId}, response ${data.responseId}, session ${data.sessionId}, country: ${countryCode || 'unknown'}`);
