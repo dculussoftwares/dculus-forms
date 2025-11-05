@@ -323,7 +323,7 @@ const FieldSelectionGrid: React.FC<{
   selectedFieldId: string | null;
   onFieldSelect: (fieldId: string) => void;
   totalFormResponses: number;
-  t: (key: string) => string;
+  t: (key: string, options?: { values?: Record<string, string | number>; defaultValue?: string }) => string;
 }> = ({ fields, selectedFieldId, onFieldSelect, totalFormResponses: _totalFormResponses, t }) => {
   if (fields.length === 0) {
     return (
@@ -452,7 +452,7 @@ const AnalyticsContent: React.FC<{
   field: FieldAnalyticsData;
   totalFormResponses: number;
   loading: boolean;
-  t: (key: string) => string;
+  t: (key: string, options?: { values?: Record<string, string | number>; defaultValue?: string }) => string;
 }> = ({ field, totalFormResponses, loading, t }) => {
   const renderAnalytics = () => {
     switch (field.fieldType) {
@@ -567,7 +567,7 @@ const AnalyticsContent: React.FC<{
               {field.fieldLabel || `${t('fieldHeader.fieldPrefix')} ${field.fieldId}`}
             </h2>
             <p className="text-sm text-gray-600">
-              {getFieldTypeDisplayName(field.fieldType, t)} • {t('fieldHeader.responsesCount', { values: { count: field.totalResponses } })} • {t('fieldHeader.responseRateText', { values: { rate: field.responseRate.toFixed(1) } })}
+              {getFieldTypeDisplayName(field.fieldType, (key: string) => t(key))} • {t('fieldHeader.responsesCount', { values: { count: field.totalResponses } })} • {t('fieldHeader.responseRateText', { values: { rate: field.responseRate.toFixed(1) } })}
             </p>
           </div>
         </div>
