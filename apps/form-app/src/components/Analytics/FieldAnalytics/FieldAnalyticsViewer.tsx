@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Card, CardContent, Button } from '@dculus/ui';
+import { Card, CardContent, Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@dculus/ui';
 import { useFieldAnalyticsManager, FieldAnalyticsData } from '@/hooks/useFieldAnalytics.ts';
 import { usePerformanceMonitor, useMemoryTracker } from '@/hooks/usePerformanceMonitor.ts';
 import { TextFieldAnalytics } from './TextFieldAnalytics';
@@ -345,103 +345,94 @@ const FieldSelectionGrid: React.FC<{
   };
 
   return (
-    <div className="grid grid-cols-1 gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {fields.map((field) => {
         const isSelected = selectedFieldId === field.fieldId;
-        
+
         return (
-          <Card 
+          <Card
             key={field.fieldId}
-            className={`cursor-pointer transition-all hover:shadow-md ${
-              isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:ring-1 hover:ring-gray-300'
+            className={`cursor-pointer transition-all hover:shadow-lg ${
+              isSelected ? 'ring-2 ring-blue-500 shadow-lg' : 'hover:ring-1 hover:ring-gray-300'
             }`}
             onClick={() => onFieldSelect(field.fieldId)}
           >
-            <CardContent className="p-6">
-              <div className="flex items-stretch gap-6">
-                {/* Left side - Field Info */}
-                <div 
-                  className="flex-shrink-0 w-80"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className={`p-3 rounded-lg ${
+            <CardContent className="p-0">
+              {/* Field Header */}
+              <div className="p-5 border-b bg-gradient-to-r from-gray-50 to-white">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className={`p-2.5 rounded-lg flex-shrink-0 ${
                       isSelected ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
                     }`}>
                       {getFieldTypeIcon(field.fieldType)}
                     </div>
-                    <div>
-                      <div className="font-semibold text-gray-900 text-lg">
-                        {field.fieldLabel || `Field ${field.fieldId}`}
-                      </div>
-                      <div className="text-sm text-gray-500">
+                    <div className="flex-1 min-w-0">
+                      <TooltipProvider delayDuration={300}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="font-semibold text-gray-900 text-base truncate cursor-help">
+                              {field.fieldLabel || `Field ${field.fieldId}`}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs">
+                            <p className="text-sm">{field.fieldLabel || `Field ${field.fieldId}`}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <div className="text-xs text-gray-500 mt-0.5">
                         {getFieldTypeDisplayName(field.fieldType, t)}
                       </div>
                     </div>
                   </div>
-                  
-                  {/* Stats */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm text-gray-700">{t('fieldList.responses')}</span>
-                      </div>
-                      <div className="font-bold text-lg text-gray-900">
-                        {field.totalResponses}
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm text-gray-700">{t('fieldList.responseRate')}</span>
-                      </div>
-                      <div className={`px-3 py-1 rounded-full text-sm font-bold ${
-                        getResponseRateColor(field.responseRate)
-                      }`}>
-                        {field.responseRate.toFixed(1)}%
-                      </div>
-                    </div>
+                  <TooltipProvider delayDuration={300}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className={`px-2.5 py-1 rounded-full text-xs font-bold flex-shrink-0 cursor-help ${
+                          getResponseRateColor(field.responseRate)
+                        }`}>
+                          {field.responseRate.toFixed(0)}%
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs">
+                        <p className="text-sm font-semibold mb-1">Response Rate</p>
+                        <p className="text-xs opacity-90">
+                          Percentage of form submissions that included a response for this field
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              </div>
 
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <Eye className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm text-gray-700">{t('fieldList.lastUpdated')}</span>
-                      </div>
-                      <div className="font-medium text-sm text-gray-900">
-                        {new Date(field.lastUpdated).toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric',
-                          year: 'numeric'
-                        })}
-                      </div>
+              {/* Chart Preview */}
+              <div className="bg-gradient-to-br from-blue-50/50 to-purple-50/50 p-4">
+                <div className="h-48 flex items-center justify-center bg-white rounded-lg shadow-sm">
+                  <MiniPreviewChart field={field} />
+                </div>
+              </div>
+
+              {/* Stats Footer */}
+              <div className="p-4 bg-white">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2 p-2.5 bg-gray-50 rounded-lg">
+                    <Users className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-gray-600">{t('fieldList.responses')}</div>
+                      <div className="font-bold text-sm text-gray-900">{field.totalResponses}</div>
                     </div>
                   </div>
-                </div>
 
-                {/* Right side - Chart Preview */}
-                <div 
-                  className="flex-1 min-h-0"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="h-full bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 flex flex-col">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">{t('fieldList.dataPreview')}</h3>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onFieldSelect(field.fieldId);
-                        }}
-                        className="text-xs rounded-full"
-                      >
-                        {t('fieldList.clickToExplore')}
-                      </Button>
-                    </div>
-                    <div className="flex-1 flex items-center justify-center min-h-[200px]">
-                      <MiniPreviewChart field={field} />
+                  <div className="flex items-center gap-2 p-2.5 bg-gray-50 rounded-lg">
+                    <Eye className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-gray-600">{t('fieldList.lastUpdated')}</div>
+                      <div className="font-medium text-xs text-gray-900 truncate">
+                        {new Date(field.lastUpdated).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </div>
                     </div>
                   </div>
                 </div>
