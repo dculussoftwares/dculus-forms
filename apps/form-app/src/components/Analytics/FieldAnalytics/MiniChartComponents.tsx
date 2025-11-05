@@ -128,28 +128,26 @@ export const MiniPieChart: React.FC<{ data: Array<{ name: string; value: number 
     <div className="h-full w-full flex items-center justify-center">
       <div className="flex items-center gap-8">
         {/* Pie Chart */}
-        <div className="flex-shrink-0">
-          <ResponsiveContainer width={180} height={180}>
-            <PieChart>
-              <Pie
-                data={chartData}
-                dataKey="value"
-                cx="50%"
-                cy="50%"
-                innerRadius={40}
-                outerRadius={80}
-                paddingAngle={2}
-              >
-                {chartData.map((_entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={MINI_CHART_COLORS[index % MINI_CHART_COLORS.length]}
-                    style={{ filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))' }}
-                  />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
+        <div className="flex-shrink-0" style={{ width: 180, height: 180 }}>
+          <PieChart width={180} height={180}>
+            <Pie
+              data={chartData}
+              dataKey="value"
+              cx="50%"
+              cy="50%"
+              innerRadius={40}
+              outerRadius={80}
+              paddingAngle={2}
+            >
+              {chartData.map((_entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={MINI_CHART_COLORS[index % MINI_CHART_COLORS.length]}
+                  style={{ filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))' }}
+                />
+              ))}
+            </Pie>
+          </PieChart>
         </div>
 
         {/* Legend */}
