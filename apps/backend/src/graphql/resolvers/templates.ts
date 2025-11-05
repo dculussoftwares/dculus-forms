@@ -14,6 +14,7 @@ import { copyFileForForm } from '../../services/fileUploadService.js';
 import { prisma } from '../../lib/prisma.js';
 import { constructCdnUrl } from '../../utils/cdn.js';
 import { requireSystemLevelRole, requireAuthentication, type AuthContext } from '../../utils/auth.js';
+import { requireOrganizationMembership, BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 
 export interface CreateTemplateArgs {
   input: {
@@ -162,10 +163,13 @@ export const templatesResolvers = {
       }
     },
 
-    createFormFromTemplate: async (_: any, args: CreateFormFromTemplateArgs, context: AuthContext) => {
+    createFormFromTemplate: async (_: any, args: CreateFormFromTemplateArgs, context: AuthContext & { auth: BetterAuthContext }) => {
       try {
         // Ensure user is authenticated first - any authenticated user can create forms from templates
         const user = requireAuthentication(context);
+
+        // 🔒 SECURITY: Verify user is a member of the target organization before creating form
+        await requireOrganizationMembership(context.auth, args.organizationId);
 
         // Get the template
         const template = await getTemplateById(args.templateId);

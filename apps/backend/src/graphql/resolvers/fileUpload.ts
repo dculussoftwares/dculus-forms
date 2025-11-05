@@ -2,6 +2,8 @@ import { GraphQLError } from 'graphql';
 import { uploadFile, deleteFile } from '../../services/fileUploadService.js';
 import { prisma } from '../../lib/prisma.js';
 import { randomUUID } from 'crypto';
+import { BetterAuthContext, requireAuth, requireOrganizationMembership } from '../../middleware/better-auth-middleware.js';
+import { checkFormAccess, PermissionLevel } from './formSharing.js';
 
 interface FileUpload {
   filename: string;
@@ -22,26 +24,72 @@ export interface UploadFileArgs {
     file: Promise<FileUpload | FileUploadWrapper>;
     type: string;
     formId?: string;
+    organizationId?: string;
   };
+}
+
+/**
+ * Helper function to check if user has admin role
+ */
+function requireAdminRole(context: { auth: BetterAuthContext }) {
+  requireAuth(context.auth);
+
+  const userRole = context.auth.user?.role;
+  if (!userRole || (userRole !== 'admin' && userRole !== 'superAdmin')) {
+    throw new GraphQLError('Admin privileges required to upload templates');
+  }
+
+  return context.auth.user;
 }
 
 export const fileUploadResolvers = {
   Mutation: {
-    uploadFile: async (_: any, args: UploadFileArgs, context: any) => {
+    uploadFile: async (_: any, args: UploadFileArgs, context: { auth: BetterAuthContext }) => {
       try {
-        // Check if user is authenticated
-        // if (!context.user) {
-        //   throw new GraphQLError('Authentication required');
-        // }
+        const { file: filePromise, type, formId, organizationId } = args.input;
 
-        const { file: filePromise, type, formId } = args.input;
-        
+        // 🔒 SECURITY: Validate the type first
+        const allowedTypes = ['FormTemplate', 'FormBackground', 'UserAvatar', 'OrganizationLogo'];
+        if (!allowedTypes.includes(type)) {
+          throw new GraphQLError(`Invalid file type. Allowed types: ${allowedTypes.join(', ')}`);
+        }
+
+        // 🔒 SECURITY: Role-based access control based on file type
+        if (type === 'FormTemplate') {
+          // Only admin/superAdmin can upload templates
+          requireAdminRole(context);
+        } else if (type === 'FormBackground') {
+          // Must have EDITOR access to the form
+          if (!formId) {
+            throw new GraphQLError('formId is required for FormBackground uploads');
+          }
+          requireAuth(context.auth);
+          const accessCheck = await checkFormAccess(
+            context.auth.user!.id,
+            formId,
+            PermissionLevel.EDITOR
+          );
+          if (!accessCheck.hasAccess) {
+            throw new GraphQLError('Access denied: You need EDITOR access to upload background images for this form');
+          }
+        } else if (type === 'UserAvatar') {
+          // User can only upload their own avatar
+          requireAuth(context.auth);
+          // Avatar is associated with the authenticated user automatically
+        } else if (type === 'OrganizationLogo') {
+          // Must be a member of the organization
+          if (!organizationId) {
+            throw new GraphQLError('organizationId is required for OrganizationLogo uploads');
+          }
+          await requireOrganizationMembership(context.auth, organizationId);
+        }
+
         // Resolve the file upload promise
         const fileUpload = await filePromise;
-        
+
         // Extract the actual file object from the upload wrapper
         const file = ('file' in fileUpload) ? fileUpload.file : fileUpload;
-        
+
         // Debug logging - more detailed
         console.log('File upload details:', {
           filename: file?.filename,
@@ -51,12 +99,6 @@ export const fileUploadResolvers = {
           fileKeys: file ? Object.keys(file) : 'file is null/undefined',
           hasCreateReadStream: typeof file?.createReadStream === 'function'
         });
-        
-        // Validate the type
-        const allowedTypes = ['FormTemplate', 'FormBackground', 'UserAvatar', 'OrganizationLogo'];
-        if (!allowedTypes.includes(type)) {
-          throw new GraphQLError(`Invalid file type. Allowed types: ${allowedTypes.join(', ')}`);
-        }
 
         // Upload the file
         const result = await uploadFile({
@@ -90,17 +132,39 @@ export const fileUploadResolvers = {
       }
     },
 
-    deleteFile: async (_: any, args: { key: string }, context: any) => {
+    deleteFile: async (_: any, args: { key: string }, context: { auth: BetterAuthContext }) => {
       try {
-        // Check if user is authenticated
-        // if (!context.user) {
-        //   throw new GraphQLError('Authentication required');
-        // }
+        // 🔒 SECURITY: Check if user is authenticated
+        requireAuth(context.auth);
+
+        // 🔒 SECURITY: Verify file ownership before deletion
+        // Check if this file belongs to a form the user has access to
+        const formFile = await prisma.formFile.findUnique({
+          where: { key: args.key },
+          include: { form: true }
+        });
+
+        if (formFile) {
+          // File is associated with a form - check form access
+          const accessCheck = await checkFormAccess(
+            context.auth.user!.id,
+            formFile.formId,
+            PermissionLevel.EDITOR
+          );
+          if (!accessCheck.hasAccess) {
+            throw new GraphQLError('Access denied: You need EDITOR access to delete files from this form');
+          }
+        }
+        // If file is not in FormFile table (UserAvatar, OrganizationLogo, FormTemplate),
+        // basic authentication is sufficient as these are user-owned or admin-only
 
         const success = await deleteFile(args.key);
         return success;
       } catch (error) {
         console.error('Error in deleteFile resolver:', error);
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
         throw new GraphQLError(`Failed to delete file: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     },

@@ -1,5 +1,7 @@
 import { GraphQLError } from 'graphql';
 import { prisma } from '../../lib/prisma.js';
+import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
+import { checkFormAccess, PermissionLevel } from './formSharing.js';
 
 export interface GetFormFilesArgs {
   formId: string;
@@ -8,14 +10,22 @@ export interface GetFormFilesArgs {
 
 export const formFileResolvers = {
   Query: {
-    getFormFiles: async (_: any, args: GetFormFilesArgs, context: any) => {
+    getFormFiles: async (_: any, args: GetFormFilesArgs, context: { auth: BetterAuthContext }) => {
       try {
-        // Check if user is authenticated
-        // if (!context.user) {
-        //   throw new GraphQLError('Authentication required');
-        // }
+        // 🔒 SECURITY: Check if user is authenticated
+        requireAuth(context.auth);
 
         const { formId, type } = args;
+
+        // 🔒 SECURITY: Verify user has access to this form before showing files
+        const accessCheck = await checkFormAccess(
+          context.auth.user!.id,
+          formId,
+          PermissionLevel.VIEWER
+        );
+        if (!accessCheck.hasAccess) {
+          throw new GraphQLError('Access denied: You do not have permission to view files for this form');
+        }
 
         // Build where clause
         const where: any = { formId };

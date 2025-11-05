@@ -7,6 +7,7 @@ import { uploadTemporaryFile } from '../../services/temporaryFileService.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 import { deserializeFormSchema } from '@dculus/types';
 import { ResponseFilter, applyResponseFilters } from '../../services/responseFilterService.js';
+import { checkFormAccess, PermissionLevel } from './formSharing.js';
 
 
 export const unifiedExportResolvers = {
@@ -17,21 +18,26 @@ export const unifiedExportResolvers = {
       context: { auth: BetterAuthContext }
     ) => {
       try {
-        // Require authentication
+        // 🔒 SECURITY: Require authentication
         requireAuth(context.auth);
 
         const exportFormat: ExportFormat = format.toLowerCase() as ExportFormat;
         console.log(`Starting unified ${exportFormat.toUpperCase()} export for form: ${formId}`);
 
+        // 🔒 SECURITY: Verify user has access to this form before exporting data
+        const accessCheck = await checkFormAccess(
+          context.auth.user!.id,
+          formId,
+          PermissionLevel.VIEWER
+        );
+        if (!accessCheck.hasAccess) {
+          throw new GraphQLError('Access denied: You do not have permission to export data from this form');
+        }
+
         // Get form details
         const form = await getFormById(formId);
         if (!form) {
           throw new GraphQLError('Form not found');
-        }
-
-        // Check if user has access to this form
-        if (!context.auth.user) {
-          throw new GraphQLError('Authentication required');
         }
 
         // Get all responses for the form (unlimited)

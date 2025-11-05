@@ -22,6 +22,8 @@ import { analyticsService } from '../../services/analyticsService.js';
 import { emitFormSubmitted } from '../../plugins/events.js';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
 import { emitFormSubmitted as emitSubscriptionFormSubmitted } from '../../subscriptions/events.js';
+import { checkFormAccess, PermissionLevel } from './formSharing.js';
+import { GraphQLError } from 'graphql';
 
 export const responsesResolvers = {
   Query: {
@@ -320,10 +322,23 @@ export const responsesResolvers = {
       context: { auth: BetterAuthContext }
     ) => {
       requireAuth(context.auth);
+
+      // 🔒 SECURITY: Fetch response with form information
       const existingResponse = await getResponseById(id);
       if (!existingResponse) {
         throw new Error('Response not found');
       }
+
+      // 🔒 SECURITY: Verify user has OWNER access to the form before allowing response deletion
+      const accessCheck = await checkFormAccess(
+        context.auth.user!.id,
+        existingResponse.formId,
+        PermissionLevel.OWNER
+      );
+      if (!accessCheck.hasAccess) {
+        throw new GraphQLError('Access denied: You need OWNER access to delete responses for this form');
+      }
+
       return await deleteResponse(id);
     },
   },
