@@ -40,6 +40,7 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
     addEmptyPage,
     removePage,
     duplicatePage,
+    updatePageTitle,
     updateField,
     removeField,
     duplicateField,
@@ -115,6 +116,7 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
             onAddPage={addEmptyPage}
             onRemovePage={removePage}
             onDuplicatePage={duplicatePage}
+            onUpdatePageTitle={updatePageTitle}
             onFieldUpdate={onFieldUpdate}
             onFieldDeselect={onFieldDeselect}
             width={sidebarWidth}

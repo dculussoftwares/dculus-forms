@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { useDndContext, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { FormPage } from '@dculus/types';
-import { Button, Card } from '@dculus/ui';
+import { Button, Card, Input } from '@dculus/ui';
 import { useFormPermissions } from '../../hooks/useFormPermissions';
 import { useTranslation } from '../../hooks/useTranslation';
 import {
@@ -22,6 +22,7 @@ interface DraggablePageItemProps {
   onSelect: () => void;
   onRemove?: () => void;
   onDuplicate?: () => void;
+  onUpdateTitle?: (title: string) => void;
   shouldScrollIntoView?: boolean;
 }
 
@@ -33,18 +34,65 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
   onSelect,
   onRemove,
   onDuplicate,
+  onUpdateTitle,
   shouldScrollIntoView = false,
 }) => {
   const { t } = useTranslation('draggablePageItem');
   const permissions = useFormPermissions();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(page.title);
   const pageItemRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { active, over } = useDndContext();
+
+  // Update editedTitle when page.title changes (from collaboration)
+  useEffect(() => {
+    setEditedTitle(page.title);
+  }, [page.title]);
+
+  // Auto-focus input when entering edit mode
+  useEffect(() => {
+    if (isEditingTitle && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditingTitle]);
 
   // Helper function for field count with proper pluralization
   const getFieldCountText = (count: number) => {
     const fieldLabel = count === 1 ? t('fieldCount.singular') : t('fieldCount.plural');
     return `${count} ${fieldLabel}`;
+  };
+
+  const handleSaveTitle = () => {
+    const trimmedTitle = editedTitle.trim();
+    if (!trimmedTitle) {
+      // Revert to original title if empty
+      setEditedTitle(page.title);
+      setIsEditingTitle(false);
+      return;
+    }
+
+    if (trimmedTitle !== page.title && onUpdateTitle) {
+      // Save the new title
+      onUpdateTitle(trimmedTitle);
+      // Keep editedTitle as is - it will be synced via useEffect when YJS updates
+    }
+
+    setIsEditingTitle(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditedTitle(page.title);
+    setIsEditingTitle(false);
+  };
+
+  const handleTitleClick = (e: React.MouseEvent) => {
+    if (!isEditingTitle && permissions.canEditFields() && isConnected) {
+      e.stopPropagation();
+      setIsEditingTitle(true);
+    }
   };
   
   const {
@@ -184,19 +232,43 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
 
             {/* Page Info */}
             <div className="flex-1 min-w-0">
-              <div 
-                data-testid={`page-title-${index + 1}`}
-                className={`
-                  text-sm font-medium leading-tight
-                  line-clamp-2 overflow-hidden
-                  ${isSelected 
-                    ? 'text-blue-900 dark:text-blue-100' 
-                    : 'text-gray-900 dark:text-white'
-                  }
-                `}
-              >
-                {page.title}
-              </div>
+              {isEditingTitle ? (
+                <Input
+                  ref={inputRef}
+                  value={editedTitle}
+                  onChange={(e) => setEditedTitle(e.target.value)}
+                  onBlur={handleSaveTitle}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSaveTitle();
+                    } else if (e.key === 'Escape') {
+                      e.preventDefault();
+                      handleCancelEdit();
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-sm font-medium h-auto py-0.5 px-1 border-blue-500 focus:ring-2 focus:ring-blue-500"
+                  data-testid={`page-title-input-${index + 1}`}
+                />
+              ) : (
+                <div
+                  data-testid={`page-title-${index + 1}`}
+                  onClick={handleTitleClick}
+                  className={`
+                    text-sm font-medium leading-tight
+                    line-clamp-2 overflow-hidden
+                    ${permissions.canEditFields() && isConnected ? 'cursor-text hover:text-blue-600 dark:hover:text-blue-400' : ''}
+                    ${isSelected
+                      ? 'text-blue-900 dark:text-blue-100'
+                      : 'text-gray-900 dark:text-white'
+                    }
+                  `}
+                  title={permissions.canEditFields() && isConnected ? t('editTitle') : undefined}
+                >
+                  {editedTitle}
+                </div>
+              )}
               <div 
                 data-testid={`page-field-count-${index + 1}`}
                 className={`

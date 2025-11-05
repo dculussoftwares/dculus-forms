@@ -58,6 +58,7 @@ interface FormBuilderState {
   addEmptyPage: () => string | undefined;
   removePage: (pageId: string) => void;
   duplicatePage: (pageId: string) => void;
+  updatePageTitle: (pageId: string, title: string) => void;
   addField: (pageId: string, fieldType: FieldType, fieldData?: Partial<FieldData>) => void;
   addFieldAtIndex: (pageId: string, fieldType: FieldType, fieldData: Partial<FieldData>, insertIndex: number) => void;
   updateField: (pageId: string, fieldId: string, updates: Partial<FieldData>) => void;
@@ -747,37 +748,59 @@ export const useFormBuilderStore = create<FormBuilderState>()(
 
           const formSchemaMap = ydoc.getMap('formSchema');
           const pagesArray = formSchemaMap.get('pages') as Y.Array<Y.Map<any>>;
-          
+
           if (!pagesArray) return;
-          
+
           const pageIndex = pagesArray.toArray().findIndex(pageMap => pageMap.get('id') === pageId);
           if (pageIndex === -1) return;
 
           const originalPageMap = pagesArray.get(pageIndex);
           const duplicatePageMap = new Y.Map();
           const newPageId = `page-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-          
+
           duplicatePageMap.set('id', newPageId);
           duplicatePageMap.set('title', `${originalPageMap.get('title')} (Copy)`);
           duplicatePageMap.set('description', originalPageMap.get('description') || '');
           duplicatePageMap.set('order', pageIndex + 1);
-          
+
           const originalFieldsArray = originalPageMap.get('fields') as Y.Array<Y.Map<any>>;
           const duplicateFieldsArray = new Y.Array();
-          
+
           originalFieldsArray.toArray().forEach((originalFieldMap) => {
             const fieldData = extractFieldData(originalFieldMap);
             fieldData.id = generateUniqueId();
             const duplicateFieldMap = createYJSFieldMap(fieldData);
             duplicateFieldsArray.push([duplicateFieldMap]);
           });
-          
+
           duplicatePageMap.set('fields', duplicateFieldsArray);
           pagesArray.insert(pageIndex + 1, [duplicatePageMap]);
-          
+
           pagesArray.toArray().forEach((pageMap, index) => {
             pageMap.set('order', index);
           });
+        },
+
+        updatePageTitle: (pageId: string, title: string) => {
+          const { ydoc, isConnected } = get();
+          if (!ydoc || !isConnected) {
+            console.warn('Cannot update page title: YJS document not available or not connected');
+            return;
+          }
+
+          const formSchemaMap = ydoc.getMap('formSchema');
+          const pagesArray = getOrCreatePagesArray(formSchemaMap);
+
+          const pageIndex = pagesArray.toArray().findIndex(pageMap => pageMap.get('id') === pageId);
+          if (pageIndex === -1) {
+            console.warn(`Page with id ${pageId} not found`);
+            return;
+          }
+
+          const pageMap = pagesArray.get(pageIndex);
+          pageMap.set('title', title);
+
+          console.log(`Updated page ${pageId} title to: ${title}`);
         },
 
         moveFieldBetweenPages: (sourcePageId: string, targetPageId: string, fieldId: string, insertIndex?: number) => {

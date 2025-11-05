@@ -6,6 +6,7 @@
   "empty": "Empty",
   "moveHere": "Move here",
   "addHere": "Add here",
+  "editTitle": "Click to edit page name",
   "deleteDialog": {
     "title": "Delete Page",
     "message": "Are you sure you want to delete \"{{pageTitle}}\"? This action cannot be undone.",

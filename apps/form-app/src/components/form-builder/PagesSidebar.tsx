@@ -25,6 +25,7 @@ interface PagesSidebarProps {
   onAddPage: () => string | undefined;
   onRemovePage?: (pageId: string) => void;
   onDuplicatePage?: (pageId: string) => void;
+  onUpdatePageTitle?: (pageId: string, title: string) => void;
   onFieldUpdate?: (updates: Record<string, any>) => void;
   onFieldDeselect?: () => void;
   width?: number;
@@ -43,6 +44,7 @@ export const PagesSidebar: React.FC<PagesSidebarProps> = ({
   onAddPage,
   onRemovePage,
   onDuplicatePage,
+  onUpdatePageTitle,
   onFieldUpdate,
   onFieldDeselect,
   width = 320,
@@ -220,6 +222,7 @@ export const PagesSidebar: React.FC<PagesSidebarProps> = ({
                   onSelect={() => onPageSelect(page.id)}
                   onRemove={onRemovePage ? () => onRemovePage(page.id) : undefined}
                   onDuplicate={onDuplicatePage ? () => onDuplicatePage(page.id) : undefined}
+                  onUpdateTitle={onUpdatePageTitle ? (title) => onUpdatePageTitle(page.id, title) : undefined}
                   shouldScrollIntoView={page.id === newlyCreatedPageId}
                 />
               ))}
