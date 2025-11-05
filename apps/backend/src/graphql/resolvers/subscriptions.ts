@@ -7,7 +7,7 @@ import {
   createChargebeeCustomer,
   createFreeSubscription,
 } from '../../services/chargebeeService.js';
-import { requireAuth, type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
+import { requireAuth, requireOrganizationMembership, type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 import { GraphQLError } from 'graphql';
 
 /**
@@ -42,6 +42,9 @@ export const subscriptionResolvers = {
       if (!session?.activeOrganizationId) {
         throw new GraphQLError('No active organization');
       }
+
+      // 🔒 SECURITY: Verify user is a member of the active organization
+      await requireOrganizationMembership(context.auth, session.activeOrganizationId);
 
       // Get subscription to find Chargebee customer ID
       const subscription = await prisma.subscription.findUnique({
@@ -84,6 +87,9 @@ export const subscriptionResolvers = {
       if (!session?.activeOrganizationId) {
         throw new GraphQLError('No active organization');
       }
+
+      // 🔒 SECURITY: Verify user is a member of the active organization
+      await requireOrganizationMembership(context.auth, session.activeOrganizationId);
 
       // Get subscription to find Chargebee customer ID
       const subscription = await prisma.subscription.findUnique({
@@ -141,7 +147,15 @@ export const subscriptionResolvers = {
           throw new GraphQLError('Organization not found');
         }
 
-        // Get the organization owner to get email
+        // 🔒 SECURITY: Verify the authenticated user is a member of this organization
+        const membership = await requireOrganizationMembership(context.auth, organizationId);
+
+        // 🔒 SECURITY: Verify the authenticated user is the organization owner
+        if (membership.role !== 'owner') {
+          throw new GraphQLError('Only organization owner can initialize subscription');
+        }
+
+        // Get the organization owner to get email for Chargebee customer
         const member = await prisma.member.findFirst({
           where: {
             organizationId,
@@ -154,11 +168,6 @@ export const subscriptionResolvers = {
 
         if (!member) {
           throw new GraphQLError('Organization owner not found');
-        }
-
-        // Verify the authenticated user is the owner
-        if (member.userId !== context.auth.user?.id) {
-          throw new GraphQLError('Only organization owner can initialize subscription');
         }
 
         // Create Chargebee customer

@@ -300,8 +300,27 @@ export const formSharingResolvers = {
 
       // Handle user-specific permissions
       if (input.userPermissions && input.userPermissions.length > 0) {
-        // Remove existing permissions for these users
         const userIds = input.userPermissions.map(up => up.userId);
+
+        // 🔒 SECURITY: Verify all target users are members of the form's organization
+        const orgMembers = await prisma.member.findMany({
+          where: {
+            organizationId: accessCheck.form.organizationId,
+            userId: { in: userIds }
+          },
+          select: { userId: true }
+        });
+
+        const validUserIds = new Set(orgMembers.map(m => m.userId));
+        const invalidUsers = userIds.filter(id => !validUserIds.has(id));
+
+        if (invalidUsers.length > 0) {
+          throw new GraphQLError(
+            `Cannot grant permissions to users outside organization: ${invalidUsers.join(', ')}`
+          );
+        }
+
+        // Remove existing permissions for these users
         await prisma.formPermission.deleteMany({
           where: {
             formId: input.formId,
@@ -355,6 +374,18 @@ export const formSharingResolvers = {
       const accessCheck = await checkFormAccess(grantedById, input.formId, PermissionLevel.EDITOR);
       if (!accessCheck.hasAccess) {
         throw new GraphQLError('Access denied: Insufficient permissions');
+      }
+
+      // 🔒 SECURITY: Verify target user is a member of the form's organization
+      const isMember = await prisma.member.findFirst({
+        where: {
+          organizationId: accessCheck.form.organizationId,
+          userId: input.userId
+        }
+      });
+
+      if (!isMember) {
+        throw new GraphQLError('Cannot grant permissions to users outside organization');
       }
 
       // Prevent users from changing owner permissions

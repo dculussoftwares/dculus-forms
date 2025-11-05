@@ -328,13 +328,14 @@ export const formsResolvers = {
     },
     regenerateShortUrl: async (_: any, { id }: { id: string }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);
-      
-      // Check if user has EDITOR access to regenerate URL
-      const accessCheck = await checkFormAccess(context.auth.user!.id, id, PermissionLevel.EDITOR);
+
+      // 🔒 SECURITY: Check if user has OWNER access to regenerate URL
+      // Regenerating URL breaks all existing shared links - this is a critical operation
+      const accessCheck = await checkFormAccess(context.auth.user!.id, id, PermissionLevel.OWNER);
       if (!accessCheck.hasAccess) {
-        throw new GraphQLError('Access denied: You do not have permission to regenerate the URL for this form');
+        throw new GraphQLError('Access denied: Only form owners can regenerate the URL (this breaks all existing shared links)');
       }
-      
+
       return await regenerateShortUrl(id);
     },
     duplicateForm: async (_: any, { id }: { id: string }, context: { auth: BetterAuthContext }) => {
