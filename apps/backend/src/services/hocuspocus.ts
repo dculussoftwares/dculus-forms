@@ -1,10 +1,10 @@
 import { Hocuspocus } from '@hocuspocus/server';
 import { Database } from '@hocuspocus/extension-database';
-import { prisma } from '../lib/prisma.js';
 import { extractFormStatsFromYDoc, updateFormMetadata } from './formMetadataService.js';
 import { checkFormAccess, PermissionLevel } from '../graphql/resolvers/formSharing.js';
 import { auth } from '../lib/better-auth.js';
 import { GraphQLError } from 'graphql';
+import { collaborativeDocumentRepository } from '../repositories/index.js';
 
 // Debounce configuration for metadata updates
 const METADATA_UPDATE_DEBOUNCE_MS = 5000; // 5 seconds
@@ -58,7 +58,7 @@ export const createHocuspocusServer = () => {
           try {
             console.log(`🔍 [Hocuspocus] Fetching document: ${documentName}`);
             
-            const document = await prisma.collaborativeDocument.findUnique({
+            const document = await collaborativeDocumentRepository.findUnique({
               where: { documentName },
               select: { state: true, id: true, updatedAt: true }
             });
@@ -75,7 +75,7 @@ export const createHocuspocusServer = () => {
             console.log(`❌ [Hocuspocus] Document not found for: ${documentName}`);
             
             // List all documents for debugging
-            const allDocs = await prisma.collaborativeDocument.findMany({
+            const allDocs = await collaborativeDocumentRepository.findMany({
               select: { documentName: true, id: true }
             });
             console.log(`📋 [Hocuspocus] Available documents:`, allDocs.map((d: {documentName: string}) => d.documentName));
@@ -91,13 +91,13 @@ export const createHocuspocusServer = () => {
             console.log(`[Hocuspocus] Storing document ${documentName} with state length: ${state.length}`);
             
             // Try to find existing document first
-            const existingDoc = await prisma.collaborativeDocument.findUnique({
+            const existingDoc = await collaborativeDocumentRepository.findUnique({
               where: { documentName }
             });
 
             if (existingDoc) {
               // Update existing document
-              await prisma.collaborativeDocument.update({
+              await collaborativeDocumentRepository.update({
                 where: { documentName },
                 data: {
                   state: Buffer.from(state),
@@ -106,7 +106,7 @@ export const createHocuspocusServer = () => {
               });
             } else {
               // Create new document
-              await prisma.collaborativeDocument.create({
+              await collaborativeDocumentRepository.create({
                 data: {
                   id: `collab-${documentName}`,
                   documentName,
@@ -277,7 +277,7 @@ export const getFormSchemaFromHocuspocus = async (formId: string): Promise<any |
     console.log(`🔍 Getting form schema from Hocuspocus for form: ${formId}`);
     
     // Get the collaborative document from database
-    const collabDoc = await prisma.collaborativeDocument.findUnique({
+    const collabDoc = await collaborativeDocumentRepository.findUnique({
       where: { documentName: formId },
       select: { state: true }
     });
@@ -527,7 +527,7 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
     console.log(`💾 Storing document state to MongoDB for form: ${formId}, update size: ${fullUpdate.length} bytes`);
     
     // Create the collaborative document
-    await prisma.collaborativeDocument.create({
+    await collaborativeDocumentRepository.create({
       data: {
         id: `collab-${formId}`,
         documentName: formId,

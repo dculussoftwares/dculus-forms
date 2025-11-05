@@ -1,6 +1,6 @@
-import { prisma } from '../lib/prisma.js';
 import { FormSchema, deserializeFormSchema, ThemeType, SpacingType, PageModeType } from '@dculus/types';
 import { generateId } from '@dculus/utils';
+import { responseRepository } from '../repositories/index.js';
 
 export interface FieldChange {
   fieldId: string;
@@ -235,7 +235,7 @@ export class ResponseEditTrackingService {
     const changesSummary = this.createChangesSummary(changes);
 
     // Create edit history record
-    await prisma.responseEditHistory.create({
+    await responseRepository.createEditHistory({
       data: {
         id: editHistoryId,
         responseId,
@@ -251,7 +251,7 @@ export class ResponseEditTrackingService {
 
     // Create field change records
     const fieldChangePromises = changes.map(change =>
-      prisma.responseFieldChange.create({
+      responseRepository.createFieldChange({
         data: {
           id: generateId(),
           editHistoryId,
@@ -273,7 +273,7 @@ export class ResponseEditTrackingService {
    * Gets edit history for a response
    */
   static async getEditHistory(responseId: string) {
-    return await prisma.responseEditHistory.findMany({
+    return await responseRepository.findEditHistory({
       where: { responseId },
       include: {
         editedBy: {
@@ -296,7 +296,7 @@ export class ResponseEditTrackingService {
    * Gets response with form schema for change detection
    */
   static async getResponseWithFormSchema(responseId: string) {
-    const response = await prisma.response.findUnique({
+    const response = await responseRepository.findUnique({
       where: { id: responseId },
       include: {
         form: {

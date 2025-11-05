@@ -2,7 +2,10 @@ import { UAParser } from 'ua-parser-js';
 import countries from 'i18n-iso-countries';
 import * as ct from 'countries-and-timezones';
 import { createRequire } from 'module';
-import { prisma } from '../lib/prisma.js';
+import {
+  formViewAnalyticsRepository,
+  formSubmissionAnalyticsRepository,
+} from '../repositories/index.js';
 
 // Create require for CommonJS modules in ES module context
 const require = createRequire(import.meta.url);
@@ -181,7 +184,7 @@ const trackFormView = async (data: AnalyticsData, clientIP?: string): Promise<vo
     const countryCode = await detectCountryCode(data, clientIP);
     const analyticsId = generateAnalyticsId();
 
-    await prisma.formViewAnalytics.create({
+    await formViewAnalyticsRepository.create({
       data: {
         id: analyticsId,
         formId: data.formId,
@@ -209,7 +212,7 @@ const trackFormView = async (data: AnalyticsData, clientIP?: string): Promise<vo
 // Update form start time when user first interacts with form
 const updateFormStartTime = async (data: UpdateFormStartTimeData): Promise<void> => {
   try {
-    await prisma.formViewAnalytics.updateMany({
+    await formViewAnalyticsRepository.updateMany({
       where: {
         formId: data.formId,
         sessionId: data.sessionId,
@@ -233,7 +236,7 @@ const trackFormSubmission = async (data: SubmissionAnalyticsData, clientIP?: str
     const countryCode = await detectCountryCode(data, clientIP);
     const analyticsId = generateAnalyticsId();
 
-    await prisma.formSubmissionAnalytics.create({
+    await formSubmissionAnalyticsRepository.create({
       data: {
         id: analyticsId,
         formId: data.formId,
@@ -336,14 +339,14 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
     
     // Parallel execution of database queries for better performance
     const [totalViews, uniqueSessionsData, countryStats, osStats, browserStats, dailyViews] = await Promise.all([
-      prisma.formViewAnalytics.count({ where: whereClause }),
+      formViewAnalyticsRepository.count({ where: whereClause }),
       
-      prisma.formViewAnalytics.groupBy({
+      formViewAnalyticsRepository.groupBy({
         by: ['sessionId'],
         where: whereClause
       }),
       
-      prisma.formViewAnalytics.groupBy({
+      formViewAnalyticsRepository.groupBy({
         by: ['countryCode'],
         where: { ...whereClause, countryCode: { not: null } },
         _count: { countryCode: true },
@@ -351,7 +354,7 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
         take: 10
       }),
       
-      prisma.formViewAnalytics.groupBy({
+      formViewAnalyticsRepository.groupBy({
         by: ['operatingSystem'],
         where: { ...whereClause, operatingSystem: { not: null } },
         _count: { operatingSystem: true },
@@ -359,7 +362,7 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
         take: 10
       }),
       
-      prisma.formViewAnalytics.groupBy({
+      formViewAnalyticsRepository.groupBy({
         by: ['browser'],
         where: { ...whereClause, browser: { not: null } },
         _count: { browser: true },
@@ -368,7 +371,7 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
       }),
       
       // Time-series data: Get all records for daily aggregation
-      prisma.formViewAnalytics.findMany({
+      formViewAnalyticsRepository.findMany({
         where: whereClause,
         select: {
           viewedAt: true,
@@ -469,14 +472,14 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
     
     // Parallel execution of database queries for better performance
     const [totalSubmissions, uniqueSessionsData, countryStats, osStats, browserStats, dailySubmissions, completionTimeData] = await Promise.all([
-      prisma.formSubmissionAnalytics.count({ where: whereClause }),
+      formSubmissionAnalyticsRepository.count({ where: whereClause }),
       
-      prisma.formSubmissionAnalytics.groupBy({
+      formSubmissionAnalyticsRepository.groupBy({
         by: ['sessionId'],
         where: whereClause
       }),
       
-      prisma.formSubmissionAnalytics.groupBy({
+      formSubmissionAnalyticsRepository.groupBy({
         by: ['countryCode'],
         where: { ...whereClause, countryCode: { not: null } },
         _count: { countryCode: true },
@@ -484,7 +487,7 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
         take: 10
       }),
       
-      prisma.formSubmissionAnalytics.groupBy({
+      formSubmissionAnalyticsRepository.groupBy({
         by: ['operatingSystem'],
         where: { ...whereClause, operatingSystem: { not: null } },
         _count: { operatingSystem: true },
@@ -492,7 +495,7 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
         take: 10
       }),
       
-      prisma.formSubmissionAnalytics.groupBy({
+      formSubmissionAnalyticsRepository.groupBy({
         by: ['browser'],
         where: { ...whereClause, browser: { not: null } },
         _count: { browser: true },
@@ -501,7 +504,7 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
       }),
       
       // Time-series data: Get all records for daily aggregation
-      prisma.formSubmissionAnalytics.findMany({
+      formSubmissionAnalyticsRepository.findMany({
         where: whereClause,
         select: {
           submittedAt: true,
@@ -513,7 +516,7 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
       }),
       
       // Completion time data: Get all completion times for statistical analysis
-      prisma.formSubmissionAnalytics.findMany({
+      formSubmissionAnalyticsRepository.findMany({
         where: { 
           ...whereClause, 
           completionTimeSeconds: { not: null } 

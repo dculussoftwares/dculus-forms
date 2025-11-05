@@ -1,6 +1,6 @@
 import Chargebee from 'chargebee';
-import { prisma } from '../lib/prisma.js';
 import { resetUsageCounters } from '../subscriptions/usageService.js';
+import { subscriptionRepository } from '../repositories/index.js';
 
 /**
  * Chargebee Service
@@ -70,7 +70,7 @@ export const createFreeSubscription = async (
     const periodEnd = new Date();
     periodEnd.setMonth(periodEnd.getMonth() + 1); // Free plan is monthly
 
-    await prisma.subscription.create({
+    await subscriptionRepository.create({
       data: {
         id: `sub_${organizationId}`,
         organizationId,
@@ -224,7 +224,7 @@ export const syncSubscriptionFromWebhook = async (
     else if (subscriptionData.status === 'paused') status = 'expired';
 
     // Update or create subscription
-    await prisma.subscription.upsert({
+    await subscriptionRepository.upsert({
       where: { organizationId },
       update: {
         chargebeeSubscriptionId: subscriptionData.id,

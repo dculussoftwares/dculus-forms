@@ -1,9 +1,9 @@
 import { FormResponse } from '@dculus/types';
-import { prisma } from '../lib/prisma.js';
 import { ResponseFilter, applyResponseFilters } from './responseFilterService.js';
+import { responseRepository } from '../repositories/index.js';
 
 export const getAllResponses = async (organizationId?: string): Promise<FormResponse[]> => {
-  const responses = await prisma.response.findMany({
+  const responses = await responseRepository.findMany({
     where: organizationId ? {
       form: {
         organizationId
@@ -26,7 +26,7 @@ export const getAllResponses = async (organizationId?: string): Promise<FormResp
 
 export const getResponseById = async (id: string): Promise<FormResponse | null> => {
   try {
-    const response = await prisma.response.findUnique({
+    const response = await responseRepository.findUnique({
       where: { id },
       include: {
         form: true,
@@ -91,7 +91,7 @@ export const getResponsesByFormId = async (
   
   if (needsMemoryProcessing) {
     // Get all responses for filtering/sorting in memory
-    allResponses = await prisma.response.findMany({
+    allResponses = await responseRepository.findMany({
       where: { formId },
     });
     
@@ -146,11 +146,11 @@ export const getResponsesByFormId = async (
     
   } else {
     // No filters and regular sorting - use database query for better performance
-    total = await prisma.response.count({
+    total = await responseRepository.count({
       where: { formId },
     });
     
-    responses = await prisma.response.findMany({
+    responses = await responseRepository.findMany({
       where: { formId },
       orderBy: { [validSortBy]: validSortOrder },
       skip,
@@ -181,7 +181,7 @@ export const getAllResponsesByFormId = async (formId: string): Promise<FormRespo
   try {
     console.log(`Fetching ALL responses for form: ${formId}`);
     
-    const responses = await prisma.response.findMany({
+    const responses = await responseRepository.findMany({
       where: { formId },
       orderBy: { submittedAt: 'desc' },
     });
@@ -203,7 +203,7 @@ export const getAllResponsesByFormId = async (formId: string): Promise<FormRespo
 
 export const submitResponse = async (responseData: Partial<FormResponse>): Promise<FormResponse> => {
   const { generateId } = await import('@dculus/utils');
-  const newResponse = await prisma.response.create({
+  const newResponse = await responseRepository.create({
     data: {
       id: generateId(),
       formId: responseData.formId!,
@@ -244,7 +244,7 @@ export const updateResponse = async (
       const oldData = currentResponse.data as Record<string, any>;
 
       // Update the response
-      const updatedResponse = await prisma.response.update({
+      const updatedResponse = await responseRepository.update({
         where: { id: responseId },
         data: { data: data },
       });
@@ -273,7 +273,7 @@ export const updateResponse = async (
       };
     } else {
       // Legacy mode - just update without tracking
-      const updatedResponse = await prisma.response.update({
+      const updatedResponse = await responseRepository.update({
         where: { id: responseId },
         data: { data: data },
       });
@@ -294,7 +294,7 @@ export const updateResponse = async (
 
 export const deleteResponse = async (id: string): Promise<boolean> => {
   try {
-    await prisma.response.delete({
+    await responseRepository.delete({
       where: { id },
     });
     return true;

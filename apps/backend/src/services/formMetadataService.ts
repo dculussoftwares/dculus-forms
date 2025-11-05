@@ -1,6 +1,10 @@
 import * as Y from 'yjs';
-import { prisma } from '../lib/prisma.js';
 import { constructCdnUrl } from '../utils/cdn.js';
+import {
+  formMetadataRepository,
+  collaborativeDocumentRepository,
+  formRepository,
+} from '../repositories/index.js';
 
 export interface FormMetadataStats {
   pageCount: number;
@@ -77,7 +81,7 @@ export const updateFormMetadata = async (
   stats: FormMetadataStats
 ): Promise<void> => {
   try {
-    await prisma.formMetadata.upsert({
+    await formMetadataRepository.upsert({
       where: { formId },
       update: {
         pageCount: stats.pageCount,
@@ -110,7 +114,7 @@ export const computeFormMetadata = async (
 ): Promise<FormMetadataStats | null> => {
   try {
     // Fetch the collaborative document
-    const collaborativeDoc = await prisma.collaborativeDocument.findUnique({
+    const collaborativeDoc = await collaborativeDocumentRepository.findUnique({
       where: { documentName: formId },
       select: { state: true },
     });
@@ -173,7 +177,7 @@ export const getFormMetadata = async (
 ): Promise<FormMetadataWithTimestamp | null> => {
   try {
     // Try to get from cache first
-    const cachedMetadata = await prisma.formMetadata.findUnique({
+    const cachedMetadata = await formMetadataRepository.findUnique({
       where: { formId },
       select: {
         pageCount: true,
@@ -222,10 +226,10 @@ export const constructBackgroundImageUrl = (
  */
 export const getFormsNeedingMetadataUpdate = async (): Promise<string[]> => {
   try {
-    const formsWithoutMetadata = await prisma.form.findMany({
+    const formsWithoutMetadata = await formRepository.findMany({
       where: {
         id: {
-          notIn: await prisma.formMetadata
+          notIn: await formMetadataRepository
             .findMany({
               select: { formId: true },
             })

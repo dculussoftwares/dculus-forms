@@ -1,5 +1,8 @@
 import { FieldType } from '@dculus/types';
-import { prisma } from '../lib/prisma.js';
+import {
+  responseRepository,
+  formRepository,
+} from '../repositories/index.js';
 
 export interface FieldResponse {
   value: any;
@@ -155,7 +158,7 @@ export const getFormResponses = async (formId: string): Promise<Array<{
   data: Record<string, any>;
   submittedAt: Date;
 }>> => {
-  const responses = await prisma.response.findMany({
+  const responses = await responseRepository.findMany({
     where: { formId },
     select: {
       id: true,
@@ -921,7 +924,7 @@ export const getAllFieldsAnalytics = async (formId: string): Promise<{
   fields: FieldAnalytics[];
 }> => {
   // First, get the form to extract field information
-  const form = await prisma.form.findUnique({
+  const form = await formRepository.findUnique({
     where: { id: formId },
     select: { formSchema: true },
   });

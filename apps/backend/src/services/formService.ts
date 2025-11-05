@@ -1,4 +1,3 @@
-import { prisma } from '../lib/prisma.js';
 import { 
   Form as IForm, 
   FormSchema, 
@@ -17,6 +16,7 @@ import { checkFormAccess, PermissionLevel } from '../graphql/resolvers/formShari
 import { randomUUID } from 'crypto';
 import { getFormSchemaFromHocuspocus } from './hocuspocus.js';
 import { copyFileForForm } from './fileUploadService.js';
+import { formRepository } from '../repositories/index.js';
 
 export interface Form extends Omit<IForm, 'formSchema'> {
   formSchema: any; // JsonValue from Prisma
@@ -35,7 +35,7 @@ const generateUniqueShortUrl = async (): Promise<string> => {
     shortUrl = await generateShortUrl(8); // Generate 8-character short URL
     
     // Check if this short URL already exists
-    const existingForm = await prisma.form.findUnique({
+    const existingForm = await formRepository.findUnique({
       where: { shortUrl },
     });
     
@@ -52,8 +52,8 @@ const generateUniqueShortUrl = async (): Promise<string> => {
 };
 
 export const getAllForms = async (organizationId?: string): Promise<Form[]> => {
-  const forms = await prisma.form.findMany({
-    where: organizationId ? { organizationId } : {},
+  const forms = await formRepository.findMany({
+    ...(organizationId ? { where: { organizationId } } : {}),
     orderBy: { createdAt: 'desc' },
     include: {
       organization: true,
@@ -69,7 +69,7 @@ export const getAllForms = async (organizationId?: string): Promise<Form[]> => {
 
 export const getFormById = async (id: string): Promise<Form | null> => {
   try {
-    const form = await prisma.form.findUnique({
+    const form = await formRepository.findUnique({
       where: { id },
       include: {
         organization: true,
@@ -91,7 +91,7 @@ export const getFormById = async (id: string): Promise<Form | null> => {
 
 export const getFormByShortUrl = async (shortUrl: string): Promise<Form | null> => {
   try {
-    const form = await prisma.form.findUnique({
+    const form = await formRepository.findUnique({
       where: { shortUrl },
       include: {
         organization: true,
@@ -151,7 +151,7 @@ export const createForm = async (
   const shortUrl = await generateUniqueShortUrl();
   
   // Create form without formSchema field in database
-  const newForm = await prisma.form.create({
+  const newForm = await formRepository.create({
     data: {
       id: formData.id,
       title: formData.title,
@@ -176,7 +176,7 @@ export const createForm = async (
 
   // Create OWNER permission for the form creator
   try {
-    await prisma.formPermission.create({
+    await formRepository.createPermission({
       data: {
         id: randomUUID(),
         formId: result.id,
@@ -206,7 +206,7 @@ export const createForm = async (
 };
 
 export const duplicateForm = async (formId: string, userId: string): Promise<Form> => {
-  const existingForm = await prisma.form.findUnique({
+  const existingForm = await formRepository.findUnique({
     where: { id: formId },
     include: {
       organization: true,
@@ -230,7 +230,7 @@ export const duplicateForm = async (formId: string, userId: string): Promise<For
       const copiedFile = await copyFileForForm(schemaClone.layout.backgroundImageKey, newFormId);
       schemaClone.layout.backgroundImageKey = copiedFile.key;
 
-      await prisma.formFile.create({
+      await formRepository.createFile({
         data: {
           id: randomUUID(),
           key: copiedFile.key,
@@ -278,7 +278,7 @@ export const duplicateForm = async (formId: string, userId: string): Promise<For
 export const updateForm = async (id: string, formData: Partial<Omit<Form, 'id' | 'createdAt' | 'updatedAt' | 'organizationId' | 'createdById' | 'shortUrl'>>, userId?: string): Promise<Form | null> => {
   try {
     // First, get the current form state to check if it's being published
-    const currentForm = await prisma.form.findUnique({
+    const currentForm = await formRepository.findUnique({
       where: { id },
       include: {
         organization: true,
@@ -327,7 +327,7 @@ export const updateForm = async (id: string, formData: Partial<Omit<Form, 'id' |
     if (formData.isPublished !== undefined) updateData.isPublished = formData.isPublished;
     if (formData.settings !== undefined) updateData.settings = formData.settings;
     
-    const updatedForm = await prisma.form.update({
+    const updatedForm = await formRepository.update({
       where: { id },
       data: updateData,
       include: {
@@ -373,7 +373,7 @@ export const regenerateShortUrl = async (id: string): Promise<Form | null> => {
     // Generate a new unique short URL
     const newShortUrl = await generateUniqueShortUrl();
     
-    const updatedForm = await prisma.form.update({
+    const updatedForm = await formRepository.update({
       where: { id },
       data: { shortUrl: newShortUrl },
       include: {
@@ -405,7 +405,7 @@ export const deleteForm = async (id: string, userId?: string): Promise<boolean> 
       console.log(`✅ Permission validated for user ${userId} to delete form ${id}: OWNER`);
     }
     
-    await prisma.form.delete({
+    await formRepository.delete({
       where: { id },
     });
     return true;

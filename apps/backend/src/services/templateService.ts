@@ -1,10 +1,10 @@
-import { prisma } from '../lib/prisma.js';
 import { 
   FormSchema, 
   serializeFormSchema, 
   deserializeFormSchema 
 } from '@dculus/types';
 import { randomUUID } from 'crypto';
+import { formTemplateRepository } from '../repositories/index.js';
 
 export interface FormTemplate {
   id: string;
@@ -36,7 +36,7 @@ export interface UpdateTemplateInput {
  * Get all active templates, optionally filtered by category
  */
 export const getAllTemplates = async (category?: string): Promise<FormTemplate[]> => {
-  const templates = await prisma.formTemplate.findMany({
+  const templates = await formTemplateRepository.findMany({
     where: {
       isActive: true,
       ...(category && { category }),
@@ -57,7 +57,7 @@ export const getAllTemplates = async (category?: string): Promise<FormTemplate[]
  */
 export const getTemplateById = async (id: string): Promise<FormTemplate | null> => {
   try {
-    const template = await prisma.formTemplate.findUnique({
+    const template = await formTemplateRepository.findUnique({
       where: { id },
     });
 
@@ -79,7 +79,7 @@ export const getTemplateById = async (id: string): Promise<FormTemplate | null> 
  * Create a new form template
  */
 export const createTemplate = async (templateData: CreateTemplateInput): Promise<FormTemplate> => {
-  const newTemplate = await prisma.formTemplate.create({
+  const newTemplate = await formTemplateRepository.create({
     data: {
       id: randomUUID(),
       name: templateData.name,
@@ -114,7 +114,7 @@ export const updateTemplate = async (
     if (templateData.formSchema) updateData.formSchema = serializeFormSchema(templateData.formSchema);
     if (templateData.isActive !== undefined) updateData.isActive = templateData.isActive;
     
-    const updatedTemplate = await prisma.formTemplate.update({
+    const updatedTemplate = await formTemplateRepository.update({
       where: { id },
       data: updateData,
     });
@@ -136,7 +136,7 @@ export const updateTemplate = async (
  */
 export const deleteTemplate = async (id: string): Promise<boolean> => {
   try {
-    await prisma.formTemplate.update({
+    await formTemplateRepository.update({
       where: { id },
       data: { isActive: false },
     });
@@ -152,7 +152,7 @@ export const deleteTemplate = async (id: string): Promise<boolean> => {
  */
 export const hardDeleteTemplate = async (id: string): Promise<boolean> => {
   try {
-    await prisma.formTemplate.delete({
+    await formTemplateRepository.delete({
       where: { id },
     });
     return true;
@@ -185,7 +185,7 @@ export const getTemplatesByCategory = async (): Promise<Record<string, FormTempl
  * Get template categories
  */
 export const getTemplateCategories = async (): Promise<string[]> => {
-  const templates = await prisma.formTemplate.findMany({
+  const templates = await formTemplateRepository.findMany({
     where: { isActive: true },
     select: { category: true },
     distinct: ['category'],
