@@ -5,8 +5,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   Badge,
+  DropdownMenuSeparator,
 } from '@dculus/ui';
 import {
   Eye,
@@ -17,6 +17,7 @@ import {
   MoreHorizontal,
   Share2,
   Calendar,
+  Copy,
 } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 
@@ -36,8 +37,10 @@ interface FormHeaderProps {
   onPreview: () => void;
   onViewAnalytics: () => void;
   onShare?: () => void;
+  onDuplicate: () => void;
   updateLoading: boolean;
   deleteLoading: boolean;
+  duplicateLoading: boolean;
 }
 
 export const FormHeader: React.FC<FormHeaderProps> = ({
@@ -49,8 +52,10 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
   onPreview,
   onViewAnalytics,
   onShare,
+  onDuplicate,
   updateLoading,
   deleteLoading,
+  duplicateLoading,
 }) => {
   const { t, locale } = useTranslation('formDashboard');
 
@@ -183,6 +188,13 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem
+              onClick={onDuplicate}
+              disabled={duplicateLoading}
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              {duplicateLoading ? t('header.actions.duplicating') : t('header.actions.duplicate')}
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={onDelete}
