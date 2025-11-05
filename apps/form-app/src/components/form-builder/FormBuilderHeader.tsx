@@ -30,7 +30,7 @@ import { useFormPermissions } from '../../hooks/useFormPermissions';
 import { useTranslation } from '../../hooks/useTranslation';
 import { ShareModal } from '../sharing/ShareModal';
 import { PermissionBadge } from './PermissionBadge';
-import { DUPLICATE_FORM } from '../../graphql/mutations';
+import { DUPLICATE_FORM, UPDATE_FORM } from '../../graphql/mutations';
 
 interface FormBuilderHeaderProps {
     formId: string;
@@ -64,7 +64,8 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
     const permissions = useFormPermissions();
     const navigate = useNavigate();
     const [duplicateFormMutation, { loading: isDuplicating }] = useMutation(DUPLICATE_FORM);
-    
+    const [updateFormMutation] = useMutation(UPDATE_FORM);
+
     // Update local state when prop changes
     useEffect(() => {
         if (initialFormTitle) {
@@ -101,6 +102,50 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
             setDuplicateProgress(0);
         }
     }, [showDuplicateDialog, isDuplicating]);
+
+    const handleSaveTitle = async () => {
+        const trimmedTitle = formTitle.trim();
+
+        if (!trimmedTitle) {
+            // Revert to original title if empty
+            setFormTitle(initialFormTitle || t('defaultTitle'));
+            setIsEditingTitle(false);
+            return;
+        }
+
+        if (trimmedTitle !== initialFormTitle && permissions.canEdit) {
+            try {
+                await updateFormMutation({
+                    variables: {
+                        id: _formId,
+                        input: {
+                            title: trimmedTitle
+                        }
+                    }
+                });
+
+                toastSuccess(
+                    t('toasts.updateTitleSuccess.title'),
+                    t('toasts.updateTitleSuccess.description')
+                );
+            } catch (error) {
+                console.error('Failed to update form title:', error);
+                toastError(
+                    t('toasts.updateTitleError.title'),
+                    t('toasts.updateTitleError.description')
+                );
+                // Revert to original title on error
+                setFormTitle(initialFormTitle || t('defaultTitle'));
+            }
+        }
+
+        setIsEditingTitle(false);
+    };
+
+    const handleCancelEdit = () => {
+        setFormTitle(initialFormTitle || t('defaultTitle'));
+        setIsEditingTitle(false);
+    };
 
     const handleDuplicateForm = () => {
         if (!permissions.canEdit) {
@@ -164,8 +209,16 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                                     <Input
                                         value={formTitle}
                                         onChange={(e) => setFormTitle(e.target.value)}
-                                        onBlur={() => setIsEditingTitle(false)}
-                                        onKeyDown={(e) => e.key === 'Enter' && setIsEditingTitle(false)}
+                                        onBlur={handleSaveTitle}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                handleSaveTitle();
+                                            } else if (e.key === 'Escape') {
+                                                e.preventDefault();
+                                                handleCancelEdit();
+                                            }
+                                        }}
                                         className="text-lg font-semibold border-0 shadow-none p-0 h-auto focus:ring-0"
                                         autoFocus
                                     />

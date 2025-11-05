@@ -28,6 +28,14 @@
     "duplicateError": {
       "title": "Unable to duplicate",
       "description": "Something went wrong while duplicating this form. Please try again."
+    },
+    "updateTitleSuccess": {
+      "title": "Form name updated",
+      "description": "The form name has been saved successfully"
+    },
+    "updateTitleError": {
+      "title": "Failed to update form name",
+      "description": "Something went wrong while updating the form name. Please try again."
     }
   },
   "duplicateDialog": {
