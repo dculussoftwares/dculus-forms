@@ -291,6 +291,164 @@ describe('Analytics Service', () => {
 
 
 
+  describe('getFormAnalytics', () => {
+    it('should return analytics data for a form', async () => {
+      const mockAnalyticsData = [
+        {
+          id: '1',
+          formId: 'form-123',
+          sessionId: 'session-1',
+          countryCode: 'USA',
+          operatingSystem: 'Windows',
+          browser: 'Chrome',
+          viewedAt: new Date('2024-01-01'),
+        },
+        {
+          id: '2',
+          formId: 'form-123',
+          sessionId: 'session-2',
+          countryCode: 'CAN',
+          operatingSystem: 'macOS',
+          browser: 'Safari',
+          viewedAt: new Date('2024-01-02'),
+        },
+      ];
+
+      vi.mocked(formViewAnalyticsRepository.count).mockResolvedValue(2);
+
+      // Mock multiple groupBy calls with different results
+      vi.mocked(formViewAnalyticsRepository.groupBy)
+        .mockResolvedValueOnce([{ sessionId: 'session-1' }, { sessionId: 'session-2' }] as any)
+        .mockResolvedValueOnce([{ countryCode: 'USA', _count: { countryCode: 1 } }] as any)
+        .mockResolvedValueOnce([{ operatingSystem: 'Windows', _count: { operatingSystem: 1 } }] as any)
+        .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
+
+      vi.mocked(formViewAnalyticsRepository.findMany).mockResolvedValue(mockAnalyticsData as any);
+
+      const result = await analyticsService.getFormAnalytics('form-123');
+
+      expect(result.totalViews).toBe(2);
+      expect(result.uniqueSessions).toBe(2);
+      expect(result.topCountries).toBeDefined();
+      expect(result.topOperatingSystems).toBeDefined();
+      expect(result.topBrowsers).toBeDefined();
+    });
+
+    it('should handle time range filtering', async () => {
+      vi.mocked(formViewAnalyticsRepository.count).mockResolvedValue(5);
+
+      // Mock multiple groupBy calls for time range test
+      vi.mocked(formViewAnalyticsRepository.groupBy)
+        .mockResolvedValueOnce([{ sessionId: 'session-1' }] as any)
+        .mockResolvedValueOnce([{ countryCode: 'USA', _count: { countryCode: 1 } }] as any)
+        .mockResolvedValueOnce([{ operatingSystem: 'Windows', _count: { operatingSystem: 1 } }] as any)
+        .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
+
+      vi.mocked(formViewAnalyticsRepository.findMany).mockResolvedValue([
+        {
+          id: '1',
+          formId: 'form-123',
+          sessionId: 'session-1',
+          countryCode: 'USA',
+          operatingSystem: 'Windows',
+          browser: 'Chrome',
+          viewedAt: new Date('2024-01-01'),
+        },
+      ] as any);
+
+      const timeRange = {
+        start: new Date('2024-01-01'),
+        end: new Date('2024-01-31'),
+      };
+
+      const result = await analyticsService.getFormAnalytics('form-123', timeRange);
+
+      expect(result.totalViews).toBe(5);
+      expect(result.viewsOverTime).toBeDefined();
+    });
+
+    it('should handle errors gracefully', async () => {
+      vi.mocked(formViewAnalyticsRepository.count).mockRejectedValue(
+        new Error('Database error')
+      );
+
+      await expect(analyticsService.getFormAnalytics('form-123')).rejects.toThrow(
+        'Failed to fetch analytics data'
+      );
+    });
+  });
+
+  describe('getFormSubmissionAnalytics', () => {
+    it('should return submission analytics for a form', async () => {
+      vi.mocked(formSubmissionAnalyticsRepository.count).mockResolvedValue(10);
+
+      // Mock multiple groupBy calls
+      vi.mocked(formSubmissionAnalyticsRepository.groupBy)
+        .mockResolvedValueOnce([{ sessionId: 'session-1' }, { sessionId: 'session-2' }] as any)
+        .mockResolvedValueOnce([{ countryCode: 'USA', _count: { countryCode: 1 } }] as any)
+        .mockResolvedValueOnce([{ operatingSystem: 'Windows', _count: { operatingSystem: 1 } }] as any)
+        .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
+
+      // Mock findMany calls (2 calls: dailySubmissions and completionTimeData)
+      vi.mocked(formSubmissionAnalyticsRepository.findMany)
+        .mockResolvedValueOnce([
+          {
+            submittedAt: new Date('2024-01-01'),
+            sessionId: 'session-1',
+          },
+        ] as any)
+        .mockResolvedValueOnce([
+          { completionTimeSeconds: 120 },
+        ] as any);
+
+      const result = await analyticsService.getFormSubmissionAnalytics('form-123');
+
+      expect(result.totalSubmissions).toBe(10);
+      expect(result.uniqueSessions).toBe(2);
+      expect(result.averageCompletionTime).toBeDefined();
+    });
+
+    it('should calculate completion time statistics', async () => {
+      vi.mocked(formSubmissionAnalyticsRepository.count).mockResolvedValue(5);
+
+      // Mock multiple groupBy calls
+      vi.mocked(formSubmissionAnalyticsRepository.groupBy)
+        .mockResolvedValueOnce([{ sessionId: 'session-1' }] as any)
+        .mockResolvedValueOnce([{ countryCode: 'USA', _count: { countryCode: 1 } }] as any)
+        .mockResolvedValueOnce([{ operatingSystem: 'Windows', _count: { operatingSystem: 1 } }] as any)
+        .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
+
+      // Mock findMany calls (2 calls: dailySubmissions and completionTimeData)
+      vi.mocked(formSubmissionAnalyticsRepository.findMany)
+        .mockResolvedValueOnce([
+          {
+            submittedAt: new Date('2024-01-01'),
+            sessionId: 'session-1',
+          },
+        ] as any)
+        .mockResolvedValueOnce([
+          { completionTimeSeconds: 60 },
+          { completionTimeSeconds: 120 },
+          { completionTimeSeconds: 180 },
+        ] as any);
+
+      const result = await analyticsService.getFormSubmissionAnalytics('form-123');
+
+      expect(result.averageCompletionTime).toBe(120);
+      expect(result.completionTimePercentiles).toBeDefined();
+    });
+
+    it('should handle errors gracefully', async () => {
+      vi.mocked(formSubmissionAnalyticsRepository.count).mockRejectedValue(
+        new Error('Database error')
+      );
+
+      await expect(
+        analyticsService.getFormSubmissionAnalytics('form-123')
+      ).rejects.toThrow('Failed to fetch submission analytics data');
+    });
+  });
+
   describe('Country detection fallback logic', () => {
     it('should use language when IP and timezone unavailable', async () => {
       vi.mocked(formViewAnalyticsRepository.createViewEvent).mockResolvedValue({} as any);
