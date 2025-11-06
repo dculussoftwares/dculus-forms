@@ -4,7 +4,7 @@ import {
   getFieldAnalytics,
   getAllFieldsAnalytics,
   type FieldAnalytics
-} from '../../services/fieldAnalyticsService.js';
+} from '../../services/fieldAnalytics/index.js';
 import { prisma } from '../../lib/prisma.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 
