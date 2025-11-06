@@ -322,6 +322,22 @@ describe('Response Service', () => {
       expect(loggerError).toHaveBeenCalled();
       loggerError.mockRestore();
     });
+
+    it('should handle update without editContext (legacy mode)', async () => {
+      const updatedData = { field1: 'updated-legacy' };
+      const updatedResponse = { ...mockResponse, data: updatedData };
+
+      vi.mocked(responseRepository.update).mockResolvedValue(updatedResponse as any);
+
+      // Call without editContext - should use legacy mode
+      const result = await updateResponse('response-123', updatedData);
+
+      expect(responseRepository.update).toHaveBeenCalledWith({
+        where: { id: 'response-123' },
+        data: { data: updatedData },
+      });
+      expect(result.data.field1).toBe('updated-legacy');
+    });
   });
 
   describe('deleteResponse', () => {

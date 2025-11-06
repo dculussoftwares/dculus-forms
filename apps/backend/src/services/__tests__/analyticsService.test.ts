@@ -448,6 +448,89 @@ describe('Analytics Service', () => {
         analyticsService.getFormSubmissionAnalytics('form-123')
       ).rejects.toThrow('Failed to fetch submission analytics data');
     });
+
+    it('should fill missing dates when timeRange is provided', async () => {
+      vi.mocked(formSubmissionAnalyticsRepository.count).mockResolvedValue(3);
+
+      // Mock multiple groupBy calls
+      vi.mocked(formSubmissionAnalyticsRepository.groupBy)
+        .mockResolvedValueOnce([{ sessionId: 'session-1' }] as any)
+        .mockResolvedValueOnce([{ countryCode: 'USA', _count: { countryCode: 1 } }] as any)
+        .mockResolvedValueOnce([{ operatingSystem: 'Windows', _count: { operatingSystem: 1 } }] as any)
+        .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
+
+      // Mock findMany calls - return submissions only for Jan 1 and Jan 3 (missing Jan 2)
+      vi.mocked(formSubmissionAnalyticsRepository.findMany)
+        .mockResolvedValueOnce([
+          { submittedAt: new Date('2024-01-01'), sessionId: 'session-1' },
+          { submittedAt: new Date('2024-01-03'), sessionId: 'session-1' },
+        ] as any)
+        .mockResolvedValueOnce([{ completionTimeSeconds: 60 }] as any);
+
+      const result = await analyticsService.getFormSubmissionAnalytics('form-123', {
+        start: new Date('2024-01-01'),
+        end: new Date('2024-01-03'),
+      });
+
+      // Should have 3 entries (Jan 1, 2, 3) with Jan 2 filled with zeros
+      expect(result.submissionsOverTime).toHaveLength(3);
+      expect(result.submissionsOverTime[0].date).toBe('2024-01-01');
+      expect(result.submissionsOverTime[1].date).toBe('2024-01-02');
+      expect(result.submissionsOverTime[1].submissions).toBe(0);
+      expect(result.submissionsOverTime[1].sessions).toBe(0);
+      expect(result.submissionsOverTime[2].date).toBe('2024-01-03');
+    });
+
+    it('should not fill dates when timeRange is not provided', async () => {
+      vi.mocked(formSubmissionAnalyticsRepository.count).mockResolvedValue(2);
+
+      // Mock multiple groupBy calls
+      vi.mocked(formSubmissionAnalyticsRepository.groupBy)
+        .mockResolvedValueOnce([{ sessionId: 'session-1' }] as any)
+        .mockResolvedValueOnce([{ countryCode: 'USA', _count: { countryCode: 1 } }] as any)
+        .mockResolvedValueOnce([{ operatingSystem: 'Windows', _count: { operatingSystem: 1 } }] as any)
+        .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
+
+      // Mock findMany calls - return submissions only for Jan 1 and Jan 3
+      vi.mocked(formSubmissionAnalyticsRepository.findMany)
+        .mockResolvedValueOnce([
+          { submittedAt: new Date('2024-01-01'), sessionId: 'session-1' },
+          { submittedAt: new Date('2024-01-03'), sessionId: 'session-1' },
+        ] as any)
+        .mockResolvedValueOnce([{ completionTimeSeconds: 60 }] as any);
+
+      const result = await analyticsService.getFormSubmissionAnalytics('form-123');
+
+      // Should have only 2 entries (no filling)
+      expect(result.submissionsOverTime).toHaveLength(2);
+      expect(result.submissionsOverTime[0].date).toBe('2024-01-01');
+      expect(result.submissionsOverTime[1].date).toBe('2024-01-03');
+    });
+
+    it('should handle empty submissions when timeRange is provided', async () => {
+      vi.mocked(formSubmissionAnalyticsRepository.count).mockResolvedValue(0);
+
+      // Mock multiple groupBy calls
+      vi.mocked(formSubmissionAnalyticsRepository.groupBy)
+        .mockResolvedValueOnce([] as any)
+        .mockResolvedValueOnce([] as any)
+        .mockResolvedValueOnce([] as any)
+        .mockResolvedValueOnce([] as any);
+
+      // Mock findMany calls - return empty arrays
+      vi.mocked(formSubmissionAnalyticsRepository.findMany)
+        .mockResolvedValueOnce([] as any)
+        .mockResolvedValueOnce([] as any);
+
+      const result = await analyticsService.getFormSubmissionAnalytics('form-123', {
+        start: new Date('2024-01-01'),
+        end: new Date('2024-01-03'),
+      });
+
+      // Should have empty submissionsOverTime when no data exists
+      expect(result.submissionsOverTime).toHaveLength(0);
+      expect(result.totalSubmissions).toBe(0);
+    });
   });
 
   describe('Country detection fallback logic', () => {
