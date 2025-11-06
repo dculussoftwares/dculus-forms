@@ -2,6 +2,7 @@ import { GraphQLError } from 'graphql';
 import { prisma } from '../../lib/prisma.js';
 import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { s3Config } from '../../lib/env.js';
+import { logger } from '../../lib/logger.js';
 
 export interface AdminOrganizationsArgs {
   limit?: number;
@@ -91,7 +92,7 @@ async function getS3StorageStats(): Promise<{ storageUsed: string; fileCount: nu
       fileCount: totalFiles,
     };
   } catch (error) {
-    console.error('Error fetching S3 storage stats:', error);
+    logger.error('Error fetching S3 storage stats:', error);
     return {
       storageUsed: '0 B',
       fileCount: 0,
@@ -121,7 +122,7 @@ async function getMongoStorageStats(): Promise<{ mongoDbSize: string; mongoColle
       mongoCollectionCount: collectionCount,
     };
   } catch (error) {
-    console.error('Error fetching MongoDB storage stats:', error);
+    logger.error('Error fetching MongoDB storage stats:', error);
     return {
       mongoDbSize: '0 B',
       mongoCollectionCount: 0,
@@ -188,7 +189,7 @@ export const adminResolvers = {
           hasMore: offset + limit < total,
         };
       } catch (error) {
-        console.error('Error fetching admin organizations:', error);
+        logger.error('Error fetching admin organizations:', error);
         throw new GraphQLError('Failed to fetch organizations');
       }
     },
@@ -242,7 +243,7 @@ export const adminResolvers = {
           formCount: organization._count.forms,
         };
       } catch (error) {
-        console.error('Error fetching admin organization:', error);
+        logger.error('Error fetching admin organization:', error);
         throw new GraphQLError('Failed to fetch organization');
       }
     },
@@ -279,7 +280,7 @@ export const adminResolvers = {
           mongoCollectionCount: mongoStats.mongoCollectionCount,
         };
       } catch (error) {
-        console.error('Error fetching admin stats:', error);
+        logger.error('Error fetching admin stats:', error);
         throw new GraphQLError('Failed to fetch admin statistics');
       }
     },
@@ -350,7 +351,7 @@ export const adminResolvers = {
           totalPages,
         };
       } catch (error) {
-        console.error('Error fetching admin users:', error);
+        logger.error('Error fetching admin users:', error);
         throw new GraphQLError('Failed to fetch users');
       }
     },
@@ -398,7 +399,7 @@ export const adminResolvers = {
           })),
         };
       } catch (error) {
-        console.error('Error fetching admin user:', error);
+        logger.error('Error fetching admin user:', error);
         throw new GraphQLError('Failed to fetch user');
       }
     },
@@ -460,7 +461,7 @@ export const adminResolvers = {
           },
         };
       } catch (error) {
-        console.error('Error fetching admin organization by id:', error);
+        logger.error('Error fetching admin organization by id:', error);
         throw new GraphQLError('Failed to fetch organization');
       }
     },

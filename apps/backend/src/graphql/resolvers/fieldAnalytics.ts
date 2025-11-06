@@ -7,6 +7,7 @@ import {
 } from '../../services/fieldAnalytics/index.js';
 import { prisma } from '../../lib/prisma.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
+import { logger } from '../../lib/logger.js';
 
 /**
  * Check if user has access to the form (optimized query)
@@ -57,7 +58,7 @@ const getFieldInfo = (formSchema: any, fieldId: string): { type: FieldType; labe
     }
   }
 
-  console.log('❌ Field not found:', fieldId);
+  logger.info('❌ Field not found:', fieldId);
   return null;
 };
 
@@ -191,12 +192,12 @@ export const fieldAnalyticsResolvers = {
       // Check form access (don't need schema from DB since we'll get it from Hocuspocus)
       const form = await checkFormAccess(formId, context.user.id, false);
 
-      console.log('🔍 Getting form schema from Hocuspocus collaborative document...');
+      logger.info('🔍 Getting form schema from Hocuspocus collaborative document...');
       
       // Get the proper form schema from YJS collaborative document
       const formSchemaFromHocuspocus = await getFormSchemaFromHocuspocus(formId);
       
-      console.log('📋 Hocuspocus schema structure:', {
+      logger.info('📋 Hocuspocus schema structure:', {
         hasSchema: !!formSchemaFromHocuspocus,
         hasPages: !!formSchemaFromHocuspocus?.pages,
         pagesCount: formSchemaFromHocuspocus?.pages?.length || 0,
@@ -204,13 +205,13 @@ export const fieldAnalyticsResolvers = {
       });
       
       if (!formSchemaFromHocuspocus) {
-        console.log('❌ No collaborative schema found, falling back to database schema');
+        logger.info('❌ No collaborative schema found, falling back to database schema');
         
         // Fallback to database schema if collaborative document doesn't exist
         const fallbackForm = await checkFormAccess(formId, context.user.id, true);
         const fallbackSchema = fallbackForm.formSchema as any; // Type assertion for Prisma JSON field
         
-        console.log('📋 Fallback DB schema structure:', {
+        logger.info('📋 Fallback DB schema structure:', {
           hasFormSchema: !!fallbackSchema,
           hasPages: !!fallbackSchema?.pages,
           pagesCount: fallbackSchema?.pages?.length || 0,
@@ -277,7 +278,7 @@ export const fieldAnalyticsResolvers = {
 
         return transformAnalyticsToGraphQL(analytics);
       } catch (error) {
-        console.error('Error getting field analytics:', error);
+        logger.error('Error getting field analytics:', error);
         throw new GraphQLError('Failed to get field analytics', {
           extensions: { code: 'INTERNAL_ERROR' }
         });
@@ -310,7 +311,7 @@ export const fieldAnalyticsResolvers = {
           fields: analytics.fields.map(transformAnalyticsToGraphQL),
         };
       } catch (error) {
-        console.error('Error getting all fields analytics:', error);
+        logger.error('Error getting all fields analytics:', error);
         throw new GraphQLError('Failed to get all fields analytics', {
           extensions: { code: 'INTERNAL_ERROR' }
         });

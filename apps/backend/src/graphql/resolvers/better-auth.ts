@@ -8,6 +8,7 @@ import { nanoid } from 'nanoid';
 import { auth } from '../../lib/better-auth.js';
 import { fromNodeHeaders } from 'better-auth/node';
 import { GraphQLError } from 'graphql';
+import { logger } from '../../lib/logger.js';
 import {
   createChargebeeCustomer,
   createFreeSubscription,
@@ -136,7 +137,7 @@ export const betterAuthResolvers = {
 
       // Auto-create free subscription for new organization
       try {
-        console.log('[Organization] Creating Chargebee customer and free subscription...');
+        logger.info('[Organization] Creating Chargebee customer and free subscription...');
 
         const customerId = await createChargebeeCustomer(
           organization.id,
@@ -146,9 +147,9 @@ export const betterAuthResolvers = {
 
         await createFreeSubscription(organization.id, customerId);
 
-        console.log(`[Organization] ✅ Created free subscription for "${organization.name}"`);
+        logger.info(`[Organization] ✅ Created free subscription for "${organization.name}"`);
       } catch (error: any) {
-        console.error('[Organization] ⚠️  Failed to create subscription:', error.message);
+        logger.error('[Organization] ⚠️  Failed to create subscription:', error.message);
         // Don't throw - organization is already created
         // User can still use the system, admin can manually fix subscription later
         // This prevents organization creation from failing due to Chargebee issues

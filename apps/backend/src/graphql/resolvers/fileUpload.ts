@@ -4,6 +4,7 @@ import { prisma } from '../../lib/prisma.js';
 import { randomUUID } from 'crypto';
 import { BetterAuthContext, requireAuth, requireOrganizationMembership } from '../../middleware/better-auth-middleware.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
+import { logger } from '../../lib/logger.js';
 
 interface FileUpload {
   filename: string;
@@ -91,7 +92,7 @@ export const fileUploadResolvers = {
         const file = ('file' in fileUpload) ? fileUpload.file : fileUpload;
 
         // Debug logging - more detailed
-        console.log('File upload details:', {
+        logger.info('File upload details:', {
           filename: file?.filename,
           mimetype: file?.mimetype,
           encoding: file?.encoding,
@@ -124,7 +125,7 @@ export const fileUploadResolvers = {
 
         return result;
       } catch (error) {
-        console.error('Error in uploadFile resolver:', error);
+        logger.error('Error in uploadFile resolver:', error);
         if (error instanceof GraphQLError) {
           throw error;
         }
@@ -161,7 +162,7 @@ export const fileUploadResolvers = {
         const success = await deleteFile(args.key);
         return success;
       } catch (error) {
-        console.error('Error in deleteFile resolver:', error);
+        logger.error('Error in deleteFile resolver:', error);
         if (error instanceof GraphQLError) {
           throw error;
         }

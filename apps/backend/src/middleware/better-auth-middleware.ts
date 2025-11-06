@@ -3,6 +3,7 @@ import { fromNodeHeaders } from 'better-auth/node';
 import { auth } from '../lib/better-auth.js';
 import { prisma } from '../lib/prisma.js';
 import { GraphQLError } from 'graphql';
+import { logger } from '../lib/logger.js';
 
 export interface BetterAuthContext {
   user: any | null;
@@ -16,7 +17,7 @@ export async function createBetterAuthContext(req: Request): Promise<BetterAuthC
       headers: fromNodeHeaders(req.headers),
     });
 
-    console.log('Auth context - User:', sessionData?.user?.email || 'none', 'Role:', (sessionData?.user as any)?.role || 'none');
+    logger.info('Auth context - User:', sessionData?.user?.email || 'none', 'Role:', (sessionData?.user as any)?.role || 'none');
 
     return {
       user: sessionData?.user || null,
@@ -24,7 +25,7 @@ export async function createBetterAuthContext(req: Request): Promise<BetterAuthC
       isAuthenticated: !!sessionData?.user,
     };
   } catch (error) {
-    console.error('Error getting session:', error);
+    logger.error('Error getting session:', error);
     return {
       user: null,
       session: null,

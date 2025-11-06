@@ -1,11 +1,12 @@
 import 'dotenv/config';
 import { prisma } from '../lib/prisma.js';
+import { logger } from '../lib/logger.js';
 
 /**
  * Migration script to update organization member roles from custom roles ('companyMember'/'companyOwner') to standard better-auth roles ('member'/'owner')
  */
 async function migrateOrganizationRoles() {
-  console.log('🚀 Starting organization role migration to standard better-auth roles...');
+  logger.info('🚀 Starting organization role migration to standard better-auth roles...');
 
   try {
     // Update all 'companyMember' roles to 'member'
@@ -14,7 +15,7 @@ async function migrateOrganizationRoles() {
       data: { role: 'member' },
     });
 
-    console.log(`✅ Updated ${memberUpdate.count} member roles from 'companyMember' to 'member'`);
+    logger.info(`✅ Updated ${memberUpdate.count} member roles from 'companyMember' to 'member'`);
 
     // Update all 'companyOwner' roles to 'owner'
     const ownerUpdate = await prisma.member.updateMany({
@@ -22,7 +23,7 @@ async function migrateOrganizationRoles() {
       data: { role: 'owner' },
     });
 
-    console.log(`✅ Updated ${ownerUpdate.count} owner roles from 'companyOwner' to 'owner'`);
+    logger.info(`✅ Updated ${ownerUpdate.count} owner roles from 'companyOwner' to 'owner'`);
 
     // Update all invitation 'companyMember' roles to 'member'
     const invitationMemberUpdate = await prisma.invitation.updateMany({
@@ -30,7 +31,7 @@ async function migrateOrganizationRoles() {
       data: { role: 'member' },
     });
 
-    console.log(`✅ Updated ${invitationMemberUpdate.count} invitation roles from 'companyMember' to 'member'`);
+    logger.info(`✅ Updated ${invitationMemberUpdate.count} invitation roles from 'companyMember' to 'member'`);
 
     // Update all invitation 'companyOwner' roles to 'owner'
     const invitationOwnerUpdate = await prisma.invitation.updateMany({
@@ -38,7 +39,7 @@ async function migrateOrganizationRoles() {
       data: { role: 'owner' },
     });
 
-    console.log(`✅ Updated ${invitationOwnerUpdate.count} invitation roles from 'companyOwner' to 'owner'`);
+    logger.info(`✅ Updated ${invitationOwnerUpdate.count} invitation roles from 'companyOwner' to 'owner'`);
 
     // Verify the migration by counting records with old custom role names
     const remainingCustomMemberRoles = await prisma.member.count({
@@ -60,9 +61,9 @@ async function migrateOrganizationRoles() {
     });
 
     if (remainingCustomMemberRoles === 0 && remainingCustomInvitationRoles === 0) {
-      console.log('✅ Migration completed successfully! All roles are now using standard better-auth names.');
+      logger.info('✅ Migration completed successfully! All roles are now using standard better-auth names.');
     } else {
-      console.warn(`⚠️ Migration incomplete: ${remainingCustomMemberRoles} member records and ${remainingCustomInvitationRoles} invitation records still have custom role names.`);
+      logger.warn(`⚠️ Migration incomplete: ${remainingCustomMemberRoles} member records and ${remainingCustomInvitationRoles} invitation records still have custom role names.`);
     }
 
     // Show current role distribution
@@ -73,13 +74,13 @@ async function migrateOrganizationRoles() {
       }
     });
 
-    console.log('\n📊 Current organization role distribution:');
+    logger.info('\n📊 Current organization role distribution:');
     currentRoleStats.forEach(stat => {
-      console.log(`  ${stat.role}: ${stat._count.role} members`);
+      logger.info(`  ${stat.role}: ${stat._count.role} members`);
     });
 
   } catch (error) {
-    console.error('❌ Error during migration:', error);
+    logger.error('❌ Error during migration:', error);
     throw error;
   } finally {
     await prisma.$disconnect();
@@ -88,6 +89,6 @@ async function migrateOrganizationRoles() {
 
 // Run the migration
 migrateOrganizationRoles().catch((error) => {
-  console.error('Migration failed:', error);
+  logger.error('Migration failed:', error);
   process.exit(1);
 });

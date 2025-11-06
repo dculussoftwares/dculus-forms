@@ -9,13 +9,14 @@ export * from './usageService.js';
 
 import { initializeSubscriptionEvents } from './events.js';
 import { initializeUsageService } from './usageService.js';
+import { logger } from '../lib/logger.js';
 
 /**
  * Initialize the entire subscription system
  * Call this once when the application starts
  */
 export const initializeSubscriptionSystem = (): void => {
-  console.log('[Subscription System] Initializing...');
+  logger.info('[Subscription System] Initializing...');
 
   // Initialize event emitter
   initializeSubscriptionEvents();
@@ -23,5 +24,5 @@ export const initializeSubscriptionSystem = (): void => {
   // Initialize usage service (attaches listeners to events)
   initializeUsageService();
 
-  console.log('[Subscription System] Initialization complete');
+  logger.info('[Subscription System] Initialization complete');
 };

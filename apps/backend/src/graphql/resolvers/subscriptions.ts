@@ -9,6 +9,7 @@ import {
 } from '../../services/chargebeeService.js';
 import { requireAuth, requireOrganizationMembership, type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 import { GraphQLError } from 'graphql';
+import { logger } from '../../lib/logger.js';
 
 /**
  * Subscription GraphQL Resolvers
@@ -67,7 +68,7 @@ export const subscriptionResolvers = {
           hostedPageId: result.id,
         };
       } catch (error: any) {
-        console.error('[Subscription Resolver] Error creating checkout session:', error);
+        logger.error('[Subscription Resolver] Error creating checkout session:', error);
         throw new GraphQLError(`Failed to create checkout session: ${error.message}`);
       }
     },
@@ -106,7 +107,7 @@ export const subscriptionResolvers = {
 
         return { url };
       } catch (error: any) {
-        console.error('[Subscription Resolver] Error creating portal session:', error);
+        logger.error('[Subscription Resolver] Error creating portal session:', error);
         throw new GraphQLError(`Failed to create portal session: ${error.message}`);
       }
     },
@@ -122,7 +123,7 @@ export const subscriptionResolvers = {
     ) => {
       requireAuth(context.auth);
 
-      console.log('[Subscription Resolver] Initializing subscription for organization:', organizationId);
+      logger.info('[Subscription Resolver] Initializing subscription for organization:', organizationId);
 
       try {
         // Check if subscription already exists (idempotency)
@@ -131,7 +132,7 @@ export const subscriptionResolvers = {
         });
 
         if (existingSubscription) {
-          console.log('[Subscription Resolver] Subscription already exists for organization:', organizationId);
+          logger.info('[Subscription Resolver] Subscription already exists for organization:', organizationId);
           return {
             success: true,
             subscription: existingSubscription,
@@ -186,7 +187,7 @@ export const subscriptionResolvers = {
           where: { organizationId },
         });
 
-        console.log('[Subscription Resolver] ✅ Subscription initialized successfully for organization:', organizationId);
+        logger.info('[Subscription Resolver] ✅ Subscription initialized successfully for organization:', organizationId);
 
         return {
           success: true,
@@ -194,7 +195,7 @@ export const subscriptionResolvers = {
           message: 'Free subscription created successfully',
         };
       } catch (error: any) {
-        console.error('[Subscription Resolver] Error initializing subscription:', error);
+        logger.error('[Subscription Resolver] Error initializing subscription:', error);
 
         // Return error without throwing to allow signup to continue
         return {

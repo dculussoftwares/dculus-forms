@@ -1,5 +1,6 @@
 import * as Y from 'yjs';
 import { constructCdnUrl } from '../utils/cdn.js';
+import { logger } from '../lib/logger.js';
 import {
   formMetadataRepository,
   collaborativeDocumentRepository,
@@ -44,7 +45,7 @@ export const extractFormStatsFromYDoc = (ydoc: Y.Doc): FormMetadataStats => {
       backgroundImageKey: backgroundImageKey || null,
     };
   } catch (error) {
-    console.error('Error extracting form stats from YDoc:', error);
+    logger.error('Error extracting form stats from YDoc:', error);
     return {
       pageCount: 0,
       fieldCount: 0,
@@ -64,7 +65,7 @@ export const extractFormStatsFromState = (
     Y.applyUpdate(ydoc, state);
     return extractFormStatsFromYDoc(ydoc);
   } catch (error) {
-    console.error('Error extracting form stats from state:', error);
+    logger.error('Error extracting form stats from state:', error);
     return {
       pageCount: 0,
       fieldCount: 0,
@@ -90,9 +91,9 @@ export const updateFormMetadata = async (
       lastUpdated: new Date(),
     });
 
-    console.log(`✅ Updated metadata for form ${formId}:`, stats);
+    logger.info(`✅ Updated metadata for form ${formId}:`, stats);
   } catch (error) {
-    console.error(`❌ Failed to update metadata for form ${formId}:`, error);
+    logger.error(`❌ Failed to update metadata for form ${formId}:`, error);
     throw error;
   }
 };
@@ -110,7 +111,7 @@ export const computeFormMetadata = async (
     );
 
     if (!collaborativeDoc || !collaborativeDoc.state) {
-      console.warn(`No collaborative document found for form: ${formId}`);
+      logger.warn(`No collaborative document found for form: ${formId}`);
       return null;
     }
 
@@ -124,7 +125,7 @@ export const computeFormMetadata = async (
 
     return stats;
   } catch (error) {
-    console.error(`Failed to compute metadata for form ${formId}:`, error);
+    logger.error(`Failed to compute metadata for form ${formId}:`, error);
     return null;
   }
 };
@@ -135,7 +136,7 @@ export const computeFormMetadata = async (
 export const batchUpdateFormMetadata = async (
   formIds: string[]
 ): Promise<void> => {
-  console.log(`🔄 Starting batch metadata update for ${formIds.length} forms`);
+  logger.info(`🔄 Starting batch metadata update for ${formIds.length} forms`);
 
   let successCount = 0;
   let errorCount = 0;
@@ -145,12 +146,12 @@ export const batchUpdateFormMetadata = async (
       await computeFormMetadata(formId);
       successCount++;
     } catch (error) {
-      console.error(`Failed to update metadata for form ${formId}:`, error);
+      logger.error(`Failed to update metadata for form ${formId}:`, error);
       errorCount++;
     }
   }
 
-  console.log(
+  logger.info(
     `✅ Batch update completed: ${successCount} successful, ${errorCount} errors`
   );
 };
@@ -174,7 +175,7 @@ export const getFormMetadata = async (
     }
 
     // If not cached, compute and cache it
-    console.log(`Computing metadata for form ${formId} (not cached)`);
+    logger.info(`Computing metadata for form ${formId} (not cached)`);
     const computedStats = await computeFormMetadata(formId);
 
     if (!computedStats) {
@@ -187,7 +188,7 @@ export const getFormMetadata = async (
       lastUpdated: new Date(),
     };
   } catch (error) {
-    console.error(`Failed to get metadata for form ${formId}:`, error);
+    logger.error(`Failed to get metadata for form ${formId}:`, error);
     return null;
   }
 };
@@ -221,7 +222,7 @@ export const getFormsNeedingMetadataUpdate = async (): Promise<string[]> => {
 
     return formsWithoutMetadata.map((form: { id: string }) => form.id);
   } catch (error) {
-    console.error('Failed to get forms needing metadata update:', error);
+    logger.error('Failed to get forms needing metadata update:', error);
     return [];
   }
 };

@@ -1,6 +1,7 @@
 import Chargebee from 'chargebee';
 import { resetUsageCounters } from '../subscriptions/usageService.js';
 import { subscriptionRepository } from '../repositories/index.js';
+import { logger } from '../lib/logger.js';
 
 /**
  * Chargebee Service
@@ -50,7 +51,7 @@ export const createChargebeeCustomer = async (
 
     return result.customer.id;
   } catch (error: any) {
-    console.error('[Chargebee Service] Error creating customer:', error);
+    logger.error('[Chargebee Service] Error creating customer:', error);
     throw new Error(`Failed to create Chargebee customer: ${error.message}`);
   }
 };
@@ -85,9 +86,9 @@ export const createFreeSubscription = async (
       currentPeriodEnd: periodEnd,
     });
 
-    console.log('[Chargebee Service] Created free subscription for organization:', organizationId);
+    logger.info('[Chargebee Service] Created free subscription for organization:', organizationId);
   } catch (error: any) {
-    console.error('[Chargebee Service] Error creating free subscription:', error);
+    logger.error('[Chargebee Service] Error creating free subscription:', error);
     throw new Error(`Failed to create free subscription: ${error.message}`);
   }
 };
@@ -124,7 +125,7 @@ export const createCheckoutHostedPage = async (
       id: result.hosted_page.id!,
     };
   } catch (error: any) {
-    console.error('[Chargebee Service] Error creating checkout hosted page:', error);
+    logger.error('[Chargebee Service] Error creating checkout hosted page:', error);
     throw new Error(`Failed to create checkout page: ${error.message}`);
   }
 };
@@ -143,7 +144,7 @@ export const createPortalSession = async (customerId: string): Promise<string> =
 
     return result.portal_session.access_url;
   } catch (error: any) {
-    console.error('[Chargebee Service] Error creating portal session:', error);
+    logger.error('[Chargebee Service] Error creating portal session:', error);
     throw new Error(`Failed to create portal session: ${error.message}`);
   }
 };
@@ -156,7 +157,7 @@ export const getChargebeeSubscription = async (subscriptionId: string) => {
     const result = await chargebee.subscription.retrieve(subscriptionId);
     return result.subscription;
   } catch (error: any) {
-    console.error('[Chargebee Service] Error retrieving subscription:', error);
+    logger.error('[Chargebee Service] Error retrieving subscription:', error);
     throw new Error(`Failed to retrieve subscription: ${error.message}`);
   }
 };
@@ -173,9 +174,9 @@ export const cancelChargebeeSubscription = async (
       end_of_term: endOfTerm,
     } as any);
 
-    console.log('[Chargebee Service] Cancelled subscription:', subscriptionId);
+    logger.info('[Chargebee Service] Cancelled subscription:', subscriptionId);
   } catch (error: any) {
-    console.error('[Chargebee Service] Error cancelling subscription:', error);
+    logger.error('[Chargebee Service] Error cancelling subscription:', error);
     throw new Error(`Failed to cancel subscription: ${error.message}`);
   }
 };
@@ -188,9 +189,9 @@ export const reactivateChargebeeSubscription = async (
 ): Promise<void> => {
   try {
     await chargebee.subscription.reactivate(subscriptionId);
-    console.log('[Chargebee Service] Reactivated subscription:', subscriptionId);
+    logger.info('[Chargebee Service] Reactivated subscription:', subscriptionId);
   } catch (error: any) {
-    console.error('[Chargebee Service] Error reactivating subscription:', error);
+    logger.error('[Chargebee Service] Error reactivating subscription:', error);
     throw new Error(`Failed to reactivate subscription: ${error.message}`);
   }
 };
@@ -258,9 +259,9 @@ export const syncSubscriptionFromWebhook = async (
       }
     );
 
-    console.log('[Chargebee Service] Synced subscription for organization:', organizationId);
+    logger.info('[Chargebee Service] Synced subscription for organization:', organizationId);
   } catch (error: any) {
-    console.error('[Chargebee Service] Error syncing subscription:', error);
+    logger.error('[Chargebee Service] Error syncing subscription:', error);
     throw error;
   }
 };
@@ -281,9 +282,9 @@ export const handleSubscriptionRenewal = async (
 
     await resetUsageCounters(organizationId, periodStart, periodEnd);
 
-    console.log('[Chargebee Service] Reset usage counters for organization:', organizationId);
+    logger.info('[Chargebee Service] Reset usage counters for organization:', organizationId);
   } catch (error: any) {
-    console.error('[Chargebee Service] Error handling subscription renewal:', error);
+    logger.error('[Chargebee Service] Error handling subscription renewal:', error);
     throw error;
   }
 };
@@ -305,7 +306,7 @@ export const getAvailablePlans = async () => {
   // Check cache first
   const now = Date.now();
   if (plansCache && (now - plansCacheTime) < CACHE_DURATION) {
-    console.log('[Chargebee Service] Returning cached plans');
+    logger.info('[Chargebee Service] Returning cached plans');
     return plansCache;
   }
 
@@ -418,7 +419,7 @@ export const getAvailablePlans = async () => {
       return aPrice - bPrice;
     });
 
-    console.log('[Chargebee Service] Fetched plans from Chargebee:', plans.length);
+    logger.info('[Chargebee Service] Fetched plans from Chargebee:', plans.length);
 
     // Update cache
     plansCache = plans;
@@ -426,10 +427,10 @@ export const getAvailablePlans = async () => {
 
     return plans;
   } catch (error: any) {
-    console.error('[Chargebee Service] Error fetching plans from Chargebee:', error);
+    logger.error('[Chargebee Service] Error fetching plans from Chargebee:', error);
 
     // Fallback to hardcoded plans if Chargebee API fails
-    console.warn('[Chargebee Service] Falling back to hardcoded plans');
+    logger.warn('[Chargebee Service] Falling back to hardcoded plans');
     return [
       {
         id: 'free',

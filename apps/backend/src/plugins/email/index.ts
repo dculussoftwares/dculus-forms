@@ -6,6 +6,7 @@
 import { registerPlugin } from '../registry.js';
 import { emailHandler } from './handler.js';
 import { EMAIL_PLUGIN_TYPE } from './types.js';
+import { logger } from '../../lib/logger.js';
 
 // Export types
 export * from './types.js';
@@ -19,5 +20,5 @@ export { emailHandler } from './handler.js';
  */
 export const registerEmailPlugin = (): void => {
   registerPlugin(EMAIL_PLUGIN_TYPE, emailHandler);
-  console.log('[Email Plugin] Registered successfully');
+  logger.info('[Email Plugin] Registered successfully');
 };

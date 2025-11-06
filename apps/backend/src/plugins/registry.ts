@@ -1,4 +1,5 @@
 import type { PluginHandler } from './types.js';
+import { logger } from '../lib/logger.js';
 
 /**
  * Plugin Registry
@@ -18,10 +19,10 @@ const pluginRegistry: Map<string, PluginHandler> = new Map();
  */
 export const registerPlugin = (type: string, handler: PluginHandler): void => {
   if (pluginRegistry.has(type)) {
-    console.warn(`[Plugin Registry] Plugin type "${type}" is already registered. Overwriting...`);
+    logger.warn(`[Plugin Registry] Plugin type "${type}" is already registered. Overwriting...`);
   }
   pluginRegistry.set(type, handler);
-  console.log(`[Plugin Registry] Registered plugin type: ${type}`);
+  logger.info(`[Plugin Registry] Registered plugin type: ${type}`);
 };
 
 /**

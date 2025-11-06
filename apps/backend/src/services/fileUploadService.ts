@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import path from 'path';
 import { s3Config } from '../lib/env.js';
 import { constructCdnUrl } from '../utils/cdn.js';
+import { logger } from '../lib/logger.js';
 
 export interface UploadFileResult {
   key: string;
@@ -114,7 +115,7 @@ export async function uploadFile(input: UploadFileInput): Promise<UploadFileResu
   // Use detected mimetype or fallback to extension-based detection
   const finalMimetype = mimetype || getMimetypeFromExtension(filename);
   
-  console.log('Upload file details:', {
+  logger.info('Upload file details:', {
     filename,
     originalMimetype: mimetype,
     finalMimetype,
@@ -169,7 +170,7 @@ export async function uploadFile(input: UploadFileInput): Promise<UploadFileResu
       mimeType: finalMimetype,
     };
   } catch (error) {
-    console.error('Error uploading file to Cloudflare R2:', error);
+    logger.error('Error uploading file to Cloudflare R2:', error);
     throw new Error(`Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -189,7 +190,7 @@ export async function deleteFile(s3Key: string): Promise<boolean> {
     await s3Client.send(deleteObjectCommand);
     return true;
   } catch (error) {
-    console.error('Error deleting file from Cloudflare R2:', error);
+    logger.error('Error deleting file from Cloudflare R2:', error);
     return false;
   }
 }
@@ -227,7 +228,7 @@ export async function copyFileForForm(sourceKey: string, formId: string): Promis
       mimeType: 'image/jpeg', // Default to jpeg, could be enhanced to detect from extension
     };
   } catch (error) {
-    console.error('Error copying file in Cloudflare R2:', error);
+    logger.error('Error copying file in Cloudflare R2:', error);
     throw new Error(`Failed to copy file: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

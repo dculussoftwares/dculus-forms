@@ -7,6 +7,7 @@ import type {
   UsageLimitExceededEvent,
 } from './types.js';
 import { SubscriptionEventType } from './types.js';
+import { logger } from '../lib/logger.js';
 
 /**
  * Subscription Event System
@@ -30,13 +31,13 @@ subscriptionEventEmitter.setMaxListeners(100);
  * Sets up event listeners for subscription tracking
  */
 export const initializeSubscriptionEvents = (): void => {
-  console.log('[Subscription Events] Initializing subscription event system...');
+  logger.info('[Subscription Events] Initializing subscription event system...');
 
   // Listen for form viewed events
   subscriptionEventEmitter.on(
     SubscriptionEventType.FORM_VIEWED,
     async (event: FormViewedEvent) => {
-      console.log('[Subscription Events] Form viewed:', {
+      logger.info('[Subscription Events] Form viewed:', {
         organizationId: event.organizationId,
         formId: event.formId,
       });
@@ -50,7 +51,7 @@ export const initializeSubscriptionEvents = (): void => {
   subscriptionEventEmitter.on(
     SubscriptionEventType.FORM_SUBMITTED,
     async (event: FormSubmittedEvent) => {
-      console.log('[Subscription Events] Form submitted:', {
+      logger.info('[Subscription Events] Form submitted:', {
         organizationId: event.organizationId,
         formId: event.formId,
         responseId: event.data.responseId,
@@ -64,7 +65,7 @@ export const initializeSubscriptionEvents = (): void => {
   subscriptionEventEmitter.on(
     SubscriptionEventType.USAGE_LIMIT_REACHED,
     async (event: UsageLimitReachedEvent) => {
-      console.warn('[Subscription Events] Usage limit warning:', {
+      logger.warn('[Subscription Events] Usage limit warning:', {
         organizationId: event.organizationId,
         usageType: event.data.usageType,
         current: event.data.current,
@@ -80,7 +81,7 @@ export const initializeSubscriptionEvents = (): void => {
   subscriptionEventEmitter.on(
     SubscriptionEventType.USAGE_LIMIT_EXCEEDED,
     async (event: UsageLimitExceededEvent) => {
-      console.error('[Subscription Events] Usage limit exceeded:', {
+      logger.error('[Subscription Events] Usage limit exceeded:', {
         organizationId: event.organizationId,
         usageType: event.data.usageType,
         current: event.data.current,
@@ -91,7 +92,7 @@ export const initializeSubscriptionEvents = (): void => {
     }
   );
 
-  console.log('[Subscription Events] Subscription event system initialized successfully');
+  logger.info('[Subscription Events] Subscription event system initialized successfully');
 };
 
 /**

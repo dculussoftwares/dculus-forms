@@ -5,6 +5,7 @@ import {
 } from '@dculus/types';
 import { randomUUID } from 'crypto';
 import { formTemplateRepository } from '../repositories/index.js';
+import { logger } from '../lib/logger.js';
 
 export interface FormTemplate {
   id: string;
@@ -64,7 +65,7 @@ export const getTemplateById = async (id: string): Promise<FormTemplate | null> 
       formSchema: deserializeFormSchema(template.formSchema),
     };
   } catch (error) {
-    console.error('Error fetching template by ID:', error);
+    logger.error('Error fetching template by ID:', error);
     return null;
   }
 };
@@ -118,7 +119,7 @@ export const updateTemplate = async (
       formSchema: deserializeFormSchema(updatedTemplate.formSchema),
     };
   } catch (error) {
-    console.error('Error updating template:', error);
+    logger.error('Error updating template:', error);
     return null;
   }
 };
@@ -131,7 +132,7 @@ export const deleteTemplate = async (id: string): Promise<boolean> => {
     await formTemplateRepository.softDeleteTemplate(id);
     return true;
   } catch (error) {
-    console.error('Error deleting template:', error);
+    logger.error('Error deleting template:', error);
     return false;
   }
 };
@@ -144,7 +145,7 @@ export const hardDeleteTemplate = async (id: string): Promise<boolean> => {
     await formTemplateRepository.hardDeleteTemplate(id);
     return true;
   } catch (error) {
-    console.error('Error hard deleting template:', error);
+    logger.error('Error hard deleting template:', error);
     return false;
   }
 };

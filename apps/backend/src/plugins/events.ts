@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 import { executePluginsForForm } from './executor.js';
 import type { PluginEvent } from './types.js';
+import { logger } from '../lib/logger.js';
 
 /**
  * Plugin Event System
@@ -22,11 +23,11 @@ pluginEventEmitter.setMaxListeners(100);
  * Sets up event listeners that execute plugins when events are emitted
  */
 export const initializePluginEvents = (): void => {
-  console.log('[Plugin Events] Initializing plugin event system...');
+  logger.info('[Plugin Events] Initializing plugin event system...');
 
   // Listen for all plugin events and execute matching plugins
   pluginEventEmitter.on('plugin:event', async (event: PluginEvent) => {
-    console.log(`[Plugin Events] Event triggered: ${event.type}`, {
+    logger.info(`[Plugin Events] Event triggered: ${event.type}`, {
       formId: event.formId,
       organizationId: event.organizationId,
     });
@@ -34,11 +35,11 @@ export const initializePluginEvents = (): void => {
     try {
       await executePluginsForForm(event.formId, event);
     } catch (error: any) {
-      console.error('[Plugin Events] Error executing plugins:', error);
+      logger.error('[Plugin Events] Error executing plugins:', error);
     }
   });
 
-  console.log('[Plugin Events] Plugin event system initialized successfully');
+  logger.info('[Plugin Events] Plugin event system initialized successfully');
 };
 
 /**

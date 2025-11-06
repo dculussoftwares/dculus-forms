@@ -6,6 +6,7 @@
 
 import { QuizGradingMetadata } from '@dculus/types';
 import { PluginExportColumn, registerPluginExport } from '../exportRegistry.js';
+import { logger } from '../../lib/logger.js';
 
 /**
  * Quiz plugin export column definition
@@ -63,4 +64,4 @@ export const quizExportColumns: PluginExportColumn = {
  */
 registerPluginExport(quizExportColumns);
 
-console.log('Quiz plugin export columns registered');
+logger.info('Quiz plugin export columns registered');

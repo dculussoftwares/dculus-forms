@@ -25,6 +25,7 @@ import { createHocuspocusServer } from './services/hocuspocus.js';
 import { appConfig } from './lib/env.js';
 import { initializePluginSystem } from './plugins/index.js';
 import { initializeSubscriptionSystem } from './subscriptions/index.js';
+import { logger } from './lib/logger.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -121,7 +122,7 @@ const allOrigins = [
   'https://sandbox.embed.apollographql.com',
 ];
 
-console.log('🔧 Configured CORS origins:', allOrigins);
+logger.info('🔧 Configured CORS origins:', allOrigins);
 
 // Apply CORS first - this must be before ALL other middleware
 app.use(
@@ -179,7 +180,7 @@ const server = new ApolloServer({
     }),
   ],
   formatError: (error) => {
-    console.error('GraphQL Error:', error);
+    logger.error('GraphQL Error:', error);
     return {
       message: error.message,
       path: error.path,
@@ -189,14 +190,14 @@ const server = new ApolloServer({
 
 async function startServer() {
   // Initialize plugin system
-  console.log('🔌 Initializing plugin system...');
+  logger.info('🔌 Initializing plugin system...');
   initializePluginSystem();
-  console.log('✅ Plugin system initialized');
+  logger.info('✅ Plugin system initialized');
 
   // Initialize subscription system
-  console.log('💳 Initializing subscription system...');
+  logger.info('💳 Initializing subscription system...');
   initializeSubscriptionSystem();
-  console.log('✅ Subscription system initialized');
+  logger.info('✅ Subscription system initialized');
 
   await server.start();
 
@@ -239,18 +240,18 @@ async function startServer() {
   });
 
   wss.on('connection', (ws, request) => {
-    console.log('🔌 WebSocket connection established');
+    logger.info('🔌 WebSocket connection established');
     hocuspocusServer.handleConnection(ws, request);
   });
 
   httpServer.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📊 GraphQL endpoint: http://localhost:${PORT}/graphql`);
-    console.log(`🤝 Hocuspocus WebSocket server integrated on port ${PORT}`);
+    logger.info(`🚀 Server running on http://localhost:${PORT}`);
+    logger.info(`📊 GraphQL endpoint: http://localhost:${PORT}/graphql`);
+    logger.info(`🤝 Hocuspocus WebSocket server integrated on port ${PORT}`);
   });
 }
 
 startServer().catch((error) => {
-  console.error('Failed to start server:', error);
+  logger.error('Failed to start server:', error);
   process.exit(1);
 });

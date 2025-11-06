@@ -1,3 +1,5 @@
+import { logger } from '../lib/logger.js';
+
 /**
  * Plugin Export Column Registry
  *
@@ -37,11 +39,11 @@ const PLUGIN_EXPORT_REGISTRY: Map<string, PluginExportColumn> = new Map();
  */
 export function registerPluginExport(columnDef: PluginExportColumn): void {
   if (PLUGIN_EXPORT_REGISTRY.has(columnDef.pluginType)) {
-    console.warn(`Plugin export for "${columnDef.pluginType}" is already registered. Overwriting...`);
+    logger.warn(`Plugin export for "${columnDef.pluginType}" is already registered. Overwriting...`);
   }
 
   PLUGIN_EXPORT_REGISTRY.set(columnDef.pluginType, columnDef);
-  console.log(`Registered export columns for plugin: ${columnDef.pluginType}`);
+  logger.info(`Registered export columns for plugin: ${columnDef.pluginType}`);
 }
 
 /**

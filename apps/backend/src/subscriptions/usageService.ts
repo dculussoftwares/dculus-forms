@@ -6,6 +6,7 @@ import {
 } from './events.js';
 import { SubscriptionEventType } from './types.js';
 import type { FormViewedEvent, FormSubmittedEvent } from './types.js';
+import { logger } from '../lib/logger.js';
 
 const prisma = new PrismaClient();
 
@@ -22,7 +23,7 @@ const WARNING_THRESHOLD = 80;
  * Sets up event listeners for usage tracking
  */
 export const initializeUsageService = (): void => {
-  console.log('[Usage Service] Initializing subscription usage service...');
+  logger.info('[Usage Service] Initializing subscription usage service...');
 
   const eventEmitter = getSubscriptionEventEmitter();
 
@@ -31,7 +32,7 @@ export const initializeUsageService = (): void => {
     try {
       await trackFormView(event.organizationId, event.formId);
     } catch (error: any) {
-      console.error('[Usage Service] Error tracking form view:', error);
+      logger.error('[Usage Service] Error tracking form view:', error);
     }
   });
 
@@ -42,12 +43,12 @@ export const initializeUsageService = (): void => {
       try {
         await trackFormSubmission(event.organizationId, event.formId);
       } catch (error: any) {
-        console.error('[Usage Service] Error tracking form submission:', error);
+        logger.error('[Usage Service] Error tracking form submission:', error);
       }
     }
   );
 
-  console.log('[Usage Service] Subscription usage service initialized successfully');
+  logger.info('[Usage Service] Subscription usage service initialized successfully');
 };
 
 /**
@@ -67,7 +68,7 @@ export const trackFormView = async (
   });
 
   if (!subscription) {
-    console.warn('[Usage Service] No subscription found for organization:', organizationId);
+    logger.warn('[Usage Service] No subscription found for organization:', organizationId);
     return;
   }
 
@@ -108,7 +109,7 @@ export const trackFormSubmission = async (
   });
 
   if (!subscription) {
-    console.warn('[Usage Service] No subscription found for organization:', organizationId);
+    logger.warn('[Usage Service] No subscription found for organization:', organizationId);
     return;
   }
 
@@ -256,5 +257,5 @@ export const resetUsageCounters = async (
     },
   });
 
-  console.log('[Usage Service] Usage counters reset for organization:', organizationId);
+  logger.info('[Usage Service] Usage counters reset for organization:', organizationId);
 };

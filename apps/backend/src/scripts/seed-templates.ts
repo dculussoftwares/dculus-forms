@@ -16,6 +16,7 @@ import {
   LayoutCode
 } from '@dculus/types';
 import { randomUUID } from 'crypto';
+import { logger } from '../lib/logger.js';
 
 // HTML content for different template types
 const getHtmlContent = (type: string): string => {
@@ -56,7 +57,7 @@ interface UploadedFile {
 }
 
 export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise<void> => {
-  console.log('🌱 Seeding form templates...');
+  logger.info('🌱 Seeding form templates...');
   
   // Get background image keys from uploaded files
   const backgroundImages = uploadedFiles.filter(file => 
@@ -75,7 +76,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
     return availableImages[index % availableImages.length].key;
   };
     
-  console.log(`📸 Found ${availableImages.length} images for template backgrounds`);
+  logger.info(`📸 Found ${availableImages.length} images for template backgrounds`);
 
   const templates = [
     // Contact Form Template
@@ -548,12 +549,12 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
     // Create templates
     for (const templateData of templates) {
       const template = await createTemplate(templateData);
-      console.log(`✅ Created template: ${template.name}`);
+      logger.info(`✅ Created template: ${template.name}`);
     }
 
-    console.log(`🌱 Successfully seeded ${templates.length} form templates`);
+    logger.info(`🌱 Successfully seeded ${templates.length} form templates`);
   } catch (error) {
-    console.error('❌ Error seeding templates:', error);
+    logger.error('❌ Error seeding templates:', error);
     throw error;
   }
 };

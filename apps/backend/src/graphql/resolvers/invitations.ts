@@ -1,6 +1,7 @@
 import { GraphQLError } from 'graphql';
 import { prisma } from '../../lib/prisma.js';
 import { parseDate, isDateExpired } from '../../utils/dateHelpers.js';
+import { logger } from '../../lib/logger.js';
 
 export const invitationResolvers = {
   Query: {
@@ -68,7 +69,7 @@ export const invitationResolvers = {
           } : null,
         };
       } catch (error) {
-        console.error('Error fetching invitation:', error);
+        logger.error('Error fetching invitation:', error);
         
         // Re-throw GraphQLError as is
         if (error instanceof GraphQLError) {

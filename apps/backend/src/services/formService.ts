@@ -17,6 +17,7 @@ import { randomUUID } from 'crypto';
 import { getFormSchemaFromHocuspocus } from './hocuspocus.js';
 import { copyFileForForm } from './fileUploadService.js';
 import { formRepository } from '../repositories/index.js';
+import { logger } from '../lib/logger.js';
 
 export interface Form extends Omit<IForm, 'formSchema'> {
   formSchema: any; // JsonValue from Prisma
@@ -69,7 +70,7 @@ export const getFormById = async (id: string): Promise<Form | null> => {
       description: form.description || undefined,
     };
   } catch (error) {
-    console.error('Error fetching form by ID:', error);
+    logger.error('Error fetching form by ID:', error);
     return null;
   }
 };
@@ -85,7 +86,7 @@ export const getFormByShortUrl = async (shortUrl: string): Promise<Form | null> 
       description: form.description || undefined,
     };
   } catch (error) {
-    console.error('Error fetching form by short URL:', error);
+    logger.error('Error fetching form by short URL:', error);
     return null;
   }
 };
@@ -102,7 +103,7 @@ export const createForm = async (
       try {
         return JSON.parse(formData.settings);
       } catch (error) {
-        console.warn(`⚠️ Failed to parse form settings for form ${formData.id ?? 'new'}`, error);
+        logger.warn(`⚠️ Failed to parse form settings for form ${formData.id ?? 'new'}`, error);
         return formData.settings;
       }
     }
@@ -156,21 +157,21 @@ export const createForm = async (
       permission: 'OWNER',
       grantedById: formData.createdById, // Self-granted
     });
-    console.log(`✅ Created OWNER permission for form creator: ${result.id}`);
+    logger.info(`✅ Created OWNER permission for form creator: ${result.id}`);
   } catch (error) {
-    console.error(`❌ Failed to create OWNER permission for form ${result.id}:`, error);
+    logger.error(`❌ Failed to create OWNER permission for form ${result.id}:`, error);
   }
 
   // Initialize Hocuspocus document for collaborative editing
   const schemaToInitialize = templateFormSchema || defaultFormSchema;
-  console.log(`🔄 Initializing Hocuspocus document for form: ${result.id}`);
+  logger.info(`🔄 Initializing Hocuspocus document for form: ${result.id}`);
   
   try {
     await initializeHocuspocusDocument(result.id, schemaToInitialize);
-    console.log(`✅ Hocuspocus document initialized successfully for form: ${result.id}`);
+    logger.info(`✅ Hocuspocus document initialized successfully for form: ${result.id}`);
   } catch (error) {
-    console.error(`❌ Failed to initialize Hocuspocus document for form ${result.id}:`, error);
-    console.warn(`⚠️ Form ${result.id} created but collaboration initialization failed`);
+    logger.error(`❌ Failed to initialize Hocuspocus document for form ${result.id}:`, error);
+    logger.warn(`⚠️ Form ${result.id} created but collaboration initialization failed`);
   }
 
   return result;
@@ -206,7 +207,7 @@ export const duplicateForm = async (formId: string, userId: string): Promise<For
         mimeType: copiedFile.mimeType,
       });
     } catch (error) {
-      console.error(`❌ Failed to copy background image for duplicated form ${formId}:`, error);
+      logger.error(`❌ Failed to copy background image for duplicated form ${formId}:`, error);
       if (schemaClone?.layout) {
         schemaClone.layout.backgroundImageKey = '';
       }
@@ -274,7 +275,7 @@ export const updateForm = async (id: string, formData: Partial<Omit<Form, 'id' |
         throw new Error(`Access denied: ${permissionName} permissions required for this type of update`);
       }
       
-      console.log(`✅ Permission validated for user ${userId} on form ${id}: ${requiredPermission}`);
+      logger.info(`✅ Permission validated for user ${userId} on form ${id}: ${requiredPermission}`);
     }
     
     const updateData: any = {};
@@ -301,10 +302,10 @@ export const updateForm = async (id: string, formData: Partial<Omit<Form, 'id' |
           ownerName: updatedForm.createdBy.name || updatedForm.createdBy.email,
         }, updatedForm.createdBy.email);
         
-        console.log(`Form published notification sent to: ${updatedForm.createdBy.email}`);
+        logger.info(`Form published notification sent to: ${updatedForm.createdBy.email}`);
       } catch (emailError) {
         // Log email error but don't fail the form update
-        console.error('Failed to send form published notification:', emailError);
+        logger.error('Failed to send form published notification:', emailError);
       }
     }
     
@@ -313,7 +314,7 @@ export const updateForm = async (id: string, formData: Partial<Omit<Form, 'id' |
       description: updatedForm.description || undefined,
     };
   } catch (error) {
-    console.error('Error updating form:', error);
+    logger.error('Error updating form:', error);
     throw error; // Re-throw to let GraphQL handle the error message
   }
 };
@@ -330,7 +331,7 @@ export const regenerateShortUrl = async (id: string): Promise<Form | null> => {
       description: updatedForm.description || undefined,
     };
   } catch (error) {
-    console.error('Error regenerating short URL:', error);
+    logger.error('Error regenerating short URL:', error);
     throw error;
   }
 };
@@ -345,13 +346,13 @@ export const deleteForm = async (id: string, userId?: string): Promise<boolean> 
         throw new Error('Access denied: Only the form owner can delete this form');
       }
       
-      console.log(`✅ Permission validated for user ${userId} to delete form ${id}: OWNER`);
+      logger.info(`✅ Permission validated for user ${userId} to delete form ${id}: OWNER`);
     }
     
     await formRepository.deleteForm(id);
     return true;
   } catch (error) {
-    console.error('Error deleting form:', error);
+    logger.error('Error deleting form:', error);
     return false;
   }
 };

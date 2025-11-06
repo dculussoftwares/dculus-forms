@@ -2,6 +2,7 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } fro
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 import { s3Config } from '../lib/env.js';
+import { logger } from '../lib/logger.js';
 
 // Initialize S3 client for Cloudflare R2
 const s3Client = new S3Client({
@@ -67,7 +68,7 @@ export async function uploadTemporaryFile(
       fileKey
     };
   } catch (error) {
-    console.error('Error uploading temporary file:', error);
+    logger.error('Error uploading temporary file:', error);
     throw new Error(`Failed to upload temporary file: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -83,10 +84,10 @@ export async function deleteTemporaryFile(fileKey: string): Promise<boolean> {
     });
 
     await s3Client.send(deleteCommand);
-    console.log(`Temporary file deleted: ${fileKey}`);
+    logger.info(`Temporary file deleted: ${fileKey}`);
     return true;
   } catch (error) {
-    console.error(`Error deleting temporary file ${fileKey}:`, error);
+    logger.error(`Error deleting temporary file ${fileKey}:`, error);
     return false;
   }
 }
@@ -100,7 +101,7 @@ function scheduleFileCleanup(fileKey: string, delayMs: number): void {
     try {
       await deleteTemporaryFile(fileKey);
     } catch (error) {
-      console.error(`Failed to cleanup temporary file ${fileKey}:`, error);
+      logger.error(`Failed to cleanup temporary file ${fileKey}:`, error);
     }
   }, delayMs);
 }
@@ -112,6 +113,6 @@ function scheduleFileCleanup(fileKey: string, delayMs: number): void {
 export async function cleanupExpiredFiles(): Promise<void> {
   // This would need to be implemented with proper S3 listing and metadata checking
   // For now, we rely on the scheduled cleanup above
-  console.log('Cleanup expired files task - implement with S3 listing if needed');
+  logger.info('Cleanup expired files task - implement with S3 listing if needed');
 }
 

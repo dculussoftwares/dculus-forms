@@ -4,6 +4,7 @@ import { getPluginTypesWithData, getPluginExport } from '../plugins/exportRegist
 
 // Import plugin export registrations
 import '../plugins/quiz/export.js';
+import { logger } from '../lib/logger.js';
 
 export type ExportFormat = 'excel' | 'csv';
 
@@ -70,7 +71,7 @@ const extractFieldInfo = (formSchema: FormSchema, responses: FormResponse[]): { 
   let orderedFieldIds: string[] = [];
 
   if (formSchema.pages.length === 0 && responses.length > 0) {
-    console.log('Unified Export - Form schema is empty, extracting field info from response data...');
+    logger.info('Unified Export - Form schema is empty, extracting field info from response data...');
     
     // Get all unique field IDs from all responses
     const allFieldIds = new Set<string>();
@@ -99,7 +100,7 @@ const extractFieldInfo = (formSchema: FormSchema, responses: FormResponse[]): { 
       fieldInfo[fieldId] = label;
     });
     
-    console.log('Unified Export - Extracted field info:', Object.keys(fieldInfo).length, 'fields');
+    logger.info('Unified Export - Extracted field info:', Object.keys(fieldInfo).length, 'fields');
   } else {
     // Extract field info from form schema
     formSchema.pages.forEach(page => {
@@ -204,7 +205,7 @@ const generateCsvContent = (data: UnifiedExportData): string => {
     return count + (pluginExport ? pluginExport.getColumns().length : 0);
   }, 0);
 
-  console.log(`Unified Export - Generated CSV with ${responses.length} rows and ${headers.length} columns (${pluginColumnCount} plugin columns)`);
+  logger.info(`Unified Export - Generated CSV with ${responses.length} rows and ${headers.length} columns (${pluginColumnCount} plugin columns)`);
   return csvContent;
 };
 
@@ -313,7 +314,7 @@ const generateExcelContent = (data: UnifiedExportData): Buffer => {
   }, 0);
   const totalColumns = 2 + pluginColumnCount + orderedFieldIds.length; // 2 for Response ID + Submitted At
 
-  console.log(`Unified Export - Generated Excel with ${responses.length} rows and ${totalColumns} columns (${pluginColumnCount} plugin columns)`);
+  logger.info(`Unified Export - Generated Excel with ${responses.length} rows and ${totalColumns} columns (${pluginColumnCount} plugin columns)`);
   return Buffer.from(buffer);
 };
 
@@ -323,9 +324,9 @@ const generateExcelContent = (data: UnifiedExportData): Buffer => {
 export async function generateExportFile(data: UnifiedExportData): Promise<ExportResult> {
   const { formTitle, format } = data;
 
-  console.log(`Unified Export - Generating ${format.toUpperCase()} export for form: ${formTitle}`);
-  console.log(`Unified Export - Form schema pages: ${data.formSchema.pages.length}`);
-  console.log(`Unified Export - Total responses: ${data.responses.length}`);
+  logger.info(`Unified Export - Generating ${format.toUpperCase()} export for form: ${formTitle}`);
+  logger.info(`Unified Export - Form schema pages: ${data.formSchema.pages.length}`);
+  logger.info(`Unified Export - Total responses: ${data.responses.length}`);
 
   let buffer: Buffer;
   let filename: string;
@@ -342,7 +343,7 @@ export async function generateExportFile(data: UnifiedExportData): Promise<Expor
     contentType = 'text/csv';
   }
 
-  console.log(`Unified Export - Generated ${format.toUpperCase()} file, size: ${buffer.length} bytes`);
+  logger.info(`Unified Export - Generated ${format.toUpperCase()} file, size: ${buffer.length} bytes`);
 
   return {
     buffer,

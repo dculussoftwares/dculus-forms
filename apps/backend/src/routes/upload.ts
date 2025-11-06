@@ -4,6 +4,7 @@ import { Readable } from 'stream';
 import { uploadFile } from '../services/fileUploadService.js';
 import { prisma } from '../lib/prisma.js';
 import { randomUUID } from 'crypto';
+import { logger } from '../lib/logger.js';
 
 const router: Router = Router();
 
@@ -67,7 +68,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error uploading file:', error);
+    logger.error('Error uploading file:', error);
     res.status(500).json({ 
       error: `Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}` 
     });

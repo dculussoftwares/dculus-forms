@@ -5,6 +5,7 @@ import { checkFormAccess, PermissionLevel } from '../graphql/resolvers/formShari
 import { auth } from '../lib/better-auth.js';
 import { GraphQLError } from 'graphql';
 import { collaborativeDocumentRepository } from '../repositories/index.js';
+import { logger } from '../lib/logger.js';
 
 // Debounce configuration for metadata updates
 const METADATA_UPDATE_DEBOUNCE_MS = 5000; // 5 seconds
@@ -44,7 +45,7 @@ const validateUserAccess = async (token: string, formId: string, requiredPermiss
       form: accessCheck.form
     };
   } catch (error) {
-    console.error(`[validateUserAccess] Error:`, error);
+    logger.error(`[validateUserAccess] Error:`, error);
     throw error;
   }
 };
@@ -56,7 +57,7 @@ export const createHocuspocusServer = () => {
       new Database({
         fetch: async ({ documentName }) => {
           try {
-            console.log(`🔍 [Hocuspocus] Fetching document: ${documentName}`);
+            logger.info(`🔍 [Hocuspocus] Fetching document: ${documentName}`);
             
             const document =
               await collaborativeDocumentRepository.fetchDocumentWithState(
@@ -64,29 +65,29 @@ export const createHocuspocusServer = () => {
               );
 
             if (document && document.state) {
-              console.log(`✅ [Hocuspocus] Document found for ${documentName}:`);
-              console.log(`   - ID: ${document.id}`);
-              console.log(`   - State length: ${document.state.length} bytes`);
-              console.log(`   - Updated: ${document.updatedAt}`);
-              console.log(`   - Returning Uint8Array state to YJS`);
+              logger.info(`✅ [Hocuspocus] Document found for ${documentName}:`);
+              logger.info(`   - ID: ${document.id}`);
+              logger.info(`   - State length: ${document.state.length} bytes`);
+              logger.info(`   - Updated: ${document.updatedAt}`);
+              logger.info(`   - Returning Uint8Array state to YJS`);
               return new Uint8Array(document.state);
             }
 
-            console.log(`❌ [Hocuspocus] Document not found for: ${documentName}`);
+            logger.info(`❌ [Hocuspocus] Document not found for: ${documentName}`);
             
             // List all documents for debugging
             const allDocs = await collaborativeDocumentRepository.listDocumentNames();
-            console.log(`📋 [Hocuspocus] Available documents:`, allDocs.map((d: {documentName: string}) => d.documentName));
+            logger.info(`📋 [Hocuspocus] Available documents:`, allDocs.map((d: {documentName: string}) => d.documentName));
             
             return null;
           } catch (error) {
-            console.error(`💥 [Hocuspocus] Error fetching document ${documentName}:`, error);
+            logger.error(`💥 [Hocuspocus] Error fetching document ${documentName}:`, error);
             return null;
           }
         },
         store: async ({ documentName, state }) => {
           try {
-            console.log(`[Hocuspocus] Storing document ${documentName} with state length: ${state.length}`);
+            logger.info(`[Hocuspocus] Storing document ${documentName} with state length: ${state.length}`);
             
             // Try to find existing document first
             await collaborativeDocumentRepository.saveDocumentState(
@@ -95,16 +96,16 @@ export const createHocuspocusServer = () => {
               (name) => `collab-${name}`
             );
 
-            console.log(`[Hocuspocus] Document ${documentName} stored successfully`);
+            logger.info(`[Hocuspocus] Document ${documentName} stored successfully`);
           } catch (error) {
-            console.error(`[Hocuspocus] Error storing document ${documentName}:`, error);
+            logger.error(`[Hocuspocus] Error storing document ${documentName}:`, error);
             // Don't throw the error to prevent server crashes
           }
         },
       }),
     ],
     onAuthenticate: async ({ documentName, token, requestHeaders, requestParameters, ...rest }) => {
-      console.log('🔐 [onAuthenticate] Called with:', { 
+      logger.info('🔐 [onAuthenticate] Called with:', { 
         documentName, 
         hasToken: !!token,
         hasHeaders: !!requestHeaders,
@@ -114,7 +115,7 @@ export const createHocuspocusServer = () => {
       
       try {
         if (!documentName || documentName.trim() === '') {
-          console.warn('⚠️ [onAuthenticate] Empty or undefined documentName received');
+          logger.warn('⚠️ [onAuthenticate] Empty or undefined documentName received');
           throw new Error('Document name is required');
         }
         
@@ -128,7 +129,7 @@ export const createHocuspocusServer = () => {
           const tokenParam = requestParameters.get('token');
           if (tokenParam) {
             authToken = tokenParam;
-            console.log('🔍 [onAuthenticate] Found token in URL parameters');
+            logger.info('🔍 [onAuthenticate] Found token in URL parameters');
           }
         }
         
@@ -143,19 +144,19 @@ export const createHocuspocusServer = () => {
             
             if (authHeader && typeof authHeader === 'string') {
               authToken = authHeader.replace('Bearer ', '');
-              console.log('🔍 [onAuthenticate] Found token in Authorization header');
+              logger.info('🔍 [onAuthenticate] Found token in Authorization header');
             }
           } catch (error) {
-            console.log('🔍 [onAuthenticate] Could not extract token from headers:', error);
+            logger.info('🔍 [onAuthenticate] Could not extract token from headers:', error);
           }
         }
         
-        console.log('🔐 [onAuthenticate] Final token status:', { hasToken: !!authToken });
+        logger.info('🔐 [onAuthenticate] Final token status:', { hasToken: !!authToken });
         
         // Validate user authentication and form access
         const userAccess = await validateUserAccess(authToken, formId, PermissionLevel.VIEWER);
         
-        console.log(`✅ [onAuthenticate] User ${userAccess.user.email} authenticated for form ${formId} with ${userAccess.permission} permission`);
+        logger.info(`✅ [onAuthenticate] User ${userAccess.user.email} authenticated for form ${formId} with ${userAccess.permission} permission`);
         
         return { 
           user: { 
@@ -166,41 +167,41 @@ export const createHocuspocusServer = () => {
           } 
         };
       } catch (error) {
-        console.error(`❌ [onAuthenticate] Authentication failed for form ${documentName}:`, error);
+        logger.error(`❌ [onAuthenticate] Authentication failed for form ${documentName}:`, error);
         throw error; // This will reject the connection
       }
     },
     onConnect: async ({ documentName, ...rest }) => {
-      console.log('🔌 [onConnect] Called with:', { 
+      logger.info('🔌 [onConnect] Called with:', { 
         documentName, 
         restKeys: Object.keys(rest)
       });
-      console.log(`🔌 User connected to document: "${documentName}"`);
+      logger.info(`🔌 User connected to document: "${documentName}"`);
     },
     onDisconnect: async ({ documentName, ...rest }) => {
-      console.log('🔌 [onDisconnect] Called with:', { 
+      logger.info('🔌 [onDisconnect] Called with:', { 
         documentName, 
         restKeys: Object.keys(rest)
       });
-      console.log(`🔌 User disconnected from document: "${documentName}"`);
+      logger.info(`🔌 User disconnected from document: "${documentName}"`);
     },
     onChange: async ({ documentName, document, context }) => {
       // Check if user has edit permissions before processing changes
       const userContext = context?.user;
       if (userContext?.permission === PermissionLevel.VIEWER) {
-        console.warn(`⚠️ [onChange] VIEWER user ${userContext.email} attempted to modify form ${documentName} - change ignored`);
+        logger.warn(`⚠️ [onChange] VIEWER user ${userContext.email} attempted to modify form ${documentName} - change ignored`);
         return; // Don't process changes for viewers
       }
 
-      console.log(`📝 [onChange] Processing changes for form ${documentName} by user ${userContext?.email || 'unknown'} (${userContext?.permission || 'unknown'})`);
+      logger.info(`📝 [onChange] Processing changes for form ${documentName} by user ${userContext?.email || 'unknown'} (${userContext?.permission || 'unknown'})`);
       
       // Debounce metadata updates to handle frequent collaborative changes
       if (!metadataUpdateTimeouts.has(documentName)) {
-        console.log(`📊 [onChange] Scheduling metadata update for form: ${documentName}`);
+        logger.info(`📊 [onChange] Scheduling metadata update for form: ${documentName}`);
         
         const timeoutId = setTimeout(async () => {
           try {
-            console.log(`🔄 [Metadata] Updating metadata for form: ${documentName}`);
+            logger.info(`🔄 [Metadata] Updating metadata for form: ${documentName}`);
             
             // Extract stats from the current YJS document
             const stats = extractFormStatsFromYDoc(document);
@@ -208,9 +209,9 @@ export const createHocuspocusServer = () => {
             // Update metadata cache
             await updateFormMetadata(documentName, stats);
             
-            console.log(`✅ [Metadata] Updated for form ${documentName}:`, stats);
+            logger.info(`✅ [Metadata] Updated for form ${documentName}:`, stats);
           } catch (error) {
-            console.error(`❌ [Metadata] Failed to update for form ${documentName}:`, error);
+            logger.error(`❌ [Metadata] Failed to update for form ${documentName}:`, error);
           } finally {
             // Clean up timeout reference
             metadataUpdateTimeouts.delete(documentName);
@@ -225,7 +226,7 @@ export const createHocuspocusServer = () => {
         
         const timeoutId = setTimeout(async () => {
           try {
-            console.log(`🔄 [Metadata] Updating metadata for form: ${documentName}`);
+            logger.info(`🔄 [Metadata] Updating metadata for form: ${documentName}`);
             
             // Extract stats from the current YJS document
             const stats = extractFormStatsFromYDoc(document);
@@ -233,9 +234,9 @@ export const createHocuspocusServer = () => {
             // Update metadata cache
             await updateFormMetadata(documentName, stats);
             
-            console.log(`✅ [Metadata] Updated for form ${documentName}:`, stats);
+            logger.info(`✅ [Metadata] Updated for form ${documentName}:`, stats);
           } catch (error) {
-            console.error(`❌ [Metadata] Failed to update for form ${documentName}:`, error);
+            logger.error(`❌ [Metadata] Failed to update for form ${documentName}:`, error);
           } finally {
             // Clean up timeout reference
             metadataUpdateTimeouts.delete(documentName);
@@ -253,14 +254,14 @@ export const createHocuspocusServer = () => {
  */
 export const getFormSchemaFromHocuspocus = async (formId: string): Promise<any | null> => {
   try {
-    console.log(`🔍 Getting form schema from Hocuspocus for form: ${formId}`);
+    logger.info(`🔍 Getting form schema from Hocuspocus for form: ${formId}`);
     
     // Get the collaborative document from database
     const collabDoc =
       await collaborativeDocumentRepository.fetchDocumentWithState(formId);
     
     if (!collabDoc || !collabDoc.state) {
-      console.log(`❌ No collaborative document found for form: ${formId}`);
+      logger.info(`❌ No collaborative document found for form: ${formId}`);
       return null;
     }
     
@@ -275,7 +276,7 @@ export const getFormSchemaFromHocuspocus = async (formId: string): Promise<any |
     const formSchemaMap = doc.getMap('formSchema');
     
     if (!formSchemaMap) {
-      console.log(`❌ No formSchema map found in document for form: ${formId}`);
+      logger.info(`❌ No formSchema map found in document for form: ${formId}`);
       doc.destroy();
       return null;
     }
@@ -378,14 +379,14 @@ export const getFormSchemaFromHocuspocus = async (formId: string): Promise<any |
     };
     
     const formSchema = reconstructFormSchema();
-    console.log(`✅ Retrieved form schema for form: ${formId}`);
+    logger.info(`✅ Retrieved form schema for form: ${formId}`);
     
     // Clean up
     doc.destroy();
     
     return formSchema;
   } catch (error) {
-    console.error(`❌ Error getting form schema from Hocuspocus for form ${formId}:`, error);
+    logger.error(`❌ Error getting form schema from Hocuspocus for form ${formId}:`, error);
     return null;
   }
 };
@@ -396,8 +397,8 @@ export const getFormSchemaFromHocuspocus = async (formId: string): Promise<any |
  */
 export const initializeHocuspocusDocument = async (formId: string, formSchema: any): Promise<void> => {
   try {
-    console.log(`🚀 Initializing Hocuspocus document for form: ${formId}`);
-    console.log(`📥 Form schema input:`, JSON.stringify({
+    logger.info(`🚀 Initializing Hocuspocus document for form: ${formId}`);
+    logger.info(`📥 Form schema input:`, JSON.stringify({
       pages: formSchema.pages?.length || 0,
       fields: formSchema.pages?.[0]?.fields?.length || 0,
       layout: !!formSchema.layout
@@ -412,7 +413,7 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
     const pagesArray = new Y.Array();
     
     if (formSchema.pages && formSchema.pages.length > 0) {
-      console.log(`📄 Initializing ${formSchema.pages.length} pages with form data`);
+      logger.info(`📄 Initializing ${formSchema.pages.length} pages with form data`);
       formSchema.pages.forEach((page: any, pageIndex: number) => {
         const pageMap = new Y.Map();
         pageMap.set('id', page.id);
@@ -421,7 +422,7 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
         
         const fieldsArray = new Y.Array();
         if (page.fields && page.fields.length > 0) {
-          console.log(`  📝 Page ${pageIndex + 1} (${page.title}): Adding ${page.fields.length} fields`);
+          logger.info(`  📝 Page ${pageIndex + 1} (${page.title}): Adding ${page.fields.length} fields`);
           page.fields.forEach((field: any, fieldIndex: number) => {
             const fieldMap = new Y.Map();
             fieldMap.set('id', field.id);
@@ -462,7 +463,7 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
               if (field.maxDate !== undefined) fieldMap.set('maxDate', field.maxDate);
             }
             
-            console.log(`    ⚙️ Field ${fieldIndex + 1}: ${field.type} - "${field.label}"`);
+            logger.info(`    ⚙️ Field ${fieldIndex + 1}: ${field.type} - "${field.label}"`);
             fieldsArray.push([fieldMap]);
           });
         }
@@ -472,7 +473,7 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
       });
     } else {
       // Create an empty page if no pages exist
-      console.log(`📝 Creating default empty page for form: ${formId}`);
+      logger.info(`📝 Creating default empty page for form: ${formId}`);
       const defaultPageMap = new Y.Map();
       defaultPageMap.set('id', `page-${Date.now()}`);
       defaultPageMap.set('title', 'Page 1');
@@ -501,7 +502,7 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
     
     // Store the document state directly in the database
     const fullUpdate = Y.encodeStateAsUpdate(tempDoc);
-    console.log(`💾 Storing document state to MongoDB for form: ${formId}, update size: ${fullUpdate.length} bytes`);
+    logger.info(`💾 Storing document state to MongoDB for form: ${formId}, update size: ${fullUpdate.length} bytes`);
     
     // Create the collaborative document
     await collaborativeDocumentRepository.saveDocumentState(
@@ -510,13 +511,13 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
       (name) => `collab-${name}`
     );
     
-    console.log(`✅ Hocuspocus document initialized successfully for form: ${formId}`);
+    logger.info(`✅ Hocuspocus document initialized successfully for form: ${formId}`);
     
     // Clean up temporary document
     tempDoc.destroy();
     
   } catch (error) {
-    console.error(`❌ Failed to initialize Hocuspocus document for form ${formId}:`, error);
+    logger.error(`❌ Failed to initialize Hocuspocus document for form ${formId}:`, error);
     throw error;
   }
 };

@@ -1,4 +1,5 @@
 import express, { Router } from 'express';
+import { logger } from '../lib/logger.js';
 import {
   syncSubscriptionFromWebhook,
   handleSubscriptionRenewal,
@@ -17,7 +18,7 @@ router.post('/webhooks/chargebee', async (req, res) => {
   try {
     const event = req.body;
 
-    console.log('[Chargebee Webhook] Received event:', event.event_type);
+    logger.info('[Chargebee Webhook] Received event:', event.event_type);
 
     // Handle different event types
     switch (event.event_type) {
@@ -68,22 +69,22 @@ router.post('/webhooks/chargebee', async (req, res) => {
         break;
 
       case 'payment_succeeded':
-        console.log('[Chargebee Webhook] Payment succeeded for subscription');
+        logger.info('[Chargebee Webhook] Payment succeeded for subscription');
         break;
 
       case 'payment_failed':
-        console.log('[Chargebee Webhook] Payment failed for subscription');
+        logger.info('[Chargebee Webhook] Payment failed for subscription');
         // TODO: Send notification to organization owner
         break;
 
       default:
-        console.log('[Chargebee Webhook] Unhandled event type:', event.event_type);
+        logger.info('[Chargebee Webhook] Unhandled event type:', event.event_type);
     }
 
     // Always respond with 200 to acknowledge receipt
     res.status(200).json({ received: true });
   } catch (error: any) {
-    console.error('[Chargebee Webhook] Error processing webhook:', error);
+    logger.error('[Chargebee Webhook] Error processing webhook:', error);
     // Still return 200 to prevent retries for errors we can't fix
     res.status(200).json({ received: true, error: error.message });
   }

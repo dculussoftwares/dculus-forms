@@ -1,6 +1,7 @@
 import { FormSchema, deserializeFormSchema, ThemeType, SpacingType, PageModeType } from '@dculus/types';
 import { generateId } from '@dculus/utils';
 import { responseRepository } from '../repositories/index.js';
+import { logger } from '../lib/logger.js';
 
 export interface FieldChange {
   fieldId: string;
@@ -87,21 +88,21 @@ export class ResponseEditTrackingService {
   private static createFieldMetadataMap(formSchema: FormSchema): Record<string, { label: string; type: string }> {
     const metadata: Record<string, { label: string; type: string }> = {};
 
-    console.log('Creating field metadata map from form schema');
-    console.log('Form schema structure:', JSON.stringify(formSchema, null, 2).substring(0, 500));
+    logger.info('Creating field metadata map from form schema');
+    logger.info('Form schema structure:', JSON.stringify(formSchema, null, 2).substring(0, 500));
 
     if (formSchema?.pages) {
-      console.log(`Processing ${formSchema.pages.length} pages`);
+      logger.info(`Processing ${formSchema.pages.length} pages`);
 
       for (const page of formSchema.pages) {
         if (page?.fields) {
-          console.log(`Processing ${page.fields.length} fields from page "${page.title}"`);
+          logger.info(`Processing ${page.fields.length} fields from page "${page.title}"`);
 
           for (const field of page.fields) {
             if (field?.id) {
               // Debug: log the raw field object
-              console.log(`Raw field object keys:`, Object.keys(field));
-              console.log(`Field data:`, JSON.stringify(field, null, 2).substring(0, 300));
+              logger.info(`Raw field object keys:`, Object.keys(field));
+              logger.info(`Field data:`, JSON.stringify(field, null, 2).substring(0, 300));
 
               // Extract label - check multiple possible properties
               let label = field.id; // Default fallback
@@ -126,16 +127,16 @@ export class ResponseEditTrackingService {
                 type: fieldType
               };
 
-              console.log(`✓ Field metadata: id=${field.id}, label=${label}, type=${fieldType}`);
+              logger.info(`✓ Field metadata: id=${field.id}, label=${label}, type=${fieldType}`);
             }
           }
         }
       }
     } else {
-      console.error('Form schema has no pages!');
+      logger.error('Form schema has no pages!');
     }
 
-    console.log('Final metadata map:', JSON.stringify(metadata, null, 2));
+    logger.info('Final metadata map:', JSON.stringify(metadata, null, 2));
     return metadata;
   }
 
@@ -322,21 +323,21 @@ export class ResponseEditTrackingService {
       const yjsSchemaData = await getFormSchemaFromHocuspocus(response.form.id);
 
       if (yjsSchemaData && yjsSchemaData.pages && yjsSchemaData.pages.length > 0) {
-        console.log(`Using form schema from YJS for form ${response.form.id}`);
+        logger.info(`Using form schema from YJS for form ${response.form.id}`);
         // Deserialize the YJS schema data
         formSchema = deserializeFormSchema(yjsSchemaData);
       } else {
         throw new Error('YJS schema empty or invalid');
       }
     } catch (yjsError) {
-      console.warn(`Failed to get schema from YJS for form ${response.form.id}, falling back to database:`, yjsError);
+      logger.warn(`Failed to get schema from YJS for form ${response.form.id}, falling back to database:`, yjsError);
 
       // Fallback to database schema
       if (response.form.formSchema && JSON.stringify(response.form.formSchema) !== '{}') {
         formSchema = deserializeFormSchema(response.form.formSchema);
-        console.log(`Using form schema from database for form ${response.form.id}`);
+        logger.info(`Using form schema from database for form ${response.form.id}`);
       } else {
-        console.error(`No valid form schema found for form ${response.form.id}`);
+        logger.error(`No valid form schema found for form ${response.form.id}`);
         // Return empty schema with proper structure to prevent crashes
         formSchema = {
           pages: [],

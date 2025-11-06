@@ -4,6 +4,7 @@ import { generateFormPublishedHtml } from '../templates/formPublishedEmail.js';
 import { generateOTPEmailHtml, generateOTPEmailText, type OTPEmailData } from '../templates/otpEmail.js';
 import { generateResetPasswordEmailHtml, generateResetPasswordEmailText, type ResetPasswordEmailData } from '../templates/resetPasswordEmail.js';
 import { generateInvitationEmailHtml, generateInvitationEmailText, type InvitationEmailData } from '../templates/invitationEmail.js';
+import { logger } from '../lib/logger.js';
 
 export interface EmailOptions {
   to: string;
@@ -63,9 +64,9 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log(`Email sent successfully to: ${options.to}`);
+    logger.info(`Email sent successfully to: ${options.to}`);
   } catch (error) {
-    console.error('Failed to send email:', error);
+    logger.error('Failed to send email:', error);
     throw new Error(`Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -117,7 +118,7 @@ export async function sendOTPEmail(options: SendOTPEmailOptions): Promise<void> 
     text,
   });
 
-  console.log(`OTP email sent successfully to: ${to} (Type: ${type})`);
+  logger.info(`OTP email sent successfully to: ${to} (Type: ${type})`);
 }
 
 export async function sendResetPasswordEmail(options: SendResetPasswordEmailOptions): Promise<void> {
@@ -139,7 +140,7 @@ export async function sendResetPasswordEmail(options: SendResetPasswordEmailOpti
     text,
   });
 
-  console.log(`Password reset email sent successfully to: ${to}`);
+  logger.info(`Password reset email sent successfully to: ${to}`);
 }
 
 export async function sendInvitationEmail(options: SendInvitationEmailOptions): Promise<void> {
@@ -167,5 +168,5 @@ export async function sendInvitationEmail(options: SendInvitationEmailOptions): 
     text,
   });
 
-  console.log(`Invitation email sent successfully to: ${to} for organization: ${organizationName}`);
+  logger.info(`Invitation email sent successfully to: ${to} for organization: ${organizationName}`);
 }

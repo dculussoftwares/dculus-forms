@@ -2,6 +2,7 @@ import 'dotenv/config';
 import crypto from 'crypto';
 import { prisma } from '../lib/prisma.js';
 import { auth } from '../lib/better-auth.js';
+import { logger } from '../lib/logger.js';
 
 async function setupSuperAdmin() {
   const adminEmail = process.env.ADMIN_EMAIL;
@@ -9,13 +10,13 @@ async function setupSuperAdmin() {
   const adminName = process.env.ADMIN_NAME;
 
   if (!adminEmail || !adminPassword || !adminName) {
-    console.error('❌ Admin credentials not found in environment variables');
-    console.log('Please set ADMIN_EMAIL, ADMIN_PASSWORD, and ADMIN_NAME in your .env file');
+    logger.error('❌ Admin credentials not found in environment variables');
+    logger.info('Please set ADMIN_EMAIL, ADMIN_PASSWORD, and ADMIN_NAME in your .env file');
     process.exit(1);
   }
 
   try {
-    console.log('🔧 Setting up super admin user...');
+    logger.info('🔧 Setting up super admin user...');
 
     // Check if admin user already exists
     const existingUser = await prisma.user.findUnique({
@@ -23,7 +24,7 @@ async function setupSuperAdmin() {
     });
 
     if (existingUser) {
-      console.log('👤 Admin user already exists, updating role to superAdmin...');
+      logger.info('👤 Admin user already exists, updating role to superAdmin...');
       
       // Update existing user to superAdmin role
       await prisma.user.update({
@@ -31,9 +32,9 @@ async function setupSuperAdmin() {
         data: { role: 'superAdmin' },
       });
       
-      console.log(`✅ User ${adminEmail} updated to superAdmin role`);
+      logger.info(`✅ User ${adminEmail} updated to superAdmin role`);
     } else {
-      console.log('👤 Creating new super admin user...');
+      logger.info('👤 Creating new super admin user...');
       
       // Create new admin user directly in database using better-auth's approach
       try {
@@ -45,7 +46,7 @@ async function setupSuperAdmin() {
           },
         });
 
-        console.log('Auth result:', result);
+        logger.info('Auth result:', result);
 
         if ((result as any).data?.user || result.user) {
           // Update the user role to superAdmin
@@ -54,13 +55,13 @@ async function setupSuperAdmin() {
             data: { role: 'superAdmin' },
           });
           
-          console.log(`✅ Super admin user created successfully!`);
-          console.log(`   Email: ${adminEmail}`);
-          console.log(`   Name: ${adminName}`);
-          console.log(`   Role: superAdmin`);
+          logger.info(`✅ Super admin user created successfully!`);
+          logger.info(`   Email: ${adminEmail}`);
+          logger.info(`   Name: ${adminName}`);
+          logger.info(`   Role: superAdmin`);
         } else {
           // If better-auth signup fails, try creating directly in database
-          console.log('Attempting direct database creation...');
+          logger.info('Attempting direct database creation...');
           
           const bcrypt = await import('bcryptjs');
           const hashedPassword = await bcrypt.hash(adminPassword, 12);
@@ -86,25 +87,25 @@ async function setupSuperAdmin() {
             },
           });
           
-          console.log(`✅ Super admin user created successfully (direct method)!`);
-          console.log(`   Email: ${adminEmail}`);
-          console.log(`   Name: ${adminName}`);
-          console.log(`   Role: superAdmin`);
+          logger.info(`✅ Super admin user created successfully (direct method)!`);
+          logger.info(`   Email: ${adminEmail}`);
+          logger.info(`   Name: ${adminName}`);
+          logger.info(`   Role: superAdmin`);
         }
       } catch (createError) {
-        console.error('❌ Error during user creation:', createError);
+        logger.error('❌ Error during user creation:', createError);
         process.exit(1);
       }
     }
 
-    console.log('\n🎉 Super admin setup completed!');
-    console.log('You can now sign in to the admin dashboard with:');
-    console.log(`   Email: ${adminEmail}`);
-    console.log(`   Password: ${adminPassword}`);
-    console.log(`   Admin Dashboard: http://localhost:3002`);
+    logger.info('\n🎉 Super admin setup completed!');
+    logger.info('You can now sign in to the admin dashboard with:');
+    logger.info(`   Email: ${adminEmail}`);
+    logger.info(`   Password: ${adminPassword}`);
+    logger.info(`   Admin Dashboard: http://localhost:3002`);
 
   } catch (error) {
-    console.error('❌ Error setting up super admin:', error);
+    logger.error('❌ Error setting up super admin:', error);
     process.exit(1);
   } finally {
     await prisma.$disconnect();

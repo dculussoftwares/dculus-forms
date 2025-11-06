@@ -13,6 +13,7 @@ import * as dotenv from 'dotenv';
 import { resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { logger } from '../lib/logger.js';
 
 // ES module __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
@@ -26,8 +27,8 @@ const CHARGEBEE_SITE = process.env.CHARGEBEE_SITE;
 const CHARGEBEE_API_KEY = process.env.CHARGEBEE_API_KEY;
 
 if (!CHARGEBEE_SITE || !CHARGEBEE_API_KEY) {
-  console.error('❌ Missing Chargebee credentials!');
-  console.error('Please set CHARGEBEE_SITE and CHARGEBEE_API_KEY in apps/backend/.env');
+  logger.error('❌ Missing Chargebee credentials!');
+  logger.error('Please set CHARGEBEE_SITE and CHARGEBEE_API_KEY in apps/backend/.env');
   process.exit(1);
 }
 
@@ -37,8 +38,8 @@ const chargebee = new Chargebee({
   apiKey: CHARGEBEE_API_KEY
 });
 
-console.log('🚀 Chargebee Setup Script Starting...\n');
-console.log(`📍 Site: ${CHARGEBEE_SITE}\n`);
+logger.info('🚀 Chargebee Setup Script Starting...\n');
+logger.info(`📍 Site: ${CHARGEBEE_SITE}\n`);
 
 /**
  * Helper function to handle Chargebee API errors
@@ -53,10 +54,10 @@ function handleError(error: any, context: string) {
   if (error.type === 'invalid_request' &&
       (alreadyExistsErrors.includes(error.api_error_code) ||
        error.message?.includes('already exists'))) {
-    console.log(`  ⚠️  ${context} already exists (skipping)\n`);
+    logger.info(`  ⚠️  ${context} already exists (skipping)\n`);
     return { alreadyExists: true };
   }
-  console.error(`  ❌ Error in ${context}:`, error.message || error);
+  logger.error(`  ❌ Error in ${context}:`, error.message || error);
   throw error;
 }
 
@@ -64,7 +65,7 @@ function handleError(error: any, context: string) {
  * Step 0: Create Item Family
  */
 async function createItemFamily() {
-  console.log('🏢 Step 0: Creating Item Family...\n');
+  logger.info('🏢 Step 0: Creating Item Family...\n');
 
   try {
     const result = await chargebee.itemFamily.create({
@@ -72,7 +73,7 @@ async function createItemFamily() {
       name: 'Dculus Forms Plans',
       description: 'All subscription plans for Dculus Forms'
     });
-    console.log('  ✅ Created item family: dculus-forms\n');
+    logger.info('  ✅ Created item family: dculus-forms\n');
   } catch (error: any) {
     const result = handleError(error, 'dculus-forms item family');
     if (!result?.alreadyExists) throw error;
@@ -83,7 +84,7 @@ async function createItemFamily() {
  * Step 1: Create Features
  */
 async function createFeatures() {
-  console.log('📦 Step 1: Creating Features...\n');
+  logger.info('📦 Step 1: Creating Features...\n');
 
   // Feature 1: Form Views
   try {
@@ -105,7 +106,7 @@ async function createFeatures() {
         }
       ]
     });
-    console.log('  ✅ Created feature: form_views');
+    logger.info('  ✅ Created feature: form_views');
   } catch (error: any) {
     const result = handleError(error, 'form_views feature');
     if (!result?.alreadyExists) throw error;
@@ -141,7 +142,7 @@ async function createFeatures() {
         }
       ]
     });
-    console.log('  ✅ Created feature: form_submissions\n');
+    logger.info('  ✅ Created feature: form_submissions\n');
   } catch (error: any) {
     const result = handleError(error, 'form_submissions feature');
     if (!result?.alreadyExists) throw error;
@@ -152,7 +153,7 @@ async function createFeatures() {
  * Step 2: Create Plan Items
  */
 async function createPlanItems() {
-  console.log('📋 Step 2: Creating Plan Items...\n');
+  logger.info('📋 Step 2: Creating Plan Items...\n');
 
   const plans = [
     { id: 'free', name: 'Free Plan' },
@@ -169,20 +170,20 @@ async function createPlanItems() {
         item_family_id: 'dculus-forms',
         item_applicability: 'all'
       });
-      console.log(`  ✅ Created plan item: ${plan.id}`);
+      logger.info(`  ✅ Created plan item: ${plan.id}`);
     } catch (error: any) {
       const result = handleError(error, `${plan.id} plan item`);
       if (!result?.alreadyExists) throw error;
     }
   }
-  console.log('');
+  logger.info('');
 }
 
 /**
  * Step 3: Create Item Prices (Multi-Currency)
  */
 async function createItemPrices() {
-  console.log('💰 Step 3: Creating Item Prices...\n');
+  logger.info('💰 Step 3: Creating Item Prices...\n');
 
   const itemPrices = [
     // Free Plan
@@ -299,20 +300,20 @@ async function createItemPrices() {
         ? `$${(priceData.price / 100).toFixed(2)}`
         : `₹${(priceData.price / 100).toFixed(2)}`;
       const period = priceData.period_unit === 'year' ? 'year' : 'month';
-      console.log(`  ✅ Created price: ${priceData.id} (${displayPrice}/${period})`);
+      logger.info(`  ✅ Created price: ${priceData.id} (${displayPrice}/${period})`);
     } catch (error: any) {
       const result = handleError(error, `${priceData.id} item price`);
       if (!result?.alreadyExists) throw error;
     }
   }
-  console.log('');
+  logger.info('');
 }
 
 /**
  * Step 4: Link Features to Plans via Entitlements
  */
 async function createEntitlements() {
-  console.log('🔗 Step 4: Linking Features to Plans (Entitlements)...\n');
+  logger.info('🔗 Step 4: Linking Features to Plans (Entitlements)...\n');
 
   const entitlementConfigs = [
     // Free Plan (USD)
@@ -421,17 +422,17 @@ async function createEntitlements() {
         entitlements: entitlementsData
       } as any);
 
-      console.log(`  ✅ Configured entitlements for ${config.planName}:`);
+      logger.info(`  ✅ Configured entitlements for ${config.planName}:`);
       config.entitlements.forEach(e => {
         const displayValue = e.value === 'unlimited' ? 'Unlimited' : parseInt(e.value).toLocaleString();
-        console.log(`     - ${e.feature_id}: ${displayValue}`);
+        logger.info(`     - ${e.feature_id}: ${displayValue}`);
       });
     } catch (error: any) {
-      console.error(`  ❌ Error configuring entitlements for ${config.planName}:`, error.message || error);
+      logger.error(`  ❌ Error configuring entitlements for ${config.planName}:`, error.message || error);
       // Continue with other plans even if one fails
     }
   }
-  console.log('');
+  logger.info('');
 }
 
 /**
@@ -445,22 +446,22 @@ async function main() {
     await createItemPrices();
     await createEntitlements();
 
-    console.log('✅ Chargebee setup complete!\n');
-    console.log('📊 Summary:');
-    console.log('  • Features created: form_views, form_submissions');
-    console.log('  • Plans created: free, starter, advanced');
-    console.log('  • Item prices created: 10 total');
-    console.log('    - Free: 2 (USD/INR monthly)');
-    console.log('    - Starter: 4 (USD/INR monthly + yearly)');
-    console.log('    - Advanced: 4 (USD/INR monthly + yearly)');
-    console.log('  • Entitlements configured: 10 plan prices\n');
-    console.log('💰 Pricing:');
-    console.log('  • Starter: $6/mo or $66/yr ($5.50/mo)');
-    console.log('  • Advanced: $15/mo or $168/yr ($14/mo)\n');
-    console.log('🎉 You can now view your plans in the Chargebee dashboard!');
-    console.log(`   https://${CHARGEBEE_SITE}.chargebee.com/\n`);
+    logger.info('✅ Chargebee setup complete!\n');
+    logger.info('📊 Summary:');
+    logger.info('  • Features created: form_views, form_submissions');
+    logger.info('  • Plans created: free, starter, advanced');
+    logger.info('  • Item prices created: 10 total');
+    logger.info('    - Free: 2 (USD/INR monthly)');
+    logger.info('    - Starter: 4 (USD/INR monthly + yearly)');
+    logger.info('    - Advanced: 4 (USD/INR monthly + yearly)');
+    logger.info('  • Entitlements configured: 10 plan prices\n');
+    logger.info('💰 Pricing:');
+    logger.info('  • Starter: $6/mo or $66/yr ($5.50/mo)');
+    logger.info('  • Advanced: $15/mo or $168/yr ($14/mo)\n');
+    logger.info('🎉 You can now view your plans in the Chargebee dashboard!');
+    logger.info(`   https://${CHARGEBEE_SITE}.chargebee.com/\n`);
   } catch (error) {
-    console.error('\n❌ Setup failed:', error);
+    logger.error('\n❌ Setup failed:', error);
     process.exit(1);
   }
 }

@@ -19,6 +19,7 @@ import { prisma } from '../../lib/prisma.js';
 import { randomUUID } from 'crypto';
 import { GraphQLError } from 'graphql';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
+import { logger } from '../../lib/logger.js';
 
 export const formsResolvers = {
   Query: {
@@ -224,7 +225,7 @@ export const formsResolvers = {
       // Always copy background images from templates to ensure unique keys for each form
       if (formSchema.layout && formSchema.layout.backgroundImageKey) {
         try {
-          console.log('Template has background image, copying to form-specific location:', formSchema.layout.backgroundImageKey);
+          logger.info('Template has background image, copying to form-specific location:', formSchema.layout.backgroundImageKey);
           
           // Always copy the background image to create a unique key with formId
           const copiedFile = await copyFileForForm(formSchema.layout.backgroundImageKey, newFormId);
@@ -232,7 +233,7 @@ export const formsResolvers = {
           // Update the form schema with the new unique key
           formSchema.layout.backgroundImageKey = copiedFile.key;
           
-          console.log('Updated form schema with new background image key:', copiedFile.key);
+          logger.info('Updated form schema with new background image key:', copiedFile.key);
           
           // Create FormFile record for the copied image
           await prisma.formFile.create({
@@ -248,9 +249,9 @@ export const formsResolvers = {
             }
           });
           
-          console.log('Successfully copied template background and created FormFile record');
+          logger.info('Successfully copied template background and created FormFile record');
         } catch (formFileError) {
-          console.error('Error handling template background image:', formFileError);
+          logger.error('Error handling template background image:', formFileError);
           // Continue with form creation even if FormFile creation fails
           // But remove the backgroundImageKey to avoid broken references
           formSchema.layout.backgroundImageKey = '';

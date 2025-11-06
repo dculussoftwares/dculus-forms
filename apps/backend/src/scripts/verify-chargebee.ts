@@ -9,6 +9,7 @@ import * as dotenv from 'dotenv';
 import { resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { logger } from '../lib/logger.js';
 
 // ES module __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
@@ -24,21 +25,21 @@ const chargebee = new Chargebee({
 });
 
 async function verifySetup() {
-  console.log('🔍 Verifying Chargebee Setup...\n');
+  logger.info('🔍 Verifying Chargebee Setup...\n');
 
   try {
     // List all items
-    console.log('📋 Plan Items:');
+    logger.info('📋 Plan Items:');
     const itemsResult = await chargebee.item.list({
       limit: 10,
     } as any);
 
     for (const entry of itemsResult.list) {
-      console.log(`  • ${entry.item.id} - ${entry.item.name}`);
+      logger.info(`  • ${entry.item.id} - ${entry.item.name}`);
     }
 
     // List all item prices
-    console.log('\n💰 Item Prices:');
+    logger.info('\n💰 Item Prices:');
     const pricesResult = await chargebee.itemPrice.list({
       limit: 20
     } as any);
@@ -49,22 +50,22 @@ async function verifySetup() {
         ? `$${(price.price! / 100).toFixed(2)}`
         : `₹${(price.price! / 100).toFixed(2)}`;
       const period = price.period_unit === 'year' ? 'year' : 'month';
-      console.log(`  • ${price.id} - ${displayPrice}/${period} (${price.currency_code})`);
+      logger.info(`  • ${price.id} - ${displayPrice}/${period} (${price.currency_code})`);
     }
 
     // List all features
-    console.log('\n📦 Features:');
+    logger.info('\n📦 Features:');
     const featuresResult = await chargebee.feature.list({
       limit: 10
     } as any);
 
     for (const entry of featuresResult.list) {
-      console.log(`  • ${entry.feature.id} - ${entry.feature.name}`);
+      logger.info(`  • ${entry.feature.id} - ${entry.feature.name}`);
     }
 
-    console.log('\n✅ Verification complete!');
+    logger.info('\n✅ Verification complete!');
   } catch (error: any) {
-    console.error('❌ Verification failed:', error.message);
+    logger.error('❌ Verification failed:', error.message);
   }
 }
 

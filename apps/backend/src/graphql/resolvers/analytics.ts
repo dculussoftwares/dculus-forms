@@ -2,6 +2,7 @@ import { GraphQLError } from 'graphql';
 import { analyticsService } from '../../services/analyticsService.js';
 import { prisma } from '../../lib/prisma.js';
 import { emitFormViewed } from '../../subscriptions/events.js';
+import { logger } from '../../lib/logger.js';
 
 export const analyticsResolvers = {
   Mutation: {
@@ -45,14 +46,14 @@ export const analyticsResolvers = {
             input.userAgent
           );
         } catch (error) {
-          console.error('Error emitting subscription event:', error);
+          logger.error('Error emitting subscription event:', error);
         }
 
         return {
           success: true
         };
       } catch (error) {
-        console.error('Error in trackFormView mutation:', error);
+        logger.error('Error in trackFormView mutation:', error);
         
         if (error instanceof GraphQLError) {
           throw error;
@@ -91,7 +92,7 @@ export const analyticsResolvers = {
           success: true
         };
       } catch (error) {
-        console.error('Error in updateFormStartTime mutation:', error);
+        logger.error('Error in updateFormStartTime mutation:', error);
         return {
           success: false
         };
@@ -149,7 +150,7 @@ export const analyticsResolvers = {
           success: true
         };
       } catch (error) {
-        console.error('Error in trackFormSubmission mutation:', error);
+        logger.error('Error in trackFormSubmission mutation:', error);
         
         if (error instanceof GraphQLError) {
           throw error;
@@ -208,7 +209,7 @@ export const analyticsResolvers = {
         
         return analytics;
       } catch (error) {
-        console.error('Error in formAnalytics query:', error);
+        logger.error('Error in formAnalytics query:', error);
         
         if (error instanceof GraphQLError) {
           throw error;
@@ -262,7 +263,7 @@ export const analyticsResolvers = {
         
         return submissionAnalytics;
       } catch (error) {
-        console.error('Error in formSubmissionAnalytics query:', error);
+        logger.error('Error in formSubmissionAnalytics query:', error);
         
         if (error instanceof GraphQLError) {
           throw error;

@@ -2,6 +2,7 @@ import { GraphQLError } from 'graphql';
 import { prisma } from '../../lib/prisma.js';
 import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
+import { logger } from '../../lib/logger.js';
 
 export interface GetFormFilesArgs {
   formId: string;
@@ -43,7 +44,7 @@ export const formFileResolvers = {
 
         return formFiles;
       } catch (error) {
-        console.error('Error in getFormFiles resolver:', error);
+        logger.error('Error in getFormFiles resolver:', error);
         if (error instanceof GraphQLError) {
           throw error;
         }

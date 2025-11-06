@@ -24,6 +24,7 @@ import { checkUsageExceeded } from '../../subscriptions/usageService.js';
 import { emitFormSubmitted as emitSubscriptionFormSubmitted } from '../../subscriptions/events.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import { GraphQLError } from 'graphql';
+import { logger } from '../../lib/logger.js';
 
 export const responsesResolvers = {
   Query: {
@@ -190,12 +191,12 @@ export const responsesResolvers = {
             clientIP
           );
 
-          console.log(
+          logger.info(
             `Submission analytics tracked for form ${input.formId}, response ${response.id}`
           );
         } catch (error) {
           // Log error but don't fail the response submission
-          console.error('Error tracking submission analytics:', error);
+          logger.error('Error tracking submission analytics:', error);
         }
       }
 
@@ -234,7 +235,7 @@ export const responsesResolvers = {
           );
         } catch (error) {
           // If substitution fails, log error but continue with original message
-          console.error('Failed to apply mention substitution:', error);
+          logger.error('Failed to apply mention substitution:', error);
           // thankYouMessage remains the original HTML with mentions
         }
       }
@@ -248,14 +249,14 @@ export const responsesResolvers = {
         });
       } catch (error) {
         // Log error but don't fail the response submission
-        console.error('Error emitting form.submitted event:', error);
+        logger.error('Error emitting form.submitted event:', error);
       }
 
       // Emit subscription event for usage tracking
       try {
         emitSubscriptionFormSubmitted(form.organizationId, input.formId, response.id);
       } catch (error) {
-        console.error('Error emitting subscription event:', error);
+        logger.error('Error emitting subscription event:', error);
       }
 
       return {
@@ -345,7 +346,7 @@ export const responsesResolvers = {
 };
 
 // Create extended resolvers with edit tracking functionality
-console.log('Loading extendedResponsesResolvers with FormResponse field resolvers');
+logger.info('Loading extendedResponsesResolvers with FormResponse field resolvers');
 export const extendedResponsesResolvers = {
   Query: {
     ...responsesResolvers.Query,
@@ -417,7 +418,7 @@ export const extendedResponsesResolvers = {
 
   FormResponse: {
     hasBeenEdited: async (parent: any) => {
-      console.log('hasBeenEdited resolver executing for response:', parent.id);
+      logger.info('hasBeenEdited resolver executing for response:', parent.id);
       try {
         const { ResponseEditTrackingService } = await import(
           '../../services/responseEditTrackingService.js'
@@ -425,7 +426,7 @@ export const extendedResponsesResolvers = {
         const editHistory = await ResponseEditTrackingService.getEditHistory(parent.id);
         return editHistory.length > 0;
       } catch (error) {
-        console.error('Error getting hasBeenEdited for response:', parent.id, error);
+        logger.error('Error getting hasBeenEdited for response:', parent.id, error);
         return false;
       }
     },
@@ -438,7 +439,7 @@ export const extendedResponsesResolvers = {
         const editHistory = await ResponseEditTrackingService.getEditHistory(parent.id);
         return editHistory.length;
       } catch (error) {
-        console.error('Error getting totalEdits for response:', parent.id, error);
+        logger.error('Error getting totalEdits for response:', parent.id, error);
         return 0;
       }
     },
@@ -455,7 +456,7 @@ export const extendedResponsesResolvers = {
         }
         return null;
       } catch (error) {
-        console.error('Error getting lastEditedAt for response:', parent.id, error);
+        logger.error('Error getting lastEditedAt for response:', parent.id, error);
         return null;
       }
     },
@@ -474,7 +475,7 @@ export const extendedResponsesResolvers = {
         }
         return null;
       } catch (error) {
-        console.error('Error getting lastEditedBy for response:', parent.id, error);
+        logger.error('Error getting lastEditedBy for response:', parent.id, error);
         return null;
       }
     },
@@ -486,7 +487,7 @@ export const extendedResponsesResolvers = {
         );
         return await ResponseEditTrackingService.getEditHistory(parent.id);
       } catch (error) {
-        console.error('Error getting editHistory for response:', parent.id, error);
+        logger.error('Error getting editHistory for response:', parent.id, error);
         return [];
       }
     },

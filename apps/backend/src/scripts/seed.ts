@@ -5,14 +5,15 @@ import { uploadFile } from '../services/fileUploadService.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Readable } from 'stream';
+import { logger } from '../lib/logger.js';
 
 async function uploadStaticFiles() {
-  console.log('📁 Uploading static files...');
+  logger.info('📁 Uploading static files...');
   
   const staticFilesPath = path.join(process.cwd(), '..', '..', 'static-files');
   
   if (!fs.existsSync(staticFilesPath)) {
-    console.log('⚠️  Static files folder not found, skipping upload');
+    logger.info('⚠️  Static files folder not found, skipping upload');
     return [];
   }
   
@@ -68,24 +69,24 @@ async function uploadStaticFiles() {
         });
         
         uploadedFiles.push(result);
-        console.log(`✅ Uploaded ${fileName} -> ${result.key}`);
+        logger.info(`✅ Uploaded ${fileName} -> ${result.key}`);
         
       } catch (error) {
-        console.error(`❌ Failed to upload ${fileName}:`, error);
+        logger.error(`❌ Failed to upload ${fileName}:`, error);
       }
     }
   }
   
-  console.log(`📁 Uploaded ${uploadedFiles.length} static files`);
+  logger.info(`📁 Uploaded ${uploadedFiles.length} static files`);
   return uploadedFiles;
 }
 
 async function seed() {
-  console.log('🌱 Starting database seed...');
+  logger.info('🌱 Starting database seed...');
 
   try {
     // Clear existing data
-    console.log('🧹 Clearing existing data...');
+    logger.info('🧹 Clearing existing data...');
     await prisma.response.deleteMany();
     await prisma.form.deleteMany();
     await prisma.formTemplate.deleteMany();
@@ -96,7 +97,7 @@ async function seed() {
     await prisma.account.deleteMany();
     await prisma.user.deleteMany();
 
-    console.log('✅ Database cleared successfully');
+    logger.info('✅ Database cleared successfully');
     
     // Upload static files
     const uploadedFiles = await uploadStaticFiles();
@@ -104,11 +105,11 @@ async function seed() {
     // Seed templates with uploaded files
     await seedTemplates(uploadedFiles);
     
-    console.log('🌱 Seed completed. Use Better Auth endpoints to create users and organizations.');
-    console.log(`📁 ${uploadedFiles.length} static files uploaded to CDN`);
+    logger.info('🌱 Seed completed. Use Better Auth endpoints to create users and organizations.');
+    logger.info(`📁 ${uploadedFiles.length} static files uploaded to CDN`);
 
   } catch (error) {
-    console.error('❌ Error during seed:', error);
+    logger.error('❌ Error during seed:', error);
     throw error;
   } finally {
     await prisma.$disconnect();
@@ -117,6 +118,6 @@ async function seed() {
 
 seed()
   .catch((error) => {
-    console.error('❌ Seed failed:', error);
+    logger.error('❌ Seed failed:', error);
     process.exit(1);
   });

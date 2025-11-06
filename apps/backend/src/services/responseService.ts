@@ -1,6 +1,7 @@
 import { FormResponse } from '@dculus/types';
 import { ResponseFilter, applyResponseFilters } from './responseFilterService.js';
 import { responseRepository } from '../repositories/index.js';
+import { logger } from '../lib/logger.js';
 
 export const getAllResponses = async (organizationId?: string): Promise<FormResponse[]> => {
   const responses = await responseRepository.findMany({
@@ -43,7 +44,7 @@ export const getResponseById = async (id: string): Promise<FormResponse | null> 
       submittedAt: response.submittedAt,
     };
   } catch (error) {
-    console.error('Error fetching response by ID:', error);
+    logger.error('Error fetching response by ID:', error);
     return null;
   }
 };
@@ -177,11 +178,11 @@ export const getResponsesByFormId = async (
 
 export const getAllResponsesByFormId = async (formId: string): Promise<FormResponse[]> => {
   try {
-    console.log(`Fetching ALL responses for form: ${formId}`);
+    logger.info(`Fetching ALL responses for form: ${formId}`);
     
     const responses = await responseRepository.listByForm(formId);
     
-    console.log(`Found ${responses.length} total responses for form: ${formId}`);
+    logger.info(`Found ${responses.length} total responses for form: ${formId}`);
     
     return responses.map((response: any) => ({
       id: response.id,
@@ -191,7 +192,7 @@ export const getAllResponsesByFormId = async (formId: string): Promise<FormRespo
       submittedAt: response.submittedAt,
     }));
   } catch (error) {
-    console.error('Error fetching all responses by form ID:', error);
+    logger.error('Error fetching all responses by form ID:', error);
     throw new Error(`Failed to fetch responses: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
@@ -225,13 +226,13 @@ export const updateResponse = async (
     editReason?: string;
   }
 ): Promise<FormResponse> => {
-  console.log('updateResponse called with:', { responseId, hasEditContext: !!editContext, editContext });
+  logger.info('updateResponse called with:', { responseId, hasEditContext: !!editContext, editContext });
   // Debug logging
 
   try {
     // If edit tracking context is provided, we need to track the edit
     if (editContext) {
-      console.log('Edit tracking mode - creating snapshot and recording edit');
+      logger.info('Edit tracking mode - creating snapshot and recording edit');
       const { ResponseEditTrackingService } = await import('./responseEditTrackingService.js');
 
       // Get the current response and form schema for change detection
@@ -282,7 +283,7 @@ export const updateResponse = async (
       };
     }
   } catch (error) {
-    console.error('Error updating response:', error);
+    logger.error('Error updating response:', error);
     throw new Error(`Failed to update response: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
@@ -294,7 +295,7 @@ export const deleteResponse = async (id: string): Promise<boolean> => {
     });
     return true;
   } catch (error) {
-    console.error('Error deleting response:', error);
+    logger.error('Error deleting response:', error);
     return false;
   }
 }; 

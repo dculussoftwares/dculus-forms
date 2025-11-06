@@ -2,6 +2,7 @@ import { UAParser } from 'ua-parser-js';
 import countries from 'i18n-iso-countries';
 import * as ct from 'countries-and-timezones';
 import { createRequire } from 'module';
+import { logger } from '../lib/logger.js';
 import {
   formViewAnalyticsRepository,
   formSubmissionAnalyticsRepository,
@@ -65,7 +66,7 @@ const parseUserAgent = (userAgent: string): UserAgentInfo => {
       browserVersion: result.browser.version || null
     };
   } catch (error) {
-    console.error('Error parsing user agent:', error);
+    logger.error('Error parsing user agent:', error);
     return {
       operatingSystem: null,
       browser: null,
@@ -79,7 +80,7 @@ const getGeolocationFromIP = async (_ip: string): Promise<GeolocationResult> => 
     // TODO: Implement MaxMind GeoIP2 when database is available
     return {};
   } catch (error) {
-    console.error('Error getting geolocation from IP:', error);
+    logger.error('Error getting geolocation from IP:', error);
     return {};
   }
 };
@@ -94,13 +95,13 @@ const getCountryFromLanguage = (language: string): string | null => {
       const alpha3Code = countries.alpha2ToAlpha3(alpha2Code);
       
       if (alpha3Code) {
-        console.log(`Language ${language} -> Alpha2: ${alpha2Code} -> Alpha3: ${alpha3Code}`);
+        logger.info(`Language ${language} -> Alpha2: ${alpha2Code} -> Alpha3: ${alpha3Code}`);
         return alpha3Code;
       }
     }
     return null;
   } catch (error) {
-    console.error('Error parsing country from language:', error);
+    logger.error('Error parsing country from language:', error);
     return null;
   }
 };
@@ -117,7 +118,7 @@ const getCountryFromTimezone = (timezone: string): string | null => {
         const alpha3Code = countries.alpha2ToAlpha3(countryCode);
         
         if (alpha3Code) {
-          console.log(`Timezone ${timezone} -> Alpha2: ${countryCode} -> Alpha3: ${alpha3Code}`);
+          logger.info(`Timezone ${timezone} -> Alpha2: ${countryCode} -> Alpha3: ${alpha3Code}`);
           return alpha3Code;
         }
       }
@@ -125,7 +126,7 @@ const getCountryFromTimezone = (timezone: string): string | null => {
     
     return null;
   } catch (error) {
-    console.error('Error parsing country from timezone:', error);
+    logger.error('Error parsing country from timezone:', error);
     return null;
   }
 };
@@ -136,7 +137,7 @@ const getCountryNameFromCode = (code: string): string => {
     const countryName = countries.getName(code, 'en');
     return countryName || code || 'Unknown';
   } catch (error) {
-    console.error('Error getting country name from code:', error);
+    logger.error('Error getting country name from code:', error);
     return code || 'Unknown';
   }
 };
@@ -155,7 +156,7 @@ const detectCountryCode = async (data: AnalyticsData, clientIP?: string): Promis
   if (data.language) {
     const countryCode = getCountryFromLanguage(data.language);
     if (countryCode) {
-      console.log(`Country from language ${data.language}: ${countryCode}`);
+      logger.info(`Country from language ${data.language}: ${countryCode}`);
       return countryCode;
     }
   }
@@ -164,7 +165,7 @@ const detectCountryCode = async (data: AnalyticsData, clientIP?: string): Promis
   if (data.timezone) {
     const countryCode = getCountryFromTimezone(data.timezone);
     if (countryCode) {
-      console.log(`Country from timezone ${data.timezone}: ${countryCode}`);
+      logger.info(`Country from timezone ${data.timezone}: ${countryCode}`);
       return countryCode;
     }
   }
@@ -200,9 +201,9 @@ const trackFormView = async (data: AnalyticsData, clientIP?: string): Promise<vo
       viewedAt: new Date(),
     });
     
-    console.log(`Analytics tracked for form ${data.formId}, session ${data.sessionId}, country: ${countryCode || 'unknown'}`);
+    logger.info(`Analytics tracked for form ${data.formId}, session ${data.sessionId}, country: ${countryCode || 'unknown'}`);
   } catch (error) {
-    console.error('Error tracking form view analytics:', error);
+    logger.error('Error tracking form view analytics:', error);
     // Don't throw error to avoid disrupting form viewing
   }
 };
@@ -221,9 +222,9 @@ const updateFormStartTime = async (data: UpdateFormStartTimeData): Promise<void>
       }
     );
     
-    console.log(`Form start time updated for form ${data.formId}, session ${data.sessionId}`);
+    logger.info(`Form start time updated for form ${data.formId}, session ${data.sessionId}`);
   } catch (error) {
-    console.error('Error updating form start time:', error);
+    logger.error('Error updating form start time:', error);
     // Don't throw error to avoid disrupting form interaction
   }
 };
@@ -252,9 +253,9 @@ const trackFormSubmission = async (data: SubmissionAnalyticsData, clientIP?: str
       completionTimeSeconds: data.completionTimeSeconds ?? null,
     });
     
-    console.log(`Submission analytics tracked for form ${data.formId}, response ${data.responseId}, session ${data.sessionId}, country: ${countryCode || 'unknown'}`);
+    logger.info(`Submission analytics tracked for form ${data.formId}, response ${data.responseId}, session ${data.sessionId}, country: ${countryCode || 'unknown'}`);
   } catch (error) {
-    console.error('Error tracking form submission analytics:', error);
+    logger.error('Error tracking form submission analytics:', error);
     // Don't throw error to avoid disrupting form submission
   }
 };
@@ -444,14 +445,14 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
       viewsOverTime: filledViewsOverTime
     };
   } catch (error) {
-    console.error('Error getting form analytics:', error);
+    logger.error('Error getting form analytics:', error);
     throw new Error('Failed to fetch analytics data');
   }
 };
 
 // Initialize service (log startup)
 const initializeService = () => {
-  console.log('GeoIP service initialized (fallback mode)');
+  logger.info('GeoIP service initialized (fallback mode)');
 };
 
 // Database query functions for submission analytics
@@ -603,7 +604,7 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
       completionTimeDistribution
     };
   } catch (error) {
-    console.error('Error getting form submission analytics:', error);
+    logger.error('Error getting form submission analytics:', error);
     throw new Error('Failed to fetch submission analytics data');
   }
 };

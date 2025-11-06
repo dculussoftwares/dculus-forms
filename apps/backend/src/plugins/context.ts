@@ -6,6 +6,7 @@ import {
   getAllResponsesByFormId,
 } from '../services/responseService.js';
 import { sendEmail, type EmailOptions } from '../services/emailService.js';
+import { logger } from '../lib/logger.js';
 
 /**
  * Plugin context interface
@@ -80,13 +81,13 @@ export const createPluginContext = (): PluginContext => {
     // Logger with plugin context prefix
     logger: {
       info: (message: string, meta?: any) => {
-        console.log(`[Plugin] ${message}`, meta || '');
+        logger.info(`[Plugin] ${message}`, meta || '');
       },
       error: (message: string, error?: any) => {
-        console.error(`[Plugin Error] ${message}`, error || '');
+        logger.error(`[Plugin Error] ${message}`, error || '');
       },
       warn: (message: string, meta?: any) => {
-        console.warn(`[Plugin Warning] ${message}`, meta || '');
+        logger.warn(`[Plugin Warning] ${message}`, meta || '');
       },
     },
   };

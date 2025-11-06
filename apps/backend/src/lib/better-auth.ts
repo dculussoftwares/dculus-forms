@@ -3,6 +3,7 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { admin, bearer, emailOTP, organization } from 'better-auth/plugins';
 import { prisma } from './prisma.js';
 import { authConfig } from './env.js';
+import { logger } from '../lib/logger.js';
 import {
   sendInvitationEmail,
   sendOTPEmail,
@@ -95,7 +96,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
     session: {
       create: {
         before: async (session) => {
-          console.log('Creating session for user:', session.userId);
+          logger.info('Creating session for user:', session.userId);
 
           const member = await prisma.member.findFirst({
             where: {
@@ -103,7 +104,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
             },
           });
 
-          console.log('Member found:', member?.id || 'none');
+          logger.info('Member found:', member?.id || 'none');
 
           return {
             data: {
@@ -117,7 +118,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
     member: {
       create: {
         before: async (member: any) => {
-          console.log('Creating member for user:', member.userId);
+          logger.info('Creating member for user:', member.userId);
 
           // Check if user already belongs to an organization (single organization rule)
           const existingMembership = await prisma.member.findFirst({

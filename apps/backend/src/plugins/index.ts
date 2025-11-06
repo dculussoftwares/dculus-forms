@@ -24,13 +24,14 @@ import { initializePluginEvents } from './events.js';
 import { registerWebhookPlugin } from './webhooks/index.js';
 import { registerEmailPlugin } from './email/index.js';
 import { registerQuizGradingPlugin } from './quiz/index.js';
+import { logger } from '../lib/logger.js';
 
 /**
  * Initialize the complete plugin system
  * Call this once during server startup
  */
 export const initializePluginSystem = (): void => {
-  console.log('[Plugin System] Initializing...');
+  logger.info('[Plugin System] Initializing...');
 
   // Register all available plugins
   registerWebhookPlugin();
@@ -40,5 +41,5 @@ export const initializePluginSystem = (): void => {
   // Initialize event system
   initializePluginEvents();
 
-  console.log('[Plugin System] Initialization complete');
+  logger.info('[Plugin System] Initialization complete');
 };
