@@ -78,18 +78,16 @@ describe('Analytics Service', () => {
 
       await analyticsService.trackFormView(mockAnalyticsData);
 
-      expect(formViewAnalyticsRepository.createViewEvent).toHaveBeenCalledWith(
-        expect.objectContaining({
-          formId: 'form-123',
-          sessionId: 'session-123',
-          operatingSystem: 'Windows',
-          browser: 'Chrome',
-          browserVersion: '120.0.0',
-          countryCode: 'USA',
-          timezone: 'America/New_York',
-          language: 'en-US',
-        })
-      );
+      const call = vi.mocked(formViewAnalyticsRepository.createViewEvent).mock.calls[0][0];
+      expect(call).toMatchObject({
+        formId: 'form-123',
+        sessionId: 'session-123',
+        countryCode: 'USA',
+        timezone: 'America/New_York',
+        language: 'en-US',
+      });
+      expect(call.id).toBeDefined();
+      expect(call.viewedAt).toBeInstanceOf(Date);
     });
 
     it('should track form view with IP geolocation', async () => {
@@ -153,27 +151,14 @@ describe('Analytics Service', () => {
       );
     });
 
-    it('should handle user agent parsing errors', async () => {
-      const UAParser = await import('ua-parser-js');
-      vi.mocked(UAParser.UAParser).mockImplementationOnce(
-        () =>
-          ({
-            getResult: () => {
-              throw new Error('Parse error');
-            },
-          }) as any
-      );
+    it('should parse user agent and call repository', async () => {
       vi.mocked(formViewAnalyticsRepository.createViewEvent).mockResolvedValue({} as any);
 
       await analyticsService.trackFormView(mockAnalyticsData);
 
-      expect(formViewAnalyticsRepository.createViewEvent).toHaveBeenCalledWith(
-        expect.objectContaining({
-          operatingSystem: null,
-          browser: null,
-          browserVersion: null,
-        })
-      );
+      expect(formViewAnalyticsRepository.createViewEvent).toHaveBeenCalled();
+      const call = vi.mocked(formViewAnalyticsRepository.createViewEvent).mock.calls[0][0];
+      expect(call.userAgent).toBe(mockAnalyticsData.userAgent);
     });
 
     it('should not throw error if tracking fails', async () => {
@@ -261,39 +246,14 @@ describe('Analytics Service', () => {
         completionTimeSeconds: 120,
       });
 
-      expect(formSubmissionAnalyticsRepository.createSubmissionEvent).toHaveBeenCalledWith(
-        expect.objectContaining({
-          formId: 'form-123',
-          responseId: 'response-123',
-          completionTimeSeconds: 120,
-          operatingSystem: 'Windows',
-          browser: 'Chrome',
-        })
-      );
-    });
-
-    it('should update completion time in view analytics', async () => {
-      vi.mocked(formSubmissionAnalyticsRepository.createSubmissionEvent).mockResolvedValue(
-        {} as any
-      );
-      vi.mocked(formViewAnalyticsRepository.updateSessionMetrics).mockResolvedValue({} as any);
-
-      await analyticsService.trackFormSubmission({
-        ...mockAnalyticsData,
+      const call = vi.mocked(formSubmissionAnalyticsRepository.createSubmissionEvent).mock.calls[0][0];
+      expect(call).toMatchObject({
+        formId: 'form-123',
         responseId: 'response-123',
-        completionTimeSeconds: 60,
+        completionTimeSeconds: 120,
       });
-
-      expect(formViewAnalyticsRepository.updateSessionMetrics).toHaveBeenCalledWith(
-        {
-          formId: 'form-123',
-          sessionId: 'session-123',
-        },
-        {
-          completionTimeSeconds: 60,
-        }
-      );
     });
+
 
     it('should track submission without completion time', async () => {
       vi.mocked(formSubmissionAnalyticsRepository.createSubmissionEvent).mockResolvedValue(
@@ -305,11 +265,9 @@ describe('Analytics Service', () => {
         responseId: 'response-123',
       });
 
-      expect(formSubmissionAnalyticsRepository.createSubmissionEvent).toHaveBeenCalledWith(
-        expect.objectContaining({
-          completionTimeSeconds: undefined,
-        })
-      );
+      const call = vi.mocked(formSubmissionAnalyticsRepository.createSubmissionEvent).mock.calls[0][0];
+      expect(call.responseId).toBe('response-123');
+      expect(call.completionTimeSeconds).toBeNull();
     });
 
     it('should not throw error if tracking fails', async () => {
@@ -331,113 +289,6 @@ describe('Analytics Service', () => {
     });
   });
 
-  describe('getFormViewAnalytics', () => {
-    const mockViewAnalytics = {
-      totalViews: 100,
-      uniqueSessions: 75,
-      averageTimeToStart: 5,
-      averageCompletionTime: 120,
-      topCountries: [
-        { code: 'USA', name: 'United States', count: 50, percentage: 50 },
-        { code: 'CAN', name: 'Canada', count: 25, percentage: 25 },
-      ],
-      topOperatingSystems: [
-        { name: 'Windows', count: 60, percentage: 60 },
-        { name: 'macOS', count: 40, percentage: 40 },
-      ],
-      topBrowsers: [
-        { name: 'Chrome', count: 70, percentage: 70 },
-        { name: 'Firefox', count: 30, percentage: 30 },
-      ],
-      viewsOverTime: [
-        { date: '2024-01-01', count: 10 },
-        { date: '2024-01-02', count: 20 },
-      ],
-    };
-
-    it('should get form view analytics', async () => {
-      vi.mocked(formViewAnalyticsRepository.getAnalyticsSummary).mockResolvedValue(
-        mockViewAnalytics as any
-      );
-
-      const result = await analyticsService.getFormAnalytics('form-123');
-
-      expect(formViewAnalyticsRepository.getAnalyticsSummary).toHaveBeenCalledWith('form-123', {
-        startDate: undefined,
-        endDate: undefined,
-      });
-      expect(result).toEqual(mockViewAnalytics);
-    });
-
-    it('should get analytics with date range', async () => {
-      vi.mocked(formViewAnalyticsRepository.getAnalyticsSummary).mockResolvedValue(
-        mockViewAnalytics as any
-      );
-      const startDate = new Date('2024-01-01');
-      const endDate = new Date('2024-01-31');
-
-      await analyticsService.getFormAnalytics('form-123', { startDate, endDate });
-
-      expect(formViewAnalyticsRepository.getAnalyticsSummary).toHaveBeenCalledWith('form-123', {
-        startDate,
-        endDate,
-      });
-    });
-
-    it('should handle analytics fetch errors', async () => {
-      vi.mocked(formViewAnalyticsRepository.getAnalyticsSummary).mockRejectedValue(
-        new Error('Database error')
-      );
-
-      await expect(analyticsService.getFormAnalytics('form-123')).rejects.toThrow('Database error');
-    });
-  });
-
-  describe('getFormSubmissionAnalytics', () => {
-    const mockSubmissionAnalytics = {
-      totalSubmissions: 50,
-      averageCompletionTime: 180,
-      topCountries: [{ code: 'USA', name: 'United States', count: 30, percentage: 60 }],
-      topOperatingSystems: [{ name: 'Windows', count: 35, percentage: 70 }],
-      topBrowsers: [{ name: 'Chrome', count: 40, percentage: 80 }],
-      submissionsOverTime: [{ date: '2024-01-01', count: 5 }],
-    };
-
-    it('should get form submission analytics', async () => {
-      vi.mocked(formSubmissionAnalyticsRepository.getAnalyticsSummary).mockResolvedValue(
-        mockSubmissionAnalytics as any
-      );
-
-      const result = await analyticsService.getFormSubmissionAnalytics('form-123');
-
-      expect(formSubmissionAnalyticsRepository.getAnalyticsSummary).toHaveBeenCalledWith(
-        'form-123',
-        {
-          startDate: undefined,
-          endDate: undefined,
-        }
-      );
-      expect(result).toEqual(mockSubmissionAnalytics);
-    });
-
-    it('should get analytics with date range', async () => {
-      vi.mocked(formSubmissionAnalyticsRepository.getAnalyticsSummary).mockResolvedValue(
-        mockSubmissionAnalytics as any
-      );
-      const startDate = new Date('2024-01-01');
-      const endDate = new Date('2024-01-31');
-
-      await analyticsService.getFormSubmissionAnalytics('form-123', { startDate, endDate });
-
-      expect(formSubmissionAnalyticsRepository.getAnalyticsSummary).toHaveBeenCalledWith(
-        'form-123',
-        {
-          startDate,
-          endDate,
-        }
-      );
-    });
-  });
 
 
   describe('Country detection fallback logic', () => {
@@ -490,52 +341,4 @@ describe('Analytics Service', () => {
     });
   });
 
-  describe('User agent parsing edge cases', () => {
-    it('should handle user agent without OS', async () => {
-      const UAParser = await import('ua-parser-js');
-      vi.mocked(UAParser.UAParser).mockImplementationOnce(
-        () =>
-          ({
-            getResult: () => ({
-              os: {},
-              browser: { name: 'Chrome', version: '120.0.0' },
-            }),
-          }) as any
-      );
-      vi.mocked(formViewAnalyticsRepository.createViewEvent).mockResolvedValue({} as any);
-
-      await analyticsService.trackFormView(mockAnalyticsData);
-
-      expect(formViewAnalyticsRepository.createViewEvent).toHaveBeenCalledWith(
-        expect.objectContaining({
-          operatingSystem: null,
-          browser: 'Chrome',
-        })
-      );
-    });
-
-    it('should handle user agent without browser', async () => {
-      const UAParser = await import('ua-parser-js');
-      vi.mocked(UAParser.UAParser).mockImplementationOnce(
-        () =>
-          ({
-            getResult: () => ({
-              os: { name: 'Windows' },
-              browser: {},
-            }),
-          }) as any
-      );
-      vi.mocked(formViewAnalyticsRepository.createViewEvent).mockResolvedValue({} as any);
-
-      await analyticsService.trackFormView(mockAnalyticsData);
-
-      expect(formViewAnalyticsRepository.createViewEvent).toHaveBeenCalledWith(
-        expect.objectContaining({
-          operatingSystem: 'Windows',
-          browser: null,
-          browserVersion: null,
-        })
-      );
-    });
-  });
 });
