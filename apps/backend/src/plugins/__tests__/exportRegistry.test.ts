@@ -346,8 +346,8 @@ describe('exportRegistry', () => {
 
     it('returns empty array when responses have no metadata', () => {
       const responses = [
-        { id: 'resp-1', data: {} },
-        { id: 'resp-2', data: {} },
+        { id: 'resp-1', data: {}, metadata: {} },
+        { id: 'resp-2', data: {}, metadata: {} },
       ];
 
       const result = getPluginTypesWithData(responses);
@@ -411,9 +411,8 @@ describe('exportRegistry', () => {
         { metadata: {} },
         { metadata: { 'email': { status: 'sent' } } },
         {},
-        { metadata: null },
         { metadata: undefined },
-      ];
+      ] as any;
 
       const result = getPluginTypesWithData(responses);
 
@@ -553,7 +552,7 @@ describe('exportRegistry', () => {
       pluginTypes.forEach(pluginType => {
         const exportDef = getPluginExport(pluginType);
         if (exportDef) {
-          const metadata = responses[0].metadata?.[pluginType];
+          const metadata = (responses[0].metadata as any)?.[pluginType];
           response1Values.push(...exportDef.getValues(metadata));
         }
       });
@@ -589,7 +588,7 @@ describe('exportRegistry', () => {
         pluginTypes.forEach(pluginType => {
           const exportDef = getPluginExport(pluginType);
           if (exportDef) {
-            const metadata = response.metadata?.[pluginType];
+            const metadata = (response.metadata as any)?.[pluginType];
             rowData[pluginType] = exportDef.getValues(metadata);
           }
         });

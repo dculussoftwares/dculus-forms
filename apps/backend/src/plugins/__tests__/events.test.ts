@@ -457,7 +457,7 @@ describe('events', () => {
       });
 
       // Should be called multiple times due to multiple listeners
-      expect(executePluginsForForm.mock.calls.length).toBeGreaterThanOrEqual(1);
+      expect(vi.mocked(executePluginsForForm).mock.calls.length).toBeGreaterThanOrEqual(1);
     });
 
     it('handles very large event data payloads', async () => {

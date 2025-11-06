@@ -48,6 +48,7 @@ describe('Plugins Resolvers', () => {
         name: 'Test User',
       },
       session: { id: 'session-123' },
+      isAuthenticated: true,
     },
   };
 
@@ -126,9 +127,10 @@ describe('Plugins Resolvers', () => {
 
   describe('Query: formPlugins', () => {
     it('should return all plugins for a form when user has viewer access', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.formPlugin.findMany).mockResolvedValue([
@@ -158,9 +160,10 @@ describe('Plugins Resolvers', () => {
     });
 
     it('should return empty array when no plugins exist', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.formPlugin.findMany).mockResolvedValue([]);
@@ -175,10 +178,11 @@ describe('Plugins Resolvers', () => {
     });
 
     it('should throw error when user lacks access to form', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: false,
-        form: null,
+        permission: null as any,
+        form: null as any,
       });
 
       await expect(
@@ -202,13 +206,14 @@ describe('Plugins Resolvers', () => {
 
   describe('Query: formPlugin', () => {
     it('should return plugin by ID when user has access', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue({
         ...mockWebhookPlugin,
         form: mockForm,
       } as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
 
@@ -235,7 +240,7 @@ describe('Plugins Resolvers', () => {
     });
 
     it('should throw error when plugin not found', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(null);
 
       await expect(
@@ -244,14 +249,15 @@ describe('Plugins Resolvers', () => {
     });
 
     it('should throw error when user lacks access to form', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue({
         ...mockWebhookPlugin,
         form: mockForm,
       } as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: false,
-        form: null,
+        permission: null as any,
+        form: null as any,
       });
 
       await expect(
@@ -281,10 +287,11 @@ describe('Plugins Resolvers', () => {
     ];
 
     it('should return plugin deliveries when user has access', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.pluginDelivery.findMany).mockResolvedValue(mockDeliveries as any);
@@ -312,10 +319,11 @@ describe('Plugins Resolvers', () => {
     });
 
     it('should use custom limit when provided', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.pluginDelivery.findMany).mockResolvedValue(mockDeliveries as any);
@@ -334,7 +342,7 @@ describe('Plugins Resolvers', () => {
     });
 
     it('should throw error when plugin not found', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(null);
 
       await expect(
@@ -347,11 +355,12 @@ describe('Plugins Resolvers', () => {
     });
 
     it('should throw error when user lacks access', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: false,
-        form: null,
+        permission: null as any,
+        form: null as any,
       });
 
       await expect(
@@ -378,9 +387,10 @@ describe('Plugins Resolvers', () => {
         enabled: true,
       };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.formPlugin.create).mockResolvedValue(mockWebhookPlugin as any);
@@ -424,9 +434,10 @@ describe('Plugins Resolvers', () => {
         events: ['form.submitted'],
       };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.formPlugin.create).mockResolvedValue(mockEmailPlugin as any);
@@ -454,9 +465,10 @@ describe('Plugins Resolvers', () => {
         events: ['form.submitted'],
       };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.formPlugin.create).mockResolvedValue(mockQuizPlugin as any);
@@ -479,9 +491,10 @@ describe('Plugins Resolvers', () => {
         events: ['form.submitted'],
       };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.formPlugin.create).mockResolvedValue(mockWebhookPlugin as any);
@@ -506,10 +519,11 @@ describe('Plugins Resolvers', () => {
         events: ['form.submitted'],
       };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: false,
-        form: null,
+        permission: null as any,
+        form: null as any,
       });
 
       await expect(
@@ -526,9 +540,10 @@ describe('Plugins Resolvers', () => {
         events: ['form.submitted', 'invalid.event', 'another.invalid'],
       };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
 
@@ -546,9 +561,10 @@ describe('Plugins Resolvers', () => {
         events: ['form.submitted', 'plugin.test'],
       };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.formPlugin.create).mockResolvedValue(mockWebhookPlugin as any);
@@ -567,10 +583,11 @@ describe('Plugins Resolvers', () => {
         enabled: false,
       };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.formPlugin.update).mockResolvedValue({
@@ -606,10 +623,11 @@ describe('Plugins Resolvers', () => {
     it('should update only provided fields', async () => {
       const input = { enabled: false };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.formPlugin.update).mockResolvedValue({
@@ -633,7 +651,7 @@ describe('Plugins Resolvers', () => {
     });
 
     it('should throw error when plugin not found', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(null);
 
       await expect(
@@ -646,11 +664,12 @@ describe('Plugins Resolvers', () => {
     });
 
     it('should throw error when user lacks editor access', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: false,
-        form: null,
+        permission: null as any,
+        form: null as any,
       });
 
       await expect(
@@ -665,10 +684,11 @@ describe('Plugins Resolvers', () => {
     it('should validate events when updating', async () => {
       const input = { events: ['form.submitted', 'invalid.event'] };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
 
@@ -684,10 +704,11 @@ describe('Plugins Resolvers', () => {
     it('should allow updating events with valid values', async () => {
       const input = { events: ['form.submitted', 'plugin.test'] };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.formPlugin.update).mockResolvedValue({
@@ -707,10 +728,11 @@ describe('Plugins Resolvers', () => {
 
   describe('Mutation: deleteFormPlugin', () => {
     it('should delete plugin with editor access', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.formPlugin.delete).mockResolvedValue(mockWebhookPlugin as any);
@@ -740,7 +762,7 @@ describe('Plugins Resolvers', () => {
     });
 
     it('should throw error when plugin not found', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(null);
 
       await expect(
@@ -749,11 +771,12 @@ describe('Plugins Resolvers', () => {
     });
 
     it('should throw error when user lacks editor access', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: false,
-        form: null,
+        permission: null as any,
+        form: null as any,
       });
 
       await expect(
@@ -764,13 +787,14 @@ describe('Plugins Resolvers', () => {
 
   describe('Mutation: testFormPlugin', () => {
     it('should trigger test event for plugin', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue({
         ...mockWebhookPlugin,
         form: mockForm,
       } as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(pluginEvents.emitPluginTest).mockReturnValue(undefined);
@@ -807,7 +831,7 @@ describe('Plugins Resolvers', () => {
     });
 
     it('should throw error when plugin not found', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(null);
 
       await expect(
@@ -816,14 +840,15 @@ describe('Plugins Resolvers', () => {
     });
 
     it('should throw error when user lacks editor access', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue({
         ...mockWebhookPlugin,
         form: mockForm,
       } as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: false,
-        form: null,
+        permission: null as any,
+        form: null as any,
       });
 
       await expect(
@@ -832,13 +857,14 @@ describe('Plugins Resolvers', () => {
     });
 
     it('should test email plugin', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue({
         ...mockEmailPlugin,
         form: mockForm,
       } as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(pluginEvents.emitPluginTest).mockReturnValue(undefined);
@@ -861,13 +887,14 @@ describe('Plugins Resolvers', () => {
     });
 
     it('should test quiz grading plugin', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue({
         ...mockQuizPlugin,
         form: mockForm,
       } as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(pluginEvents.emitPluginTest).mockReturnValue(undefined);
@@ -1017,7 +1044,7 @@ describe('Plugins Resolvers', () => {
   describe('Authentication Edge Cases', () => {
     it('should handle missing auth context in formPlugins query', async () => {
       const contextWithoutAuth = {
-        auth: { user: null },
+        auth: { user: null, isAuthenticated: false } as any,
       };
 
       vi.mocked(betterAuthMiddleware.requireAuth).mockImplementation(() => {
@@ -1034,12 +1061,14 @@ describe('Plugins Resolvers', () => {
         auth: {
           user: mockContext.auth.user,
           session: null,
-        },
+          isAuthenticated: true,
+        } as any,
       };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.formPlugin.findMany).mockResolvedValue([mockWebhookPlugin] as any);
@@ -1064,9 +1093,10 @@ describe('Plugins Resolvers', () => {
         events: ['form.submitted'],
       };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.formPlugin.create).mockResolvedValue({
@@ -1088,10 +1118,11 @@ describe('Plugins Resolvers', () => {
         config: { url: 'https://example.com', headers: null },
       };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.formPlugin.update).mockResolvedValue({
@@ -1119,9 +1150,10 @@ describe('Plugins Resolvers', () => {
         events: ['form.submitted', 'plugin.test'],
       };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.formPlugin.create).mockResolvedValue({
@@ -1143,10 +1175,11 @@ describe('Plugins Resolvers', () => {
         events: ['form.submitted', 'plugin.test'],
       };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.formPlugin.update).mockResolvedValue({
@@ -1166,9 +1199,10 @@ describe('Plugins Resolvers', () => {
 
   describe('Organization-Level Access', () => {
     it('should allow access to plugins within organization', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.formPlugin.findMany).mockResolvedValue([mockWebhookPlugin] as any);
@@ -1188,10 +1222,11 @@ describe('Plugins Resolvers', () => {
     });
 
     it('should deny access to plugins from different organization', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: false,
-        form: null,
+        permission: null as any,
+        form: null as any,
       });
 
       await expect(
@@ -1206,10 +1241,11 @@ describe('Plugins Resolvers', () => {
 
   describe('Plugin Delivery History Edge Cases', () => {
     it('should return empty array when no deliveries exist', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.pluginDelivery.findMany).mockResolvedValue([]);
@@ -1233,10 +1269,11 @@ describe('Plugins Resolvers', () => {
         deliveredAt: new Date(),
       }));
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.pluginDelivery.findMany).mockResolvedValue(

@@ -321,7 +321,7 @@ describe('Template Service', () => {
 
   describe('deleteTemplate', () => {
     it('should soft delete template successfully', async () => {
-      vi.mocked(formTemplateRepository.softDeleteTemplate).mockResolvedValue(undefined);
+      vi.mocked(formTemplateRepository.softDeleteTemplate).mockResolvedValue({} as any);
 
       const result = await deleteTemplate('template-123');
 
@@ -345,7 +345,7 @@ describe('Template Service', () => {
 
   describe('hardDeleteTemplate', () => {
     it('should hard delete template successfully', async () => {
-      vi.mocked(formTemplateRepository.hardDeleteTemplate).mockResolvedValue(undefined);
+      vi.mocked(formTemplateRepository.hardDeleteTemplate).mockResolvedValue({} as any);
 
       const result = await hardDeleteTemplate('template-123');
 

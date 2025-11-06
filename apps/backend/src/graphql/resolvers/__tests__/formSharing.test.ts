@@ -455,7 +455,7 @@ describe('FormSharing Resolvers', () => {
         },
       ];
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.form.findUnique).mockResolvedValue({
         ...mockForm,
         organization: {
@@ -484,7 +484,7 @@ describe('FormSharing Resolvers', () => {
     });
 
     it('should throw error when user lacks EDITOR access', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.form.findUnique).mockResolvedValue({
         ...mockForm,
         createdById: 'owner-999',
@@ -909,7 +909,7 @@ describe('FormSharing Resolvers', () => {
     };
 
     it('should update form sharing scope and default permission', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.form.findUnique).mockResolvedValue(mockForm as any);
       vi.mocked(prisma.form.update).mockResolvedValue({
         ...mockForm,
@@ -944,7 +944,7 @@ describe('FormSharing Resolvers', () => {
         ],
       };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.form.findUnique).mockResolvedValue(mockForm as any);
       vi.mocked(prisma.form.update).mockResolvedValue(mockForm as any);
       vi.mocked(prisma.member.findMany).mockResolvedValue([
@@ -1001,7 +1001,7 @@ describe('FormSharing Resolvers', () => {
         ],
       };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.form.findUnique).mockResolvedValue(mockForm as any);
       vi.mocked(prisma.form.update).mockResolvedValue(mockForm as any);
       vi.mocked(prisma.member.findMany).mockResolvedValue([
@@ -1037,7 +1037,7 @@ describe('FormSharing Resolvers', () => {
         ],
       };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.form.findUnique).mockResolvedValue(mockForm as any);
       vi.mocked(prisma.form.update).mockResolvedValue(mockForm as any);
       vi.mocked(prisma.member.findMany).mockResolvedValue([
@@ -1063,7 +1063,7 @@ describe('FormSharing Resolvers', () => {
         userPermissions: [{ userId: 'external-user', permission: PermissionLevel.VIEWER }],
       };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.form.findUnique).mockResolvedValue(mockForm as any);
       vi.mocked(prisma.member.findMany).mockResolvedValue([]);
 
@@ -1076,7 +1076,7 @@ describe('FormSharing Resolvers', () => {
     });
 
     it('should throw error when user lacks EDITOR permission', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.form.findUnique).mockResolvedValue({
         ...mockForm,
         createdById: 'owner-999',
@@ -1101,7 +1101,7 @@ describe('FormSharing Resolvers', () => {
         sharingScope: SharingScope.ALL_ORG_MEMBERS,
       };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.form.findUnique).mockResolvedValue(mockForm as any);
       vi.mocked(prisma.form.update).mockResolvedValue(mockForm as any);
       vi.mocked(prisma.formPermission.findMany).mockResolvedValue([]);
@@ -1142,7 +1142,7 @@ describe('FormSharing Resolvers', () => {
         grantedBy: mockContext.auth.user,
       };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.form.findUnique).mockResolvedValue(mockForm as any);
       vi.mocked(prisma.member.findFirst).mockResolvedValue({
         userId: 'user-456',
@@ -1188,7 +1188,7 @@ describe('FormSharing Resolvers', () => {
         permission: PermissionLevel.NO_ACCESS,
       };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.form.findUnique).mockResolvedValue(mockForm as any);
       vi.mocked(prisma.member.findFirst).mockResolvedValue({
         userId: 'user-456',
@@ -1214,7 +1214,7 @@ describe('FormSharing Resolvers', () => {
     });
 
     it('should throw error when target user is not org member', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.form.findUnique).mockResolvedValue(mockForm as any);
       vi.mocked(prisma.member.findFirst).mockResolvedValue(null);
 
@@ -1241,7 +1241,7 @@ describe('FormSharing Resolvers', () => {
         permission: PermissionLevel.VIEWER,
       };
 
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.form.findUnique).mockResolvedValue(mockForm as any);
       vi.mocked(prisma.member.findFirst).mockResolvedValue({
         userId: 'user-123',
@@ -1266,7 +1266,7 @@ describe('FormSharing Resolvers', () => {
     });
 
     it('should throw error when user lacks EDITOR access', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.form.findUnique).mockResolvedValue({
         ...mockForm,
         createdById: 'owner-999',
@@ -1296,7 +1296,7 @@ describe('FormSharing Resolvers', () => {
 
   describe('Mutation: removeFormAccess', () => {
     it('should remove user access to form', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.form.findUnique).mockResolvedValue(mockForm as any);
       vi.mocked(prisma.formPermission.deleteMany).mockResolvedValue({ count: 1 });
 
@@ -1316,7 +1316,7 @@ describe('FormSharing Resolvers', () => {
     });
 
     it('should return false when no permission found', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.form.findUnique).mockResolvedValue(mockForm as any);
       vi.mocked(prisma.formPermission.deleteMany).mockResolvedValue({ count: 0 });
 
@@ -1330,7 +1330,7 @@ describe('FormSharing Resolvers', () => {
     });
 
     it('should throw error when trying to remove owner access', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.form.findUnique).mockResolvedValue(mockForm as any);
 
       await expect(
@@ -1350,7 +1350,7 @@ describe('FormSharing Resolvers', () => {
     });
 
     it('should throw error when user lacks EDITOR access', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.form.findUnique).mockResolvedValue({
         ...mockForm,
         createdById: 'owner-999',
@@ -1424,7 +1424,7 @@ describe('FormSharing Resolvers', () => {
       });
 
       it('should return null when user is not authenticated', async () => {
-        const unauthContext = { auth: { user: null } };
+        const unauthContext = { auth: { user: null, isAuthenticated: false } as any };
 
         const result = await formSharingResolvers.Form.userPermission(
           { id: 'form-123' },
@@ -1458,7 +1458,7 @@ describe('FormSharing Resolvers', () => {
       });
 
       it('should return null when user is not authenticated', () => {
-        const unauthContext = { auth: { user: null } };
+        const unauthContext = { auth: { user: null, isAuthenticated: false } as any };
 
         const result = formSharingResolvers.Form.category(
           { id: 'form-123', createdById: 'user-123' },

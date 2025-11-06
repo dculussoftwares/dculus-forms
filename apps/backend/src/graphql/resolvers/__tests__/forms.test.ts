@@ -61,6 +61,7 @@ describe('Forms Resolvers', () => {
         name: 'Test User',
       },
       session: { id: 'session-123' },
+      isAuthenticated: true,
     },
   };
 
@@ -87,9 +88,10 @@ describe('Forms Resolvers', () => {
 
   describe('Query: form', () => {
     it('should return form when user has access', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'VIEWER' as any,
         form: mockForm as any,
       });
 
@@ -109,10 +111,11 @@ describe('Forms Resolvers', () => {
     });
 
     it('should throw error when user lacks access', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: false,
-        form: null,
+        permission: null as any,
+        form: null as any,
       });
 
       await expect(
@@ -134,8 +137,7 @@ describe('Forms Resolvers', () => {
 
       const result = await formsResolvers.Query.formByShortUrl(
         {},
-        { shortUrl: 'abc12345' },
-        {} as any
+        { shortUrl: 'abc12345' }
       );
 
       expect(formService.getFormByShortUrl).toHaveBeenCalledWith('abc12345');
@@ -146,7 +148,7 @@ describe('Forms Resolvers', () => {
       vi.mocked(formService.getFormByShortUrl).mockResolvedValue(null);
 
       await expect(
-        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'invalid' }, {} as any)
+        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'invalid' })
       ).rejects.toThrow('Form not found');
     });
 
@@ -157,7 +159,7 @@ describe('Forms Resolvers', () => {
       } as any);
 
       await expect(
-        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' }, {} as any)
+        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' })
       ).rejects.toThrow('Form is not published');
     });
 
@@ -169,7 +171,7 @@ describe('Forms Resolvers', () => {
       });
 
       await expect(
-        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' }, {} as any)
+        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' })
       ).rejects.toThrow("Form view limit exceeded for this organization's subscription plan");
     });
 
@@ -190,7 +192,7 @@ describe('Forms Resolvers', () => {
       vi.mocked(prisma.response.count).mockResolvedValue(100);
 
       await expect(
-        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' }, {} as any)
+        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' })
       ).rejects.toThrow('Form has reached its maximum response limit');
     });
 
@@ -215,7 +217,7 @@ describe('Forms Resolvers', () => {
       });
 
       await expect(
-        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' }, {} as any)
+        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' })
       ).rejects.toThrow('Form is not yet open for submissions');
     });
 
@@ -240,7 +242,7 @@ describe('Forms Resolvers', () => {
       });
 
       await expect(
-        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' }, {} as any)
+        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' })
       ).rejects.toThrow('Form submission period has ended');
     });
   });
@@ -420,7 +422,7 @@ describe('Forms Resolvers', () => {
         originalName: 'background.jpg',
         size: 1024,
         mimeType: 'image/jpeg',
-      });
+      } as any);
       vi.mocked(prisma.formFile.create).mockResolvedValue({} as any);
       vi.mocked(formService.createForm).mockResolvedValue(mockForm as any);
 
@@ -457,9 +459,10 @@ describe('Forms Resolvers', () => {
 
   describe('Mutation: updateForm', () => {
     it('should update form with editor permissions', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'VIEWER' as any,
         form: mockForm as any,
       });
       vi.mocked(formService.updateForm).mockResolvedValue({ ...mockForm, title: 'Updated' } as any);
@@ -476,13 +479,14 @@ describe('Forms Resolvers', () => {
         'form-123',
         formSharingResolvers.PermissionLevel.EDITOR
       );
-      expect(result.title).toBe('Updated');
+      expect(result?.title).toBe('Updated');
     });
 
     it('should require owner permissions for critical changes', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'VIEWER' as any,
         form: mockForm as any,
       });
       vi.mocked(formService.updateForm).mockResolvedValue({ ...mockForm, isPublished: true } as any);
@@ -498,10 +502,11 @@ describe('Forms Resolvers', () => {
     });
 
     it('should throw error when access denied', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: false,
-        form: null,
+        permission: null as any,
+        form: null as any,
       });
 
       await expect(
@@ -512,9 +517,10 @@ describe('Forms Resolvers', () => {
 
   describe('Mutation: deleteForm', () => {
     it('should delete form with owner permissions', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'VIEWER' as any,
         form: mockForm as any,
       });
       vi.mocked(formService.deleteForm).mockResolvedValue(true);
@@ -534,10 +540,11 @@ describe('Forms Resolvers', () => {
     });
 
     it('should throw error when user is not owner', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: false,
-        form: null,
+        permission: null as any,
+        form: null as any,
       });
 
       await expect(
@@ -548,9 +555,10 @@ describe('Forms Resolvers', () => {
 
   describe('Mutation: regenerateShortUrl', () => {
     it('should regenerate short URL with owner permissions', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'VIEWER' as any,
         form: mockForm as any,
       });
       vi.mocked(formService.regenerateShortUrl).mockResolvedValue({
@@ -564,14 +572,15 @@ describe('Forms Resolvers', () => {
         mockContext
       );
 
-      expect(result.shortUrl).toBe('newUrl123');
+      expect(result?.shortUrl).toBe('newUrl123');
     });
 
     it('should throw error when user is not owner', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: false,
-        form: null,
+        permission: null as any,
+        form: null as any,
       });
 
       await expect(
@@ -582,9 +591,10 @@ describe('Forms Resolvers', () => {
 
   describe('Mutation: duplicateForm', () => {
     it('should duplicate form with editor permissions', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'VIEWER' as any,
         form: mockForm as any,
       });
       vi.mocked(formService.duplicateForm).mockResolvedValue({
@@ -604,10 +614,11 @@ describe('Forms Resolvers', () => {
     });
 
     it('should throw error when access denied', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: false,
-        form: null,
+        permission: null as any,
+        form: null as any,
       });
 
       await expect(

@@ -92,7 +92,7 @@ describe('Responses Routes', () => {
     });
 
     it('should return empty array when no responses found for form', async () => {
-      vi.mocked(getResponsesByFormId).mockResolvedValue([]);
+      vi.mocked(getResponsesByFormId).mockResolvedValue({ data: [], total: 0, page: 1, limit: 50, totalPages: 0 });
 
       const response = await request(app).get('/api/responses/form/form-nonexistent');
 

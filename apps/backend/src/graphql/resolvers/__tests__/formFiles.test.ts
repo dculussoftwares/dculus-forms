@@ -36,6 +36,7 @@ describe('Form Files Resolvers', () => {
         name: 'Test User',
       },
       session: { id: 'session-123' },
+      isAuthenticated: true,
     },
   };
 
@@ -152,9 +153,10 @@ describe('Form Files Resolvers', () => {
 
     describe('Authorization', () => {
       it('should verify user has viewer access to form', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([]);
@@ -173,10 +175,11 @@ describe('Form Files Resolvers', () => {
       });
 
       it('should throw error when user lacks access to form', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: false,
-          form: null,
+          permission: null as any,
+          form: null as any,
         });
 
         await expect(
@@ -199,10 +202,11 @@ describe('Form Files Resolvers', () => {
       });
 
       it('should deny access for users from different organization', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: false,
-          form: null,
+          permission: null as any,
+          form: null as any,
         });
 
         await expect(
@@ -215,9 +219,10 @@ describe('Form Files Resolvers', () => {
       });
 
       it('should allow access for organization members with viewer role', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([mockFormFile1] as any);
@@ -239,9 +244,10 @@ describe('Form Files Resolvers', () => {
 
     describe('Fetching All Files', () => {
       it('should return all form files when no type filter provided', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([
@@ -265,9 +271,10 @@ describe('Form Files Resolvers', () => {
       });
 
       it('should return empty array when no files exist', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([]);
@@ -282,9 +289,10 @@ describe('Form Files Resolvers', () => {
       });
 
       it('should order files by createdAt in descending order', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([
@@ -311,9 +319,10 @@ describe('Form Files Resolvers', () => {
 
     describe('Filtering by Type', () => {
       it('should filter files by type when type parameter provided', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([
@@ -336,9 +345,10 @@ describe('Form Files Resolvers', () => {
       });
 
       it('should filter by backup type', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([mockFormFile2] as any);
@@ -358,9 +368,10 @@ describe('Form Files Resolvers', () => {
       });
 
       it('should return empty array when no files match type filter', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([]);
@@ -380,9 +391,10 @@ describe('Form Files Resolvers', () => {
           id: 'file-custom',
           type: 'custom',
         };
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([customFile] as any);
@@ -400,9 +412,10 @@ describe('Form Files Resolvers', () => {
 
     describe('File Properties', () => {
       it('should return files with all properties', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([mockFormFile1] as any);
@@ -433,9 +446,10 @@ describe('Form Files Resolvers', () => {
           ...mockFormFile1,
           metadata: null,
         };
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([
@@ -448,7 +462,7 @@ describe('Form Files Resolvers', () => {
           mockContext
         );
 
-        expect(result[0].metadata).toBeNull();
+        expect((result[0] as any).metadata).toBeNull();
       });
 
       it('should handle files with complex metadata', async () => {
@@ -462,9 +476,10 @@ describe('Form Files Resolvers', () => {
             exportedAt: '2024-01-01T10:00:00Z',
           },
         };
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([
@@ -477,15 +492,16 @@ describe('Form Files Resolvers', () => {
           mockContext
         );
 
-        expect(result[0].metadata).toEqual(fileWithComplexMetadata.metadata);
+        expect((result[0] as any).metadata).toEqual(fileWithComplexMetadata.metadata);
       });
     });
 
     describe('Multiple Forms', () => {
       it('should only return files for specified form', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([mockFormFile1] as any);
@@ -504,9 +520,10 @@ describe('Form Files Resolvers', () => {
       });
 
       it('should handle different forms separately', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([mockFormFile1] as any);
@@ -527,9 +544,10 @@ describe('Form Files Resolvers', () => {
 
     describe('Error Handling', () => {
       it('should re-throw GraphQLError instances', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         const customError = new GraphQLError('Custom database error');
@@ -553,9 +571,10 @@ describe('Form Files Resolvers', () => {
       });
 
       it('should convert non-GraphQLError to GraphQLError', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         const databaseError = new Error('Database connection failed');
@@ -579,9 +598,10 @@ describe('Form Files Resolvers', () => {
       });
 
       it('should handle prisma errors gracefully', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         const prismaError = new Error('P2021: Table does not exist');
@@ -597,9 +617,10 @@ describe('Form Files Resolvers', () => {
       });
 
       it('should handle unknown errors', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockRejectedValue('Unknown error');
@@ -614,10 +635,11 @@ describe('Form Files Resolvers', () => {
       });
 
       it('should handle null formId gracefully', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: false,
-          form: null,
+          permission: null as any,
+          form: null as any,
         });
 
         await expect(
@@ -638,9 +660,10 @@ describe('Form Files Resolvers', () => {
           filename: `export-${i}.xlsx`,
         }));
 
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue(largeFileList as any);
@@ -659,9 +682,10 @@ describe('Form Files Resolvers', () => {
           ...mockFormFile1,
           filename: 'form-export (2024) [final] @user.xlsx',
         };
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([
@@ -674,7 +698,7 @@ describe('Form Files Resolvers', () => {
           mockContext
         );
 
-        expect(result[0].filename).toBe('form-export (2024) [final] @user.xlsx');
+        expect((result[0] as any).filename).toBe('form-export (2024) [final] @user.xlsx');
       });
 
       it('should handle unicode characters in filenames', async () => {
@@ -682,9 +706,10 @@ describe('Form Files Resolvers', () => {
           ...mockFormFile1,
           filename: 'formulaire-réponse-ñ-中文.xlsx',
         };
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([fileWithUnicode] as any);
@@ -695,14 +720,15 @@ describe('Form Files Resolvers', () => {
           mockContext
         );
 
-        expect(result[0].filename).toBe('formulaire-réponse-ñ-中文.xlsx');
+        expect((result[0] as any).filename).toBe('formulaire-réponse-ñ-中文.xlsx');
       });
 
       it('should handle very long form IDs', async () => {
         const longFormId = 'f'.repeat(100);
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: { ...mockForm, id: longFormId } as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([]);
@@ -721,9 +747,10 @@ describe('Form Files Resolvers', () => {
       });
 
       it('should handle empty type string', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([]);
@@ -744,9 +771,10 @@ describe('Form Files Resolvers', () => {
 
     describe('Performance', () => {
       it('should not over-fetch data', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([mockFormFile1] as any);
@@ -765,9 +793,10 @@ describe('Form Files Resolvers', () => {
       });
 
       it('should only query database once per request', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([mockFormFile1] as any);
@@ -784,9 +813,10 @@ describe('Form Files Resolvers', () => {
 
     describe('File Types', () => {
       it('should support export file type', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([mockFormFile1] as any);
@@ -801,9 +831,10 @@ describe('Form Files Resolvers', () => {
       });
 
       it('should support backup file type', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([mockFormFile2] as any);
@@ -820,9 +851,10 @@ describe('Form Files Resolvers', () => {
 
     describe('MIME Types', () => {
       it('should handle Excel MIME type', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([mockFormFile1] as any);
@@ -839,9 +871,10 @@ describe('Form Files Resolvers', () => {
       });
 
       it('should handle CSV MIME type', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([mockFormFile3] as any);
@@ -856,9 +889,10 @@ describe('Form Files Resolvers', () => {
       });
 
       it('should handle JSON MIME type', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(prisma.formFile.findMany).mockResolvedValue([mockFormFile2] as any);

@@ -1,5 +1,8 @@
 import type { PluginContext } from './context.js';
 
+// Re-export PluginContext for use in other modules
+export type { PluginContext };
+
 /**
  * Base plugin configuration interface
  * All plugin configs must extend this

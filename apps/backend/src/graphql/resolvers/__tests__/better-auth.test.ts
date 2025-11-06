@@ -302,6 +302,8 @@ describe('Better-Auth Resolvers', () => {
         slug: 'new-organization',
         logo: null,
         createdAt: new Date(),
+        updatedAt: new Date(),
+        metadata: null,
       });
       vi.mocked(prisma.member.create).mockResolvedValue({
         id: 'generated-nano-id',
@@ -309,6 +311,7 @@ describe('Better-Auth Resolvers', () => {
         userId: 'user-123',
         role: 'owner',
         createdAt: new Date(),
+        updatedAt: new Date(),
       });
       vi.mocked(prisma.organization.findUnique).mockResolvedValue(mockOrganization as any);
       vi.mocked(chargebeeService.createChargebeeCustomer).mockResolvedValue('cb-customer-123');
@@ -352,6 +355,8 @@ describe('Better-Auth Resolvers', () => {
         slug: 'test-org',
         logo: null,
         createdAt: new Date(),
+        updatedAt: new Date(),
+        metadata: null,
       });
       vi.mocked(prisma.member.create).mockResolvedValue({
         id: 'member-new',
@@ -359,6 +364,7 @@ describe('Better-Auth Resolvers', () => {
         userId: 'user-123',
         role: 'owner',
         createdAt: new Date(),
+        updatedAt: new Date(),
       });
       vi.mocked(prisma.organization.findUnique).mockResolvedValue(mockOrganization as any);
       vi.mocked(chargebeeService.createChargebeeCustomer).mockResolvedValue('cb-customer-789');
@@ -390,6 +396,8 @@ describe('Better-Auth Resolvers', () => {
         slug: 'test-org',
         logo: null,
         createdAt: new Date(),
+        updatedAt: new Date(),
+        metadata: null,
       });
       vi.mocked(prisma.member.create).mockResolvedValue({
         id: 'member-new',
@@ -397,6 +405,7 @@ describe('Better-Auth Resolvers', () => {
         userId: 'user-123',
         role: 'owner',
         createdAt: new Date(),
+        updatedAt: new Date(),
       });
       vi.mocked(prisma.organization.findUnique).mockResolvedValue(mockOrganization as any);
       vi.mocked(chargebeeService.createChargebeeCustomer).mockRejectedValue(
@@ -420,6 +429,7 @@ describe('Better-Auth Resolvers', () => {
         userId: 'user-123',
         role: 'member',
         createdAt: new Date(),
+        updatedAt: new Date(),
       });
 
       await expect(
@@ -440,6 +450,8 @@ describe('Better-Auth Resolvers', () => {
         slug: 'my-org--123',
         logo: null,
         createdAt: new Date(),
+        updatedAt: new Date(),
+        metadata: null,
       });
       vi.mocked(prisma.member.create).mockResolvedValue({
         id: 'member-id',
@@ -447,6 +459,7 @@ describe('Better-Auth Resolvers', () => {
         userId: 'user-123',
         role: 'owner',
         createdAt: new Date(),
+        updatedAt: new Date(),
       });
       vi.mocked(prisma.organization.findUnique).mockResolvedValue(mockOrganization as any);
       vi.mocked(chargebeeService.createChargebeeCustomer).mockResolvedValue('cb-customer-456');

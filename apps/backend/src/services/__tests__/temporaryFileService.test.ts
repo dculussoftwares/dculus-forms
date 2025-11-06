@@ -19,13 +19,13 @@ vi.mock('@aws-sdk/client-s3', () => {
     S3Client: vi.fn(function() {
       return mockS3Client;
     }),
-    PutObjectCommand: vi.fn(function(params) {
+    PutObjectCommand: vi.fn(function(this: any, params: any) {
       this.input = params;
     }),
-    DeleteObjectCommand: vi.fn(function(params) {
+    DeleteObjectCommand: vi.fn(function(this: any, params: any) {
       this.input = params;
     }),
-    GetObjectCommand: vi.fn(function(params) {
+    GetObjectCommand: vi.fn(function(this: any, params: any) {
       this.input = params;
     }),
     __mockSend: mockSend, // Export mockSend so we can access it

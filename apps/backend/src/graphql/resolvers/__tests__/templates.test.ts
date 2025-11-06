@@ -46,6 +46,7 @@ describe('Templates Resolvers', () => {
         name: 'Test User',
       },
       session: { id: 'session-123' },
+      isAuthenticated: true,
     },
   };
 
@@ -63,6 +64,7 @@ describe('Templates Resolvers', () => {
         name: 'Admin User',
       },
       session: { id: 'session-admin' },
+      isAuthenticated: true,
     },
   };
 
@@ -270,7 +272,7 @@ describe('Templates Resolvers', () => {
         'Basic Forms': [mockTemplate],
         'Advanced Forms': [mockTemplateWithBg],
       };
-      vi.mocked(templateService.getTemplatesByCategory).mockResolvedValue(mockGroupedTemplates);
+      vi.mocked(templateService.getTemplatesByCategory).mockResolvedValue(mockGroupedTemplates as any);
 
       const result = await templatesResolvers.Query.templatesByCategory(
         {},
@@ -309,7 +311,7 @@ describe('Templates Resolvers', () => {
       const mockGroupedTemplates = {
         'Uncategorized': [mockTemplate],
       };
-      vi.mocked(templateService.getTemplatesByCategory).mockResolvedValue(mockGroupedTemplates);
+      vi.mocked(templateService.getTemplatesByCategory).mockResolvedValue(mockGroupedTemplates as any);
 
       const result = await templatesResolvers.Query.templatesByCategory(
         {},
@@ -759,10 +761,10 @@ describe('Templates Resolvers', () => {
     });
 
     it('should throw error when user is not authenticated', async () => {
-      const unauthContext = { user: undefined, auth: { user: null } };
+      const unauthContext = { auth: { user: null, isAuthenticated: false } as any };
 
       await expect(
-        templatesResolvers.Mutation.createFormFromTemplate({}, createFormArgs, unauthContext)
+        templatesResolvers.Mutation.createFormFromTemplate({}, createFormArgs, unauthContext as any)
       ).rejects.toThrow('Authentication required');
     });
 
@@ -775,7 +777,7 @@ describe('Templates Resolvers', () => {
         originalName: 'bg-image.jpg',
         size: 102400,
         mimeType: 'image/jpeg',
-      });
+      } as any);
       vi.mocked(prisma.formFile.create).mockResolvedValue({} as any);
       vi.mocked(formService.createForm).mockResolvedValue(mockForm as any);
 
@@ -842,7 +844,7 @@ describe('Templates Resolvers', () => {
         originalName: 'shared-bg.jpg',
         size: 51200,
         mimeType: 'image/jpeg',
-      });
+      } as any);
       vi.mocked(prisma.formFile.create).mockResolvedValue({} as any);
       vi.mocked(formService.createForm).mockResolvedValue(mockForm as any);
 
@@ -902,7 +904,7 @@ describe('Templates Resolvers', () => {
         originalName: 'background.jpg',
         size: 102400,
         mimeType: 'image/jpeg',
-      });
+      } as any);
       vi.mocked(prisma.formFile.findFirst).mockResolvedValue(null);
       vi.mocked(prisma.formFile.create).mockResolvedValue({} as any);
       vi.mocked(formService.createForm).mockResolvedValue(mockForm as any);
@@ -968,7 +970,7 @@ describe('Templates Resolvers', () => {
         originalName: 'background.jpg',
         size: 102400,
         mimeType: 'image/jpeg',
-      });
+      } as any);
       // Mock that FormFile already exists
       vi.mocked(prisma.formFile.findFirst).mockResolvedValue({
         id: 'existing-file',
@@ -999,7 +1001,7 @@ describe('Templates Resolvers', () => {
         originalName: 'bg-image.jpg',
         size: 102400,
         mimeType: 'image/jpeg',
-      });
+      } as any);
       vi.mocked(prisma.formFile.create).mockRejectedValue(new Error('Database error'));
       vi.mocked(formService.createForm).mockResolvedValue(mockForm as any);
 
@@ -1090,10 +1092,10 @@ describe('Templates Resolvers', () => {
 
   describe('Authentication Edge Cases', () => {
     it('should handle missing user in context for queries', async () => {
-      const emptyContext = { user: null };
+      const emptyContext = { auth: { user: null, isAuthenticated: false } as any };
 
       await expect(
-        templatesResolvers.Query.templates({}, {}, emptyContext)
+        templatesResolvers.Query.templates({}, {}, emptyContext as any)
       ).rejects.toThrow('Authentication required');
     });
 

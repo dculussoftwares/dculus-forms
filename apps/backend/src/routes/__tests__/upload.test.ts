@@ -239,7 +239,7 @@ describe('Upload Routes', () => {
         const stream = file.createReadStream();
         const chunks: Buffer[] = [];
         for await (const chunk of stream) {
-          chunks.push(chunk);
+          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
         }
         expect(Buffer.concat(chunks).length).toBeGreaterThan(0);
         return mockResult;

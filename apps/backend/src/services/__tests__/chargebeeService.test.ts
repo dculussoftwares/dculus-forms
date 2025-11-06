@@ -11,7 +11,6 @@ import {
   handleSubscriptionRenewal,
   getAvailablePlans,
 } from '../chargebeeService.js';
-import Chargebee from 'chargebee';
 import { resetUsageCounters } from '../../subscriptions/usageService.js';
 import { subscriptionRepository } from '../../repositories/index.js';
 import { logger } from '../../lib/logger.js';
@@ -150,7 +149,7 @@ describe('Chargebee Service', () => {
       const expectedEndDate = new Date(periodStart);
       expectedEndDate.setMonth(expectedEndDate.getMonth() + 1);
 
-      expect(periodEnd.getMonth()).toBe(expectedEndDate.getMonth());
+      expect(new Date(periodEnd).getMonth()).toBe(expectedEndDate.getMonth());
     });
 
     it('should handle subscription creation errors', async () => {

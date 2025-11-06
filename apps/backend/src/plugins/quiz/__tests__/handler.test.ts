@@ -33,6 +33,9 @@ describe('Quiz Grading Handler', () => {
       logger: mockLogger,
       getFormById: vi.fn(),
       getResponseById: vi.fn(),
+      getResponsesByFormId: vi.fn(),
+      getOrganization: vi.fn(),
+      getUserById: vi.fn(),
       sendEmail: vi.fn(),
       prisma: mockPrisma,
     };

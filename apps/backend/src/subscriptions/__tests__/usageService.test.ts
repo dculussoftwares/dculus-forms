@@ -7,7 +7,7 @@ import {
   getUsage,
   resetUsageCounters,
 } from '../usageService.js';
-import { PrismaClient, mockSubscription } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import {
   emitUsageLimitReached,
   emitUsageLimitExceeded,
@@ -16,18 +16,18 @@ import {
 import { SubscriptionEventType } from '../types.js';
 import { logger } from '../../lib/logger.js';
 
+// Create mock subscription object
+const mockSubscription = {
+  findUnique: vi.fn(),
+  update: vi.fn(),
+};
+
 // Mock dependencies
 vi.mock('@prisma/client', () => {
-  const mockSubscription = {
-    findUnique: vi.fn(),
-    update: vi.fn(),
-  };
-
   return {
     PrismaClient: class {
       subscription = mockSubscription;
     },
-    mockSubscription, // Export for test access
   };
 });
 

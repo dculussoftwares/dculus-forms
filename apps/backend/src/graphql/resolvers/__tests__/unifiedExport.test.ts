@@ -44,6 +44,7 @@ describe('Unified Export Resolvers', () => {
         name: 'Test User',
       },
       session: { id: 'session-123' },
+      isAuthenticated: true,
     },
   };
 
@@ -145,6 +146,7 @@ describe('Unified Export Resolvers', () => {
           auth: {
             user: null,
             session: null,
+            isAuthenticated: false,
           },
         };
 
@@ -178,9 +180,10 @@ describe('Unified Export Resolvers', () => {
 
     describe('Authorization', () => {
       it('should verify user has viewer access to form', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -211,10 +214,11 @@ describe('Unified Export Resolvers', () => {
       });
 
       it('should throw error when user lacks access to form', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: false,
-          form: null,
+          permission: null as any,
+          form: null as any,
         });
 
         await expect(
@@ -235,10 +239,11 @@ describe('Unified Export Resolvers', () => {
       });
 
       it('should deny access for users from different organization', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: false,
-          form: null,
+          permission: null as any,
+          form: null as any,
         });
 
         await expect(
@@ -253,9 +258,10 @@ describe('Unified Export Resolvers', () => {
 
     describe('Form Validation', () => {
       it('should throw error when form does not exist', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: null as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(null);
@@ -270,9 +276,10 @@ describe('Unified Export Resolvers', () => {
       });
 
       it('should fetch form by ID correctly', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -301,9 +308,10 @@ describe('Unified Export Resolvers', () => {
 
     describe('Response Validation', () => {
       it('should throw error when no responses exist', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -319,9 +327,10 @@ describe('Unified Export Resolvers', () => {
       });
 
       it('should fetch all responses for form', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -357,9 +366,10 @@ describe('Unified Export Resolvers', () => {
           metadata: {},
         }));
 
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -402,9 +412,10 @@ describe('Unified Export Resolvers', () => {
         ];
         const filteredResponses = [mockResponses[0]];
 
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -450,9 +461,10 @@ describe('Unified Export Resolvers', () => {
           },
         ];
 
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -484,9 +496,10 @@ describe('Unified Export Resolvers', () => {
           },
         ];
 
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -519,9 +532,10 @@ describe('Unified Export Resolvers', () => {
       });
 
       it('should not filter when no filters provided', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -562,9 +576,10 @@ describe('Unified Export Resolvers', () => {
           ],
         };
 
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -595,9 +610,10 @@ describe('Unified Export Resolvers', () => {
       });
 
       it('should fallback to database schema when live schema unavailable', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -632,9 +648,10 @@ describe('Unified Export Resolvers', () => {
           isShuffleEnabled: false,
         };
 
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -667,9 +684,10 @@ describe('Unified Export Resolvers', () => {
 
     describe('Excel Export', () => {
       it('should generate Excel export successfully', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -702,9 +720,10 @@ describe('Unified Export Resolvers', () => {
       });
 
       it('should convert EXCEL format to lowercase for service', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -735,9 +754,10 @@ describe('Unified Export Resolvers', () => {
       });
 
       it('should handle Excel MIME type correctly', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -776,9 +796,10 @@ describe('Unified Export Resolvers', () => {
           contentType: 'text/csv',
         };
 
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -817,9 +838,10 @@ describe('Unified Export Resolvers', () => {
           contentType: 'text/csv',
         };
 
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -856,9 +878,10 @@ describe('Unified Export Resolvers', () => {
           contentType: 'text/csv',
         };
 
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -891,9 +914,10 @@ describe('Unified Export Resolvers', () => {
 
     describe('File Upload', () => {
       it('should upload file to temporary storage', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -924,9 +948,10 @@ describe('Unified Export Resolvers', () => {
       });
 
       it('should return signed download URL', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -955,9 +980,10 @@ describe('Unified Export Resolvers', () => {
       });
 
       it('should return expiration time', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -984,9 +1010,10 @@ describe('Unified Export Resolvers', () => {
       });
 
       it('should return filename in response', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -1015,9 +1042,10 @@ describe('Unified Export Resolvers', () => {
 
     describe('Error Handling', () => {
       it('should re-throw GraphQLError instances', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         const customError = new GraphQLError('Custom export error');
@@ -1041,9 +1069,10 @@ describe('Unified Export Resolvers', () => {
       });
 
       it('should convert non-GraphQLError to GraphQLError', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         const serviceError = new Error('Export service failed');
@@ -1067,9 +1096,10 @@ describe('Unified Export Resolvers', () => {
       });
 
       it('should handle S3 upload errors', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -1096,9 +1126,10 @@ describe('Unified Export Resolvers', () => {
       });
 
       it('should handle export generation errors', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -1122,9 +1153,10 @@ describe('Unified Export Resolvers', () => {
       });
 
       it('should handle unknown errors', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockRejectedValue('Unknown error');
@@ -1146,9 +1178,10 @@ describe('Unified Export Resolvers', () => {
           title: 'Test Form (2024) [Final] @org',
         };
 
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: formWithSpecialTitle as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(formWithSpecialTitle as any);
@@ -1184,9 +1217,10 @@ describe('Unified Export Resolvers', () => {
           title: 'Formulaire de réponse 中文 ñ',
         };
 
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: formWithUnicode as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(formWithUnicode as any);
@@ -1227,9 +1261,10 @@ describe('Unified Export Resolvers', () => {
           },
         ];
 
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -1259,9 +1294,10 @@ describe('Unified Export Resolvers', () => {
         const longFormId = 'f'.repeat(100);
         const longForm = { ...mockForm, id: longFormId };
 
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: longForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(longForm as any);
@@ -1290,9 +1326,10 @@ describe('Unified Export Resolvers', () => {
 
     describe('Export Formats', () => {
       it('should return original format enum in response', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -1325,9 +1362,10 @@ describe('Unified Export Resolvers', () => {
           contentType: 'text/csv',
         };
 
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
+          permission: 'VIEWER' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);

@@ -627,7 +627,7 @@ describe('Invitation Resolvers', () => {
         await invitationResolvers.Query.getInvitationPublic({}, { id: 'invitation-123' });
 
         const call = vi.mocked(prisma.invitation.findUnique).mock.calls[0][0];
-        const orgSelect = call?.include?.organization?.select;
+        const orgSelect = (call?.include?.organization as any)?.select;
 
         expect(orgSelect).toBeDefined();
         expect(orgSelect).toEqual({
@@ -643,7 +643,7 @@ describe('Invitation Resolvers', () => {
         await invitationResolvers.Query.getInvitationPublic({}, { id: 'invitation-123' });
 
         const call = vi.mocked(prisma.invitation.findUnique).mock.calls[0][0];
-        const inviterSelect = call?.include?.inviter?.select;
+        const inviterSelect = (call?.include?.inviter as any)?.select;
 
         expect(inviterSelect).toBeDefined();
         expect(inviterSelect).toEqual({

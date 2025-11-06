@@ -46,6 +46,7 @@ describe('Responses Resolvers', () => {
         id: 'session-123',
         activeOrganizationId: 'org-123',
       },
+      isAuthenticated: true,
     },
     req: {
       ip: '192.168.1.1',
@@ -128,7 +129,7 @@ describe('Responses Resolvers', () => {
 
   describe('Query: response', () => {
     it('should return response by id when user is authenticated', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(responseService.getResponseById).mockResolvedValue(mockResponse as any);
 
       const result = await responsesResolvers.Query.response(
@@ -143,7 +144,7 @@ describe('Responses Resolvers', () => {
     });
 
     it('should throw error when response not found', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(responseService.getResponseById).mockResolvedValue(null);
 
       await expect(
@@ -172,7 +173,7 @@ describe('Responses Resolvers', () => {
     };
 
     it('should return paginated responses for form', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
       vi.mocked(responseService.getResponsesByFormId).mockResolvedValue(mockPaginatedResult as any);
 
@@ -202,7 +203,7 @@ describe('Responses Resolvers', () => {
 
     it('should apply filters when provided', async () => {
       const filters = [{ field: 'field1', operator: 'equals', value: 'value1' }];
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
       vi.mocked(responseService.getResponsesByFormId).mockResolvedValue(mockPaginatedResult as any);
 
@@ -230,7 +231,7 @@ describe('Responses Resolvers', () => {
     });
 
     it('should throw error when form not found', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formService.getFormById).mockResolvedValue(null);
 
       await expect(
@@ -250,7 +251,7 @@ describe('Responses Resolvers', () => {
           session: { id: 'session-123', activeOrganizationId: 'different-org' },
         },
       };
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
 
       await expect(
@@ -270,7 +271,7 @@ describe('Responses Resolvers', () => {
           session: null,
         },
       };
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
 
       await expect(
@@ -631,7 +632,7 @@ describe('Responses Resolvers', () => {
     };
 
     beforeEach(() => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(responseService.getResponseById).mockResolvedValue(mockResponse as any);
       vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
       vi.mocked(responseService.updateResponse).mockResolvedValue({
@@ -792,10 +793,11 @@ describe('Responses Resolvers', () => {
 
   describe('Mutation: deleteResponse', () => {
     beforeEach(() => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(responseService.getResponseById).mockResolvedValue(mockResponse as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'OWNER' as any,
         form: mockForm as any,
       });
       vi.mocked(responseService.deleteResponse).mockResolvedValue(true);
@@ -830,7 +832,8 @@ describe('Responses Resolvers', () => {
     it('should deny access when user is not owner', async () => {
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: false,
-        form: null,
+        permission: null as any,
+        form: null as any,
       });
 
       await expect(
@@ -886,7 +889,7 @@ describe('Responses Resolvers', () => {
     ];
 
     it('should return edit history for response', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(responseService.getResponseById).mockResolvedValue(mockResponse as any);
       vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
 
@@ -911,7 +914,7 @@ describe('Responses Resolvers', () => {
     });
 
     it('should throw error when response not found', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(responseService.getResponseById).mockResolvedValue(null);
 
       await expect(
@@ -924,7 +927,7 @@ describe('Responses Resolvers', () => {
     });
 
     it('should throw error when form not found', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(responseService.getResponseById).mockResolvedValue(mockResponse as any);
       vi.mocked(formService.getFormById).mockResolvedValue(null);
 
@@ -945,7 +948,7 @@ describe('Responses Resolvers', () => {
           session: { id: 'session-123', activeOrganizationId: 'different-org' },
         },
       };
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(responseService.getResponseById).mockResolvedValue(mockResponse as any);
       vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
 

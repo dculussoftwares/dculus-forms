@@ -95,7 +95,7 @@ describe('File Upload Resolvers', () => {
 
   describe('Mutation: uploadFile', () => {
     it('should upload FormTemplate when user is admin', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockAdminContext.auth);
       vi.mocked(fileUploadService.uploadFile).mockResolvedValue({
         ...mockUploadResult,
         type: 'FormTemplate',
@@ -124,7 +124,7 @@ describe('File Upload Resolvers', () => {
     });
 
     it('should upload FormTemplate when user is superAdmin', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockAdminContext.auth);
       vi.mocked(fileUploadService.uploadFile).mockResolvedValue({
         ...mockUploadResult,
         type: 'FormTemplate',
@@ -149,7 +149,7 @@ describe('File Upload Resolvers', () => {
     });
 
     it('should throw error when non-admin tries to upload FormTemplate', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockAdminContext.auth);
 
       await expect(
         fileUploadResolvers.Mutation.uploadFile(
@@ -166,9 +166,10 @@ describe('File Upload Resolvers', () => {
     });
 
     it('should upload FormBackground when user has editor access', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockAdminContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: { id: 'form-123' } as any,
       });
       vi.mocked(fileUploadService.uploadFile).mockResolvedValue(mockUploadResult);
@@ -218,7 +219,7 @@ describe('File Upload Resolvers', () => {
     });
 
     it('should throw error when formId is missing for FormBackground', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockAdminContext.auth);
 
       await expect(
         fileUploadResolvers.Mutation.uploadFile(
@@ -235,10 +236,11 @@ describe('File Upload Resolvers', () => {
     });
 
     it('should throw error when user lacks editor access for FormBackground', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockAdminContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: false,
-        form: null,
+        permission: null as any,
+        form: null as any,
       });
 
       await expect(
@@ -257,7 +259,7 @@ describe('File Upload Resolvers', () => {
     });
 
     it('should upload UserAvatar when authenticated', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockAdminContext.auth);
       vi.mocked(fileUploadService.uploadFile).mockResolvedValue({
         ...mockUploadResult,
         type: 'UserAvatar',
@@ -343,7 +345,7 @@ describe('File Upload Resolvers', () => {
     });
 
     it('should handle wrapped file upload object', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockAdminContext.auth);
       vi.mocked(fileUploadService.uploadFile).mockResolvedValue({
         ...mockUploadResult,
         type: 'UserAvatar',
@@ -378,7 +380,7 @@ describe('File Upload Resolvers', () => {
     });
 
     it('should handle upload service errors', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockAdminContext.auth);
       vi.mocked(fileUploadService.uploadFile).mockRejectedValue(
         new Error('S3 upload failed')
       );
@@ -419,7 +421,7 @@ describe('File Upload Resolvers', () => {
 
   describe('Mutation: deleteFile', () => {
     it('should delete file when user has editor access to associated form', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockAdminContext.auth);
       vi.mocked(prisma.formFile.findUnique).mockResolvedValue({
         id: 'file-123',
         key: 'uploads/test-key',
@@ -431,10 +433,10 @@ describe('File Upload Resolvers', () => {
         mimeType: 'image/jpeg',
         createdAt: new Date(),
         updatedAt: new Date(),
-        form: { id: 'form-123' } as any,
-      });
+      } as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
+        permission: 'EDITOR' as any,
         form: { id: 'form-123' } as any,
       });
       vi.mocked(fileUploadService.deleteFile).mockResolvedValue(true);
@@ -460,7 +462,7 @@ describe('File Upload Resolvers', () => {
     });
 
     it('should throw error when user lacks editor access', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockAdminContext.auth);
       vi.mocked(prisma.formFile.findUnique).mockResolvedValue({
         id: 'file-123',
         key: 'uploads/test-key',
@@ -472,11 +474,11 @@ describe('File Upload Resolvers', () => {
         mimeType: 'image/jpeg',
         createdAt: new Date(),
         updatedAt: new Date(),
-        form: { id: 'form-123' } as any,
-      });
+      } as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: false,
-        form: null,
+        permission: null as any,
+        form: null as any,
       });
 
       await expect(
@@ -489,7 +491,7 @@ describe('File Upload Resolvers', () => {
     });
 
     it('should delete file when not associated with form (UserAvatar, etc.)', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockAdminContext.auth);
       vi.mocked(prisma.formFile.findUnique).mockResolvedValue(null);
       vi.mocked(fileUploadService.deleteFile).mockResolvedValue(true);
 
@@ -518,7 +520,7 @@ describe('File Upload Resolvers', () => {
     });
 
     it('should handle delete service errors', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockAdminContext.auth);
       vi.mocked(prisma.formFile.findUnique).mockResolvedValue(null);
       vi.mocked(fileUploadService.deleteFile).mockRejectedValue(
         new Error('S3 deletion failed')
@@ -534,7 +536,7 @@ describe('File Upload Resolvers', () => {
     });
 
     it('should preserve GraphQLError when thrown', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockAdminContext.auth);
       vi.mocked(prisma.formFile.findUnique).mockResolvedValue({
         id: 'file-123',
         key: 'uploads/test-key',
@@ -546,8 +548,7 @@ describe('File Upload Resolvers', () => {
         mimeType: 'image/jpeg',
         createdAt: new Date(),
         updatedAt: new Date(),
-        form: { id: 'form-123' } as any,
-      });
+      } as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockImplementation(() => {
         throw new GraphQLError('Access denied');
       });
@@ -562,7 +563,7 @@ describe('File Upload Resolvers', () => {
     });
 
     it('should return false when delete fails', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockAdminContext.auth);
       vi.mocked(prisma.formFile.findUnique).mockResolvedValue(null);
       vi.mocked(fileUploadService.deleteFile).mockResolvedValue(false);
 

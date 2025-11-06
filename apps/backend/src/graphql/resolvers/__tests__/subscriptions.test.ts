@@ -53,6 +53,7 @@ describe('Subscription Resolvers', () => {
         id: 'session-123',
         activeOrganizationId: 'org-123',
       },
+      isAuthenticated: true,
     },
   };
 
@@ -143,7 +144,7 @@ describe('Subscription Resolvers', () => {
 
   describe('Mutation: createCheckoutSession', () => {
     it('should create checkout session successfully', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(
         mockMember as any
       );
@@ -192,12 +193,13 @@ describe('Subscription Resolvers', () => {
     });
 
     it('should throw error when no active organization', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
 
       const contextWithoutOrg = {
         auth: {
           user: mockContext.auth.user,
           session: { id: 'session-123' },
+          isAuthenticated: true,
         },
       };
 
@@ -211,7 +213,7 @@ describe('Subscription Resolvers', () => {
     });
 
     it('should throw error when user is not organization member', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockRejectedValue(
         new GraphQLError('Not a member of this organization')
       );
@@ -226,7 +228,7 @@ describe('Subscription Resolvers', () => {
     });
 
     it('should throw error when subscription not found', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(
         mockMember as any
       );
@@ -242,7 +244,7 @@ describe('Subscription Resolvers', () => {
     });
 
     it('should handle Chargebee service errors gracefully', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(
         mockMember as any
       );
@@ -263,7 +265,7 @@ describe('Subscription Resolvers', () => {
 
   describe('Mutation: createPortalSession', () => {
     it('should create portal session successfully', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(
         mockMember as any
       );
@@ -303,12 +305,13 @@ describe('Subscription Resolvers', () => {
     });
 
     it('should throw error when no active organization', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
 
       const contextWithoutOrg = {
         auth: {
           user: mockContext.auth.user,
           session: { id: 'session-123' },
+          isAuthenticated: true,
         },
       };
 
@@ -318,7 +321,7 @@ describe('Subscription Resolvers', () => {
     });
 
     it('should throw error when user is not organization member', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockRejectedValue(
         new GraphQLError('Not a member of this organization')
       );
@@ -329,7 +332,7 @@ describe('Subscription Resolvers', () => {
     });
 
     it('should throw error when subscription not found', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(
         mockMember as any
       );
@@ -341,7 +344,7 @@ describe('Subscription Resolvers', () => {
     });
 
     it('should handle Chargebee service errors gracefully', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(
         mockMember as any
       );
@@ -358,7 +361,7 @@ describe('Subscription Resolvers', () => {
 
   describe('Mutation: initializeOrganizationSubscription', () => {
     it('should initialize subscription successfully', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.subscription.findUnique)
         .mockResolvedValueOnce(null) // First check - no existing subscription
         .mockResolvedValueOnce(mockSubscription as any); // After creation
@@ -401,7 +404,7 @@ describe('Subscription Resolvers', () => {
     });
 
     it('should return existing subscription if already initialized', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.subscription.findUnique).mockResolvedValue(mockSubscription as any);
 
       const result = await subscriptionResolvers.Mutation.initializeOrganizationSubscription(
@@ -434,7 +437,7 @@ describe('Subscription Resolvers', () => {
     });
 
     it('should return error when organization not found', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
       vi.mocked(prisma.organization.findUnique).mockResolvedValue(null);
 
@@ -450,7 +453,7 @@ describe('Subscription Resolvers', () => {
     });
 
     it('should return error when user is not organization member', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
       vi.mocked(prisma.organization.findUnique).mockResolvedValue(mockOrganization as any);
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockRejectedValue(
@@ -469,7 +472,7 @@ describe('Subscription Resolvers', () => {
     });
 
     it('should return error when user is not organization owner', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
       vi.mocked(prisma.organization.findUnique).mockResolvedValue(mockOrganization as any);
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue({
@@ -489,7 +492,7 @@ describe('Subscription Resolvers', () => {
     });
 
     it('should return error when organization owner not found', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
       vi.mocked(prisma.organization.findUnique).mockResolvedValue(mockOrganization as any);
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(
@@ -509,7 +512,7 @@ describe('Subscription Resolvers', () => {
     });
 
     it('should handle Chargebee customer creation errors', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
       vi.mocked(prisma.organization.findUnique).mockResolvedValue(mockOrganization as any);
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(
@@ -532,7 +535,7 @@ describe('Subscription Resolvers', () => {
     });
 
     it('should handle subscription creation errors', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(undefined);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
       vi.mocked(prisma.organization.findUnique).mockResolvedValue(mockOrganization as any);
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(
