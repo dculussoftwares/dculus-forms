@@ -558,6 +558,50 @@ describe('Field Analytics Resolvers', () => {
       ).rejects.toThrow('Form not found or access denied');
     });
 
+
+    it('should throw error when fallback schema is null', async () => {
+      const mockFormWithoutSchema = {
+        ...mockForm,
+        organization: {
+          id: 'org-123',
+          members: [{ userId: 'user-123' }],
+        },
+        formSchema: null,
+      };
+
+      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockFormWithoutSchema as any);
+      vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(null);
+
+      await expect(
+        fieldAnalyticsResolvers.Query.fieldAnalytics(
+          {},
+          { formId: 'form-123', fieldId: 'field-text-1' },
+          mockContext
+        )
+      ).rejects.toThrow('No form schema found in either collaborative document or database');
+    });
+
+    it('should throw error when field not found in fallback schema', async () => {
+      const mockFormWithSchemaData = {
+        ...mockFormWithSchema,
+        organization: {
+          id: 'org-123',
+          members: [{ userId: 'user-123' }],
+        },
+      };
+
+      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockFormWithSchemaData as any);
+      vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(null);
+
+      await expect(
+        fieldAnalyticsResolvers.Query.fieldAnalytics(
+          {},
+          { formId: 'form-123', fieldId: 'non-existent-field' },
+          mockContext
+        )
+      ).rejects.toThrow('Field not found: non-existent-field');
+    });
+
     // Note: Schema fallback error handling is complex in current implementation
     // Field not found errors are tested below which cover similar error paths
 

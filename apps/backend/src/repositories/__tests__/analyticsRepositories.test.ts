@@ -64,6 +64,42 @@ describe('Form View Analytics Repository', () => {
     });
   });
 
+  describe('create', () => {
+    it('should create view analytics record', async () => {
+      const analyticsData = {
+        id: 'view-123',
+        formId: 'form-123',
+        sessionId: 'session-123',
+        userAgent: 'Mozilla/5.0',
+        viewedAt: new Date(),
+      };
+
+      mockPrisma.formViewAnalytics.create.mockResolvedValue(analyticsData as any);
+
+      const result = await repository.create({
+        data: analyticsData,
+      });
+
+      expect(result).toEqual(analyticsData);
+      expect(mockPrisma.formViewAnalytics.create).toHaveBeenCalledWith({
+        data: analyticsData,
+      });
+    });
+  });
+
+  describe('updateMany', () => {
+    it('should update many view analytics records', async () => {
+      mockPrisma.formViewAnalytics.updateMany.mockResolvedValue({ count: 5 } as any);
+
+      const result = await repository.updateMany({
+        where: { formId: 'form-123' },
+        data: { operatingSystem: 'macOS' },
+      });
+
+      expect(result).toEqual({ count: 5 });
+    });
+  });
+
   describe('count', () => {
     it('should count view analytics', async () => {
       mockPrisma.formViewAnalytics.count.mockResolvedValue(42);

@@ -822,6 +822,30 @@ describe('Templates Resolvers', () => {
       expect(result).toEqual(mockForm);
     });
 
+    it('should continue form creation if FormFile record creation fails', async () => {
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+      vi.mocked(templateService.getTemplateById).mockResolvedValue(mockTemplateWithBg as any);
+      vi.mocked(fileUploadService.copyFileForForm).mockResolvedValue({
+        key: 'form-123/bg-image.jpg',
+        url: 'https://cdn.example.com/form-123/bg-image.jpg',
+        originalName: 'bg-image.jpg',
+        size: 102400,
+        mimeType: 'image/jpeg',
+      } as any);
+      vi.mocked(prisma.formFile.create).mockRejectedValue(new Error('Database error'));
+      vi.mocked(formService.createForm).mockResolvedValue(mockForm as any);
+
+      const result = await templatesResolvers.Mutation.createFormFromTemplate(
+        {},
+        createFormArgs,
+        mockContext
+      );
+
+      // Form should still be created even if FormFile creation fails
+      expect(result).toEqual(mockForm);
+      expect(fileUploadService.copyFileForForm).toHaveBeenCalled();
+    });
+
     it('should handle template images from allOrgs directory', async () => {
       // Clear all previous mocks before this test
       vi.clearAllMocks();

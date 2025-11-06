@@ -441,6 +441,42 @@ describe('Forms Resolvers', () => {
       expect(prisma.formFile.create).toHaveBeenCalled();
     });
 
+    it('should handle FormFile creation error gracefully', async () => {
+      const templateWithBg = {
+        ...mockTemplate,
+        formSchema: {
+          pages: [],
+          layout: {
+            theme: 'light',
+            backgroundImageKey: 'template-bg-key',
+          },
+        },
+      };
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+      vi.mocked(templateService.getTemplateById).mockResolvedValue(templateWithBg as any);
+      vi.mocked(fileUploadService.copyFileForForm).mockResolvedValue({
+        key: 'new-bg-key',
+        url: 'https://cdn.example.com/new-bg-key',
+        originalName: 'background.jpg',
+        size: 1024,
+        mimeType: 'image/jpeg',
+      } as any);
+      vi.mocked(prisma.formFile.create).mockRejectedValue(new Error('Database error'));
+      vi.mocked(formService.createForm).mockResolvedValue(mockForm as any);
+
+      const input = {
+        templateId: 'template-123',
+        title: 'New Form',
+        organizationId: 'org-123',
+      };
+
+      // Should still create form even if FormFile creation fails
+      const result = await formsResolvers.Mutation.createForm({}, { input }, mockContext);
+
+      expect(result).toEqual(mockForm);
+      expect(formService.createForm).toHaveBeenCalled();
+    });
+
     it('should throw error when template not found', async () => {
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
       vi.mocked(templateService.getTemplateById).mockResolvedValue(null);
@@ -512,6 +548,40 @@ describe('Forms Resolvers', () => {
       await expect(
         formsResolvers.Mutation.updateForm({}, { id: 'form-123', input: { title: 'New' } }, mockContext)
       ).rejects.toThrow(GraphQLError);
+    });
+
+    it('should throw error when trying to change organizationId', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: true,
+        permission: 'OWNER' as any,
+        form: { ...mockForm, organizationId: 'org-123' } as any,
+      });
+
+      await expect(
+        formsResolvers.Mutation.updateForm(
+          {},
+          { id: 'form-123', input: { organizationId: 'org-456' } },
+          mockContext
+        )
+      ).rejects.toThrow('Cannot transfer form to different organization');
+    });
+
+    it('should throw error when trying to change createdById', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: true,
+        permission: 'OWNER' as any,
+        form: mockForm as any,
+      });
+
+      await expect(
+        formsResolvers.Mutation.updateForm(
+          {},
+          { id: 'form-123', input: { createdById: 'different-user-id' } },
+          mockContext
+        )
+      ).rejects.toThrow('Cannot change form ownership through update');
     });
   });
 
