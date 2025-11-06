@@ -82,26 +82,9 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
   timeRange = '30d'
 }) => {
   const { t } = useTranslation('viewsOverTimeChart');
-  
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center text-base">
-            <TrendingUp className="h-4 w-4 mr-2 text-blue-600" />
-            Views Over Time
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-64 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   // Merge views and submission data by date
+  // IMPORTANT: This hook must be called before any conditional returns
   const mergedData = React.useMemo(() => {
     const dataMap = new Map();
     
@@ -135,6 +118,25 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
     
     return Array.from(dataMap.values()).sort((a, b) => a.date.localeCompare(b.date));
   }, [data, submissionData]);
+
+  // Check loading state after all hooks are called
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center text-base">
+            <TrendingUp className="h-4 w-4 mr-2 text-blue-600" />
+            Views Over Time
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!mergedData || mergedData.length === 0) {
     return (
