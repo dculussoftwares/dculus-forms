@@ -1,150 +1,46 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useMutation, useQuery } from '@apollo/client';
-import { ColumnDef, VisibilityState } from '@tanstack/react-table';
-import { formatDistanceToNow } from 'date-fns';
+import { useQuery } from '@apollo/client';
 import { useTranslation } from '../hooks/useTranslation';
 import {
-  Badge,
   Button,
-  DataTableColumnHeader,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  Input,
   LoadingSpinner,
-  ServerDataTable,
   TypographyH3,
   TypographyP,
 } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
-import { FilterChip, FilterModal, FilterState } from '../components/Filters';
+import { FilterModal } from '../components/Filters';
 import { QuizResultsDialog } from '../components/plugins/response-table/quiz/QuizResultsDialog';
-import { getPluginColumns } from '../components/plugins/response-table';
+import { ResponsesToolbar } from '../components/Responses/ResponsesToolbar';
+import { ResponsesTable } from '../components/Responses/ResponsesTable';
+import { useResponsesState } from '../hooks/useResponsesState';
+import { createResponsesColumns } from '../utils/createResponsesColumns';
 import {
-  GENERATE_FORM_RESPONSE_REPORT,
   GET_FORM_BY_ID,
   GET_FORM_RESPONSES,
 } from '../graphql/queries';
 import { GET_FORM_PLUGINS } from '../graphql/plugins';
 import {
   deserializeFormSchema,
-  FieldType,
   FillableFormField,
-  FormResponse,
   FormSchema,
 } from '@dculus/types';
 import {
   AlertCircle,
   ArrowLeft,
-  Calendar,
-  CheckSquare,
-  ChevronDown,
-  Download,
-  Edit,
-  Eye,
-  FileSpreadsheet,
-  FileText,
-  Filter,
-  Hash,
-  History,
-  List,
-  MoreHorizontal,
   RotateCcw,
-  Search,
-  Settings2,
-  Type,
-  X,
 } from 'lucide-react';
-
-// Helper function to format values based on field type
-const formatFieldValue = (value: any, fieldType: FieldType): string => {
-  if (value === null || value === undefined) return '';
-
-  switch (fieldType) {
-    case FieldType.CHECKBOX_FIELD:
-      return Array.isArray(value) ? value.join(', ') : String(value);
-    case FieldType.DATE_FIELD:
-      // Handle date field values properly
-      const timestamp = typeof value === 'string' ? parseInt(value, 10) : value;
-      const date = new Date(timestamp);
-      return isNaN(date.getTime()) ? 'Invalid date' : date.toLocaleDateString();
-    case FieldType.SELECT_FIELD:
-      return Array.isArray(value) ? value.join(', ') : String(value);
-    default:
-      return String(value);
-  }
-};
 
 const Responses: React.FC = () => {
   const { formId, id } = useParams<{ formId?: string; id?: string }>();
   const navigate = useNavigate();
   const { t, locale } = useTranslation('responses');
 
-  // Pagination and sorting state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  // Note: Sorting is now handled by the DataTable components directly
-  // These states are kept for server-side sorting if needed in the future
-  const [sortBy] = useState('submittedAt');
-  const [sortOrder] = useState<'asc' | 'desc'>('desc');
-
-  // Enhanced UI state
-  const [globalFilter, setGlobalFilter] = useState('');
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [showFilterModal, setShowFilterModal] = useState(false);
-  const [filters, setFilters] = useState<Record<string, FilterState>>({});
-
-  // Plugin metadata dialog state (quiz, email, webhook, etc.)
-  const [pluginDialogState, setPluginDialogState] = useState<{
-    pluginType: string | null;
-    metadata: any;
-    responseId: string | null;
-  }>({
-    pluginType: null,
-    metadata: null,
-    responseId: null,
-  });
-
   // Use formId if available, otherwise fall back to id for backward compatibility
   const actualFormId = formId || id;
 
-  // Filter handlers
-  const handleFilterChange = (
-    fieldId: string,
-    filterUpdate: Partial<FilterState>
-  ) => {
-    setFilters((prev) => ({
-      ...prev,
-      [fieldId]: {
-        ...prev[fieldId],
-        fieldId,
-        ...filterUpdate,
-      },
-    }));
-    // Reset to first page when filters change
-    setCurrentPage(1);
-  };
-
-  const handleClearAllFilters = () => {
-    setFilters({});
-    setCurrentPage(1);
-  };
-
-  const handleRemoveFilter = (fieldId: string) => {
-    setFilters((prev) => {
-      const newFilters = { ...prev };
-      delete newFilters[fieldId];
-      return newFilters;
-    });
-    setCurrentPage(1);
-  };
-
-  const handleApplyFilters = () => {
-    // Reset to first page when applying filters
-    setCurrentPage(1);
-  };
+  // Use responses state hook
+  const responsesState = useResponsesState({ formId: actualFormId });
 
   const {
     data: formData,
@@ -161,121 +57,22 @@ const Responses: React.FC = () => {
     skip: !actualFormId,
   });
 
-  // Convert filters to GraphQL format
-  const graphqlFilters = useMemo(() => {
-    const activeFilters = Object.values(filters).filter((f) => f.active);
-    return activeFilters.length > 0
-      ? activeFilters.map((filter) => ({
-          fieldId: filter.fieldId,
-          operator: filter.operator,
-          value: filter.value,
-          values: filter.values,
-          dateRange: filter.dateRange,
-          numberRange: filter.numberRange,
-        }))
-      : null;
-  }, [filters]);
-
   const {
     data: responsesData,
     loading: responsesLoading,
     error: responsesError,
-    // refetch: refetchResponses,
   } = useQuery(GET_FORM_RESPONSES, {
     variables: {
       formId: actualFormId,
-      page: currentPage,
-      limit: pageSize,
-      sortBy,
-      sortOrder,
-      filters: graphqlFilters,
+      page: responsesState.currentPage,
+      limit: responsesState.pageSize,
+      sortBy: responsesState.sortBy,
+      sortOrder: responsesState.sortOrder,
+      filters: responsesState.graphqlFilters,
     },
     skip: !actualFormId,
     notifyOnNetworkStatusChange: true,
   });
-
-  // Mutation for generating reports
-  const [generateReport, { loading: exportLoading }] = useMutation(
-    GENERATE_FORM_RESPONSE_REPORT
-  );
-
-  const isExporting = exportLoading;
-
-  // This function is not needed with the new DataTableColumnHeader component
-  // Sorting is handled automatically by TanStack Table
-
-  // Common download function
-  const handleDownload = (downloadUrl: string, filename: string) => {
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = filename;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    console.log(`Download initiated: ${filename}`);
-  };
-
-  // Convert frontend filters to GraphQL format
-  const convertFiltersForExport = () => {
-    return Object.values(filters)
-      .filter((filter) => filter.active)
-      .map((filter) => ({
-        fieldId: filter.fieldId,
-        operator: filter.operator,
-        value: filter.value || undefined,
-        values: filter.values || undefined,
-        dateRange: filter.dateRange
-          ? {
-              from: filter.dateRange.from || undefined,
-              to: filter.dateRange.to || undefined,
-            }
-          : undefined,
-        numberRange: filter.numberRange
-          ? {
-              min: filter.numberRange.min || undefined,
-              max: filter.numberRange.max || undefined,
-            }
-          : undefined,
-      }));
-  };
-
-  // Handle export with format selection
-  const handleExport = async (format: 'EXCEL' | 'CSV') => {
-    if (!actualFormId) return;
-
-    try {
-      const activeFilters = convertFiltersForExport();
-      const hasFilters = activeFilters.length > 0;
-
-      console.log(
-        `Generating ${format} report on backend${hasFilters ? ` with ${activeFilters.length} filters` : ' (all responses)'}...`
-      );
-
-      const { data } = await generateReport({
-        variables: {
-          formId: actualFormId,
-          format,
-          filters: hasFilters ? activeFilters : undefined,
-        },
-      });
-
-      if (data?.generateFormResponseReport?.downloadUrl) {
-        const { downloadUrl, filename } = data.generateFormResponseReport;
-        console.log(`${format} report generated: ${filename}`);
-        handleDownload(downloadUrl, filename);
-      }
-    } catch (error) {
-      console.error(`${format} export failed:`, error);
-      // You could add a toast notification here
-    }
-  };
-
-  // Export to Excel function (now using unified backend)
-  const exportToExcel = () => handleExport('EXCEL');
-
-  // Export to CSV function (using unified backend)
-  const exportToCsv = () => handleExport('CSV');
 
   // Extract fillable form fields for filtering
   const fillableFields = useMemo(() => {
@@ -297,308 +94,48 @@ const Responses: React.FC = () => {
     return fields;
   }, [formData]);
 
-  // Generate dynamic columns based on form schema
-  const columns: ColumnDef<FormResponse>[] = useMemo(() => {
-    if (!formData?.form?.formSchema) return [];
-
-    const formSchema: FormSchema = deserializeFormSchema(
-      formData.form.formSchema
-    );
-    const baseColumns: ColumnDef<FormResponse>[] = [
-      {
-        accessorKey: 'id',
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title={t('table.columns.responseId')} />
-        ),
-        cell: ({ row }) => {
-          const id = row.getValue('id') as string;
-          return (
-            <div className="flex items-center space-x-2">
-              <Hash className="h-4 w-4 text-muted-foreground" />
-              <span className="inline-flex items-center px-2 py-1 text-xs font-mono font-medium bg-slate-100/80 text-slate-800 border border-slate-200/60 rounded-md">
-                {id?.slice(-6) || 'N/A'}
-              </span>
-            </div>
-          );
-        },
-        enableSorting: true,
-        enableHiding: false,
-        size: 140,
-      },
-      {
-        accessorKey: 'submittedAt',
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title={t('table.columns.submittedAt')} />
-        ),
-        cell: ({ row }) => {
-          const submittedAt = row.getValue('submittedAt') as string | number;
-          const timestamp =
-            typeof submittedAt === 'string'
-              ? parseInt(submittedAt, 10)
-              : submittedAt;
-          const date = new Date(timestamp);
-
-          if (isNaN(date.getTime())) {
-            return (
-              <div className="flex items-center space-x-2 text-muted-foreground">
-                <Calendar className="h-4 w-4" />
-                <span className="text-sm">{t('errors.invalidDate')}</span>
-              </div>
-            );
-          }
-
-          return (
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">
-                  {date.toLocaleDateString(locale, {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {date.toLocaleTimeString(locale, {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
-              </div>
-            </div>
-          );
-        },
-        enableSorting: true,
-        size: 180,
-      },
-      {
-        accessorKey: 'hasBeenEdited',
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title={t('table.columns.editStatus')} />
-        ),
-        cell: ({ row }) => {
-          const response = row.original;
-          const hasBeenEdited = response.hasBeenEdited;
-          const totalEdits = response.totalEdits || 0;
-          const lastEditedAt = response.lastEditedAt;
-          const lastEditedBy = response.lastEditedBy;
-
-          if (!hasBeenEdited) {
-            return (
-              <div className="flex items-center space-x-2">
-                <div className="h-2 w-2 bg-green-500 rounded-full" />
-                <span className="text-sm text-muted-foreground">{t('table.editStatus.original')}</span>
-              </div>
-            );
-          }
-
-          return (
-            <div className="flex items-center space-x-2">
-              <div className="h-2 w-2 bg-orange-500 rounded-full" />
-              <div className="flex flex-col">
-                <div className="flex items-center space-x-1">
-                  <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                    <History className="h-3 w-3 mr-1" />
-                    {totalEdits === 1 ? t('table.editStatus.editBadge', { values: { count: totalEdits } }) : t('table.editStatus.editBadgePlural', { values: { count: totalEdits } })}
-                  </Badge>
-                </div>
-                {lastEditedAt && (
-                  <div className="flex items-center space-x-1 mt-1">
-                    <span className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(lastEditedAt), { addSuffix: true })}
-                    </span>
-                    {lastEditedBy && (
-                      <>
-                        <span className="text-xs text-muted-foreground">{t('table.editStatus.editedBy')}</span>
-                        <span className="text-xs font-medium text-muted-foreground">
-                          {lastEditedBy.name}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        },
-        enableSorting: true,
-        size: 200,
-      },
-    ];
-
-    // Generate columns for form fields
-    const fieldColumns: ColumnDef<FormResponse>[] = [];
-    formSchema.pages.forEach((page) => {
-      page.fields.forEach((field) => {
-        if (field instanceof FillableFormField) {
-          // Get field type icon
-          const getFieldIcon = (fieldType: FieldType) => {
-            switch (fieldType) {
-              case FieldType.TEXT_INPUT_FIELD:
-                return <Type className="h-4 w-4" />;
-              case FieldType.CHECKBOX_FIELD:
-                return <CheckSquare className="h-4 w-4" />;
-              case FieldType.DATE_FIELD:
-                return <Calendar className="h-4 w-4" />;
-              case FieldType.SELECT_FIELD:
-              case FieldType.RADIO_FIELD:
-                return <List className="h-4 w-4" />;
-              default:
-                return <Type className="h-4 w-4" />;
-            }
-          };
-
-          fieldColumns.push({
-            accessorKey: `data.${field.id}`,
-            id: `field-${field.id}`,
-            header: ({ column }) => (
-              <div className="flex items-center space-x-2">
-                <div className="text-muted-foreground">
-                  {getFieldIcon(field.type)}
-                </div>
-                <DataTableColumnHeader column={column} title={field.label} />
-              </div>
-            ),
-            cell: ({ row }) => {
-              const value = row.original.data[field.id];
-              const formattedValue = formatFieldValue(value, field.type);
-
-              if (!formattedValue) {
-                return (
-                  <div className="flex items-center space-x-2 text-muted-foreground">
-                    {getFieldIcon(field.type)}
-                    <span className="text-sm italic">{t('table.fieldResponses.noResponse')}</span>
-                  </div>
-                );
-              }
-
-              return (
-                <div className="flex items-center space-x-2">
-                  <div className="text-muted-foreground">
-                    {getFieldIcon(field.type)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span
-                      className="text-sm font-medium truncate block"
-                      title={formattedValue}
-                    >
-                      {formattedValue}
-                    </span>
-                  </div>
-                </div>
-              );
-            },
-            enableSorting: true,
-            enableHiding: true,
-            size: 200,
+  // Generate dynamic columns using the utility function
+  const columns = useMemo(
+    () =>
+      createResponsesColumns({
+        formSchema: formData?.form?.formSchema,
+        formId: actualFormId!,
+        pluginsData,
+        locale,
+        onPluginClick: (pluginType, metadata, responseId) => {
+          responsesState.setPluginDialogState({
+            pluginType,
+            metadata,
+            responseId,
           });
-        }
-      });
-    });
-
-    // Actions column
-    const actionsColumn: ColumnDef<FormResponse> = {
-      id: 'actions',
-      header: () => <div className="text-center">{t('table.columns.actions')}</div>,
-      cell: ({ row }) => (
-        <div className="flex items-center justify-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
-            onClick={(e) => {
-              e.stopPropagation();
-              // TODO: Navigate to individual response view
-              console.log('View response:', row.original.id);
-            }}
-          >
-            <Eye className="h-4 w-4" />
-            <span className="sr-only">{t('table.actions.viewResponse')}</span>
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 hover:bg-slate-50"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreHorizontal className="h-4 w-4" />
-                <span className="sr-only">{t('table.actions.moreActions')}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() =>
-                  navigate(
-                    `/dashboard/form/${actualFormId}/responses/${row.original.id}/edit`
-                  )
-                }
-              >
-                <Edit className="mr-2 h-4 w-4" />
-                Edit Response
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => navigate(`/dashboard/form/${actualFormId}/responses/${row.original.id}/history`)}
-                disabled={!row.original.hasBeenEdited}
-              >
-                <History className="mr-2 h-4 w-4" />
-                {t('table.actions.editHistory')}
-                {(row.original.totalEdits || 0) > 0 && (
-                  <Badge variant="outline" className="ml-2 bg-orange-50 text-orange-700 border-orange-200 text-xs">
-                    {row.original.totalEdits}
-                  </Badge>
-                )}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => console.log('Delete response:', row.original.id)}
-              >
-                <X className="mr-2 h-4 w-4" />
-                {t('table.actions.delete')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      ),
-      enableSorting: false,
-      enableHiding: false,
-      size: 80,
-    };
-
-    // Get enabled plugin types from plugins data
-    const enabledPluginTypes = pluginsData?.formPlugins
-      ?.filter((plugin: any) => plugin.enabled)
-      ?.map((plugin: any) => plugin.type) || [];
-
-    // Generate plugin columns dynamically based on enabled plugins
-    const pluginColumns = getPluginColumns<FormResponse>(
-      enabledPluginTypes,
-      (pluginType, metadata, responseId) => {
-        setPluginDialogState({
-          pluginType,
-          metadata,
-          responseId,
-        });
-      }
-    );
-
-    return [...baseColumns, ...fieldColumns, ...pluginColumns, actionsColumn];
-  }, [formData, pluginsData, sortBy, sortOrder]);
+        },
+        t,
+      }),
+    [formData, pluginsData, locale, actualFormId, t]
+  );
 
   const loading = formLoading;
   const error = formError || responsesError;
   const responsePagination = responsesData?.responsesByForm;
   const responses = responsePagination?.data || [];
 
-  // Handle page change
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
-  };
-
-  // Handle page size change
-  const handlePageSizeChange = (newPageSize: number) => {
-    setPageSize(newPageSize);
-    setCurrentPage(1); // Reset to first page when changing page size
+  // Helper to get column label
+  const getColumnLabel = (columnId: string): string => {
+    if (columnId.startsWith('field-')) {
+      if (formData?.form?.formSchema) {
+        const field = deserializeFormSchema(formData.form.formSchema)
+          .pages.flatMap((p) => p.fields)
+          .find((f) => `field-${f.id}` === columnId);
+        return field instanceof FillableFormField ? field.label : columnId;
+      }
+    } else if (columnId === 'id') {
+      return t('table.columns.responseId');
+    } else if (columnId === 'submittedAt') {
+      return t('table.columns.submittedAt');
+    } else if (columnId === 'hasBeenEdited') {
+      return t('table.columns.editStatus');
+    }
+    return columnId;
   };
 
   if (loading) {
@@ -652,232 +189,6 @@ const Responses: React.FC = () => {
   }
 
   const form = formData.form;
-
-  // Enhanced data table toolbar component
-  const DataTableToolbar = () => {
-    const hiddenColumns = Object.entries(columnVisibility)
-      .filter(([_, visible]) => !visible)
-      .map(([id]) => {
-        const field = formData?.form?.formSchema
-          ? deserializeFormSchema(formData.form.formSchema)
-              .pages.flatMap((p) => p.fields)
-              .find(
-                (f) => `field-${f.id}` === id && f instanceof FillableFormField
-              )
-          : null;
-        return field ? (field as FillableFormField).label : id;
-      });
-
-    return (
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-slate-50/80 border-b border-slate-200/40 w-full overflow-hidden">
-        {/* Left side - Search and filters */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1 min-w-0 overflow-hidden">
-          {/* Enhanced search */}
-          <div className="relative w-full sm:w-80 sm:max-w-[320px] min-w-0">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={t('toolbar.search.placeholder')}
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              className="pl-9 h-10 w-full"
-            />
-            {globalFilter && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-transparent"
-                onClick={() => setGlobalFilter('')}
-              >
-                <X className="h-4 w-4" />
-                <span className="sr-only">{t('toolbar.search.clearLabel')}</span>
-              </Button>
-            )}
-          </div>
-
-          {/* Filter toggle */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowFilterModal(true)}
-            className="flex-shrink-0"
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            {t('toolbar.filters.buttonLabel')}
-            {Object.values(filters).some((f) => f.active) && (
-              <span className="ml-2 px-2 py-0.5 bg-blue-100/80 text-blue-800 text-xs rounded-full font-medium border border-blue-200/40">
-                {Object.values(filters).filter((f) => f.active).length}
-              </span>
-            )}
-          </Button>
-
-          {/* Active filters display */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Search indicator */}
-            {globalFilter && (
-              <div className="flex items-center gap-1 px-2 py-1 bg-blue-50/80 text-blue-700 text-sm rounded-md border border-blue-200/60">
-                <span className="truncate max-w-32">
-                  {t('table.searchIndicator', { values: { query: `${globalFilter.slice(0, 15)}${globalFilter.length > 15 ? '...' : ''}` } })}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-4 w-4 p-0 hover:bg-transparent text-blue-700 flex-shrink-0"
-                  onClick={() => setGlobalFilter('')}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-            )}
-
-            {/* Field filters */}
-            {Object.entries(filters)
-              .filter(([, f]) => f.active)
-              .map(([filterId, filter]) => {
-                const field = fillableFields.find(
-                  (f) => f.id === filter.fieldId
-                );
-                return field ? (
-                  <FilterChip
-                    key={filterId}
-                    field={field}
-                    filter={filter}
-                    onRemove={() => handleRemoveFilter(filterId)}
-                  />
-                ) : null;
-              })}
-          </div>
-        </div>
-
-        {/* Right side - Actions and column visibility */}
-        <div className="flex items-center gap-3 flex-shrink-0 overflow-visible">
-          {/* Column visibility */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="flex-shrink-0">
-                <Settings2 className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">{t('toolbar.columns.buttonLabel')}</span>
-                {hiddenColumns.length > 0 && (
-                  <span className="ml-2 px-2 py-0.5 bg-slate-100/80 text-slate-700 text-xs rounded-full font-medium border border-slate-200/40">
-                    {t('toolbar.columns.hiddenCount', { values: { count: hiddenColumns.length } })}
-                  </span>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64">
-              <div className="flex flex-col max-h-80">
-                <div className="flex items-center justify-between p-3 pb-2 border-b flex-shrink-0">
-                  <span className="text-sm font-medium">{t('toolbar.columns.toggle')}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 text-xs"
-                    onClick={() => setColumnVisibility({})}
-                  >
-                    <RotateCcw className="h-3 w-3 mr-1" />
-                    {t('toolbar.columns.reset')}
-                  </Button>
-                </div>
-                <div className="overflow-y-auto flex-1 p-2">
-                  {columns.length === 0 ? (
-                    <div className="text-center text-slate-500 text-sm py-4">
-                      {t('toolbar.columns.noColumnsAvailable')}
-                    </div>
-                  ) : (
-                    <div className="space-y-1">
-                      {columns.map((column) => {
-                        if (!column.id || column.enableHiding === false)
-                          return null;
-                        const isVisible = columnVisibility[column.id] !== false;
-
-                        let columnLabel = column.id;
-                        if (column.id.startsWith('field-')) {
-                          if (formData?.form?.formSchema) {
-                            const field = deserializeFormSchema(
-                              formData.form.formSchema
-                            )
-                              .pages.flatMap((p) => p.fields)
-                              .find((f) => `field-${f.id}` === column.id);
-                            columnLabel =
-                              field instanceof FillableFormField
-                                ? field.label
-                                : column.id;
-                          }
-                        } else if (column.id === 'id') {
-                          columnLabel = 'Response ID';
-                        } else if (column.id === 'submittedAt') {
-                          columnLabel = 'Submitted At';
-                        }
-
-                        return (
-                          <div
-                            key={column.id}
-                            className="flex items-center space-x-2 p-2 rounded hover:bg-slate-50"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isVisible}
-                              onChange={(e) =>
-                                setColumnVisibility((prev) => ({
-                                  ...prev,
-                                  [column.id!]: e.target.checked,
-                                }))
-                              }
-                              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                            />
-                            <span
-                              className="text-sm flex-1 min-w-0 truncate"
-                              title={columnLabel}
-                            >
-                              {columnLabel}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Export dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={isExporting}
-                className="flex-shrink-0"
-              >
-                {exportLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
-                    {t('toolbar.export.exporting')}
-                  </>
-                ) : (
-                  <>
-                    <Download className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">{t('toolbar.export.buttonLabel')}</span>
-                    <ChevronDown className="h-4 w-4 ml-2" />
-                  </>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={exportToExcel} disabled={isExporting}>
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                {t('toolbar.export.excel')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={exportToCsv} disabled={isExporting}>
-                <FileText className="h-4 w-4 mr-2" />
-                {t('toolbar.export.csv')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <MainLayout
@@ -947,53 +258,39 @@ const Responses: React.FC = () => {
               <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Enhanced toolbar - Fixed width, no horizontal scroll */}
                 <div className="flex-shrink-0 overflow-hidden">
-                  <DataTableToolbar />
+                  <ResponsesToolbar
+                    globalFilter={responsesState.globalFilter}
+                    onGlobalFilterChange={responsesState.setGlobalFilter}
+                    filters={responsesState.filters}
+                    fillableFields={fillableFields}
+                    onShowFilterModal={() => responsesState.setShowFilterModal(true)}
+                    onRemoveFilter={responsesState.handleRemoveFilter}
+                    columns={columns}
+                    columnVisibility={responsesState.columnVisibility}
+                    onColumnVisibilityChange={responsesState.setColumnVisibility}
+                    getColumnLabel={getColumnLabel}
+                    isExporting={responsesState.isExporting}
+                    onExportExcel={responsesState.exportToExcel}
+                    onExportCsv={responsesState.exportToCsv}
+                    t={t}
+                  />
                 </div>
 
                 {/* Table container - Only table content scrolls horizontally */}
-                <div className="flex-1 overflow-hidden">
-                  <ServerDataTable
-                    columns={columns
-                      .map((col) => ({
-                        ...col,
-                        // Apply column visibility
-                        meta: {
-                          ...col.meta,
-                          hidden: col.id
-                            ? columnVisibility[col.id] === false
-                            : false,
-                        },
-                      }))
-                      .filter((col) => !col.meta?.hidden)}
-                    data={responses.filter((response: FormResponse) => {
-                      if (!globalFilter) return true;
-
-                      const searchText = globalFilter.toLowerCase();
-
-                      // Search in response ID
-                      if (response.id.toLowerCase().includes(searchText))
-                        return true;
-
-                      // Search in response data
-                      return Object.values(response.data || {}).some((value) =>
-                        String(value).toLowerCase().includes(searchText)
-                      );
-                    })}
-                    searchPlaceholder={t('table.searchPlaceholder')}
-                    onRowClick={(row) => {
-                      console.log('Row clicked:', row.id);
-                    }}
-                    pageCount={responsePagination?.totalPages || 0}
-                    currentPage={currentPage}
-                    pageSize={pageSize}
-                    totalItems={responsePagination?.total || 0}
-                    onPageChange={handlePageChange}
-                    onPageSizeChange={handlePageSizeChange}
-                    loading={responsesLoading}
-                    maxHeight="100%"
-                    className="border-0 h-full"
-                  />
-                </div>
+                <ResponsesTable
+                  columns={columns}
+                  responses={responses}
+                  loading={responsesLoading}
+                  currentPage={responsesState.currentPage}
+                  pageSize={responsesState.pageSize}
+                  totalPages={responsePagination?.totalPages || 0}
+                  totalItems={responsePagination?.total || 0}
+                  onPageChange={responsesState.handlePageChange}
+                  onPageSizeChange={responsesState.handlePageSizeChange}
+                  globalFilter={responsesState.globalFilter}
+                  columnVisibility={responsesState.columnVisibility}
+                  t={t}
+                />
               </div>
             </div>
           )}
@@ -1002,33 +299,34 @@ const Responses: React.FC = () => {
 
       {/* Filter Modal */}
       <FilterModal
-        open={showFilterModal}
-        onClose={() => setShowFilterModal(false)}
+        open={responsesState.showFilterModal}
+        onClose={() => responsesState.setShowFilterModal(false)}
         fields={fillableFields}
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        onRemoveFilter={handleRemoveFilter}
-        onClearAllFilters={handleClearAllFilters}
-        onApplyFilters={handleApplyFilters}
+        filters={responsesState.filters}
+        onFilterChange={responsesState.handleFilterChange}
+        onRemoveFilter={responsesState.handleRemoveFilter}
+        onClearAllFilters={responsesState.handleClearAllFilters}
+        onApplyFilters={responsesState.handleApplyFilters}
       />
 
       {/* Plugin-specific dialogs */}
-      {pluginDialogState.pluginType === 'quiz-grading' && pluginDialogState.metadata && (
-        <QuizResultsDialog
-          open={true}
-          onOpenChange={(open) => {
-            if (!open) {
-              setPluginDialogState({
-                pluginType: null,
-                metadata: null,
-                responseId: null,
-              });
-            }
-          }}
-          metadata={pluginDialogState.metadata}
-          responseId={pluginDialogState.responseId || undefined}
-        />
-      )}
+      {responsesState.pluginDialogState.pluginType === 'quiz-grading' &&
+        responsesState.pluginDialogState.metadata && (
+          <QuizResultsDialog
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) {
+                responsesState.setPluginDialogState({
+                  pluginType: null,
+                  metadata: null,
+                  responseId: null,
+                });
+              }
+            }}
+            metadata={responsesState.pluginDialogState.metadata}
+            responseId={responsesState.pluginDialogState.responseId || undefined}
+          />
+        )}
       {/* Add other plugin dialogs here */}
     </MainLayout>
   );
