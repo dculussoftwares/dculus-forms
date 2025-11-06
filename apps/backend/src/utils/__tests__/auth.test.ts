@@ -5,7 +5,7 @@ import {
   requireSuperAdminRole,
   requireSystemLevelRole,
   type AuthContext,
-} from '../auth';
+} from '../auth.js';
 import { GraphQLError } from 'graphql';
 
 describe('Auth Utilities', () => {
