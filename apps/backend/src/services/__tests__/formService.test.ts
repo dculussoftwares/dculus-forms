@@ -50,7 +50,31 @@ describe('Form Service', () => {
       email: 'test@example.com',
       name: 'Test User',
     },
+    organization: {
+      members: [],
+    },
+    permissions: [],
   };
+
+  const mockFormWithAccess = {
+    ...mockForm,
+    organization: {
+      members: [{
+        userId: 'user-123',
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          name: 'Test User',
+          emailVerified: true,
+          image: null,
+          role: 'user',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      }],
+    },
+    permissions: [],
+  } as any;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -407,7 +431,11 @@ describe('Form Service', () => {
     beforeEach(() => {
       vi.mocked(formRepository.findById).mockResolvedValue(mockForm as any);
       vi.mocked(formRepository.updateForm).mockResolvedValue(mockForm as any);
-      vi.mocked(checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'EDITOR' });
+      vi.mocked(checkFormAccess).mockResolvedValue({
+        hasAccess: true,
+        permission: 'EDITOR' as any,
+        form: mockFormWithAccess,
+      });
     });
 
     it('should update form basic fields', async () => {
@@ -436,7 +464,7 @@ describe('Form Service', () => {
     });
 
     it('should validate OWNER permissions for publishing', async () => {
-      vi.mocked(checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'OWNER' });
+      vi.mocked(checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'OWNER' as any, form: mockFormWithAccess });
 
       await updateForm('form-123', { isPublished: true }, 'user-123');
 
@@ -444,7 +472,7 @@ describe('Form Service', () => {
     });
 
     it('should throw error when user lacks permissions', async () => {
-      vi.mocked(checkFormAccess).mockResolvedValue({ hasAccess: false, permission: null });
+      vi.mocked(checkFormAccess).mockResolvedValue({ hasAccess: false, permission: 'NO_ACCESS' as any, form: mockFormWithAccess });
 
       await expect(updateForm('form-123', { title: 'New' }, 'user-123')).rejects.toThrow(
         'Access denied'
@@ -457,7 +485,7 @@ describe('Form Service', () => {
 
       vi.mocked(formRepository.findById).mockResolvedValue(unpublishedForm as any);
       vi.mocked(formRepository.updateForm).mockResolvedValue(publishedForm as any);
-      vi.mocked(checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'OWNER' });
+      vi.mocked(checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'OWNER' as any, form: mockFormWithAccess });
       vi.mocked(sendFormPublishedNotification).mockResolvedValue(undefined);
 
       await updateForm('form-123', { isPublished: true }, 'user-123');
@@ -490,7 +518,7 @@ describe('Form Service', () => {
 
       vi.mocked(formRepository.findById).mockResolvedValue(unpublishedForm as any);
       vi.mocked(formRepository.updateForm).mockResolvedValue(publishedForm as any);
-      vi.mocked(checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'OWNER' });
+      vi.mocked(checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'OWNER' as any, form: mockFormWithAccess });
       vi.mocked(sendFormPublishedNotification).mockRejectedValue(new Error('Email error'));
 
       const result = await updateForm('form-123', { isPublished: true }, 'user-123');
@@ -544,8 +572,8 @@ describe('Form Service', () => {
 
   describe('deleteForm', () => {
     beforeEach(() => {
-      vi.mocked(formRepository.deleteForm).mockResolvedValue(undefined);
-      vi.mocked(checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'OWNER' });
+      vi.mocked(formRepository.deleteForm).mockResolvedValue(mockForm as any);
+      vi.mocked(checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'OWNER' as any, form: mockFormWithAccess });
     });
 
     it('should delete form', async () => {
@@ -563,7 +591,7 @@ describe('Form Service', () => {
 
     it('should return false when user lacks OWNER permissions', async () => {
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-      vi.mocked(checkFormAccess).mockResolvedValue({ hasAccess: false, permission: null });
+      vi.mocked(checkFormAccess).mockResolvedValue({ hasAccess: false, permission: 'NO_ACCESS' as any, form: mockFormWithAccess });
 
       const result = await deleteForm('form-123', 'user-123');
 

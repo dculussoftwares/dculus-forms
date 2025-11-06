@@ -33,6 +33,7 @@ describe('Form View Analytics Repository', () => {
         id: 'view-123',
         formId: 'form-123',
         sessionId: 'session-123',
+        userAgent: 'Mozilla/5.0',
         viewedAt: new Date(),
       };
 
@@ -125,6 +126,7 @@ describe('Form Submission Analytics Repository', () => {
         formId: 'form-123',
         responseId: 'response-123',
         sessionId: 'session-123',
+        userAgent: 'Mozilla/5.0',
         submittedAt: new Date(),
       };
 
@@ -190,6 +192,8 @@ describe('Form Submission Analytics Repository', () => {
         id: 'sub-123',
         formId: 'form-123',
         responseId: 'response-123',
+        sessionId: 'session-123',
+        userAgent: 'Mozilla/5.0',
       };
 
       mockPrisma.formSubmissionAnalytics.create.mockResolvedValue(analyticsData as any);

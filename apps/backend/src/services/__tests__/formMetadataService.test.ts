@@ -20,6 +20,17 @@ import {
 vi.mock('../../repositories/index.js');
 vi.mock('../../utils/cdn.js');
 
+// Helper to create mock metadata
+const createMockMetadata = (formId: string, overrides = {}) => ({
+  id: `metadata-${formId}`,
+  formId,
+  pageCount: 0,
+  fieldCount: 0,
+  backgroundImageKey: null,
+  lastUpdated: new Date(),
+  ...overrides,
+});
+
 describe('Form Metadata Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -127,7 +138,9 @@ describe('Form Metadata Service', () => {
   describe('updateFormMetadata', () => {
     it('should update metadata in repository', async () => {
       const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
-      vi.mocked(formMetadataRepository.upsertMetadata).mockResolvedValue(undefined);
+      vi.mocked(formMetadataRepository.upsertMetadata).mockResolvedValue(
+        createMockMetadata('form-123') as any
+      );
 
       const stats = {
         pageCount: 2,
@@ -177,7 +190,7 @@ describe('Form Metadata Service', () => {
         state: Buffer.from(state),
       } as any);
 
-      vi.mocked(formMetadataRepository.upsertMetadata).mockResolvedValue(undefined);
+      vi.mocked(formMetadataRepository.upsertMetadata).mockResolvedValue(createMockMetadata("form-123") as any);
 
       const result = await computeFormMetadata('form-123');
 
@@ -241,7 +254,7 @@ describe('Form Metadata Service', () => {
         state: Buffer.from(state),
       } as any);
 
-      vi.mocked(formMetadataRepository.upsertMetadata).mockResolvedValue(undefined);
+      vi.mocked(formMetadataRepository.upsertMetadata).mockResolvedValue(createMockMetadata("form-123") as any);
 
       await batchUpdateFormMetadata(['form-1', 'form-2', 'form-3']);
 
@@ -266,7 +279,7 @@ describe('Form Metadata Service', () => {
         } as any)
         .mockRejectedValueOnce(new Error('Database error'));
 
-      vi.mocked(formMetadataRepository.upsertMetadata).mockResolvedValue(undefined);
+      vi.mocked(formMetadataRepository.upsertMetadata).mockResolvedValue(createMockMetadata("form-123") as any);
 
       await batchUpdateFormMetadata(['form-1', 'form-2']);
 
@@ -311,7 +324,7 @@ describe('Form Metadata Service', () => {
         documentId: 'form-123',
         state: Buffer.from(state),
       } as any);
-      vi.mocked(formMetadataRepository.upsertMetadata).mockResolvedValue(undefined);
+      vi.mocked(formMetadataRepository.upsertMetadata).mockResolvedValue(createMockMetadata("form-123") as any);
 
       const result = await getFormMetadata('form-123');
 

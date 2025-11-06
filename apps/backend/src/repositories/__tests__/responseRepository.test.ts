@@ -136,6 +136,7 @@ describe('Response Repository', () => {
       const editHistoryData = {
         id: 'edit-123',
         responseId: 'response-123',
+        editedById: 'user-123',
         editedAt: new Date(),
       };
 
@@ -172,6 +173,9 @@ describe('Response Repository', () => {
         id: 'change-123',
         editHistoryId: 'edit-123',
         fieldId: 'field-1',
+        fieldLabel: 'Field Label',
+        fieldType: 'text',
+        changeType: 'update',
         oldValue: 'old',
         newValue: 'new',
       };

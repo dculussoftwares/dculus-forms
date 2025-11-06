@@ -180,6 +180,7 @@ describe('Form Repository', () => {
         id: 'asset-123',
         formId: 'form-123',
         key: 'bg-image-key',
+        url: 'https://cdn.example.com/bg-image-key',
         type: 'FormBackground',
         originalName: 'background.jpg',
         size: 12345,
