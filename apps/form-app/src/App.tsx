@@ -23,6 +23,9 @@ import FormSettings from './pages/FormSettings';
 import CollaborativeFormBuilder from './pages/CollaborativeFormBuilder';
 import Plugins from './pages/Plugins';
 import PluginConfiguration from './pages/PluginConfiguration';
+import { Pricing } from './pages/Pricing';
+import { CheckoutSuccess } from './pages/subscription/success';
+import { CheckoutCancel } from './pages/subscription/cancel';
 
 
 function App() {
@@ -37,6 +40,9 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/invite/:invitationId" element={<InviteAcceptance />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/subscription/success" element={<CheckoutSuccess />} />
+          <Route path="/subscription/cancel" element={<CheckoutCancel />} />
           
           {/* Protected routes */}
           <Route path="/" element={

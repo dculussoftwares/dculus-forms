@@ -1,0 +1,18 @@
+{
+  "resource": {
+    "views": "Form Views",
+    "submissions": "Form Submissions"
+  },
+  "title": {
+    "exceeded": "{{resourceType}} Limit Exceeded",
+    "approaching": "Approaching {{resourceType}} Limit"
+  },
+  "message": {
+    "exceeded": "You've used {{used}} of {{limit}} {{resourceType}}. Your limit has been reached. Please upgrade your plan to continue.",
+    "approaching": "You've used {{used}} of {{limit}} {{resourceType}} ({{percentage}}%). Consider upgrading soon to avoid interruptions."
+  },
+  "buttons": {
+    "upgradeNow": "Upgrade Now",
+    "upgradePlan": "Upgrade Plan"
+  }
+}

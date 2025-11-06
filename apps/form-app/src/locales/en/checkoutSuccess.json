@@ -1,0 +1,47 @@
+{
+  "loading": {
+    "message": "Loading your subscription details..."
+  },
+  "title": "Payment Successful!",
+  "subtitle": "Your subscription has been activated successfully",
+  "planDetails": {
+    "activated": "Plan Activated"
+  },
+  "plans": {
+    "starter": {
+      "name": "Starter Plan",
+      "features": {
+        "unlimitedViews": "Unlimited form views",
+        "submissions": "10,000 submissions per month",
+        "advancedAnalytics": "Advanced analytics",
+        "prioritySupport": "Priority email support"
+      }
+    },
+    "advanced": {
+      "name": "Advanced Plan",
+      "features": {
+        "unlimitedViews": "Unlimited form views",
+        "submissions": "100,000 submissions per month",
+        "advancedAnalytics": "Advanced analytics",
+        "prioritySupport": "24/7 priority support",
+        "customIntegrations": "Custom integrations",
+        "whiteLabel": "White-label options"
+      }
+    }
+  },
+  "usage": {
+    "views": "Form Views",
+    "submissions": "Form Submissions",
+    "unlimited": "Unlimited"
+  },
+  "billing": {
+    "nextBilling": "Next billing date:"
+  },
+  "buttons": {
+    "goToDashboard": "Go to Dashboard",
+    "viewSubscription": "View Subscription"
+  },
+  "footer": {
+    "receiptEmail": "A receipt has been sent to your email address. You can manage your subscription anytime from the dashboard."
+  }
+}

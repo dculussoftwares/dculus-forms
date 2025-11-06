@@ -101,6 +101,9 @@ export const createCheckoutHostedPage = async (
   itemPriceId: string
 ): Promise<{ url: string; id: string }> => {
   try {
+    // Get base URL from environment or use default
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+
     // Use checkoutNewForItems for Product Catalog 2.0
     const result = await chargebee.hostedPage.checkoutNewForItems({
       subscription_items: [
@@ -112,6 +115,8 @@ export const createCheckoutHostedPage = async (
       customer: {
         id: customerId,
       },
+      redirect_url: `${baseUrl}/subscription/success`,
+      cancel_url: `${baseUrl}/subscription/cancel`,
     } as any);
 
     return {

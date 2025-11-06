@@ -105,6 +105,10 @@ import enFilterRow from './en/filterRow.json';
 import enFilterModal from './en/filterModal.json';
 import enFilterPanel from './en/filterPanel.json';
 import enPixabayImageBrowser from './en/pixabayImageBrowser.json';
+import enUsageWarning from './en/usageWarning.json';
+import enCheckoutSuccess from './en/checkoutSuccess.json';
+import enCheckoutCancel from './en/checkoutCancel.json';
+import enPricing from './en/pricing.json';
 
 export const translations = {
   en: {
@@ -215,6 +219,10 @@ export const translations = {
     filterModal: enFilterModal,
     filterPanel: enFilterPanel,
     pixabayImageBrowser: enPixabayImageBrowser,
+    usageWarning: enUsageWarning,
+    checkoutSuccess: enCheckoutSuccess,
+    checkoutCancel: enCheckoutCancel,
+    pricing: enPricing,
   },
 } as const;
 

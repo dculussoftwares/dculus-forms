@@ -1,0 +1,41 @@
+{
+  "title": "Checkout Cancelled",
+  "subtitle": "You haven't been charged. Your current plan remains active.",
+  "reasons": {
+    "needHelp": {
+      "title": "Need help choosing?",
+      "description": "Our team is here to help you find the perfect plan for your needs.",
+      "button": "Contact Support"
+    },
+    "comparePlans": {
+      "title": "Want to compare plans?",
+      "description": "Take another look at our pricing and features to find the best fit.",
+      "button": "View All Plans"
+    }
+  },
+  "benefits": {
+    "title": "What you're missing with an upgrade:",
+    "items": {
+      "unlimitedViews": "Unlimited form views",
+      "moreSubmissions": "More form submissions",
+      "advancedAnalytics": "Advanced analytics",
+      "prioritySupport": "Priority support"
+    }
+  },
+  "buttons": {
+    "tryAgain": "Try Upgrading Again",
+    "backToDashboard": "Back to Dashboard"
+  },
+  "footer": {
+    "noCharge": "You haven't been charged anything. No payment was processed.",
+    "flexible": "You can upgrade or change your plan at any time."
+  },
+  "modal": {
+    "title": "Ready to upgrade?",
+    "message": "Choose the perfect plan for your needs and start growing today.",
+    "buttons": {
+      "viewPlans": "View Plans",
+      "cancel": "Cancel"
+    }
+  }
+}
