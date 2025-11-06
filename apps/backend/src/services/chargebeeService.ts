@@ -381,10 +381,13 @@ export const getAvailablePlans = async () => {
       }
 
       // Add price to plan
+      // Convert from smallest unit (cents/paise) to actual currency (dollars/rupees)
+      const amountInCurrency = (itemPrice.price || 0) / 100;
+
       plansByItem[planId].prices.push({
         id: itemPrice.id,
         currency: itemPrice.currency_code,
-        amount: itemPrice.price || 0, // Already in cents
+        amount: amountInCurrency, // Converted to dollars/rupees
         period: itemPrice.period_unit, // 'month' or 'year'
       });
 
@@ -443,10 +446,10 @@ export const getAvailablePlans = async () => {
         name: 'Starter Plan',
         description: 'For growing teams',
         prices: [
-          { id: 'starter-usd-monthly', currency: 'USD', amount: 600, period: 'month' },
-          { id: 'starter-usd-yearly', currency: 'USD', amount: 6600, period: 'year' },
-          { id: 'starter-inr-monthly', currency: 'INR', amount: 48900, period: 'month' },
-          { id: 'starter-inr-yearly', currency: 'INR', amount: 540000, period: 'year' },
+          { id: 'starter-usd-monthly', currency: 'USD', amount: 6, period: 'month' },
+          { id: 'starter-usd-yearly', currency: 'USD', amount: 66, period: 'year' },
+          { id: 'starter-inr-monthly', currency: 'INR', amount: 489, period: 'month' },
+          { id: 'starter-inr-yearly', currency: 'INR', amount: 5400, period: 'year' },
         ],
         features: { views: null, submissions: 10000 },
       },
@@ -455,10 +458,10 @@ export const getAvailablePlans = async () => {
         name: 'Advanced Plan',
         description: 'For enterprises',
         prices: [
-          { id: 'advanced-usd-monthly', currency: 'USD', amount: 1500, period: 'month' },
-          { id: 'advanced-usd-yearly', currency: 'USD', amount: 16800, period: 'year' },
-          { id: 'advanced-inr-monthly', currency: 'INR', amount: 128900, period: 'month' },
-          { id: 'advanced-inr-yearly', currency: 'INR', amount: 1426800, period: 'year' },
+          { id: 'advanced-usd-monthly', currency: 'USD', amount: 15, period: 'month' },
+          { id: 'advanced-usd-yearly', currency: 'USD', amount: 168, period: 'year' },
+          { id: 'advanced-inr-monthly', currency: 'INR', amount: 1289, period: 'month' },
+          { id: 'advanced-inr-yearly', currency: 'INR', amount: 14268, period: 'year' },
         ],
         features: { views: null, submissions: 100000 },
       },
