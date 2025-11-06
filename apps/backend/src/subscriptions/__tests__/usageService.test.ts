@@ -16,20 +16,31 @@ import {
 import { SubscriptionEventType } from '../types.js';
 import { logger } from '../../lib/logger.js';
 
-// Create mock subscription object
-const mockSubscription = {
-  findUnique: vi.fn(),
-  update: vi.fn(),
-};
-
 // Mock dependencies
 vi.mock('@prisma/client', () => {
+  // Create mock subscription object inside vi.mock to avoid hoisting issues
+  const mockSubscription = {
+    findUnique: vi.fn(),
+    update: vi.fn(),
+  };
+
   return {
     PrismaClient: class {
       subscription = mockSubscription;
     },
   };
 });
+
+// Get the mock subscription object for test assertions
+const getMockSubscription = () => {
+  const prisma = new PrismaClient();
+  return prisma.subscription as unknown as {
+    findUnique: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+  };
+};
+
+const mockSubscription = getMockSubscription();
 
 vi.mock('../events.js', () => ({
   emitUsageLimitReached: vi.fn(),

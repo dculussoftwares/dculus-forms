@@ -99,7 +99,13 @@ describe('Responses Routes', () => {
       expect(response.status).toBe(HTTP_STATUS.OK);
       expect(response.body).toEqual({
         success: true,
-        data: [],
+        data: {
+          data: [],
+          total: 0,
+          page: 1,
+          limit: 50,
+          totalPages: 0,
+        },
       });
     });
 

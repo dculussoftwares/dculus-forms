@@ -21,10 +21,12 @@ describe('ResponseEditTrackingService', () => {
           {
             id: 'field-1',
             type: 'text_input_field',
+            label: 'Name',
           } as any,
           {
             id: 'field-2',
             type: 'email_field',
+            label: 'Email',
           } as any,
         ],
       },
