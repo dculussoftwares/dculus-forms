@@ -11,40 +11,11 @@ import {
   BarChart3,
   Users,
   Eye,
-  FileText,
-  Hash,
-  Mail,
-  Calendar,
-  ListOrdered,
-  CheckSquare,
-  CircleDot
 } from 'lucide-react';
 import { FieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
 import { MiniPreviewChart } from './MiniChartComponents';
 import { getFieldTypeDisplayName } from '@dculus/utils';
-
-// Field Type Icons
-const getFieldTypeIcon = (fieldType: string) => {
-  switch (fieldType) {
-    case 'text_input_field':
-    case 'text_area_field':
-      return <FileText className="h-5 w-5" />;
-    case 'number_field':
-      return <Hash className="h-5 w-5" />;
-    case 'email_field':
-      return <Mail className="h-5 w-5" />;
-    case 'date_field':
-      return <Calendar className="h-5 w-5" />;
-    case 'select_field':
-      return <ListOrdered className="h-5 w-5" />;
-    case 'radio_field':
-      return <CircleDot className="h-5 w-5" />;
-    case 'checkbox_field':
-      return <CheckSquare className="h-5 w-5" />;
-    default:
-      return <BarChart3 className="h-5 w-5" />;
-  }
-};
+import { getAnalyticsIcon } from './registry';
 
 interface FieldSelectionGridProps {
   fields: FieldAnalyticsData[];
@@ -105,7 +76,7 @@ export const FieldSelectionGrid: React.FC<FieldSelectionGridProps> = ({
                     <div className={`p-2.5 rounded-lg flex-shrink-0 ${
                       isSelected ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
                     }`}>
-                      {getFieldTypeIcon(field.fieldType)}
+                      {React.createElement(getAnalyticsIcon(field.fieldType as any), { className: 'h-5 w-5' })}
                     </div>
                     <div className="flex-1 min-w-0">
                       <TooltipProvider delayDuration={300}>
