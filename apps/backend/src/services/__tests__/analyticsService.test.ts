@@ -4,6 +4,7 @@ import {
   formViewAnalyticsRepository,
   formSubmissionAnalyticsRepository,
 } from '../../repositories/index.js';
+import { logger } from '../../lib/logger.js';
 
 // Mock repositories
 vi.mock('../../repositories/index.js');
@@ -64,8 +65,8 @@ describe('Analytics Service', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(console, 'log').mockImplementation(() => {});
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(logger, 'info').mockImplementation(() => {});
+    vi.spyOn(logger, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -167,7 +168,7 @@ describe('Analytics Service', () => {
       );
 
       await expect(analyticsService.trackFormView(mockAnalyticsData)).resolves.not.toThrow();
-      expect(console.error).toHaveBeenCalledWith(
+      expect(logger.error).toHaveBeenCalledWith(
         'Error tracking form view analytics:',
         expect.any(Error)
       );
@@ -226,7 +227,7 @@ describe('Analytics Service', () => {
         })
       ).resolves.not.toThrow();
 
-      expect(console.error).toHaveBeenCalledWith(
+      expect(logger.error).toHaveBeenCalledWith(
         'Error updating form start time:',
         expect.any(Error)
       );
@@ -282,7 +283,7 @@ describe('Analytics Service', () => {
         })
       ).resolves.not.toThrow();
 
-      expect(console.error).toHaveBeenCalledWith(
+      expect(logger.error).toHaveBeenCalledWith(
         'Error tracking form submission analytics:',
         expect.any(Error)
       );

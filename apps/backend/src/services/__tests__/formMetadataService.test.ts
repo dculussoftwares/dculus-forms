@@ -15,6 +15,7 @@ import {
   collaborativeDocumentRepository,
   formRepository,
 } from '../../repositories/index.js';
+import { logger } from '../../lib/logger.js';
 
 // Mock dependencies
 vi.mock('../../repositories/index.js');
@@ -89,7 +90,7 @@ describe('Form Metadata Service', () => {
     });
 
     it('should handle errors gracefully', () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       const invalidYDoc = null as any;
 
       const result = extractFormStatsFromYDoc(invalidYDoc);
@@ -99,8 +100,8 @@ describe('Form Metadata Service', () => {
         fieldCount: 0,
         backgroundImageKey: null,
       });
-      expect(consoleError).toHaveBeenCalled();
-      consoleError.mockRestore();
+      expect(loggerError).toHaveBeenCalled();
+      loggerError.mockRestore();
     });
   });
 
@@ -120,7 +121,7 @@ describe('Form Metadata Service', () => {
     });
 
     it('should handle invalid state gracefully', () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       const invalidState = new Uint8Array([1, 2, 3]); // Invalid YJS state
 
       const result = extractFormStatsFromState(invalidState);
@@ -130,14 +131,14 @@ describe('Form Metadata Service', () => {
         fieldCount: 0,
         backgroundImageKey: null,
       });
-      expect(consoleError).toHaveBeenCalled();
-      consoleError.mockRestore();
+      expect(loggerError).toHaveBeenCalled();
+      loggerError.mockRestore();
     });
   });
 
   describe('updateFormMetadata', () => {
     it('should update metadata in repository', async () => {
-      const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const loggerInfo = vi.spyOn(logger, 'info').mockImplementation(() => {});
       vi.mocked(formMetadataRepository.upsertMetadata).mockResolvedValue(
         createMockMetadata('form-123') as any
       );
@@ -158,15 +159,15 @@ describe('Form Metadata Service', () => {
         backgroundImageKey: 'bg-123',
         lastUpdated: expect.any(Date),
       });
-      expect(consoleLog).toHaveBeenCalledWith(
+      expect(loggerInfo).toHaveBeenCalledWith(
         '✅ Updated metadata for form form-123:',
         stats
       );
-      consoleLog.mockRestore();
+      loggerInfo.mockRestore();
     });
 
     it('should handle errors and rethrow', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       vi.mocked(formMetadataRepository.upsertMetadata).mockRejectedValue(
         new Error('Database error')
       );
@@ -174,8 +175,8 @@ describe('Form Metadata Service', () => {
       const stats = { pageCount: 2, fieldCount: 5, backgroundImageKey: null };
 
       await expect(updateFormMetadata('form-123', stats)).rejects.toThrow('Database error');
-      expect(consoleError).toHaveBeenCalled();
-      consoleError.mockRestore();
+      expect(loggerError).toHaveBeenCalled();
+      loggerError.mockRestore();
     });
   });
 
@@ -201,20 +202,20 @@ describe('Form Metadata Service', () => {
     });
 
     it('should return null when collaborative document not found', async () => {
-      const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const loggerWarn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
       vi.mocked(collaborativeDocumentRepository.fetchDocumentWithState).mockResolvedValue(null);
 
       const result = await computeFormMetadata('form-123');
 
       expect(result).toBeNull();
-      expect(consoleWarn).toHaveBeenCalledWith(
+      expect(loggerWarn).toHaveBeenCalledWith(
         'No collaborative document found for form: form-123'
       );
-      consoleWarn.mockRestore();
+      loggerWarn.mockRestore();
     });
 
     it('should return null when document has no state', async () => {
-      const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const loggerWarn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
       vi.mocked(collaborativeDocumentRepository.fetchDocumentWithState).mockResolvedValue({
         id: 'doc-123',
         documentId: 'form-123',
@@ -224,12 +225,12 @@ describe('Form Metadata Service', () => {
       const result = await computeFormMetadata('form-123');
 
       expect(result).toBeNull();
-      expect(consoleWarn).toHaveBeenCalled();
-      consoleWarn.mockRestore();
+      expect(loggerWarn).toHaveBeenCalled();
+      loggerWarn.mockRestore();
     });
 
     it('should handle errors gracefully', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       vi.mocked(collaborativeDocumentRepository.fetchDocumentWithState).mockRejectedValue(
         new Error('Database error')
       );
@@ -237,14 +238,14 @@ describe('Form Metadata Service', () => {
       const result = await computeFormMetadata('form-123');
 
       expect(result).toBeNull();
-      expect(consoleError).toHaveBeenCalled();
-      consoleError.mockRestore();
+      expect(loggerError).toHaveBeenCalled();
+      loggerError.mockRestore();
     });
   });
 
   describe('batchUpdateFormMetadata', () => {
     it('should update metadata for multiple forms', async () => {
-      const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const loggerInfo = vi.spyOn(logger, 'info').mockImplementation(() => {});
       const ydoc = new Y.Doc();
       const state = Y.encodeStateAsUpdate(ydoc);
 
@@ -258,18 +259,18 @@ describe('Form Metadata Service', () => {
 
       await batchUpdateFormMetadata(['form-1', 'form-2', 'form-3']);
 
-      expect(consoleLog).toHaveBeenCalledWith(
+      expect(loggerInfo).toHaveBeenCalledWith(
         '🔄 Starting batch metadata update for 3 forms'
       );
-      expect(consoleLog).toHaveBeenCalledWith(
+      expect(loggerInfo).toHaveBeenCalledWith(
         '✅ Batch update completed: 3 successful, 0 errors'
       );
-      consoleLog.mockRestore();
+      loggerInfo.mockRestore();
     });
 
     it('should handle errors and continue processing', async () => {
-      const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerInfo = vi.spyOn(logger, 'info').mockImplementation(() => {});
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
 
       vi.mocked(collaborativeDocumentRepository.fetchDocumentWithState)
         .mockResolvedValueOnce({
@@ -283,14 +284,14 @@ describe('Form Metadata Service', () => {
 
       await batchUpdateFormMetadata(['form-1', 'form-2']);
 
-      expect(consoleError).toHaveBeenCalled();
+      expect(loggerError).toHaveBeenCalled();
       // Check that batch update logs completion (don't check exact counts due to async issues)
-      const completedCalls = consoleLog.mock.calls.filter((call) =>
+      const completedCalls = loggerInfo.mock.calls.filter((call) =>
         call[0]?.includes('Batch update completed')
       );
       expect(completedCalls.length).toBeGreaterThan(0);
-      consoleLog.mockRestore();
-      consoleError.mockRestore();
+      loggerInfo.mockRestore();
+      loggerError.mockRestore();
     });
   });
 
@@ -314,7 +315,7 @@ describe('Form Metadata Service', () => {
     });
 
     it('should compute metadata when not cached', async () => {
-      const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const loggerInfo = vi.spyOn(logger, 'info').mockImplementation(() => {});
       const ydoc = new Y.Doc();
       const state = Y.encodeStateAsUpdate(ydoc);
 
@@ -329,10 +330,10 @@ describe('Form Metadata Service', () => {
       const result = await getFormMetadata('form-123');
 
       expect(result).toBeDefined();
-      expect(consoleLog).toHaveBeenCalledWith(
+      expect(loggerInfo).toHaveBeenCalledWith(
         'Computing metadata for form form-123 (not cached)'
       );
-      consoleLog.mockRestore();
+      loggerInfo.mockRestore();
     });
 
     it('should return null when computation fails', async () => {
@@ -345,7 +346,7 @@ describe('Form Metadata Service', () => {
     });
 
     it('should handle errors gracefully', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       vi.mocked(formMetadataRepository.findByFormId).mockRejectedValue(
         new Error('Database error')
       );
@@ -353,8 +354,8 @@ describe('Form Metadata Service', () => {
       const result = await getFormMetadata('form-123');
 
       expect(result).toBeNull();
-      expect(consoleError).toHaveBeenCalled();
-      consoleError.mockRestore();
+      expect(loggerError).toHaveBeenCalled();
+      loggerError.mockRestore();
     });
   });
 
@@ -409,7 +410,7 @@ describe('Form Metadata Service', () => {
     });
 
     it('should handle errors gracefully', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       vi.mocked(formMetadataRepository.listCachedFormIds).mockRejectedValue(
         new Error('Database error')
       );
@@ -417,8 +418,8 @@ describe('Form Metadata Service', () => {
       const result = await getFormsNeedingMetadataUpdate();
 
       expect(result).toEqual([]);
-      expect(consoleError).toHaveBeenCalled();
-      consoleError.mockRestore();
+      expect(loggerError).toHaveBeenCalled();
+      loggerError.mockRestore();
     });
   });
 });

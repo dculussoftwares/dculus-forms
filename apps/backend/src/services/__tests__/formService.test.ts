@@ -10,6 +10,8 @@ import {
   duplicateForm,
 } from '../formService.js';
 import { formRepository } from '../../repositories/index.js';
+import { logger } from '../../lib/logger.js';
+
 import { initializeHocuspocusDocument, getFormSchemaFromHocuspocus } from '../hocuspocus.js';
 import { sendFormPublishedNotification } from '../emailService.js';
 import { checkFormAccess } from '../../graphql/resolvers/formSharing.js';
@@ -137,14 +139,14 @@ describe('Form Service', () => {
     });
 
     it('should handle errors and return null', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       vi.mocked(formRepository.findById).mockRejectedValue(new Error('Database error'));
 
       const result = await getFormById('form-123');
 
       expect(result).toBeNull();
-      expect(consoleError).toHaveBeenCalledWith('Error fetching form by ID:', expect.any(Error));
-      consoleError.mockRestore();
+      expect(loggerError).toHaveBeenCalledWith('Error fetching form by ID:', expect.any(Error));
+      loggerError.mockRestore();
     });
 
     it('should convert null description to undefined', async () => {
@@ -176,14 +178,14 @@ describe('Form Service', () => {
     });
 
     it('should handle errors and return null', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       vi.mocked(formRepository.findByShortUrl).mockRejectedValue(new Error('Database error'));
 
       const result = await getFormByShortUrl('abc12345');
 
       expect(result).toBeNull();
-      expect(consoleError).toHaveBeenCalledWith('Error fetching form by short URL:', expect.any(Error));
-      consoleError.mockRestore();
+      expect(loggerError).toHaveBeenCalledWith('Error fetching form by short URL:', expect.any(Error));
+      loggerError.mockRestore();
     });
   });
 
@@ -361,7 +363,7 @@ describe('Form Service', () => {
     });
 
     it('should handle invalid JSON in settings gracefully', async () => {
-      const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const loggerWarn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
       const invalidJSON = '{invalid json}';
 
       await createForm({
@@ -374,16 +376,16 @@ describe('Form Service', () => {
         settings: invalidJSON as any,
       });
 
-      expect(consoleWarn).toHaveBeenCalledWith(
+      expect(loggerWarn).toHaveBeenCalledWith(
         expect.stringContaining('Failed to parse form settings'),
         expect.any(Error)
       );
-      consoleWarn.mockRestore();
+      loggerWarn.mockRestore();
     });
 
     it('should continue if Hocuspocus initialization fails', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-      const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
+      const loggerWarn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
       vi.mocked(initializeHocuspocusDocument).mockRejectedValue(new Error('Hocuspocus error'));
 
       const result = await createForm({
@@ -396,16 +398,16 @@ describe('Form Service', () => {
       });
 
       expect(result.id).toBe('form-123');
-      expect(consoleError).toHaveBeenCalled();
-      expect(consoleWarn).toHaveBeenCalledWith(
+      expect(loggerError).toHaveBeenCalled();
+      expect(loggerWarn).toHaveBeenCalledWith(
         expect.stringContaining('collaboration initialization failed')
       );
-      consoleError.mockRestore();
-      consoleWarn.mockRestore();
+      loggerError.mockRestore();
+      loggerWarn.mockRestore();
     });
 
     it('should log error if OWNER permission creation fails', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       vi.mocked(formRepository.createOwnerPermission).mockRejectedValue(
         new Error('Permission error')
       );
@@ -419,11 +421,11 @@ describe('Form Service', () => {
         createdById: 'user-123',
       });
 
-      expect(consoleError).toHaveBeenCalledWith(
+      expect(loggerError).toHaveBeenCalledWith(
         expect.stringContaining('Failed to create OWNER permission'),
         expect.any(Error)
       );
-      consoleError.mockRestore();
+      loggerError.mockRestore();
     });
   });
 
@@ -512,7 +514,7 @@ describe('Form Service', () => {
     });
 
     it('should handle email notification failure gracefully', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       const unpublishedForm = { ...mockForm, isPublished: false };
       const publishedForm = { ...mockForm, isPublished: true };
 
@@ -524,11 +526,11 @@ describe('Form Service', () => {
       const result = await updateForm('form-123', { isPublished: true }, 'user-123');
 
       expect(result).toBeDefined();
-      expect(consoleError).toHaveBeenCalledWith(
+      expect(loggerError).toHaveBeenCalledWith(
         'Failed to send form published notification:',
         expect.any(Error)
       );
-      consoleError.mockRestore();
+      loggerError.mockRestore();
     });
 
     it('should update settings field', async () => {
@@ -561,12 +563,12 @@ describe('Form Service', () => {
     });
 
     it('should handle errors and rethrow', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       vi.mocked(formRepository.updateForm).mockRejectedValue(new Error('Database error'));
 
       await expect(regenerateShortUrl('form-123')).rejects.toThrow('Database error');
-      expect(consoleError).toHaveBeenCalled();
-      consoleError.mockRestore();
+      expect(loggerError).toHaveBeenCalled();
+      loggerError.mockRestore();
     });
   });
 
@@ -590,25 +592,25 @@ describe('Form Service', () => {
     });
 
     it('should return false when user lacks OWNER permissions', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       vi.mocked(checkFormAccess).mockResolvedValue({ hasAccess: false, permission: 'NO_ACCESS' as any, form: mockFormWithAccess });
 
       const result = await deleteForm('form-123', 'user-123');
 
       expect(result).toBe(false);
-      expect(consoleError).toHaveBeenCalledWith('Error deleting form:', expect.any(Error));
-      consoleError.mockRestore();
+      expect(loggerError).toHaveBeenCalledWith('Error deleting form:', expect.any(Error));
+      loggerError.mockRestore();
     });
 
     it('should return false on error', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       vi.mocked(formRepository.deleteForm).mockRejectedValue(new Error('Database error'));
 
       const result = await deleteForm('form-123');
 
       expect(result).toBe(false);
-      expect(consoleError).toHaveBeenCalled();
-      consoleError.mockRestore();
+      expect(loggerError).toHaveBeenCalled();
+      loggerError.mockRestore();
     });
   });
 
@@ -711,7 +713,7 @@ describe('Form Service', () => {
     });
 
     it('should handle background image copy failure', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       const schemaWithBg = {
         ...mockSchemaFromHocuspocus,
         layout: {
@@ -725,7 +727,7 @@ describe('Form Service', () => {
 
       await duplicateForm('form-123', 'user-456');
 
-      expect(consoleError).toHaveBeenCalledWith(
+      expect(loggerError).toHaveBeenCalledWith(
         expect.stringContaining('Failed to copy background image'),
         expect.any(Error)
       );
@@ -737,7 +739,7 @@ describe('Form Service', () => {
           }),
         })
       );
-      consoleError.mockRestore();
+      loggerError.mockRestore();
     });
 
     it('should handle null schema from Hocuspocus', async () => {

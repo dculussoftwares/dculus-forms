@@ -34,13 +34,15 @@ vi.mock('better-auth/node', () => ({
 
 import { auth } from '../../lib/better-auth.js';
 import { prisma } from '../../lib/prisma.js';
+import { logger } from '../../lib/logger.js';
 
 describe('Better Auth Middleware', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Suppress console logs in tests
-    vi.spyOn(console, 'log').mockImplementation(() => {});
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    // Suppress logger output in tests
+    vi.spyOn(logger, 'info').mockImplementation(() => {});
+    vi.spyOn(logger, 'debug').mockImplementation(() => {});
+    vi.spyOn(logger, 'error').mockImplementation(() => {});
   });
 
   describe('createBetterAuthContext', () => {
@@ -81,7 +83,7 @@ describe('Better Auth Middleware', () => {
       expect(result.user).toBeNull();
       expect(result.session).toBeNull();
       expect(result.isAuthenticated).toBe(false);
-      expect(console.error).toHaveBeenCalled();
+      expect(logger.error).toHaveBeenCalled();
     });
   });
 

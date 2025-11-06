@@ -9,6 +9,8 @@ import {
   deleteResponse,
 } from '../responseService.js';
 import { responseRepository } from '../../repositories/index.js';
+import { logger } from '../../lib/logger.js';
+
 import { applyResponseFilters } from '../responseFilterService.js';
 
 // Mock dependencies
@@ -107,14 +109,14 @@ describe('Response Service', () => {
     });
 
     it('should handle errors and return null', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       vi.mocked(responseRepository.findUnique).mockRejectedValue(new Error('Database error'));
 
       const result = await getResponseById('response-123');
 
       expect(result).toBeNull();
-      expect(consoleError).toHaveBeenCalledWith('Error fetching response by ID:', expect.any(Error));
-      consoleError.mockRestore();
+      expect(loggerError).toHaveBeenCalledWith('Error fetching response by ID:', expect.any(Error));
+      loggerError.mockRestore();
     });
   });
 
@@ -313,12 +315,12 @@ describe('Response Service', () => {
     });
 
     it('should handle errors during update', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       vi.mocked(responseRepository.update).mockRejectedValue(new Error('Database error'));
 
       await expect(updateResponse('response-123', {})).rejects.toThrow();
-      expect(consoleError).toHaveBeenCalled();
-      consoleError.mockRestore();
+      expect(loggerError).toHaveBeenCalled();
+      loggerError.mockRestore();
     });
   });
 
@@ -333,14 +335,14 @@ describe('Response Service', () => {
     });
 
     it('should return false on error', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       vi.mocked(responseRepository.delete).mockRejectedValue(new Error('Database error'));
 
       const result = await deleteResponse('response-123');
 
       expect(result).toBe(false);
-      expect(consoleError).toHaveBeenCalled();
-      consoleError.mockRestore();
+      expect(loggerError).toHaveBeenCalled();
+      loggerError.mockRestore();
     });
   });
 });
