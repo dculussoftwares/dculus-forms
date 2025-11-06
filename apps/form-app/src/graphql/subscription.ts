@@ -10,6 +10,7 @@ export const GET_AVAILABLE_PLANS = gql`
     availablePlans {
       id
       name
+      description
       prices {
         id
         currency

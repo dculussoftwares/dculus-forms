@@ -1011,6 +1011,7 @@ export const typeDefs = gql`
   type AvailablePlan {
     id: String!
     name: String!
+    description: String
     prices: [PlanPrice!]!
     features: PlanFeatures!
   }

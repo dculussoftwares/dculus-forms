@@ -19,9 +19,10 @@ export const subscriptionResolvers = {
   Query: {
     /**
      * Get available subscription plans with pricing
+     * Fetches from Chargebee dynamically
      */
-    availablePlans: () => {
-      return getAvailablePlans();
+    availablePlans: async () => {
+      return await getAvailablePlans();
     },
   },
 
