@@ -197,6 +197,9 @@ jobs:
       - name: Type check backend
         run: pnpm --filter backend type-check
 
+      - name: Run unit tests
+        run: pnpm --filter backend test
+
       - name: Build backend
         run: pnpm --filter backend build
 
