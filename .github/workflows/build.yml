@@ -198,6 +198,8 @@ jobs:
         run: pnpm --filter backend type-check
 
       - name: Run unit tests
+        env:
+          NODE_ENV: test
         run: pnpm --filter backend test
 
       - name: Build backend

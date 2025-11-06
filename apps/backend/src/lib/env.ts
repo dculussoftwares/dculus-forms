@@ -39,13 +39,17 @@ export interface EmailConfig {
   from: string;
 }
 
+// Determine environment early to use in config
+const nodeEnv = optionalEnv('NODE_ENV', 'development')!;
+const isTest = nodeEnv === 'test';
+
 export const s3Config: S3Config = {
-  endpoint: requireEnv('S3_ENDPOINT'),
-  accessKey: requireEnv('S3_ACCESS_KEY'),
-  secretKey: requireEnv('S3_SECRET_KEY'),
-  publicBucketName: requireEnv('S3_PUBLIC_BUCKET_NAME'),
-  privateBucketName: requireEnv('S3_PRIVATE_BUCKET_NAME'),
-  cdnUrl: requireEnv('S3_CDN_URL'),
+  endpoint: isTest ? optionalEnv('S3_ENDPOINT', 'http://localhost:9000')! : requireEnv('S3_ENDPOINT'),
+  accessKey: isTest ? optionalEnv('S3_ACCESS_KEY', 'test-access-key')! : requireEnv('S3_ACCESS_KEY'),
+  secretKey: isTest ? optionalEnv('S3_SECRET_KEY', 'test-secret-key')! : requireEnv('S3_SECRET_KEY'),
+  publicBucketName: isTest ? optionalEnv('S3_PUBLIC_BUCKET_NAME', 'test-public-bucket')! : requireEnv('S3_PUBLIC_BUCKET_NAME'),
+  privateBucketName: isTest ? optionalEnv('S3_PRIVATE_BUCKET_NAME', 'test-private-bucket')! : requireEnv('S3_PRIVATE_BUCKET_NAME'),
+  cdnUrl: isTest ? optionalEnv('S3_CDN_URL', 'http://localhost:9000')! : requireEnv('S3_CDN_URL'),
 };
 
 export const authConfig: AuthConfig = {
@@ -55,8 +59,6 @@ export const authConfig: AuthConfig = {
     'fallback-secret-for-development-only-do-not-use-in-production'
   ),
 };
-
-const nodeEnv = optionalEnv('NODE_ENV', 'development')!;
 
 export const appConfig: AppConfig = {
   port: parseInt(optionalEnv('PORT', '4000')!, 10),
