@@ -175,8 +175,10 @@ export const getTemplatesByCategory = async (): Promise<Record<string, FormTempl
 export const getTemplateCategories = async (): Promise<string[]> => {
   const templates = await formTemplateRepository.listCategories();
 
-  return templates
+  const categories = templates
     .map((t: {category: string | null}) => t.category)
-    .filter((category): category is string => Boolean(category))
-    .sort();
+    .filter((category): category is string => Boolean(category));
+
+  // Remove duplicates using Set and sort
+  return Array.from(new Set(categories)).sort();
 };

@@ -72,6 +72,10 @@ export function applyResponseFilters(responses: any[], filters?: ResponseFilter[
           try {
             const fieldDate = new Date(Number(fieldValue) || fieldValue);
             const compareDate = new Date(filter.value || '');
+            // Check for invalid dates
+            if (isNaN(fieldDate.getTime()) || isNaN(compareDate.getTime())) {
+              return false;
+            }
             return fieldDate.toDateString() === compareDate.toDateString();
           } catch {
             return false;
@@ -81,15 +85,23 @@ export function applyResponseFilters(responses: any[], filters?: ResponseFilter[
           try {
             const fieldDate = new Date(Number(fieldValue) || fieldValue);
             const compareDate = new Date(filter.value || '');
+            // Check for invalid dates
+            if (isNaN(fieldDate.getTime()) || isNaN(compareDate.getTime())) {
+              return false;
+            }
             return fieldDate < compareDate;
           } catch {
             return false;
           }
-        
+
         case 'DATE_AFTER':
           try {
             const fieldDate = new Date(Number(fieldValue) || fieldValue);
             const compareDate = new Date(filter.value || '');
+            // Check for invalid dates
+            if (isNaN(fieldDate.getTime()) || isNaN(compareDate.getTime())) {
+              return false;
+            }
             return fieldDate > compareDate;
           } catch {
             return false;
@@ -99,10 +111,20 @@ export function applyResponseFilters(responses: any[], filters?: ResponseFilter[
           if (!filter.dateRange) return false;
           try {
             const fieldDate = new Date(Number(fieldValue) || fieldValue);
+            // Check for invalid field date
+            if (isNaN(fieldDate.getTime())) {
+              return false;
+            }
+
             const fromDate = filter.dateRange.from ? new Date(filter.dateRange.from) : null;
             const toDate = filter.dateRange.to ? new Date(filter.dateRange.to) : null;
-            
-            return (!fromDate || fieldDate >= fromDate) && 
+
+            // Check for invalid range dates
+            if ((fromDate && isNaN(fromDate.getTime())) || (toDate && isNaN(toDate.getTime()))) {
+              return false;
+            }
+
+            return (!fromDate || fieldDate >= fromDate) &&
                    (!toDate || fieldDate <= toDate);
           } catch {
             return false;
