@@ -1,13 +1,18 @@
 import { setWorldConstructor, World, IWorldOptions } from '@cucumber/cucumber';
 import { AxiosResponse } from 'axios';
+import { PrismaClient } from '@prisma/client';
 import { AuthUtils, AuthUser, AuthSession } from '../utils/auth-utils';
 import { FormTestUtils, Form } from '../utils/form-test-utils';
+import { MockSMTPServer } from '../utils/mock-servers';
+import { getPrismaClient, getMockSMTPServer } from './hooks';
 
 export interface CustomWorld extends World {
   response?: AxiosResponse;
   baseURL: string;
   authUtils: AuthUtils;
   formTestUtils: FormTestUtils;
+  prisma: PrismaClient;
+  mockSMTP: MockSMTPServer;
   authToken?: string;
   currentUser?: AuthUser;
   currentSession?: AuthSession;
@@ -15,8 +20,12 @@ export interface CustomWorld extends World {
   uploadedFiles: string[]; // Track uploaded files for cleanup
   createdForms: Form[]; // Track created forms for cleanup
   sharedTestData: Map<string, any>; // Shared data across step files
+  currentOrganization?: { id: string; name: string }; // Track current organization
   setSharedTestData(key: string, value: any): void;
   getSharedTestData(key: string): any;
+  clearDatabase(): Promise<void>;
+  trackUploadedFile(fileKey: string): void;
+  trackCreatedForm(form: Form): void;
 }
 
 export class CustomWorldConstructor extends World implements CustomWorld {
@@ -24,6 +33,8 @@ export class CustomWorldConstructor extends World implements CustomWorld {
   public baseURL: string;
   public authUtils: AuthUtils;
   public formTestUtils: FormTestUtils;
+  public prisma: PrismaClient;
+  public mockSMTP: MockSMTPServer;
   public authToken?: string;
   public currentUser?: AuthUser;
   public currentSession?: AuthSession;
@@ -31,6 +42,7 @@ export class CustomWorldConstructor extends World implements CustomWorld {
   public uploadedFiles: string[];
   public createdForms: Form[];
   public sharedTestData: Map<string, any>;
+  public currentOrganization?: { id: string; name: string };
 
   constructor(options: IWorldOptions) {
     super(options);
@@ -41,6 +53,17 @@ export class CustomWorldConstructor extends World implements CustomWorld {
     this.uploadedFiles = [];
     this.createdForms = [];
     this.sharedTestData = new Map();
+
+    // Get Prisma client and Mock SMTP Server from hooks (only available for local tests)
+    const isRemoteBackend = process.env.TEST_BASE_URL && !process.env.TEST_BASE_URL.includes('localhost');
+    if (!isRemoteBackend) {
+      this.prisma = getPrismaClient();
+      this.mockSMTP = getMockSMTPServer();
+    } else {
+      // For remote tests, prisma and mockSMTP won't be available
+      this.prisma = null as any;
+      this.mockSMTP = null as any;
+    }
 
     console.log(`🔧 Test environment configured - using ${this.baseURL}`);
   }
@@ -171,6 +194,43 @@ export class CustomWorldConstructor extends World implements CustomWorld {
   }
 
   /**
+   * Clear all data from database (for local tests only)
+   */
+  async clearDatabase(): Promise<void> {
+    if (!this.prisma) {
+      console.warn('Prisma client not available, skipping database cleanup');
+      return;
+    }
+
+    try {
+      // Delete in order to respect foreign key constraints
+      await this.prisma.formViewAnalytics.deleteMany({});
+      await this.prisma.formSubmissionAnalytics.deleteMany({});
+      await this.prisma.response.deleteMany({});
+      await this.prisma.formPlugin.deleteMany({});
+      await this.prisma.formPermission.deleteMany({});
+      await this.prisma.formFile.deleteMany({});
+      await this.prisma.formMetadata.deleteMany({});
+      await this.prisma.form.deleteMany({});
+      await this.prisma.formTemplate.deleteMany({});
+      await this.prisma.collaborativeDocument.deleteMany({});
+      await this.prisma.invitation.deleteMany({});
+      await this.prisma.member.deleteMany({});
+      await this.prisma.session.deleteMany({});
+      await this.prisma.account.deleteMany({});
+      await this.prisma.user.deleteMany({});
+      await this.prisma.organization.deleteMany({});
+      await this.prisma.subscription.deleteMany({});
+      await this.prisma.verification.deleteMany({});
+
+      console.log('✅ Database cleared successfully');
+    } catch (error) {
+      console.error('Failed to clear database:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Clean up all test users created during this scenario
    */
   async cleanup(): Promise<void> {
@@ -230,6 +290,7 @@ export class CustomWorldConstructor extends World implements CustomWorld {
     // Clear all contexts
     this.clearAuthContext();
     this.testUsers.clear();
+    this.currentOrganization = undefined;
   }
 }
 

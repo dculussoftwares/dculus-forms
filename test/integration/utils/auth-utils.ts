@@ -127,7 +127,11 @@ export class AuthUtils {
       };
     } catch (error: any) {
       if (error.response?.data?.error) {
+        console.error('Sign up error response:', JSON.stringify(error.response.data, null, 2));
         throw new Error(`Auth error: ${error.response.data.error.message}`);
+      }
+      if (error.response?.data) {
+        console.error('Sign up error response:', JSON.stringify(error.response.data, null, 2));
       }
       throw new Error(`Sign up failed: ${error.message}`);
     }
