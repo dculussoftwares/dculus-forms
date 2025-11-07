@@ -109,6 +109,23 @@ describe('fieldAnalyticsService', () => {
       });
       expect(analytics.lastUpdated).toEqual(new Date('2024-05-01T12:00:00Z'));
     });
+
+    it('returns zero response rate when total submissions are unknown', () => {
+      const fieldResponses = [
+        { value: 'Data driven insights', submittedAt: toDate('2024-03-01T08:00:00Z'), responseId: 'r1' },
+        { value: 'Data driven strategic vision', submittedAt: toDate('2024-03-02T08:00:00Z'), responseId: 'r2' },
+      ];
+
+      const analytics = processTextFieldAnalytics(fieldResponses, 'field-text-zero', 'Comments', 0);
+
+      expect(analytics.totalResponses).toBe(2);
+      expect(analytics.responseRate).toBe(0);
+      expect(analytics.averageLength).toBe(24);
+      expect(analytics.minLength).toBe(20);
+      expect(analytics.maxLength).toBe(28);
+      expect(analytics.commonPhrases).toContainEqual({ phrase: 'data driven', count: 2 });
+      expect(analytics.wordCloud.find(entry => entry.word === 'data')?.weight).toBe(1);
+    });
   });
 
   describe('processNumberFieldAnalytics', () => {
@@ -169,6 +186,27 @@ describe('fieldAnalyticsService', () => {
         trend: [],
       });
     });
+
+    it('skips NaN entries when calculating numeric stats and trend', () => {
+      const fieldResponses = [
+        { value: '5', submittedAt: toDate('2024-03-01T00:00:00Z'), responseId: 'r1' },
+        { value: 'invalid', submittedAt: toDate('2024-03-02T00:00:00Z'), responseId: 'r2' },
+        { value: 15, submittedAt: toDate('2024-03-03T00:00:00Z'), responseId: 'r3' },
+      ];
+
+      const analytics = processNumberFieldAnalytics(fieldResponses, 'field-number', 'Score', 3);
+
+      expect(analytics.totalResponses).toBe(2);
+      expect(analytics.responseRate).toBeCloseTo(66.67, 2);
+      expect(analytics.min).toBe(5);
+      expect(analytics.max).toBe(15);
+      expect(analytics.median).toBe(15);
+      expect(analytics.standardDeviation).toBe(5);
+      expect(analytics.trend).toEqual([
+        { date: '2024-03-01', average: 5, count: 1 },
+        { date: '2024-03-03', average: 15, count: 1 },
+      ]);
+    });
   });
 
   describe('processSelectionFieldAnalytics', () => {
@@ -225,6 +263,26 @@ describe('fieldAnalyticsService', () => {
       expect(analytics.responseDistribution).toBe('polarized');
       expect(analytics.trend).toHaveLength(9);
     });
+
+    it('treats a single unique option as concentrated and still builds trend data', () => {
+      const responses = [
+        { value: 'Only option', submittedAt: toDate('2024-03-01T10:00:00Z'), responseId: '1' },
+        { value: 'Only option', submittedAt: toDate('2024-03-02T10:00:00Z'), responseId: '2' },
+        { value: 'Only option', submittedAt: toDate('2024-03-03T10:00:00Z'), responseId: '3' },
+      ];
+
+      const analytics = processSelectionFieldAnalytics(responses, 'field-select', 'Selection', 6);
+
+      expect(analytics.options).toHaveLength(1);
+      expect(analytics.topOption).toBe('Only option');
+      expect(analytics.responseDistribution).toBe('concentrated');
+      expect(analytics.trend).toEqual([
+        { date: '2024-03-01', options: [{ option: 'Only option', count: 1 }] },
+        { date: '2024-03-02', options: [{ option: 'Only option', count: 1 }] },
+        { date: '2024-03-03', options: [{ option: 'Only option', count: 1 }] },
+      ]);
+      expect(analytics.responseRate).toBe(50);
+    });
   });
 
   describe('processCheckboxFieldAnalytics', () => {
@@ -256,6 +314,28 @@ describe('fieldAnalyticsService', () => {
         option2: 'Option B',
       });
       expect(analytics.lastUpdated).toEqual(new Date('2024-05-01T12:00:00Z'));
+    });
+
+    it('parses comma separated strings and highlights strong co-occurrence', () => {
+      const responses = [
+        { value: 'Option A, Option B', submittedAt: toDate('2024-03-01T00:00:00Z'), responseId: '1' },
+        { value: 'Option A, Option B', submittedAt: toDate('2024-03-02T00:00:00Z'), responseId: '2' },
+        { value: 'Option A, Option B', submittedAt: toDate('2024-03-03T00:00:00Z'), responseId: '3' },
+        { value: 'Option A, Option B', submittedAt: toDate('2024-03-04T00:00:00Z'), responseId: '4' },
+        { value: 'Option C', submittedAt: toDate('2024-03-05T00:00:00Z'), responseId: '5' },
+        { value: 'Option C', submittedAt: toDate('2024-03-06T00:00:00Z'), responseId: '6' },
+        { value: 'Option C', submittedAt: toDate('2024-03-07T00:00:00Z'), responseId: '7' },
+        { value: 'Option C', submittedAt: toDate('2024-03-08T00:00:00Z'), responseId: '8' },
+      ];
+
+      const analytics = processCheckboxFieldAnalytics(responses, 'field-checkbox', 'Choices', 10);
+
+      expect(analytics.totalResponses).toBe(8);
+      expect(analytics.responseRate).toBe(80);
+      expect(analytics.averageSelections).toBe(1.5);
+      expect(analytics.individualOptions.find(option => option.option === 'Option C')?.count).toBe(4);
+      expect(analytics.combinations[0]).toMatchObject({ combination: ['Option A', 'Option B'], count: 4 });
+      expect(analytics.correlations[0]).toMatchObject({ option1: 'Option A', option2: 'Option B' });
     });
   });
 
@@ -293,6 +373,9 @@ describe('fieldAnalyticsService', () => {
       expect(analytics.totalResponses).toBe(0);
       expect(analytics.responseRate).toBe(0);
       expect(analytics.dateDistribution).toEqual([]);
+      expect(analytics.weekdayDistribution).toEqual([]);
+      expect(analytics.monthlyDistribution).toEqual([]);
+      expect(analytics.seasonalPatterns).toEqual([]);
     });
 
     it('correctly categorizes dates into all four seasons', () => {
@@ -308,6 +391,20 @@ describe('fieldAnalyticsService', () => {
       expect(analytics.seasonalPatterns.find(s => s.season === 'Summer')?.count).toBe(1);
       expect(analytics.seasonalPatterns.find(s => s.season === 'Fall')?.count).toBe(1);
       expect(analytics.seasonalPatterns.find(s => s.season === 'Winter')?.count).toBe(2);
+    });
+
+    it('sets response rate to zero when total submissions count is unknown', () => {
+      const responses = [
+        { value: '2024-06-01', submittedAt: toDate('2024-06-02T10:00:00Z'), responseId: '1' },
+        { value: '2024-06-01', submittedAt: toDate('2024-06-03T10:00:00Z'), responseId: '2' },
+        { value: '2024-06-02', submittedAt: toDate('2024-06-04T10:00:00Z'), responseId: '3' },
+      ];
+
+      const analytics = processDateFieldAnalytics(responses, 'field-date', 'Event Date', 0);
+
+      expect(analytics.totalResponses).toBe(3);
+      expect(analytics.responseRate).toBe(0);
+      expect(analytics.mostCommonDate.toISOString()).toBe('2024-06-01T00:00:00.000Z');
     });
   });
 
@@ -335,6 +432,38 @@ describe('fieldAnalyticsService', () => {
       expect(analytics.popularProviders.map(provider => provider.provider)).toEqual(['gmail', 'yahoo']);
       expect(analytics.corporateVsPersonal).toEqual({ corporate: 3, personal: 2, unknown: 1 });
       expect(analytics.lastUpdated).toEqual(new Date('2024-05-01T12:00:00Z'));
+    });
+
+    it('detects corporate, personal, and unknown domains from subdomains', () => {
+      const responses = [
+        { value: 'analyst@mail.corp.co.uk', submittedAt: toDate('2024-03-01T00:00:00Z'), responseId: '1' },
+        { value: 'lead@mail.corp.co.uk', submittedAt: toDate('2024-03-02T00:00:00Z'), responseId: '2' },
+        { value: 'cto@mail.corp.co.uk', submittedAt: toDate('2024-03-03T00:00:00Z'), responseId: '3' },
+        { value: 'friend@gmail.com', submittedAt: toDate('2024-03-04T00:00:00Z'), responseId: '4' },
+        { value: 'founder@newstartup.io', submittedAt: toDate('2024-03-05T00:00:00Z'), responseId: '5' },
+        { value: 'invalid', submittedAt: toDate('2024-03-06T00:00:00Z'), responseId: '6' },
+      ];
+
+      const analytics = processEmailFieldAnalytics(responses, 'field-email', 'Email', 6);
+
+      expect(analytics.domains.find(domain => domain.domain === 'mail.corp.co.uk')?.count).toBe(3);
+      expect(analytics.topLevelDomains.find(tld => tld.tld === 'uk')?.count).toBe(3);
+      expect(analytics.popularProviders.map(provider => provider.provider)).toContain('gmail');
+      expect(analytics.corporateVsPersonal).toEqual({ corporate: 3, personal: 1, unknown: 1 });
+    });
+
+    it('returns zeroed breakdowns when every email is invalid', () => {
+      const responses = [
+        { value: 'bad', submittedAt: toDate('2024-03-01T00:00:00Z'), responseId: '1' },
+        { value: 'still.bad', submittedAt: toDate('2024-03-02T00:00:00Z'), responseId: '2' },
+      ];
+
+      const analytics = processEmailFieldAnalytics(responses, 'field-email', 'Email', 2);
+
+      expect(analytics.validEmails).toBe(0);
+      expect(analytics.validationRate).toBe(0);
+      expect(analytics.domains).toHaveLength(0);
+      expect(analytics.corporateVsPersonal).toEqual({ corporate: 0, personal: 0, unknown: 0 });
     });
   });
 
@@ -530,6 +659,34 @@ describe('fieldAnalyticsService', () => {
       vi.mocked(formRepository.findUnique).mockResolvedValue(null);
 
       await expect(getAllFieldsAnalytics('missing-form')).rejects.toThrow('Form not found: missing-form');
+    });
+
+    it('falls back to generated labels when schema omits them', async () => {
+      vi.mocked(formRepository.findUnique).mockResolvedValue({
+        formSchema: {},
+      } as any);
+      vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValue({
+        pages: [
+          {
+            fields: [
+              { id: 'noLabelField', type: FieldType.TEXT_INPUT_FIELD },
+              { id: 'ignored', type: FieldType.FORM_FIELD },
+            ],
+          },
+        ],
+      });
+      vi.mocked(responseRepository.listByForm).mockResolvedValue([
+        {
+          id: 'resp-1',
+          data: { noLabelField: 'hello' },
+          submittedAt: new Date('2024-04-01T10:00:00Z'),
+        },
+      ] as any);
+
+      const result = await getAllFieldsAnalytics('form-fallback');
+
+      const field = result.fields.find(item => item.fieldId === 'noLabelField');
+      expect(field?.fieldLabel).toBe('Field noLabelField');
     });
   });
 });

@@ -7,6 +7,7 @@ describe('Form Metadata Repository', () => {
       findUnique: vi.fn(),
       upsert: vi.fn(),
       findMany: vi.fn(),
+      update: vi.fn(),
     },
   };
 
@@ -16,6 +17,58 @@ describe('Form Metadata Repository', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     formMetadataRepository = createFormMetadataRepository(mockContext);
+  });
+
+  describe('core prisma delegates', () => {
+    it('should call findUnique with provided args', async () => {
+      const args = { where: { id: 'meta-1' }, select: { id: true } };
+      const record = { id: 'meta-1' };
+      mockPrisma.formMetadata.findUnique.mockResolvedValue(record as any);
+
+      const result = await formMetadataRepository.findUnique(args as any);
+
+      expect(mockPrisma.formMetadata.findUnique).toHaveBeenCalledWith(args);
+      expect(result).toEqual(record);
+    });
+
+    it('should call findMany with provided args', async () => {
+      const args = { where: { pageCount: { gt: 2 } }, take: 5 };
+      const list = [{ id: 'meta-a' }, { id: 'meta-b' }];
+      mockPrisma.formMetadata.findMany.mockResolvedValue(list as any);
+
+      const result = await formMetadataRepository.findMany(args as any);
+
+      expect(mockPrisma.formMetadata.findMany).toHaveBeenCalledWith(args);
+      expect(result).toEqual(list);
+    });
+
+    it('should call upsert with provided args', async () => {
+      const args = {
+        where: { formId: 'form-999' },
+        create: { formId: 'form-999', pageCount: 1 },
+        update: { pageCount: 2 },
+      };
+      mockPrisma.formMetadata.upsert.mockResolvedValue(args.create as any);
+
+      const result = await formMetadataRepository.upsert(args as any);
+
+      expect(mockPrisma.formMetadata.upsert).toHaveBeenCalledWith(args);
+      expect(result).toEqual(args.create);
+    });
+
+    it('should call update with provided args', async () => {
+      const args = {
+        where: { formId: 'form-777' },
+        data: { lastUpdated: new Date() },
+      };
+      const updated = { ...args.data, formId: 'form-777' };
+      mockPrisma.formMetadata.update.mockResolvedValue(updated as any);
+
+      const result = await formMetadataRepository.update(args as any);
+
+      expect(mockPrisma.formMetadata.update).toHaveBeenCalledWith(args);
+      expect(result).toEqual(updated);
+    });
   });
 
   describe('findByFormId', () => {

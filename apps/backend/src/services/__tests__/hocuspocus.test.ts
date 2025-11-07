@@ -129,6 +129,19 @@ describe('Hocuspocus Service', () => {
 
       expect(logger.error).toHaveBeenCalledWith('[Hocuspocus] Error storing document form-123:', error);
     });
+
+    it('should prefix stored document names via callback', async () => {
+      const mockState = new Uint8Array([9, 9, 9]);
+      vi.mocked(collaborativeDocumentRepository.saveDocumentState).mockResolvedValue(undefined as any);
+
+      const server = createHocuspocusServer();
+      const databaseExtension = server.configuration.extensions[0];
+      await (databaseExtension as any).configuration.store({ documentName: 'form-abc', state: mockState });
+
+      const [, , collectionCallback] =
+        vi.mocked(collaborativeDocumentRepository.saveDocumentState).mock.calls[0];
+      expect(collectionCallback('form-abc')).toBe('collab-form-abc');
+    });
   });
 
   describe('onAuthenticate hook', () => {
@@ -261,10 +274,35 @@ describe('Hocuspocus Service', () => {
         server.configuration.onAuthenticate!({
           documentName: '',
           token: 'Bearer valid-token',
-          requestHeaders: new Headers(),
+        requestHeaders: new Headers(),
+        requestParameters: new URLSearchParams(),
+      } as any)
+    ).rejects.toThrow('Document name is required');
+    });
+
+    it('should log when authorization headers cannot be parsed', async () => {
+      const headerError = new Error('headers broken');
+      const problemHeaders = {
+        get: () => {
+          throw headerError;
+        },
+      };
+
+      const server = createHocuspocusServer();
+
+      await expect(
+        server.configuration.onAuthenticate!({
+          documentName: 'form-123',
+          token: undefined,
+          requestHeaders: problemHeaders as any,
           requestParameters: new URLSearchParams(),
         } as any)
-      ).rejects.toThrow('Document name is required');
+      ).rejects.toThrow('No authentication token provided');
+
+      expect(logger.info).toHaveBeenCalledWith(
+        '🔍 [onAuthenticate] Could not extract token from headers:',
+        headerError
+      );
     });
   });
 
@@ -406,6 +444,29 @@ describe('Hocuspocus Service', () => {
         context: { user: { email: 'editor@example.com', permission: PermissionLevel.EDITOR } },
       } as any);
 
+      await vi.runAllTimersAsync();
+
+      expect(logger.error).toHaveBeenCalledWith('❌ [Metadata] Failed to update for form form-123:', error);
+    });
+
+    it('should log metadata errors when resetting an existing debounce', async () => {
+      const error = new Error('Second debounce failure');
+      vi.mocked(updateFormMetadata).mockRejectedValue(error);
+
+      const server = createHocuspocusServer();
+      const changePayload = {
+        documentName: 'form-123',
+        document: mockDoc,
+        context: {
+          user: {
+            email: 'editor@example.com',
+            permission: PermissionLevel.EDITOR,
+          },
+        },
+      };
+
+      await server.configuration.onChange!(changePayload as any);
+      await server.configuration.onChange!(changePayload as any);
       await vi.runAllTimersAsync();
 
       expect(logger.error).toHaveBeenCalledWith('❌ [Metadata] Failed to update for form form-123:', error);
@@ -561,6 +622,27 @@ describe('Hocuspocus Service', () => {
         '❌ Error getting form schema from Hocuspocus for form form-123:',
         error
       );
+    });
+
+    it('should return null when formSchema map is missing', async () => {
+      const doc = new Y.Doc();
+      const state = Y.encodeStateAsUpdate(doc);
+
+      vi.mocked(collaborativeDocumentRepository.fetchDocumentWithState).mockResolvedValue({
+        state: Buffer.from(state),
+      } as any);
+
+      const getMapSpy = vi.spyOn(Y.Doc.prototype as any, 'getMap').mockReturnValue(undefined as any);
+      const destroySpy = vi.spyOn(Y.Doc.prototype as any, 'destroy');
+
+      const result = await getFormSchemaFromHocuspocus('form-123');
+
+      expect(result).toBeNull();
+      expect(logger.info).toHaveBeenCalledWith('❌ No formSchema map found in document for form: form-123');
+      expect(destroySpy).toHaveBeenCalled();
+
+      getMapSpy.mockRestore();
+      destroySpy.mockRestore();
     });
   });
 
