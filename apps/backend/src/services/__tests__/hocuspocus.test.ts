@@ -799,4 +799,28 @@ describe('Hocuspocus Service', () => {
       );
     });
   });
+
+  describe('initializeHocuspocusDocument callback', () => {
+    it('should use callback to generate collection name during initialization', async () => {
+      vi.mocked(collaborativeDocumentRepository.saveDocumentState).mockResolvedValue({
+        id: 'collab-id',
+        documentName: 'new-form-456',
+        state: new Uint8Array(),
+        updatedAt: new Date(),
+      } as any);
+
+      await initializeHocuspocusDocument('new-form-456', { pages: [], layout: {} } as any);
+
+      expect(collaborativeDocumentRepository.saveDocumentState).toHaveBeenCalledWith(
+        'new-form-456',
+        expect.any(Buffer),
+        expect.any(Function)
+      );
+
+      // Test the callback function
+      const callArgs = vi.mocked(collaborativeDocumentRepository.saveDocumentState).mock.calls[0];
+      const callback = callArgs[2] as (name: string) => string;
+      expect(callback('new-form-456')).toBe('collab-new-form-456');
+    });
+  });
 });

@@ -189,6 +189,74 @@ describe('Analytics Service', () => {
       expect(calls).toHaveLength(2);
       expect(calls[0]).not.toBe(calls[1]);
     });
+
+    it('should handle errors in country detection from language', async () => {
+      const countriesMock = await import('i18n-iso-countries');
+      vi.mocked(countriesMock.default.alpha2ToAlpha3).mockImplementationOnce(() => {
+        throw new Error('Country lookup error');
+      });
+      vi.mocked(formViewAnalyticsRepository.createViewEvent).mockResolvedValue({} as any);
+
+      const dataWithLanguage = {
+        ...mockAnalyticsData,
+        language: 'en-US',
+        timezone: undefined, // Remove timezone so it can't fall back to timezone detection
+      };
+
+      await analyticsService.trackFormView(dataWithLanguage);
+
+      expect(logger.error).toHaveBeenCalledWith(
+        'Error parsing country from language:',
+        expect.any(Error)
+      );
+      // The country may still be detected from other sources, just verify error was logged
+    });
+
+    it('should handle errors in country detection from timezone', async () => {
+      const ct = await import('countries-and-timezones');
+      vi.mocked(ct.getTimezone).mockImplementationOnce(() => {
+        throw new Error('Timezone lookup error');
+      });
+      vi.mocked(formViewAnalyticsRepository.createViewEvent).mockResolvedValue({} as any);
+
+      const dataWithTimezone = {
+        ...mockAnalyticsData,
+        language: undefined,
+        timezone: 'America/Toronto',
+      };
+
+      await analyticsService.trackFormView(dataWithTimezone);
+
+      expect(logger.error).toHaveBeenCalledWith(
+        'Error parsing country from timezone:',
+        expect.any(Error)
+      );
+      expect(formViewAnalyticsRepository.createViewEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          countryCode: null,
+        })
+      );
+    });
+
+    it('should handle errors in getting country name from code', async () => {
+      const countriesMock = await import('i18n-iso-countries');
+      vi.mocked(countriesMock.default.getName).mockImplementationOnce(() => {
+        throw new Error('Country name lookup error');
+      });
+
+      vi.mocked(formViewAnalyticsRepository.groupBy).mockResolvedValue([
+        { countryCode: 'USA', _count: { countryCode: 10 } },
+      ] as any);
+      vi.mocked(formViewAnalyticsRepository.count).mockResolvedValue(10);
+
+      // Verify the error is logged
+      await expect(analyticsService.getFormAnalytics('form-123')).rejects.toThrow('Failed to fetch analytics data');
+
+      expect(logger.error).toHaveBeenCalledWith(
+        'Error getting country name from code:',
+        expect.any(Error)
+      );
+    });
   });
 
   describe('updateFormStartTime', () => {

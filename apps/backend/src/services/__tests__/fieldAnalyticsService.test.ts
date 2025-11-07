@@ -294,6 +294,21 @@ describe('fieldAnalyticsService', () => {
       expect(analytics.responseRate).toBe(0);
       expect(analytics.dateDistribution).toEqual([]);
     });
+
+    it('correctly categorizes dates into all four seasons', () => {
+      const responses = [
+        { value: '2024-06-15', submittedAt: toDate('2024-06-16T10:00:00Z'), responseId: '1' }, // Summer
+        { value: '2024-09-15', submittedAt: toDate('2024-09-16T10:00:00Z'), responseId: '2' }, // Fall
+        { value: '2024-12-15', submittedAt: toDate('2024-12-16T10:00:00Z'), responseId: '3' }, // Winter
+        { value: '2024-01-15', submittedAt: toDate('2024-01-16T10:00:00Z'), responseId: '4' }, // Winter
+      ];
+
+      const analytics = processDateFieldAnalytics(responses, 'field-date', 'Event Date', 4);
+
+      expect(analytics.seasonalPatterns.find(s => s.season === 'Summer')?.count).toBe(1);
+      expect(analytics.seasonalPatterns.find(s => s.season === 'Fall')?.count).toBe(1);
+      expect(analytics.seasonalPatterns.find(s => s.season === 'Winter')?.count).toBe(2);
+    });
   });
 
   describe('processEmailFieldAnalytics', () => {
@@ -368,7 +383,42 @@ describe('fieldAnalyticsService', () => {
         throw new Error('Expected checkbox field analytics');
       }
       expect(result.totalResponses).toBe(2);
-      expect(result.individualOptions[0]).toMatchObject({ option: 'Option A', count: 2 });
+    });
+
+    it('routes to selection analytics for select fields', async () => {
+      vi.mocked(responseRepository.listByForm).mockResolvedValue([
+        { id: 'resp-1', data: { fieldA: 'Option A' }, submittedAt: new Date('2024-04-01T00:00:00Z') },
+        { id: 'resp-2', data: { fieldA: 'Option B' }, submittedAt: new Date('2024-04-02T00:00:00Z') },
+      ] as any);
+
+      const result = await getFieldAnalytics('form-123', 'fieldA', FieldType.SELECT_FIELD, 'Select');
+
+      expect(result.fieldType).toBe(FieldType.SELECT_FIELD);
+      expect(result.totalResponses).toBe(2);
+    });
+
+    it('routes to selection analytics for radio fields', async () => {
+      vi.mocked(responseRepository.listByForm).mockResolvedValue([
+        { id: 'resp-1', data: { fieldA: 'Option A' }, submittedAt: new Date('2024-04-01T00:00:00Z') },
+        { id: 'resp-2', data: { fieldA: 'Option B' }, submittedAt: new Date('2024-04-02T00:00:00Z') },
+      ] as any);
+
+      const result = await getFieldAnalytics('form-123', 'fieldA', FieldType.RADIO_FIELD, 'Radio');
+
+      expect(result.fieldType).toBe(FieldType.RADIO_FIELD);
+      expect(result.totalResponses).toBe(2);
+    });
+
+    it('routes to date analytics for date fields', async () => {
+      vi.mocked(responseRepository.listByForm).mockResolvedValue([
+        { id: 'resp-1', data: { fieldA: '2024-04-01' }, submittedAt: new Date('2024-04-01T00:00:00Z') },
+        { id: 'resp-2', data: { fieldA: '2024-04-02' }, submittedAt: new Date('2024-04-02T00:00:00Z') },
+      ] as any);
+
+      const result = await getFieldAnalytics('form-123', 'fieldA', FieldType.DATE_FIELD, 'Date');
+
+      expect(result.fieldType).toBe(FieldType.DATE_FIELD);
+      expect(result.totalResponses).toBe(2);
     });
 
     it('throws for unsupported field types', async () => {

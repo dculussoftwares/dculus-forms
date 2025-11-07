@@ -560,5 +560,99 @@ describe('ResponseEditTrackingService', () => {
 
       loggerError.mockRestore();
     });
+
+    it('should throw error when YJS schema is empty', async () => {
+      const mockResponse = {
+        id: 'response-123',
+        data: {},
+        form: {
+          id: 'form-123',
+          formSchema: {},
+        },
+      };
+
+      vi.mocked(responseRepository.findUnique).mockResolvedValue(mockResponse as any);
+
+      const { getFormSchemaFromHocuspocus } = await import('../hocuspocus.js');
+      // Mock YJS returning empty schema
+      vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValue({ pages: [] } as any);
+
+      const loggerWarn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+
+      const result = await ResponseEditTrackingService.getResponseWithFormSchema('response-123');
+
+      expect(result.formSchema.pages).toEqual([]);
+      expect(loggerWarn).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to get schema from YJS'),
+        expect.any(Error)
+      );
+
+      loggerWarn.mockRestore();
+    });
+  });
+
+  describe('createFieldMetadataMap', () => {
+    it('should handle fields with __type property', () => {
+      const mockFormSchema = {
+        pages: [
+          {
+            id: 'page-1',
+            title: 'Page 1',
+            order: 0,
+            fields: [
+              {
+                id: 'field-1',
+                type: 'text_field',
+                __type: 'text_field',
+                label: 'Test Field',
+              },
+            ],
+          },
+        ],
+        layout: {},
+        isShuffleEnabled: false,
+      } as any;
+
+      // Test indirectly through detectChanges
+      const changes = ResponseEditTrackingService.detectChanges(
+        { 'field-1': 'old value' },
+        { 'field-1': 'new value' },
+        mockFormSchema
+      );
+
+      expect(changes.length).toBe(1);
+      expect(changes[0].fieldType).toBe('text_field');
+    });
+
+    it('should log error when form schema has no pages', () => {
+      const mockFormSchema = {
+        pages: undefined,
+        layout: {},
+        isShuffleEnabled: false,
+      } as any;
+
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
+
+      const changes = ResponseEditTrackingService.detectChanges(
+        { 'field-1': 'value' },
+        {},
+        mockFormSchema
+      );
+
+      expect(loggerError).toHaveBeenCalledWith('Form schema has no pages!');
+
+      loggerError.mockRestore();
+    });
+  });
+
+  describe('areValuesEquivalent', () => {
+    it('should return false when array lengths differ', () => {
+      const result = (ResponseEditTrackingService as any).areValuesEquivalent(
+        ['a', 'b'],
+        ['a']
+      );
+
+      expect(result).toBe(false);
+    });
   });
 });
