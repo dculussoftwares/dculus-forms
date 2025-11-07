@@ -21,3 +21,9 @@ Feature: Form response submissions
     Given I create an unpublished form from template "Contact Template" with title "Draft Only"
     When a public user attempts to submit a response to the unpublished form titled "Draft Only"
     Then the submission should fail with error "Failed to submit response: Form is not published and cannot accept responses"
+
+  Scenario: Submission limit prevents additional responses
+    Given I set the submission limit to 1 response on the published form
+    When a public user submits a response to the published form
+    And another public user attempts to submit a response to the published form
+    Then the submission should fail with error "Failed to submit response: Form has reached its maximum response limit"

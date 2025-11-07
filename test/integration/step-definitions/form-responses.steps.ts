@@ -48,6 +48,42 @@ Given('I create an unpublished form from template {string} with title {string}',
   }
 );
 
+Given('I set the submission limit to {int} response on the published form',
+  async function(this: CustomWorld, limit: number) {
+    const form = this.getSharedTestData('createdForm');
+    expectDefined(form, 'Form must exist before configuring submission limits');
+    expectDefined(this.authToken, 'Auth token is required to update form settings');
+
+    const existingSettings = (() => {
+      if (!form.settings) return {};
+      if (typeof form.settings === 'string') {
+        try {
+          return JSON.parse(form.settings);
+        } catch {
+          return {};
+        }
+      }
+      return form.settings;
+    })();
+
+    const updatedForm = await this.formTestUtils.updateForm(this.authToken!, form.id, {
+      settings: {
+        ...existingSettings,
+        submissionLimits: {
+          ...existingSettings?.submissionLimits,
+          maxResponses: {
+            enabled: true,
+            limit,
+          },
+        },
+      },
+    });
+
+    this.setSharedTestData('createdForm', updatedForm);
+    console.log(`📊 Enabled submission limit of ${limit} for form ${updatedForm.id}`);
+  }
+);
+
 When('a public user submits a response to the published form',
   async function(this: CustomWorld) {
     const form = this.getSharedTestData('createdForm');
@@ -74,6 +110,34 @@ When('a public user submits a response to the published form',
     } catch (error) {
       this.setSharedTestData('responseError', error);
       throw error;
+    }
+  }
+);
+
+When('another public user attempts to submit a response to the published form',
+  async function(this: CustomWorld) {
+    const form = this.getSharedTestData('createdForm');
+    expectDefined(form, 'Form must exist before submitting response');
+
+    const submissionData = this.formTestUtils.generateSampleFormData(form.formSchema);
+    const input = {
+      formId: form.id,
+      data: submissionData,
+      sessionId: generateId(16),
+      userAgent: 'integration-test-agent',
+      timezone: 'UTC',
+      language: 'en-US',
+      completionTimeSeconds: 10,
+    };
+
+    try {
+      const response = await this.formTestUtils.submitResponse(input);
+      this.setSharedTestData('lastResponse', response);
+      this.setSharedTestData('responseError', undefined);
+      console.warn('⚠️ Additional submission unexpectedly succeeded despite limits');
+    } catch (error) {
+      this.setSharedTestData('responseError', error);
+      console.log('❌ Additional submission blocked by submission limits as expected');
     }
   }
 );
