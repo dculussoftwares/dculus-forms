@@ -302,7 +302,7 @@ describe('Form Metadata Service', () => {
       const loggerInfo = vi.spyOn(logger, 'info').mockImplementation(() => {});
       const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       const computeSpy = vi
-        .spyOn(formMetadataModule, 'computeFormMetadata')
+        .spyOn(formMetadataModule.formMetadataInternals, 'computeFormMetadata')
         .mockRejectedValueOnce(new Error('boom'))
         .mockResolvedValueOnce({
           pageCount: 1,

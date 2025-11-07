@@ -148,9 +148,13 @@ const getCountryNameFromCode = (code: string): string => {
 const detectCountryCode = async (data: AnalyticsData, clientIP?: string): Promise<string | null> => {
   // Method 1: IP geolocation (most accurate when available)
   if (clientIP) {
-    const geoData = await analyticsInternals.getGeolocationFromIP(clientIP);
-    if (geoData.countryCode) {
-      return geoData.countryCode;
+    try {
+      const geoData = await analyticsInternals.getGeolocationFromIP(clientIP);
+      if (geoData.countryCode) {
+        return geoData.countryCode;
+      }
+    } catch (error) {
+      logger.error('Error getting geolocation from IP:', error);
     }
   }
 

@@ -130,6 +130,10 @@ export const computeFormMetadata = async (
   }
 };
 
+export const formMetadataInternals = {
+  computeFormMetadata,
+};
+
 /**
  * Batch update metadata for multiple forms
  */
@@ -143,7 +147,7 @@ export const batchUpdateFormMetadata = async (
 
   for (const formId of formIds) {
     try {
-      await computeFormMetadata(formId);
+      await formMetadataInternals.computeFormMetadata(formId);
       successCount++;
     } catch (error) {
       logger.error(`Failed to update metadata for form ${formId}:`, error);

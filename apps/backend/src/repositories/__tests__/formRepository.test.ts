@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createFormRepository } from '../formRepository.js';
 
-const prismaMock = {
+const prismaMock = vi.hoisted(() => ({
   form: {
     findMany: vi.fn().mockResolvedValue([]),
     findUnique: vi.fn().mockResolvedValue(null),
@@ -16,7 +16,7 @@ const prismaMock = {
   formFile: {
     create: vi.fn().mockResolvedValue({}),
   },
-};
+}));
 
 vi.mock('../baseRepository.js', () => ({
   resolvePrisma: () => prismaMock,
@@ -25,6 +25,14 @@ vi.mock('../baseRepository.js', () => ({
 describe('formRepository', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaMock.form.findMany.mockResolvedValue([]);
+    prismaMock.form.findUnique.mockResolvedValue(null);
+    prismaMock.form.create.mockResolvedValue({});
+    prismaMock.form.update.mockResolvedValue({});
+    prismaMock.form.delete.mockResolvedValue({});
+    prismaMock.form.count.mockResolvedValue(0);
+    prismaMock.formPermission.create.mockResolvedValue({});
+    prismaMock.formFile.create.mockResolvedValue({});
   });
 
   it('should proxy basic prisma delegate methods', async () => {
@@ -79,7 +87,7 @@ describe('formRepository', () => {
         include: expect.any(Object),
       })
     );
-    expect(prismaMock.formPermission.create).toHaveBeenCalledWith({ formId: 'form-1' });
-    expect(prismaMock.formFile.create).toHaveBeenCalledWith({ formId: 'form-1', key: 'file' });
+    expect(prismaMock.formPermission.create).toHaveBeenCalledWith({ data: { formId: 'form-1' } });
+    expect(prismaMock.formFile.create).toHaveBeenCalledWith({ data: { formId: 'form-1', key: 'file' } });
   });
 });
