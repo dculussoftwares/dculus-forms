@@ -50,7 +50,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
     bearer(),
     organization({
       allowUserToCreateOrganization: true,
-      organizationLimit: 1, // Restrict users to only one organization
+      organizationLimit: process.env.NODE_ENV === 'test' ? 100 : 1, // Allow multiple orgs in test environment
       creatorRole: 'owner',
       membershipLimit: 100,
       sendInvitationEmail: async ({

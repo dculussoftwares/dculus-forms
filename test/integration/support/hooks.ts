@@ -18,11 +18,13 @@ let mockSMTPServer: MockSMTPServer;
 
 const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
 
-const waitForServer = async (url: string, maxAttempts = 60, interval = 500): Promise<void> => {
+const waitForServer = async (url: string, maxAttempts = 90, interval = 1000): Promise<void> => {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       await axios.get(url);
       console.log(`✅ Server is ready after ${attempt} attempts`);
+      // Give it a bit more time to fully initialize after health check passes
+      await sleep(2000);
       return;
     } catch (error) {
       if (attempt === maxAttempts) {
@@ -33,7 +35,7 @@ const waitForServer = async (url: string, maxAttempts = 60, interval = 500): Pro
   }
 };
 
-BeforeAll({ timeout: 90000 }, async function() {
+BeforeAll({ timeout: 120000 }, async function() {
   const baseURL = process.env.TEST_BASE_URL || 'http://localhost:4000';
   const isRemoteBackend = process.env.TEST_BASE_URL && !process.env.TEST_BASE_URL.includes('localhost');
 

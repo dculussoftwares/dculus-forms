@@ -38,12 +38,15 @@ export const createFormMetadataRepository = (context?: RepositoryContext) => {
   const upsertMetadata = async (
     formId: string,
     data: Prisma.FormMetadataUpsertArgs['create']
-  ) =>
-    prisma.formMetadata.upsert({
+  ) => {
+    // Remove id from update data since it can't be updated
+    const { id, ...updateData } = data;
+    return prisma.formMetadata.upsert({
       where: { formId },
       create: data,
-      update: data,
+      update: updateData,
     });
+  };
 
   const findByFormId = async (formId: string) =>
     prisma.formMetadata.findUnique({

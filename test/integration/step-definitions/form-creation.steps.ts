@@ -15,84 +15,55 @@ function generateId(length: number = 21): string {
 }
 
 Given('an organization owner {string} exists with password {string} and organization {string}',
-  async function(this: CustomWorld, email: string, _password: string, organizationName: string) {
-    expectDefined(this.prisma, 'Prisma client must be available to seed users');
+  async function(this: CustomWorld, email: string, password: string, organizationName: string) {
+    expectDefined(this.authUtils, 'Auth utils must be available');
 
-    const userId = generateId();
-    const organizationId = generateId();
-    const now = new Date();
+    // Make email unique per test run to avoid conflicts during retries
+    const uniqueEmail = email.replace('@', `+${Date.now()}@`);
 
-    const user = await this.prisma.user.create({
-      data: {
-        id: userId,
-        email,
+    // Use better-auth signup API to create user with proper session
+    try {
+      const signupResponse = await this.authUtils.axiosInstance.post('/api/auth/sign-up/email', {
+        email: uniqueEmail,
+        password,
         name: 'Owner User',
-        emailVerified: true,
-        role: 'user',
-        createdAt: now,
-        updatedAt: now,
-      },
-    });
+        callbackURL: '/',
+      });
 
-    const organization = await this.prisma.organization.create({
-      data: {
-        id: organizationId,
-        name: organizationName,
-        slug: `${organizationName.toLowerCase().replace(/\s+/g, '-')}-${generateId(6)}`.slice(0, 30),
-        createdAt: now,
-        updatedAt: now,
-      },
-    });
+      // Extract auth token from response headers
+      const authToken = signupResponse.headers['set-auth-token'];
+      if (!authToken) {
+        throw new Error('No auth token returned from signup');
+      }
 
-    await this.prisma.member.create({
-      data: {
-        id: generateId(),
-        organizationId: organization.id,
-        userId: user.id,
-        role: 'owner',
-        createdAt: now,
-        updatedAt: now,
-      },
-    });
+      this.authToken = authToken;
+      this.currentUser = signupResponse.data.user;
 
-    const sessionToken = `test-session-${generateId(32)}`;
-    const session = await this.prisma.session.create({
-      data: {
-        id: generateId(),
-        userId: user.id,
-        token: sessionToken,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        ipAddress: '127.0.0.1',
-        userAgent: 'integration-test',
-        activeOrganizationId: organization.id,
-        createdAt: now,
-        updatedAt: now,
-      },
-    });
+      // Create organization for the user using better-auth organization API
+      const createOrgResponse = await this.authUtils.axiosInstance.post(
+        '/api/auth/organization/create',
+        {
+          name: organizationName,
+          slug: `${organizationName.toLowerCase().replace(/\s+/g, '-')}-${generateId(6)}`.slice(0, 30),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
-    this.currentUser = {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
-    };
-    this.currentOrganization = {
-      id: organization.id,
-      name: organization.name,
-    };
-    this.currentSession = {
-      id: session.id,
-      userId: session.userId,
-      token: session.token,
-      expiresAt: session.expiresAt.toISOString(),
-      createdAt: session.createdAt.toISOString(),
-      updatedAt: session.updatedAt.toISOString(),
-      activeOrganizationId: session.activeOrganizationId || undefined,
-    };
-    this.authToken = session.token;
+      this.currentOrganization = {
+        id: createOrgResponse.data.id,
+        name: createOrgResponse.data.name,
+      };
 
-    console.log(`👤 Seeded organization owner ${email} with organization ${organization.name}`);
+      console.log(`👤 Seeded organization owner ${uniqueEmail} with organization ${organizationName}`);
+    } catch (error: any) {
+      console.error('Failed to create organization owner:', error.response?.data || error.message);
+      throw error;
+    }
   }
 );
 
