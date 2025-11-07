@@ -6,6 +6,7 @@ import * as formService from '../../../services/formService.js';
 import * as fileUploadService from '../../../services/fileUploadService.js';
 import * as betterAuthMiddleware from '../../../middleware/better-auth-middleware.js';
 import { prisma } from '../../../lib/prisma.js';
+import { logger } from '../../../lib/logger.js';
 
 // Mock all dependencies
 vi.mock('../../../services/templateService.js');
@@ -844,6 +845,81 @@ describe('Templates Resolvers', () => {
       // Form should still be created even if FormFile creation fails
       expect(result).toEqual(mockForm);
       expect(fileUploadService.copyFileForForm).toHaveBeenCalled();
+    });
+
+    it('should copy template background detected after form creation', async () => {
+      const templateWithoutInitialBg = {
+        ...mockTemplate,
+        formSchema: {
+          ...mockTemplate.formSchema,
+          layout: {
+            ...mockTemplate.formSchema.layout,
+            backgroundImageKey: '',
+          },
+        },
+      };
+
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+      vi.mocked(templateService.getTemplateById).mockResolvedValue(templateWithoutInitialBg as any);
+      vi.mocked(fileUploadService.copyFileForForm).mockResolvedValue({
+        key: 'form-uuid/copied-bg.jpg',
+        url: 'https://cdn.example.com/form-uuid/copied-bg.jpg',
+        originalName: 'template-bg.jpg',
+        size: 5555,
+        mimeType: 'image/jpeg',
+      } as any);
+      vi.mocked(prisma.formFile.create).mockResolvedValue({} as any);
+      vi.mocked(formService.createForm).mockImplementation(async (_payload, schema: any) => {
+        schema.layout.backgroundImageKey = 'templateDirectory/template-bg.jpg';
+        return mockForm as any;
+      });
+
+      await templatesResolvers.Mutation.createFormFromTemplate({}, createFormArgs, mockContext);
+
+      expect(fileUploadService.copyFileForForm).toHaveBeenCalledWith(
+        'templateDirectory/template-bg.jpg',
+        expect.any(String)
+      );
+      expect(prisma.formFile.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          key: 'form-uuid/copied-bg.jpg',
+          formId: expect.any(String),
+          type: 'FormBackground',
+        }),
+      });
+    });
+
+    it('should swallow errors when handling template images after form creation', async () => {
+      const templateWithoutInitialBg = {
+        ...mockTemplate,
+        formSchema: {
+          ...mockTemplate.formSchema,
+          layout: {
+            ...mockTemplate.formSchema.layout,
+            backgroundImageKey: '',
+          },
+        },
+      };
+
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+      vi.mocked(templateService.getTemplateById).mockResolvedValue(templateWithoutInitialBg as any);
+      vi.mocked(fileUploadService.copyFileForForm).mockRejectedValue(new Error('secondary copy failed'));
+      vi.mocked(formService.createForm).mockImplementation(async (_payload, schema: any) => {
+        schema.layout.backgroundImageKey = 'allOrgs/default-bg.jpg';
+        return mockForm as any;
+      });
+
+      const result = await templatesResolvers.Mutation.createFormFromTemplate(
+        {},
+        createFormArgs,
+        mockContext
+      );
+
+      expect(result).toEqual(mockForm);
+      expect(logger.error).toHaveBeenCalledWith(
+        'Error handling template background image:',
+        expect.any(Error)
+      );
     });
 
     it('should handle template images from allOrgs directory', async () => {

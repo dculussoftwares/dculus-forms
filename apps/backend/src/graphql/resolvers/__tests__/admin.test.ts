@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { adminResolvers } from '../admin.js';
 import { GraphQLError } from 'graphql';
 import { prisma } from '../../../lib/prisma.js';
-import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
 
 // Mock all dependencies
 vi.mock('../../../lib/prisma.js', () => ({
@@ -35,9 +34,17 @@ vi.mock('../../../lib/logger.js', () => ({
   },
 }));
 
+const { mockS3Send } = vi.hoisted(() => ({
+  mockS3Send: vi.fn(),
+}));
+
 vi.mock('@aws-sdk/client-s3', () => ({
-  S3Client: vi.fn(),
-  ListObjectsV2Command: vi.fn(),
+  S3Client: vi.fn().mockImplementation(function MockS3Client() {
+    return { send: mockS3Send };
+  }),
+  ListObjectsV2Command: vi.fn().mockImplementation(function MockListObjectsV2Command(config) {
+    return config;
+  }),
 }));
 
 vi.mock('../../../lib/env.js', () => ({
@@ -134,6 +141,7 @@ describe('Admin Resolvers', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockS3Send.mockReset();
   });
 
   afterEach(() => {
@@ -149,11 +157,10 @@ describe('Admin Resolvers', () => {
       vi.mocked(prisma.response.count).mockResolvedValue(0);
 
       // Mock S3 client
-      const mockSend = vi.fn().mockResolvedValue({
+      mockS3Send.mockResolvedValue({
         Contents: [],
         IsTruncated: false,
       });
-      vi.mocked(S3Client).mockReturnValue({ send: mockSend } as any);
 
       // Mock MongoDB stats
       vi.mocked(prisma.$runCommandRaw)
@@ -171,11 +178,10 @@ describe('Admin Resolvers', () => {
       vi.mocked(prisma.form.count).mockResolvedValue(0);
       vi.mocked(prisma.response.count).mockResolvedValue(0);
 
-      const mockSend = vi.fn().mockResolvedValue({
+      mockS3Send.mockResolvedValue({
         Contents: [],
         IsTruncated: false,
       });
-      vi.mocked(S3Client).mockReturnValue({ send: mockSend } as any);
 
       vi.mocked(prisma.$runCommandRaw)
         .mockResolvedValueOnce({ dataSize: 0 })
@@ -419,8 +425,7 @@ describe('Admin Resolvers', () => {
       vi.mocked(prisma.response.count).mockResolvedValue(100);
 
       // Mock S3 errors (S3 mocking is complex, just test error handling)
-      const mockSend = vi.fn().mockRejectedValue(new Error('S3 not available'));
-      vi.mocked(S3Client).mockReturnValue({ send: mockSend } as any);
+      mockS3Send.mockRejectedValue(new Error('S3 not available'));
 
       // Mock MongoDB stats
       vi.mocked(prisma.$runCommandRaw)
@@ -442,9 +447,7 @@ describe('Admin Resolvers', () => {
     });
 
     it('should handle S3 errors in pagination', async () => {
-      const mockSend = vi.fn().mockRejectedValue(new Error('S3 connection failed'));
-
-      vi.mocked(S3Client).mockReturnValue({ send: mockSend } as any);
+      mockS3Send.mockRejectedValue(new Error('S3 connection failed'));
       vi.mocked(prisma.organization.count).mockResolvedValue(0);
       vi.mocked(prisma.user.count).mockResolvedValue(0);
       vi.mocked(prisma.form.count).mockResolvedValue(0);
@@ -460,8 +463,7 @@ describe('Admin Resolvers', () => {
     });
 
     it('should handle S3 errors gracefully', async () => {
-      const mockSend = vi.fn().mockRejectedValue(new Error('S3 connection failed'));
-      vi.mocked(S3Client).mockReturnValue({ send: mockSend } as any);
+      mockS3Send.mockRejectedValue(new Error('S3 connection failed'));
       vi.mocked(prisma.organization.count).mockResolvedValue(0);
       vi.mocked(prisma.user.count).mockResolvedValue(0);
       vi.mocked(prisma.form.count).mockResolvedValue(0);
@@ -477,11 +479,10 @@ describe('Admin Resolvers', () => {
     });
 
     it('should handle MongoDB errors gracefully', async () => {
-      const mockSend = vi.fn().mockResolvedValue({
+      mockS3Send.mockResolvedValue({
         Contents: [],
         IsTruncated: false,
       });
-      vi.mocked(S3Client).mockReturnValue({ send: mockSend } as any);
       vi.mocked(prisma.organization.count).mockResolvedValue(0);
       vi.mocked(prisma.user.count).mockResolvedValue(0);
       vi.mocked(prisma.form.count).mockResolvedValue(0);
@@ -495,8 +496,7 @@ describe('Admin Resolvers', () => {
     });
 
     it('should handle byte formatting in MongoDB stats', async () => {
-      const mockSend = vi.fn().mockRejectedValue(new Error('S3 error'));
-      vi.mocked(S3Client).mockReturnValue({ send: mockSend } as any);
+      mockS3Send.mockRejectedValue(new Error('S3 error'));
       vi.mocked(prisma.organization.count).mockResolvedValue(0);
       vi.mocked(prisma.user.count).mockResolvedValue(0);
       vi.mocked(prisma.form.count).mockResolvedValue(0);
@@ -509,6 +509,32 @@ describe('Admin Resolvers', () => {
 
       // MongoDB size should be formatted correctly
       expect(result.mongoDbSize).toContain('GB');
+    });
+
+    it('should aggregate paginated S3 responses', async () => {
+      mockS3Send
+        .mockResolvedValueOnce({
+          Contents: [{ Size: 1024 }, { Size: 2048 }],
+          IsTruncated: true,
+          NextContinuationToken: 'token-1',
+        })
+        .mockResolvedValueOnce({
+          Contents: [{ Size: 4096 }],
+          IsTruncated: false,
+        });
+      vi.mocked(prisma.organization.count).mockResolvedValue(0);
+      vi.mocked(prisma.user.count).mockResolvedValue(0);
+      vi.mocked(prisma.form.count).mockResolvedValue(0);
+      vi.mocked(prisma.response.count).mockResolvedValue(0);
+      vi.mocked(prisma.$runCommandRaw)
+        .mockResolvedValueOnce({ dataSize: 0 })
+        .mockResolvedValueOnce({ cursor: { firstBatch: [] } });
+
+      const result = await adminResolvers.Query.adminStats({}, {}, mockAdminContext);
+
+      expect(result.storageUsed).toBe('7 KB');
+      expect(result.fileCount).toBe(3);
+      expect(mockS3Send).toHaveBeenCalledTimes(2);
     });
 
     it('should throw error when user is not admin', async () => {
@@ -902,8 +928,7 @@ describe('Admin Resolvers', () => {
     it('should handle S3 with missing Size property', async () => {
       // S3 mocking is complex with the actual S3 client instance created in the resolver
       // This test verifies S3 errors are handled gracefully
-      const mockSend = vi.fn().mockRejectedValue(new Error('S3 error'));
-      vi.mocked(S3Client).mockReturnValue({ send: mockSend } as any);
+      mockS3Send.mockRejectedValue(new Error('S3 error'));
       vi.mocked(prisma.organization.count).mockResolvedValue(0);
       vi.mocked(prisma.user.count).mockResolvedValue(0);
       vi.mocked(prisma.form.count).mockResolvedValue(0);
@@ -920,11 +945,10 @@ describe('Admin Resolvers', () => {
     });
 
     it('should handle MongoDB stats with missing properties', async () => {
-      const mockSend = vi.fn().mockResolvedValue({
+      mockS3Send.mockResolvedValue({
         Contents: [],
         IsTruncated: false,
       });
-      vi.mocked(S3Client).mockReturnValue({ send: mockSend } as any);
       vi.mocked(prisma.organization.count).mockResolvedValue(0);
       vi.mocked(prisma.user.count).mockResolvedValue(0);
       vi.mocked(prisma.form.count).mockResolvedValue(0);
