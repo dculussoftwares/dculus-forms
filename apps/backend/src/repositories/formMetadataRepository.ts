@@ -20,20 +20,30 @@ export const createFormMetadataRepository = (context?: RepositoryContext) => {
     args: Prisma.SelectSubset<T, Prisma.FormMetadataUpdateArgs>
   ) => prisma.formMetadata.update(args);
 
+  // const upsertMetadata = async (
+  //   formId: string,
+  //   data: Prisma.FormMetadataUpsertArgs['create']
+  // ) => {
+  //   const { id: _ignoredId, ...updatableData } = data as Prisma.FormMetadataCreateInput & {
+  //     id?: string;
+  //   };
+  //
+  //   return prisma.formMetadata.upsert({
+  //     where: { formId },
+  //     create: data,
+  //     update: updatableData,
+  //   });
+  // };
+
   const upsertMetadata = async (
     formId: string,
     data: Prisma.FormMetadataUpsertArgs['create']
-  ) => {
-    const { id: _ignoredId, ...updatableData } = data as Prisma.FormMetadataCreateInput & {
-      id?: string;
-    };
-
-    return prisma.formMetadata.upsert({
+  ) =>
+    prisma.formMetadata.upsert({
       where: { formId },
       create: data,
-      update: updatableData,
+      update: data,
     });
-  };
 
   const findByFormId = async (formId: string) =>
     prisma.formMetadata.findUnique({

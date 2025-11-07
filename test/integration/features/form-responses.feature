@@ -27,3 +27,8 @@ Feature: Form response submissions
     When a public user submits a response to the published form
     And another public user attempts to submit a response to the published form
     Then the submission should fail with error "Failed to submit response: Form has reached its maximum response limit"
+
+  Scenario: Custom thank you message renders with field data
+    Given I configure a custom thank you message "Thank you {{field-1}} for reaching out!" on the published form
+    When a public user submits a response to the published form
+    Then the custom thank you message should render with submitted data

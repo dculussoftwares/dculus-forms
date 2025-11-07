@@ -84,6 +84,40 @@ Given('I set the submission limit to {int} response on the published form',
   }
 );
 
+Given('I configure a custom thank you message {string} on the published form',
+  async function(this: CustomWorld, messageTemplate: string) {
+    const form = this.getSharedTestData('createdForm');
+    expectDefined(form, 'Form must exist before configuring thank you message');
+    expectDefined(this.authToken, 'Auth token is required to update form settings');
+
+    const existingSettings = (() => {
+      if (!form.settings) return {};
+      if (typeof form.settings === 'string') {
+        try {
+          return JSON.parse(form.settings);
+        } catch {
+          return {};
+        }
+      }
+      return form.settings;
+    })();
+
+    const updatedForm = await this.formTestUtils.updateForm(this.authToken!, form.id, {
+      settings: {
+        ...existingSettings,
+        thankYou: {
+          enabled: true,
+          message: messageTemplate,
+        },
+      },
+    });
+
+    this.setSharedTestData('createdForm', updatedForm);
+    this.setSharedTestData('thankYouTemplate', messageTemplate);
+    console.log(`💬 Configured custom thank you message on form ${updatedForm.id}`);
+  }
+);
+
 When('a public user submits a response to the published form',
   async function(this: CustomWorld) {
     const form = this.getSharedTestData('createdForm');
@@ -215,5 +249,25 @@ Then('the submission should fail with error {string}',
     const error = this.getSharedTestData('responseError') as Error | undefined;
     expectDefined(error, 'Error should be captured for failed submission');
     expectEqual(error.message, expectedMessage, 'Error message should match expected value');
+  }
+);
+
+Then('the custom thank you message should render with submitted data',
+  function(this: CustomWorld) {
+    const response = this.getSharedTestData('lastResponse');
+    const submittedData = this.getSharedTestData('lastSubmittedData');
+    const template = this.getSharedTestData('thankYouTemplate');
+
+    expectDefined(response, 'Response should exist after submission');
+    expectDefined(submittedData, 'Submitted data should be stored');
+    expectDefined(template, 'Thank you template should be stored');
+
+    const renderedExpectation = template.replace(/\{\{([^}]+)\}\}/g, (_match: string, fieldId: string) => {
+      const value = submittedData[fieldId];
+      return value !== undefined && value !== null ? String(value) : `[${fieldId}]`;
+    });
+
+    expectEqual(response.thankYouMessage, renderedExpectation, 'Thank you message should include substituted field values');
+    expect(response.showCustomThankYou === true, 'Custom thank you message should set showCustomThankYou to true');
   }
 );
