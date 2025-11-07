@@ -72,15 +72,43 @@ describe('logger', () => {
     expect(warnMock).toHaveBeenCalledWith('Cache miss for form-123');
   });
 
+  it('logs debug messages when only a single argument is provided', async () => {
+    const { logger } = await importLogger();
+
+    logger.debug('heartbeat ok');
+
+    expect(debugMock).toHaveBeenCalledWith('heartbeat ok');
+  });
+
+  it('logs debug messages with trailing context object', async () => {
+    const { logger } = await importLogger();
+
+    logger.debug('Sync form', 'completed', { requestId: 'req-42' });
+
+    expect(debugMock).toHaveBeenCalledWith({ requestId: 'req-42' }, 'Sync form completed');
+  });
+
+  it('joins debug arguments when no context object is supplied', async () => {
+    const { logger } = await importLogger();
+
+    logger.debug('Loading', 'responses');
+
+    expect(debugMock).toHaveBeenCalledWith('Loading responses');
+  });
+
   it('creates child loggers with bound context', async () => {
     const { logger } = await importLogger();
 
     const child = logger.child({ service: 'forms' });
     child.info('processing', 'complete');
     child.error('failed');
+    child.warn('cache', 'miss');
+    child.debug('sync', 'done');
 
     expect(childFactory).toHaveBeenCalledWith({ service: 'forms' });
     expect(childInfoMock).toHaveBeenCalledWith('processing complete');
     expect(childErrorMock).toHaveBeenCalledWith('failed');
+    expect(childWarnMock).toHaveBeenCalledWith('cache miss');
+    expect(childDebugMock).toHaveBeenCalledWith('sync done');
   });
 });
