@@ -5,7 +5,8 @@ import { AuthUtils, AuthUser, AuthSession } from '../utils/auth-utils';
 import { FormTestUtils, Form } from '../utils/form-test-utils';
 import { ResponseTestUtils } from '../utils/response-test-utils';
 import { MockSMTPServer } from '../utils/mock-servers';
-import { getPrismaClient, getMockSMTPServer } from './hooks';
+import { MockS3Service } from '../utils/s3-mock';
+import { getPrismaClient, getMockSMTPServer, getMockS3 } from './hooks';
 
 export interface CustomWorld extends World {
   response?: AxiosResponse;
@@ -15,6 +16,7 @@ export interface CustomWorld extends World {
   responseTestUtils: ResponseTestUtils;
   prisma: PrismaClient;
   mockSMTP: MockSMTPServer;
+  mockS3: MockS3Service;
   authToken?: string;
   currentUser?: AuthUser;
   currentSession?: AuthSession;
@@ -39,6 +41,7 @@ export class CustomWorldConstructor extends World implements CustomWorld {
   public responseTestUtils: ResponseTestUtils;
   public prisma: PrismaClient;
   public mockSMTP: MockSMTPServer;
+  public mockS3: MockS3Service;
   public authToken?: string;
   public currentUser?: AuthUser;
   public currentSession?: AuthSession;
@@ -60,15 +63,17 @@ export class CustomWorldConstructor extends World implements CustomWorld {
     this.createdForms = [];
     this.sharedTestData = new Map();
 
-    // Get Prisma client and Mock SMTP Server from hooks (only available for local tests)
+    // Get Prisma client, Mock SMTP Server, and Mock S3 from hooks (only available for local tests)
     const isRemoteBackend = process.env.TEST_BASE_URL && !process.env.TEST_BASE_URL.includes('localhost');
     if (!isRemoteBackend) {
       this.prisma = getPrismaClient();
       this.mockSMTP = getMockSMTPServer();
+      this.mockS3 = getMockS3();
     } else {
-      // For remote tests, prisma and mockSMTP won't be available
+      // For remote tests, prisma, mockSMTP, and mockS3 won't be available
       this.prisma = null as any;
       this.mockSMTP = null as any;
+      this.mockS3 = null as any;
     }
 
     console.log(`🔧 Test environment configured - using ${this.baseURL}`);

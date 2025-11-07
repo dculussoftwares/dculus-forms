@@ -6,6 +6,7 @@ import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import { PrismaClient } from '@prisma/client';
 import { CustomWorld } from './world';
 import { MockSMTPServer } from '../utils/mock-servers';
+import { getMockS3Service, MockS3Service } from '../utils/s3-mock';
 
 // Set step timeout based on backend type (local vs remote)
 const isRemoteBackend = process.env.TEST_BASE_URL && !process.env.TEST_BASE_URL.includes('localhost');
@@ -15,6 +16,7 @@ let backendProcess: ChildProcess;
 let mongoServer: MongoMemoryReplSet;
 let prisma: PrismaClient;
 let mockSMTPServer: MockSMTPServer;
+let mockS3: MockS3Service;
 
 const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -114,6 +116,11 @@ BeforeAll({ timeout: 120000 }, async function() {
     mockSMTPServer = new MockSMTPServer();
     await mockSMTPServer.start(1025);
 
+    // Initialize Mock S3 Service
+    console.log('📦 Initializing Mock S3 Service for integration tests...');
+    mockS3 = getMockS3Service();
+    console.log('✅ Mock S3 Service initialized');
+
     console.log('🚀 Starting local backend server for integration tests...');
 
     // Start backend server with coverage if NODE_V8_COVERAGE is set
@@ -154,10 +161,16 @@ BeforeAll({ timeout: 120000 }, async function() {
   }
 });
 
-// Clean up authentication data after each scenario
+// Clean up authentication data and mock S3 after each scenario
 After(async function(this: CustomWorld) {
   if (typeof (this as any).cleanup === 'function') {
     await (this as any).cleanup();
+  }
+
+  // Clear mock S3 storage between scenarios
+  const isRemoteBackend = process.env.TEST_BASE_URL && !process.env.TEST_BASE_URL.includes('localhost');
+  if (!isRemoteBackend && mockS3) {
+    mockS3.clear();
   }
 });
 
@@ -213,4 +226,12 @@ export function getMockSMTPServer(): MockSMTPServer {
     throw new Error('Mock SMTP Server not initialized. BeforeAll hook must run first.');
   }
   return mockSMTPServer;
+}
+
+// Export mock S3 service for use in World and step definitions
+export function getMockS3(): MockS3Service {
+  if (!mockS3) {
+    throw new Error('Mock S3 Service not initialized. BeforeAll hook must run first.');
+  }
+  return mockS3;
 }

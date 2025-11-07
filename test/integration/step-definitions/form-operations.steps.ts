@@ -329,10 +329,33 @@ Given('a public user submits a response to the form',
 );
 
 Given('the form template has a background image',
-  function(this: CustomWorld) {
-    // This is handled by the template seeding
-    // We'll assume templates have background images for testing
-    console.log('Assuming template has background image');
+  async function(this: CustomWorld) {
+    expectDefined(this.mockS3, 'Mock S3 must be available');
+    const template = this.getSharedTestData(`template:Contact Template`);
+    expectDefined(template, 'Template must exist');
+
+    // Load test image from static files
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    const testImagePath = path.join(process.cwd(), 'static-files', 'dculus-high-resolution-logo.png');
+    const imageBuffer = await fs.readFile(testImagePath);
+
+    // Upload to mock S3
+    const imageKey = `files/form-template/test-background-${Date.now()}.png`;
+    const imageUrl = await this.mockS3.upload(imageKey, imageBuffer, {
+      mimeType: 'image/png',
+      originalName: 'test-background.png',
+    });
+
+    // Update template schema with background image
+    template.formSchema.layout = template.formSchema.layout || {};
+    template.formSchema.layout.backgroundImageKey = imageKey;
+    template.formSchema.layout.backgroundImageUrl = imageUrl;
+
+    this.setSharedTestData(`template:Contact Template`, template);
+    this.setSharedTestData('backgroundImageKey', imageKey);
+
+    console.log(`📸 Uploaded background image: ${imageKey}`);
   }
 );
 
@@ -569,10 +592,26 @@ Then('the metadata should have a lastUpdated timestamp',
 
 Then('the new form should have a copied background image',
   function(this: CustomWorld) {
+    expectDefined(this.mockS3, 'Mock S3 must be available');
     const duplicatedForm = this.getSharedTestData('duplicatedForm');
+    const originalBackgroundKey = this.getSharedTestData('backgroundImageKey');
     expectDefined(duplicatedForm, 'Duplicated form must exist');
-    // Background image copying is tested in the backend
-    console.log('Background image should be copied');
+
+    // Parse form schema to get background image key
+    const schema = typeof duplicatedForm.formSchema === 'string'
+      ? JSON.parse(duplicatedForm.formSchema)
+      : duplicatedForm.formSchema;
+
+    const backgroundImageKey = schema?.layout?.backgroundImageKey;
+
+    if (originalBackgroundKey) {
+      // If original had a background, duplicated form should have one too
+      expectDefined(backgroundImageKey, 'Duplicated form should have background image key');
+
+      // Note: In real S3, this would be copied. In our mock, we verify the key exists
+      // and is different from the original (tested in next step)
+      console.log(`📸 Duplicated form has background image: ${backgroundImageKey}`);
+    }
   }
 );
 
@@ -580,15 +619,29 @@ Then('the new form background image should have a unique key',
   function(this: CustomWorld) {
     const originalForm = this.getSharedTestData('createdForm');
     const duplicatedForm = this.getSharedTestData('duplicatedForm');
+    const originalBackgroundKey = this.getSharedTestData('backgroundImageKey');
     expectDefined(originalForm, 'Original form must exist');
     expectDefined(duplicatedForm, 'Duplicated form must exist');
 
-    // If both have background images, they should have different keys
-    if (originalForm.metadata?.backgroundImageKey && duplicatedForm.metadata?.backgroundImageKey) {
+    // Parse both form schemas
+    const originalSchema = typeof originalForm.formSchema === 'string'
+      ? JSON.parse(originalForm.formSchema)
+      : originalForm.formSchema;
+
+    const duplicatedSchema = typeof duplicatedForm.formSchema === 'string'
+      ? JSON.parse(duplicatedForm.formSchema)
+      : duplicatedForm.formSchema;
+
+    const originalKey = originalSchema?.layout?.backgroundImageKey || originalBackgroundKey;
+    const duplicatedKey = duplicatedSchema?.layout?.backgroundImageKey;
+
+    // If original had a background, verify duplicated has different key
+    if (originalKey && duplicatedKey) {
       expect(
-        duplicatedForm.metadata.backgroundImageKey !== originalForm.metadata.backgroundImageKey,
-        'Background image keys should be different'
+        duplicatedKey !== originalKey,
+        `Background image keys should be different: original="${originalKey}", duplicated="${duplicatedKey}"`
       );
+      console.log(`✅ Background image keys are unique: ${originalKey} → ${duplicatedKey}`);
     }
   }
 );
