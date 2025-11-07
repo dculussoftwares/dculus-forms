@@ -528,6 +528,99 @@ export class FormTestUtils {
     return response.data.data.regenerateShortUrl;
   }
 
+  /**
+   * Duplicate a form
+   */
+  async duplicateForm(token: string, formId: string): Promise<Form> {
+    const mutation = `
+      mutation DuplicateForm($id: ID!) {
+        duplicateForm(id: $id) {
+          id
+          title
+          description
+          shortUrl
+          formSchema
+          isPublished
+          organization {
+            id
+            name
+            slug
+          }
+          createdBy {
+            id
+            name
+            email
+          }
+          responseCount
+          sharingScope
+          defaultPermission
+          permissions {
+            id
+            formId
+            userId
+            permission
+            grantedBy {
+              id
+              name
+              email
+            }
+            grantedAt
+            updatedAt
+          }
+          userPermission
+          createdAt
+          updatedAt
+          metadata {
+            pageCount
+            fieldCount
+            backgroundImageKey
+            backgroundImageUrl
+            lastUpdated
+          }
+          settings {
+            thankYou {
+              enabled
+              message
+            }
+            submissionLimits {
+              maxResponses {
+                enabled
+                limit
+              }
+              timeWindow {
+                enabled
+                startDate
+                endDate
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const response = await this.authUtils.graphqlRequest(mutation, { id: formId }, token);
+
+    if (response.data.errors) {
+      throw new Error(`Failed to duplicate form: ${response.data.errors[0].message}`);
+    }
+
+    return response.data.data.duplicateForm;
+  }
+
+  /**
+   * Query form by ID (alias for getForm for test consistency)
+   */
+  async queryFormById(token: string, formId: string): Promise<Form> {
+    return this.getForm(token, formId);
+  }
+
+  /**
+   * Query form by short URL (alias for getFormByShortUrl for test consistency)
+   */
+  async queryFormByShortUrl(shortUrl: string): Promise<Form> {
+    return this.getFormByShortUrl(shortUrl);
+  }
+
 
   /**
    * Get forms with specific category (recommended approach)

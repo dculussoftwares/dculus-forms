@@ -3,6 +3,7 @@ import { AxiosResponse } from 'axios';
 import { PrismaClient } from '@prisma/client';
 import { AuthUtils, AuthUser, AuthSession } from '../utils/auth-utils';
 import { FormTestUtils, Form } from '../utils/form-test-utils';
+import { ResponseTestUtils } from '../utils/response-test-utils';
 import { MockSMTPServer } from '../utils/mock-servers';
 import { getPrismaClient, getMockSMTPServer } from './hooks';
 
@@ -11,6 +12,7 @@ export interface CustomWorld extends World {
   baseURL: string;
   authUtils: AuthUtils;
   formTestUtils: FormTestUtils;
+  responseTestUtils: ResponseTestUtils;
   prisma: PrismaClient;
   mockSMTP: MockSMTPServer;
   authToken?: string;
@@ -21,6 +23,7 @@ export interface CustomWorld extends World {
   createdForms: Form[]; // Track created forms for cleanup
   sharedTestData: Map<string, any>; // Shared data across step files
   currentOrganization?: { id: string; name: string }; // Track current organization
+  lastOperationError?: string; // Track last operation error for negative test cases
   setSharedTestData(key: string, value: any): void;
   getSharedTestData(key: string): any;
   clearDatabase(): Promise<void>;
@@ -33,6 +36,7 @@ export class CustomWorldConstructor extends World implements CustomWorld {
   public baseURL: string;
   public authUtils: AuthUtils;
   public formTestUtils: FormTestUtils;
+  public responseTestUtils: ResponseTestUtils;
   public prisma: PrismaClient;
   public mockSMTP: MockSMTPServer;
   public authToken?: string;
@@ -43,12 +47,14 @@ export class CustomWorldConstructor extends World implements CustomWorld {
   public createdForms: Form[];
   public sharedTestData: Map<string, any>;
   public currentOrganization?: { id: string; name: string };
+  public lastOperationError?: string;
 
   constructor(options: IWorldOptions) {
     super(options);
     this.baseURL = process.env.TEST_BASE_URL || 'http://localhost:4000';
     this.authUtils = new AuthUtils(this.baseURL);
     this.formTestUtils = new FormTestUtils(this.baseURL);
+    this.responseTestUtils = new ResponseTestUtils(this.baseURL);
     this.testUsers = new Map();
     this.uploadedFiles = [];
     this.createdForms = [];
