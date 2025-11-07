@@ -14,6 +14,7 @@ import { formSharingResolvers } from './resolvers/formSharing.js';
 import { pluginsResolvers } from './resolvers/plugins.js';
 import { subscriptionResolvers } from './resolvers/subscriptions.js';
 import { GraphQLJSON } from 'graphql-type-json';
+import { debugResolvers } from './resolvers/debug.js';
 
 
 export const resolvers = {
@@ -37,6 +38,7 @@ export const resolvers = {
     ...formSharingResolvers.Query,
     ...pluginsResolvers.Query,
     ...subscriptionResolvers.Query,
+    ...debugResolvers.Query,
   },
   Mutation: {
     ...betterAuthResolvers.Mutation,

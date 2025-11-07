@@ -10,6 +10,12 @@ export const GET_ACTIVE_ORGANIZATION = gql`
   }
 `;
 
+export const GET_DEBUG_HEADERS = gql`
+  query GetDebugHeaders {
+    debugRequestHeaders
+  }
+`;
+
 export const FORM_LIST_FIELDS = gql`
   fragment FormListFields on Form {
     id

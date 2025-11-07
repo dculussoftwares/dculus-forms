@@ -978,6 +978,8 @@ export const typeDefs = gql`
     # Subscription Queries
     availablePlans: [AvailablePlan!]!
 
+    # Debug / diagnostics
+    debugRequestHeaders: JSON!
   }
 
   # Subscription Mutation Response Types

@@ -26,8 +26,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAppConfig } from '@/hooks';
 import { AlertCircle } from 'lucide-react';
 import { useTranslation } from '../hooks/useTranslation';
-import { useMutation } from '@apollo/client';
+import { useLazyQuery, useMutation } from '@apollo/client';
 import { DUPLICATE_FORM } from '../graphql/mutations';
+import { GET_DEBUG_HEADERS } from '../graphql/queries';
 
 const FormDashboard: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
@@ -39,6 +40,10 @@ const FormDashboard: React.FC = () => {
   const [duplicateProgress, setDuplicateProgress] = useState(0);
   const { t } = useTranslation('formDashboard');
   const [duplicateFormMutation, { loading: isDuplicating }] = useMutation(DUPLICATE_FORM);
+  const [fetchHeaders, { data: headersData, loading: headersLoading, error: headersError }] = useLazyQuery(
+    GET_DEBUG_HEADERS,
+    { fetchPolicy: 'no-cache' }
+  );
 
   const {
     form,
@@ -244,6 +249,31 @@ const FormDashboard: React.FC = () => {
 
           {/* Quick Actions Section */}
           <QuickActions formId={formId!} />
+
+          {/* Debug Headers Section */}
+          <div className="rounded-lg border border-dashed border-slate-300 bg-white/70 p-6 shadow-sm">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Request Header Inspector</h3>
+                <p className="text-sm text-slate-600">
+                  Use this temporary button to fetch the raw headers seen by the backend through Cloudflare.
+                </p>
+              </div>
+              <Button onClick={() => fetchHeaders()} disabled={headersLoading}>
+                {headersLoading ? 'Fetching headers…' : 'Fetch headers'}
+              </Button>
+            </div>
+            {headersError && (
+              <p className="mt-3 text-sm text-red-600">
+                Failed to load headers. Check the console for details.
+              </p>
+            )}
+            {headersData?.debugRequestHeaders && (
+              <pre className="mt-4 max-h-72 overflow-auto rounded-md bg-slate-900/90 p-4 text-xs text-slate-100">
+                {JSON.stringify(headersData.debugRequestHeaders, null, 2)}
+              </pre>
+            )}
+          </div>
         </div>
 
         {/* Dialogs */}
