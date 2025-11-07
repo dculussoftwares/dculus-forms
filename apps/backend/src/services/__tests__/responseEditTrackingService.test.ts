@@ -220,6 +220,49 @@ describe('ResponseEditTrackingService', () => {
 
       expect(changes).toHaveLength(0);
     });
+
+    it('should derive field type from __type metadata when type is missing', () => {
+      const schemaWithCustomType: FormSchema = {
+        ...mockFormSchema,
+        pages: [
+          {
+            ...mockFormSchema.pages[0],
+            fields: [
+              ...mockFormSchema.pages[0].fields,
+              {
+                id: 'field-custom',
+                label: 'Custom',
+                __type: 'custom_field_type',
+              } as any,
+            ],
+          },
+        ],
+      };
+
+      const changes = ResponseEditTrackingService.detectChanges(
+        { 'field-custom': 'before' },
+        { 'field-custom': 'after' },
+        schemaWithCustomType
+      );
+
+      expect(changes[0]).toMatchObject({
+        fieldId: 'field-custom',
+        fieldType: 'custom_field_type',
+      });
+    });
+
+    it('should treat identical arrays as equivalent', () => {
+      const oldData = { 'field-1': ['a', 'b'] };
+      const newData = { 'field-1': ['a', 'b'] };
+
+      const changes = ResponseEditTrackingService.detectChanges(
+        oldData,
+        newData,
+        mockFormSchema
+      );
+
+      expect(changes).toHaveLength(0);
+    });
   });
 
   describe('createChangesSummary', () => {

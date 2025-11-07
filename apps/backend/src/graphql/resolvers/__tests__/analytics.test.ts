@@ -487,6 +487,29 @@ describe('Analytics Resolvers', () => {
 
       expect(result).toEqual({ success: true });
     });
+
+    it('should fall back to x-forwarded-for header when other IP sources are absent', async () => {
+      const forwardedContext = {
+        req: {
+          headers: { 'x-forwarded-for': '203.0.113.9, 10.0.0.1' },
+        },
+      };
+
+      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(prisma.response.findUnique).mockResolvedValue(mockResponse as any);
+      vi.mocked(analyticsService.trackFormSubmission).mockResolvedValue(undefined);
+
+      await analyticsResolvers.Mutation.trackFormSubmission(
+        {},
+        { input: trackFormSubmissionInput },
+        forwardedContext
+      );
+
+      expect(analyticsService.trackFormSubmission).toHaveBeenCalledWith(
+        expect.any(Object),
+        '203.0.113.9'
+      );
+    });
   });
 
   describe('Query: formAnalytics', () => {

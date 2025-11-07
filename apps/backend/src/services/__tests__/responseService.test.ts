@@ -12,10 +12,17 @@ import { responseRepository } from '../../repositories/index.js';
 import { logger } from '../../lib/logger.js';
 
 import { applyResponseFilters } from '../responseFilterService.js';
+import { ResponseEditTrackingService } from '../responseEditTrackingService.js';
 
 // Mock dependencies
 vi.mock('../../repositories/index.js');
 vi.mock('../responseFilterService.js');
+vi.mock('../responseEditTrackingService.js', () => ({
+  ResponseEditTrackingService: {
+    getResponseWithFormSchema: vi.fn(),
+    recordEdit: vi.fn(),
+  },
+}));
 
 describe('Response Service', () => {
   const mockResponse = {
@@ -321,6 +328,53 @@ describe('Response Service', () => {
       await expect(updateResponse('response-123', {})).rejects.toThrow();
       expect(loggerError).toHaveBeenCalled();
       loggerError.mockRestore();
+    });
+
+    it('should record edit history when edit context is provided', async () => {
+      const updatedData = { field1: 'new-value' };
+      const updatedResponse = { ...mockResponse, data: updatedData };
+      const formSchema = { pages: [] } as any;
+
+      vi.mocked(ResponseEditTrackingService.getResponseWithFormSchema).mockResolvedValue({
+        response: {
+          id: 'response-123',
+          formId: 'form-123',
+          data: { field1: 'old-value' },
+          metadata: {},
+          submittedAt: new Date('2024-01-01'),
+          form: {
+            id: 'form-123',
+            formSchema: {},
+          },
+        },
+        formSchema,
+      });
+      vi.mocked(responseRepository.update).mockResolvedValue(updatedResponse as any);
+
+      const editContext = {
+        userId: 'user-1',
+        ipAddress: '127.0.0.1',
+        userAgent: 'vitest',
+        editReason: 'Fix typo',
+      };
+
+      const result = await updateResponse('response-123', updatedData, editContext);
+
+      expect(ResponseEditTrackingService.getResponseWithFormSchema).toHaveBeenCalledWith('response-123');
+      expect(ResponseEditTrackingService.recordEdit).toHaveBeenCalledWith(
+        'response-123',
+        { field1: 'old-value' },
+        updatedData,
+        formSchema,
+        expect.objectContaining({
+          userId: 'user-1',
+          ipAddress: '127.0.0.1',
+          userAgent: 'vitest',
+          editType: 'MANUAL',
+          editReason: 'Fix typo',
+        })
+      );
+      expect(result.data.field1).toBe('new-value');
     });
 
     it('should handle update without editContext (legacy mode)', async () => {

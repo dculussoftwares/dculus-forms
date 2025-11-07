@@ -75,13 +75,15 @@ const parseUserAgent = (userAgent: string): UserAgentInfo => {
   }
 };
 
-const getGeolocationFromIP = async (_ip: string): Promise<GeolocationResult> => {
-  try {
-    // TODO: Implement MaxMind GeoIP2 when database is available
-    return {};
-  } catch (error) {
-    logger.error('Error getting geolocation from IP:', error);
-    return {};
+export const analyticsInternals = {
+  getGeolocationFromIP: async (_ip: string): Promise<GeolocationResult> => {
+    try {
+      // TODO: Implement MaxMind GeoIP2 when database is available
+      return {};
+    } catch (error) {
+      logger.error('Error getting geolocation from IP:', error);
+      return {};
+    }
   }
 };
 
@@ -146,7 +148,7 @@ const getCountryNameFromCode = (code: string): string => {
 const detectCountryCode = async (data: AnalyticsData, clientIP?: string): Promise<string | null> => {
   // Method 1: IP geolocation (most accurate when available)
   if (clientIP) {
-    const geoData = await getGeolocationFromIP(clientIP);
+    const geoData = await analyticsInternals.getGeolocationFromIP(clientIP);
     if (geoData.countryCode) {
       return geoData.countryCode;
     }

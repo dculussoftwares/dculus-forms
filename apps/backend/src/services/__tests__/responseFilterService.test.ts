@@ -32,6 +32,19 @@ describe('Response Filter Service', () => {
     },
   ];
 
+  const createResponsesWithThrowingDate = () => [
+    {
+      id: 'resp-error',
+      responseData: {
+        'field-date': {
+          valueOf: () => {
+            throw new Error('date conversion failed');
+          },
+        },
+      },
+    },
+  ];
+
   describe('applyResponseFilters', () => {
     it('should return all responses when no filters provided', () => {
       const result = applyResponseFilters(mockResponses, undefined);
@@ -297,6 +310,64 @@ describe('Response Filter Service', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('resp-1');
+    });
+
+    it('should handle DATE_EQUALS parsing errors gracefully', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-date', operator: 'DATE_EQUALS', value: new Date().toISOString() },
+      ];
+
+      const result = applyResponseFilters(createResponsesWithThrowingDate(), filters);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('should handle DATE_BEFORE parsing errors gracefully', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-date', operator: 'DATE_BEFORE', value: new Date().toISOString() },
+      ];
+
+      const result = applyResponseFilters(createResponsesWithThrowingDate(), filters);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('should handle DATE_AFTER parsing errors gracefully', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-date', operator: 'DATE_AFTER', value: new Date().toISOString() },
+      ];
+
+      const result = applyResponseFilters(createResponsesWithThrowingDate(), filters);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('should handle DATE_BETWEEN parsing errors gracefully', () => {
+      const filters: ResponseFilter[] = [
+        {
+          fieldId: 'field-date',
+          operator: 'DATE_BETWEEN',
+          dateRange: { from: new Date().toISOString(), to: new Date().toISOString() },
+        },
+      ];
+
+      const result = applyResponseFilters(createResponsesWithThrowingDate(), filters);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('should return false when DATE_BETWEEN has invalid range boundaries', () => {
+      const filters: ResponseFilter[] = [
+        {
+          fieldId: 'field-date',
+          operator: 'DATE_BETWEEN',
+          dateRange: { from: 'invalid-date' },
+        },
+      ];
+
+      const result = applyResponseFilters(mockResponses, filters);
+
+      expect(result).toHaveLength(0);
     });
 
     it('should filter with IN operator', () => {

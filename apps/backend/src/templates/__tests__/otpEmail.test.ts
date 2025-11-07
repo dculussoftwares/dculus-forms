@@ -125,6 +125,18 @@ describe('OTP Email Templates', () => {
       expect(html).toContain('@media only screen and (max-width: 600px)');
       expect(html).toContain('font-family');
     });
+
+    it('should fall back to default title and message for unknown types', () => {
+      const data = {
+        otp: '000000',
+        type: 'unexpected-type',
+      } as unknown as OTPEmailData;
+
+      const html = generateOTPEmailHtml(data);
+
+      expect(html).toContain('Authentication Code');
+      expect(html).toContain('Here is your verification code:');
+    });
   });
 
   describe('generateOTPEmailText', () => {
@@ -242,6 +254,17 @@ describe('OTP Email Templates', () => {
 
       expect(text).toContain('\n');
       expect(text.trim().length).toBeGreaterThan(0);
+    });
+
+    it('should fall back to default text for unknown types', () => {
+      const data = {
+        otp: '555555',
+        type: 'unexpected-type',
+      } as unknown as OTPEmailData;
+
+      const text = generateOTPEmailText(data);
+
+      expect(text).toContain('Here is your verification code');
     });
   });
 

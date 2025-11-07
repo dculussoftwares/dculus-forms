@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { analyticsService } from '../analyticsService.js';
+import { analyticsService, analyticsInternals } from '../analyticsService.js';
 import {
   formViewAnalyticsRepository,
   formSubmissionAnalyticsRepository,
@@ -92,11 +92,16 @@ describe('Analytics Service', () => {
     });
 
     it('should track form view with IP geolocation', async () => {
+      vi.spyOn(analyticsInternals, 'getGeolocationFromIP').mockResolvedValueOnce({
+        countryCode: 'USA',
+      });
       vi.mocked(formViewAnalyticsRepository.createViewEvent).mockResolvedValue({} as any);
 
       await analyticsService.trackFormView(mockAnalyticsData, '192.168.1.1');
 
-      expect(formViewAnalyticsRepository.createViewEvent).toHaveBeenCalled();
+      expect(formViewAnalyticsRepository.createViewEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ countryCode: 'USA' })
+      );
     });
 
     it('should detect country from language when available', async () => {
@@ -236,6 +241,19 @@ describe('Analytics Service', () => {
           countryCode: null,
         })
       );
+    });
+
+    it('should log and continue when IP geolocation lookup fails', async () => {
+      vi.spyOn(analyticsInternals, 'getGeolocationFromIP').mockRejectedValueOnce(new Error('geo fail'));
+      vi.mocked(formViewAnalyticsRepository.createViewEvent).mockResolvedValue({} as any);
+
+      await analyticsService.trackFormView(mockAnalyticsData, '10.0.0.1');
+
+      expect(logger.error).toHaveBeenCalledWith(
+        'Error getting geolocation from IP:',
+        expect.any(Error)
+      );
+      expect(formViewAnalyticsRepository.createViewEvent).toHaveBeenCalled();
     });
 
     it('should handle errors in getting country name from code', async () => {

@@ -128,6 +128,27 @@ describe('Response Service - Additional Coverage', () => {
       expect(result.data.length).toBe(3);
     });
 
+    it('should sort non-date fields in memory when filters are applied', async () => {
+      const mockResponses = [
+        { id: 'resp-c', formId: 'form-1', data: {}, submittedAt: new Date('2024-01-03') },
+        { id: 'resp-a', formId: 'form-1', data: {}, submittedAt: new Date('2024-01-01') },
+        { id: 'resp-b', formId: 'form-1', data: {}, submittedAt: new Date('2024-01-02') }
+      ];
+
+      vi.mocked(responseRepository.listByForm).mockResolvedValue(mockResponses as any);
+
+      const result = await getResponsesByFormId(
+        'form-1',
+        1,
+        10,
+        'id',
+        'asc',
+        [{ fieldId: 'status', operator: 'EQUALS', value: 'any' }] as any
+      );
+
+      expect(result.data.map((response) => response.id)).toEqual(['resp-a', 'resp-b', 'resp-c']);
+    });
+
     it('should cap limit at 100 items per page', async () => {
       vi.mocked(responseRepository.count).mockResolvedValue(200);
       vi.mocked(responseRepository.findMany).mockResolvedValue([]);

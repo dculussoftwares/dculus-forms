@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as Y from 'yjs';
+import * as formMetadataModule from '../formMetadataService.js';
 import {
   extractFormStatsFromYDoc,
   extractFormStatsFromState,
@@ -16,10 +17,13 @@ import {
   formRepository,
 } from '../../repositories/index.js';
 import { logger } from '../../lib/logger.js';
+import { constructCdnUrl } from '../../utils/cdn.js';
 
 // Mock dependencies
 vi.mock('../../repositories/index.js');
-vi.mock('../../utils/cdn.js');
+vi.mock('../../utils/cdn.js', () => ({
+  constructCdnUrl: vi.fn((key: string) => `https://cdn.example/${key}`),
+}));
 
 // Helper to create mock metadata
 const createMockMetadata = (formId: string, overrides = {}) => ({
@@ -293,6 +297,33 @@ describe('Form Metadata Service', () => {
       loggerInfo.mockRestore();
       loggerError.mockRestore();
     });
+
+    it('should increment error counter when computeFormMetadata throws', async () => {
+      const loggerInfo = vi.spyOn(logger, 'info').mockImplementation(() => {});
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
+      const computeSpy = vi
+        .spyOn(formMetadataModule, 'computeFormMetadata')
+        .mockRejectedValueOnce(new Error('boom'))
+        .mockResolvedValueOnce({
+          pageCount: 1,
+          fieldCount: 2,
+          backgroundImageKey: null,
+        });
+
+      await batchUpdateFormMetadata(['form-error', 'form-success']);
+
+      expect(loggerError).toHaveBeenCalledWith(
+        'Failed to update metadata for form form-error:',
+        expect.any(Error)
+      );
+      expect(loggerInfo).toHaveBeenCalledWith(
+        '✅ Batch update completed: 1 successful, 1 errors'
+      );
+
+      computeSpy.mockRestore();
+      loggerInfo.mockRestore();
+      loggerError.mockRestore();
+    });
   });
 
   describe('getFormMetadata', () => {
@@ -370,6 +401,13 @@ describe('Form Metadata Service', () => {
       const result = constructBackgroundImageUrl('');
 
       expect(result).toBeNull();
+    });
+
+    it('should construct CDN URL when key is provided', () => {
+      const result = constructBackgroundImageUrl('background/key.png');
+
+      expect(constructCdnUrl).toHaveBeenCalledWith('background/key.png');
+      expect(result).toBe('https://cdn.example/background/key.png');
     });
   });
 

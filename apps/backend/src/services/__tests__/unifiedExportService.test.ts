@@ -307,6 +307,27 @@ describe('Unified Export Service', () => {
 
       expect(XLSX.utils.json_to_sheet).toHaveBeenCalledWith([]);
     });
+
+    it('should cap Excel column widths at 50 characters', async () => {
+      const wideWorksheet = {
+        '!ref': 'A1:A1',
+        A1: { v: 'x'.repeat(200) },
+      } as XLSX.WorkSheet;
+
+      vi.mocked(XLSX.utils.json_to_sheet).mockImplementationOnce(() => wideWorksheet as any);
+      vi.mocked(XLSX.utils.decode_range).mockReturnValueOnce({ s: { r: 0, c: 0 }, e: { r: 0, c: 0 } } as any);
+
+      await generateExportFile({
+        formTitle: 'Wide Columns Form',
+        responses: mockResponses as any,
+        formSchema: mockFormSchema,
+        format: 'excel',
+      });
+
+      const columns = wideWorksheet['!cols'];
+      expect(columns).toBeDefined();
+      expect(columns?.[0]?.wch).toBe(50);
+    });
   });
 
   describe('generateExportFile - CSV', () => {
@@ -419,6 +440,37 @@ describe('Unified Export Service', () => {
 
       const csvContent = result.buffer.toString('utf-8');
       expect(csvContent).toContain('"Line 1\nLine 2"');
+    });
+
+    it('should derive friendly column names when schema is empty', async () => {
+      const responsesWithUnknownFields = [
+        {
+          id: 'resp-1',
+          data: {
+            'field-section-789': 'alpha',
+            'extremelylongfieldidentifier1234567890': 'beta',
+          },
+          submittedAt: 1704067200000,
+          metadata: {},
+        },
+      ];
+
+      const emptySchema: FormSchema = {
+        pages: [],
+        layout: mockFormSchema.layout,
+        isShuffleEnabled: false,
+      };
+
+      const result = await generateExportFile({
+        formTitle: 'Unknown Fields',
+        responses: responsesWithUnknownFields as any,
+        formSchema: emptySchema,
+        format: 'csv',
+      });
+
+      const header = result.buffer.toString('utf-8').split('\n')[0];
+      expect(header).toContain('Field 789');
+      expect(header).toContain('Field extremel');
     });
   });
 
