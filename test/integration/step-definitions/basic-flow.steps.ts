@@ -235,11 +235,10 @@ Then('the form should belong to my organization',
     expectDefined(form, 'Created form should exist');
     expectDefined(this.currentOrganization, 'Current organization should exist');
 
-    expectEqual(
-      form.organizationId,
-      this.currentOrganization!.id,
-      'Form should belong to the current organization'
-    );
+    const formOrganizationId = form.organizationId ?? form.organization?.id;
+    expectDefined(formOrganizationId, 'Form should include an organization reference');
+
+    expectEqual(formOrganizationId, this.currentOrganization!.id, 'Form should belong to the current organization');
 
     console.log(`✅ Form organization ownership verified: ${this.currentOrganization!.name}`);
   }

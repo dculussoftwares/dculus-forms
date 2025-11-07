@@ -1,5 +1,15 @@
+import { randomBytes } from 'crypto';
 import { PrismaClient, User, Organization, Form, Response, FormTemplate, FormPlugin } from '@prisma/client';
-import { nanoid } from 'nanoid';
+
+function generateId(length: number = 21): string {
+  const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+  const array = randomBytes(length);
+  let id = '';
+  for (let i = 0; i < length; i++) {
+    id += alphabet[array[i] % alphabet.length];
+  }
+  return id;
+}
 
 /**
  * Database Utilities for Integration Tests
@@ -54,8 +64,8 @@ export interface SeedPluginData {
   type: string;
   name: string;
   config: any;
-  isEnabled?: boolean;
-  order?: number;
+  enabled?: boolean;
+  events?: string[];
 }
 
 /**
@@ -67,7 +77,7 @@ export async function seedTestUser(
 ): Promise<User> {
   const user = await prisma.user.create({
     data: {
-      id: data.id || nanoid(),
+      id: data.id || generateId(),
       name: data.name,
       email: data.email,
       role: data.role || 'user',
@@ -81,8 +91,8 @@ export async function seedTestUser(
   if (data.password) {
     await prisma.account.create({
       data: {
-        id: nanoid(),
-        accountId: nanoid(),
+        id: generateId(),
+        accountId: generateId(),
         providerId: 'credential',
         userId: user.id,
         password: data.password, // In real scenario, this would be hashed
@@ -105,9 +115,9 @@ export async function seedTestOrganization(
 ): Promise<Organization> {
   const organization = await prisma.organization.create({
     data: {
-      id: data.id || nanoid(),
+      id: data.id || generateId(),
       name: data.name,
-      slug: data.slug || data.name.toLowerCase().replace(/\s+/g, '-') + '-' + nanoid(6),
+      slug: data.slug || data.name.toLowerCase().replace(/\s+/g, '-') + '-' + generateId(6),
       createdAt: new Date(),
       updatedAt: new Date(),
     },
@@ -117,7 +127,7 @@ export async function seedTestOrganization(
   if (ownerId) {
     await prisma.member.create({
       data: {
-        id: nanoid(),
+        id: generateId(),
         organizationId: organization.id,
         userId: ownerId,
         role: 'owner',
@@ -139,10 +149,10 @@ export async function seedTestForm(
 ): Promise<Form> {
   const form = await prisma.form.create({
     data: {
-      id: data.id || nanoid(),
+      id: data.id || generateId(),
       title: data.title,
       description: data.description || '',
-      shortUrl: data.shortUrl || nanoid(8),
+      shortUrl: data.shortUrl || generateId(8),
       formSchema: data.formSchema,
       organizationId: data.organizationId,
       createdById: data.createdById,
@@ -173,7 +183,7 @@ export async function seedTestResponses(
 
     const response = await prisma.response.create({
       data: {
-        id: nanoid(),
+        id: generateId(),
         formId,
         data: responseData,
         metadata: {},
@@ -196,7 +206,7 @@ export async function seedTestResponse(
 ): Promise<Response> {
   const response = await prisma.response.create({
     data: {
-      id: data.id || nanoid(),
+      id: data.id || generateId(),
       formId: data.formId,
       data: data.data,
       metadata: data.metadata || {},
@@ -216,7 +226,7 @@ export async function seedTestTemplate(
 ): Promise<FormTemplate> {
   const template = await prisma.formTemplate.create({
     data: {
-      id: data.id || nanoid(),
+      id: data.id || generateId(),
       name: data.name,
       description: data.description || '',
       category: data.category || 'general',
@@ -239,13 +249,13 @@ export async function seedTestPlugin(
 ): Promise<FormPlugin> {
   const plugin = await prisma.formPlugin.create({
     data: {
-      id: data.id || nanoid(),
+      id: data.id || generateId(),
       formId: data.formId,
       type: data.type,
       name: data.name,
       config: data.config,
-      isEnabled: data.isEnabled ?? true,
-      order: data.order ?? 0,
+      enabled: data.enabled ?? true,
+      events: data.events ?? [],
       createdAt: new Date(),
       updatedAt: new Date(),
     },
@@ -373,7 +383,7 @@ export async function createCompleteTestSetup(
   // Create user
   const user = await seedTestUser(prisma, {
     name: options.userName || 'Test User',
-    email: options.userEmail || `test-${nanoid(6)}@example.com`,
+    email: options.userEmail || `test-${generateId(6)}@example.com`,
     role: 'user',
   });
 
@@ -392,7 +402,7 @@ export async function createCompleteTestSetup(
     formSchema: options.formSchema || {
       pages: [
         {
-          id: nanoid(),
+          id: generateId(),
           title: 'Page 1',
           fields: [],
           order: 0,
