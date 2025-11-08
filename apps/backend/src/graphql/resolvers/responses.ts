@@ -417,6 +417,22 @@ export const extendedResponsesResolvers = {
   },
 
   FormResponse: {
+    submittedAt: (parent: any) => {
+      // Convert Date object to ISO string for GraphQL
+      if (parent.submittedAt instanceof Date) {
+        return parent.submittedAt.toISOString();
+      }
+      // If already a string, return as is
+      if (typeof parent.submittedAt === 'string') {
+        return parent.submittedAt;
+      }
+      // If it's a number (Unix timestamp), convert to ISO string
+      if (typeof parent.submittedAt === 'number') {
+        return new Date(parent.submittedAt).toISOString();
+      }
+      return parent.submittedAt;
+    },
+
     hasBeenEdited: async (parent: any) => {
       logger.info('hasBeenEdited resolver executing for response:', parent.id);
       try {

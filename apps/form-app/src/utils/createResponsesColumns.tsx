@@ -98,8 +98,8 @@ const createBaseColumns = (
       ),
       cell: ({ row }) => {
         const submittedAt = row.getValue('submittedAt') as string | number;
-        const timestamp = typeof submittedAt === 'string' ? parseInt(submittedAt, 10) : submittedAt;
-        const date = new Date(timestamp);
+        // Date constructor handles both ISO strings and Unix timestamps
+        const date = new Date(submittedAt);
 
         if (isNaN(date.getTime())) {
           return (

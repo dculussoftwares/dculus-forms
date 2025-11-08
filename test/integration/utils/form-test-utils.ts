@@ -796,6 +796,103 @@ export class FormTestUtils {
     return response.data.data.deleteResponse;
   }
 
+  /**
+   * Update a response
+   */
+  async updateResponse(
+    token: string,
+    responseId: string,
+    data: any,
+    editReason?: string
+  ): Promise<FormResponse> {
+    const mutation = `
+      mutation UpdateResponse($input: UpdateResponseInput!) {
+        updateResponse(input: $input) {
+          id
+          formId
+          data
+          submittedAt
+          hasBeenEdited
+          totalEdits
+          lastEditedAt
+          lastEditedBy {
+            id
+            name
+            email
+          }
+          editHistory {
+            id
+            editedBy {
+              id
+              name
+              email
+            }
+            editedAt
+            editType
+            editReason
+            totalChanges
+            changesSummary
+            fieldChanges {
+              id
+              fieldId
+              fieldLabel
+              fieldType
+              previousValue
+              newValue
+              changeType
+            }
+          }
+        }
+      }
+    `;
+
+    const input: any = { responseId, data };
+    if (editReason) {
+      input.editReason = editReason;
+    }
+
+    const response = await this.authUtils.graphqlRequest(mutation, { input }, token);
+
+    if (response.data.errors) {
+      throw new Error(`Failed to update response: ${response.data.errors[0].message}`);
+    }
+
+    return response.data.data.updateResponse;
+  }
+
+  /**
+   * Get single response by ID
+   */
+  async getResponse(token: string, responseId: string): Promise<FormResponse> {
+    const query = `
+      query GetResponse($id: ID!) {
+        response(id: $id) {
+          id
+          formId
+          data
+          metadata
+          submittedAt
+          hasBeenEdited
+          totalEdits
+          lastEditedAt
+          lastEditedBy {
+            id
+            name
+            email
+          }
+        }
+      }
+    `;
+
+    const response = await this.authUtils.graphqlRequest(query, { id: responseId }, token);
+
+    if (response.data.errors) {
+      throw new Error(`Failed to get response: ${response.data.errors[0].message}`);
+    }
+
+    return response.data.data.response;
+  }
+
   // Utility Methods
 
   /**
@@ -828,35 +925,46 @@ export class FormTestUtils {
     schema.pages.forEach((page: any) => {
       if (page.fields) {
         page.fields.forEach((field: any) => {
-          switch (field.type) {
-            case 'TextInput':
+          // Normalize field type to handle both PascalCase and snake_case
+          const fieldType = field.type?.toLowerCase().replace(/_/g, '');
+
+          switch (fieldType) {
+            case 'textinput':
+            case 'textinputfield':
               data[field.id] = `Sample text for ${field.label || field.id}`;
               break;
-            case 'TextArea':
+            case 'textarea':
+            case 'textareafield':
               data[field.id] = `Sample long text for ${field.label || field.id}`;
               break;
-            case 'Email':
+            case 'email':
+            case 'emailfield':
               data[field.id] = 'test@example.com';
               break;
-            case 'Number':
+            case 'number':
+            case 'numberfield':
               data[field.id] = 42;
               break;
-            case 'Select':
+            case 'select':
+            case 'selectfield':
               if (field.options && field.options.length > 0) {
                 data[field.id] = field.options[0];
               }
               break;
-            case 'Radio':
+            case 'radio':
+            case 'radiofield':
               if (field.options && field.options.length > 0) {
                 data[field.id] = field.options[0];
               }
               break;
-            case 'Checkbox':
+            case 'checkbox':
+            case 'checkboxfield':
               if (field.options && field.options.length > 0) {
                 data[field.id] = [field.options[0]];
               }
               break;
-            case 'Date':
+            case 'date':
+            case 'datefield':
               data[field.id] = '2024-01-15';
               break;
           }
