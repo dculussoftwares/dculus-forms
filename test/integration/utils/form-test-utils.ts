@@ -907,4 +907,246 @@ export class FormTestUtils {
       organizationName: `Test Org ${timestamp}`
     };
   }
+
+  // Form Sharing Operations
+
+  /**
+   * Share form with specific users or all organization members
+   */
+  async shareForm(
+    token: string,
+    input: {
+      formId: string;
+      sharingScope: string;
+      defaultPermission?: string;
+      userPermissions?: Array<{ userId: string; permission: string }>;
+    }
+  ): Promise<any> {
+    const mutation = `
+      mutation ShareForm($input: ShareFormInput!) {
+        shareForm(input: $input) {
+          sharingScope
+          defaultPermission
+          permissions {
+            id
+            formId
+            userId
+            user {
+              id
+              name
+              email
+            }
+            permission
+            grantedBy {
+              id
+              name
+              email
+            }
+            grantedAt
+            updatedAt
+          }
+        }
+      }
+    `;
+
+    const response = await this.authUtils.graphqlRequest(mutation, { input }, token);
+
+    if (response.data.errors) {
+      throw new Error(`Failed to share form: ${response.data.errors[0].message}`);
+    }
+
+    return response.data.data.shareForm;
+  }
+
+  /**
+   * Update form permission for a specific user
+   */
+  async updateFormPermission(
+    token: string,
+    input: {
+      formId: string;
+      userId: string;
+      permission: string;
+    }
+  ): Promise<any> {
+    const mutation = `
+      mutation UpdateFormPermission($input: UpdateFormPermissionInput!) {
+        updateFormPermission(input: $input) {
+          id
+          formId
+          userId
+          user {
+            id
+            name
+            email
+          }
+          permission
+          grantedBy {
+            id
+            name
+            email
+          }
+          grantedAt
+          updatedAt
+        }
+      }
+    `;
+
+    const response = await this.authUtils.graphqlRequest(mutation, { input }, token);
+
+    if (response.data.errors) {
+      throw new Error(`Failed to update form permission: ${response.data.errors[0].message}`);
+    }
+
+    return response.data.data.updateFormPermission;
+  }
+
+  /**
+   * Remove user access from form
+   */
+  async removeFormAccess(token: string, formId: string, userId: string): Promise<boolean> {
+    const mutation = `
+      mutation RemoveFormAccess($formId: ID!, $userId: ID!) {
+        removeFormAccess(formId: $formId, userId: $userId)
+      }
+    `;
+
+    const response = await this.authUtils.graphqlRequest(
+      mutation,
+      { formId, userId },
+      token
+    );
+
+    if (response.data.errors) {
+      throw new Error(`Failed to remove form access: ${response.data.errors[0].message}`);
+    }
+
+    return response.data.data.removeFormAccess;
+  }
+
+  /**
+   * Query form permissions
+   */
+  async getFormPermissions(token: string, formId: string): Promise<FormPermission[]> {
+    const query = `
+      query GetFormPermissions($formId: ID!) {
+        formPermissions(formId: $formId) {
+          id
+          formId
+          userId
+          user {
+            id
+            name
+            email
+          }
+          permission
+          grantedBy {
+            id
+            name
+            email
+          }
+          grantedAt
+          updatedAt
+        }
+      }
+    `;
+
+    const response = await this.authUtils.graphqlRequest(query, { formId }, token);
+
+    if (response.data.errors) {
+      throw new Error(`Failed to get form permissions: ${response.data.errors[0].message}`);
+    }
+
+    return response.data.data.formPermissions;
+  }
+
+  /**
+   * Query forms by category (OWNER, SHARED, ALL)
+   */
+  async getFormsByCategory(
+    token: string,
+    organizationId: string,
+    category: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ forms: Form[]; totalCount: number; page: number; limit: number; totalPages: number }> {
+    const query = `
+      query GetForms($organizationId: ID!, $category: FormCategory!, $page: Int, $limit: Int) {
+        forms(organizationId: $organizationId, category: $category, page: $page, limit: $limit) {
+          forms {
+            id
+            title
+            description
+            shortUrl
+            isPublished
+            sharingScope
+            defaultPermission
+            userPermission
+            createdBy {
+              id
+              name
+              email
+            }
+            organization {
+              id
+              name
+              slug
+            }
+            responseCount
+            createdAt
+            updatedAt
+          }
+          totalCount
+          page
+          limit
+          totalPages
+          hasNextPage
+          hasPreviousPage
+        }
+      }
+    `;
+
+    const response = await this.authUtils.graphqlRequest(
+      query,
+      { organizationId, category, page, limit },
+      token
+    );
+
+    if (response.data.errors) {
+      throw new Error(`Failed to get forms by category: ${response.data.errors[0].message}`);
+    }
+
+    return response.data.data.forms;
+  }
+
+  /**
+   * Query organization members
+   */
+  async getOrganizationMembers(token: string, organizationId: string): Promise<any[]> {
+    const query = `
+      query GetOrganizationMembers($organizationId: ID!) {
+        organizationMembers(organizationId: $organizationId) {
+          id
+          name
+          email
+          emailVerified
+          image
+          createdAt
+          updatedAt
+        }
+      }
+    `;
+
+    const response = await this.authUtils.graphqlRequest(
+      query,
+      { organizationId },
+      token
+    );
+
+    if (response.data.errors) {
+      throw new Error(`Failed to get organization members: ${response.data.errors[0].message}`);
+    }
+
+    return response.data.data.organizationMembers;
+  }
 }
