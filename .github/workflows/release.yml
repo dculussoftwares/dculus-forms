@@ -1,0 +1,527 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger on version tags like v1.2.3
+
+permissions:
+  contents: write # Required for creating releases
+  packages: write # Required for Docker Hub
+  id-token: write # Required for Azure OIDC
+
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '8.15.0'
+  REGISTRY: docker.io
+  IMAGE_NAME: dculus/forms-backend
+
+jobs:
+  # Validate the version tag format and extract version
+  validate-version:
+    name: Validate Version Tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract.outputs.version }}
+      version_without_v: ${{ steps.extract.outputs.version_without_v }}
+      is_prerelease: ${{ steps.extract.outputs.is_prerelease }}
+    steps:
+      - name: Extract version from tag
+        id: extract
+        run: |
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          echo "Tag name: $TAG_NAME"
+
+          # Validate semver format (v1.2.3, v1.2.3-beta.1, etc.)
+          if [[ ! $TAG_NAME =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+            echo "Error: Invalid version tag format. Expected: v1.2.3 or v1.2.3-beta.1"
+            exit 1
+          fi
+
+          VERSION="${TAG_NAME}"
+          VERSION_WITHOUT_V="${TAG_NAME#v}"
+
+          # Check if this is a prerelease (contains -, like -beta, -rc, -alpha)
+          if [[ $VERSION_WITHOUT_V =~ - ]]; then
+            IS_PRERELEASE="true"
+          else
+            IS_PRERELEASE="false"
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version_without_v=$VERSION_WITHOUT_V" >> $GITHUB_OUTPUT
+          echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+
+          echo "Version: $VERSION"
+          echo "Version without v: $VERSION_WITHOUT_V"
+          echo "Is prerelease: $IS_PRERELEASE"
+
+  # Security scan before building
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: validate-version
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        continue-on-error: true
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified --exclude-paths=.github/trufflehog-exclude.txt
+
+  # Build shared packages first (required by all apps)
+  build-shared-packages:
+    name: Build Shared Packages
+    runs-on: ubuntu-latest
+    needs: security-scan
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter @dculus/types exec prisma generate
+
+      - name: Build shared packages
+        run: |
+          pnpm --filter @dculus/types build
+          pnpm --filter @dculus/utils build
+          pnpm --filter @dculus/ui build
+
+      - name: Cache built packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            packages/types/dist
+            packages/utils/dist
+            packages/ui/dist
+            node_modules/.pnpm
+          key: release-built-packages-${{ github.sha }}
+
+  # Build form-app
+  build-form-app:
+    name: Build Form App
+    runs-on: ubuntu-latest
+    needs: build-shared-packages
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore built packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            packages/types/dist
+            packages/utils/dist
+            packages/ui/dist
+            node_modules/.pnpm
+          key: release-built-packages-${{ github.sha }}
+
+      - name: Build form-app
+        run: pnpm --filter form-app build
+        env:
+          VITE_CDN_ENDPOINT: ${{ secrets.VITE_CDN_ENDPOINT }}
+          VITE_PIXABAY_API_KEY: ${{ secrets.VITE_PIXABAY_API_KEY }}
+          VITE_API_URL: https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io
+          VITE_GRAPHQL_URL: https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io/graphql
+
+      - name: Upload form-app dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: form-app-dist
+          path: apps/form-app/dist
+          retention-days: 30
+
+  # Build form-viewer
+  build-form-viewer:
+    name: Build Form Viewer
+    runs-on: ubuntu-latest
+    needs: build-shared-packages
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore built packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            packages/types/dist
+            packages/utils/dist
+            packages/ui/dist
+            node_modules/.pnpm
+          key: release-built-packages-${{ github.sha }}
+
+      - name: Build form-viewer
+        run: pnpm --filter form-viewer build
+        env:
+          VITE_API_URL: https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io
+          VITE_GRAPHQL_URL: https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io/graphql
+
+      - name: Upload form-viewer dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: form-viewer-dist
+          path: apps/form-viewer/dist
+          retention-days: 30
+
+  # Build admin-app
+  build-admin-app:
+    name: Build Admin App
+    runs-on: ubuntu-latest
+    needs: build-shared-packages
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Restore built packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            packages/types/dist
+            packages/utils/dist
+            packages/ui/dist
+            node_modules/.pnpm
+          key: release-built-packages-${{ github.sha }}
+
+      - name: Build admin-app
+        run: pnpm --filter admin-app build
+        env:
+          VITE_API_URL: https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io
+          VITE_GRAPHQL_URL: https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io/graphql
+
+      - name: Upload admin-app dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-app-dist
+          path: apps/admin-app/dist
+          retention-days: 30
+
+  # Build and push Docker image
+  build-and-push-docker:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: build-shared-packages
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+      image_tags: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable=${{ needs.validate-version.outputs.is_prerelease == 'false' }}
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/backend/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Create release artifacts
+  create-release-artifacts:
+    name: Create Release Artifacts
+    runs-on: ubuntu-latest
+    needs:
+      - validate-version
+      - build-form-app
+      - build-form-viewer
+      - build-admin-app
+      - build-and-push-docker
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download form-app dist
+        uses: actions/download-artifact@v4
+        with:
+          name: form-app-dist
+          path: artifacts/form-app
+
+      - name: Download form-viewer dist
+        uses: actions/download-artifact@v4
+        with:
+          name: form-viewer-dist
+          path: artifacts/form-viewer
+
+      - name: Download admin-app dist
+        uses: actions/download-artifact@v4
+        with:
+          name: admin-app-dist
+          path: artifacts/admin-app
+
+      - name: Create zip artifacts
+        run: |
+          cd artifacts
+          zip -r "form-app-${{ needs.validate-version.outputs.version }}.zip" form-app/
+          zip -r "form-viewer-${{ needs.validate-version.outputs.version }}.zip" form-viewer/
+          zip -r "admin-app-${{ needs.validate-version.outputs.version }}.zip" admin-app/
+
+          # Generate checksums
+          sha256sum form-app-${{ needs.validate-version.outputs.version }}.zip > checksums.txt
+          sha256sum form-viewer-${{ needs.validate-version.outputs.version }}.zip >> checksums.txt
+          sha256sum admin-app-${{ needs.validate-version.outputs.version }}.zip >> checksums.txt
+
+          cat checksums.txt
+
+      - name: Create deployment manifest
+        run: |
+          cat > artifacts/deployment-manifest.json << 'EOF'
+          {
+            "version": "${{ needs.validate-version.outputs.version_without_v }}",
+            "releaseTag": "${{ needs.validate-version.outputs.version }}",
+            "createdAt": "${{ github.event.head_commit.timestamp }}",
+            "commitSha": "${{ github.sha }}",
+            "artifacts": {
+              "formApp": {
+                "filename": "form-app-${{ needs.validate-version.outputs.version }}.zip",
+                "checksum": "$(sha256sum artifacts/form-app-${{ needs.validate-version.outputs.version }}.zip | cut -d' ' -f1)",
+                "cloudflareProject": "dculus-forms-app"
+              },
+              "formViewer": {
+                "filename": "form-viewer-${{ needs.validate-version.outputs.version }}.zip",
+                "checksum": "$(sha256sum artifacts/form-viewer-${{ needs.validate-version.outputs.version }}.zip | cut -d' ' -f1)",
+                "cloudflareProject": "dculus-forms-viewer-app"
+              },
+              "adminApp": {
+                "filename": "admin-app-${{ needs.validate-version.outputs.version }}.zip",
+                "checksum": "$(sha256sum artifacts/admin-app-${{ needs.validate-version.outputs.version }}.zip | cut -d' ' -f1)",
+                "cloudflareProject": "dculus-forms-admin-app"
+              }
+            },
+            "docker": {
+              "registry": "${{ env.REGISTRY }}",
+              "image": "${{ env.IMAGE_NAME }}",
+              "digest": "${{ needs.build-and-push-docker.outputs.digest }}",
+              "tags": ${{ toJSON(needs.build-and-push-docker.outputs.image_tags) }}
+            },
+            "deployments": {
+              "production": {
+                "formApp": "https://dculus-forms-app.pages.dev",
+                "formViewer": "https://dculus-forms-viewer-app.pages.dev",
+                "adminApp": "https://dculus-forms-admin-app.pages.dev",
+                "backend": "https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io"
+              }
+            }
+          }
+          EOF
+
+          cat artifacts/deployment-manifest.json
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: |
+            artifacts/*.zip
+            artifacts/checksums.txt
+            artifacts/deployment-manifest.json
+          retention-days: 90
+
+  # Generate changelog and create GitHub Release
+  create-github-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs:
+      - validate-version
+      - create-release-artifacts
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+          path: release-artifacts
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          # Get the previous tag
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | grep -v '${{ needs.validate-version.outputs.version }}' | head -n 1)
+
+          if [ -z "$PREVIOUS_TAG" ]; then
+            echo "No previous tag found, using initial commit"
+            PREVIOUS_TAG=$(git rev-list --max-parents=0 HEAD)
+          fi
+
+          echo "Generating changelog from $PREVIOUS_TAG to ${{ needs.validate-version.outputs.version }}"
+
+          # Create release notes file
+          cat > release-notes.md << 'NOTES_EOF'
+          ## 🚀 Release ${{ needs.validate-version.outputs.version }}
+
+          ### 📦 Artifacts
+
+          This release includes the following build artifacts:
+
+          - **form-app-${{ needs.validate-version.outputs.version }}.zip** - Form Builder Application
+          - **form-viewer-${{ needs.validate-version.outputs.version }}.zip** - Form Viewer Application
+          - **admin-app-${{ needs.validate-version.outputs.version }}.zip** - Admin Dashboard Application
+          - **deployment-manifest.json** - Deployment metadata and checksums
+          - **checksums.txt** - SHA256 checksums for all artifacts
+
+          ### 🐳 Docker Image
+
+          ```bash
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.validate-version.outputs.version_without_v }}
+          ```
+
+          ### 📝 Changes Since $PREVIOUS_TAG
+
+          NOTES_EOF
+
+          # Generate changelog from commits
+          git log $PREVIOUS_TAG..${{ needs.validate-version.outputs.version }} --pretty=format:"- %s (%h)" --no-merges >> release-notes.md
+
+          echo "" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "### 🔗 Deployment URLs" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "- **Form Builder**: https://dculus-forms-app.pages.dev" >> release-notes.md
+          echo "- **Form Viewer**: https://dculus-forms-viewer-app.pages.dev" >> release-notes.md
+          echo "- **Admin Dashboard**: https://dculus-forms-admin-app.pages.dev" >> release-notes.md
+          echo "- **Backend API**: https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io" >> release-notes.md
+
+          cat release-notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.validate-version.outputs.version }}
+          name: Release ${{ needs.validate-version.outputs.version }}
+          body_path: release-notes.md
+          draft: false
+          prerelease: ${{ needs.validate-version.outputs.is_prerelease == 'true' }}
+          files: |
+            release-artifacts/form-app-${{ needs.validate-version.outputs.version }}.zip
+            release-artifacts/form-viewer-${{ needs.validate-version.outputs.version }}.zip
+            release-artifacts/admin-app-${{ needs.validate-version.outputs.version }}.zip
+            release-artifacts/checksums.txt
+            release-artifacts/deployment-manifest.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Trigger deployment workflow
+  trigger-deployment:
+    name: Trigger Deployment
+    runs-on: ubuntu-latest
+    needs:
+      - validate-version
+      - create-github-release
+    steps:
+      - name: Trigger deployment workflow
+        run: |
+          echo "✅ Release ${{ needs.validate-version.outputs.version }} created successfully"
+          echo "🚀 Deployment will be handled by the build.yml workflow"
+          echo "📦 Release artifacts available at: https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate-version.outputs.version }}"
