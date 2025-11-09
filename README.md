@@ -363,21 +363,90 @@ The UI package includes all shadcn/ui components:
 
 ## 📦 Deployment
 
-### Backend Deployment
-1. Build the backend: `pnpm backend:build`
-2. Deploy the `dist` folder to your server
-3. Set environment variables
-4. Start with: `node dist/index.js`
+### Using Pre-built Release Artifacts (Recommended)
 
-### Form App Deployment
-1. Build the form-app: `pnpm form-app:build`
-2. Deploy the `dist` folder to your static hosting service
-3. Configure API proxy or CORS settings
+The easiest way to deploy Dculus Forms is to use the pre-built artifacts from GitHub Releases:
 
-### Form Viewer Deployment
-1. Build the form-viewer: `pnpm form-viewer:build`
-2. Deploy the `dist` folder to your static hosting service
-3. Configure API proxy or CORS settings
+1. **Download Release Artifacts**
+   - Go to [GitHub Releases](https://github.com/your-org/dculus-forms/releases)
+   - Download the desired application ZIP file:
+     - `form-app-build-v{version}.zip` - Form Builder Application
+     - `form-viewer-build-v{version}.zip` - Form Viewer Application
+     - `admin-app-build-v{version}.zip` - Admin Dashboard Application
+
+2. **Extract and Deploy**
+   ```bash
+   unzip form-app-build-v1.0.0.zip
+   # Deploy the dist/ folder to any static hosting provider
+   ```
+
+3. **Backend Docker Image**
+   ```bash
+   docker pull dculus/forms-backend:v1.0.0
+   docker run -d -p 4000:4000 \
+     -e DATABASE_URL='your-mongodb-url' \
+     -e BETTER_AUTH_SECRET='your-secret' \
+     dculus/forms-backend:v1.0.0
+   ```
+
+**Supported Hosting Providers:**
+- AWS S3 + CloudFront
+- Azure Static Web Apps
+- Cloudflare Pages
+- Netlify
+- Vercel
+- nginx (self-hosted)
+- Google Cloud Storage
+
+**📚 For detailed deployment instructions for each platform, see [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)**
+
+### Creating a New Release
+
+To create a new release with build artifacts:
+
+```bash
+# Create and push a version tag
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The GitHub Actions workflow will automatically:
+- Build all frontend applications
+- Create ZIP archives
+- Create a GitHub Release with downloadable artifacts
+- Build and push the backend Docker image
+
+### Building from Source
+
+If you need to build with custom environment variables:
+
+**Backend:**
+```bash
+pnpm backend:build
+# Deploy dist/ folder or use Docker
+```
+
+**Form App:**
+```bash
+VITE_API_URL=https://your-api.com \
+VITE_GRAPHQL_URL=https://your-api.com/graphql \
+pnpm form-app:build
+# Deploy apps/form-app/dist/ to static hosting
+```
+
+**Form Viewer:**
+```bash
+pnpm form-viewer:build
+# Deploy apps/form-viewer/dist/ to static hosting
+```
+
+**Admin App:**
+```bash
+VITE_API_URL=https://your-api.com \
+VITE_GRAPHQL_URL=https://your-api.com/graphql \
+pnpm admin-app:build
+# Deploy apps/admin-app/dist/ to static hosting
+```
 
 ## 🔮 Future Enhancements
 
