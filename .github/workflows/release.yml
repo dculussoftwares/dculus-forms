@@ -114,7 +114,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma Client
-        run: pnpm --filter @dculus/types exec prisma generate
+        run: pnpm db:generate
 
       - name: Build shared packages
         run: |
