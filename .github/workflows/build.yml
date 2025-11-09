@@ -445,6 +445,40 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Building release artifacts for version: $VERSION"
 
+      - name: Build backend for release
+        run: |
+          echo "Building backend..."
+          pnpm --filter backend build
+
+      - name: Create backend release directory
+        run: |
+          echo "Preparing backend release package..."
+          mkdir -p backend-release
+
+          # Copy built files
+          cp -r apps/backend/dist backend-release/
+          cp -r apps/backend/prisma backend-release/
+          cp apps/backend/package.json backend-release/
+          cp apps/backend/.env.example backend-release/
+          cp apps/backend/README-DEPLOYMENT.md backend-release/
+
+          # Copy node_modules (production only)
+          cd apps/backend
+          pnpm install --prod --frozen-lockfile
+          cd ../..
+          cp -r apps/backend/node_modules backend-release/
+
+          echo "Backend release package prepared"
+          du -sh backend-release/
+
+      - name: Create backend ZIP archive
+        run: |
+          cd backend-release
+          zip -r ../backend-build-v${{ steps.version.outputs.version }}.zip .
+          cd ..
+          ls -lh backend-build-v${{ steps.version.outputs.version }}.zip
+          echo "Backend ZIP size: $(du -h backend-build-v${{ steps.version.outputs.version }}.zip | cut -f1)"
+
       - name: Create form-app ZIP archive
         run: |
           cd apps/form-app
@@ -487,6 +521,13 @@ jobs:
           path: admin-app-build-v${{ steps.version.outputs.version }}.zip
           retention-days: 90
 
+      - name: Upload backend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-build-v${{ steps.version.outputs.version }}
+          path: backend-build-v${{ steps.version.outputs.version }}.zip
+          retention-days: 90
+
       - name: Artifact Summary
         run: |
           echo "## 📦 Release Artifacts Created!" >> $GITHUB_STEP_SUMMARY
@@ -494,6 +535,7 @@ jobs:
           echo "**Version**: v${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Build Artifacts:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ backend-build-v${{ steps.version.outputs.version }}.zip" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ form-app-build-v${{ steps.version.outputs.version }}.zip" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ form-viewer-build-v${{ steps.version.outputs.version }}.zip" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ admin-app-build-v${{ steps.version.outputs.version }}.zip" >> $GITHUB_STEP_SUMMARY
@@ -535,6 +577,11 @@ jobs:
         with:
           name: admin-app-build-v${{ steps.version.outputs.version }}
 
+      - name: Download backend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-build-v${{ steps.version.outputs.version }}
+
       - name: Verify downloaded artifacts
         run: |
           echo "Verifying downloaded artifacts..."
@@ -550,16 +597,24 @@ jobs:
           prerelease: ${{ contains(steps.version.outputs.tag_name, 'alpha') || contains(steps.version.outputs.tag_name, 'beta') || contains(steps.version.outputs.tag_name, 'rc') }}
           generate_release_notes: true
           files: |
+            backend-build-v${{ steps.version.outputs.version }}.zip
             form-app-build-v${{ steps.version.outputs.version }}.zip
             form-viewer-build-v${{ steps.version.outputs.version }}.zip
             admin-app-build-v${{ steps.version.outputs.version }}.zip
           body: |
             ## 🚀 Dculus Forms Release ${{ steps.version.outputs.tag_name }}
 
-            ### 📦 Frontend Build Artifacts
+            ### 📦 Build Artifacts
 
-            This release includes production-ready build artifacts for all frontend applications. Download and deploy to any static hosting provider:
+            This release includes production-ready build artifacts for all applications:
 
+            **Backend:**
+            - **backend-build-v${{ steps.version.outputs.version }}.zip** - Backend API (Node.js)
+              - Includes compiled code, dependencies, and deployment documentation
+              - Alternative to Docker for direct Node.js deployment
+              - See included `README-DEPLOYMENT.md` for setup instructions
+
+            **Frontend Applications:**
             - **form-app-build-v${{ steps.version.outputs.version }}.zip** - Form Builder Application
             - **form-viewer-build-v${{ steps.version.outputs.version }}.zip** - Form Viewer Application
             - **admin-app-build-v${{ steps.version.outputs.version }}.zip** - Admin Dashboard Application
@@ -572,47 +627,61 @@ jobs:
 
             ### 📋 Deployment Instructions
 
+            **Backend Deployment (Choose One):**
+
+            **Option 1: Docker (Recommended)**
+            ```bash
+            docker pull dculus/forms-backend:${{ steps.version.outputs.tag_name }}
+            docker run -d -p 4000:4000 --env-file .env dculus/forms-backend:${{ steps.version.outputs.tag_name }}
+            ```
+
+            **Option 2: Node.js Direct**
+            ```bash
+            unzip backend-build-v${{ steps.version.outputs.version }}.zip
+            cd backend-build-v${{ steps.version.outputs.version }}
+            cp .env.example .env
+            # Edit .env with your values
+            node dist/apps/backend/src/index.js
+            ```
+
+            See included `README-DEPLOYMENT.md` for detailed backend deployment instructions including PM2, systemd, and production best practices.
+
+            **Frontend Deployment:**
+
             1. Download the desired application ZIP file from the assets below
-            2. Extract the archive: `unzip <app-name>.zip`
+            2. Extract: `unzip <app-name>.zip`
             3. **Configure environment variables** in your hosting provider (see below)
-            4. Deploy the `dist/` folder to your static hosting provider:
-               - **AWS S3**: `aws s3 sync dist/ s3://your-bucket-name --acl public-read`
-               - **Azure Static Web Apps**: Use Azure Portal or Azure CLI
+            4. Deploy the `dist/` folder:
                - **Cloudflare Pages**: `wrangler pages deploy dist/`
                - **Netlify**: `netlify deploy --prod --dir=dist`
                - **Vercel**: `vercel --prod dist/`
-               - **nginx**: Copy `dist/` contents to your web root directory
+               - **AWS S3**: `aws s3 sync dist/ s3://bucket --acl public-read`
+               - **nginx**: Copy `dist/` to web root
 
             ### 🔧 Environment Variables Configuration
 
-            **⚠️ REQUIRED:** You MUST configure these in your hosting provider's dashboard or CLI:
+            **⚠️ REQUIRED:** Configure these in your hosting provider or .env file:
+
+            **Backend** (see `.env.example`):
+            - `DATABASE_URL` - MongoDB connection string
+            - `BETTER_AUTH_SECRET` - Min 32 character secret
+            - `BETTER_AUTH_URL` - Public API URL
+            - `CORS_ORIGINS` - Allowed frontend URLs
+            - `S3_*` - S3 storage configuration
+            - Full list in `README-DEPLOYMENT.md`
 
             **Form App:**
-            - `VITE_API_URL` - Your backend API URL (e.g., `https://api.yourdomain.com`)
-            - `VITE_GRAPHQL_URL` - Your GraphQL endpoint (e.g., `https://api.yourdomain.com/graphql`)
-            - `VITE_CDN_ENDPOINT` - Your CDN endpoint for file uploads
-            - `VITE_PIXABAY_API_KEY` - Your Pixabay API key for image search
+            - `VITE_API_URL` - Backend API URL
+            - `VITE_GRAPHQL_URL` - GraphQL endpoint
+            - `VITE_CDN_ENDPOINT` - CDN endpoint
+            - `VITE_PIXABAY_API_KEY` - Pixabay key
 
             **Admin App:**
-            - `VITE_API_URL` - Your backend API URL
-            - `VITE_GRAPHQL_URL` - Your GraphQL endpoint
+            - `VITE_API_URL` - Backend API URL
+            - `VITE_GRAPHQL_URL` - GraphQL endpoint
 
             **Form Viewer:**
-            - No environment variables required (uses runtime configuration)
-
-            **How to set environment variables:**
-            - **Cloudflare Pages**: Dashboard → Pages → Settings → Environment Variables
-            - **Netlify**: Dashboard → Site Settings → Environment Variables
-            - **Vercel**: Dashboard → Project → Settings → Environment Variables
-            - **Azure Static Web Apps**: Portal → Configuration → Application Settings
-            - **For static hosting (S3/nginx)**: See deployment guide for runtime config options
-
-            ### 🐳 Backend Docker Image
-
-            Backend Docker image is available at:
-            ```
-            docker pull dculus/forms-backend:${{ steps.version.outputs.tag_name }}
-            ```
+            - No build-time env vars needed
 
             ### 📚 Documentation
 
@@ -626,11 +695,15 @@ jobs:
           echo "**URL**: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📦 Attached Artifacts:" >> $GITHUB_STEP_SUMMARY
-          echo "- form-app-build-v${{ steps.version.outputs.version }}.zip" >> $GITHUB_STEP_SUMMARY
-          echo "- form-viewer-build-v${{ steps.version.outputs.version }}.zip" >> $GITHUB_STEP_SUMMARY
-          echo "- admin-app-build-v${{ steps.version.outputs.version }}.zip" >> $GITHUB_STEP_SUMMARY
+          echo "- backend-build-v${{ steps.version.outputs.version }}.zip (Backend API)" >> $GITHUB_STEP_SUMMARY
+          echo "- form-app-build-v${{ steps.version.outputs.version }}.zip (Form Builder)" >> $GITHUB_STEP_SUMMARY
+          echo "- form-viewer-build-v${{ steps.version.outputs.version }}.zip (Form Viewer)" >> $GITHUB_STEP_SUMMARY
+          echo "- admin-app-build-v${{ steps.version.outputs.version }}.zip (Admin Dashboard)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🚀 Download & Deploy:" >> $GITHUB_STEP_SUMMARY
+          echo "### 🚀 Deployment Options:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend**: Docker image or Node.js ZIP artifact" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend**: Deploy to Cloudflare, Netlify, Vercel, AWS, Azure, or nginx" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           echo "Visit the release page to download artifacts and follow deployment instructions." >> $GITHUB_STEP_SUMMARY
 
   build-and-push:

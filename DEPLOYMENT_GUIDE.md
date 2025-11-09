@@ -1,13 +1,16 @@
 # Deployment Guide
 
-This guide explains how to use the frontend build artifacts from GitHub Releases to deploy Dculus Forms to any cloud provider.
+This guide explains how to use the build artifacts from GitHub Releases to deploy Dculus Forms to any cloud provider.
 
 ## Table of Contents
 
 - [Overview](#overview)
 - [Creating a Release](#creating-a-release)
 - [Downloading Build Artifacts](#downloading-build-artifacts)
-- [Deployment to Cloud Providers](#deployment-to-cloud-providers)
+- [Backend Deployment](#backend-deployment)
+  - [Docker Deployment (Recommended)](#docker-deployment-recommended)
+  - [Node.js Direct Deployment](#nodejs-direct-deployment)
+- [Frontend Deployment to Cloud Providers](#frontend-deployment-to-cloud-providers)
   - [AWS S3 + CloudFront](#aws-s3--cloudfront)
   - [Azure Static Web Apps](#azure-static-web-apps)
   - [Cloudflare Pages](#cloudflare-pages)
@@ -16,18 +19,23 @@ This guide explains how to use the frontend build artifacts from GitHub Releases
   - [nginx (Self-hosted)](#nginx-self-hosted)
   - [Google Cloud Storage](#google-cloud-storage)
 - [Environment Variables](#environment-variables)
-- [Backend Deployment](#backend-deployment)
 - [Troubleshooting](#troubleshooting)
 
 ## Overview
 
-Dculus Forms provides production-ready build artifacts for all three frontend applications:
+Dculus Forms provides production-ready build artifacts for all applications:
 
+**Backend:**
+- **Backend API** - Express.js + GraphQL backend (backend-build)
+  - Available as Docker image (recommended)
+  - Available as Node.js ZIP artifact (alternative)
+
+**Frontend Applications:**
 - **Form App** - Form builder application (form-app)
 - **Form Viewer** - Form viewing and submission application (form-viewer)
 - **Admin App** - System administration dashboard (admin-app)
 
-Each release includes ZIP archives containing optimized, minified production builds ready for deployment to any static hosting provider.
+Each release includes ZIP archives containing optimized, minified production builds ready for deployment to any hosting provider.
 
 ## Creating a Release
 
@@ -54,11 +62,200 @@ The GitHub Actions workflow will:
 1. Go to the [Releases page](https://github.com/your-org/dculus-forms/releases)
 2. Find the desired release version
 3. Download the ZIP file(s) for the application(s) you want to deploy:
-   - `form-app-build-v{version}.zip`
-   - `form-viewer-build-v{version}.zip`
-   - `admin-app-build-v{version}.zip`
+   - `backend-build-v{version}.zip` - Backend API (Node.js)
+   - `form-app-build-v{version}.zip` - Form Builder
+   - `form-viewer-build-v{version}.zip` - Form Viewer
+   - `admin-app-build-v{version}.zip` - Admin Dashboard
 
-## Deployment to Cloud Providers
+## Backend Deployment
+
+The backend can be deployed using either Docker (recommended) or Node.js directly from the ZIP artifact.
+
+### Docker Deployment (Recommended)
+
+Docker provides the most consistent and reliable deployment experience.
+
+**Prerequisites:**
+- Docker Engine 20.10+ or Docker Desktop
+- MongoDB 5.0+ (local, Atlas, or managed service)
+- S3-compatible storage
+
+**Step 1: Pull the Docker image**
+```bash
+docker pull dculus/forms-backend:v1.0.0
+# Or for latest:
+docker pull dculus/forms-backend:latest
+```
+
+**Step 2: Create environment file**
+```bash
+cat > .env << 'EOF'
+DATABASE_URL=mongodb+srv://user:pass@cluster.mongodb.net/dculus_forms
+BETTER_AUTH_SECRET=$(openssl rand -hex 32)
+BETTER_AUTH_URL=https://api.yourdomain.com
+CORS_ORIGINS=https://app.yourdomain.com,https://admin.yourdomain.com
+S3_ACCESS_KEY=your-access-key
+S3_SECRET_KEY=your-secret-key
+S3_ENDPOINT=https://s3.amazonaws.com
+S3_REGION=us-east-1
+S3_PRIVATE_BUCKET_NAME=dculus-private
+S3_PUBLIC_BUCKET_NAME=dculus-public
+EOF
+```
+
+**Step 3: Run the container**
+```bash
+docker run -d \
+  --name dculus-backend \
+  -p 4000:4000 \
+  --env-file .env \
+  --restart unless-stopped \
+  dculus/forms-backend:v1.0.0
+```
+
+**Step 4: Verify deployment**
+```bash
+# Check container status
+docker ps | grep dculus-backend
+
+# Check logs
+docker logs dculus-backend
+
+# Test health endpoint
+curl http://localhost:4000/health
+# Should return: {"status":"ok"}
+```
+
+**Using Docker Compose:**
+```yaml
+version: '3.8'
+services:
+  backend:
+    image: dculus/forms-backend:v1.0.0
+    ports:
+      - "4000:4000"
+    env_file: .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+```
+
+Deploy with: `docker-compose up -d`
+
+### Node.js Direct Deployment
+
+Deploy from the ZIP artifact when you prefer running Node.js directly or have resource constraints.
+
+**Prerequisites:**
+- Node.js 18.x or higher
+- MongoDB 5.0+
+- S3-compatible storage
+
+**Step 1: Download and extract**
+```bash
+# Download backend ZIP from GitHub Releases
+wget https://github.com/your-org/dculus-forms/releases/download/v1.0.0/backend-build-v1.0.0.zip
+
+# Extract
+unzip backend-build-v1.0.0.zip
+cd backend-build-v1.0.0
+```
+
+**Step 2: Configure environment**
+```bash
+# Copy example environment file
+cp .env.example .env
+
+# Edit with your values
+nano .env  # or vim, code, etc.
+```
+
+**Required environment variables:**
+```bash
+DATABASE_URL=mongodb+srv://user:pass@cluster.mongodb.net/dculus_forms
+BETTER_AUTH_SECRET=$(openssl rand -hex 32)
+BETTER_AUTH_URL=https://api.yourdomain.com
+CORS_ORIGINS=https://app.yourdomain.com,https://admin.yourdomain.com
+S3_ACCESS_KEY=your-s3-access-key
+S3_SECRET_KEY=your-s3-secret-key
+S3_ENDPOINT=https://s3.amazonaws.com
+S3_REGION=us-east-1
+S3_PRIVATE_BUCKET_NAME=dculus-forms-private
+S3_PUBLIC_BUCKET_NAME=dculus-forms-public
+```
+
+**Step 3: Run the application**
+
+**Option A: Direct execution (testing)**
+```bash
+node dist/apps/backend/src/index.js
+```
+
+**Option B: PM2 (production recommended)**
+```bash
+# Install PM2 globally
+npm install -g pm2
+
+# Start with PM2
+pm2 start dist/apps/backend/src/index.js \
+  --name dculus-backend \
+  --env production
+
+# Save configuration
+pm2 save
+
+# Setup PM2 to start on boot
+pm2 startup
+# Follow the instructions printed
+```
+
+**Option C: systemd service**
+
+Create `/etc/systemd/system/dculus-backend.service`:
+```ini
+[Unit]
+Description=Dculus Forms Backend
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/dculus-backend
+EnvironmentFile=/var/www/dculus-backend/.env
+ExecStart=/usr/bin/node dist/apps/backend/src/index.js
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable dculus-backend
+sudo systemctl start dculus-backend
+sudo systemctl status dculus-backend
+```
+
+**Step 4: Verify deployment**
+```bash
+# Test health endpoint
+curl http://localhost:4000/health
+
+# Check logs (PM2)
+pm2 logs dculus-backend
+
+# Check logs (systemd)
+sudo journalctl -u dculus-backend -f
+```
+
+**For detailed backend deployment instructions including nginx reverse proxy, SSL setup, monitoring, and troubleshooting, see the included `README-DEPLOYMENT.md` file in the backend ZIP archive.**
+
+## Frontend Deployment to Cloud Providers
 
 ### AWS S3 + CloudFront
 
