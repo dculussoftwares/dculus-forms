@@ -26,11 +26,15 @@ output "log_analytics_workspace_id" {
 output "deployment_info" {
   description = "Deployment summary information"
   value = {
+    environment           = var.environment
     backend_url           = "https://${azurerm_container_app.backend.ingress[0].fqdn}"
     graphql_endpoint      = "https://${azurerm_container_app.backend.ingress[0].fqdn}/graphql"
     health_check_endpoint = "https://${azurerm_container_app.backend.ingress[0].fqdn}/health"
     container_app_name    = azurerm_container_app.backend.name
     resource_group        = azurerm_resource_group.main.name
     location              = azurerm_resource_group.main.location
+    container_image       = local.full_container_image
+    replicas              = "${var.min_replicas}-${var.max_replicas}"
+    cpu_memory            = "${var.cpu_cores} cores / ${var.memory_gb}Gi"
   }
 }

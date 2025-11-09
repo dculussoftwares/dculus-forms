@@ -1,13 +1,16 @@
-variable "app_name" {
-  description = "Name of the application (used as prefix for resources)"
+variable "project_name" {
+  description = "Name of the project (used as prefix for resources)"
   type        = string
   default     = "dculus-forms"
 }
 
-variable "resource_group_name" {
-  description = "Name of the Azure Resource Group"
+variable "environment" {
+  description = "Environment name (dev, staging, production)"
   type        = string
-  default     = "dculus-forms-rg"
+  validation {
+    condition     = contains(["dev", "staging", "production"], var.environment)
+    error_message = "Environment must be dev, staging, or production."
+  }
 }
 
 variable "location" {
@@ -16,10 +19,64 @@ variable "location" {
   default     = "East US"
 }
 
-variable "container_app_domain" {
-  description = "Domain for container apps (region-specific)"
+variable "cpu_cores" {
+  description = "CPU cores for container app"
+  type        = number
+  default     = 0.25
+}
+
+variable "memory_gb" {
+  description = "Memory in GB for container app"
+  type        = number
+  default     = 0.5
+}
+
+variable "min_replicas" {
+  description = "Minimum number of replicas"
+  type        = number
+  default     = 1
+}
+
+variable "max_replicas" {
+  description = "Maximum number of replicas"
+  type        = number
+  default     = 10
+}
+
+variable "container_port" {
+  description = "Port the container listens on"
+  type        = number
+  default     = 4000
+}
+
+variable "target_port" {
+  description = "Target port for ingress"
+  type        = number
+  default     = 4000
+}
+
+variable "external_enabled" {
+  description = "Enable external ingress"
+  type        = bool
+  default     = true
+}
+
+variable "allow_insecure_traffic" {
+  description = "Allow insecure HTTP traffic"
+  type        = bool
+  default     = false
+}
+
+variable "ingress_transport" {
+  description = "Ingress transport protocol"
   type        = string
-  default     = "thankfulbay-2c831716.eastus.azurecontainerapps.io"
+  default     = "auto"
+}
+
+variable "log_analytics_retention_days" {
+  description = "Log Analytics workspace retention in days"
+  type        = number
+  default     = 30
 }
 
 variable "mongodb_connection_string" {
@@ -74,9 +131,15 @@ variable "cors_origins" {
 }
 
 variable "container_image" {
-  description = "Docker container image to deploy"
+  description = "Docker container image repository"
   type        = string
-  default     = "dculus/forms-backend:latest"
+  default     = "dculus/forms-backend"
+}
+
+variable "container_image_tag" {
+  description = "Docker container image tag"
+  type        = string
+  default     = "latest"
 }
 
 variable "tags" {

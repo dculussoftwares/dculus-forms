@@ -7,39 +7,42 @@ terraform {
     }
   }
 
-  backend "azurerm" {
-    resource_group_name  = "dculus-global-terraform-assets-resource-grp"
-    storage_account_name = "dculusterraformstates"
-    container_name       = "backend-container-app-deployment"
-    key                  = "terraform.tfstate"
-  }
+  # Backend configuration is loaded from environment-specific backend.tf files
+  # See: environments/{dev,staging,production}/backend.tf
 }
 
 provider "azurerm" {
   features {}
 }
 
-# Data source for existing resource group (if you want to use existing one)
-# or create a new one for the container app
+# Locals for resource naming with environment suffix
+locals {
+  resource_group_name = "${var.project_name}-${var.environment}-rg"
+  app_name            = "${var.project_name}-${var.environment}"
+  full_container_image = "${var.container_image}:${var.container_image_tag}"
+}
+
+# Resource Group for this environment
 resource "azurerm_resource_group" "main" {
-  name     = var.resource_group_name
+  name     = local.resource_group_name
   location = var.location
+  tags     = var.tags
 }
 
 # Log Analytics Workspace for Container App Environment
 resource "azurerm_log_analytics_workspace" "main" {
-  name                = "${var.app_name}-logs"
+  name                = "${local.app_name}-logs"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   sku                 = "PerGB2018"
-  retention_in_days   = 30
+  retention_in_days   = var.log_analytics_retention_days
 
   tags = var.tags
 }
 
 # Container App Environment
 resource "azurerm_container_app_environment" "main" {
-  name                       = "${var.app_name}-env"
+  name                       = "${local.app_name}-env"
   location                   = azurerm_resource_group.main.location
   resource_group_name        = azurerm_resource_group.main.name
   log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
@@ -49,20 +52,20 @@ resource "azurerm_container_app_environment" "main" {
 
 # Container App
 resource "azurerm_container_app" "backend" {
-  name                         = "${var.app_name}-backend"
+  name                         = "${local.app_name}-backend"
   container_app_environment_id = azurerm_container_app_environment.main.id
   resource_group_name          = azurerm_resource_group.main.name
   revision_mode                = "Single"
 
   template {
-    min_replicas = 1
-    max_replicas = 10
+    min_replicas = var.min_replicas
+    max_replicas = var.max_replicas
 
     container {
       name   = "backend"
-      image  = var.container_image
-      cpu    = 0.25
-      memory = "0.5Gi"
+      image  = local.full_container_image
+      cpu    = var.cpu_cores
+      memory = "${var.memory_gb}Gi"
 
       env {
         name  = "DATABASE_URL"
@@ -77,17 +80,12 @@ resource "azurerm_container_app" "backend" {
 
       env {
         name  = "BETTER_AUTH_URL"
-        value = "https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io"
-      }
-
-      env {
-        name  = "S3_CDN_URL"
-        value = "https://cdn-handler-dev.natheeshece.workers.dev"
+        value = "https://${azurerm_container_app.backend.latest_revision_fqdn}"
       }
 
       env {
         name  = "NODE_ENV"
-        value = "development"
+        value = "production"
       }
 
       env {
@@ -127,7 +125,7 @@ resource "azurerm_container_app" "backend" {
 
       liveness_probe {
         transport               = "HTTP"
-        port                    = 4000
+        port                    = var.container_port
         path                    = "/health"
         initial_delay           = 30
         interval_seconds        = 30
@@ -137,7 +135,7 @@ resource "azurerm_container_app" "backend" {
 
       readiness_probe {
         transport               = "HTTP"
-        port                    = 4000
+        port                    = var.container_port
         path                    = "/health"
         interval_seconds        = 10
         timeout                 = 5
@@ -154,10 +152,10 @@ resource "azurerm_container_app" "backend" {
   }
 
   ingress {
-    allow_insecure_connections = false
-    external_enabled           = true
-    target_port                = 4000
-    transport                  = "http"
+    allow_insecure_connections = var.allow_insecure_traffic
+    external_enabled           = var.external_enabled
+    target_port                = var.target_port
+    transport                  = var.ingress_transport
 
     traffic_weight {
       percentage      = 100
