@@ -174,10 +174,11 @@ jobs:
 
       - name: Terraform Plan
         id: plan
+        env:
+          TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           terraform plan \
-            -var="cloudflare_account_id=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" \
-            -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
             -out=tfplan \
             -detailed-exitcode || echo "plan_exitcode=$?" >> $GITHUB_OUTPUT
 
@@ -278,6 +279,9 @@ jobs:
 
       - name: Terraform Apply
         id: apply
+        env:
+          TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           terraform apply -auto-approve tfplan
 
