@@ -679,7 +679,7 @@ jobs:
     name: Deploy Form App to Cloudflare Pages
     runs-on: ubuntu-latest
     needs: build-form-app
-    if: (github.ref == 'refs/heads/release' || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && github.event_name != 'pull_request'
+    if: (github.ref == 'refs/heads/release' || github.ref == 'refs/heads/main') && github.event_name != 'pull_request'
     permissions:
       contents: read
       deployments: write
@@ -687,54 +687,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Check if deploying from release
-        id: check_release
-        run: |
-          if [[ $GITHUB_REF == refs/tags/v* ]]; then
-            echo "is_release=true" >> $GITHUB_OUTPUT
-            VERSION="${GITHUB_REF#refs/tags/}"
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "Deploying from release: $VERSION"
-          else
-            echo "is_release=false" >> $GITHUB_OUTPUT
-            echo "Deploying from branch build"
-          fi
-
-      - name: Download release artifact (if release)
-        if: steps.check_release.outputs.is_release == 'true'
-        run: |
-          VERSION="${{ steps.check_release.outputs.version }}"
-          echo "Downloading form-app artifact from release $VERSION"
-
-          # Download release artifact using GitHub API
-          gh release download "$VERSION" \
-            --pattern "form-app-${VERSION}.zip" \
-            --dir /tmp/release-artifacts
-
-          # Extract artifact
-          mkdir -p apps/form-app/dist
-          unzip -q "/tmp/release-artifacts/form-app-${VERSION}.zip" -d /tmp/extracted
-          cp -r /tmp/extracted/form-app/* apps/form-app/dist/
-
-          echo "✅ Release artifact extracted to apps/form-app/dist"
-          ls -la apps/form-app/dist
-        env:
-          GH_TOKEN: ${{ github.token }}
-
-      - name: Setup Node.js (if branch build)
-        if: steps.check_release.outputs.is_release == 'false'
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Setup pnpm (if branch build)
-        if: steps.check_release.outputs.is_release == 'false'
+      - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - name: Restore built packages cache (if branch build)
-        if: steps.check_release.outputs.is_release == 'false'
+      - name: Restore built packages cache
         uses: actions/cache@v4
         with:
           path: |
@@ -744,12 +707,10 @@ jobs:
             node_modules/.pnpm
           key: built-packages-${{ github.sha }}
 
-      - name: Install dependencies (if branch build)
-        if: steps.check_release.outputs.is_release == 'false'
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build form-app with production environment variables (if branch build)
-        if: steps.check_release.outputs.is_release == 'false'
+      - name: Build form-app with production environment variables
         env:
           VITE_CDN_ENDPOINT: ${{ secrets.VITE_CDN_ENDPOINT }}
           VITE_PIXABAY_API_KEY: ${{ secrets.VITE_PIXABAY_API_KEY }}
@@ -765,15 +726,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          if [[ "${{ steps.check_release.outputs.is_release }}" == "true" ]]; then
-            # Deploy with version-tagged branch
-            wrangler pages deploy apps/form-app/dist \
-              --project-name=dculus-forms-app \
-              --branch="${{ steps.check_release.outputs.version }}"
-          else
-            # Deploy without branch specification (uses git branch)
-            wrangler pages deploy apps/form-app/dist --project-name=dculus-forms-app
-          fi
+          wrangler pages deploy apps/form-app/dist --project-name=dculus-forms-app
 
       - name: Deployment Summary
         run: |
@@ -791,7 +744,7 @@ jobs:
     name: Deploy Form Viewer to Cloudflare Pages
     runs-on: ubuntu-latest
     needs: build-form-viewer
-    if: (github.ref == 'refs/heads/release' || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && github.event_name != 'pull_request'
+    if: (github.ref == 'refs/heads/release' || github.ref == 'refs/heads/main') && github.event_name != 'pull_request'
     permissions:
       contents: read
       deployments: write
@@ -799,54 +752,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Check if deploying from release
-        id: check_release
-        run: |
-          if [[ $GITHUB_REF == refs/tags/v* ]]; then
-            echo "is_release=true" >> $GITHUB_OUTPUT
-            VERSION="${GITHUB_REF#refs/tags/}"
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "Deploying from release: $VERSION"
-          else
-            echo "is_release=false" >> $GITHUB_OUTPUT
-            echo "Deploying from branch build"
-          fi
-
-      - name: Download release artifact (if release)
-        if: steps.check_release.outputs.is_release == 'true'
-        run: |
-          VERSION="${{ steps.check_release.outputs.version }}"
-          echo "Downloading form-viewer artifact from release $VERSION"
-
-          # Download release artifact using GitHub API
-          gh release download "$VERSION" \
-            --pattern "form-viewer-${VERSION}.zip" \
-            --dir /tmp/release-artifacts
-
-          # Extract artifact
-          mkdir -p apps/form-viewer/dist
-          unzip -q "/tmp/release-artifacts/form-viewer-${VERSION}.zip" -d /tmp/extracted
-          cp -r /tmp/extracted/form-viewer/* apps/form-viewer/dist/
-
-          echo "✅ Release artifact extracted to apps/form-viewer/dist"
-          ls -la apps/form-viewer/dist
-        env:
-          GH_TOKEN: ${{ github.token }}
-
-      - name: Setup Node.js (if branch build)
-        if: steps.check_release.outputs.is_release == 'false'
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Setup pnpm (if branch build)
-        if: steps.check_release.outputs.is_release == 'false'
+      - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - name: Restore built packages cache (if branch build)
-        if: steps.check_release.outputs.is_release == 'false'
+      - name: Restore built packages cache
         uses: actions/cache@v4
         with:
           path: |
@@ -856,12 +772,10 @@ jobs:
             node_modules/.pnpm
           key: built-packages-${{ github.sha }}
 
-      - name: Install dependencies (if branch build)
-        if: steps.check_release.outputs.is_release == 'false'
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build form-viewer (if branch build)
-        if: steps.check_release.outputs.is_release == 'false'
+      - name: Build form-viewer
         run: pnpm --filter form-viewer build
 
       - name: Install wrangler globally
@@ -872,15 +786,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          if [[ "${{ steps.check_release.outputs.is_release }}" == "true" ]]; then
-            # Deploy with version-tagged branch
-            wrangler pages deploy apps/form-viewer/dist \
-              --project-name=dculus-forms-viewer-app \
-              --branch="${{ steps.check_release.outputs.version }}"
-          else
-            # Deploy without branch specification (uses git branch)
-            wrangler pages deploy apps/form-viewer/dist --project-name=dculus-forms-viewer-app
-          fi
+          wrangler pages deploy apps/form-viewer/dist --project-name=dculus-forms-viewer-app
 
       - name: Deployment Summary
         run: |
@@ -898,7 +804,7 @@ jobs:
     name: Deploy Admin App to Cloudflare Pages
     runs-on: ubuntu-latest
     needs: build-admin-app
-    if: (github.ref == 'refs/heads/release' || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && github.event_name != 'pull_request'
+    if: (github.ref == 'refs/heads/release' || github.ref == 'refs/heads/main') && github.event_name != 'pull_request'
     permissions:
       contents: read
       deployments: write
@@ -906,54 +812,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Check if deploying from release
-        id: check_release
-        run: |
-          if [[ $GITHUB_REF == refs/tags/v* ]]; then
-            echo "is_release=true" >> $GITHUB_OUTPUT
-            VERSION="${GITHUB_REF#refs/tags/}"
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "Deploying from release: $VERSION"
-          else
-            echo "is_release=false" >> $GITHUB_OUTPUT
-            echo "Deploying from branch build"
-          fi
-
-      - name: Download release artifact (if release)
-        if: steps.check_release.outputs.is_release == 'true'
-        run: |
-          VERSION="${{ steps.check_release.outputs.version }}"
-          echo "Downloading admin-app artifact from release $VERSION"
-
-          # Download release artifact using GitHub API
-          gh release download "$VERSION" \
-            --pattern "admin-app-${VERSION}.zip" \
-            --dir /tmp/release-artifacts
-
-          # Extract artifact
-          mkdir -p apps/admin-app/dist
-          unzip -q "/tmp/release-artifacts/admin-app-${VERSION}.zip" -d /tmp/extracted
-          cp -r /tmp/extracted/admin-app/* apps/admin-app/dist/
-
-          echo "✅ Release artifact extracted to apps/admin-app/dist"
-          ls -la apps/admin-app/dist
-        env:
-          GH_TOKEN: ${{ github.token }}
-
-      - name: Setup Node.js (if branch build)
-        if: steps.check_release.outputs.is_release == 'false'
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Setup pnpm (if branch build)
-        if: steps.check_release.outputs.is_release == 'false'
+      - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - name: Restore built packages cache (if branch build)
-        if: steps.check_release.outputs.is_release == 'false'
+      - name: Restore built packages cache
         uses: actions/cache@v4
         with:
           path: |
@@ -963,12 +832,10 @@ jobs:
             node_modules/.pnpm
           key: built-packages-${{ github.sha }}
 
-      - name: Install dependencies (if branch build)
-        if: steps.check_release.outputs.is_release == 'false'
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build admin-app with production environment variables (if branch build)
-        if: steps.check_release.outputs.is_release == 'false'
+      - name: Build admin-app with production environment variables
         env:
           VITE_API_URL: ${{ env.BACKEND_URL }}
           VITE_GRAPHQL_URL: ${{ env.BACKEND_URL }}/graphql
@@ -982,15 +849,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          if [[ "${{ steps.check_release.outputs.is_release }}" == "true" ]]; then
-            # Deploy with version-tagged branch
-            wrangler pages deploy apps/admin-app/dist \
-              --project-name=dculus-forms-admin-app \
-              --branch="${{ steps.check_release.outputs.version }}"
-          else
-            # Deploy without branch specification (uses git branch)
-            wrangler pages deploy apps/admin-app/dist --project-name=dculus-forms-admin-app
-          fi
+          wrangler pages deploy apps/admin-app/dist --project-name=dculus-forms-admin-app
 
       - name: Deployment Summary
         run: |
