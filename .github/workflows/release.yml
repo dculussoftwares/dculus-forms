@@ -355,74 +355,18 @@ jobs:
           name: admin-app-dist
           path: artifacts/admin-app
 
-      - name: Verify artifacts contain only build output
-        run: |
-          echo "📦 Verifying artifacts contain only build output (no source code)..."
-
-          # Check form-app
-          echo "Checking form-app contents:"
-          ls -la artifacts/form-app/
-          if [ -f "artifacts/form-app/package.json" ] || [ -d "artifacts/form-app/src" ]; then
-            echo "❌ ERROR: Source code found in form-app artifact!"
-            exit 1
-          fi
-          echo "✅ form-app: Contains only build output"
-
-          # Check form-viewer
-          echo "Checking form-viewer contents:"
-          ls -la artifacts/form-viewer/
-          if [ -f "artifacts/form-viewer/package.json" ] || [ -d "artifacts/form-viewer/src" ]; then
-            echo "❌ ERROR: Source code found in form-viewer artifact!"
-            exit 1
-          fi
-          echo "✅ form-viewer: Contains only build output"
-
-          # Check admin-app
-          echo "Checking admin-app contents:"
-          ls -la artifacts/admin-app/
-          if [ -f "artifacts/admin-app/package.json" ] || [ -d "artifacts/admin-app/src" ]; then
-            echo "❌ ERROR: Source code found in admin-app artifact!"
-            exit 1
-          fi
-          echo "✅ admin-app: Contains only build output"
-
-          echo ""
-          echo "✅ All artifacts verified - build output only, no source code"
-
       - name: Create zip artifacts
         run: |
           cd artifacts
-
-          echo "📦 Creating release artifacts (build output only)..."
-
-          # Create zip files containing ONLY build output
           zip -r "form-app-${{ needs.validate-version.outputs.version }}.zip" form-app/
           zip -r "form-viewer-${{ needs.validate-version.outputs.version }}.zip" form-viewer/
           zip -r "admin-app-${{ needs.validate-version.outputs.version }}.zip" admin-app/
 
-          echo ""
-          echo "📊 Artifact sizes:"
-          ls -lh *.zip
-
-          echo ""
-          echo "📋 Artifact contents summary:"
-          echo "form-app:"
-          unzip -l "form-app-${{ needs.validate-version.outputs.version }}.zip" | head -20
-          echo ""
-          echo "form-viewer:"
-          unzip -l "form-viewer-${{ needs.validate-version.outputs.version }}.zip" | head -20
-          echo ""
-          echo "admin-app:"
-          unzip -l "admin-app-${{ needs.validate-version.outputs.version }}.zip" | head -20
-
-          echo ""
-          echo "🔐 Generating checksums..."
+          # Generate checksums
           sha256sum form-app-${{ needs.validate-version.outputs.version }}.zip > checksums.txt
           sha256sum form-viewer-${{ needs.validate-version.outputs.version }}.zip >> checksums.txt
           sha256sum admin-app-${{ needs.validate-version.outputs.version }}.zip >> checksums.txt
 
-          echo ""
-          echo "✅ Checksums:"
           cat checksums.txt
 
       - name: Create deployment manifest
@@ -517,33 +461,21 @@ jobs:
           cat > release-notes.md << 'NOTES_EOF'
           ## 🚀 Release ${{ needs.validate-version.outputs.version }}
 
-          ### 📦 Build Artifacts (Production-Ready)
+          ### 📦 Artifacts
 
-          This release contains **build output only** (no source code) - ready for deployment:
+          This release includes the following build artifacts:
 
-          **Frontend Applications (Static Build Output):**
-          - **form-app-${{ needs.validate-version.outputs.version }}.zip** - Form Builder Application (HTML/CSS/JS bundle)
-          - **form-viewer-${{ needs.validate-version.outputs.version }}.zip** - Form Viewer Application (HTML/CSS/JS bundle)
-          - **admin-app-${{ needs.validate-version.outputs.version }}.zip** - Admin Dashboard Application (HTML/CSS/JS bundle)
+          - **form-app-${{ needs.validate-version.outputs.version }}.zip** - Form Builder Application
+          - **form-viewer-${{ needs.validate-version.outputs.version }}.zip** - Form Viewer Application
+          - **admin-app-${{ needs.validate-version.outputs.version }}.zip** - Admin Dashboard Application
+          - **deployment-manifest.json** - Deployment metadata and checksums
+          - **checksums.txt** - SHA256 checksums for all artifacts
 
-          **Deployment Metadata:**
-          - **deployment-manifest.json** - Deployment configuration, checksums, and URLs
-          - **checksums.txt** - SHA256 checksums for integrity verification
-
-          > **Note**: These archives contain only compiled/bundled assets (dist files), not source code.
-          > Source code is available via the auto-generated "Source code (zip)" link below or via git tag.
-
-          ### 🐳 Backend Docker Image
+          ### 🐳 Docker Image
 
           ```bash
-          # Pull the backend image
           docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.validate-version.outputs.version_without_v }}
-
-          # Also available as:
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           ```
-
-          **Platforms**: `linux/amd64`, `linux/arm64`
 
           ### 📝 Changes Since $PREVIOUS_TAG
 

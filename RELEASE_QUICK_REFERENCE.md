@@ -132,11 +132,6 @@ gh release list
 
 # Check artifacts in release
 gh release view v1.2.3 --json assets
-
-# Download and inspect artifacts (build output only)
-gh release download v1.2.3 --pattern "form-app-v1.2.3.zip"
-unzip -l form-app-v1.2.3.zip
-# You'll see: index.html, assets/*.js, assets/*.css (NO source code)
 ```
 
 ### Check Deployment Status

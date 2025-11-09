@@ -215,17 +215,14 @@ if: github.event_name == 'pull_request'
 
 ### Artifact Types
 
-1. **Frontend Artifacts** (Build Output Only - No Source Code)
-   - `form-app-v1.2.3.zip` - Form builder application (compiled HTML/CSS/JS)
-   - `form-viewer-v1.2.3.zip` - Form viewer application (compiled HTML/CSS/JS)
-   - `admin-app-v1.2.3.zip` - Admin dashboard (compiled HTML/CSS/JS)
-   - **Contains**: Production-ready dist files only
-   - **Does NOT contain**: Source code, node_modules, package.json
+1. **Frontend Artifacts** (Zip files)
+   - `form-app-v1.2.3.zip` - Form builder application
+   - `form-viewer-v1.2.3.zip` - Form viewer application
+   - `admin-app-v1.2.3.zip` - Admin dashboard
 
 2. **Backend Artifact** (Docker image)
    - `docker.io/dculus/forms-backend:1.2.3`
    - Multi-platform: `linux/amd64`, `linux/arm64`
-   - **Contains**: Complete runtime environment with source code
 
 3. **Metadata Artifacts**
    - `deployment-manifest.json` - Deployment metadata
@@ -233,31 +230,16 @@ if: github.event_name == 'pull_request'
 
 ### Artifact Structure
 
-**Frontend Zip Structure (Build Output Only)**:
+**Frontend Zip Structure**:
 ```
 form-app-v1.2.3.zip
 └── form-app/
-    ├── index.html                    ✅ Build output
+    ├── index.html
     ├── assets/
-    │   ├── index-[hash].js          ✅ Bundled JavaScript
-    │   ├── index-[hash].css         ✅ Bundled CSS
-    │   └── logo-[hash].svg          ✅ Optimized assets
-    └── vite.svg                      ✅ Static assets
-
-NOT INCLUDED:
-    ❌ src/ (source code)
-    ❌ node_modules/ (dependencies)
-    ❌ package.json (npm config)
-    ❌ *.ts, *.tsx (TypeScript files)
-    ❌ vite.config.ts (build config)
+    │   ├── index-[hash].js
+    │   └── index-[hash].css
+    └── ...
 ```
-
-**Why Build Output Only?**
-- ✅ **Smaller size**: ~5-10 MB vs 500+ MB with source
-- ✅ **Security**: Source code not exposed in release artifacts
-- ✅ **Ready to deploy**: No build step needed
-- ✅ **Cloudflare compatible**: Static files only
-- ℹ️ **Source available**: Via git tag or GitHub's auto-generated source archives
 
 **Deployment Manifest**:
 ```json
