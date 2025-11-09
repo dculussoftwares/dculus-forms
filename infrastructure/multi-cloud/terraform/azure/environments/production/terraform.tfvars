@@ -3,6 +3,7 @@ environment         = "production"
 location            = "East US"
 container_image     = "dculus/forms-backend"
 container_image_tag = "latest"
+better_auth_url     = "https://dculus-forms-production-backend.kindocean-e9e3f3f1.eastus.azurecontainerapps.io"
 
 # Resource configuration
 cpu_cores    = 1.0

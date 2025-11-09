@@ -92,6 +92,12 @@ variable "better_auth_secret" {
   sensitive   = true
 }
 
+variable "better_auth_url" {
+  description = "Better Auth URL (backend URL)"
+  type        = string
+  default     = ""
+}
+
 variable "s3_access_key" {
   description = "S3 access key for file storage"
   type        = string

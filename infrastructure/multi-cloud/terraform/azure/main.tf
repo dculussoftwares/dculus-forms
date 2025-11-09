@@ -80,7 +80,7 @@ resource "azurerm_container_app" "backend" {
 
       env {
         name  = "BETTER_AUTH_URL"
-        value = "https://${azurerm_container_app.backend.latest_revision_fqdn}"
+        value = var.better_auth_url
       }
 
       env {
