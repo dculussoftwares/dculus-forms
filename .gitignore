@@ -126,6 +126,7 @@ tests/playwright-report/
 
 # Test artifacts
 *.png
+!static-files/*.png
 *.webm
 *.zip
 error-context.md
