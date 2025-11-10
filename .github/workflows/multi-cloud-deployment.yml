@@ -281,13 +281,15 @@ jobs:
         run: |
           terraform plan -out=tfplan
 
+      # NOTE: Plan files may contain sensitive data (credentials, connection strings)
+      # Only uploaded for debugging purposes with minimal retention
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: tfplan-mongodb-${{ needs.determine-environment.outputs.environment }}
           path: ${{ env.MONGODB_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}/tfplan
-          retention-days: 5
+          retention-days: 1  # Minimize exposure window
 
   # Terraform Plan for Cloudflare R2
   terraform-cloudflare-plan:
@@ -366,13 +368,15 @@ jobs:
             -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}" \
             -out=tfplan
 
+      # NOTE: Plan files may contain sensitive data (API tokens, IDs)
+      # Only uploaded for debugging purposes with minimal retention
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: tfplan-cloudflare-${{ needs.determine-environment.outputs.environment }}
           path: ${{ env.CLOUDFLARE_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}/tfplan
-          retention-days: 5
+          retention-days: 1  # Minimize exposure window
 
   # Terraform Plan for Azure Container Apps
   terraform-azure-plan:
@@ -441,13 +445,15 @@ jobs:
         run: |
           terraform plan -out=tfplan
 
+      # NOTE: Plan files may contain sensitive data (connection strings, secrets)
+      # Only uploaded for debugging purposes with minimal retention
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: tfplan-azure-${{ needs.determine-environment.outputs.environment }}
           path: ${{ env.AZURE_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}/tfplan
-          retention-days: 5
+          retention-days: 1  # Minimize exposure window
 
   # Terraform Apply for Cloudflare R2
   terraform-cloudflare-apply:
