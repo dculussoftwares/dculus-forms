@@ -40,7 +40,6 @@ resource "cloudflare_page_rule" "public_cdn_cache" {
     cache_level         = "cache_everything"
     edge_cache_ttl      = 7200
     browser_cache_ttl   = 3600
-    cache_on_cookie     = ""
     disable_performance = false
   }
 
