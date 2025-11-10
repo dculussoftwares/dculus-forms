@@ -291,15 +291,19 @@ jobs:
           path: ${{ env.MONGODB_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}/tfplan
           retention-days: 1  # Minimize exposure window
 
-  # Terraform Plan for Cloudflare R2
-  terraform-cloudflare-plan:
-    name: Terraform Plan (Cloudflare R2)
+  # Terraform Plan and Apply for Cloudflare R2 (merged for security)
+  terraform-cloudflare-deploy:
+    name: Deploy Cloudflare R2
     runs-on: ubuntu-latest
     needs: [determine-environment, setup-azure-backend]
     if: |
       always() && !cancelled() && !failure() &&
       needs.determine-environment.outputs.deploy_cloudflare == 'true'
     environment: ${{ needs.determine-environment.outputs.environment }}
+    outputs:
+      private_bucket: ${{ steps.apply.outputs.private_bucket }}
+      public_bucket: ${{ steps.apply.outputs.public_bucket }}
+      r2_endpoint: ${{ steps.apply.outputs.r2_endpoint }}
     defaults:
       run:
         working-directory: ${{ env.CLOUDFLARE_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
@@ -330,6 +334,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
 
       - name: Copy shared Terraform files
         run: |
@@ -365,18 +370,26 @@ jobs:
           terraform plan \
             -var="cloudflare_account_id=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" \
             -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
-            -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}" \
-            -out=tfplan
+            -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
 
-      # NOTE: Plan files may contain sensitive data (API tokens, IDs)
-      # Only uploaded for debugging purposes with minimal retention
-      - name: Upload Terraform Plan
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: tfplan-cloudflare-${{ needs.determine-environment.outputs.environment }}
-          path: ${{ env.CLOUDFLARE_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}/tfplan
-          retention-days: 1  # Minimize exposure window
+      - name: Terraform Apply
+        id: apply
+        if: needs.determine-environment.outputs.should_deploy == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          terraform apply -auto-approve \
+            -var="cloudflare_account_id=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" \
+            -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
+
+          # Capture outputs
+          echo "private_bucket=$(terraform output -raw private_bucket_name)" >> $GITHUB_OUTPUT
+          echo "public_bucket=$(terraform output -raw public_bucket_name)" >> $GITHUB_OUTPUT
+          echo "r2_endpoint=$(terraform output -raw r2_endpoint_url)" >> $GITHUB_OUTPUT
 
   # Terraform Plan for Azure Container Apps
   terraform-azure-plan:
@@ -454,85 +467,6 @@ jobs:
           name: tfplan-azure-${{ needs.determine-environment.outputs.environment }}
           path: ${{ env.AZURE_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}/tfplan
           retention-days: 1  # Minimize exposure window
-
-  # Terraform Apply for Cloudflare R2
-  terraform-cloudflare-apply:
-    name: Terraform Apply (Cloudflare R2)
-    runs-on: ubuntu-latest
-    needs: [determine-environment, terraform-cloudflare-plan]
-    if: needs.determine-environment.outputs.should_deploy == 'true'
-    environment: ${{ needs.determine-environment.outputs.environment }}
-    outputs:
-      private_bucket: ${{ steps.apply.outputs.private_bucket }}
-      public_bucket: ${{ steps.apply.outputs.public_bucket }}
-      r2_endpoint: ${{ steps.apply.outputs.r2_endpoint }}
-    defaults:
-      run:
-        working-directory: ${{ env.CLOUDFLARE_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          path: dculus-forms
-
-      - name: Azure Login (OIDC)
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Get Azure Storage Account Key
-        run: |
-          ACCOUNT_KEY=$(az storage account keys list \
-            --resource-group dculus-global-terraform-assets-resource-grp \
-            --account-name dculusterraformstates \
-            --query '[0].value' -o tsv)
-          echo "::add-mask::$ACCOUNT_KEY"
-          echo "ARM_ACCESS_KEY=$ACCOUNT_KEY" >> $GITHUB_ENV
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TERRAFORM_VERSION }}
-          terraform_wrapper: false
-
-      - name: Copy shared Terraform files
-        run: |
-          cp ../../main.tf .
-          cp ../../variables.tf .
-          cp ../../r2-buckets.tf .
-          cp ../../r2-custom-domains.tf .
-          cp ../../outputs.tf .
-
-      - name: Terraform Init
-        run: |
-          terraform init \
-            -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
-            -backend-config="storage_account_name=dculusterraformstates" \
-            -backend-config="container_name=dculus-forms-cloudflare-r2-${{ needs.determine-environment.outputs.environment }}-state" \
-            -backend-config="key=terraform.tfstate"
-
-      - name: Download Terraform Plan
-        uses: actions/download-artifact@v4
-        with:
-          name: tfplan-cloudflare-${{ needs.determine-environment.outputs.environment }}
-          path: ${{ env.CLOUDFLARE_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
-
-      - name: Terraform Apply
-        id: apply
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
-          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          terraform apply -auto-approve tfplan
-
-          # Capture outputs
-          echo "private_bucket=$(terraform output -raw private_bucket_name)" >> $GITHUB_OUTPUT
-          echo "public_bucket=$(terraform output -raw public_bucket_name)" >> $GITHUB_OUTPUT
-          echo "r2_endpoint=$(terraform output -raw r2_endpoint_url)" >> $GITHUB_OUTPUT
 
   # Terraform Apply for MongoDB Atlas
   terraform-mongodb-apply:
@@ -766,10 +700,9 @@ jobs:
     needs: [
       determine-environment,
       terraform-mongodb-plan,
-      terraform-cloudflare-plan,
+      terraform-cloudflare-deploy,
       terraform-azure-plan,
       terraform-mongodb-apply,
-      terraform-cloudflare-apply,
       terraform-azure-apply,
       health-checks
     ]
@@ -790,7 +723,7 @@ jobs:
           echo "| Component | Plan | Apply | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|------|-------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| MongoDB Atlas | ${{ needs.terraform-mongodb-plan.result }} | ${{ needs.terraform-mongodb-apply.result }} | ${{ needs.terraform-mongodb-apply.result == 'success' && '✅' || needs.terraform-mongodb-apply.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Cloudflare R2 | ${{ needs.terraform-cloudflare-plan.result }} | ${{ needs.terraform-cloudflare-apply.result }} | ${{ needs.terraform-cloudflare-apply.result == 'success' && '✅' || needs.terraform-cloudflare-apply.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Cloudflare R2 | ${{ needs.terraform-cloudflare-deploy.result }} | ${{ needs.terraform-cloudflare-deploy.result }} | ${{ needs.terraform-cloudflare-deploy.result == 'success' && '✅' || needs.terraform-cloudflare-deploy.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Azure Container Apps | ${{ needs.terraform-azure-plan.result }} | ${{ needs.terraform-azure-apply.result }} | ${{ needs.terraform-azure-apply.result == 'success' && '✅' || needs.terraform-azure-apply.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Health Checks | - | - | ${{ needs.health-checks.result == 'success' && '✅' || needs.health-checks.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -807,12 +740,12 @@ jobs:
           fi
 
           # Cloudflare R2 Summary
-          if [ "${{ needs.terraform-cloudflare-apply.result }}" = "success" ]; then
+          if [ "${{ needs.terraform-cloudflare-deploy.result }}" = "success" ]; then
             echo "## ☁️ Cloudflare R2 Deployment" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "- **Private Bucket**: \`${{ needs.terraform-cloudflare-apply.outputs.private_bucket }}\`" >> $GITHUB_STEP_SUMMARY
-            echo "- **Public Bucket**: \`${{ needs.terraform-cloudflare-apply.outputs.public_bucket }}\`" >> $GITHUB_STEP_SUMMARY
-            echo "- **R2 Endpoint**: \`${{ needs.terraform-cloudflare-apply.outputs.r2_endpoint }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Private Bucket**: \`${{ needs.terraform-cloudflare-deploy.outputs.private_bucket }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Public Bucket**: \`${{ needs.terraform-cloudflare-deploy.outputs.public_bucket }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **R2 Endpoint**: \`${{ needs.terraform-cloudflare-deploy.outputs.r2_endpoint }}\`" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
 
@@ -828,11 +761,11 @@ jobs:
           fi
 
           # Overall Status
-          if [ "${{ needs.terraform-mongodb-apply.result }}" = "success" ] && [ "${{ needs.terraform-cloudflare-apply.result }}" = "success" ] && [ "${{ needs.terraform-azure-apply.result }}" = "success" ]; then
+          if [ "${{ needs.terraform-mongodb-apply.result }}" = "success" ] && [ "${{ needs.terraform-cloudflare-deploy.result }}" = "success" ] && [ "${{ needs.terraform-azure-apply.result }}" = "success" ]; then
             echo "## ✅ Deployment Successful!" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "All infrastructure has been deployed successfully to the **${{ needs.determine-environment.outputs.environment }}** environment." >> $GITHUB_STEP_SUMMARY
-          elif [ "${{ needs.terraform-mongodb-apply.result }}" = "skipped" ] && [ "${{ needs.terraform-cloudflare-apply.result }}" = "skipped" ] && [ "${{ needs.terraform-azure-apply.result }}" = "skipped" ]; then
+          elif [ "${{ needs.terraform-mongodb-apply.result }}" = "skipped" ] && [ "${{ needs.terraform-cloudflare-deploy.result }}" = "skipped" ] && [ "${{ needs.terraform-azure-apply.result }}" = "skipped" ]; then
             echo "## ℹ️ Deployment Skipped" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "This was a plan-only run (likely from a pull request). No infrastructure changes were applied." >> $GITHUB_STEP_SUMMARY
