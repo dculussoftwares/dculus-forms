@@ -1,0 +1,449 @@
+name: Multi-Cloud Infrastructure Destroy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to destroy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          # Production is NOT available - must be destroyed manually with approval
+      destroy_mongodb:
+        description: '🔥 Destroy MongoDB Atlas (PERMANENT DATA LOSS - Cannot be recovered)'
+        required: false
+        type: boolean
+        default: false
+      destroy_cloudflare:
+        description: '🔥 Destroy Cloudflare R2 (ALL FILES DELETED - Cannot be recovered)'
+        required: false
+        type: boolean
+        default: false
+      destroy_azure:
+        description: 'Destroy Azure Container Apps (Stateless - Safe to recreate)'
+        required: false
+        type: boolean
+        default: false
+      confirmation:
+        description: 'Type "DESTROY-{environment}" to confirm (e.g., "DESTROY-dev")'
+        required: true
+        type: string
+
+permissions:
+  id-token: write      # Required for OIDC authentication with Azure
+  contents: read       # Required for checking out code
+
+env:
+  TERRAFORM_VERSION: '1.6.0'
+  MONGODB_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/mongodb'
+  CLOUDFLARE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare'
+  AZURE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/azure'
+
+jobs:
+  # Validate destroy request and confirmation
+  validate-destroy-request:
+    name: Validate Destroy Request
+    runs-on: ubuntu-latest
+    outputs:
+      confirmed: ${{ steps.validate.outputs.confirmed }}
+      environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Validate Confirmation
+        id: validate
+        run: |
+          EXPECTED="DESTROY-${{ github.event.inputs.environment }}"
+          ACTUAL="${{ github.event.inputs.confirmation }}"
+
+          echo "Expected confirmation: $EXPECTED"
+          echo "Actual confirmation: $ACTUAL"
+
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "❌ ERROR: Confirmation does not match!"
+            echo "Expected: $EXPECTED"
+            echo "Got: $ACTUAL"
+            exit 1
+          fi
+
+          echo "✅ Confirmation verified: $ACTUAL"
+          echo "confirmed=true" >> $GITHUB_OUTPUT
+
+      - name: Verify At Least One Provider Selected
+        run: |
+          if [ "${{ github.event.inputs.destroy_mongodb }}" != "true" ] && \
+             [ "${{ github.event.inputs.destroy_cloudflare }}" != "true" ] && \
+             [ "${{ github.event.inputs.destroy_azure }}" != "true" ]; then
+            echo "❌ ERROR: No providers selected for destruction!"
+            echo "Please select at least one provider to destroy."
+            exit 1
+          fi
+
+          echo "✅ At least one provider selected for destruction"
+
+      - name: Display Destruction Plan
+        run: |
+          echo "🔥 DESTRUCTION PLAN 🔥"
+          echo "═══════════════════════════════════"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Triggered by: @${{ github.actor }}"
+          echo ""
+          echo "Resources to be destroyed:"
+
+          if [ "${{ github.event.inputs.destroy_azure }}" = "true" ]; then
+            echo "  ✅ Azure Container Apps (Stateless)"
+          else
+            echo "  ⏭️ Azure Container Apps (Skipped)"
+          fi
+
+          if [ "${{ github.event.inputs.destroy_cloudflare }}" = "true" ]; then
+            echo "  🔥 Cloudflare R2 Buckets (ALL FILES DELETED)"
+          else
+            echo "  ⏭️ Cloudflare R2 (Skipped)"
+          fi
+
+          if [ "${{ github.event.inputs.destroy_mongodb }}" = "true" ]; then
+            echo "  ⚠️⚠️⚠️ MongoDB Atlas (PERMANENT DATA LOSS)"
+          else
+            echo "  ⏭️ MongoDB Atlas (Skipped)"
+          fi
+
+          echo ""
+          echo "⚠️ WARNING: This action cannot be undone!"
+
+  # Destroy Azure Container Apps (Stateless - Safe)
+  terraform-azure-destroy:
+    name: Destroy Azure Container Apps
+    runs-on: ubuntu-latest
+    needs: validate-destroy-request
+    if: github.event.inputs.destroy_azure == 'true'
+    environment: ${{ github.event.inputs.environment }}
+    defaults:
+      run:
+        working-directory: ${{ env.AZURE_TERRAFORM_DIR }}/environments/${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: dculus-forms
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get Azure Storage Account Key
+        run: |
+          ACCOUNT_KEY=$(az storage account keys list \
+            --resource-group dculus-global-terraform-assets-resource-grp \
+            --account-name dculusterraformstates \
+            --query '[0].value' -o tsv)
+          echo "::add-mask::$ACCOUNT_KEY"
+          echo "ARM_ACCESS_KEY=$ACCOUNT_KEY" >> $GITHUB_ENV
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Copy shared Terraform files
+        run: |
+          cp ../../main.tf .
+          cp ../../variables.tf .
+          cp ../../outputs.tf .
+          echo "✅ Copied shared Terraform files"
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Destroy
+        env:
+          TF_VAR_mongodb_connection_string: "placeholder"
+          TF_VAR_better_auth_secret: ${{ secrets.BETTER_AUTH_SECRET }}
+          TF_VAR_s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
+          TF_VAR_s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
+          TF_VAR_s3_endpoint: ${{ secrets.S3_ENDPOINT }}
+          TF_VAR_s3_private_bucket_name: ${{ secrets.S3_PRIVATE_BUCKET_NAME }}
+          TF_VAR_s3_public_bucket_name: ${{ secrets.S3_PUBLIC_BUCKET_NAME }}
+          TF_VAR_cors_origins: ${{ secrets.CORS_ORIGINS }}
+          TF_VAR_container_image_tag: "placeholder"
+        run: |
+          echo "🔥 Destroying Azure Container Apps..."
+          terraform destroy -auto-approve
+          echo "✅ Azure Container Apps destroyed successfully"
+
+  # Destroy Cloudflare R2 Buckets (File Storage)
+  terraform-cloudflare-destroy:
+    name: Destroy Cloudflare R2 Buckets
+    runs-on: ubuntu-latest
+    needs: [validate-destroy-request, terraform-azure-destroy]
+    if: |
+      always() && !cancelled() &&
+      (needs.terraform-azure-destroy.result == 'success' || needs.terraform-azure-destroy.result == 'skipped') &&
+      github.event.inputs.destroy_cloudflare == 'true'
+    environment: ${{ github.event.inputs.environment }}
+    defaults:
+      run:
+        working-directory: ${{ env.CLOUDFLARE_TERRAFORM_DIR }}/environments/${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: dculus-forms
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get Azure Storage Account Key
+        run: |
+          ACCOUNT_KEY=$(az storage account keys list \
+            --resource-group dculus-global-terraform-assets-resource-grp \
+            --account-name dculusterraformstates \
+            --query '[0].value' -o tsv)
+          echo "::add-mask::$ACCOUNT_KEY"
+          echo "ARM_ACCESS_KEY=$ACCOUNT_KEY" >> $GITHUB_ENV
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Copy shared Terraform files
+        run: |
+          cp ../../main.tf .
+          cp ../../variables.tf .
+          cp ../../r2-buckets.tf .
+          cp ../../outputs.tf .
+          echo "✅ Copied shared Terraform files"
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
+            -backend-config="storage_account_name=dculusterraformstates" \
+            -backend-config="container_name=dculus-forms-cloudflare-r2-${{ github.event.inputs.environment }}-state" \
+            -backend-config="key=terraform.tfstate"
+
+      - name: Warning - Files Will Be Deleted
+        run: |
+          echo "⚠️⚠️⚠️ WARNING ⚠️⚠️⚠️"
+          echo "All files in the following buckets will be PERMANENTLY DELETED:"
+          echo "  - dculus-forms-private-${{ github.event.inputs.environment }}"
+          echo "  - dculus-forms-public-${{ github.event.inputs.environment }}"
+          echo ""
+          echo "This includes:"
+          echo "  - User uploads"
+          echo "  - Form attachments"
+          echo "  - Public assets"
+          echo "  - All other files"
+          echo ""
+          echo "⚠️ NO BACKUPS - CANNOT BE RECOVERED ⚠️"
+
+      - name: Terraform Destroy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          echo "🔥 Destroying Cloudflare R2 buckets..."
+          terraform destroy -auto-approve \
+            -var="cloudflare_account_id=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" \
+            -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}"
+          echo "✅ Cloudflare R2 buckets destroyed successfully"
+
+  # Destroy MongoDB Atlas (Database with ALL Data)
+  terraform-mongodb-destroy:
+    name: Destroy MongoDB Atlas Database
+    runs-on: ubuntu-latest
+    needs: [validate-destroy-request, terraform-cloudflare-destroy]
+    if: |
+      always() && !cancelled() &&
+      (needs.terraform-cloudflare-destroy.result == 'success' || needs.terraform-cloudflare-destroy.result == 'skipped') &&
+      github.event.inputs.destroy_mongodb == 'true'
+    environment: ${{ github.event.inputs.environment }}
+    defaults:
+      run:
+        working-directory: ${{ env.MONGODB_TERRAFORM_DIR }}/environments/${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: dculus-forms
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get Azure Storage Account Key
+        run: |
+          ACCOUNT_KEY=$(az storage account keys list \
+            --resource-group dculus-global-terraform-assets-resource-grp \
+            --account-name dculusterraformstates \
+            --query '[0].value' -o tsv)
+          echo "::add-mask::$ACCOUNT_KEY"
+          echo "ARM_ACCESS_KEY=$ACCOUNT_KEY" >> $GITHUB_ENV
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Copy shared Terraform files
+        run: |
+          cp ../../main.tf .
+          cp ../../variables.tf .
+          cp ../../cluster.tf .
+          cp ../../database-user.tf .
+          cp ../../network-access.tf .
+          cp ../../outputs.tf .
+          echo "✅ Copied shared Terraform files"
+
+      - name: Terraform Init
+        env:
+          TF_VAR_mongodb_atlas_public_key: ${{ secrets.MONGODB_ATLAS_PUBLIC_KEY }}
+          TF_VAR_mongodb_atlas_private_key: ${{ secrets.MONGODB_ATLAS_PRIVATE_KEY }}
+          TF_VAR_mongodb_atlas_org_id: ${{ secrets.MONGODB_ATLAS_ORG_ID }}
+          TF_VAR_database_password: ${{ secrets.MONGODB_DATABASE_PASSWORD }}
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
+            -backend-config="storage_account_name=dculusterraformstates" \
+            -backend-config="container_name=dculus-forms-mongodb-${{ github.event.inputs.environment }}-state" \
+            -backend-config="key=terraform.tfstate"
+
+      - name: FINAL WARNING - Database Destruction
+        run: |
+          echo "⚠️⚠️⚠️ FINAL WARNING ⚠️⚠️⚠️"
+          echo ""
+          echo "You are about to PERMANENTLY DELETE the MongoDB Atlas database:"
+          echo "  Project: dculus-forms-${{ github.event.inputs.environment }}"
+          echo "  Cluster: dculus-forms-${{ github.event.inputs.environment }}-mongodb"
+          echo ""
+          echo "This will DELETE ALL DATA including:"
+          echo "  - All forms"
+          echo "  - All form responses"
+          echo "  - All users and authentication data"
+          echo "  - All organizations"
+          echo "  - All configuration data"
+          echo ""
+          echo "⚠️ M0 FREE TIER HAS NO BACKUPS ⚠️"
+          echo "⚠️ DATA CANNOT BE RECOVERED ⚠️"
+          echo "⚠️ THIS IS PERMANENT AND IRREVERSIBLE ⚠️"
+          echo ""
+          echo "Proceeding with destruction in 10 seconds..."
+          sleep 10
+
+      - name: Terraform Destroy
+        env:
+          TF_VAR_mongodb_atlas_public_key: ${{ secrets.MONGODB_ATLAS_PUBLIC_KEY }}
+          TF_VAR_mongodb_atlas_private_key: ${{ secrets.MONGODB_ATLAS_PRIVATE_KEY }}
+          TF_VAR_mongodb_atlas_org_id: ${{ secrets.MONGODB_ATLAS_ORG_ID }}
+          TF_VAR_database_password: ${{ secrets.MONGODB_DATABASE_PASSWORD }}
+        run: |
+          echo "🔥 Destroying MongoDB Atlas database..."
+          terraform destroy -auto-approve
+          echo "✅ MongoDB Atlas database destroyed - ALL DATA PERMANENTLY DELETED"
+
+  # Generate destruction summary
+  destroy-summary:
+    name: Destruction Summary
+    runs-on: ubuntu-latest
+    needs: [
+      validate-destroy-request,
+      terraform-azure-destroy,
+      terraform-cloudflare-destroy,
+      terraform-mongodb-destroy
+    ]
+    if: always()
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "# 🔥 Multi-Cloud Infrastructure Destruction Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment**: \`${{ github.event.inputs.environment }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by**: @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Date**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "**Confirmation**: ✅ \`${{ github.event.inputs.confirmation }}\` verified" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "## ⚠️ DESTRUCTION STATUS" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Destroy Requested | Status | Data Loss |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------------------|--------|-----------|" >> $GITHUB_STEP_SUMMARY
+
+          # Azure Status
+          if [ "${{ github.event.inputs.destroy_azure }}" = "true" ]; then
+            AZURE_STATUS="${{ needs.terraform-azure-destroy.result == 'success' && '✅ Destroyed' || '❌ Failed' }}"
+            echo "| Azure Container Apps | ✅ Yes | $AZURE_STATUS | ℹ️ No data stored |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Azure Container Apps | ❌ No | ⏭️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Cloudflare Status
+          if [ "${{ github.event.inputs.destroy_cloudflare }}" = "true" ]; then
+            CF_STATUS="${{ needs.terraform-cloudflare-destroy.result == 'success' && '✅ Destroyed' || '❌ Failed' }}"
+            echo "| Cloudflare R2 | ✅ Yes | $CF_STATUS | ⚠️ ALL FILES LOST |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Cloudflare R2 | ❌ No | ⏭️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # MongoDB Status
+          if [ "${{ github.event.inputs.destroy_mongodb }}" = "true" ]; then
+            MONGO_STATUS="${{ needs.terraform-mongodb-destroy.result == 'success' && '✅ Destroyed' || '❌ Failed' }}"
+            echo "| MongoDB Atlas | ✅ Yes | $MONGO_STATUS | ⚠️⚠️ ALL DATA LOST |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| MongoDB Atlas | ❌ No | ⏭️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Detailed destruction info
+          if [ "${{ needs.terraform-azure-destroy.result }}" = "success" ]; then
+            echo "## 🔷 Azure Container Apps Destroyed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Resource Group**: \`dculus-forms-${{ github.event.inputs.environment }}-rg\` - DELETED" >> $GITHUB_STEP_SUMMARY
+            echo "- **Container App**: \`dculus-forms-${{ github.event.inputs.environment }}-backend\` - DELETED" >> $GITHUB_STEP_SUMMARY
+            echo "- **Log Analytics**: All monitoring data - DELETED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.terraform-cloudflare-destroy.result }}" = "success" ]; then
+            echo "## ☁️ Cloudflare R2 Buckets Destroyed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Private Bucket**: \`dculus-forms-private-${{ github.event.inputs.environment }}\` - DELETED" >> $GITHUB_STEP_SUMMARY
+            echo "  - All user uploads and attachments - PERMANENTLY LOST" >> $GITHUB_STEP_SUMMARY
+            echo "- **Public Bucket**: \`dculus-forms-public-${{ github.event.inputs.environment }}\` - DELETED" >> $GITHUB_STEP_SUMMARY
+            echo "  - All public assets and images - PERMANENTLY LOST" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.terraform-mongodb-destroy.result }}" = "success" ]; then
+            echo "## 🍃 MongoDB Atlas Database Destroyed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Project**: \`dculus-forms-${{ github.event.inputs.environment }}\` - DELETED" >> $GITHUB_STEP_SUMMARY
+            echo "- **Cluster**: \`dculus-forms-${{ github.event.inputs.environment }}-mongodb\` - DELETED" >> $GITHUB_STEP_SUMMARY
+            echo "- **Database**: All forms, responses, users, organizations - PERMANENTLY LOST" >> $GITHUB_STEP_SUMMARY
+            echo "- **Region**: AWS Mumbai (ap-south-1)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ **WARNING**: M0 free tier has NO backups. Data cannot be recovered." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Recovery info
+          echo "## ℹ️ Important Notes" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Terraform state preserved** - Infrastructure can be recreated" >> $GITHUB_STEP_SUMMARY
+          echo "❌ **Data cannot be recovered** - No backups exist for destroyed resources" >> $GITHUB_STEP_SUMMARY
+          echo "🔄 **To recreate infrastructure**: Run Multi-Cloud Deployment workflow" >> $GITHUB_STEP_SUMMARY
+          echo "📝 **Note**: Recreated infrastructure will start with empty databases" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📖 **Documentation**: [Destruction Guide](https://github.com/${{ github.repository }}/tree/main/infrastructure/multi-cloud/terraform/DESTROY_GUIDE.md)" >> $GITHUB_STEP_SUMMARY
