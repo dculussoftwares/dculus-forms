@@ -30,27 +30,25 @@ resource "cloudflare_r2_custom_domain" "public_cdn" {
 }
 
 # Page Rule for CDN cache optimization
-# NOTE: Commented out due to API token permission requirements
-# To enable: Add "Zone Settings: Edit" permission to your Cloudflare API token
-# resource "cloudflare_page_rule" "public_cdn_cache" {
-#   zone_id  = var.cloudflare_zone_id
-#   target   = "public-cdn-${var.environment}.dculus.com/*"
-#   priority = 1
-#   status   = "active"
-#
-#   actions = {
-#     cache_level         = "cache_everything"
-#     edge_cache_ttl      = 7200  # 2 hours
-#     browser_cache_ttl   = 3600  # 1 hour
-#     cache_on_cookie     = ""
-#     disable_performance = false
-#   }
-#
-#   depends_on = [
-#     cloudflare_dns_record.public_cdn,
-#     cloudflare_r2_custom_domain.public_cdn
-#   ]
-# }
+resource "cloudflare_page_rule" "public_cdn_cache" {
+  zone_id  = var.cloudflare_zone_id
+  target   = "public-cdn-${var.environment}.dculus.com/*"
+  priority = 1
+  status   = "active"
+
+  actions {
+    cache_level         = "cache_everything"
+    edge_cache_ttl      = 7200
+    browser_cache_ttl   = 3600
+    cache_on_cookie     = ""
+    disable_performance = false
+  }
+
+  depends_on = [
+    cloudflare_dns_record.public_cdn,
+    cloudflare_r2_custom_domain.public_cdn
+  ]
+}
 
 # Optional: Advanced Cache Rules using Rulesets
 # Uncomment if you prefer more granular cache control over Page Rules
