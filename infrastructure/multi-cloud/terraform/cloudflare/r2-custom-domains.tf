@@ -36,7 +36,7 @@ resource "cloudflare_page_rule" "public_cdn_cache" {
   priority = 1
   status   = "active"
 
-  actions {
+  actions = {
     cache_level         = "cache_everything"
     edge_cache_ttl      = 7200
     browser_cache_ttl   = 3600
