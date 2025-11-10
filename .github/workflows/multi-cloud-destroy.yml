@@ -219,6 +219,7 @@ jobs:
           cp ../../main.tf .
           cp ../../variables.tf .
           cp ../../r2-buckets.tf .
+          cp ../../r2-custom-domains.tf .
           cp ../../outputs.tf .
           echo "✅ Copied shared Terraform files"
 
@@ -248,12 +249,16 @@ jobs:
       - name: Terraform Destroy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          echo "🔥 Destroying Cloudflare R2 buckets..."
+          echo "🔥 Destroying Cloudflare R2 buckets and CDN configuration..."
           terraform destroy -auto-approve \
             -var="cloudflare_account_id=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" \
-            -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}"
-          echo "✅ Cloudflare R2 buckets destroyed successfully"
+            -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
+          echo "✅ Cloudflare R2 buckets and CDN destroyed successfully"
 
   # Destroy MongoDB Atlas (Database with ALL Data)
   terraform-mongodb-destroy:
@@ -415,12 +420,16 @@ jobs:
           fi
 
           if [ "${{ needs.terraform-cloudflare-destroy.result }}" = "success" ]; then
-            echo "## ☁️ Cloudflare R2 Buckets Destroyed" >> $GITHUB_STEP_SUMMARY
+            echo "## ☁️ Cloudflare R2 Buckets & CDN Destroyed" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "- **Private Bucket**: \`dculus-forms-private-${{ github.event.inputs.environment }}\` - DELETED" >> $GITHUB_STEP_SUMMARY
             echo "  - All user uploads and attachments - PERMANENTLY LOST" >> $GITHUB_STEP_SUMMARY
             echo "- **Public Bucket**: \`dculus-forms-public-${{ github.event.inputs.environment }}\` - DELETED" >> $GITHUB_STEP_SUMMARY
             echo "  - All public assets and images - PERMANENTLY LOST" >> $GITHUB_STEP_SUMMARY
+            echo "- **CDN Domain**: \`public-cdn-${{ github.event.inputs.environment }}.dculus.com\` - DELETED" >> $GITHUB_STEP_SUMMARY
+            echo "  - DNS record removed" >> $GITHUB_STEP_SUMMARY
+            echo "  - Custom domain disconnected" >> $GITHUB_STEP_SUMMARY
+            echo "  - Page rule removed" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
 
