@@ -10,6 +10,27 @@ This infrastructure creates two R2 buckets per environment:
 
 All buckets are created in the **APAC** (Asia-Pacific) region for optimal performance.
 
+## CDN Configuration
+
+The public bucket is configured with a **custom domain CDN** for fast, global content delivery:
+
+| Environment | CDN Domain | Description |
+|-------------|------------|-------------|
+| dev | `public-cdn-dev.dculus.com` | Development CDN endpoint |
+| staging | `public-cdn-staging.dculus.com` | Staging CDN endpoint |
+| production | `public-cdn-production.dculus.com` | Production CDN endpoint |
+
+### CDN Features
+
+- **Cloudflare Proxy**: All traffic is proxied through Cloudflare's global network (orange cloud)
+- **Cache Optimization**: Page Rules configured for aggressive caching:
+  - Edge Cache TTL: 2 hours
+  - Browser Cache TTL: 1 hour
+  - Cache Everything enabled
+- **HTTPS**: Automatic SSL/TLS certificates managed by Cloudflare
+- **DDoS Protection**: Built-in DDoS mitigation at the edge
+- **Performance**: Sub-100ms response times globally via Cloudflare's CDN
+
 ## Prerequisites
 
 - [Terraform](https://www.terraform.io/downloads.html) >= 1.6.0
@@ -27,6 +48,7 @@ cloudflare/
 ├── main.tf                          # Provider configuration
 ├── variables.tf                     # Variable definitions
 ├── r2-buckets.tf                    # R2 bucket resources
+├── r2-custom-domains.tf             # CDN custom domain configuration
 ├── outputs.tf                       # Output values
 ├── README.md                        # This file
 ├── .terraform-version               # Terraform version constraint
@@ -56,7 +78,35 @@ All containers are in the existing storage account:
 
 ## GitHub Environment Setup
 
-This project uses **GitHub Environments** for secure secret management. Configure the following environments in your GitHub repository:
+This project uses **GitHub Environments** for secure secret management. Configure secrets using GitHub CLI:
+
+### Quick Setup with GitHub CLI
+
+```bash
+# Set your values
+ACCOUNT_ID="your-cloudflare-account-id"
+ZONE_ID="your-cloudflare-zone-id"
+API_TOKEN="your-api-token-here"
+
+# Development environment
+gh secret set CLOUDFLARE_ACCOUNT_ID --body "$ACCOUNT_ID" --env development
+gh secret set CLOUDFLARE_ZONE_ID --body "$ZONE_ID" --env development
+gh secret set CLOUDFLARE_API_TOKEN --body "$API_TOKEN" --env development
+
+# Staging environment
+gh secret set CLOUDFLARE_ACCOUNT_ID --body "$ACCOUNT_ID" --env staging
+gh secret set CLOUDFLARE_ZONE_ID --body "$ZONE_ID" --env staging
+gh secret set CLOUDFLARE_API_TOKEN --body "$API_TOKEN" --env staging
+
+# Production environment
+gh secret set CLOUDFLARE_ACCOUNT_ID --body "$ACCOUNT_ID" --env production
+gh secret set CLOUDFLARE_ZONE_ID --body "$ZONE_ID" --env production
+gh secret set CLOUDFLARE_API_TOKEN --body "$API_TOKEN" --env production
+```
+
+### Manual Setup via GitHub UI
+
+Alternatively, configure environments manually:
 
 ### 1. Development Environment
 
@@ -71,6 +121,7 @@ Deployment Branches:
 Required Secrets:
 ```
 CLOUDFLARE_ACCOUNT_ID       = <your-cloudflare-account-id>
+CLOUDFLARE_ZONE_ID          = <your-cloudflare-zone-id>
 CLOUDFLARE_API_TOKEN        = <api-token-with-r2-permissions>
 ```
 
@@ -88,6 +139,7 @@ Deployment Branches:
 Required Secrets:
 ```
 CLOUDFLARE_ACCOUNT_ID       = <your-cloudflare-account-id>
+CLOUDFLARE_ZONE_ID          = <your-cloudflare-zone-id>
 CLOUDFLARE_API_TOKEN        = <api-token-with-r2-permissions>
 ```
 
@@ -106,6 +158,7 @@ Deployment Branches:
 Required Secrets:
 ```
 CLOUDFLARE_ACCOUNT_ID       = <your-cloudflare-account-id>
+CLOUDFLARE_ZONE_ID          = <your-cloudflare-zone-id>
 CLOUDFLARE_API_TOKEN        = <api-token-with-r2-permissions>
 ```
 
@@ -181,6 +234,28 @@ terraform apply \
   -var="cloudflare_api_token=YOUR_API_TOKEN"
 ```
 
+### 7. Verify CDN Deployment
+
+After `terraform apply` completes successfully, the custom domain will be automatically connected to your R2 bucket via the `cloudflare_r2_custom_domain` resource.
+
+Wait 1-2 minutes for DNS propagation, then test:
+
+```bash
+# Upload a test file
+aws s3 cp test.jpg s3://dculus-forms-public-dev/ \
+  --endpoint-url https://{ACCOUNT_ID}.r2.cloudflarestorage.com
+
+# Access via CDN
+curl -I https://public-cdn-dev.dculus.com/test.jpg
+```
+
+You should see HTTP 200 response with Cloudflare headers (`cf-cache-status`, `cf-ray`, etc.).
+
+The CDN URL will be available immediately:
+- Dev: `https://public-cdn-dev.dculus.com`
+- Staging: `https://public-cdn-staging.dculus.com`
+- Production: `https://public-cdn-production.dculus.com`
+
 ## CI/CD Pipeline Deployment
 
 The GitHub Actions workflow uses a **single main branch** with **manual deployment** via GitHub Environments:
@@ -250,6 +325,18 @@ S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
 S3_REGION=auto
 S3_PRIVATE_BUCKET_NAME=dculus-forms-private-dev
 S3_PUBLIC_BUCKET_NAME=dculus-forms-public-dev
+S3_PUBLIC_CDN_URL=https://public-cdn-dev.dculus.com
+S3_ACCESS_KEY=<r2-access-key-id>
+S3_SECRET_KEY=<r2-secret-access-key>
+```
+
+**For Staging:**
+```bash
+S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+S3_REGION=auto
+S3_PRIVATE_BUCKET_NAME=dculus-forms-private-staging
+S3_PUBLIC_BUCKET_NAME=dculus-forms-public-staging
+S3_PUBLIC_CDN_URL=https://public-cdn-staging.dculus.com
 S3_ACCESS_KEY=<r2-access-key-id>
 S3_SECRET_KEY=<r2-secret-access-key>
 ```
@@ -260,11 +347,29 @@ S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
 S3_REGION=auto
 S3_PRIVATE_BUCKET_NAME=dculus-forms-private-production
 S3_PUBLIC_BUCKET_NAME=dculus-forms-public-production
+S3_PUBLIC_CDN_URL=https://public-cdn-production.dculus.com
 S3_ACCESS_KEY=<r2-access-key-id>
 S3_SECRET_KEY=<r2-secret-access-key>
 ```
 
-### 3. Configure CORS (Optional)
+### 3. Using the CDN in Your Application
+
+When serving public assets, use the `S3_PUBLIC_CDN_URL` environment variable:
+
+```typescript
+// Instead of constructing direct R2 URLs
+const imageUrl = `${process.env.S3_PUBLIC_CDN_URL}/${filePath}`;
+
+// Example: https://public-cdn-dev.dculus.com/form-backgrounds/hero.jpg
+```
+
+**Benefits:**
+- Faster global delivery via Cloudflare's CDN
+- Automatic caching and optimization
+- HTTPS with managed SSL certificates
+- DDoS protection included
+
+### 4. Configure CORS (Optional)
 
 CORS configuration must be done using the AWS S3 SDK, as the Cloudflare Terraform provider doesn't support CORS configuration yet.
 

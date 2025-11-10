@@ -10,6 +10,12 @@ variable "cloudflare_api_token" {
   sensitive   = true
 }
 
+variable "cloudflare_zone_id" {
+  description = "Cloudflare Zone ID for dculus.com domain"
+  type        = string
+  sensitive   = false
+}
+
 variable "environment" {
   description = "Environment name (dev, staging, production)"
   type        = string
