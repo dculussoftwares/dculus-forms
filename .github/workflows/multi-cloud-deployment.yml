@@ -334,6 +334,7 @@ jobs:
           cp ../../main.tf .
           cp ../../variables.tf .
           cp ../../r2-buckets.tf .
+          cp ../../r2-custom-domains.tf .
           cp ../../outputs.tf .
           echo "✅ Copied shared Terraform files"
 
@@ -355,6 +356,7 @@ jobs:
           terraform plan \
             -var="cloudflare_account_id=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" \
             -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}" \
             -out=tfplan
 
       - name: Upload Terraform Plan
@@ -487,6 +489,7 @@ jobs:
           cp ../../main.tf .
           cp ../../variables.tf .
           cp ../../r2-buckets.tf .
+          cp ../../r2-custom-domains.tf .
           cp ../../outputs.tf .
 
       - name: Terraform Init
