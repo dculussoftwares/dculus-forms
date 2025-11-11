@@ -460,9 +460,6 @@ jobs:
       health_endpoint: ${{ steps.apply.outputs.health_endpoint }}
       container_app_name: ${{ steps.apply.outputs.container_app_name }}
       backend_fqdn: ${{ steps.apply.outputs.backend_fqdn }}
-      form_services_domain: ${{ steps.apply.outputs.form_services_domain }}
-      form_services_certificate_id: ${{ steps.apply.outputs.form_services_certificate_id }}
-      form_services_validation_token: ${{ steps.apply.outputs.form_services_validation_token }}
     defaults:
       run:
         working-directory: ${{ env.AZURE_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
@@ -519,7 +516,8 @@ jobs:
           TF_VAR_s3_public_bucket_name: ${{ secrets.S3_PUBLIC_BUCKET_NAME }}
           TF_VAR_cors_origins: ${{ secrets.CORS_ORIGINS }}
           TF_VAR_container_image_tag: ${{ needs.check-docker-image.outputs.image_tag }}
-          TF_VAR_form_services_bind_custom_domain: "false"
+          TF_VAR_form_services_certificate_pfx_base64: ${{ secrets.FORM_SERVICES_CERT_PFX_BASE64 }}
+          TF_VAR_form_services_certificate_password: ${{ secrets.FORM_SERVICES_CERT_PASSWORD }}
         run: |
           terraform plan -out=tfplan
 
@@ -547,25 +545,20 @@ jobs:
           TF_VAR_s3_public_bucket_name: ${{ secrets.S3_PUBLIC_BUCKET_NAME }}
           TF_VAR_cors_origins: ${{ secrets.CORS_ORIGINS }}
           TF_VAR_container_image_tag: ${{ needs.check-docker-image.outputs.image_tag }}
-          TF_VAR_form_services_bind_custom_domain: "false"
+          TF_VAR_form_services_certificate_pfx_base64: ${{ secrets.FORM_SERVICES_CERT_PFX_BASE64 }}
+          TF_VAR_form_services_certificate_password: ${{ secrets.FORM_SERVICES_CERT_PASSWORD }}
         run: |
           terraform apply -auto-approve tfplan
 
           # Capture outputs
           BACKEND_URL=$(terraform output -raw backend_url)
           BACKEND_FQDN=$(terraform output -raw backend_fqdn)
-          FORM_SERVICES_DOMAIN=$(terraform output -raw form_services_domain 2>/dev/null || echo "")
-          FORM_SERVICES_CERT_ID=$(terraform output -raw form_services_certificate_id 2>/dev/null || echo "")
-          FORM_SERVICES_VALIDATION_TOKEN=$(terraform output -raw form_services_managed_certificate_validation_token 2>/dev/null || echo "")
 
           echo "backend_url=$BACKEND_URL" >> $GITHUB_OUTPUT
           echo "backend_fqdn=$BACKEND_FQDN" >> $GITHUB_OUTPUT
           echo "graphql_endpoint=${BACKEND_URL}/graphql" >> $GITHUB_OUTPUT
           echo "health_endpoint=${BACKEND_URL}/health" >> $GITHUB_OUTPUT
           echo "container_app_name=$(terraform output -json deployment_info | jq -r '.container_app_name')" >> $GITHUB_OUTPUT
-          echo "form_services_domain=$FORM_SERVICES_DOMAIN" >> $GITHUB_OUTPUT
-          echo "form_services_certificate_id=$FORM_SERVICES_CERT_ID" >> $GITHUB_OUTPUT
-          echo "form_services_validation_token=$FORM_SERVICES_VALIDATION_TOKEN" >> $GITHUB_OUTPUT
 
   # Cloudflare DNS record linking form-services-{env}.dculus.com to Azure backend
   terraform-cloudflare-service-domain:
@@ -589,7 +582,6 @@ jobs:
       TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
       TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       TF_VAR_backend_fqdn: ${{ needs.terraform-azure-deploy.outputs.backend_fqdn }}
-      TF_VAR_managed_certificate_validation_token: ${{ needs.terraform-azure-deploy.outputs.form_services_validation_token }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -651,107 +643,14 @@ jobs:
           echo "service_domain=$(terraform output -raw service_domain)" >> $GITHUB_OUTPUT
           echo "target_backend_fqdn=$(terraform output -raw target_backend_fqdn)" >> $GITHUB_OUTPUT
 
-  terraform-azure-domain-binding:
-    name: Terraform Apply (Azure Custom Domain)
-    runs-on: ubuntu-latest
-    needs: [
-      determine-environment,
-      setup-azure-backend,
-      check-docker-image,
-      terraform-mongodb-deploy,
-      terraform-cloudflare-deploy,
-      terraform-azure-deploy,
-      terraform-cloudflare-service-domain
-    ]
-    if: |
-      needs.determine-environment.outputs.deploy_azure == 'true' &&
-      needs.terraform-azure-deploy.result == 'success' &&
-      needs.terraform-cloudflare-service-domain.result == 'success'
-    environment: ${{ needs.determine-environment.outputs.environment }}
-    defaults:
-      run:
-        working-directory: ${{ env.AZURE_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          path: dculus-forms
-
-      - name: Azure Login (OIDC)
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Get Azure Storage Account Key
-        id: get-storage-key
-        run: |
-          ACCOUNT_KEY=$(az storage account keys list \
-            --resource-group dculus-global-terraform-assets-resource-grp \
-            --account-name dculusterraformstates \
-            --query '[0].value' -o tsv)
-          echo "::add-mask::$ACCOUNT_KEY"
-          echo "ARM_ACCESS_KEY=$ACCOUNT_KEY" >> $GITHUB_ENV
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TERRAFORM_VERSION }}
-
-      - name: Copy shared Terraform files
-        run: |
-          cp ../../main.tf .
-          cp ../../variables.tf .
-          cp ../../outputs.tf .
-          echo "✅ Copied shared Terraform files"
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Validate
-        run: terraform validate
-
-      - name: Terraform Plan
-        env:
-          TF_VAR_mongodb_connection_string: ${{ needs.terraform-mongodb-deploy.outputs.connection_string || secrets.MONGODB_CONNECTION_STRING }}
-          TF_VAR_better_auth_secret: ${{ secrets.BETTER_AUTH_SECRET }}
-          TF_VAR_s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
-          TF_VAR_s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
-          TF_VAR_s3_endpoint: ${{ secrets.S3_ENDPOINT }}
-          TF_VAR_s3_cdn_url: ${{ needs.terraform-cloudflare-deploy.outputs.public_cdn_url || secrets.S3_CDN_URL }}
-          TF_VAR_s3_private_bucket_name: ${{ secrets.S3_PRIVATE_BUCKET_NAME }}
-          TF_VAR_s3_public_bucket_name: ${{ secrets.S3_PUBLIC_BUCKET_NAME }}
-          TF_VAR_cors_origins: ${{ secrets.CORS_ORIGINS }}
-          TF_VAR_container_image_tag: ${{ needs.check-docker-image.outputs.image_tag }}
-          TF_VAR_form_services_bind_custom_domain: "true"
-        run: terraform plan -out=tfplan
-
-      - name: Terraform Apply
-        if: needs.determine-environment.outputs.should_deploy == 'true'
-        env:
-          TF_VAR_mongodb_connection_string: ${{ needs.terraform-mongodb-deploy.outputs.connection_string || secrets.MONGODB_CONNECTION_STRING }}
-          TF_VAR_better_auth_secret: ${{ secrets.BETTER_AUTH_SECRET }}
-          TF_VAR_s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
-          TF_VAR_s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
-          TF_VAR_s3_endpoint: ${{ secrets.S3_ENDPOINT }}
-          TF_VAR_s3_cdn_url: ${{ needs.terraform-cloudflare-deploy.outputs.public_cdn_url || secrets.S3_CDN_URL }}
-          TF_VAR_s3_private_bucket_name: ${{ secrets.S3_PRIVATE_BUCKET_NAME }}
-          TF_VAR_s3_public_bucket_name: ${{ secrets.S3_PUBLIC_BUCKET_NAME }}
-          TF_VAR_cors_origins: ${{ secrets.CORS_ORIGINS }}
-          TF_VAR_container_image_tag: ${{ needs.check-docker-image.outputs.image_tag }}
-          TF_VAR_form_services_bind_custom_domain: "true"
-        run: terraform apply -auto-approve tfplan
-
   # Health checks after deployment
   health-checks:
     name: Health Checks
     runs-on: ubuntu-latest
-    needs: [determine-environment, terraform-azure-deploy, terraform-azure-domain-binding]
+    needs: [determine-environment, terraform-azure-deploy]
     if: |
       always() && !cancelled() &&
-      needs.terraform-azure-deploy.result == 'success' &&
-      (needs.terraform-azure-domain-binding.result == 'success' || needs.terraform-azure-domain-binding.result == 'skipped')
+      needs.terraform-azure-deploy.result == 'success'
     steps:
       - name: Wait for backend to be ready
         run: |
@@ -808,7 +707,6 @@ jobs:
       terraform-mongodb-deploy,
       terraform-cloudflare-deploy,
       terraform-cloudflare-service-domain,
-      terraform-azure-domain-binding,
       terraform-azure-deploy,
       health-checks
     ]
@@ -831,7 +729,6 @@ jobs:
           echo "| MongoDB Atlas | ${{ needs.terraform-mongodb-deploy.result == 'success' && '✅' || needs.terraform-mongodb-deploy.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Cloudflare R2 | ${{ needs.terraform-cloudflare-deploy.result == 'success' && '✅' || needs.terraform-cloudflare-deploy.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Cloudflare Service Domain | ${{ needs.terraform-cloudflare-service-domain.result == 'success' && '✅' || needs.terraform-cloudflare-service-domain.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Azure Domain Binding | ${{ needs.terraform-azure-domain-binding.result == 'success' && '✅' || needs.terraform-azure-domain-binding.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Azure Container Apps | ${{ needs.terraform-azure-deploy.result == 'success' && '✅' || needs.terraform-azure-deploy.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Health Checks | ${{ needs.health-checks.result == 'success' && '✅' || needs.health-checks.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -863,15 +760,6 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "- **Hostname**: \`${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}\`" >> $GITHUB_STEP_SUMMARY
             echo "- **Target FQDN**: \`${{ needs.terraform-cloudflare-service-domain.outputs.target_backend_fqdn }}\`" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          # Azure Custom Domain Binding Summary
-          if [ "${{ needs.terraform-azure-domain-binding.result }}" = "success" ]; then
-            echo "## 🔐 Azure Custom Domain Binding" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "- **Certificate ID**: \`${{ needs.terraform-azure-deploy.outputs.form_services_certificate_id }}\`" >> $GITHUB_STEP_SUMMARY
-            echo "- **Bound Hostname**: \`${{ needs.terraform-azure-deploy.outputs.form_services_domain }}\`" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
 

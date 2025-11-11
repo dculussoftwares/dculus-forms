@@ -20,12 +20,6 @@ variable "backend_fqdn" {
   type        = string
 }
 
-variable "managed_certificate_validation_token" {
-  description = "DNS TXT token required for Azure managed certificate validation"
-  type        = string
-  default     = ""
-}
-
 variable "cloudflare_zone_id" {
   description = "Cloudflare zone identifier for the managed domain"
   type        = string
@@ -36,3 +30,4 @@ variable "cloudflare_api_token" {
   type        = string
   sensitive   = true
 }
+

@@ -38,13 +38,3 @@ output "form_services_domain" {
   description = "Custom domain bound to the backend service"
   value       = local.form_services_domain_enabled ? local.form_services_domain : ""
 }
-
-output "form_services_certificate_id" {
-  description = "Resource ID of the certificate bound to the form services domain"
-  value       = local.form_services_certificate_id
-}
-
-output "form_services_managed_certificate_validation_token" {
-  description = "DNS TXT token required for managed certificate validation"
-  value       = local.form_services_validation_token
-}
