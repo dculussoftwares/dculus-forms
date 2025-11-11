@@ -497,6 +497,65 @@ Examples:
 
 ## Troubleshooting
 
+### Error: "An A, AAAA, or CNAME record with that host already exists" (DNS Record Conflict)
+
+**Cause**: The DNS record for the custom domain already exists in Cloudflare, but Terraform is trying to create it again.
+
+**This configuration automatically handles this scenario!** The `r2-custom-domains.tf` file includes:
+
+1. **Data Source Check**: Queries existing DNS records before attempting creation
+2. **Conditional Creation**: Only creates the DNS record if it doesn't already exist
+3. **Automatic Detection**: Works seamlessly whether the record exists or not
+
+**How it works:**
+
+```hcl
+# Checks for existing DNS record
+data "cloudflare_dns_records" "existing_public_cdn" {
+  zone_id = var.cloudflare_zone_id
+  filter {
+    name = "public-cdn-${var.environment}.dculus.com"
+    type = "CNAME"
+  }
+}
+
+# Only creates if record doesn't exist (count = 0)
+resource "cloudflare_dns_record" "public_cdn" {
+  count = length(data.cloudflare_dns_records.existing_public_cdn.records) == 0 ? 1 : 0
+  # ... rest of configuration
+}
+```
+
+**What you should do:**
+
+✅ **Nothing!** The configuration will automatically:
+- Detect existing DNS records
+- Skip creation if record exists
+- Use the existing record for R2 custom domain connection
+- Create the record only if it's missing
+
+**Manual Import (Alternative approach):**
+
+If you prefer to manage the existing record with Terraform, you can import it:
+
+```bash
+# Get the record ID from Cloudflare dashboard or API
+RECORD_ID="your-dns-record-id"
+
+# Import the record (note: requires removing count parameter first)
+terraform import 'cloudflare_dns_record.public_cdn[0]' $CLOUDFLARE_ZONE_ID/$RECORD_ID
+
+# Then run terraform plan to verify
+terraform plan
+```
+
+**Verification:**
+
+After running `terraform apply`, check the logs:
+- If record exists: Terraform will show "data.cloudflare_dns_records.existing_public_cdn: Reading..."
+- If creating: Terraform will show "cloudflare_dns_record.public_cdn[0]: Creating..."
+- Either way, the R2 custom domain will be configured correctly
+
 ### Error: "Backend initialization required"
 
 **Solution:**

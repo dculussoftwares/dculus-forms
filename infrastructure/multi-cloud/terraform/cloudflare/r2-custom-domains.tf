@@ -6,9 +6,20 @@ locals {
   public_cdn_domain = "public-cdn-${var.environment}.dculus.com"
 }
 
+# Check if DNS record already exists
+data "cloudflare_dns_records" "existing_public_cdn" {
+  zone_id = var.cloudflare_zone_id
+  filter {
+    name = "public-cdn-${var.environment}.dculus.com"
+    type = "CNAME"
+  }
+}
+
 # DNS CNAME record pointing to the R2 bucket
 # This record is required for the custom domain to work
+# Only create if it doesn't already exist
 resource "cloudflare_dns_record" "public_cdn" {
+  count   = length(data.cloudflare_dns_records.existing_public_cdn.records) == 0 ? 1 : 0
   zone_id = var.cloudflare_zone_id
   name    = "public-cdn-${var.environment}"
   content = "${cloudflare_r2_bucket.public.name}.${var.cloudflare_account_id}.r2.cloudflarestorage.com"
@@ -16,6 +27,22 @@ resource "cloudflare_dns_record" "public_cdn" {
   proxied = true  # Enable Cloudflare CDN/proxy
   ttl     = 1     # Auto TTL when proxied
   comment = "Custom domain for public R2 bucket - ${var.environment} environment"
+
+  lifecycle {
+    # Prevent recreation if the record already exists
+    ignore_changes = [
+      created_on,
+      modified_on,
+      metadata,
+    ]
+  }
+}
+
+# Use existing DNS record or the newly created one
+locals {
+  # Get the DNS record ID - either from existing record or newly created one
+  public_cdn_record_exists = length(data.cloudflare_dns_records.existing_public_cdn.records) > 0
+  public_cdn_record_id     = local.public_cdn_record_exists ? data.cloudflare_dns_records.existing_public_cdn.records[0].id : (length(cloudflare_dns_record.public_cdn) > 0 ? cloudflare_dns_record.public_cdn[0].id : null)
 }
 
 # R2 Custom Domain - Connect the custom domain to the R2 bucket
@@ -26,7 +53,10 @@ resource "cloudflare_r2_custom_domain" "public_cdn" {
   domain      = local.public_cdn_domain
   enabled     = true
 
-  depends_on = [cloudflare_dns_record.public_cdn]
+  depends_on = [
+    cloudflare_dns_record.public_cdn,
+    data.cloudflare_dns_records.existing_public_cdn
+  ]
 }
 
 # Page Rule for CDN cache optimization
@@ -44,7 +74,7 @@ resource "cloudflare_page_rule" "public_cdn_cache" {
   }
 
   depends_on = [
-    cloudflare_dns_record.public_cdn,
+    data.cloudflare_dns_records.existing_public_cdn,
     cloudflare_r2_custom_domain.public_cdn
   ]
 }
