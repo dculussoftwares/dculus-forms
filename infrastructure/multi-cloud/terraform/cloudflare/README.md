@@ -499,65 +499,43 @@ Examples:
 
 ### Error: "An A, AAAA, or CNAME record with that host already exists" (DNS Record Conflict)
 
-**Cause**: The DNS record for the custom domain already exists in Cloudflare, but Terraform is trying to create it again.
+**Cause**: The DNS record for the custom domain already exists in Cloudflare.
 
-**✅ FIXED!** The GitHub Actions workflow now automatically handles this scenario:
+**✅ FIXED!** The Terraform configuration has been redesigned to eliminate this issue entirely:
 
-1. **Automatic Import**: The workflow runs `import-dns-records.sh` before Terraform apply
-2. **Smart Detection**: The script checks if the DNS record exists in Cloudflare
-3. **Seamless Import**: If found, it imports the record into Terraform state automatically
-4. **Zero Intervention**: No manual steps required!
+**How the new approach works:**
 
-**How it works:**
+1. **Automatic DNS Management**: The `cloudflare_r2_custom_domain` resource automatically creates and manages the DNS CNAME record
+2. **No Manual DNS Records**: We don't create a separate `cloudflare_dns_record` resource, preventing conflicts
+3. **Zero Configuration**: The DNS record is created automatically when you deploy the R2 custom domain
+4. **Read-Only Protection**: Cloudflare marks the auto-created DNS record as read-only, ensuring consistency
 
-The workflow includes a pre-apply step that:
-- Queries Cloudflare API for existing DNS records
-- Checks if the record is already in Terraform state
-- Automatically imports the record if it exists but isn't managed by Terraform
-- Allows Terraform to proceed without conflicts
+**What happens during deployment:**
 
-**Manual Import (If needed):**
-
-If the automatic import fails or you're running Terraform locally:
-
-```bash
-# Navigate to your environment directory
-cd infrastructure/multi-cloud/terraform/cloudflare/environments/dev
-
-# Run the import script manually
-bash ../../import-dns-records.sh dev
-
-# Or import directly if you know the record ID
-ZONE_ID="your-zone-id"
-RECORD_ID="your-dns-record-id"
-terraform import cloudflare_dns_record.public_cdn $ZONE_ID/$RECORD_ID
+```
+1. Terraform creates R2 buckets (private and public)
+2. Terraform creates cloudflare_r2_custom_domain resource
+   → This automatically creates DNS CNAME: public-cdn-{env}.dculus.com → public.r2.dev
+   → DNS record is proxied through Cloudflare (orange cloud)
+   → Record is marked as read_only (managed by R2)
+3. Terraform creates page rules for CDN caching
 ```
 
-**Getting the Record ID:**
+**Why this is better:**
 
-Option 1 - Using Cloudflare Dashboard:
-1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com/)
-2. Select your domain (dculus.com)
-3. Go to DNS → Records
-4. Find `public-cdn-dev.dculus.com`
-5. Click on the record to see its ID in the URL
+- ✅ No import scripts needed
+- ✅ No state management issues
+- ✅ No circular dependencies
+- ✅ DNS record always matches R2 configuration
+- ✅ Simpler, more maintainable infrastructure code
 
-Option 2 - Using Cloudflare API:
-```bash
-curl -X GET "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?name=public-cdn-dev.dculus.com&type=CNAME" \
-  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-  -H "Content-Type: application/json" | jq '.result[0].id'
-```
+**If you see this error:**
 
-**Verification:**
+This should no longer happen with the current configuration. If you do encounter it:
 
-After the workflow runs successfully:
-- Check the "Import Existing DNS Records" step in GitHub Actions logs
-- You should see either:
-  - `✅ DNS record does not exist in Cloudflare - Terraform will create it`
-  - `✅ DNS record is already in Terraform state - no import needed`
-  - `✅ Successfully imported DNS record into Terraform state`
-- The subsequent Terraform apply will succeed without conflicts
+1. Check that you're using the latest Terraform configuration from `main` branch
+2. Ensure you don't have a manual `cloudflare_dns_record.public_cdn` resource in your code
+3. The `cloudflare_r2_custom_domain` resource handles DNS automatically - no separate DNS record needed
 
 ### Error: "Backend initialization required"
 
