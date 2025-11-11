@@ -16,14 +16,14 @@ The following secrets must be configured in your GitHub repository:
 **Required:**
 - `MONGODB_CONNECTION_STRING`: MongoDB Atlas or Azure Cosmos DB connection string
 - `BETTER_AUTH_SECRET`: Better Auth signing secret (minimum 32 characters)
-- `S3_CDN_URL`: CDN endpoint that serves public assets (Cloudflare R2 custom domain, CloudFront, etc.)
 
-**Optional (for file uploads):**
+**Optional (for file uploads / CDN overrides):**
 - `S3_ACCESS_KEY`: S3 access key
 - `S3_SECRET_KEY`: S3 secret key
 - `S3_ENDPOINT`: S3 endpoint URL
 - `S3_PRIVATE_BUCKET_NAME`: Private bucket name
 - `S3_PUBLIC_BUCKET_NAME`: Public bucket name
+- `S3_CDN_URL`: CDN endpoint that serves public assets (defaults to `https://public-cdn-${environment}.dculus.com` if omitted)
 
 ## Infrastructure Components
 

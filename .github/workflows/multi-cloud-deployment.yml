@@ -322,24 +322,29 @@ jobs:
     name: Deploy Cloudflare R2
     runs-on: ubuntu-latest
     needs: [determine-environment, setup-azure-backend]
-    if: |
-      always() && !cancelled() && !failure() &&
-      needs.determine-environment.outputs.deploy_cloudflare == 'true'
+    if: always() && !cancelled() && !failure()
     environment: ${{ needs.determine-environment.outputs.environment }}
     outputs:
       private_bucket: ${{ steps.apply.outputs.private_bucket }}
       public_bucket: ${{ steps.apply.outputs.public_bucket }}
       r2_endpoint: ${{ steps.apply.outputs.r2_endpoint }}
+      public_cdn_url: ${{ steps.apply.outputs.public_cdn_url }}
     defaults:
       run:
         working-directory: ${{ env.CLOUDFLARE_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
     steps:
+      - name: Skip Cloudflare deploy
+        if: ${{ needs.determine-environment.outputs.deploy_cloudflare != 'true' }}
+        run: echo "⏭️ Skipping Cloudflare deployment per workflow input"
+
       - name: Checkout code
+        if: ${{ needs.determine-environment.outputs.deploy_cloudflare == 'true' }}
         uses: actions/checkout@v4
         with:
           path: dculus-forms
 
       - name: Azure Login (OIDC)
+        if: ${{ needs.determine-environment.outputs.deploy_cloudflare == 'true' }}
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -347,6 +352,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Get Azure Storage Account Key
+        if: ${{ needs.determine-environment.outputs.deploy_cloudflare == 'true' }}
         id: get-storage-key
         run: |
           ACCOUNT_KEY=$(az storage account keys list \
@@ -357,12 +363,14 @@ jobs:
           echo "ARM_ACCESS_KEY=$ACCOUNT_KEY" >> $GITHUB_ENV
 
       - name: Setup Terraform
+        if: ${{ needs.determine-environment.outputs.deploy_cloudflare == 'true' }}
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
           terraform_wrapper: false
 
       - name: Copy shared Terraform files
+        if: ${{ needs.determine-environment.outputs.deploy_cloudflare == 'true' }}
         run: |
           cp ../../main.tf .
           cp ../../variables.tf .
@@ -372,6 +380,7 @@ jobs:
           echo "✅ Copied shared Terraform files"
 
       - name: Terraform Init
+        if: ${{ needs.determine-environment.outputs.deploy_cloudflare == 'true' }}
         run: |
           terraform init \
             -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
@@ -380,6 +389,7 @@ jobs:
             -backend-config="key=terraform.tfstate"
 
       - name: Terraform Validate
+        if: ${{ needs.determine-environment.outputs.deploy_cloudflare == 'true' }}
         env:
           TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
@@ -387,6 +397,7 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
+        if: ${{ needs.determine-environment.outputs.deploy_cloudflare == 'true' }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -400,7 +411,7 @@ jobs:
 
       - name: Terraform Apply
         id: apply
-        if: needs.determine-environment.outputs.should_deploy == 'true'
+        if: ${{ needs.determine-environment.outputs.should_deploy == 'true' && needs.determine-environment.outputs.deploy_cloudflare == 'true' }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -416,12 +427,13 @@ jobs:
           echo "private_bucket=$(terraform output -raw private_bucket_name)" >> $GITHUB_OUTPUT
           echo "public_bucket=$(terraform output -raw public_bucket_name)" >> $GITHUB_OUTPUT
           echo "r2_endpoint=$(terraform output -raw r2_endpoint_url)" >> $GITHUB_OUTPUT
+          echo "public_cdn_url=$(terraform output -raw public_cdn_url)" >> $GITHUB_OUTPUT
 
   # Terraform Plan & Apply for Azure Container Apps
   terraform-azure-deploy:
     name: Terraform Plan & Apply (Azure Container Apps)
     runs-on: ubuntu-latest
-    needs: [determine-environment, setup-azure-backend, check-docker-image, terraform-mongodb-deploy]
+    needs: [determine-environment, setup-azure-backend, check-docker-image, terraform-mongodb-deploy, terraform-cloudflare-deploy]
     if: |
       always() && !cancelled() && !failure() &&
       needs.determine-environment.outputs.deploy_azure == 'true'
@@ -482,7 +494,7 @@ jobs:
           TF_VAR_s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
           TF_VAR_s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
           TF_VAR_s3_endpoint: ${{ secrets.S3_ENDPOINT }}
-          TF_VAR_s3_cdn_url: ${{ secrets.S3_CDN_URL }}
+          TF_VAR_s3_cdn_url: ${{ needs.terraform-cloudflare-deploy.outputs.public_cdn_url || secrets.S3_CDN_URL }}
           TF_VAR_s3_private_bucket_name: ${{ secrets.S3_PRIVATE_BUCKET_NAME }}
           TF_VAR_s3_public_bucket_name: ${{ secrets.S3_PUBLIC_BUCKET_NAME }}
           TF_VAR_cors_origins: ${{ secrets.CORS_ORIGINS }}
@@ -509,7 +521,7 @@ jobs:
           TF_VAR_s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
           TF_VAR_s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
           TF_VAR_s3_endpoint: ${{ secrets.S3_ENDPOINT }}
-          TF_VAR_s3_cdn_url: ${{ secrets.S3_CDN_URL }}
+          TF_VAR_s3_cdn_url: ${{ needs.terraform-cloudflare-deploy.outputs.public_cdn_url || secrets.S3_CDN_URL }}
           TF_VAR_s3_private_bucket_name: ${{ secrets.S3_PRIVATE_BUCKET_NAME }}
           TF_VAR_s3_public_bucket_name: ${{ secrets.S3_PUBLIC_BUCKET_NAME }}
           TF_VAR_cors_origins: ${{ secrets.CORS_ORIGINS }}

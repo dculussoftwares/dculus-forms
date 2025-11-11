@@ -20,6 +20,8 @@ locals {
   resource_group_name  = "${var.project_name}-${var.environment}-rg"
   app_name             = "${var.project_name}-${var.environment}"
   full_container_image = "${var.container_image}:${var.container_image_tag}"
+  public_cdn_domain    = "public-cdn-${var.environment}.dculus.com"
+  resolved_s3_cdn_url  = var.s3_cdn_url != "" ? var.s3_cdn_url : "https://${local.public_cdn_domain}"
 }
 
 # Resource Group for this environment
@@ -103,7 +105,7 @@ resource "azurerm_container_app" "backend" {
 
       env {
         name  = "S3_CDN_URL"
-        value = var.s3_cdn_url
+        value = local.resolved_s3_cdn_url
       }
 
       env {
