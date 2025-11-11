@@ -112,6 +112,12 @@ variable "s3_endpoint" {
   default     = ""
 }
 
+variable "s3_cdn_url" {
+  description = "CDN URL for serving public S3 assets"
+  type        = string
+  default     = ""
+}
+
 variable "s3_private_bucket_name" {
   description = "S3 private bucket name"
   type        = string

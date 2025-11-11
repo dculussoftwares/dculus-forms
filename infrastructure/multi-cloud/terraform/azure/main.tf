@@ -102,6 +102,11 @@ resource "azurerm_container_app" "backend" {
       }
 
       env {
+        name  = "S3_CDN_URL"
+        value = var.s3_cdn_url
+      }
+
+      env {
         name  = "S3_PRIVATE_BUCKET_NAME"
         value = var.s3_private_bucket_name
       }

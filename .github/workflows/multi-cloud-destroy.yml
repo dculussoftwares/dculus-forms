@@ -165,6 +165,7 @@ jobs:
           TF_VAR_s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
           TF_VAR_s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
           TF_VAR_s3_endpoint: ${{ secrets.S3_ENDPOINT }}
+          TF_VAR_s3_cdn_url: ${{ secrets.S3_CDN_URL }}
           TF_VAR_s3_private_bucket_name: ${{ secrets.S3_PRIVATE_BUCKET_NAME }}
           TF_VAR_s3_public_bucket_name: ${{ secrets.S3_PUBLIC_BUCKET_NAME }}
           TF_VAR_cors_origins: ${{ secrets.CORS_ORIGINS }}
