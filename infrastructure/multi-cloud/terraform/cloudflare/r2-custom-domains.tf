@@ -27,13 +27,6 @@ resource "cloudflare_dns_record" "public_cdn" {
     # this will prevent Terraform from trying to recreate it on subsequent runs
     # You'll need to import it first: terraform import cloudflare_dns_record.public_cdn <zone_id>/<record_id>
     create_before_destroy = false
-
-    # Ignore changes to metadata fields that don't affect functionality
-    ignore_changes = [
-      created_on,
-      modified_on,
-      metadata,
-    ]
   }
 }
 
