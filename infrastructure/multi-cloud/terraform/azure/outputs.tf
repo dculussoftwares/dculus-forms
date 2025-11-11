@@ -18,11 +18,6 @@ output "resource_group_name" {
   value       = azurerm_resource_group.main.name
 }
 
-output "log_analytics_workspace_id" {
-  description = "ID of the Log Analytics Workspace"
-  value       = azurerm_log_analytics_workspace.main.id
-}
-
 output "deployment_info" {
   description = "Deployment summary information"
   value = {

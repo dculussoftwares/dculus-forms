@@ -17,8 +17,8 @@ provider "azurerm" {
 
 # Locals for resource naming with environment suffix
 locals {
-  resource_group_name = "${var.project_name}-${var.environment}-rg"
-  app_name            = "${var.project_name}-${var.environment}"
+  resource_group_name  = "${var.project_name}-${var.environment}-rg"
+  app_name             = "${var.project_name}-${var.environment}"
   full_container_image = "${var.container_image}:${var.container_image_tag}"
 }
 
@@ -29,23 +29,12 @@ resource "azurerm_resource_group" "main" {
   tags     = var.tags
 }
 
-# Log Analytics Workspace for Container App Environment
-resource "azurerm_log_analytics_workspace" "main" {
-  name                = "${local.app_name}-logs"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  sku                 = "PerGB2018"
-  retention_in_days   = var.log_analytics_retention_days
-
-  tags = var.tags
-}
-
 # Container App Environment
 resource "azurerm_container_app_environment" "main" {
-  name                       = "${local.app_name}-env"
-  location                   = azurerm_resource_group.main.location
-  resource_group_name        = azurerm_resource_group.main.name
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
+  name                = "${local.app_name}-env"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  logs_destination    = "azure-monitor"
 
   tags = var.tags
 }

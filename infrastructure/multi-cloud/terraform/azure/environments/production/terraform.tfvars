@@ -19,8 +19,6 @@ allow_insecure_traffic   = false
 ingress_transport        = "auto"
 
 # Monitoring
-log_analytics_retention_days = 90
-
 # Tags
 tags = {
   Environment = "production"

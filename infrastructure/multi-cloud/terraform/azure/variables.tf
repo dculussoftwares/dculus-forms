@@ -73,12 +73,6 @@ variable "ingress_transport" {
   default     = "auto"
 }
 
-variable "log_analytics_retention_days" {
-  description = "Log Analytics workspace retention in days"
-  type        = number
-  default     = 30
-}
-
 variable "mongodb_connection_string" {
   description = "MongoDB connection string"
   type        = string
