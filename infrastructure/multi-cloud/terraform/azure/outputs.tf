@@ -33,3 +33,8 @@ output "deployment_info" {
     cpu_memory            = "${var.cpu_cores} cores / ${var.memory_gb}Gi"
   }
 }
+
+output "form_services_domain" {
+  description = "Custom domain bound to the backend service"
+  value       = local.form_services_domain_enabled ? local.form_services_domain : ""
+}

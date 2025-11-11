@@ -4,6 +4,9 @@ location            = "East US"
 container_image     = "dculus/forms-backend"
 container_image_tag = "latest"
 better_auth_url     = "https://dculus-forms-staging-backend.kindocean-e9e3f3f1.eastus.azurecontainerapps.io"
+enable_form_services_domain = true
+form_services_domain_prefix = "form-services"
+form_services_root_domain   = "dculus.com"
 
 # Resource configuration
 cpu_cores    = 0.5

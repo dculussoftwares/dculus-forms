@@ -516,6 +516,8 @@ jobs:
           TF_VAR_s3_public_bucket_name: ${{ secrets.S3_PUBLIC_BUCKET_NAME }}
           TF_VAR_cors_origins: ${{ secrets.CORS_ORIGINS }}
           TF_VAR_container_image_tag: ${{ needs.check-docker-image.outputs.image_tag }}
+          TF_VAR_form_services_certificate_pfx_base64: ${{ secrets.FORM_SERVICES_CERT_PFX_BASE64 }}
+          TF_VAR_form_services_certificate_password: ${{ secrets.FORM_SERVICES_CERT_PASSWORD }}
         run: |
           terraform plan -out=tfplan
 
@@ -543,6 +545,8 @@ jobs:
           TF_VAR_s3_public_bucket_name: ${{ secrets.S3_PUBLIC_BUCKET_NAME }}
           TF_VAR_cors_origins: ${{ secrets.CORS_ORIGINS }}
           TF_VAR_container_image_tag: ${{ needs.check-docker-image.outputs.image_tag }}
+          TF_VAR_form_services_certificate_pfx_base64: ${{ secrets.FORM_SERVICES_CERT_PFX_BASE64 }}
+          TF_VAR_form_services_certificate_password: ${{ secrets.FORM_SERVICES_CERT_PASSWORD }}
         run: |
           terraform apply -auto-approve tfplan
 

@@ -22,6 +22,8 @@ locals {
   full_container_image = "${var.container_image}:${var.container_image_tag}"
   public_cdn_domain    = "public-cdn-${var.environment}.dculus.com"
   resolved_s3_cdn_url  = var.s3_cdn_url != "" ? var.s3_cdn_url : "https://${local.public_cdn_domain}"
+  form_services_domain = "${var.form_services_domain_prefix}-${var.environment}.${var.form_services_root_domain}"
+  form_services_domain_enabled = var.enable_form_services_domain && var.form_services_domain_prefix != "" && var.form_services_root_domain != ""
 }
 
 # Resource Group for this environment
@@ -38,6 +40,21 @@ resource "azurerm_container_app_environment" "main" {
   resource_group_name = azurerm_resource_group.main.name
 
   tags = var.tags
+}
+
+resource "azurerm_container_app_environment_certificate" "form_services" {
+  count                       = local.form_services_domain_enabled ? 1 : 0
+  name                        = "${local.app_name}-form-services-cert"
+  container_app_environment_id = azurerm_container_app_environment.main.id
+  certificate_blob_base64     = var.form_services_certificate_pfx_base64
+  certificate_password        = var.form_services_certificate_password
+
+  lifecycle {
+    precondition {
+      condition     = var.form_services_certificate_pfx_base64 != "" && var.form_services_certificate_password != ""
+      error_message = "form_services_certificate_pfx_base64 and form_services_certificate_password must be provided when enable_form_services_domain is true."
+    }
+  }
 }
 
 # Container App
@@ -155,6 +172,15 @@ resource "azurerm_container_app" "backend" {
     traffic_weight {
       percentage      = 100
       latest_revision = true
+    }
+
+    dynamic "custom_domain" {
+      for_each = azurerm_container_app_environment_certificate.form_services
+      content {
+        name                     = local.form_services_domain
+        certificate_id           = custom_domain.value.id
+        certificate_binding_type = "SniEnabled"
+      }
     }
   }
 
