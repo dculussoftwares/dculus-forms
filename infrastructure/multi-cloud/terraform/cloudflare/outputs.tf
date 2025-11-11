@@ -45,7 +45,7 @@ output "public_cdn_url" {
 
 output "dns_record_status" {
   description = "Status of the DNS record configuration"
-  value       = cloudflare_dns_record.public_cdn.proxied ? "Proxied through Cloudflare CDN (Orange Cloud)" : "DNS Only"
+  value       = "Automatically managed by R2 Custom Domain - Proxied through Cloudflare"
 }
 
 output "next_steps" {

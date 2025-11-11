@@ -6,41 +6,18 @@ locals {
   public_cdn_domain = "public-cdn-${var.environment}.dculus.com"
 }
 
-# DNS CNAME record pointing to the R2 bucket
-# This record is required for the custom domain to work
-#
-# IMPORTANT: If you get an error "record already exists", you need to import the existing record:
-# terraform import cloudflare_dns_record.public_cdn <zone_id>/<record_id>
-#
-# Or delete the existing record from Cloudflare dashboard first
-resource "cloudflare_dns_record" "public_cdn" {
-  zone_id = var.cloudflare_zone_id
-  name    = "public-cdn-${var.environment}"
-  content = "${cloudflare_r2_bucket.public.name}.${var.cloudflare_account_id}.r2.cloudflarestorage.com"
-  type    = "CNAME"
-  proxied = true  # Enable Cloudflare CDN/proxy
-  ttl     = 1     # Auto TTL when proxied
-  comment = "Custom domain for public R2 bucket - ${var.environment} environment"
-
-  lifecycle {
-    # If the record already exists in Cloudflare but not in Terraform state,
-    # this will prevent Terraform from trying to recreate it on subsequent runs
-    # You'll need to import it first: terraform import cloudflare_dns_record.public_cdn <zone_id>/<record_id>
-    create_before_destroy = false
-  }
-}
-
 # R2 Custom Domain - Connect the custom domain to the R2 bucket
-# This resource will automatically create the necessary connection between
-# the DNS record and the R2 bucket for CDN functionality
+# This resource will automatically create the DNS CNAME record
+# pointing to public.r2.dev with the R2 custom domain connection
+#
+# IMPORTANT: This resource creates its own DNS record automatically
+# Do NOT create a separate cloudflare_dns_record resource as it will conflict
 resource "cloudflare_r2_custom_domain" "public_cdn" {
   account_id  = var.cloudflare_account_id
   bucket_name = cloudflare_r2_bucket.public.name
   zone_id     = var.cloudflare_zone_id
   domain      = local.public_cdn_domain
   enabled     = true
-
-  depends_on = [cloudflare_dns_record.public_cdn]
 }
 
 # Page Rule for CDN cache optimization
@@ -57,10 +34,7 @@ resource "cloudflare_page_rule" "public_cdn_cache" {
     disable_performance = false
   }
 
-  depends_on = [
-    cloudflare_dns_record.public_cdn,
-    cloudflare_r2_custom_domain.public_cdn
-  ]
+  depends_on = [cloudflare_r2_custom_domain.public_cdn]
 }
 
 # Optional: Advanced Cache Rules using Rulesets
