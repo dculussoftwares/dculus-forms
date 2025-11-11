@@ -387,37 +387,12 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        id: plan
-        continue-on-error: true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
           TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          terraform plan \
-            -var="cloudflare_account_id=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" \
-            -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
-            -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
-
-      - name: Handle DNS Record Conflicts
-        if: steps.plan.outcome == 'failure'
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
-          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          echo "⚠️ Plan failed - checking if it's due to DNS record conflict..."
-          
-          # If the resource exists in state but not in Cloudflare (warning), remove from state
-          if terraform state list | grep -q "cloudflare_dns_record.public_cdn"; then
-            echo "🗑️ Removing stale DNS record from state..."
-            terraform state rm cloudflare_dns_record.public_cdn || true
-          fi
-          
-          # Re-run plan after cleanup
-          echo "🔄 Retrying plan..."
           terraform plan \
             -var="cloudflare_account_id=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" \
             -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
