@@ -501,60 +501,63 @@ Examples:
 
 **Cause**: The DNS record for the custom domain already exists in Cloudflare, but Terraform is trying to create it again.
 
-**This configuration automatically handles this scenario!** The `r2-custom-domains.tf` file includes:
+**✅ FIXED!** The GitHub Actions workflow now automatically handles this scenario:
 
-1. **Data Source Check**: Queries existing DNS records before attempting creation
-2. **Conditional Creation**: Only creates the DNS record if it doesn't already exist
-3. **Automatic Detection**: Works seamlessly whether the record exists or not
+1. **Automatic Import**: The workflow runs `import-dns-records.sh` before Terraform apply
+2. **Smart Detection**: The script checks if the DNS record exists in Cloudflare
+3. **Seamless Import**: If found, it imports the record into Terraform state automatically
+4. **Zero Intervention**: No manual steps required!
 
 **How it works:**
 
-```hcl
-# Checks for existing DNS record
-data "cloudflare_dns_records" "existing_public_cdn" {
-  zone_id = var.cloudflare_zone_id
-  filter {
-    name = "public-cdn-${var.environment}.dculus.com"
-    type = "CNAME"
-  }
-}
+The workflow includes a pre-apply step that:
+- Queries Cloudflare API for existing DNS records
+- Checks if the record is already in Terraform state
+- Automatically imports the record if it exists but isn't managed by Terraform
+- Allows Terraform to proceed without conflicts
 
-# Only creates if record doesn't exist (count = 0)
-resource "cloudflare_dns_record" "public_cdn" {
-  count = length(data.cloudflare_dns_records.existing_public_cdn.records) == 0 ? 1 : 0
-  # ... rest of configuration
-}
-```
+**Manual Import (If needed):**
 
-**What you should do:**
-
-✅ **Nothing!** The configuration will automatically:
-- Detect existing DNS records
-- Skip creation if record exists
-- Use the existing record for R2 custom domain connection
-- Create the record only if it's missing
-
-**Manual Import (Alternative approach):**
-
-If you prefer to manage the existing record with Terraform, you can import it:
+If the automatic import fails or you're running Terraform locally:
 
 ```bash
-# Get the record ID from Cloudflare dashboard or API
+# Navigate to your environment directory
+cd infrastructure/multi-cloud/terraform/cloudflare/environments/dev
+
+# Run the import script manually
+bash ../../import-dns-records.sh dev
+
+# Or import directly if you know the record ID
+ZONE_ID="your-zone-id"
 RECORD_ID="your-dns-record-id"
+terraform import cloudflare_dns_record.public_cdn $ZONE_ID/$RECORD_ID
+```
 
-# Import the record (note: requires removing count parameter first)
-terraform import 'cloudflare_dns_record.public_cdn[0]' $CLOUDFLARE_ZONE_ID/$RECORD_ID
+**Getting the Record ID:**
 
-# Then run terraform plan to verify
-terraform plan
+Option 1 - Using Cloudflare Dashboard:
+1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com/)
+2. Select your domain (dculus.com)
+3. Go to DNS → Records
+4. Find `public-cdn-dev.dculus.com`
+5. Click on the record to see its ID in the URL
+
+Option 2 - Using Cloudflare API:
+```bash
+curl -X GET "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?name=public-cdn-dev.dculus.com&type=CNAME" \
+  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+  -H "Content-Type: application/json" | jq '.result[0].id'
 ```
 
 **Verification:**
 
-After running `terraform apply`, check the logs:
-- If record exists: Terraform will show "data.cloudflare_dns_records.existing_public_cdn: Reading..."
-- If creating: Terraform will show "cloudflare_dns_record.public_cdn[0]: Creating..."
-- Either way, the R2 custom domain will be configured correctly
+After the workflow runs successfully:
+- Check the "Import Existing DNS Records" step in GitHub Actions logs
+- You should see either:
+  - `✅ DNS record does not exist in Cloudflare - Terraform will create it`
+  - `✅ DNS record is already in Terraform state - no import needed`
+  - `✅ Successfully imported DNS record into Terraform state`
+- The subsequent Terraform apply will succeed without conflicts
 
 ### Error: "Backend initialization required"
 
