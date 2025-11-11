@@ -41,6 +41,7 @@ permissions:
 env:
   TERRAFORM_VERSION: '1.6.0'
   CLOUDFLARE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare'
+  CLOUDFLARE_SERVICE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-service-domain'
   AZURE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/azure'
   MONGODB_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/mongodb'
 
@@ -135,6 +136,21 @@ jobs:
             echo "✅ Container created: $CLOUDFLARE_CONTAINER"
           else
             echo "✅ Container exists: $CLOUDFLARE_CONTAINER"
+          fi
+
+          # Create Cloudflare service-domain container
+          CLOUDFLARE_SERVICE_CONTAINER="dculus-forms-cloudflare-services-${ENV}-state"
+          if ! az storage container show \
+            --name "$CLOUDFLARE_SERVICE_CONTAINER" \
+            --account-name "$STORAGE_ACCOUNT" &>/dev/null; then
+            echo "📦 Creating container: $CLOUDFLARE_SERVICE_CONTAINER"
+            az storage container create \
+              --name "$CLOUDFLARE_SERVICE_CONTAINER" \
+              --account-name "$STORAGE_ACCOUNT" \
+              --auth-mode login
+            echo "✅ Container created: $CLOUDFLARE_SERVICE_CONTAINER"
+          else
+            echo "✅ Container exists: $CLOUDFLARE_SERVICE_CONTAINER"
           fi
 
           # Create Azure Container Apps container
@@ -443,6 +459,7 @@ jobs:
       graphql_endpoint: ${{ steps.apply.outputs.graphql_endpoint }}
       health_endpoint: ${{ steps.apply.outputs.health_endpoint }}
       container_app_name: ${{ steps.apply.outputs.container_app_name }}
+      backend_fqdn: ${{ steps.apply.outputs.backend_fqdn }}
     defaults:
       run:
         working-directory: ${{ env.AZURE_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
@@ -530,10 +547,97 @@ jobs:
           terraform apply -auto-approve tfplan
 
           # Capture outputs
-          echo "backend_url=$(terraform output -raw backend_url)" >> $GITHUB_OUTPUT
-          echo "graphql_endpoint=$(terraform output -raw backend_url)/graphql" >> $GITHUB_OUTPUT
-          echo "health_endpoint=$(terraform output -raw backend_url)/health" >> $GITHUB_OUTPUT
+          BACKEND_URL=$(terraform output -raw backend_url)
+          BACKEND_FQDN=$(terraform output -raw backend_fqdn)
+
+          echo "backend_url=$BACKEND_URL" >> $GITHUB_OUTPUT
+          echo "backend_fqdn=$BACKEND_FQDN" >> $GITHUB_OUTPUT
+          echo "graphql_endpoint=${BACKEND_URL}/graphql" >> $GITHUB_OUTPUT
+          echo "health_endpoint=${BACKEND_URL}/health" >> $GITHUB_OUTPUT
           echo "container_app_name=$(terraform output -json deployment_info | jq -r '.container_app_name')" >> $GITHUB_OUTPUT
+
+  # Cloudflare DNS record linking form-services-{env}.dculus.com to Azure backend
+  terraform-cloudflare-service-domain:
+    name: Cloudflare DNS (Form Services)
+    runs-on: ubuntu-latest
+    needs: [determine-environment, setup-azure-backend, terraform-azure-deploy]
+    if: |
+      always() && !cancelled() && !failure() &&
+      needs.determine-environment.outputs.should_deploy == 'true' &&
+      needs.determine-environment.outputs.deploy_cloudflare == 'true' &&
+      needs.determine-environment.outputs.deploy_azure == 'true' &&
+      needs.terraform-azure-deploy.result == 'success'
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    outputs:
+      service_domain: ${{ steps.apply.outputs.service_domain }}
+      target_backend_fqdn: ${{ steps.apply.outputs.target_backend_fqdn }}
+    defaults:
+      run:
+        working-directory: ${{ env.CLOUDFLARE_SERVICE_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
+    env:
+      TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+      TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      TF_VAR_backend_fqdn: ${{ needs.terraform-azure-deploy.outputs.backend_fqdn }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: dculus-forms
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get Azure Storage Account Key
+        id: get-storage-key
+        run: |
+          ACCOUNT_KEY=$(az storage account keys list \
+            --resource-group dculus-global-terraform-assets-resource-grp \
+            --account-name dculusterraformstates \
+            --query '[0].value' -o tsv)
+          echo "::add-mask::$ACCOUNT_KEY"
+          echo "ARM_ACCESS_KEY=$ACCOUNT_KEY" >> $GITHUB_ENV
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Validate backend FQDN
+        run: |
+          if [ -z "${{ needs.terraform-azure-deploy.outputs.backend_fqdn }}" ]; then
+            echo "❌ Azure backend FQDN output is empty. Aborting DNS update."
+            exit 1
+          fi
+          echo "🔗 Updating DNS for backend FQDN: ${{ needs.terraform-azure-deploy.outputs.backend_fqdn }}"
+
+      - name: Copy shared Terraform files
+        run: |
+          cp ../../main.tf .
+          cp ../../variables.tf .
+          cp ../../outputs.tf .
+          echo "✅ Copied shared Terraform files"
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        id: apply
+        run: |
+          terraform apply -auto-approve tfplan
+
+          echo "service_domain=$(terraform output -raw service_domain)" >> $GITHUB_OUTPUT
+          echo "target_backend_fqdn=$(terraform output -raw target_backend_fqdn)" >> $GITHUB_OUTPUT
 
   # Health checks after deployment
   health-checks:
@@ -598,6 +702,7 @@ jobs:
       determine-environment,
       terraform-mongodb-deploy,
       terraform-cloudflare-deploy,
+      terraform-cloudflare-service-domain,
       terraform-azure-deploy,
       health-checks
     ]
@@ -619,6 +724,7 @@ jobs:
           echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| MongoDB Atlas | ${{ needs.terraform-mongodb-deploy.result == 'success' && '✅' || needs.terraform-mongodb-deploy.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Cloudflare R2 | ${{ needs.terraform-cloudflare-deploy.result == 'success' && '✅' || needs.terraform-cloudflare-deploy.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Cloudflare Service Domain | ${{ needs.terraform-cloudflare-service-domain.result == 'success' && '✅' || needs.terraform-cloudflare-service-domain.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Azure Container Apps | ${{ needs.terraform-azure-deploy.result == 'success' && '✅' || needs.terraform-azure-deploy.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Health Checks | ${{ needs.health-checks.result == 'success' && '✅' || needs.health-checks.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -641,6 +747,15 @@ jobs:
             echo "- **Private Bucket**: \`${{ needs.terraform-cloudflare-deploy.outputs.private_bucket }}\`" >> $GITHUB_STEP_SUMMARY
             echo "- **Public Bucket**: \`${{ needs.terraform-cloudflare-deploy.outputs.public_bucket }}\`" >> $GITHUB_STEP_SUMMARY
             echo "- **R2 Endpoint**: \`${{ needs.terraform-cloudflare-deploy.outputs.r2_endpoint }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Cloudflare Service Domain Summary
+          if [ "${{ needs.terraform-cloudflare-service-domain.result }}" = "success" ]; then
+            echo "## 🌐 Form Services Domain" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Hostname**: \`${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Target FQDN**: \`${{ needs.terraform-cloudflare-service-domain.outputs.target_backend_fqdn }}\`" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
 
