@@ -157,35 +157,3 @@ variable "tags" {
     ManagedBy   = "Terraform"
   }
 }
-
-variable "enable_form_services_domain" {
-  description = "Enable custom domain binding for form-services-{env}.dculus.com"
-  type        = bool
-  default     = false
-}
-
-variable "form_services_domain_prefix" {
-  description = "Prefix portion of the form services domain"
-  type        = string
-  default     = "form-services"
-}
-
-variable "form_services_root_domain" {
-  description = "Root domain for the form services hostname"
-  type        = string
-  default     = "dculus.com"
-}
-
-variable "form_services_certificate_pfx_base64" {
-  description = "Base64 encoded PFX certificate used to bind the custom domain"
-  type        = string
-  sensitive   = true
-  default     = ""
-}
-
-variable "form_services_certificate_password" {
-  description = "Password for the PFX certificate"
-  type        = string
-  sensitive   = true
-  default     = ""
-}
