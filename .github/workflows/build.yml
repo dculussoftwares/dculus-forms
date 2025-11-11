@@ -816,7 +816,8 @@ jobs:
     name: Deploy to Azure Container Apps
     runs-on: ubuntu-latest
     needs: [build-and-push]
-    if: (github.ref == 'refs/heads/release' || github.ref == 'refs/heads/main') && github.event_name != 'pull_request'
+    # Disabled per deployment freeze; restore previous branch condition to re-enable.
+    if: ${{ false }}
     permissions:
       id-token: write
       contents: read
@@ -996,7 +997,8 @@ jobs:
     name: Deploy Form App to Cloudflare Pages
     runs-on: ubuntu-latest
     needs: build-form-app
-    if: (github.ref == 'refs/heads/release' || github.ref == 'refs/heads/main') && github.event_name != 'pull_request'
+    # Disabled per deployment freeze; restore previous branch condition to re-enable.
+    if: ${{ false }}
     permissions:
       contents: read
       deployments: write
@@ -1061,7 +1063,8 @@ jobs:
     name: Deploy Form Viewer to Cloudflare Pages
     runs-on: ubuntu-latest
     needs: build-form-viewer
-    if: (github.ref == 'refs/heads/release' || github.ref == 'refs/heads/main') && github.event_name != 'pull_request'
+    # Disabled per deployment freeze; restore previous branch condition to re-enable.
+    if: ${{ false }}
     permissions:
       contents: read
       deployments: write
@@ -1121,7 +1124,8 @@ jobs:
     name: Deploy Admin App to Cloudflare Pages
     runs-on: ubuntu-latest
     needs: build-admin-app
-    if: (github.ref == 'refs/heads/release' || github.ref == 'refs/heads/main') && github.event_name != 'pull_request'
+    # Disabled per deployment freeze; restore previous branch condition to re-enable.
+    if: ${{ false }}
     permissions:
       contents: read
       deployments: write
@@ -1242,4 +1246,3 @@ jobs:
             echo ""
             echo "⚠️  Some deployments failed or were skipped"
           fi
-
