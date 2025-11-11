@@ -34,7 +34,6 @@ resource "azurerm_container_app_environment" "main" {
   name                = "${local.app_name}-env"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
-  logs_destination    = "azure-monitor"
 
   tags = var.tags
 }
