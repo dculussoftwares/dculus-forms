@@ -27,3 +27,15 @@ resource "cloudflare_record" "form_services_backend" {
   comment = "Managed by Terraform - routes traffic to Azure Container App backend"
 }
 
+resource "cloudflare_record" "form_services_validation" {
+  count   = var.managed_certificate_validation_token != "" ? 1 : 0
+  zone_id = var.cloudflare_zone_id
+  name    = "_acme-challenge.${local.service_hostname}"
+  type    = "TXT"
+  value   = var.managed_certificate_validation_token
+  ttl     = 120
+
+  comment = "Azure managed certificate validation token"
+
+  depends_on = [cloudflare_record.form_services_backend]
+}

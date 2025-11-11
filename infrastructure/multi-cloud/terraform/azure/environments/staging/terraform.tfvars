@@ -7,6 +7,7 @@ better_auth_url     = "https://dculus-forms-staging-backend.kindocean-e9e3f3f1.e
 enable_form_services_domain = true
 form_services_domain_prefix = "form-services"
 form_services_root_domain   = "dculus.com"
+form_services_certificate_type = "managed"
 
 # Resource configuration
 cpu_cores    = 0.5
