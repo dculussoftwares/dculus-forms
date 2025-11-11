@@ -201,15 +201,21 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
 
-  # Terraform Plan for MongoDB Atlas
-  terraform-mongodb-plan:
-    name: Terraform Plan (MongoDB Atlas)
+  # Terraform Plan & Apply for MongoDB Atlas
+  terraform-mongodb-deploy:
+    name: Terraform Plan & Apply (MongoDB Atlas)
     runs-on: ubuntu-latest
     needs: [determine-environment, setup-azure-backend]
     if: |
       always() && !cancelled() && !failure() &&
       needs.determine-environment.outputs.deploy_mongodb == 'true'
     environment: ${{ needs.determine-environment.outputs.environment }}
+    outputs:
+      connection_string: ${{ steps.apply.outputs.connection_string }}
+      project_id: ${{ steps.apply.outputs.project_id }}
+      project_name: ${{ steps.apply.outputs.project_name }}
+      cluster_name: ${{ steps.apply.outputs.cluster_name }}
+      cluster_state: ${{ steps.apply.outputs.cluster_state }}
     defaults:
       run:
         working-directory: ${{ env.MONGODB_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
@@ -290,6 +296,26 @@ jobs:
           name: tfplan-mongodb-${{ needs.determine-environment.outputs.environment }}
           path: ${{ env.MONGODB_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}/tfplan
           retention-days: 1  # Minimize exposure window
+
+      - name: Terraform Apply
+        id: apply
+        if: needs.determine-environment.outputs.should_deploy == 'true'
+        env:
+          TF_VAR_mongodb_atlas_public_key: ${{ secrets.MONGODB_ATLAS_PUBLIC_KEY }}
+          TF_VAR_mongodb_atlas_private_key: ${{ secrets.MONGODB_ATLAS_PRIVATE_KEY }}
+          TF_VAR_mongodb_atlas_org_id: ${{ secrets.MONGODB_ATLAS_ORG_ID }}
+          TF_VAR_database_password: ${{ secrets.MONGODB_DATABASE_PASSWORD }}
+        run: |
+          terraform apply -auto-approve tfplan
+
+          # Capture outputs
+          CONNECTION_STRING=$(terraform output -raw mongodb_connection_string)
+          echo "::add-mask::$CONNECTION_STRING"
+          echo "connection_string=$CONNECTION_STRING" >> $GITHUB_OUTPUT
+          echo "project_id=$(terraform output -raw project_id)" >> $GITHUB_OUTPUT
+          echo "project_name=$(terraform output -raw project_name)" >> $GITHUB_OUTPUT
+          echo "cluster_name=$(terraform output -raw cluster_name)" >> $GITHUB_OUTPUT
+          echo "cluster_state=$(terraform output -raw cluster_state)" >> $GITHUB_OUTPUT
 
   # Terraform Plan and Apply for Cloudflare R2 (merged for security)
   terraform-cloudflare-deploy:
@@ -391,15 +417,20 @@ jobs:
           echo "public_bucket=$(terraform output -raw public_bucket_name)" >> $GITHUB_OUTPUT
           echo "r2_endpoint=$(terraform output -raw r2_endpoint_url)" >> $GITHUB_OUTPUT
 
-  # Terraform Plan for Azure Container Apps
-  terraform-azure-plan:
-    name: Terraform Plan (Azure Container Apps)
+  # Terraform Plan & Apply for Azure Container Apps
+  terraform-azure-deploy:
+    name: Terraform Plan & Apply (Azure Container Apps)
     runs-on: ubuntu-latest
-    needs: [determine-environment, setup-azure-backend, check-docker-image]
+    needs: [determine-environment, setup-azure-backend, check-docker-image, terraform-mongodb-deploy]
     if: |
       always() && !cancelled() && !failure() &&
       needs.determine-environment.outputs.deploy_azure == 'true'
     environment: ${{ needs.determine-environment.outputs.environment }}
+    outputs:
+      backend_url: ${{ steps.apply.outputs.backend_url }}
+      graphql_endpoint: ${{ steps.apply.outputs.graphql_endpoint }}
+      health_endpoint: ${{ steps.apply.outputs.health_endpoint }}
+      container_app_name: ${{ steps.apply.outputs.container_app_name }}
     defaults:
       run:
         working-directory: ${{ env.AZURE_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
@@ -446,7 +477,7 @@ jobs:
 
       - name: Terraform Plan
         env:
-          TF_VAR_mongodb_connection_string: ${{ secrets.MONGODB_CONNECTION_STRING }}
+          TF_VAR_mongodb_connection_string: ${{ needs.terraform-mongodb-deploy.outputs.connection_string || secrets.MONGODB_CONNECTION_STRING }}
           TF_VAR_better_auth_secret: ${{ secrets.BETTER_AUTH_SECRET }}
           TF_VAR_s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
           TF_VAR_s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
@@ -468,159 +499,11 @@ jobs:
           path: ${{ env.AZURE_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}/tfplan
           retention-days: 1  # Minimize exposure window
 
-  # Terraform Apply for MongoDB Atlas
-  terraform-mongodb-apply:
-    name: Terraform Apply (MongoDB Atlas)
-    runs-on: ubuntu-latest
-    needs: [determine-environment, terraform-mongodb-plan]
-    if: needs.determine-environment.outputs.should_deploy == 'true'
-    environment: ${{ needs.determine-environment.outputs.environment }}
-    outputs:
-      connection_string: ${{ steps.apply.outputs.connection_string }}
-      project_id: ${{ steps.apply.outputs.project_id }}
-      project_name: ${{ steps.apply.outputs.project_name }}
-      cluster_name: ${{ steps.apply.outputs.cluster_name }}
-      cluster_state: ${{ steps.apply.outputs.cluster_state }}
-    defaults:
-      run:
-        working-directory: ${{ env.MONGODB_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          path: dculus-forms
-
-      - name: Azure Login (OIDC)
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Get Azure Storage Account Key
-        run: |
-          ACCOUNT_KEY=$(az storage account keys list \
-            --resource-group dculus-global-terraform-assets-resource-grp \
-            --account-name dculusterraformstates \
-            --query '[0].value' -o tsv)
-          echo "::add-mask::$ACCOUNT_KEY"
-          echo "ARM_ACCESS_KEY=$ACCOUNT_KEY" >> $GITHUB_ENV
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TERRAFORM_VERSION }}
-          terraform_wrapper: false
-
-      - name: Copy shared Terraform files
-        run: |
-          cp ../../main.tf .
-          cp ../../variables.tf .
-          cp ../../cluster.tf .
-          cp ../../database-user.tf .
-          cp ../../network-access.tf .
-          cp ../../outputs.tf .
-
-      - name: Terraform Init
-        env:
-          TF_VAR_mongodb_atlas_public_key: ${{ secrets.MONGODB_ATLAS_PUBLIC_KEY }}
-          TF_VAR_mongodb_atlas_private_key: ${{ secrets.MONGODB_ATLAS_PRIVATE_KEY }}
-          TF_VAR_mongodb_atlas_org_id: ${{ secrets.MONGODB_ATLAS_ORG_ID }}
-          TF_VAR_database_password: ${{ secrets.MONGODB_DATABASE_PASSWORD }}
-        run: |
-          terraform init \
-            -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
-            -backend-config="storage_account_name=dculusterraformstates" \
-            -backend-config="container_name=dculus-forms-mongodb-${{ needs.determine-environment.outputs.environment }}-state" \
-            -backend-config="key=terraform.tfstate"
-
-      - name: Download Terraform Plan
-        uses: actions/download-artifact@v4
-        with:
-          name: tfplan-mongodb-${{ needs.determine-environment.outputs.environment }}
-          path: ${{ env.MONGODB_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
-
       - name: Terraform Apply
         id: apply
+        if: needs.determine-environment.outputs.should_deploy == 'true'
         env:
-          TF_VAR_mongodb_atlas_public_key: ${{ secrets.MONGODB_ATLAS_PUBLIC_KEY }}
-          TF_VAR_mongodb_atlas_private_key: ${{ secrets.MONGODB_ATLAS_PRIVATE_KEY }}
-          TF_VAR_mongodb_atlas_org_id: ${{ secrets.MONGODB_ATLAS_ORG_ID }}
-          TF_VAR_database_password: ${{ secrets.MONGODB_DATABASE_PASSWORD }}
-        run: |
-          terraform apply -auto-approve tfplan
-
-          # Capture outputs
-          CONNECTION_STRING=$(terraform output -raw mongodb_connection_string)
-          echo "::add-mask::$CONNECTION_STRING"
-          echo "connection_string=$CONNECTION_STRING" >> $GITHUB_OUTPUT
-          echo "project_id=$(terraform output -raw project_id)" >> $GITHUB_OUTPUT
-          echo "project_name=$(terraform output -raw project_name)" >> $GITHUB_OUTPUT
-          echo "cluster_name=$(terraform output -raw cluster_name)" >> $GITHUB_OUTPUT
-          echo "cluster_state=$(terraform output -raw cluster_state)" >> $GITHUB_OUTPUT
-
-  # Terraform Apply for Azure Container Apps
-  terraform-azure-apply:
-    name: Terraform Apply (Azure Container Apps)
-    runs-on: ubuntu-latest
-    needs: [determine-environment, terraform-azure-plan, check-docker-image, terraform-mongodb-apply]
-    if: needs.determine-environment.outputs.should_deploy == 'true'
-    environment: ${{ needs.determine-environment.outputs.environment }}
-    outputs:
-      backend_url: ${{ steps.apply.outputs.backend_url }}
-      graphql_endpoint: ${{ steps.apply.outputs.graphql_endpoint }}
-      health_endpoint: ${{ steps.apply.outputs.health_endpoint }}
-      container_app_name: ${{ steps.apply.outputs.container_app_name }}
-    defaults:
-      run:
-        working-directory: ${{ env.AZURE_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          path: dculus-forms
-
-      - name: Azure Login (OIDC)
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Get Azure Storage Account Key
-        run: |
-          ACCOUNT_KEY=$(az storage account keys list \
-            --resource-group dculus-global-terraform-assets-resource-grp \
-            --account-name dculusterraformstates \
-            --query '[0].value' -o tsv)
-          echo "::add-mask::$ACCOUNT_KEY"
-          echo "ARM_ACCESS_KEY=$ACCOUNT_KEY" >> $GITHUB_ENV
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TERRAFORM_VERSION }}
-          terraform_wrapper: false
-
-      - name: Copy shared Terraform files
-        run: |
-          cp ../../main.tf .
-          cp ../../variables.tf .
-          cp ../../outputs.tf .
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Download Terraform Plan
-        uses: actions/download-artifact@v4
-        with:
-          name: tfplan-azure-${{ needs.determine-environment.outputs.environment }}
-          path: ${{ env.AZURE_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
-
-      - name: Terraform Apply
-        id: apply
-        env:
-          TF_VAR_mongodb_connection_string: ${{ needs.terraform-mongodb-apply.outputs.connection_string }}
+          TF_VAR_mongodb_connection_string: ${{ needs.terraform-mongodb-deploy.outputs.connection_string || secrets.MONGODB_CONNECTION_STRING }}
           TF_VAR_better_auth_secret: ${{ secrets.BETTER_AUTH_SECRET }}
           TF_VAR_s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
           TF_VAR_s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
@@ -642,10 +525,10 @@ jobs:
   health-checks:
     name: Health Checks
     runs-on: ubuntu-latest
-    needs: [determine-environment, terraform-azure-apply]
+    needs: [determine-environment, terraform-azure-deploy]
     if: |
       always() && !cancelled() &&
-      needs.terraform-azure-apply.result == 'success'
+      needs.terraform-azure-deploy.result == 'success'
     steps:
       - name: Wait for backend to be ready
         run: |
@@ -654,7 +537,7 @@ jobs:
 
       - name: Check backend health endpoint
         run: |
-          HEALTH_URL="${{ needs.terraform-azure-apply.outputs.health_endpoint }}"
+          HEALTH_URL="${{ needs.terraform-azure-deploy.outputs.health_endpoint }}"
           echo "🏥 Checking health endpoint: $HEALTH_URL"
 
           MAX_RETRIES=5
@@ -679,7 +562,7 @@ jobs:
 
       - name: Check GraphQL endpoint
         run: |
-          GRAPHQL_URL="${{ needs.terraform-azure-apply.outputs.graphql_endpoint }}"
+          GRAPHQL_URL="${{ needs.terraform-azure-deploy.outputs.graphql_endpoint }}"
           echo "🔍 Checking GraphQL endpoint: $GRAPHQL_URL"
 
           RESPONSE=$(curl -sf -X POST "$GRAPHQL_URL" \
@@ -699,11 +582,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [
       determine-environment,
-      terraform-mongodb-plan,
+      terraform-mongodb-deploy,
       terraform-cloudflare-deploy,
-      terraform-azure-plan,
-      terraform-mongodb-apply,
-      terraform-azure-apply,
+      terraform-azure-deploy,
       health-checks
     ]
     if: always()
@@ -720,21 +601,21 @@ jobs:
 
           echo "## 📊 Job Status" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Component | Plan | Apply | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----------|------|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| MongoDB Atlas | ${{ needs.terraform-mongodb-plan.result }} | ${{ needs.terraform-mongodb-apply.result }} | ${{ needs.terraform-mongodb-apply.result == 'success' && '✅' || needs.terraform-mongodb-apply.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Cloudflare R2 | ${{ needs.terraform-cloudflare-deploy.result }} | ${{ needs.terraform-cloudflare-deploy.result }} | ${{ needs.terraform-cloudflare-deploy.result == 'success' && '✅' || needs.terraform-cloudflare-deploy.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Azure Container Apps | ${{ needs.terraform-azure-plan.result }} | ${{ needs.terraform-azure-apply.result }} | ${{ needs.terraform-azure-apply.result == 'success' && '✅' || needs.terraform-azure-apply.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Health Checks | - | - | ${{ needs.health-checks.result == 'success' && '✅' || needs.health-checks.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| MongoDB Atlas | ${{ needs.terraform-mongodb-deploy.result == 'success' && '✅' || needs.terraform-mongodb-deploy.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Cloudflare R2 | ${{ needs.terraform-cloudflare-deploy.result == 'success' && '✅' || needs.terraform-cloudflare-deploy.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Azure Container Apps | ${{ needs.terraform-azure-deploy.result == 'success' && '✅' || needs.terraform-azure-deploy.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Health Checks | ${{ needs.health-checks.result == 'success' && '✅' || needs.health-checks.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           # MongoDB Atlas Summary
-          if [ "${{ needs.terraform-mongodb-apply.result }}" = "success" ]; then
+          if [ "${{ needs.terraform-mongodb-deploy.result }}" = "success" ]; then
             echo "## 🍃 MongoDB Atlas Deployment" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "- **Project**: \`${{ needs.terraform-mongodb-apply.outputs.project_name }}\`" >> $GITHUB_STEP_SUMMARY
-            echo "- **Cluster**: \`${{ needs.terraform-mongodb-apply.outputs.cluster_name }}\`" >> $GITHUB_STEP_SUMMARY
-            echo "- **Status**: \`${{ needs.terraform-mongodb-apply.outputs.cluster_state }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Project**: \`${{ needs.terraform-mongodb-deploy.outputs.project_name }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Cluster**: \`${{ needs.terraform-mongodb-deploy.outputs.cluster_name }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Status**: \`${{ needs.terraform-mongodb-deploy.outputs.cluster_state }}\`" >> $GITHUB_STEP_SUMMARY
             echo "- **Connection**: Passed to Azure Container Apps ✅" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
@@ -750,22 +631,22 @@ jobs:
           fi
 
           # Azure Container Apps Summary
-          if [ "${{ needs.terraform-azure-apply.result }}" = "success" ]; then
+          if [ "${{ needs.terraform-azure-deploy.result }}" = "success" ]; then
             echo "## 🔷 Azure Container Apps Deployment" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "- **Backend URL**: [${{ needs.terraform-azure-apply.outputs.backend_url }}](${{ needs.terraform-azure-apply.outputs.backend_url }})" >> $GITHUB_STEP_SUMMARY
-            echo "- **GraphQL Endpoint**: [${{ needs.terraform-azure-apply.outputs.graphql_endpoint }}](${{ needs.terraform-azure-apply.outputs.graphql_endpoint }})" >> $GITHUB_STEP_SUMMARY
-            echo "- **Health Check**: [${{ needs.terraform-azure-apply.outputs.health_endpoint }}](${{ needs.terraform-azure-apply.outputs.health_endpoint }})" >> $GITHUB_STEP_SUMMARY
-            echo "- **Container App**: \`${{ needs.terraform-azure-apply.outputs.container_app_name }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Backend URL**: [${{ needs.terraform-azure-deploy.outputs.backend_url }}](${{ needs.terraform-azure-deploy.outputs.backend_url }})" >> $GITHUB_STEP_SUMMARY
+            echo "- **GraphQL Endpoint**: [${{ needs.terraform-azure-deploy.outputs.graphql_endpoint }}](${{ needs.terraform-azure-deploy.outputs.graphql_endpoint }})" >> $GITHUB_STEP_SUMMARY
+            echo "- **Health Check**: [${{ needs.terraform-azure-deploy.outputs.health_endpoint }}](${{ needs.terraform-azure-deploy.outputs.health_endpoint }})" >> $GITHUB_STEP_SUMMARY
+            echo "- **Container App**: \`${{ needs.terraform-azure-deploy.outputs.container_app_name }}\`" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
 
           # Overall Status
-          if [ "${{ needs.terraform-mongodb-apply.result }}" = "success" ] && [ "${{ needs.terraform-cloudflare-deploy.result }}" = "success" ] && [ "${{ needs.terraform-azure-apply.result }}" = "success" ]; then
+          if [ "${{ needs.terraform-mongodb-deploy.result }}" = "success" ] && [ "${{ needs.terraform-cloudflare-deploy.result }}" = "success" ] && [ "${{ needs.terraform-azure-deploy.result }}" = "success" ]; then
             echo "## ✅ Deployment Successful!" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "All infrastructure has been deployed successfully to the **${{ needs.determine-environment.outputs.environment }}** environment." >> $GITHUB_STEP_SUMMARY
-          elif [ "${{ needs.terraform-mongodb-apply.result }}" = "skipped" ] && [ "${{ needs.terraform-cloudflare-deploy.result }}" = "skipped" ] && [ "${{ needs.terraform-azure-apply.result }}" = "skipped" ]; then
+          elif [ "${{ needs.terraform-mongodb-deploy.result }}" = "skipped" ] && [ "${{ needs.terraform-cloudflare-deploy.result }}" = "skipped" ] && [ "${{ needs.terraform-azure-deploy.result }}" = "skipped" ]; then
             echo "## ℹ️ Deployment Skipped" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "This was a plan-only run (likely from a pull request). No infrastructure changes were applied." >> $GITHUB_STEP_SUMMARY
