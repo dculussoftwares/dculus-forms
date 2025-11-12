@@ -18,26 +18,26 @@ The Cloudflare API token used for Terraform deployments must have **"API Tokens:
 - ✅ Zone DNS: Edit
 - ✅ Zone Settings: Edit
 
-### 2. Automated Flow
+### 2. Automated Flow (Merged Job Architecture)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ 1. Cloudflare Deployment (Terraform)                            │
+│ Single Job: terraform-infrastructure-deploy                      │
+│                                                                   │
+│ Step 1: Cloudflare R2 Deployment (Terraform)                    │
 │    └─> Creates cloudflare_api_token.r2_access resource          │
 │        ├─> Token ID → r2_access_key_id (32 chars)              │
 │        └─> Token Value → r2_secret_access_key (64 chars)       │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ 2. GitHub Actions Workflow                                      │
-│    └─> Captures Terraform outputs                               │
-│        ├─> Masks sensitive values in logs                       │
-│        └─> Passes to Azure deployment as environment variables  │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ 3. Azure Container Apps Deployment (Terraform)                  │
-│    └─> Receives credentials as TF variables                     │
+│    └─> Captures outputs to $GITHUB_ENV (stays within job)       │
+│        ├─> R2_ACCESS_KEY_ID                                     │
+│        ├─> R2_SECRET_ACCESS_KEY                                 │
+│        ├─> R2_ENDPOINT                                          │
+│        ├─> R2_PRIVATE_BUCKET                                    │
+│        ├─> R2_PUBLIC_BUCKET                                     │
+│        └─> R2_PUBLIC_CDN_URL                                    │
+│                                                                   │
+│ Step 2: Azure Container Apps Deployment (Terraform)             │
+│    └─> Receives credentials from $GITHUB_ENV (same job)         │
 │        └─> Sets environment variables in container              │
 │            ├─> PUBLIC_S3_ACCESS_KEY                             │
 │            ├─> PUBLIC_S3_SECRET_KEY                             │
@@ -46,6 +46,13 @@ The Cloudflare API token used for Terraform deployments must have **"API Tokens:
 │            ├─> PRIVATE_S3_BUCKET_NAME                           │
 │            └─> PUBLIC_S3_BUCKET_NAME                            │
 └─────────────────────────────────────────────────────────────────┘
+
+SECURITY BENEFITS:
+✅ Credentials stay in $GITHUB_ENV (never cross job boundaries)
+✅ No credential passing via $GITHUB_OUTPUT
+✅ Simpler workflow (single job, no dependencies)
+✅ Faster execution (no job handoff delays)
+✅ More secure (credentials never leave job execution context)
 ```
 
 ### 3. R2 API Token Configuration
