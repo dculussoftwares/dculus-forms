@@ -183,6 +183,21 @@ jobs:
             echo "✅ Container exists: $MONGODB_CONTAINER"
           fi
 
+          # Create Cloudflare Pages container
+          CLOUDFLARE_PAGES_CONTAINER="dculus-forms-cloudflare-pages-${ENV}-state"
+          if ! az storage container show \
+            --name "$CLOUDFLARE_PAGES_CONTAINER" \
+            --account-name "$STORAGE_ACCOUNT" &>/dev/null; then
+            echo "📦 Creating container: $CLOUDFLARE_PAGES_CONTAINER"
+            az storage container create \
+              --name "$CLOUDFLARE_PAGES_CONTAINER" \
+              --account-name "$STORAGE_ACCOUNT" \
+              --auth-mode login
+            echo "✅ Container created: $CLOUDFLARE_PAGES_CONTAINER"
+          else
+            echo "✅ Container exists: $CLOUDFLARE_PAGES_CONTAINER"
+          fi
+
   # Build and push Docker image if needed
   check-docker-image:
     name: Check Docker Image

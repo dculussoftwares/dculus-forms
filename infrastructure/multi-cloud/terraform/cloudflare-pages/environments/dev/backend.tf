@@ -1,8 +1,8 @@
 terraform {
   backend "azurerm" {
-    resource_group_name  = "dculus-forms-terraform-state"
-    storage_account_name = "dculusformstfstate"
-    container_name       = "tfstate-dev"
-    key                  = "cloudflare-pages.tfstate"
+    resource_group_name  = "dculus-global-terraform-assets-resource-grp"
+    storage_account_name = "dculusterraformstates"
+    container_name       = "dculus-forms-cloudflare-pages-dev-state"
+    key                  = "terraform.tfstate"
   }
 }
