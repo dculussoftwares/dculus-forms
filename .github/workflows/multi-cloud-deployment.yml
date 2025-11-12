@@ -674,23 +674,25 @@ jobs:
           cp cloudflare-pages-domain.tf environments/${{ needs.determine-environment.outputs.environment }}/
           echo "✅ Copied shared Terraform files to environment directory"
 
-      - name: Terraform Init
-        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages/environments/${{ needs.determine-environment.outputs.environment }}
-        run: terraform init
-
-      - name: Terraform Validate
-        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages/environments/${{ needs.determine-environment.outputs.environment }}
-        run: terraform validate
-
-      - name: Terraform Plan
-        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages/environments/${{ needs.determine-environment.outputs.environment }}
-        run: terraform plan -out=tfplan
-
-      - name: Terraform Apply
+      - name: Terraform Init, Plan & Apply
         id: apply
         working-directory: dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages/environments/${{ needs.determine-environment.outputs.environment }}
         run: |
-          terraform apply -auto-approve tfplan
+          # Initialize Terraform with backend config
+          terraform init \
+            -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
+            -backend-config="storage_account_name=dculusterraformstates" \
+            -backend-config="container_name=dculus-forms-cloudflare-pages-${{ needs.determine-environment.outputs.environment }}-state" \
+            -backend-config="key=terraform.tfstate"
+
+          # Validate
+          terraform validate
+
+          # Plan
+          terraform plan
+
+          # Apply
+          terraform apply -auto-approve
 
           # Capture outputs
           echo "pages_project_name=$(terraform output -raw pages_project_name)" >> $GITHUB_OUTPUT
