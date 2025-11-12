@@ -345,8 +345,6 @@ jobs:
       public_bucket: ${{ steps.apply.outputs.public_bucket }}
       r2_endpoint: ${{ steps.apply.outputs.r2_endpoint }}
       public_cdn_url: ${{ steps.apply.outputs.public_cdn_url }}
-      r2_access_key_id: ${{ steps.apply.outputs.r2_access_key_id }}
-      r2_secret_access_key: ${{ steps.apply.outputs.r2_secret_access_key }}
     defaults:
       run:
         working-directory: ${{ env.CLOUDFLARE_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
@@ -394,7 +392,6 @@ jobs:
           cp ../../variables.tf .
           cp ../../r2-buckets.tf .
           cp ../../r2-custom-domains.tf .
-          cp ../../r2-api-token.tf .
           cp ../../outputs.tf .
           echo "✅ Copied shared Terraform files"
 
@@ -448,15 +445,10 @@ jobs:
           echo "r2_endpoint=$(terraform output -raw r2_endpoint_url)" >> $GITHUB_OUTPUT
           echo "public_cdn_url=$(terraform output -raw public_cdn_url)" >> $GITHUB_OUTPUT
 
-          # Capture R2 API credentials (sensitive outputs)
-          R2_ACCESS_KEY_ID=$(terraform output -raw r2_access_key_id)
-          R2_SECRET_ACCESS_KEY=$(terraform output -raw r2_secret_access_key)
-          echo "::add-mask::$R2_ACCESS_KEY_ID"
-          echo "::add-mask::$R2_SECRET_ACCESS_KEY"
-          echo "r2_access_key_id=$R2_ACCESS_KEY_ID" >> $GITHUB_OUTPUT
-          echo "r2_secret_access_key=$R2_SECRET_ACCESS_KEY" >> $GITHUB_OUTPUT
-
-          echo "✅ R2 API credentials automatically generated via Terraform"
+          echo "✅ Cloudflare R2 buckets and CDN configured successfully"
+          echo "ℹ️  R2 API credentials must be configured via GitHub Secrets:"
+          echo "   - PUBLIC_S3_ACCESS_KEY"
+          echo "   - PUBLIC_S3_SECRET_KEY"
 
   # Terraform Plan & Apply for Azure Container Apps
   terraform-azure-deploy:
@@ -563,8 +555,8 @@ jobs:
         env:
           TF_VAR_mongodb_connection_string: ${{ needs.terraform-mongodb-deploy.outputs.connection_string || secrets.MONGODB_CONNECTION_STRING }}
           TF_VAR_better_auth_secret: ${{ secrets.BETTER_AUTH_SECRET }}
-          TF_VAR_public_s3_access_key: ${{ needs.terraform-cloudflare-deploy.outputs.r2_access_key_id || secrets.PUBLIC_S3_ACCESS_KEY }}
-          TF_VAR_public_s3_secret_key: ${{ needs.terraform-cloudflare-deploy.outputs.r2_secret_access_key || secrets.PUBLIC_S3_SECRET_KEY }}
+          TF_VAR_public_s3_access_key: ${{ secrets.PUBLIC_S3_ACCESS_KEY }}
+          TF_VAR_public_s3_secret_key: ${{ secrets.PUBLIC_S3_SECRET_KEY }}
           TF_VAR_public_s3_endpoint: ${{ needs.terraform-cloudflare-deploy.outputs.r2_endpoint || secrets.PUBLIC_S3_ENDPOINT }}
           TF_VAR_public_s3_cdn_url: ${{ needs.terraform-cloudflare-deploy.outputs.public_cdn_url || secrets.PUBLIC_S3_CDN_URL }}
           TF_VAR_private_s3_bucket_name: ${{ needs.terraform-cloudflare-deploy.outputs.private_bucket || secrets.PRIVATE_S3_BUCKET_NAME }}
@@ -590,8 +582,8 @@ jobs:
         env:
           TF_VAR_mongodb_connection_string: ${{ needs.terraform-mongodb-deploy.outputs.connection_string || secrets.MONGODB_CONNECTION_STRING }}
           TF_VAR_better_auth_secret: ${{ secrets.BETTER_AUTH_SECRET }}
-          TF_VAR_public_s3_access_key: ${{ needs.terraform-cloudflare-deploy.outputs.r2_access_key_id || secrets.PUBLIC_S3_ACCESS_KEY }}
-          TF_VAR_public_s3_secret_key: ${{ needs.terraform-cloudflare-deploy.outputs.r2_secret_access_key || secrets.PUBLIC_S3_SECRET_KEY }}
+          TF_VAR_public_s3_access_key: ${{ secrets.PUBLIC_S3_ACCESS_KEY }}
+          TF_VAR_public_s3_secret_key: ${{ secrets.PUBLIC_S3_SECRET_KEY }}
           TF_VAR_public_s3_endpoint: ${{ needs.terraform-cloudflare-deploy.outputs.r2_endpoint || secrets.PUBLIC_S3_ENDPOINT }}
           TF_VAR_public_s3_cdn_url: ${{ needs.terraform-cloudflare-deploy.outputs.public_cdn_url || secrets.PUBLIC_S3_CDN_URL }}
           TF_VAR_private_s3_bucket_name: ${{ needs.terraform-cloudflare-deploy.outputs.private_bucket || secrets.PRIVATE_S3_BUCKET_NAME }}
