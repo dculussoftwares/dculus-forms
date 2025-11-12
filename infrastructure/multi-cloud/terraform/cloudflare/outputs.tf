@@ -49,16 +49,18 @@ output "dns_record_status" {
 }
 
 # R2 API Token Outputs (S3-compatible credentials)
+# Note: sensitive = false to allow job output passing in GitHub Actions
+# Values are masked via ::add-mask:: in the workflow
 output "r2_access_key_id" {
   description = "R2 Access Key ID (API Token ID) - Used as AWS_ACCESS_KEY_ID"
   value       = cloudflare_api_token.r2_access.id
-  sensitive   = true
+  sensitive   = false
 }
 
 output "r2_secret_access_key" {
   description = "R2 Secret Access Key (Token Value) - Used as AWS_SECRET_ACCESS_KEY"
   value       = cloudflare_api_token.r2_access.value
-  sensitive   = true
+  sensitive   = false
 }
 
 output "next_steps" {
