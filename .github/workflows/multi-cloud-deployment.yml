@@ -615,7 +615,7 @@ jobs:
       custom_domain: ${{ steps.apply.outputs.custom_domain }}
     defaults:
       run:
-        working-directory: infrastructure/multi-cloud/terraform/cloudflare-pages/environments/${{ needs.determine-environment.outputs.environment }}
+        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages/environments/${{ needs.determine-environment.outputs.environment }}
     env:
       TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
