@@ -321,35 +321,35 @@ Add the following environment variables to your backend application:
 
 **For Development:**
 ```bash
-S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+PUBLIC_S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
 S3_REGION=auto
 S3_PRIVATE_BUCKET_NAME=dculus-forms-private-dev
 S3_PUBLIC_BUCKET_NAME=dculus-forms-public-dev
 S3_PUBLIC_CDN_URL=https://public-cdn-dev.dculus.com
-S3_ACCESS_KEY=<r2-access-key-id>
-S3_SECRET_KEY=<r2-secret-access-key>
+PUBLIC_S3_ACCESS_KEY=<r2-access-key-id>
+PUBLIC_S3_SECRET_KEY=<r2-secret-access-key>
 ```
 
 **For Staging:**
 ```bash
-S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+PUBLIC_S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
 S3_REGION=auto
 S3_PRIVATE_BUCKET_NAME=dculus-forms-private-staging
 S3_PUBLIC_BUCKET_NAME=dculus-forms-public-staging
 S3_PUBLIC_CDN_URL=https://public-cdn-staging.dculus.com
-S3_ACCESS_KEY=<r2-access-key-id>
-S3_SECRET_KEY=<r2-secret-access-key>
+PUBLIC_S3_ACCESS_KEY=<r2-access-key-id>
+PUBLIC_S3_SECRET_KEY=<r2-secret-access-key>
 ```
 
 **For Production:**
 ```bash
-S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+PUBLIC_S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
 S3_REGION=auto
 S3_PRIVATE_BUCKET_NAME=dculus-forms-private-production
 S3_PUBLIC_BUCKET_NAME=dculus-forms-public-production
 S3_PUBLIC_CDN_URL=https://public-cdn-production.dculus.com
-S3_ACCESS_KEY=<r2-access-key-id>
-S3_SECRET_KEY=<r2-secret-access-key>
+PUBLIC_S3_ACCESS_KEY=<r2-access-key-id>
+PUBLIC_S3_SECRET_KEY=<r2-secret-access-key>
 ```
 
 ### 3. Using the CDN in Your Application

@@ -58,9 +58,9 @@ For each environment (dev, staging, production):
 - [ ] `MONGODB_CONNECTION_STRING`
 - [ ] `BETTER_AUTH_SECRET`
 - [ ] `S3_PUBLIC_CDN_URL`
-- [ ] `S3_ACCESS_KEY`
-- [ ] `S3_SECRET_KEY`
-- [ ] `S3_ENDPOINT`
+- [ ] `PUBLIC_S3_ACCESS_KEY`
+- [ ] `PUBLIC_S3_SECRET_KEY`
+- [ ] `PUBLIC_S3_ENDPOINT`
 - [ ] `S3_PRIVATE_BUCKET_NAME`
 - [ ] `S3_PUBLIC_BUCKET_NAME`
 - [ ] `CORS_ORIGINS`
@@ -97,9 +97,9 @@ gh secret set BETTER_AUTH_SECRET --env dev \
 
 # Cloudflare R2
 gh secret set S3_PUBLIC_CDN_URL --env dev --body "https://cdn.dev.dculus.com"
-gh secret set S3_ACCESS_KEY --env dev --body "your-r2-access-key"
-gh secret set S3_SECRET_KEY --env dev --body "your-r2-secret-key"
-gh secret set S3_ENDPOINT --env dev \
+gh secret set PUBLIC_S3_ACCESS_KEY --env dev --body "your-r2-access-key"
+gh secret set PUBLIC_S3_SECRET_KEY --env dev --body "your-r2-secret-key"
+gh secret set PUBLIC_S3_ENDPOINT --env dev \
   --body "https://your-account-id.r2.cloudflarestorage.com"
 gh secret set S3_PRIVATE_BUCKET_NAME --env dev --body "dculus-forms-private-dev"
 gh secret set S3_PUBLIC_BUCKET_NAME --env dev --body "dculus-forms-public-dev"

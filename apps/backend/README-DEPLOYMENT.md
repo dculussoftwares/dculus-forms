@@ -52,9 +52,9 @@ DATABASE_URL=mongodb+srv://user:pass@cluster.mongodb.net/dculus_forms
 BETTER_AUTH_SECRET=your-secret-min-32-characters
 BETTER_AUTH_URL=https://api.yourdomain.com
 CORS_ORIGINS=https://app.yourdomain.com,https://admin.yourdomain.com
-S3_ACCESS_KEY=your-access-key
-S3_SECRET_KEY=your-secret-key
-S3_ENDPOINT=https://s3.amazonaws.com
+PUBLIC_S3_ACCESS_KEY=your-access-key
+PUBLIC_S3_SECRET_KEY=your-secret-key
+PUBLIC_S3_ENDPOINT=https://s3.amazonaws.com
 S3_REGION=us-east-1
 S3_PRIVATE_BUCKET_NAME=dculus-private
 S3_PUBLIC_BUCKET_NAME=dculus-public
@@ -100,9 +100,9 @@ services:
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
       - BETTER_AUTH_URL=${BETTER_AUTH_URL}
       - CORS_ORIGINS=${CORS_ORIGINS}
-      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
-      - S3_SECRET_KEY=${S3_SECRET_KEY}
-      - S3_ENDPOINT=${S3_ENDPOINT}
+      - PUBLIC_S3_ACCESS_KEY=${PUBLIC_S3_ACCESS_KEY}
+      - PUBLIC_S3_SECRET_KEY=${PUBLIC_S3_SECRET_KEY}
+      - PUBLIC_S3_ENDPOINT=${PUBLIC_S3_ENDPOINT}
       - S3_REGION=${S3_REGION}
       - S3_PRIVATE_BUCKET_NAME=${S3_PRIVATE_BUCKET_NAME}
       - S3_PUBLIC_BUCKET_NAME=${S3_PUBLIC_BUCKET_NAME}
@@ -175,9 +175,9 @@ DATABASE_URL=mongodb+srv://user:pass@cluster.mongodb.net/dculus_forms
 BETTER_AUTH_SECRET=$(openssl rand -hex 32)
 BETTER_AUTH_URL=https://api.yourdomain.com
 CORS_ORIGINS=https://app.yourdomain.com,https://admin.yourdomain.com
-S3_ACCESS_KEY=your-access-key
-S3_SECRET_KEY=your-secret-key
-S3_ENDPOINT=https://s3.amazonaws.com
+PUBLIC_S3_ACCESS_KEY=your-access-key
+PUBLIC_S3_SECRET_KEY=your-secret-key
+PUBLIC_S3_ENDPOINT=https://s3.amazonaws.com
 S3_REGION=us-east-1
 S3_PRIVATE_BUCKET_NAME=dculus-private
 S3_PUBLIC_BUCKET_NAME=dculus-public
@@ -263,9 +263,9 @@ sudo systemctl status dculus-backend
 | `BETTER_AUTH_SECRET` | Authentication secret (min 32 chars) | Generate with `openssl rand -hex 32` |
 | `BETTER_AUTH_URL` | Public API URL | `https://api.yourdomain.com` |
 | `CORS_ORIGINS` | Allowed frontend origins (comma-separated) | `https://app.example.com,https://admin.example.com` |
-| `S3_ACCESS_KEY` | S3 access key | Your S3 access key |
-| `S3_SECRET_KEY` | S3 secret key | Your S3 secret key |
-| `S3_ENDPOINT` | S3 endpoint URL | `https://s3.amazonaws.com` |
+| `PUBLIC_S3_ACCESS_KEY` | S3 access key | Your S3 access key |
+| `PUBLIC_S3_SECRET_KEY` | S3 secret key | Your S3 secret key |
+| `PUBLIC_S3_ENDPOINT` | S3 endpoint URL | `https://s3.amazonaws.com` |
 | `S3_REGION` | S3 region | `us-east-1` |
 | `S3_PRIVATE_BUCKET_NAME` | Private files bucket | `dculus-forms-private` |
 | `S3_PUBLIC_BUCKET_NAME` | Public files bucket | `dculus-forms-public` |

@@ -94,9 +94,9 @@ DATABASE_URL=mongodb+srv://user:pass@cluster.mongodb.net/dculus_forms
 BETTER_AUTH_SECRET=$(openssl rand -hex 32)
 BETTER_AUTH_URL=https://api.yourdomain.com
 CORS_ORIGINS=https://app.yourdomain.com,https://admin.yourdomain.com
-S3_ACCESS_KEY=your-access-key
-S3_SECRET_KEY=your-secret-key
-S3_ENDPOINT=https://s3.amazonaws.com
+PUBLIC_S3_ACCESS_KEY=your-access-key
+PUBLIC_S3_SECRET_KEY=your-secret-key
+PUBLIC_S3_ENDPOINT=https://s3.amazonaws.com
 S3_REGION=us-east-1
 S3_PRIVATE_BUCKET_NAME=dculus-private
 S3_PUBLIC_BUCKET_NAME=dculus-public
@@ -179,9 +179,9 @@ DATABASE_URL=mongodb+srv://user:pass@cluster.mongodb.net/dculus_forms
 BETTER_AUTH_SECRET=$(openssl rand -hex 32)
 BETTER_AUTH_URL=https://api.yourdomain.com
 CORS_ORIGINS=https://app.yourdomain.com,https://admin.yourdomain.com
-S3_ACCESS_KEY=your-s3-access-key
-S3_SECRET_KEY=your-s3-secret-key
-S3_ENDPOINT=https://s3.amazonaws.com
+PUBLIC_S3_ACCESS_KEY=your-s3-access-key
+PUBLIC_S3_SECRET_KEY=your-s3-secret-key
+PUBLIC_S3_ENDPOINT=https://s3.amazonaws.com
 S3_REGION=us-east-1
 S3_PRIVATE_BUCKET_NAME=dculus-forms-private
 S3_PUBLIC_BUCKET_NAME=dculus-forms-public
@@ -634,9 +634,9 @@ docker run -d \
   --name dculus-backend \
   -e DATABASE_URL='your-mongodb-connection-string' \
   -e BETTER_AUTH_SECRET='your-auth-secret' \
-  -e S3_ACCESS_KEY='your-s3-access-key' \
-  -e S3_SECRET_KEY='your-s3-secret-key' \
-  -e S3_ENDPOINT='your-s3-endpoint' \
+  -e PUBLIC_S3_ACCESS_KEY='your-s3-access-key' \
+  -e PUBLIC_S3_SECRET_KEY='your-s3-secret-key' \
+  -e PUBLIC_S3_ENDPOINT='your-s3-endpoint' \
   -e S3_PRIVATE_BUCKET_NAME='your-private-bucket' \
   -e S3_PUBLIC_BUCKET_NAME='your-public-bucket' \
   -e CORS_ORIGINS='https://your-frontend-domain.com' \
@@ -654,9 +654,9 @@ services:
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
-      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
-      - S3_SECRET_KEY=${S3_SECRET_KEY}
-      - S3_ENDPOINT=${S3_ENDPOINT}
+      - PUBLIC_S3_ACCESS_KEY=${PUBLIC_S3_ACCESS_KEY}
+      - PUBLIC_S3_SECRET_KEY=${PUBLIC_S3_SECRET_KEY}
+      - PUBLIC_S3_ENDPOINT=${PUBLIC_S3_ENDPOINT}
       - S3_PRIVATE_BUCKET_NAME=${S3_PRIVATE_BUCKET_NAME}
       - S3_PUBLIC_BUCKET_NAME=${S3_PUBLIC_BUCKET_NAME}
       - CORS_ORIGINS=${CORS_ORIGINS}
@@ -671,9 +671,9 @@ services:
 **Required environment variables:**
 - `DATABASE_URL` - MongoDB connection string
 - `BETTER_AUTH_SECRET` - Secret for authentication (generate with `openssl rand -hex 32`)
-- `S3_ACCESS_KEY` - S3-compatible storage access key
-- `S3_SECRET_KEY` - S3-compatible storage secret key
-- `S3_ENDPOINT` - S3-compatible storage endpoint
+- `PUBLIC_S3_ACCESS_KEY` - S3-compatible storage access key
+- `PUBLIC_S3_SECRET_KEY` - S3-compatible storage secret key
+- `PUBLIC_S3_ENDPOINT` - S3-compatible storage endpoint
 - `S3_PRIVATE_BUCKET_NAME` - Private S3 bucket name
 - `S3_PUBLIC_BUCKET_NAME` - Public S3 bucket name
 - `CORS_ORIGINS` - Comma-separated list of allowed origins

@@ -18,9 +18,9 @@ describe('env config', () => {
 
   it('falls back to safe defaults when NODE_ENV=test', async () => {
     process.env.NODE_ENV = 'test';
-    delete process.env.S3_ENDPOINT;
-    delete process.env.S3_ACCESS_KEY;
-    delete process.env.S3_SECRET_KEY;
+    delete process.env.PUBLIC_S3_ENDPOINT;
+    delete process.env.PUBLIC_S3_ACCESS_KEY;
+    delete process.env.PUBLIC_S3_SECRET_KEY;
     delete process.env.S3_PUBLIC_BUCKET_NAME;
     delete process.env.S3_PRIVATE_BUCKET_NAME;
     delete process.env.S3_PUBLIC_CDN_URL;
@@ -58,9 +58,9 @@ describe('env config', () => {
 
   it('throws when required S3 variables are missing in production', async () => {
     process.env.NODE_ENV = 'production';
-    process.env.S3_ENDPOINT = 'https://s3.example.com';
-    process.env.S3_ACCESS_KEY = 'prod-access';
-    process.env.S3_SECRET_KEY = 'prod-secret';
+    process.env.PUBLIC_S3_ENDPOINT = 'https://s3.example.com';
+    process.env.PUBLIC_S3_ACCESS_KEY = 'prod-access';
+    process.env.PUBLIC_S3_SECRET_KEY = 'prod-secret';
     process.env.S3_PUBLIC_BUCKET_NAME = 'public';
     process.env.S3_PRIVATE_BUCKET_NAME = 'private';
     delete process.env.S3_PUBLIC_CDN_URL;
@@ -73,9 +73,9 @@ describe('env config', () => {
 
   it('builds configs from provided production environment variables', async () => {
     process.env.NODE_ENV = 'production';
-    process.env.S3_ENDPOINT = 'https://s3.example.com';
-    process.env.S3_ACCESS_KEY = 'prod-access';
-    process.env.S3_SECRET_KEY = 'prod-secret';
+    process.env.PUBLIC_S3_ENDPOINT = 'https://s3.example.com';
+    process.env.PUBLIC_S3_ACCESS_KEY = 'prod-access';
+    process.env.PUBLIC_S3_SECRET_KEY = 'prod-secret';
     process.env.S3_PUBLIC_BUCKET_NAME = 'public';
     process.env.S3_PRIVATE_BUCKET_NAME = 'private';
     process.env.S3_PUBLIC_CDN_URL = 'https://cdn.example.com';

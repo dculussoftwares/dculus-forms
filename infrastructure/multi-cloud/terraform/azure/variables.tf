@@ -92,22 +92,22 @@ variable "better_auth_url" {
   default     = ""
 }
 
-variable "s3_access_key" {
-  description = "S3 access key for file storage"
+variable "public_s3_access_key" {
+  description = "Public S3 bucket access key for file storage"
   type        = string
   sensitive   = true
   default     = ""
 }
 
-variable "s3_secret_key" {
-  description = "S3 secret key for file storage"
+variable "public_s3_secret_key" {
+  description = "Public S3 bucket secret key for file storage"
   type        = string
   sensitive   = true
   default     = ""
 }
 
-variable "s3_endpoint" {
-  description = "S3 endpoint URL"
+variable "public_s3_endpoint" {
+  description = "Public S3 bucket endpoint URL"
   type        = string
   default     = ""
 }

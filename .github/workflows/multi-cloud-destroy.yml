@@ -212,9 +212,9 @@ jobs:
         env:
           TF_VAR_mongodb_connection_string: "placeholder"
           TF_VAR_better_auth_secret: ${{ secrets.BETTER_AUTH_SECRET }}
-          TF_VAR_s3_access_key: ${{ secrets.S3_ACCESS_KEY }}
-          TF_VAR_s3_secret_key: ${{ secrets.S3_SECRET_KEY }}
-          TF_VAR_s3_endpoint: ${{ secrets.S3_ENDPOINT }}
+          TF_VAR_public_s3_access_key: ${{ secrets.PUBLIC_S3_ACCESS_KEY }}
+          TF_VAR_public_s3_secret_key: ${{ secrets.PUBLIC_S3_SECRET_KEY }}
+          TF_VAR_public_s3_endpoint: ${{ secrets.PUBLIC_S3_ENDPOINT }}
           TF_VAR_s3_cdn_url: ${{ secrets.S3_PUBLIC_CDN_URL }}
           TF_VAR_s3_private_bucket_name: ${{ secrets.S3_PRIVATE_BUCKET_NAME }}
           TF_VAR_s3_public_bucket_name: ${{ secrets.S3_PUBLIC_BUCKET_NAME }}

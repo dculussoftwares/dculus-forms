@@ -18,9 +18,9 @@ The following secrets must be configured in your GitHub repository:
 - `BETTER_AUTH_SECRET`: Better Auth signing secret (minimum 32 characters)
 
 **Optional (for file uploads / CDN overrides):**
-- `S3_ACCESS_KEY`: S3 access key
-- `S3_SECRET_KEY`: S3 secret key
-- `S3_ENDPOINT`: S3 endpoint URL
+- `PUBLIC_S3_ACCESS_KEY`: S3 access key
+- `PUBLIC_S3_SECRET_KEY`: S3 secret key
+- `PUBLIC_S3_ENDPOINT`: S3 endpoint URL
 - `S3_PRIVATE_BUCKET_NAME`: Private bucket name
 - `S3_PUBLIC_BUCKET_NAME`: Public bucket name
 - `S3_PUBLIC_CDN_URL`: CDN endpoint that serves public assets (defaults to `https://public-cdn-${environment}.dculus.com` if omitted)

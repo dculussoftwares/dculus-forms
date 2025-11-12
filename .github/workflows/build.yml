@@ -906,9 +906,9 @@ jobs:
           terraform plan \
             -var="mongodb_connection_string=${{ secrets.MONGODB_CONNECTION_STRING }}" \
             -var="better_auth_secret=${{ secrets.BETTER_AUTH_SECRET }}" \
-            -var="s3_access_key=${{ secrets.S3_ACCESS_KEY }}" \
-            -var="s3_secret_key=${{ secrets.S3_SECRET_KEY }}" \
-            -var="s3_endpoint=${{ secrets.S3_ENDPOINT }}" \
+            -var="public_s3_access_key=${{ secrets.PUBLIC_S3_ACCESS_KEY }}" \
+            -var="public_s3_secret_key=${{ secrets.PUBLIC_S3_SECRET_KEY }}" \
+            -var="public_s3_endpoint=${{ secrets.PUBLIC_S3_ENDPOINT }}" \
             -var="s3_private_bucket_name=${{ secrets.S3_PRIVATE_BUCKET_NAME }}" \
             -var="s3_public_bucket_name=${{ secrets.S3_PUBLIC_BUCKET_NAME }}" \
             -var="cors_origins=${{ secrets.CORS_ORIGINS }}" \

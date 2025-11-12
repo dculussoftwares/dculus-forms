@@ -44,9 +44,9 @@ const nodeEnv = optionalEnv('NODE_ENV', 'development')!;
 const isTest = nodeEnv === 'test';
 
 export const s3Config: S3Config = {
-  endpoint: isTest ? optionalEnv('S3_ENDPOINT', 'http://localhost:9000')! : requireEnv('S3_ENDPOINT'),
-  accessKey: isTest ? optionalEnv('S3_ACCESS_KEY', 'test-access-key')! : requireEnv('S3_ACCESS_KEY'),
-  secretKey: isTest ? optionalEnv('S3_SECRET_KEY', 'test-secret-key')! : requireEnv('S3_SECRET_KEY'),
+  endpoint: isTest ? optionalEnv('PUBLIC_S3_ENDPOINT', 'http://localhost:9000')! : requireEnv('PUBLIC_S3_ENDPOINT'),
+  accessKey: isTest ? optionalEnv('PUBLIC_S3_ACCESS_KEY', 'test-access-key')! : requireEnv('PUBLIC_S3_ACCESS_KEY'),
+  secretKey: isTest ? optionalEnv('PUBLIC_S3_SECRET_KEY', 'test-secret-key')! : requireEnv('PUBLIC_S3_SECRET_KEY'),
   publicBucketName: isTest ? optionalEnv('S3_PUBLIC_BUCKET_NAME', 'test-public-bucket')! : requireEnv('S3_PUBLIC_BUCKET_NAME'),
   privateBucketName: isTest ? optionalEnv('S3_PRIVATE_BUCKET_NAME', 'test-private-bucket')! : requireEnv('S3_PRIVATE_BUCKET_NAME'),
   publicCdnUrl: isTest ? optionalEnv('S3_PUBLIC_CDN_URL', 'http://localhost:9000')! : requireEnv('S3_PUBLIC_CDN_URL'),

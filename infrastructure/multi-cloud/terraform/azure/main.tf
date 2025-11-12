@@ -89,18 +89,18 @@ resource "azurerm_container_app" "backend" {
       }
 
       env {
-        name  = "S3_ACCESS_KEY"
-        value = var.s3_access_key
+        name  = "PUBLIC_S3_ACCESS_KEY"
+        value = var.public_s3_access_key
       }
 
       env {
-        name  = "S3_SECRET_KEY"
-        value = var.s3_secret_key
+        name  = "PUBLIC_S3_SECRET_KEY"
+        value = var.public_s3_secret_key
       }
 
       env {
-        name  = "S3_ENDPOINT"
-        value = var.s3_endpoint
+        name  = "PUBLIC_S3_ENDPOINT"
+        value = var.public_s3_endpoint
       }
 
       env {
