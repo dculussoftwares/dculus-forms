@@ -111,12 +111,62 @@ jobs:
           echo ""
           echo "⚠️ WARNING: This action cannot be undone!"
 
+  # Cleanup Azure Custom Domain and Certificate before destroying infrastructure
+  cleanup-azure-custom-domain:
+    name: Cleanup Custom Domain & Certificate
+    runs-on: ubuntu-latest
+    needs: validate-destroy-request
+    if: github.event.inputs.destroy_azure == 'true'
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set environment variables
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          echo "RESOURCE_GROUP=dculus-forms-${ENV}-rg" >> $GITHUB_ENV
+          echo "CONTAINER_APP_NAME=dculus-forms-${ENV}-backend" >> $GITHUB_ENV
+          echo "CONTAINER_ENV_NAME=dculus-forms-${ENV}-env" >> $GITHUB_ENV
+          echo "CUSTOM_DOMAIN=form-services-${ENV}.dculus.com" >> $GITHUB_ENV
+          echo "ENVIRONMENT=${ENV}" >> $GITHUB_ENV
+
+      - name: Run cleanup script
+        env:
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          chmod +x .github/scripts/cleanup-azure-custom-domain.sh
+          ./.github/scripts/cleanup-azure-custom-domain.sh || {
+            echo "⚠️ Cleanup failed but continuing with destruction"
+            exit 0
+          }
+
+      - name: Display cleanup summary
+        if: always()
+        run: |
+          echo "==================== Cleanup Summary ===================="
+          echo "Custom Domain: form-services-${{ github.event.inputs.environment }}.dculus.com"
+          echo "✅ Custom domain cleanup completed"
+          echo "Infrastructure destruction will proceed..."
+          echo "================================================================"
+
   # Destroy Azure Container Apps (Stateless - Safe)
   terraform-azure-destroy:
     name: Destroy Azure Container Apps
     runs-on: ubuntu-latest
-    needs: validate-destroy-request
-    if: github.event.inputs.destroy_azure == 'true'
+    needs: [validate-destroy-request, cleanup-azure-custom-domain]
+    if: |
+      always() && !cancelled() &&
+      (needs.cleanup-azure-custom-domain.result == 'success' || needs.cleanup-azure-custom-domain.result == 'skipped') &&
+      github.event.inputs.destroy_azure == 'true'
     environment: ${{ github.event.inputs.environment }}
     defaults:
       run:
@@ -363,6 +413,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [
       validate-destroy-request,
+      cleanup-azure-custom-domain,
       terraform-azure-destroy,
       terraform-cloudflare-destroy,
       terraform-mongodb-destroy

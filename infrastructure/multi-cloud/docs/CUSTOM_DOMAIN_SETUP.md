@@ -281,8 +281,55 @@ Client → Cloudflare (Cloudflare certificate)
 - [Cloudflare DNS Records](https://developers.cloudflare.com/dns/manage-dns-records/how-to/create-dns-records/)
 - [Cloudflare SSL/TLS Settings](https://developers.cloudflare.com/ssl/origin-configuration/ssl-modes/)
 
+## Cleanup and Destruction
+
+### Automatic Cleanup (via Destroy Workflow)
+
+The custom domain and certificate are automatically cleaned up before infrastructure destruction:
+
+```bash
+# Triggered automatically in destroy workflow when destroy_azure = true
+.github/scripts/cleanup-azure-custom-domain.sh
+```
+
+**Cleanup Process:**
+1. Remove custom hostname binding from Container App
+2. Delete managed certificate from Container Apps environment
+3. Remove Cloudflare TXT verification record
+4. CNAME record removed by Terraform during Cloudflare DNS destruction
+
+### Manual Cleanup
+
+If needed, clean up manually:
+
+```bash
+# Set environment variables
+export ENVIRONMENT="dev"
+export RESOURCE_GROUP="dculus-forms-dev-rg"
+export CONTAINER_APP_NAME="dculus-forms-dev-backend"
+export CONTAINER_ENV_NAME="dculus-forms-dev-env"
+export CUSTOM_DOMAIN="form-services-dev.dculus.com"
+export CLOUDFLARE_ZONE_ID="your-zone-id"
+export CLOUDFLARE_API_TOKEN="your-api-token"
+
+# Run cleanup script
+./.github/scripts/cleanup-azure-custom-domain.sh
+```
+
+### Destroy Workflow Integration
+
+The cleanup happens automatically in the destroy workflow:
+
+1. **`cleanup-azure-custom-domain`** job runs first (if `destroy_azure = true`)
+2. **`terraform-azure-destroy`** job runs after cleanup completes
+3. Terraform removes remaining infrastructure (Container App, Resource Group)
+4. Cloudflare DNS records removed by Terraform (if `destroy_cloudflare = true`)
+
+This ensures clean removal without orphaned certificates or DNS records.
+
 ## Related Documentation
 
 - [Multi-Cloud Deployment Pipeline](../README.md)
+- [Multi-Cloud Destroy Workflow](../../../.github/workflows/multi-cloud-destroy.yml)
 - [Terraform Cloudflare DNS Configuration](../terraform/cloudflare-service-domain/README.md)
 - [Azure Container Apps Infrastructure](../terraform/azure/README.md)
