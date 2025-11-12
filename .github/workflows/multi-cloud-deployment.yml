@@ -639,6 +639,79 @@ jobs:
           echo "service_domain=$(terraform output -raw service_domain)" >> $GITHUB_OUTPUT
           echo "target_backend_fqdn=$(terraform output -raw target_backend_fqdn)" >> $GITHUB_OUTPUT
 
+  # Configure Azure Custom Domain and Managed Certificate
+  configure-azure-custom-domain:
+    name: Configure Custom Domain & Certificate
+    runs-on: ubuntu-latest
+    needs: [determine-environment, terraform-azure-deploy, terraform-cloudflare-service-domain]
+    if: |
+      always() && !cancelled() && !failure() &&
+      needs.determine-environment.outputs.should_deploy == 'true' &&
+      needs.determine-environment.outputs.deploy_cloudflare == 'true' &&
+      needs.determine-environment.outputs.deploy_azure == 'true' &&
+      needs.terraform-cloudflare-service-domain.result == 'success'
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set environment variables
+        id: set-env
+        run: |
+          ENV="${{ needs.determine-environment.outputs.environment }}"
+
+          # Set resource names based on environment
+          echo "RESOURCE_GROUP=dculus-forms-${ENV}-rg" >> $GITHUB_ENV
+          echo "CONTAINER_APP_NAME=dculus-forms-${ENV}-backend" >> $GITHUB_ENV
+          echo "CONTAINER_ENV_NAME=dculus-forms-${ENV}-env" >> $GITHUB_ENV
+          echo "CUSTOM_DOMAIN=${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}" >> $GITHUB_ENV
+          echo "ENVIRONMENT=${ENV}" >> $GITHUB_ENV
+
+          echo "📋 Configuration:"
+          echo "  Environment: ${ENV}"
+          echo "  Resource Group: dculus-forms-${ENV}-rg"
+          echo "  Container App: dculus-forms-${ENV}-backend"
+          echo "  Custom Domain: ${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}"
+
+      - name: Run custom domain configuration script
+        env:
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          chmod +x .github/scripts/configure-azure-custom-domain.sh
+          ./.github/scripts/configure-azure-custom-domain.sh
+
+      - name: Display configuration summary
+        if: always()
+        run: |
+          echo "==================== Configuration Summary ===================="
+          echo "Custom Domain: ${CUSTOM_DOMAIN}"
+
+          # Get final binding status
+          BINDING_STATUS=$(az containerapp hostname list \
+            --name "${CONTAINER_APP_NAME}" \
+            --resource-group "${RESOURCE_GROUP}" \
+            --output json | jq -r --arg domain "${CUSTOM_DOMAIN}" '.[] | select(.name == $domain) | .bindingType // "Not configured"')
+
+          echo "Binding Status: ${BINDING_STATUS}"
+
+          # Get certificate info
+          CERT_INFO=$(az containerapp env certificate list \
+            --name "${CONTAINER_ENV_NAME}" \
+            --resource-group "${RESOURCE_GROUP}" \
+            --managed-certificates-only \
+            --output json 2>/dev/null | jq -r --arg domain "${CUSTOM_DOMAIN}" '.[] | select(.properties.subjectName == $domain) | "Certificate: \(.name) | Status: \(.properties.provisioningState)"' || echo "Certificate: Not found")
+
+          echo "${CERT_INFO}"
+          echo "================================================================"
+
   # Health checks after deployment
   health-checks:
     name: Health Checks
@@ -704,6 +777,7 @@ jobs:
       terraform-cloudflare-deploy,
       terraform-cloudflare-service-domain,
       terraform-azure-deploy,
+      configure-azure-custom-domain,
       health-checks
     ]
     if: always()
@@ -726,6 +800,7 @@ jobs:
           echo "| Cloudflare R2 | ${{ needs.terraform-cloudflare-deploy.result == 'success' && '✅' || needs.terraform-cloudflare-deploy.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Cloudflare Service Domain | ${{ needs.terraform-cloudflare-service-domain.result == 'success' && '✅' || needs.terraform-cloudflare-service-domain.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Azure Container Apps | ${{ needs.terraform-azure-deploy.result == 'success' && '✅' || needs.terraform-azure-deploy.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Custom Domain & Certificate | ${{ needs.configure-azure-custom-domain.result == 'success' && '✅' || needs.configure-azure-custom-domain.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Health Checks | ${{ needs.health-checks.result == 'success' && '✅' || needs.health-checks.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
