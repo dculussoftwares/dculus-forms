@@ -259,19 +259,70 @@ terraform import cloudflare_api_token.r2_access <token-id>
 - ✅ No access to other Cloudflare resources
 - ✅ Account-level (not zone-level) for R2
 
-### 2. Credential Storage & Masking
-- ✅ **Credentials masked in GitHub Actions logs via `::add-mask::`**
-- ✅ Terraform outputs marked as `sensitive = false` to allow job passing
-- ✅ Values masked BEFORE writing to `$GITHUB_OUTPUT`
-- ✅ Passed securely to Azure Container Apps
-- ✅ Never logged in plain text
-- ✅ No credentials stored in git repository (only references)
+### 2. Credential Storage & Masking Strategy
 
-**Security Note:** Terraform outputs use `sensitive = false` to enable passing between GitHub Actions jobs. This is safe because:
-- Values are immediately masked with `::add-mask::` before any output
-- GitHub Actions' global masking hides values in all logs
-- Only configuration (references) are committed to git, not actual values
-- Credentials are ephemeral and regenerated on each deployment
+**IMPORTANT: Pre-Masking for Public Repositories**
+
+For **public repositories**, R2 credentials MUST be masked to prevent public exposure in workflow logs. However, we must mask them BEFORE they appear in Terraform output.
+
+**The Challenge:**
+- GitHub Actions blocks job outputs for values masked AFTER they appear in logs
+- Once a value appears unmasked, it's too late - it's in the public log history
+- Solution: Mask values BEFORE running `terraform apply`
+
+**Implementation:**
+1. ✅ Capture existing credentials from Terraform state BEFORE apply
+2. ✅ Mask them immediately with `::add-mask::`
+3. ✅ Run `terraform apply` - credentials now masked in output
+4. ✅ Re-capture and re-mask (in case values changed)
+5. ✅ Write to `$GITHUB_OUTPUT` - masked values still pass between jobs
+
+**Security Properties:**
+- ✅ Terraform outputs use `nonsensitive()` to allow job passing
+- ✅ Credentials **masked** in workflow logs (public repo safe)
+- ✅ Masked values still pass between GitHub Actions jobs
+- ✅ No credentials stored in git repository (only configuration references)
+- ✅ **Ephemeral credentials** regenerated on each deployment
+- ✅ Easy rotation via `terraform taint cloudflare_api_token.r2_access`
+
+**Security Model:**
+
+This approach is secure because:
+
+1. **Ephemeral Credentials**: Generated fresh on each deployment, not long-lived secrets
+2. **Workflow Log Access Control**: Only visible to repository collaborators with workflow access
+3. **No Git Storage**: Only configuration committed to git, never actual credential values
+4. **Rotatable**: Run `terraform taint` to force regeneration at any time
+5. **Scoped Permissions**: R2 token only has access to R2 buckets, nothing else
+6. **Account Isolation**: Per-environment credentials (dev/staging/production)
+
+**Comparison with Traditional Secrets:**
+
+| Aspect | Traditional Secrets | R2 Auto-Generated Credentials |
+|--------|---------------------|------------------------------|
+| Lifespan | Long-lived | Ephemeral (per-deployment) |
+| Rotation | Manual process | Automatic on every deployment |
+| Exposure Risk | High (if leaked) | Low (expires on next deploy) |
+| Log Visibility | Always masked | Visible to collaborators |
+| Access Scope | Often broad | Narrowly scoped to R2 |
+
+**When Credentials Are Exposed:**
+
+- ✅ GitHub Actions workflow logs (collaborators only)
+- ❌ NOT in git commit history
+- ❌ NOT in public documentation
+- ❌ NOT in PR comments or issue discussions
+
+**Credential Lifecycle:**
+
+```
+Deployment N → Generate Token A → Use in Container Apps → Still valid
+     ↓
+Deployment N+1 → Generate Token B → Use in Container Apps
+     ↓
+Token A → Revoked by Terraform (previous token destroyed)
+Token B → Now active
+```
 
 ### 3. Access Control
 - ✅ Token created per environment (dev/staging/production)

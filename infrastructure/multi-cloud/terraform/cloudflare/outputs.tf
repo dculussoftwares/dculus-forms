@@ -49,11 +49,12 @@ output "dns_record_status" {
 }
 
 # R2 API Token Outputs (S3-compatible credentials)
-# Note: Using nonsensitive() to allow job output passing in GitHub Actions
+# Note: Token ID is not sensitive, but token value is
+# Token value uses nonsensitive() to allow job output passing in GitHub Actions
 # Values are immediately masked via ::add-mask:: in the workflow for security
 output "r2_access_key_id" {
   description = "R2 Access Key ID (API Token ID) - Used as AWS_ACCESS_KEY_ID"
-  value       = nonsensitive(cloudflare_api_token.r2_access.id)
+  value       = cloudflare_api_token.r2_access.id
 }
 
 output "r2_secret_access_key" {

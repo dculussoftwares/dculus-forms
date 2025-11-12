@@ -343,7 +343,7 @@ jobs:
     outputs:
       private_bucket: ${{ steps.apply.outputs.private_bucket }}
       public_bucket: ${{ steps.apply.outputs.public_bucket }}
-      r2_endpoint: ${{ steps.apply.outputs.r2_endpoint }}
+      # r2_endpoint removed - reconstructed from CLOUDFLARE_ACCOUNT_ID to avoid GitHub Actions blocking
       public_cdn_url: ${{ steps.apply.outputs.public_cdn_url }}
       r2_access_key_id: ${{ steps.apply.outputs.r2_access_key_id }}
       r2_secret_access_key: ${{ steps.apply.outputs.r2_secret_access_key }}
@@ -437,26 +437,46 @@ jobs:
           TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
           TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
+          # Apply Terraform and capture sensitive outputs before they're displayed
+          # CRITICAL: For public repositories, we must prevent credentials from appearing in logs
+
+          # Capture credentials BEFORE running apply (they already exist from previous run)
+          R2_ACCESS_KEY_ID=$(terraform output -raw r2_access_key_id 2>/dev/null || echo "")
+          R2_SECRET_ACCESS_KEY=$(terraform output -raw r2_secret_access_key 2>/dev/null || echo "")
+
+          # Mask them IMMEDIATELY before any output
+          if [ -n "$R2_ACCESS_KEY_ID" ]; then
+            echo "::add-mask::$R2_ACCESS_KEY_ID"
+          fi
+          if [ -n "$R2_SECRET_ACCESS_KEY" ]; then
+            echo "::add-mask::$R2_SECRET_ACCESS_KEY"
+          fi
+
+          # Now run apply - credentials will be masked in output
           terraform apply -auto-approve \
             -var="cloudflare_account_id=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" \
             -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
             -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
 
-          # Capture outputs
+          # Capture all outputs (credentials already masked above)
           echo "private_bucket=$(terraform output -raw private_bucket_name)" >> $GITHUB_OUTPUT
           echo "public_bucket=$(terraform output -raw public_bucket_name)" >> $GITHUB_OUTPUT
-          echo "r2_endpoint=$(terraform output -raw r2_endpoint_url)" >> $GITHUB_OUTPUT
+          # r2_endpoint NOT captured - will be reconstructed from CLOUDFLARE_ACCOUNT_ID
           echo "public_cdn_url=$(terraform output -raw public_cdn_url)" >> $GITHUB_OUTPUT
 
-          # Capture R2 API credentials (sensitive outputs)
-          R2_ACCESS_KEY_ID=$(terraform output -raw r2_access_key_id)
-          R2_SECRET_ACCESS_KEY=$(terraform output -raw r2_secret_access_key)
+          # Re-capture credentials after apply (in case they changed)
+          R2_ACCESS_KEY_ID=$(terraform output -raw r2_access_key_id 2>/dev/null)
+          R2_SECRET_ACCESS_KEY=$(terraform output -raw r2_secret_access_key 2>/dev/null)
+
+          # Mask again (in case values changed)
           echo "::add-mask::$R2_ACCESS_KEY_ID"
           echo "::add-mask::$R2_SECRET_ACCESS_KEY"
+
+          # Write to job outputs (masked values still pass between jobs)
           echo "r2_access_key_id=$R2_ACCESS_KEY_ID" >> $GITHUB_OUTPUT
           echo "r2_secret_access_key=$R2_SECRET_ACCESS_KEY" >> $GITHUB_OUTPUT
 
-          echo "✅ R2 API credentials automatically generated and will be passed to Azure Container Apps"
+          echo "✅ R2 API credentials automatically generated (masked in logs) and will be passed to Azure Container Apps"
 
   # Terraform Plan & Apply for Azure Container Apps
   terraform-azure-deploy:
@@ -576,15 +596,13 @@ jobs:
             exit 1
           fi
 
-          if [ -z "${{ needs.terraform-cloudflare-deploy.outputs.r2_endpoint }}" ]; then
-            echo "❌ ERROR: R2 Endpoint is empty!"
-            exit 1
-          fi
+          # Construct R2 endpoint from account ID (not passed as job output due to GitHub Actions blocking)
+          R2_ENDPOINT="https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com"
 
           echo "✅ R2 credentials validation passed"
           echo "✅ Access Key ID: present (32 chars)"
           echo "✅ Secret Access Key: present (64 chars)"
-          echo "✅ Endpoint: ${{ needs.terraform-cloudflare-deploy.outputs.r2_endpoint }}"
+          echo "✅ Endpoint: $R2_ENDPOINT"
 
       - name: Terraform Plan
         env:
@@ -592,7 +610,7 @@ jobs:
           TF_VAR_better_auth_secret: ${{ secrets.BETTER_AUTH_SECRET }}
           TF_VAR_public_s3_access_key: ${{ needs.terraform-cloudflare-deploy.outputs.r2_access_key_id }}
           TF_VAR_public_s3_secret_key: ${{ needs.terraform-cloudflare-deploy.outputs.r2_secret_access_key }}
-          TF_VAR_public_s3_endpoint: ${{ needs.terraform-cloudflare-deploy.outputs.r2_endpoint }}
+          TF_VAR_public_s3_endpoint: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
           TF_VAR_public_s3_cdn_url: ${{ needs.terraform-cloudflare-deploy.outputs.public_cdn_url }}
           TF_VAR_private_s3_bucket_name: ${{ needs.terraform-cloudflare-deploy.outputs.private_bucket }}
           TF_VAR_public_s3_bucket_name: ${{ needs.terraform-cloudflare-deploy.outputs.public_bucket }}
@@ -619,7 +637,7 @@ jobs:
           TF_VAR_better_auth_secret: ${{ secrets.BETTER_AUTH_SECRET }}
           TF_VAR_public_s3_access_key: ${{ needs.terraform-cloudflare-deploy.outputs.r2_access_key_id }}
           TF_VAR_public_s3_secret_key: ${{ needs.terraform-cloudflare-deploy.outputs.r2_secret_access_key }}
-          TF_VAR_public_s3_endpoint: ${{ needs.terraform-cloudflare-deploy.outputs.r2_endpoint }}
+          TF_VAR_public_s3_endpoint: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
           TF_VAR_public_s3_cdn_url: ${{ needs.terraform-cloudflare-deploy.outputs.public_cdn_url }}
           TF_VAR_private_s3_bucket_name: ${{ needs.terraform-cloudflare-deploy.outputs.private_bucket }}
           TF_VAR_public_s3_bucket_name: ${{ needs.terraform-cloudflare-deploy.outputs.public_bucket }}
@@ -903,7 +921,7 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "- **Private Bucket**: \`${{ needs.terraform-cloudflare-deploy.outputs.private_bucket }}\`" >> $GITHUB_STEP_SUMMARY
             echo "- **Public Bucket**: \`${{ needs.terraform-cloudflare-deploy.outputs.public_bucket }}\`" >> $GITHUB_STEP_SUMMARY
-            echo "- **R2 Endpoint**: \`${{ needs.terraform-cloudflare-deploy.outputs.r2_endpoint }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **R2 Endpoint**: \`https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com\`" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
 
