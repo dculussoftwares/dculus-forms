@@ -122,12 +122,12 @@ Configure these secrets for **each environment** (dev, staging, production):
 |-------------|-------------|---------|
 | `MONGODB_CONNECTION_STRING` | MongoDB connection string | `mongodb+srv://user:pass@cluster.mongodb.net/dbname` |
 | `BETTER_AUTH_SECRET` | Authentication secret (min 32 chars) | Generate with `openssl rand -base64 32` |
-| `S3_PUBLIC_CDN_URL` | CDN URL serving public assets | `https://cdn.dev.dculus.com` |
+| `PUBLIC_S3_CDN_URL` | CDN URL serving public assets | `https://cdn.dev.dculus.com` |
 | `PUBLIC_S3_ACCESS_KEY` | Cloudflare R2 API token access key | From Cloudflare R2 dashboard |
 | `PUBLIC_S3_SECRET_KEY` | Cloudflare R2 API token secret key | From Cloudflare R2 dashboard |
 | `PUBLIC_S3_ENDPOINT` | R2 endpoint URL | `https://{account_id}.r2.cloudflarestorage.com` |
-| `S3_PRIVATE_BUCKET_NAME` | Private bucket name | `dculus-forms-private-{env}` |
-| `S3_PUBLIC_BUCKET_NAME` | Public bucket name | `dculus-forms-public-{env}` |
+| `PRIVATE_S3_BUCKET_NAME` | Private bucket name | `dculus-forms-private-{env}` |
+| `PUBLIC_S3_BUCKET_NAME` | Public bucket name | `dculus-forms-public-{env}` |
 | `CORS_ORIGINS` | Allowed CORS origins (comma-separated) | `https://dev.example.com,https://admin-dev.example.com` |
 
 ### Setting Up Secrets via GitHub CLI
@@ -143,12 +143,12 @@ gh secret set CLOUDFLARE_ACCOUNT_ID --body "your-account-id"
 # Environment secrets (repeat for dev, staging, production)
 gh secret set MONGODB_CONNECTION_STRING --env dev --body "your-connection-string"
 gh secret set BETTER_AUTH_SECRET --env dev --body "$(openssl rand -base64 32)"
-gh secret set S3_PUBLIC_CDN_URL --env dev --body "https://cdn.dev.dculus.com"
+gh secret set PUBLIC_S3_CDN_URL --env dev --body "https://cdn.dev.dculus.com"
 gh secret set PUBLIC_S3_ACCESS_KEY --env dev --body "your-r2-access-key"
 gh secret set PUBLIC_S3_SECRET_KEY --env dev --body "your-r2-secret-key"
 gh secret set PUBLIC_S3_ENDPOINT --env dev --body "https://your-account-id.r2.cloudflarestorage.com"
-gh secret set S3_PRIVATE_BUCKET_NAME --env dev --body "dculus-forms-private-dev"
-gh secret set S3_PUBLIC_BUCKET_NAME --env dev --body "dculus-forms-public-dev"
+gh secret set PRIVATE_S3_BUCKET_NAME --env dev --body "dculus-forms-private-dev"
+gh secret set PUBLIC_S3_BUCKET_NAME --env dev --body "dculus-forms-public-dev"
 gh secret set CORS_ORIGINS --env dev --body "http://localhost:3000,http://localhost:5173"
 ```
 

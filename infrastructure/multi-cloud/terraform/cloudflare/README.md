@@ -323,9 +323,9 @@ Add the following environment variables to your backend application:
 ```bash
 PUBLIC_S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
 S3_REGION=auto
-S3_PRIVATE_BUCKET_NAME=dculus-forms-private-dev
-S3_PUBLIC_BUCKET_NAME=dculus-forms-public-dev
-S3_PUBLIC_CDN_URL=https://public-cdn-dev.dculus.com
+PRIVATE_S3_BUCKET_NAME=dculus-forms-private-dev
+PUBLIC_S3_BUCKET_NAME=dculus-forms-public-dev
+PUBLIC_S3_CDN_URL=https://public-cdn-dev.dculus.com
 PUBLIC_S3_ACCESS_KEY=<r2-access-key-id>
 PUBLIC_S3_SECRET_KEY=<r2-secret-access-key>
 ```
@@ -334,9 +334,9 @@ PUBLIC_S3_SECRET_KEY=<r2-secret-access-key>
 ```bash
 PUBLIC_S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
 S3_REGION=auto
-S3_PRIVATE_BUCKET_NAME=dculus-forms-private-staging
-S3_PUBLIC_BUCKET_NAME=dculus-forms-public-staging
-S3_PUBLIC_CDN_URL=https://public-cdn-staging.dculus.com
+PRIVATE_S3_BUCKET_NAME=dculus-forms-private-staging
+PUBLIC_S3_BUCKET_NAME=dculus-forms-public-staging
+PUBLIC_S3_CDN_URL=https://public-cdn-staging.dculus.com
 PUBLIC_S3_ACCESS_KEY=<r2-access-key-id>
 PUBLIC_S3_SECRET_KEY=<r2-secret-access-key>
 ```
@@ -345,20 +345,20 @@ PUBLIC_S3_SECRET_KEY=<r2-secret-access-key>
 ```bash
 PUBLIC_S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
 S3_REGION=auto
-S3_PRIVATE_BUCKET_NAME=dculus-forms-private-production
-S3_PUBLIC_BUCKET_NAME=dculus-forms-public-production
-S3_PUBLIC_CDN_URL=https://public-cdn-production.dculus.com
+PRIVATE_S3_BUCKET_NAME=dculus-forms-private-production
+PUBLIC_S3_BUCKET_NAME=dculus-forms-public-production
+PUBLIC_S3_CDN_URL=https://public-cdn-production.dculus.com
 PUBLIC_S3_ACCESS_KEY=<r2-access-key-id>
 PUBLIC_S3_SECRET_KEY=<r2-secret-access-key>
 ```
 
 ### 3. Using the CDN in Your Application
 
-When serving public assets, use the `S3_PUBLIC_CDN_URL` environment variable:
+When serving public assets, use the `PUBLIC_S3_CDN_URL` environment variable:
 
 ```typescript
 // Instead of constructing direct R2 URLs
-const imageUrl = `${process.env.S3_PUBLIC_CDN_URL}/${filePath}`;
+const imageUrl = `${process.env.PUBLIC_S3_CDN_URL}/${filePath}`;
 
 // Example: https://public-cdn-dev.dculus.com/form-backgrounds/hero.jpg
 ```

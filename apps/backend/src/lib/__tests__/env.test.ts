@@ -21,9 +21,9 @@ describe('env config', () => {
     delete process.env.PUBLIC_S3_ENDPOINT;
     delete process.env.PUBLIC_S3_ACCESS_KEY;
     delete process.env.PUBLIC_S3_SECRET_KEY;
-    delete process.env.S3_PUBLIC_BUCKET_NAME;
-    delete process.env.S3_PRIVATE_BUCKET_NAME;
-    delete process.env.S3_PUBLIC_CDN_URL;
+    delete process.env.PUBLIC_S3_BUCKET_NAME;
+    delete process.env.PRIVATE_S3_BUCKET_NAME;
+    delete process.env.PUBLIC_S3_CDN_URL;
     delete process.env.PORT;
     delete process.env.EMAIL_HOST;
     delete process.env.EMAIL_PORT;
@@ -61,13 +61,13 @@ describe('env config', () => {
     process.env.PUBLIC_S3_ENDPOINT = 'https://s3.example.com';
     process.env.PUBLIC_S3_ACCESS_KEY = 'prod-access';
     process.env.PUBLIC_S3_SECRET_KEY = 'prod-secret';
-    process.env.S3_PUBLIC_BUCKET_NAME = 'public';
-    process.env.S3_PRIVATE_BUCKET_NAME = 'private';
-    delete process.env.S3_PUBLIC_CDN_URL;
+    process.env.PUBLIC_S3_BUCKET_NAME = 'public';
+    process.env.PRIVATE_S3_BUCKET_NAME = 'private';
+    delete process.env.PUBLIC_S3_CDN_URL;
     process.env.BETTER_AUTH_SECRET = 'prod-auth-secret';
 
     await expect(import('../env.js')).rejects.toThrow(
-      'Missing required environment variable: S3_PUBLIC_CDN_URL'
+      'Missing required environment variable: PUBLIC_S3_CDN_URL'
     );
   });
 
@@ -76,9 +76,9 @@ describe('env config', () => {
     process.env.PUBLIC_S3_ENDPOINT = 'https://s3.example.com';
     process.env.PUBLIC_S3_ACCESS_KEY = 'prod-access';
     process.env.PUBLIC_S3_SECRET_KEY = 'prod-secret';
-    process.env.S3_PUBLIC_BUCKET_NAME = 'public';
-    process.env.S3_PRIVATE_BUCKET_NAME = 'private';
-    process.env.S3_PUBLIC_CDN_URL = 'https://cdn.example.com';
+    process.env.PUBLIC_S3_BUCKET_NAME = 'public';
+    process.env.PRIVATE_S3_BUCKET_NAME = 'private';
+    process.env.PUBLIC_S3_CDN_URL = 'https://cdn.example.com';
     process.env.BETTER_AUTH_SECRET = 'prod-auth-secret';
     process.env.BETTER_AUTH_URL = 'https://auth.example.com';
     process.env.PORT = '8080';

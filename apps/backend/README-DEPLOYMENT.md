@@ -56,8 +56,8 @@ PUBLIC_S3_ACCESS_KEY=your-access-key
 PUBLIC_S3_SECRET_KEY=your-secret-key
 PUBLIC_S3_ENDPOINT=https://s3.amazonaws.com
 S3_REGION=us-east-1
-S3_PRIVATE_BUCKET_NAME=dculus-private
-S3_PUBLIC_BUCKET_NAME=dculus-public
+PRIVATE_S3_BUCKET_NAME=dculus-private
+PUBLIC_S3_BUCKET_NAME=dculus-public
 EOF
 ```
 
@@ -104,8 +104,8 @@ services:
       - PUBLIC_S3_SECRET_KEY=${PUBLIC_S3_SECRET_KEY}
       - PUBLIC_S3_ENDPOINT=${PUBLIC_S3_ENDPOINT}
       - S3_REGION=${S3_REGION}
-      - S3_PRIVATE_BUCKET_NAME=${S3_PRIVATE_BUCKET_NAME}
-      - S3_PUBLIC_BUCKET_NAME=${S3_PUBLIC_BUCKET_NAME}
+      - PRIVATE_S3_BUCKET_NAME=${PRIVATE_S3_BUCKET_NAME}
+      - PUBLIC_S3_BUCKET_NAME=${PUBLIC_S3_BUCKET_NAME}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
@@ -179,8 +179,8 @@ PUBLIC_S3_ACCESS_KEY=your-access-key
 PUBLIC_S3_SECRET_KEY=your-secret-key
 PUBLIC_S3_ENDPOINT=https://s3.amazonaws.com
 S3_REGION=us-east-1
-S3_PRIVATE_BUCKET_NAME=dculus-private
-S3_PUBLIC_BUCKET_NAME=dculus-public
+PRIVATE_S3_BUCKET_NAME=dculus-private
+PUBLIC_S3_BUCKET_NAME=dculus-public
 ```
 
 ### Step 3: Install Dependencies (if not included)
@@ -267,8 +267,8 @@ sudo systemctl status dculus-backend
 | `PUBLIC_S3_SECRET_KEY` | S3 secret key | Your S3 secret key |
 | `PUBLIC_S3_ENDPOINT` | S3 endpoint URL | `https://s3.amazonaws.com` |
 | `S3_REGION` | S3 region | `us-east-1` |
-| `S3_PRIVATE_BUCKET_NAME` | Private files bucket | `dculus-forms-private` |
-| `S3_PUBLIC_BUCKET_NAME` | Public files bucket | `dculus-forms-public` |
+| `PRIVATE_S3_BUCKET_NAME` | Private files bucket | `dculus-forms-private` |
+| `PUBLIC_S3_BUCKET_NAME` | Public files bucket | `dculus-forms-public` |
 
 ### Optional Variables
 
@@ -276,7 +276,7 @@ sudo systemctl status dculus-backend
 |----------|-------------|---------|
 | `NODE_ENV` | Environment mode | `production` |
 | `PORT` | Server port | `4000` |
-| `S3_PUBLIC_CDN_URL` | CDN URL for public files | S3 endpoint |
+| `PUBLIC_S3_CDN_URL` | CDN URL for public files | S3 endpoint |
 | `ADMIN_EMAIL` | Initial admin email | - |
 | `ADMIN_PASSWORD` | Initial admin password | - |
 | `ADMIN_NAME` | Initial admin name | - |

@@ -81,9 +81,9 @@ output "next_steps" {
     2. Update Backend Environment Variables:
        PUBLIC_S3_ENDPOINT=${var.cloudflare_account_id}.r2.cloudflarestorage.com
        S3_REGION=auto
-       S3_PRIVATE_BUCKET_NAME=${cloudflare_r2_bucket.private.name}
-       S3_PUBLIC_BUCKET_NAME=${cloudflare_r2_bucket.public.name}
-       S3_PUBLIC_CDN_URL=https://public-cdn-${var.environment}.dculus.com
+       PRIVATE_S3_BUCKET_NAME=${cloudflare_r2_bucket.private.name}
+       PUBLIC_S3_BUCKET_NAME=${cloudflare_r2_bucket.public.name}
+       PUBLIC_S3_CDN_URL=https://public-cdn-${var.environment}.dculus.com
        PUBLIC_S3_ACCESS_KEY=<your-r2-access-key-id>
        PUBLIC_S3_SECRET_KEY=<your-r2-secret-access-key>
 

@@ -98,8 +98,8 @@ PUBLIC_S3_ACCESS_KEY=your-access-key
 PUBLIC_S3_SECRET_KEY=your-secret-key
 PUBLIC_S3_ENDPOINT=https://s3.amazonaws.com
 S3_REGION=us-east-1
-S3_PRIVATE_BUCKET_NAME=dculus-private
-S3_PUBLIC_BUCKET_NAME=dculus-public
+PRIVATE_S3_BUCKET_NAME=dculus-private
+PUBLIC_S3_BUCKET_NAME=dculus-public
 EOF
 ```
 
@@ -183,8 +183,8 @@ PUBLIC_S3_ACCESS_KEY=your-s3-access-key
 PUBLIC_S3_SECRET_KEY=your-s3-secret-key
 PUBLIC_S3_ENDPOINT=https://s3.amazonaws.com
 S3_REGION=us-east-1
-S3_PRIVATE_BUCKET_NAME=dculus-forms-private
-S3_PUBLIC_BUCKET_NAME=dculus-forms-public
+PRIVATE_S3_BUCKET_NAME=dculus-forms-private
+PUBLIC_S3_BUCKET_NAME=dculus-forms-public
 ```
 
 **Step 3: Run the application**
@@ -637,8 +637,8 @@ docker run -d \
   -e PUBLIC_S3_ACCESS_KEY='your-s3-access-key' \
   -e PUBLIC_S3_SECRET_KEY='your-s3-secret-key' \
   -e PUBLIC_S3_ENDPOINT='your-s3-endpoint' \
-  -e S3_PRIVATE_BUCKET_NAME='your-private-bucket' \
-  -e S3_PUBLIC_BUCKET_NAME='your-public-bucket' \
+  -e PRIVATE_S3_BUCKET_NAME='your-private-bucket' \
+  -e PUBLIC_S3_BUCKET_NAME='your-public-bucket' \
   -e CORS_ORIGINS='https://your-frontend-domain.com' \
   dculus/forms-backend:v1.0.0
 ```
@@ -657,8 +657,8 @@ services:
       - PUBLIC_S3_ACCESS_KEY=${PUBLIC_S3_ACCESS_KEY}
       - PUBLIC_S3_SECRET_KEY=${PUBLIC_S3_SECRET_KEY}
       - PUBLIC_S3_ENDPOINT=${PUBLIC_S3_ENDPOINT}
-      - S3_PRIVATE_BUCKET_NAME=${S3_PRIVATE_BUCKET_NAME}
-      - S3_PUBLIC_BUCKET_NAME=${S3_PUBLIC_BUCKET_NAME}
+      - PRIVATE_S3_BUCKET_NAME=${PRIVATE_S3_BUCKET_NAME}
+      - PUBLIC_S3_BUCKET_NAME=${PUBLIC_S3_BUCKET_NAME}
       - CORS_ORIGINS=${CORS_ORIGINS}
     restart: unless-stopped
     healthcheck:
@@ -674,8 +674,8 @@ services:
 - `PUBLIC_S3_ACCESS_KEY` - S3-compatible storage access key
 - `PUBLIC_S3_SECRET_KEY` - S3-compatible storage secret key
 - `PUBLIC_S3_ENDPOINT` - S3-compatible storage endpoint
-- `S3_PRIVATE_BUCKET_NAME` - Private S3 bucket name
-- `S3_PUBLIC_BUCKET_NAME` - Public S3 bucket name
+- `PRIVATE_S3_BUCKET_NAME` - Private S3 bucket name
+- `PUBLIC_S3_BUCKET_NAME` - Public S3 bucket name
 - `CORS_ORIGINS` - Comma-separated list of allowed origins
 
 ## Troubleshooting

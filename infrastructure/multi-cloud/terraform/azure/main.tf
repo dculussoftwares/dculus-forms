@@ -17,11 +17,11 @@ provider "azurerm" {
 
 # Locals for resource naming with environment suffix
 locals {
-  resource_group_name  = "${var.project_name}-${var.environment}-rg"
-  app_name             = "${var.project_name}-${var.environment}"
-  full_container_image = "${var.container_image}:${var.container_image_tag}"
-  public_cdn_domain    = "public-cdn-${var.environment}.dculus.com"
-  resolved_s3_cdn_url  = var.s3_cdn_url != "" ? var.s3_cdn_url : "https://${local.public_cdn_domain}"
+  resource_group_name   = "${var.project_name}-${var.environment}-rg"
+  app_name              = "${var.project_name}-${var.environment}"
+  full_container_image  = "${var.container_image}:${var.container_image_tag}"
+  public_cdn_domain     = "public-cdn-${var.environment}.dculus.com"
+  resolved_s3_cdn_url   = var.public_s3_cdn_url != "" ? var.public_s3_cdn_url : "https://${local.public_cdn_domain}"
 }
 
 # Resource Group for this environment
@@ -104,18 +104,18 @@ resource "azurerm_container_app" "backend" {
       }
 
       env {
-        name  = "S3_PUBLIC_CDN_URL"
+        name  = "PUBLIC_S3_CDN_URL"
         value = local.resolved_s3_cdn_url
       }
 
       env {
-        name  = "S3_PRIVATE_BUCKET_NAME"
-        value = var.s3_private_bucket_name
+        name  = "PRIVATE_S3_BUCKET_NAME"
+        value = var.private_s3_bucket_name
       }
 
       env {
-        name  = "S3_PUBLIC_BUCKET_NAME"
-        value = var.s3_public_bucket_name
+        name  = "PUBLIC_S3_BUCKET_NAME"
+        value = var.public_s3_bucket_name
       }
 
       liveness_probe {
