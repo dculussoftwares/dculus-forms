@@ -259,11 +259,19 @@ terraform import cloudflare_api_token.r2_access <token-id>
 - ✅ No access to other Cloudflare resources
 - ✅ Account-level (not zone-level) for R2
 
-### 2. Credential Storage
-- ✅ Credentials masked in GitHub Actions logs
-- ✅ Stored as sensitive Terraform outputs
+### 2. Credential Storage & Masking
+- ✅ **Credentials masked in GitHub Actions logs via `::add-mask::`**
+- ✅ Terraform outputs marked as `sensitive = false` to allow job passing
+- ✅ Values masked BEFORE writing to `$GITHUB_OUTPUT`
 - ✅ Passed securely to Azure Container Apps
 - ✅ Never logged in plain text
+- ✅ No credentials stored in git repository (only references)
+
+**Security Note:** Terraform outputs use `sensitive = false` to enable passing between GitHub Actions jobs. This is safe because:
+- Values are immediately masked with `::add-mask::` before any output
+- GitHub Actions' global masking hides values in all logs
+- Only configuration (references) are committed to git, not actual values
+- Credentials are ephemeral and regenerated on each deployment
 
 ### 3. Access Control
 - ✅ Token created per environment (dev/staging/production)
