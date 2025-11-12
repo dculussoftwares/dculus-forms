@@ -48,6 +48,19 @@ output "dns_record_status" {
   value       = "Automatically managed by R2 Custom Domain - Proxied through Cloudflare"
 }
 
+# R2 API Token Outputs (S3-compatible credentials)
+output "r2_access_key_id" {
+  description = "R2 Access Key ID (API Token ID) - Used as AWS_ACCESS_KEY_ID"
+  value       = cloudflare_api_token.r2_access.id
+  sensitive   = true
+}
+
+output "r2_secret_access_key" {
+  description = "R2 Secret Access Key (Token Value) - Used as AWS_SECRET_ACCESS_KEY"
+  value       = cloudflare_api_token.r2_access.value
+  sensitive   = true
+}
+
 output "next_steps" {
   description = "Next steps after deployment"
   value       = <<-EOT
