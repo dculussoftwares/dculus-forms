@@ -457,6 +457,16 @@ jobs:
           TF_VAR_public_s3_bucket_name: ${{ env.R2_PUBLIC_BUCKET }}
           TF_VAR_cors_origins: ${{ secrets.CORS_ORIGINS }}
           TF_VAR_container_image_tag: ${{ needs.check-docker-image.outputs.image_tag }}
+          TF_VAR_admin_email: ${{ secrets.ADMIN_EMAIL }}
+          TF_VAR_admin_password: ${{ secrets.ADMIN_PASSWORD }}
+          TF_VAR_admin_name: ${{ secrets.ADMIN_NAME }}
+          TF_VAR_email_host: ${{ secrets.EMAIL_HOST }}
+          TF_VAR_email_port: ${{ secrets.EMAIL_PORT }}
+          TF_VAR_email_user: ${{ secrets.EMAIL_USER }}
+          TF_VAR_email_password: ${{ secrets.EMAIL_PASSWORD }}
+          TF_VAR_email_from: ${{ secrets.EMAIL_FROM }}
+          TF_VAR_chargebee_site: ${{ secrets.CHARGEBEE_SITE }}
+          TF_VAR_chargebee_api_key: ${{ secrets.CHARGEBEE_API_KEY }}
         run: |
           # Copy shared Terraform files
           cp ../../main.tf .

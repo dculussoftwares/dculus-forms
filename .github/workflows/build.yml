@@ -914,6 +914,16 @@ jobs:
             -var="public_s3_bucket_name=${{ secrets.PUBLIC_S3_BUCKET_NAME }}" \
             -var="cors_origins=${{ secrets.CORS_ORIGINS }}" \
             -var="container_image=${{ steps.image.outputs.full_image }}" \
+            -var="admin_email=${{ secrets.ADMIN_EMAIL }}" \
+            -var="admin_password=${{ secrets.ADMIN_PASSWORD }}" \
+            -var="admin_name=${{ secrets.ADMIN_NAME }}" \
+            -var="email_host=${{ secrets.EMAIL_HOST }}" \
+            -var="email_port=${{ secrets.EMAIL_PORT }}" \
+            -var="email_user=${{ secrets.EMAIL_USER }}" \
+            -var="email_password=${{ secrets.EMAIL_PASSWORD }}" \
+            -var="email_from=${{ secrets.EMAIL_FROM }}" \
+            -var="chargebee_site=${{ secrets.CHARGEBEE_SITE }}" \
+            -var="chargebee_api_key=${{ secrets.CHARGEBEE_API_KEY }}" \
             -out=tfplan
 
       - name: Terraform Apply

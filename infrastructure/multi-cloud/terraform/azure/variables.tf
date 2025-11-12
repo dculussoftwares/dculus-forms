@@ -148,6 +148,71 @@ variable "container_image_tag" {
   default     = "latest"
 }
 
+variable "admin_email" {
+  description = "Admin email for initial super admin account"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "admin_password" {
+  description = "Admin password for initial super admin account"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "admin_name" {
+  description = "Admin name for initial super admin account"
+  type        = string
+  default     = "Super Admin"
+}
+
+variable "email_host" {
+  description = "SMTP email host (e.g., AWS SES endpoint)"
+  type        = string
+  default     = ""
+}
+
+variable "email_port" {
+  description = "SMTP email port"
+  type        = string
+  default     = "587"
+}
+
+variable "email_user" {
+  description = "SMTP email username (e.g., AWS SES access key)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "email_password" {
+  description = "SMTP email password (e.g., AWS SES secret key)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "email_from" {
+  description = "From email address for sending emails"
+  type        = string
+  default     = ""
+}
+
+variable "chargebee_site" {
+  description = "Chargebee site name"
+  type        = string
+  default     = ""
+}
+
+variable "chargebee_api_key" {
+  description = "Chargebee API key"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)

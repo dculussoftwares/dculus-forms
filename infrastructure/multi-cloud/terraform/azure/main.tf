@@ -118,6 +118,56 @@ resource "azurerm_container_app" "backend" {
         value = var.public_s3_bucket_name
       }
 
+      env {
+        name  = "ADMIN_EMAIL"
+        value = var.admin_email
+      }
+
+      env {
+        name  = "ADMIN_PASSWORD"
+        value = var.admin_password
+      }
+
+      env {
+        name  = "ADMIN_NAME"
+        value = var.admin_name
+      }
+
+      env {
+        name  = "EMAIL_HOST"
+        value = var.email_host
+      }
+
+      env {
+        name  = "EMAIL_PORT"
+        value = var.email_port
+      }
+
+      env {
+        name  = "EMAIL_USER"
+        value = var.email_user
+      }
+
+      env {
+        name  = "EMAIL_PASSWORD"
+        value = var.email_password
+      }
+
+      env {
+        name  = "EMAIL_FROM"
+        value = var.email_from
+      }
+
+      env {
+        name  = "CHARGEBEE_SITE"
+        value = var.chargebee_site
+      }
+
+      env {
+        name  = "CHARGEBEE_API_KEY"
+        value = var.chargebee_api_key
+      }
+
       liveness_probe {
         transport               = "HTTP"
         port                    = var.container_port
