@@ -1,0 +1,27 @@
+# Terraform files
+.terraform/
+*.tfstate
+*.tfstate.backup
+terraform.tfplan
+tfplan
+
+# Copied Terraform files in environment directories
+# These are copied from parent directory by GitHub Actions workflow
+environments/*/main.tf
+environments/*/variables.tf
+environments/*/outputs.tf
+environments/*/r2-*.tf
+
+# Environment files
+.env*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
