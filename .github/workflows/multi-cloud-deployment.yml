@@ -598,6 +598,244 @@ jobs:
           echo "service_domain=$(terraform output -raw service_domain)" >> $GITHUB_OUTPUT
           echo "target_backend_fqdn=$(terraform output -raw target_backend_fqdn)" >> $GITHUB_OUTPUT
 
+  # Terraform: Cloudflare Pages Infrastructure
+  terraform-cloudflare-pages:
+    name: Deploy Cloudflare Pages Infrastructure
+    runs-on: ubuntu-latest
+    needs: [determine-environment, setup-azure-backend, terraform-infrastructure-deploy]
+    if: |
+      always() && !cancelled() && !failure() &&
+      needs.determine-environment.outputs.should_deploy == 'true' &&
+      needs.determine-environment.outputs.deploy_cloudflare == 'true' &&
+      needs.terraform-infrastructure-deploy.result == 'success'
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    outputs:
+      pages_project_name: ${{ steps.apply.outputs.pages_project_name }}
+      pages_url: ${{ steps.apply.outputs.pages_url }}
+      custom_domain: ${{ steps.apply.outputs.custom_domain }}
+    defaults:
+      run:
+        working-directory: infrastructure/multi-cloud/terraform/cloudflare-pages/environments/${{ needs.determine-environment.outputs.environment }}
+    env:
+      TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+      TF_VAR_environment: ${{ needs.determine-environment.outputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: dculus-forms
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get Azure Storage Account Key
+        id: get-storage-key
+        run: |
+          ACCOUNT_KEY=$(az storage account keys list \
+            --resource-group dculus-global-terraform-assets-resource-grp \
+            --account-name dculusterraformstates \
+            --query '[0].value' -o tsv)
+          echo "::add-mask::$ACCOUNT_KEY"
+          echo "ARM_ACCESS_KEY=$ACCOUNT_KEY" >> $GITHUB_ENV
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Copy shared Terraform files
+        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages
+        run: |
+          cp main.tf environments/${{ needs.determine-environment.outputs.environment }}/
+          cp variables.tf environments/${{ needs.determine-environment.outputs.environment }}/
+          cp outputs.tf environments/${{ needs.determine-environment.outputs.environment }}/
+          cp cloudflare-pages-domain.tf environments/${{ needs.determine-environment.outputs.environment }}/
+          echo "✅ Copied shared Terraform files to environment directory"
+
+      - name: Terraform Init
+        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages/environments/${{ needs.determine-environment.outputs.environment }}
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages/environments/${{ needs.determine-environment.outputs.environment }}
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages/environments/${{ needs.determine-environment.outputs.environment }}
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        id: apply
+        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages/environments/${{ needs.determine-environment.outputs.environment }}
+        run: |
+          terraform apply -auto-approve tfplan
+
+          # Capture outputs
+          echo "pages_project_name=$(terraform output -raw pages_project_name)" >> $GITHUB_OUTPUT
+          echo "pages_url=$(terraform output -raw pages_url)" >> $GITHUB_OUTPUT
+          echo "custom_domain=$(terraform output -raw custom_domain)" >> $GITHUB_OUTPUT
+
+          echo "✅ Cloudflare Pages project created: $(terraform output -raw pages_project_name)"
+          echo "📍 Custom domain: $(terraform output -raw custom_domain)"
+
+  # Deploy form-app to Cloudflare Pages
+  deploy-cloudflare-pages-form-app:
+    name: Build & Deploy form-app to Cloudflare Pages
+    runs-on: ubuntu-latest
+    needs:
+      - determine-environment
+      - terraform-infrastructure-deploy
+      - terraform-cloudflare-service-domain
+      - terraform-cloudflare-pages
+    if: |
+      always() && !cancelled() && !failure() &&
+      needs.determine-environment.outputs.should_deploy == 'true' &&
+      needs.determine-environment.outputs.deploy_cloudflare == 'true' &&
+      needs.terraform-cloudflare-service-domain.result == 'success' &&
+      needs.terraform-cloudflare-pages.result == 'success'
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    steps:
+      - name: Download latest release source code
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Get latest release tag
+          LATEST_TAG=$(gh release list --repo ${{ github.repository }} --limit 1 --json tagName --jq '.[0].tagName')
+          echo "📦 Deploying from release: $LATEST_TAG"
+          echo "RELEASE_TAG=$LATEST_TAG" >> $GITHUB_ENV
+
+          # Download GitHub's auto-generated source code archive
+          mkdir -p ./release
+          curl -L -o ./release/source.tar.gz \
+            "https://github.com/${{ github.repository }}/archive/refs/tags/$LATEST_TAG.tar.gz"
+
+          # Extract source code
+          mkdir -p ./source
+          tar -xzf ./release/source.tar.gz -C ./source --strip-components=1
+
+          echo "✅ Source code extracted from release $LATEST_TAG"
+          ls -la ./source
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        working-directory: ./source
+        run: |
+          echo "📦 Installing dependencies..."
+          pnpm install --frozen-lockfile
+          echo "✅ Dependencies installed"
+
+      - name: Build shared packages
+        working-directory: ./source
+        run: |
+          echo "🔨 Building shared packages..."
+          pnpm --filter @dculus/types build
+          pnpm --filter @dculus/utils build
+          pnpm --filter @dculus/ui build
+          echo "✅ Shared packages built"
+
+      - name: Build form-app with environment-specific variables
+        working-directory: ./source
+        env:
+          VITE_GRAPHQL_URL: https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}/graphql
+          VITE_API_URL: https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}
+          VITE_CDN_ENDPOINT: ${{ needs.terraform-infrastructure-deploy.outputs.public_cdn_endpoint }}
+          VITE_PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+        run: |
+          echo "🔨 Building form-app for environment: ${{ needs.determine-environment.outputs.environment }}"
+          echo "Backend URL: $VITE_API_URL"
+          echo "GraphQL URL: $VITE_GRAPHQL_URL"
+          echo "CDN Endpoint: $VITE_CDN_ENDPOINT"
+
+          pnpm --filter form-app build
+
+          echo "✅ form-app build completed"
+          ls -la apps/form-app/dist/
+
+      - name: Install wrangler
+        run: npm install -g wrangler
+
+      - name: Deploy to Cloudflare Pages
+        working-directory: ./source
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "🚀 Deploying to Cloudflare Pages..."
+          echo "Project: form-app-${{ needs.determine-environment.outputs.environment }}"
+
+          wrangler pages deploy apps/form-app/dist \
+            --project-name=form-app-${{ needs.determine-environment.outputs.environment }} \
+            --branch=main \
+            --commit-hash=${{ github.sha }} \
+            --commit-message="Deploy release ${{ env.RELEASE_TAG }} to ${{ needs.determine-environment.outputs.environment }}"
+
+          echo "✅ Deployment completed"
+
+      - name: Health check deployment
+        run: |
+          CUSTOM_DOMAIN="${{ needs.terraform-cloudflare-pages.outputs.custom_domain }}"
+          echo "🔍 Checking deployment at: $CUSTOM_DOMAIN"
+
+          # Wait for DNS propagation and deployment
+          echo "⏳ Waiting 60 seconds for DNS propagation..."
+          sleep 60
+
+          # Retry health check up to 5 times
+          MAX_RETRIES=5
+          RETRY_COUNT=0
+
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -L "$CUSTOM_DOMAIN" || echo "000")
+
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Health check passed! (HTTP $HTTP_CODE)"
+              echo "🌐 form-app is live at: $CUSTOM_DOMAIN"
+              exit 0
+            else
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              echo "⚠️ Health check attempt $RETRY_COUNT/$MAX_RETRIES failed (HTTP $HTTP_CODE)"
+
+              if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                echo "⏳ Waiting 30 seconds before retry..."
+                sleep 30
+              fi
+            fi
+          done
+
+          echo "❌ Health check failed after $MAX_RETRIES attempts"
+          echo "💡 Check Cloudflare Pages dashboard: https://dash.cloudflare.com/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/pages/view/form-app-${{ needs.determine-environment.outputs.environment }}"
+          exit 1
+
+      - name: Deployment summary
+        if: success()
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ form-app Deployment Successful"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "📦 Release: ${{ env.RELEASE_TAG }}"
+          echo "🌍 Environment: ${{ needs.determine-environment.outputs.environment }}"
+          echo "🌐 URL: ${{ needs.terraform-cloudflare-pages.outputs.custom_domain }}"
+          echo "📊 Backend: https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}"
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
   # Configure Azure Custom Domain and Managed Certificate
   configure-azure-custom-domain:
     name: Configure Custom Domain & Certificate
@@ -735,6 +973,8 @@ jobs:
       terraform-mongodb-deploy,
       terraform-infrastructure-deploy,
       terraform-cloudflare-service-domain,
+      terraform-cloudflare-pages,
+      deploy-cloudflare-pages-form-app,
       configure-azure-custom-domain,
       health-checks
     ]
@@ -757,6 +997,8 @@ jobs:
           echo "| MongoDB Atlas | ${{ needs.terraform-mongodb-deploy.result == 'success' && '✅' || needs.terraform-mongodb-deploy.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Infrastructure (R2 + Container Apps) | ${{ needs.terraform-infrastructure-deploy.result == 'success' && '✅' || needs.terraform-infrastructure-deploy.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Cloudflare Service Domain | ${{ needs.terraform-cloudflare-service-domain.result == 'success' && '✅' || needs.terraform-cloudflare-service-domain.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Cloudflare Pages Infrastructure | ${{ needs.terraform-cloudflare-pages.result == 'success' && '✅' || needs.terraform-cloudflare-pages.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| form-app Deployment (Pages) | ${{ needs.deploy-cloudflare-pages-form-app.result == 'success' && '✅' || needs.deploy-cloudflare-pages-form-app.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Custom Domain & Certificate | ${{ needs.configure-azure-custom-domain.result == 'success' && '✅' || needs.configure-azure-custom-domain.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Health Checks | ${{ needs.health-checks.result == 'success' && '✅' || needs.health-checks.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -796,6 +1038,18 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "- **Hostname**: \`${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}\`" >> $GITHUB_STEP_SUMMARY
             echo "- **Target FQDN**: \`${{ needs.terraform-cloudflare-service-domain.outputs.target_backend_fqdn }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Cloudflare Pages Deployment Summary
+          if [ "${{ needs.deploy-cloudflare-pages-form-app.result }}" = "success" ]; then
+            echo "## 📱 form-app Deployment (Cloudflare Pages)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Project**: \`${{ needs.terraform-cloudflare-pages.outputs.pages_project_name }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Custom Domain**: [${{ needs.terraform-cloudflare-pages.outputs.custom_domain }}](${{ needs.terraform-cloudflare-pages.outputs.custom_domain }})" >> $GITHUB_STEP_SUMMARY
+            echo "- **Pages URL**: [${{ needs.terraform-cloudflare-pages.outputs.pages_url }}](${{ needs.terraform-cloudflare-pages.outputs.pages_url }})" >> $GITHUB_STEP_SUMMARY
+            echo "- **Backend**: \`https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Status**: ✅ Deployed and health check passed" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
 

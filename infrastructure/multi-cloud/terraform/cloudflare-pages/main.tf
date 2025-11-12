@@ -1,0 +1,30 @@
+terraform {
+  required_version = ">= 1.0"
+  required_providers {
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 4.0"
+    }
+  }
+}
+
+# Cloudflare Pages Project for form-app
+resource "cloudflare_pages_project" "form_app" {
+  account_id        = var.cloudflare_account_id
+  name              = "form-app-${var.environment}"
+  production_branch = "main"
+
+  # Build configuration (not used since we deploy via wrangler CLI)
+  build_config {
+    build_command   = ""
+    destination_dir = ""
+  }
+
+  # Deployment configuration
+  deployment_configs {
+    production {
+      compatibility_date  = "2024-01-01"
+      compatibility_flags = []
+    }
+  }
+}

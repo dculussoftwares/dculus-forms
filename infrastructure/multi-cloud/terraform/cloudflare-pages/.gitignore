@@ -1,0 +1,16 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+tfplan
+*.tfvars
+*.tfvars.json
+
+# Local files
+*.local
+.DS_Store
+
+# Environment files
+.env
+.env.local

@@ -1,0 +1,36 @@
+output "pages_project_name" {
+  description = "Cloudflare Pages project name"
+  value       = cloudflare_pages_project.form_app.name
+}
+
+output "pages_project_id" {
+  description = "Cloudflare Pages project ID"
+  value       = cloudflare_pages_project.form_app.id
+}
+
+output "pages_url" {
+  description = "Cloudflare Pages default URL (*.pages.dev)"
+  value       = "https://${cloudflare_pages_project.form_app.subdomain}"
+}
+
+output "custom_domain" {
+  description = "Custom domain for form-app"
+  value       = "https://form-app-${var.environment}.${var.root_domain}"
+}
+
+output "pages_subdomain" {
+  description = "Cloudflare Pages subdomain"
+  value       = cloudflare_pages_project.form_app.subdomain
+}
+
+output "deployment_info" {
+  description = "Deployment information for form-app"
+  value = {
+    environment      = var.environment
+    project_name     = cloudflare_pages_project.form_app.name
+    custom_domain    = "https://form-app-${var.environment}.${var.root_domain}"
+    pages_url        = "https://${cloudflare_pages_project.form_app.subdomain}"
+    dns_record_name  = "form-app-${var.environment}"
+    production_branch = cloudflare_pages_project.form_app.production_branch
+  }
+}
