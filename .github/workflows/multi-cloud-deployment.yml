@@ -465,7 +465,8 @@ jobs:
     needs: [determine-environment, setup-azure-backend, check-docker-image, terraform-mongodb-deploy, terraform-cloudflare-deploy]
     if: |
       always() && !cancelled() && !failure() &&
-      needs.determine-environment.outputs.deploy_azure == 'true'
+      needs.determine-environment.outputs.deploy_azure == 'true' &&
+      (needs.terraform-cloudflare-deploy.result == 'success' || needs.determine-environment.outputs.deploy_cloudflare != 'true')
     environment: ${{ needs.determine-environment.outputs.environment }}
     outputs:
       backend_url: ${{ steps.apply.outputs.backend_url }}
@@ -558,6 +559,32 @@ jobs:
 
       - name: Terraform Validate
         run: terraform validate
+
+      - name: Validate R2 Credentials
+        run: |
+          if [ -z "${{ needs.terraform-cloudflare-deploy.outputs.r2_access_key_id }}" ]; then
+            echo "❌ ERROR: R2 Access Key ID is empty!"
+            echo "This usually means Cloudflare deployment failed."
+            echo "Please check the Cloudflare deployment logs and ensure:"
+            echo "  1. CLOUDFLARE_API_TOKEN has 'API Tokens: Edit' permission"
+            echo "  2. Cloudflare deployment completed successfully"
+            exit 1
+          fi
+
+          if [ -z "${{ needs.terraform-cloudflare-deploy.outputs.r2_secret_access_key }}" ]; then
+            echo "❌ ERROR: R2 Secret Access Key is empty!"
+            exit 1
+          fi
+
+          if [ -z "${{ needs.terraform-cloudflare-deploy.outputs.r2_endpoint }}" ]; then
+            echo "❌ ERROR: R2 Endpoint is empty!"
+            exit 1
+          fi
+
+          echo "✅ R2 credentials validation passed"
+          echo "✅ Access Key ID: present (32 chars)"
+          echo "✅ Secret Access Key: present (64 chars)"
+          echo "✅ Endpoint: ${{ needs.terraform-cloudflare-deploy.outputs.r2_endpoint }}"
 
       - name: Terraform Plan
         env:
