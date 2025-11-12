@@ -22,6 +22,9 @@ locals {
   full_container_image  = "${var.container_image}:${var.container_image_tag}"
   public_cdn_domain     = "public-cdn-${var.environment}.dculus.com"
   resolved_s3_cdn_url   = var.public_s3_cdn_url != "" ? var.public_s3_cdn_url : "https://${local.public_cdn_domain}"
+  # Cloudflare service domain for BETTER_AUTH_URL
+  service_domain        = "form-services-${var.environment}.dculus.com"
+  resolved_auth_url     = var.better_auth_url != "" ? var.better_auth_url : "https://${local.service_domain}"
 }
 
 # Resource Group for this environment
@@ -70,7 +73,7 @@ resource "azurerm_container_app" "backend" {
 
       env {
         name  = "BETTER_AUTH_URL"
-        value = var.better_auth_url
+        value = local.resolved_auth_url
       }
 
       env {
