@@ -23,7 +23,7 @@ describe('env config', () => {
     delete process.env.S3_SECRET_KEY;
     delete process.env.S3_PUBLIC_BUCKET_NAME;
     delete process.env.S3_PRIVATE_BUCKET_NAME;
-    delete process.env.S3_CDN_URL;
+    delete process.env.S3_PUBLIC_CDN_URL;
     delete process.env.PORT;
     delete process.env.EMAIL_HOST;
     delete process.env.EMAIL_PORT;
@@ -39,7 +39,7 @@ describe('env config', () => {
       secretKey: 'test-secret-key',
       publicBucketName: 'test-public-bucket',
       privateBucketName: 'test-private-bucket',
-      cdnUrl: 'http://localhost:9000',
+      publicCdnUrl: 'http://localhost:9000',
     });
     expect(envModule.appConfig).toMatchObject({
       port: 4000,
@@ -63,11 +63,11 @@ describe('env config', () => {
     process.env.S3_SECRET_KEY = 'prod-secret';
     process.env.S3_PUBLIC_BUCKET_NAME = 'public';
     process.env.S3_PRIVATE_BUCKET_NAME = 'private';
-    delete process.env.S3_CDN_URL;
+    delete process.env.S3_PUBLIC_CDN_URL;
     process.env.BETTER_AUTH_SECRET = 'prod-auth-secret';
 
     await expect(import('../env.js')).rejects.toThrow(
-      'Missing required environment variable: S3_CDN_URL'
+      'Missing required environment variable: S3_PUBLIC_CDN_URL'
     );
   });
 
@@ -78,7 +78,7 @@ describe('env config', () => {
     process.env.S3_SECRET_KEY = 'prod-secret';
     process.env.S3_PUBLIC_BUCKET_NAME = 'public';
     process.env.S3_PRIVATE_BUCKET_NAME = 'private';
-    process.env.S3_CDN_URL = 'https://cdn.example.com';
+    process.env.S3_PUBLIC_CDN_URL = 'https://cdn.example.com';
     process.env.BETTER_AUTH_SECRET = 'prod-auth-secret';
     process.env.BETTER_AUTH_URL = 'https://auth.example.com';
     process.env.PORT = '8080';
@@ -96,7 +96,7 @@ describe('env config', () => {
       secretKey: 'prod-secret',
       publicBucketName: 'public',
       privateBucketName: 'private',
-      cdnUrl: 'https://cdn.example.com',
+      publicCdnUrl: 'https://cdn.example.com',
     });
     expect(envModule.authConfig).toEqual({
       baseUrl: 'https://auth.example.com',

@@ -16,7 +16,7 @@ export interface S3Config {
   secretKey: string;
   publicBucketName: string;
   privateBucketName: string;
-  cdnUrl: string;
+  publicCdnUrl: string;
 }
 
 export interface AuthConfig {
@@ -49,7 +49,7 @@ export const s3Config: S3Config = {
   secretKey: isTest ? optionalEnv('S3_SECRET_KEY', 'test-secret-key')! : requireEnv('S3_SECRET_KEY'),
   publicBucketName: isTest ? optionalEnv('S3_PUBLIC_BUCKET_NAME', 'test-public-bucket')! : requireEnv('S3_PUBLIC_BUCKET_NAME'),
   privateBucketName: isTest ? optionalEnv('S3_PRIVATE_BUCKET_NAME', 'test-private-bucket')! : requireEnv('S3_PRIVATE_BUCKET_NAME'),
-  cdnUrl: isTest ? optionalEnv('S3_CDN_URL', 'http://localhost:9000')! : requireEnv('S3_CDN_URL'),
+  publicCdnUrl: isTest ? optionalEnv('S3_PUBLIC_CDN_URL', 'http://localhost:9000')! : requireEnv('S3_PUBLIC_CDN_URL'),
 };
 
 export const authConfig: AuthConfig = {

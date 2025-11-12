@@ -57,7 +57,7 @@ For each environment (dev, staging, production):
 
 - [ ] `MONGODB_CONNECTION_STRING`
 - [ ] `BETTER_AUTH_SECRET`
-- [ ] `S3_CDN_URL`
+- [ ] `S3_PUBLIC_CDN_URL`
 - [ ] `S3_ACCESS_KEY`
 - [ ] `S3_SECRET_KEY`
 - [ ] `S3_ENDPOINT`
@@ -96,7 +96,7 @@ gh secret set BETTER_AUTH_SECRET --env dev \
   --body "$(openssl rand -base64 32)"
 
 # Cloudflare R2
-gh secret set S3_CDN_URL --env dev --body "https://cdn.dev.dculus.com"
+gh secret set S3_PUBLIC_CDN_URL --env dev --body "https://cdn.dev.dculus.com"
 gh secret set S3_ACCESS_KEY --env dev --body "your-r2-access-key"
 gh secret set S3_SECRET_KEY --env dev --body "your-r2-secret-key"
 gh secret set S3_ENDPOINT --env dev \

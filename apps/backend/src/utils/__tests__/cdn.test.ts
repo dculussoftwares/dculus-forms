@@ -4,7 +4,7 @@ import { constructCdnUrl } from '../cdn.js';
 // Mock the env module
 vi.mock('../../lib/env.js', () => ({
   s3Config: {
-    cdnUrl: 'https://cdn.example.com',
+    publicCdnUrl: 'https://cdn.example.com',
   },
 }));
 
@@ -34,7 +34,7 @@ describe('CDN Utils', () => {
       // Re-mock with trailing slash
       vi.doMock('../../lib/env.js', () => ({
         s3Config: {
-          cdnUrl: 'https://cdn.example.com/',
+          publicCdnUrl: 'https://cdn.example.com/',
         },
       }));
 

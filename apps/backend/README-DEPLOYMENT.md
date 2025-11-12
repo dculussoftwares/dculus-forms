@@ -276,7 +276,7 @@ sudo systemctl status dculus-backend
 |----------|-------------|---------|
 | `NODE_ENV` | Environment mode | `production` |
 | `PORT` | Server port | `4000` |
-| `S3_CDN_URL` | CDN URL for public files | S3 endpoint |
+| `S3_PUBLIC_CDN_URL` | CDN URL for public files | S3 endpoint |
 | `ADMIN_EMAIL` | Initial admin email | - |
 | `ADMIN_PASSWORD` | Initial admin password | - |
 | `ADMIN_NAME` | Initial admin name | - |

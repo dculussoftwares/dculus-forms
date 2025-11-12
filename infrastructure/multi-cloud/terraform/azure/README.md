@@ -23,7 +23,7 @@ The following secrets must be configured in your GitHub repository:
 - `S3_ENDPOINT`: S3 endpoint URL
 - `S3_PRIVATE_BUCKET_NAME`: Private bucket name
 - `S3_PUBLIC_BUCKET_NAME`: Public bucket name
-- `S3_CDN_URL`: CDN endpoint that serves public assets (defaults to `https://public-cdn-${environment}.dculus.com` if omitted)
+- `S3_PUBLIC_CDN_URL`: CDN endpoint that serves public assets (defaults to `https://public-cdn-${environment}.dculus.com` if omitted)
 
 ## Infrastructure Components
 

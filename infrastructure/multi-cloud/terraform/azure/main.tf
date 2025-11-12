@@ -104,7 +104,7 @@ resource "azurerm_container_app" "backend" {
       }
 
       env {
-        name  = "S3_CDN_URL"
+        name  = "S3_PUBLIC_CDN_URL"
         value = local.resolved_s3_cdn_url
       }
 
