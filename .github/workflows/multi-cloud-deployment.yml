@@ -345,6 +345,8 @@ jobs:
       public_bucket: ${{ steps.apply.outputs.public_bucket }}
       r2_endpoint: ${{ steps.apply.outputs.r2_endpoint }}
       public_cdn_url: ${{ steps.apply.outputs.public_cdn_url }}
+      r2_access_key_id: ${{ steps.r2-token.outputs.r2_access_key_id }}
+      r2_secret_access_key: ${{ steps.r2-token.outputs.r2_secret_access_key }}
     defaults:
       run:
         working-directory: ${{ env.CLOUDFLARE_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
@@ -444,6 +446,41 @@ jobs:
           echo "public_bucket=$(terraform output -raw public_bucket_name)" >> $GITHUB_OUTPUT
           echo "r2_endpoint=$(terraform output -raw r2_endpoint_url)" >> $GITHUB_OUTPUT
           echo "public_cdn_url=$(terraform output -raw public_cdn_url)" >> $GITHUB_OUTPUT
+
+      - name: Create or Retrieve R2 API Token
+        id: r2-token
+        if: ${{ needs.determine-environment.outputs.should_deploy == 'true' && needs.determine-environment.outputs.deploy_cloudflare == 'true' }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ENVIRONMENT: ${{ needs.determine-environment.outputs.environment }}
+        run: |
+          echo "🔑 Creating R2 API Token for environment: $ENVIRONMENT"
+          
+          # Create R2 API token via Cloudflare API
+          TOKEN_NAME="dculus-forms-r2-${ENVIRONMENT}-$(date +%s)"
+          
+          RESPONSE=$(curl -s -X POST "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/r2/credentials" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{\"name\":\"${TOKEN_NAME}\"}")
+          
+          # Check if request was successful
+          if echo "$RESPONSE" | jq -e '.success == true' > /dev/null; then
+            ACCESS_KEY_ID=$(echo "$RESPONSE" | jq -r '.result.access_key_id')
+            SECRET_ACCESS_KEY=$(echo "$RESPONSE" | jq -r '.result.secret_access_key')
+            
+            echo "✅ R2 API Token created successfully"
+            echo "::add-mask::$ACCESS_KEY_ID"
+            echo "::add-mask::$SECRET_ACCESS_KEY"
+            
+            echo "r2_access_key_id=$ACCESS_KEY_ID" >> $GITHUB_OUTPUT
+            echo "r2_secret_access_key=$SECRET_ACCESS_KEY" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Failed to create R2 API Token"
+            echo "$RESPONSE" | jq '.'
+            exit 1
+          fi
 
   # Terraform Plan & Apply for Azure Container Apps
   terraform-azure-deploy:
@@ -550,8 +587,8 @@ jobs:
         env:
           TF_VAR_mongodb_connection_string: ${{ needs.terraform-mongodb-deploy.outputs.connection_string || secrets.MONGODB_CONNECTION_STRING }}
           TF_VAR_better_auth_secret: ${{ secrets.BETTER_AUTH_SECRET }}
-          TF_VAR_public_s3_access_key: ${{ secrets.PUBLIC_S3_ACCESS_KEY }}
-          TF_VAR_public_s3_secret_key: ${{ secrets.PUBLIC_S3_SECRET_KEY }}
+          TF_VAR_public_s3_access_key: ${{ needs.terraform-cloudflare-deploy.outputs.r2_access_key_id || secrets.PUBLIC_S3_ACCESS_KEY }}
+          TF_VAR_public_s3_secret_key: ${{ needs.terraform-cloudflare-deploy.outputs.r2_secret_access_key || secrets.PUBLIC_S3_SECRET_KEY }}
           TF_VAR_public_s3_endpoint: ${{ needs.terraform-cloudflare-deploy.outputs.r2_endpoint || secrets.PUBLIC_S3_ENDPOINT }}
           TF_VAR_public_s3_cdn_url: ${{ needs.terraform-cloudflare-deploy.outputs.public_cdn_url || secrets.PUBLIC_S3_CDN_URL }}
           TF_VAR_private_s3_bucket_name: ${{ needs.terraform-cloudflare-deploy.outputs.private_bucket || secrets.PRIVATE_S3_BUCKET_NAME }}
@@ -577,8 +614,8 @@ jobs:
         env:
           TF_VAR_mongodb_connection_string: ${{ needs.terraform-mongodb-deploy.outputs.connection_string || secrets.MONGODB_CONNECTION_STRING }}
           TF_VAR_better_auth_secret: ${{ secrets.BETTER_AUTH_SECRET }}
-          TF_VAR_public_s3_access_key: ${{ secrets.PUBLIC_S3_ACCESS_KEY }}
-          TF_VAR_public_s3_secret_key: ${{ secrets.PUBLIC_S3_SECRET_KEY }}
+          TF_VAR_public_s3_access_key: ${{ needs.terraform-cloudflare-deploy.outputs.r2_access_key_id || secrets.PUBLIC_S3_ACCESS_KEY }}
+          TF_VAR_public_s3_secret_key: ${{ needs.terraform-cloudflare-deploy.outputs.r2_secret_access_key || secrets.PUBLIC_S3_SECRET_KEY }}
           TF_VAR_public_s3_endpoint: ${{ needs.terraform-cloudflare-deploy.outputs.r2_endpoint || secrets.PUBLIC_S3_ENDPOINT }}
           TF_VAR_public_s3_cdn_url: ${{ needs.terraform-cloudflare-deploy.outputs.public_cdn_url || secrets.PUBLIC_S3_CDN_URL }}
           TF_VAR_private_s3_bucket_name: ${{ needs.terraform-cloudflare-deploy.outputs.private_bucket || secrets.PRIVATE_S3_BUCKET_NAME }}
