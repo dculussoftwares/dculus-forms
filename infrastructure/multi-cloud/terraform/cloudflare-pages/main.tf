@@ -8,6 +8,11 @@ terraform {
   }
 }
 
+provider "cloudflare" {
+  # The provider will automatically use CLOUDFLARE_API_TOKEN environment variable
+  # No need to explicitly set api_token here
+}
+
 # Cloudflare Pages Project for form-app
 resource "cloudflare_pages_project" "form_app" {
   account_id        = var.cloudflare_account_id

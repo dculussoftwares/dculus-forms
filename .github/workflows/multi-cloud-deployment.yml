@@ -42,6 +42,7 @@ env:
   TERRAFORM_VERSION: '1.6.0'
   CLOUDFLARE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare'
   CLOUDFLARE_SERVICE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-service-domain'
+  CLOUDFLARE_PAGES_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages'
   AZURE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/azure'
   MONGODB_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/mongodb'
 
@@ -630,8 +631,9 @@ jobs:
       custom_domain: ${{ steps.apply.outputs.custom_domain }}
     defaults:
       run:
-        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages/environments/${{ needs.determine-environment.outputs.environment }}
+        working-directory: ${{ env.CLOUDFLARE_PAGES_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
     env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
@@ -666,35 +668,27 @@ jobs:
           terraform_wrapper: false
 
       - name: Copy shared Terraform files
-        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages
         run: |
-          cp main.tf environments/${{ needs.determine-environment.outputs.environment }}/
-          cp variables.tf environments/${{ needs.determine-environment.outputs.environment }}/
-          cp outputs.tf environments/${{ needs.determine-environment.outputs.environment }}/
-          cp cloudflare-pages-domain.tf environments/${{ needs.determine-environment.outputs.environment }}/
-          echo "✅ Copied shared Terraform files to environment directory"
+          cp ../../main.tf .
+          cp ../../variables.tf .
+          cp ../../outputs.tf .
+          cp ../../cloudflare-pages-domain.tf .
+          echo "✅ Copied shared Terraform files"
 
-      - name: Terraform Init, Plan & Apply
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
         id: apply
-        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages/environments/${{ needs.determine-environment.outputs.environment }}
         run: |
-          # Initialize Terraform with backend config
-          terraform init \
-            -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
-            -backend-config="storage_account_name=dculusterraformstates" \
-            -backend-config="container_name=dculus-forms-cloudflare-pages-${{ needs.determine-environment.outputs.environment }}-state" \
-            -backend-config="key=terraform.tfstate"
+          terraform apply -auto-approve tfplan
 
-          # Validate
-          terraform validate
-
-          # Plan
-          terraform plan
-
-          # Apply
-          terraform apply -auto-approve
-
-          # Capture outputs
           echo "pages_project_name=$(terraform output -raw pages_project_name)" >> $GITHUB_OUTPUT
           echo "pages_url=$(terraform output -raw pages_url)" >> $GITHUB_OUTPUT
           echo "custom_domain=$(terraform output -raw custom_domain)" >> $GITHUB_OUTPUT
