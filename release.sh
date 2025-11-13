@@ -31,8 +31,7 @@ print_error() {
 
 # Function to extract version from README.md
 get_current_version() {
-    # Look for version pattern in README.md (handles both standalone and code block)
-    grep -o "v[0-9]\+\.[0-9]\+\.[0-9]\+" README.md | head -1 | sed 's/^v//'
+    grep -m 1 "^v[0-9]\+\.[0-9]\+\.[0-9]\+" README.md | sed 's/^v//'
 }
 
 # Function to increment version
@@ -70,11 +69,11 @@ update_readme_version() {
     
     # Use sed to replace the first occurrence of version pattern
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        # macOS - replace first occurrence of version pattern
-        sed -i '' "s/v[0-9]\+\.[0-9]\+\.[0-9]\+/v$new_version/" README.md
+        # macOS
+        sed -i '' "s/^v[0-9]\+\.[0-9]\+\.[0-9]\+/v$new_version/" README.md
     else
-        # Linux - replace first occurrence of version pattern
-        sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+/v$new_version/" README.md
+        # Linux
+        sed -i "s/^v[0-9]\+\.[0-9]\+\.[0-9]\+/v$new_version/" README.md
     fi
 }
 
