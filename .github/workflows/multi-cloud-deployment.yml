@@ -619,7 +619,7 @@ jobs:
           echo "container_app_name=${{ env.CONTAINER_APP_NAME }}" >> $GITHUB_OUTPUT
 
   # ============================================================
-  # PHASE 5: BACKEND DOMAIN CONFIGURATION
+  # PHASE 5: DOMAIN CONFIGURATION (Backend + Frontend in Parallel)
   # ============================================================
 
   terraform-cloudflare-service-domain:
@@ -704,12 +704,8 @@ jobs:
           echo "service_domain=$(terraform output -raw service_domain)" >> $GITHUB_OUTPUT
           echo "target_backend_fqdn=$(terraform output -raw target_backend_fqdn)" >> $GITHUB_OUTPUT
 
-  # ============================================================
-  # PHASE 6: FRONTEND PAGES INFRASTRUCTURE & DOMAIN SETUP
-  # ============================================================
-
   terraform-cloudflare-pages:
-    name: 6.1. Setup Pages Infrastructure & Domain (form-app)
+    name: 5.2. Setup Pages Infrastructure & Domain (form-app)
     runs-on: ubuntu-latest
     needs: [determine-environment, setup-azure-backend, terraform-infrastructure-deploy]
     if: |
@@ -790,11 +786,11 @@ jobs:
           echo "📍 Custom domain: $(terraform output -raw custom_domain)"
 
   # ============================================================
-  # PHASE 7: FRONTEND APPLICATION DEPLOYMENT
+  # PHASE 6: APPLICATION DEPLOYMENT (All Frontends)
   # ============================================================
 
   deploy-cloudflare-pages-form-app:
-    name: 7.1. Build & Deploy Frontend (form-app)
+    name: 6.1. Build & Deploy Frontend (form-app)
     runs-on: ubuntu-latest
     needs:
       - determine-environment
@@ -949,7 +945,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
   terraform-cloudflare-pages-admin:
-    name: 6.2. Setup Pages Infrastructure & Domain (admin-app)
+    name: 5.3. Setup Pages Infrastructure & Domain (admin-app)
     runs-on: ubuntu-latest
     needs: [determine-environment, setup-azure-backend, terraform-infrastructure-deploy]
     if: |
@@ -1030,7 +1026,7 @@ jobs:
           echo "📍 Custom domain: $(terraform output -raw custom_domain)"
 
   deploy-cloudflare-pages-admin-app:
-    name: 7.2. Build & Deploy Frontend (admin-app)
+    name: 6.2. Build & Deploy Frontend (admin-app)
     runs-on: ubuntu-latest
     needs:
       - determine-environment
@@ -1184,7 +1180,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
   terraform-cloudflare-pages-viewer:
-    name: 6.3. Setup Pages Infrastructure & Domain (form-viewer)
+    name: 5.4. Setup Pages Infrastructure & Domain (form-viewer)
     runs-on: ubuntu-latest
     needs: [determine-environment, terraform-infrastructure-deploy, setup-azure-backend]
     if: |
@@ -1271,7 +1267,7 @@ jobs:
           echo "📍 Custom domain: $(terraform output -raw custom_domain)"
 
   deploy-cloudflare-pages-viewer-app:
-    name: 7.3. Build & Deploy Frontend (form-viewer)
+    name: 6.3. Build & Deploy Frontend (form-viewer)
     runs-on: ubuntu-latest
     needs:
       - determine-environment
@@ -1425,11 +1421,11 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
   # ============================================================
-  # PHASE 8: SSL CERTIFICATE & CUSTOM DOMAIN
+  # PHASE 7: SSL CERTIFICATE & CUSTOM DOMAIN (Backend)
   # ============================================================
 
   configure-azure-custom-domain:
-    name: 8.1. Configure Custom Domain & SSL Certificate
+    name: 7.1. Configure Backend SSL Certificate
     runs-on: ubuntu-latest
     needs: [determine-environment, terraform-infrastructure-deploy, terraform-cloudflare-service-domain]
     if: |
@@ -1501,11 +1497,11 @@ jobs:
           echo "================================================================"
 
   # ============================================================
-  # PHASE 9: POST-DEPLOYMENT VALIDATION
+  # PHASE 8: POST-DEPLOYMENT VALIDATION
   # ============================================================
 
   health-checks:
-    name: 9.1. Run Health Checks
+    name: 8.1. Run Health Checks
     runs-on: ubuntu-latest
     needs: [determine-environment, terraform-infrastructure-deploy]
     if: |
@@ -1559,11 +1555,11 @@ jobs:
           fi
 
   # ============================================================
-  # PHASE 10: DEPLOYMENT SUMMARY
+  # PHASE 9: DEPLOYMENT SUMMARY
   # ============================================================
 
   deployment-summary:
-    name: 10.1. Generate Deployment Summary
+    name: 9.1. Generate Deployment Summary
     runs-on: ubuntu-latest
     needs: [
       determine-environment,
