@@ -405,9 +405,9 @@ The easiest way to deploy Dculus Forms is to use the pre-built artifacts from Gi
 To create a new release with build artifacts:
 
 ```bash
-# Create and push a version tag
-git tag v1.0.0
-git push origin v1.0.0
+# Create and push a version tag (annotated tag with message)
+git tag -a v1.2.0 -m "Release v1.2.0" && \
+git push origin v1.2.0
 ```
 
 The GitHub Actions workflow will automatically:
