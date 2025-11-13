@@ -221,7 +221,6 @@ export const SignUp = () => {
         const orgResult = await authClient.organization.create({
           name: formData.organizationName,
           slug: organizationSlug,
-          keepCurrentActiveOrganization: false,
         });
 
         // Initialize free subscription for the new organization
@@ -240,6 +239,16 @@ export const SignUp = () => {
           } catch (subscriptionError) {
             // Log error but don't block signup flow
             console.error('[SignUp] ⚠️ Error initializing subscription:', subscriptionError);
+          }
+
+          // Set active organization and refresh session
+          try {
+            await organization.setActive({
+              organizationId: orgResult.data.id,
+            });
+            await authClient.getSession();
+          } catch (sessionError) {
+            console.error('[SignUp] Error setting active organization:', sessionError);
           }
         }
       }

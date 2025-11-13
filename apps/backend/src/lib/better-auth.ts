@@ -82,6 +82,24 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
         });
       },
       invitationExpiresIn: 60 * 60 * 24 * 2, // 2 days
+      organizationHooks: {
+        afterCreateOrganization: async ({ organization, user }: any) => {
+          // Update active sessions with the new organizationId
+          try {
+            await prisma.session.updateMany({
+              where: {
+                userId: user.id,
+                expiresAt: { gt: new Date() },
+              },
+              data: {
+                activeOrganizationId: organization.id,
+              },
+            });
+          } catch (error) {
+            logger.error('Error updating sessions with organizationId:', error);
+          }
+        },
+      },
     }),
     admin({
       defaultRole: 'user',
