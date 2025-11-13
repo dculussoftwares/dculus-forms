@@ -11,6 +11,10 @@ on:
           - dev
           - staging
           - production
+      release_tag:
+        description: 'Git tag/version to deploy (e.g., v1.2.3)'
+        required: true
+        type: string
       deploy_cloudflare:
         description: 'Deploy Cloudflare R2 infrastructure'
         required: false
@@ -57,6 +61,8 @@ jobs:
       deploy_cloudflare: ${{ steps.set-env.outputs.deploy_cloudflare }}
       deploy_azure: ${{ steps.set-env.outputs.deploy_azure }}
       deploy_mongodb: ${{ steps.set-env.outputs.deploy_mongodb }}
+      release_tag: ${{ steps.set-env.outputs.release_tag }}
+      release_commit: ${{ steps.resolve-release.outputs.release_commit || steps.set-env.outputs.release_commit }}
     steps:
       - name: Determine environment
         id: set-env
@@ -68,6 +74,7 @@ jobs:
             echo "deploy_cloudflare=${{ github.event.inputs.deploy_cloudflare }}" >> $GITHUB_OUTPUT
             echo "deploy_azure=${{ github.event.inputs.deploy_azure }}" >> $GITHUB_OUTPUT
             echo "deploy_mongodb=${{ github.event.inputs.deploy_mongodb }}" >> $GITHUB_OUTPUT
+            echo "release_tag=${{ github.event.inputs.release_tag }}" >> $GITHUB_OUTPUT
             exit 0
           fi
 
@@ -78,8 +85,46 @@ jobs:
             echo "deploy_cloudflare=true" >> $GITHUB_OUTPUT
             echo "deploy_azure=true" >> $GITHUB_OUTPUT
             echo "deploy_mongodb=true" >> $GITHUB_OUTPUT
+            echo "release_tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "release_commit=${{ github.sha }}" >> $GITHUB_OUTPUT
             exit 0
           fi
+
+      - name: Validate release tag
+        id: resolve-release
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.set-env.outputs.release_tag }}"
+
+          if [ -z "$TAG" ]; then
+            echo "❌ Release tag input is required."
+            exit 1
+          fi
+
+          echo "🔍 Validating release tag: $TAG"
+
+          REF_JSON=$(gh api repos/${{ github.repository }}/git/ref/tags/${TAG} 2>/tmp/ref_error || true)
+
+          if [ -z "$REF_JSON" ]; then
+            echo "❌ Tag '$TAG' was not found in repository ${{ github.repository }}"
+            echo "Details:"
+            cat /tmp/ref_error || true
+            exit 1
+          fi
+
+          OBJECT_SHA=$(echo "$REF_JSON" | jq -r '.object.sha')
+          OBJECT_TYPE=$(echo "$REF_JSON" | jq -r '.object.type')
+
+          if [ "$OBJECT_TYPE" = "tag" ]; then
+            COMMIT_SHA=$(gh api repos/${{ github.repository }}/git/tags/${OBJECT_SHA} --jq '.object.sha')
+          else
+            COMMIT_SHA="$OBJECT_SHA"
+          fi
+
+          echo "✅ Tag resolved to commit: $COMMIT_SHA"
+          echo "release_commit=$COMMIT_SHA" >> $GITHUB_OUTPUT
 
       - name: Display environment info
         run: |
@@ -88,6 +133,8 @@ jobs:
           echo "☁️ Deploy Cloudflare: ${{ steps.set-env.outputs.deploy_cloudflare }}"
           echo "🔷 Deploy Azure: ${{ steps.set-env.outputs.deploy_azure }}"
           echo "🍃 Deploy MongoDB: ${{ steps.set-env.outputs.deploy_mongodb }}"
+          echo "🏷️ Release tag: ${{ steps.set-env.outputs.release_tag }}"
+          echo "🔁 Release commit: ${{ steps.resolve-release.outputs.release_commit || steps.set-env.outputs.release_commit }}"
           echo "🔀 Event: ${{ github.event_name }}"
           echo "📌 Ref: ${{ github.ref }}"
 
@@ -212,8 +259,7 @@ jobs:
       - name: Set image tag
         id: set-tag
         run: |
-          # Use commit SHA as tag
-          TAG="${{ github.sha }}"
+          TAG="${{ needs.determine-environment.outputs.release_tag }}"
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "Using Docker image tag: ${TAG}"
 
@@ -713,25 +759,28 @@ jobs:
       needs.terraform-cloudflare-pages.result == 'success'
     environment: ${{ needs.determine-environment.outputs.environment }}
     steps:
-      - name: Download latest release source code
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Prepare release metadata
         run: |
-          # Get latest release tag
-          LATEST_TAG=$(gh release list --repo ${{ github.repository }} --limit 1 --json tagName --jq '.[0].tagName')
-          echo "📦 Deploying from release: $LATEST_TAG"
-          echo "RELEASE_TAG=$LATEST_TAG" >> $GITHUB_ENV
+          echo "RELEASE_TAG=${{ needs.determine-environment.outputs.release_tag }}" >> $GITHUB_ENV
+          echo "RELEASE_COMMIT=${{ needs.determine-environment.outputs.release_commit }}" >> $GITHUB_ENV
+          echo "📦 Deploying tag: ${{ needs.determine-environment.outputs.release_tag }}"
+
+      - name: Download tagged source code
+        env:
+          RELEASE_TAG: ${{ needs.determine-environment.outputs.release_tag }}
+        run: |
+          echo "📦 Downloading source for tag: $RELEASE_TAG"
 
           # Download GitHub's auto-generated source code archive
           mkdir -p ./release
-          curl -L -o ./release/source.tar.gz \
-            "https://github.com/${{ github.repository }}/archive/refs/tags/$LATEST_TAG.tar.gz"
+          curl -fL -o ./release/source.tar.gz \
+            "https://github.com/${{ github.repository }}/archive/refs/tags/${RELEASE_TAG}.tar.gz"
 
           # Extract source code
           mkdir -p ./source
           tar -xzf ./release/source.tar.gz -C ./source --strip-components=1
 
-          echo "✅ Source code extracted from release $LATEST_TAG"
+          echo "✅ Source code extracted from release $RELEASE_TAG"
           ls -la ./source
 
       - name: Setup Node.js
@@ -786,6 +835,8 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          RELEASE_TAG: ${{ needs.determine-environment.outputs.release_tag }}
+          RELEASE_COMMIT: ${{ needs.determine-environment.outputs.release_commit }}
         run: |
           echo "🚀 Deploying to Cloudflare Pages..."
           echo "Project: form-app-${{ needs.determine-environment.outputs.environment }}"
@@ -793,8 +844,8 @@ jobs:
           wrangler pages deploy apps/form-app/dist \
             --project-name=form-app-${{ needs.determine-environment.outputs.environment }} \
             --branch=main \
-            --commit-hash=${{ github.sha }} \
-            --commit-message="Deploy release ${{ env.RELEASE_TAG }} to ${{ needs.determine-environment.outputs.environment }}"
+            --commit-hash=${RELEASE_COMMIT} \
+            --commit-message="Deploy release ${RELEASE_TAG} to ${{ needs.determine-environment.outputs.environment }}"
 
           echo "✅ Deployment completed"
 
