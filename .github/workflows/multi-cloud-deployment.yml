@@ -48,6 +48,7 @@ env:
   CLOUDFLARE_SERVICE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-service-domain'
   CLOUDFLARE_PAGES_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages'
   CLOUDFLARE_PAGES_ADMIN_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages-admin'
+  CLOUDFLARE_PAGES_VIEWER_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages-viewer'
   AZURE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/azure'
   MONGODB_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/mongodb'
 
@@ -260,6 +261,21 @@ jobs:
             echo "✅ Container created: $CLOUDFLARE_PAGES_ADMIN_CONTAINER"
           else
             echo "✅ Container exists: $CLOUDFLARE_PAGES_ADMIN_CONTAINER"
+          fi
+
+          # Create Cloudflare Pages Viewer container
+          CLOUDFLARE_PAGES_VIEWER_CONTAINER="dculus-forms-cloudflare-pages-viewer-${ENV}-state"
+          if ! az storage container show \
+            --name "$CLOUDFLARE_PAGES_VIEWER_CONTAINER" \
+            --account-name "$STORAGE_ACCOUNT" &>/dev/null; then
+            echo "📦 Creating container: $CLOUDFLARE_PAGES_VIEWER_CONTAINER"
+            az storage container create \
+              --name "$CLOUDFLARE_PAGES_VIEWER_CONTAINER" \
+              --account-name "$STORAGE_ACCOUNT" \
+              --auth-mode login
+            echo "✅ Container created: $CLOUDFLARE_PAGES_VIEWER_CONTAINER"
+          else
+            echo "✅ Container exists: $CLOUDFLARE_PAGES_VIEWER_CONTAINER"
           fi
 
   # Build and push Docker image if needed
@@ -1151,6 +1167,249 @@ jobs:
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
+  # Cloudflare Pages Viewer Infrastructure
+  terraform-cloudflare-pages-viewer:
+    name: Cloudflare Pages Viewer Terraform
+    runs-on: ubuntu-latest
+    needs: [determine-environment, terraform-infrastructure-deploy, setup-azure-backend]
+    if: |
+      always() && !cancelled() && !failure() &&
+      needs.determine-environment.outputs.should_deploy == 'true' &&
+      needs.determine-environment.outputs.deploy_cloudflare == 'true' &&
+      needs.terraform-infrastructure-deploy.result == 'success'
+    outputs:
+      pages_project_name: ${{ steps.apply.outputs.pages_project_name }}
+      pages_url: ${{ steps.apply.outputs.pages_url }}
+      custom_domain: ${{ steps.apply.outputs.custom_domain }}
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    defaults:
+      run:
+        working-directory: ${{ env.CLOUDFLARE_PAGES_VIEWER_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
+    env:
+      TF_VAR_environment: ${{ needs.determine-environment.outputs.environment }}
+      TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+      TF_VAR_root_domain: dculus.com
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_USE_OIDC: true
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.determine-environment.outputs.release_commit }}
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get Azure Storage Account Key
+        id: get-storage-key
+        run: |
+          ACCOUNT_KEY=$(az storage account keys list \
+            --resource-group dculus-global-terraform-assets-resource-grp \
+            --account-name dculusterraformstates \
+            --query '[0].value' -o tsv)
+          echo "::add-mask::$ACCOUNT_KEY"
+          echo "ARM_ACCESS_KEY=$ACCOUNT_KEY" >> $GITHUB_ENV
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Copy shared Terraform files
+        run: |
+          cp ../../main.tf .
+          cp ../../variables.tf .
+          cp ../../outputs.tf .
+          cp ../../cloudflare-pages-domain.tf .
+          echo "✅ Copied shared Terraform files"
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        id: apply
+        run: |
+          terraform apply -auto-approve tfplan
+
+          echo "pages_project_name=$(terraform output -raw pages_project_name)" >> $GITHUB_OUTPUT
+          echo "pages_url=$(terraform output -raw pages_url)" >> $GITHUB_OUTPUT
+          echo "custom_domain=$(terraform output -raw custom_domain)" >> $GITHUB_OUTPUT
+
+          echo "✅ Cloudflare Pages project created: $(terraform output -raw pages_project_name)"
+          echo "📍 Custom domain: $(terraform output -raw custom_domain)"
+
+  # Deploy form-viewer to Cloudflare Pages
+  deploy-cloudflare-pages-viewer-app:
+    name: Build & Deploy form-viewer to Cloudflare Pages
+    runs-on: ubuntu-latest
+    needs:
+      - determine-environment
+      - terraform-infrastructure-deploy
+      - terraform-cloudflare-service-domain
+      - terraform-cloudflare-pages-viewer
+    if: |
+      always() && !cancelled() && !failure() &&
+      needs.determine-environment.outputs.should_deploy == 'true' &&
+      needs.determine-environment.outputs.deploy_cloudflare == 'true' &&
+      needs.terraform-cloudflare-service-domain.result == 'success' &&
+      needs.terraform-cloudflare-pages-viewer.result == 'success'
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    steps:
+      - name: Prepare release metadata
+        run: |
+          echo "RELEASE_TAG=${{ needs.determine-environment.outputs.release_tag }}" >> $GITHUB_ENV
+          echo "RELEASE_COMMIT=${{ needs.determine-environment.outputs.release_commit }}" >> $GITHUB_ENV
+          echo "📦 Deploying tag: ${{ needs.determine-environment.outputs.release_tag }}"
+
+      - name: Download tagged source code
+        env:
+          RELEASE_TAG: ${{ needs.determine-environment.outputs.release_tag }}
+        run: |
+          echo "📦 Downloading source for tag: $RELEASE_TAG"
+
+          # Download GitHub's auto-generated source code archive
+          mkdir -p ./release
+          curl -fL -o ./release/source.tar.gz \
+            "https://github.com/${{ github.repository }}/archive/refs/tags/${RELEASE_TAG}.tar.gz"
+
+          # Extract source code
+          mkdir -p ./source
+          tar -xzf ./release/source.tar.gz -C ./source --strip-components=1
+
+          echo "✅ Source code extracted from release $RELEASE_TAG"
+          ls -la ./source
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        working-directory: ./source
+        run: |
+          echo "📦 Installing dependencies..."
+          pnpm install --frozen-lockfile
+          echo "✅ Dependencies installed"
+
+      - name: Build shared packages
+        working-directory: ./source
+        run: |
+          echo "🔨 Building shared packages..."
+          pnpm --filter @dculus/types build
+          pnpm --filter @dculus/utils build
+          pnpm --filter @dculus/ui build
+          echo "✅ Shared packages built"
+
+      - name: Build form-viewer with environment-specific variables
+        working-directory: ./source
+        env:
+          VITE_GRAPHQL_URL: https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}/graphql
+          VITE_API_URL: https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}
+          VITE_CDN_ENDPOINT: ${{ needs.terraform-infrastructure-deploy.outputs.public_cdn_endpoint }}
+        run: |
+          echo "🔨 Building form-viewer for environment: ${{ needs.determine-environment.outputs.environment }}"
+          echo "Backend URL: $VITE_API_URL"
+          echo "GraphQL URL: $VITE_GRAPHQL_URL"
+          echo "CDN Endpoint: $VITE_CDN_ENDPOINT"
+
+          pnpm --filter form-viewer build
+
+          echo "✅ form-viewer build completed"
+          ls -la apps/form-viewer/dist/
+
+      - name: Install wrangler
+        run: npm install -g wrangler
+
+      - name: Deploy to Cloudflare Pages
+        working-directory: ./source
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          RELEASE_TAG: ${{ needs.determine-environment.outputs.release_tag }}
+          RELEASE_COMMIT: ${{ needs.determine-environment.outputs.release_commit }}
+        run: |
+          echo "🚀 Deploying to Cloudflare Pages..."
+          echo "Project: viewer-app-${{ needs.determine-environment.outputs.environment }}"
+
+          wrangler pages deploy apps/form-viewer/dist \
+            --project-name=viewer-app-${{ needs.determine-environment.outputs.environment }} \
+            --branch=main \
+            --commit-hash=${RELEASE_COMMIT} \
+            --commit-message="Deploy release ${RELEASE_TAG} to ${{ needs.determine-environment.outputs.environment }}"
+
+          echo "✅ Deployment completed"
+
+      - name: Health check deployment
+        run: |
+          CUSTOM_DOMAIN="${{ needs.terraform-cloudflare-pages-viewer.outputs.custom_domain }}"
+          echo "🔍 Checking deployment at: $CUSTOM_DOMAIN"
+
+          # Wait for DNS propagation and deployment
+          echo "⏳ Waiting 60 seconds for DNS propagation..."
+          sleep 60
+
+          # Retry health check up to 5 times
+          MAX_RETRIES=5
+          RETRY_COUNT=0
+
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -L "$CUSTOM_DOMAIN" || echo "000")
+
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Health check passed! (HTTP $HTTP_CODE)"
+              echo "🌐 form-viewer is live at: $CUSTOM_DOMAIN"
+              exit 0
+            else
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              echo "⚠️ Health check attempt $RETRY_COUNT/$MAX_RETRIES failed (HTTP $HTTP_CODE)"
+
+              if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                echo "⏳ Waiting 30 seconds before retry..."
+                sleep 30
+              fi
+            fi
+          done
+
+          echo "❌ Health check failed after $MAX_RETRIES attempts"
+          echo "💡 Check Cloudflare Pages dashboard: https://dash.cloudflare.com/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/pages/view/viewer-app-${{ needs.determine-environment.outputs.environment }}"
+          exit 1
+
+      - name: Deployment summary
+        if: success()
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ form-viewer Deployment Successful"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "📦 Release: ${{ env.RELEASE_TAG }}"
+          echo "🌍 Environment: ${{ needs.determine-environment.outputs.environment }}"
+          echo "🌐 URL: ${{ needs.terraform-cloudflare-pages-viewer.outputs.custom_domain }}"
+          echo "📊 Backend: https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}"
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
   # Configure Azure Custom Domain and Managed Certificate
   configure-azure-custom-domain:
     name: Configure Custom Domain & Certificate
@@ -1290,8 +1549,10 @@ jobs:
       terraform-cloudflare-service-domain,
       terraform-cloudflare-pages,
       terraform-cloudflare-pages-admin,
+      terraform-cloudflare-pages-viewer,
       deploy-cloudflare-pages-form-app,
       deploy-cloudflare-pages-admin-app,
+      deploy-cloudflare-pages-viewer-app,
       configure-azure-custom-domain,
       health-checks
     ]
@@ -1316,8 +1577,10 @@ jobs:
           echo "| Cloudflare Service Domain | ${{ needs.terraform-cloudflare-service-domain.result == 'success' && '✅' || needs.terraform-cloudflare-service-domain.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Cloudflare Pages Infrastructure (form-app) | ${{ needs.terraform-cloudflare-pages.result == 'success' && '✅' || needs.terraform-cloudflare-pages.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Cloudflare Pages Infrastructure (admin-app) | ${{ needs.terraform-cloudflare-pages-admin.result == 'success' && '✅' || needs.terraform-cloudflare-pages-admin.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Cloudflare Pages Infrastructure (viewer-app) | ${{ needs.terraform-cloudflare-pages-viewer.result == 'success' && '✅' || needs.terraform-cloudflare-pages-viewer.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| form-app Deployment (Pages) | ${{ needs.deploy-cloudflare-pages-form-app.result == 'success' && '✅' || needs.deploy-cloudflare-pages-form-app.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| admin-app Deployment (Pages) | ${{ needs.deploy-cloudflare-pages-admin-app.result == 'success' && '✅' || needs.deploy-cloudflare-pages-admin-app.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| viewer-app Deployment (Pages) | ${{ needs.deploy-cloudflare-pages-viewer-app.result == 'success' && '✅' || needs.deploy-cloudflare-pages-viewer-app.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Custom Domain & Certificate | ${{ needs.configure-azure-custom-domain.result == 'success' && '✅' || needs.configure-azure-custom-domain.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Health Checks | ${{ needs.health-checks.result == 'success' && '✅' || needs.health-checks.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -1379,6 +1642,18 @@ jobs:
             echo "- **Project**: \`${{ needs.terraform-cloudflare-pages-admin.outputs.pages_project_name }}\`" >> $GITHUB_STEP_SUMMARY
             echo "- **Custom Domain**: [${{ needs.terraform-cloudflare-pages-admin.outputs.custom_domain }}](${{ needs.terraform-cloudflare-pages-admin.outputs.custom_domain }})" >> $GITHUB_STEP_SUMMARY
             echo "- **Pages URL**: [${{ needs.terraform-cloudflare-pages-admin.outputs.pages_url }}](${{ needs.terraform-cloudflare-pages-admin.outputs.pages_url }})" >> $GITHUB_STEP_SUMMARY
+            echo "- **Backend**: \`https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Status**: ✅ Deployed and health check passed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Viewer App Deployment Summary
+          if [ "${{ needs.deploy-cloudflare-pages-viewer-app.result }}" = "success" ]; then
+            echo "## 👁️ form-viewer Deployment (Cloudflare Pages)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Project**: \`${{ needs.terraform-cloudflare-pages-viewer.outputs.pages_project_name }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Custom Domain**: [${{ needs.terraform-cloudflare-pages-viewer.outputs.custom_domain }}](${{ needs.terraform-cloudflare-pages-viewer.outputs.custom_domain }})" >> $GITHUB_STEP_SUMMARY
+            echo "- **Pages URL**: [${{ needs.terraform-cloudflare-pages-viewer.outputs.pages_url }}](${{ needs.terraform-cloudflare-pages-viewer.outputs.pages_url }})" >> $GITHUB_STEP_SUMMARY
             echo "- **Backend**: \`https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}\`" >> $GITHUB_STEP_SUMMARY
             echo "- **Status**: ✅ Deployed and health check passed" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY

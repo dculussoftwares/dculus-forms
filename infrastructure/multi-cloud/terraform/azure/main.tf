@@ -30,13 +30,13 @@ locals {
   # Dynamically generate frontend URLs based on environment
   # These match the Cloudflare Pages deployment URLs
   form_app_domain       = "form-app-${var.environment}.${var.root_domain}"
-  form_viewer_domain    = "form-viewer-${var.environment}.${var.root_domain}"
+  form_viewer_domain    = "viewer-app-${var.environment}.${var.root_domain}"
   admin_app_domain      = "form-admin-app-${var.environment}.${var.root_domain}"
   
   # For production, also include the apex domain aliases
   production_domains    = var.environment == "production" ? [
     "https://form-app.${var.root_domain}",
-    "https://form-viewer.${var.root_domain}",
+    "https://viewer-app.${var.root_domain}",
     "https://form-admin-app.${var.root_domain}"
   ] : []
   
