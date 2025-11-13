@@ -141,7 +141,7 @@ curl -X GET "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}" \
 
 View deployment status:
 - **GitHub Actions**: https://github.com/yourusername/dculus-forms/actions
-- **Workflow**: Multi-Cloud Deployment (Cloudflare R2 + Azure Container Apps)
+- **Workflow**: Multi-Cloud Deployment (Cloudflare R2 + Azure Container Apps + Cloudflare Pages + Cloudflare DNS)
 - **Job**: Configure Custom Domain & Certificate
 
 ## 🔐 Required Permissions

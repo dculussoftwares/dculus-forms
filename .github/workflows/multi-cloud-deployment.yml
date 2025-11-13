@@ -1,4 +1,4 @@
-name: Multi-Cloud Deployment (Cloudflare R2 + Azure Container Apps)
+name: Multi-Cloud Deployment (Cloudflare R2 + Azure Container Apps + Cloudflare Pages + Cloudflare DNS)
 
 on:
   workflow_dispatch:

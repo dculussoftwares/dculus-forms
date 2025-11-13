@@ -207,7 +207,7 @@ locals {
 Use the GitHub Actions workflow dispatch:
 
 ```bash
-# Navigate to: Actions > Multi-Cloud Deployment (Cloudflare R2 + Azure Container Apps)
+# Navigate to: Actions > Multi-Cloud Deployment (Cloudflare R2 + Azure Container Apps + Cloudflare Pages + Cloudflare DNS)
 
 # Fill in:
 # - Environment: dev | staging | production
