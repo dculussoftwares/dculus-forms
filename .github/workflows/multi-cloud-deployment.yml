@@ -53,9 +53,12 @@ env:
   MONGODB_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/mongodb'
 
 jobs:
-  # Determine which environment to deploy based on branch or manual input
+  # ============================================================
+  # PHASE 1: ENVIRONMENT SETUP & VALIDATION
+  # ============================================================
+
   determine-environment:
-    name: Determine Environment
+    name: 1.1. Determine Deployment Environment
     runs-on: ubuntu-latest
     outputs:
       environment: ${{ steps.set-env.outputs.environment }}
@@ -140,9 +143,8 @@ jobs:
           echo "🔀 Event: ${{ github.event_name }}"
           echo "📌 Ref: ${{ github.ref }}"
 
-  # Setup Azure backend infrastructure for Terraform state
   setup-azure-backend:
-    name: Setup Azure Backend
+    name: 1.2. Setup Azure Terraform Backend
     runs-on: ubuntu-latest
     needs: determine-environment
     if: needs.determine-environment.outputs.should_deploy == 'true'
@@ -278,9 +280,12 @@ jobs:
             echo "✅ Container exists: $CLOUDFLARE_PAGES_VIEWER_CONTAINER"
           fi
 
-  # Build and push Docker image if needed
+  # ============================================================
+  # PHASE 2: PRE-DEPLOYMENT VALIDATION
+  # ============================================================
+
   check-docker-image:
-    name: Check Docker Image
+    name: 2.1. Validate Docker Image Availability
     runs-on: ubuntu-latest
     needs: [determine-environment, setup-azure-backend]
     if: needs.determine-environment.outputs.deploy_azure == 'true'
@@ -311,9 +316,12 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
 
-  # Terraform Plan & Apply for MongoDB Atlas
+  # ============================================================
+  # PHASE 3: DATABASE INFRASTRUCTURE
+  # ============================================================
+
   terraform-mongodb-deploy:
-    name: Terraform Plan & Apply (MongoDB Atlas)
+    name: 3.1. Deploy MongoDB Atlas Infrastructure
     runs-on: ubuntu-latest
     needs: [determine-environment, setup-azure-backend]
     if: |
@@ -427,11 +435,12 @@ jobs:
           echo "cluster_name=$(terraform output -raw cluster_name)" >> $GITHUB_OUTPUT
           echo "cluster_state=$(terraform output -raw cluster_state)" >> $GITHUB_OUTPUT
 
-  # Merged Cloudflare + Azure Deployment
-  # This job deploys both Cloudflare R2 and Azure Container Apps in sequence
-  # Benefits: No credential passing between jobs, simpler, more secure
+  # ============================================================
+  # PHASE 4: CORE INFRASTRUCTURE (Storage + Backend)
+  # ============================================================
+
   terraform-infrastructure-deploy:
-    name: Deploy Infrastructure (R2 + Container Apps)
+    name: 4.1. Deploy Core Infrastructure (R2 Storage + Azure Container Apps)
     runs-on: ubuntu-latest
     needs: [determine-environment, setup-azure-backend, check-docker-image, terraform-mongodb-deploy]
     if: |
@@ -609,9 +618,12 @@ jobs:
           echo "health_endpoint=${{ env.BACKEND_URL }}/health" >> $GITHUB_OUTPUT
           echo "container_app_name=${{ env.CONTAINER_APP_NAME }}" >> $GITHUB_OUTPUT
 
-  # Cloudflare DNS record linking form-services-{env}.dculus.com to Azure backend
+  # ============================================================
+  # PHASE 5: BACKEND DOMAIN CONFIGURATION
+  # ============================================================
+
   terraform-cloudflare-service-domain:
-    name: Cloudflare DNS (Form Services)
+    name: 5.1. Configure Backend Service Domain DNS
     runs-on: ubuntu-latest
     needs: [determine-environment, setup-azure-backend, terraform-infrastructure-deploy]
     if: |
@@ -692,9 +704,12 @@ jobs:
           echo "service_domain=$(terraform output -raw service_domain)" >> $GITHUB_OUTPUT
           echo "target_backend_fqdn=$(terraform output -raw target_backend_fqdn)" >> $GITHUB_OUTPUT
 
-  # Terraform: Cloudflare Pages Infrastructure
+  # ============================================================
+  # PHASE 6: FRONTEND PAGES INFRASTRUCTURE & DOMAIN SETUP
+  # ============================================================
+
   terraform-cloudflare-pages:
-    name: Deploy Cloudflare Pages Infrastructure
+    name: 6.1. Setup Pages Infrastructure & Domain (form-app)
     runs-on: ubuntu-latest
     needs: [determine-environment, setup-azure-backend, terraform-infrastructure-deploy]
     if: |
@@ -774,9 +789,12 @@ jobs:
           echo "✅ Cloudflare Pages project created: $(terraform output -raw pages_project_name)"
           echo "📍 Custom domain: $(terraform output -raw custom_domain)"
 
-  # Deploy form-app to Cloudflare Pages
+  # ============================================================
+  # PHASE 7: FRONTEND APPLICATION DEPLOYMENT
+  # ============================================================
+
   deploy-cloudflare-pages-form-app:
-    name: Build & Deploy form-app to Cloudflare Pages
+    name: 7.1. Build & Deploy Frontend (form-app)
     runs-on: ubuntu-latest
     needs:
       - determine-environment
@@ -930,9 +948,8 @@ jobs:
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-  # Terraform: Cloudflare Pages Infrastructure for admin-app
   terraform-cloudflare-pages-admin:
-    name: Deploy Cloudflare Pages Infrastructure (admin-app)
+    name: 6.2. Setup Pages Infrastructure & Domain (admin-app)
     runs-on: ubuntu-latest
     needs: [determine-environment, setup-azure-backend, terraform-infrastructure-deploy]
     if: |
@@ -1012,9 +1029,8 @@ jobs:
           echo "✅ Cloudflare Pages project created: $(terraform output -raw pages_project_name)"
           echo "📍 Custom domain: $(terraform output -raw custom_domain)"
 
-  # Deploy admin-app to Cloudflare Pages
   deploy-cloudflare-pages-admin-app:
-    name: Build & Deploy admin-app to Cloudflare Pages
+    name: 7.2. Build & Deploy Frontend (admin-app)
     runs-on: ubuntu-latest
     needs:
       - determine-environment
@@ -1167,9 +1183,8 @@ jobs:
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-  # Cloudflare Pages Viewer Infrastructure
   terraform-cloudflare-pages-viewer:
-    name: Cloudflare Pages Viewer Terraform
+    name: 6.3. Setup Pages Infrastructure & Domain (form-viewer)
     runs-on: ubuntu-latest
     needs: [determine-environment, terraform-infrastructure-deploy, setup-azure-backend]
     if: |
@@ -1255,9 +1270,8 @@ jobs:
           echo "✅ Cloudflare Pages project created: $(terraform output -raw pages_project_name)"
           echo "📍 Custom domain: $(terraform output -raw custom_domain)"
 
-  # Deploy form-viewer to Cloudflare Pages
   deploy-cloudflare-pages-viewer-app:
-    name: Build & Deploy form-viewer to Cloudflare Pages
+    name: 7.3. Build & Deploy Frontend (form-viewer)
     runs-on: ubuntu-latest
     needs:
       - determine-environment
@@ -1410,9 +1424,12 @@ jobs:
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-  # Configure Azure Custom Domain and Managed Certificate
+  # ============================================================
+  # PHASE 8: SSL CERTIFICATE & CUSTOM DOMAIN
+  # ============================================================
+
   configure-azure-custom-domain:
-    name: Configure Custom Domain & Certificate
+    name: 8.1. Configure Custom Domain & SSL Certificate
     runs-on: ubuntu-latest
     needs: [determine-environment, terraform-infrastructure-deploy, terraform-cloudflare-service-domain]
     if: |
@@ -1483,9 +1500,12 @@ jobs:
           echo "${CERT_INFO}"
           echo "================================================================"
 
-  # Health checks after deployment
+  # ============================================================
+  # PHASE 9: POST-DEPLOYMENT VALIDATION
+  # ============================================================
+
   health-checks:
-    name: Health Checks
+    name: 9.1. Run Health Checks
     runs-on: ubuntu-latest
     needs: [determine-environment, terraform-infrastructure-deploy]
     if: |
@@ -1538,9 +1558,12 @@ jobs:
             echo "$RESPONSE"
           fi
 
-  # Summary job to report overall status
+  # ============================================================
+  # PHASE 10: DEPLOYMENT SUMMARY
+  # ============================================================
+
   deployment-summary:
-    name: Deployment Summary
+    name: 10.1. Generate Deployment Summary
     runs-on: ubuntu-latest
     needs: [
       determine-environment,
