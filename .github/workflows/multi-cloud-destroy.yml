@@ -377,11 +377,12 @@ jobs:
       - name: Terraform Destroy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_environment: ${{ github.event.inputs.environment }}
           TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
           TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           TF_VAR_backend_fqdn: "placeholder-not-needed-for-destroy"
         run: |
-          echo "🔥 Destroying backend service domain DNS..."
+          echo "🔥 Destroying backend service domain DNS (form-services-${{ github.event.inputs.environment }}.dculus.com)..."
           terraform destroy -auto-approve
           echo "✅ Backend service domain destroyed successfully"
 
