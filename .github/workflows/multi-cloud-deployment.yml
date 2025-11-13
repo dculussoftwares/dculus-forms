@@ -312,8 +312,9 @@ jobs:
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "❌ Docker image does not exist: ${IMAGE_NAME}:${TAG}"
-            echo "ℹ️  Image will need to be built via the build.yml workflow"
+            echo "⚠️  Please run the build.yml workflow with tag ${TAG} to build the image first"
             echo "exists=false" >> $GITHUB_OUTPUT
+            exit 1
           fi
 
   # ============================================================
