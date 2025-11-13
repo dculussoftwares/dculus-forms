@@ -724,6 +724,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      pull-requests: write
 
     steps:
       - name: Checkout repository
@@ -806,30 +807,6 @@ jobs:
           build-args: |
             BUILDKIT_INLINE_CACHE=1
 
-
-
-      - name: Comment on PR with image info
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const output = `
-            ## 🐳 Docker Build Summary
-            
-            **Image**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}\`
-            **Status**: ✅ Build successful (not pushed to registry)
-            **Platforms**: linux/amd64, linux/arm64
-            **Context**: Pull Request #${{ github.event.number }}
-            
-            The Docker image builds successfully but was not pushed to Docker Hub since this is a pull request.
-            `;
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output
-            });
 
       - name: Summary
         if: github.event_name != 'pull_request'
