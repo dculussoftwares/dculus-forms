@@ -39,6 +39,10 @@ env:
   TERRAFORM_VERSION: '1.6.0'
   MONGODB_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/mongodb'
   CLOUDFLARE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare'
+  CLOUDFLARE_SERVICE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-service-domain'
+  CLOUDFLARE_PAGES_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages'
+  CLOUDFLARE_PAGES_ADMIN_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages-admin'
+  CLOUDFLARE_PAGES_VIEWER_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages-viewer'
   AZURE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/azure'
 
 jobs:
@@ -212,27 +216,183 @@ jobs:
         env:
           TF_VAR_mongodb_connection_string: "placeholder"
           TF_VAR_better_auth_secret: ${{ secrets.BETTER_AUTH_SECRET }}
-          TF_VAR_public_s3_access_key: ${{ secrets.PUBLIC_S3_ACCESS_KEY }}
-          TF_VAR_public_s3_secret_key: ${{ secrets.PUBLIC_S3_SECRET_KEY }}
-          TF_VAR_public_s3_endpoint: ${{ secrets.PUBLIC_S3_ENDPOINT }}
-          TF_VAR_public_s3_cdn_url: ${{ secrets.PUBLIC_S3_CDN_URL }}
-          TF_VAR_private_s3_bucket_name: ${{ secrets.PRIVATE_S3_BUCKET_NAME }}
-          TF_VAR_public_s3_bucket_name: ${{ secrets.PUBLIC_S3_BUCKET_NAME }}
-          TF_VAR_cors_origins: ${{ secrets.CORS_ORIGINS }}
+          TF_VAR_public_s3_access_key: ${{ secrets.PUBLIC_S3_ACCESS_KEY || 'placeholder' }}
+          TF_VAR_public_s3_secret_key: ${{ secrets.PUBLIC_S3_SECRET_KEY || 'placeholder' }}
+          TF_VAR_public_s3_endpoint: ${{ secrets.PUBLIC_S3_ENDPOINT || 'placeholder' }}
+          TF_VAR_public_s3_cdn_url: ${{ secrets.PUBLIC_S3_CDN_URL || 'placeholder' }}
+          TF_VAR_private_s3_bucket_name: ${{ secrets.PRIVATE_S3_BUCKET_NAME || 'placeholder' }}
+          TF_VAR_public_s3_bucket_name: ${{ secrets.PUBLIC_S3_BUCKET_NAME || 'placeholder' }}
+          TF_VAR_cors_origins: ${{ secrets.CORS_ORIGINS || 'placeholder' }}
           TF_VAR_container_image_tag: "placeholder"
+          TF_VAR_admin_email: ${{ secrets.ADMIN_EMAIL || 'placeholder' }}
+          TF_VAR_admin_password: ${{ secrets.ADMIN_PASSWORD || 'placeholder' }}
+          TF_VAR_admin_name: ${{ secrets.ADMIN_NAME || 'placeholder' }}
+          TF_VAR_email_host: ${{ secrets.EMAIL_HOST || 'placeholder' }}
+          TF_VAR_email_port: ${{ secrets.EMAIL_PORT || '587' }}
+          TF_VAR_email_user: ${{ secrets.EMAIL_USER || 'placeholder' }}
+          TF_VAR_email_password: ${{ secrets.EMAIL_PASSWORD || 'placeholder' }}
+          TF_VAR_email_from: ${{ secrets.EMAIL_FROM || 'placeholder' }}
+          TF_VAR_chargebee_site: ${{ secrets.CHARGEBEE_SITE || 'placeholder' }}
+          TF_VAR_chargebee_api_key: ${{ secrets.CHARGEBEE_API_KEY || 'placeholder' }}
         run: |
           echo "🔥 Destroying Azure Container Apps..."
           terraform destroy -auto-approve
           echo "✅ Azure Container Apps destroyed successfully"
 
-  # Destroy Cloudflare R2 Buckets (File Storage)
-  terraform-cloudflare-destroy:
-    name: Destroy Cloudflare R2 Buckets
+  # Destroy Cloudflare Pages Projects (form-app, admin-app, viewer-app)
+  terraform-cloudflare-pages-destroy:
+    name: Destroy Cloudflare Pages Projects
     runs-on: ubuntu-latest
     needs: [validate-destroy-request, terraform-azure-destroy]
     if: |
       always() && !cancelled() &&
       (needs.terraform-azure-destroy.result == 'success' || needs.terraform-azure-destroy.result == 'skipped') &&
+      github.event.inputs.destroy_cloudflare == 'true'
+    environment: ${{ github.event.inputs.environment }}
+    strategy:
+      matrix:
+        project:
+          - name: form-app
+            dir: cloudflare-pages
+            description: Form Builder Application
+          - name: admin-app
+            dir: cloudflare-pages-admin
+            description: Admin Dashboard
+          - name: viewer-app
+            dir: cloudflare-pages-viewer
+            description: Form Viewer Application
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: dculus-forms
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get Azure Storage Account Key
+        run: |
+          ACCOUNT_KEY=$(az storage account keys list \
+            --resource-group dculus-global-terraform-assets-resource-grp \
+            --account-name dculusterraformstates \
+            --query '[0].value' -o tsv)
+          echo "::add-mask::$ACCOUNT_KEY"
+          echo "ARM_ACCESS_KEY=$ACCOUNT_KEY" >> $GITHUB_ENV
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Copy shared Terraform files
+        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/${{ matrix.project.dir }}/environments/${{ github.event.inputs.environment }}
+        run: |
+          cp ../../main.tf .
+          cp ../../variables.tf .
+          cp ../../outputs.tf .
+          cp ../../cloudflare-pages-domain.tf .
+          echo "✅ Copied shared Terraform files for ${{ matrix.project.name }}"
+
+      - name: Terraform Init
+        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/${{ matrix.project.dir }}/environments/${{ github.event.inputs.environment }}
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
+            -backend-config="storage_account_name=dculusterraformstates" \
+            -backend-config="container_name=dculus-forms-${{ matrix.project.dir }}-${{ github.event.inputs.environment }}-state" \
+            -backend-config="key=terraform.tfstate"
+
+      - name: Terraform Destroy
+        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/${{ matrix.project.dir }}/environments/${{ github.event.inputs.environment }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          TF_VAR_environment: ${{ github.event.inputs.environment }}
+        run: |
+          echo "🔥 Destroying Cloudflare Pages: ${{ matrix.project.description }}..."
+          terraform destroy -auto-approve
+          echo "✅ Cloudflare Pages project destroyed: ${{ matrix.project.name }}"
+
+  # Destroy Cloudflare Service Domain (Backend DNS)
+  terraform-cloudflare-service-domain-destroy:
+    name: Destroy Backend Service Domain
+    runs-on: ubuntu-latest
+    needs: [validate-destroy-request, terraform-cloudflare-pages-destroy]
+    if: |
+      always() && !cancelled() &&
+      (needs.terraform-cloudflare-pages-destroy.result == 'success' || needs.terraform-cloudflare-pages-destroy.result == 'skipped') &&
+      github.event.inputs.destroy_cloudflare == 'true'
+    environment: ${{ github.event.inputs.environment }}
+    defaults:
+      run:
+        working-directory: ${{ env.CLOUDFLARE_SERVICE_TERRAFORM_DIR }}/environments/${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: dculus-forms
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get Azure Storage Account Key
+        run: |
+          ACCOUNT_KEY=$(az storage account keys list \
+            --resource-group dculus-global-terraform-assets-resource-grp \
+            --account-name dculusterraformstates \
+            --query '[0].value' -o tsv)
+          echo "::add-mask::$ACCOUNT_KEY"
+          echo "ARM_ACCESS_KEY=$ACCOUNT_KEY" >> $GITHUB_ENV
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Copy shared Terraform files
+        run: |
+          cp ../../main.tf .
+          cp ../../variables.tf .
+          cp ../../outputs.tf .
+          echo "✅ Copied shared Terraform files"
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
+            -backend-config="storage_account_name=dculusterraformstates" \
+            -backend-config="container_name=dculus-forms-cloudflare-services-${{ github.event.inputs.environment }}-state" \
+            -backend-config="key=terraform.tfstate"
+
+      - name: Terraform Destroy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_backend_fqdn: "placeholder-not-needed-for-destroy"
+        run: |
+          echo "🔥 Destroying backend service domain DNS..."
+          terraform destroy -auto-approve
+          echo "✅ Backend service domain destroyed successfully"
+
+  # Destroy Cloudflare R2 Buckets (File Storage)
+  terraform-cloudflare-destroy:
+    name: Destroy Cloudflare R2 Buckets
+    runs-on: ubuntu-latest
+    needs: [validate-destroy-request, terraform-cloudflare-service-domain-destroy]
+    if: |
+      always() && !cancelled() &&
+      (needs.terraform-cloudflare-service-domain-destroy.result == 'success' || needs.terraform-cloudflare-service-domain-destroy.result == 'skipped') &&
       github.event.inputs.destroy_cloudflare == 'true'
     environment: ${{ github.event.inputs.environment }}
     defaults:
@@ -415,6 +575,8 @@ jobs:
       validate-destroy-request,
       cleanup-azure-custom-domain,
       terraform-azure-destroy,
+      terraform-cloudflare-pages-destroy,
+      terraform-cloudflare-service-domain-destroy,
       terraform-cloudflare-destroy,
       terraform-mongodb-destroy
     ]
@@ -443,11 +605,19 @@ jobs:
             echo "| Azure Container Apps | ❌ No | ⏭️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
           fi
 
-          # Cloudflare Status
+          # Cloudflare Pages Status
           if [ "${{ github.event.inputs.destroy_cloudflare }}" = "true" ]; then
+            PAGES_STATUS="${{ needs.terraform-cloudflare-pages-destroy.result == 'success' && '✅ Destroyed' || needs.terraform-cloudflare-pages-destroy.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}"
+            echo "| Cloudflare Pages (form-app, admin-app, viewer-app) | ✅ Yes | $PAGES_STATUS | ℹ️ Static sites only |" >> $GITHUB_STEP_SUMMARY
+            
+            SERVICE_DOMAIN_STATUS="${{ needs.terraform-cloudflare-service-domain-destroy.result == 'success' && '✅ Destroyed' || needs.terraform-cloudflare-service-domain-destroy.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}"
+            echo "| Backend Service Domain (DNS) | ✅ Yes | $SERVICE_DOMAIN_STATUS | ℹ️ DNS records only |" >> $GITHUB_STEP_SUMMARY
+            
             CF_STATUS="${{ needs.terraform-cloudflare-destroy.result == 'success' && '✅ Destroyed' || '❌ Failed' }}"
             echo "| Cloudflare R2 | ✅ Yes | $CF_STATUS | ⚠️ ALL FILES LOST |" >> $GITHUB_STEP_SUMMARY
           else
+            echo "| Cloudflare Pages Projects | ❌ No | ⏭️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
+            echo "| Backend Service Domain | ❌ No | ⏭️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
             echo "| Cloudflare R2 | ❌ No | ⏭️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
           fi
 
@@ -468,6 +638,30 @@ jobs:
             echo "- **Resource Group**: \`dculus-forms-${{ github.event.inputs.environment }}-rg\` - DELETED" >> $GITHUB_STEP_SUMMARY
             echo "- **Container App**: \`dculus-forms-${{ github.event.inputs.environment }}-backend\` - DELETED" >> $GITHUB_STEP_SUMMARY
             echo "- **Log Analytics**: All monitoring data - DELETED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.terraform-cloudflare-pages-destroy.result }}" = "success" ]; then
+            echo "## 📄 Cloudflare Pages Projects Destroyed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **form-app**: Form Builder application - DELETED" >> $GITHUB_STEP_SUMMARY
+            echo "  - Project: \`form-app-${{ github.event.inputs.environment }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "  - Custom domain removed from DNS" >> $GITHUB_STEP_SUMMARY
+            echo "- **admin-app**: Admin Dashboard application - DELETED" >> $GITHUB_STEP_SUMMARY
+            echo "  - Project: \`form-admin-app-${{ github.event.inputs.environment }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "  - Custom domain removed from DNS" >> $GITHUB_STEP_SUMMARY
+            echo "- **viewer-app**: Form Viewer application - DELETED" >> $GITHUB_STEP_SUMMARY
+            echo "  - Project: \`viewer-app-${{ github.event.inputs.environment }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "  - Custom domain removed from DNS" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.terraform-cloudflare-service-domain-destroy.result }}" = "success" ]; then
+            echo "## 🌐 Backend Service Domain Destroyed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Service Domain**: \`form-services-${{ github.event.inputs.environment }}.dculus.com\` - DELETED" >> $GITHUB_STEP_SUMMARY
+            echo "  - DNS CNAME record removed" >> $GITHUB_STEP_SUMMARY
+            echo "  - Points to Azure Container Apps FQDN" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
 
