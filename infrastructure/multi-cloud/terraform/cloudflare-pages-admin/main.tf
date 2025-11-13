@@ -16,7 +16,7 @@ provider "cloudflare" {
 # Cloudflare Pages Project for admin-app
 resource "cloudflare_pages_project" "admin_app" {
   account_id        = var.cloudflare_account_id
-  name              = "admin-app-${var.environment}"
+  name              = "form-admin-app-${var.environment}"
   production_branch = "main"
 
   # Build configuration (not used since we deploy via wrangler CLI)

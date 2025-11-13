@@ -17,9 +17,9 @@ This document provides a comprehensive guide for deploying the `admin-app` to Cl
 
 | Environment | URL |
 |------------|-----|
-| Development | `https://admin-app-dev.dculus.com` |
-| Staging | `https://admin-app-staging.dculus.com` |
-| Production | `https://admin-app-production.dculus.com` |
+| Development | `https://form-admin-app-dev.dculus.com` |
+| Staging | `https://form-admin-app-staging.dculus.com` |
+| Production | `https://form-admin-app-production.dculus.com` |
 
 ## Terraform Infrastructure
 
@@ -47,7 +47,7 @@ infrastructure/multi-cloud/terraform/cloudflare-pages-admin/
 ```terraform
 resource "cloudflare_pages_project" "admin_app" {
   account_id        = var.cloudflare_account_id
-  name              = "admin-app-${var.environment}"
+  name              = "form-admin-app-${var.environment}"
   production_branch = "main"
   
   build_config {
@@ -70,12 +70,12 @@ resource "cloudflare_pages_project" "admin_app" {
 resource "cloudflare_pages_domain" "admin_app" {
   account_id   = var.cloudflare_account_id
   project_name = cloudflare_pages_project.admin_app.name
-  domain       = "admin-app-${var.environment}.${var.root_domain}"
+  domain       = "form-admin-app-${var.environment}.${var.root_domain}"
 }
 
 resource "cloudflare_record" "admin_app_cname" {
   zone_id = var.cloudflare_zone_id
-  name    = "admin-app-${var.environment}"
+  name    = "form-admin-app-${var.environment}"
   type    = "CNAME"
   value   = cloudflare_pages_project.admin_app.subdomain
   proxied = true
@@ -243,7 +243,7 @@ These are injected during the build step in the GitHub Actions workflow.
 
 1. **Custom Domain Check**:
    ```bash
-   curl -I https://admin-app-dev.dculus.com
+   curl -I https://form-admin-app-dev.dculus.com
    # Expected: HTTP/2 200
    ```
 
@@ -260,7 +260,7 @@ These are injected during the build step in the GitHub Actions workflow.
 3. **CORS Verification**:
    ```bash
    curl -I https://form-services-dev.dculus.com/graphql \
-     -H "Origin: https://admin-app-dev.dculus.com" \
+     -H "Origin: https://form-admin-app-dev.dculus.com" \
      -H "Access-Control-Request-Method: POST"
    # Expected: Access-Control-Allow-Origin header present
    ```
@@ -272,9 +272,9 @@ After successful deployment, the GitHub Actions summary includes:
 ```markdown
 ## 🔧 admin-app Deployment (Cloudflare Pages)
 
-- **Project**: `admin-app-dev`
-- **Custom Domain**: [https://admin-app-dev.dculus.com](https://admin-app-dev.dculus.com)
-- **Pages URL**: [https://admin-app-dev-xxx.pages.dev](https://admin-app-dev-xxx.pages.dev)
+- **Project**: `form-admin-app-dev`
+- **Custom Domain**: [https://form-admin-app-dev.dculus.com](https://form-admin-app-dev.dculus.com)
+- **Pages URL**: [https://form-admin-app-dev-xxx.pages.dev](https://form-admin-app-dev-xxx.pages.dev)
 - **Backend**: `https://form-services-dev.dculus.com`
 - **Status**: ✅ Deployed and health check passed
 ```
@@ -285,7 +285,7 @@ After successful deployment, the GitHub Actions summary includes:
 
 #### 1. DNS Not Resolving
 
-**Symptom**: `admin-app-{env}.dculus.com` doesn't resolve
+**Symptom**: `form-admin-app-{env}.dculus.com` doesn't resolve
 
 **Solution**:
 - Check Cloudflare DNS records in dashboard
@@ -340,7 +340,7 @@ terraform output
 wrangler pages deployments list --project-name=admin-app-dev
 
 # Test custom domain
-curl -v https://admin-app-dev.dculus.com
+curl -v https://form-admin-app-dev.dculus.com
 ```
 
 ## Rollback Strategy

@@ -91,9 +91,9 @@ locals {
 
 | Environment | Admin App URL |
 |------------|---------------|
-| Development | `https://admin-app-dev.dculus.com` |
-| Staging | `https://admin-app-staging.dculus.com` |
-| Production | `https://admin-app-production.dculus.com` |
+| Development | `https://form-admin-app-dev.dculus.com` |
+| Staging | `https://form-admin-app-staging.dculus.com` |
+| Production | `https://form-admin-app-production.dculus.com` |
 
 ## Deployment Flow
 
@@ -161,10 +161,10 @@ Admin-app build receives the following environment variables:
 ## Comparison: form-app vs admin-app
 
 | Aspect | form-app | admin-app |
-|--------|----------|-----------|
+|--------|----------|--------|
 | Terraform Path | `cloudflare-pages/` | `cloudflare-pages-admin/` |
-| Project Name | `form-app-{env}` | `admin-app-{env}` |
-| Custom Domain | `form-app-{env}.dculus.com` | `admin-app-{env}.dculus.com` |
+| Project Name | `form-app-{env}` | `form-admin-app-{env}` |
+| Custom Domain | `form-app-{env}.dculus.com` | `form-admin-app-{env}.dculus.com` |
 | State Container | `cloudflare-pages-{env}-state` | `cloudflare-pages-admin-{env}-state` |
 | Build Output Dir | `apps/form-app/dist/` | `apps/admin-app/dist/` |
 | Workflow Job | `deploy-cloudflare-pages-form-app` | `deploy-cloudflare-pages-admin-app` |
@@ -178,8 +178,8 @@ Admin-app build receives the following environment variables:
 - [ ] Check Azure storage account access
 
 ### Post-Deployment
-- [ ] Custom domain resolves: `nslookup admin-app-{env}.dculus.com`
-- [ ] HTTPS certificate valid: `curl -I https://admin-app-{env}.dculus.com`
+- [ ] Custom domain resolves: `nslookup form-admin-app-{env}.dculus.com`
+- [ ] HTTPS certificate valid: `curl -I https://form-admin-app-{env}.dculus.com`
 - [ ] Admin app loads: Test in browser
 - [ ] GraphQL connectivity: Check network tab for API calls
 - [ ] CORS working: No console errors
@@ -212,15 +212,15 @@ Admin-app build receives the following environment variables:
 4. **Verify Deployment**:
    ```bash
    # Check DNS
-   nslookup admin-app-dev.dculus.com
+   nslookup form-admin-app-dev.dculus.com
    
    # Test HTTPS
-   curl -I https://admin-app-dev.dculus.com
+   curl -I https://form-admin-app-dev.dculus.com
    
    # Test backend connectivity
    curl -X POST https://form-services-dev.dculus.com/graphql \
      -H "Content-Type: application/json" \
-     -H "Origin: https://admin-app-dev.dculus.com" \
+     -H "Origin: https://form-admin-app-dev.dculus.com" \
      -d '{"query":"{ __typename }"}'
    ```
 

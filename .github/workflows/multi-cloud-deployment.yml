@@ -1092,10 +1092,10 @@ jobs:
           RELEASE_COMMIT: ${{ needs.determine-environment.outputs.release_commit }}
         run: |
           echo "🚀 Deploying to Cloudflare Pages..."
-          echo "Project: admin-app-${{ needs.determine-environment.outputs.environment }}"
+          echo "Project: form-admin-app-${{ needs.determine-environment.outputs.environment }}"
 
           wrangler pages deploy apps/admin-app/dist \
-            --project-name=admin-app-${{ needs.determine-environment.outputs.environment }} \
+            --project-name=form-admin-app-${{ needs.determine-environment.outputs.environment }} \
             --branch=main \
             --commit-hash=${RELEASE_COMMIT} \
             --commit-message="Deploy release ${RELEASE_TAG} to ${{ needs.determine-environment.outputs.environment }}"
@@ -1134,7 +1134,7 @@ jobs:
           done
 
           echo "❌ Health check failed after $MAX_RETRIES attempts"
-          echo "💡 Check Cloudflare Pages dashboard: https://dash.cloudflare.com/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/pages/view/admin-app-${{ needs.determine-environment.outputs.environment }}"
+          echo "💡 Check Cloudflare Pages dashboard: https://dash.cloudflare.com/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/pages/view/form-admin-app-${{ needs.determine-environment.outputs.environment }}"
           exit 1
 
       - name: Deployment summary

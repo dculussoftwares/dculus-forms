@@ -15,7 +15,7 @@ output "pages_url" {
 
 output "custom_domain" {
   description = "Custom domain for admin-app"
-  value       = "https://admin-app-${var.environment}.${var.root_domain}"
+  value       = "https://form-admin-app-${var.environment}.${var.root_domain}"
 }
 
 output "pages_subdomain" {
@@ -28,9 +28,9 @@ output "deployment_info" {
   value = {
     environment      = var.environment
     project_name     = cloudflare_pages_project.admin_app.name
-    custom_domain    = "https://admin-app-${var.environment}.${var.root_domain}"
+    custom_domain    = "https://form-admin-app-${var.environment}.${var.root_domain}"
     pages_url        = "https://${cloudflare_pages_project.admin_app.subdomain}"
-    dns_record_name  = "admin-app-${var.environment}"
+    dns_record_name  = "form-admin-app-${var.environment}"
     production_branch = cloudflare_pages_project.admin_app.production_branch
   }
 }
