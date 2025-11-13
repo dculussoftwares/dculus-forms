@@ -431,6 +431,7 @@ jobs:
           cp ../../variables.tf .
           cp ../../r2-buckets.tf .
           cp ../../r2-custom-domains.tf .
+          cp ../../r2-api-token.tf .
           cp ../../outputs.tf .
           echo "✅ Copied shared Terraform files"
 
