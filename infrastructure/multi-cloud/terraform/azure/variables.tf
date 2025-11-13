@@ -131,9 +131,15 @@ variable "public_s3_bucket_name" {
 }
 
 variable "cors_origins" {
-  description = "CORS origins for the backend API (comma-separated)"
+  description = "CORS origins for the backend API (comma-separated). Additional custom origins to include beyond auto-generated frontend URLs."
   type        = string
-  default     = "http://localhost:3000,http://localhost:5173"
+  default     = ""
+}
+
+variable "root_domain" {
+  description = "Root domain for the application (used to construct frontend URLs)"
+  type        = string
+  default     = "dculus.com"
 }
 
 variable "container_image" {

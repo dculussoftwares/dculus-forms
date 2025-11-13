@@ -11,6 +11,7 @@ import { useQuery } from '@apollo/client';
 import { GET_TEMPLATES } from '../graphql/templates';
 import { UseTemplatePopover } from '../components/UseTemplatePopover';
 import { useTranslation } from '../hooks/useTranslation';
+import { getCdnEndpoint } from '../lib/config';
 
 /**
  * Templates Page - displays available form templates for selection.
@@ -18,7 +19,7 @@ import { useTranslation } from '../hooks/useTranslation';
 
 const Templates: React.FC = () => {
   const { data, loading, error } = useQuery(GET_TEMPLATES);
-  const cdnEndpoint = (import.meta as any).env.VITE_CDN_ENDPOINT;
+  const cdnEndpoint = getCdnEndpoint();
   const { t, locale } = useTranslation('templates');
 
   return (

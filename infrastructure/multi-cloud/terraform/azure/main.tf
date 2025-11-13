@@ -22,9 +22,52 @@ locals {
   full_container_image  = "${var.container_image}:${var.container_image_tag}"
   public_cdn_domain     = "public-cdn-${var.environment}.dculus.com"
   resolved_s3_cdn_url   = var.public_s3_cdn_url != "" ? var.public_s3_cdn_url : "https://${local.public_cdn_domain}"
+  
   # Cloudflare service domain for BETTER_AUTH_URL
   service_domain        = "form-services-${var.environment}.dculus.com"
   resolved_auth_url     = var.better_auth_url != "" ? var.better_auth_url : "https://${local.service_domain}"
+  
+  # Dynamically generate frontend URLs based on environment
+  # These match the Cloudflare Pages deployment URLs
+  form_app_domain       = "form-app-${var.environment}.${var.root_domain}"
+  form_viewer_domain    = "form-viewer-${var.environment}.${var.root_domain}"
+  admin_app_domain      = "admin-app-${var.environment}.${var.root_domain}"
+  
+  # For production, also include the apex domain aliases
+  production_domains    = var.environment == "production" ? [
+    "https://form-app.${var.root_domain}",
+    "https://form-viewer.${var.root_domain}",
+    "https://admin-app.${var.root_domain}"
+  ] : []
+  
+  # Build CORS origins dynamically
+  # 1. Environment-specific frontend domains
+  frontend_domains = [
+    "https://${local.form_app_domain}",
+    "https://${local.form_viewer_domain}",
+    "https://${local.admin_app_domain}"
+  ]
+  
+  # 2. Development localhost URLs (only for dev/staging)
+  localhost_origins = var.environment != "production" ? [
+    "http://localhost:3000",
+    "http://localhost:3002",
+    "http://localhost:5173"
+  ] : []
+  
+  # 3. Additional custom origins from variable (if any)
+  custom_origins = var.cors_origins != "" ? split(",", var.cors_origins) : []
+  
+  # Combine all origins and remove duplicates
+  all_cors_origins = distinct(concat(
+    local.frontend_domains,
+    local.production_domains,
+    local.localhost_origins,
+    local.custom_origins
+  ))
+  
+  # Convert to comma-separated string for environment variable
+  cors_origins_string = join(",", local.all_cors_origins)
 }
 
 # Resource Group for this environment
@@ -88,7 +131,7 @@ resource "azurerm_container_app" "backend" {
 
       env {
         name  = "CORS_ORIGINS"
-        value = var.cors_origins
+        value = local.cors_origins_string
       }
 
       env {

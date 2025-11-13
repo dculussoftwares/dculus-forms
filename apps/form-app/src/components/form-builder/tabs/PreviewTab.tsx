@@ -3,6 +3,7 @@ import { useFormBuilderStore } from '@/store/useFormBuilderStore.ts';
 import { FormRenderer } from '@dculus/ui';
 import type { FormSchema } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
+import { getCdnEndpoint } from '../../../lib/config';
 
 interface PreviewTabProps {
   formId?: string;
@@ -10,7 +11,7 @@ interface PreviewTabProps {
 
 export const PreviewTab: React.FC<PreviewTabProps> = () => {
   const { pages, layout } = useFormBuilderStore();
-  const cdnEndpoint = (import.meta as any).env?.VITE_CDN_ENDPOINT;
+  const cdnEndpoint = getCdnEndpoint();
 
   // Create form schema from current builder state
   const formSchema: FormSchema = useMemo(

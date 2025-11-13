@@ -10,6 +10,27 @@ import {
   sendResetPasswordEmail,
 } from '../services/emailService.js';
 
+// Parse trusted origins from environment variable, with fallback to localhost
+const getTrustedOrigins = (): string[] => {
+  const corsOrigins = process.env.CORS_ORIGINS?.split(',').map(origin => origin.trim()) || [];
+  
+  // Default localhost origins for development
+  const defaultOrigins = [
+    'http://localhost:3000', // Form app
+    'http://localhost:3001', // Form viewer
+    'http://localhost:3002', // Admin app
+    'http://localhost:4000', // Backend (for GraphQL playground)
+    'http://localhost:5173', // Form viewer (Vite dev server)
+  ];
+
+  // Combine environment-specific origins with defaults (removing duplicates)
+  const allOrigins = [...new Set([...corsOrigins, ...defaultOrigins])];
+  
+  logger.info('🔐 Better Auth trusted origins:', allOrigins);
+  
+  return allOrigins;
+};
+
 export const auth: ReturnType<typeof betterAuth> = betterAuth({
   database: prismaAdapter(prisma, {
     provider: 'mongodb',
@@ -17,13 +38,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 
   baseURL: authConfig.baseUrl,
   secret: authConfig.secret,
-  trustedOrigins: [
-    'http://localhost:3000', // Form app
-    'http://localhost:3001', // Form viewer
-    'http://localhost:3002', // Admin app
-    'http://localhost:4000', // Backend (for GraphQL playground)
-    'http://localhost:5173', // Form viewer (Vite dev server)
-  ],
+  trustedOrigins: getTrustedOrigins(),
 
   emailAndPassword: {
     enabled: true,

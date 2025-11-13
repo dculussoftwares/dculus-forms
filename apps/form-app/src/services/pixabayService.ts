@@ -1,4 +1,5 @@
 import { uploadFileHTTP } from './fileUploadService';
+import { getPixabayApiKey } from '../lib/config';
 
 interface PixabayImage {
   id: number;
@@ -18,7 +19,7 @@ interface PixabayResponse {
   hits: PixabayImage[];
 }
 
-const PIXABAY_API_KEY = (import.meta as any).env?.VITE_PIXABAY_API_KEY;
+const PIXABAY_API_KEY = getPixabayApiKey();
 
 const PIXABAY_BASE_URL = 'https://pixabay.com/api/';
 

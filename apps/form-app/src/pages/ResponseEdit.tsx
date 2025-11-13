@@ -9,6 +9,7 @@ import { GET_FORM_BY_ID, GET_RESPONSE_BY_ID, UPDATE_RESPONSE, GET_FORM_RESPONSES
 import { MainLayout } from '../components/MainLayout';
 import { Button, LoadingSpinner, toastSuccess, toastError } from '@dculus/ui';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
+import { getCdnEndpoint } from '../lib/config';
 
 const ResponseEdit: React.FC = () => {
   const { t } = useTranslation('responseEdit');
@@ -158,7 +159,7 @@ const ResponseEdit: React.FC = () => {
 
   // Deserialize the form schema from the backend
   const formSchema = deserializeFormSchema(form.formSchema);
-  const cdnEndpoint = (import.meta as any).env?.VITE_CDN_ENDPOINT;
+  const cdnEndpoint = getCdnEndpoint();
 
   return (
     <MainLayout

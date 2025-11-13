@@ -8,10 +8,11 @@ import { GET_FORM_BY_SHORT_URL, SUBMIT_RESPONSE } from '../graphql/queries';
 import ThankYouDisplay from '../components/ThankYouDisplay';
 import { useFormAnalytics } from '../hooks/useFormAnalytics';
 import { useFormSubmissionAnalytics } from '../hooks/useFormSubmissionAnalytics';
+import { getCdnEndpoint } from '../lib/config';
 
 const FormViewer: React.FC = () => {
   const { shortUrl } = useParams<{ shortUrl: string }>();
-  const cdnEndpoint = import.meta.env?.VITE_CDN_ENDPOINT as string | undefined;
+  const cdnEndpoint = getCdnEndpoint();
   const [submissionState, setSubmissionState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [submissionMessage, setSubmissionMessage] = useState<string>('');
   const [thankYouData, setThankYouData] = useState<{message: string; isCustom: boolean} | null>(null);

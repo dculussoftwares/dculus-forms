@@ -5,6 +5,7 @@ import { FormRenderer } from '@dculus/ui';
 import { LayoutSidebar } from './layout/LayoutSidebar';
 import { RendererMode } from '@dculus/utils';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
+import { getCdnEndpoint } from '../../../lib/config';
 
 interface LayoutTabProps {
   onLayoutChange?: (updates: Partial<FormLayout>) => void;
@@ -14,7 +15,7 @@ export const LayoutTab: React.FC<LayoutTabProps> = ({ onLayoutChange }) => {
   const { layout, updateLayout, isConnected, pages, formId } = useFormBuilderStore();
   const permissions = useFormPermissions();
   const currentLayoutCode = layout?.code || 'L1';
-  const cdnEndpoint = (import.meta as any).env?.VITE_CDN_ENDPOINT;
+  const cdnEndpoint = getCdnEndpoint();
 
   const handleLayoutSelect = (layoutCode: LayoutCode) => {
     if (permissions.canEditLayout()) {

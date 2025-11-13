@@ -31,5 +31,16 @@ output "deployment_info" {
     container_image       = local.full_container_image
     replicas              = "${var.min_replicas}-${var.max_replicas}"
     cpu_memory            = "${var.cpu_cores} cores / ${var.memory_gb}Gi"
+    cors_origins          = local.cors_origins_string
+    frontend_domains = {
+      form_app    = "https://${local.form_app_domain}"
+      form_viewer = "https://${local.form_viewer_domain}"
+      admin_app   = "https://${local.admin_app_domain}"
+    }
   }
+}
+
+output "cors_origins" {
+  description = "Configured CORS origins (auto-generated + custom)"
+  value       = local.all_cors_origins
 }
