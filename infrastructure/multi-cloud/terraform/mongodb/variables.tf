@@ -29,6 +29,12 @@ variable "database_username" {
   type        = string
 }
 
+variable "database_name" {
+  description = "Database name"
+  type        = string
+  default     = "dculus_forms"
+}
+
 # Environment Configuration
 variable "environment" {
   description = "Environment name (dev, staging, production)"

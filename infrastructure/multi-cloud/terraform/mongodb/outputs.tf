@@ -2,10 +2,11 @@
 output "mongodb_connection_string" {
   description = "MongoDB connection string for application use"
   value = format(
-    "mongodb+srv://%s:%s@%s/?retryWrites=true&w=majority",
+    "mongodb+srv://%s:%s@%s/%s?retryWrites=true&w=majority",
     urlencode(var.database_username),
     urlencode(var.database_password),
-    replace(mongodbatlas_cluster.main.connection_strings[0].standard_srv, "mongodb+srv://", "")
+    replace(mongodbatlas_cluster.main.connection_strings[0].standard_srv, "mongodb+srv://", ""),
+    var.database_name
   )
   sensitive = true
 }
@@ -47,4 +48,9 @@ output "cluster_mongo_uri" {
 output "database_username" {
   description = "Database username"
   value       = mongodbatlas_database_user.main.username
+}
+
+output "database_name" {
+  description = "Database name"
+  value       = var.database_name
 }
