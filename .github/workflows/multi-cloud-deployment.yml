@@ -579,7 +579,7 @@ jobs:
             -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
             -backend-config="storage_account_name=dculusterraformstates" \
             -backend-config="container_name=dculus-forms-mongodb-${{ needs.determine-environment.outputs.environment }}-state" \
-            -backend-config="key=mongodb.tfstate"
+            -backend-config="key=terraform.tfstate"
 
           # Retrieve connection string from state
           CONNECTION_STRING=$(terraform output -raw mongodb_connection_string 2>/dev/null || echo "")
