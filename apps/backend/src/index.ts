@@ -13,12 +13,14 @@ import { auth } from './lib/better-auth.js';
 import { typeDefs } from './graphql/schema.js';
 import { resolvers } from './graphql/resolvers.js';
 import { healthRouter } from './routes/health.js';
+import { debugRouter } from './routes/debug.js';
 import { formsRouter } from './routes/forms.js';
 import { responsesRouter } from './routes/responses.js';
 import templatesRouter from './routes/templates.js';
 import { uploadRouter } from './routes/upload.js';
 import { chargebeeWebhookRouter } from './routes/chargebee-webhooks.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { cloudflareGeolocationMiddleware } from './middleware/cloudflare-geolocation.js';
 import { createBetterAuthContext } from './middleware/better-auth-middleware.js';
 import { prisma } from './lib/prisma.js';
 import { createHocuspocusServer } from './services/hocuspocus.js';
@@ -141,11 +143,13 @@ app.all('/api/auth/*', toNodeHandler(auth));
 // Apply express.json() AFTER Better Auth handler
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use(cloudflareGeolocationMiddleware);
 
 // graphqlUploadExpress will be added in the async startServer function
 
 // Routes
 app.use('/health', healthRouter);
+app.use('/api/debug', debugRouter);
 app.use('/api/forms', formsRouter);
 app.use('/api/responses', responsesRouter);
 app.use('/api/templates', templatesRouter);
