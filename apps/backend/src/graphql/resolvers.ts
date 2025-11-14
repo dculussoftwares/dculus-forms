@@ -1,4 +1,3 @@
-
 import { betterAuthResolvers } from './resolvers/better-auth.js';
 import { formsResolvers } from './resolvers/forms.js';
 import { extendedResponsesResolvers } from './resolvers/responses.js';
@@ -14,7 +13,6 @@ import { formSharingResolvers } from './resolvers/formSharing.js';
 import { pluginsResolvers } from './resolvers/plugins.js';
 import { subscriptionResolvers } from './resolvers/subscriptions.js';
 import { GraphQLJSON } from 'graphql-type-json';
-import { debugResolvers } from './resolvers/debug.js';
 
 
 export const resolvers = {
@@ -38,7 +36,6 @@ export const resolvers = {
     ...formSharingResolvers.Query,
     ...pluginsResolvers.Query,
     ...subscriptionResolvers.Query,
-    ...debugResolvers.Query,
   },
   Mutation: {
     ...betterAuthResolvers.Mutation,
