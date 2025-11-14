@@ -51,5 +51,18 @@ EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:4000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => { process.exit(1) })"
 
-# Start the application
-CMD ["node", "dist/apps/backend/src/index.js"]
+# Create startup script that runs seed before starting the app
+RUN echo '#!/bin/sh' > /app/apps/backend/start.sh && \
+    echo 'echo "🔍 Checking if database needs seeding..."' >> /app/apps/backend/start.sh && \
+    echo 'if [ "$RUN_SEED" = "true" ]; then' >> /app/apps/backend/start.sh && \
+    echo '  echo "🌱 Running database seed..."' >> /app/apps/backend/start.sh && \
+    echo '  node dist/scripts/seed.js || echo "⚠️  Seed failed, continuing anyway"' >> /app/apps/backend/start.sh && \
+    echo 'else' >> /app/apps/backend/start.sh && \
+    echo '  echo "⏭️  Skipping seed (RUN_SEED not set to true)"' >> /app/apps/backend/start.sh && \
+    echo 'fi' >> /app/apps/backend/start.sh && \
+    echo 'echo "🚀 Starting application..."' >> /app/apps/backend/start.sh && \
+    echo 'exec node dist/index.js' >> /app/apps/backend/start.sh && \
+    chmod +x /app/apps/backend/start.sh
+
+# Start the application with startup script
+CMD ["/bin/sh", "/app/apps/backend/start.sh"]

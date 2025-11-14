@@ -214,6 +214,11 @@ resource "azurerm_container_app" "backend" {
         value = var.chargebee_api_key
       }
 
+      env {
+        name  = "RUN_SEED"
+        value = var.run_seed ? "true" : "false"
+      }
+
       liveness_probe {
         transport               = "HTTP"
         port                    = var.container_port

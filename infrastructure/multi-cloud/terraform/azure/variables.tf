@@ -219,6 +219,12 @@ variable "chargebee_api_key" {
   default     = ""
 }
 
+variable "run_seed" {
+  description = "Whether to run database seeding on container startup"
+  type        = bool
+  default     = false
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)
