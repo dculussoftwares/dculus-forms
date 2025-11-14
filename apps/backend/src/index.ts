@@ -14,9 +14,6 @@ import { typeDefs } from './graphql/schema.js';
 import { resolvers } from './graphql/resolvers.js';
 import { healthRouter } from './routes/health.js';
 import { debugRouter } from './routes/debug.js';
-import { formsRouter } from './routes/forms.js';
-import { responsesRouter } from './routes/responses.js';
-import templatesRouter from './routes/templates.js';
 import { uploadRouter } from './routes/upload.js';
 import { chargebeeWebhookRouter } from './routes/chargebee-webhooks.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -150,9 +147,6 @@ app.use(cloudflareGeolocationMiddleware);
 // Routes
 app.use('/health', healthRouter);
 app.use('/api/debug', debugRouter);
-app.use('/api/forms', formsRouter);
-app.use('/api/responses', responsesRouter);
-app.use('/api/templates', templatesRouter);
 app.use('/', uploadRouter);
 app.use('/api', chargebeeWebhookRouter);
 

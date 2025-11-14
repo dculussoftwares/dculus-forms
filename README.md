@@ -205,16 +205,7 @@ pnpm db:seed           # Seed with sample data
 ## 📚 API Endpoints
 
 ### REST API
-- `GET /api/forms` - Get all forms
-- `GET /api/forms/:id` - Get form by ID
-- `POST /api/forms` - Create new form
-- `PUT /api/forms/:id` - Update form
-- `DELETE /api/forms/:id` - Delete form
-
-- `GET /api/responses` - Get all responses
-- `GET /api/responses/:id` - Get response by ID
-- `POST /api/responses` - Submit response
-- `DELETE /api/responses/:id` - Delete response
+Legacy REST handlers for forms, responses, and templates have been removed—GraphQL is now the only supported surface for these resources.
 
 ### GraphQL
 The GraphQL schema includes queries and mutations for forms and responses. Access the GraphQL Playground at http://localhost:4000/graphql for interactive documentation.
@@ -303,7 +294,7 @@ import {
 } from '@dculus/ui';
 
 // Import utilities from the utils package
-import { generateId, API_ENDPOINTS, cn } from '@dculus/utils';
+import { generateId, cn } from '@dculus/utils';
 
 export function MyComponent() {
   return (
@@ -351,7 +342,7 @@ Both React apps use shared UI components from `packages/ui/src` with the `@dculu
 
 ```typescript
 import { Button, Card, Input, SidebarProvider, useSidebar } from '@dculus/ui';
-import { generateId, API_ENDPOINTS, cn } from '@dculus/utils';
+import { generateId, cn } from '@dculus/utils';
 ```
 
 The UI package includes all shadcn/ui components:

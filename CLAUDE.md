@@ -74,7 +74,7 @@ This is a **pnpm monorepo** with four main applications and shared packages:
 import { Button, Card, SidebarProvider } from '@dculus/ui';
 
 // Shared utilities and constants
-import { generateId, API_ENDPOINTS, cn } from '@dculus/utils';
+import { generateId, cn } from '@dculus/utils';
 
 // Shared types and form field classes
 import type { Form, FormSchema } from '@dculus/types';

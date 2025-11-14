@@ -1,10 +1,3 @@
-export const API_ENDPOINTS = {
-  GRAPHQL: '/graphql',
-  HEALTH: '/health',
-  FORMS: '/api/forms',
-  RESPONSES: '/api/responses',
-} as const;
-
 export const HTTP_STATUS = {
   OK: 200,
   CREATED: 201,
