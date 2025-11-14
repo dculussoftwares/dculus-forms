@@ -7,6 +7,7 @@ import {
   formViewAnalyticsRepository,
   formSubmissionAnalyticsRepository,
 } from '../repositories/index.js';
+import { EdgeVisitorLocation } from '../middleware/edge-geolocation.js';
 
 // Create require for CommonJS modules in ES module context
 const require = createRequire(import.meta.url);
@@ -29,6 +30,7 @@ interface AnalyticsData {
   userAgent: string;
   timezone?: string;
   language?: string;
+  visitorGeo?: EdgeVisitorLocation;
 }
 
 interface SubmissionAnalyticsData extends AnalyticsData {
@@ -46,6 +48,16 @@ interface GeolocationResult {
   countryCode?: string;
   regionCode?: string;
   city?: string;
+}
+
+interface LocationDetails {
+  countryAlpha2: string | null;
+  region: string | null;
+  regionCode: string | null;
+  city: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  countryCode: string | null;
 }
 
 interface UserAgentInfo {
@@ -85,6 +97,41 @@ export const analyticsInternals = {
       return {};
     }
   }
+};
+
+const parseCoordinate = (value?: string): number | null => {
+  if (!value) {
+    return null;
+  }
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const convertAlpha2ToAlpha3 = (alpha2?: string | null): string | null => {
+  if (!alpha2) {
+    return null;
+  }
+
+  try {
+    initializeLocale();
+    const code = countries.alpha2ToAlpha3(alpha2.toUpperCase());
+    return code || null;
+  } catch (error) {
+    logger.error('Error converting alpha2 to alpha3:', error);
+    return null;
+  }
+};
+
+const extractVisitorLocation = (geo?: EdgeVisitorLocation): LocationDetails => {
+  return {
+    countryAlpha2: geo?.country?.toUpperCase() || null,
+    region: geo?.region || null,
+    regionCode: geo?.regionCode || null,
+    city: geo?.city || null,
+    latitude: parseCoordinate(geo?.latitude),
+    longitude: parseCoordinate(geo?.longitude),
+    countryCode: convertAlpha2ToAlpha3(geo?.country),
+  };
 };
 
 const getCountryFromLanguage = (language: string): string | null => {
@@ -185,10 +232,15 @@ const generateAnalyticsId = (): string => {
 };
 
 // Main business logic functions
-const trackFormView = async (data: AnalyticsData, clientIP?: string): Promise<void> => {
+const trackFormView = async (
+  data: AnalyticsData,
+  clientIP?: string
+): Promise<void> => {
   try {
     const userAgentData = parseUserAgent(data.userAgent);
-    const countryCode = await detectCountryCode(data, clientIP);
+    const locationDetails = extractVisitorLocation(data.visitorGeo);
+    const countryCode =
+      locationDetails.countryCode || (await detectCountryCode(data, clientIP));
     const analyticsId = generateAnalyticsId();
 
     await formViewAnalyticsRepository.createViewEvent({
@@ -200,8 +252,12 @@ const trackFormView = async (data: AnalyticsData, clientIP?: string): Promise<vo
       browser: userAgentData.browser,
       browserVersion: userAgentData.browserVersion,
       countryCode,
-      regionCode: null, // TODO: Add region detection
-      city: null, // TODO: Add city detection
+      countryAlpha2: locationDetails.countryAlpha2,
+      regionCode: locationDetails.regionCode,
+      region: locationDetails.region,
+      city: locationDetails.city,
+      longitude: locationDetails.longitude,
+      latitude: locationDetails.latitude,
       timezone: data.timezone,
       language: data.language,
       viewedAt: new Date(),
@@ -235,10 +291,15 @@ const updateFormStartTime = async (data: UpdateFormStartTimeData): Promise<void>
   }
 };
 
-const trackFormSubmission = async (data: SubmissionAnalyticsData, clientIP?: string): Promise<void> => {
+const trackFormSubmission = async (
+  data: SubmissionAnalyticsData,
+  clientIP?: string
+): Promise<void> => {
   try {
     const userAgentData = parseUserAgent(data.userAgent);
-    const countryCode = await detectCountryCode(data, clientIP);
+    const locationDetails = extractVisitorLocation(data.visitorGeo);
+    const countryCode =
+      locationDetails.countryCode || (await detectCountryCode(data, clientIP));
     const analyticsId = generateAnalyticsId();
 
     await formSubmissionAnalyticsRepository.createSubmissionEvent({
@@ -251,8 +312,12 @@ const trackFormSubmission = async (data: SubmissionAnalyticsData, clientIP?: str
       browser: userAgentData.browser,
       browserVersion: userAgentData.browserVersion,
       countryCode,
-      regionCode: null, // TODO: Add region detection
-      city: null, // TODO: Add city detection
+      countryAlpha2: locationDetails.countryAlpha2,
+      regionCode: locationDetails.regionCode,
+      region: locationDetails.region,
+      city: locationDetails.city,
+      longitude: locationDetails.longitude,
+      latitude: locationDetails.latitude,
       timezone: data.timezone,
       language: data.language,
       submittedAt: new Date(),
@@ -341,7 +406,16 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
     }
     
     // Parallel execution of database queries for better performance
-    const [totalViews, uniqueSessionsData, countryStats, osStats, browserStats, dailyViews] = await Promise.all([
+    const [
+      totalViews,
+      uniqueSessionsData,
+      countryStats,
+      regionStats,
+      cityStats,
+      osStats,
+      browserStats,
+      dailyViews,
+    ] = await Promise.all([
       formViewAnalyticsRepository.count({ where: whereClause }),
       
       formViewAnalyticsRepository.groupBy({
@@ -354,6 +428,22 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
         where: { ...whereClause, countryCode: { not: null } },
         _count: { countryCode: true },
         orderBy: { _count: { countryCode: 'desc' } },
+        take: 10
+      }),
+
+      formViewAnalyticsRepository.groupBy({
+        by: ['region', 'regionCode', 'countryAlpha2'],
+        where: { ...whereClause, region: { not: null } },
+        _count: { region: true },
+        orderBy: { _count: { region: 'desc' } },
+        take: 10
+      }),
+
+      formViewAnalyticsRepository.groupBy({
+        by: ['city', 'region', 'regionCode', 'countryAlpha2'],
+        where: { ...whereClause, city: { not: null } },
+        _count: { city: true },
+        orderBy: { _count: { city: 'desc' } },
         take: 10
       }),
       
@@ -393,6 +483,26 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
       count: stat._count.countryCode,
       percentage: totalViews > 0 ? (stat._count.countryCode / totalViews) * 100 : 0
     }));
+
+    const topRegions = regionStats
+      .filter((stat: any) => stat.region)
+      .map((stat: any) => ({
+        name: stat.region,
+        code: stat.regionCode,
+        countryCode: stat.countryAlpha2,
+        count: stat._count.region,
+        percentage: totalViews > 0 ? (stat._count.region / totalViews) * 100 : 0
+      }));
+
+    const topCities = cityStats
+      .filter((stat: any) => stat.city)
+      .map((stat: any) => ({
+        name: stat.city,
+        region: stat.region,
+        countryCode: stat.countryAlpha2,
+        count: stat._count.city,
+        percentage: totalViews > 0 ? (stat._count.city / totalViews) * 100 : 0
+      }));
     
     const topOperatingSystems = osStats.map((stat: any) => ({
       name: stat.operatingSystem,
@@ -446,6 +556,8 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
       totalViews,
       uniqueSessions: uniqueSessionsData.length,
       topCountries,
+      topRegions,
+      topCities,
       topOperatingSystems,
       topBrowsers,
       viewsOverTime: filledViewsOverTime
@@ -474,7 +586,17 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
     }
     
     // Parallel execution of database queries for better performance
-    const [totalSubmissions, uniqueSessionsData, countryStats, osStats, browserStats, dailySubmissions, completionTimeData] = await Promise.all([
+    const [
+      totalSubmissions,
+      uniqueSessionsData,
+      countryStats,
+      regionStats,
+      cityStats,
+      osStats,
+      browserStats,
+      dailySubmissions,
+      completionTimeData
+    ] = await Promise.all([
       formSubmissionAnalyticsRepository.count({ where: whereClause }),
       
       formSubmissionAnalyticsRepository.groupBy({
@@ -487,6 +609,22 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
         where: { ...whereClause, countryCode: { not: null } },
         _count: { countryCode: true },
         orderBy: { _count: { countryCode: 'desc' } },
+        take: 10
+      }),
+
+      formSubmissionAnalyticsRepository.groupBy({
+        by: ['region', 'regionCode', 'countryAlpha2'],
+        where: { ...whereClause, region: { not: null } },
+        _count: { region: true },
+        orderBy: { _count: { region: 'desc' } },
+        take: 10
+      }),
+      
+      formSubmissionAnalyticsRepository.groupBy({
+        by: ['city', 'region', 'regionCode', 'countryAlpha2'],
+        where: { ...whereClause, city: { not: null } },
+        _count: { city: true },
+        orderBy: { _count: { city: 'desc' } },
         take: 10
       }),
       
@@ -537,6 +675,26 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
       count: stat._count.countryCode,
       percentage: totalSubmissions > 0 ? (stat._count.countryCode / totalSubmissions) * 100 : 0
     }));
+
+    const topRegions = regionStats
+      .filter((stat: any) => stat.region)
+      .map((stat: any) => ({
+        name: stat.region,
+        code: stat.regionCode,
+        countryCode: stat.countryAlpha2,
+        count: stat._count.region,
+        percentage: totalSubmissions > 0 ? (stat._count.region / totalSubmissions) * 100 : 0
+      }));
+
+    const topCities = cityStats
+      .filter((stat: any) => stat.city)
+      .map((stat: any) => ({
+        name: stat.city,
+        region: stat.region,
+        countryCode: stat.countryAlpha2,
+        count: stat._count.city,
+        percentage: totalSubmissions > 0 ? (stat._count.city / totalSubmissions) * 100 : 0
+      }));
     
     const topOperatingSystems = osStats.map((stat: any) => ({
       name: stat.operatingSystem,
@@ -604,6 +762,8 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
       averageCompletionTime,
       completionTimePercentiles,
       topCountries,
+      topRegions,
+      topCities,
       topOperatingSystems,
       topBrowsers,
       submissionsOverTime: filledSubmissionsOverTime,

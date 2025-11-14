@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import WorldMap from 'react-svg-worldmap';
 import { Card, CardContent, CardHeader, CardTitle, Button } from '@dculus/ui';
 import { Globe, TrendingUp } from 'lucide-react';
@@ -14,6 +14,7 @@ interface WorldMapVisualizationProps {
   dataMode?: DataMode;
   onDataModeChange?: (mode: DataMode) => void;
   loading?: boolean;
+  headerActions?: ReactNode;
 }
 
 // Get the 2-letter country code from 3-letter code using iso-3166-1 library
@@ -32,7 +33,8 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
   submissionData = [],
   dataMode = 'views',
   onDataModeChange,
-  loading = false
+  loading = false,
+  headerActions = null
 }) => {
   const { t } = useTranslation('worldMapVisualization');
   
@@ -49,8 +51,13 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
               <Globe className="h-4 w-4 mr-2 text-blue-600" />
               {t('title')}
             </div>
-            {onDataModeChange && (
-              <DataModeToggle dataMode={dataMode} onDataModeChange={onDataModeChange} t={t} />
+            {(headerActions || onDataModeChange) && (
+              <div className="flex items-center gap-3">
+                {headerActions}
+                {onDataModeChange && (
+                  <DataModeToggle dataMode={dataMode} onDataModeChange={onDataModeChange} t={t} />
+                )}
+              </div>
             )}
           </CardTitle>
         </CardHeader>
@@ -76,8 +83,13 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
               <Globe className="h-4 w-4 mr-2 text-blue-600" />
               {t('title')}
             </div>
-            {onDataModeChange && (
-              <DataModeToggle dataMode={dataMode} onDataModeChange={onDataModeChange} t={t} />
+            {(headerActions || onDataModeChange) && (
+              <div className="flex items-center gap-3">
+                {headerActions}
+                {onDataModeChange && (
+                  <DataModeToggle dataMode={dataMode} onDataModeChange={onDataModeChange} t={t} />
+                )}
+              </div>
             )}
           </CardTitle>
         </CardHeader>
@@ -114,11 +126,12 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
             <Globe className="h-4 w-4 mr-2 text-blue-600" />
             {t('title')}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap justify-end">
             <div className="flex items-center text-sm text-green-600">
               <TrendingUp className="h-3 w-3 mr-1" />
               {t('countryCount', { values: { count: currentData.length } })}
             </div>
+            {headerActions}
             {onDataModeChange && (
               <DataModeToggle dataMode={dataMode} onDataModeChange={onDataModeChange} t={t} />
             )}

@@ -2,13 +2,17 @@ import React, { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, Button } from '@dculus/ui';
 import { Globe, TrendingUp, BarChart3, Map } from 'lucide-react';
-import { CountryStats } from '../../hooks/useFormAnalytics';
+import { CountryStats, RegionStats, CityStats } from '../../hooks/useFormAnalytics';
 import { WorldMapVisualization } from './WorldMapVisualization';
 import { useTranslation } from '../../hooks/useTranslation';
 
 interface GeographicChartProps {
   data: CountryStats[];
   submissionData?: CountryStats[];
+  regionData?: RegionStats[];
+  regionSubmissionData?: RegionStats[];
+  cityData?: CityStats[];
+  citySubmissionData?: CityStats[];
   totalViews: number;
   totalSubmissions?: number;
   loading?: boolean;
@@ -41,6 +45,118 @@ const CustomTooltip = ({ active, payload, dataMode, t }: any) => {
   return null;
 };
 
+type TranslateFn = (key: string, options?: Record<string, unknown>) => string;
+type GenericBreakdownEntry = CountryStats | RegionStats | CityStats;
+
+interface GeographicBreakdownProps {
+  countries: CountryStats[];
+  regions: RegionStats[];
+  cities: CityStats[];
+  dataMode: DataMode;
+  t: TranslateFn;
+}
+
+const GeographicBreakdown: React.FC<GeographicBreakdownProps> = ({
+  countries,
+  regions,
+  cities,
+  dataMode,
+  t
+}) => {
+  const metricLabel = dataMode === 'submissions' ? t('submissions') : t('views');
+
+  const sections: Array<{
+    key: string;
+    title: string;
+    data: GenericBreakdownEntry[];
+    formatName: (entry: GenericBreakdownEntry) => string;
+    formatMeta?: (entry: GenericBreakdownEntry) => string | undefined;
+  }> = [
+    {
+      key: 'countries',
+      title: t('breakdown.countries'),
+      data: countries,
+      formatName: (entry) => (entry as CountryStats).name,
+      formatMeta: (entry) => (entry as CountryStats).code?.toUpperCase(),
+    },
+    {
+      key: 'regions',
+      title: t('breakdown.regions'),
+      data: regions,
+      formatName: (entry) => (entry as RegionStats).name,
+      formatMeta: (entry) => (entry as RegionStats).countryCode?.toUpperCase(),
+    },
+    {
+      key: 'cities',
+      title: t('breakdown.cities'),
+      data: cities,
+      formatName: (entry) => (entry as CityStats).name,
+      formatMeta: (entry) => {
+        const city = entry as CityStats;
+        const parts = [city.region, city.countryCode?.toUpperCase()].filter(Boolean);
+        return parts.length ? parts.join(' • ') : undefined;
+      },
+    },
+  ];
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-3">
+      {sections.map((section) => (
+        <Card key={section.key}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold text-gray-900">
+              {section.title}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {section.data.length === 0 ? (
+              <p className="text-sm text-gray-500">{t('breakdown.empty')}</p>
+            ) : (
+              <div className="space-y-3">
+                {section.data.slice(0, 5).map((entry, index) => {
+                  const meta = section.formatMeta ? section.formatMeta(entry) : undefined;
+                  return (
+                  <div
+                    key={`${section.key}-${index}`}
+                    className="flex items-center justify-between"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {section.formatName(entry)}
+                      </p>
+                      {meta && (
+                        <p className="text-xs text-gray-500">
+                          {meta}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-gray-900">
+                        {entry.count}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {entry.percentage.toFixed(1)}% · {metricLabel}
+                      </p>
+                    </div>
+                  </div>
+                );
+                })}
+                {section.data.length > 5 && (
+                  <p className="text-xs text-gray-400 text-center">
+                    {t('breakdown.more', {
+                      values: { count: section.data.length - 5 },
+                    })}
+                  </p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+};
+
 const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
   if (percent < 0.05) return null; // Don't show labels for slices < 5%
   
@@ -69,6 +185,10 @@ type DataMode = 'views' | 'submissions';
 export const GeographicChart: React.FC<GeographicChartProps> = ({
   data,
   submissionData = [],
+  regionData = [],
+  regionSubmissionData = [],
+  cityData = [],
+  citySubmissionData = [],
   totalViews,
   totalSubmissions = 0,
   loading = false
@@ -78,18 +198,30 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
   const [dataMode, setDataMode] = useState<DataMode>('views');
   // Get current data based on mode
   const currentData = dataMode === 'submissions' ? submissionData : data;
+  const currentRegions = dataMode === 'submissions' ? regionSubmissionData : regionData;
+  const currentCities = dataMode === 'submissions' ? citySubmissionData : cityData;
   const currentTotal = dataMode === 'submissions' ? totalSubmissions : totalViews;
 
   // Show world map if requested
   if (viewType === 'map') {
     return (
-      <div className="animate-in fade-in duration-300">
+      <div className="animate-in fade-in duration-300 space-y-4">
         <WorldMapVisualization
           data={currentData}
           submissionData={submissionData}
           dataMode={dataMode}
           onDataModeChange={setDataMode}
           loading={loading}
+          headerActions={
+            <ViewToggleButtons viewType={viewType} onViewTypeChange={setViewType} />
+          }
+        />
+        <GeographicBreakdown
+          countries={currentData}
+          regions={currentRegions}
+          cities={currentCities}
+          dataMode={dataMode}
+          t={t}
         />
       </div>
     );
@@ -174,7 +306,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
   const topCountry = currentData[0];
 
   return (
-    <div className="animate-in fade-in duration-300">
+    <div className="animate-in fade-in duration-300 space-y-4">
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between text-base">
@@ -267,6 +399,13 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
         </div>
       </CardContent>
     </Card>
+      <GeographicBreakdown
+        countries={currentData}
+        regions={currentRegions}
+        cities={currentCities}
+        dataMode={dataMode}
+        t={t}
+      />
     </div>
   );
 };

@@ -3,5 +3,12 @@
   "topCountry": "Top Country",
   "noData": "No geographic data available",
   "views": "Views",
-  "submissions": "Submissions"
+  "submissions": "Submissions",
+  "breakdown": {
+    "countries": "Country Breakdown",
+    "regions": "Region Breakdown",
+    "cities": "City Breakdown",
+    "empty": "Data will appear once we have enough sessions for this location.",
+    "more": "+{{count}} more locations"
+  }
 }

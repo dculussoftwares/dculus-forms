@@ -28,13 +28,16 @@ export const analyticsResolvers = {
           throw new GraphQLError('Form is not published');
         }
 
+        const visitorGeo = context.req?.visitorGeo || context.res?.locals?.visitorGeo;
+
         // Track the analytics
         await analyticsService.trackFormView({
           formId: input.formId,
           sessionId: input.sessionId,
           userAgent: input.userAgent,
           timezone: input.timezone,
-          language: input.language
+          language: input.language,
+          visitorGeo
         }, clientIP);
 
         // Emit subscription event for usage tracking
@@ -135,6 +138,8 @@ export const analyticsResolvers = {
           throw new GraphQLError('Response does not belong to this form');
         }
         
+        const visitorGeo = context.req?.visitorGeo || context.res?.locals?.visitorGeo;
+
         // Track the submission analytics
         await analyticsService.trackFormSubmission({
           formId: input.formId,
@@ -143,7 +148,8 @@ export const analyticsResolvers = {
           userAgent: input.userAgent,
           timezone: input.timezone,
           language: input.language,
-          completionTimeSeconds: input.completionTimeSeconds
+          completionTimeSeconds: input.completionTimeSeconds,
+          visitorGeo
         }, clientIP);
         
         return {

@@ -28,6 +28,7 @@ vi.mock('i18n-iso-countries', () => ({
         CA: 'CAN',
         GB: 'GBR',
         FR: 'FRA',
+        IN: 'IND',
       };
       return map[code] || null;
     }),
@@ -36,6 +37,7 @@ vi.mock('i18n-iso-countries', () => ({
         USA: 'United States',
         CAN: 'Canada',
         GBR: 'United Kingdom',
+        IND: 'India',
       };
       return map[code] || code;
     }),
@@ -165,6 +167,33 @@ describe('Analytics Service', () => {
       expect(formViewAnalyticsRepository.createViewEvent).toHaveBeenCalled();
       const call = vi.mocked(formViewAnalyticsRepository.createViewEvent).mock.calls[0][0];
       expect(call.userAgent).toBe(mockAnalyticsData.userAgent);
+    });
+
+    it('should prioritize edge visitor geo data when provided', async () => {
+      vi.mocked(formViewAnalyticsRepository.createViewEvent).mockResolvedValue({} as any);
+
+      await analyticsService.trackFormView({
+        ...mockAnalyticsData,
+        visitorGeo: {
+          city: 'Chennai',
+          country: 'IN',
+          region: 'Tamil Nadu',
+          regionCode: 'TN',
+          longitude: '80.27847',
+          latitude: '13.08784',
+        },
+      });
+
+      const call = vi.mocked(formViewAnalyticsRepository.createViewEvent).mock.calls[0][0];
+      expect(call).toMatchObject({
+        countryCode: 'IND',
+        countryAlpha2: 'IN',
+        region: 'Tamil Nadu',
+        regionCode: 'TN',
+        city: 'Chennai',
+        longitude: 80.27847,
+        latitude: 13.08784,
+      });
     });
 
     it('should not throw error if tracking fails', async () => {
@@ -357,6 +386,37 @@ describe('Analytics Service', () => {
       expect(call.completionTimeSeconds).toBeNull();
     });
 
+    it('should include edge visitor geo data for submissions when available', async () => {
+      vi.mocked(formSubmissionAnalyticsRepository.createSubmissionEvent).mockResolvedValue(
+        {} as any
+      );
+
+      await analyticsService.trackFormSubmission({
+        ...mockAnalyticsData,
+        responseId: 'response-123',
+        visitorGeo: {
+          country: 'IN',
+          city: 'Chennai',
+          region: 'Tamil Nadu',
+          regionCode: 'TN',
+          longitude: '80.27847',
+          latitude: '13.08784',
+        }
+      });
+
+      const call = vi.mocked(formSubmissionAnalyticsRepository.createSubmissionEvent).mock.calls[0][0];
+
+      expect(call).toMatchObject({
+        countryCode: 'IND',
+        countryAlpha2: 'IN',
+        region: 'Tamil Nadu',
+        regionCode: 'TN',
+        city: 'Chennai',
+        longitude: 80.27847,
+        latitude: 13.08784,
+      });
+    });
+
     it('should not throw error if tracking fails', async () => {
       vi.mocked(formSubmissionAnalyticsRepository.createSubmissionEvent).mockRejectedValue(
         new Error('Database error')
@@ -407,6 +467,8 @@ describe('Analytics Service', () => {
       vi.mocked(formViewAnalyticsRepository.groupBy)
         .mockResolvedValueOnce([{ sessionId: 'session-1' }, { sessionId: 'session-2' }] as any)
         .mockResolvedValueOnce([{ countryCode: 'USA', _count: { countryCode: 1 } }] as any)
+        .mockResolvedValueOnce([{ region: 'California', regionCode: 'CA', countryAlpha2: 'US', _count: { region: 1 } }] as any)
+        .mockResolvedValueOnce([{ city: 'San Francisco', region: 'California', countryAlpha2: 'US', _count: { city: 1 } }] as any)
         .mockResolvedValueOnce([{ operatingSystem: 'Windows', _count: { operatingSystem: 1 } }] as any)
         .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
 
@@ -428,6 +490,8 @@ describe('Analytics Service', () => {
       vi.mocked(formViewAnalyticsRepository.groupBy)
         .mockResolvedValueOnce([{ sessionId: 'session-1' }] as any)
         .mockResolvedValueOnce([{ countryCode: 'USA', _count: { countryCode: 1 } }] as any)
+        .mockResolvedValueOnce([{ region: 'California', regionCode: 'CA', countryAlpha2: 'US', _count: { region: 1 } }] as any)
+        .mockResolvedValueOnce([{ city: 'San Francisco', region: 'California', countryAlpha2: 'US', _count: { city: 1 } }] as any)
         .mockResolvedValueOnce([{ operatingSystem: 'Windows', _count: { operatingSystem: 1 } }] as any)
         .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
 
@@ -473,6 +537,8 @@ describe('Analytics Service', () => {
       vi.mocked(formSubmissionAnalyticsRepository.groupBy)
         .mockResolvedValueOnce([{ sessionId: 'session-1' }, { sessionId: 'session-2' }] as any)
         .mockResolvedValueOnce([{ countryCode: 'USA', _count: { countryCode: 1 } }] as any)
+        .mockResolvedValueOnce([{ region: 'California', regionCode: 'CA', countryAlpha2: 'US', _count: { region: 1 } }] as any)
+        .mockResolvedValueOnce([{ city: 'San Francisco', region: 'California', countryAlpha2: 'US', _count: { city: 1 } }] as any)
         .mockResolvedValueOnce([{ operatingSystem: 'Windows', _count: { operatingSystem: 1 } }] as any)
         .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
 
@@ -502,6 +568,8 @@ describe('Analytics Service', () => {
       vi.mocked(formSubmissionAnalyticsRepository.groupBy)
         .mockResolvedValueOnce([{ sessionId: 'session-1' }] as any)
         .mockResolvedValueOnce([{ countryCode: 'USA', _count: { countryCode: 1 } }] as any)
+        .mockResolvedValueOnce([] as any)
+        .mockResolvedValueOnce([] as any)
         .mockResolvedValueOnce([{ operatingSystem: 'Windows', _count: { operatingSystem: 1 } }] as any)
         .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
 
@@ -542,6 +610,8 @@ describe('Analytics Service', () => {
       vi.mocked(formSubmissionAnalyticsRepository.groupBy)
         .mockResolvedValueOnce([{ sessionId: 'session-1' }] as any)
         .mockResolvedValueOnce([{ countryCode: 'USA', _count: { countryCode: 1 } }] as any)
+        .mockResolvedValueOnce([] as any)
+        .mockResolvedValueOnce([] as any)
         .mockResolvedValueOnce([{ operatingSystem: 'Windows', _count: { operatingSystem: 1 } }] as any)
         .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
 
@@ -574,6 +644,8 @@ describe('Analytics Service', () => {
       vi.mocked(formSubmissionAnalyticsRepository.groupBy)
         .mockResolvedValueOnce([{ sessionId: 'session-1' }] as any)
         .mockResolvedValueOnce([{ countryCode: 'USA', _count: { countryCode: 1 } }] as any)
+        .mockResolvedValueOnce([] as any)
+        .mockResolvedValueOnce([] as any)
         .mockResolvedValueOnce([{ operatingSystem: 'Windows', _count: { operatingSystem: 1 } }] as any)
         .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
 
@@ -598,6 +670,8 @@ describe('Analytics Service', () => {
 
       // Mock multiple groupBy calls
       vi.mocked(formSubmissionAnalyticsRepository.groupBy)
+        .mockResolvedValueOnce([] as any)
+        .mockResolvedValueOnce([] as any)
         .mockResolvedValueOnce([] as any)
         .mockResolvedValueOnce([] as any)
         .mockResolvedValueOnce([] as any)

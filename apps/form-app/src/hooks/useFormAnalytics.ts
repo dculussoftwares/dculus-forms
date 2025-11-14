@@ -15,6 +15,22 @@ export interface CountryStats {
   percentage: number;
 }
 
+export interface RegionStats {
+  name: string;
+  code?: string;
+  countryCode?: string;
+  count: number;
+  percentage: number;
+}
+
+export interface CityStats {
+  name: string;
+  region?: string;
+  countryCode?: string;
+  count: number;
+  percentage: number;
+}
+
 export interface OSStats {
   name: string;
   count: number;
@@ -43,6 +59,8 @@ export interface FormAnalyticsData {
   totalViews: number;
   uniqueSessions: number;
   topCountries: CountryStats[];
+  topRegions: RegionStats[];
+  topCities: CityStats[];
   topOperatingSystems: OSStats[];
   topBrowsers: BrowserStats[];
   viewsOverTime: ViewsOverTimeData[];
@@ -69,6 +87,8 @@ export interface FormSubmissionAnalyticsData {
   averageCompletionTime: number | null;
   completionTimePercentiles: CompletionTimePercentiles | null;
   topCountries: CountryStats[];
+  topRegions: RegionStats[];
+  topCities: CityStats[];
   topOperatingSystems: OSStats[];
   topBrowsers: BrowserStats[];
   submissionsOverTime: SubmissionsOverTimeData[];

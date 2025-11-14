@@ -241,8 +241,12 @@ model FormViewAnalytics {
   browser         String?  // Parsed browser (Chrome, Firefox, Safari, etc.)
   browserVersion  String?  // Browser version
   countryCode     String?  // ISO 3166-1 alpha-3 (e.g., "USA", "CAN", "GBR")
+  countryAlpha2   String?  // ISO 3166-1 alpha-2 (e.g., "US", "IN")
   regionCode      String?  // State/province code
+  region          String?  // Full region/state name from edge headers
   city            String?  // City if available
+  longitude       Float?   // Longitude from edge headers
+  latitude        Float?   // Latitude from edge headers
   timezone        String?  // IANA timezone (e.g., "America/New_York")
   language        String?  // Browser locale (e.g., "en-US", "fr-CA")
   viewedAt        DateTime @default(now())
@@ -266,8 +270,12 @@ model FormSubmissionAnalytics {
   browser               String?  // Parsed browser (Chrome, Firefox, Safari, etc.)
   browserVersion        String?  // Browser version
   countryCode           String?  // ISO 3166-1 alpha-3 (e.g., "USA", "CAN", "GBR")
+  countryAlpha2         String?  // ISO 3166-1 alpha-2 (e.g., "US", "IN")
   regionCode            String?  // State/province code
+  region                String?  // Full region/state name from edge headers
   city                  String?  // City if available
+  longitude             Float?   // Longitude from edge headers
+  latitude              Float?   // Latitude from edge headers
   timezone              String?  // IANA timezone (e.g., "America/New_York")
   language              String?  // Browser locale (e.g., "en-US", "fr-CA")
   submittedAt           DateTime @default(now())

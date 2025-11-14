@@ -49,6 +49,20 @@ export const GET_FORM_ANALYTICS = gql`
         count
         percentage
       }
+      topRegions {
+        name
+        code
+        countryCode
+        count
+        percentage
+      }
+      topCities {
+        name
+        region
+        countryCode
+        count
+        percentage
+      }
       topOperatingSystems {
         name
         count

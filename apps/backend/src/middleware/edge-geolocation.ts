@@ -1,11 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
 
 export interface EdgeVisitorLocation {
-  ipCity?: string;
-  ipCountry?: string;
-  ipContinent?: string;
-  ipLongitude?: string;
-  ipLatitude?: string;
+  city?: string;
+  country?: string;
+  continent?: string;
+  longitude?: string;
+  latitude?: string;
   region?: string;
   regionCode?: string;
   metroCode?: string;
@@ -14,11 +14,11 @@ export interface EdgeVisitorLocation {
 }
 
 export const EDGE_VISITOR_LOCATION_HEADER_MAP = {
-  ipCity: 'cf-ipcity',
-  ipCountry: 'cf-ipcountry',
-  ipContinent: 'cf-ipcontinent',
-  ipLongitude: 'cf-iplongitude',
-  ipLatitude: 'cf-iplatitude',
+  city: 'cf-ipcity',
+  country: 'cf-ipcountry',
+  continent: 'cf-ipcontinent',
+  longitude: 'cf-iplongitude',
+  latitude: 'cf-iplatitude',
   region: 'cf-region',
   regionCode: 'cf-region-code',
   metroCode: 'cf-metro-code',

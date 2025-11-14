@@ -278,6 +278,10 @@ const FormAnalytics: React.FC = () => {
                 <GeographicChart
                   data={analyticsData?.topCountries || []}
                   submissionData={submissionAnalyticsData?.topCountries || []}
+                  regionData={analyticsData?.topRegions || []}
+                  regionSubmissionData={submissionAnalyticsData?.topRegions || []}
+                  cityData={analyticsData?.topCities || []}
+                  citySubmissionData={submissionAnalyticsData?.topCities || []}
                   totalViews={analyticsData?.totalViews || 0}
                   totalSubmissions={
                     submissionAnalyticsData?.totalSubmissions || 0

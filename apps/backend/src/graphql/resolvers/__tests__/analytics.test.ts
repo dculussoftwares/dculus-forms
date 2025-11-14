@@ -521,6 +521,14 @@ describe('Analytics Resolvers', () => {
         { code: 'GBR', name: 'United Kingdom', count: 300, percentage: 20 },
         { code: 'CAN', name: 'Canada', count: 200, percentage: 13.3 },
       ],
+      topRegions: [
+        { name: 'California', code: 'CA', countryCode: 'US', count: 500, percentage: 33.3 },
+        { name: 'Ontario', code: 'ON', countryCode: 'CA', count: 200, percentage: 13.3 },
+      ],
+      topCities: [
+        { name: 'San Francisco', region: 'California', countryCode: 'US', count: 250, percentage: 16.6 },
+        { name: 'London', region: 'England', countryCode: 'GB', count: 180, percentage: 12 },
+      ],
       topOperatingSystems: [
         { name: 'Windows', count: 750, percentage: 50 },
         { name: 'macOS', count: 450, percentage: 30 },
@@ -704,6 +712,14 @@ describe('Analytics Resolvers', () => {
       topCountries: [
         { code: 'USA', name: 'United States', count: 400, percentage: 50 },
         { code: 'GBR', name: 'United Kingdom', count: 200, percentage: 25 },
+      ],
+      topRegions: [
+        { name: 'California', code: 'CA', countryCode: 'US', count: 220, percentage: 27.5 },
+        { name: 'England', code: 'ENG', countryCode: 'GB', count: 150, percentage: 18.75 },
+      ],
+      topCities: [
+        { name: 'Los Angeles', region: 'California', countryCode: 'US', count: 180, percentage: 22.5 },
+        { name: 'London', region: 'England', countryCode: 'GB', count: 130, percentage: 16.25 },
       ],
       topOperatingSystems: [
         { name: 'Windows', count: 400, percentage: 50 },

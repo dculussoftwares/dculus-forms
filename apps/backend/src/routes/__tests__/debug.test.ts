@@ -31,11 +31,11 @@ describe('Debug Routes - Cloudflare Geolocation', () => {
     expect(response.body).toMatchObject({
       hasVisitorLocationData: true,
       visitorGeo: {
-        ipCity: 'Austin',
-        ipCountry: 'US',
-        ipContinent: 'NA',
-        ipLongitude: '-97.7431',
-        ipLatitude: '30.2672',
+        city: 'Austin',
+        country: 'US',
+        continent: 'NA',
+        longitude: '-97.7431',
+        latitude: '30.2672',
         region: 'Texas',
         regionCode: 'TX',
         metroCode: '635',

@@ -510,6 +510,8 @@ export const typeDefs = gql`
     totalViews: Int!
     uniqueSessions: Int!
     topCountries: [CountryStats!]!
+    topRegions: [RegionStats!]!
+    topCities: [CityStats!]!
     topOperatingSystems: [OSStats!]!
     topBrowsers: [BrowserStats!]!
     viewsOverTime: [ViewsOverTimeData!]!
@@ -527,6 +529,8 @@ export const typeDefs = gql`
     averageCompletionTime: Float # Average completion time in seconds
     completionTimePercentiles: CompletionTimePercentiles
     topCountries: [CountryStats!]!
+    topRegions: [RegionStats!]!
+    topCities: [CityStats!]!
     topOperatingSystems: [OSStats!]!
     topBrowsers: [BrowserStats!]!
     submissionsOverTime: [SubmissionsOverTimeData!]!
@@ -557,6 +561,22 @@ export const typeDefs = gql`
   type CountryStats {
     code: String
     name: String!
+    count: Int!
+    percentage: Float!
+  }
+
+  type RegionStats {
+    name: String!
+    code: String
+    countryCode: String
+    count: Int!
+    percentage: Float!
+  }
+
+  type CityStats {
+    name: String!
+    region: String
+    countryCode: String
     count: Int!
     percentage: Float!
   }
