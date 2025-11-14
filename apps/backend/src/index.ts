@@ -18,8 +18,10 @@ import { responsesRouter } from './routes/responses.js';
 import templatesRouter from './routes/templates.js';
 import { uploadRouter } from './routes/upload.js';
 import { chargebeeWebhookRouter } from './routes/chargebee-webhooks.js';
+import { debugRouter } from './routes/debug.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { createBetterAuthContext } from './middleware/better-auth-middleware.js';
+import { cloudflareGeolocationMiddleware } from './middleware/cloudflare-geolocation.js';
 import { prisma } from './lib/prisma.js';
 import { createHocuspocusServer } from './services/hocuspocus.js';
 import { appConfig } from './lib/env.js';
@@ -142,6 +144,9 @@ app.all('/api/auth/*', toNodeHandler(auth));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Cloudflare Geolocation Middleware - extracts CF headers
+app.use(cloudflareGeolocationMiddleware);
+
 // graphqlUploadExpress will be added in the async startServer function
 
 // Routes
@@ -151,6 +156,12 @@ app.use('/api/responses', responsesRouter);
 app.use('/api/templates', templatesRouter);
 app.use('/', uploadRouter);
 app.use('/api', chargebeeWebhookRouter);
+
+// Debug routes (only available in development)
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/debug', debugRouter);
+  logger.info('🔍 Debug endpoints enabled at /debug/cloudflare and /debug/headers');
+}
 
 // Add favicon route to prevent 404 errors
 app.get('/favicon.ico', (req, res) => {
@@ -221,6 +232,7 @@ async function startServer() {
           session: authContext.session,
           auth: authContext,
           req, // Add request object for better-auth API calls
+          cloudflare: req.cloudflare, // Cloudflare geolocation data
           prisma,
         };
       },
