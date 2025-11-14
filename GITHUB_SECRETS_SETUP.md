@@ -99,6 +99,7 @@ These secrets are used for frontend builds:
 |------------|-------------|---------------|
 | `VITE_CDN_ENDPOINT` | CDN endpoint for frontend assets | `https://cdn.dculus.com` |
 | `VITE_PIXABAY_API_KEY` | Pixabay API key for image search | `your-pixabay-api-key` |
+| `VITE_FORM_VIEWER_URL` | Base URL for the public form viewer | `https://viewer-app.dculus.com` |
 
 ### Docker Hub Secrets
 

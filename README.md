@@ -421,6 +421,7 @@ pnpm backend:build
 ```bash
 VITE_API_URL=https://your-api.com \
 VITE_GRAPHQL_URL=https://your-api.com/graphql \
+VITE_FORM_VIEWER_URL=https://your-viewer.com \
 pnpm form-app:build
 # Deploy apps/form-app/dist/ to static hosting
 ```

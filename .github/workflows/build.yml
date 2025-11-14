@@ -20,6 +20,8 @@ env:
   IMAGE_NAME: dculus/forms-backend
   # Backend URL for production builds 
   BACKEND_URL: https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io
+  # Viewer URL used for linking out of the builder
+  FORM_VIEWER_URL: https://dculus-forms-viewer-app.pages.dev
   # Azure Configuration
   ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
   ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -302,6 +304,7 @@ jobs:
           VITE_PIXABAY_API_KEY: ${{ secrets.VITE_PIXABAY_API_KEY }}
           VITE_API_URL: ${{ env.BACKEND_URL }}
           VITE_GRAPHQL_URL: ${{ env.BACKEND_URL }}/graphql
+          VITE_FORM_VIEWER_URL: ${{ env.FORM_VIEWER_URL }}
         run: pnpm --filter form-app build
 
   build-form-viewer:
@@ -685,6 +688,7 @@ jobs:
             **Form App:**
             - `VITE_API_URL` - Backend API URL
             - `VITE_GRAPHQL_URL` - GraphQL endpoint
+            - `VITE_FORM_VIEWER_URL` - Base URL for the public form viewer
             - `VITE_CDN_ENDPOINT` - CDN endpoint
             - `VITE_PIXABAY_API_KEY` - Pixabay key
 

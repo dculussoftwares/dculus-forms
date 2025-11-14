@@ -385,7 +385,9 @@ import {
 ```bash
 # Real-time collaboration
 VITE_WEBSOCKET_URL=ws://localhost:1234
-VITE_API_URL=http://localhost:4000/graphql
+VITE_API_URL=http://localhost:4000
+VITE_GRAPHQL_URL=http://localhost:4000/graphql
+VITE_FORM_VIEWER_URL=http://localhost:5173
 
 # Authentication
 VITE_BETTER_AUTH_URL=http://localhost:4000/api/auth

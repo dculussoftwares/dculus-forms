@@ -339,6 +339,7 @@ swa deploy ./dist \
 Go to Azure Portal → Your Static Web App → Configuration → Application settings:
 - Add `VITE_API_URL`
 - Add `VITE_GRAPHQL_URL`
+- Add `VITE_FORM_VIEWER_URL`
 - Add other required environment variables
 
 ### Cloudflare Pages
@@ -371,6 +372,7 @@ wrangler pages deploy dist/ \
 # Set environment variables
 wrangler pages secrets put VITE_API_URL
 wrangler pages secrets put VITE_GRAPHQL_URL
+wrangler pages secrets put VITE_FORM_VIEWER_URL
 ```
 
 Or configure via Cloudflare Dashboard → Pages → Your Project → Settings → Environment Variables
@@ -403,6 +405,7 @@ netlify deploy --prod --dir=dist
 # Set environment variables
 netlify env:set VITE_API_URL "https://your-backend-url.com"
 netlify env:set VITE_GRAPHQL_URL "https://your-backend-url.com/graphql"
+netlify env:set VITE_FORM_VIEWER_URL "https://viewer.your-domain.com"
 ```
 
 Or configure via Netlify Dashboard → Site Settings → Environment Variables
@@ -437,6 +440,7 @@ vercel --prod dist/
 # Set environment variables
 vercel env add VITE_API_URL production
 vercel env add VITE_GRAPHQL_URL production
+vercel env add VITE_FORM_VIEWER_URL production
 ```
 
 Or configure via Vercel Dashboard → Project → Settings → Environment Variables
@@ -561,6 +565,7 @@ Each frontend application requires different environment variables:
 **Required:**
 - `VITE_API_URL` - Backend API base URL (e.g., `https://api.your-domain.com`)
 - `VITE_GRAPHQL_URL` - GraphQL endpoint URL (e.g., `https://api.your-domain.com/graphql`)
+- `VITE_FORM_VIEWER_URL` - Public form viewer base URL (e.g., `https://viewer.your-domain.com`)
 
 **Optional:**
 - `VITE_CDN_ENDPOINT` - CDN endpoint for assets
@@ -596,6 +601,7 @@ pnpm install
 # Build with your env vars
 VITE_API_URL=https://api.your-domain.com \
 VITE_GRAPHQL_URL=https://api.your-domain.com/graphql \
+VITE_FORM_VIEWER_URL=https://viewer.your-domain.com \
 pnpm --filter form-app build
 
 # Deploy the dist folder
@@ -607,7 +613,8 @@ Create `config.js` in your build's `dist/` folder:
 ```javascript
 window.__RUNTIME_CONFIG__ = {
   VITE_API_URL: 'https://api.your-domain.com',
-  VITE_GRAPHQL_URL: 'https://api.your-domain.com/graphql'
+  VITE_GRAPHQL_URL: 'https://api.your-domain.com/graphql',
+  VITE_FORM_VIEWER_URL: 'https://viewer.your-domain.com'
 };
 ```
 
@@ -703,6 +710,7 @@ services:
 
 **Solution:**
 - Verify `VITE_API_URL` and `VITE_GRAPHQL_URL` are correct
+- Verify `VITE_FORM_VIEWER_URL` points to your deployed viewer
 - Ensure backend `CORS_ORIGINS` includes your frontend domain
 - Check backend health endpoint: `https://your-backend-url/health`
 

@@ -837,12 +837,14 @@ jobs:
       - terraform-infrastructure-deploy
       - terraform-cloudflare-service-domain
       - terraform-cloudflare-pages
+      - terraform-cloudflare-pages-viewer
     if: |
       always() && !cancelled() && !failure() &&
       needs.determine-environment.outputs.should_deploy == 'true' &&
       needs.determine-environment.outputs.deploy_cloudflare == 'true' &&
       needs.terraform-cloudflare-service-domain.result == 'success' &&
-      needs.terraform-cloudflare-pages.result == 'success'
+      needs.terraform-cloudflare-pages.result == 'success' &&
+      needs.terraform-cloudflare-pages-viewer.result == 'success'
     environment: ${{ needs.determine-environment.outputs.environment }}
     steps:
       - name: Prepare release metadata
@@ -902,11 +904,13 @@ jobs:
           VITE_API_URL: https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}
           VITE_CDN_ENDPOINT: ${{ needs.terraform-infrastructure-deploy.outputs.public_cdn_endpoint }}
           VITE_PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          VITE_FORM_VIEWER_URL: ${{ needs.terraform-cloudflare-pages-viewer.outputs.custom_domain }}
         run: |
           echo "🔨 Building form-app for environment: ${{ needs.determine-environment.outputs.environment }}"
           echo "Backend URL: $VITE_API_URL"
           echo "GraphQL URL: $VITE_GRAPHQL_URL"
           echo "CDN Endpoint: $VITE_CDN_ENDPOINT"
+          echo "Form Viewer URL: $VITE_FORM_VIEWER_URL"
 
           pnpm --filter form-app build
 
