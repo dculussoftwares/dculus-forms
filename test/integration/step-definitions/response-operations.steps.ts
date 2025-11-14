@@ -126,10 +126,16 @@ Given('another user {string} exists in a different organization {string}',
     // Create a new organization
     const generateId = (length: number = 21): string => {
       const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-      const bytes = require('crypto').randomBytes(length);
+      const crypto = require('crypto');
       let id = '';
-      for (let i = 0; i < length; i++) {
-        id += alphabet[bytes[i] % alphabet.length];
+      let bytesNeeded = length;
+      while (id.length < length) {
+        const bytes = crypto.randomBytes(bytesNeeded);
+        for (let i = 0; i < bytes.length && id.length < length; i++) {
+          // Discard bytes too large to avoid modulo bias
+          if (bytes[i] >= 248) continue;
+          id += alphabet[bytes[i] % alphabet.length];
+        }
       }
       return id;
     };
