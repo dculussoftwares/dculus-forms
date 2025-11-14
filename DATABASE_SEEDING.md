@@ -52,7 +52,7 @@ The Dockerfile includes a startup script that checks the `RUN_SEED` environment 
 # In Docker container startup
 if [ "$RUN_SEED" = "true" ]; then
   echo "🌱 Running database seed..."
-  node dist/scripts/seed.js
+  node dist/apps/backend/src/scripts/seed.js
 fi
 ```
 
@@ -90,7 +90,7 @@ If you need to manually seed production:
 az containerapp exec \
   --name dculus-forms-production-backend \
   --resource-group dculus-forms-production-rg \
-  --command "node dist/scripts/seed.js"
+  --command "node dist/apps/backend/src/scripts/seed.js"
 
 # Option 2: Update environment variable and trigger restart
 az containerapp update \
