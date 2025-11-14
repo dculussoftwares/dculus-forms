@@ -3,8 +3,8 @@ output "mongodb_connection_string" {
   description = "MongoDB connection string for application use"
   value = format(
     "mongodb+srv://%s:%s@%s/?retryWrites=true&w=majority",
-    var.database_username,
-    var.database_password,
+    urlencode(var.database_username),
+    urlencode(var.database_password),
     replace(mongodbatlas_cluster.main.connection_strings[0].standard_srv, "mongodb+srv://", "")
   )
   sensitive = true

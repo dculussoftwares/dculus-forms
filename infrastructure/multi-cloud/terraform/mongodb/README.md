@@ -149,6 +149,7 @@ The connection string is automatically:
 ```
 mongodb+srv://<username>:<password>@<cluster-host>/?retryWrites=true&w=majority
 ```
+> ℹ️ Terraform automatically URL-encodes the username and password, so you can supply strong secrets (including `+`, `/`, `@`, etc.) without manual escaping.
 
 ## Terraform State
 
