@@ -1,58 +1,39 @@
-# Cloudflare Managed Transforms - Manual Configuration Required
+# Cloudflare Managed Transforms - Terraform Implementation
 
 ## Overview
 
-Cloudflare's "Add visitor location headers" Managed Transform must be **manually enabled** in the Cloudflare Dashboard. Terraform currently doesn't support managing this resource type directly.
+Added Terraform configuration to automatically enable Cloudflare's "Add visitor location headers" Managed Transform for the backend service domain. This eliminates manual configuration in the Cloudflare dashboard.
 
-## Quick Setup (5 minutes)
+## Changes Made
 
-### Enable in Cloudflare Dashboard
+### 1. New Terraform Resource
+**File:** `infrastructure/multi-cloud/terraform/cloudflare-service-domain/managed-transforms.tf`
 
-1. Log in to [Cloudflare Dashboard](https://dash.cloudflare.com/)
-2. Select your domain (`dculus.com`)
-3. Go to **Rules** > **Transform Rules** > **Managed Transforms**
-4. Find **"Add visitor location headers"**
-5. Toggle the switch to **ON** (blue)
-6. Changes apply immediately (no deployment needed)
+```terraform
+resource "cloudflare_managed_headers" "add_visitor_location_headers" {
+  zone_id = var.cloudflare_zone_id
 
-### Verify It's Working
-
-```bash
-curl -s https://form-services-dev.dculus.com/debug/cloudflare | jq .cloudflareHeaders
-```
-
-You should now see all location headers:
-```json
-{
-  "cf-ipcountry": "IN",
-  "cf-ipcontinent": "AS",
-  "cf-ipcity": "Chennai",
-  "cf-region": "Tamil Nadu",
-  ...
+  managed_request_headers {
+    id      = "add_visitor_location_headers"
+    enabled = true
+  }
 }
 ```
 
-## Why Manual Configuration?
+This configures Cloudflare to add all visitor location headers to requests sent to your backend.
 
-The Cloudflare Terraform provider doesn't yet support the `cloudflare_managed_headers` resource for Managed Transforms. Options:
+### 2. Updated Outputs
+**File:** `infrastructure/multi-cloud/terraform/cloudflare-service-domain/outputs.tf`
 
-1. **Manual Dashboard** (current approach) ✅
-   - Simple, one-time setup
-   - Works immediately
-   - No Terraform complexity
+Added:
+- `managed_transforms_id` - ID of the managed transforms configuration
+- `visitor_location_headers_enabled` - Boolean flag (always true when deployed)
 
-2. **Cloudflare API** (future enhancement)
-   - Could be automated via API calls
-   - Requires custom scripting
-   - More complex to maintain
+### 3. Updated Deployment Workflow
+**File:** `.github/workflows/multi-cloud-deployment.yml`
 
-3. **Wait for Provider Support**
-   - Cloudflare may add this in future provider versions
-   - Would enable full IaC approach
-
-## Current Implementation
-
-The file `managed-transforms.tf` exists as documentation only and doesn't create any resources. It serves as a reminder to enable the managed transform manually.
+- Captures managed transforms status in job outputs
+- Displays in deployment summary: "Visitor Location Headers: ✅ Enabled"
 
 ## What This Enables
 
@@ -71,16 +52,6 @@ cf-timezone: Asia/Kolkata
 cf-connecting-ip: <visitor-ip>
 cf-ray: <ray-id>
 ```
-
-## One-Time Manual Setup Required
-
-**⚠️ Important**: After deploying infrastructure, you must manually enable the managed transform once:
-
-1. Go to Cloudflare Dashboard
-2. Rules > Transform Rules > Managed Transforms  
-3. Enable "Add visitor location headers"
-
-This is a **one-time setup** and will work for all environments (dev, staging, production).
 
 ## Deployment
 
