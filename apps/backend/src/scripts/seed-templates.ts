@@ -72,10 +72,10 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
   const availableImages = backgroundImages;
     
   // Helper function to get an image key for a template
-  const getImageKey = (index: number): string | null => {
+  const getImageKey = (index: number): string => {
     if (availableImages.length === 0) {
-      logger.warn('⚠️  No background images found, templates will have null backgroundImageKey');
-      return null;
+      logger.warn('⚠️  No background images found, templates will have empty backgroundImageKey');
+      return '';
     }
     return availableImages[index % availableImages.length].key;
   };
