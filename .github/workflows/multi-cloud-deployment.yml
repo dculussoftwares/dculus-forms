@@ -546,12 +546,60 @@ jobs:
           echo "public_cdn_url=${{ env.R2_PUBLIC_CDN_URL }}" >> $GITHUB_OUTPUT
 
       # ==================== AZURE CONTAINER APPS DEPLOYMENT ====================
+      - name: Retrieve MongoDB connection string from Terraform state
+        id: get-mongodb-connection
+        if: needs.determine-environment.outputs.deploy_azure == 'true'
+        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/mongodb/environments/${{ needs.determine-environment.outputs.environment }}
+        env:
+          TF_VAR_mongodb_atlas_public_key: ${{ secrets.MONGODB_ATLAS_PUBLIC_KEY }}
+          TF_VAR_mongodb_atlas_private_key: ${{ secrets.MONGODB_ATLAS_PRIVATE_KEY }}
+          TF_VAR_mongodb_atlas_org_id: ${{ secrets.MONGODB_ATLAS_ORG_ID }}
+          TF_VAR_database_password: ${{ secrets.MONGODB_DATABASE_PASSWORD }}
+        run: |
+          # If MongoDB was deployed in this run, use its output
+          if [ -n "${{ needs.terraform-mongodb-deploy.outputs.connection_string }}" ]; then
+            echo "Using MongoDB connection string from current deployment"
+            echo "connection_string=${{ needs.terraform-mongodb-deploy.outputs.connection_string }}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Otherwise, retrieve from existing Terraform state
+          echo "Retrieving MongoDB connection string from Terraform state..."
+          
+          # Copy shared Terraform files (needed for state access)
+          cp ../../main.tf .
+          cp ../../variables.tf .
+          cp ../../cluster.tf .
+          cp ../../database-user.tf .
+          cp ../../network-access.tf .
+          cp ../../outputs.tf .
+
+          # Initialize Terraform to access remote state
+          terraform init \
+            -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
+            -backend-config="storage_account_name=dculusterraformstates" \
+            -backend-config="container_name=dculus-forms-mongodb-${{ needs.determine-environment.outputs.environment }}-state" \
+            -backend-config="key=mongodb.tfstate"
+
+          # Retrieve connection string from state
+          CONNECTION_STRING=$(terraform output -raw mongodb_connection_string 2>/dev/null || echo "")
+          
+          if [ -z "$CONNECTION_STRING" ]; then
+            echo "❌ Error: Could not retrieve MongoDB connection string from Terraform state"
+            echo "💡 Tip: Either deploy MongoDB first (deploy_mongodb=true) or ensure the GitHub secret MONGODB_CONNECTION_STRING is set"
+            exit 1
+          fi
+
+          echo "✅ Retrieved MongoDB connection string from existing infrastructure"
+          echo "::add-mask::$CONNECTION_STRING"
+          echo "connection_string=$CONNECTION_STRING" >> $GITHUB_OUTPUT
+
       - name: Deploy Azure Container Apps
         id: azure-deploy
         if: needs.determine-environment.outputs.deploy_azure == 'true'
         working-directory: dculus-forms/infrastructure/multi-cloud/terraform/azure/environments/${{ needs.determine-environment.outputs.environment }}
         env:
-          TF_VAR_mongodb_connection_string: ${{ needs.terraform-mongodb-deploy.outputs.connection_string || secrets.MONGODB_CONNECTION_STRING }}
+          TF_VAR_mongodb_connection_string: ${{ steps.get-mongodb-connection.outputs.connection_string }}
           TF_VAR_better_auth_secret: ${{ secrets.BETTER_AUTH_SECRET }}
           TF_VAR_public_s3_access_key: ${{ env.R2_ACCESS_KEY_ID }}
           TF_VAR_public_s3_secret_key: ${{ env.R2_SECRET_ACCESS_KEY }}
