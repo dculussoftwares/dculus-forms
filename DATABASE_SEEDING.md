@@ -19,17 +19,20 @@ apps/backend/src/scripts/seed.ts
 
 ### 1. Static Files Upload
 - Reads files from `static-files/` directory
-- Uploads to S3/R2 bucket
+- Uploads to S3/R2 bucket (public bucket)
 - Returns keys for use in templates
+- Files with 'background' or 'logo' in name are used as form backgrounds
 
 ### 2. Template Forms
 - Creates `FormTemplate` records in database
-- Links to uploaded static files
+- Links to uploaded static files via `backgroundImageKey`
 - Provides starting point for users
+- **Idempotent**: Won't re-seed if templates already exist
 
-### 3. Database Cleanup (Development)
+### 3. Database Cleanup (Development Only)
 - Clears all existing data before seeding
-- Only runs in development/staging environments
+- **Only runs in non-production environments** (when `NODE_ENV !== 'production'`)
+- **Skipped if templates already exist** (idempotency check)
 
 ## Local Development
 
@@ -143,18 +146,24 @@ RUN_SEED=true  # Set to "true" to enable seeding on startup
 // apps/backend/src/scripts/seed.ts
 
 async function seed() {
-  // 1. Clear existing data (dev only)
-  await prisma.user.deleteMany();
-  // ... other models
+  // 1. Check if templates already exist (idempotency)
+  const existingTemplates = await prisma.formTemplate.count();
+  if (existingTemplates > 0) {
+    logger.info('⏭️  Templates already exist, skipping seed');
+    return;
+  }
 
-  // 2. Upload static files
+  // 2. Clear data only in non-production
+  if (process.env.NODE_ENV !== 'production') {
+    await prisma.user.deleteMany();
+    // ... other models
+  }
+
+  // 3. Upload static files
   const uploadedFiles = await uploadStaticFiles();
 
-  // 3. Seed templates with uploaded file keys
+  // 4. Seed templates with uploaded file keys
   await seedTemplates(uploadedFiles);
-
-  // 4. Create sample data (optional)
-  // ...
 }
 ```
 

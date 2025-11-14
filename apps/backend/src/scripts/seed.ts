@@ -85,19 +85,31 @@ async function seed() {
   logger.info('🌱 Starting database seed...');
 
   try {
-    // Clear existing data
-    logger.info('🧹 Clearing existing data...');
-    await prisma.response.deleteMany();
-    await prisma.form.deleteMany();
-    await prisma.formTemplate.deleteMany();
-    await prisma.member.deleteMany();
-    await prisma.invitation.deleteMany();
-    await prisma.organization.deleteMany();
-    await prisma.session.deleteMany();
-    await prisma.account.deleteMany();
-    await prisma.user.deleteMany();
+    // Check if templates already exist (idempotency)
+    const existingTemplates = await prisma.formTemplate.count();
+    if (existingTemplates > 0) {
+      logger.info(`⏭️  Found ${existingTemplates} existing templates, skipping seed`);
+      logger.info('💡 To force reseed, manually delete templates from database first');
+      return;
+    }
 
-    logger.info('✅ Database cleared successfully');
+    // Only clear data in non-production environments
+    const isProduction = process.env.NODE_ENV === 'production';
+    if (!isProduction) {
+      logger.info('🧹 Clearing existing data (non-production environment)...');
+      await prisma.response.deleteMany();
+      await prisma.form.deleteMany();
+      await prisma.formTemplate.deleteMany();
+      await prisma.member.deleteMany();
+      await prisma.invitation.deleteMany();
+      await prisma.organization.deleteMany();
+      await prisma.session.deleteMany();
+      await prisma.account.deleteMany();
+      await prisma.user.deleteMany();
+      logger.info('✅ Database cleared successfully');
+    } else {
+      logger.info('⏭️  Skipping data clearing in production environment');
+    }
     
     // Upload static files
     const uploadedFiles = await uploadStaticFiles();

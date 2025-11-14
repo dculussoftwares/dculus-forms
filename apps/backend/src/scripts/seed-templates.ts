@@ -60,23 +60,30 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
   logger.info('🌱 Seeding form templates...');
   
   // Get background image keys from uploaded files
+  // Accept files with 'background' OR 'logo' in name, or FormBackground/OrganizationLogo types
   const backgroundImages = uploadedFiles.filter(file => 
     file.type === 'FormBackground' || 
-    file.filename?.includes('background')
+    file.type === 'OrganizationLogo' ||
+    file.filename?.includes('background') ||
+    file.filename?.includes('logo')
   );
   
-  // Use logo images as background if no specific background images available
-  const availableImages = backgroundImages.length > 0 
-    ? backgroundImages 
-    : uploadedFiles.filter(file => file.type === 'OrganizationLogo');
+  // Use all matching images
+  const availableImages = backgroundImages;
     
   // Helper function to get an image key for a template
-  const getImageKey = (index: number): string => {
-    if (availableImages.length === 0) return "";
+  const getImageKey = (index: number): string | null => {
+    if (availableImages.length === 0) {
+      logger.warn('⚠️  No background images found, templates will have null backgroundImageKey');
+      return null;
+    }
     return availableImages[index % availableImages.length].key;
   };
     
   logger.info(`📸 Found ${availableImages.length} images for template backgrounds`);
+  if (availableImages.length > 0) {
+    logger.info('Available images:', availableImages.map(f => f.filename || f.key).join(', '));
+  }
 
   const templates = [
     // Contact Form Template
