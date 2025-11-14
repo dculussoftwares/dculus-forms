@@ -17,7 +17,7 @@ import { debugRouter } from './routes/debug.js';
 import { uploadRouter } from './routes/upload.js';
 import { chargebeeWebhookRouter } from './routes/chargebee-webhooks.js';
 import { errorHandler } from './middleware/errorHandler.js';
-import { cloudflareGeolocationMiddleware } from './middleware/cloudflare-geolocation.js';
+import { edgeGeolocationMiddleware } from './middleware/edge-geolocation.js';
 import { createBetterAuthContext } from './middleware/better-auth-middleware.js';
 import { prisma } from './lib/prisma.js';
 import { createHocuspocusServer } from './services/hocuspocus.js';
@@ -140,7 +140,7 @@ app.all('/api/auth/*', toNodeHandler(auth));
 // Apply express.json() AFTER Better Auth handler
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(cloudflareGeolocationMiddleware);
+app.use(edgeGeolocationMiddleware);
 
 // graphqlUploadExpress will be added in the async startServer function
 

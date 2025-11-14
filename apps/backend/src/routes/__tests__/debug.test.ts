@@ -2,14 +2,14 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import express, { Express } from 'express';
 import { debugRouter } from '../debug.js';
-import { cloudflareGeolocationMiddleware } from '../../middleware/cloudflare-geolocation.js';
+import { edgeGeolocationMiddleware } from '../../middleware/edge-geolocation.js';
 
 describe('Debug Routes - Cloudflare Geolocation', () => {
   let app: Express;
 
   beforeEach(() => {
     app = express();
-    app.use(cloudflareGeolocationMiddleware);
+    app.use(edgeGeolocationMiddleware);
     app.use('/api/debug', debugRouter);
   });
 
@@ -30,7 +30,7 @@ describe('Debug Routes - Cloudflare Geolocation', () => {
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({
       hasVisitorLocationData: true,
-      cloudflareGeo: {
+      visitorGeo: {
         ipCity: 'Austin',
         ipCountry: 'US',
         ipContinent: 'NA',
@@ -56,6 +56,6 @@ describe('Debug Routes - Cloudflare Geolocation', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.hasVisitorLocationData).toBe(false);
-    expect(response.body.cloudflareGeo).toEqual({});
+    expect(response.body.visitorGeo).toEqual({});
   });
 });

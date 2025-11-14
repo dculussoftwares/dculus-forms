@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 
-export interface CloudflareVisitorLocation {
+export interface EdgeVisitorLocation {
   ipCity?: string;
   ipCountry?: string;
   ipContinent?: string;
@@ -13,7 +13,7 @@ export interface CloudflareVisitorLocation {
   timezone?: string;
 }
 
-export const VISITOR_LOCATION_HEADER_MAP = {
+export const EDGE_VISITOR_LOCATION_HEADER_MAP = {
   ipCity: 'cf-ipcity',
   ipCountry: 'cf-ipcountry',
   ipContinent: 'cf-ipcontinent',
@@ -24,7 +24,7 @@ export const VISITOR_LOCATION_HEADER_MAP = {
   metroCode: 'cf-metro-code',
   postalCode: 'cf-postal-code',
   timezone: 'cf-timezone',
-} as const satisfies Record<keyof CloudflareVisitorLocation, string>;
+} as const satisfies Record<keyof EdgeVisitorLocation, string>;
 
 function normalizeHeaderValue(value: string | string[] | undefined): string | undefined {
   if (Array.isArray(value)) {
@@ -33,15 +33,15 @@ function normalizeHeaderValue(value: string | string[] | undefined): string | un
   return value?.toString().trim() || undefined;
 }
 
-export function cloudflareGeolocationMiddleware(
+export function edgeGeolocationMiddleware(
   req: Request,
   res: Response,
   next: NextFunction
 ): void {
-  const geoData: CloudflareVisitorLocation = {};
+  const geoData: EdgeVisitorLocation = {};
 
-  (Object.entries(VISITOR_LOCATION_HEADER_MAP) as [
-    keyof CloudflareVisitorLocation,
+  (Object.entries(EDGE_VISITOR_LOCATION_HEADER_MAP) as [
+    keyof EdgeVisitorLocation,
     string
   ][]).forEach(([key, headerName]) => {
     const normalizedValue = normalizeHeaderValue(req.headers[headerName]);
@@ -50,8 +50,8 @@ export function cloudflareGeolocationMiddleware(
     }
   });
 
-  req.cloudflareGeo = geoData;
-  res.locals.cloudflareGeo = geoData;
+  req.visitorGeo = geoData;
+  res.locals.visitorGeo = geoData;
 
   next();
 }
@@ -59,11 +59,11 @@ export function cloudflareGeolocationMiddleware(
 declare global {
   namespace Express {
     interface Request {
-      cloudflareGeo?: CloudflareVisitorLocation;
+      visitorGeo?: EdgeVisitorLocation;
     }
 
     interface Locals {
-      cloudflareGeo?: CloudflareVisitorLocation;
+      visitorGeo?: EdgeVisitorLocation;
     }
   }
 }
