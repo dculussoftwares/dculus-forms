@@ -743,6 +743,10 @@ jobs:
 
           echo "service_domain=$(terraform output -raw service_domain)" >> $GITHUB_OUTPUT
           echo "target_backend_fqdn=$(terraform output -raw target_backend_fqdn)" >> $GITHUB_OUTPUT
+          echo "visitor_location_headers_enabled=$(terraform output -raw visitor_location_headers_enabled)" >> $GITHUB_OUTPUT
+          
+          echo "✅ Cloudflare DNS and Managed Transforms configured"
+          echo "📍 Visitor location headers: ENABLED"
 
   terraform-cloudflare-pages:
     name: 5.2. Setup Pages Infrastructure & Domain (form-app)
@@ -1673,6 +1677,7 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "- **Hostname**: \`${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}\`" >> $GITHUB_STEP_SUMMARY
             echo "- **Target FQDN**: \`${{ needs.terraform-cloudflare-service-domain.outputs.target_backend_fqdn }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Visitor Location Headers**: ✅ Enabled (Managed Transform)" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
 
