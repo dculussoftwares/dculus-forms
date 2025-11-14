@@ -8,17 +8,27 @@ Cloudflare's IP Geolocation feature automatically adds geographic information he
 
 ### 1. Cloudflare Configuration
 
-**Enable IP Geolocation in Cloudflare Dashboard:**
+**Step 1: Enable IP Geolocation (Free)**
 1. Log in to Cloudflare Dashboard
 2. Select your domain
 3. Go to **Network** settings
 4. Enable **IP Geolocation**
-5. Ensure DNS records are **proxied** (orange cloud icon)
+5. This provides `CF-IPCountry` header automatically
 
-**Verify Proxied Status:**
+**Step 2: Enable Visitor Location Headers (Recommended)**
+1. Go to **Rules** > **Transform Rules** > **Managed Transforms**
+2. Enable **"Add visitor location headers"**
+3. This adds all location headers listed below
+
+**Step 3: Verify DNS Proxy Status**
+1. Go to **DNS** settings
+2. Ensure your backend subdomain has **orange cloud** icon (proxied)
+3. Gray cloud = DNS only (no Cloudflare features)
+
+**Verify Setup:**
 ```bash
 # Check if your domain is proxied through Cloudflare
-curl -I https://api-dev.dculus.com/health
+curl -I https://form-services-dev.dculus.com/health
 # Look for: CF-Ray header (indicates Cloudflare proxy)
 ```
 
@@ -26,11 +36,24 @@ curl -I https://api-dev.dculus.com/health
 
 | Header | Description | Availability |
 |--------|-------------|--------------|
-| `CF-IPCountry` | ISO 3166-1 Alpha 2 country code (e.g., "US", "GB", "IN") | All plans |
-| `CF-IPContinent` | Continent code (e.g., "NA", "EU", "AS") | All plans |
-| `CF-IPCity` | City name | **Enterprise only** |
-| `CF-Connecting-IP` | Original visitor IP address | All plans |
-| `CF-Ray` | Cloudflare Ray ID (includes data center code) | All plans |
+| `CF-IPCountry` | ISO 3166-1 Alpha 2 country code (e.g., "US", "GB", "IN") | ✅ All plans (IP Geolocation enabled) |
+| `CF-IPContinent` | Continent code (e.g., "NA", "EU", "AS") | ✅ With Managed Transform |
+| `CF-IPCity` | City name (UTF-8 encoded) | ✅ With Managed Transform |
+| `CF-Region` | Region/state name | ✅ With Managed Transform |
+| `CF-Region-Code` | Region/state code (e.g., "CA", "TX") | ✅ With Managed Transform |
+| `CF-Postal-Code` | Postal/ZIP code | ✅ With Managed Transform |
+| `CF-Metro-Code` | Metro code (DMA for US) | ✅ With Managed Transform |
+| `CF-IPLatitude` | Latitude coordinate | ✅ With Managed Transform |
+| `CF-IPLongitude` | Longitude coordinate | ✅ With Managed Transform |
+| `CF-Timezone` | IANA timezone name | ✅ With Managed Transform |
+| `CF-Connecting-IP` | Original visitor IP address | ✅ All plans (confirmed working) |
+| `CF-Ray` | Cloudflare Ray ID (includes data center code) | ✅ All plans (confirmed working) |
+
+**Notes:**
+- `CF-IPCountry` requires only **IP Geolocation** enabled (Network settings)
+- All other location headers require **"Add visitor location headers"** Managed Transform (Rules > Transform Rules > Managed Transforms)
+- City names with non-ASCII characters are UTF-8 encoded (e.g., `São Paulo` → `S\u00c3\u00a3o Paulo`)
+- Accuracy varies by location; some fields may be empty for certain IPs
 
 ## Architecture
 
@@ -79,9 +102,14 @@ export const myResolvers = {
       
       if (geo?.isProxied) {
         console.log('User location:', {
-          country: geo.country,      // "US"
-          continent: geo.continent,  // "NA"
-          ip: geo.connectingIp,      // "203.0.113.1"
+          country: geo.country,          // "US"
+          continent: geo.continent,      // "NA"
+          city: geo.city,                // "San Francisco"
+          region: geo.region,            // "California"
+          postalCode: geo.postalCode,    // "94107"
+          timezone: geo.timezone,        // "America/Los_Angeles"
+          coordinates: `${geo.latitude},${geo.longitude}`, // "37.7749,-122.4194"
+          ip: geo.connectingIp,          // "203.0.113.1"
         });
       }
 
@@ -212,21 +240,37 @@ curl https://api-dev.dculus.com/debug/cloudflare
   "success": true,
   "isProxiedThroughCloudflare": true,
   "cloudflareHeaders": {
-    "cf-ipcountry": "US",
-    "cf-ipcontinent": "NA",
-    "cf-connecting-ip": "203.0.113.1",
-    "cf-ray": "1234567890abc-IAD"
+    "cf-ipcountry": "IN",
+    "cf-ipcontinent": "AS",
+    "cf-ipcity": "Chennai",
+    "cf-region": "Tamil Nadu",
+    "cf-region-code": "TN",
+    "cf-postal-code": "600001",
+    "cf-iplatitude": "13.0827",
+    "cf-iplongitude": "80.2707",
+    "cf-timezone": "Asia/Kolkata",
+    "cf-connecting-ip": "2406:7400:1c3:6ed4:c549:edec:c16a:2953",
+    "cf-ray": "99e467c6ca5e7f4b-MAA"
   },
   "geolocationData": {
-    "country": "US",
-    "continent": "NA",
-    "connectingIp": "203.0.113.1",
-    "colo": "IAD",
-    "ray": "1234567890abc-IAD",
+    "country": "IN",
+    "continent": "AS",
+    "city": "Chennai",
+    "region": "Tamil Nadu",
+    "regionCode": "TN",
+    "postalCode": "600001",
+    "latitude": "13.0827",
+    "longitude": "80.2707",
+    "timezone": "Asia/Kolkata",
+    "connectingIp": "2406:7400:1c3:6ed4:c549:edec:c16a:2953",
+    "colo": "MAA",
+    "ray": "99e467c6ca5e7f4b-MAA",
     "isProxied": true
   }
 }
 ```
+
+**Note:** All location fields shown above require the **"Add visitor location headers"** Managed Transform to be enabled. Without it, only `country`, `connectingIp`, and `ray` will be available.
 
 ## Helper Functions
 

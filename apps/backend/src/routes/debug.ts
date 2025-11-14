@@ -10,10 +10,17 @@ const router: ExpressRouter = Router();
  */
 router.get('/cloudflare', (req: Request, res: Response) => {
   const cloudflareHeaders = {
-    // Geolocation headers
+    // Geolocation headers (require "Add visitor location headers" Managed Transform)
     'cf-ipcountry': req.headers['cf-ipcountry'],
     'cf-ipcontinent': req.headers['cf-ipcontinent'],
     'cf-ipcity': req.headers['cf-ipcity'],
+    'cf-region': req.headers['cf-region'],
+    'cf-region-code': req.headers['cf-region-code'],
+    'cf-postal-code': req.headers['cf-postal-code'],
+    'cf-metro-code': req.headers['cf-metro-code'],
+    'cf-iplatitude': req.headers['cf-iplatitude'],
+    'cf-iplongitude': req.headers['cf-iplongitude'],
+    'cf-timezone': req.headers['cf-timezone'],
     'cf-connecting-ip': req.headers['cf-connecting-ip'],
     
     // Cloudflare proxy headers

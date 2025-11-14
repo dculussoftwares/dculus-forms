@@ -3,15 +3,30 @@ import { logger } from '../lib/logger.js';
 
 /**
  * Cloudflare Geolocation Headers Interface
- * @see https://developers.cloudflare.com/fundamentals/reference/http-request-headers/#cf-ipcountry
+ * These headers are available when "Add visitor location headers" Managed Transform is enabled
+ * @see https://developers.cloudflare.com/rules/transform/managed-transforms/reference/#add-visitor-location-headers
  */
 export interface CloudflareGeolocation {
   /** ISO 3166-1 Alpha 2 country code (e.g., "US", "GB", "IN") */
   country?: string;
   /** Continent code (e.g., "NA", "EU", "AS") */
   continent?: string;
-  /** City name (Enterprise plan only) */
+  /** City name (may contain non-ASCII characters encoded as UTF-8) */
   city?: string;
+  /** Region/state name */
+  region?: string;
+  /** Region/state code (e.g., "CA" for California) */
+  regionCode?: string;
+  /** Postal/ZIP code */
+  postalCode?: string;
+  /** Metro code (DMA code for US locations) */
+  metroCode?: string;
+  /** Latitude coordinate */
+  latitude?: string;
+  /** Longitude coordinate */
+  longitude?: string;
+  /** Timezone name (e.g., "America/Los_Angeles") */
+  timezone?: string;
   /** Original visitor IP address */
   connectingIp?: string;
   /** Cloudflare data center that handled the request */
@@ -35,8 +50,11 @@ declare global {
 
 /**
  * Middleware to extract and attach Cloudflare geolocation headers to the request object.
- * This data is available when IP Geolocation is enabled in Cloudflare and the request
- * is proxied through Cloudflare's network (orange cloud enabled in DNS).
+ * This data is available when "Add visitor location headers" Managed Transform is enabled
+ * in Cloudflare dashboard under Rules > Transform Rules > Managed Transforms.
+ * 
+ * Note: Enabling IP Geolocation in Network settings provides cf-ipcountry by default,
+ * but other location headers require the Managed Transform to be enabled.
  */
 export function cloudflareGeolocationMiddleware(
   req: Request,
@@ -47,9 +65,21 @@ export function cloudflareGeolocationMiddleware(
   const cfRayString = Array.isArray(cfRay) ? cfRay[0] : cfRay;
 
   const cfHeaders: CloudflareGeolocation = {
+    // Basic geolocation (available with IP Geolocation enabled)
     country: req.headers['cf-ipcountry'] as string | undefined,
+    
+    // Extended geolocation (requires "Add visitor location headers" Managed Transform)
     continent: req.headers['cf-ipcontinent'] as string | undefined,
     city: req.headers['cf-ipcity'] as string | undefined,
+    region: req.headers['cf-region'] as string | undefined,
+    regionCode: req.headers['cf-region-code'] as string | undefined,
+    postalCode: req.headers['cf-postal-code'] as string | undefined,
+    metroCode: req.headers['cf-metro-code'] as string | undefined,
+    latitude: req.headers['cf-iplatitude'] as string | undefined,
+    longitude: req.headers['cf-iplongitude'] as string | undefined,
+    timezone: req.headers['cf-timezone'] as string | undefined,
+    
+    // Connection info
     connectingIp: req.headers['cf-connecting-ip'] as string | undefined,
     colo: cfRayString?.split('-')[1],
     ray: cfRayString,
@@ -64,7 +94,13 @@ export function cloudflareGeolocationMiddleware(
     logger.debug('🌍 Cloudflare Geolocation:', {
       country: cfHeaders.country || 'N/A',
       continent: cfHeaders.continent || 'N/A',
-      city: cfHeaders.city || 'N/A (Enterprise only)',
+      city: cfHeaders.city || 'N/A',
+      region: cfHeaders.region || 'N/A',
+      postalCode: cfHeaders.postalCode || 'N/A',
+      timezone: cfHeaders.timezone || 'N/A',
+      coordinates: cfHeaders.latitude && cfHeaders.longitude 
+        ? `${cfHeaders.latitude}, ${cfHeaders.longitude}` 
+        : 'N/A',
       ip: cfHeaders.connectingIp || 'N/A',
       colo: cfHeaders.colo || 'N/A',
       ray: cfHeaders.ray || 'N/A',
