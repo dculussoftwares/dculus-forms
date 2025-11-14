@@ -33,6 +33,7 @@ import { GET_ACTIVE_ORGANIZATION, GET_FORMS } from '../graphql/queries';
 import Templates from '../pages/Templates';
 import FormDashboard from '../pages/FormDashboard';
 import { useTranslation } from '../hooks/useTranslation';
+import { getFormViewerUrl } from '@/lib/config';
 
 export function Dashboard() {
   const { t: tTemplates } = useTranslation('templates');
@@ -652,7 +653,7 @@ function FormCard({
   const handlePreview = (e: React.MouseEvent) => {
     e.stopPropagation();
     // Navigate to form preview/viewer
-    const formViewerUrl = `http://localhost:5173/f/${form.shortUrl}`;
+    const formViewerUrl = getFormViewerUrl(form.shortUrl);
     window.open(formViewerUrl, '_blank');
   };
 

@@ -29,6 +29,7 @@ import { useTranslation } from '../hooks/useTranslation';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import { DUPLICATE_FORM } from '../graphql/mutations';
 import { GET_DEBUG_HEADERS } from '../graphql/queries';
+import { getFormViewerUrl } from '@/lib/config';
 
 const FormDashboard: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
@@ -203,6 +204,8 @@ const FormDashboard: React.FC = () => {
     );
   }
 
+  const formViewerUrl = getFormViewerUrl(form.shortUrl);
+
   return (
     <MainLayout
       title={`${form.title} - ${t('layout.title')}`}
@@ -221,7 +224,6 @@ const FormDashboard: React.FC = () => {
             onDelete={() => setShowDeleteDialog(true)}
             onCollectResponses={handleCollectResponses}
             onPreview={() => {
-              const formViewerUrl = `http://localhost:5173/f/${form.shortUrl}`;
               window.open(formViewerUrl, '_blank');
             }}
             onViewAnalytics={() => {
@@ -296,7 +298,7 @@ const FormDashboard: React.FC = () => {
         <CollectResponsesDialog
           open={showCollectResponsesDialog}
           onOpenChange={setShowCollectResponsesDialog}
-          formUrl={`http://localhost:5173/f/${form.shortUrl}`}
+          formUrl={formViewerUrl}
           formTitle={form.title}
           onCopyLink={handleCopyLink}
           onOpenForm={handleOpenFormViewer}
@@ -352,7 +354,7 @@ const FormDashboard: React.FC = () => {
         {showPublishAnimation && (
           <PublishSuccessAnimation
             formTitle={form.title}
-            formUrl={`http://localhost:5173/f/${form.shortUrl}`}
+            formUrl={formViewerUrl}
             onClose={() => setShowPublishAnimation(false)}
             onCopyLink={handleAnimationCopyLink}
             onViewForm={handleAnimationViewForm}

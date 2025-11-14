@@ -47,3 +47,22 @@ export function getCdnEndpoint(): string {
 export function getPixabayApiKey(): string {
   return import.meta.env.VITE_PIXABAY_API_KEY || '';
 }
+
+/**
+ * Get the base Form Viewer URL (without trailing slash)
+ */
+export function getFormViewerBaseUrl(): string {
+  const baseUrl = import.meta.env.VITE_FORM_VIEWER_URL || 'http://localhost:5173';
+  return baseUrl.replace(/\/$/, '');
+}
+
+/**
+ * Build the full Form Viewer URL for a given short URL
+ */
+export function getFormViewerUrl(shortUrl?: string): string {
+  const baseUrl = getFormViewerBaseUrl();
+  if (!shortUrl) {
+    return baseUrl;
+  }
+  return `${baseUrl}/f/${shortUrl}`;
+}

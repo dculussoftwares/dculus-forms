@@ -15,6 +15,7 @@ import { ViewsOverTimeChart } from '../components/Analytics/ViewsOverTimeChart';
 import { CompletionTimeChart } from '../components/Analytics/CompletionTimeChart';
 import { CompletionTimePercentiles } from '../components/Analytics/CompletionTimePercentiles';
 import { FieldAnalyticsViewer } from '../components/Analytics/FieldAnalytics/FieldAnalyticsViewer';
+import { getFormViewerUrl } from '@/lib/config';
 
 const FormAnalytics: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
@@ -106,7 +107,7 @@ const FormAnalytics: React.FC = () => {
   };
 
   const handleViewForm = () => {
-    const formViewerUrl = `http://localhost:5173/f/${form.shortUrl}`;
+    const formViewerUrl = getFormViewerUrl(form.shortUrl);
     window.open(formViewerUrl, '_blank');
   };
 

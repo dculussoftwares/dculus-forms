@@ -4,6 +4,7 @@ import { useQuery, useMutation } from '@apollo/client';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { DELETE_FORM, UPDATE_FORM } from '../graphql/mutations';
 import { useAppConfig } from '@/hooks';
+import { getFormViewerUrl } from '@/lib/config';
 
 interface DashboardStats {
   totalResponses: number;
@@ -192,14 +193,14 @@ export const useFormDashboard = (formId: string | undefined) => {
   };
 
   const handleCopyLink = () => {
-    const formViewerUrl = `http://localhost:5173/f/${formData?.form?.shortUrl}`;
+    const formViewerUrl = getFormViewerUrl(formData?.form?.shortUrl);
     navigator.clipboard.writeText(formViewerUrl).then(() => {
       console.log('Link copied to clipboard');
     });
   };
 
   const handleOpenFormViewer = () => {
-    const formViewerUrl = `http://localhost:5173/f/${formData?.form?.shortUrl}`;
+    const formViewerUrl = getFormViewerUrl(formData?.form?.shortUrl);
     window.open(formViewerUrl, '_blank');
   };
 
