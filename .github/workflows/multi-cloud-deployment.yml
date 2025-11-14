@@ -403,8 +403,7 @@ jobs:
           TF_VAR_mongodb_atlas_private_key: ${{ secrets.MONGODB_ATLAS_PRIVATE_KEY }}
           TF_VAR_mongodb_atlas_org_id: ${{ secrets.MONGODB_ATLAS_ORG_ID }}
           TF_VAR_database_password: ${{ secrets.MONGODB_DATABASE_PASSWORD }}
-        run: |
-          terraform plan -out=tfplan
+        run: terraform plan -out=tfplan
 
       - name: Terraform Apply
         id: apply
@@ -634,7 +633,8 @@ jobs:
           terraform validate
 
           # Plan
-          terraform plan -out=tfplan
+          IMAGE_TAG="${TF_VAR_container_image_tag}"
+          terraform plan -out=tfplan -var="container_image_tag=${IMAGE_TAG}"
 
           # Apply
           if [ "${{ needs.determine-environment.outputs.should_deploy }}" = "true" ]; then
