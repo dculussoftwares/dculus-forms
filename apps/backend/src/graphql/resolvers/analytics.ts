@@ -8,23 +8,11 @@ export const analyticsResolvers = {
   Mutation: {
     trackFormView: async (_: any, { input }: { input: TrackFormViewInput }, context: any) => {
       try {
-        // Get client IP from Cloudflare or fallback to request IP
-        const clientIP = context.cloudflare?.connectingIp || 
-                        context.req?.ip || 
+        // Get client IP from request
+        const clientIP = context.req?.ip || 
                         context.req?.connection?.remoteAddress || 
                         context.req?.socket?.remoteAddress || 
                         (context.req?.headers?.['x-forwarded-for'] as string)?.split(',')[0];
-        
-        // Log geolocation data if available
-        if (context.cloudflare?.isProxied) {
-          logger.info('📍 Form view with geolocation:', {
-            formId: input.formId,
-            country: context.cloudflare.country,
-            continent: context.cloudflare.continent,
-            city: context.cloudflare.city || 'N/A',
-            clientIP,
-          });
-        }
         
         // Verify form exists and is published
         const form = await prisma.form.findUnique({
