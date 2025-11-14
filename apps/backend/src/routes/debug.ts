@@ -64,11 +64,29 @@ router.get('/cloudflare', (req: Request, res: Response) => {
 router.get('/headers', (req: Request, res: Response) => {
   logger.info('🔍 Headers debug endpoint accessed');
 
+  // Explicitly show all geolocation fields (including undefined ones)
+  const geolocation = req.cloudflare ? {
+    country: req.cloudflare.country,
+    continent: req.cloudflare.continent,
+    city: req.cloudflare.city,
+    region: req.cloudflare.region,
+    regionCode: req.cloudflare.regionCode,
+    postalCode: req.cloudflare.postalCode,
+    metroCode: req.cloudflare.metroCode,
+    latitude: req.cloudflare.latitude,
+    longitude: req.cloudflare.longitude,
+    timezone: req.cloudflare.timezone,
+    connectingIp: req.cloudflare.connectingIp,
+    colo: req.cloudflare.colo,
+    ray: req.cloudflare.ray,
+    isProxied: req.cloudflare.isProxied,
+  } : null;
+
   res.json({
     success: true,
     timestamp: new Date().toISOString(),
     headers: req.headers,
-    geolocation: req.cloudflare,
+    geolocation,
   });
 });
 
