@@ -121,7 +121,7 @@ resource "azurerm_container_app" "backend" {
 
       env {
         name  = "NODE_ENV"
-        value = "production"
+        value = var.environment
       }
 
       env {
