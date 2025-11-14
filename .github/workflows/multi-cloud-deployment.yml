@@ -406,16 +406,6 @@ jobs:
         run: |
           terraform plan -out=tfplan
 
-      # NOTE: Plan files may contain sensitive data (credentials, connection strings)
-      # Only uploaded for debugging purposes with minimal retention
-      - name: Upload Terraform Plan
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: tfplan-mongodb-${{ needs.determine-environment.outputs.environment }}
-          path: ${{ env.MONGODB_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}/tfplan
-          retention-days: 1  # Minimize exposure window
-
       - name: Terraform Apply
         id: apply
         if: needs.determine-environment.outputs.should_deploy == 'true'
