@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle, Button } from '@dculus/ui';
+import { Card, CardContent, CardHeader, CardTitle, Tabs, TabsList, TabsTrigger } from '@dculus/ui';
 import { Globe, TrendingUp, BarChart3, Map } from 'lucide-react';
 import { CountryStats, RegionStats, CityStats } from '../../hooks/useFormAnalytics';
 import { WorldMapVisualization } from './WorldMapVisualization';
@@ -417,35 +417,25 @@ interface ViewToggleButtonsProps {
 }
 
 const ViewToggleButtons: React.FC<ViewToggleButtonsProps> = ({ viewType, onViewTypeChange }) => {
+  const { t } = useTranslation('geographicChart');
+
   return (
-    <div className="flex items-center bg-gray-100 rounded-lg p-1 border shadow-sm">
-      <Button
-        size="sm"
-        variant={viewType === 'map' ? 'default' : 'ghost'}
-        onClick={() => onViewTypeChange('map')}
-        className={`h-8 px-3 text-xs font-medium transition-all duration-200 ${
-          viewType === 'map' 
-            ? 'bg-white shadow-sm text-blue-700 border-0' 
-            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
-        }`}
-      >
-        <Map className="h-3 w-3 mr-1.5" />
-        Map View
-      </Button>
-      <Button
-        size="sm"
-        variant={viewType === 'chart' ? 'default' : 'ghost'}
-        onClick={() => onViewTypeChange('chart')}
-        className={`h-8 px-3 text-xs font-medium transition-all duration-200 ${
-          viewType === 'chart' 
-            ? 'bg-white shadow-sm text-blue-700 border-0' 
-            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
-        }`}
-      >
-        <BarChart3 className="h-3 w-3 mr-1.5" />
-        Chart View
-      </Button>
-    </div>
+    <Tabs
+      value={viewType}
+      onValueChange={(value) => onViewTypeChange(value as ViewType)}
+      className="w-fit"
+    >
+      <TabsList>
+        <TabsTrigger value="map" className="flex items-center gap-2">
+          <Map className="h-3 w-3" />
+          {t('viewToggle.map')}
+        </TabsTrigger>
+        <TabsTrigger value="chart" className="flex items-center gap-2">
+          <BarChart3 className="h-3 w-3" />
+          {t('viewToggle.chart')}
+        </TabsTrigger>
+      </TabsList>
+    </Tabs>
   );
 };
 
@@ -456,32 +446,18 @@ interface DataModeToggleProps {
 }
 
 const DataModeToggle: React.FC<DataModeToggleProps> = ({ dataMode, onDataModeChange }) => {
+  const { t } = useTranslation('geographicChart');
+
   return (
-    <div className="flex items-center bg-gray-100 rounded-lg p-1 border shadow-sm">
-      <Button
-        size="sm"
-        variant={dataMode === 'views' ? 'default' : 'ghost'}
-        onClick={() => onDataModeChange('views')}
-        className={`h-8 px-3 text-xs font-medium transition-all duration-200 ${
-          dataMode === 'views' 
-            ? 'bg-white shadow-sm text-blue-700 border-0' 
-            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
-        }`}
-      >
-        Views
-      </Button>
-      <Button
-        size="sm"
-        variant={dataMode === 'submissions' ? 'default' : 'ghost'}
-        onClick={() => onDataModeChange('submissions')}
-        className={`h-8 px-3 text-xs font-medium transition-all duration-200 ${
-          dataMode === 'submissions' 
-            ? 'bg-white shadow-sm text-orange-700 border-0' 
-            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
-        }`}
-      >
-        Submissions
-      </Button>
-    </div>
+    <Tabs
+      value={dataMode}
+      onValueChange={(value) => onDataModeChange(value as DataMode)}
+      className="w-fit"
+    >
+      <TabsList>
+        <TabsTrigger value="views">{t('views')}</TabsTrigger>
+        <TabsTrigger value="submissions">{t('submissions')}</TabsTrigger>
+      </TabsList>
+    </Tabs>
   );
 };

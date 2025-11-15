@@ -4,6 +4,10 @@
   "noData": "No geographic data available",
   "views": "Views",
   "submissions": "Submissions",
+  "viewToggle": {
+    "map": "Map View",
+    "chart": "Chart View"
+  },
   "breakdown": {
     "countries": "Country Breakdown",
     "regions": "Region Breakdown",

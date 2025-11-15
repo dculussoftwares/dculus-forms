@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle, Button } from '@dculus/ui';
+import { Card, CardContent, CardHeader, CardTitle, Tabs, TabsList, TabsTrigger } from '@dculus/ui';
 import { Monitor, Globe } from 'lucide-react';
 import { OSStats, BrowserStats } from '../../hooks/useFormAnalytics';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -15,7 +15,7 @@ interface BrowserOSChartsProps {
   loading?: boolean;
 }
 
-const CustomTooltip = ({ active, payload, label, dataMode }: any) => {
+const CustomTooltip = ({ active, payload, label, dataMode, t }: any) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white p-3 border rounded-lg shadow-lg">
@@ -28,17 +28,17 @@ const CustomTooltip = ({ active, payload, label, dataMode }: any) => {
             let percentage = entry.payload.percentage;
 
             if (entry.dataKey === 'views' || (dataMode === 'views' && entry.dataKey === 'count')) {
-              metricLabel = 'Views';
+              metricLabel = t('dataMode.views');
               color = '#3b82f6';
             } else if (entry.dataKey === 'submissions' || (dataMode === 'submissions' && entry.dataKey === 'count')) {
-              metricLabel = 'Submissions';
+              metricLabel = t('dataMode.submissions');
               color = '#f59e0b';
             } else if (entry.dataKey === 'count' && dataMode === 'combined') {
               // For combined mode, we need to check the data structure
-              metricLabel = 'Views';
+              metricLabel = t('dataMode.views');
               color = '#3b82f6';
             } else if (entry.dataKey === 'submissionCount') {
-              metricLabel = 'Submissions';
+              metricLabel = t('dataMode.submissions');
               color = '#f59e0b';
               percentage = entry.payload.submissionPercentage;
             }
@@ -148,10 +148,12 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
             <CardTitle className="flex items-center justify-between text-base">
               <div className="flex items-center">
                 <Monitor className="h-4 w-4 mr-2 text-green-600" />
-                Operating Systems
+                {t('sections.operatingSystems')}
               </div>
               {currentOSData && currentOSData.length > 0 && (
-                <span className="text-sm text-gray-500">{currentOSData.length} systems</span>
+                <span className="text-sm text-gray-500">
+                  {t('sections.osCount', { values: { count: currentOSData.length } })}
+                </span>
               )}
             </CardTitle>
           </CardHeader>
@@ -162,7 +164,11 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
             <EmptyState 
               icon={Monitor}
               title={t('noOSData')}
-              subtitle={`${dataMode === 'submissions' ? 'Submission' : 'View'} operating system data will appear here`}
+              subtitle={
+                t(
+                  `emptyState.os.${dataMode === 'submissions' ? 'submissions' : 'views'}`
+                )
+              }
             />
           ) : (
             <>
@@ -181,11 +187,21 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
                       height={60}
                     />
                     <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip content={<CustomTooltip dataMode={dataMode} />} />
+                    <Tooltip content={<CustomTooltip dataMode={dataMode} t={t} />} />
                     {dataMode === 'combined' ? (
                       <>
-                        <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Views" />
-                        <Bar dataKey="submissionCount" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Submissions" />
+                        <Bar
+                          dataKey="count"
+                          fill="#3b82f6"
+                          radius={[4, 4, 0, 0]}
+                          name={t('dataMode.views')}
+                        />
+                        <Bar
+                          dataKey="submissionCount"
+                          fill="#f59e0b"
+                          radius={[4, 4, 0, 0]}
+                          name={t('dataMode.submissions')}
+                        />
                       </>
                     ) : (
                       <Bar 
@@ -214,13 +230,13 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
                           <div>
                             <span className="text-sm font-medium text-blue-600">{os.count}</span>
                             <span className="text-xs text-gray-500 ml-2">
-                              ({os.percentage.toFixed(1)}%) views
+                              ({os.percentage.toFixed(1)}%) {t('metrics.views')}
                             </span>
                           </div>
                           <div>
                             <span className="text-sm font-medium text-orange-600">{os.submissionCount || 0}</span>
                             <span className="text-xs text-gray-500 ml-2">
-                              ({(os.submissionPercentage || 0).toFixed(1)}%) submissions
+                              ({(os.submissionPercentage || 0).toFixed(1)}%) {t('metrics.submissions')}
                             </span>
                           </div>
                         </div>
@@ -247,10 +263,12 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
           <CardTitle className="flex items-center justify-between text-base">
             <div className="flex items-center">
               <Globe className="h-4 w-4 mr-2 text-blue-600" />
-              Browsers
+              {t('sections.browsers')}
             </div>
             {currentBrowserData && currentBrowserData.length > 0 && (
-              <span className="text-sm text-gray-500">{currentBrowserData.length} browsers</span>
+              <span className="text-sm text-gray-500">
+                {t('sections.browserCount', { values: { count: currentBrowserData.length } })}
+              </span>
             )}
           </CardTitle>
         </CardHeader>
@@ -261,7 +279,11 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
             <EmptyState 
               icon={Globe}
               title={t('noBrowserData')}
-              subtitle={`${dataMode === 'submissions' ? 'Submission' : 'View'} browser usage data will appear here`}
+              subtitle={
+                t(
+                  `emptyState.browser.${dataMode === 'submissions' ? 'submissions' : 'views'}`
+                )
+              }
             />
           ) : (
             <>
@@ -280,11 +302,21 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
                       height={60}
                     />
                     <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip content={<CustomTooltip dataMode={dataMode} />} />
+                    <Tooltip content={<CustomTooltip dataMode={dataMode} t={t} />} />
                     {dataMode === 'combined' ? (
                       <>
-                        <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Views" />
-                        <Bar dataKey="submissionCount" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Submissions" />
+                        <Bar
+                          dataKey="count"
+                          fill="#3b82f6"
+                          radius={[4, 4, 0, 0]}
+                          name={t('dataMode.views')}
+                        />
+                        <Bar
+                          dataKey="submissionCount"
+                          fill="#f59e0b"
+                          radius={[4, 4, 0, 0]}
+                          name={t('dataMode.submissions')}
+                        />
                       </>
                     ) : (
                       <Bar 
@@ -313,13 +345,13 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
                           <div>
                             <span className="text-sm font-medium text-blue-600">{browser.count}</span>
                             <span className="text-xs text-gray-500 ml-2">
-                              ({browser.percentage.toFixed(1)}%) views
+                              ({browser.percentage.toFixed(1)}%) {t('metrics.views')}
                             </span>
                           </div>
                           <div>
                             <span className="text-sm font-medium text-orange-600">{browser.submissionCount || 0}</span>
                             <span className="text-xs text-gray-500 ml-2">
-                              ({(browser.submissionPercentage || 0).toFixed(1)}%) submissions
+                              ({(browser.submissionPercentage || 0).toFixed(1)}%) {t('metrics.submissions')}
                             </span>
                           </div>
                         </div>
@@ -351,44 +383,19 @@ interface DataModeToggleProps {
 }
 
 const DataModeToggle: React.FC<DataModeToggleProps> = ({ dataMode, onDataModeChange }) => {
+  const { t } = useTranslation('browserOSCharts');
+
   return (
-    <div className="flex items-center bg-gray-100 rounded-lg p-1 border shadow-sm">
-      <Button
-        size="sm"
-        variant={dataMode === 'views' ? 'default' : 'ghost'}
-        onClick={() => onDataModeChange('views')}
-        className={`h-8 px-3 text-xs font-medium transition-all duration-200 ${
-          dataMode === 'views' 
-            ? 'bg-white shadow-sm text-blue-700 border-0' 
-            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
-        }`}
-      >
-        Views
-      </Button>
-      <Button
-        size="sm"
-        variant={dataMode === 'submissions' ? 'default' : 'ghost'}
-        onClick={() => onDataModeChange('submissions')}
-        className={`h-8 px-3 text-xs font-medium transition-all duration-200 ${
-          dataMode === 'submissions' 
-            ? 'bg-white shadow-sm text-orange-700 border-0' 
-            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
-        }`}
-      >
-        Submissions
-      </Button>
-      <Button
-        size="sm"
-        variant={dataMode === 'combined' ? 'default' : 'ghost'}
-        onClick={() => onDataModeChange('combined')}
-        className={`h-8 px-3 text-xs font-medium transition-all duration-200 ${
-          dataMode === 'combined' 
-            ? 'bg-white shadow-sm text-purple-700 border-0' 
-            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
-        }`}
-      >
-        Combined
-      </Button>
-    </div>
+    <Tabs
+      value={dataMode}
+      onValueChange={(value) => onDataModeChange(value as DataMode)}
+      className="w-fit"
+    >
+      <TabsList>
+        <TabsTrigger value="views">{t('dataMode.views')}</TabsTrigger>
+        <TabsTrigger value="submissions">{t('dataMode.submissions')}</TabsTrigger>
+        <TabsTrigger value="combined">{t('dataMode.combined')}</TabsTrigger>
+      </TabsList>
+    </Tabs>
   );
 };

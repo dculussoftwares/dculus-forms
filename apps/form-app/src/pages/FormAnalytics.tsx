@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
-import { Button, Card, LoadingSpinner } from '@dculus/ui';
+import { Button, Card, LoadingSpinner, Tabs, TabsList, TabsTrigger } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { useTranslation } from '../hooks/useTranslation';
 import { GET_FORM_BY_ID } from '../graphql/queries';
@@ -150,36 +150,21 @@ const FormAnalytics: React.FC = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'overview'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <BarChart3 className="h-4 w-4" />
-                {t('tabs.overview')}
-              </div>
-            </button>
-            <button
-              onClick={() => setActiveTab('fields')}
-              className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'fields'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
-                {t('tabs.fields')}
-              </div>
-            </button>
-          </nav>
-        </div>
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as 'overview' | 'fields')}
+        >
+          <TabsList className="mb-6 w-fit">
+            <TabsTrigger value="overview" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              {t('tabs.overview')}
+            </TabsTrigger>
+            <TabsTrigger value="fields" className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              {t('tabs.fields')}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         {/* Tab Content */}
         {activeTab === 'overview' ? (

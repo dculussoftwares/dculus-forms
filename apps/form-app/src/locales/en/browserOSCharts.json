@@ -1,5 +1,30 @@
 {
   "title": "Browser & Operating System Analytics",
   "noOSData": "No OS data available",
-  "noBrowserData": "No browser data available"
+  "noBrowserData": "No browser data available",
+  "sections": {
+    "operatingSystems": "Operating Systems",
+    "browsers": "Browsers",
+    "osCount": "{{count}} systems",
+    "browserCount": "{{count}} browsers"
+  },
+  "emptyState": {
+    "os": {
+      "views": "View operating system data will appear here",
+      "submissions": "Submission operating system data will appear here"
+    },
+    "browser": {
+      "views": "View browser usage data will appear here",
+      "submissions": "Submission browser usage data will appear here"
+    }
+  },
+  "dataMode": {
+    "views": "Views",
+    "submissions": "Submissions",
+    "combined": "Combined"
+  },
+  "metrics": {
+    "views": "views",
+    "submissions": "submissions"
+  }
 }

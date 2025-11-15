@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import WorldMap from 'react-svg-worldmap';
-import { Card, CardContent, CardHeader, CardTitle, Button } from '@dculus/ui';
+import { Card, CardContent, CardHeader, CardTitle, Button, Tabs, TabsList, TabsTrigger } from '@dculus/ui';
 import { Globe, TrendingUp } from 'lucide-react';
 import { CountryStats } from '../../hooks/useFormAnalytics';
 import ISO31661 from 'iso-3166-1';
@@ -333,31 +333,15 @@ interface DataModeToggleProps {
 
 const DataModeToggle: React.FC<DataModeToggleProps> = ({ dataMode, onDataModeChange, t }) => {
   return (
-    <div className="flex items-center bg-gray-100 rounded-lg p-1 border shadow-sm">
-      <Button
-        size="sm"
-        variant={dataMode === 'views' ? 'default' : 'ghost'}
-        onClick={() => onDataModeChange('views')}
-        className={`h-8 px-3 text-xs font-medium transition-all duration-200 ${
-          dataMode === 'views' 
-            ? 'bg-white shadow-sm text-blue-700 border-0' 
-            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
-        }`}
-      >
-        {t('dataMode.views')}
-      </Button>
-      <Button
-        size="sm"
-        variant={dataMode === 'submissions' ? 'default' : 'ghost'}
-        onClick={() => onDataModeChange('submissions')}
-        className={`h-8 px-3 text-xs font-medium transition-all duration-200 ${
-          dataMode === 'submissions' 
-            ? 'bg-white shadow-sm text-orange-700 border-0' 
-            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-200'
-        }`}
-      >
-        {t('dataMode.submissions')}
-      </Button>
-    </div>
+    <Tabs
+      value={dataMode}
+      onValueChange={(value) => onDataModeChange(value as DataMode)}
+      className="w-fit"
+    >
+      <TabsList>
+        <TabsTrigger value="views">{t('dataMode.views')}</TabsTrigger>
+        <TabsTrigger value="submissions">{t('dataMode.submissions')}</TabsTrigger>
+      </TabsList>
+    </Tabs>
   );
 };

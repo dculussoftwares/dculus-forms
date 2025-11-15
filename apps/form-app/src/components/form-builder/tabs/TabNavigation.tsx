@@ -177,14 +177,14 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                       className={cn(
                         "flex items-center space-x-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                         isActive
-                          ? 'bg-blue-50 text-blue-700 border-2 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800 hover:bg-blue-100'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 border-2 border-transparent dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800'
+                          ? 'bg-primary/10 text-primary border-2 border-primary/30 hover:bg-primary/20 dark:bg-primary/20 dark:text-primary dark:border-primary/40'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 border-2 border-transparent dark:hover:bg-muted/60'
                       )}
                       aria-label={t('aria.switchToTab', { values: { label: tab.label, description: tab.description } })}
                       role="tab"
                       aria-selected={isActive}
                     >
-                      <Icon className={cn("w-4 h-4", isActive && 'text-blue-600 dark:text-blue-400')} />
+                      <Icon className={cn("w-4 h-4", isActive && 'text-primary')} />
                       <span>{tab.label}</span>
                     </Button>
                   );
