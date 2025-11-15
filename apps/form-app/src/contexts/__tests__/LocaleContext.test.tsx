@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { act } from 'react';
-import { LocaleProvider, useLocale, LOCALE_STORAGE_KEY } from '../LocaleContext';
+import { LocaleProvider, LOCALE_STORAGE_KEY } from '../LocaleContext';
+import { useLocale } from '../../hooks/useLocale';
 import { defaultLocale } from '../../locales';
 
 const LocaleConsumer = () => {

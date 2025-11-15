@@ -1,15 +1,7 @@
-import React, { createContext, useState, useCallback, useContext, useMemo } from 'react';
-import type { Locale, LocaleMessages } from '../locales';
+import React, { useState, useCallback, useMemo } from 'react';
+import type { Locale } from '../locales';
 import { translations, defaultLocale, availableLocales } from '../locales';
-
-interface LocaleContextValue {
-  locale: Locale;
-  setLocale: (locale: Locale) => void;
-  messages: LocaleMessages;
-  availableLocales: Locale[];
-}
-
-const LocaleContext = createContext<LocaleContextValue | undefined>(undefined);
+import { LocaleContext, LocaleContextValue } from './locale-context';
 
 interface LocaleProviderProps {
   children: React.ReactNode;
@@ -29,7 +21,7 @@ export const LocaleProvider: React.FC<LocaleProviderProps> = ({
 
   const messages = useMemo(() => translations[locale], [locale]);
 
-  const value = useMemo(
+  const value = useMemo<LocaleContextValue>(
     () => ({
       locale,
       setLocale,
@@ -40,12 +32,4 @@ export const LocaleProvider: React.FC<LocaleProviderProps> = ({
   );
 
   return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
-};
-
-export const useLocale = (): LocaleContextValue => {
-  const context = useContext(LocaleContext);
-  if (!context) {
-    throw new Error('useLocale must be used within a LocaleProvider');
-  }
-  return context;
 };

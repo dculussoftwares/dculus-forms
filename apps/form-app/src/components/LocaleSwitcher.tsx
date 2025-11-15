@@ -1,12 +1,6 @@
 import { useMemo, useCallback } from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@dculus/ui';
-import { useLocale } from '../contexts/LocaleContext';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@dculus/ui';
+import { useLocale } from '../hooks/useLocale';
 import type { Locale } from '../locales';
 import { useTranslation } from '../hooks/useTranslation';
 

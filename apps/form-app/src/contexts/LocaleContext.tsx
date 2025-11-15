@@ -1,23 +1,9 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import {
-  availableLocales,
-  defaultLocale,
-  translations,
-  type Locale,
-  type LocaleMessages,
-} from '../locales';
+import { availableLocales, defaultLocale, translations, type Locale } from '../locales';
+import { LocaleContext, LocaleContextValue } from './locale-context';
 
 export const LOCALE_STORAGE_KEY = 'dculus.forms.locale';
-
-interface LocaleContextValue {
-  locale: Locale;
-  setLocale: (locale: Locale) => void;
-  availableLocales: Locale[];
-  messages: LocaleMessages;
-}
-
-const LocaleContext = createContext<LocaleContextValue | undefined>(undefined);
 
 const isLocale = (value: string | null): value is Locale => {
   return !!value && availableLocales.includes(value as Locale);
@@ -81,14 +67,4 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   );
 
   return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
-}
-
-export function useLocale() {
-  const context = useContext(LocaleContext);
-
-  if (!context) {
-    throw new Error('useLocale must be used within a LocaleProvider');
-  }
-
-  return context;
 }

@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useLocale } from '../contexts/LocaleContext';
+import { useLocale } from './useLocale';
 import type { Namespace } from '../locales';
 
 type TranslateValues = Record<string, string | number>;
