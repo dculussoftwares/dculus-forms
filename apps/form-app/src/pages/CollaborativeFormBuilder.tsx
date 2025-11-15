@@ -143,7 +143,6 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
     
     if (pageWithField) {
       updateField(pageWithField.id, selectedField.id, updates);
-    } else {
     }
   }, [getSelectedField, updateField]);
 

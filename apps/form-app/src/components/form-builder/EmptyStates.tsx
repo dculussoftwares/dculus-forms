@@ -3,9 +3,7 @@ import { TypographyH1, TypographyP, Button } from '@dculus/ui';
 import { FileText, Plus } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 
-interface MissingFormIdProps {}
-
-export const MissingFormId: React.FC<MissingFormIdProps> = () => {
+export const MissingFormId: React.FC = () => {
   const { t } = useTranslation('emptyStates');
   
   return (

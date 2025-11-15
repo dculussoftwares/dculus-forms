@@ -68,7 +68,7 @@ async function createItemFamily() {
   logger.info('🏢 Step 0: Creating Item Family...\n');
 
   try {
-    const result = await chargebee.itemFamily.create({
+    await chargebee.itemFamily.create({
       id: 'dculus-forms',
       name: 'Dculus Forms Plans',
       description: 'All subscription plans for Dculus Forms'
@@ -88,7 +88,7 @@ async function createFeatures() {
 
   // Feature 1: Form Views
   try {
-    const result = await chargebee.feature.create({
+    await chargebee.feature.create({
       id: 'form_views',
       name: 'Form Views',
       type: 'quantity',
@@ -114,7 +114,7 @@ async function createFeatures() {
 
   // Feature 2: Form Submissions
   try {
-    const result = await chargebee.feature.create({
+    await chargebee.feature.create({
       id: 'form_submissions',
       name: 'Form Submissions',
       type: 'quantity',
@@ -163,7 +163,7 @@ async function createPlanItems() {
 
   for (const plan of plans) {
     try {
-      const result = await chargebee.item.create({
+      await chargebee.item.create({
         id: plan.id,
         name: plan.name,
         type: 'plan',
@@ -295,7 +295,7 @@ async function createItemPrices() {
 
   for (const priceData of itemPrices) {
     try {
-      const result = await chargebee.itemPrice.create(priceData as any);
+      await chargebee.itemPrice.create(priceData as any);
       const displayPrice = priceData.currency_code === 'USD'
         ? `$${(priceData.price / 100).toFixed(2)}`
         : `₹${(priceData.price / 100).toFixed(2)}`;
@@ -417,7 +417,7 @@ async function createEntitlements() {
         value: e.value
       }));
 
-      const result = await chargebee.entitlement.create({
+      await chargebee.entitlement.create({
         action: 'upsert',
         entitlements: entitlementsData
       } as any);

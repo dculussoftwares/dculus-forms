@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useMutation, useQuery } from '@apollo/client';
 import { Button, LoadingSpinner } from '@dculus/ui';
 import { X, FileText, Layout, Code } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import type { FormSchema } from '@dculus/types';
 import { CREATE_TEMPLATE, UPDATE_TEMPLATE, GET_TEMPLATE, GET_TEMPLATE_CATEGORIES } from '../../graphql/templates';
 
 // Sample data templates
@@ -61,7 +63,7 @@ interface Template {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  formSchema?: any;
+  formSchema?: FormSchema;
 }
 
 interface TemplateModalProps {
@@ -80,6 +82,18 @@ interface TemplateFormData {
 }
 
 export default function TemplateModal({ isOpen, onClose, mode, template }: TemplateModalProps) {
+  type TemplateModalTab = {
+    id: 'basic' | 'schema' | 'layout';
+    label: string;
+    icon: LucideIcon;
+  };
+
+  const tabs: TemplateModalTab[] = [
+    { id: 'basic', label: 'Basic Info', icon: FileText },
+    { id: 'schema', label: 'Form Schema', icon: Code },
+    { id: 'layout', label: 'Layout', icon: Layout },
+  ];
+
   const [formData, setFormData] = useState<TemplateFormData>({
     name: '',
     description: '',
@@ -284,15 +298,11 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
         {(mode === 'create' || mode === 'edit' || mode === 'view') && (
           <div className="border-b">
             <nav className="flex space-x-8 px-6">
-              {[
-                { id: 'basic', label: 'Basic Info', icon: FileText },
-                { id: 'schema', label: 'Form Schema', icon: Code },
-                { id: 'layout', label: 'Layout', icon: Layout },
-              ].map((tab) => (
+              {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() => setActiveTab(tab.id)}
                   className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600'

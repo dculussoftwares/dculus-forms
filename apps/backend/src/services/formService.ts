@@ -251,11 +251,11 @@ export const updateForm = async (id: string, formData: Partial<Omit<Form, 'id' |
     // If userId is provided, validate permissions at service layer
     if (userId) {
       // Analyze formData to determine required permission level
-      const hasLayoutChanges = formData.hasOwnProperty('title') || 
-                             formData.hasOwnProperty('description') || 
-                             formData.hasOwnProperty('settings');
-      
-      const hasCriticalChanges = formData.hasOwnProperty('isPublished');
+      const hasProp = (prop: string) =>
+        Object.prototype.hasOwnProperty.call(formData, prop);
+      const hasLayoutChanges =
+        ['title', 'description', 'settings'].some(hasProp);
+      const hasCriticalChanges = hasProp('isPublished');
       
       // Determine required permission level based on update type
       let requiredPermission: string = PermissionLevel.EDITOR;

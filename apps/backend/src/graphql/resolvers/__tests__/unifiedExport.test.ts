@@ -9,7 +9,6 @@ import * as unifiedExportService from '../../../services/unifiedExportService.js
 import * as temporaryFileService from '../../../services/temporaryFileService.js';
 import * as hocuspocusService from '../../../services/hocuspocus.js';
 import * as responseFilterService from '../../../services/responseFilterService.js';
-import { FormSchema, TextInputField, EmailField, NumberField } from '@dculus/types';
 
 // Mock all dependencies
 vi.mock('../../../middleware/better-auth-middleware.js');

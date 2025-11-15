@@ -185,7 +185,7 @@ const renderFilterInput = (
 
     case FieldType.SELECT_FIELD:
     case FieldType.RADIO_FIELD:
-    case FieldType.CHECKBOX_FIELD:
+    case FieldType.CHECKBOX_FIELD: {
       const options = (field as SelectField | RadioField | CheckboxField).options || [];
       return (
         <div className="border border-slate-200 rounded-md max-h-40 overflow-y-auto">
@@ -224,6 +224,7 @@ const renderFilterInput = (
           )}
         </div>
       );
+    }
 
     default:
       return null;

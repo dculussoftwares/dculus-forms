@@ -5,6 +5,17 @@ import { Building2, Users, FileText, Calendar } from 'lucide-react';
 import { ADMIN_ORGANIZATIONS_QUERY } from '../graphql/organizations';
 import { useTranslation } from '../hooks/useTranslation';
 
+interface AdminOrganization {
+  id: string;
+  name: string;
+  slug: string;
+  logo?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  memberCount: number;
+  formCount: number;
+}
+
 export default function OrganizationsPage() {
   const navigate = useNavigate();
   const { t } = useTranslation('organizations');
@@ -15,7 +26,7 @@ export default function OrganizationsPage() {
     },
   });
 
-  const organizations = data?.adminOrganizations?.organizations || [];
+  const organizations: AdminOrganization[] = data?.adminOrganizations?.organizations || [];
 
   if (error) {
     return (
@@ -54,7 +65,7 @@ export default function OrganizationsPage() {
       {/* Organizations Grid */}
       {!loading && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
-          {organizations.map((org: any) => (
+          {organizations.map((org) => (
           <Card key={org.id} className="p-6">
             <div className="flex items-start justify-between">
               <div className="flex items-center">
@@ -151,7 +162,7 @@ export default function OrganizationsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {organizations.map((org: any) => (
+                {organizations.map((org) => (
                   <tr key={org.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">

@@ -676,7 +676,7 @@ describe('ResponseEditTrackingService', () => {
 
       const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
 
-      const changes = ResponseEditTrackingService.detectChanges(
+      ResponseEditTrackingService.detectChanges(
         { 'field-1': 'value' },
         {},
         mockFormSchema

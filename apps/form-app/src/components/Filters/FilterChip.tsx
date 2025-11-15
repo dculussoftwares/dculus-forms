@@ -32,28 +32,32 @@ const getFilterLabel = (filter: FilterState): string => {
       return `> ${filter.value}`;
     case 'LESS_THAN':
       return `< ${filter.value}`;
-    case 'BETWEEN':
+    case 'BETWEEN': {
       const min = filter.numberRange?.min ?? '';
       const max = filter.numberRange?.max ?? '';
       return `between ${min} and ${max}`;
+    }
     case 'DATE_EQUALS':
       return `date equals ${filter.value}`;
     case 'DATE_BEFORE':
       return `before ${filter.value}`;
     case 'DATE_AFTER':
       return `after ${filter.value}`;
-    case 'DATE_BETWEEN':
+    case 'DATE_BETWEEN': {
       const from = filter.dateRange?.from ?? '';
       const to = filter.dateRange?.to ?? '';
       return `between ${from} and ${to}`;
-    case 'IN':
+    }
+    case 'IN': {
       const inValues = filter.values?.slice(0, 2).join(', ') || '';
       const extraCount = (filter.values?.length ?? 0) - 2;
       return `is ${inValues}${extraCount > 0 ? ` +${extraCount} more` : ''}`;
-    case 'NOT_IN':
+    }
+    case 'NOT_IN': {
       const notInValues = filter.values?.slice(0, 2).join(', ') || '';
       const notInExtraCount = (filter.values?.length ?? 0) - 2;
       return `is not ${notInValues}${notInExtraCount > 0 ? ` +${notInExtraCount} more` : ''}`;
+    }
     default:
       return 'filtered';
   }

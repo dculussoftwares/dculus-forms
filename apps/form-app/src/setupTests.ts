@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom';
+import React from 'react';
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
@@ -40,7 +41,6 @@ jest.mock('@apollo/client', () => ({
 
 // Mock @dculus/ui components
 jest.mock('@dculus/ui', () => {
-  const React = require('react');
   return {
     Button: ({ children, ...props }: any) => React.createElement('button', props, children),
     Input: (props: any) => React.createElement('input', props),

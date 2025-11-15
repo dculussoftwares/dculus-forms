@@ -74,8 +74,8 @@ function createFieldSettingsModuleStub() {
 jest.mock('../../field-settings-v2', () => createFieldSettingsModuleStub());
 jest.mock('../../field-settings-v2/index', () => createFieldSettingsModuleStub());
 
-beforeAll(() => {
-  ({ default: FieldSettingsV2 } = require('../../FieldSettingsV2'));
+beforeAll(async () => {
+  ({ default: FieldSettingsV2 } = await import('../../FieldSettingsV2'));
 });
 
 // Create mock fields for testing

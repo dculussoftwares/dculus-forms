@@ -93,12 +93,12 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
   }, [selectedFieldIdFromUrl, selectedFieldId, selectField, clearSelection, allFields]);
 
   // Performance monitoring (only in development and limited logging)
-  const { markLoadComplete, getPerformanceSummary: _getPerformanceSummary } = usePerformanceMonitor({
+  const { markLoadComplete } = usePerformanceMonitor({
     componentName: 'FieldAnalyticsViewer',
     enableLogging: false, // Disable verbose logging
   });
 
-  const { getMemoryPressure: _getMemoryPressure } = useMemoryTracker('FieldAnalyticsViewer');
+  useMemoryTracker('FieldAnalyticsViewer');
 
   // Mark load complete when data is ready
   useEffect(() => {

@@ -8,6 +8,7 @@
  */
 
 import { ColumnDef } from '@tanstack/react-table';
+import type { Row } from '@tanstack/react-table';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -246,6 +247,75 @@ const createFieldColumns = (
   return fieldColumns;
 };
 
+const ResponsesActionsCell: React.FC<{
+  row: Row<FormResponse>;
+  formId: string;
+  t: CreateResponsesColumnsOptions['t'];
+}> = ({ row, formId, t }) => {
+  const navigate = useNavigate();
+
+  return (
+    <div className="flex items-center justify-center gap-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
+        onClick={(e) => {
+          e.stopPropagation();
+          console.log('View response:', row.original.id);
+        }}
+      >
+        <Eye className="h-4 w-4" />
+        <span className="sr-only">{t('table.actions.viewResponse')}</span>
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 hover:bg-slate-50"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MoreHorizontal className="h-4 w-4" />
+            <span className="sr-only">{t('table.actions.moreActions')}</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            onClick={() =>
+              navigate(`/dashboard/form/${formId}/responses/${row.original.id}/edit`)
+            }
+          >
+            <Edit className="mr-2 h-4 w-4" />
+            Edit Response
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              navigate(`/dashboard/form/${formId}/responses/${row.original.id}/history`)
+            }
+            disabled={!row.original.hasBeenEdited}
+          >
+            <History className="mr-2 h-4 w-4" />
+            {t('table.actions.editHistory')}
+            {(row.original.totalEdits || 0) > 0 && (
+              <Badge
+                variant="outline"
+                className="ml-2 bg-orange-50 text-orange-700 border-orange-200 text-xs"
+              >
+                {row.original.totalEdits}
+              </Badge>
+            )}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => console.log('Delete response:', row.original.id)}>
+            <X className="mr-2 h-4 w-4" />
+            {t('table.actions.delete')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+};
+
 /**
  * Create actions column
  * Note: This uses a React component internally that needs navigate context
@@ -257,64 +327,7 @@ const createActionsColumn = (
   return {
     id: 'actions',
     header: () => <div className="text-center">{t('table.columns.actions')}</div>,
-    cell: ({ row }) => {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const navigate = useNavigate();
-
-      return (
-        <div className="flex items-center justify-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
-            onClick={(e) => {
-              e.stopPropagation();
-              console.log('View response:', row.original.id);
-            }}
-          >
-            <Eye className="h-4 w-4" />
-            <span className="sr-only">{t('table.actions.viewResponse')}</span>
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 hover:bg-slate-50"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreHorizontal className="h-4 w-4" />
-                <span className="sr-only">{t('table.actions.moreActions')}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => navigate(`/dashboard/form/${formId}/responses/${row.original.id}/edit`)}
-              >
-                <Edit className="mr-2 h-4 w-4" />
-                Edit Response
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => navigate(`/dashboard/form/${formId}/responses/${row.original.id}/history`)}
-                disabled={!row.original.hasBeenEdited}
-              >
-                <History className="mr-2 h-4 w-4" />
-                {t('table.actions.editHistory')}
-                {(row.original.totalEdits || 0) > 0 && (
-                  <Badge variant="outline" className="ml-2 bg-orange-50 text-orange-700 border-orange-200 text-xs">
-                    {row.original.totalEdits}
-                  </Badge>
-                )}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => console.log('Delete response:', row.original.id)}>
-                <X className="mr-2 h-4 w-4" />
-                {t('table.actions.delete')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      );
-    },
+    cell: ({ row }) => <ResponsesActionsCell row={row} formId={formId} t={t} />,
     enableSorting: false,
     enableHiding: false,
     size: 80,

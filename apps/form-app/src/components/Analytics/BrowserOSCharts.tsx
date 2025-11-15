@@ -24,7 +24,7 @@ const CustomTooltip = ({ active, payload, label, dataMode }: any) => {
           {payload.map((entry: any, index: number) => {
             let color = entry.color;
             let metricLabel = '';
-            let value = entry.value;
+            const value = entry.value;
             let percentage = entry.payload.percentage;
 
             if (entry.dataKey === 'views' || (dataMode === 'views' && entry.dataKey === 'count')) {

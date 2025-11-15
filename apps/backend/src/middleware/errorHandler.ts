@@ -12,7 +12,7 @@ export const errorHandler = (
   error: AppError,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) => {
   const statusCode = error.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR;
   const message = error.message || 'Internal Server Error';

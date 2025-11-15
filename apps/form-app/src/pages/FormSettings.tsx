@@ -122,7 +122,7 @@ const FormSettings: React.FC = () => {
           },
         },
       });
-    } catch (error) {
+    } catch {
       // Error handled by onError callback
     }
   };
@@ -139,7 +139,7 @@ const FormSettings: React.FC = () => {
           id: formId,
         },
       });
-    } catch (error) {
+    } catch {
       // Error handled by onError callback
     }
   };

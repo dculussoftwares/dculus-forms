@@ -101,26 +101,25 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
     try {
       // Convert form data to field updates - exclude nested validation object first
       const anyData = data as any;
-      const { validation: _, required: __, ...cleanData } = anyData;
+      const { validation, required, ...cleanData } = anyData;
       const updates: Record<string, any> = { ...cleanData };
       
       // Handle validation object updates
-      if ('required' in anyData || ('validation' in anyData && anyData.validation)) {
+      if (required !== undefined || validation) {
+        const validationData = validation || {};
         if (field.type === FieldType.TEXT_INPUT_FIELD || field.type === FieldType.TEXT_AREA_FIELD) {
           // For text fields, handle the validation object with character limits
-          const validationData = anyData.validation || {};
           updates.validation = {
             ...((field as any)?.validation || {}),
-            required: anyData.required !== undefined ? anyData.required : validationData.required || false,
+            required: required !== undefined ? required : validationData.required || false,
             minLength: validationData.minLength,
             maxLength: validationData.maxLength,
           };
         } else if (field.type === FieldType.CHECKBOX_FIELD) {
           // For checkbox fields, handle the validation object with selection limits
-          const validationData = anyData.validation || {};
           updates.validation = {
             ...((field as any)?.validation || {}),
-            required: anyData.required !== undefined ? anyData.required : validationData.required || false,
+            required: required !== undefined ? required : validationData.required || false,
             minSelections: validationData.minSelections,
             maxSelections: validationData.maxSelections,
           };
@@ -128,7 +127,7 @@ export function useFieldEditor({ field, onSave, onCancel }: UseFieldEditorProps)
           // For other field types, handle only required
           updates.validation = {
             ...((field as any)?.validation || {}),
-            required: anyData.required || false,
+            required: required || validationData.required || false,
           };
         }
       }

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { uploadFile, deleteFile, copyFileForForm } from '../fileUploadService.js';
-import { S3Client, PutObjectCommand, DeleteObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3';
+import { PutObjectCommand, DeleteObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3';
 import { s3Config } from '../../lib/env.js';
 import { constructCdnUrl } from '../../utils/cdn.js';
 import { logger } from '../../lib/logger.js';

@@ -1,6 +1,5 @@
 import { EventEmitter } from 'events';
 import type {
-  SubscriptionEvent,
   FormViewedEvent,
   FormSubmittedEvent,
   UsageLimitReachedEvent,

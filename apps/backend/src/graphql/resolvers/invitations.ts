@@ -1,6 +1,6 @@
 import { GraphQLError } from 'graphql';
 import { prisma } from '../../lib/prisma.js';
-import { parseDate, isDateExpired } from '../../utils/dateHelpers.js';
+import { isDateExpired } from '../../utils/dateHelpers.js';
 import { logger } from '../../lib/logger.js';
 
 export const invitationResolvers = {

@@ -182,7 +182,7 @@ export const templatesResolvers = {
         const newFormId = randomUUID();
         
         // Clone the template schema to avoid modifying the original
-        let formSchema = JSON.parse(JSON.stringify(template.formSchema));
+        const formSchema = JSON.parse(JSON.stringify(template.formSchema));
         
         // Check if template has a background image and copy it for the new form
         if (formSchema.layout && formSchema.layout.backgroundImageKey) {

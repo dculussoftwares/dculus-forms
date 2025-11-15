@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { formFileResolvers, GetFormFilesArgs } from '../formFiles.js';
+import { formFileResolvers } from '../formFiles.js';
 import { GraphQLError } from 'graphql';
 import * as betterAuthMiddleware from '../../../middleware/better-auth-middleware.js';
 import * as formSharingResolvers from '../formSharing.js';

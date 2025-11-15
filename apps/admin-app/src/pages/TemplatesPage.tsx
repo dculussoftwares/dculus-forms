@@ -82,14 +82,18 @@ export default function TemplatesPage() {
       {/* Header */}
       <div className="mb-8 flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Templates</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t('pageTitle', { defaultValue: 'Templates' })}
+          </h1>
           <p className="mt-1 text-sm text-gray-600">
-            Manage form templates for your organization
+            {t('pageSubtitle', {
+              defaultValue: 'Manage form templates for your organization',
+            })}
           </p>
         </div>
         <Button onClick={handleCreateTemplate}>
           <Plus className="h-4 w-4 mr-2" />
-          Create Template
+          {t('createTemplate', { defaultValue: 'Create Template' })}
         </Button>
       </div>
 
@@ -104,11 +108,13 @@ export default function TemplatesPage() {
             <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No templates yet</h3>
             <p className="text-sm text-gray-500 mb-4">
-              Create your first template to get started
+              {t('emptyState.description', {
+                defaultValue: 'Create your first template to get started',
+              })}
             </p>
             <Button onClick={handleCreateTemplate}>
               <Plus className="h-4 w-4 mr-2" />
-              Create Template
+              {t('createTemplate', { defaultValue: 'Create Template' })}
             </Button>
           </div>
         ) : (

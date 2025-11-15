@@ -115,7 +115,7 @@ export const useFormSettings = ({
           },
         },
       });
-    } catch (error) {
+    } catch {
       // Error handled by onError callback
     }
   };
@@ -130,7 +130,7 @@ export const useFormSettings = ({
         }
       });
       toastSuccess('Thank You settings saved successfully');
-    } catch (error) {
+    } catch {
       // Error already handled in the mutation onError callback
     }
   };
@@ -150,7 +150,7 @@ export const useFormSettings = ({
         submissionLimits: settings.submissionLimits,
       });
       toastSuccess('Submission limits saved successfully');
-    } catch (error) {
+    } catch {
       // Error already handled in the mutation onError callback
     }
   };

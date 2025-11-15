@@ -1,9 +1,5 @@
-import type { PluginHandler, PluginEvent } from '../types.js';
-import type {
-  EmailPluginConfig,
-  ValidatedEmailConfig,
-  EmailDeliveryResult,
-} from './types.js';
+import type { PluginHandler } from '../types.js';
+import type { ValidatedEmailConfig, EmailDeliveryResult } from './types.js';
 import { deserializeFormSchema } from '@dculus/types';
 import { substituteMentions, createFieldLabelsMap } from '@dculus/utils';
 
@@ -83,13 +79,6 @@ export const emailHandler: PluginHandler = async (plugin, event, context) => {
       recipient: config.recipientEmail,
       error: error.message,
     });
-
-    const result: EmailDeliveryResult = {
-      success: false,
-      recipient: config.recipientEmail,
-      subject: config.subject,
-      error: error.message || 'Unknown error',
-    };
 
     throw new Error(`Email sending failed: ${error.message}`);
   }

@@ -90,14 +90,9 @@ export const useResponseEditHistory = ({
 
   // Action functions
   const updateResponseWithTracking = async (input: UpdateResponseInput) => {
-    try {
-      await updateResponseMutation({
-        variables: { input }
-      });
-    } catch (error) {
-      // Error is handled in the mutation's onError callback
-      throw error;
-    }
+    await updateResponseMutation({
+      variables: { input }
+    });
   };
 
   const invalidateHistory = () => {

@@ -49,17 +49,19 @@ export function applyResponseFilters(responses: any[], filters?: ResponseFilter[
         case 'ENDS_WITH':
           return fieldValue && String(fieldValue).toLowerCase().endsWith(String(filter.value || '').toLowerCase());
         
-        case 'GREATER_THAN':
+        case 'GREATER_THAN': {
           const numValue = parseFloat(fieldValue);
           const filterNum = parseFloat(filter.value || '0');
           return !isNaN(numValue) && !isNaN(filterNum) && numValue > filterNum;
+        }
         
-        case 'LESS_THAN':
+        case 'LESS_THAN': {
           const numValue2 = parseFloat(fieldValue);
           const filterNum2 = parseFloat(filter.value || '0');
           return !isNaN(numValue2) && !isNaN(filterNum2) && numValue2 < filterNum2;
+        }
         
-        case 'BETWEEN':
+        case 'BETWEEN': {
           if (!filter.numberRange) return false;
           const numValue3 = parseFloat(fieldValue);
           const min = filter.numberRange.min;
@@ -67,8 +69,9 @@ export function applyResponseFilters(responses: any[], filters?: ResponseFilter[
           return !isNaN(numValue3) && 
                  (min === undefined || numValue3 >= min) && 
                  (max === undefined || numValue3 <= max);
+        }
         
-        case 'DATE_EQUALS':
+        case 'DATE_EQUALS': {
           try {
             const fieldDate = new Date(Number(fieldValue) || fieldValue);
             const compareDate = new Date(filter.value || '');
@@ -80,8 +83,9 @@ export function applyResponseFilters(responses: any[], filters?: ResponseFilter[
           } catch {
             return false;
           }
+        }
         
-        case 'DATE_BEFORE':
+        case 'DATE_BEFORE': {
           try {
             const fieldDate = new Date(Number(fieldValue) || fieldValue);
             const compareDate = new Date(filter.value || '');
@@ -93,8 +97,9 @@ export function applyResponseFilters(responses: any[], filters?: ResponseFilter[
           } catch {
             return false;
           }
+        }
 
-        case 'DATE_AFTER':
+        case 'DATE_AFTER': {
           try {
             const fieldDate = new Date(Number(fieldValue) || fieldValue);
             const compareDate = new Date(filter.value || '');
@@ -106,8 +111,9 @@ export function applyResponseFilters(responses: any[], filters?: ResponseFilter[
           } catch {
             return false;
           }
+        }
         
-        case 'DATE_BETWEEN':
+        case 'DATE_BETWEEN': {
           if (!filter.dateRange) return false;
           try {
             const fieldDate = new Date(Number(fieldValue) || fieldValue);
@@ -129,6 +135,7 @@ export function applyResponseFilters(responses: any[], filters?: ResponseFilter[
           } catch {
             return false;
           }
+        }
         
         case 'IN':
           return filter.values?.some(value => 

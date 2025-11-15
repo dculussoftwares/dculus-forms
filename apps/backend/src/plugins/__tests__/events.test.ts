@@ -363,11 +363,9 @@ describe('events', () => {
     });
 
     it('handles concurrent event emissions', async () => {
-      const promises = [
-        emitFormSubmitted('form-1', 'org-1', {}),
-        emitFormSubmitted('form-2', 'org-1', {}),
-        emitFormSubmitted('form-3', 'org-1', {}),
-      ];
+      emitFormSubmitted('form-1', 'org-1', {});
+      emitFormSubmitted('form-2', 'org-1', {});
+      emitFormSubmitted('form-3', 'org-1', {});
 
       await vi.waitFor(() => {
         expect(executePluginsForForm).toHaveBeenCalledTimes(3);

@@ -40,7 +40,8 @@ export const createFormMetadataRepository = (context?: RepositoryContext) => {
     data: Prisma.FormMetadataUpsertArgs['create']
   ) => {
     // Remove id from update data since it can't be updated
-    const { id, ...updateData } = data;
+    const { id: _ignoredId, ...updateData } = data;
+    void _ignoredId;
     return prisma.formMetadata.upsert({
       where: { formId },
       create: data,

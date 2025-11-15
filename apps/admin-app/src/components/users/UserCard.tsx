@@ -1,7 +1,6 @@
 import { Card, CardContent, Button } from '@dculus/ui';
 import { Building2, CheckCircle2, XCircle } from 'lucide-react';
 import { AdminUserDetail } from '../../graphql/users';
-import { useNavigate } from 'react-router-dom';
 
 interface UserCardProps {
   user: AdminUserDetail;
@@ -10,8 +9,6 @@ interface UserCardProps {
 }
 
 export const UserCard = ({ user, onViewDetails, onViewOrganization }: UserCardProps) => {
-  const navigate = useNavigate();
-
   // Format date
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

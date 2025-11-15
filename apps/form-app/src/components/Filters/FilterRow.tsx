@@ -200,14 +200,11 @@ const renderFilterInput = (
 
     case FieldType.SELECT_FIELD:
     case FieldType.RADIO_FIELD:
-    case FieldType.CHECKBOX_FIELD:
+    case FieldType.CHECKBOX_FIELD: {
       const options = (field as SelectField | RadioField | CheckboxField).options || [];
       return (
         <div className="relative min-w-[200px]">
-          <Select
-            value="placeholder"
-            onValueChange={() => {}}
-          >
+          <Select value="placeholder" onValueChange={() => {}}>
             <SelectTrigger className="h-9">
               <SelectValue>
                 <div className="flex items-center gap-2">
@@ -227,14 +224,15 @@ const renderFilterInput = (
                       checked={isSelected}
                       onCheckedChange={(checked) => {
                         const currentValues = filter.values || [];
-                        const newValues = checked
-                          ? [...currentValues, option]
-                          : currentValues.filter(v => v !== option);
-                        onChange({ 
+                        const newValues =
+                          checked && typeof checked === 'boolean'
+                            ? [...currentValues, option]
+                            : currentValues.filter(v => v !== option);
+                        onChange({
                           fieldId: filter.fieldId,
                           operator: filter.operator,
-                          values: newValues, 
-                          active: newValues.length > 0 
+                          values: newValues,
+                          active: newValues.length > 0,
                         });
                       }}
                     />
@@ -252,6 +250,7 @@ const renderFilterInput = (
           </Select>
         </div>
       );
+    }
 
     default:
       return null;

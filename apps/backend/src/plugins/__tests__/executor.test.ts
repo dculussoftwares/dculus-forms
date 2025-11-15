@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { executePlugin, executePluginsForForm } from '../executor.js';
 import { prisma } from '../../lib/prisma.js';
 import { getPluginHandler } from '../registry.js';
@@ -391,7 +391,7 @@ describe('executor', () => {
         { id: 'plugin-2', name: 'Plugin 2', type: 'email', enabled: true, events: ['form.submitted'], config: {} },
       ];
 
-      let callOrder: number[] = [];
+      const callOrder: number[] = [];
       const mockHandler1: PluginHandler = vi.fn().mockImplementation(async () => {
         await new Promise(resolve => setTimeout(resolve, 50));
         callOrder.push(1);

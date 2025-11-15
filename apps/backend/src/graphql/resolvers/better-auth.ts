@@ -5,8 +5,6 @@ import {
 } from '../../middleware/better-auth-middleware.js';
 import { prisma } from '../../lib/prisma.js';
 import { nanoid } from 'nanoid';
-import { auth } from '../../lib/better-auth.js';
-import { fromNodeHeaders } from 'better-auth/node';
 import { GraphQLError } from 'graphql';
 import { logger } from '../../lib/logger.js';
 import {
@@ -174,7 +172,7 @@ export const betterAuthResolvers = {
     ) => {
       // 🔒 SECURITY: Verify user is a member of the requested organization
       // (requireOrganizationMembership internally calls requireAuth, so no need to call it separately)
-      const membership = await requireOrganizationMembership(context.auth, organizationId);
+      await requireOrganizationMembership(context.auth, organizationId);
 
       // Update user's session to set the active organization
       // For now, we'll just return the organization as the session update

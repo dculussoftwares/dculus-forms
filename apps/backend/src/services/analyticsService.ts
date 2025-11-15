@@ -544,7 +544,6 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
     let filledViewsOverTime = viewsOverTime;
     if (timeRange && viewsOverTime.length > 0) {
       const dateRange = generateDateRange(timeRange.start, timeRange.end);
-      const existingDates = new Set(viewsOverTime.map(v => v.date));
       
       filledViewsOverTime = dateRange.map(date => {
         const existingData = viewsOverTime.find(v => v.date === date);
@@ -736,7 +735,6 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
     let filledSubmissionsOverTime = submissionsOverTime;
     if (timeRange && submissionsOverTime.length > 0) {
       const dateRange = generateDateRange(timeRange.start, timeRange.end);
-      const existingDates = new Set(submissionsOverTime.map(v => v.date));
       
       filledSubmissionsOverTime = dateRange.map(date => {
         const existingData = submissionsOverTime.find(v => v.date === date);

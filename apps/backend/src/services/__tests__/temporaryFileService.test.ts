@@ -4,7 +4,7 @@ import {
   deleteTemporaryFile,
   cleanupExpiredFiles,
 } from '../temporaryFileService.js';
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { s3Config } from '../../lib/env.js';
 import { logger } from '../../lib/logger.js';
@@ -154,7 +154,7 @@ describe('Temporary File Service', () => {
       vi.mocked(getSignedUrl).mockResolvedValue('https://signed-url.example.com/file.xlsx');
 
       const buffer = Buffer.from('test data');
-      const result = await uploadTemporaryFile(buffer, 'report.xlsx');
+      await uploadTemporaryFile(buffer, 'report.xlsx');
 
       // Fast-forward time by 5 hours
       vi.advanceTimersByTime(5 * 60 * 60 * 1000);

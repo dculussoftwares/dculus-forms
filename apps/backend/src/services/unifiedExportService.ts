@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { FormResponse, FormSchema, FillableFormField, FieldType } from '@dculus/types';
+import { FormResponse, FormSchema, FieldType } from '@dculus/types';
 import { getPluginTypesWithData, getPluginExport } from '../plugins/exportRegistry.js';
 
 // Import plugin export registrations
@@ -36,11 +36,12 @@ const formatFieldValue = (value: any, fieldType?: FieldType, format: ExportForma
   // Handle specific field types
   if (fieldType) {
     switch (fieldType) {
-      case FieldType.DATE_FIELD:
+      case FieldType.DATE_FIELD: {
         const timestamp = typeof value === 'string' ? parseInt(value, 10) : value;
         const date = new Date(timestamp);
         stringValue = isNaN(date.getTime()) ? 'Invalid date' : date.toLocaleDateString();
         break;
+      }
       default:
         // Use the string value as is
         break;
@@ -67,7 +68,7 @@ const escapeCsvFieldName = (fieldName: string): string => {
 
 // Extract field information from responses or schema
 const extractFieldInfo = (formSchema: FormSchema, responses: FormResponse[]): { fieldInfo: Record<string, string>, orderedFieldIds: string[] } => {
-  let fieldInfo: Record<string, string> = {};
+  const fieldInfo: Record<string, string> = {};
   let orderedFieldIds: string[] = [];
 
   if (formSchema.pages.length === 0 && responses.length > 0) {
@@ -118,7 +119,7 @@ const extractFieldInfo = (formSchema: FormSchema, responses: FormResponse[]): { 
 
 // Generate CSV content
 const generateCsvContent = (data: UnifiedExportData): string => {
-  const { formTitle, responses, formSchema } = data;
+  const { responses, formSchema } = data;
   const { fieldInfo, orderedFieldIds } = extractFieldInfo(formSchema, responses);
 
   // Get plugin types that have data in any response
@@ -211,7 +212,7 @@ const generateCsvContent = (data: UnifiedExportData): string => {
 
 // Generate Excel content
 const generateExcelContent = (data: UnifiedExportData): Buffer => {
-  const { formTitle, responses, formSchema } = data;
+  const { responses, formSchema } = data;
   const { fieldInfo, orderedFieldIds } = extractFieldInfo(formSchema, responses);
 
   // Get plugin types that have data in any response

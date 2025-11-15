@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import type { PluginHandler, PluginEvent } from '../types.js';
+import type { PluginHandler } from '../types.js';
 import type {
   WebhookPayload,
   WebhookDeliveryResult,
@@ -70,7 +70,7 @@ const sendWebhook = async (
       } else {
         responseBody = await response.text();
       }
-    } catch (parseError) {
+    } catch {
       responseBody = null;
     }
 

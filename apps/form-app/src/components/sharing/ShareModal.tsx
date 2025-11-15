@@ -202,6 +202,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       toastSuccess(t('toast.success.linkCopied'));
       setTimeout(() => setLinkCopied(false), 2000);
     } catch (error) {
+      console.error('Failed to copy share link', error);
       toastError(t('toast.error.copyFailed'), t('toast.error.clipboardUnavailable'));
     }
   };

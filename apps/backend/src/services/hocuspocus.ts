@@ -3,7 +3,6 @@ import { Database } from '@hocuspocus/extension-database';
 import { extractFormStatsFromYDoc, updateFormMetadata } from './formMetadataService.js';
 import { checkFormAccess, PermissionLevel } from '../graphql/resolvers/formSharing.js';
 import { auth } from '../lib/better-auth.js';
-import { GraphQLError } from 'graphql';
 import { collaborativeDocumentRepository } from '../repositories/index.js';
 import { logger } from '../lib/logger.js';
 

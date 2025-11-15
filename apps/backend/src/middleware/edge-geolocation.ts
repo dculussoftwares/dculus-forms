@@ -57,6 +57,7 @@ export function edgeGeolocationMiddleware(
 }
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       visitorGeo?: EdgeVisitorLocation;

@@ -15,9 +15,9 @@ interface FileUpload {
 
 interface FileUploadWrapper {
   file: FileUpload;
-  resolve: Function;
-  reject: Function;
-  promise: Promise<any>;
+  resolve: (value: FileUpload | PromiseLike<FileUpload>) => void;
+  reject: (reason?: unknown) => void;
+  promise: Promise<FileUpload | void>;
 }
 
 export interface UploadFileArgs {

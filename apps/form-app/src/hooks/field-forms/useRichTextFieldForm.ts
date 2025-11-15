@@ -43,7 +43,7 @@ const sanitizeHtmlContent = (content: string): string => {
   if (!content) return '';
   
   // Basic HTML sanitization - remove script tags and dangerous attributes
-  let sanitized = content
+  const sanitized = content
     .replace(/<script[^>]*>.*?<\/script>/gi, '')
     .replace(/javascript:/gi, '')
     .replace(/on\w+\s*=/gi, '');

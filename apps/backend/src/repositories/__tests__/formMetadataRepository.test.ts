@@ -107,7 +107,8 @@ describe('Form Metadata Repository', () => {
       await formMetadataRepository.upsertMetadata('form-123', metadataData);
 
       // Update clause should not include id field
-      const { id, ...updateData } = metadataData;
+      const { id: _unused, ...updateData } = metadataData;
+      void _unused;
       expect(mockPrisma.formMetadata.upsert).toHaveBeenCalledWith({
         where: { formId: 'form-123' },
         update: updateData,

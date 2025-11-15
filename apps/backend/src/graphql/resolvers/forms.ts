@@ -1,5 +1,4 @@
 import {
-  getFormById,
   getFormByShortUrl,
   createForm,
   updateForm,
@@ -14,7 +13,6 @@ import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import { generateId } from '@dculus/utils';
 import { copyFileForForm } from '../../services/fileUploadService.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
-import { constructCdnUrl } from '../../utils/cdn.js';
 import { prisma } from '../../lib/prisma.js';
 import { randomUUID } from 'crypto';
 import { GraphQLError } from 'graphql';
@@ -220,7 +218,7 @@ export const formsResolvers = {
       const newFormId = generateId();
       
       // Clone the template schema to avoid modifying the original
-      let formSchema = JSON.parse(JSON.stringify(template.formSchema));
+      const formSchema = JSON.parse(JSON.stringify(template.formSchema));
       
       // Always copy background images from templates to ensure unique keys for each form
       if (formSchema.layout && formSchema.layout.backgroundImageKey) {
@@ -273,13 +271,12 @@ export const formsResolvers = {
       requireAuth(context.auth);
       
       // Analyze input to determine required permission level
-      const hasLayoutChanges = input.hasOwnProperty('title') || 
-                             input.hasOwnProperty('description') || 
-                             input.hasOwnProperty('settings');
-      
-      const hasCriticalChanges = input.hasOwnProperty('isPublished') || 
-                                input.hasOwnProperty('shortUrl') || 
-                                input.hasOwnProperty('organizationId');
+      const hasProp = (prop: string) =>
+        Object.prototype.hasOwnProperty.call(input, prop);
+      const hasLayoutChanges =
+        ['title', 'description', 'settings'].some(hasProp);
+      const hasCriticalChanges =
+        ['isPublished', 'shortUrl', 'organizationId'].some(hasProp);
       
       // Determine required permission level based on update type
       let requiredPermission: string = PermissionLevel.EDITOR;
@@ -300,12 +297,12 @@ export const formsResolvers = {
       }
       
       // Additional validation for specific fields
-      if (input.hasOwnProperty('organizationId') && input.organizationId !== accessCheck.form.organizationId) {
+      if (hasProp('organizationId') && input.organizationId !== accessCheck.form.organizationId) {
         // Only allow moving forms within same organization for now
         throw new GraphQLError('Access denied: Cannot transfer form to different organization');
       }
       
-      if (input.hasOwnProperty('createdById')) {
+      if (hasProp('createdById')) {
         // Never allow changing form ownership through update
         throw new GraphQLError('Access denied: Cannot change form ownership through update');
       }

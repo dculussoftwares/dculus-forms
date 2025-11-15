@@ -43,7 +43,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false, // For development
-    sendResetPassword: async ({ user, url }, request) => {
+    sendResetPassword: async ({ user, url }, _request) => {
       await sendResetPasswordEmail({
         to: user.email,
         resetUrl: url,
