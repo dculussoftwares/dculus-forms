@@ -219,6 +219,11 @@ resource "azurerm_container_app" "backend" {
         value = var.run_seed ? "true" : "false"
       }
 
+      env {
+        name  = "SENTRY_DSN"
+        value = var.sentry_dsn
+      }
+
       liveness_probe {
         transport               = "HTTP"
         port                    = var.container_port

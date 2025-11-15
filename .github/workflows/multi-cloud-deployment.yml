@@ -608,6 +608,7 @@ jobs:
           TF_VAR_email_from: ${{ secrets.EMAIL_FROM }}
           TF_VAR_chargebee_site: ${{ secrets.CHARGEBEE_SITE }}
           TF_VAR_chargebee_api_key: ${{ secrets.CHARGEBEE_API_KEY }}
+          TF_VAR_sentry_dsn: ${{ secrets.SENTRY_DSN }}
           TF_VAR_run_seed: true
         run: |
           # Copy shared Terraform files

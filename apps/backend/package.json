@@ -36,6 +36,8 @@
     "@hocuspocus/extension-database": "^3.2.3",
     "@hocuspocus/server": "^3.2.3",
     "@prisma/client": "6.13.0",
+    "@sentry/node": "10.25.0",
+    "@sentry/profiling-node": "10.25.0",
     "@types/bcryptjs": "3.0.0",
     "@types/graphql-upload": "17.0.0",
     "@types/jsonwebtoken": "9.0.10",

@@ -219,6 +219,12 @@ variable "chargebee_api_key" {
   default     = ""
 }
 
+variable "sentry_dsn" {
+  description = "Sentry DSN for backend observability"
+  type        = string
+  default     = ""
+}
+
 variable "run_seed" {
   description = "Whether to run database seeding on container startup"
   type        = bool

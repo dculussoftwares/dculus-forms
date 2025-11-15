@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import { sentryEnabled } from './instrument.js';
+import * as Sentry from '@sentry/node';
 import express from 'express';
 import { createServer } from 'http';
 import { ApolloServer } from '@apollo/server';
@@ -155,6 +157,12 @@ app.get('/favicon.ico', (req, res) => {
   res.status(204).end();
 });
 
+if (sentryEnabled) {
+  app.get('/debug-sentry', (_req, _res) => {
+    throw new Error('Intentional Sentry debug error');
+  });
+}
+
 // GraphQL Server
 const server = new ApolloServer({
   typeDefs,
@@ -224,6 +232,10 @@ async function startServer() {
       },
     })
   );
+
+  if (sentryEnabled) {
+    Sentry.setupExpressErrorHandler(app);
+  }
 
   app.use(errorHandler);
 
