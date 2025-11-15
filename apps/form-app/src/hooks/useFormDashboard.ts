@@ -161,12 +161,6 @@ export const useFormDashboard = (formId: string | undefined) => {
       variables: {
         id: formId,
         input: { isPublished: true }
-      },
-      optimisticResponse: {
-        updateForm: {
-          ...formData?.form,
-          isPublished: true
-        }
       }
     });
   };
@@ -177,12 +171,6 @@ export const useFormDashboard = (formId: string | undefined) => {
       variables: {
         id: formId,
         input: { isPublished: false }
-      },
-      optimisticResponse: {
-        updateForm: {
-          ...formData?.form,
-          isPublished: false
-        }
       }
     });
     setShowUnpublishDialog(false);
