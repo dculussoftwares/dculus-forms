@@ -56,7 +56,7 @@ export const FieldSelectionGrid: React.FC<FieldSelectionGridProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {fields.map((field) => {
         const isSelected = selectedFieldId === field.fieldId;
 
