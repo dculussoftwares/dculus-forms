@@ -1,0 +1,78 @@
+{
+  "layout": {
+    "title": "படிவம் பகுப்பாய்வு",
+    "titleWithForm": "{{formTitle}} - பகுப்பாய்வு",
+    "breadcrumbDashboard": "டாஷ்போர்டு",
+    "breadcrumbFormDashboard": "படிவம் டாஷ்போர்டு",
+    "breadcrumbAnalytics": "பகுப்பாய்வு"
+  },
+  "header": {
+    "title": "படிவம் பகுப்பாய்வு",
+    "description": "{{formTitle}}க்கான விரிவான நுண்ணறிவு மற்றும் அறிக்கைகள்",
+    "viewFormButton": "படிவத்தைப் பார்க்கவும்"
+  },
+  "tabs": {
+    "overview": "படிவம் மேலோட்டம்",
+    "fields": "புல நுண்ணறிவு"
+  },
+  "errors": {
+    "formNotFound": "படிவம் கிடைக்கவில்லை",
+    "formNotFoundMessage": "நீங்கள் தேடும் படிவம் இல்லை அல்லது அதன் பகுப்பாய்வுகளைப் பார்க்க உங்களுக்கு அனுமதி இல்லை.",
+    "unableToLoadAnalytics": "பகுப்பாய்வுகளை ஏற்ற முடியவில்லை",
+    "analyticsLoadError": "பகுப்பாய்வு தரவை ஏற்றுவதில் பிழை.",
+    "tryAgain": "மீண்டும் முயற்சிக்கவும்"
+  },
+  "states": {
+    "authenticationRequired": "அங்கீகாரம் தேவை",
+    "authenticationMessage": "படிவப் பகுப்பாய்வுகளைப் பார்க்க நீங்கள் உள்நுழைந்திருக்க வேண்டும். உங்கள் படிவத்தின் செயல்திறனைப் பற்றிய விரிவான நுண்ணறிவுகளை அணுக உள்நுழையவும்.",
+    "noDataYet": "இதுவரை Analytics தரவு இல்லை",
+    "noDataMessage": "பார்வையாளர்கள் உங்கள் படிவத்தை அணுகத் தொடங்கியவுடன் உங்கள் படிவ பகுப்பாய்வு இங்கே தோன்றும். உங்கள் பார்வையாளர்களைப் பற்றிய மதிப்புமிக்க நுண்ணறிவுகளைச் சேகரிக்கத் தொடங்க, உங்கள் படிவத்தைப் பகிரவும்.",
+    "viewYourForm": "உங்கள் படிவத்தைப் பார்க்கவும்",
+    "privacyNotice": "தனியுரிமை முதலில்: எங்கள் பகுப்பாய்வு அமைப்பு தனியுரிமையை மனதில் கொண்டு வடிவமைக்கப்பட்டுள்ளது. தனிப்பட்ட தகவல் அல்லது ஐபி முகவரிகளை சேமிக்காமல் அநாமதேய தரவை மட்டுமே சேகரிக்கிறோம்."
+  },
+  "overview": {
+    "scrollLeft": "இடதுபுறமாக உருட்டவும்",
+    "scrollRight": "வலதுபுறமாக உருட்டவும்",
+    "metrics": {
+      "totalViews": {
+        "title": "மொத்த பார்வைகள்",
+        "subtitle": "மொத்த வடிவ பதிவுகள்"
+      },
+      "totalSubmissions": {
+        "title": "மொத்த சமர்ப்பிப்புகள்",
+        "subtitle": "{{rate}}% மாற்று விகிதம்"
+      },
+      "viewSessions": {
+        "title": "அமர்வுகளைப் பார்க்கவும்",
+        "subtitle": "{{rate}}% தனிப்பட்ட பார்வை விகிதம்"
+      },
+      "submissionSessions": {
+        "title": "சமர்ப்பிப்பு அமர்வுகள்",
+        "subtitle": "தனிப்பட்ட சமர்ப்பிப்பு அமர்வுகள்"
+      },
+      "topViewCountry": {
+        "title": "சிறந்த காட்சி நாடு",
+        "subtitle": "{{count}} பார்வைகள் ({{percentage}}%)",
+        "noData": "பார்வை தரவு இல்லை",
+        "unknown": "தெரியவில்லை"
+      },
+      "topSubmissionCountry": {
+        "title": "சிறந்த சமர்ப்பிப்பு நாடு",
+        "subtitle": "{{count}} சமர்ப்பிப்புகள் ({{percentage}}%)",
+        "noData": "சமர்ப்பிப்பு தரவு இல்லை",
+        "unknown": "தெரியவில்லை"
+      },
+      "avgCompletionTime": {
+        "title": "சராசரி நிறைவு நேரம்",
+        "subtitle": "படிவத்தை பூர்த்தி செய்வதற்கான நேரம்",
+        "noData": "நிறைவு தரவு இல்லை",
+        "formatSeconds": "{{seconds}}வி",
+        "formatMinutesSeconds": "{{minutes}}m {{seconds}}s",
+        "formatMinutes": "{{minutes}}m",
+        "formatHoursMinutes": "{{hours}}h {{minutes}}m",
+        "formatHours": "{{hours}}h",
+        "notAvailable": "N/A"
+      }
+    }
+  }
+}

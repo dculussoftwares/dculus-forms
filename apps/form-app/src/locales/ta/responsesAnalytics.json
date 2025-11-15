@@ -1,0 +1,43 @@
+{
+  "layout": {
+    "title": "பகுப்பாய்வு - பதில்கள்",
+    "dynamicTitle": "{{formTitle}} - பதில் பகுப்பாய்வு",
+    "breadcrumbs": {
+      "dashboard": "டாஷ்போர்டு",
+      "formDashboard": "படிவம் டாஷ்போர்டு",
+      "responses": "பதில்கள்",
+      "analytics": "பகுப்பாய்வு"
+    }
+  },
+  "errors": {
+    "formNotFound": {
+      "title": "படிவம் கிடைக்கவில்லை",
+      "description": "நீங்கள் தேடும் படிவம் இல்லை அல்லது அதைப் பார்க்க உங்களுக்கு அனுமதி இல்லை."
+    }
+  },
+  "navigation": {
+    "backToResponses": "மறுமொழிகளுக்குத் திரும்பு"
+  },
+  "charts": {
+    "responseTrends": {
+      "title": "பதில் போக்குகள்",
+      "description": "காலப்போக்கில் பதில் சமர்ப்பிப்பு முறைகள்",
+      "placeholder": "பதில் போக்குகள் விளக்கப்படம்",
+      "comingSoon": "விளக்கப்படக் காட்சிப்படுத்தல் விரைவில்"
+    },
+    "fieldAnalytics": {
+      "title": "களப் பகுப்பாய்வு",
+      "description": "மிகவும் பொதுவான பதில்கள் மற்றும் புல நிறைவு விகிதங்கள்",
+      "nameFieldCompletion": "பெயர் புலம் நிறைவு",
+      "emailFieldCompletion": "மின்னஞ்சல் புலம் நிறைவு",
+      "messageFieldCompletion": "செய்தி புலம் நிறைவு"
+    },
+    "responseSummary": {
+      "title": "பதில் சுருக்கம்",
+      "description": "படிவ சமர்ப்பிப்புகளில் இருந்து முக்கிய நுண்ணறிவு",
+      "totalSubmissions": "மொத்த சமர்ப்பிப்புகள்",
+      "completionRate": "நிறைவு விகிதம்",
+      "avgTimeToComplete": "சராசரி முடிக்க வேண்டிய நேரம்"
+    }
+  }
+}

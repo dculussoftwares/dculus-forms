@@ -1,0 +1,62 @@
+{
+  "header": {
+    "titleCreate": "Webhook ஐ உள்ளமைக்கவும்",
+    "titleEdit": "வெப்ஹூக்கைத் திருத்தவும்",
+    "description": "படிவ நிகழ்வுகள் நிகழும்போது HTTP POST கோரிக்கைகளை வெளிப்புற சேவைகளுக்கு அனுப்பவும்"
+  },
+  "fields": {
+    "name": {
+      "label": "செருகுநிரல் பெயர்",
+      "placeholder": "எ.கா., Zapier க்கு அனுப்பு, API ஒருங்கிணைப்பு",
+      "required": "செருகுநிரல் பெயர் தேவை"
+    },
+    "url": {
+      "label": "Webhook URL",
+      "placeholder": "https://example.com/webhook",
+      "required": "Webhook URL தேவை",
+      "invalid": "சரியான URL ஐ உள்ளிடவும்",
+      "hint": "POST கோரிக்கைகளைப் பெறும் இறுதிப்புள்ளி"
+    },
+    "secret": {
+      "label": "கையெழுத்திடும் ரகசியம் (விரும்பினால்)",
+      "placeholder": "HMAC கையொப்பத்திற்கான ரகசியத்தை உள்ளிடவும்",
+      "hint": "வழங்கப்பட்டால், கோரிக்கைகளில் HMAC கையொப்ப தலைப்பு இருக்கும்"
+    },
+    "customHeaders": {
+      "label": "தனிப்பயன் தலைப்புகள் (விரும்பினால்)",
+      "keyPlaceholder": "தலைப்பு பெயர் (எ.கா., X-API-Key)",
+      "valuePlaceholder": "தலைப்பு மதிப்பு",
+      "addButton": "தலைப்பைச் சேர்க்கவும்"
+    },
+    "triggerEvents": {
+      "label": "தூண்டுதல் நிகழ்வுகள்",
+      "formSubmitted": {
+        "label": "படிவம் சமர்ப்பிக்கப்பட்டது",
+        "description": "ஒரு பயனர் பதிலைச் சமர்ப்பிக்கும்போது தூண்டப்பட்டது"
+      },
+      "testEvent": {
+        "label": "சோதனை நிகழ்வு",
+        "description": "கைமுறை சோதனை தூண்டுதல்"
+      },
+      "validation": "குறைந்தது ஒரு நிகழ்வையாவது தேர்ந்தெடுக்கவும்"
+    }
+  },
+  "actions": {
+    "cancel": "ரத்து செய்",
+    "save": "சேமிக்கவும்"
+  },
+  "validation": {
+    "noEvents": "குறைந்தது ஒரு நிகழ்வையாவது தேர்ந்தெடுக்கவும்"
+  },
+  "toasts": {
+    "validationErrorTitle": "சரிபார்ப்பு பிழை",
+    "createSuccessTitle": "Webhook உருவாக்கப்பட்டது",
+    "createSuccessMessage": "\"{{name}}\" வெற்றிகரமாக உருவாக்கப்பட்டது",
+    "updateSuccessTitle": "Webhook புதுப்பிக்கப்பட்டது",
+    "updateSuccessMessage": "\"{{name}}\" வெற்றிகரமாக புதுப்பிக்கப்பட்டது",
+    "createErrorTitle": "Webhook ஐ உருவாக்க முடியவில்லை",
+    "updateErrorTitle": "Webhook ஐப் புதுப்பிக்க முடியவில்லை",
+    "unexpectedError": "எதிர்பாராத பிழை ஏற்பட்டது"
+  },
+  "required": "*"
+}

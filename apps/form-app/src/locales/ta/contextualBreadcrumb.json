@@ -1,0 +1,12 @@
+{
+  "defaultFormTitle": "பெயரிடப்படாத படிவம்",
+  "modes": {
+    "contentEditor": "உள்ளடக்க ஆசிரியர்",
+    "designEditor": "வடிவமைப்பு ஆசிரியர்",
+    "content": "உள்ளடக்கம்",
+    "design": "வடிவமைப்பு"
+  },
+  "buttons": {
+    "preview": "முன்னோட்டம்"
+  }
+}

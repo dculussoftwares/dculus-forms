@@ -1,0 +1,54 @@
+{
+  "wordCloud": {
+    "title": "வார்த்தை மேகம்",
+    "mostCommon": "மிகவும் பொதுவான சொற்கள்",
+    "noData": "காட்ட வார்த்தைகள் இல்லை"
+  },
+  "responseLength": {
+    "title": "பதில் நீளம் விநியோகம்",
+    "xAxis": "பாத்திரங்கள்",
+    "yAxis": "பதில்கள்"
+  },
+  "stats": {
+    "averageLength": "சராசரி நீளம்",
+    "averageLengthSubtitle": "ஒவ்வொரு பதிலுக்கும் எழுத்துகள்",
+    "shortestResponse": "குறுகிய பதில்",
+    "longestResponse": "மிக நீண்ட பதில்",
+    "totalWords": "மொத்த வார்த்தைகள்",
+    "uniqueWords": "தனித்துவமான சொற்கள் கிடைத்தன",
+    "chars": "எழுத்துக்கள்",
+    "minLength": "குறைந்தபட்ச நீளம் பதிவு செய்யப்பட்டுள்ளது",
+    "maxLength": "அதிகபட்ச நீளம் பதிவு செய்யப்பட்டது"
+  },
+  "insights": {
+    "title": "நுண்ணறிவு",
+    "avgWordsPerResponse": "ஒரு பதிலுக்கு சராசரி {{count}} வார்த்தைகள்",
+    "vocabularyDiversity": "சொல்லகராதி பன்முகத்தன்மை: {{percentage}}%",
+    "commonLength": "மிகவும் பொதுவான நீளம்: {{length}} எழுத்துகள்"
+  },
+  "emptyState": {
+    "title": "உரை தரவு இல்லை",
+    "subtitle": "இந்தப் புலம் இதுவரை எந்தப் பதிலும் வரவில்லை."
+  },
+  "topWords": {
+    "title": "சிறந்த வார்த்தைகள்",
+    "count": "எண்ணு"
+  },
+  "recentResponses": {
+    "title": "சமீபத்திய பதில்கள்",
+    "noData": "பதில்கள் இல்லை"
+  },
+  "commonPhrases": {
+    "title": "பொதுவான சொற்றொடர்கள்"
+  },
+  "summary": {
+    "title": "உரை பகுப்பாய்வு சுருக்கம்",
+    "responseRate": "பதில் விகிதம்:",
+    "uniqueWords": "தனித்துவமான வார்த்தைகள்:",
+    "commonPhrases": "பொதுவான சொற்றொடர்கள்:",
+    "avgLength": "சராசரி நீளம்:",
+    "wordCount": "வார்த்தை எண்ணிக்கை:",
+    "characters": "பாத்திரங்கள்",
+    "words": "வார்த்தைகள்"
+  }
+}

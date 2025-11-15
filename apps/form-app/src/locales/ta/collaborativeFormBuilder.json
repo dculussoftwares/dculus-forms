@@ -1,0 +1,14 @@
+{
+  "errors": {
+    "formIdRequired": "படிவம் ஐடி தேவை",
+    "formIdRequiredDescription": "தொடர சரியான படிவ ஐடியை வழங்கவும்.",
+    "errorLoadingForm": "படிவத்தை ஏற்றுவதில் பிழை",
+    "errorLoadingFormDescription": "படிவத் தரவை ஏற்ற முடியவில்லை."
+  },
+  "loading": {
+    "loadingFormData": "படிவத் தரவை ஏற்றுகிறது...",
+    "loadingFormDataDescription": "உங்கள் படிவ பில்டர் இடைமுகத்தை அமைத்தல்.",
+    "connectingCollaboration": "கூட்டுப்பணியுடன் இணைகிறது...",
+    "connectingCollaborationDescription": "நிகழ்நேர ஒத்துழைப்பு இணைப்பை நிறுவுதல்."
+  }
+}

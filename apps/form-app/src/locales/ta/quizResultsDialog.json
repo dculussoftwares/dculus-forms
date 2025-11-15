@@ -1,0 +1,15 @@
+{
+  "title": "வினாடி வினா முடிவுகள்",
+  "response": "பதில்",
+  "graded": "தரப்படுத்தப்பட்டது",
+  "overallScore": "மொத்த மதிப்பெண்",
+  "pointsEarned": "பெற்ற புள்ளிகள்",
+  "percentage": "சதவீதம்",
+  "correct": "சரி",
+  "yourAnswer": "உங்கள் பதில்:",
+  "correctAnswer": "சரியான பதில்:",
+  "status": {
+    "passed": "தேர்ச்சி பெற்றது",
+    "failed": "தோல்வியடைந்தது"
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "title": "தேதி பகுப்பாய்வு",
+  "emptyState": {
+    "title": "தேதி தரவு இல்லை",
+    "subtitle": "இந்தத் தேதிப் புலம் இதுவரை எந்தப் பதிலும் வரவில்லை."
+  },
+  "stats": {
+    "totalResponses": "மொத்த பதில்கள்",
+    "dateRange": "தேதி வரம்பு",
+    "popularDay": "பிரபலமான நாள்",
+    "popularMonth": "பிரபலமான மாதம்",
+    "dateSelectionsMade": "தேதி தேர்வு செய்யப்பட்டது",
+    "fromEarliestToLatest": "ஆரம்பம் முதல் சமீபத்தியது வரை"
+  },
+  "calendar": {
+    "title": "தேதி தேர்வு காலண்டர்",
+    "noDateData": "தேதி தரவு இல்லை",
+    "intensityScale": "தீவிர அளவு (ஒரு நாளைக்கு தேர்வு)",
+    "less": "குறைவாக",
+    "more": "மேலும்"
+  },
+  "seasonal": {
+    "title": "பருவகால வடிவங்கள்",
+    "peak": "உச்சம்",
+    "selections": "தேர்வுகள்",
+    "insightsTitle": "பருவகால நுண்ணறிவு",
+    "mostPopularSeason": "{{percentage}}% தேர்வுகளுடன் {{season}} மிகவும் பிரபலமான சீசன்",
+    "totalCoverage": "மொத்த பருவகால தரவு {{count}} தேதியிட்ட பதில்களை உள்ளடக்கியது",
+    "evenDistribution": "பருவங்கள் முழுவதும் கூட",
+    "somePreferences": "சில பருவகால விருப்பத்தேர்வுகள்"
+  },
+  "rangeOverview": {
+    "title": "தேதி வரம்பு மேலோட்டம்",
+    "earliest": "ஆரம்பமானது",
+    "latest": "சமீபத்திய",
+    "mostCommon": "மிகவும் பொதுவானது",
+    "timeSpan": "நேர இடைவெளி",
+    "totalDateResponses": "மொத்த தேதி பதில்கள்",
+    "days": "நாட்கள்"
+  },
+  "dayOfWeek": {
+    "title": "வாரத்தின் நாள் விநியோகம்",
+    "day": "நாள்",
+    "selections": "தேர்வுகள்"
+  },
+  "monthly": {
+    "title": "மாதாந்திர விநியோகம்",
+    "month": "மாதம்",
+    "count": "எண்ணு"
+  },
+  "summary": {
+    "title": "தேதி பகுப்பாய்வு சுருக்கம்",
+    "rangeTitle": "தேதி வரம்பு",
+    "span": "இடைவெளி:",
+    "earliest": "ஆரம்பமானது:",
+    "latest": "சமீபத்திய:",
+    "patternsTitle": "வடிவங்கள்",
+    "popularDay": "பிரபலமான நாள்:",
+    "popularMonth": "பிரபலமான மாதம்:",
+    "mostCommon": "மிகவும் பொதுவானது:",
+    "distributionTitle": "விநியோகம்",
+    "responses": "பதில்கள்:",
+    "uniqueDates": "தனித்துவமான தேதிகள்:",
+    "concentration": "செறிவு:",
+    "high": "உயர்",
+    "medium": "நடுத்தர",
+    "low": "குறைந்த",
+    "dataQualityTitle": "தரவு தரம்",
+    "completeness": "முழுமை:",
+    "dateRange": "தேதி வரம்பு:",
+    "responseRate": "பதில் விகிதம்:",
+    "temporalSpread": "தற்காலிக பரவல்:",
+    "allSeasons": "அனைத்து பருவங்களும்",
+    "partial": "பகுதி",
+    "peakDay": "உச்ச நாள்:",
+    "peakMonth": "உச்ச மாதம்:",
+    "avgResponsesPerDay": "சராசரி பதில்கள்/நாள்:",
+    "days": "நாட்கள்",
+    "wide": "பரந்த",
+    "moderate": "மிதமான",
+    "narrow": "குறுகிய"
+  },
+  "timeline": {
+    "title": "தேதி விநியோகம்",
+    "date": "தேதி",
+    "responses": "பதில்கள்"
+  },
+  "dateRange": {
+    "title": "தேதி வரம்பு",
+    "earliest": "ஆரம்பமானது",
+    "latest": "சமீபத்திய",
+    "span": "இடைவெளி",
+    "days": "நாட்கள்"
+  },
+  "patterns": {
+    "title": "வடிவங்கள்",
+    "mostCommon": "மிகவும் பொதுவான தேதி:",
+    "dayOfWeek": "மிகவும் பிரபலமான நாள்:",
+    "monthDistribution": "மாத விநியோகம்:"
+  },
+  "insights": {
+    "title": "நுண்ணறிவு",
+    "dateSpan": "தேதிகள் {{days}} நாட்கள்",
+    "mostCommonDate": "மிகவும் பொதுவானது: {{date}}",
+    "peakPeriod": "உச்ச காலம்: {{period}}"
+  },
+  "daysOfWeek": {
+    "monday": "திங்கட்கிழமை",
+    "tuesday": "செவ்வாய்",
+    "wednesday": "புதன்",
+    "thursday": "வியாழன்",
+    "friday": "வெள்ளிக்கிழமை",
+    "saturday": "சனிக்கிழமை",
+    "sunday": "ஞாயிறு"
+  },
+  "months": {
+    "january": "ஜனவரி",
+    "february": "பிப்ரவரி",
+    "march": "மார்ச்",
+    "april": "ஏப்ரல்",
+    "may": "மே",
+    "june": "ஜூன்",
+    "july": "ஜூலை",
+    "august": "ஆகஸ்ட்",
+    "september": "செப்டம்பர்",
+    "october": "அக்டோபர்",
+    "november": "நவம்பர்",
+    "december": "டிசம்பர்"
+  }
+}

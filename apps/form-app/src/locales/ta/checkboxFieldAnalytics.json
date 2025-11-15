@@ -1,0 +1,94 @@
+{
+  "title": "தேர்வுப்பெட்டி பகுப்பாய்வு",
+  "emptyState": {
+    "title": "தேர்வுப்பெட்டி தரவு இல்லை",
+    "subtitle": "இந்த தேர்வுப்பெட்டி புலம் இதுவரை பதில்கள் எதையும் பெறவில்லை."
+  },
+  "stats": {
+    "totalSelections": "மொத்த தேர்வுகள்",
+    "averageSelected": "சராசரி தேர்ந்தெடுக்கப்பட்டது",
+    "mostPopular": "மிகவும் பிரபலமானது",
+    "uniqueCombos": "தனித்துவமான சேர்க்கைகள்",
+    "acrossAllOptions": "அனைத்து விருப்பங்கள் முழுவதும்",
+    "optionsPerResponse": "ஒரு பதிலுக்கு விருப்பங்கள்",
+    "differentCombinationsUsed": "வெவ்வேறு சேர்க்கைகள் பயன்படுத்தப்படுகின்றன"
+  },
+  "correlations": {
+    "title": "விருப்ப தொடர்புகள்",
+    "noSignificantCorrelations": "குறிப்பிடத்தக்க தொடர்புகள் எதுவும் இல்லை",
+    "strength": {
+      "veryStrong": "மிகவும் வலிமையானது",
+      "strong": "வலுவான",
+      "moderate": "மிதமான",
+      "weak": "பலவீனமான",
+      "veryWeak": "மிகவும் பலவீனமானது"
+    },
+    "correlation": "தொடர்பு",
+    "moreLikelyTogether": "ஒன்றாக இருக்கலாம்",
+    "understandingTitle": "தொடர்புகளைப் புரிந்துகொள்வது",
+    "strongDescription": "வலிமையானது (2.0x+): விருப்பங்கள் அடிக்கடி ஒன்றாகத் தேர்ந்தெடுக்கப்படுகின்றன",
+    "moderateDescription": "மிதமான (1.5x+): சில நேரங்களில் ஒன்றாகத் தேர்ந்தெடுக்கப்படும்",
+    "weakDescription": "பலவீனமான (<1.5x): விருப்பங்கள் அரிதாகவே ஒன்றாகத் தேர்ந்தெடுக்கப்படுகின்றன"
+  },
+  "combinations": {
+    "title": "பிரபலமான சேர்க்கைகள்",
+    "mostPopularTitle": "மிகவும் பிரபலமான சேர்க்கைகள்",
+    "noCombinationData": "சேர்க்கை தரவு இல்லை",
+    "option": "விருப்பம்",
+    "options": "விருப்பங்கள்",
+    "times": "முறை",
+    "showingTopOf": "{{total}} தனித்துவமான சேர்க்கைகளில் முதல் 10ஐக் காட்டுகிறது"
+  },
+  "selectionDistribution": {
+    "title": "தேர்வு எண்ணிக்கை விநியோகம்",
+    "numberOfResponses": "பதில்களின் எண்ணிக்கை",
+    "average": "சராசரி"
+  },
+  "patterns": {
+    "title": "தேர்வு வடிவங்கள்",
+    "avgSelected": "சராசரி தேர்வுகள்",
+    "mostSelected": "அதிகம் தேர்ந்தெடுக்கப்பட்டவை",
+    "leastSelected": "குறைந்தது தேர்ந்தெடுக்கப்பட்டது"
+  },
+  "charts": {
+    "selectionPatterns": "தேர்வு வடிவங்கள்",
+    "individualPopularity": "தனிப்பட்ட விருப்பம் பிரபலம்",
+    "multiSelectionSummary": "பல தேர்வு பகுப்பாய்வு சுருக்கம்"
+  },
+  "distribution": {
+    "title": "விருப்பம் விநியோகம்",
+    "option": "விருப்பம்",
+    "selected": "தேர்ந்தெடுக்கப்பட்டது"
+  },
+  "insights": {
+    "title": "நுண்ணறிவு",
+    "avgSelections": "பயனர்கள் சராசரியாக {{count}} விருப்பங்களைத் தேர்ந்தெடுக்கின்றனர்",
+    "topOption": "சிறந்த விருப்பம்: {{option}} ({{percentage}}%)",
+    "engagementLevel": "நிச்சயதார்த்த நிலை: {{level}}",
+    "high": "உயர்",
+    "medium": "நடுத்தர",
+    "low": "குறைந்த"
+  },
+  "selectionCount": {
+    "title": "தேர்வுகளின் எண்ணிக்கை",
+    "count": "தேர்வுகள்",
+    "responses": "பதில்கள்"
+  },
+  "summary": {
+    "selectionBehavior": "தேர்வு நடத்தை",
+    "responseRate": "மறுமொழி விகிதம்:",
+    "avgSelections": "சராசரி தேர்வுகள்:",
+    "optionPerformance": "விருப்பம் செயல்திறன்",
+    "availableOptions": "கிடைக்கக்கூடிய விருப்பங்கள்:",
+    "usedOptions": "பயன்படுத்திய விருப்பங்கள்:",
+    "combinationPatterns": "சேர்க்கை வடிவங்கள்",
+    "uniqueCombos": "தனித்துவமான சேர்க்கைகள்:",
+    "strongCorrelations": "வலுவான தொடர்புகள்:",
+    "dataQuality": "தரவு தரம்",
+    "totalResponses": "மொத்த பதில்கள்:",
+    "selectionVariety": "தேர்வு வகை:",
+    "varietyHigh": "உயர்",
+    "varietyMedium": "நடுத்தர",
+    "varietyLow": "குறைந்த"
+  }
+}

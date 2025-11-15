@@ -1,0 +1,32 @@
+{
+  "header": {
+    "title": "படிவ அமைப்புகள்",
+    "description": "படிவ நடத்தை மற்றும் விருப்பங்களை உள்ளமைக்கவும்"
+  },
+  "comingSoon": {
+    "title": "செட்டிங்ஸ் பேனல் விரைவில்",
+    "description": "மேம்பட்ட படிவ அமைப்புகள் மற்றும் உள்ளமைவு விருப்பங்கள் இங்கே கிடைக்கும்."
+  },
+  "currentState": {
+    "title": "தற்போதைய படிவம் நிலை",
+    "totalPages": "மொத்த பக்கங்கள்:",
+    "shuffleEnabled": "ஷஃபிள் இயக்கப்பட்டது:",
+    "totalFields": "மொத்த புலங்கள்:",
+    "yes": "ஆம்",
+    "no": "இல்லை"
+  },
+  "upcomingFeatures": {
+    "title": "வரவிருக்கும் அமைப்புகள்:",
+    "features": {
+      "formSubmission": "படிவம் சமர்ப்பிக்கும் அமைப்புகள்",
+      "emailNotifications": "மின்னஞ்சல் அறிவிப்புகள்",
+      "accessPermissions": "அணுகல் அனுமதிகள்",
+      "responseValidation": "பதில் சரிபார்ப்பு",
+      "exportOptions": "ஏற்றுமதி விருப்பங்கள்",
+      "integrationSettings": "ஒருங்கிணைப்பு அமைப்புகள்"
+    }
+  },
+  "collaboration": {
+    "ready": "நிகழ்நேர ஒத்துழைப்பு தயாராக உள்ளது"
+  }
+}

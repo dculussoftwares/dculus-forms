@@ -1,0 +1,39 @@
+{
+  "editHistoryTimeline": {
+    "empty": {
+      "title": "திருத்த வரலாறு இல்லை",
+      "description": "இந்த பதில் இன்னும் திருத்தப்படவில்லை. எந்த மாற்றங்களும் இங்கே தோன்றும்."
+    },
+    "badges": {
+      "latest": "சமீபத்திய"
+    },
+    "buttons": {
+      "view": "காண்க",
+      "show": "காட்டு",
+      "hide": "மறை"
+    },
+    "labels": {
+      "reason": "காரணம்:",
+      "unknownTime": "தெரியாத நேரம்",
+      "unknownDate": "தெரியாத தேதி",
+      "fieldChanges_one": "{{count}} புல மாற்றம்",
+      "fieldChanges_other": "{{count}} புல மாற்றங்கள்",
+      "modifiedFields_one": "மாற்றியமைக்கப்பட்ட {{count}} புலம்",
+      "modifiedFields_other": "மாற்றியமைக்கப்பட்ட {{count}} புலங்கள்"
+    }
+  },
+  "fieldChangeCard": {
+    "empty": "(காலி)",
+    "yes": "ஆம்",
+    "no": "இல்லை",
+    "labels": {
+      "before": "முன்பு",
+      "after": "பிறகு",
+      "addedValue": "கூடுதல் மதிப்பு",
+      "removedValue": "அகற்றப்பட்ட மதிப்பு",
+      "fieldId": "புல ஐடி:",
+      "type": "வகை:",
+      "chars": "{{count}} எழுத்துகள்"
+    }
+  }
+}

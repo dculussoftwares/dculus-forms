@@ -1,0 +1,77 @@
+{
+  "title": "தேர்வு பகுப்பாய்வு",
+  "emptyState": {
+    "title": "இன்னும் பதில்கள் இல்லை",
+    "subtitle": "இந்த {{fieldType}} புலம் இதுவரை எந்தப் பதிலையும் பெறவில்லை."
+  },
+  "distribution": {
+    "title": "பதில் விநியோகம்",
+    "option": "விருப்பம்",
+    "responses": "பதில்கள்",
+    "totalSelections": "மொத்த தேர்வுகள்",
+    "fromResponses": "{{count}} பதில்களிலிருந்து",
+    "availableOptions": "கிடைக்கும் விருப்பங்கள்",
+    "choicesProvided": "தேர்வுகள் வழங்கப்பட்டுள்ளன",
+    "selectionRate": "தேர்வு விகிதம்",
+    "completionRate": "நிறைவு விகிதம்",
+    "optionPopularity": "விருப்பம் பிரபலம்",
+    "numberOfSelections": "தேர்வுகளின் எண்ணிக்கை",
+    "selectionsCount": "{{count}} தேர்வுகள் ({{percentage}}%)"
+  },
+  "topChoices": {
+    "title": "சிறந்த தேர்வுகள்",
+    "mostPopular": "மிகவும் பிரபலமானது",
+    "leastPopular": "குறைவான பிரபலமானது",
+    "topOption": "மேல் விருப்பம்"
+  },
+  "insights": {
+    "title": "நுண்ணறிவு",
+    "popularChoices": "பிரபலமான தேர்வுகள்",
+    "distribution": "விநியோகம்",
+    "performance": "செயல்திறன்",
+    "mostPopular": "மிகவும் பிரபலமானது:",
+    "leastPopular": "குறைவான பிரபலமானது:",
+    "type": "வகை:",
+    "balanced": "சமச்சீர்",
+    "skewed": "வளைந்த",
+    "optionsUsed": "பயன்படுத்தப்படும் விருப்பங்கள்:",
+    "unusedOptions": "பயன்படுத்தப்படாத விருப்பங்கள்:",
+    "competitionLevel": "போட்டி நிலை:",
+    "high": "உயர்",
+    "medium": "நடுத்தர",
+    "low": "குறைந்த"
+  },
+  "quickInsights": {
+    "title": "விரைவான நுண்ணறிவு",
+    "mostPopular": "மிகவும் பிரபலமானது",
+    "ofResponses": "{{percentage}}% பதில்கள்",
+    "clearWinner": "தெளிவான வெற்றியாளர்",
+    "closeCompetition": "மூடு போட்டி",
+    "marginAhead": "விளிம்பு முன்னால்",
+    "differenceBetweenTopOptions": "சிறந்த விருப்பங்களுக்கு இடையிலான வேறுபாடு",
+    "responseRate": "பதில் விகிதம்",
+    "ofFormSubmissions": "படிவ சமர்ப்பிப்புகள்",
+    "lowPerforming": "குறைந்த செயல்திறன்",
+    "optionUnder5": "5% கீழ் விருப்பம்",
+    "optionsUnder5": "5% கீழ் விருப்பங்கள்"
+  },
+  "optionPerformance": {
+    "title": "விருப்பம் செயல்திறன்",
+    "showingAll": "அனைத்து {{count}} விருப்பங்களையும் காட்டுகிறது",
+    "responses": "{{count}} பதில்கள்"
+  },
+  "pieChart": {
+    "title": "{{fieldType}} விநியோகம்",
+    "selection": "தேர்வு",
+    "choice": "தேர்வு"
+  },
+  "trendsOverTime": {
+    "title": "காலப்போக்கில் தேர்வு போக்குகள்"
+  },
+  "distributionDescriptions": {
+    "concentrated": "ஒரு விருப்பம் {{percentage}}% பதில்களுடன் ஆதிக்கம் செலுத்துகிறது",
+    "even": "அனைத்து விருப்பங்களிலும் பதில்கள் நியாயமான முறையில் விநியோகிக்கப்படுகின்றன",
+    "polarized": "பதில்கள் சில பிரபலமான விருப்பங்களுக்கு இடையில் பிரிக்கப்பட்டுள்ளன",
+    "unavailable": "விநியோக பகுப்பாய்வு கிடைக்கவில்லை"
+  }
+}

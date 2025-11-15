@@ -1,0 +1,21 @@
+{
+  "fieldTypes": {
+    "shortText": "குறுகிய உரை",
+    "longText": "நீண்ட உரை",
+    "email": "மின்னஞ்சல்",
+    "number": "எண்",
+    "dropdown": "கீழிறக்கம்",
+    "radio": "வானொலி",
+    "checkbox": "தேர்வுப்பெட்டி",
+    "date": "தேதி",
+    "richText": "பணக்கார உரை",
+    "formField": "படிவம் புலம்",
+    "fallback": "களம்"
+  },
+  "tooltips": {
+    "fieldSettings": "புல அமைப்புகள்",
+    "duplicateField": "நகல் புலம்",
+    "pageActions": "பக்க செயல்கள்",
+    "deleteField": "புலத்தை நீக்கு"
+  }
+}

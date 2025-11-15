@@ -1,0 +1,12 @@
+{
+  "title": "வினாடி வினா முடிவுகள்",
+  "gradedOn": "{{date}} இல் தானாக தரப்படுத்தப்பட்டது",
+  "answerBreakdown": "பதில் முறிவு",
+  "questionLabel": "கேள்வி {{number}}: {{label}}",
+  "yourAnswer": "உங்கள் பதில்:",
+  "correctAnswer": "சரியான பதில்:",
+  "status": {
+    "passed": "தேர்ச்சி பெற்றது",
+    "failed": "தோல்வியடைந்தது"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "defaultPageTitle": "பக்கம் {{number}}",
+  "fieldCount": {
+    "singular": "களம்",
+    "plural": "வயல்வெளிகள்"
+  },
+  "menu": {
+    "pageSettings": "பக்க அமைப்புகள்",
+    "duplicatePage": "நகல் பக்கம்",
+    "deletePage": "பக்கத்தை நீக்கு"
+  },
+  "emptyState": {
+    "message": "இந்தப் பக்கத்தில் இதுவரை புலங்கள் எதுவும் இல்லை"
+  }
+}

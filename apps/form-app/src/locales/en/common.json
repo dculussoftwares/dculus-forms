@@ -3,7 +3,8 @@
   "language": {
     "label": "Language",
     "options": {
-      "en": "English"
+      "en": "English",
+      "ta": "Tamil"
     }
   },
   "loading": "Loading...",

@@ -1,0 +1,12 @@
+{
+  "organizationError": "நிறுவனப் பிழை",
+  "loading": "ஏற்றுகிறது...",
+  "noOrganizations": "நிறுவனங்கள் இல்லை",
+  "selectOrganization": "அமைப்பைத் தேர்ந்தெடுக்கவும்",
+  "organizations": "நிறுவனங்கள்",
+  "createOrganization": "அமைப்பை உருவாக்கவும்",
+  "roles": {
+    "owner": "உரிமையாளர்",
+    "member": "உறுப்பினர்"
+  }
+}

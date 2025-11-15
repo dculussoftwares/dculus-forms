@@ -1,0 +1,41 @@
+{
+  "layout": {
+    "title": "தனிப்பட்ட பதில்கள்",
+    "dynamicTitle": "{{formTitle}} - தனிப்பட்ட பதில்கள்",
+    "breadcrumbs": {
+      "dashboard": "டாஷ்போர்டு",
+      "formDashboard": "படிவம் டாஷ்போர்டு",
+      "responses": "பதில்கள்",
+      "individual": "தனிநபர்"
+    }
+  },
+  "errors": {
+    "formNotFound": {
+      "title": "படிவம் கிடைக்கவில்லை",
+      "description": "நீங்கள் தேடும் படிவம் இல்லை அல்லது அதைப் பார்க்க உங்களுக்கு அனுமதி இல்லை."
+    }
+  },
+  "navigation": {
+    "backToResponses": "மறுமொழிகளுக்குத் திரும்பு"
+  },
+  "content": {
+    "individualResponseDetails": {
+      "title": "தனிப்பட்ட பதில் விவரங்கள்",
+      "description": "ஒவ்வொரு படிவ சமர்ப்பிப்பிற்கான விரிவான தகவலைக் காண்க"
+    },
+    "emptyState": {
+      "title": "இதுவரை தனிப்பட்ட பதில்கள் இல்லை",
+      "description": "படிவங்கள் சமர்ப்பிக்கப்பட்டவுடன் தனிப்பட்ட பதில் விவரங்கள் இங்கே தோன்றும்."
+    },
+    "response": {
+      "responseNumber": "பதில் #{{id}}",
+      "submittedOn": "{{date}} அன்று சமர்ப்பிக்கப்பட்டது",
+      "viewDetails": "விவரங்களைக் காண்க"
+    },
+    "fields": {
+      "name": "பெயர்",
+      "email": "மின்னஞ்சல்",
+      "message": "செய்தி"
+    }
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "title": "களப் பகுப்பாய்வு",
+  "loading": {
+    "fieldAnalytics": "புல பகுப்பாய்வுகளை ஏற்றுகிறது..."
+  },
+  "backToOverview": "மேலோட்டப் பார்வைக்குத் திரும்பு",
+  "fieldTypes": {
+    "text_input_field": "உரை உள்ளீடு",
+    "text_area_field": "உரை பகுதி",
+    "number_field": "எண்",
+    "email_field": "மின்னஞ்சல்",
+    "date_field": "தேதி",
+    "select_field": "கீழ்தோன்றும் என்பதைத் தேர்ந்தெடுக்கவும்",
+    "radio_field": "ரேடியோ பொத்தான்கள்",
+    "checkbox_field": "தேர்வுப்பெட்டிகள்",
+    "unknown": "தெரியாத புலம்"
+  },
+  "miniChart": {
+    "noData": "வார்த்தை தரவு இல்லை",
+    "noDistribution": "விநியோகம் இல்லை",
+    "noOptions": "விருப்பங்கள் இல்லை",
+    "noDates": "தேதிகள் இல்லை"
+  },
+  "stats": {
+    "responses": "பதில்கள்",
+    "responseRate": "பதில் விகிதம்",
+    "lastUpdated": "கடைசியாக புதுப்பிக்கப்பட்டது",
+    "analyzableFields": "பகுப்பாய்வு செய்யக்கூடிய புலங்கள்",
+    "highEngagement": "உயர் ஈடுபாடு",
+    "formResponses": "பதில்கள் படிவம்"
+  },
+  "dataPreview": {
+    "title": "தரவு முன்னோட்டம்",
+    "fieldType": "புல வகை"
+  },
+  "error": {
+    "loadingTitle": "புலப் பகுப்பாய்வுகளை ஏற்றுவதில் பிழை",
+    "loadingData": "புலத் தரவை ஏற்றுவதில் பிழை",
+    "tryAgain": "மீண்டும் முயற்சிக்கவும்",
+    "backToList": "புலப் பட்டியலுக்குத் திரும்பு"
+  },
+  "emptyState": {
+    "title": "புலங்கள் எதுவும் கிடைக்கவில்லை",
+    "description": "இந்தப் படிவத்தில் இதுவரை பகுப்பாய்வு செய்யக்கூடிய புலங்கள் எதுவும் இல்லை.",
+    "addFields": "பகுப்பாய்வுகளை இங்கே காண உங்கள் படிவத்தில் புலங்களைச் சேர்க்கவும்."
+  },
+  "refresh": "பகுப்பாய்வுகளைப் புதுப்பிக்கவும்",
+  "navigation": {
+    "allFields": "அனைத்து துறைகள்"
+  },
+  "buttons": {
+    "refresh": "புதுப்பிக்கவும்",
+    "clearCache": "தற்காலிக சேமிப்பை அழிக்கவும்",
+    "clearCacheTitle": "தற்காலிக சேமிப்பை அழித்து தரவைப் புதுப்பிக்கவும்"
+  },
+  "responseCount": "{{count}} பதில்கள்",
+  "errors": {
+    "loadingAnalytics": "புல பகுப்பாய்வு தரவை ஏற்றுவதில் பிழை.",
+    "loadingFieldAnalytics": "இந்தப் புலத்தின் பகுப்பாய்வுகளை ஏற்றுவதில் பிழை."
+  },
+  "titles": {
+    "fieldAnalytics": "களப் பகுப்பாய்வு",
+    "fieldInsights": "புல நுண்ணறிவு"
+  },
+  "miniCharts": {
+    "noWordData": "வார்த்தை தரவு இல்லை",
+    "noChartData": "விளக்கப்பட தரவு இல்லை",
+    "noSelectionData": "தேர்வு தரவு இல்லை"
+  },
+  "fieldList": {
+    "noFieldsTitle": "புலங்கள் எதுவும் கிடைக்கவில்லை",
+    "noFieldsDescription": "இந்தப் படிவத்தில் பகுப்பாய்வை ஆதரிக்கும் புலங்கள் எதுவும் இல்லை அல்லது இதுவரை பதில்கள் எதுவும் சமர்ப்பிக்கப்படவில்லை.",
+    "responses": "பதில்கள்",
+    "responseRate": "பதில் விகிதம்",
+    "lastUpdated": "கடைசியாக புதுப்பிக்கப்பட்டது",
+    "dataPreview": "தரவு முன்னோட்டம்",
+    "clickToExplore": "ஆராய கிளிக் செய்யவும் →"
+  },
+  "detailView": {
+    "notSupported": "இந்த புல வகைக்கு பகுப்பாய்வு ஆதரிக்கப்படவில்லை",
+    "fieldType": "புல வகை"
+  },
+  "header": {
+    "title": "களப் பகுப்பாய்வு",
+    "loading": "புலத் தரவை ஏற்றுகிறது..."
+  },
+  "overviewStats": {
+    "analyzableFields": "பகுப்பாய்வு செய்யக்கூடிய புலங்கள்",
+    "highEngagement": "உயர் ஈடுபாடு",
+    "avgResponseRate": "சராசரி மறுமொழி விகிதம்",
+    "formResponses": "பதில்கள் படிவம்"
+  },
+  "tooltips": {
+    "responseRate": {
+      "title": "பதில் விகிதம்",
+      "description": "இந்தப் புலத்திற்கான பதிலை உள்ளடக்கிய படிவ சமர்ப்பிப்புகளின் சதவீதம்"
+    },
+    "wordAppears": "\"{{word}}\" {{count}} முறை தோன்றும்"
+  },
+  "noDataMessages": {
+    "textAnalytics": "உரை பகுப்பாய்வு தரவு இல்லை",
+    "numberAnalytics": "எண் பகுப்பாய்வு தரவு இல்லை",
+    "selectionAnalytics": "தேர்வு பகுப்பாய்வு தரவு இல்லை",
+    "checkboxAnalytics": "தேர்வுப்பெட்டி பகுப்பாய்வு தரவு இல்லை",
+    "dateAnalytics": "தேதி பகுப்பாய்வு தரவு இல்லை",
+    "emailAnalytics": "மின்னஞ்சல் பகுப்பாய்வு தரவு இல்லை"
+  },
+  "fieldHeader": {
+    "responsesCount": "{{count}} பதில்கள்",
+    "responseRateText": "{{rate}}% மறுமொழி விகிதம்",
+    "fieldPrefix": "களம்"
+  },
+  "description": {
+    "analyzePerformance": "{{count}} படிவ மறுமொழிகளில் தனிப்பட்ட புல செயல்திறனை பகுப்பாய்வு செய்யவும்"
+  }
+}

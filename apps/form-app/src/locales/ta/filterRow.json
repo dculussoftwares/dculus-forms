@@ -1,0 +1,27 @@
+{
+  "operators": {
+    "isEmpty": "காலியாக உள்ளது",
+    "isNotEmpty": "காலியாக இல்லை",
+    "contains": "கொண்டுள்ளது",
+    "notContains": "கொண்டிருக்கவில்லை",
+    "equals": "சமம்",
+    "notEquals": "சமமாக இல்லை",
+    "startsWith": "உடன் தொடங்குகிறது",
+    "endsWith": "உடன் முடிகிறது",
+    "greaterThan": "விட பெரியது",
+    "lessThan": "விட குறைவாக",
+    "between": "இடையில்",
+    "before": "முன்பு",
+    "after": "பிறகு",
+    "includes": "அடங்கும்",
+    "notIncludes": "அடங்காது"
+  },
+  "placeholders": {
+    "enterValue": "மதிப்பை உள்ளிடவும்",
+    "min": "குறைந்தபட்சம்",
+    "max": "அதிகபட்சம்",
+    "enterNumber": "எண்ணை உள்ளிடவும்",
+    "selectField": "ஒரு புலத்தைத் தேர்ந்தெடுக்கவும்",
+    "selectCondition": "அடங்கும்"
+  }
+}

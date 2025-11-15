@@ -1,0 +1,40 @@
+{
+  "layout": {
+    "title": "வரலாற்றைத் திருத்தவும்",
+    "dynamicTitle": "{{formTitle}} - வரலாற்றைத் திருத்து",
+    "breadcrumbs": {
+      "dashboard": "டாஷ்போர்டு",
+      "formDashboard": "படிவம் டாஷ்போர்டு",
+      "responses": "பதில்கள்",
+      "editHistory": "வரலாற்றைத் திருத்தவும்"
+    }
+  },
+  "errors": {
+    "notFound": {
+      "title": "கிடைக்கவில்லை",
+      "description": "பதில் அல்லது படிவம் கிடைக்கவில்லை. URL ஐ சரிபார்த்து மீண்டும் முயற்சிக்கவும்."
+    },
+    "historyLoadError": "திருத்த வரலாற்றை ஏற்ற முடியவில்லை. சில செயல்பாடுகள் குறைவாக இருக்கலாம்."
+  },
+  "navigation": {
+    "backToResponses": "மறுமொழிகளுக்குத் திரும்பு"
+  },
+  "header": {
+    "title": "பதில் திருத்த வரலாறு",
+    "editResponse": "பதிலைத் திருத்து"
+  },
+  "responseInfo": {
+    "title": "பதில் தகவல்",
+    "responseId": "பதில் ஐடி:",
+    "submitted": "சமர்ப்பிக்கப்பட்டது:",
+    "totalEdits": "மொத்த திருத்தங்கள்:",
+    "editsCount": "{{count}} திருத்து",
+    "editsCountPlural": "{{count}} திருத்தங்கள்"
+  },
+  "timeline": {
+    "title": "காலவரிசையைத் திருத்து ({{count}} {{editText}})",
+    "editSingular": "திருத்தவும்",
+    "editPlural": "திருத்துகிறது",
+    "lastEdited": "கடைசியாக திருத்தப்பட்டது {{date}}"
+  }
+}

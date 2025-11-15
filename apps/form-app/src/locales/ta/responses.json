@@ -1,0 +1,113 @@
+{
+  "layout": {
+    "title": "{{formTitle}} - பதில்கள்",
+    "breadcrumbDashboard": "டாஷ்போர்டு",
+    "breadcrumbFormDashboard": "படிவம் டாஷ்போர்டு",
+    "breadcrumbResponses": "பதில்கள்"
+  },
+  "header": {
+    "backButton": "மீண்டும்",
+    "responseCount": "{{count}} பதில்கள்",
+    "responseCountPlural": "{{count}} பதில்கள்"
+  },
+  "toolbar": {
+    "search": {
+      "placeholder": "பதில்களைத் தேடு...",
+      "clearLabel": "தெளிவான தேடல்"
+    },
+    "filters": {
+      "buttonLabel": "வடிப்பான்கள்",
+      "activeFilters": "{{count}} செயலில் உள்ள வடிப்பான்கள்",
+      "activeFilter": "{{count}} செயலில் உள்ள வடிகட்டி"
+    },
+    "columns": {
+      "buttonLabel": "நெடுவரிசைகள்",
+      "hiddenCount": "{{count}} மறைக்கப்பட்டுள்ளது",
+      "toggle": "நெடுவரிசைகளை நிலைமாற்று",
+      "reset": "மீட்டமை",
+      "noColumnsAvailable": "நெடுவரிசைகள் இல்லை"
+    },
+    "export": {
+      "buttonLabel": "ஏற்றுமதி",
+      "exporting": "ஏற்றுமதி செய்கிறது...",
+      "excel": "Excel ஆக ஏற்றுமதி செய்யவும்",
+      "csv": "CSV ஆக ஏற்றுமதி செய்யவும்"
+    }
+  },
+  "table": {
+    "columns": {
+      "responseId": "பதில் ஐடி",
+      "submittedAt": "சமர்ப்பிக்கப்பட்டது",
+      "editStatus": "நிலையை திருத்தவும்",
+      "actions": "செயல்கள்"
+    },
+    "editStatus": {
+      "original": "அசல்",
+      "editBadge": "{{count}} திருத்து",
+      "editBadgePlural": "{{count}} திருத்தங்கள்",
+      "editedBy": "மூலம்"
+    },
+    "actions": {
+      "view": "காண்க",
+      "viewResponse": "பதிலைக் காண்க",
+      "edit": "திருத்தவும்",
+      "editHistory": "வரலாற்றைத் திருத்தவும்",
+      "delete": "நீக்கு",
+      "moreActions": "மேலும் செயல்கள்"
+    },
+    "fieldResponses": {
+      "noResponse": "பதில் இல்லை"
+    },
+    "emptyState": {
+      "title": "இன்னும் பதில்கள் இல்லை",
+      "description": "இந்தப் படிவத்தை இதுவரை யாரும் சமர்ப்பிக்கவில்லை. நீங்கள் பதில்களைப் பெற்றவுடன், அவை இங்கே தோன்றும்."
+    },
+    "loadingState": "பதில்களை ஏற்றுகிறது...",
+    "searchPlaceholder": "பதில்களைத் தேடு...",
+    "searchIndicator": "தேடு: \"{{query}}\"",
+    "refreshPage": "பக்கத்தைப் புதுப்பிக்கவும்"
+  },
+  "filters": {
+    "modal": {
+      "title": "பதில்களை வடிகட்டவும்",
+      "description": "புல மதிப்புகள் மூலம் பதில்களை வடிகட்டவும்",
+      "noFiltersActive": "வடிப்பான்கள் எதுவும் செயலில் இல்லை",
+      "clearAll": "அனைத்தையும் அழி",
+      "apply": "வடிப்பான்களைப் பயன்படுத்து",
+      "cancel": "ரத்து செய்"
+    },
+    "fieldTypes": {
+      "text": "உரை",
+      "email": "மின்னஞ்சல்",
+      "number": "எண்",
+      "date": "தேதி",
+      "select": "தேர்ந்தெடு",
+      "radio": "வானொலி",
+      "checkbox": "தேர்வுப்பெட்டி"
+    },
+    "operators": {
+      "equals": "சமம்",
+      "contains": "கொண்டுள்ளது",
+      "startsWith": "உடன் தொடங்குகிறது",
+      "endsWith": "உடன் முடிகிறது",
+      "greaterThan": "விட பெரியது",
+      "lessThan": "விட குறைவாக",
+      "between": "இடையில்",
+      "in": "இல்",
+      "notIn": "உள்ளே இல்லை"
+    }
+  },
+  "errors": {
+    "loadingForm": "படிவத்தை ஏற்ற முடியவில்லை",
+    "loadingResponses": "பதில்களை ஏற்றுவதில் பிழை",
+    "loadingResponsesMessage": "படிவ பதில்களை ஏற்றுவதில் பிழை. மீண்டும் முயற்சிக்கவும்.",
+    "formNotFound": "படிவம் கிடைக்கவில்லை",
+    "formNotFoundMessage": "நீங்கள் தேடும் படிவம் இல்லை அல்லது அதைப் பார்க்க உங்களுக்கு அனுமதி இல்லை.",
+    "exportFailed": "ஏற்றுமதி தோல்வியடைந்தது. மீண்டும் முயற்சிக்கவும்.",
+    "invalidDate": "தவறான தேதி"
+  },
+  "success": {
+    "exportStarted": "ஏற்றுமதி தொடங்கியது. பதிவிறக்கம் விரைவில் தொடங்கும்.",
+    "filtersApplied": "வடிப்பான்கள் வெற்றிகரமாகப் பயன்படுத்தப்பட்டன"
+  }
+}

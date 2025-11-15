@@ -1,0 +1,17 @@
+{
+  "title": "பயன்பாட்டு போக்குகள்",
+  "subtitle": "{{startDate}} முதல் {{endDate}} வரை தினசரி பயன்பாடு",
+  "tooltip": {
+    "views": "காட்சிகள்:",
+    "submissions": "சமர்ப்பிப்புகள்:"
+  },
+  "legend": {
+    "formViews": "படிவக் காட்சிகள்",
+    "formSubmissions": "படிவம் சமர்ப்பிப்புகள்"
+  },
+  "totals": {
+    "views": "மொத்த பார்வைகள்",
+    "submissions": "மொத்த சமர்ப்பிப்புகள்",
+    "ofLimit": "{{limit}} வரம்பு"
+  }
+}

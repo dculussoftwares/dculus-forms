@@ -1,0 +1,23 @@
+{
+  "title": "காலப்போக்கில் பார்வைகள் மற்றும் சமர்ப்பிப்புகள்",
+  "legend": {
+    "totalViews": "மொத்த பார்வைகள்",
+    "viewSessions": "அமர்வுகளைப் பார்க்கவும்",
+    "submissions": "சமர்ப்பிப்புகள்",
+    "subSessions": "துணை அமர்வுகள்"
+  },
+  "stats": {
+    "totalViews": "மொத்த பார்வைகள்",
+    "viewSessions": "அமர்வுகளைப் பார்க்கவும்",
+    "submissions": "சமர்ப்பிப்புகள்",
+    "submissionSessions": "துணை அமர்வுகள்",
+    "avgViewsPerDay": "சராசரி பார்வைகள்/நாள்",
+    "avgSubsPerDay": "சராசரி துணைகள்/நாள்"
+  },
+  "legendItems": {
+    "views": "காட்சிகள்",
+    "viewSessions": "அமர்வுகளைப் பார்க்கவும்",
+    "submissions": "சமர்ப்பிப்புகள்",
+    "submissionSessions": "சமர்ப்பிப்பு அமர்வுகள்"
+  }
+}
