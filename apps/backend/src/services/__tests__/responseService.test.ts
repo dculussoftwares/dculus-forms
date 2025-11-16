@@ -178,14 +178,14 @@ describe('Response Service', () => {
 
     it('should apply filters when provided', async () => {
       const mockResponses = [mockResponse];
-      const filteredResponses = [mockResponse];
       vi.mocked(responseRepository.listByForm).mockResolvedValue(mockResponses as any);
-      vi.mocked(applyResponseFilters).mockReturnValue(filteredResponses as any);
+      vi.mocked(applyResponseFilters).mockReturnValue(mockResponses as any);
 
       const filters = [{ fieldId: 'field1', operator: 'equals' as const, value: 'value1' }];
       const result = await getResponsesByFormId('form-123', 1, 10, 'submittedAt', 'desc', filters);
 
-      expect(applyResponseFilters).toHaveBeenCalledWith(mockResponses, filters);
+      // With database-level filtering, applyResponseFilters is only called for memory-only operators
+      // For simple operators like 'equals', it uses database filtering
       expect(result.data).toHaveLength(1);
     });
 

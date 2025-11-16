@@ -1,7 +1,13 @@
 import { FormResponse } from '@dculus/types';
 import { ResponseFilter, applyResponseFilters } from './responseFilterService.js';
+import { 
+  buildMongoDBFilter, 
+  canFilterAtDatabase, 
+  getMemoryOnlyFilters 
+} from './responseQueryBuilder.js';
 import { responseRepository } from '../repositories/index.js';
 import { logger } from '../lib/logger.js';
+import { prisma } from '../lib/prisma.js';
 
 export const getAllResponses = async (organizationId?: string): Promise<FormResponse[]> => {
   const responses = await responseRepository.findMany({
@@ -81,21 +87,86 @@ export const getResponsesByFormId = async (
     validSortBy = 'submittedAt';
   }
 
-  // When filters are applied or form field sorting is needed, we need to load all responses
-  // to apply filters and sort in memory
-  const needsMemoryProcessing = filters && filters.length > 0 || isFormFieldSort;
-  
-  let allResponses;
-  let filteredResponses;
+  // Determine filtering strategy
+  const hasFilters = filters && filters.length > 0;
+  const memoryOnlyFilters = hasFilters ? getMemoryOnlyFilters(filters) : [];
+  const needsMemoryProcessing = isFormFieldSort || memoryOnlyFilters.length > 0;
+
   let responses;
   let total;
-  
-  if (needsMemoryProcessing) {
-    // Get all responses for filtering/sorting in memory
-    allResponses = await responseRepository.listByForm(formId);
+
+  if (hasFilters && !needsMemoryProcessing && canFilterAtDatabase(filters)) {
+    // OPTIMIZED PATH: Use database-level filtering with raw MongoDB query
+    logger.info(`Using database-level filtering for ${filters?.length || 0} filters`);
     
-    // Apply filters first
-    filteredResponses = applyResponseFilters(allResponses, filters);
+    try {
+      // Build MongoDB filter
+      const mongoFilter = buildMongoDBFilter(formId, filters);
+      
+      // Count total matching documents
+      const countResults = await prisma.response.aggregateRaw({
+        pipeline: [
+          { $match: mongoFilter },
+          { $count: 'total' },
+        ],
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      total = (countResults as any)[0]?.total || 0;
+
+      // Apply sorting at database level
+      const sortField = validSortBy;
+      const sortDirection = validSortOrder === 'asc' ? 1 : -1;
+
+      const sortedResults = await prisma.response.findRaw({
+        filter: mongoFilter,
+        options: {
+          sort: { [sortField]: sortDirection },
+          skip: skip,
+          limit: validLimit,
+        },
+      });
+
+      // Convert raw MongoDB results to typed responses
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      responses = (sortedResults as unknown as any[]).map((doc: any) => {
+        // Handle MongoDB BSON Date objects and ISO strings
+        let submittedAt: Date;
+        if (doc.submittedAt instanceof Date) {
+          submittedAt = doc.submittedAt;
+        } else if (doc.submittedAt?.$date) {
+          // MongoDB extended JSON format
+          submittedAt = new Date(doc.submittedAt.$date);
+        } else if (typeof doc.submittedAt === 'string' || typeof doc.submittedAt === 'number') {
+          submittedAt = new Date(doc.submittedAt);
+        } else {
+          submittedAt = new Date(); // Fallback to current date
+        }
+
+        return {
+          id: doc._id,
+          formId: doc.formId,
+          data: doc.data || {},
+          metadata: doc.metadata,
+          submittedAt,
+        };
+      });
+
+    } catch (error) {
+      logger.error('Database filtering failed, falling back to memory filtering:', error);
+      // Fallback to memory processing
+      const allResponses = await responseRepository.listByForm(formId);
+      const filteredResponses = applyResponseFilters(allResponses, filters);
+      total = filteredResponses.length;
+      responses = filteredResponses.slice(skip, skip + validLimit);
+    }
+
+  } else if (needsMemoryProcessing || (hasFilters && memoryOnlyFilters.length > 0)) {
+    // HYBRID PATH: Get all responses and apply memory filtering
+    logger.info(`Using memory filtering for ${filters?.length || 0} filters (${memoryOnlyFilters.length} complex)`);
+    
+    const allResponses = await responseRepository.listByForm(formId);
+    const filteredResponses = applyResponseFilters(allResponses, filters);
     total = filteredResponses.length;
     
     // Apply sorting

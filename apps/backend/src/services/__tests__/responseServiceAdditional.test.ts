@@ -121,10 +121,13 @@ describe('Response Service - Additional Coverage', () => {
         { id: '3', formId: 'form-1', data: {}, submittedAt: date3 }
       ];
 
+      // When filters are applied, it uses listByForm and memory filtering
+      // Using DATE_AFTER operator which is memory-only to force memory filtering path
       vi.mocked(responseRepository.listByForm).mockResolvedValue(mockResponses as any);
 
-      const result = await getResponsesByFormId('form-1', 1, 10, 'submittedAt', 'asc', [{ fieldId: 'test', operator: 'equals', value: 'test' }] as any);
+      const result = await getResponsesByFormId('form-1', 1, 10, 'submittedAt', 'asc', [{ fieldId: 'test', operator: 'DATE_AFTER', value: '2024-01-01' }] as any);
 
+      // Should return all 3 responses (filtering happens in memory but mock passes everything through)
       expect(result.data.length).toBe(3);
     });
 
@@ -135,6 +138,8 @@ describe('Response Service - Additional Coverage', () => {
         { id: 'resp-b', formId: 'form-1', data: {}, submittedAt: new Date('2024-01-02') }
       ];
 
+      // When filters are applied with regular field sorting, it uses memory filtering
+      // Using DATE_AFTER operator which is memory-only to force memory filtering path
       vi.mocked(responseRepository.listByForm).mockResolvedValue(mockResponses as any);
 
       const result = await getResponsesByFormId(
@@ -143,9 +148,10 @@ describe('Response Service - Additional Coverage', () => {
         10,
         'id',
         'asc',
-        [{ fieldId: 'status', operator: 'EQUALS', value: 'any' }] as any
+        [{ fieldId: 'status', operator: 'DATE_AFTER', value: '2024-01-01' }] as any
       );
 
+      // Should be sorted by id in ascending order
       expect(result.data.map((response) => response.id)).toEqual(['resp-a', 'resp-b', 'resp-c']);
     });
 
