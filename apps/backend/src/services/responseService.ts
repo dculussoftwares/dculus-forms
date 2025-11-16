@@ -1,13 +1,70 @@
-import { FormResponse } from '@dculus/types';
+import { FormResponse, FieldType, FormSchema } from '@dculus/types';
 import { ResponseFilter, applyResponseFilters } from './responseFilterService.js';
 import { 
   buildMongoDBFilter, 
-  canFilterAtDatabase, 
-  getMemoryOnlyFilters 
+  canFilterAtDatabase
 } from './responseQueryBuilder.js';
 import { responseRepository } from '../repositories/index.js';
 import { logger } from '../lib/logger.js';
+import { getFormSchemaFromHocuspocus } from './hocuspocus.js';
 import { prisma } from '../lib/prisma.js';
+import type { Prisma } from '@prisma/client';
+
+/**
+ * Transform date field values from ISO strings to Date objects
+ * This enables database-level filtering for date fields
+ * 
+ * Uses the collaborative form schema from Hocuspocus (YJS) to identify date fields.
+ * This ensures we always use the latest schema from the real-time collaborative editor.
+ */
+const transformDateFields = async (formId: string, responseData: Record<string, unknown>): Promise<Prisma.InputJsonValue> => {
+  try {
+    // Get form schema from Hocuspocus collaborative document (not database)
+    // This ensures we use the real-time collaborative schema
+    const schemaData = await getFormSchemaFromHocuspocus(formId);
+
+    if (!schemaData) {
+      logger.warn(`No collaborative schema found for form ${formId}, skipping date transformation`);
+      return responseData as Prisma.InputJsonValue;
+    }
+
+    const schema = schemaData as FormSchema;
+    if (!schema || !schema.pages) {
+      return responseData as Prisma.InputJsonValue;
+    }
+
+    // Create a copy to avoid mutating the original
+    const transformed = { ...responseData };
+
+    // Find all date fields in the form schema
+    for (const page of schema.pages) {
+      for (const field of page.fields) {
+        if (field.type === FieldType.DATE_FIELD && transformed[field.id]) {
+          const dateValue = transformed[field.id];
+          
+          // Convert string dates to Date objects for MongoDB
+          if (typeof dateValue === 'string' && dateValue.trim() !== '') {
+            try {
+              const parsedDate = new Date(dateValue);
+              if (!isNaN(parsedDate.getTime())) {
+                transformed[field.id] = parsedDate;
+                logger.info(`Converted date field ${field.id} from string to Date object`);
+              }
+            } catch (error) {
+              logger.warn(`Failed to parse date value for field ${field.id}:`, error);
+              // Keep original value if parsing fails
+            }
+          }
+        }
+      }
+    }
+
+    return transformed as Prisma.InputJsonValue;
+  } catch (error) {
+    logger.error('Error transforming date fields:', error);
+    return responseData as Prisma.InputJsonValue; // Return original on error
+  }
+};
 
 export const getAllResponses = async (organizationId?: string): Promise<FormResponse[]> => {
   const responses = await responseRepository.findMany({
@@ -22,11 +79,11 @@ export const getAllResponses = async (organizationId?: string): Promise<FormResp
     },
   });
   
-  return responses.map((response: any) => ({
+  return responses.map((response) => ({
     id: response.id,
     formId: response.formId,
-    data: (response.data as Record<string, any>) || {},
-    metadata: (response.metadata as any) || undefined,
+    data: (response.data as Prisma.JsonObject) || {},
+    metadata: (response.metadata as FormResponse['metadata']) || undefined,
     submittedAt: response.submittedAt,
   }));
 };
@@ -45,8 +102,8 @@ export const getResponseById = async (id: string): Promise<FormResponse | null> 
     return {
       id: response.id,
       formId: response.formId,
-      data: (response.data as Record<string, any>) || {},
-      metadata: (response.metadata as any) || undefined,
+      data: (response.data as Prisma.JsonObject) || {},
+      metadata: response.metadata as FormResponse['metadata'],
       submittedAt: response.submittedAt,
     };
   } catch (error) {
@@ -89,14 +146,13 @@ export const getResponsesByFormId = async (
 
   // Determine filtering strategy
   const hasFilters = filters && filters.length > 0;
-  const memoryOnlyFilters = hasFilters ? getMemoryOnlyFilters(filters) : [];
-  const needsMemoryProcessing = isFormFieldSort || memoryOnlyFilters.length > 0;
 
   let responses;
   let total;
 
-  if (hasFilters && !needsMemoryProcessing && canFilterAtDatabase(filters)) {
+  if (hasFilters && !isFormFieldSort && canFilterAtDatabase(filters)) {
     // OPTIMIZED PATH: Use database-level filtering with raw MongoDB query
+    // Now supports all operators including date comparisons (dates stored as Date objects)
     logger.info(`Using database-level filtering for ${filters?.length || 0} filters`);
     
     try {
@@ -128,15 +184,14 @@ export const getResponsesByFormId = async (
       });
 
       // Convert raw MongoDB results to typed responses
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      responses = (sortedResults as unknown as any[]).map((doc: any) => {
+      responses = (sortedResults as unknown as Array<Record<string, unknown>>).map((doc) => {
         // Handle MongoDB BSON Date objects and ISO strings
         let submittedAt: Date;
         if (doc.submittedAt instanceof Date) {
           submittedAt = doc.submittedAt;
-        } else if (doc.submittedAt?.$date) {
+        } else if (doc.submittedAt && typeof doc.submittedAt === 'object' && '$date' in doc.submittedAt) {
           // MongoDB extended JSON format
-          submittedAt = new Date(doc.submittedAt.$date);
+          submittedAt = new Date((doc.submittedAt as { $date: string }).$date);
         } else if (typeof doc.submittedAt === 'string' || typeof doc.submittedAt === 'number') {
           submittedAt = new Date(doc.submittedAt);
         } else {
@@ -161,12 +216,13 @@ export const getResponsesByFormId = async (
       responses = filteredResponses.slice(skip, skip + validLimit);
     }
 
-  } else if (needsMemoryProcessing || (hasFilters && memoryOnlyFilters.length > 0)) {
-    // HYBRID PATH: Get all responses and apply memory filtering
-    logger.info(`Using memory filtering for ${filters?.length || 0} filters (${memoryOnlyFilters.length} complex)`);
+  } else if (isFormFieldSort || hasFilters) {
+    // MEMORY PATH: Form field sorting or with filters
+    // Note: Form field sorting requires memory processing to access nested data fields
+    logger.info(`Using memory filtering for ${filters?.length || 0} filters (form field sort: ${isFormFieldSort})`);
     
     const allResponses = await responseRepository.listByForm(formId);
-    const filteredResponses = applyResponseFilters(allResponses, filters);
+    const filteredResponses = hasFilters ? applyResponseFilters(allResponses, filters) : allResponses;
     total = filteredResponses.length;
     
     // Apply sorting
@@ -174,8 +230,8 @@ export const getResponsesByFormId = async (
       const fieldId = validSortBy.replace('data.', '');
       
       filteredResponses.sort((a, b) => {
-        const aValue = (a.data as any)?.[fieldId];
-        const bValue = (b.data as any)?.[fieldId];
+        const aValue = (a.data as Record<string, unknown>)[fieldId];
+        const bValue = (b.data as Record<string, unknown>)[fieldId];
         
         // Handle null/undefined values
         if (aValue == null && bValue == null) return 0;
@@ -228,11 +284,11 @@ export const getResponsesByFormId = async (
     });
   }
   
-  const data = responses.map((response: any) => ({
+  const data = responses.map((response) => ({
     id: response.id,
     formId: response.formId,
-    data: (response.data as Record<string, any>) || {},
-    metadata: (response.metadata as any) || undefined,
+    data: (response.data as Prisma.JsonObject) || {},
+    metadata: response.metadata as FormResponse['metadata'],
     submittedAt: response.submittedAt,
   }));
 
@@ -255,11 +311,11 @@ export const getAllResponsesByFormId = async (formId: string): Promise<FormRespo
     
     logger.info(`Found ${responses.length} total responses for form: ${formId}`);
     
-    return responses.map((response: any) => ({
+    return responses.map((response) => ({
       id: response.id,
       formId: response.formId,
-      data: (response.data as Record<string, any>) || {},
-      metadata: response.metadata,
+      data: (response.data as Prisma.JsonObject) || {},
+      metadata: response.metadata as FormResponse['metadata'],
       submittedAt: response.submittedAt,
     }));
   } catch (error) {
@@ -270,26 +326,33 @@ export const getAllResponsesByFormId = async (formId: string): Promise<FormRespo
 
 export const submitResponse = async (responseData: Partial<FormResponse>): Promise<FormResponse> => {
   const { generateId } = await import('@dculus/utils');
+  
+  // Transform date field values from strings to Date objects
+  const transformedData = await transformDateFields(
+    responseData.formId!,
+    responseData.data || {}
+  );
+  
   const newResponse = await responseRepository.create({
     data: {
       id: generateId(),
       formId: responseData.formId!,
-      data: responseData.data || {},
+      data: transformedData as Prisma.InputJsonValue,
     },
   });
 
   return {
     id: newResponse.id,
     formId: newResponse.formId,
-    data: (newResponse.data as Record<string, any>) || {},
-    metadata: (newResponse.metadata as any) || undefined,
+    data: (newResponse.data as Prisma.JsonObject) || {},
+    metadata: newResponse.metadata as FormResponse['metadata'],
     submittedAt: newResponse.submittedAt,
   };
 };
 
 export const updateResponse = async (
   responseId: string,
-  data: Record<string, any>,
+  data: Prisma.JsonObject,
   editContext?: {
     userId: string;
     ipAddress?: string;
@@ -308,12 +371,12 @@ export const updateResponse = async (
 
       // Get the current response and form schema for change detection
       const { response: currentResponse, formSchema } = await ResponseEditTrackingService.getResponseWithFormSchema(responseId);
-      const oldData = currentResponse.data as Record<string, any>;
+      const oldData = currentResponse.data as Prisma.JsonObject;
 
       // Update the response
       const updatedResponse = await responseRepository.update({
         where: { id: responseId },
-        data: { data: data },
+        data: { data: data as Prisma.InputJsonValue },
       });
 
       // Record the edit with field-level changes
@@ -334,22 +397,22 @@ export const updateResponse = async (
       return {
         id: updatedResponse.id,
         formId: updatedResponse.formId,
-        data: (updatedResponse.data as Record<string, any>) || {},
-        metadata: (updatedResponse.metadata as any) || undefined,
+        data: (updatedResponse.data as Prisma.JsonObject) || {},
+        metadata: updatedResponse.metadata as FormResponse['metadata'],
         submittedAt: updatedResponse.submittedAt,
       };
     } else {
       // Legacy mode - just update without tracking
       const updatedResponse = await responseRepository.update({
         where: { id: responseId },
-        data: { data: data },
+        data: { data: data as Prisma.InputJsonValue },
       });
 
       return {
         id: updatedResponse.id,
         formId: updatedResponse.formId,
-        data: (updatedResponse.data as Record<string, any>) || {},
-        metadata: (updatedResponse.metadata as any) || undefined,
+        data: (updatedResponse.data as Prisma.JsonObject) || {},
+        metadata: updatedResponse.metadata as FormResponse['metadata'],
         submittedAt: updatedResponse.submittedAt,
       };
     }

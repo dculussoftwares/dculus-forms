@@ -9,6 +9,7 @@ import { FieldResponse, FieldAnalyticsBase, DateFieldAnalytics } from './types.j
 
 /**
  * Process date field analytics
+ * Handles both Date objects (new storage format) and ISO strings (legacy format)
  */
 export const processDateFieldAnalytics = (
   fieldResponses: FieldResponse[],
@@ -17,7 +18,13 @@ export const processDateFieldAnalytics = (
   totalFormResponses: number
 ): FieldAnalyticsBase & DateFieldAnalytics => {
   const validDates = fieldResponses
-    .map(r => new Date(String(r.value)))
+    .map(r => {
+      // Handle both Date objects and string dates
+      if (r.value instanceof Date) {
+        return r.value;
+      }
+      return new Date(String(r.value));
+    })
     .filter(date => !isNaN(date.getTime()))
     .sort((a, b) => a.getTime() - b.getTime());
 

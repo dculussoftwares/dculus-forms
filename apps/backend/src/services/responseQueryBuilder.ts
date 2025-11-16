@@ -34,11 +34,15 @@ export function canFilterAtDatabase(filters?: ResponseFilter[]): boolean {
     'NOT_IN',
     'GREATER_THAN',
     'LESS_THAN',
-    'BETWEEN',      // MongoDB supports $gte and $lte
-    'CONTAINS',     // MongoDB supports regex
+    'BETWEEN',        // MongoDB supports $gte and $lte
+    'CONTAINS',       // MongoDB supports regex
     'NOT_CONTAINS',
     'STARTS_WITH',
     'ENDS_WITH',
+    'DATE_EQUALS',    // Now supported - dates stored as Date objects
+    'DATE_BEFORE',    // Now supported - can use $lt on Date objects
+    'DATE_AFTER',     // Now supported - can use $gt on Date objects
+    'DATE_BETWEEN',   // Now supported - can use $gte/$lte on Date objects
   ];
   
   return filters.every(filter => databaseSupportedOperators.includes(filter.operator));
@@ -227,6 +231,90 @@ function buildFilterCondition(filter: ResponseFilter): MongoFilter | null {
         })),
       };
 
+    // Date operators - now work at database level since dates are stored as Date objects
+    case 'DATE_EQUALS': {
+      if (!filter.value) return null;
+      try {
+        const targetDate = new Date(filter.value);
+        if (isNaN(targetDate.getTime())) return null;
+        
+        // Match the date (ignoring time component)
+        const startOfDay = new Date(targetDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(targetDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        
+        return {
+          [fieldPath]: {
+            $gte: startOfDay,
+            $lte: endOfDay,
+          },
+        };
+      } catch {
+        return null;
+      }
+    }
+
+    case 'DATE_BEFORE': {
+      if (!filter.value) return null;
+      try {
+        const targetDate = new Date(filter.value);
+        if (isNaN(targetDate.getTime())) return null;
+        
+        return {
+          [fieldPath]: { $lt: targetDate },
+        };
+      } catch {
+        return null;
+      }
+    }
+
+    case 'DATE_AFTER': {
+      if (!filter.value) return null;
+      try {
+        const targetDate = new Date(filter.value);
+        if (isNaN(targetDate.getTime())) return null;
+        
+        return {
+          [fieldPath]: { $gt: targetDate },
+        };
+      } catch {
+        return null;
+      }
+    }
+
+    case 'DATE_BETWEEN': {
+      if (!filter.dateRange) return null;
+      try {
+        const conditions: MongoFilter = {};
+        
+        if (filter.dateRange.from) {
+          const fromDate = new Date(filter.dateRange.from);
+          if (!isNaN(fromDate.getTime())) {
+            conditions.$gte = fromDate;
+          }
+        }
+        
+        if (filter.dateRange.to) {
+          const toDate = new Date(filter.dateRange.to);
+          if (!isNaN(toDate.getTime())) {
+            // Set to end of day for inclusive range
+            toDate.setHours(23, 59, 59, 999);
+            conditions.$lte = toDate;
+          }
+        }
+        
+        // Must have at least one bound
+        if (Object.keys(conditions).length === 0) return null;
+        
+        return {
+          [fieldPath]: conditions,
+        };
+      } catch {
+        return null;
+      }
+    }
+
     default:
       // Unsupported at database level
       return null;
@@ -239,21 +327,3 @@ function buildFilterCondition(filter: ResponseFilter): MongoFilter | null {
 function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
-
-/**
- * Filters that require in-memory processing (complex operations not supported by basic MongoDB queries)
- * Only date operations need memory processing due to multiple format handling and date-only comparisons
- */
-export function getMemoryOnlyFilters(filters?: ResponseFilter[]): ResponseFilter[] {
-  if (!filters) return [];
-  
-  const memoryRequiredOperators = [
-    'DATE_EQUALS',    // Needs date parsing and date-only comparison
-    'DATE_BEFORE',    // Needs date parsing for multiple formats
-    'DATE_AFTER',     // Needs date parsing for multiple formats
-    'DATE_BETWEEN',   // Needs date parsing and range comparison
-  ];
-  
-  return filters.filter(filter => memoryRequiredOperators.includes(filter.operator));
-}
-

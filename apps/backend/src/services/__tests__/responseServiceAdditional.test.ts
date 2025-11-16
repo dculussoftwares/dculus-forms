@@ -116,42 +116,39 @@ describe('Response Service - Additional Coverage', () => {
       const date3 = new Date('2024-01-03');
 
       const mockResponses = [
-        { id: '1', formId: 'form-1', data: {}, submittedAt: date2 },
-        { id: '2', formId: 'form-1', data: {}, submittedAt: date1 },
-        { id: '3', formId: 'form-1', data: {}, submittedAt: date3 }
+        { id: '1', formId: 'form-1', data: { field1: 'value1' }, submittedAt: date2 },
+        { id: '2', formId: 'form-1', data: { field1: 'value2' }, submittedAt: date1 },
+        { id: '3', formId: 'form-1', data: { field1: 'value3' }, submittedAt: date3 }
       ];
 
-      // When filters are applied, it uses listByForm and memory filtering
-      // Using DATE_AFTER operator which is memory-only to force memory filtering path
+      // Test form field sorting which requires memory processing
       vi.mocked(responseRepository.listByForm).mockResolvedValue(mockResponses as any);
 
-      const result = await getResponsesByFormId('form-1', 1, 10, 'submittedAt', 'asc', [{ fieldId: 'test', operator: 'DATE_AFTER', value: '2024-01-01' }] as any);
+      const result = await getResponsesByFormId('form-1', 1, 10, 'data.field1', 'asc');
 
-      // Should return all 3 responses (filtering happens in memory but mock passes everything through)
+      // Should return all 3 responses sorted by nested field
       expect(result.data.length).toBe(3);
     });
 
-    it('should sort non-date fields in memory when filters are applied', async () => {
+    it('should sort non-date fields in memory when form field sorting is used', async () => {
       const mockResponses = [
-        { id: 'resp-c', formId: 'form-1', data: {}, submittedAt: new Date('2024-01-03') },
-        { id: 'resp-a', formId: 'form-1', data: {}, submittedAt: new Date('2024-01-01') },
-        { id: 'resp-b', formId: 'form-1', data: {}, submittedAt: new Date('2024-01-02') }
+        { id: 'resp-c', formId: 'form-1', data: { priority: 3 }, submittedAt: new Date('2024-01-03') },
+        { id: 'resp-a', formId: 'form-1', data: { priority: 1 }, submittedAt: new Date('2024-01-01') },
+        { id: 'resp-b', formId: 'form-1', data: { priority: 2 }, submittedAt: new Date('2024-01-02') }
       ];
 
-      // When filters are applied with regular field sorting, it uses memory filtering
-      // Using DATE_AFTER operator which is memory-only to force memory filtering path
+      // Form field sorting requires memory processing
       vi.mocked(responseRepository.listByForm).mockResolvedValue(mockResponses as any);
 
       const result = await getResponsesByFormId(
         'form-1',
         1,
         10,
-        'id',
-        'asc',
-        [{ fieldId: 'status', operator: 'DATE_AFTER', value: '2024-01-01' }] as any
+        'data.priority',
+        'asc'
       );
 
-      // Should be sorted by id in ascending order
+      // Should be sorted by priority field in ascending order
       expect(result.data.map((response) => response.id)).toEqual(['resp-a', 'resp-b', 'resp-c']);
     });
 
