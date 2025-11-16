@@ -46,6 +46,9 @@
   },
   "refresh": "பகுப்பாய்வுகளைப் புதுப்பிக்கவும்",
   "navigation": {
+    "previousField": "முந்தைய புலம்",
+    "nextField": "அடுத்த புலம்",
+    "fieldOfTotal": "{{total}} இல் {{current}}",
     "allFields": "அனைத்து துறைகள்"
   },
   "buttons": {

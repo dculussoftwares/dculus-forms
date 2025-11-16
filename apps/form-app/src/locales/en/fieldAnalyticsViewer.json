@@ -46,7 +46,8 @@
   "navigation": {
     "previousField": "Previous field",
     "nextField": "Next field",
-    "fieldOfTotal": "{{current}} of {{total}}"
+    "fieldOfTotal": "{{current}} of {{total}}",
+    "allFields": "All Fields"
   },
   "buttons": {
     "refresh": "Refresh",
@@ -109,9 +110,6 @@
     "responsesCount": "{{count}} responses",
     "responseRateText": "{{rate}}% response rate",
     "fieldPrefix": "Field"
-  },
-  "navigation": {
-    "allFields": "All Fields"
   },
   "description": {
     "analyzePerformance": "Analyze individual field performance across {{count}} form responses"
