@@ -151,61 +151,39 @@ export const getResponsesByFormId = async (
   let total;
 
   if (hasFilters && !isFormFieldSort && canFilterAtDatabase(filters)) {
-    // OPTIMIZED PATH: Use database-level filtering with raw MongoDB query
-    // Now supports all operators including date comparisons (dates stored as Date objects)
+    // OPTIMIZED PATH: Use database-level filtering with Prisma's type-safe queries
+    // PostgreSQL supports all operators including date comparisons with JSONB
     logger.info(`Using database-level filtering for ${filters?.length || 0} filters`);
     
     try {
-      // Build MongoDB filter
-      const mongoFilter = buildMongoDBFilter(formId, filters);
+      // Build PostgreSQL filter using Prisma's JSONB support
+      const whereClause = buildMongoDBFilter(formId, filters);
       
       // Count total matching documents
-      const countResults = await prisma.response.aggregateRaw({
-        pipeline: [
-          { $match: mongoFilter },
-          { $count: 'total' },
-        ],
+      total = await prisma.response.count({
+        where: whereClause,
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      total = (countResults as any)[0]?.total || 0;
+      // Query with pagination and sorting
+      const orderBy: Prisma.ResponseOrderByWithRelationInput = validSortBy === 'submittedAt' 
+        ? { submittedAt: validSortOrder as 'asc' | 'desc' } 
+        : { id: validSortOrder as 'asc' | 'desc' }; // Fallback to id sorting
 
-      // Apply sorting at database level
-      const sortField = validSortBy;
-      const sortDirection = validSortOrder === 'asc' ? 1 : -1;
-
-      const sortedResults = await prisma.response.findRaw({
-        filter: mongoFilter,
-        options: {
-          sort: { [sortField]: sortDirection },
-          skip: skip,
-          limit: validLimit,
-        },
+      const dbResponses = await prisma.response.findMany({
+        where: whereClause,
+        orderBy: orderBy,
+        skip: skip,
+        take: validLimit,
       });
 
-      // Convert raw MongoDB results to typed responses
-      responses = (sortedResults as unknown as Array<Record<string, unknown>>).map((doc) => {
-        // Handle MongoDB BSON Date objects and ISO strings
-        let submittedAt: Date;
-        if (doc.submittedAt instanceof Date) {
-          submittedAt = doc.submittedAt;
-        } else if (doc.submittedAt && typeof doc.submittedAt === 'object' && '$date' in doc.submittedAt) {
-          // MongoDB extended JSON format
-          submittedAt = new Date((doc.submittedAt as { $date: string }).$date);
-        } else if (typeof doc.submittedAt === 'string' || typeof doc.submittedAt === 'number') {
-          submittedAt = new Date(doc.submittedAt);
-        } else {
-          submittedAt = new Date(); // Fallback to current date
-        }
-
-        return {
-          id: doc._id,
-          formId: doc.formId,
-          data: doc.data || {},
-          metadata: doc.metadata,
-          submittedAt,
-        };
-      });
+      // Convert to FormResponse format
+      responses = dbResponses.map((doc) => ({
+        id: doc.id,
+        formId: doc.formId,
+        data: (doc.data as Prisma.JsonObject) || {},
+        metadata: doc.metadata as FormResponse['metadata'],
+        submittedAt: doc.submittedAt,
+      }));
 
     } catch (error) {
       logger.error('Database filtering failed, falling back to memory filtering:', error);
