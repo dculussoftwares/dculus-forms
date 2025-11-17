@@ -1,7 +1,7 @@
 import { FormResponse, FieldType, FormSchema } from '@dculus/types';
 import { ResponseFilter, applyResponseFilters } from './responseFilterService.js';
 import { 
-  buildMongoDBFilter, 
+  buildPostgreSQLFilter, 
   canFilterAtDatabase
 } from './responseQueryBuilder.js';
 import { responseRepository } from '../repositories/index.js';
@@ -157,7 +157,7 @@ export const getResponsesByFormId = async (
     
     try {
       // Build PostgreSQL filter using Prisma's JSONB support
-      const whereClause = buildMongoDBFilter(formId, filters);
+      const whereClause = buildPostgreSQLFilter(formId, filters);
       
       // Count total matching documents
       total = await prisma.response.count({

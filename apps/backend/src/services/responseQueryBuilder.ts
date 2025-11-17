@@ -35,7 +35,7 @@ export function canFilterAtDatabase(_filters?: ResponseFilter[]): boolean {
  * Builds a Prisma where clause for response queries using PostgreSQL JSONB operators
  * Returns a filter that can be used directly with Prisma client
  */
-export function buildMongoDBFilter(
+export function buildPostgreSQLFilter(
   formId: string,
   filters?: ResponseFilter[]
 ): PostgreSQLFilter {

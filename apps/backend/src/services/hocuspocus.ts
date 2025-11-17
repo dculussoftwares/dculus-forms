@@ -501,7 +501,7 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
     
     // Store the document state directly in the database
     const fullUpdate = Y.encodeStateAsUpdate(tempDoc);
-    logger.info(`💾 Storing document state to MongoDB for form: ${formId}, update size: ${fullUpdate.length} bytes`);
+    logger.info(`💾 Storing document state to PostgreSQL for form: ${formId}, update size: ${fullUpdate.length} bytes`);
     
     // Create the collaborative document
     await collaborativeDocumentRepository.saveDocumentState(

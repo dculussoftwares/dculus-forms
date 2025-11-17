@@ -33,7 +33,7 @@ const getTrustedOrigins = (): string[] => {
 
 export const auth: ReturnType<typeof betterAuth> = betterAuth({
   database: prismaAdapter(prisma, {
-    provider: 'mongodb',
+    provider: 'postgresql',
   }),
 
   baseURL: authConfig.baseUrl,
