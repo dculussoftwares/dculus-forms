@@ -13,10 +13,19 @@ import { logger } from '../../lib/logger.js';
 
 import { applyResponseFilters } from '../responseFilterService.js';
 import { ResponseEditTrackingService } from '../responseEditTrackingService.js';
+import { prisma } from '../../lib/prisma.js';
 
 // Mock dependencies
 vi.mock('../../repositories/index.js');
 vi.mock('../responseFilterService.js');
+vi.mock('../../lib/prisma.js', () => ({
+  prisma: {
+    response: {
+      count: vi.fn(),
+      findMany: vi.fn(),
+    },
+  },
+}));
 vi.mock('../responseEditTrackingService.js', () => ({
   ResponseEditTrackingService: {
     getResponseWithFormSchema: vi.fn(),
@@ -178,14 +187,17 @@ describe('Response Service', () => {
 
     it('should apply filters when provided', async () => {
       const mockResponses = [mockResponse];
-      vi.mocked(responseRepository.listByForm).mockResolvedValue(mockResponses as any);
-      vi.mocked(applyResponseFilters).mockReturnValue(mockResponses as any);
+      
+      // Mock Prisma calls for database-level filtering
+      vi.mocked(prisma.response.count).mockResolvedValue(1);
+      vi.mocked(prisma.response.findMany).mockResolvedValue(mockResponses as any);
 
       const filters = [{ fieldId: 'field1', operator: 'equals' as const, value: 'value1' }];
       const result = await getResponsesByFormId('form-123', 1, 10, 'submittedAt', 'desc', filters);
 
-      // With database-level filtering, applyResponseFilters is only called for memory-only operators
-      // For simple operators like 'equals', it uses database filtering
+      // With database-level filtering, Prisma methods are called directly
+      expect(prisma.response.count).toHaveBeenCalled();
+      expect(prisma.response.findMany).toHaveBeenCalled();
       expect(result.data).toHaveLength(1);
     });
 
