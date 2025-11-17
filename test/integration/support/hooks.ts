@@ -2,7 +2,6 @@ import { Before, After, BeforeAll, AfterAll, setDefaultTimeout } from '@cucumber
 import { spawn, ChildProcess } from 'child_process';
 import axios from 'axios';
 import path from 'path';
-import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import { PrismaClient } from '@prisma/client';
 import { CustomWorld } from './world';
 import { MockSMTPServer } from '../utils/mock-servers';
@@ -13,12 +12,47 @@ const isRemoteBackend = process.env.TEST_BASE_URL && !process.env.TEST_BASE_URL.
 setDefaultTimeout(isRemoteBackend ? 30000 : 10000); // 30s for remote, 10s for local
 
 let backendProcess: ChildProcess;
-let mongoServer: MongoMemoryReplSet;
 let prisma: PrismaClient;
 let mockSMTPServer: MockSMTPServer;
 let mockS3: MockS3Service;
 
 const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
+
+// Helper to clean PostgreSQL database
+const cleanDatabase = async (prismaClient: PrismaClient) => {
+  // Delete in correct order to respect foreign keys
+  const tables = [
+    'response_field_change',
+    'response_edit_history',
+    'form_submission_analytics',
+    'form_view_analytics',
+    'response',
+    'form_permission',
+    'form_plugin',
+    'form_file',
+    'collaborative_document',
+    'form_metadata',
+    'form',
+    'form_template',
+    'external_plugin',
+    'verification',
+    'session',
+    'account',
+    'member',
+    'invitation',
+    'organization',
+    'user',
+  ];
+
+  for (const table of tables) {
+    try {
+      await prismaClient.$executeRawUnsafe(`TRUNCATE TABLE "${table}" CASCADE;`);
+    } catch (error) {
+      // Table might not exist or already empty, continue
+      console.log(`  Skipping ${table}`);
+    }
+  }
+};
 
 const waitForServer = async (url: string, maxAttempts = 90, interval = 1000): Promise<void> => {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -46,70 +80,30 @@ BeforeAll({ timeout: 120000 }, async function() {
     // Just wait for remote server to be ready
     await waitForServer(`${baseURL}/health`);
   } else {
-    console.log('🗄️  Starting MongoDB Memory Server for integration tests...');
+    console.log('🗄️  Using PostgreSQL database for integration tests...');
 
     const rootDir = path.resolve(process.cwd());
 
-    // Start MongoDB Memory Replica Set (required for Prisma transactions)
-    mongoServer = await MongoMemoryReplSet.create({
-      replSet: {
-        count: 1,  // Single node replica set
-        dbName: 'integration_test_db',
-        storageEngine: 'wiredTiger',
-      },
-    });
+    // Use existing PostgreSQL database (from .env or Docker)
+    const postgresUri = process.env.DATABASE_URL || 'postgresql://dculus:dculus_dev_password@127.0.0.1:5433/dculus_forms';
+    console.log(`✅ Using PostgreSQL at: ${postgresUri.replace(/:[^:]*@/, ':****@')}`);
 
-    // Get URI and add database name properly (before query params)
-    const baseUri = mongoServer.getUri();
-    const mongoUri = baseUri.replace('/?', '/integration_test_db?');
-    console.log(`✅ MongoDB Memory Server started at ${mongoUri}`);
-
-    // Initialize Prisma client with in-memory MongoDB
+    // Initialize Prisma client with PostgreSQL
     prisma = new PrismaClient({
       datasources: {
         db: {
-          url: mongoUri,
+          url: postgresUri,
         },
       },
     });
 
     await prisma.$connect();
-    console.log('✅ Prisma client connected to MongoDB Memory Server');
+    console.log('✅ Prisma client connected to PostgreSQL');
 
-    // Push schema to MongoDB Memory Server
-    console.log('🔨 Pushing Prisma schema to in-memory database...');
-    const { spawn: syncSpawn } = await import('child_process');
-    const backendDir = path.join(rootDir, 'apps', 'backend');
-    const pushSchemaProcess = syncSpawn('npx', ['prisma', 'db', 'push', '--skip-generate'], {
-      cwd: backendDir,
-      env: {
-        ...process.env,
-        DATABASE_URL: mongoUri,
-      },
-      stdio: 'pipe',
-    });
-
-    // Wait for schema push to complete
-    await new Promise<void>((resolve, reject) => {
-      let output = '';
-      pushSchemaProcess.stdout?.on('data', (data) => {
-        output += data.toString();
-        console.log(`[Schema Push]: ${data.toString().trim()}`);
-      });
-      pushSchemaProcess.stderr?.on('data', (data) => {
-        output += data.toString();
-        console.log(`[Schema Push]: ${data.toString().trim()}`);
-      });
-      pushSchemaProcess.on('close', (code) => {
-        if (code === 0) {
-          console.log('✅ Prisma schema pushed to MongoDB Memory Server');
-          resolve();
-        } else {
-          console.error('❌ Failed to push Prisma schema');
-          reject(new Error(`Schema push failed with code ${code}`));
-        }
-      });
-    });
+    // Clean database before tests
+    console.log('🧹 Cleaning test database...');
+    await cleanDatabase(prisma);
+    console.log('✅ Test database cleaned');
 
     // Start Mock SMTP Server
     console.log('📧 Starting Mock SMTP Server for integration tests...');
@@ -134,8 +128,8 @@ BeforeAll({ timeout: 120000 }, async function() {
         ...process.env,
         NODE_ENV: 'test',
         PORT: '4000',
-        // Use in-memory MongoDB for local tests
-        DATABASE_URL: mongoUri,
+        // Use PostgreSQL for local tests
+        DATABASE_URL: postgresUri,
         // Use Mock SMTP Server for emails
         EMAIL_HOST: 'localhost',
         EMAIL_PORT: '1025',
@@ -196,16 +190,10 @@ AfterAll(async function() {
       await mockSMTPServer.stop();
     }
 
-    // Cleanup Prisma and MongoDB Memory Server
+    // Cleanup Prisma
     if (prisma) {
       console.log('🗄️  Disconnecting Prisma client...');
       await prisma.$disconnect();
-    }
-
-    if (mongoServer) {
-      console.log('🗄️  Stopping MongoDB Memory Server...');
-      await mongoServer.stop();
-      console.log('✅ MongoDB Memory Server stopped');
     }
   } else if (isRemoteBackend) {
     console.log('🌐 Remote backend testing completed');
