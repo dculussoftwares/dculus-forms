@@ -22,7 +22,6 @@ vi.mock('../../../lib/prisma.js', () => ({
     response: {
       count: vi.fn(),
     },
-    $runCommandRaw: vi.fn(),
   },
 }));
 
@@ -162,11 +161,6 @@ describe('Admin Resolvers', () => {
         IsTruncated: false,
       });
 
-      // Mock MongoDB stats
-      vi.mocked(prisma.$runCommandRaw)
-        .mockResolvedValueOnce({ dataSize: 0 })
-        .mockResolvedValueOnce({ cursor: { firstBatch: [] } });
-
       await expect(
         adminResolvers.Query.adminStats({}, {}, mockAdminContext)
       ).resolves.toBeDefined();
@@ -182,10 +176,6 @@ describe('Admin Resolvers', () => {
         Contents: [],
         IsTruncated: false,
       });
-
-      vi.mocked(prisma.$runCommandRaw)
-        .mockResolvedValueOnce({ dataSize: 0 })
-        .mockResolvedValueOnce({ cursor: { firstBatch: [] } });
 
       await expect(
         adminResolvers.Query.adminStats({}, {}, mockSuperAdminContext)
@@ -427,10 +417,7 @@ describe('Admin Resolvers', () => {
       // Mock S3 errors (S3 mocking is complex, just test error handling)
       mockS3Send.mockRejectedValue(new Error('S3 not available'));
 
-      // Mock MongoDB stats
-      vi.mocked(prisma.$runCommandRaw)
-        .mockResolvedValueOnce({ dataSize: 5242880 }) // 5 MB in bytes
-        .mockResolvedValueOnce({ cursor: { firstBatch: [{}, {}, {}] } }); // 3 collections
+      // PostgreSQL returns fixed values now
 
       const result = await adminResolvers.Query.adminStats({}, {}, mockAdminContext);
 
@@ -441,8 +428,8 @@ describe('Admin Resolvers', () => {
         responseCount: 100,
         storageUsed: '0 B', // S3 error returns default
         fileCount: 0, // S3 error returns default
-        mongoDbSize: '5 MB',
-        mongoCollectionCount: 3,
+        mongoDbSize: 'N/A (PostgreSQL)',
+        mongoCollectionCount: 21,
       });
     });
 
@@ -452,9 +439,6 @@ describe('Admin Resolvers', () => {
       vi.mocked(prisma.user.count).mockResolvedValue(0);
       vi.mocked(prisma.form.count).mockResolvedValue(0);
       vi.mocked(prisma.response.count).mockResolvedValue(0);
-      vi.mocked(prisma.$runCommandRaw)
-        .mockResolvedValueOnce({ dataSize: 0 })
-        .mockResolvedValueOnce({ cursor: { firstBatch: [] } });
 
       const result = await adminResolvers.Query.adminStats({}, {}, mockAdminContext);
 
@@ -468,9 +452,6 @@ describe('Admin Resolvers', () => {
       vi.mocked(prisma.user.count).mockResolvedValue(0);
       vi.mocked(prisma.form.count).mockResolvedValue(0);
       vi.mocked(prisma.response.count).mockResolvedValue(0);
-      vi.mocked(prisma.$runCommandRaw)
-        .mockResolvedValueOnce({ dataSize: 0 })
-        .mockResolvedValueOnce({ cursor: { firstBatch: [] } });
 
       const result = await adminResolvers.Query.adminStats({}, {}, mockAdminContext);
 
@@ -478,37 +459,18 @@ describe('Admin Resolvers', () => {
       expect(result.fileCount).toBe(0);
     });
 
-    it('should handle MongoDB errors gracefully', async () => {
-      mockS3Send.mockResolvedValue({
-        Contents: [],
-        IsTruncated: false,
-      });
-      vi.mocked(prisma.organization.count).mockResolvedValue(0);
-      vi.mocked(prisma.user.count).mockResolvedValue(0);
-      vi.mocked(prisma.form.count).mockResolvedValue(0);
-      vi.mocked(prisma.response.count).mockResolvedValue(0);
-      vi.mocked(prisma.$runCommandRaw).mockRejectedValue(new Error('MongoDB error'));
-
-      const result = await adminResolvers.Query.adminStats({}, {}, mockAdminContext);
-
-      expect(result.mongoDbSize).toBe('0 B');
-      expect(result.mongoCollectionCount).toBe(0);
-    });
-
-    it('should handle byte formatting in MongoDB stats', async () => {
+    it('should handle byte formatting with PostgreSQL', async () => {
       mockS3Send.mockRejectedValue(new Error('S3 error'));
       vi.mocked(prisma.organization.count).mockResolvedValue(0);
       vi.mocked(prisma.user.count).mockResolvedValue(0);
       vi.mocked(prisma.form.count).mockResolvedValue(0);
       vi.mocked(prisma.response.count).mockResolvedValue(0);
-      vi.mocked(prisma.$runCommandRaw)
-        .mockResolvedValueOnce({ dataSize: 1073741824 }) // 1 GB in bytes
-        .mockResolvedValueOnce({ cursor: { firstBatch: [] } });
 
       const result = await adminResolvers.Query.adminStats({}, {}, mockAdminContext);
 
-      // MongoDB size should be formatted correctly
-      expect(result.mongoDbSize).toContain('GB');
+      // PostgreSQL returns fixed value
+      expect(result.mongoDbSize).toBe('N/A (PostgreSQL)');
+      expect(result.mongoCollectionCount).toBe(21);
     });
 
     it('should aggregate paginated S3 responses', async () => {
@@ -526,9 +488,6 @@ describe('Admin Resolvers', () => {
       vi.mocked(prisma.user.count).mockResolvedValue(0);
       vi.mocked(prisma.form.count).mockResolvedValue(0);
       vi.mocked(prisma.response.count).mockResolvedValue(0);
-      vi.mocked(prisma.$runCommandRaw)
-        .mockResolvedValueOnce({ dataSize: 0 })
-        .mockResolvedValueOnce({ cursor: { firstBatch: [] } });
 
       const result = await adminResolvers.Query.adminStats({}, {}, mockAdminContext);
 
@@ -933,9 +892,6 @@ describe('Admin Resolvers', () => {
       vi.mocked(prisma.user.count).mockResolvedValue(0);
       vi.mocked(prisma.form.count).mockResolvedValue(0);
       vi.mocked(prisma.response.count).mockResolvedValue(0);
-      vi.mocked(prisma.$runCommandRaw)
-        .mockResolvedValueOnce({ dataSize: 0 })
-        .mockResolvedValueOnce({ cursor: { firstBatch: [] } });
 
       const result = await adminResolvers.Query.adminStats({}, {}, mockAdminContext);
 
@@ -944,7 +900,7 @@ describe('Admin Resolvers', () => {
       expect(result.fileCount).toBe(0);
     });
 
-    it('should handle MongoDB stats with missing properties', async () => {
+    it('should return PostgreSQL fixed values', async () => {
       mockS3Send.mockResolvedValue({
         Contents: [],
         IsTruncated: false,
@@ -953,14 +909,11 @@ describe('Admin Resolvers', () => {
       vi.mocked(prisma.user.count).mockResolvedValue(0);
       vi.mocked(prisma.form.count).mockResolvedValue(0);
       vi.mocked(prisma.response.count).mockResolvedValue(0);
-      vi.mocked(prisma.$runCommandRaw)
-        .mockResolvedValueOnce({}) // Missing dataSize
-        .mockResolvedValueOnce({}); // Missing cursor
 
       const result = await adminResolvers.Query.adminStats({}, {}, mockAdminContext);
 
-      expect(result.mongoDbSize).toBe('0 B');
-      expect(result.mongoCollectionCount).toBe(0);
+      expect(result.mongoDbSize).toBe('N/A (PostgreSQL)');
+      expect(result.mongoCollectionCount).toBe(21);
     });
 
     it('should handle large pagination offset', async () => {
