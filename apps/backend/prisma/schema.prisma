@@ -165,6 +165,8 @@ model Response {
   editHistory                ResponseEditHistory[]
 
   @@map("response")
+  @@index([data(ops: JsonbOps)], type: Gin)
+  @@index([metadata(ops: JsonbOps)], type: Gin)
 }
 
 model FormTemplate {
