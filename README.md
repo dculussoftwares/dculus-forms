@@ -104,7 +104,7 @@ dculus-forms/
 
 4. **Set up the database**
    ```bash
-   # Start MongoDB using Docker
+   # Start PostgreSQL using Docker
    pnpm docker:up
    
    # Generate Prisma client
@@ -375,7 +375,7 @@ The easiest way to deploy Dculus Forms is to use the pre-built artifacts from Gi
    ```bash
    docker pull dculus/forms-backend:v1.0.0
    docker run -d -p 4000:4000 \
-     -e DATABASE_URL='your-mongodb-url' \
+     -e DATABASE_URL='your-postgresql-url' \
      -e BETTER_AUTH_SECRET='your-secret' \
      dculus/forms-backend:v1.0.0
    ```
