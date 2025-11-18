@@ -113,20 +113,21 @@ export const getResponseById = async (id: string): Promise<FormResponse | null> 
 };
 
 
-export const getResponsesByFormId = async (
-  formId: string, 
-  page: number = 1, 
+export async function getResponsesByFormId(
+  formId: string,
+  page: number = 1,
   limit: number = 10,
   sortBy: string = 'submittedAt',
-  sortOrder: string = 'desc',
-  filters?: ResponseFilter[]
+  sortOrder: 'asc' | 'desc' = 'desc',
+  filters?: ResponseFilter[],
+  filterLogic: 'AND' | 'OR' = 'AND'
 ): Promise<{
   data: FormResponse[];
   total: number;
   page: number;
   limit: number;
   totalPages: number;
-}> => {
+}> {
   // Ensure pagination values are valid
   const validPage = Math.max(1, page);
   const validLimit = Math.min(Math.max(1, limit), 100); // Cap at 100 items per page
@@ -151,30 +152,46 @@ export const getResponsesByFormId = async (
   let total;
 
   if (hasFilters && !isFormFieldSort && canFilterAtDatabase(filters)) {
-    // OPTIMIZED PATH: Use database-level filtering with Prisma's type-safe queries
+    // OPTIMIZED PATH: Use database-level filtering with PostgreSQL raw SQL
     // PostgreSQL supports all operators including date comparisons with JSONB
     logger.info(`Using database-level filtering for ${filters?.length || 0} filters`);
     
     try {
-      // Build PostgreSQL filter using Prisma's JSONB support
-      const whereClause = buildPostgreSQLFilter(formId, filters);
+      // Build PostgreSQL filter using raw SQL
+      const { conditions, params } = buildPostgreSQLFilter(formId, filters, filterLogic);
+      
+      // Build WHERE clause with dynamic logic (AND/OR)
+      const logicOperator = filterLogic === 'OR' ? ' OR ' : ' AND ';
+      const whereClause = conditions.length > 0 
+        ? `WHERE "formId" = $1 AND (${conditions.join(logicOperator)})`
+        : `WHERE "formId" = $1`;
       
       // Count total matching documents
-      total = await prisma.response.count({
-        where: whereClause,
-      });
+      const countQuery = `SELECT COUNT(*) as count FROM "response" ${whereClause}`;
+      const countResult = await prisma.$queryRawUnsafe<[{ count: bigint }]>(countQuery, ...params);
+      total = Number(countResult[0].count);
+
+      // Build ORDER BY clause
+      const orderClause = validSortBy === 'submittedAt' 
+        ? `ORDER BY "submittedAt" ${validSortOrder.toUpperCase()}`
+        : `ORDER BY "id" ${validSortOrder.toUpperCase()}`; // Fallback to id sorting
 
       // Query with pagination and sorting
-      const orderBy: Prisma.ResponseOrderByWithRelationInput = validSortBy === 'submittedAt' 
-        ? { submittedAt: validSortOrder as 'asc' | 'desc' } 
-        : { id: validSortOrder as 'asc' | 'desc' }; // Fallback to id sorting
-
-      const dbResponses = await prisma.response.findMany({
-        where: whereClause,
-        orderBy: orderBy,
-        skip: skip,
-        take: validLimit,
-      });
+      const selectQuery = `
+        SELECT id, "formId", data, metadata, "submittedAt"
+        FROM "response"
+        ${whereClause}
+        ${orderClause}
+        LIMIT ${validLimit} OFFSET ${skip}
+      `;
+      
+      const dbResponses = await prisma.$queryRawUnsafe<Array<{
+        id: string;
+        formId: string;
+        data: Prisma.JsonValue;
+        metadata: Prisma.JsonValue;
+        submittedAt: Date;
+      }>>(selectQuery, ...params);
 
       // Convert to FormResponse format
       responses = dbResponses.map((doc) => ({
@@ -189,7 +206,7 @@ export const getResponsesByFormId = async (
       logger.error('Database filtering failed, falling back to memory filtering:', error);
       // Fallback to memory processing
       const allResponses = await responseRepository.listByForm(formId);
-      const filteredResponses = applyResponseFilters(allResponses, filters);
+      const filteredResponses = applyResponseFilters(allResponses, filters, filterLogic);
       total = filteredResponses.length;
       responses = filteredResponses.slice(skip, skip + validLimit);
     }
@@ -200,7 +217,7 @@ export const getResponsesByFormId = async (
     logger.info(`Using memory filtering for ${filters?.length || 0} filters (form field sort: ${isFormFieldSort})`);
     
     const allResponses = await responseRepository.listByForm(formId);
-    const filteredResponses = hasFilters ? applyResponseFilters(allResponses, filters) : allResponses;
+    const filteredResponses = hasFilters ? applyResponseFilters(allResponses, filters, filterLogic) : allResponses;
     total = filteredResponses.length;
     
     // Apply sorting
@@ -279,7 +296,7 @@ export const getResponsesByFormId = async (
     limit: validLimit,
     totalPages,
   };
-};
+}
 
 export const getAllResponsesByFormId = async (formId: string): Promise<FormResponse[]> => {
   try {

@@ -15,7 +15,12 @@ export const unifiedExportResolvers = {
   Mutation: {
     generateFormResponseReport: async (
       _: any, 
-      { formId, format, filters = [] }: { formId: string; format: 'EXCEL' | 'CSV'; filters?: ResponseFilter[] }, 
+      { formId, format, filters = [], filterLogic = 'AND' }: { 
+        formId: string; 
+        format: 'EXCEL' | 'CSV'; 
+        filters?: ResponseFilter[];
+        filterLogic?: 'AND' | 'OR';
+      }, 
       context: { auth: BetterAuthContext }
     ) => {
       try {
@@ -53,8 +58,8 @@ export const unifiedExportResolvers = {
 
         // Apply filters if provided
         if (filters && filters.length > 0) {
-          responses = applyResponseFilters(responses, filters);
-          logger.info(`Found ${responses.length} responses after applying ${filters.length} filters`);
+          responses = applyResponseFilters(responses, filters, filterLogic);
+          logger.info(`Found ${responses.length} responses after applying ${filters.length} filters with ${filterLogic} logic`);
           
           if (responses.length === 0) {
             throw new GraphQLError('No responses match the applied filters');

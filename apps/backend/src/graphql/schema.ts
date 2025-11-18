@@ -900,6 +900,11 @@ export const typeDefs = gql`
     max: Float
   }
 
+  enum FilterLogic {
+    AND
+    OR
+  }
+
   input ResponseFilterInput {
     fieldId: String!
     operator: FilterOperator!
@@ -955,7 +960,7 @@ export const typeDefs = gql`
     formByShortUrl(shortUrl: String!): Form
     responses(organizationId: ID!): [FormResponse!]!
     response(id: ID!): FormResponse
-    responsesByForm(formId: ID!, page: Int = 1, limit: Int = 10, sortBy: String = "submittedAt", sortOrder: String = "desc", filters: [ResponseFilterInput!]): PaginatedResponses!
+    responsesByForm(formId: ID!, page: Int = 1, limit: Int = 10, sortBy: String = "submittedAt", sortOrder: String = "desc", filters: [ResponseFilterInput!], filterLogic: FilterLogic = AND): PaginatedResponses!
 
     # Response Edit Tracking Queries
     responseEditHistory(responseId: ID!): [ResponseEditHistory!]!
@@ -1073,7 +1078,7 @@ export const typeDefs = gql`
     deleteFile(key: String!): Boolean!
 
     # Export Mutations
-    generateFormResponseReport(formId: ID!, format: ExportFormat!, filters: [ResponseFilterInput!]): ExportResult!
+    generateFormResponseReport(formId: ID!, format: ExportFormat!, filters: [ResponseFilterInput!], filterLogic: FilterLogic = AND): ExportResult!
 
     # Analytics Mutations
     trackFormView(input: TrackFormViewInput!): TrackFormViewResponse!

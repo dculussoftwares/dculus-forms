@@ -52,20 +52,22 @@ export const responsesResolvers = {
       _: any,
       {
         formId,
-        page,
-        limit,
-        sortBy,
-        sortOrder,
+        page = 1,
+        limit = 10,
+        sortBy = 'submittedAt',
+        sortOrder = 'desc',
         filters,
+        filterLogic = 'AND',
       }: {
         formId: string;
-        page: number;
-        limit: number;
-        sortBy: string;
-        sortOrder: string;
+        page?: number;
+        limit?: number;
+        sortBy?: string;
+        sortOrder?: string;
         filters?: any[];
+        filterLogic?: 'AND' | 'OR';
       },
-      context: { auth: BetterAuthContext }
+      context: any
     ) => {
       requireAuth(context.auth);
 
@@ -91,8 +93,9 @@ export const responsesResolvers = {
         page,
         limit,
         sortBy,
-        sortOrder,
-        filters
+        sortOrder as 'asc' | 'desc',
+        filters,
+        filterLogic
       );
     },
   },

@@ -11,16 +11,22 @@ export interface ResponseFilter {
  * Applies filters to response data based on various operators
  * @param responses - Array of response objects
  * @param filters - Array of filter criteria to apply
- * @returns Filtered array of responses that match ALL filter criteria (AND logic)
+ * @param filterLogic - Logic to combine filters: 'AND' (all must pass) or 'OR' (any can pass)
+ * @returns Filtered array of responses that match filter criteria
  */
-export function applyResponseFilters(responses: any[], filters?: ResponseFilter[]): any[] {
+export function applyResponseFilters(
+  responses: any[], 
+  filters?: ResponseFilter[],
+  filterLogic: 'AND' | 'OR' = 'AND'
+): any[] {
   if (!filters || filters.length === 0) {
     return responses;
   }
 
   return responses.filter(response => {
-    // All filters must pass (AND logic)
-    return filters.every(filter => {
+    // Apply AND or OR logic depending on parameter
+    const filterMethod = filterLogic === 'OR' ? 'some' : 'every';
+    return filters[filterMethod](filter => {
       // Get field value from response data (handles both 'data' and 'responseData' properties)
       const fieldValue = response.responseData?.[filter.fieldId] || response.data?.[filter.fieldId];
       
