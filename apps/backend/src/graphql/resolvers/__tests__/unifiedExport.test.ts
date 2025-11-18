@@ -442,7 +442,8 @@ describe('Unified Export Resolvers', () => {
 
         expect(responseFilterService.applyResponseFilters).toHaveBeenCalledWith(
           mockResponses,
-          filters
+          filters,
+          'AND'
         );
         expect(unifiedExportService.generateExportFile).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -526,7 +527,8 @@ describe('Unified Export Resolvers', () => {
 
         expect(responseFilterService.applyResponseFilters).toHaveBeenCalledWith(
           mockResponses,
-          filters
+          filters,
+          'AND'
         );
       });
 

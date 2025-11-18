@@ -196,7 +196,8 @@ describe('Responses Resolvers', () => {
         10,
         'submittedAt',
         'desc',
-        undefined
+        undefined,
+        'AND'
       );
       expect(result).toEqual(mockPaginatedResult);
     });
@@ -226,7 +227,8 @@ describe('Responses Resolvers', () => {
         10,
         'submittedAt',
         'desc',
-        filters
+        filters,
+        'AND'
       );
     });
 

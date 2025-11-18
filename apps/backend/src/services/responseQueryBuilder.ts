@@ -186,20 +186,35 @@ function buildRawSQLCondition(
 
     case 'IN': {
       if (!filter.values || filter.values.length === 0) return { sql: '', values: [] };
-      // Use ANY for case-insensitive IN check
-      const inPlaceholders = filter.values.map((_, i) => `$${startIndex + i}`).join(', ');
+      // Handle both string fields and array fields (like checkboxes)
+      // For string fields: check if value matches any of the provided values (case-insensitive)
+      // For array fields: check if array contains any of the provided values
+      const values = filter.values; // Store to avoid type issues
+      const stringPlaceholders = values.map((_, i) => `$${startIndex + i}`).join(', ');
+      const arrayPlaceholders = values.map((_, i) => `$${startIndex + values.length + i}`).join(', ');
       return {
-        sql: `LOWER(data->>'${filter.fieldId}') = ANY(ARRAY[${inPlaceholders}]::text[])`,
-        values: filter.values.map(v => String(v).toLowerCase()),
+        sql: `(
+          (jsonb_typeof(data->'${filter.fieldId}') = 'string' AND LOWER(data->>'${filter.fieldId}') = ANY(ARRAY[${stringPlaceholders}]::text[])) OR
+          (jsonb_typeof(data->'${filter.fieldId}') = 'array' AND data->'${filter.fieldId}' ?| ARRAY[${arrayPlaceholders}])
+        )`,
+        values: [...values.map(v => String(v).toLowerCase()), ...values.map(v => String(v))],
       };
     }
 
     case 'NOT_IN': {
       if (!filter.values || filter.values.length === 0) return { sql: '', values: [] };
-      const notInPlaceholders = filter.values.map((_, i) => `$${startIndex + i}`).join(', ');
+      // Handle both string fields and array fields
+      // For string fields: value must not match any of the provided values
+      // For array fields: array must not contain any of the provided values
+      const values = filter.values; // Store to avoid type issues
+      const stringPlaceholders = values.map((_, i) => `$${startIndex + i}`).join(', ');
+      const arrayPlaceholders = values.map((_, i) => `$${startIndex + values.length + i}`).join(', ');
       return {
-        sql: `LOWER(data->>'${filter.fieldId}') != ALL(ARRAY[${notInPlaceholders}]::text[])`,
-        values: filter.values.map(v => String(v).toLowerCase()),
+        sql: `(
+          (jsonb_typeof(data->'${filter.fieldId}') = 'string' AND LOWER(data->>'${filter.fieldId}') != ALL(ARRAY[${stringPlaceholders}]::text[])) OR
+          (jsonb_typeof(data->'${filter.fieldId}') = 'array' AND NOT data->'${filter.fieldId}' ?| ARRAY[${arrayPlaceholders}])
+        )`,
+        values: [...values.map(v => String(v).toLowerCase()), ...values.map(v => String(v))],
       };
     }
 
