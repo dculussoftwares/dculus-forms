@@ -561,6 +561,97 @@ describe('Unified Export Resolvers', () => {
 
         expect(responseFilterService.applyResponseFilters).not.toHaveBeenCalled();
       });
+
+      it('should apply OR logic when filterLogic is OR', async () => {
+        const filters = [
+          { fieldId: 'field-1', operator: 'EQUALS', value: 'test1' },
+          { fieldId: 'field-2', operator: 'EQUALS', value: 'test2' },
+        ];
+        const filteredResponses = [mockResponses[0]];
+
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+        vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+          hasAccess: true,
+          permission: 'VIEWER' as any,
+          form: mockForm as any,
+        });
+        vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
+        vi.mocked(responseService.getAllResponsesByFormId).mockResolvedValue(
+          mockResponses as any
+        );
+        vi.mocked(responseFilterService.applyResponseFilters).mockReturnValue(
+          filteredResponses as any
+        );
+        vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(
+          mockForm.formSchema as any
+        );
+        vi.mocked(unifiedExportService.generateExportFile).mockResolvedValue(
+          mockExportResult
+        );
+        vi.mocked(temporaryFileService.uploadTemporaryFile).mockResolvedValue(
+          mockTemporaryFile as any
+        );
+
+        await unifiedExportResolvers.Mutation.generateFormResponseReport(
+          {},
+          { formId: 'form-123', format: 'EXCEL', filters, filterLogic: 'OR' },
+          mockContext
+        );
+
+        expect(responseFilterService.applyResponseFilters).toHaveBeenCalledWith(
+          mockResponses,
+          filters,
+          'OR'
+        );
+        expect(unifiedExportService.generateExportFile).toHaveBeenCalledWith(
+          expect.objectContaining({
+            responses: filteredResponses,
+          })
+        );
+      });
+
+      it('should default to AND logic when filterLogic not specified', async () => {
+        const filters = [
+          { fieldId: 'field-1', operator: 'EQUALS', value: 'test' },
+        ];
+        const filteredResponses = [mockResponses[0]];
+
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+        vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+          hasAccess: true,
+          permission: 'VIEWER' as any,
+          form: mockForm as any,
+        });
+        vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
+        vi.mocked(responseService.getAllResponsesByFormId).mockResolvedValue(
+          mockResponses as any
+        );
+        vi.mocked(responseFilterService.applyResponseFilters).mockReturnValue(
+          filteredResponses as any
+        );
+        vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(
+          mockForm.formSchema as any
+        );
+        vi.mocked(unifiedExportService.generateExportFile).mockResolvedValue(
+          mockExportResult
+        );
+        vi.mocked(temporaryFileService.uploadTemporaryFile).mockResolvedValue(
+          mockTemporaryFile as any
+        );
+
+        await unifiedExportResolvers.Mutation.generateFormResponseReport(
+          {},
+          { formId: 'form-123', format: 'EXCEL', filters },
+          mockContext
+        );
+
+        // Should default to AND when filterLogic not provided
+        expect(responseFilterService.applyResponseFilters).toHaveBeenCalledWith(
+          mockResponses,
+          filters,
+          'AND'
+        );
+      });
     });
 
     describe('Form Schema Handling', () => {

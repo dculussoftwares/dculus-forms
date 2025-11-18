@@ -510,4 +510,89 @@ describe('Response Filter Service', () => {
       expect(result).toHaveLength(0);
     });
   });
+
+  describe('OR Logic', () => {
+    it('should apply OR logic when filterLogic is OR', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-name', operator: 'EQUALS', value: 'John Doe' },
+        { fieldId: 'field-age', operator: 'EQUALS', value: '30' },
+      ];
+
+      const result = applyResponseFilters(mockResponses, filters, 'OR');
+
+      // Should match resp-1 (John Doe) OR resp-2 (age 30)
+      expect(result).toHaveLength(2);
+      expect(result.find(r => r.id === 'resp-1')).toBeDefined();
+      expect(result.find(r => r.id === 'resp-2')).toBeDefined();
+    });
+
+    it('should apply AND logic by default', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-name', operator: 'EQUALS', value: 'John Doe' },
+        { fieldId: 'field-age', operator: 'EQUALS', value: '30' },
+      ];
+
+      const result = applyResponseFilters(mockResponses, filters);
+
+      // Should match NONE (John Doe AND age 30 don't exist on same response)
+      expect(result).toHaveLength(0);
+    });
+
+    it('should handle OR logic with IS_EMPTY', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-name', operator: 'IS_EMPTY' },
+        { fieldId: 'field-email', operator: 'CONTAINS', value: 'john' },
+      ];
+
+      const result = applyResponseFilters(mockResponses, filters, 'OR');
+
+      // Should match resp-3 (empty name) OR resp-1 (john email)
+      expect(result).toHaveLength(2);
+      expect(result.find(r => r.id === 'resp-1')).toBeDefined();
+      expect(result.find(r => r.id === 'resp-3')).toBeDefined();
+    });
+
+    it('should handle OR logic with numeric comparisons', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-age', operator: 'LESS_THAN', value: '26' },
+        { fieldId: 'field-age', operator: 'GREATER_THAN', value: '32' },
+      ];
+
+      const result = applyResponseFilters(mockResponses, filters, 'OR');
+
+      // Should match resp-1 (age 25) OR resp-3 (age 35)
+      expect(result).toHaveLength(2);
+      expect(result.find(r => r.id === 'resp-1')).toBeDefined();
+      expect(result.find(r => r.id === 'resp-3')).toBeDefined();
+    });
+
+    it('should handle OR logic with array fields', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-tags', operator: 'CONTAINS', value: 'javascript' },
+        { fieldId: 'field-name', operator: 'EQUALS', value: 'Jane Smith' },
+      ];
+
+      const result = applyResponseFilters(mockResponses, filters, 'OR');
+
+      // Should match resp-1 (has javascript tag) OR resp-2 (Jane Smith)
+      expect(result).toHaveLength(2);
+      expect(result.find(r => r.id === 'resp-1')).toBeDefined();
+      expect(result.find(r => r.id === 'resp-2')).toBeDefined();
+    });
+
+    it('should handle OR logic with IN operator', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-tags', operator: 'IN', values: ['javascript', 'python'] },
+        { fieldId: 'field-age', operator: 'EQUALS', value: '30' },
+      ];
+
+      const result = applyResponseFilters(mockResponses, filters, 'OR');
+
+      // Should match resp-1 (has javascript) OR resp-2 (age 30)
+      expect(result).toHaveLength(2);
+      expect(result.find(r => r.id === 'resp-1')).toBeDefined();
+      expect(result.find(r => r.id === 'resp-2')).toBeDefined();
+    });
+  });
 });
+

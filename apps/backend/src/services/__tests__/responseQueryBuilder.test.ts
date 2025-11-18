@@ -305,4 +305,187 @@ describe('Response Query Builder', () => {
       expect(result.conditions[0]).toContain('END');
     });
   });
+
+  describe('Missing SQL Operators', () => {
+    it('should handle NOT_CONTAINS operator', () => {
+      const result = buildPostgreSQLFilter('form-123', [
+        { fieldId: 'description', operator: 'NOT_CONTAINS', value: 'test' }
+      ]);
+
+      expect(result.conditions).toHaveLength(1);
+      expect(result.conditions[0]).toContain('NOT EXISTS');
+      expect(result.conditions[0]).toContain('NOT ILIKE');
+      expect(result.params).toContain('test');
+    });
+
+    it('should handle STARTS_WITH operator', () => {
+      const result = buildPostgreSQLFilter('form-123', [
+        { fieldId: 'name', operator: 'STARTS_WITH', value: 'John' }
+      ]);
+
+      expect(result.conditions).toHaveLength(1);
+      expect(result.conditions[0]).toContain('ILIKE');
+      expect(result.params).toContain('John%');
+    });
+
+    it('should handle ENDS_WITH operator', () => {
+      const result = buildPostgreSQLFilter('form-123', [
+        { fieldId: 'email', operator: 'ENDS_WITH', value: '@example.com' }
+      ]);
+
+      expect(result.conditions).toHaveLength(1);
+      expect(result.conditions[0]).toContain('ILIKE');
+      expect(result.params).toContain('%@example.com');
+    });
+
+    it('should handle BETWEEN operator with min and max', () => {
+      const result = buildPostgreSQLFilter('form-123', [
+        { 
+          fieldId: 'score', 
+          operator: 'BETWEEN', 
+          numberRange: { min: 50, max: 100 } 
+        }
+      ]);
+
+      expect(result.conditions).toHaveLength(1);
+      expect(result.conditions[0]).toContain('>=');
+      expect(result.conditions[0]).toContain('<=');
+      expect(result.conditions[0]).toContain('CASE');
+      expect(result.params).toContain(50);
+      expect(result.params).toContain(100);
+    });
+
+    it('should handle BETWEEN operator with only min', () => {
+      const result = buildPostgreSQLFilter('form-123', [
+        { 
+          fieldId: 'score', 
+          operator: 'BETWEEN', 
+          numberRange: { min: 50 } 
+        }
+      ]);
+
+      expect(result.conditions).toHaveLength(1);
+      expect(result.conditions[0]).toContain('>=');
+      expect(result.params).toContain(50);
+    });
+
+    it('should handle BETWEEN operator with only max', () => {
+      const result = buildPostgreSQLFilter('form-123', [
+        { 
+          fieldId: 'score', 
+          operator: 'BETWEEN', 
+          numberRange: { max: 100 } 
+        }
+      ]);
+
+      expect(result.conditions).toHaveLength(1);
+      expect(result.conditions[0]).toContain('<=');
+      expect(result.params).toContain(100);
+    });
+
+    it('should handle DATE_BEFORE operator', () => {
+      const result = buildPostgreSQLFilter('form-123', [
+        { fieldId: 'deadline', operator: 'DATE_BEFORE', value: '2025-12-31' }
+      ]);
+
+      expect(result.conditions).toHaveLength(1);
+      expect(result.conditions[0]).toContain('timestamp');
+      expect(result.conditions[0]).toContain('<');
+      expect(result.conditions[0]).toContain('CASE');
+      expect(result.params).toContain('2025-12-31');
+    });
+
+    it('should handle DATE_AFTER operator', () => {
+      const result = buildPostgreSQLFilter('form-123', [
+        { fieldId: 'startDate', operator: 'DATE_AFTER', value: '2025-01-01' }
+      ]);
+
+      expect(result.conditions).toHaveLength(1);
+      expect(result.conditions[0]).toContain('timestamp');
+      expect(result.conditions[0]).toContain('>');
+      expect(result.conditions[0]).toContain('CASE');
+      expect(result.params).toContain('2025-01-01');
+    });
+
+    it('should handle DATE_BETWEEN operator with both dates', () => {
+      const result = buildPostgreSQLFilter('form-123', [
+        { 
+          fieldId: 'createdAt', 
+          operator: 'DATE_BETWEEN',
+          dateRange: { from: '2025-01-01', to: '2025-12-31' }
+        }
+      ]);
+
+      expect(result.conditions).toHaveLength(1);
+      expect(result.conditions[0]).toContain('>=');
+      expect(result.conditions[0]).toContain('<=');
+      expect(result.conditions[0]).toContain('CASE');
+      expect(result.params).toContain('2025-01-01');
+      expect(result.params).toContain('2025-12-31');
+    });
+
+    it('should handle DATE_BETWEEN operator with only from date', () => {
+      const result = buildPostgreSQLFilter('form-123', [
+        { 
+          fieldId: 'createdAt', 
+          operator: 'DATE_BETWEEN',
+          dateRange: { from: '2025-01-01' }
+        }
+      ]);
+
+      expect(result.conditions).toHaveLength(1);
+      expect(result.conditions[0]).toContain('>=');
+      expect(result.params).toContain('2025-01-01');
+    });
+
+    it('should handle DATE_BETWEEN operator with only to date', () => {
+      const result = buildPostgreSQLFilter('form-123', [
+        { 
+          fieldId: 'createdAt', 
+          operator: 'DATE_BETWEEN',
+          dateRange: { to: '2025-12-31' }
+        }
+      ]);
+
+      expect(result.conditions).toHaveLength(1);
+      expect(result.conditions[0]).toContain('<=');
+      expect(result.params).toContain('2025-12-31');
+    });
+
+    it('should handle IN operator for strings', () => {
+      const result = buildPostgreSQLFilter('form-123', [
+        { fieldId: 'status', operator: 'IN', values: ['active', 'pending'] }
+      ]);
+
+      expect(result.conditions).toHaveLength(1);
+      expect(result.conditions[0]).toContain('LOWER');
+      expect(result.conditions[0]).toContain('ANY');
+      expect(result.params).toContain('active');
+      expect(result.params).toContain('pending');
+    });
+
+    it('should handle NOT_IN operator for strings', () => {
+      const result = buildPostgreSQLFilter('form-123', [
+        { fieldId: 'status', operator: 'NOT_IN', values: ['archived', 'deleted'] }
+      ]);
+
+      expect(result.conditions).toHaveLength(1);
+      expect(result.conditions[0]).toContain('NOT');
+      expect(result.conditions[0]).toContain('IS NULL');
+      expect(result.params).toContain('archived');
+      expect(result.params).toContain('deleted');
+    });
+
+    it('should handle NOT_EQUALS operator', () => {
+      const result = buildPostgreSQLFilter('form-123', [
+        { fieldId: 'status', operator: 'NOT_EQUALS', value: 'draft' }
+      ]);
+
+      expect(result.conditions).toHaveLength(1);
+      expect(result.conditions[0]).toContain('!=');
+      expect(result.conditions[0]).toContain('LOWER');
+      expect(result.params).toContain('draft');
+    });
+  });
 });
+
