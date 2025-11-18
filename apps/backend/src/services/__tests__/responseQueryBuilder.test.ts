@@ -205,6 +205,9 @@ describe('Response Query Builder', () => {
       expect(result.conditions).toHaveLength(1);
       expect(result.conditions[0]).toContain("data->'test-field' IS NULL");
       expect(result.conditions[0]).toContain("data->>'test-field' = ''");
+      // Should also check for empty arrays
+      expect(result.conditions[0]).toContain("jsonb_typeof");
+      expect(result.conditions[0]).toContain("jsonb_array_length");
     });
 
     it('should handle IS_NOT_EMPTY operator', () => {
@@ -215,6 +218,9 @@ describe('Response Query Builder', () => {
       expect(result.conditions).toHaveLength(1);
       expect(result.conditions[0]).toContain("data->'test-field' IS NOT NULL");
       expect(result.conditions[0]).toContain("data->>'test-field' != ''");
+      // Should also exclude empty arrays
+      expect(result.conditions[0]).toContain("jsonb_typeof");
+      expect(result.conditions[0]).toContain("jsonb_array_length");
     });
 
     it('should handle EQUALS operator with string value', () => {

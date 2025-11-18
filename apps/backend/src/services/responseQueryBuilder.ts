@@ -92,16 +92,24 @@ function buildRawSQLCondition(
 
   switch (filter.operator) {
     case 'IS_EMPTY':
-      // Check if field is null, empty string, or doesn't exist
+      // Check if field is null, empty string, or empty array
       return {
-        sql: `(${jsonAccessor} IS NULL OR ${textAccessor} = '')`,
+        sql: `(
+          ${jsonAccessor} IS NULL OR 
+          ${textAccessor} = '' OR
+          (jsonb_typeof(${jsonAccessor}) = 'array' AND jsonb_array_length(${jsonAccessor}) = 0)
+        )`,
         values: [],
       };
 
     case 'IS_NOT_EMPTY':
-      // Check if field exists and is not empty
+      // Check if field exists, is not empty, and not an empty array
       return {
-        sql: `(${jsonAccessor} IS NOT NULL AND ${textAccessor} != '')`,
+        sql: `(
+          ${jsonAccessor} IS NOT NULL AND 
+          ${textAccessor} != '' AND
+          NOT (jsonb_typeof(${jsonAccessor}) = 'array' AND jsonb_array_length(${jsonAccessor}) = 0)
+        )`,
         values: [],
       };
 
