@@ -94,12 +94,31 @@ function buildRawSQLCondition(
       };
 
     case 'EQUALS':
-      if (filter.value === undefined) return { sql: '', values: [] };
-      // Case-insensitive comparison using LOWER()
-      return {
-        sql: `LOWER(data->>'${filter.fieldId}') = LOWER($${startIndex})`,
-        values: [String(filter.value)],
-      };
+      // Handle both string equality and array exact match
+      if (filter.value === undefined && (!filter.values || filter.values.length === 0)) {
+        return { sql: '', values: [] };
+      }
+      // For string comparison (single value)
+      if (filter.value !== undefined) {
+        return {
+          sql: `LOWER(data->>'${filter.fieldId}') = LOWER($${startIndex})`,
+          values: [String(filter.value)],
+        };
+      }
+      // For array exact match (multiple values) - used by checkbox fields
+      // Order-independent comparison: array contains exactly these values, no more, no less
+      if (filter.values && filter.values.length > 0) {
+        return {
+          sql: `(
+            jsonb_typeof(data->'${filter.fieldId}') = 'array' AND
+            jsonb_array_length(data->'${filter.fieldId}') = ${filter.values.length} AND
+            data->'${filter.fieldId}' @> $${startIndex}::jsonb AND
+            data->'${filter.fieldId}' <@ $${startIndex}::jsonb
+          )`,
+          values: [JSON.stringify(filter.values)],
+        };
+      }
+      return { sql: '', values: [] };
 
     case 'NOT_EQUALS':
       if (filter.value === undefined) return { sql: '', values: [] };
@@ -215,6 +234,16 @@ function buildRawSQLCondition(
           (jsonb_typeof(data->'${filter.fieldId}') = 'array' AND NOT data->'${filter.fieldId}' ?| ARRAY[${arrayPlaceholders}])
         )`,
         values: [...values.map(v => String(v).toLowerCase()), ...values.map(v => String(v))],
+      };
+    }
+
+    case 'CONTAINS_ALL': {
+      if (!filter.values || filter.values.length === 0) return { sql: '', values: [] };
+      // Check if array contains ALL of the specified values
+      // Uses PostgreSQL's @> operator for JSONB containment
+      return {
+        sql: `data->'${filter.fieldId}' @> $${startIndex}::jsonb`,
+        values: [JSON.stringify(filter.values)],
       };
     }
 

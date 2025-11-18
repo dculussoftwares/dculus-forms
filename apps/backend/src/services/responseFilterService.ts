@@ -38,6 +38,15 @@ export function applyResponseFilters(
           return fieldValue && fieldValue !== '' && fieldValue !== null && fieldValue !== undefined;
         
         case 'EQUALS':
+          // Handle both string equality and array exact match
+          if (Array.isArray(fieldValue) && filter.values && filter.values.length > 0) {
+            // Array exact match: same length and same values (order-independent)
+            if (fieldValue.length !== filter.values.length) return false;
+            const fieldValuesLower = fieldValue.map(v => String(v).toLowerCase()).sort();
+            const filterValuesLower = filter.values.map(v => String(v).toLowerCase()).sort();
+            return fieldValuesLower.every((val, idx) => val === filterValuesLower[idx]);
+          }
+          // String equality
           return String(fieldValue).toLowerCase() === String(filter.value || '').toLowerCase();
         
         case 'NOT_EQUALS':
@@ -143,15 +152,42 @@ export function applyResponseFilters(
           }
         }
         
-        case 'IN':
+        case 'IN': {
+          // For arrays (checkbox fields), check if any selected value matches
+          if (Array.isArray(fieldValue)) {
+            return filter.values?.some(value => 
+              fieldValue.some(v => String(v).toLowerCase() === String(value).toLowerCase())
+            ) ?? false;
+          }
+          // For strings (select/radio fields)
           return filter.values?.some(value => 
             String(fieldValue).toLowerCase() === String(value).toLowerCase()
           ) ?? false;
+        }
         
-        case 'NOT_IN':
+        case 'NOT_IN': {
+          // For arrays (checkbox fields)
+          if (Array.isArray(fieldValue)) {
+            return !(filter.values?.some(value => 
+              fieldValue.some(v => String(v).toLowerCase() === String(value).toLowerCase())
+            ) ?? false);
+          }
+          // For strings (select/radio fields)
           return !(filter.values?.some(value => 
             String(fieldValue).toLowerCase() === String(value).toLowerCase()
           ) ?? false);
+        }
+        
+        case 'CONTAINS_ALL': {
+          // Check if array contains ALL of the specified values
+          if (!filter.values || filter.values.length === 0) return false;
+          if (!Array.isArray(fieldValue)) return false;
+          
+          const fieldValuesLower = fieldValue.map(v => String(v).toLowerCase());
+          return filter.values.every(value => 
+            fieldValuesLower.includes(String(value).toLowerCase())
+          );
+        }
         
         default:
           return true;

@@ -14,7 +14,10 @@
     "before": "Before",
     "after": "After",
     "includes": "Includes",
-    "notIncludes": "Does not include"
+    "notIncludes": "Does not include",
+    "includesAny": "Includes any",
+    "notIncludesAny": "Does not include any",
+    "containsAll": "Contains all"
   },
   "placeholders": {
     "enterValue": "Enter value",

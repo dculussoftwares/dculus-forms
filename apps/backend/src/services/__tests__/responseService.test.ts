@@ -24,6 +24,7 @@ vi.mock('../../lib/prisma.js', () => ({
       count: vi.fn(),
       findMany: vi.fn(),
     },
+    $queryRawUnsafe: vi.fn(),
   },
 }));
 vi.mock('../responseEditTrackingService.js', () => ({
@@ -189,6 +190,8 @@ describe('Response Service', () => {
       const mockResponses = [mockResponse];
       
       // Mock Prisma calls for database-level filtering
+      vi.mocked(prisma.$queryRawUnsafe).mockResolvedValueOnce([{ count: BigInt(1) }] as any);
+      vi.mocked(prisma.$queryRawUnsafe).mockResolvedValueOnce(mockResponses as any);
       vi.mocked(prisma.response.count).mockResolvedValue(1);
       vi.mocked(prisma.response.findMany).mockResolvedValue(mockResponses as any);
       // Mock memory filtering fallback in case database filtering fails

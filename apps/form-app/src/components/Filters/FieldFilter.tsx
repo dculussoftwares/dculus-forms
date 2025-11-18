@@ -62,10 +62,20 @@ const getOperatorOptions = (fieldType: FieldType, t: (key: string) => string) =>
 
     case FieldType.SELECT_FIELD:
     case FieldType.RADIO_FIELD:
-    case FieldType.CHECKBOX_FIELD:
       return [
         { value: 'IN', label: t('operators.includes') },
         { value: 'NOT_IN', label: t('operators.notIncludes') },
+        ...baseOptions,
+      ];
+
+    case FieldType.CHECKBOX_FIELD:
+      return [
+        { value: 'IN', label: t('operators.includesAny') },
+        { value: 'NOT_IN', label: t('operators.notIncludesAny') },
+        { value: 'CONTAINS', label: t('operators.contains') },
+        { value: 'NOT_CONTAINS', label: t('operators.notContains') },
+        { value: 'CONTAINS_ALL', label: t('operators.containsAll') },
+        { value: 'EQUALS', label: t('operators.equals') },
         ...baseOptions,
       ];
 
@@ -187,6 +197,31 @@ const renderFilterInput = (
     case FieldType.RADIO_FIELD:
     case FieldType.CHECKBOX_FIELD: {
       const options = (field as SelectField | RadioField | CheckboxField).options || [];
+      
+      // CONTAINS and NOT_CONTAINS use single value selection (dropdown)
+      if (filter?.operator === 'CONTAINS' || filter?.operator === 'NOT_CONTAINS') {
+        return (
+          <Select 
+            value={filter.value || ''} 
+            onValueChange={(value) => {
+              onChange({ value, active: true });
+            }}
+          >
+            <SelectTrigger className="h-8 text-sm">
+              <SelectValue placeholder="Select an option..." />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((option, index) => (
+                <SelectItem key={index} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        );
+      }
+      
+      // IN, NOT_IN, CONTAINS_ALL, EQUALS use multi-select (checkboxes)
       return (
         <div className="border border-slate-200 rounded-md max-h-40 overflow-y-auto">
           {options.length === 0 ? (

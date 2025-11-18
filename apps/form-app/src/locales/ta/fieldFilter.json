@@ -14,7 +14,10 @@
     "before": "முன்பு",
     "after": "பிறகு",
     "includes": "அடங்கும்",
-    "notIncludes": "அடங்காது"
+    "notIncludes": "அடங்காது",
+    "includesAny": "ஏதேனும் அடங்கும்",
+    "notIncludesAny": "ஏதேனும் அடங்காது",
+    "containsAll": "அனைத்தையும் கொண்டுள்ளது"
   },
   "placeholders": {
     "enterValue": "மதிப்பை உள்ளிடவும்",

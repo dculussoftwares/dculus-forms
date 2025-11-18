@@ -1154,3 +1154,107 @@ async function executeFilterWithSort(this: CustomWorld, fieldLabel: string, oper
   this.setSharedTestData('filterResult', response.data.data.responsesByForm);
   console.log(`🔍 Filtered and sorted by ${sortBy} ${sortOrder}: found ${response.data.data.responsesByForm.data.length} responses`);
 }
+
+// ============================================================================
+// CONTAINS_ALL OPERATOR STEPS
+// ============================================================================
+
+When('I filter responses by checkbox field {string} operator {string} with values {string}',
+  async function(this: CustomWorld, fieldLabel: string, operator: string, values: string) {
+    await executeFilterWithMultipleValues.call(this, fieldLabel, operator, values.split(','));
+  }
+);
+
+Then('all responses should have checkbox field {string} containing all values {string}',
+  async function(this: CustomWorld, fieldLabel: string, values: string) {
+    const filterResult = this.getSharedTestData('filterResult');
+    expectDefined(filterResult, 'Filter result must exist');
+    
+    const fieldId = getFieldIdByLabel.call(this, fieldLabel);
+    const expectedValues = values.split(',').map(v => v.trim());
+    
+    for (const response of filterResult.data) {
+      const fieldValue = response.data[fieldId];
+      expect(Array.isArray(fieldValue), `Field ${fieldLabel} should be an array`);
+      
+      // Check that all expected values are present
+      for (const expectedValue of expectedValues) {
+        expect(
+          fieldValue.includes(expectedValue),
+          `Response should contain ${expectedValue} in ${fieldLabel}`
+        );
+      }
+    }
+    
+    console.log(`✅ All ${filterResult.data.length} responses contain all values: ${values}`);
+  }
+);
+
+Then('the response should have checkbox field {string} with values {string}',
+  async function(this: CustomWorld, fieldLabel: string, values: string) {
+    const filterResult = this.getSharedTestData('filterResult');
+    expectDefined(filterResult, 'Filter result must exist');
+    expect(filterResult.data.length === 1, `Expected 1 response but got ${filterResult.data.length}`);
+    
+    const fieldId = getFieldIdByLabel.call(this, fieldLabel);
+    const expectedValues = values.split(',').map(v => v.trim()).sort();
+    const actualValues = filterResult.data[0].data[fieldId]?.sort() || [];
+    
+    expect(
+      JSON.stringify(actualValues) === JSON.stringify(expectedValues),
+      `Expected ${JSON.stringify(expectedValues)} but got ${JSON.stringify(actualValues)}`
+    );
+    
+    console.log(`✅ Response has exact values: ${values}`);
+  }
+);
+
+async function executeFilterWithMultipleValues(this: CustomWorld, fieldLabel: string, operator: string, values: string[]) {
+  const form = this.getSharedTestData('testForm');
+  expectDefined(form, 'Test form must exist');
+  expectDefined(this.authToken, 'Auth token required');
+  
+  const fieldId = getFieldIdByLabel.call(this, fieldLabel);
+  
+  const filters = [{
+    fieldId,
+    operator,
+    values: values.map(v => v.trim())
+  }];
+  
+  const query = `
+    query GetResponsesByForm($formId: ID!, $page: Int!, $limit: Int!, $sortBy: String!, $sortOrder: String!, $filters: [ResponseFilterInput!]) {
+      responsesByForm(formId: $formId, page: $page, limit: $limit, sortBy: $sortBy, sortOrder: $sortOrder, filters: $filters) {
+        data {
+          id
+          formId
+          data
+          submittedAt
+        }
+        total
+        page
+        limit
+      }
+    }
+  `;
+  
+  const response = await this.authUtils.graphqlRequest(
+    query,
+    {
+      formId: form.id,
+      page: 1,
+      limit: 100,
+      sortBy: 'submittedAt',
+      sortOrder: 'asc',
+      filters
+    },
+    this.authToken
+  );
+  
+  if (response.data.errors) {
+    throw new Error(`Failed to filter responses: ${response.data.errors[0].message}`);
+  }
+  
+  this.setSharedTestData('filterResult', response.data.data.responsesByForm);
+  console.log(`🔍 Filtered by ${fieldLabel} ${operator} ${values.join(',')}: found ${response.data.data.responsesByForm.data.length} responses`);
+}

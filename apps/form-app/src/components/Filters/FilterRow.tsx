@@ -64,10 +64,20 @@ const getOperatorOptions = (fieldType: FieldType, t: (key: string) => string) =>
 
     case FieldType.SELECT_FIELD:
     case FieldType.RADIO_FIELD:
-    case FieldType.CHECKBOX_FIELD:
       return [
         { value: 'IN', label: t('operators.includes') },
         { value: 'NOT_IN', label: t('operators.notIncludes') },
+        ...baseOptions,
+      ];
+
+    case FieldType.CHECKBOX_FIELD:
+      return [
+        { value: 'IN', label: t('operators.includesAny') },
+        { value: 'NOT_IN', label: t('operators.notIncludesAny') },
+        { value: 'CONTAINS', label: t('operators.contains') },
+        { value: 'NOT_CONTAINS', label: t('operators.notContains') },
+        { value: 'CONTAINS_ALL', label: t('operators.containsAll') },
+        { value: 'EQUALS', label: t('operators.equals') },
         ...baseOptions,
       ];
 
@@ -202,6 +212,36 @@ const renderFilterInput = (
     case FieldType.RADIO_FIELD:
     case FieldType.CHECKBOX_FIELD: {
       const options = (field as SelectField | RadioField | CheckboxField).options || [];
+      
+      // CONTAINS and NOT_CONTAINS use single value selection (dropdown)
+      if (filter.operator === 'CONTAINS' || filter.operator === 'NOT_CONTAINS') {
+        return (
+          <Select 
+            value={filter.value || ''} 
+            onValueChange={(value) => {
+              onChange({
+                fieldId: filter.fieldId,
+                operator: filter.operator,
+                value,
+                active: true,
+              });
+            }}
+          >
+            <SelectTrigger className="h-9 min-w-[200px]">
+              <SelectValue placeholder="Select an option..." />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((option, index) => (
+                <SelectItem key={index} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        );
+      }
+      
+      // IN, NOT_IN, CONTAINS_ALL, EQUALS use multi-select (checkboxes)
       return (
         <div className="relative min-w-[200px]">
           <Select value="placeholder" onValueChange={() => {}}>
@@ -214,8 +254,7 @@ const renderFilterInput = (
                 </div>
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="max-h-60">
-              {options.map((option, index) => {
+            <SelectContent className="max-h-60">{options.map((option, index) => {
                 const isSelected = filter.values?.includes(option) ?? false;
                 return (
                   <div key={index} className="flex items-center space-x-2 p-2 hover:bg-slate-50">

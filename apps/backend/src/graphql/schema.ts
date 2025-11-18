@@ -875,6 +875,7 @@ export const typeDefs = gql`
     NOT_EQUALS
     CONTAINS
     NOT_CONTAINS
+    CONTAINS_ALL
     STARTS_WITH
     ENDS_WITH
     IS_EMPTY

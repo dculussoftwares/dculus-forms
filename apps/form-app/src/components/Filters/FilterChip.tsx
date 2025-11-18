@@ -58,6 +58,21 @@ const getFilterLabel = (filter: FilterState): string => {
       const notInExtraCount = (filter.values?.length ?? 0) - 2;
       return `is not ${notInValues}${notInExtraCount > 0 ? ` +${notInExtraCount} more` : ''}`;
     }
+    case 'CONTAINS_ALL': {
+      const allValues = filter.values?.slice(0, 2).join(', ') || '';
+      const allExtraCount = (filter.values?.length ?? 0) - 2;
+      return `has all: ${allValues}${allExtraCount > 0 ? ` +${allExtraCount} more` : ''}`;
+    }
+    case 'EQUALS': {
+      // For array/checkbox fields with multiple values
+      if (filter.values && filter.values.length > 0) {
+        const eqValues = filter.values.slice(0, 2).join(', ');
+        const eqExtraCount = filter.values.length - 2;
+        return `equals: ${eqValues}${eqExtraCount > 0 ? ` +${eqExtraCount} more` : ''}`;
+      }
+      // For string fields with single value
+      return `= ${filter.value || ''}`;
+    }
     default:
       return 'filtered';
   }
