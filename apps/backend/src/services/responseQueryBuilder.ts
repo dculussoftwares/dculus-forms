@@ -18,6 +18,15 @@
 
 import { ResponseFilter } from './responseFilterService.js';
 
+const SAFE_FIELD_ID_PATTERN = /^[A-Za-z0-9_-]+$/;
+
+const ensureSafeFieldId = (fieldId: string): string => {
+  if (!SAFE_FIELD_ID_PATTERN.test(fieldId)) {
+    throw new Error(`Invalid fieldId "${fieldId}"`);
+  }
+  return fieldId;
+};
+
 // For PostgreSQL, we return SQL conditions and parameters
 export interface RawSQLFilter {
   conditions: string[];
@@ -77,19 +86,22 @@ function buildRawSQLCondition(
   startIndex: number
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): { sql: string; values: any[] } {
-  
+  const safeFieldId = ensureSafeFieldId(filter.fieldId);
+  const jsonAccessor = `data->'${safeFieldId}'`;
+  const textAccessor = `data->>'${safeFieldId}'`;
+
   switch (filter.operator) {
     case 'IS_EMPTY':
       // Check if field is null, empty string, or doesn't exist
       return {
-        sql: `(data->'${filter.fieldId}' IS NULL OR data->>'${filter.fieldId}' = '')`,
+        sql: `(${jsonAccessor} IS NULL OR ${textAccessor} = '')`,
         values: [],
       };
 
     case 'IS_NOT_EMPTY':
       // Check if field exists and is not empty
       return {
-        sql: `(data->'${filter.fieldId}' IS NOT NULL AND data->>'${filter.fieldId}' != '')`,
+        sql: `(${jsonAccessor} IS NOT NULL AND ${textAccessor} != '')`,
         values: [],
       };
 
@@ -101,21 +113,29 @@ function buildRawSQLCondition(
       // For string comparison (single value)
       if (filter.value !== undefined) {
         return {
-          sql: `LOWER(data->>'${filter.fieldId}') = LOWER($${startIndex})`,
+          sql: `LOWER(${textAccessor}) = LOWER($${startIndex})`,
           values: [String(filter.value)],
         };
       }
       // For array exact match (multiple values) - used by checkbox fields
       // Order-independent comparison: array contains exactly these values, no more, no less
       if (filter.values && filter.values.length > 0) {
+        const placeholders = filter.values
+          .map((_, idx) => `$${startIndex + idx}`)
+          .join(', ');
         return {
           sql: `(
-            jsonb_typeof(data->'${filter.fieldId}') = 'array' AND
-            jsonb_array_length(data->'${filter.fieldId}') = ${filter.values.length} AND
-            data->'${filter.fieldId}' @> $${startIndex}::jsonb AND
-            data->'${filter.fieldId}' <@ $${startIndex}::jsonb
+            jsonb_typeof(${jsonAccessor}) = 'array' AND
+            jsonb_array_length(${jsonAccessor}) = ${filter.values.length} AND
+            NOT EXISTS (
+              SELECT 1 FROM unnest(ARRAY[${placeholders}]::text[]) AS expected(val)
+              WHERE NOT EXISTS (
+                SELECT 1 FROM jsonb_array_elements_text(${jsonAccessor}) elem
+                WHERE LOWER(elem) = LOWER(expected.val)
+              )
+            )
           )`,
-          values: [JSON.stringify(filter.values)],
+          values: filter.values.map((value) => String(value)),
         };
       }
       return { sql: '', values: [] };
@@ -123,7 +143,7 @@ function buildRawSQLCondition(
     case 'NOT_EQUALS':
       if (filter.value === undefined) return { sql: '', values: [] };
       return {
-        sql: `LOWER(data->>'${filter.fieldId}') != LOWER($${startIndex})`,
+        sql: `LOWER(${textAccessor}) != LOWER($${startIndex})`,
         values: [String(filter.value)],
       };
 
@@ -134,33 +154,40 @@ function buildRawSQLCondition(
       // For strings: Use ILIKE for case-insensitive substring match
       return {
         sql: `(
-          (jsonb_typeof(data->'${filter.fieldId}') = 'array' AND data->'${filter.fieldId}' @> $${startIndex}::jsonb) OR
-          (jsonb_typeof(data->'${filter.fieldId}') = 'string' AND data->>'${filter.fieldId}' ILIKE $${startIndex + 1})
+          (jsonb_typeof(${jsonAccessor}) = 'array' AND EXISTS (
+            SELECT 1 FROM jsonb_array_elements_text(${jsonAccessor}) elem
+            WHERE LOWER(elem) = $${startIndex}
+          )) OR
+          (jsonb_typeof(${jsonAccessor}) = 'string' AND ${textAccessor} ILIKE $${startIndex + 1})
         )`,
-        values: [JSON.stringify([String(filter.value)]), `%${filter.value}%`],
+        values: [String(filter.value).toLowerCase(), `%${filter.value}%`],
       };
 
     case 'NOT_CONTAINS':
       if (!filter.value) return { sql: '', values: [] };
       return {
         sql: `(
-          (jsonb_typeof(data->'${filter.fieldId}') = 'array' AND NOT data->'${filter.fieldId}' @> $${startIndex}::jsonb) OR
-          (jsonb_typeof(data->'${filter.fieldId}') = 'string' AND data->>'${filter.fieldId}' NOT ILIKE $${startIndex + 1})
+          ${jsonAccessor} IS NULL OR
+          (jsonb_typeof(${jsonAccessor}) = 'array' AND NOT EXISTS (
+            SELECT 1 FROM jsonb_array_elements_text(${jsonAccessor}) elem
+            WHERE LOWER(elem) = $${startIndex}
+          )) OR
+          (jsonb_typeof(${jsonAccessor}) = 'string' AND ${textAccessor} NOT ILIKE $${startIndex + 1})
         )`,
-        values: [JSON.stringify([String(filter.value)]), `%${filter.value}%`],
+        values: [String(filter.value).toLowerCase(), `%${filter.value}%`],
       };
 
     case 'STARTS_WITH':
       if (!filter.value) return { sql: '', values: [] };
       return {
-        sql: `data->>'${filter.fieldId}' ILIKE $${startIndex}`,
+        sql: `${textAccessor} ILIKE $${startIndex}`,
         values: [`${filter.value}%`],
       };
 
     case 'ENDS_WITH':
       if (!filter.value) return { sql: '', values: [] };
       return {
-        sql: `data->>'${filter.fieldId}' ILIKE $${startIndex}`,
+        sql: `${textAccessor} ILIKE $${startIndex}`,
         values: [`%${filter.value}`],
       };
 
@@ -168,14 +195,14 @@ function buildRawSQLCondition(
       if (filter.value === undefined) return { sql: '', values: [] };
       // Cast JSONB value to numeric for comparison
       return {
-        sql: `(data->>'${filter.fieldId}')::numeric > $${startIndex}::numeric`,
+        sql: `(${textAccessor})::numeric > $${startIndex}::numeric`,
         values: [filter.value],
       };
 
     case 'LESS_THAN':
       if (filter.value === undefined) return { sql: '', values: [] };
       return {
-        sql: `(data->>'${filter.fieldId}')::numeric < $${startIndex}::numeric`,
+        sql: `(${textAccessor})::numeric < $${startIndex}::numeric`,
         values: [filter.value],
       };
 
@@ -187,12 +214,12 @@ function buildRawSQLCondition(
       let idx = startIndex;
       
       if (filter.numberRange.min !== undefined) {
-        conditions.push(`(data->>'${filter.fieldId}')::numeric >= $${idx}::numeric`);
+        conditions.push(`(${textAccessor})::numeric >= $${idx}::numeric`);
         values.push(filter.numberRange.min);
         idx++;
       }
       if (filter.numberRange.max !== undefined) {
-        conditions.push(`(data->>'${filter.fieldId}')::numeric <= $${idx}::numeric`);
+        conditions.push(`(${textAccessor})::numeric <= $${idx}::numeric`);
         values.push(filter.numberRange.max);
       }
       
@@ -205,45 +232,53 @@ function buildRawSQLCondition(
 
     case 'IN': {
       if (!filter.values || filter.values.length === 0) return { sql: '', values: [] };
-      // Handle both string fields and array fields (like checkboxes)
-      // For string fields: check if value matches any of the provided values (case-insensitive)
-      // For array fields: check if array contains any of the provided values
-      const values = filter.values; // Store to avoid type issues
-      const stringPlaceholders = values.map((_, i) => `$${startIndex + i}`).join(', ');
-      const arrayPlaceholders = values.map((_, i) => `$${startIndex + values.length + i}`).join(', ');
+      const loweredValues = filter.values.map((value) => String(value).toLowerCase());
+      const placeholders = loweredValues.map((_, idx) => `$${startIndex + idx}`).join(', ');
       return {
         sql: `(
-          (jsonb_typeof(data->'${filter.fieldId}') = 'string' AND LOWER(data->>'${filter.fieldId}') = ANY(ARRAY[${stringPlaceholders}]::text[])) OR
-          (jsonb_typeof(data->'${filter.fieldId}') = 'array' AND data->'${filter.fieldId}' ?| ARRAY[${arrayPlaceholders}])
+          (jsonb_typeof(${jsonAccessor}) = 'string' AND LOWER(${textAccessor}) = ANY(ARRAY[${placeholders}]::text[])) OR
+          (jsonb_typeof(${jsonAccessor}) = 'array' AND EXISTS (
+            SELECT 1 FROM jsonb_array_elements_text(${jsonAccessor}) elem
+            WHERE LOWER(elem) = ANY(ARRAY[${placeholders}]::text[])
+          ))
         )`,
-        values: [...values.map(v => String(v).toLowerCase()), ...values.map(v => String(v))],
+        values: loweredValues,
       };
     }
 
     case 'NOT_IN': {
       if (!filter.values || filter.values.length === 0) return { sql: '', values: [] };
-      // Handle both string fields and array fields
-      // For string fields: value must not match any of the provided values
-      // For array fields: array must not contain any of the provided values
-      const values = filter.values; // Store to avoid type issues
-      const stringPlaceholders = values.map((_, i) => `$${startIndex + i}`).join(', ');
-      const arrayPlaceholders = values.map((_, i) => `$${startIndex + values.length + i}`).join(', ');
+      const loweredValues = filter.values.map((value) => String(value).toLowerCase());
+      const placeholders = loweredValues.map((_, idx) => `$${startIndex + idx}`).join(', ');
       return {
         sql: `(
-          (jsonb_typeof(data->'${filter.fieldId}') = 'string' AND LOWER(data->>'${filter.fieldId}') != ALL(ARRAY[${stringPlaceholders}]::text[])) OR
-          (jsonb_typeof(data->'${filter.fieldId}') = 'array' AND NOT data->'${filter.fieldId}' ?| ARRAY[${arrayPlaceholders}])
+          ${jsonAccessor} IS NULL OR
+          (jsonb_typeof(${jsonAccessor}) = 'string' AND NOT (LOWER(${textAccessor}) = ANY(ARRAY[${placeholders}]::text[]))) OR
+          (jsonb_typeof(${jsonAccessor}) = 'array' AND NOT EXISTS (
+            SELECT 1 FROM jsonb_array_elements_text(${jsonAccessor}) elem
+            WHERE LOWER(elem) = ANY(ARRAY[${placeholders}]::text[])
+          ))
         )`,
-        values: [...values.map(v => String(v).toLowerCase()), ...values.map(v => String(v))],
+        values: loweredValues,
       };
     }
 
     case 'CONTAINS_ALL': {
       if (!filter.values || filter.values.length === 0) return { sql: '', values: [] };
-      // Check if array contains ALL of the specified values
-      // Uses PostgreSQL's @> operator for JSONB containment
+      const loweredValues = filter.values.map((value) => String(value).toLowerCase());
+      const placeholders = loweredValues.map((_, idx) => `$${startIndex + idx}`).join(', ');
       return {
-        sql: `data->'${filter.fieldId}' @> $${startIndex}::jsonb`,
-        values: [JSON.stringify(filter.values)],
+        sql: `(
+          jsonb_typeof(${jsonAccessor}) = 'array' AND
+          NOT EXISTS (
+            SELECT 1 FROM unnest(ARRAY[${placeholders}]::text[]) AS expected(val)
+            WHERE NOT EXISTS (
+              SELECT 1 FROM jsonb_array_elements_text(${jsonAccessor}) elem
+              WHERE LOWER(elem) = expected.val
+            )
+          )
+        )`,
+        values: loweredValues,
       };
     }
 
@@ -252,7 +287,7 @@ function buildRawSQLCondition(
       if (!filter.value) return { sql: '', values: [] };
       // Compare dates ignoring time component
       return {
-        sql: `DATE(data->>'${filter.fieldId}') = DATE($${startIndex}::timestamp)`,
+        sql: `DATE(${textAccessor}) = DATE($${startIndex}::timestamp)`,
         values: [filter.value],
       };
     }
@@ -260,7 +295,7 @@ function buildRawSQLCondition(
     case 'DATE_BEFORE': {
       if (!filter.value) return { sql: '', values: [] };
       return {
-        sql: `(data->>'${filter.fieldId}')::timestamp < $${startIndex}::timestamp`,
+        sql: `(${textAccessor})::timestamp < $${startIndex}::timestamp`,
         values: [filter.value],
       };
     }
@@ -268,7 +303,7 @@ function buildRawSQLCondition(
     case 'DATE_AFTER': {
       if (!filter.value) return { sql: '', values: [] };
       return {
-        sql: `(data->>'${filter.fieldId}')::timestamp > $${startIndex}::timestamp`,
+        sql: `(${textAccessor})::timestamp > $${startIndex}::timestamp`,
         values: [filter.value],
       };
     }
@@ -281,12 +316,12 @@ function buildRawSQLCondition(
       let dateIdx = startIndex;
       
       if (filter.dateRange.from) {
-        dateConditions.push(`(data->>'${filter.fieldId}')::timestamp >= $${dateIdx}::timestamp`);
+        dateConditions.push(`(${textAccessor})::timestamp >= $${dateIdx}::timestamp`);
         dateValues.push(filter.dateRange.from);
         dateIdx++;
       }
       if (filter.dateRange.to) {
-        dateConditions.push(`(data->>'${filter.fieldId}')::timestamp <= $${dateIdx}::timestamp`);
+        dateConditions.push(`(${textAccessor})::timestamp <= $${dateIdx}::timestamp`);
         dateValues.push(filter.dateRange.to);
       }
       

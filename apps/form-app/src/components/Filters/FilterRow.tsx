@@ -21,6 +21,7 @@ interface FilterRowProps {
   onChange: (filter: Partial<FilterState>) => void;
   onRemove: () => void;
   isFirst?: boolean;
+  filterLogic: 'AND' | 'OR';
 }
 
 const getOperatorOptions = (fieldType: FieldType, t: (key: string) => string) => {
@@ -302,6 +303,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
   onChange,
   onRemove,
   isFirst = false,
+  filterLogic,
 }) => {
   const { t } = useTranslation('filterRow');
   const currentField = fields.find(f => f.id === filter.fieldId);
@@ -340,7 +342,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
       <div className="flex items-center justify-between">
         {!isFirst ? (
           <div className="text-sm font-medium text-slate-600">
-            and
+            {filterLogic === 'AND' ? 'and' : 'or'}
           </div>
         ) : (
           <div></div>

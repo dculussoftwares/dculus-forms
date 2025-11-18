@@ -135,6 +135,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                     onChange={(updates) => onFilterChange(filterId, updates)}
                     onRemove={() => handleRemoveFilter(filterId)}
                     isFirst={index === 0}
+                    filterLogic={filterLogic}
                   />
                 ))}
               </div>

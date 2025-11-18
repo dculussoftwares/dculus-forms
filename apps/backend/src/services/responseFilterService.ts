@@ -14,8 +14,40 @@ export interface ResponseFilter {
  * @param filterLogic - Logic to combine filters: 'AND' (all must pass) or 'OR' (any can pass)
  * @returns Filtered array of responses that match filter criteria
  */
+const isValueEmpty = (value: unknown): boolean => {
+  if (value === null || value === undefined) {
+    return true;
+  }
+  if (typeof value === 'string') {
+    return value.trim() === '';
+  }
+  if (Array.isArray(value)) {
+    return value.length === 0;
+  }
+  return false;
+};
+
+const toNumber = (value: unknown): number | null => {
+  if (typeof value === 'number' && !isNaN(value)) {
+    return value;
+  }
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    return isNaN(parsed) ? null : parsed;
+  }
+  return null;
+};
+
+const parseFilterNumber = (value?: string): number | null => {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+  const parsed = Number(value);
+  return isNaN(parsed) ? null : parsed;
+};
+
 export function applyResponseFilters(
-  responses: any[], 
+  responses: any[],
   filters?: ResponseFilter[],
   filterLogic: 'AND' | 'OR' = 'AND'
 ): any[] {
@@ -28,15 +60,17 @@ export function applyResponseFilters(
     const filterMethod = filterLogic === 'OR' ? 'some' : 'every';
     return filters[filterMethod](filter => {
       // Get field value from response data (handles both 'data' and 'responseData' properties)
-      const fieldValue = response.responseData?.[filter.fieldId] || response.data?.[filter.fieldId];
-      
+      const fieldValue =
+        response.responseData?.[filter.fieldId] ??
+        response.data?.[filter.fieldId];
+
       switch (filter.operator) {
         case 'IS_EMPTY':
-          return !fieldValue || fieldValue === '' || fieldValue === null || fieldValue === undefined;
-        
+          return isValueEmpty(fieldValue);
+
         case 'IS_NOT_EMPTY':
-          return fieldValue && fieldValue !== '' && fieldValue !== null && fieldValue !== undefined;
-        
+          return !isValueEmpty(fieldValue);
+
         case 'EQUALS':
           // Handle both string equality and array exact match
           if (Array.isArray(fieldValue) && filter.values && filter.values.length > 0) {
@@ -65,25 +99,29 @@ export function applyResponseFilters(
           return fieldValue && String(fieldValue).toLowerCase().endsWith(String(filter.value || '').toLowerCase());
         
         case 'GREATER_THAN': {
-          const numValue = parseFloat(fieldValue);
-          const filterNum = parseFloat(filter.value || '0');
-          return !isNaN(numValue) && !isNaN(filterNum) && numValue > filterNum;
+          const filterNum = parseFilterNumber(filter.value);
+          if (filterNum === null) return false;
+          const numValue = toNumber(fieldValue);
+          return numValue !== null && numValue > filterNum;
         }
         
         case 'LESS_THAN': {
-          const numValue2 = parseFloat(fieldValue);
-          const filterNum2 = parseFloat(filter.value || '0');
-          return !isNaN(numValue2) && !isNaN(filterNum2) && numValue2 < filterNum2;
+          const filterNum = parseFilterNumber(filter.value);
+          if (filterNum === null) return false;
+          const numValue = toNumber(fieldValue);
+          return numValue !== null && numValue < filterNum;
         }
         
         case 'BETWEEN': {
           if (!filter.numberRange) return false;
-          const numValue3 = parseFloat(fieldValue);
+          const numValue3 = toNumber(fieldValue);
           const min = filter.numberRange.min;
           const max = filter.numberRange.max;
-          return !isNaN(numValue3) && 
+          if (numValue3 === null) return false;
+          return (
                  (min === undefined || numValue3 >= min) && 
-                 (max === undefined || numValue3 <= max);
+                 (max === undefined || numValue3 <= max)
+          );
         }
         
         case 'DATE_EQUALS': {
