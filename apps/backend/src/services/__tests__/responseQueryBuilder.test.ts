@@ -263,6 +263,11 @@ describe('Response Query Builder', () => {
       expect(result.conditions).toHaveLength(2);
       expect(result.params).toContain('18');
       expect(result.params).toContain('100');
+      // Should use CASE statements for safe casting
+      expect(result.conditions[0]).toContain('CASE');
+      expect(result.conditions[0]).toContain('WHEN');
+      // Should validate numeric pattern with regex
+      expect(result.conditions[0]).toContain('~');
     });
 
     it('should handle date operators', () => {
@@ -272,8 +277,32 @@ describe('Response Query Builder', () => {
       ]);
 
       expect(result.conditions).toHaveLength(1);
-      expect(result.conditions[0]).toContain('DATE(');
       expect(result.params).toContain(date);
+      // Should use CASE statements for safe casting
+      expect(result.conditions[0]).toContain('CASE');
+      expect(result.conditions[0]).toContain('WHEN');
+      // Should validate date pattern with regex
+      expect(result.conditions[0]).toContain('~');
+    });
+
+    it('should handle invalid numeric values safely', () => {
+      const result = buildPostgreSQLFilter('form-123', [
+        { fieldId: 'age', operator: 'GREATER_THAN', value: '18' }
+      ]);
+
+      // Should generate SQL that returns FALSE for non-numeric values
+      expect(result.conditions[0]).toContain('ELSE FALSE');
+      expect(result.conditions[0]).toContain('END');
+    });
+
+    it('should handle invalid date values safely', () => {
+      const result = buildPostgreSQLFilter('form-123', [
+        { fieldId: 'created', operator: 'DATE_AFTER', value: '2025-01-01' }
+      ]);
+
+      // Should generate SQL that returns FALSE for non-date values
+      expect(result.conditions[0]).toContain('ELSE FALSE');
+      expect(result.conditions[0]).toContain('END');
     });
   });
 });

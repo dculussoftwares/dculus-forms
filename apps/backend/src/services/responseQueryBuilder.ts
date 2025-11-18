@@ -201,16 +201,29 @@ function buildRawSQLCondition(
 
     case 'GREATER_THAN':
       if (filter.value === undefined) return { sql: '', values: [] };
-      // Cast JSONB value to numeric for comparison
+      // Safe numeric cast: validate the value is a number before casting
       return {
-        sql: `(${textAccessor})::numeric > $${startIndex}::numeric`,
+        sql: `(
+          CASE 
+            WHEN ${textAccessor} ~ '^-?[0-9]+(\\.[0-9]+)?$' 
+            THEN (${textAccessor})::numeric > $${startIndex}::numeric
+            ELSE FALSE
+          END
+        )`,
         values: [filter.value],
       };
 
     case 'LESS_THAN':
       if (filter.value === undefined) return { sql: '', values: [] };
+      // Safe numeric cast: validate the value is a number before casting
       return {
-        sql: `(${textAccessor})::numeric < $${startIndex}::numeric`,
+        sql: `(
+          CASE 
+            WHEN ${textAccessor} ~ '^-?[0-9]+(\\.[0-9]+)?$' 
+            THEN (${textAccessor})::numeric < $${startIndex}::numeric
+            ELSE FALSE
+          END
+        )`,
         values: [filter.value],
       };
 
@@ -220,6 +233,9 @@ function buildRawSQLCondition(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const values: any[] = [];
       let idx = startIndex;
+      
+      // Safe numeric cast: only process if value matches numeric pattern
+      const numericCheck = `${textAccessor} ~ '^-?[0-9]+(\\.[0-9]+)?$'`;
       
       if (filter.numberRange.min !== undefined) {
         conditions.push(`(${textAccessor})::numeric >= $${idx}::numeric`);
@@ -233,7 +249,13 @@ function buildRawSQLCondition(
       
       if (conditions.length === 0) return { sql: '', values: [] };
       return {
-        sql: `(${conditions.join(' AND ')})`,
+        sql: `(
+          CASE 
+            WHEN ${numericCheck}
+            THEN ${conditions.join(' AND ')}
+            ELSE FALSE
+          END
+        )`,
         values,
       };
     }
@@ -293,25 +315,45 @@ function buildRawSQLCondition(
     // Date operators
     case 'DATE_EQUALS': {
       if (!filter.value) return { sql: '', values: [] };
-      // Compare dates ignoring time component
+      // Safe date cast: validate timestamp format before casting
       return {
-        sql: `DATE(${textAccessor}) = DATE($${startIndex}::timestamp)`,
+        sql: `(
+          CASE 
+            WHEN ${textAccessor} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' OR ${textAccessor} ~ '^[0-9]+$'
+            THEN DATE((${textAccessor})::timestamp) = DATE($${startIndex}::timestamp)
+            ELSE FALSE
+          END
+        )`,
         values: [filter.value],
       };
     }
 
     case 'DATE_BEFORE': {
       if (!filter.value) return { sql: '', values: [] };
+      // Safe date cast: validate timestamp format before casting
       return {
-        sql: `(${textAccessor})::timestamp < $${startIndex}::timestamp`,
+        sql: `(
+          CASE 
+            WHEN ${textAccessor} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' OR ${textAccessor} ~ '^[0-9]+$'
+            THEN (${textAccessor})::timestamp < $${startIndex}::timestamp
+            ELSE FALSE
+          END
+        )`,
         values: [filter.value],
       };
     }
 
     case 'DATE_AFTER': {
       if (!filter.value) return { sql: '', values: [] };
+      // Safe date cast: validate timestamp format before casting
       return {
-        sql: `(${textAccessor})::timestamp > $${startIndex}::timestamp`,
+        sql: `(
+          CASE 
+            WHEN ${textAccessor} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' OR ${textAccessor} ~ '^[0-9]+$'
+            THEN (${textAccessor})::timestamp > $${startIndex}::timestamp
+            ELSE FALSE
+          END
+        )`,
         values: [filter.value],
       };
     }
@@ -322,6 +364,9 @@ function buildRawSQLCondition(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const dateValues: any[] = [];
       let dateIdx = startIndex;
+      
+      // Safe date cast: validate timestamp format before casting
+      const dateCheck = `${textAccessor} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' OR ${textAccessor} ~ '^[0-9]+$'`;
       
       if (filter.dateRange.from) {
         dateConditions.push(`(${textAccessor})::timestamp >= $${dateIdx}::timestamp`);
@@ -335,7 +380,13 @@ function buildRawSQLCondition(
       
       if (dateConditions.length === 0) return { sql: '', values: [] };
       return {
-        sql: `(${dateConditions.join(' AND ')})`,
+        sql: `(
+          CASE 
+            WHEN ${dateCheck}
+            THEN ${dateConditions.join(' AND ')}
+            ELSE FALSE
+          END
+        )`,
         values: dateValues,
       };
     }
