@@ -35,6 +35,8 @@ export interface UseResponsesStateReturn {
   filters: Record<string, FilterState>;
   setFilters: React.Dispatch<React.SetStateAction<Record<string, FilterState>>>;
   graphqlFilters: any[] | null;
+  filterLogic: 'AND' | 'OR';
+  setFilterLogic: (logic: 'AND' | 'OR') => void;
   showFilterModal: boolean;
   setShowFilterModal: (show: boolean) => void;
   handleFilterChange: (fieldId: string, filterUpdate: Partial<FilterState>) => void;
@@ -76,6 +78,7 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filters, setFilters] = useState<Record<string, FilterState>>({});
+  const [filterLogic, setFilterLogic] = useState<'AND' | 'OR'>('AND');
 
   // Plugin metadata dialog state
   const [pluginDialogState, setPluginDialogState] = useState<{
@@ -201,6 +204,7 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
           formId,
           format,
           filters: hasFilters ? activeFilters : undefined,
+          filterLogic: hasFilters && activeFilters.length > 1 ? filterLogic : undefined,
         },
       });
 
@@ -235,6 +239,8 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
     filters,
     setFilters,
     graphqlFilters,
+    filterLogic,
+    setFilterLogic,
     showFilterModal,
     setShowFilterModal,
     handleFilterChange,

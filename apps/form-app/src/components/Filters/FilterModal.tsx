@@ -11,6 +11,8 @@ interface FilterModalProps {
   onClose: () => void;
   fields: FillableFormField[];
   filters: Record<string, FilterState>;
+  filterLogic: 'AND' | 'OR';
+  onFilterLogicChange: (logic: 'AND' | 'OR') => void;
   onFilterChange: (fieldId: string, filter: Partial<FilterState>) => void;
   onRemoveFilter: (fieldId: string) => void;
   onClearAllFilters: () => void;
@@ -22,6 +24,8 @@ export const FilterModal: React.FC<FilterModalProps> = ({
   onClose,
   fields,
   filters,
+  filterLogic,
+  onFilterLogicChange,
   onFilterChange,
   onRemoveFilter,
   onClearAllFilters,
@@ -75,6 +79,38 @@ export const FilterModal: React.FC<FilterModalProps> = ({
             <p className="text-sm text-slate-500 mt-1">
               {t('subtitle')}
             </p>
+            {activeFilterCount > 1 && (
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-xs text-slate-600 font-medium">Match:</span>
+                <div className="inline-flex rounded-md shadow-sm" role="group">
+                  <button
+                    type="button"
+                    onClick={() => onFilterLogicChange('AND')}
+                    className={`px-3 py-1 text-xs font-medium rounded-l-lg border ${
+                      filterLogic === 'AND'
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    ALL filters
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onFilterLogicChange('OR')}
+                    className={`px-3 py-1 text-xs font-medium rounded-r-lg border-t border-b border-r ${
+                      filterLogic === 'OR'
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    ANY filter
+                  </button>
+                </div>
+                <span className="text-xs text-slate-500">
+                  ({filterLogic === 'AND' ? 'All conditions must match' : 'Any condition can match'})
+                </span>
+              </div>
+            )}
           </div>
           <Button
             variant="ghost"

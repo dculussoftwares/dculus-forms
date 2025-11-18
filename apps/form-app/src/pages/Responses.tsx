@@ -69,6 +69,7 @@ const Responses: React.FC = () => {
       sortBy: responsesState.sortBy,
       sortOrder: responsesState.sortOrder,
       filters: responsesState.graphqlFilters,
+      filterLogic: responsesState.graphqlFilters && responsesState.graphqlFilters.length > 1 ? responsesState.filterLogic : undefined,
     },
     skip: !actualFormId,
     notifyOnNetworkStatusChange: true,
@@ -303,6 +304,8 @@ const Responses: React.FC = () => {
         onClose={() => responsesState.setShowFilterModal(false)}
         fields={fillableFields}
         filters={responsesState.filters}
+        filterLogic={responsesState.filterLogic}
+        onFilterLogicChange={responsesState.setFilterLogic}
         onFilterChange={responsesState.handleFilterChange}
         onRemoveFilter={responsesState.handleRemoveFilter}
         onClearAllFilters={responsesState.handleClearAllFilters}

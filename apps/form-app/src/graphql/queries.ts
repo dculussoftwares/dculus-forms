@@ -134,8 +134,8 @@ export const GET_FORM_BY_ID = gql`
 `;
 
 export const GET_FORM_RESPONSES = gql`
-  query GetFormResponses($formId: ID!, $page: Int = 1, $limit: Int = 10, $sortBy: String = "submittedAt", $sortOrder: String = "desc", $filters: [ResponseFilterInput!]) {
-    responsesByForm(formId: $formId, page: $page, limit: $limit, sortBy: $sortBy, sortOrder: $sortOrder, filters: $filters) {
+  query GetFormResponses($formId: ID!, $page: Int = 1, $limit: Int = 10, $sortBy: String = "submittedAt", $sortOrder: String = "desc", $filters: [ResponseFilterInput!], $filterLogic: FilterLogic) {
+    responsesByForm(formId: $formId, page: $page, limit: $limit, sortBy: $sortBy, sortOrder: $sortOrder, filters: $filters, filterLogic: $filterLogic) {
       data {
         id
         formId
@@ -174,8 +174,8 @@ export const GET_ALL_FORM_RESPONSES = gql`
 `;
 
 export const GENERATE_FORM_RESPONSE_REPORT = gql`
-  mutation GenerateFormResponseReport($formId: ID!, $format: ExportFormat!, $filters: [ResponseFilterInput!]) {
-    generateFormResponseReport(formId: $formId, format: $format, filters: $filters) {
+  mutation GenerateFormResponseReport($formId: ID!, $format: ExportFormat!, $filters: [ResponseFilterInput!], $filterLogic: FilterLogic) {
+    generateFormResponseReport(formId: $formId, format: $format, filters: $filters, filterLogic: $filterLogic) {
       downloadUrl
       expiresAt
       filename
