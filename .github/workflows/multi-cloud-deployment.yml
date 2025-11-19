@@ -50,6 +50,7 @@ env:
   CLOUDFLARE_PAGES_ADMIN_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages-admin'
   CLOUDFLARE_PAGES_VIEWER_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages-viewer'
   AZURE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/azure'
+  AZURE_POSTGRES_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/azure-postgres'
   MONGODB_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/mongodb'
 
 jobs:
@@ -233,6 +234,21 @@ jobs:
             echo "✅ Container created: $MONGODB_CONTAINER"
           else
             echo "✅ Container exists: $MONGODB_CONTAINER"
+          fi
+
+          # Create Azure PostgreSQL container
+          AZURE_POSTGRES_CONTAINER="dculus-forms-azure-postgres-${ENV}-state"
+          if ! az storage container show \
+            --name "$AZURE_POSTGRES_CONTAINER" \
+            --account-name "$STORAGE_ACCOUNT" &>/dev/null; then
+            echo "📦 Creating container: $AZURE_POSTGRES_CONTAINER"
+            az storage container create \
+              --name "$AZURE_POSTGRES_CONTAINER" \
+              --account-name "$STORAGE_ACCOUNT" \
+              --auth-mode login
+            echo "✅ Container created: $AZURE_POSTGRES_CONTAINER"
+          else
+            echo "✅ Container exists: $AZURE_POSTGRES_CONTAINER"
           fi
 
           # Create Cloudflare Pages container
@@ -424,6 +440,96 @@ jobs:
           echo "project_name=$(terraform output -raw project_name)" >> $GITHUB_OUTPUT
           echo "cluster_name=$(terraform output -raw cluster_name)" >> $GITHUB_OUTPUT
           echo "cluster_state=$(terraform output -raw cluster_state)" >> $GITHUB_OUTPUT
+
+  terraform-azure-postgres-deploy:
+    name: 3.2. Deploy Azure PostgreSQL Infrastructure
+    runs-on: ubuntu-latest
+    needs: [determine-environment, setup-azure-backend]
+    if: |
+      always() && !cancelled() && !failure() &&
+      needs.determine-environment.outputs.deploy_azure == 'true'
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    outputs:
+      connection_string: ${{ steps.apply.outputs.connection_string }}
+      server_name: ${{ steps.apply.outputs.server_name }}
+      server_fqdn: ${{ steps.apply.outputs.server_fqdn }}
+      database_name: ${{ steps.apply.outputs.database_name }}
+    defaults:
+      run:
+        working-directory: ${{ env.AZURE_POSTGRES_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: dculus-forms
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get Azure Storage Account Key
+        id: get-storage-key
+        run: |
+          ACCOUNT_KEY=$(az storage account keys list \
+            --resource-group dculus-global-terraform-assets-resource-grp \
+            --account-name dculusterraformstates \
+            --query '[0].value' -o tsv)
+          echo "::add-mask::$ACCOUNT_KEY"
+          echo "ARM_ACCESS_KEY=$ACCOUNT_KEY" >> $GITHUB_ENV
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Copy Terraform module files
+        run: |
+          cp ../../main.tf .
+          cp ../../variables.tf .
+          cp ../../outputs.tf .
+          echo "✅ Copied Azure PostgreSQL module files"
+
+      - name: Terraform Init
+        env:
+          TF_VAR_postgres_admin_password: ${{ secrets.AZURE_POSTGRES_ADMIN_PASSWORD }}
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
+            -backend-config="storage_account_name=dculusterraformstates" \
+            -backend-config="container_name=dculus-forms-azure-postgres-${{ needs.determine-environment.outputs.environment }}-state" \
+            -backend-config="key=terraform.tfstate"
+
+      - name: Terraform Validate
+        env:
+          TF_VAR_postgres_admin_password: ${{ secrets.AZURE_POSTGRES_ADMIN_PASSWORD }}
+        run: terraform validate
+
+      - name: Terraform Plan
+        env:
+          TF_VAR_postgres_admin_password: ${{ secrets.AZURE_POSTGRES_ADMIN_PASSWORD }}
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        id: apply
+        if: needs.determine-environment.outputs.should_deploy == 'true'
+        env:
+          TF_VAR_postgres_admin_password: ${{ secrets.AZURE_POSTGRES_ADMIN_PASSWORD }}
+        run: |
+          terraform apply -auto-approve tfplan
+
+          POSTGRES_CONNECTION_STRING=$(terraform output -raw postgres_connection_string)
+          POSTGRES_SERVER_NAME=$(terraform output -raw postgres_server_name)
+          POSTGRES_SERVER_FQDN=$(terraform output -raw postgres_fqdn)
+          POSTGRES_DATABASE_NAME=$(terraform output -raw postgres_database_name)
+
+          echo "::add-mask::$POSTGRES_CONNECTION_STRING"
+          echo "connection_string=$POSTGRES_CONNECTION_STRING" >> $GITHUB_OUTPUT
+          echo "server_name=$POSTGRES_SERVER_NAME" >> $GITHUB_OUTPUT
+          echo "server_fqdn=$POSTGRES_SERVER_FQDN" >> $GITHUB_OUTPUT
+          echo "database_name=$POSTGRES_DATABASE_NAME" >> $GITHUB_OUTPUT
 
   # ============================================================
   # PHASE 4: CORE INFRASTRUCTURE (Storage + Backend)
@@ -1603,6 +1709,7 @@ jobs:
     needs: [
       determine-environment,
       terraform-mongodb-deploy,
+      terraform-azure-postgres-deploy,
       terraform-infrastructure-deploy,
       terraform-cloudflare-service-domain,
       terraform-cloudflare-pages,
@@ -1631,6 +1738,7 @@ jobs:
           echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| MongoDB Atlas | ${{ needs.terraform-mongodb-deploy.result == 'success' && '✅' || needs.terraform-mongodb-deploy.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Azure PostgreSQL | ${{ needs.terraform-azure-postgres-deploy.result == 'success' && '✅' || needs.terraform-azure-postgres-deploy.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Infrastructure (R2 + Container Apps) | ${{ needs.terraform-infrastructure-deploy.result == 'success' && '✅' || needs.terraform-infrastructure-deploy.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Cloudflare Service Domain | ${{ needs.terraform-cloudflare-service-domain.result == 'success' && '✅' || needs.terraform-cloudflare-service-domain.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Cloudflare Pages Infrastructure (form-app) | ${{ needs.terraform-cloudflare-pages.result == 'success' && '✅' || needs.terraform-cloudflare-pages.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
@@ -1718,7 +1826,12 @@ jobs:
           fi
 
           # Overall Status
-          if [ "${{ needs.terraform-mongodb-deploy.result }}" = "success" ] && [ "${{ needs.terraform-infrastructure-deploy.result }}" = "success" ]; then
+          POSTGRES_JOB_FAILED=false
+          if [ "${{ needs.terraform-azure-postgres-deploy.result }}" = "failure" ] || [ "${{ needs.terraform-azure-postgres-deploy.result }}" = "cancelled" ]; then
+            POSTGRES_JOB_FAILED=true
+          fi
+
+          if [ "${{ needs.terraform-mongodb-deploy.result }}" = "success" ] && [ "${{ needs.terraform-infrastructure-deploy.result }}" = "success" ] && [ "$POSTGRES_JOB_FAILED" = "false" ]; then
             echo "## ✅ Deployment Successful!" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "All infrastructure has been deployed successfully to the **${{ needs.determine-environment.outputs.environment }}** environment." >> $GITHUB_STEP_SUMMARY
