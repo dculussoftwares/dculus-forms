@@ -29,6 +29,7 @@ variable "postgres_admin_password" {
   description = "Administrator password for the PostgreSQL server"
   type        = string
   sensitive   = true
+  default     = ""
 }
 
 variable "postgres_version" {

@@ -11,6 +11,6 @@ output "postgres_database_name" {
 }
 
 output "postgres_connection_string" {
-  value     = "postgresql://${local.postgres_admin_principal}:${var.postgres_admin_password}@${azurerm_postgresql_flexible_server.main.fqdn}:5432/${var.postgres_database_name}?sslmode=require"
+  value     = "postgresql://${local.postgres_admin_principal}:${local.resolved_admin_password}@${azurerm_postgresql_flexible_server.main.fqdn}:5432/${var.postgres_database_name}?sslmode=require"
   sensitive = true
 }

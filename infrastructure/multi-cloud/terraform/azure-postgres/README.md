@@ -21,7 +21,7 @@ Make sure the following GitHub secrets are configured:
 | `AZURE_SUBSCRIPTION_ID` | Azure subscription ID |
 
 ### PostgreSQL Credentials
-- `AZURE_POSTGRES_ADMIN_PASSWORD`: Required. Password for the PostgreSQL administrator user (should meet Azure's complexity requirements).
+- `AZURE_POSTGRES_ADMIN_PASSWORD` (optional): When provided, Terraform uses it for the PostgreSQL administrator. When omitted, the module automatically generates a strong 24-character password (stored in Terraform state and used in outputs).
 - Optionally, `AZURE_POSTGRES_ADMIN_USERNAME` can be provided if you want to override the default (`dculusadmin`). If the secret is missing, Terraform defaults to `dculusadmin`.
 
 ## Deployment
@@ -42,7 +42,7 @@ terraform plan
 terraform apply
 ```
 
-> **Tip**: When running locally, supply `TF_VAR_postgres_admin_password`, e.g. `export TF_VAR_postgres_admin_password='...'`.
+> **Tip**: When running locally you can omit `TF_VAR_postgres_admin_password` to let Terraform generate a compliant password, or set it explicitly with `export TF_VAR_postgres_admin_password='...'`.
 
 ## Customization
 
