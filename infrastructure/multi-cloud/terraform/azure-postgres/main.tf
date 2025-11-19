@@ -24,7 +24,7 @@ locals {
   postgres_server_name     = "${var.project_name}-${var.environment}-backend-database"
   postgres_admin_principal = "${var.postgres_admin_username}@${local.postgres_server_name}"
   enable_high_availability = lower(var.postgres_high_availability_mode) != "disabled"
-  resolved_admin_password  = var.postgres_admin_password != "" ? var.postgres_admin_password : random_password.admin[0].result
+  resolved_admin_password  = var.postgres_admin_password != "" ? var.postgres_admin_password : random_password.admin.result
 }
 
 resource "azurerm_resource_group" "postgres" {
@@ -36,7 +36,6 @@ resource "azurerm_resource_group" "postgres" {
 }
 
 resource "random_password" "admin" {
-  count            = var.postgres_admin_password != "" ? 0 : 1
   length           = 24
   min_lower        = 2
   min_upper        = 2
