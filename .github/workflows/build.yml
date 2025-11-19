@@ -242,7 +242,7 @@ jobs:
         run: docker compose -f test/integration/docker-compose.postgres.yml pull postgres
 
       - name: Set integration database URL
-        run: echo "DATABASE_URL=postgresql://dculus:dculus_dev_password@127.0.0.1:5543/dculus_forms" >> $GITHUB_ENV
+        run: echo "DATABASE_URL=postgresql://dculus:dculus_dev_password@127.0.0.1:5543/dculus_forms?sslmode=disable&gssencmode=disable" >> $GITHUB_ENV
 
       - name: Run integration tests
         env:

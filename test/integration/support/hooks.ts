@@ -89,6 +89,21 @@ const stopDockerPostgres = () => {
   }
 };
 
+const connectPrismaWithRetry = async (client: PrismaClient, maxAttempts = 30, delayMs = 1000) => {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      await client.$connect();
+      return;
+    } catch (error) {
+      if (attempt === maxAttempts) {
+        throw error;
+      }
+      console.log(`⏳ Waiting for PostgreSQL to become ready (attempt ${attempt}/${maxAttempts})...`);
+      await sleep(delayMs);
+    }
+  }
+};
+
 // Helper to clean PostgreSQL database
 const cleanDatabase = async (prismaClient: PrismaClient) => {
   // Delete in correct order to respect foreign keys
@@ -158,7 +173,9 @@ BeforeAll({ timeout: 120000 }, async function() {
     const rootDir = path.resolve(process.cwd());
 
     // Use existing PostgreSQL database (from env) or integration Docker container
-    const postgresUri = process.env.DATABASE_URL || 'postgresql://dculus:dculus_dev_password@127.0.0.1:5543/dculus_forms';
+    const postgresUri =
+      process.env.DATABASE_URL ||
+      'postgresql://dculus:dculus_dev_password@127.0.0.1:5543/dculus_forms?sslmode=disable&gssencmode=disable';
     console.log(`✅ Using PostgreSQL at: ${postgresUri.replace(/:[^:]*@/, ':****@')}`);
 
     // Initialize Prisma client with PostgreSQL
@@ -170,7 +187,7 @@ BeforeAll({ timeout: 120000 }, async function() {
       },
     });
 
-    await prisma.$connect();
+    await connectPrismaWithRetry(prisma);
     console.log('✅ Prisma client connected to PostgreSQL');
 
     // Clean database before tests
