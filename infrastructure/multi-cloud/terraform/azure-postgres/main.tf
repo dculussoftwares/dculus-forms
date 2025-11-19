@@ -58,7 +58,7 @@ resource "azurerm_postgresql_flexible_server_database" "app" {
   name      = var.postgres_database_name
   server_id = azurerm_postgresql_flexible_server.main.id
   charset   = "UTF8"
-  collation = "English_United States.1252"
+  collation = "en_US.utf8"
 }
 
 resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_all" {
