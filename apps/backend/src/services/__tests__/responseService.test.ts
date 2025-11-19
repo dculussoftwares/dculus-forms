@@ -224,7 +224,7 @@ describe('Response Service', () => {
       vi.mocked(responseRepository.listByForm).mockResolvedValue([mockResponse] as any);
       vi.mocked(responseRepository.count).mockResolvedValue(1);
 
-      const result = await getResponsesByFormId('form-123', 1, 10, 'invalid', 'desc');
+      const result = await getResponsesByFormId('form-123', 1, 10, 'invalid' as any, 'desc');
 
       // Should default to submittedAt when invalid field is provided
       expect(result.data).toBeDefined();
@@ -234,7 +234,7 @@ describe('Response Service', () => {
       vi.mocked(responseRepository.listByForm).mockResolvedValue([mockResponse] as any);
       vi.mocked(responseRepository.count).mockResolvedValue(1);
 
-      const result = await getResponsesByFormId('form-123', 1, 10, 'submittedAt', 'invalid');
+      const result = await getResponsesByFormId('form-123', 1, 10, 'submittedAt', 'invalid' as any);
 
       // Should default to desc when invalid order is provided
       expect(result.data).toBeDefined();
