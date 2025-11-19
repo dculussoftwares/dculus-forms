@@ -277,6 +277,11 @@ jobs:
           echo "DATABASE_URL=postgresql://dculus:dculus_dev_password@127.0.0.1:5543/dculus_forms?sslmode=disable&gssencmode=disable" >> $GITHUB_ENV
           echo "MANAGE_INTEGRATION_DOCKER=false" >> $GITHUB_ENV
 
+      - name: Apply Prisma schema to integration database
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+        run: pnpm --filter backend db:push
+
       - name: Run integration tests
         id: run_integration_tests
         env:
