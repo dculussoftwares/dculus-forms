@@ -257,6 +257,21 @@ jobs:
           docker compose -f test/integration/docker-compose.postgres.yml logs postgres
           exit 1
 
+      - name: Wait for host PostgreSQL port
+        shell: bash
+        run: |
+          for i in {1..30}; do
+            if (echo > /dev/tcp/127.0.0.1/5543) >/dev/null 2>&1; then
+              echo "Host port 5543 is reachable"
+              exit 0
+            fi
+            echo "Waiting for host port 5543 (${i}/30)..."
+            sleep 2
+          done
+          echo "Host port 5543 never opened" >&2
+          docker compose -f test/integration/docker-compose.postgres.yml logs postgres
+          exit 1
+
       - name: Export integration database environment
         run: |
           echo "DATABASE_URL=postgresql://dculus:dculus_dev_password@127.0.0.1:5543/dculus_forms?sslmode=disable&gssencmode=disable" >> $GITHUB_ENV

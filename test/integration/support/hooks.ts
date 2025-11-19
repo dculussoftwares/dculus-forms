@@ -18,6 +18,11 @@ let prisma: PrismaClient;
 let mockSMTPServer: MockSMTPServer;
 let mockS3: MockS3Service;
 const shouldManageDocker = process.env.MANAGE_INTEGRATION_DOCKER !== 'false';
+console.log(
+  `⚙️  Integration Docker management: ${shouldManageDocker ? 'auto' : 'external'} (MANAGE_INTEGRATION_DOCKER=${
+    process.env.MANAGE_INTEGRATION_DOCKER ?? 'undefined'
+  })`
+);
 let startedDockerPostgres = false;
 
 const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
@@ -215,6 +220,7 @@ BeforeAll({ timeout: 120000 }, async function() {
 
     // Ensure PostgreSQL is reachable before connecting via Prisma
     await waitForPostgresPort(postgresUri);
+    console.log('✅ PostgreSQL port reachable');
 
     // Initialize Prisma client with PostgreSQL
     prisma = new PrismaClient({
