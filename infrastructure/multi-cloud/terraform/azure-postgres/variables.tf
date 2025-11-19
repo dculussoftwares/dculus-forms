@@ -40,13 +40,7 @@ variable "postgres_version" {
 variable "postgres_sku_name" {
   description = "SKU name for the PostgreSQL flexible server"
   type        = string
-  default     = "Standard_B1ms"
-}
-
-variable "postgres_sku_tier" {
-  description = "SKU tier for the PostgreSQL flexible server"
-  type        = string
-  default     = "Burstable"
+  default     = "B_Standard_B1ms"
 }
 
 variable "postgres_storage_gb" {
@@ -54,7 +48,7 @@ variable "postgres_storage_gb" {
   type        = number
   default     = 32
 }
- 
+
 variable "postgres_resource_group_name" {
   description = "Optional override for the PostgreSQL resource group name"
   type        = string
@@ -67,7 +61,7 @@ variable "postgres_backup_retention_days" {
   default     = 7
 }
 
-variable "postgres_geo_redundant_backup" {
+variable "postgres_geo_redundant_backup_enabled" {
   description = "Enable geo-redundant backups"
   type        = bool
   default     = false
@@ -77,6 +71,12 @@ variable "postgres_high_availability_mode" {
   description = "High availability mode for the flexible server"
   type        = string
   default     = "Disabled"
+}
+
+variable "postgres_high_availability_standby_zone" {
+  description = "Optional standby availability zone when HA is enabled"
+  type        = string
+  default     = ""
 }
 
 variable "postgres_database_name" {
