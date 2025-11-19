@@ -3,6 +3,7 @@ import { spawn, spawnSync, ChildProcess } from 'child_process';
 import axios from 'axios';
 import path from 'path';
 import fs from 'fs';
+import net from 'net';
 import { PrismaClient } from '@prisma/client';
 import { CustomWorld } from './world';
 import { MockSMTPServer } from '../utils/mock-servers';
@@ -105,6 +106,35 @@ const connectPrismaWithRetry = async (client: PrismaClient, maxAttempts = 30, de
   }
 };
 
+const waitForPostgresPort = async (postgresUri: string, maxAttempts = 30, delayMs = 1000) => {
+  const url = new URL(postgresUri);
+  const host = url.hostname || '127.0.0.1';
+  const port = Number(url.port || 5432);
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const isReachable = await new Promise<boolean>((resolve) => {
+      const socket = net.createConnection({ host, port }, () => {
+        socket.end();
+        resolve(true);
+      });
+
+      socket.on('error', () => {
+        socket.destroy();
+        resolve(false);
+      });
+    });
+
+    if (isReachable) {
+      return;
+    }
+
+    console.log(`⏳ Waiting for PostgreSQL port ${host}:${port} (attempt ${attempt}/${maxAttempts})...`);
+    await sleep(delayMs);
+  }
+
+  throw new Error(`PostgreSQL is not reachable at ${host}:${port}`);
+};
+
 // Helper to clean PostgreSQL database
 const cleanDatabase = async (prismaClient: PrismaClient) => {
   // Delete in correct order to respect foreign keys
@@ -182,6 +212,9 @@ BeforeAll({ timeout: 120000 }, async function() {
       process.env.DATABASE_URL ||
       'postgresql://dculus:dculus_dev_password@127.0.0.1:5543/dculus_forms?sslmode=disable&gssencmode=disable';
     console.log(`✅ Using PostgreSQL at: ${postgresUri.replace(/:[^:]*@/, ':****@')}`);
+
+    // Ensure PostgreSQL is reachable before connecting via Prisma
+    await waitForPostgresPort(postgresUri);
 
     // Initialize Prisma client with PostgreSQL
     prisma = new PrismaClient({
