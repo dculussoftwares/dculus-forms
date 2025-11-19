@@ -1,4 +1,4 @@
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 import { prisma } from '../../lib/prisma.js';
 import { isDateExpired } from '../../utils/dateHelpers.js';
 import { logger } from '../../lib/logger.js';

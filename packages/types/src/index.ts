@@ -889,3 +889,9 @@ export * from './plugins.js';
  * - See NumberRangeSettings component  
  * - See validation schema with range validation
  */
+
+export {
+  GRAPHQL_ERROR_CODES,
+  type GraphQLErrorCode,
+  isGraphQLErrorCode,
+} from './graphql.js';

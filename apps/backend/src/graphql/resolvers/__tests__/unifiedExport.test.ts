@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { unifiedExportResolvers } from '../unifiedExport.js';
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 import * as betterAuthMiddleware from '../../../middleware/better-auth-middleware.js';
 import * as formSharingResolvers from '../formSharing.js';
 import * as formService from '../../../services/formService.js';

@@ -2,8 +2,12 @@ import { Request } from 'express';
 import { fromNodeHeaders } from 'better-auth/node';
 import { auth } from '../lib/better-auth.js';
 import { prisma } from '../lib/prisma.js';
-import { GraphQLError } from 'graphql';
 import { logger } from '../lib/logger.js';
+import {
+  GRAPHQL_ERROR_CODES,
+  type GraphQLErrorCode,
+} from '@dculus/types/graphql.js';
+import { createGraphQLError } from '../lib/graphqlErrors.js';
 
 export interface BetterAuthContext {
   user: any | null;
@@ -36,7 +40,10 @@ export async function createBetterAuthContext(req: Request): Promise<BetterAuthC
 
 export function requireAuth(context: BetterAuthContext) {
   if (!context.isAuthenticated || !context.user) {
-    throw new Error('Authentication required');
+    throwGraphQLAccessError(
+      'Authentication required',
+      GRAPHQL_ERROR_CODES.AUTHENTICATION_REQUIRED
+    );
   }
   return context;
 }
@@ -44,7 +51,10 @@ export function requireAuth(context: BetterAuthContext) {
 export function requireOrganization(context: BetterAuthContext) {
   requireAuth(context);
   if (!context.session?.activeOrganizationId) {
-    throw new Error('Active organization required');
+    throwGraphQLAccessError(
+      'Active organization required',
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
   }
   return context;
 }
@@ -53,6 +63,13 @@ export function requireOrganization(context: BetterAuthContext) {
  * Verify that a user is a member of a specific organization
  * Uses Prisma to check membership in alignment with better-auth data model
  */
+const throwGraphQLAccessError = (
+  message: string,
+  code: GraphQLErrorCode
+): never => {
+  throw createGraphQLError(message, code);
+};
+
 export async function requireOrganizationMembership(
   context: BetterAuthContext,
   organizationId: string
@@ -72,7 +89,10 @@ export async function requireOrganizationMembership(
   });
 
   if (!membership) {
-    throw new GraphQLError('Access denied: You are not a member of this organization');
+    throwGraphQLAccessError(
+      'Access denied: You are not a member of this organization',
+      GRAPHQL_ERROR_CODES.NO_ACCESS
+    );
   }
 
   return membership;
@@ -89,7 +109,10 @@ export async function requireOrganizationRole(
   const membership = await requireOrganizationMembership(context, organizationId);
 
   if (membership.role !== requiredRole) {
-    throw new GraphQLError(`Access denied: ${requiredRole} role required for this operation`);
+    throwGraphQLAccessError(
+      `Access denied: ${requiredRole} role required for this operation`,
+      GRAPHQL_ERROR_CODES.NO_ACCESS
+    );
   }
 
   return membership;

@@ -15,7 +15,7 @@ import { copyFileForForm } from '../../services/fileUploadService.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 import { prisma } from '../../lib/prisma.js';
 import { randomUUID } from 'crypto';
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
 import { logger } from '../../lib/logger.js';
 

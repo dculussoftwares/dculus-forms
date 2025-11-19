@@ -1,7 +1,7 @@
 import { prisma } from '../../lib/prisma.js';
 import { BetterAuthContext, requireAuth, requireOrganizationMembership } from '../../middleware/better-auth-middleware.js';
 import { randomUUID } from 'crypto';
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 
 // Permission levels mapping
 export const PermissionLevel = {

@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./graphql.js": {
+      "types": "./dist/graphql.d.ts",
+      "import": "./dist/graphql.js"
     }
   },
   "scripts": {

@@ -34,6 +34,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '#graphql-errors': path.resolve(__dirname, './src/lib/graphqlErrors.ts'),
     },
   },
 });

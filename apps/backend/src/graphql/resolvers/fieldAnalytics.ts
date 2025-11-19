@@ -1,4 +1,4 @@
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 import { FieldType } from '@dculus/types';
 import {
   getFieldAnalytics,

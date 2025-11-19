@@ -1,4 +1,4 @@
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 import { prisma } from '../../lib/prisma.js';
 import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { s3Config } from '../../lib/env.js';

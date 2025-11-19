@@ -5,7 +5,7 @@ import {
 } from '../../middleware/better-auth-middleware.js';
 import { prisma } from '../../lib/prisma.js';
 import { nanoid } from 'nanoid';
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 import { logger } from '../../lib/logger.js';
 import {
   createChargebeeCustomer,

@@ -1,4 +1,4 @@
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 import { analyticsService } from '../../services/analyticsService.js';
 import { prisma } from '../../lib/prisma.js';
 import { emitFormViewed } from '../../subscriptions/events.js';

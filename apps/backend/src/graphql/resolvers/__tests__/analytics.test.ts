@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { analyticsResolvers } from '../analytics.js';
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 import { analyticsService } from '../../../services/analyticsService.js';
 import { prisma } from '../../../lib/prisma.js';
 import * as events from '../../../subscriptions/events.js';

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { adminResolvers } from '../admin.js';
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 import { prisma } from '../../../lib/prisma.js';
 
 // Mock all dependencies

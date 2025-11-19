@@ -4,6 +4,11 @@ import { useSession } from '../lib/auth-client';
 import { gql } from '@apollo/client';
 import { toastError } from '@dculus/ui';
 import { useTranslation } from '../hooks/useTranslation';
+import {
+  GRAPHQL_ERROR_CODES,
+  type GraphQLErrorCode,
+} from '@dculus/types/graphql';
+import { extractGraphQLErrorCode } from '../utils/graphqlErrors';
 
 // Better-Auth user type (based on the auth configuration)
 interface AuthUser {
@@ -34,6 +39,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   activeOrganization: Organization | null;
   organizationError: string | null;
+  organizationErrorCode: GraphQLErrorCode | null;
 }
 
 const ACTIVE_ORGANIZATION = gql`
@@ -66,6 +72,7 @@ export const AuthProvider = ({
   const { data: session, isPending } = useSession();
   const [isLoading, setIsLoading] = useState(true);
   const [organizationError, setOrganizationError] = useState<string | null>(null);
+  const [organizationErrorCode, setOrganizationErrorCode] = useState<GraphQLErrorCode | null>(null);
 
   const { data: orgData, error: orgError } = useQuery(ACTIVE_ORGANIZATION, {
     skip: !session?.user,
@@ -80,19 +87,30 @@ export const AuthProvider = ({
   // Handle organization query errors
   useEffect(() => {
     if (orgError) {
-      const errorMessage = orgError.graphQLErrors?.[0]?.message || orgError.message || 'Failed to load organization';
+      const errorMessage =
+        orgError.graphQLErrors?.[0]?.message ||
+        orgError.message ||
+        'Failed to load organization';
+      const errorCode = extractGraphQLErrorCode(orgError);
       setOrganizationError(errorMessage);
+      setOrganizationErrorCode(errorCode ?? null);
 
-      // Show user-friendly error messages for specific authorization errors
-      if (errorMessage.includes('Access denied') || errorMessage.includes('not a member')) {
-        toastError(t('errors.accessDenied.title'), t('errors.accessDenied.message'));
-      } else if (errorMessage.includes('Authentication required')) {
-        toastError(t('errors.authRequired.title'), t('errors.authRequired.message'));
+      if (errorCode === GRAPHQL_ERROR_CODES.NO_ACCESS) {
+        toastError(
+          t('errors.accessDenied.title'),
+          t('errors.accessDenied.message')
+        );
+      } else if (errorCode === GRAPHQL_ERROR_CODES.AUTHENTICATION_REQUIRED) {
+        toastError(
+          t('errors.authRequired.title'),
+          t('errors.authRequired.message')
+        );
       }
     } else {
       setOrganizationError(null);
+      setOrganizationErrorCode(null);
     }
-  }, [orgError]);
+  }, [orgError, t]);
 
 
   const value: AuthContextType = {
@@ -101,6 +119,7 @@ export const AuthProvider = ({
     isAuthenticated: !!session?.user,
     activeOrganization: orgData?.activeOrganization || null,
     organizationError,
+    organizationErrorCode,
   };
 
   return (

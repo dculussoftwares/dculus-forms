@@ -5,12 +5,19 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@dculus/ui': path.resolve(__dirname, '../../packages/ui/src'),
-      '@dculus/utils': path.resolve(__dirname, '../../packages/utils/src'),
-      '@dculus/types': path.resolve(__dirname, '../../packages/types/src/index'),
-    },
+    alias: [
+      { find: '@', replacement: path.resolve(__dirname, './src') },
+      { find: '@dculus/ui', replacement: path.resolve(__dirname, '../../packages/ui/src') },
+      { find: '@dculus/utils', replacement: path.resolve(__dirname, '../../packages/utils/src') },
+      {
+        find: '@dculus/types/graphql',
+        replacement: path.resolve(__dirname, '../../packages/types/src/graphql.ts'),
+      },
+      {
+        find: '@dculus/types',
+        replacement: path.resolve(__dirname, '../../packages/types/src/index.ts'),
+      },
+    ],
   },
   server: {
     port: 3000,

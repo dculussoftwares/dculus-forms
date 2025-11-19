@@ -8,7 +8,7 @@ import {
   createFreeSubscription,
 } from '../../services/chargebeeService.js';
 import { requireAuth, requireOrganizationMembership, type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 import { logger } from '../../lib/logger.js';
 
 /**

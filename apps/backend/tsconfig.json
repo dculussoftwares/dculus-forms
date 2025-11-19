@@ -21,7 +21,8 @@
       "@dculus/utils": ["../../packages/utils/src"],
       "@dculus/utils/*": ["../../packages/utils/src/*"],
       "@dculus/types": ["../../packages/types/src"],
-      "@dculus/types/*": ["../../packages/types/src/*"]
+      "@dculus/types/*": ["../../packages/types/src/*"],
+      "#graphql-errors": ["./src/lib/graphqlErrors.ts"]
     }
   },
   "include": ["src/**/*", "../../packages/utils/src/**/*", "../../packages/types/src/**/*"],

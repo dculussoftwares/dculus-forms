@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { responsesResolvers, extendedResponsesResolvers } from '../responses.js';
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 import * as responseService from '../../../services/responseService.js';
 import * as formService from '../../../services/formService.js';
 import * as betterAuthMiddleware from '../../../middleware/better-auth-middleware.js';

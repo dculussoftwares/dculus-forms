@@ -1,4 +1,4 @@
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 import { uploadFile, deleteFile } from '../../services/fileUploadService.js';
 import { prisma } from '../../lib/prisma.js';
 import { randomUUID } from 'crypto';

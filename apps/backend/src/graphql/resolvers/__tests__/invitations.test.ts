@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { invitationResolvers } from '../invitations.js';
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 import { prisma } from '../../../lib/prisma.js';
 import * as dateHelpers from '../../../utils/dateHelpers.js';
 

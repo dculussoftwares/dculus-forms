@@ -23,7 +23,7 @@ import { emitFormSubmitted } from '../../plugins/events.js';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
 import { emitFormSubmitted as emitSubscriptionFormSubmitted } from '../../subscriptions/events.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 import { logger } from '../../lib/logger.js';
 
 export const responsesResolvers = {

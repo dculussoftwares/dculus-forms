@@ -20,7 +20,10 @@
     "paths": {
       "@/*": ["./src/*"],
       "@shared/*": ["../../packages/shared/src/*"],
-      "@dculus/type": ["../../packages/types/src/index"]
+      "@dculus/type": ["../../packages/types/src/index"],
+      "@dculus/types": ["../../packages/types/src/index"],
+      "@dculus/types/*": ["../../packages/types/src/*"],
+      "@dculus/types/graphql": ["../../packages/types/src/graphql"]
     }
   },
   "include": ["src"],

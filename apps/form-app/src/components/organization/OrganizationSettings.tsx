@@ -9,13 +9,15 @@ import { InviteUserDialog } from './InviteUserDialog';
 import { SubscriptionDashboard } from '../subscription/SubscriptionDashboard';
 import { organization } from '../../lib/auth-client';
 import { useTranslation } from '../../hooks/useTranslation';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql';
+import { extractGraphQLErrorCode } from '../../utils/graphqlErrors';
 
 interface OrganizationSettingsProps {
   initialTab?: string;
 }
 
 export const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ initialTab }) => {
-  const { activeOrganization, organizationError } = useAuthContext();
+  const { activeOrganization, organizationError, organizationErrorCode } = useAuthContext();
   const navigate = useNavigate();
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab && ['team', 'subscription'].includes(initialTab) ? initialTab : 'team');
@@ -74,10 +76,10 @@ export const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ init
       console.error('Error fetching invitations:', error);
       setPendingInvitations([]);
 
-      // Show user-friendly error for authorization failures
-      if (error?.message?.includes('Access denied') || error?.message?.includes('not a member')) {
+      const errorCode = extractGraphQLErrorCode(error);
+      if (errorCode === GRAPHQL_ERROR_CODES.NO_ACCESS) {
         toastError(t('toasts.accessDenied.title'), t('toasts.accessDenied.description'));
-      } else if (error?.message?.includes('Authentication required')) {
+      } else if (errorCode === GRAPHQL_ERROR_CODES.AUTHENTICATION_REQUIRED) {
         toastError(t('toasts.authRequired.title'), t('toasts.authRequired.description'));
       }
     }
@@ -104,7 +106,7 @@ export const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ init
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              {organizationError.includes('Access denied') || organizationError.includes('not a member')
+              {organizationErrorCode === GRAPHQL_ERROR_CODES.NO_ACCESS
                 ? t('organization.alerts.accessDenied')
                 : organizationError}
             </AlertDescription>

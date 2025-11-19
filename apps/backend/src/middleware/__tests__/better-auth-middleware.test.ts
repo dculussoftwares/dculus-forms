@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 import {
   createBetterAuthContext,
   requireAuth,

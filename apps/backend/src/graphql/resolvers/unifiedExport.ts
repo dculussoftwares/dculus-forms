@@ -1,4 +1,4 @@
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
 import { getFormById } from '../../services/formService.js';
 import { getAllResponsesByFormId } from '../../services/responseService.js';

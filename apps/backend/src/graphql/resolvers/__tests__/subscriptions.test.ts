@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { subscriptionResolvers } from '../subscriptions.js';
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 import { prisma } from '../../../lib/prisma.js';
 import * as chargebeeService from '../../../services/chargebeeService.js';
 import * as betterAuthMiddleware from '../../../middleware/better-auth-middleware.js';

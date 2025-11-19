@@ -4,6 +4,9 @@
   "description": "Express.js + GraphQL backend for Dculus Forms",
   "type": "module",
   "main": "dist/index.js",
+  "imports": {
+    "#graphql-errors": "./src/lib/graphqlErrors.js"
+  },
   "scripts": {
     "predev": "prisma generate",
     "dev": "tsx watch src/index.ts",

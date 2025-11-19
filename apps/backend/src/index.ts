@@ -27,6 +27,7 @@ import { appConfig } from './lib/env.js';
 import { initializePluginSystem } from './plugins/index.js';
 import { initializeSubscriptionSystem } from './subscriptions/index.js';
 import { logger } from './lib/logger.js';
+import { deriveGraphQLErrorCode } from './lib/graphqlErrors.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -185,11 +186,23 @@ const server = new ApolloServer({
       },
     }),
   ],
-  formatError: (error) => {
-    logger.error('GraphQL Error:', error);
+  formatError: (formattedError, error) => {
+    const code = deriveGraphQLErrorCode(formattedError);
+    const extensions = {
+      ...formattedError.extensions,
+      code,
+    };
+
+    logger.error('GraphQL Error:', {
+      message: formattedError.message,
+      path: formattedError.path,
+      code,
+      originalError: error,
+    });
+
     return {
-      message: error.message,
-      path: error.path,
+      ...formattedError,
+      extensions,
     };
   },
 });

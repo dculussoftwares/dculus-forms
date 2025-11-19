@@ -6,7 +6,7 @@ import {
   requireSystemLevelRole,
   type AuthContext,
 } from '../auth.js';
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 
 describe('Auth Utilities', () => {
   describe('requireAuthentication', () => {

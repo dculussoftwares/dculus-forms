@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { formSharingResolvers, checkFormAccess, PermissionLevel, SharingScope } from '../formSharing.js';
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 import * as betterAuthMiddleware from '../../../middleware/better-auth-middleware.js';
 import { prisma } from '../../../lib/prisma.js';
 

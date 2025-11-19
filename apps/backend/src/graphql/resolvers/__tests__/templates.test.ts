@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { templatesResolvers } from '../templates.js';
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 import * as templateService from '../../../services/templateService.js';
 import * as formService from '../../../services/formService.js';
 import * as fileUploadService from '../../../services/fileUploadService.js';

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fieldAnalyticsResolvers } from '../fieldAnalytics.js';
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 import { FieldType } from '@dculus/types';
 import * as fieldAnalyticsService from '../../../services/fieldAnalytics/index.js';
 import * as hocuspocusService from '../../../services/hocuspocus.js';

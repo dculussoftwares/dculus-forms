@@ -1,4 +1,4 @@
-import { GraphQLError } from 'graphql';
+import { GraphQLError } from '#graphql-errors';
 import { prisma } from '../../lib/prisma.js';
 import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';

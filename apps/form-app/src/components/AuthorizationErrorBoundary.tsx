@@ -3,6 +3,11 @@ import { ApolloError } from '@apollo/client';
 import { Alert, AlertDescription, Card, CardContent, CardHeader, CardTitle, Button, ScrollArea } from '@dculus/ui';
 import { AlertTriangle, RefreshCw, LogIn, Home } from 'lucide-react';
 import { useTranslation } from '../hooks/useTranslation';
+import {
+  GRAPHQL_ERROR_CODES,
+  type GraphQLErrorCode,
+} from '@dculus/types/graphql';
+import { extractGraphQLErrorCode } from '../utils/graphqlErrors';
 
 interface AuthorizationErrorBoundaryProps {
   children: React.ReactNode;
@@ -26,9 +31,22 @@ export const AuthorizationErrorBoundary: React.FC<AuthorizationErrorBoundaryProp
   }
 
   const errorMessage = error.message || 'An unknown error occurred';
-  const isAuthError = errorMessage.includes('Authentication required');
-  const isAccessError = errorMessage.includes('Access denied') || errorMessage.includes('not a member');
-  const isForbiddenError = errorMessage.includes('Permission denied');
+  const errorCode = extractGraphQLErrorCode(error);
+  const matchesCode = (code: GraphQLErrorCode) => errorCode === code;
+
+  const messageIncludes = (snippet: string) =>
+    errorMessage.toLowerCase().includes(snippet.toLowerCase());
+
+  const isAuthError =
+    matchesCode(GRAPHQL_ERROR_CODES.AUTHENTICATION_REQUIRED) ||
+    messageIncludes('authentication required');
+  const isAccessError =
+    matchesCode(GRAPHQL_ERROR_CODES.NO_ACCESS) ||
+    messageIncludes('access denied') ||
+    messageIncludes('not a member');
+  const isForbiddenError =
+    matchesCode(GRAPHQL_ERROR_CODES.FORBIDDEN) ||
+    messageIncludes('permission denied');
 
   const getErrorIcon = () => {
     if (isAuthError) return <LogIn className="h-4 w-4" />;
