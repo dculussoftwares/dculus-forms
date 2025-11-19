@@ -1,7 +1,8 @@
 import { Before, After, BeforeAll, AfterAll, setDefaultTimeout } from '@cucumber/cucumber';
-import { spawn, ChildProcess } from 'child_process';
+import { spawn, spawnSync, ChildProcess } from 'child_process';
 import axios from 'axios';
 import path from 'path';
+import fs from 'fs';
 import { PrismaClient } from '@prisma/client';
 import { CustomWorld } from './world';
 import { MockSMTPServer } from '../utils/mock-servers';
@@ -15,8 +16,78 @@ let backendProcess: ChildProcess;
 let prisma: PrismaClient;
 let mockSMTPServer: MockSMTPServer;
 let mockS3: MockS3Service;
+let startedDockerPostgres = false;
 
 const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
+
+const dockerComposeFile = path.resolve(process.cwd(), 'test/integration/docker-compose.postgres.yml');
+
+type DockerComposeCommand = {
+  command: string;
+  args: string[];
+};
+
+const detectDockerComposeCommand = (): DockerComposeCommand => {
+  const override = process.env.DOCKER_COMPOSE_CMD;
+  if (override) {
+    const [command, ...args] = override.split(' ');
+    return { command, args };
+  }
+
+  const tryDockerCompose = spawnSync('docker', ['compose', 'version'], { stdio: 'ignore' });
+  if (!tryDockerCompose.error && tryDockerCompose.status === 0) {
+    return { command: 'docker', args: ['compose'] };
+  }
+
+  const tryLegacyCompose = spawnSync('docker-compose', ['--version'], { stdio: 'ignore' });
+  if (!tryLegacyCompose.error && tryLegacyCompose.status === 0) {
+    return { command: 'docker-compose', args: [] };
+  }
+
+  throw new Error('Neither `docker compose` nor `docker-compose` commands are available.');
+};
+
+const dockerComposeCommand = detectDockerComposeCommand();
+
+const runDockerCompose = (args: string[]) => {
+  if (!fs.existsSync(dockerComposeFile)) {
+    throw new Error(`docker-compose.yml not found at ${dockerComposeFile}`);
+  }
+
+  const result = spawnSync(dockerComposeCommand.command, [...dockerComposeCommand.args, '--file', dockerComposeFile, ...args], {
+    stdio: 'inherit',
+  });
+
+  if (result.error || result.status !== 0) {
+    throw result.error || new Error(`docker compose ${args.join(' ')} failed with code ${result.status}`);
+  }
+};
+
+const startDockerPostgres = () => {
+  if (startedDockerPostgres) {
+    return;
+  }
+
+  console.log('🐳 Ensuring PostgreSQL Docker container is running for integration tests...');
+  runDockerCompose(['up', '-d', 'postgres']);
+  startedDockerPostgres = true;
+};
+
+const stopDockerPostgres = () => {
+  if (!startedDockerPostgres) {
+    return;
+  }
+
+  console.log('🐳 Stopping PostgreSQL Docker container used for integration tests...');
+  try {
+    runDockerCompose(['stop', 'postgres']);
+    runDockerCompose(['rm', '-f', 'postgres']);
+  } catch (error) {
+    console.error('Failed to stop PostgreSQL Docker container', error);
+  } finally {
+    startedDockerPostgres = false;
+  }
+};
 
 // Helper to clean PostgreSQL database
 const cleanDatabase = async (prismaClient: PrismaClient) => {
@@ -80,12 +151,14 @@ BeforeAll({ timeout: 120000 }, async function() {
     // Just wait for remote server to be ready
     await waitForServer(`${baseURL}/health`);
   } else {
+    startDockerPostgres();
+
     console.log('🗄️  Using PostgreSQL database for integration tests...');
 
     const rootDir = path.resolve(process.cwd());
 
-    // Use existing PostgreSQL database (from .env or Docker)
-    const postgresUri = process.env.DATABASE_URL || 'postgresql://dculus:dculus_dev_password@127.0.0.1:5433/dculus_forms';
+    // Use existing PostgreSQL database (from env) or integration Docker container
+    const postgresUri = process.env.DATABASE_URL || 'postgresql://dculus:dculus_dev_password@127.0.0.1:5543/dculus_forms';
     console.log(`✅ Using PostgreSQL at: ${postgresUri.replace(/:[^:]*@/, ':****@')}`);
 
     // Initialize Prisma client with PostgreSQL
@@ -171,17 +244,19 @@ After(async function(this: CustomWorld) {
 AfterAll(async function() {
   const isRemoteBackend = process.env.TEST_BASE_URL && !process.env.TEST_BASE_URL.includes('localhost');
 
-  if (!isRemoteBackend && backendProcess) {
-    console.log('🛑 Stopping local backend server...');
+  if (!isRemoteBackend) {
+    if (backendProcess) {
+      console.log('🛑 Stopping local backend server...');
 
-    backendProcess.kill('SIGTERM');
+      backendProcess.kill('SIGTERM');
 
-    // Wait a moment for graceful shutdown
-    await sleep(2000);
+      // Wait a moment for graceful shutdown
+      await sleep(2000);
 
-    // Force kill if still running
-    if (!backendProcess.killed) {
-      backendProcess.kill('SIGKILL');
+      // Force kill if still running
+      if (!backendProcess.killed) {
+        backendProcess.kill('SIGKILL');
+      }
     }
 
     // Cleanup Mock SMTP Server
@@ -195,7 +270,9 @@ AfterAll(async function() {
       console.log('🗄️  Disconnecting Prisma client...');
       await prisma.$disconnect();
     }
-  } else if (isRemoteBackend) {
+
+    stopDockerPostgres();
+  } else {
     console.log('🌐 Remote backend testing completed');
   }
 });

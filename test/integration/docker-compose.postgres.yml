@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: dculus-forms-integration-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dculus
+      POSTGRES_PASSWORD: dculus_dev_password
+      POSTGRES_DB: dculus_forms
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5543:5432"
+    command: postgres -c listen_addresses='*' -c log_connections=on -c log_statement='all'
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dculus -d dculus_forms"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
