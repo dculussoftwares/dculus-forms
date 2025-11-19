@@ -238,9 +238,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Pre-pull integration PostgreSQL image
+        run: docker compose -f test/integration/docker-compose.postgres.yml pull postgres
+
+      - name: Set integration database URL
+        run: echo "DATABASE_URL=postgresql://dculus:dculus_dev_password@127.0.0.1:5543/dculus_forms" >> $GITHUB_ENV
+
       - name: Run integration tests
         env:
           NODE_ENV: test
+          DATABASE_URL: ${{ env.DATABASE_URL }}
         run: pnpm test:integration
 
       - name: Integration test summary
@@ -255,7 +262,7 @@ jobs:
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Test Infrastructure:**" >> $GITHUB_STEP_SUMMARY
-          echo "- MongoDB Memory Replica Set: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- Dockerized PostgreSQL (test/integration/docker-compose.postgres.yml): ✅" >> $GITHUB_STEP_SUMMARY
           echo "- Mock SMTP Server: ✅" >> $GITHUB_STEP_SUMMARY
           echo "- Backend Server: ✅" >> $GITHUB_STEP_SUMMARY
           echo "- Prisma Schema: ✅" >> $GITHUB_STEP_SUMMARY
