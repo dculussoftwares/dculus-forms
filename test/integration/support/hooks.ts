@@ -16,6 +16,7 @@ let backendProcess: ChildProcess;
 let prisma: PrismaClient;
 let mockSMTPServer: MockSMTPServer;
 let mockS3: MockS3Service;
+const shouldManageDocker = process.env.MANAGE_INTEGRATION_DOCKER !== 'false';
 let startedDockerPostgres = false;
 
 const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
@@ -166,7 +167,11 @@ BeforeAll({ timeout: 120000 }, async function() {
     // Just wait for remote server to be ready
     await waitForServer(`${baseURL}/health`);
   } else {
-    startDockerPostgres();
+    if (shouldManageDocker) {
+      startDockerPostgres();
+    } else {
+      console.log('ℹ️ Skipping Docker start (managed externally via MANAGE_INTEGRATION_DOCKER=false)');
+    }
 
     console.log('🗄️  Using PostgreSQL database for integration tests...');
 
@@ -288,7 +293,11 @@ AfterAll(async function() {
       await prisma.$disconnect();
     }
 
-    stopDockerPostgres();
+    if (shouldManageDocker) {
+      stopDockerPostgres();
+    } else {
+      console.log('ℹ️ Skipping Docker stop (managed externally via MANAGE_INTEGRATION_DOCKER=false)');
+    }
   } else {
     console.log('🌐 Remote backend testing completed');
   }
