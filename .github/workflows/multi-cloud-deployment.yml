@@ -504,7 +504,7 @@ jobs:
 
       - name: Terraform Init
         env:
-          TF_VAR_admin_password: ${{ needs.determine-environment.outputs.environment == 'dev' && secrets.POSTGRES_ADMIN_PASSWORD_DEV || needs.determine-environment.outputs.environment == 'staging' && secrets.POSTGRES_ADMIN_PASSWORD_STAGING || secrets.POSTGRES_ADMIN_PASSWORD_PRODUCTION }}
+          TF_VAR_admin_password: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
         run: |
           terraform init \
             -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
@@ -514,19 +514,19 @@ jobs:
 
       - name: Terraform Validate
         env:
-          TF_VAR_admin_password: ${{ needs.determine-environment.outputs.environment == 'dev' && secrets.POSTGRES_ADMIN_PASSWORD_DEV || needs.determine-environment.outputs.environment == 'staging' && secrets.POSTGRES_ADMIN_PASSWORD_STAGING || secrets.POSTGRES_ADMIN_PASSWORD_PRODUCTION }}
+          TF_VAR_admin_password: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
         run: terraform validate
 
       - name: Terraform Plan
         env:
-          TF_VAR_admin_password: ${{ needs.determine-environment.outputs.environment == 'dev' && secrets.POSTGRES_ADMIN_PASSWORD_DEV || needs.determine-environment.outputs.environment == 'staging' && secrets.POSTGRES_ADMIN_PASSWORD_STAGING || secrets.POSTGRES_ADMIN_PASSWORD_PRODUCTION }}
+          TF_VAR_admin_password: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
         run: terraform plan -out=tfplan
 
       - name: Terraform Apply
         id: apply
         if: needs.determine-environment.outputs.should_deploy == 'true'
         env:
-          TF_VAR_admin_password: ${{ needs.determine-environment.outputs.environment == 'dev' && secrets.POSTGRES_ADMIN_PASSWORD_DEV || needs.determine-environment.outputs.environment == 'staging' && secrets.POSTGRES_ADMIN_PASSWORD_STAGING || secrets.POSTGRES_ADMIN_PASSWORD_PRODUCTION }}
+          TF_VAR_admin_password: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
         run: |
           terraform apply -auto-approve tfplan
 
