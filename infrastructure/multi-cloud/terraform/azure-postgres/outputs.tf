@@ -20,13 +20,13 @@ output "admin_username" {
 
 output "admin_password" {
   description = "PostgreSQL admin password"
-  value       = local.resolved_admin_password
+  value       = var.admin_password
   sensitive   = true
 }
 
 output "connection_string" {
   description = "PostgreSQL connection string (password is alphanumeric, no encoding needed)"
-  value       = "postgresql://${azurerm_postgresql_flexible_server.main.administrator_login}:${local.resolved_admin_password}@${azurerm_postgresql_flexible_server.main.fqdn}:5432/${azurerm_postgresql_flexible_server_database.main.name}?sslmode=require"
+  value       = "postgresql://${azurerm_postgresql_flexible_server.main.administrator_login}:${var.admin_password}@${azurerm_postgresql_flexible_server.main.fqdn}:5432/${azurerm_postgresql_flexible_server_database.main.name}?sslmode=require"
   sensitive   = true
 }
 

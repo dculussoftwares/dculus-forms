@@ -6,10 +6,6 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 3.0"
     }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.6"
-    }
   }
 
   # Backend configuration is loaded from environment-specific backend.tf files
@@ -27,27 +23,8 @@ locals {
   server_name         = "dculus-forms-${var.environment}-pg-server"
 }
 
-# Generate random password (always create, but may not be used)
-# Use alphanumeric only to avoid URL encoding issues in connection strings
-resource "random_password" "admin_password" {
-  length  = 32
-  special = false # Avoid special characters that cause connection string issues
-  upper   = true
-  lower   = true
-  numeric = true
-}
-
-# Determine the admin password
-# Use provided password if not empty, otherwise use generated one
-# Workaround for Terraform 1.6.0 bug: use nonsensitive() in conditional then re-mark with sensitive()
-locals {
-  use_provided_password   = var.admin_password != ""
-  resolved_admin_password = sensitive(
-    local.use_provided_password
-      ? nonsensitive(var.admin_password)
-      : nonsensitive(random_password.admin_password.result)
-  )
-}
+# Admin password is always provided via GitHub environment secrets
+# No need for random generation or conditional logic
 
 # Resource Group for PostgreSQL
 resource "azurerm_resource_group" "postgres" {
@@ -68,7 +45,7 @@ resource "azurerm_postgresql_flexible_server" "main" {
   location               = azurerm_resource_group.postgres.location
   version                = "16"
   administrator_login    = var.admin_username
-  administrator_password = local.resolved_admin_password
+  administrator_password = var.admin_password
 
   # BURSTABLE SKU - Lowest cost option
   # B1ms: 1 vCore, 2 GiB RAM, burstable compute
