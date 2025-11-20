@@ -16,6 +16,11 @@ on:
         required: false
         type: boolean
         default: false
+      destroy_postgres:
+        description: '🔥 Destroy Azure PostgreSQL (PERMANENT DATA LOSS - Cannot be recovered)'
+        required: false
+        type: boolean
+        default: false
       destroy_cloudflare:
         description: '🔥 Destroy Cloudflare R2 (ALL FILES DELETED - Cannot be recovered)'
         required: false
@@ -38,6 +43,7 @@ permissions:
 env:
   TERRAFORM_VERSION: '1.6.0'
   MONGODB_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/mongodb'
+  POSTGRES_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/azure-postgres'
   CLOUDFLARE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare'
   CLOUDFLARE_SERVICE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-service-domain'
   CLOUDFLARE_PAGES_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages'
@@ -76,6 +82,7 @@ jobs:
       - name: Verify At Least One Provider Selected
         run: |
           if [ "${{ github.event.inputs.destroy_mongodb }}" != "true" ] && \
+             [ "${{ github.event.inputs.destroy_postgres }}" != "true" ] && \
              [ "${{ github.event.inputs.destroy_cloudflare }}" != "true" ] && \
              [ "${{ github.event.inputs.destroy_azure }}" != "true" ]; then
             echo "❌ ERROR: No providers selected for destruction!"
@@ -110,6 +117,12 @@ jobs:
             echo "  ⚠️⚠️⚠️ MongoDB Atlas (PERMANENT DATA LOSS)"
           else
             echo "  ⏭️ MongoDB Atlas (Skipped)"
+          fi
+
+          if [ "${{ github.event.inputs.destroy_postgres }}" = "true" ]; then
+            echo "  ⚠️⚠️⚠️ Azure PostgreSQL (PERMANENT DATA LOSS)"
+          else
+            echo "  ⏭️ Azure PostgreSQL (Skipped)"
           fi
 
           echo ""
@@ -569,6 +582,91 @@ jobs:
           terraform destroy -auto-approve
           echo "✅ MongoDB Atlas database destroyed - ALL DATA PERMANENTLY DELETED"
 
+  # Destroy Azure PostgreSQL Database
+  terraform-postgres-destroy:
+    name: Destroy Azure PostgreSQL Database
+    runs-on: ubuntu-latest
+    needs: [validate-destroy-request, terraform-mongodb-destroy]
+    if: |
+      always() && !cancelled() &&
+      (needs.terraform-mongodb-destroy.result == 'success' || needs.terraform-mongodb-destroy.result == 'skipped') &&
+      github.event.inputs.destroy_postgres == 'true'
+    environment: ${{ github.event.inputs.environment }}
+    defaults:
+      run:
+        working-directory: ${{ env.POSTGRES_TERRAFORM_DIR }}/environments/${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: dculus-forms
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get Azure Storage Account Key
+        run: |
+          ACCOUNT_KEY=$(az storage account keys list \
+            --resource-group dculus-global-terraform-assets-resource-grp \
+            --account-name dculusterraformstates \
+            --query '[0].value' -o tsv)
+          echo "::add-mask::$ACCOUNT_KEY"
+          echo "ARM_ACCESS_KEY=$ACCOUNT_KEY" >> $GITHUB_ENV
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Copy shared Terraform files
+        run: |
+          cp ../../main.tf .
+          cp ../../variables.tf .
+          cp ../../outputs.tf .
+          echo "✅ Copied shared Terraform files"
+
+      - name: Terraform Init
+        env:
+          TF_VAR_admin_password: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
+            -backend-config="storage_account_name=dculusterraformstates" \
+            -backend-config="container_name=dculus-forms-postgres-${{ github.event.inputs.environment }}-state" \
+            -backend-config="key=terraform.tfstate"
+
+      - name: FINAL WARNING - PostgreSQL Destruction
+        run: |
+          echo "⚠️⚠️⚠️ FINAL WARNING ⚠️⚠️⚠️"
+          echo ""
+          echo "You are about to PERMANENTLY DELETE the Azure PostgreSQL database:"
+          echo "  Server: dculus-forms-${{ github.event.inputs.environment }}-pg-server"
+          echo "  Database: dculus-forms-${{ github.event.inputs.environment }}-backend-database"
+          echo "  Resource Group: dculus-forms-${{ github.event.inputs.environment }}-postgres-rg"
+          echo ""
+          echo "This will DELETE ALL DATA including:"
+          echo "  - All application data"
+          echo "  - All database records"
+          echo "  - All configurations"
+          echo ""
+          echo "⚠️ NO BACKUPS AVAILABLE - DATA CANNOT BE RECOVERED ⚠️"
+          echo "⚠️ THIS IS PERMANENT AND IRREVERSIBLE ⚠️"
+          echo ""
+          echo "Proceeding with destruction in 10 seconds..."
+          sleep 10
+
+      - name: Terraform Destroy
+        env:
+          TF_VAR_admin_password: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
+        run: |
+          echo "🔥 Destroying Azure PostgreSQL database..."
+          terraform destroy -auto-approve
+          echo "✅ Azure PostgreSQL database destroyed - ALL DATA PERMANENTLY DELETED"
+
   # Generate destruction summary
   destroy-summary:
     name: Destruction Summary
@@ -580,7 +678,8 @@ jobs:
       terraform-cloudflare-pages-destroy,
       terraform-cloudflare-service-domain-destroy,
       terraform-cloudflare-destroy,
-      terraform-mongodb-destroy
+      terraform-mongodb-destroy,
+      terraform-postgres-destroy
     ]
     if: always()
     steps:
@@ -629,6 +728,14 @@ jobs:
             echo "| MongoDB Atlas | ✅ Yes | $MONGO_STATUS | ⚠️⚠️ ALL DATA LOST |" >> $GITHUB_STEP_SUMMARY
           else
             echo "| MongoDB Atlas | ❌ No | ⏭️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # PostgreSQL Status
+          if [ "${{ github.event.inputs.destroy_postgres }}" = "true" ]; then
+            POSTGRES_STATUS="${{ needs.terraform-postgres-destroy.result == 'success' && '✅ Destroyed' || '❌ Failed' }}"
+            echo "| Azure PostgreSQL | ✅ Yes | $POSTGRES_STATUS | ⚠️⚠️ ALL DATA LOST |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Azure PostgreSQL | ❌ No | ⏭️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
           fi
 
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -690,6 +797,19 @@ jobs:
             echo "- **Region**: AWS Mumbai (ap-south-1)" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "⚠️ **WARNING**: M0 free tier has NO backups. Data cannot be recovered." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.terraform-postgres-destroy.result }}" = "success" ]; then
+            echo "## 🐘 Azure PostgreSQL Database Destroyed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Server**: \`dculus-forms-${{ github.event.inputs.environment }}-pg-server\` - DELETED" >> $GITHUB_STEP_SUMMARY
+            echo "- **Database**: \`dculus-forms-${{ github.event.inputs.environment }}-backend-database\` - DELETED" >> $GITHUB_STEP_SUMMARY
+            echo "- **Resource Group**: \`dculus-forms-${{ github.event.inputs.environment }}-postgres-rg\` - DELETED" >> $GITHUB_STEP_SUMMARY
+            echo "- **Data**: All application data, records, configurations - PERMANENTLY LOST" >> $GITHUB_STEP_SUMMARY
+            echo "- **SKU**: B_Standard_B1ms (Burstable, 1 vCore, 2 GiB RAM)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ **WARNING**: 7-day backup retention has NO recovery after deletion." >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
 
