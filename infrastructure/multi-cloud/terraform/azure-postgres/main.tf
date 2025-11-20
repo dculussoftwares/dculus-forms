@@ -72,11 +72,11 @@ resource "azurerm_postgresql_flexible_server" "main" {
   backup_retention_days        = 7
   geo_redundant_backup_enabled = false
 
-  # High Availability - DISABLED for cost savings
-  # Only enable in production if needed
-  high_availability {
-    mode = "Disabled"
-  }
+  # High Availability - DISABLED for cost savings (omit block to disable)
+  # Only enable in production if needed by adding:
+  # high_availability {
+  #   mode = "ZoneRedundant" or "SameZone"
+  # }
 
   # Zone - Not specified for burstable tier (zone redundancy not supported)
   # zone = null
@@ -128,6 +128,6 @@ resource "azurerm_postgresql_flexible_server_configuration" "shared_buffers" {
 resource "azurerm_postgresql_flexible_server_database" "main" {
   name      = local.database_name
   server_id = azurerm_postgresql_flexible_server.main.id
-  collation = "en_US.UTF8"
+  collation = "en_US.utf8"
   charset   = "UTF8"
 }
