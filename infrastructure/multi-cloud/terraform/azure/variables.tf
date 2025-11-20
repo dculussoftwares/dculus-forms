@@ -73,8 +73,8 @@ variable "ingress_transport" {
   default     = "auto"
 }
 
-variable "mongodb_connection_string" {
-  description = "MongoDB connection string"
+variable "postgres_connection_string" {
+  description = "PostgreSQL connection string"
   type        = string
   sensitive   = true
 }

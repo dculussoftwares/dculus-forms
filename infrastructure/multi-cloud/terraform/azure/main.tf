@@ -105,7 +105,7 @@ resource "azurerm_container_app" "backend" {
 
       env {
         name  = "DATABASE_URL"
-        value = var.mongodb_connection_string
+        value = var.postgres_connection_string
       }
 
 
