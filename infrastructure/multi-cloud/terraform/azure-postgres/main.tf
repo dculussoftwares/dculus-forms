@@ -40,7 +40,7 @@ resource "random_password" "admin_password" {
 
 # Determine the admin password
 locals {
-  resolved_admin_password = var.admin_password != "" ? var.admin_password : random_password.admin_password[0].result
+  resolved_admin_password = var.admin_password != "" ? var.admin_password : try(random_password.admin_password[0].result, "")
 }
 
 # Resource Group for PostgreSQL
