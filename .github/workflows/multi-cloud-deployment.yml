@@ -455,9 +455,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: [determine-environment, setup-azure-backend, terraform-infrastructure-deploy]
     if: |
-      always() && !cancelled() && !failure() &&
+      always() && !cancelled() &&
+      needs.determine-environment.result == 'success' &&
+      needs.setup-azure-backend.result == 'success' &&
       needs.determine-environment.outputs.deploy_postgres == 'true' &&
-      needs.terraform-infrastructure-deploy.result == 'success'
+      (needs.terraform-infrastructure-deploy.result == 'success' || needs.terraform-infrastructure-deploy.result == 'skipped')
     environment: ${{ needs.determine-environment.outputs.environment }}
     outputs:
       connection_string: ${{ steps.apply.outputs.connection_string }}
