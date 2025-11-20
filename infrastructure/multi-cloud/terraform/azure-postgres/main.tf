@@ -39,10 +39,14 @@ resource "random_password" "admin_password" {
 
 # Determine the admin password
 # Use provided password if not empty, otherwise use generated one
-# Note: Both passwords will be sensitive, final value inherits sensitivity
+# Workaround for Terraform 1.6.0 bug: use nonsensitive() in conditional then re-mark with sensitive()
 locals {
   use_provided_password   = var.admin_password != ""
-  resolved_admin_password = local.use_provided_password ? var.admin_password : random_password.admin_password.result
+  resolved_admin_password = sensitive(
+    local.use_provided_password
+      ? nonsensitive(var.admin_password)
+      : nonsensitive(random_password.admin_password.result)
+  )
 }
 
 # Resource Group for PostgreSQL
