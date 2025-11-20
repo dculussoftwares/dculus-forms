@@ -25,8 +25,8 @@ output "admin_password" {
 }
 
 output "connection_string" {
-  description = "PostgreSQL connection string"
-  value       = "postgresql://${azurerm_postgresql_flexible_server.main.administrator_login}:${local.resolved_admin_password}@${azurerm_postgresql_flexible_server.main.fqdn}:5432/${azurerm_postgresql_flexible_server_database.main.name}?sslmode=require"
+  description = "PostgreSQL connection string with URL-encoded password"
+  value       = "postgresql://${azurerm_postgresql_flexible_server.main.administrator_login}:${urlencode(local.resolved_admin_password)}@${azurerm_postgresql_flexible_server.main.fqdn}:5432/${azurerm_postgresql_flexible_server_database.main.name}?sslmode=require"
   sensitive   = true
 }
 

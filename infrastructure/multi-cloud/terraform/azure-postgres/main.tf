@@ -28,10 +28,14 @@ locals {
 }
 
 # Generate random password only if not provided
+# Use alphanumeric only to avoid URL encoding issues in connection strings
 resource "random_password" "admin_password" {
   count   = var.admin_password == "" ? 1 : 0
   length  = 32
-  special = true
+  special = false # Avoid special characters that cause connection string issues
+  upper   = true
+  lower   = true
+  numeric = true
 }
 
 # Determine the admin password
