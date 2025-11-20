@@ -546,7 +546,7 @@ jobs:
   terraform-infrastructure-deploy:
     name: 4.1. Deploy Core Infrastructure (R2 Storage + Azure Container Apps)
     runs-on: ubuntu-latest
-    needs: [determine-environment, setup-azure-backend, check-docker-image, terraform-mongodb-deploy]
+    needs: [determine-environment, setup-azure-backend, check-docker-image, terraform-mongodb-deploy, terraform-postgres-deploy]
     if: |
       always() && !cancelled() && !failure() &&
       (needs.determine-environment.outputs.deploy_cloudflare == 'true' ||
