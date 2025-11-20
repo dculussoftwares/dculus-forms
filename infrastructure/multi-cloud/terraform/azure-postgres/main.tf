@@ -27,10 +27,9 @@ locals {
   server_name         = "dculus-forms-${var.environment}-pg-server"
 }
 
-# Generate random password only if not provided
+# Generate random password (always create, but may not be used)
 # Use alphanumeric only to avoid URL encoding issues in connection strings
 resource "random_password" "admin_password" {
-  count   = var.admin_password == "" ? 1 : 0
   length  = 32
   special = false # Avoid special characters that cause connection string issues
   upper   = true
@@ -39,8 +38,11 @@ resource "random_password" "admin_password" {
 }
 
 # Determine the admin password
+# Use provided password if not empty, otherwise use generated one
+# Note: Both passwords will be sensitive, final value inherits sensitivity
 locals {
-  resolved_admin_password = var.admin_password != "" ? var.admin_password : try(random_password.admin_password[0].result, "")
+  use_provided_password   = var.admin_password != ""
+  resolved_admin_password = local.use_provided_password ? var.admin_password : random_password.admin_password.result
 }
 
 # Resource Group for PostgreSQL
