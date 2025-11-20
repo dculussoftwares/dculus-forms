@@ -61,7 +61,7 @@ resource "azurerm_postgresql_flexible_server" "main" {
 
   # Availability Zone - Lock to zone 1 to prevent Azure from changing it
   # This prevents "zone can only be changed with high_availability" errors
-  availability_zone = "1"
+  zone = "1"
 
   # High Availability - DISABLED for cost savings (omit block to disable)
   # Only enable in production if needed by adding:
@@ -79,9 +79,9 @@ resource "azurerm_postgresql_flexible_server" "main" {
 
   lifecycle {
     prevent_destroy = false
-    # Ignore changes to availability_zone after initial creation
+    # Ignore changes to zone after initial creation
     # Azure doesn't allow changing zones without high availability
-    ignore_changes = [availability_zone]
+    ignore_changes = [zone]
   }
 }
 
