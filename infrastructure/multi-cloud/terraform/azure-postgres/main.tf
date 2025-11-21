@@ -60,6 +60,7 @@ resource "azurerm_postgresql_flexible_server" "main" {
   geo_redundant_backup_enabled = false
 
   # Availability Zone - Lock to zone 1 to prevent Azure from changing it
+  # Central India supports availability zones for PostgreSQL Flexible Server
   # This prevents "zone can only be changed with high_availability" errors
   zone = "1"
 
