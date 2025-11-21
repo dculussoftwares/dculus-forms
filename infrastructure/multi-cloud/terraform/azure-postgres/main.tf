@@ -59,9 +59,10 @@ resource "azurerm_postgresql_flexible_server" "main" {
   backup_retention_days        = 7
   geo_redundant_backup_enabled = false
 
-  # Availability Zone - Let Azure choose the best zone automatically
-  # Hardcoding zone="1" caused InternalServerError in Central India
-  # zone = "1"
+  # Availability Zone - Lock to zone 1 to prevent Azure from changing it
+  # Central India supports availability zones for PostgreSQL Flexible Server
+  # This prevents "zone can only be changed with high_availability" errors
+  zone = "1"
 
   # High Availability - DISABLED for cost savings (omit block to disable)
   # Only enable in production if needed by adding:
@@ -79,6 +80,9 @@ resource "azurerm_postgresql_flexible_server" "main" {
 
   lifecycle {
     prevent_destroy = false
+    # Ignore changes to zone after initial creation
+    # Azure doesn't allow changing zones without high availability
+    ignore_changes = [zone]
   }
 }
 
