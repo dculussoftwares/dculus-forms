@@ -16,7 +16,7 @@ variable "environment" {
 variable "location" {
   description = "Azure region where resources will be created"
   type        = string
-  default     = "East US"
+  default     = "South India"
 }
 
 variable "cpu_cores" {

@@ -1,6 +1,6 @@
 project_name        = "dculus-forms"
 environment         = "staging"
-location            = "East US"
+location            = "South India"
 container_image     = "dculus/forms-backend"
 container_image_tag = "latest"
 better_auth_url     = "https://dculus-forms-staging-backend.kindocean-e9e3f3f1.eastus.azurecontainerapps.io"

@@ -1,4 +1,4 @@
 environment         = "staging"
-location            = "Central India"
+location            = "South India"
 admin_username      = "pgadmin"
 allow_public_access = false
