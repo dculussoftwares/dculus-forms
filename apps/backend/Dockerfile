@@ -51,8 +51,11 @@ EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:4000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => { process.exit(1) })"
 
-# Create startup script that runs seed before starting the app
+# Create startup script that runs migrations, seed, and starts the app
 RUN echo '#!/bin/sh' > /app/apps/backend/start.sh && \
+    echo 'echo "🔄 Running database migrations..."' >> /app/apps/backend/start.sh && \
+    echo 'npx prisma db push --accept-data-loss || { echo "❌ Migration failed"; exit 1; }' >> /app/apps/backend/start.sh && \
+    echo 'echo "✅ Database migrations completed"' >> /app/apps/backend/start.sh && \
     echo 'echo "🔍 Checking if database needs seeding..."' >> /app/apps/backend/start.sh && \
     echo 'if [ "$RUN_SEED" = "true" ]; then' >> /app/apps/backend/start.sh && \
     echo '  echo "🌱 Running database seed..."' >> /app/apps/backend/start.sh && \
