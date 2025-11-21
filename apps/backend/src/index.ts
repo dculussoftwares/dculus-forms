@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import './instrument.js';
 import { sentryEnabled } from './instrument.js';
 import * as Sentry from '@sentry/node';
 import express from 'express';
@@ -164,12 +164,26 @@ if (sentryEnabled) {
   });
 }
 
+// Sentry Apollo Plugin for GraphQL transaction tracking
+const sentryApolloPlugin = {
+  async requestDidStart() {
+    return {
+      async didResolveOperation(requestContext: any) {
+        const operationName = requestContext.operationName || 'anonymous';
+        const operation = requestContext.operation?.operation || 'query';
+        Sentry.getCurrentScope().setTransactionName(`GraphQL ${operation}: ${operationName}`);
+      },
+    };
+  },
+};
+
 // GraphQL Server
 const server = new ApolloServer({
   typeDefs,
   resolvers,
   introspection: true, // Enable introspection for Apollo Studio Sandbox
   plugins: [
+    ...(sentryEnabled ? [sentryApolloPlugin] : []),
     // Use the modern Apollo Studio Sandbox (embedded) for development
     ApolloServerPluginLandingPageLocalDefault({
       footer: false,

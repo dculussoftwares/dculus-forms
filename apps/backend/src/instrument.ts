@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import { appConfig } from './lib/env.js';
@@ -19,6 +20,7 @@ if (sentryDsn) {
     profileLifecycle: 'trace',
     integrations: [
       Sentry.expressIntegration(),
+      Sentry.graphqlIntegration(),
       nodeProfilingIntegration(),
       Sentry.consoleLoggingIntegration({ levels: ['log', 'warn', 'error'] }),
     ],
