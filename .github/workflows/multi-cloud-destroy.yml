@@ -128,11 +128,183 @@ jobs:
           echo ""
           echo "⚠️ WARNING: This action cannot be undone!"
 
+  # Setup Azure Terraform Backend
+  setup-azure-backend:
+    name: Setup Azure Terraform Backend
+    runs-on: ubuntu-latest
+    needs: validate-destroy-request
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Create Azure Storage containers for Terraform state
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          RESOURCE_GROUP="dculus-global-terraform-assets-resource-grp"
+          STORAGE_ACCOUNT="dculusterraformstates"
+          LOCATION="centralindia"
+
+          echo "📦 Setting up Terraform backend for environment: $ENV"
+
+          # Create resource group if it doesn't exist
+          if ! az group show --name "$RESOURCE_GROUP" &>/dev/null; then
+            echo "📦 Creating resource group: $RESOURCE_GROUP in $LOCATION"
+            az group create \
+              --name "$RESOURCE_GROUP" \
+              --location "$LOCATION"
+            echo "✅ Resource group created: $RESOURCE_GROUP"
+          else
+            echo "✅ Resource group exists: $RESOURCE_GROUP"
+          fi
+
+          # Create storage account if it doesn't exist
+          if ! az storage account show \
+            --name "$STORAGE_ACCOUNT" \
+            --resource-group "$RESOURCE_GROUP" &>/dev/null; then
+            echo "📦 Creating storage account: $STORAGE_ACCOUNT in $LOCATION"
+            az storage account create \
+              --name "$STORAGE_ACCOUNT" \
+              --resource-group "$RESOURCE_GROUP" \
+              --location "$LOCATION" \
+              --sku Standard_LRS \
+              --kind StorageV2 \
+              --allow-blob-public-access false \
+              --min-tls-version TLS1_2
+            echo "✅ Storage account created: $STORAGE_ACCOUNT"
+          else
+            echo "✅ Storage account exists: $STORAGE_ACCOUNT"
+          fi
+
+          # Create Cloudflare R2 container
+          CLOUDFLARE_CONTAINER="dculus-forms-cloudflare-r2-${ENV}-state"
+          if ! az storage container show \
+            --name "$CLOUDFLARE_CONTAINER" \
+            --account-name "$STORAGE_ACCOUNT" &>/dev/null; then
+            echo "📦 Creating container: $CLOUDFLARE_CONTAINER"
+            az storage container create \
+              --name "$CLOUDFLARE_CONTAINER" \
+              --account-name "$STORAGE_ACCOUNT" \
+              --auth-mode login
+            echo "✅ Container created: $CLOUDFLARE_CONTAINER"
+          else
+            echo "✅ Container exists: $CLOUDFLARE_CONTAINER"
+          fi
+
+          # Create Cloudflare service-domain container
+          CLOUDFLARE_SERVICE_CONTAINER="dculus-forms-cloudflare-services-${ENV}-state"
+          if ! az storage container show \
+            --name "$CLOUDFLARE_SERVICE_CONTAINER" \
+            --account-name "$STORAGE_ACCOUNT" &>/dev/null; then
+            echo "📦 Creating container: $CLOUDFLARE_SERVICE_CONTAINER"
+            az storage container create \
+              --name "$CLOUDFLARE_SERVICE_CONTAINER" \
+              --account-name "$STORAGE_ACCOUNT" \
+              --auth-mode login
+            echo "✅ Container created: $CLOUDFLARE_SERVICE_CONTAINER"
+          else
+            echo "✅ Container exists: $CLOUDFLARE_SERVICE_CONTAINER"
+          fi
+
+          # Create Azure Container Apps container
+          AZURE_CONTAINER="dculus-forms-azure-backend-${ENV}-state"
+          if ! az storage container show \
+            --name "$AZURE_CONTAINER" \
+            --account-name "$STORAGE_ACCOUNT" &>/dev/null; then
+            echo "📦 Creating container: $AZURE_CONTAINER"
+            az storage container create \
+              --name "$AZURE_CONTAINER" \
+              --account-name "$STORAGE_ACCOUNT" \
+              --auth-mode login
+            echo "✅ Container created: $AZURE_CONTAINER"
+          else
+            echo "✅ Container exists: $AZURE_CONTAINER"
+          fi
+
+          # Create MongoDB Atlas container
+          MONGODB_CONTAINER="dculus-forms-mongodb-${ENV}-state"
+          if ! az storage container show \
+            --name "$MONGODB_CONTAINER" \
+            --account-name "$STORAGE_ACCOUNT" &>/dev/null; then
+            echo "📦 Creating container: $MONGODB_CONTAINER"
+            az storage container create \
+              --name "$MONGODB_CONTAINER" \
+              --account-name "$STORAGE_ACCOUNT" \
+              --auth-mode login
+            echo "✅ Container created: $MONGODB_CONTAINER"
+          else
+            echo "✅ Container exists: $MONGODB_CONTAINER"
+          fi
+
+          # Create Cloudflare Pages container
+          CLOUDFLARE_PAGES_CONTAINER="dculus-forms-cloudflare-pages-${ENV}-state"
+          if ! az storage container show \
+            --name "$CLOUDFLARE_PAGES_CONTAINER" \
+            --account-name "$STORAGE_ACCOUNT" &>/dev/null; then
+            echo "📦 Creating container: $CLOUDFLARE_PAGES_CONTAINER"
+            az storage container create \
+              --name "$CLOUDFLARE_PAGES_CONTAINER" \
+              --account-name "$STORAGE_ACCOUNT" \
+              --auth-mode login
+            echo "✅ Container created: $CLOUDFLARE_PAGES_CONTAINER"
+          else
+            echo "✅ Container exists: $CLOUDFLARE_PAGES_CONTAINER"
+          fi
+
+          # Create Cloudflare Pages Admin container
+          CLOUDFLARE_PAGES_ADMIN_CONTAINER="dculus-forms-cloudflare-pages-admin-${ENV}-state"
+          if ! az storage container show \
+            --name "$CLOUDFLARE_PAGES_ADMIN_CONTAINER" \
+            --account-name "$STORAGE_ACCOUNT" &>/dev/null; then
+            echo "📦 Creating container: $CLOUDFLARE_PAGES_ADMIN_CONTAINER"
+            az storage container create \
+              --name "$CLOUDFLARE_PAGES_ADMIN_CONTAINER" \
+              --account-name "$STORAGE_ACCOUNT" \
+              --auth-mode login
+            echo "✅ Container created: $CLOUDFLARE_PAGES_ADMIN_CONTAINER"
+          else
+            echo "✅ Container exists: $CLOUDFLARE_PAGES_ADMIN_CONTAINER"
+          fi
+
+          # Create Cloudflare Pages Viewer container
+          CLOUDFLARE_PAGES_VIEWER_CONTAINER="dculus-forms-cloudflare-pages-viewer-${ENV}-state"
+          if ! az storage container show \
+            --name "$CLOUDFLARE_PAGES_VIEWER_CONTAINER" \
+            --account-name "$STORAGE_ACCOUNT" &>/dev/null; then
+            echo "📦 Creating container: $CLOUDFLARE_PAGES_VIEWER_CONTAINER"
+            az storage container create \
+              --name "$CLOUDFLARE_PAGES_VIEWER_CONTAINER" \
+              --account-name "$STORAGE_ACCOUNT" \
+              --auth-mode login
+            echo "✅ Container created: $CLOUDFLARE_PAGES_VIEWER_CONTAINER"
+          else
+            echo "✅ Container exists: $CLOUDFLARE_PAGES_VIEWER_CONTAINER"
+          fi
+
+          # Create Azure PostgreSQL container
+          POSTGRES_CONTAINER="dculus-forms-postgres-${ENV}-state"
+          if ! az storage container show \
+            --name "$POSTGRES_CONTAINER" \
+            --account-name "$STORAGE_ACCOUNT" &>/dev/null; then
+            echo "📦 Creating container: $POSTGRES_CONTAINER"
+            az storage container create \
+              --name "$POSTGRES_CONTAINER" \
+              --account-name "$STORAGE_ACCOUNT" \
+              --auth-mode login
+            echo "✅ Container created: $POSTGRES_CONTAINER"
+          else
+            echo "✅ Container exists: $POSTGRES_CONTAINER"
+          fi
+
   # Cleanup Azure Custom Domain and Certificate before destroying infrastructure
   cleanup-azure-custom-domain:
     name: Cleanup Custom Domain & Certificate
     runs-on: ubuntu-latest
-    needs: validate-destroy-request
+    needs: [validate-destroy-request, setup-azure-backend]
     if: github.event.inputs.destroy_azure == 'true'
     environment: ${{ github.event.inputs.environment }}
     steps:

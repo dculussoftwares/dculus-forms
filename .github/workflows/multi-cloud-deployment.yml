@@ -172,18 +172,38 @@ jobs:
           ENV="${{ needs.determine-environment.outputs.environment }}"
           RESOURCE_GROUP="dculus-global-terraform-assets-resource-grp"
           STORAGE_ACCOUNT="dculusterraformstates"
+          LOCATION="centralindia"
 
           echo "📦 Setting up Terraform backend for environment: $ENV"
 
-          # Check if storage account exists
+          # Create resource group if it doesn't exist
+          if ! az group show --name "$RESOURCE_GROUP" &>/dev/null; then
+            echo "📦 Creating resource group: $RESOURCE_GROUP in $LOCATION"
+            az group create \
+              --name "$RESOURCE_GROUP" \
+              --location "$LOCATION"
+            echo "✅ Resource group created: $RESOURCE_GROUP"
+          else
+            echo "✅ Resource group exists: $RESOURCE_GROUP"
+          fi
+
+          # Create storage account if it doesn't exist
           if ! az storage account show \
             --name "$STORAGE_ACCOUNT" \
             --resource-group "$RESOURCE_GROUP" &>/dev/null; then
-            echo "❌ Storage account $STORAGE_ACCOUNT does not exist"
-            exit 1
+            echo "📦 Creating storage account: $STORAGE_ACCOUNT in $LOCATION"
+            az storage account create \
+              --name "$STORAGE_ACCOUNT" \
+              --resource-group "$RESOURCE_GROUP" \
+              --location "$LOCATION" \
+              --sku Standard_LRS \
+              --kind StorageV2 \
+              --allow-blob-public-access false \
+              --min-tls-version TLS1_2
+            echo "✅ Storage account created: $STORAGE_ACCOUNT"
+          else
+            echo "✅ Storage account exists: $STORAGE_ACCOUNT"
           fi
-
-          echo "✅ Storage account exists: $STORAGE_ACCOUNT"
 
           # Create Cloudflare R2 container
           CLOUDFLARE_CONTAINER="dculus-forms-cloudflare-r2-${ENV}-state"
