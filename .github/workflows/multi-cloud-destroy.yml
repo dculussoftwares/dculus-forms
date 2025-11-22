@@ -402,7 +402,37 @@ jobs:
             -backend-config="container_name=dculus-forms-azure-backend-${{ github.event.inputs.environment }}-state" \
             -backend-config="key=terraform.tfstate"
 
+      - name: Force Delete Container App (Bypass Hanging Resources)
+        continue-on-error: true
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          RESOURCE_GROUP="dculus-forms-${ENV}-rg"
+          CONTAINER_APP="dculus-forms-${ENV}-backend"
+          
+          echo "🔥 Attempting to force-delete Container App to prevent hanging..."
+          
+          # Check if Container App exists
+          if az containerapp show \
+            --name "$CONTAINER_APP" \
+            --resource-group "$RESOURCE_GROUP" &>/dev/null; then
+            
+            echo "📌 Container App found: $CONTAINER_APP"
+            
+            # Force delete without waiting for completion
+            echo "🗑️ Initiating force delete (no-wait)..."
+            az containerapp delete \
+              --name "$CONTAINER_APP" \
+              --resource-group "$RESOURCE_GROUP" \
+              --yes \
+              --no-wait || echo "⚠️ Force delete command failed, continuing..."
+            
+            echo "✅ Delete initiated, will continue with Terraform destroy"
+          else
+            echo "ℹ️ Container App not found, skipping force delete"
+          fi
+
       - name: Terraform Destroy
+        timeout-minutes: 30
         env:
           TF_VAR_mongodb_connection_string: "placeholder"
           TF_VAR_better_auth_secret: ${{ secrets.BETTER_AUTH_SECRET }}
@@ -425,9 +455,45 @@ jobs:
           TF_VAR_chargebee_site: ${{ secrets.CHARGEBEE_SITE || 'placeholder' }}
           TF_VAR_chargebee_api_key: ${{ secrets.CHARGEBEE_API_KEY || 'placeholder' }}
         run: |
-          echo "🔥 Destroying Azure Container Apps..."
-          terraform destroy -auto-approve
+          echo "🔥 Destroying Azure Container Apps with Terraform..."
+          echo "⏱️ Timeout set to 30 minutes to prevent indefinite hanging"
+          
+          # Terraform will detect pre-deleted resources and update state accordingly
+          # Using parallelism to speed up the destroy process
+          terraform destroy \
+            -auto-approve \
+            -parallelism=10
+          
           echo "✅ Azure Container Apps destroyed successfully"
+      
+      - name: Cleanup Any Remaining Resources
+        if: always()
+        continue-on-error: true
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          RESOURCE_GROUP="dculus-forms-${ENV}-rg"
+          
+          echo "🧹 Checking for any remaining resources in resource group..."
+          
+          # Check if resource group still exists
+          if az group exists --name "$RESOURCE_GROUP" | grep -q "true"; then
+            echo "📌 Resource group exists: $RESOURCE_GROUP"
+            
+            # List remaining resources
+            echo "📋 Listing remaining resources:"
+            az resource list --resource-group "$RESOURCE_GROUP" --output table || true
+            
+            # Force delete the entire resource group (last resort)
+            echo "🗑️ Force deleting resource group to ensure cleanup..."
+            az group delete \
+              --name "$RESOURCE_GROUP" \
+              --yes \
+              --no-wait || echo "⚠️ Resource group deletion failed"
+            
+            echo "✅ Cleanup commands executed"
+          else
+            echo "✅ Resource group already deleted"
+          fi
 
   # Destroy Cloudflare Pages Projects (form-app, admin-app, viewer-app)
   terraform-cloudflare-pages-destroy:
