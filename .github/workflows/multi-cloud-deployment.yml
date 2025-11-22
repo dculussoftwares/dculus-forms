@@ -745,7 +745,11 @@ jobs:
           cp ../../outputs.tf .
 
           # Initialize Terraform
-          terraform init
+          terraform init \
+            -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
+            -backend-config="storage_account_name=dculusterraformstates" \
+            -backend-config="container_name=dculus-forms-azure-backend-${{ needs.determine-environment.outputs.environment }}-state" \
+            -backend-config="key=terraform.tfstate"
 
           # Clean orphaned resources from state
           ENV="${{ needs.determine-environment.outputs.environment }}"
@@ -857,7 +861,12 @@ jobs:
           echo "✅ Copied shared Terraform files"
 
       - name: Terraform Init
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
+            -backend-config="storage_account_name=dculusterraformstates" \
+            -backend-config="container_name=dculus-forms-cloudflare-services-${{ needs.determine-environment.outputs.environment }}-state" \
+            -backend-config="key=terraform.tfstate"
 
       - name: Terraform Validate
         run: terraform validate
@@ -934,7 +943,12 @@ jobs:
           echo "✅ Copied shared Terraform files"
 
       - name: Terraform Init
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
+            -backend-config="storage_account_name=dculusterraformstates" \
+            -backend-config="container_name=dculus-forms-cloudflare-pages-${{ needs.determine-environment.outputs.environment }}-state" \
+            -backend-config="key=terraform.tfstate"
 
       - name: Terraform Validate
         run: terraform validate
@@ -1178,7 +1192,12 @@ jobs:
           echo "✅ Copied shared Terraform files"
 
       - name: Terraform Init
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
+            -backend-config="storage_account_name=dculusterraformstates" \
+            -backend-config="container_name=dculus-forms-cloudflare-pages-admin-${{ needs.determine-environment.outputs.environment }}-state" \
+            -backend-config="key=terraform.tfstate"
 
       - name: Terraform Validate
         run: terraform validate
@@ -1413,7 +1432,12 @@ jobs:
           echo "✅ Copied shared Terraform files"
 
       - name: Terraform Init
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
+            -backend-config="storage_account_name=dculusterraformstates" \
+            -backend-config="container_name=dculus-forms-cloudflare-pages-viewer-${{ needs.determine-environment.outputs.environment }}-state" \
+            -backend-config="key=terraform.tfstate"
 
       - name: Terraform Validate
         run: terraform validate

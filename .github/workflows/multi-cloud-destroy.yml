@@ -395,7 +395,12 @@ jobs:
           echo "✅ Copied shared Terraform files"
 
       - name: Terraform Init
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
+            -backend-config="storage_account_name=dculusterraformstates" \
+            -backend-config="container_name=dculus-forms-azure-backend-${{ github.event.inputs.environment }}-state" \
+            -backend-config="key=terraform.tfstate"
 
       - name: Terraform Destroy
         env:
