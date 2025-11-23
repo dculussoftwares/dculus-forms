@@ -1075,7 +1075,7 @@ jobs:
         env:
           VITE_GRAPHQL_URL: https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}/graphql
           VITE_API_URL: https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}
-          VITE_CDN_ENDPOINT: ${{ needs.terraform-infrastructure-deploy.outputs.public_cdn_endpoint }}
+          VITE_CDN_ENDPOINT: ${{ needs.terraform-infrastructure-deploy.outputs.public_cdn_url }}
           VITE_PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           VITE_FORM_VIEWER_URL: ${{ needs.terraform-cloudflare-pages-viewer.outputs.custom_domain }}
         run: |
@@ -1306,7 +1306,7 @@ jobs:
         env:
           VITE_GRAPHQL_URL: https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}/graphql
           VITE_API_URL: https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}
-          VITE_CDN_ENDPOINT: ${{ needs.terraform-infrastructure-deploy.outputs.public_cdn_endpoint }}
+          VITE_CDN_ENDPOINT: ${{ needs.terraform-infrastructure-deploy.outputs.public_cdn_url }}
         run: |
           echo "🔨 Building admin-app for environment: ${{ needs.determine-environment.outputs.environment }}"
           echo "Backend URL: $VITE_API_URL"
@@ -1534,7 +1534,7 @@ jobs:
         env:
           VITE_GRAPHQL_URL: https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}/graphql
           VITE_API_URL: https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}
-          VITE_CDN_ENDPOINT: ${{ needs.terraform-infrastructure-deploy.outputs.public_cdn_endpoint }}
+          VITE_CDN_ENDPOINT: ${{ needs.terraform-infrastructure-deploy.outputs.public_cdn_url }}
         run: |
           echo "🔨 Building form-viewer for environment: ${{ needs.determine-environment.outputs.environment }}"
           echo "Backend URL: $VITE_API_URL"
