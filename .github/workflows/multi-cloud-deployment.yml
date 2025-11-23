@@ -41,6 +41,12 @@ on:
     paths:
       - 'infrastructure/multi-cloud/terraform/**'
       - '.github/workflows/multi-cloud-deployment.yml'
+  workflow_run:
+    workflows: ["Build Pipeline"]
+    types:
+      - completed
+    branches:
+      - main
 
 permissions:
   id-token: write      # Required for OIDC authentication with Azure
@@ -88,6 +94,41 @@ jobs:
             echo "deploy_mongodb=${{ github.event.inputs.deploy_mongodb }}" >> $GITHUB_OUTPUT
             echo "deploy_postgres=${{ github.event.inputs.deploy_postgres }}" >> $GITHUB_OUTPUT
             echo "release_tag=${{ github.event.inputs.release_tag }}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # For workflow_run (triggered by Build Pipeline)
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "ℹ️ Triggered by Build Pipeline completion"
+            
+            # Check if build was successful
+            if [ "${{ github.event.workflow_run.conclusion }}" != "success" ]; then
+              echo "❌ Build Pipeline failed. Skipping deployment."
+              exit 1
+            fi
+            
+            # Determine tag/commit
+            HEAD_BRANCH="${{ github.event.workflow_run.head_branch }}"
+            HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
+            
+            echo "Branch: $HEAD_BRANCH"
+            echo "SHA: $HEAD_SHA"
+            
+            if [ "$HEAD_BRANCH" = "main" ]; then
+              # For main branch, deploy to dev with SHA tag
+              SHORT_SHA=${HEAD_SHA:0:7}
+              echo "environment=dev" >> $GITHUB_OUTPUT
+              echo "should_deploy=true" >> $GITHUB_OUTPUT
+              echo "deploy_cloudflare=true" >> $GITHUB_OUTPUT
+              echo "deploy_azure=true" >> $GITHUB_OUTPUT
+              echo "deploy_mongodb=true" >> $GITHUB_OUTPUT
+              echo "deploy_postgres=true" >> $GITHUB_OUTPUT
+              echo "release_tag=sha-${SHORT_SHA}" >> $GITHUB_OUTPUT
+              echo "release_commit=${HEAD_SHA}" >> $GITHUB_OUTPUT
+            else
+               echo "⚠️ Triggered by non-main branch: $HEAD_BRANCH. Skipping auto-deployment."
+               echo "should_deploy=false" >> $GITHUB_OUTPUT
+            fi
             exit 0
           fi
 

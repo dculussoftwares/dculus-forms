@@ -776,7 +776,7 @@ jobs:
   build-and-push:
     needs: [lint-and-type-check, integration-tests]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main'
     permissions:
       contents: read
       packages: write
@@ -908,5 +908,5 @@ jobs:
             echo "📦 Ready for deployment via multi-cloud-deployment.yml workflow" >> $GITHUB_STEP_SUMMARY
           elif [[ "${{ needs.build-and-push.result }}" == "skipped" ]]; then
             echo "### ℹ️ Docker Build Skipped" >> $GITHUB_STEP_SUMMARY
-            echo "Docker images are only built on version tags (e.g., v1.2.3)" >> $GITHUB_STEP_SUMMARY
+            echo "Docker images are only built on version tags (e.g., v1.2.3) or main branch" >> $GITHUB_STEP_SUMMARY
           fi
