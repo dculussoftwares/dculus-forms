@@ -58,8 +58,8 @@ output "r2_access_key_id" {
 }
 
 output "r2_secret_access_key" {
-  description = "R2 Secret Access Key (Token Value) - Used as AWS_SECRET_ACCESS_KEY"
-  value       = nonsensitive(cloudflare_api_token.r2_access.value)
+  description = "R2 Secret Access Key (SHA256 of Token Value) - Used as AWS_SECRET_ACCESS_KEY"
+  value       = sha256(cloudflare_api_token.r2_access.value)
 }
 
 output "next_steps" {
@@ -86,11 +86,9 @@ output "next_steps" {
 
     NEXT STEPS:
 
-    1. Generate R2 API Tokens:
-       - Go to: https://dash.cloudflare.com/${var.cloudflare_account_id}/r2/api-tokens
-       - Create token with "Object Read & Write" permissions
-       - Scope to buckets: ${cloudflare_r2_bucket.private.name}, ${cloudflare_r2_bucket.public.name}
-       - Save Access Key ID and Secret Access Key
+    1. R2 API Tokens (Generated Automatically):
+       - Access Key ID: ${cloudflare_api_token.r2_access.id}
+       - Secret Access Key: <sensitive> (See 'r2_secret_access_key' output)
 
     2. Update Backend Environment Variables:
        PUBLIC_S3_ENDPOINT=${var.cloudflare_account_id}.r2.cloudflarestorage.com
