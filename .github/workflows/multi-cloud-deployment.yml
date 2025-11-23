@@ -391,12 +391,14 @@ jobs:
           IMAGE_NAME="dculus/forms-backend"
           TAG="${{ steps.set-tag.outputs.tag }}"
 
-          # Try to pull the image
-          if docker manifest inspect "${IMAGE_NAME}:${TAG}" >/dev/null 2>&1; then
+          # Try to pull the image manifest (without silencing output to see errors)
+          echo "Executing: docker manifest inspect ${IMAGE_NAME}:${TAG}"
+          
+          if docker manifest inspect "${IMAGE_NAME}:${TAG}"; then
             echo "✅ Docker image exists: ${IMAGE_NAME}:${TAG}"
             echo "exists=true" >> $GITHUB_OUTPUT
           else
-            echo "❌ Docker image does not exist: ${IMAGE_NAME}:${TAG}"
+            echo "❌ Docker image does not exist or cannot be accessed: ${IMAGE_NAME}:${TAG}"
             echo "⚠️  Please run the build.yml workflow with tag ${TAG} to build the image first"
             echo "exists=false" >> $GITHUB_OUTPUT
             exit 1
@@ -1036,23 +1038,11 @@ jobs:
           echo "RELEASE_COMMIT=${{ needs.determine-environment.outputs.release_commit }}" >> $GITHUB_ENV
           echo "📦 Deploying tag: ${{ needs.determine-environment.outputs.release_tag }}"
 
-      - name: Download tagged source code
-        env:
-          RELEASE_TAG: ${{ needs.determine-environment.outputs.release_tag }}
-        run: |
-          echo "📦 Downloading source for tag: $RELEASE_TAG"
-
-          # Download GitHub's auto-generated source code archive
-          mkdir -p ./release
-          curl -fL -o ./release/source.tar.gz \
-            "https://github.com/${{ github.repository }}/archive/refs/tags/${RELEASE_TAG}.tar.gz"
-
-          # Extract source code
-          mkdir -p ./source
-          tar -xzf ./release/source.tar.gz -C ./source --strip-components=1
-
-          echo "✅ Source code extracted from release $RELEASE_TAG"
-          ls -la ./source
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.determine-environment.outputs.release_commit }}
+          path: source
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -1279,23 +1269,11 @@ jobs:
           echo "RELEASE_COMMIT=${{ needs.determine-environment.outputs.release_commit }}" >> $GITHUB_ENV
           echo "📦 Deploying tag: ${{ needs.determine-environment.outputs.release_tag }}"
 
-      - name: Download tagged source code
-        env:
-          RELEASE_TAG: ${{ needs.determine-environment.outputs.release_tag }}
-        run: |
-          echo "📦 Downloading source for tag: $RELEASE_TAG"
-
-          # Download GitHub's auto-generated source code archive
-          mkdir -p ./release
-          curl -fL -o ./release/source.tar.gz \
-            "https://github.com/${{ github.repository }}/archive/refs/tags/${RELEASE_TAG}.tar.gz"
-
-          # Extract source code
-          mkdir -p ./source
-          tar -xzf ./release/source.tar.gz -C ./source --strip-components=1
-
-          echo "✅ Source code extracted from release $RELEASE_TAG"
-          ls -la ./source
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.determine-environment.outputs.release_commit }}
+          path: source
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -1519,23 +1497,11 @@ jobs:
           echo "RELEASE_COMMIT=${{ needs.determine-environment.outputs.release_commit }}" >> $GITHUB_ENV
           echo "📦 Deploying tag: ${{ needs.determine-environment.outputs.release_tag }}"
 
-      - name: Download tagged source code
-        env:
-          RELEASE_TAG: ${{ needs.determine-environment.outputs.release_tag }}
-        run: |
-          echo "📦 Downloading source for tag: $RELEASE_TAG"
-
-          # Download GitHub's auto-generated source code archive
-          mkdir -p ./release
-          curl -fL -o ./release/source.tar.gz \
-            "https://github.com/${{ github.repository }}/archive/refs/tags/${RELEASE_TAG}.tar.gz"
-
-          # Extract source code
-          mkdir -p ./source
-          tar -xzf ./release/source.tar.gz -C ./source --strip-components=1
-
-          echo "✅ Source code extracted from release $RELEASE_TAG"
-          ls -la ./source
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.determine-environment.outputs.release_commit }}
+          path: source
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
