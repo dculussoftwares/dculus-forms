@@ -54,19 +54,22 @@ interface UploadedFile {
   key: string;
   type: string;
   filename?: string;
+  originalName?: string;
 }
 
 export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise<void> => {
   logger.info('🌱 Seeding form templates...');
+  logger.info(`📦 Received ${uploadedFiles.length} uploaded files for seeding`);
   
   // Get background image keys from uploaded files
   // Accept files with 'background' OR 'logo' in name, or FormBackground/OrganizationLogo types
-  const backgroundImages = uploadedFiles.filter(file => 
-    file.type === 'FormBackground' || 
+  const backgroundImages = uploadedFiles.filter(file => {
+    const name = file.filename || file.originalName || '';
+    return file.type === 'FormBackground' || 
     file.type === 'OrganizationLogo' ||
-    file.filename?.includes('background') ||
-    file.filename?.includes('logo')
-  );
+    name.includes('background') ||
+    name.includes('logo');
+  });
   
   // Use all matching images
   const availableImages = backgroundImages;
