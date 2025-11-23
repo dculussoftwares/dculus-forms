@@ -812,8 +812,8 @@ jobs:
             # Branch-based tags (e.g., main, develop)
             type=ref,event=branch
             type=ref,event=pr
-            # Simple SHA tag for traceability (e.g., sha-abc1234)
-            type=sha
+            # Full SHA tag for automation reliability (e.g., sha-<full_sha>)
+            type=sha,format=long
             # Latest tag for default branch
             type=raw,value=latest,enable={{is_default_branch}}
             # Custom tag from workflow_dispatch

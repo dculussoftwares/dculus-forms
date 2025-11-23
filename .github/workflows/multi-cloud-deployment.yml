@@ -116,14 +116,13 @@ jobs:
             
             if [ "$HEAD_BRANCH" = "main" ]; then
               # For main branch, deploy to dev with SHA tag
-              SHORT_SHA=${HEAD_SHA:0:7}
               echo "environment=dev" >> $GITHUB_OUTPUT
               echo "should_deploy=true" >> $GITHUB_OUTPUT
               echo "deploy_cloudflare=true" >> $GITHUB_OUTPUT
               echo "deploy_azure=true" >> $GITHUB_OUTPUT
               echo "deploy_mongodb=true" >> $GITHUB_OUTPUT
               echo "deploy_postgres=true" >> $GITHUB_OUTPUT
-              echo "release_tag=sha-${SHORT_SHA}" >> $GITHUB_OUTPUT
+              echo "release_tag=sha-${HEAD_SHA}" >> $GITHUB_OUTPUT
               echo "release_commit=${HEAD_SHA}" >> $GITHUB_OUTPUT
             else
                echo "⚠️ Triggered by non-main branch: $HEAD_BRANCH. Skipping auto-deployment."
