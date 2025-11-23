@@ -41,9 +41,6 @@ on:
     paths:
       - 'infrastructure/multi-cloud/terraform/**'
       - '.github/workflows/multi-cloud-deployment.yml'
-  push:
-    tags:
-      - 'v*'
 
 permissions:
   id-token: write      # Required for OIDC authentication with Azure
@@ -103,21 +100,6 @@ jobs:
             echo "deploy_mongodb=true" >> $GITHUB_OUTPUT
             echo "deploy_postgres=true" >> $GITHUB_OUTPUT
             echo "release_tag=${{ github.sha }}" >> $GITHUB_OUTPUT
-            echo "release_commit=${{ github.sha }}" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          # For tag pushes, deploy to dev
-          if [ "${{ github.event_name }}" = "push" ] && [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            echo "environment=dev" >> $GITHUB_OUTPUT
-            echo "should_deploy=true" >> $GITHUB_OUTPUT
-            echo "deploy_cloudflare=true" >> $GITHUB_OUTPUT
-            echo "deploy_azure=true" >> $GITHUB_OUTPUT
-            echo "deploy_mongodb=true" >> $GITHUB_OUTPUT
-            echo "deploy_postgres=true" >> $GITHUB_OUTPUT
-            # Extract tag name from ref (e.g., refs/tags/v1.0.0 -> v1.0.0)
-            TAG_NAME=${GITHUB_REF#refs/tags/}
-            echo "release_tag=${TAG_NAME}" >> $GITHUB_OUTPUT
             echo "release_commit=${{ github.sha }}" >> $GITHUB_OUTPUT
             exit 0
           fi
