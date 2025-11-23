@@ -21,8 +21,13 @@ on:
         required: false
         type: boolean
         default: false
-      destroy_cloudflare:
-        description: '🔥 Destroy Cloudflare R2 (ALL FILES DELETED - Cannot be recovered)'
+      destroy_cloudflare_pages:
+        description: 'Destroy Cloudflare Pages (form-app, admin-app, viewer-app - Static sites)'
+        required: false
+        type: boolean
+        default: false
+      destroy_cloudflare_r2:
+        description: '🔥 Destroy Cloudflare R2 & CDN (ALL FILES DELETED - Cannot be recovered)'
         required: false
         type: boolean
         default: false
@@ -83,7 +88,8 @@ jobs:
         run: |
           if [ "${{ github.event.inputs.destroy_mongodb }}" != "true" ] && \
              [ "${{ github.event.inputs.destroy_postgres }}" != "true" ] && \
-             [ "${{ github.event.inputs.destroy_cloudflare }}" != "true" ] && \
+             [ "${{ github.event.inputs.destroy_cloudflare_pages }}" != "true" ] && \
+             [ "${{ github.event.inputs.destroy_cloudflare_r2 }}" != "true" ] && \
              [ "${{ github.event.inputs.destroy_azure }}" != "true" ]; then
             echo "❌ ERROR: No providers selected for destruction!"
             echo "Please select at least one provider to destroy."
@@ -107,10 +113,16 @@ jobs:
             echo "  ⏭️ Azure Container Apps (Skipped)"
           fi
 
-          if [ "${{ github.event.inputs.destroy_cloudflare }}" = "true" ]; then
-            echo "  🔥 Cloudflare R2 Buckets (ALL FILES DELETED)"
+          if [ "${{ github.event.inputs.destroy_cloudflare_pages }}" = "true" ]; then
+            echo "  ✅ Cloudflare Pages (form-app, admin-app, viewer-app)"
           else
-            echo "  ⏭️ Cloudflare R2 (Skipped)"
+            echo "  ⏭️ Cloudflare Pages (Skipped)"
+          fi
+
+          if [ "${{ github.event.inputs.destroy_cloudflare_r2 }}" = "true" ]; then
+            echo "  🔥 Cloudflare R2 Buckets & CDN (ALL FILES DELETED)"
+          else
+            echo "  ⏭️ Cloudflare R2 & CDN (Skipped)"
           fi
 
           if [ "${{ github.event.inputs.destroy_mongodb }}" = "true" ]; then
@@ -503,7 +515,7 @@ jobs:
     if: |
       always() && !cancelled() &&
       (needs.terraform-azure-destroy.result == 'success' || needs.terraform-azure-destroy.result == 'skipped') &&
-      github.event.inputs.destroy_cloudflare == 'true'
+      github.event.inputs.destroy_cloudflare_pages == 'true'
     environment: ${{ github.event.inputs.environment }}
     strategy:
       matrix:
@@ -583,7 +595,7 @@ jobs:
     if: |
       always() && !cancelled() &&
       (needs.terraform-cloudflare-pages-destroy.result == 'success' || needs.terraform-cloudflare-pages-destroy.result == 'skipped') &&
-      github.event.inputs.destroy_cloudflare == 'true'
+      github.event.inputs.destroy_cloudflare_r2 == 'true'
     environment: ${{ github.event.inputs.environment }}
     defaults:
       run:
@@ -650,7 +662,7 @@ jobs:
     if: |
       always() && !cancelled() &&
       (needs.terraform-cloudflare-service-domain-destroy.result == 'success' || needs.terraform-cloudflare-service-domain-destroy.result == 'skipped') &&
-      github.event.inputs.destroy_cloudflare == 'true'
+      github.event.inputs.destroy_cloudflare_r2 == 'true'
     environment: ${{ github.event.inputs.environment }}
     defaults:
       run:
@@ -950,17 +962,21 @@ jobs:
           fi
 
           # Cloudflare Pages Status
-          if [ "${{ github.event.inputs.destroy_cloudflare }}" = "true" ]; then
+          if [ "${{ github.event.inputs.destroy_cloudflare_pages }}" = "true" ]; then
             PAGES_STATUS="${{ needs.terraform-cloudflare-pages-destroy.result == 'success' && '✅ Destroyed' || needs.terraform-cloudflare-pages-destroy.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}"
             echo "| Cloudflare Pages (form-app, admin-app, viewer-app) | ✅ Yes | $PAGES_STATUS | ℹ️ Static sites only |" >> $GITHUB_STEP_SUMMARY
-            
+          else
+            echo "| Cloudflare Pages Projects | ❌ No | ⏭️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Cloudflare R2 & CDN Status
+          if [ "${{ github.event.inputs.destroy_cloudflare_r2 }}" = "true" ]; then
             SERVICE_DOMAIN_STATUS="${{ needs.terraform-cloudflare-service-domain-destroy.result == 'success' && '✅ Destroyed' || needs.terraform-cloudflare-service-domain-destroy.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}"
             echo "| Backend Service Domain (DNS) | ✅ Yes | $SERVICE_DOMAIN_STATUS | ℹ️ DNS records only |" >> $GITHUB_STEP_SUMMARY
             
             CF_STATUS="${{ needs.terraform-cloudflare-destroy.result == 'success' && '✅ Destroyed' || '❌ Failed' }}"
             echo "| Cloudflare R2 | ✅ Yes | $CF_STATUS | ⚠️ ALL FILES LOST |" >> $GITHUB_STEP_SUMMARY
           else
-            echo "| Cloudflare Pages Projects | ❌ No | ⏭️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
             echo "| Backend Service Domain | ❌ No | ⏭️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
             echo "| Cloudflare R2 | ❌ No | ⏭️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
           fi
