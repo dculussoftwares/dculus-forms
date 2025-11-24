@@ -1,7 +1,8 @@
 # End-to-end tests (Cucumber + Playwright)
 
 This directory holds Cucumber scenarios that drive Playwright to exercise the
-form-app UI. The suite currently covers the email/password sign-in flow.
+form-app UI. The suite currently covers the email/password sign-in flow and
+creating a form from a template.
 
 ## Setup
 - Install deps: `pnpm install`

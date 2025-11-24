@@ -7,6 +7,7 @@ export class CustomWorld {
   page?: Page;
   readonly baseUrl: string;
   readonly headless: boolean;
+  newFormTitle?: string;
 
   constructor() {
     this.baseUrl = process.env.E2E_BASE_URL ?? 'http://localhost:5173';
