@@ -1617,6 +1617,70 @@ jobs:
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
+  run-form-app-e2e:
+    name: 7.2. Run form-app E2E (Cloudflare Pages)
+    runs-on: ubuntu-latest
+    needs:
+      - determine-environment
+      - deploy-cloudflare-pages-form-app
+      - health-checks
+    if: |
+      always() && !cancelled() && !failure() &&
+      needs.determine-environment.outputs.should_deploy == 'true' &&
+      needs.determine-environment.outputs.deploy_cloudflare == 'true' &&
+      needs.deploy-cloudflare-pages-form-app.result == 'success' &&
+      needs.health-checks.result == 'success'
+    env:
+      E2E_EMAIL: ${{ secrets.E2E_INTEGRATION_TEST_EMAIL_ID }}
+      E2E_PASSWORD: ${{ secrets.E2E_INTEGRATION_TEST_PASSWORD }}
+      E2E_BASE_URL: ${{ secrets.E2E_INTEGRATION_TEST_FORM_APP_URL }}
+      E2E_HEADLESS: 'true'
+      CI: 'true'
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.determine-environment.outputs.release_commit }}
+          path: source
+
+      - name: Validate e2e secrets
+        run: |
+          if [ -z "$E2E_EMAIL" ] || [ -z "$E2E_PASSWORD" ] || [ -z "$E2E_BASE_URL" ]; then
+            echo "❌ E2E secrets are not configured (E2E_EMAIL/E2E_PASSWORD/E2E_BASE_URL)."
+            exit 1
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        working-directory: ./source
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        working-directory: ./source
+        run: pnpm exec playwright install --with-deps
+
+      - name: Run e2e tests against Cloudflare Pages
+        working-directory: ./source
+        run: pnpm test:e2e
+
+      - name: Upload e2e artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: form-app-e2e-artifacts
+          path: |
+            source/test-results/e2e/**
+          if-no-files-found: ignore
+
   # ============================================================
   # PHASE 7: SSL CERTIFICATE & CUSTOM DOMAIN (Backend)
   # ============================================================
@@ -1769,6 +1833,7 @@ jobs:
       deploy-cloudflare-pages-form-app,
       deploy-cloudflare-pages-admin-app,
       deploy-cloudflare-pages-viewer-app,
+      run-form-app-e2e,
       configure-azure-custom-domain,
       health-checks
     ]
@@ -1797,6 +1862,7 @@ jobs:
           echo "| form-app Deployment (Pages) | ${{ needs.deploy-cloudflare-pages-form-app.result == 'success' && '✅' || needs.deploy-cloudflare-pages-form-app.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| admin-app Deployment (Pages) | ${{ needs.deploy-cloudflare-pages-admin-app.result == 'success' && '✅' || needs.deploy-cloudflare-pages-admin-app.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| viewer-app Deployment (Pages) | ${{ needs.deploy-cloudflare-pages-viewer-app.result == 'success' && '✅' || needs.deploy-cloudflare-pages-viewer-app.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| form-app E2E (Cloudflare Pages) | ${{ needs.run-form-app-e2e.result == 'success' && '✅' || needs.run-form-app-e2e.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Custom Domain & Certificate | ${{ needs.configure-azure-custom-domain.result == 'success' && '✅' || needs.configure-azure-custom-domain.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Health Checks | ${{ needs.health-checks.result == 'success' && '✅' || needs.health-checks.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
