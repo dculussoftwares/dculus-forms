@@ -17,7 +17,8 @@
     "fallbackLabel": "Form Template",
     "fallbackDescription": "A professionally designed form template ready for customization.",
     "useTemplate": "Use Template",
-    "ready": "Ready to use"
+    "ready": "Ready to use",
+    "recentlyCreated": "Recently created"
   },
   "popover": {
     "title": "Create Form from Template",
