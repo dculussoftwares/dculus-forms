@@ -8,8 +8,10 @@ import {
   RadioField,
   CheckboxField,
   DateField,
+  RichTextFormField,
   FillableFormFieldValidation,
   TextFieldValidation,
+  CheckboxFieldValidation,
   ThemeType,
   SpacingType,
   PageModeType,
@@ -548,6 +550,137 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
           content: getHtmlContent('newsletter'),
           customBackGroundColor: "#e8f5e8",
           backgroundImageKey: getImageKey(1),
+          pageMode: PageModeType.MULTIPAGE
+        },
+        isShuffleEnabled: false
+      }
+    },
+
+    // All Fields Showcase Template - Comprehensive demonstration of all field types
+    {
+      name: "All Fields Showcase",
+      description: "Comprehensive template demonstrating all available form field types",
+      category: "Reference",
+      formSchema: {
+        pages: [
+          {
+            id: randomUUID(),
+            title: "Text Input Fields",
+            order: 1,
+            fields: [
+              new TextInputField(
+                randomUUID(),
+                "Single-Line Text Input",
+                "",
+                "",
+                "Supports character limits (min: 3, max: 50 characters)",
+                "Enter your response here",
+                new TextFieldValidation(true, 3, 50)
+              ),
+              new TextAreaField(
+                randomUUID(),
+                "Multi-Line Text Area",
+                "",
+                "",
+                "Perfect for longer responses with character limits (max: 500 characters)",
+                "Enter detailed information here...",
+                new TextFieldValidation(true, 10, 500)
+              ),
+              new EmailField(
+                randomUUID(),
+                "Email Address",
+                "",
+                "",
+                "Validates email format automatically",
+                "your.email@example.com",
+                new FillableFormFieldValidation(true)
+              )
+            ]
+          },
+          {
+            id: randomUUID(),
+            title: "Numeric & Choice Fields",
+            order: 2,
+            fields: [
+              new NumberField(
+                randomUUID(),
+                "Number Input (Age)",
+                "",
+                "",
+                "Numeric input with range validation (18-100)",
+                "25",
+                new FillableFormFieldValidation(true),
+                18,
+                100
+              ),
+              new SelectField(
+                randomUUID(),
+                "Dropdown Selection",
+                "",
+                "",
+                "Choose one option from the dropdown menu",
+                new FillableFormFieldValidation(true),
+                ["Option 1", "Option 2", "Option 3", "Option 4", "Option 5"]
+              ),
+              new RadioField(
+                randomUUID(),
+                "Radio Button Selection",
+                "",
+                "",
+                "Select exactly one option from the list",
+                new FillableFormFieldValidation(true),
+                ["Choice A", "Choice B", "Choice C", "Choice D"]
+              )
+            ]
+          },
+          {
+            id: randomUUID(),
+            title: "Selection & Date Fields",
+            order: 3,
+            fields: [
+              new CheckboxField(
+                randomUUID(),
+                "Multiple Choice Checkboxes",
+                [],
+                "",
+                "Select between 1-3 options (demonstrates selection limits)",
+                "",
+                new CheckboxFieldValidation(true, 1, 3),
+                ["Feature A", "Feature B", "Feature C", "Feature D", "Feature E"]
+              ),
+              new DateField(
+                randomUUID(),
+                "Date Picker",
+                "",
+                "",
+                "Select a date with optional min/max constraints",
+                "",
+                new FillableFormFieldValidation(true),
+                "2024-01-01",
+                "2025-12-31"
+              )
+            ]
+          },
+          {
+            id: randomUUID(),
+            title: "Rich Content Display",
+            order: 4,
+            fields: [
+              new RichTextFormField(
+                randomUUID(),
+                '<h2><strong>Rich Text Field</strong></h2><p>This is a <strong>non-fillable</strong> field type used for displaying formatted content, instructions, or information to users.</p><p>It supports:</p><ul><li>Bold and italic text</li><li>Headings and paragraphs</li><li>Lists and formatting</li><li>Any HTML content</li></ul><p><em>Perfect for adding context, instructions, or visual breaks in your forms!</em></p>'
+              )
+            ]
+          }
+        ],
+        layout: {
+          theme: ThemeType.LIGHT,
+          textColor: "#333333",
+          spacing: SpacingType.NORMAL,
+          code: "L1" as LayoutCode,
+          content: '<h1><strong>All Fields Showcase</strong></h1><p>This template demonstrates all 9 available form field types with their unique capabilities and validation features.</p>',
+          customBackGroundColor: "#f0f4f8",
+          backgroundImageKey: getImageKey(0),
           pageMode: PageModeType.MULTIPAGE
         },
         isShuffleEnabled: false
