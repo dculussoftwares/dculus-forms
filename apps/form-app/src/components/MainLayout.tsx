@@ -14,7 +14,7 @@ interface MainLayoutProps {
 export const MainLayout: React.FC<MainLayoutProps> = ({ children, title, subtitle, breadcrumbs }) => {
   return (
     <SidebarProvider defaultOpen={false}>
-      <AppSidebar />
+      <AppSidebar data-testid="app-sidebar" />
       <SidebarInset>
         <PageWrapper
           title={title ?? ""}
