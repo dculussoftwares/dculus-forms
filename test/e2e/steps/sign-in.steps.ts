@@ -1,6 +1,7 @@
 import { Given, Then, When } from '@cucumber/cucumber';
 import { expect } from '@playwright/test';
 import { CustomWorld } from '../support/world';
+import { expectPoll } from '../support/expectPoll';
 
 type Credentials = {
   email: string;
@@ -108,4 +109,48 @@ Then('I should be on the new form dashboard', async function (this: CustomWorld)
 
   const sidebar = this.page.getByTestId('app-sidebar');
   await expect(sidebar).toBeVisible({ timeout: 30_000 });
+});
+
+When('I open the collaborative builder', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  const collaborateCard = this.page.getByRole('button', {
+    name: /collaborate/i,
+  });
+  await collaborateCard.click();
+
+  const builderRoot = this.page.getByTestId('collaborative-form-builder');
+  await expect(builderRoot).toBeVisible({ timeout: 45_000 });
+});
+
+When('I add a new page in the builder', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  const addPageButton = this.page.getByTestId('add-page-button');
+  await addPageButton.click();
+
+  // Wait until a new page item appears (at least 2 pages)
+  const pagesList = this.page.getByTestId('pages-list');
+  await expectPoll(async () => {
+    const count = await pagesList.locator('[data-testid^="page-item-"]').count();
+    return count >= 2;
+  }, { message: 'Expected at least 2 pages after adding', timeout: 15_000, interval: 500 });
+});
+
+Then('I drag a short text field onto the page', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  const fieldTile = this.page.getByTestId('field-type-short-text');
+  const droppablePage = this.page.getByTestId('droppable-page').first();
+
+  await fieldTile.dragTo(droppablePage);
+
+  const fieldContent = droppablePage.getByTestId('field-content-1');
+  await expect(fieldContent).toBeVisible({ timeout: 15_000 });
 });

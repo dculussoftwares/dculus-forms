@@ -10,3 +10,6 @@ Feature: Sign in
     Given I am signed in
     When I create a form from the first template
     Then I should be on the new form dashboard
+    When I open the collaborative builder
+    And I add a new page in the builder
+    Then I drag a short text field onto the page
