@@ -356,7 +356,7 @@ Phase 4: Cleanup (1 week)
 **Deliverables:**
 - ✅ Staging environment validated
 - ✅ Performance benchmarks met
-- ✅ All E2E tests passing
+- ⚪ Browser E2E suite removed (manual validation required)
 - ✅ Go/no-go decision
 
 #### Phase 3: Production Migration (1 week)
@@ -434,7 +434,7 @@ Phase 4: Cleanup (1 week)
 
 3. **Functionality**
    - ✅ All integration tests passing
-   - ✅ All E2E tests passing
+   - ⚪ Browser E2E suite removed (manual validation required)
    - ✅ All features working as before
    - ✅ No regressions
 
@@ -520,7 +520,7 @@ Phase 4: Cleanup (1 week)
 ### Before Production Cutover
 
 - [ ] Staging migration successful
-- [ ] All tests passing (unit, integration, E2E)
+- [ ] All tests passing (unit, integration)
 - [ ] Performance benchmarks met
 - [ ] Data validation scripts pass
 - [ ] Monitoring and alerting configured

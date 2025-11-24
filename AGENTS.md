@@ -5,7 +5,7 @@
 - `apps/form-app`: React form builder client with Vite; features in `src/components`, routes in `src/pages`.
 - Other frontends (`apps/form-viewer`, `apps/admin-app`) follow the same pattern: features in `src/components`, routes in `src/pages`.
 - Shared packages (`packages/ui`, `packages/utils`, `packages/types`) deliver reusable UI primitives, utilities, and contracts; update these before duplicating logic.
-- Acceptance coverage lives under `test/integration` (Cucumber + supertest) and `test/e2e` (Playwright); bash harnesses in repo root help with CI parity.
+- Acceptance coverage lives under `test/integration` (Cucumber + supertest); the former `test/e2e` Playwright suite has been removed.
 
 ## Build, Test, and Development Commands
 - `pnpm install` resolves workspace deps; rerun after shared package bumps.
@@ -21,8 +21,7 @@
 - Components live in PascalCase files; hooks stay camelCase; context providers end with `Provider`. GraphQL operations use intent-first names like `UpdateFormMutation`.
 
 ## Testing Guidelines
-- Add behavior specs under `test/integration/features/*.feature`; steps live in `test/integration/step-definitions/`. Run with `pnpm test:integration` or scope via `pnpm test:integration:by-tags "@auth"`.
-- UI flows go into `test/e2e/features`; validate with `pnpm test:e2e` and switch to `pnpm test:e2e:headed` for Playwright debugging.
+- Add behavior specs under `test/integration/features/*.feature`; steps live in `test/integration/step-definitions/`. Run with `pnpm test:integration` or scope via `pnpm test:integration:by-tags "@auth"`. (E2E suite has been removed.)
 - Capture screenshots or fixtures in `test-results/` when behavior differs from baseline; clean up temporary assets before submitting.
 
 ## Commit & Pull Request Guidelines

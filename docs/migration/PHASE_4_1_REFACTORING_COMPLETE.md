@@ -429,7 +429,7 @@ const analyticsComponentRegistry = {
   - [ ] Layout changes
   - [ ] Real-time collaboration with multiple users
 - [ ] Integration tests: `pnpm test:integration`
-- [ ] E2E tests with Playwright (if applicable)
+- [ ] E2E tests (suite currently removed)
 - [ ] Performance testing (check for re-render regressions)
 
 ---

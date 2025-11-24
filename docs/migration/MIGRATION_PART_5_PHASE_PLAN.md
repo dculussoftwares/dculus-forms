@@ -779,9 +779,6 @@ pnpm test
 
 # Integration tests
 pnpm test:integration
-
-# E2E tests
-pnpm test:e2e
 ```
 
 ---
@@ -875,7 +872,7 @@ Since this is a fresh deployment with no data, rollback is simple:
 |-------|----------|-------|
 | **Phase 1**: Schema Conversion | 1-2 days | Update Prisma schema, add defaults |
 | **Phase 2**: Code Changes | 2-3 days | Update query builders, simplify services |
-| **Phase 3**: Testing | 2-3 days | Unit, integration, E2E tests |
+| **Phase 3**: Testing | 2-3 days | Unit and integration tests |
 | **Phase 4**: Deployment | 1 day | Cloud setup, deployment, verification |
 
 **Total**: 6-9 days (1-2 weeks)

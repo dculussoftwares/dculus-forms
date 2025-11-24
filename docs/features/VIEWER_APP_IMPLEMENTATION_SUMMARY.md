@@ -332,7 +332,7 @@ curl -I https://viewer-app-dev.dculus.com
    ```
 
 ### Future Enhancements
-1. **Playwright E2E Tests**: Add viewer-app specific test scenarios
+1. **Browser Coverage**: Reintroduce automated E2E scenarios (suite currently removed)
 2. **Performance Monitoring**: Integrate with Cloudflare Analytics
 3. **Error Tracking**: Add Sentry or similar for production monitoring
 4. **Feature Flags**: Implement environment-specific feature toggles

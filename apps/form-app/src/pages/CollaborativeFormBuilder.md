@@ -283,7 +283,7 @@ The component handles several error conditions:
 
 ### Integration Testing
 
-**Recommended E2E Tests**:
+**Recommended QA Scenarios (browser E2E suite removed)**:
 1. **Form Creation Flow**: Complete form building workflow
 2. **Real-time Collaboration**: Multi-user editing scenarios
 3. **Drag-and-Drop Operations**: Field and page management

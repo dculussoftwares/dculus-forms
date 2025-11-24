@@ -638,9 +638,6 @@ pnpm test
 
 # Integration tests (if you have them)
 pnpm test:integration
-
-# E2E tests
-pnpm test:e2e
 ```
 
 ### Step 6: Manual Testing

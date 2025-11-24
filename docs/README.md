@@ -66,7 +66,7 @@ Welcome to the Dculus Forms documentation! This directory contains comprehensive
 ### For QA/Testers
 - [Testing Guide](../.agent/workflows/testing.md)
 - [Integration Tests](./testing/INTEGRATION_TEST_PLAN.md)
-- [E2E Tests](./testing/COMPREHENSIVE_TEST_SCENARIOS_PLAN.md)
+- [Archived E2E Plan](./testing/COMPREHENSIVE_TEST_SCENARIOS_PLAN.md) - Suite removed
 
 ### For Product Managers
 - [Feature Documentation](./features/)

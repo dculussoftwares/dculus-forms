@@ -716,7 +716,7 @@ This comprehensive edit tracking system provides complete visibility into respon
 ### Testing Tasks
 - [ ] Unit tests for GraphQL resolvers - Future enhancement
 - [ ] Integration tests for response update flow - Future enhancement
-- [ ] E2E tests for complete edit workflow - Future enhancement
+- [ ] Browser E2E coverage (suite currently removed) - Future enhancement
 - [ ] Permission boundary testing - Future enhancement
 - [ ] Form validation testing in edit mode - Future enhancement
 
