@@ -220,39 +220,31 @@ export const formsResolvers = {
       // Clone the template schema to avoid modifying the original
       const formSchema = JSON.parse(JSON.stringify(template.formSchema));
       
+      // Track if we need to create FormFile record after form creation
+      let copiedFileInfo: any = null;
+      
       // Always copy background images from templates to ensure unique keys for each form
-      if (formSchema.layout && formSchema.layout.backgroundImageKey) {
+      // Check for both truthy value AND non-empty string
+      if (formSchema.layout && formSchema.layout.backgroundImageKey && formSchema.layout.backgroundImageKey.trim() !== '') {
         try {
-          logger.info('Template has background image, copying to form-specific location:', formSchema.layout.backgroundImageKey);
-          
           // Always copy the background image to create a unique key with formId
           const copiedFile = await copyFileForForm(formSchema.layout.backgroundImageKey, newFormId);
           
           // Update the form schema with the new unique key
           formSchema.layout.backgroundImageKey = copiedFile.key;
           
-          logger.info('Updated form schema with new background image key:', copiedFile.key);
-          
-          // Create FormFile record for the copied image
-          await prisma.formFile.create({
-            data: {
-              id: randomUUID(),
-              key: copiedFile.key,
-              type: 'FormBackground',
-              formId: newFormId,
-              originalName: copiedFile.originalName,
-              url: copiedFile.url,
-              size: copiedFile.size,
-              mimeType: copiedFile.mimeType,
-            }
-          });
-          
-          logger.info('Successfully copied template background and created FormFile record');
-        } catch (formFileError) {
-          logger.error('Error handling template background image:', formFileError);
-          // Continue with form creation even if FormFile creation fails
+          // Store file info to create FormFile record AFTER form is created
+          copiedFileInfo = copiedFile;
+        } catch (copyError) {
+          logger.error('Error copying background image:', copyError);
+          // Continue with form creation even if image copy fails
           // But remove the backgroundImageKey to avoid broken references
           formSchema.layout.backgroundImageKey = '';
+        }
+      } else {
+        // Ensure backgroundImageKey is set to empty string if not present
+        if (formSchema.layout) {
+          formSchema.layout.backgroundImageKey = formSchema.layout.backgroundImageKey || '';
         }
       }
 
@@ -265,7 +257,32 @@ export const formsResolvers = {
         organizationId: input.organizationId,
         createdById: context.auth.user!.id,
       };
-      return await createForm(formData, formSchema); // Initialize Hocuspocus document with modified schema
+      
+      // Create the form first (this creates the database record)
+      const newForm = await createForm(formData, formSchema);
+      
+      // NOW create the FormFile record after the form exists in the database
+      if (copiedFileInfo) {
+        try {
+          await prisma.formFile.create({
+            data: {
+              id: randomUUID(),
+              key: copiedFileInfo.key,
+              type: 'FormBackground',
+              formId: newFormId,
+              originalName: copiedFileInfo.originalName,
+              url: copiedFileInfo.url,
+              size: copiedFileInfo.size,
+              mimeType: copiedFileInfo.mimeType,
+            }
+          });
+        } catch (formFileError) {
+          logger.error('Error creating FormFile record:', formFileError);
+          // Don't fail the entire operation if FormFile creation fails
+        }
+      }
+
+      return newForm;
     },
     updateForm: async (_: any, { id, input }: { id: string; input: any }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);

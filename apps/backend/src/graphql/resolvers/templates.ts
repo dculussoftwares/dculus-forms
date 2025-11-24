@@ -185,10 +185,9 @@ export const templatesResolvers = {
         const formSchema = JSON.parse(JSON.stringify(template.formSchema));
         
         // Check if template has a background image and copy it for the new form
-        if (formSchema.layout && formSchema.layout.backgroundImageKey) {
+        // Check for both truthy value AND non-empty string
+        if (formSchema.layout && formSchema.layout.backgroundImageKey && formSchema.layout.backgroundImageKey.trim() !== '') {
           try {
-            logger.info('Copying background image for new form:', formSchema.layout.backgroundImageKey);
-            
             // Copy the background image file
             const copiedFile = await copyFileForForm(formSchema.layout.backgroundImageKey, newFormId);
             
@@ -208,13 +207,16 @@ export const templatesResolvers = {
                 mimeType: copiedFile.mimeType,
               }
             });
-            
-            logger.info('Successfully copied background image:', copiedFile.key);
           } catch (copyError) {
             logger.error('Error copying background image:', copyError);
             // Continue with form creation even if image copy fails
             // But remove the backgroundImageKey to avoid broken references
             formSchema.layout.backgroundImageKey = '';
+          }
+        } else {
+          // Ensure backgroundImageKey is set to empty string if not present
+          if (formSchema.layout) {
+            formSchema.layout.backgroundImageKey = formSchema.layout.backgroundImageKey || '';
           }
         }
 
@@ -229,85 +231,6 @@ export const templatesResolvers = {
           createdById: user.id,
         }, formSchema); // Initialize YJS document with modified schema
 
-        // After form creation, check if it has a backgroundImageKey and create FormFile record
-        // This handles cases where the template background image copying happens outside our logic
-        if (newForm && formSchema.layout && formSchema.layout.backgroundImageKey) {
-          try {
-            logger.info('Template form has background image, checking if we need to copy it:', formSchema.layout.backgroundImageKey);
-            
-            // Check if this is a template directory image that needs to be copied to form-specific location
-            const isTemplateImage = formSchema.layout.backgroundImageKey.includes('templateDirectory') || 
-                                   formSchema.layout.backgroundImageKey.includes('allOrgs');
-            
-            if (isTemplateImage) {
-              logger.info('Copying template background image to form-specific location');
-              
-              // Copy the template image to a form-specific location
-              const copiedFile = await copyFileForForm(formSchema.layout.backgroundImageKey, newFormId);
-              
-              // Update the form schema with the new key
-              formSchema.layout.backgroundImageKey = copiedFile.key;
-              
-              // Update the YJS document with the new background image key
-              // This ensures the form uses the copied image, not the template image
-              logger.info('Updated form schema with new background image key:', copiedFile.key);
-              
-              // Create FormFile record for the copied image
-              await prisma.formFile.create({
-                data: {
-                  id: randomUUID(),
-                  key: copiedFile.key,
-                  type: 'FormBackground',
-                  formId: newFormId,
-                  originalName: copiedFile.originalName,
-                  url: copiedFile.url,
-                  size: copiedFile.size,
-                  mimeType: copiedFile.mimeType,
-                }
-              });
-              
-              logger.info('Successfully copied template background and created FormFile record');
-            } else {
-              // Check if FormFile record already exists for non-template images
-              const existingFormFile = await prisma.formFile.findFirst({
-                where: {
-                  formId: newFormId,
-                  key: formSchema.layout.backgroundImageKey,
-                  type: 'FormBackground'
-                }
-              });
-
-              if (!existingFormFile) {
-                logger.info('Creating FormFile record for existing background image:', formSchema.layout.backgroundImageKey);
-                
-                // Extract filename from the key
-                const originalFileName = formSchema.layout.backgroundImageKey.split('/').pop() || 'background.jpg';
-                
-                // Create FormFile record for the background image
-                await prisma.formFile.create({
-                  data: {
-                    id: randomUUID(),
-                    key: formSchema.layout.backgroundImageKey,
-                    type: 'FormBackground',
-                    formId: newFormId,
-                    originalName: originalFileName,
-                    url: constructCdnUrl(formSchema.layout.backgroundImageKey) || '',
-                    size: 0, // Size not available for existing images
-                    mimeType: 'image/jpeg', // Default mime type
-                  }
-                });
-                
-                logger.info('Successfully created FormFile record for existing background');
-              } else {
-                logger.info('FormFile record already exists for background image');
-              }
-            }
-          } catch (formFileError) {
-            logger.error('Error handling template background image:', formFileError);
-            // Don't fail form creation if FormFile creation fails
-          }
-        }
-
         return newForm;
       } catch (error) {
         logger.error('Error creating form from template:', error);
@@ -320,3 +243,4 @@ export const templatesResolvers = {
     },
   },
 };
+

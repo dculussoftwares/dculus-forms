@@ -847,7 +847,7 @@ describe('Templates Resolvers', () => {
       expect(fileUploadService.copyFileForForm).toHaveBeenCalled();
     });
 
-    it('should copy template background detected after form creation', async () => {
+    it('should handle template with empty backgroundImageKey', async () => {
       const templateWithoutInitialBg = {
         ...mockTemplate,
         formSchema: {
@@ -861,53 +861,30 @@ describe('Templates Resolvers', () => {
 
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
       vi.mocked(templateService.getTemplateById).mockResolvedValue(templateWithoutInitialBg as any);
-      vi.mocked(fileUploadService.copyFileForForm).mockResolvedValue({
-        key: 'form-uuid/copied-bg.jpg',
-        url: 'https://cdn.example.com/form-uuid/copied-bg.jpg',
-        originalName: 'template-bg.jpg',
-        size: 5555,
-        mimeType: 'image/jpeg',
-      } as any);
-      vi.mocked(prisma.formFile.create).mockResolvedValue({} as any);
-      vi.mocked(formService.createForm).mockImplementation(async (_payload, schema: any) => {
-        schema.layout.backgroundImageKey = 'templateDirectory/template-bg.jpg';
-        return mockForm as any;
-      });
+      vi.mocked(formService.createForm).mockResolvedValue(mockForm as any);
 
-      await templatesResolvers.Mutation.createFormFromTemplate({}, createFormArgs, mockContext);
+      const result = await templatesResolvers.Mutation.createFormFromTemplate({}, createFormArgs, mockContext);
 
-      expect(fileUploadService.copyFileForForm).toHaveBeenCalledWith(
-        'templateDirectory/template-bg.jpg',
-        expect.any(String)
-      );
-      expect(prisma.formFile.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          key: 'form-uuid/copied-bg.jpg',
-          formId: expect.any(String),
-          type: 'FormBackground',
-        }),
-      });
+      // Should not attempt to copy file when backgroundImageKey is empty
+      expect(fileUploadService.copyFileForForm).not.toHaveBeenCalled();
+      expect(result).toEqual(mockForm);
     });
 
-    it('should swallow errors when handling template images after form creation', async () => {
-      const templateWithoutInitialBg = {
+    it('should handle template with whitespace-only backgroundImageKey', async () => {
+      const templateWithWhitespaceBg = {
         ...mockTemplate,
         formSchema: {
           ...mockTemplate.formSchema,
           layout: {
             ...mockTemplate.formSchema.layout,
-            backgroundImageKey: '',
+            backgroundImageKey: '   ',
           },
         },
       };
 
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
-      vi.mocked(templateService.getTemplateById).mockResolvedValue(templateWithoutInitialBg as any);
-      vi.mocked(fileUploadService.copyFileForForm).mockRejectedValue(new Error('secondary copy failed'));
-      vi.mocked(formService.createForm).mockImplementation(async (_payload, schema: any) => {
-        schema.layout.backgroundImageKey = 'allOrgs/default-bg.jpg';
-        return mockForm as any;
-      });
+      vi.mocked(templateService.getTemplateById).mockResolvedValue(templateWithWhitespaceBg as any);
+      vi.mocked(formService.createForm).mockResolvedValue(mockForm as any);
 
       const result = await templatesResolvers.Mutation.createFormFromTemplate(
         {},
@@ -915,11 +892,9 @@ describe('Templates Resolvers', () => {
         mockContext
       );
 
+      // Should not attempt to copy file when backgroundImageKey is whitespace
+      expect(fileUploadService.copyFileForForm).not.toHaveBeenCalled();
       expect(result).toEqual(mockForm);
-      expect(logger.error).toHaveBeenCalledWith(
-        'Error handling template background image:',
-        expect.any(Error)
-      );
     });
 
     it('should handle template images from allOrgs directory', async () => {
@@ -997,7 +972,6 @@ describe('Templates Resolvers', () => {
 
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
       vi.mocked(templateService.getTemplateById).mockResolvedValue(existingImageTemplate as any);
-      // Mock the first copy attempt (lines 187-219)
       vi.mocked(fileUploadService.copyFileForForm).mockResolvedValue({
         key: 'form-123/background-copy.jpg',
         url: 'https://cdn.example.com/form-123/background-copy.jpg',
@@ -1005,7 +979,6 @@ describe('Templates Resolvers', () => {
         size: 102400,
         mimeType: 'image/jpeg',
       } as any);
-      vi.mocked(prisma.formFile.findFirst).mockResolvedValue(null);
       vi.mocked(prisma.formFile.create).mockResolvedValue({} as any);
       vi.mocked(formService.createForm).mockResolvedValue(mockForm as any);
 
@@ -1015,15 +988,13 @@ describe('Templates Resolvers', () => {
         mockContext
       );
 
-      // The first copy happens in lines 187-219 which creates a FormFile
-      // Then the second block (lines 232-309) checks if it's a template image
-      // Since 'form-123/background-copy.jpg' (the copied key) doesn't contain
-      // 'templateDirectory' or 'allOrgs', it goes to the else block and creates FormFile
-
-      // So we expect 2 FormFile.create calls:
-      // 1. From the first copy block (line 199)
-      // 2. From the second check block for non-template images (line 287)
-      expect(prisma.formFile.create).toHaveBeenCalledTimes(2);
+      // With the new simplified logic, we only copy the background image once
+      // and create one FormFile record
+      expect(prisma.formFile.create).toHaveBeenCalledTimes(1);
+      expect(fileUploadService.copyFileForForm).toHaveBeenCalledWith(
+        'org-456/form-789/background.jpg',
+        expect.any(String)
+      );
     });
 
     it('should not create duplicate FormFile record if exists', async () => {
