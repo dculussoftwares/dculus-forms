@@ -194,6 +194,7 @@ export const PagesSidebar: React.FC<PagesSidebarProps> = ({
               variant={activeTab === 'field-settings' ? 'default' : 'ghost'}
               onClick={() => handleTabSwitch('field-settings')}
               className="h-8 px-3"
+              data-testid="field-settings-tab"
               disabled={!selectedField || !permissions.canEditFields()}
               title={!permissions.canEditFields() ? t('tooltips.viewOnlyMode') : ""}
             >

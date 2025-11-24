@@ -231,6 +231,7 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
                         disabled={!isConnected}
                         className="h-8 w-8 text-gray-500 hover:text-blue-600"
                         title={t('tooltips.fieldSettings')}
+                        data-testid={`field-settings-button-${index + 1}`}
                       >
                         <Settings className="w-4 h-4" />
                       </Button>

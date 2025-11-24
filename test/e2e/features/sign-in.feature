@@ -12,4 +12,5 @@ Feature: Sign in
     Then I should be on the new form dashboard
     When I open the collaborative builder
     And I add a new page in the builder
-    Then I drag a short text field onto the page
+    And I drag a short text field onto the page
+    Then I fill the short text field settings with valid data

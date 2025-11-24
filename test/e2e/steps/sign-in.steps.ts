@@ -154,3 +154,43 @@ Then('I drag a short text field onto the page', async function (this: CustomWorl
   const fieldContent = droppablePage.getByTestId('field-content-1');
   await expect(fieldContent).toBeVisible({ timeout: 15_000 });
 });
+
+Then('I fill the short text field settings with valid data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Hover and click settings button for the first field
+  const fieldCard = this.page.locator('[data-testid^="draggable-field-"]').first();
+  await fieldCard.hover();
+
+  const settingsButton = this.page.getByTestId('field-settings-button-1');
+  await settingsButton.hover();
+  await settingsButton.click();
+
+  // Fill settings
+  const settingsPanel = this.page.getByTestId('field-settings-panel');
+  await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
+
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+  await this.page.fill('#field-label', `Short Answer ${Date.now()}`);
+  await this.page.fill('#field-hint', 'Provide a concise answer.');
+  await this.page.fill('#field-placeholder', 'Enter your response');
+  await this.page.fill('#field-prefix', 'QA');
+  await this.page.fill('#field-defaultValue', 'Default response');
+
+  // Validation: set min/max length
+  await this.page.fill('#field-validation\\.minLength', '1');
+  await this.page.fill('#field-validation\\.maxLength', '50');
+
+  // Required toggle
+  const requiredToggle = this.page.locator('#field-required');
+  const isChecked = await requiredToggle.isChecked();
+  if (!isChecked) {
+    await requiredToggle.click();
+  }
+
+  // Assert values persisted
+  await expect(this.page.locator('#field-label')).toHaveValue(/Short Answer/);
+  await expect(this.page.locator('#field-placeholder')).toHaveValue('Enter your response');
+});
