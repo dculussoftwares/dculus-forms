@@ -68,13 +68,9 @@ const Templates: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                 {data?.templates?.map((template: any) => {
                   const backgroundImage = template.formSchema?.layout?.backgroundImageKey;
-                  console.log("backgroundImage", backgroundImage);
-                  console.log("cdnEndpoint", cdnEndpoint);
                   const backgroundImageUrl = backgroundImage && cdnEndpoint 
                     ? `${cdnEndpoint}/${backgroundImage}`
                     : null;
-                  console.log("backgroundImageUrl", backgroundImageUrl);
-
                   return (
                     <Card 
                       key={template.id} 
@@ -141,30 +137,6 @@ const Templates: React.FC = () => {
                         }}>
                           {template.description || t('card.fallbackDescription')}
                         </p>
-                        
-                        {/* Debug Info - CDN Configuration */}
-                        <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                          <div className="text-xs font-medium text-slate-700 mb-2 flex items-center">
-                            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            CDN Debug Info
-                          </div>
-                          <div className="space-y-1.5">
-                            <div className="flex items-start text-xs">
-                              <span className="text-slate-500 w-16 shrink-0 font-mono">URL:</span>
-                              <span className="text-slate-900 font-mono break-all text-[10px]">
-                                {backgroundImageUrl || <span className="text-red-500">Not set</span>}
-                              </span>
-                            </div>
-                            <div className="flex items-start text-xs">
-                              <span className="text-slate-500 w-16 shrink-0 font-mono">CDN:</span>
-                              <span className="text-slate-900 font-mono break-all text-[10px]">
-                                {cdnEndpoint || <span className="text-red-500">Not configured</span>}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
                         
                         <div className="flex items-center justify-between text-xs text-slate-500">
                           <div className="flex items-center">
