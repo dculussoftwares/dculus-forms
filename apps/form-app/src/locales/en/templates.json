@@ -39,10 +39,6 @@
       "submit": "Create Form",
       "submitting": "Creating..."
     },
-    "success": {
-      "title": "Form created successfully",
-      "description": "\"{{title}}\" is ready for editing"
-    },
     "errors": {
       "createTitle": "Failed to create form from template",
       "organizationMissing": "Organization not found. Please refresh and try again.",

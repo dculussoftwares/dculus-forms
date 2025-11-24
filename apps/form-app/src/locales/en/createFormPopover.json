@@ -17,10 +17,6 @@
     "creating": "Creating...",
     "cancel": "Cancel"
   },
-  "success": {
-    "title": "Form created successfully",
-    "message": "\"{title}\" is ready for editing"
-  },
   "error": {
     "title": "Failed to create form"
   },

@@ -10,7 +10,6 @@ import {
   PopoverTrigger,
   TypographyH3,
   TypographySmall,
-  toastSuccess,
   toastError
 } from '@dculus/ui';
 import { Plus, Loader2 } from 'lucide-react';
@@ -44,7 +43,6 @@ export const CreateFormPopover: React.FC<CreateFormPopoverProps> = ({ onFormCrea
       setFormData({ title: '', description: '' });
       setErrors({});
       onFormCreated?.();
-      toastSuccess(t('success.title'), t('success.message', { values: { title: data.createForm.title } }));
       // Navigate to form builder with the new form ID
       navigate(`/forms/${data.createForm.id}/edit`);
     },

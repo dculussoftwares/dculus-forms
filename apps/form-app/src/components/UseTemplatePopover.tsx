@@ -10,7 +10,6 @@ import {
   Label,
   Textarea,
   LoadingSpinner,
-  toastSuccess,
   toastError,
 } from '@dculus/ui';
 import { CREATE_FORM } from '../graphql/mutations';
@@ -97,10 +96,6 @@ export const UseTemplatePopover: React.FC<UseTemplatePopoverProps> = ({
       });
 
       if (data?.createForm) {
-        toastSuccess(
-          t('popover.success.title'),
-          t('popover.success.description', { values: { title: data.createForm.title } }),
-        );
         // Navigate to the new Form Dashboard page
         navigate(`/dashboard/form/${data.createForm.id}`);
         setIsOpen(false);
