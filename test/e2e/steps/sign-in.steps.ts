@@ -2,6 +2,7 @@ import { Given, Then, When } from '@cucumber/cucumber';
 import { expect } from '@playwright/test';
 import { CustomWorld } from '../support/world';
 import { expectPoll } from '../support/expectPoll';
+import { hasStoredAuthState, saveAuthState } from '../support/authStorage';
 
 type Credentials = {
   email: string;
@@ -59,6 +60,13 @@ Then('I should see the dashboard', async function (this: CustomWorld) {
   await expect(this.page).not.toHaveURL(/signin/);
 });
 
+Then('I save my session', async function (this: CustomWorld) {
+  if (!this.context) {
+    throw new Error('Context is not initialized');
+  }
+  await saveAuthState(this.context);
+});
+
 Given('I am signed in', async function (this: CustomWorld) {
   await signInViaUi(this, { skipGoto: false });
 
@@ -66,10 +74,27 @@ Given('I am signed in', async function (this: CustomWorld) {
   await expect(sidebar).toBeVisible({ timeout: 30_000 });
 });
 
+Given('I use my saved session', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  if (!hasStoredAuthState()) {
+    throw new Error('No saved auth session found. Run the sign-in scenario first.');
+  }
+
+  await this.page.goto('/dashboard');
+  const sidebar = this.page.getByTestId('app-sidebar');
+  await expect(sidebar).toBeVisible({ timeout: 30_000 });
+});
+
 When('I create a form from the first template', async function (this: CustomWorld) {
   if (!this.page) {
     throw new Error('Page is not initialized');
   }
+
+  // Ensure we're on the dashboard
+  await this.page.goto('/dashboard');
 
   // Navigate to templates via dashboard CTA
   const createButton = this.page.getByRole('button', { name: /create form/i });

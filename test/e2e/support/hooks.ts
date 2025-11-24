@@ -1,6 +1,7 @@
 import { Before, After, setDefaultTimeout } from '@cucumber/cucumber';
 import { chromium } from 'playwright';
 import { CustomWorld } from './world';
+import { hasStoredAuthState, STORAGE_STATE_PATH } from './authStorage';
 
 setDefaultTimeout(120 * 1000);
 
@@ -8,6 +9,7 @@ Before(async function (this: CustomWorld) {
   this.browser = await chromium.launch({ headless: this.headless });
   this.context = await this.browser.newContext({
     baseURL: this.baseUrl,
+    storageState: hasStoredAuthState() ? STORAGE_STATE_PATH : undefined,
     viewport: { width: 1280, height: 720 },
   });
   this.page = await this.context.newPage();
