@@ -126,15 +126,15 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
             <Globe className="h-4 w-4 mr-2 text-blue-600" />
             {t('title')}
           </div>
-          <div className="flex items-center gap-3 flex-wrap justify-end">
+          <div className="flex items-center gap-3">
             <div className="flex items-center text-sm text-green-600">
               <TrendingUp className="h-3 w-3 mr-1" />
               {t('countryCount', { values: { count: currentData.length } })}
             </div>
-            {headerActions}
             {onDataModeChange && (
               <DataModeToggle dataMode={dataMode} onDataModeChange={onDataModeChange} t={t} />
             )}
+            {headerActions}
           </div>
         </CardTitle>
       </CardHeader>
