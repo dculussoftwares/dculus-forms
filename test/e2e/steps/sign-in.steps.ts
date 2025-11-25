@@ -680,3 +680,169 @@ Then('I fill the long text field settings with valid data', async function (this
   await expect(this.page.locator('#field-label')).toHaveValue(/Long Answer/);
   await expect(this.page.locator('#field-placeholder')).toHaveValue('Type your response here...');
 });
+
+// Email Field Test Steps
+
+Then('I drag an email field onto the page', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  const fieldTile = this.page.getByTestId('field-type-email');
+  const droppablePage = this.page.getByTestId('droppable-page').first();
+
+  await fieldTile.dragTo(droppablePage);
+
+  const fieldContent = droppablePage.getByTestId('field-content-1');
+  await expect(fieldContent).toBeVisible({ timeout: 15_000 });
+});
+
+When('I open the email field settings', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Hover and click settings button for the first field
+  const fieldCard = this.page.locator('[data-testid^="draggable-field-"]').first();
+  await fieldCard.hover();
+
+  // Wait for settings button to be visible after hover
+  const settingsButton = this.page.getByTestId('field-settings-button-1');
+  await expect(settingsButton).toBeVisible({ timeout: 30_000 });
+  await settingsButton.hover();
+  await settingsButton.click();
+
+  // Wait for settings panel to be visible
+  const settingsPanel = this.page.getByTestId('field-settings-panel');
+  await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+});
+
+Then('I fill the email field settings with valid data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Fill settings with valid data
+  const settingsPanel = this.page.getByTestId('field-settings-panel');
+  await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
+
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+  await this.page.fill('#field-label', `Email Address ${Date.now()}`);
+  await this.page.fill('#field-hint', 'We will never share your email with anyone.');
+  await this.page.fill('#field-placeholder', 'you@example.com');
+  await this.page.fill('#field-defaultValue', 'test@example.com');
+
+  // Required toggle
+  const requiredToggle = this.page.locator('#field-required');
+  const isChecked = await requiredToggle.isChecked();
+  if (!isChecked) {
+    await requiredToggle.click();
+  }
+
+  // Assert values persisted
+  await expect(this.page.locator('#field-label')).toHaveValue(/Email Address/);
+  await expect(this.page.locator('#field-placeholder')).toHaveValue('you@example.com');
+});
+
+Then('I test label and hint validation for email', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Test 1: Empty label (required field)
+  await this.page.fill('#field-label', '');
+  await this.page.locator('#field-hint').click(); // Blur to trigger validation
+  
+  const emptyLabelError = this.page.locator('text=/Field label is required/i').first();
+  await expect(emptyLabelError).toBeVisible({ timeout: 5_000 });
+
+  // Test 2: Label too long (201 characters)
+  const longLabel = 'A'.repeat(201);
+  await this.page.fill('#field-label', longLabel);
+  await this.page.locator('#field-hint').click();
+  
+  const labelTooLongError = this.page.locator('text=/Label is too long/i').first();
+  await expect(labelTooLongError).toBeVisible({ timeout: 5_000 });
+
+  // Test 3: Hint too long (501 characters)
+  const longHint = 'B'.repeat(501);
+  await this.page.fill('#field-hint', longHint);
+  await this.page.locator('#field-label').click();
+  
+  const hintTooLongError = this.page.locator('text=/Help text is too long/i').first();
+  await expect(hintTooLongError).toBeVisible({ timeout: 5_000 });
+
+  // Verify all errors are visible
+  await expect(labelTooLongError).toBeVisible();
+  await expect(hintTooLongError).toBeVisible();
+});
+
+Then('I test placeholder validation for email', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Test: Placeholder too long (101 characters)
+  const longPlaceholder = 'C'.repeat(101);
+  await this.page.fill('#field-placeholder', longPlaceholder);
+  await this.page.locator('#field-label').click(); // Blur
+  
+  const placeholderTooLongError = this.page.locator('text=/Placeholder is too long/i').first();
+  await expect(placeholderTooLongError).toBeVisible({ timeout: 5_000 });
+});
+
+Then('I test default value validation for email', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Test: Default value too long (1001 characters)
+  const longDefaultValue = 'D'.repeat(1001);
+  await this.page.fill('#field-defaultValue', longDefaultValue);
+  await this.page.locator('#field-label').click(); // Blur
+  
+  const defaultValueTooLongError = this.page.locator('text=/Default value is too long/i').first();
+  await expect(defaultValueTooLongError).toBeVisible({ timeout: 5_000 });
+});
+
+Then('I fix all validation errors for email', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Fix label: Set valid length (< 200 chars)
+  await this.page.fill('#field-label', `Email Address ${Date.now()}`);
+  
+  // Fix hint: Set valid length (< 500 chars)
+  await this.page.fill('#field-hint', 'We will never share your email.');
+  
+  // Fix placeholder: Set valid length (< 100 chars)
+  await this.page.fill('#field-placeholder', 'you@example.com');
+  
+  // Fix default value: Set valid length (< 1000 chars)
+  await this.page.fill('#field-defaultValue', 'test@example.com');
+
+  // Blur to trigger final validation
+  await this.page.locator('#field-label').click();
+  
+  // Wait a bit for validation to complete
+  await this.page.waitForTimeout(1000);
+});
+
+Then('I save the email field settings', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Click save button
+  const saveButton = this.page.getByRole('button', { name: /save/i });
+  await saveButton.click();
+
+  // Wait for save to complete
+  await this.page.waitForTimeout(1000);
+
+  // Verify field is saved
+  const fieldContent = this.page.getByTestId('field-content-1');
+  await expect(fieldContent).toBeVisible({ timeout: 5_000 });
+});
