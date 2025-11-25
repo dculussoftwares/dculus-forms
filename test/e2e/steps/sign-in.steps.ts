@@ -83,7 +83,18 @@ Given('I use my saved session', async function (this: CustomWorld) {
     throw new Error('No saved auth session found. Run the sign-in scenario first.');
   }
 
-  await this.page.goto('/dashboard');
+  // Navigate to dashboard and wait for network to be idle
+  await this.page.goto('/dashboard', { waitUntil: 'networkidle' });
+  
+  // Wait a bit for any client-side routing or auth checks
+  await this.page.waitForTimeout(2000);
+  
+  // Check if we're still on dashboard (not redirected to signin)
+  const currentUrl = this.page.url();
+  if (currentUrl.includes('/signin')) {
+    throw new Error('Session expired or invalid - redirected to sign in page');
+  }
+  
   const sidebar = this.page.getByTestId('app-sidebar');
   await expect(sidebar).toBeVisible({ timeout: 30_000 });
 });
@@ -1012,6 +1023,211 @@ Then('I fix all validation errors for number', async function (this: CustomWorld
 });
 
 Then('I save the number field settings', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Click save button
+  const saveButton = this.page.getByRole('button', { name: /save/i });
+  await saveButton.click();
+
+  // Wait for save to complete
+  await this.page.waitForTimeout(1000);
+
+  // Verify field is saved
+  const fieldContent = this.page.getByTestId('field-content-1');
+  await expect(fieldContent).toBeVisible({ timeout: 5_000 });
+});
+
+// Date Field Test Steps
+
+Then('I drag a date field onto the page', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  const fieldTile = this.page.getByTestId('field-type-date');
+  const droppablePage = this.page.getByTestId('droppable-page').first();
+  
+  // Get initial field count
+  const initialCount = await droppablePage.locator('[data-testid^="field-content-"]').count();
+
+  await fieldTile.dragTo(droppablePage);
+
+  // Wait for count to increase
+  await expect(async () => {
+    const newCount = await droppablePage.locator('[data-testid^="field-content-"]').count();
+    expect(newCount).toBeGreaterThan(initialCount);
+  }).toPass({ timeout: 15000 });
+});
+
+When('I open the date field settings', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Find the last field card (the one we just dragged)
+  const fieldCards = this.page.locator('[data-testid^="draggable-field-"]');
+  await expect(fieldCards.last()).toBeVisible({ timeout: 10_000 });
+  const lastFieldCard = fieldCards.last();
+  
+  // Hover to show actions
+  await lastFieldCard.hover();
+
+  // Find the settings button within the last field card
+  const settingsButton = lastFieldCard.locator('[data-testid^="field-settings-button-"]');
+  await expect(settingsButton).toBeVisible({ timeout: 5_000 });
+  
+  // Wait for stability
+  await this.page.waitForTimeout(1000);
+  
+  // Force click to avoid interception issues
+  await settingsButton.click({ force: true });
+
+  // Wait for settings panel to be visible
+  const settingsPanel = this.page.getByTestId('field-settings-panel');
+  await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
+  
+  // Wait for specific date field input to ensure it's the right panel
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+});
+
+Then('I fill the date field settings with valid data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Fill settings with valid data
+  const settingsPanel = this.page.getByTestId('field-settings-panel');
+  await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
+
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+  await this.page.fill('#field-label', `Event Date ${Date.now()}`);
+  await this.page.fill('#field-hint', 'Select the date of the event.');
+  await this.page.fill('#field-placeholder', 'MM/DD/YYYY');
+  
+  // Set min/max dates (YYYY-MM-DD format for date inputs)
+  await this.page.fill('#field-minDate', '2024-01-01');
+  await this.page.fill('#field-maxDate', '2024-12-31');
+  
+  // Set default value
+  await this.page.fill('#field-defaultValue', '2024-06-15');
+
+  // Required toggle
+  const requiredToggle = this.page.locator('#field-required');
+  const isChecked = await requiredToggle.isChecked();
+  if (!isChecked) {
+    await requiredToggle.click();
+  }
+
+  // Assert values persisted
+  await expect(this.page.locator('#field-label')).toHaveValue(/Event Date/);
+  await expect(this.page.locator('#field-placeholder')).toHaveValue('MM/DD/YYYY');
+});
+
+Then('I test label and hint validation for date', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Test 1: Empty label (required field)
+  await this.page.fill('#field-label', '');
+  await this.page.locator('#field-hint').click(); // Blur to trigger validation
+  
+  const emptyLabelError = this.page.locator('text=/Field label is required/i').first();
+  await expect(emptyLabelError).toBeVisible({ timeout: 5_000 });
+
+  // Test 2: Label too long (201 characters)
+  const longLabel = 'A'.repeat(201);
+  await this.page.fill('#field-label', longLabel);
+  await this.page.locator('#field-hint').click(); // Blur to trigger validation
+  
+  const labelTooLongError = this.page.locator('text=/Label is too long/i').first();
+  await expect(labelTooLongError).toBeVisible({ timeout: 5_000 });
+
+  // Test 3: Hint too long (501 characters)
+  const longHint = 'B'.repeat(501);
+  await this.page.fill('#field-hint', longHint);
+  await this.page.locator('#field-label').click();
+  
+  const hintTooLongError = this.page.locator('text=/Help text is too long/i').first();
+  await expect(hintTooLongError).toBeVisible({ timeout: 5_000 });
+
+  // Test 4: Placeholder too long (101 characters)
+  const longPlaceholder = 'C'.repeat(101);
+  await this.page.fill('#field-placeholder', longPlaceholder);
+  await this.page.locator('#field-label').click();
+  
+  const placeholderTooLongError = this.page.locator('text=/Placeholder is too long/i').first();
+  await expect(placeholderTooLongError).toBeVisible({ timeout: 5_000 });
+});
+
+Then('I test min max date validation for date', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Test: Min date > Max date (set min=2024-12-31, max=2024-01-01)
+  await this.page.fill('#field-minDate', '2024-12-31');
+  await this.page.fill('#field-maxDate', '2024-01-01');
+  await this.page.locator('#field-label').click(); // Blur
+  
+  const minGreaterThanMaxError = this.page.locator('text=/Minimum date must be before or equal to maximum date/i').first();
+  await expect(minGreaterThanMaxError).toBeVisible({ timeout: 5_000 });
+});
+
+Then('I test default value date validation for date', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Setup valid min/max first
+  await this.page.fill('#field-minDate', '2024-01-01');
+  await this.page.fill('#field-maxDate', '2024-12-31');
+
+  // Test 1: Default value < Min
+  await this.page.fill('#field-defaultValue', '2023-12-31');
+  await this.page.locator('#field-label').click(); // Blur
+  
+  const defaultValueRangeError = this.page.locator('text=/Default value must be within the specified date range/i').first();
+  await expect(defaultValueRangeError).toBeVisible({ timeout: 5_000 });
+
+  // Test 2: Default value > Max
+  await this.page.fill('#field-defaultValue', '2025-01-01');
+  await this.page.locator('#field-label').click(); // Blur
+  
+  await expect(defaultValueRangeError).toBeVisible({ timeout: 5_000 });
+});
+
+Then('I fix all validation errors for date', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Fix label: Set valid length (< 200 chars)
+  await this.page.fill('#field-label', `Event Date ${Date.now()}`);
+  
+  // Fix hint: Set valid length (< 500 chars)
+  await this.page.fill('#field-hint', 'Select the date of the event.');
+  
+  // Fix placeholder: Set valid length (< 100 chars)
+  await this.page.fill('#field-placeholder', 'MM/DD/YYYY');
+  
+  // Fix min/max dates: Set valid range
+  await this.page.fill('#field-minDate', '2024-01-01');
+  await this.page.fill('#field-maxDate', '2024-12-31');
+  
+  // Fix default value: Set within range
+  await this.page.fill('#field-defaultValue', '2024-06-15');
+
+  // Blur to trigger final validation
+  await this.page.locator('#field-label').click();
+  
+  // Wait a bit for validation to complete
+  await this.page.waitForTimeout(1000);
+});
+
+Then('I save the date field settings', async function (this: CustomWorld) {
   if (!this.page) {
     throw new Error('Page is not initialized');
   }

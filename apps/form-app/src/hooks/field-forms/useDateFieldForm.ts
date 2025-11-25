@@ -68,10 +68,10 @@ const isDateBeforeOrEqual = (date1: string | undefined, date2: string | undefine
 
 // Validation schema for date fields
 const dateFieldValidationSchema = z.object({
-  label: z.string().min(1, 'Field label is required'),
-  hint: z.string().optional(),
-  placeholder: z.string().optional(),
-  prefix: z.string().optional(),
+  label: z.string().min(1, 'fieldSettingsConstants:errorMessages.labelRequired').max(200, 'fieldSettingsConstants:errorMessages.labelTooLong'),
+  hint: z.string().max(500, 'fieldSettingsConstants:errorMessages.hintTooLong').optional(),
+  placeholder: z.string().max(100, 'fieldSettingsConstants:errorMessages.placeholderTooLong').optional(),
+  prefix: z.string().max(10, 'fieldSettingsConstants:errorMessages.prefixTooLong').optional(),
   defaultValue: z.string().optional().refine(
     (value) => {
       if (!value) return true;
