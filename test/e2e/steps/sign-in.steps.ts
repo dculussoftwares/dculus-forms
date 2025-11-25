@@ -846,3 +846,184 @@ Then('I save the email field settings', async function (this: CustomWorld) {
   const fieldContent = this.page.getByTestId('field-content-1');
   await expect(fieldContent).toBeVisible({ timeout: 5_000 });
 });
+
+// Number Field Test Steps
+
+Then('I drag a number field onto the page', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  const fieldTile = this.page.getByTestId('field-type-number');
+  const droppablePage = this.page.getByTestId('droppable-page').first();
+  
+  // Get initial field count
+  const initialCount = await droppablePage.locator('[data-testid^="field-content-"]').count();
+
+  await fieldTile.dragTo(droppablePage);
+
+  // Wait for count to increase
+  await expect(async () => {
+    const newCount = await droppablePage.locator('[data-testid^="field-content-"]').count();
+    expect(newCount).toBeGreaterThan(initialCount);
+  }).toPass({ timeout: 15000 });
+});
+
+When('I open the number field settings', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Find the last field card (the one we just dragged)
+  const fieldCards = this.page.locator('[data-testid^="draggable-field-"]');
+  await expect(fieldCards.last()).toBeVisible({ timeout: 10_000 });
+  const lastFieldCard = fieldCards.last();
+  
+  // Hover to show actions
+  await lastFieldCard.hover();
+
+  // Find the settings button within the last field card
+  const settingsButton = lastFieldCard.locator('[data-testid^="field-settings-button-"]');
+  await expect(settingsButton).toBeVisible({ timeout: 5_000 });
+  
+  // Wait for stability
+  await this.page.waitForTimeout(1000);
+  
+  // Force click to avoid interception issues
+  await settingsButton.click({ force: true });
+
+  // Wait for settings panel to be visible
+  const settingsPanel = this.page.getByTestId('field-settings-panel');
+  await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
+  
+  // Wait for specific number field input to ensure it's the right panel
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+});
+
+Then('I fill the number field settings with valid data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Fill settings with valid data
+  const settingsPanel = this.page.getByTestId('field-settings-panel');
+  await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
+
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+  await this.page.fill('#field-label', `Quantity ${Date.now()}`);
+  await this.page.fill('#field-hint', 'Enter the amount.');
+  await this.page.fill('#field-placeholder', '0');
+  await this.page.fill('#field-defaultValue', '10');
+
+  // Validation: set min/max values
+  await this.page.fill('#field-min', '0');
+  await this.page.fill('#field-max', '100');
+
+  // Required toggle
+  const requiredToggle = this.page.locator('#field-required');
+  const isChecked = await requiredToggle.isChecked();
+  if (!isChecked) {
+    await requiredToggle.click();
+  }
+
+  // Assert values persisted
+  await expect(this.page.locator('#field-label')).toHaveValue(/Quantity/);
+  await expect(this.page.locator('#field-placeholder')).toHaveValue('0');
+});
+
+Then('I test label validation for number', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Test 1: Empty label (required field)
+  await this.page.fill('#field-label', '');
+  await this.page.locator('#field-hint').click(); // Blur to trigger validation
+  
+  const emptyLabelError = this.page.locator('text=/Field label is required/i').first();
+  await expect(emptyLabelError).toBeVisible({ timeout: 5_000 });
+
+  // Test 2: Label too long (201 characters) - NEW validation added
+  const longLabel = 'A'.repeat(201);
+  await this.page.fill('#field-label', longLabel);
+  await this.page.locator('#field-hint').click();
+  
+  const labelTooLongError = this.page.locator('text=/Label is too long/i').first();
+  await expect(labelTooLongError).toBeVisible({ timeout: 5_000 });
+});
+
+Then('I test min max value validation for number', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Test: Min > Max (set min=100, max=50)
+  await this.page.fill('#field-min', '100');
+  await this.page.fill('#field-max', '50');
+  await this.page.locator('#field-label').click(); // Blur
+  
+  const minGreaterThanMaxError = this.page.locator('text=/Minimum value must be less than or equal to maximum value/i').first();
+  await expect(minGreaterThanMaxError).toBeVisible({ timeout: 5_000 });
+});
+
+Then('I test default value range validation for number', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Setup valid min/max first
+  await this.page.fill('#field-min', '10');
+  await this.page.fill('#field-max', '100');
+
+  // Test 1: Default value < Min
+  await this.page.fill('#field-defaultValue', '5');
+  await this.page.locator('#field-label').click(); // Blur
+  
+  const defaultValueRangeError = this.page.locator('text=/Default value must be within the specified range/i').first();
+  await expect(defaultValueRangeError).toBeVisible({ timeout: 5_000 });
+
+  // Test 2: Default value > Max
+  await this.page.fill('#field-defaultValue', '150');
+  await this.page.locator('#field-label').click(); // Blur
+  
+  await expect(defaultValueRangeError).toBeVisible({ timeout: 5_000 });
+});
+
+Then('I fix all validation errors for number', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Fix label: Set valid length (< 200 chars)
+  await this.page.fill('#field-label', `Quantity ${Date.now()}`);
+  
+  // Fix min/max: Set valid range
+  await this.page.fill('#field-min', '0');
+  await this.page.fill('#field-max', '100');
+  
+  // Fix default value: Set within range
+  await this.page.fill('#field-defaultValue', '50');
+
+  // Blur to trigger final validation
+  await this.page.locator('#field-label').click();
+  
+  // Wait a bit for validation to complete
+  await this.page.waitForTimeout(1000);
+});
+
+Then('I save the number field settings', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Click save button
+  const saveButton = this.page.getByRole('button', { name: /save/i });
+  await saveButton.click();
+
+  // Wait for save to complete
+  await this.page.waitForTimeout(1000);
+
+  // Verify field is saved
+  const fieldContent = this.page.getByTestId('field-content-1');
+  await expect(fieldContent).toBeVisible({ timeout: 5_000 });
+});

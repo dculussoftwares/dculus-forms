@@ -39,9 +39,9 @@ export interface UseNumberFieldFormReturn {
 
 // Validation schema for number fields
 const numberFieldValidationSchema = z.object({
-  label: z.string().min(1, 'Field label is required'),
-  hint: z.string().optional(),
-  placeholder: z.string().optional(),
+  label: z.string().min(1, 'fieldSettingsConstants:errorMessages.labelRequired').max(200, 'fieldSettingsConstants:errorMessages.labelTooLong'),
+  hint: z.string().max(500, 'fieldSettingsConstants:errorMessages.hintTooLong').optional(),
+  placeholder: z.string().max(100, 'fieldSettingsConstants:errorMessages.placeholderTooLong').optional(),
   prefix: z.string().optional(),
   defaultValue: z.number().optional(),
   required: z.boolean().default(false),

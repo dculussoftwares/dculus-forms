@@ -60,11 +60,13 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
 
     case FieldType.NUMBER_FIELD:
       return (
-        <NumberFieldSettings
-          field={field as any}
-          isConnected={isConnected}
-          onUpdate={onUpdate}
-        />
+        <div data-testid="field-settings-panel" className="h-full flex flex-col">
+          <NumberFieldSettings
+            field={field as any}
+            isConnected={isConnected}
+            onUpdate={onUpdate}
+          />
+        </div>
       );
 
     case FieldType.SELECT_FIELD:
