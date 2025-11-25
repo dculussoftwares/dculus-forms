@@ -16,6 +16,16 @@ Feature: Sign in
     And I drag a short text field onto the page
     Then I fill the short text field settings with valid data
 
+  Scenario: Test Long Text field with valid data
+    Given I use my saved session
+    When I create a form from the first template
+    Then I should be on the new form dashboard
+    When I open the collaborative builder
+    And I add a new page in the builder
+    And I drag a long text field onto the page
+    And I open the long text field settings
+    Then I fill the long text field settings with valid data
+
   Scenario: Test Long Text field with comprehensive invalid data
     Given I use my saved session
     When I create a form from the first template

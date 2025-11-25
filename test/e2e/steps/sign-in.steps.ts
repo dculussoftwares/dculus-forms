@@ -649,3 +649,34 @@ Then('I save the long text field settings', async function (this: CustomWorld) {
   const fieldContent = this.page.getByTestId('field-content-1');
   await expect(fieldContent).toBeVisible({ timeout: 5_000 });
 });
+
+Then('I fill the long text field settings with valid data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Fill settings with valid data
+  const settingsPanel = this.page.getByTestId('field-settings-panel');
+  await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
+
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+  await this.page.fill('#field-label', `Long Answer ${Date.now()}`);
+  await this.page.fill('#field-hint', 'Please provide a detailed answer.');
+  await this.page.fill('#field-placeholder', 'Type your response here...');
+  await this.page.fill('#field-defaultValue', 'Default long text response');
+
+  // Validation: set min/max length
+  await this.page.fill('#field-validation\\.minLength', '10');
+  await this.page.fill('#field-validation\\.maxLength', '500');
+
+  // Required toggle
+  const requiredToggle = this.page.locator('#field-required');
+  const isChecked = await requiredToggle.isChecked();
+  if (!isChecked) {
+    await requiredToggle.click();
+  }
+
+  // Assert values persisted
+  await expect(this.page.locator('#field-label')).toHaveValue(/Long Answer/);
+  await expect(this.page.locator('#field-placeholder')).toHaveValue('Type your response here...');
+});
