@@ -180,6 +180,20 @@ Then('I drag a short text field onto the page', async function (this: CustomWorl
   await expect(fieldContent).toBeVisible({ timeout: 15_000 });
 });
 
+Then('I drag a long text field onto the page', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  const fieldTile = this.page.getByTestId('field-type-long-text');
+  const droppablePage = this.page.getByTestId('droppable-page').first();
+
+  await fieldTile.dragTo(droppablePage);
+
+  const fieldContent = droppablePage.getByTestId('field-content-1');
+  await expect(fieldContent).toBeVisible({ timeout: 15_000 });
+});
+
 Then('I fill the short text field settings with valid data', async function (this: CustomWorld) {
   if (!this.page) {
     throw new Error('Page is not initialized');
@@ -223,6 +237,27 @@ Then('I fill the short text field settings with valid data', async function (thi
 });
 
 When('I open the short text field settings', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Hover and click settings button for the first field
+  const fieldCard = this.page.locator('[data-testid^="draggable-field-"]').first();
+  await fieldCard.hover();
+
+  // Wait for settings button to be visible after hover
+  const settingsButton = this.page.getByTestId('field-settings-button-1');
+  await expect(settingsButton).toBeVisible({ timeout: 30_000 });
+  await settingsButton.hover();
+  await settingsButton.click();
+
+  // Wait for settings panel to be visible
+  const settingsPanel = this.page.getByTestId('field-settings-panel');
+  await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+});
+
+When('I open the long text field settings', async function (this: CustomWorld) {
   if (!this.page) {
     throw new Error('Page is not initialized');
   }
@@ -478,4 +513,139 @@ Then('I verify all validations work correctly', async function (this: CustomWorl
   await expect(maxLengthZeroError).not.toBeVisible();
   await expect(maxLengthExceedsError).not.toBeVisible();
   await expect(minMaxError).not.toBeVisible();
+});
+
+// Enhanced Long Text Validation Steps for Template Creation
+
+Then('I test label and hint validation for long text', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Test 1: Empty label (required field)
+  await this.page.fill('#field-label', '');
+  await this.page.locator('#field-hint').click(); // Blur to trigger validation
+  
+  const emptyLabelError = this.page.locator('text=/Field label is required/i').first();
+  await expect(emptyLabelError).toBeVisible({ timeout: 5_000 });
+
+  // Test 2: Label too long (201 characters)
+  const longLabel = 'A'.repeat(201);
+  await this.page.fill('#field-label', longLabel);
+  await this.page.locator('#field-hint').click();
+  
+  const labelTooLongError = this.page.locator('text=/Label is too long/i').first();
+  await expect(labelTooLongError).toBeVisible({ timeout: 5_000 });
+
+  // Test 3: Hint too long (501 characters)
+  const longHint = 'B'.repeat(501);
+  await this.page.fill('#field-hint', longHint);
+  await this.page.locator('#field-label').click();
+  
+  const hintTooLongError = this.page.locator('text=/Help text is too long/i').first();
+  await expect(hintTooLongError).toBeVisible({ timeout: 5_000 });
+
+  // Verify all errors are visible
+  await expect(labelTooLongError).toBeVisible();
+  await expect(hintTooLongError).toBeVisible();
+});
+
+Then('I test min max length validation for long text', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Test 1: Negative min length
+  await this.page.fill('#field-validation\\.minLength', '-1');
+  await this.page.locator('#field-label').click(); // Blur
+  
+  const negativeMinError = this.page.locator('text=/Minimum length must be 0 or greater/i').first();
+  await expect(negativeMinError).toBeVisible({ timeout: 5_000 });
+
+  // Test 2: Max length = 0 (must be >= 1)
+  await this.page.fill('#field-validation\\.maxLength', '0');
+  await this.page.locator('#field-label').click();
+  
+  const zeroMaxError = this.page.locator('text=/Maximum length must be 1 or greater/i').first();
+  await expect(zeroMaxError).toBeVisible({ timeout: 5_000 });
+
+  // Test 3: Min > Max (set min=100, max=50)
+  await this.page.fill('#field-validation\\.minLength', '100');
+  await this.page.fill('#field-validation\\.maxLength', '50');
+  await this.page.locator('#field-label').click();
+  
+  const minGreaterThanMaxError = this.page.locator('text=/Minimum length must be less than or equal to maximum length/i').first();
+  await expect(minGreaterThanMaxError).toBeVisible({ timeout: 5_000 });
+});
+
+Then('I verify save button is disabled with errors', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Check if save button exists and is disabled
+  const saveButton = this.page.getByRole('button', { name: /save/i });
+  await expect(saveButton).toBeVisible({ timeout: 5_000 });
+  await expect(saveButton).toBeDisabled({ timeout: 5_000 });
+
+  // Verify validation summary is visible
+  const validationSummary = this.page.locator('text=/Please fix the following issues to save/i').first();
+  await expect(validationSummary).toBeVisible({ timeout: 5_000 });
+});
+
+Then('I fix all validation errors for long text', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Fix label: Set valid length (< 200 chars)
+  await this.page.fill('#field-label', `Long Answer Field ${Date.now()}`);
+  
+  // Fix hint: Set valid length (< 500 chars)
+  await this.page.fill('#field-hint', 'Please provide a detailed answer.');
+  
+  // Fix placeholder
+  await this.page.fill('#field-placeholder', 'Type your answer here...');
+  
+  // Fix min/max length: Set valid values
+  await this.page.fill('#field-validation\\.minLength', '10');
+  await this.page.fill('#field-validation\\.maxLength', '500');
+
+  // Blur to trigger final validation
+  await this.page.locator('#field-label').click();
+  
+  // Wait a bit for validation to complete
+  await this.page.waitForTimeout(1000);
+});
+
+Then('I verify save button is enabled', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Check if save button is now enabled
+  const saveButton = this.page.getByRole('button', { name: /save/i });
+  await expect(saveButton).toBeVisible({ timeout: 5_000 });
+  await expect(saveButton).toBeEnabled({ timeout: 5_000 });
+
+  // Verify no validation summary
+  const validationSummary = this.page.locator('text=/Please fix the following issues to save/i').first();
+  await expect(validationSummary).not.toBeVisible();
+});
+
+Then('I save the long text field settings', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Click save button
+  const saveButton = this.page.getByRole('button', { name: /save/i });
+  await saveButton.click();
+
+  // Wait for save to complete (settings panel should close or show success)
+  await this.page.waitForTimeout(1000);
+
+  // Verify field is saved
+  const fieldContent = this.page.getByTestId('field-content-1');
+  await expect(fieldContent).toBeVisible({ timeout: 5_000 });
 });
