@@ -189,7 +189,9 @@ Then('I fill the short text field settings with valid data', async function (thi
   const fieldCard = this.page.locator('[data-testid^="draggable-field-"]').first();
   await fieldCard.hover();
 
+  // Wait for settings button to be visible after hover
   const settingsButton = this.page.getByTestId('field-settings-button-1');
+  await expect(settingsButton).toBeVisible({ timeout: 30_000 });
   await settingsButton.hover();
   await settingsButton.click();
 
@@ -218,4 +220,262 @@ Then('I fill the short text field settings with valid data', async function (thi
   // Assert values persisted
   await expect(this.page.locator('#field-label')).toHaveValue(/Short Answer/);
   await expect(this.page.locator('#field-placeholder')).toHaveValue('Enter your response');
+});
+
+When('I open the short text field settings', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Hover and click settings button for the first field
+  const fieldCard = this.page.locator('[data-testid^="draggable-field-"]').first();
+  await fieldCard.hover();
+
+  // Wait for settings button to be visible after hover
+  const settingsButton = this.page.getByTestId('field-settings-button-1');
+  await expect(settingsButton).toBeVisible({ timeout: 30_000 });
+  await settingsButton.hover();
+  await settingsButton.click();
+
+  // Wait for settings panel to be visible
+  const settingsPanel = this.page.getByTestId('field-settings-panel');
+  await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+});
+
+Then('I test invalid label data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Test 1: Empty label (clear the default)
+  await this.page.fill('#field-label', '');
+  await this.page.locator('#field-hint').click(); // Blur to trigger validation
+  
+  // Check for error message
+  const labelError = this.page.locator('text=/Field label is required/i').first();
+  await expect(labelError).toBeVisible({ timeout: 5_000 });
+
+  // Test 2: Label too long (201+ characters)
+  const longLabel = 'A'.repeat(201);
+  await this.page.fill('#field-label', longLabel);
+  await this.page.locator('#field-hint').click(); // Blur to trigger validation
+  
+  const labelTooLongError = this.page.locator('text=/Label is too long/i').first();
+  await expect(labelTooLongError).toBeVisible({ timeout: 5_000 });
+
+  // Fix: Set valid label
+  await this.page.fill('#field-label', 'Valid Label');
+  await this.page.locator('#field-hint').click();
+  
+  // Verify error is gone
+  await expect(labelError).not.toBeVisible();
+  await expect(labelTooLongError).not.toBeVisible();
+});
+
+Then('I test invalid hint data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Test: Hint too long (501+ characters)
+  const longHint = 'H'.repeat(501);
+  await this.page.fill('#field-hint', longHint);
+  await this.page.locator('#field-label').click(); // Blur to trigger validation
+  
+  const hintError = this.page.locator('text=/Help text is too long/i').first();
+  await expect(hintError).toBeVisible({ timeout: 5_000 });
+
+  // Fix: Set valid hint
+  await this.page.fill('#field-hint', 'Valid help text');
+  await this.page.locator('#field-label').click();
+  
+  // Verify error is gone
+  await expect(hintError).not.toBeVisible();
+});
+
+Then('I test invalid placeholder data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Test: Placeholder too long (101+ characters)
+  const longPlaceholder = 'P'.repeat(101);
+  await this.page.fill('#field-placeholder', longPlaceholder);
+  await this.page.locator('#field-label').click(); // Blur to trigger validation
+  
+  const placeholderError = this.page.locator('text=/Placeholder is too long/i').first();
+  await expect(placeholderError).toBeVisible({ timeout: 5_000 });
+
+  // Fix: Set valid placeholder
+  await this.page.fill('#field-placeholder', 'Valid placeholder');
+  await this.page.locator('#field-label').click();
+  
+  // Verify error is gone
+  await expect(placeholderError).not.toBeVisible();
+});
+
+Then('I test invalid prefix data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Test: Prefix too long (11+ characters)
+  const longPrefix = 'PREFIX12345';
+  await this.page.fill('#field-prefix', longPrefix);
+  await this.page.locator('#field-label').click(); // Blur to trigger validation
+  
+  const prefixError = this.page.locator('text=/Prefix is too long/i').first();
+  await expect(prefixError).toBeVisible({ timeout: 5_000 });
+
+  // Fix: Set valid prefix
+  await this.page.fill('#field-prefix', 'PRE');
+  await this.page.locator('#field-label').click();
+  
+  // Verify error is gone
+  await expect(prefixError).not.toBeVisible();
+});
+
+Then('I test invalid default value data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Test: Default value too long (1001+ characters)
+  const longDefaultValue = 'D'.repeat(1001);
+  await this.page.fill('#field-defaultValue', longDefaultValue);
+  await this.page.locator('#field-label').click(); // Blur to trigger validation
+  
+  const defaultValueError = this.page.locator('text=/Default value is too long/i').first();
+  await expect(defaultValueError).toBeVisible({ timeout: 5_000 });
+
+  // Fix: Set valid default value
+  await this.page.fill('#field-defaultValue', 'Valid default');
+  await this.page.locator('#field-label').click();
+  
+  // Verify error is gone
+  await expect(defaultValueError).not.toBeVisible();
+});
+
+Then('I test invalid min length data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Test 1: Negative number
+  await this.page.fill('#field-validation\\.minLength', '-1');
+  await this.page.locator('#field-label').click(); // Blur to trigger validation
+  
+  const negativeError = this.page.locator('text=/Minimum length must be 0 or greater/i').first();
+  await expect(negativeError).toBeVisible({ timeout: 5_000 });
+
+  // Test 2: Exceeds 5000 characters limit
+  await this.page.fill('#field-validation\\.minLength', '5001');
+  await this.page.locator('#field-label').click();
+  
+  const exceedsLimitError = this.page.locator('text=/Cannot exceed 5000 characters/i').first();
+  await expect(exceedsLimitError).toBeVisible({ timeout: 5_000 });
+
+  // Fix: Set valid min length
+  await this.page.fill('#field-validation\\.minLength', '10');
+  await this.page.locator('#field-label').click();
+  
+  // Verify errors are gone
+  await expect(negativeError).not.toBeVisible();
+  await expect(exceedsLimitError).not.toBeVisible();
+});
+
+Then('I test invalid max length data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Test 1: Zero (must be at least 1)
+  await this.page.fill('#field-validation\\.maxLength', '0');
+  await this.page.locator('#field-label').click(); // Blur to trigger validation
+  
+  const zeroError = this.page.locator('text=/Maximum length must be 1 or greater/i').first();
+  await expect(zeroError).toBeVisible({ timeout: 5_000 });
+
+  // Test 2: Exceeds 5000 characters limit
+  await this.page.fill('#field-validation\\.maxLength', '5001');
+  await this.page.locator('#field-label').click();
+  
+  const exceedsLimitError = this.page.locator('text=/Cannot exceed 5000 characters/i').first();
+  await expect(exceedsLimitError).toBeVisible({ timeout: 5_000 });
+
+  // Fix: Set valid max length
+  await this.page.fill('#field-validation\\.maxLength', '100');
+  await this.page.locator('#field-label').click();
+  
+  // Verify errors are gone
+  await expect(zeroError).not.toBeVisible();
+  await expect(exceedsLimitError).not.toBeVisible();
+});
+
+Then('I test min greater than max validation', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Set min > max
+  await this.page.fill('#field-validation\\.minLength', '100');
+  await this.page.fill('#field-validation\\.maxLength', '50');
+  await this.page.locator('#field-label').click(); // Blur to trigger validation
+  
+  const minMaxError = this.page.locator('text=/Minimum length must be less than or equal to maximum length/i').first();
+  await expect(minMaxError).toBeVisible({ timeout: 5_000 });
+
+  // Fix: Set valid range
+  await this.page.fill('#field-validation\\.minLength', '10');
+  await this.page.fill('#field-validation\\.maxLength', '100');
+  await this.page.locator('#field-label').click();
+  
+  // Verify error is gone
+  await expect(minMaxError).not.toBeVisible();
+});
+
+Then('I verify all validations work correctly', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Final check: Ensure form is in valid state
+  const settingsPanel = this.page.getByTestId('field-settings-panel');
+  await expect(settingsPanel).toBeVisible();
+
+  // Verify the form has valid data by checking specific fields
+  const labelValue = await this.page.locator('#field-label').inputValue();
+  expect(labelValue).toBe('Valid Label');
+  
+  const minLengthValue = await this.page.locator('#field-validation\\.minLength').inputValue();
+  expect(minLengthValue).toBe('10');
+  
+  const maxLengthValue = await this.page.locator('#field-validation\\.maxLength').inputValue();
+  expect(maxLengthValue).toBe('100');
+  
+  // Ensure no validation error messages are visible (use exact error message patterns)
+  const labelError = this.page.locator('text=/Field label is required/i');
+  const labelTooLongError = this.page.locator('text=/Label is too long/i');
+  const hintError = this.page.locator('text=/Help text is too long/i');
+  const placeholderError = this.page.locator('text=/Placeholder is too long/i');
+  const prefixError = this.page.locator('text=/Prefix is too long/i');
+  const defaultValueError = this.page.locator('text=/Default value is too long/i');
+  const minLengthNegativeError = this.page.locator('text=/Minimum length must be 0 or greater/i');
+  const minLengthExceedsError = this.page.locator('text=/Minimum length cannot exceed 5000/i');
+  const maxLengthZeroError = this.page.locator('text=/Maximum length must be 1 or greater/i');
+  const maxLengthExceedsError = this.page.locator('text=/Maximum length cannot exceed 5000/i');
+  const minMaxError = this.page.locator('text=/Minimum length must be less than or equal to maximum/i');
+  
+  await expect(labelError).not.toBeVisible();
+  await expect(labelTooLongError).not.toBeVisible();
+  await expect(hintError).not.toBeVisible();
+  await expect(placeholderError).not.toBeVisible();
+  await expect(prefixError).not.toBeVisible();
+  await expect(defaultValueError).not.toBeVisible();
+  await expect(minLengthNegativeError).not.toBeVisible();
+  await expect(minLengthExceedsError).not.toBeVisible();
+  await expect(maxLengthZeroError).not.toBeVisible();
+  await expect(maxLengthExceedsError).not.toBeVisible();
+  await expect(minMaxError).not.toBeVisible();
 });

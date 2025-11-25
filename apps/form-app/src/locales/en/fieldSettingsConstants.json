@@ -23,7 +23,9 @@
     "duplicateOptions": "Duplicate options are not allowed",
     "minOptionsRequired": "Add at least one option",
     "minRadioOptionsRequired": "Radio fields need at least 2 options to choose from",
-    "defaultValuesInvalid": "Default values must be from the available options"
+    "defaultValuesInvalid": "Default values must be from the available options",
+    "defaultValueTooShort": "Default value is too short for the minimum length requirement",
+    "defaultValueTooLongForMax": "Default value is too long for the maximum length requirement"
   },
   "placeholders": {
     "fieldLabel": "Field label",

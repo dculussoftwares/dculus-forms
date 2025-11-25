@@ -39,24 +39,42 @@ export interface UseTextFieldFormReturn {
   getValues: ReturnType<typeof useForm<TextFieldFormData>>['getValues'];
 }
 
-// Validation schema for text fields
+// Validation schema for text fields - matches official @dculus/types validation
+// Uses translation keys from fieldSettingsConstants
 const textFieldValidationSchema = z
   .object({
-    label: z.string().min(1, 'Field label is required'),
-    hint: z.string().optional(),
-    placeholder: z.string().optional(),
-    prefix: z.string().optional(),
-    defaultValue: z.string().optional(),
+    label: z
+      .string()
+      .min(1, 'fieldSettingsConstants:errorMessages.labelRequired')
+      .max(200, 'fieldSettingsConstants:errorMessages.labelTooLong'),
+    hint: z
+      .string()
+      .max(500, 'fieldSettingsConstants:errorMessages.hintTooLong')
+      .optional(),
+    placeholder: z
+      .string()
+      .max(100, 'fieldSettingsConstants:errorMessages.placeholderTooLong')
+      .optional(),
+    prefix: z
+      .string()
+      .max(10, 'fieldSettingsConstants:errorMessages.prefixTooLong')
+      .optional(),
+    defaultValue: z
+      .string()
+      .max(1000, 'fieldSettingsConstants:errorMessages.defaultValueTooLong')
+      .optional(),
     required: z.boolean().default(false),
     validation: z
       .object({
         minLength: z
           .number()
-          .min(0, 'Minimum length must be 0 or greater')
+          .min(0, 'fieldSettingsConstants:errorMessages.minLengthInvalid')
+          .max(5000, 'fieldSettingsConstants:errorMessages.characterLimitExceeded')
           .optional(),
         maxLength: z
           .number()
-          .min(1, 'Maximum length must be 1 or greater')
+          .min(1, 'fieldSettingsConstants:errorMessages.maxLengthInvalid')
+          .max(5000, 'fieldSettingsConstants:errorMessages.characterLimitExceeded')
           .optional(),
       })
       .optional()
@@ -70,30 +88,34 @@ const textFieldValidationSchema = z
           return true;
         },
         {
-          message:
-            'Minimum length must be less than or equal to maximum length',
+          message: 'fieldSettingsConstants:errorMessages.minGreaterThanMax',
           path: ['maxLength'],
         }
       ),
   })
   .refine(
     (data) => {
-      // Cross-field validation: default value should respect length constraints
-      if (!data.defaultValue || !data.validation) return true;
-
-      const { minLength, maxLength } = data.validation;
+      // Check if default value meets minimum length requirement
+      if (!data.defaultValue || !data.validation?.minLength) return true;
       const defaultLength = data.defaultValue.length;
-
-      if (minLength !== undefined && defaultLength < minLength) {
-        return false;
-      }
-      if (maxLength !== undefined && defaultLength > maxLength) {
-        return false;
-      }
-      return true;
+      const minLength = data.validation.minLength;
+      return defaultLength >= minLength;
     },
     {
-      message: 'Default value must respect character length constraints',
+      message: 'fieldSettingsConstants:errorMessages.defaultValueTooShort',
+      path: ['defaultValue'],
+    }
+  )
+  .refine(
+    (data) => {
+      // Check if default value meets maximum length requirement
+      if (!data.defaultValue || !data.validation?.maxLength) return true;
+      const defaultLength = data.defaultValue.length;
+      const maxLength = data.validation.maxLength;
+      return defaultLength <= maxLength;
+    },
+    {
+      message: 'fieldSettingsConstants:errorMessages.defaultValueTooLongForMax',
       path: ['defaultValue'],
     }
   );

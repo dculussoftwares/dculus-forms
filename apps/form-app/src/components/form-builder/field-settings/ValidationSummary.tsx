@@ -1,13 +1,43 @@
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { useTranslation } from '../../../hooks/useTranslation';
+import { useLocale } from '../../../hooks/useLocale';
 
 interface ValidationSummaryProps {
   errors: Record<string, any>;
 }
 
+/**
+ * Helper function to translate messages that might be translation keys
+ */
+const useMessageTranslator = () => {
+  const { messages } = useLocale();
+  
+  return (message: string): string => {
+    // Check if the message is a translation key (format: namespace:path.to.key)
+    if (message.includes(':')) {
+      const [namespace, ...keyParts] = message.split(':');
+      const key = keyParts.join(':');
+      
+      // Manually resolve the translation
+      const segments = [namespace, ...key.split('.')].filter(Boolean);
+      const result = segments.reduce<any>((current, segment) => {
+        if (typeof current === 'object' && current !== null) {
+          return current[segment];
+        }
+        return undefined;
+      }, messages);
+      
+      return typeof result === 'string' ? result : message;
+    }
+    
+    return message;
+  };
+};
+
 export const ValidationSummary: React.FC<ValidationSummaryProps> = ({ errors }) => {
   const { t } = useTranslation('validationSummary');
+  const translateMessage = useMessageTranslator();
   
   const errorMessages = Object.entries(errors)
     .filter(([_, error]) => {
@@ -16,7 +46,7 @@ export const ValidationSummary: React.FC<ValidationSummaryProps> = ({ errors }) 
     })
     .map(([field, error]) => ({
       field,
-      message: error?.message || (typeof error === 'string' ? error : ''),
+      message: translateMessage(error?.message || (typeof error === 'string' ? error : '')),
       isGlobalError: ['minDate', 'maxDate', 'defaultValue', 'min', 'max', 'options'].includes(field)
     }));
 
