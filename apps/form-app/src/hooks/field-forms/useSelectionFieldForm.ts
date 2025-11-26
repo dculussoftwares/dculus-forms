@@ -46,12 +46,22 @@ export interface UseSelectionFieldFormReturn {
 
 // Validation schema for selection fields
 const selectionFieldValidationSchema = z.object({
-  label: z.string().min(1, 'Field label is required'),
-  hint: z.string().optional(),
-  prefix: z.string().optional(),
+  label: z.string()
+    .min(1, 'fieldSettingsConstants:errorMessages.labelRequired')
+    .max(200, 'fieldSettingsConstants:errorMessages.labelTooLong'),
+  hint: z.string()
+    .max(500, 'fieldSettingsConstants:errorMessages.hintTooLong')
+    .optional(),
+  prefix: z.string()
+    .max(10, 'fieldSettingsConstants:errorMessages.prefixTooLong')
+    .optional(),
   defaultValue: z.union([z.string(), z.array(z.string())]).optional(),
   required: z.boolean().default(false),
-  options: z.array(z.string()).min(1, 'At least one option is required')
+  options: z.array(
+    z.string()
+      .min(1, 'Option cannot be empty')
+      .max(100, 'Option is too long (max 100 characters)')
+  ).min(1, 'At least one option is required')
     .refine(
       (options) => {
         // Check that all options are non-empty strings
