@@ -1663,3 +1663,281 @@ Then('I save the radio field settings', async function (this: CustomWorld) {
   const fieldContent = this.page.getByTestId('field-content-1');
   await expect(fieldContent).toBeVisible({ timeout: 5_000 });
 });
+
+// Checkbox Field Test Steps
+
+Then('I drag a checkbox field onto the page', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  const fieldTile = this.page.getByTestId('field-type-checkbox');
+  const droppablePage = this.page.getByTestId('droppable-page').first();
+  
+  // Get initial field count
+  const initialCount = await droppablePage.locator('[data-testid^="field-content-"]').count();
+
+  await fieldTile.dragTo(droppablePage);
+
+  // Wait for count to increase
+  await expect(async () => {
+    const newCount = await droppablePage.locator('[data-testid^="field-content-"]').count();
+    expect(newCount).toBeGreaterThan(initialCount);
+  }).toPass({ timeout: 15000 });
+});
+
+When('I open the checkbox field settings', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Find the last field card (the one we just dragged)
+  const fieldCards = this.page.locator('[data-testid^="draggable-field-"]');
+  await expect(fieldCards.last()).toBeVisible({ timeout: 10_000 });
+  const lastFieldCard = fieldCards.last();
+  
+  // Hover to show actions
+  await lastFieldCard.hover();
+
+  // Find the settings button within the last field card
+  const settingsButton = lastFieldCard.locator('[data-testid^="field-settings-button-"]');
+  await expect(settingsButton).toBeVisible({ timeout: 5_000 });
+  
+  // Wait for stability
+  await this.page.waitForTimeout(1000);
+  
+  // Force click to avoid interception issues
+  await settingsButton.click({ force: true });
+
+  // Wait for settings panel to be visible
+  const settingsPanel = this.page.getByTestId('field-settings-panel');
+  await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
+  
+  // Wait for specific checkbox field input to ensure it's the right panel
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+});
+
+Then('I fill the checkbox field settings with valid data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Fill settings with valid data
+  const settingsPanel = this.page.getByTestId('field-settings-panel');
+  await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
+
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+  await this.page.fill('#field-label', `Hobbies ${Date.now()}`);
+  await this.page.fill('#field-hint', 'Select your favorite hobbies.');
+  
+  // Fill option values
+  const optionInputs = this.page.locator('input[placeholder="Enter option value"]');
+  const optionCount = await optionInputs.count();
+  
+  if (optionCount > 0) {
+    // Fill first option
+    await optionInputs.nth(0).fill('Reading');
+    
+    // Add more options
+    const addOptionButton = this.page.locator('button:has-text("Add Option")');
+    if (await addOptionButton.count() > 0) {
+      await addOptionButton.click();
+      await this.page.waitForTimeout(500);
+      await optionInputs.nth(1).fill('Gaming');
+      
+      await addOptionButton.click();
+      await this.page.waitForTimeout(500);
+      await optionInputs.nth(2).fill('Sports');
+      
+      await addOptionButton.click();
+      await this.page.waitForTimeout(500);
+      await optionInputs.nth(3).fill('Music');
+    }
+  }
+
+  // Set selection limits
+  await this.page.fill('input[name="validation.minSelections"]', '1');
+  await this.page.fill('input[name="validation.maxSelections"]', '3');
+
+  // Required toggle
+  const requiredToggle = this.page.locator('#field-required');
+  const isChecked = await requiredToggle.isChecked();
+  if (!isChecked) {
+    await requiredToggle.click();
+  }
+
+  // Assert values persisted
+  await expect(this.page.locator('#field-label')).toHaveValue(/Hobbies/);
+});
+
+Then('I test label and hint validation for checkbox', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Test 1: Empty label (required field)
+  await this.page.fill('#field-label', '');
+  await this.page.locator('#field-hint').click(); // Blur to trigger validation
+  
+  const emptyLabelError = this.page.locator('text=/Field label is required/i').first();
+  await expect(emptyLabelError).toBeVisible({ timeout: 5_000 });
+
+  // Test 2: Label too long (201 characters)
+  const longLabel = 'A'.repeat(201);
+  await this.page.fill('#field-label', longLabel);
+  await this.page.locator('#field-hint').click(); // Blur to trigger validation
+  
+  const labelTooLongError = this.page.locator('text=/Label is too long/i').first();
+  await expect(labelTooLongError).toBeVisible({ timeout: 5_000 });
+
+  // Test 3: Hint too long (501 characters)
+  const longHint = 'B'.repeat(501);
+  await this.page.fill('#field-hint', longHint);
+  await this.page.locator('#field-label').click();
+  
+  const hintTooLongError = this.page.locator('text=/Help text is too long/i').first();
+  await expect(hintTooLongError).toBeVisible({ timeout: 5_000 });
+});
+
+Then('I test options validation for checkbox', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Test 1: Empty option
+  const optionInputs = this.page.locator('input[placeholder="Enter option value"]');
+  if (await optionInputs.count() > 0) {
+    await optionInputs.nth(0).fill('');
+    await this.page.locator('#field-label').click(); // Blur
+    
+    const emptyOptionError = this.page.locator('text=/All options must have values/i, text=/Option cannot be empty/i').first();
+    await expect(emptyOptionError).toBeVisible({ timeout: 5_000 });
+  }
+
+  // Test 2: Option too long (101 characters)
+  const longOption = 'C'.repeat(101);
+  if (await optionInputs.count() > 0) {
+    await optionInputs.nth(0).fill(longOption);
+    await this.page.locator('#field-label').click(); // Blur
+    
+    const optionTooLongError = this.page.locator('text=/Option is too long/i').first();
+    await expect(optionTooLongError).toBeVisible({ timeout: 5_000 });
+  }
+
+  // Test 3: Duplicate options
+  if (await optionInputs.count() >= 2) {
+    await optionInputs.nth(0).fill('Reading');
+    await optionInputs.nth(1).fill('Reading'); // Same as first
+    await this.page.locator('#field-label').click(); // Blur
+    
+    const duplicateError = this.page.locator('text=/Options must be unique/i').first();
+    await expect(duplicateError).toBeVisible({ timeout: 5_000 });
+  }
+});
+
+Then('I test selection limits validation for checkbox', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // First fix options to have valid values
+  const optionInputs = this.page.locator('input[placeholder="Enter option value"]');
+  if (await optionInputs.count() > 0) {
+    await optionInputs.nth(0).fill('Reading');
+  }
+  if (await optionInputs.count() > 1) {
+    await optionInputs.nth(1).fill('Gaming');
+  }
+  if (await optionInputs.count() > 2) {
+    await optionInputs.nth(2).fill('Sports');
+  }
+
+  // Test 1: minSelections > maxSelections
+  await this.page.fill('input[name="validation.minSelections"]', '3');
+  await this.page.fill('input[name="validation.maxSelections"]', '2');
+  await this.page.locator('#field-label').click(); // Blur
+  
+  const minMaxError = this.page.locator('text=/Minimum selections must be less than or equal to maximum selections/i').first();
+  await expect(minMaxError).toBeVisible({ timeout: 5_000 });
+
+  // Note: The maxSelections > options count validation exists in schema but is validated on form submit
+  // We verify it prevents save in the "save button disabled" step
+});
+
+Then('I fix all validation errors for checkbox', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Fix label: Set valid length (< 200 chars)
+  await this.page.fill('#field-label', `Hobbies ${Date.now()}`);
+  
+  // Fix hint: Set valid length (< 500 chars)
+  await this.page.fill('#field-hint', 'Select your favorite hobbies.');
+  
+  // Fix options: Set valid, unique options
+  const optionInputs = this.page.locator('input[placeholder="Enter option value"]');
+  if (await optionInputs.count() > 0) {
+    await optionInputs.nth(0).fill('Reading');
+  }
+  if (await optionInputs.count() > 1) {
+    await optionInputs.nth(1).fill('Gaming');
+  }
+  if (await optionInputs.count() > 2) {
+    await optionInputs.nth(2).fill('Sports');
+  }
+  if (await optionInputs.count() > 3) {
+    await optionInputs.nth(3).fill('Music');
+  }
+
+  // Fix selection limits: Set valid range
+  await this.page.fill('input[name="validation.minSelections"]', '1');
+  await this.page.fill('input[name="validation.maxSelections"]', '3');
+
+  // Force complete revalidation by clicking through fields multiple times
+  await this.page.click('#field-label');
+  await this.page.waitForTimeout(500);
+  await this.page.click('#field-hint');
+  await this.page.waitForTimeout(500);
+  await this.page.click('input[name="validation.minSelections"]');
+  await this.page.waitForTimeout(500);
+  await this.page.click('input[name="validation.maxSelections"]');
+  await this.page.waitForTimeout(500);
+  await this.page.click('#field-label'); // Final blur
+  
+  // Wait longer for all validations to complete
+  await this.page.waitForTimeout(3000);
+});
+
+Then('I save the checkbox field settings', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Click save button
+  const saveButton = this.page.getByRole('button', { name: /save/i });
+  await saveButton.click();
+
+  // Wait for save to complete
+  await this.page.waitForTimeout(1000);
+
+  // Verify field is saved
+  const fieldContent = this.page.getByTestId('field-content-1');
+  await expect(fieldContent).toBeVisible({ timeout: 5_000 });
+});
+
+Then('I fix selection limits for checkbox', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Simply set valid selection limits without touching other fields
+  await this.page.fill('input[name="validation.minSelections"]', '1');
+  await this.page.fill('input[name="validation.maxSelections"]', '3');
+
+  // Blur to trigger validation
+  await this.page.click('#field-label');
+  
+  // Wait for validation to complete
+  await this.page.waitForTimeout(1000);
+});
