@@ -1453,3 +1453,213 @@ Then('I save the dropdown field settings', async function (this: CustomWorld) {
   const fieldContent = this.page.getByTestId('field-content-1');
   await expect(fieldContent).toBeVisible({ timeout: 5_000 });
 });
+
+// Radio Field Test Steps
+
+Then('I drag a radio field onto the page', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  const fieldTile = this.page.getByTestId('field-type-radio');
+  const droppablePage = this.page.getByTestId('droppable-page').first();
+  
+  // Get initial field count
+  const initialCount = await droppablePage.locator('[data-testid^="field-content-"]').count();
+
+  await fieldTile.dragTo(droppablePage);
+
+  // Wait for count to increase
+  await expect(async () => {
+    const newCount = await droppablePage.locator('[data-testid^="field-content-"]').count();
+    expect(newCount).toBeGreaterThan(initialCount);
+  }).toPass({ timeout: 15000 });
+});
+
+When('I open the radio field settings', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Find the last field card (the one we just dragged)
+  const fieldCards = this.page.locator('[data-testid^="draggable-field-"]');
+  await expect(fieldCards.last()).toBeVisible({ timeout: 10_000 });
+  const lastFieldCard = fieldCards.last();
+  
+  // Hover to show actions
+  await lastFieldCard.hover();
+
+  // Find the settings button within the last field card
+  const settingsButton = lastFieldCard.locator('[data-testid^="field-settings-button-"]');
+  await expect(settingsButton).toBeVisible({ timeout: 5_000 });
+  
+  // Wait for stability
+  await this.page.waitForTimeout(1000);
+  
+  // Force click to avoid interception issues
+  await settingsButton.click({ force: true });
+
+  // Wait for settings panel to be visible
+  const settingsPanel = this.page.getByTestId('field-settings-panel');
+  await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
+  
+  // Wait for specific radio field input to ensure it's the right panel
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+});
+
+Then('I fill the radio field settings with valid data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Fill settings with valid data
+  const settingsPanel = this.page.getByTestId('field-settings-panel');
+  await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
+
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+  await this.page.fill('#field-label', `Gender Selection ${Date.now()}`);
+  await this.page.fill('#field-hint', 'Please select your gender.');
+  
+  // Fill option values
+  const optionInputs = this.page.locator('input[placeholder="Enter option value"]');
+  const optionCount = await optionInputs.count();
+  
+  if (optionCount > 0) {
+    // Fill first option
+    await optionInputs.nth(0).fill('Male');
+    
+    // Add more options if needed
+    const addOptionButton = this.page.locator('button:has-text("Add Option")');
+    if (await addOptionButton.count() > 0) {
+      await addOptionButton.click();
+      await this.page.waitForTimeout(500);
+      await optionInputs.nth(1).fill('Female');
+      
+      await addOptionButton.click();
+      await this.page.waitForTimeout(500);
+      await optionInputs.nth(2).fill('Other');
+    }
+  }
+
+  // Required toggle
+  const requiredToggle = this.page.locator('#field-required');
+  const isChecked = await requiredToggle.isChecked();
+  if (!isChecked) {
+    await requiredToggle.click();
+  }
+
+  // Assert values persisted
+  await expect(this.page.locator('#field-label')).toHaveValue(/Gender Selection/);
+});
+
+Then('I test label and hint validation for radio', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Test 1: Empty label (required field)
+  await this.page.fill('#field-label', '');
+  await this.page.locator('#field-hint').click(); // Blur to trigger validation
+  
+  const emptyLabelError = this.page.locator('text=/Field label is required/i').first();
+  await expect(emptyLabelError).toBeVisible({ timeout: 5_000 });
+
+  // Test 2: Label too long (201 characters)
+  const longLabel = 'A'.repeat(201);
+  await this.page.fill('#field-label', longLabel);
+  await this.page.locator('#field-hint').click(); // Blur to trigger validation
+  
+  const labelTooLongError = this.page.locator('text=/Label is too long/i').first();
+  await expect(labelTooLongError).toBeVisible({ timeout: 5_000 });
+
+  // Test 3: Hint too long (501 characters)
+  const longHint = 'B'.repeat(501);
+  await this.page.fill('#field-hint', longHint);
+  await this.page.locator('#field-label').click();
+  
+  const hintTooLongError = this.page.locator('text=/Help text is too long/i').first();
+  await expect(hintTooLongError).toBeVisible({ timeout: 5_000 });
+});
+
+Then('I test options validation for radio', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Test 1: Empty option
+  const optionInputs = this.page.locator('input[placeholder="Enter option value"]');
+  if (await optionInputs.count() > 0) {
+    await optionInputs.nth(0).fill('');
+    await this.page.locator('#field-label').click(); // Blur
+    
+    const emptyOptionError = this.page.locator('text=/All options must have values/i, text=/Option cannot be empty/i').first();
+    await expect(emptyOptionError).toBeVisible({ timeout: 5_000 });
+  }
+
+  // Test 2: Option too long (101 characters)
+  const longOption = 'C'.repeat(101);
+  if (await optionInputs.count() > 0) {
+    await optionInputs.nth(0).fill(longOption);
+    await this.page.locator('#field-label').click(); // Blur
+    
+    const optionTooLongError = this.page.locator('text=/Option is too long/i').first();
+    await expect(optionTooLongError).toBeVisible({ timeout: 5_000 });
+  }
+
+  // Test 3: Duplicate options
+  if (await optionInputs.count() >= 2) {
+    await optionInputs.nth(0).fill('Male');
+    await optionInputs.nth(1).fill('Male'); // Same as first
+    await this.page.locator('#field-label').click(); // Blur
+    
+    const duplicateError = this.page.locator('text=/Options must be unique/i').first();
+    await expect(duplicateError).toBeVisible({ timeout: 5_000 });
+  }
+});
+
+Then('I fix all validation errors for radio', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Fix label: Set valid length (< 200 chars)
+  await this.page.fill('#field-label', `Gender Selection ${Date.now()}`);
+  
+  // Fix hint: Set valid length (< 500 chars)
+  await this.page.fill('#field-hint', 'Please select your gender.');
+  
+  // Fix options: Set valid, unique options
+  const optionInputs = this.page.locator('input[placeholder="Enter option value"]');
+  if (await optionInputs.count() > 0) {
+    await optionInputs.nth(0).fill('Male');
+  }
+  if (await optionInputs.count() > 1) {
+    await optionInputs.nth(1).fill('Female');
+  }
+  if (await optionInputs.count() > 2) {
+    await optionInputs.nth(2).fill('Other');
+  }
+
+  // Blur to trigger final validation
+  await this.page.locator('#field-label').click();
+  
+  // Wait a bit for validation to complete
+  await this.page.waitForTimeout(1000);
+});
+
+Then('I save the radio field settings', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Click save button
+  const saveButton = this.page.getByRole('button', { name: /save/i });
+  await saveButton.click();
+
+  // Wait for save to complete
+  await this.page.waitForTimeout(1000);
+
+  // Verify field is saved
+  const fieldContent = this.page.getByTestId('field-content-1');
+  await expect(fieldContent).toBeVisible({ timeout: 5_000 });
+});
