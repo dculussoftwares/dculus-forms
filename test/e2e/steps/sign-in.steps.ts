@@ -80,7 +80,16 @@ Given('I use my saved session', async function (this: CustomWorld) {
   }
 
   if (!hasStoredAuthState()) {
-    throw new Error('No saved auth session found. Run the sign-in scenario first.');
+    // No session found, so we sign in and save the session
+    await signInViaUi(this, { skipGoto: false });
+    
+    const sidebar = this.page.getByTestId('app-sidebar');
+    await expect(sidebar).toBeVisible({ timeout: 30_000 });
+    
+    if (this.context) {
+      await saveAuthState(this.context);
+    }
+    return;
   }
 
   // Navigate to dashboard and wait for network to be idle
@@ -92,7 +101,16 @@ Given('I use my saved session', async function (this: CustomWorld) {
   // Check if we're still on dashboard (not redirected to signin)
   const currentUrl = this.page.url();
   if (currentUrl.includes('/signin')) {
-    throw new Error('Session expired or invalid - redirected to sign in page');
+    // If token expired, try to sign in again
+    await signInViaUi(this, { skipGoto: false });
+    
+    const sidebar = this.page.getByTestId('app-sidebar');
+    await expect(sidebar).toBeVisible({ timeout: 30_000 });
+    
+    if (this.context) {
+      await saveAuthState(this.context);
+    }
+    return;
   }
   
   const sidebar = this.page.getByTestId('app-sidebar');
