@@ -300,7 +300,8 @@ export const typeDefs = gql`
 
 
   input CreateFormInput {
-    templateId: ID!
+    templateId: ID
+    formSchema: JSON
     title: String!
     description: String
     organizationId: ID!

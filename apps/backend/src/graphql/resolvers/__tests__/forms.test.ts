@@ -491,6 +491,151 @@ describe('Forms Resolvers', () => {
         formsResolvers.Mutation.createForm({}, { input }, mockContext)
       ).rejects.toThrow('Template not found');
     });
+
+    it('should create form with formSchema directly', async () => {
+      const mockFormSchema = {
+        pages: [{
+          id: 'page-1',
+          title: 'Page 1',
+          fields: []
+        }],
+        layout: {
+          theme: 'light',
+          backgroundImageKey: '',
+        },
+      };
+
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+      vi.mocked(formService.createForm).mockResolvedValue(mockForm as any);
+
+      const input = {
+        formSchema: mockFormSchema,
+        title: 'New Form from Schema',
+        description: 'Created directly from schema',
+       organizationId: 'org-123',
+      };
+
+      const result = await formsResolvers.Mutation.createForm({}, { input }, mockContext);
+
+      expect(betterAuthMiddleware.requireOrganizationMembership).toHaveBeenCalledWith(
+        mockContext.auth,
+        'org-123'
+      );
+      // Should NOT call getTemplateById when using formSchema
+      expect(templateService.getTemplateById).not.toHaveBeenCalled();
+      expect(formService.createForm).toHaveBeenCalled();
+      expect(result).toEqual(mockForm);
+    });
+
+    it('should throw error when both templateId and formSchema provided', async () => {
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+
+      const input = {
+        templateId: 'template-123',
+        formSchema: { pages: [], layout: {} },
+        title: 'New Form',
+        organizationId: 'org-123',
+      };
+
+      await expect(
+        formsResolvers.Mutation.createForm({}, { input }, mockContext)
+      ).rejects.toThrow(GraphQLError);
+      await expect(
+        formsResolvers.Mutation.createForm({}, { input }, mockContext)
+      ).rejects.toThrow('Cannot provide both templateId and formSchema');
+    });
+
+    it('should throw error when neither templateId nor formSchema provided', async () => {
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+
+      const input = {
+        title: 'New Form',
+        organizationId: 'org-123',
+      };
+
+      await expect(
+        formsResolvers.Mutation.createForm({}, { input }, mockContext)
+      ).rejects.toThrow(GraphQLError);
+      await expect(
+        formsResolvers.Mutation.createForm({}, { input }, mockContext)
+      ).rejects.toThrow('Either templateId or formSchema must be provided');
+    });
+
+    it('should throw error when formSchema missing pages array', async () => {
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+
+      const input = {
+        formSchema: {
+          layout: { theme: 'light' },
+          // Missing pages array
+        },
+        title: 'Invalid Form',
+        organizationId: 'org-123',
+      };
+
+      await expect(
+        formsResolvers.Mutation.createForm({}, { input }, mockContext)
+      ).rejects.toThrow(GraphQLError);
+      await expect(
+        formsResolvers.Mutation.createForm({}, { input }, mockContext)
+      ).rejects.toThrow('Invalid formSchema: pages array is required');
+    });
+
+    it('should throw error when formSchema missing layout object', async () => {
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+
+      const input = {
+        formSchema: {
+          pages: [],
+          // Missing layout object
+        },
+        title: 'Invalid Form',
+        organizationId: 'org-123',
+      };
+
+      await expect(
+        formsResolvers.Mutation.createForm({}, { input }, mockContext)
+      ).rejects.toThrow(GraphQLError);
+      await expect(
+        formsResolvers.Mutation.createForm({}, { input }, mockContext)
+      ).rejects.toThrow('Invalid formSchema: layout object is required');
+    });
+
+    it('should create form with formSchema containing background image', async () => {
+      const mockFormSchema = {
+        pages: [],
+        layout: {
+          theme: 'light',
+          backgroundImageKey: 'custom-bg-key',
+        },
+      };
+
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+      vi.mocked(fileUploadService.copyFileForForm).mockResolvedValue({
+        key: 'new-bg-key',
+        url: 'https://cdn.example.com/new-bg-key',
+        originalName: 'background.jpg',
+        size: 1024,
+        mimeType: 'image/jpeg',
+      } as any);
+      vi.mocked(prisma.formFile.create).mockResolvedValue({} as any);
+      vi.mocked(formService.createForm).mockResolvedValue(mockForm as any);
+
+      const input = {
+        formSchema: mockFormSchema,
+        title: 'Form with Background',
+        organizationId: 'org-123',
+      };
+
+      await formsResolvers.Mutation.createForm({}, { input }, mockContext);
+
+      // Should handle background image copying like template flow
+      expect(fileUploadService.copyFileForForm).toHaveBeenCalledWith(
+        'custom-bg-key',
+        'generated-form-id'
+      );
+      expect(prisma.formFile.create).toHaveBeenCalled();
+    });
   });
 
   describe('Mutation: updateForm', () => {

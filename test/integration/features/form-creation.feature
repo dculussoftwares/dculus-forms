@@ -15,3 +15,19 @@ Feature: Form creation from template
     And the form should belong to my organization
     And the form should not be published by default
     And the form schema should have 3 fields
+
+  @Smoke
+  Scenario: Owner creates a form directly from schema
+    When I create a form directly from schema with title "Schema-Based Form"
+    Then the form creation response should include the title "Schema-Based Form"
+    And the form should belong to my organization
+    And the form should not be published by default
+    And the form schema should have 2 fields
+
+  Scenario: Creating form with both templateId and formSchema should fail
+    When I attempt to create a form with both templateId and formSchema
+    Then the form creation should fail with error "Cannot provide both templateId and formSchema"
+
+  Scenario: Creating form with neither templateId nor formSchema should fail
+    When I attempt to create a form with neither templateId nor formSchema
+    Then the form creation should fail with error "Either templateId or formSchema must be provided"

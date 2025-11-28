@@ -78,7 +78,8 @@ export interface FormResponse {
 }
 
 export interface CreateFormInput {
-  templateId: string;
+  templateId?: string;
+  formSchema?: any;
   title: string;
   description?: string;
   organizationId: string;

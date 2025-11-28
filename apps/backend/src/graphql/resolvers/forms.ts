@@ -202,23 +202,55 @@ export const formsResolvers = {
   Mutation: {
     createForm: async (
       _: any,
-      { input }: { input: { templateId: string; title: string; description?: string; organizationId: string } },
+      { input }: { input: { templateId?: string; formSchema?: any; title: string; description?: string; organizationId: string } },
       context: { auth: BetterAuthContext }
     ) => {
       // 🔒 SECURITY: Verify user is a member of the target organization
       await requireOrganizationMembership(context.auth, input.organizationId);
 
-      // Fetch the template by templateId
-      const template = await getTemplateById(input.templateId);
-      if (!template) {
-        throw new Error('Template not found');
+      // ✅ VALIDATION: Ensure exactly one of templateId or formSchema is provided
+      const hasTemplateId = !!input.templateId;
+      const hasFormSchema = !!input.formSchema;
+
+      if (!hasTemplateId && !hasFormSchema) {
+        throw new GraphQLError('Either templateId or formSchema must be provided');
+      }
+
+      if (hasTemplateId && hasFormSchema) {
+        throw new GraphQLError('Cannot provide both templateId and formSchema');
       }
 
       // Generate form ID upfront
       const newFormId = generateId();
       
-      // Clone the template schema to avoid modifying the original
-      const formSchema = JSON.parse(JSON.stringify(template.formSchema));
+      let formSchema: any;
+
+      // 📋 Get schema from template OR use provided schema
+      if (hasTemplateId) {
+        // Existing flow: Fetch template and clone schema
+        const template = await getTemplateById(input.templateId!);
+        if (!template) {
+          throw new Error('Template not found');
+        }
+        formSchema = JSON.parse(JSON.stringify(template.formSchema));
+      } else {
+        // New flow: Use provided schema with validation
+        formSchema = input.formSchema;
+
+        // Validate schema structure
+        if (!formSchema.pages || !Array.isArray(formSchema.pages)) {
+          throw new GraphQLError('Invalid formSchema: pages array is required');
+        }
+
+        if (!formSchema.layout || typeof formSchema.layout !== 'object') {
+          throw new GraphQLError('Invalid formSchema: layout object is required');
+        }
+
+        // Ensure backgroundImageKey is initialized
+        if (!formSchema.layout.backgroundImageKey) {
+          formSchema.layout.backgroundImageKey = '';
+        }
+      }
       
       // Track if we need to create FormFile record after form creation
       let copiedFileInfo: any = null;
