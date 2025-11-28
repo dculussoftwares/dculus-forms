@@ -269,14 +269,14 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
 
   // Multipage mode - show current page with navigation at bottom
   return (
-    <div className={`flex flex-col min-h-full ${className}`}>
+    <div className={`flex flex-col min-h-full ${className}`} data-testid="viewer-page" data-page-index={currentPageIndex}>
       {/* Page title section - subtle and minimal */}
       {showPageNavigation && (
         <div className="mb-6">
-          <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">
+          <h3 className="text-2xl font-semibold text-gray-900 dark:text-white" data-testid="viewer-page-title">
             {pages[currentPageIndex]?.title}
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1" data-testid="viewer-page-indicator">
             Page {currentPageIndex + 1} of {pages.length}
           </p>
         </div>
@@ -411,6 +411,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
               {/* Navigation buttons */}
               <div className="flex gap-3 flex-1 md:flex-initial">
                 <button
+                  data-testid="viewer-prev-button"
                   onClick={goToPrevPage}
                   disabled={!navigationState.canGoPrevious}
                   className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:bg-gray-50 dark:disabled:bg-gray-900 disabled:text-gray-400 dark:disabled:text-gray-600 disabled:cursor-not-allowed rounded-lg transition-colors"
@@ -433,6 +434,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
                 
                 {navigationState.isLastPage ? (
                   <button
+                    data-testid="viewer-submit-button"
                     onClick={goToNextPage}
                     disabled={false}
                     className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium text-white rounded-lg transition-colors shadow-md ${
@@ -467,6 +469,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
                   </button>
                 ) : (
                   <button
+                    data-testid="viewer-next-button"
                     onClick={goToNextPage}
                     disabled={false}
                     className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium text-white rounded-lg transition-colors shadow-md ${

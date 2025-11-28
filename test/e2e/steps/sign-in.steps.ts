@@ -189,6 +189,10 @@ When('I add a new page in the builder', async function (this: CustomWorld) {
   }
 
   const addPageButton = this.page.getByTestId('add-page-button');
+  
+  // Scroll to button and wait for it to be visible
+  await addPageButton.scrollIntoViewIfNeeded();
+  await expect(addPageButton).toBeVisible({ timeout: 10_000 });
   await addPageButton.click();
 
   // Wait until a new page item appears (at least 2 pages)
@@ -2158,6 +2162,7 @@ Then('I fix selection limits for checkbox', async function (this: CustomWorld) {
   await this.page.fill('input[name="validation.minSelections"]', '1');
   await this.page.fill('input[name="validation.maxSelections"]', '3');
 
+
   // Blur to trigger validation
   await this.page.click('#field-label');
   
@@ -2165,3 +2170,144 @@ Then('I fix selection limits for checkbox', async function (this: CustomWorld) {
   await this.page.waitForTimeout(1000);
 });
 
+// Multi-Page Form Viewer Steps - Quick Field Creation
+
+async function fillAndSaveField(world: CustomWorld, fieldType: string, label: string) {
+  if (!world.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Hover on the last added field  
+  const fieldCard = world.page.locator('[data-testid^="draggable-field-"]').last();
+  await fieldCard.hover();
+
+  // Click settings button
+  const settingsButton = fieldCard.locator('[data-testid^="field-settings-button-"]').first();
+  await expect(settingsButton).toBeVisible({ timeout: 10_000 });
+  await settingsButton.click();
+
+  // Wait for settings panel
+  const settingsPanel = world.page.getByTestId('field-settings-panel');
+  await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
+  await world.page.waitForSelector('#field-label', { timeout: 10_000 });
+
+  // Fill label
+  await world.page.fill('#field-label', label);
+
+  // For dropdown, radio, and checkbox, add options
+  if (fieldType === 'dropdown' || fieldType === 'radio' || fieldType === 'checkbox') {
+    // Clear existing options first
+    const optionInputs = world.page.locator('input[placeholder^="Option "]');
+    const count = await optionInputs.count();
+    
+    if (count > 0) {
+      // Fill first three options
+      for (let i = 0; i < Math.min(3, count); i++) {
+        await optionInputs.nth(i).fill(`Option ${i + 1}`);
+      }
+    }
+  }
+
+  // Save
+  const saveButton = world.page.getByRole('button', { name: /save/i });
+  await expect(saveButton).toBeEnabled({ timeout: 5_000 });
+  await saveButton.click();
+
+  // Wait for panel to close
+  await world.page.waitForTimeout(1000);
+}
+
+When('I fill and save the short text field with label {string}', async function (this: CustomWorld, label: string) {
+  await fillAndSaveField(this, 'short-text', label);
+});
+
+When('I fill and save the long text field with label {string}', async function (this: CustomWorld, label: string) {
+  await fillAndSaveField(this, 'long-text', label);
+});
+
+When('I fill and save the email field with label {string}', async function (this: CustomWorld, label: string) {
+  await fillAndSaveField(this, 'email', label);
+});
+
+When('I fill and save the number field with label {string}', async function (this: CustomWorld, label: string) {
+  await fillAndSaveField(this, 'number', label);
+});
+
+When('I fill and save the date field with label {string}', async function (this: CustomWorld, label: string) {
+  await fillAndSaveField(this, 'date', label);
+});
+
+When('I fill and save the dropdown field with label {string}', async function (this: CustomWorld, label: string) {
+  await fillAndSaveField(this, 'dropdown', label);
+});
+
+When('I fill and save the radio field with label {string}', async function (this: CustomWorld, label: string) {
+  await fillAndSaveField(this, 'radio', label);
+});
+
+When('I fill and save the checkbox field with label {string}', async function (this: CustomWorld, label: string) {
+  await fillAndSaveField(this, 'checkbox', label);
+});
+
+// Navigation Steps
+
+When('I navigate back to the form dashboard', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Click browser back button or navigate to dashboard
+  await this.page.goBack();
+  
+  // Wait for dashboard to load
+  const sidebar = this.page.getByTestId('app-sidebar');
+  await expect(sidebar).toBeVisible({ timeout: 30_000 });
+});
+
+When('I click next in the viewer', async function (this: CustomWorld) {
+  if (!this.viewerPage) {
+    throw new Error('Viewer page is not initialized');
+  }
+
+  const nextButton = this.viewerPage.getByTestId('viewer-next-button');
+  await expect(nextButton).toBeVisible({ timeout: 10_000 });
+  await nextButton.click();
+  
+  // Wait for page transition
+  await this.viewerPage.waitForTimeout(500);
+});
+
+When('I click previous in the viewer', async function (this: CustomWorld) {
+  if (!this.viewerPage) {
+    throw new Error('Viewer page is not initialized');
+  }
+
+  const prevButton = this.viewerPage.getByTestId('viewer-prev-button');
+  await expect(prevButton).toBeVisible({ timeout: 10_000 });
+  await prevButton.click();
+  
+  // Wait for page transition
+  await this.viewerPage.waitForTimeout(500);
+});
+
+// Verification Steps
+
+Then('I should be on viewer page {int} of {int}', async function (this: CustomWorld, currentPage: number, totalPages: number) {
+  if (!this.viewerPage) {
+    throw new Error('Viewer page is not initialized');
+  }
+
+  const indicator = this.viewerPage.getByTestId('viewer-page-indicator');
+  await expect(indicator).toBeVisible({ timeout: 10_000 });
+  await expect(indicator).toContainText(`Page ${currentPage} of ${totalPages}`);
+});
+
+Then('I should see field {string} on the current page', async function (this: CustomWorld, fieldLabel: string) {
+  if (!this.viewerPage) {
+    throw new Error('Viewer page is not initialized');
+  }
+
+  // Check if the field label is visible on the current page
+  const field = this.viewerPage.getByText(fieldLabel).first();
+  await expect(field).toBeVisible({ timeout: 10_000 });
+});
