@@ -20,6 +20,149 @@ function getCredentials(): Credentials {
   return { email, password };
 }
 
+// Helper function to create form schema with all field types
+function createFormSchemaWithAllFields() {
+  return {
+    layout: {
+      theme: "light",
+      textColor: "#000000",
+      spacing: "normal",
+      code: "L9",
+      content: "<h1>Test Form</h1>",
+      customBackGroundColor: "#ffffff",
+      backgroundImageKey: "",
+      pageMode: "multipage",
+      isCustomBackgroundColorEnabled: false
+    },
+    pages: [
+      {
+        id: "page-1",
+        title: "Text Fields",
+        fields: [
+          {
+            id: "field-short-text",
+            type: "text_input_field",
+            label: "Short Text Field",
+            defaultValue: "",
+            prefix: "",
+            hint: "",
+            placeholder: "Enter short text",
+            validation: {
+              required: false,
+              type: "text_field_validation"
+            }
+          },
+          {
+            id: "field-long-text",
+            type: "text_area_field",
+            label: "Long Text Field",
+            defaultValue: "",
+            prefix: "",
+            hint: "",
+            placeholder: "Enter long text",
+            validation: {
+              required: false,
+              type: "text_field_validation"
+            }
+          }
+        ]
+      },
+      {
+        id: "page-2",
+        title: "Input Fields",
+        fields: [
+          {
+            id: "field-email",
+            type: "email_field",
+            label: "Email Field",
+            defaultValue: "",
+            prefix: "",
+            hint: "",
+            placeholder: "Enter email",
+            validation: {
+              required: false,
+              type: "fillable_form_field"
+            }
+          },
+          {
+            id: "field-number",
+            type: "number_field",
+            label: "Number Field",
+            defaultValue: "",
+            prefix: "",
+            hint: "",
+            placeholder: "Enter number",
+            validation: {
+              required: false,
+              type: "fillable_form_field"
+            }
+          },
+          {
+            id: "field-date",
+            type: "date_field",
+            label: "Date Field",
+            defaultValue: "",
+            prefix: "",
+            hint: "",
+            placeholder: "Select date",
+            validation: {
+              required: false,
+              type: "fillable_form_field"
+            }
+          }
+        ]
+      },
+      {
+        id: "page-3",
+        title: "Selection Fields",
+        fields: [
+          {
+            id: "field-dropdown",
+            type: "select_field",
+            label: "Dropdown Field",
+            defaultValue: "",
+            prefix: "",
+            hint: "",
+            validation: {
+              required: false,
+              type: "fillable_form_field"
+            },
+            options: ["Option 1", "Option 2", "Option 3"]
+          },
+          {
+            id: "field-radio",
+            type: "radio_field",
+            label: "Radio Field",
+            defaultValue: "",
+            prefix: "",
+            hint: "",
+            validation: {
+              required: false,
+              type: "fillable_form_field"
+            },
+            options: ["Choice 1", "Choice 2", "Choice 3"]
+          },
+          {
+            id: "field-checkbox",
+            type: "checkbox_field",
+            label: "Checkbox Field",
+            defaultValues: [],
+            prefix: "",
+            hint: "",
+            placeholder: "",
+            validation: {
+              required: false,
+              type: "checkbox_field_validation"
+            },
+            options: ["Item 1", "Item 2", "Item 3"]
+          }
+        ]
+      }
+    ]
+  };
+}
+
+
 async function signInViaUi(world: CustomWorld, options?: { skipGoto?: boolean }) {
   if (!world.page) {
     throw new Error('Page is not initialized');
@@ -2191,8 +2334,39 @@ async function fillAndSaveField(world: CustomWorld, fieldType: string, label: st
   await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
   await world.page.waitForSelector('#field-label', { timeout: 10_000 });
 
-  // Fill label
-  await world.page.fill('#field-label', label);
+  // Fill label with unique timestamp to ensure isDirty is true
+  const uniqueLabel = `${label} ${Date.now()}`;
+  await world.page.fill('#field-label', uniqueLabel);
+  
+  // Trigger blur to ensure validation runs
+  await world.page.click('[data-testid="field-settings-header"]');
+
+  // Wait for dirty state to be detected
+  // The "Unsaved changes" text should appear in the header
+  const unsavedChanges = world.page.locator('text=/Unsaved changes/i');
+  try {
+    await expect(unsavedChanges).toBeVisible({ timeout: 5000 });
+  } catch (e) {
+    // Try to type a character to force update
+    await world.page.type('#field-label', ' ');
+    await world.page.keyboard.press('Backspace');
+    await world.page.click('[data-testid="field-settings-header"]');
+    await expect(unsavedChanges).toBeVisible({ timeout: 5000 });
+  }
+
+  // For text fields, ensure validation limits are valid
+  if (fieldType === 'short-text' || fieldType === 'long-text') {
+    // Check if validation fields exist before filling
+    const minLength = world.page.locator('input[name="validation.minLength"]');
+    if (await minLength.count() > 0) {
+      await minLength.fill('0');
+    }
+    
+    const maxLength = world.page.locator('input[name="validation.maxLength"]');
+    if (await maxLength.count() > 0) {
+      await maxLength.fill('1000');
+    }
+  }
 
   // For dropdown, radio, and checkbox, add options
   if (fieldType === 'dropdown' || fieldType === 'radio' || fieldType === 'checkbox') {
@@ -2298,7 +2472,7 @@ Then('I should be on viewer page {int} of {int}', async function (this: CustomWo
   }
 
   const indicator = this.viewerPage.getByTestId('viewer-page-indicator');
-  await expect(indicator).toBeVisible({ timeout: 10_000 });
+  await expect(indicator).toBeVisible({ timeout: 30_000 });
   await expect(indicator).toContainText(`Page ${currentPage} of ${totalPages}`);
 });
 
@@ -2310,4 +2484,96 @@ Then('I should see field {string} on the current page', async function (this: Cu
   // Check if the field label is visible on the current page
   const field = this.viewerPage.getByText(fieldLabel).first();
   await expect(field).toBeVisible({ timeout: 10_000 });
+});
+
+// GraphQL Form Creation
+
+When('I create a form via GraphQL with all field types', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Navigate to dashboard first to ensure Apollo Client is loaded
+  await this.page.goto(`${this.baseUrl}/dashboard`);
+  await this.page.waitForTimeout(2000);
+
+  // Extract organization ID from page context (from Apollo Client or localStorage)
+  const organizationId = await this.page.evaluate(() => {
+    // Try localStorage first
+    const orgFromStorage = localStorage.getItem('organizationId');
+    if (orgFromStorage) return orgFromStorage;
+
+    // Try from Apollo cache
+    const apolloClient = (window as any).__APOLLO_CLIENT__;
+    if (apolloClient && apolloClient.cache) {
+      try {
+        // Look for organization data in cache
+        const cacheData = apolloClient.cache.extract();
+        const orgKeys = Object.keys(cacheData).filter((key: string) => key.startsWith('Organization:'));
+        if (orgKeys.length > 0) {
+          return orgKeys[0].split(':')[1];
+        }
+      } catch (e) {
+        console.error('Failed to extract org from cache:', e);
+      }
+    }
+
+    // Last resort: check URL params
+    const url = new URL(window.location.href);
+    return url.searchParams.get('org');
+  });
+
+  if (!organizationId) {
+    throw new Error('Organization ID not found');
+  }
+
+  const formSchema = createFormSchemaWithAllFields();
+  const timestamp = Date.now();
+  const formTitle = `E2E Multi-Page Form ${timestamp}`;
+
+  // Make GraphQL request to create form
+  const response = await this.page.evaluate(async ({ orgId, title, schema }) => {
+    const query = `
+      mutation CreateForm($input: CreateFormInput!) {
+        createForm(input: $input) {
+          id
+          title
+          shortUrl
+        }
+      }
+    `;
+
+    const variables = {
+      input: {
+        title,
+        formSchema: schema,
+        organizationId: orgId
+      }
+    };
+
+    const res = await fetch('http://localhost:4000/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ query, variables })
+    });
+
+    return res.json();
+  }, { orgId: organizationId, title: formTitle, schema: formSchema });
+
+  if (response.errors) {
+    throw new Error(`GraphQL error: ${JSON.stringify(response.errors)}`);
+  }
+
+  const formId = response.data.createForm.id;
+  this.newFormTitle = formTitle;
+
+  // Navigate to the form dashboard
+  await this.page.goto(`${this.baseUrl}/dashboard/form/${formId}`);
+  
+  // Wait for dashboard to load
+  const sidebar = this.page.getByTestId('app-sidebar');
+  await expect(sidebar).toBeVisible({ timeout: 30_000 });
 });

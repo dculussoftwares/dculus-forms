@@ -56,7 +56,10 @@ export const ValidationSummary: React.FC<ValidationSummaryProps> = ({ errors }) 
   const fieldErrors = errorMessages.filter(err => !err.isGlobalError);
 
   return (
-    <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+    <div 
+      data-testid="validation-error-summary"
+      className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg"
+    >
       <div className="flex items-start space-x-2">
         <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
         <div className="flex-1">

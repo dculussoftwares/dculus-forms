@@ -37,7 +37,9 @@ export const FieldSettingsHeader: React.FC<FieldSettingsHeaderProps> = ({ field,
   const fieldTypeLabels = getFieldTypeLabels(t);
   
   return (
-    <div className={`flex-shrink-0 border-b border-gray-200 dark:border-gray-700 p-4 transition-colors duration-200 ${
+    <div 
+      data-testid="field-settings-header"
+      className={`flex-shrink-0 border-b border-gray-200 dark:border-gray-700 p-4 transition-colors duration-200 ${
       isDirty 
         ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800' 
         : 'bg-white dark:bg-gray-900'
