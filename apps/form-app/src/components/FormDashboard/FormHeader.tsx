@@ -82,6 +82,7 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
       {/* Status Badge */}
       <div className="flex items-center gap-3">
         <Badge
+          data-testid="form-status-badge"
           variant={form.isPublished ? "default" : "secondary"}
           className={`${
             form.isPublished
@@ -116,6 +117,7 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
         {/* Primary Action - Publish/Unpublish */}
         {form.isPublished ? (
           <Button
+            data-testid="unpublish-form-button"
             variant="outline"
             onClick={onUnpublish}
             disabled={updateLoading}
@@ -126,6 +128,7 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
           </Button>
         ) : (
           <Button
+            data-testid="publish-form-button"
             onClick={onPublish}
             disabled={updateLoading}
             className="h-10 px-5 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-medium shadow-sm hover:shadow transition-all"
@@ -138,6 +141,7 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
         {/* Secondary Actions */}
         {form.isPublished && (
           <Button
+            data-testid="get-form-link-button"
             variant="outline"
             onClick={onCollectResponses}
             className="h-10 px-5 rounded-lg border-2 border-blue-200 hover:border-blue-300 hover:bg-blue-50 text-blue-700 font-medium transition-all"

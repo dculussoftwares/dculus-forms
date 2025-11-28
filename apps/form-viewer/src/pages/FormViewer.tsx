@@ -103,7 +103,7 @@ const FormViewer: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="h-screen w-full flex items-center justify-center">
+      <div className="h-screen w-full flex items-center justify-center" data-testid="form-viewer-loading">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading form...</p>
@@ -119,12 +119,12 @@ const FormViewer: React.FC = () => {
                                    error.message.includes('submission period has ended');
     
     return (
-      <div className="h-screen w-full flex items-center justify-center">
+      <div className="h-screen w-full flex items-center justify-center" data-testid="form-viewer-error">
         <div className="text-center p-8">
           <h1 className="text-2xl font-bold text-red-600 mb-2">
             {isSubmissionLimitError ? 'Form Unavailable' : 'Form Not Found'}
           </h1>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 mb-4" data-testid="form-viewer-error-message">
             {error.message === 'Form is not published'
               ? 'This form is not yet published.'
               : error.message.includes('maximum response limit')
@@ -208,7 +208,7 @@ const FormViewer: React.FC = () => {
 
   // Render the form in fullscreen mode
   return (
-    <div className="h-screen w-full">
+    <div className="h-screen w-full" data-testid="form-viewer-renderer">
       {/* Submission error message */}
       {submissionState === 'error' && (
         <div className="bg-red-50 border border-red-200 rounded-md p-4 m-4">
