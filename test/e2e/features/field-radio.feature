@@ -1,7 +1,7 @@
 Feature: Radio Field
 
   Scenario: Test Radio field with valid data
-    Given I use my saved session
+    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
@@ -11,7 +11,7 @@ Feature: Radio Field
     Then I fill the radio field settings with valid data
 
   Scenario: Test Radio field with comprehensive invalid data
-    Given I use my saved session
+    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder

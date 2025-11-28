@@ -1,7 +1,7 @@
 Feature: Long Text Field
 
   Scenario: Test Long Text field with valid data
-    Given I use my saved session
+    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
@@ -11,7 +11,7 @@ Feature: Long Text Field
     Then I fill the long text field settings with valid data
 
   Scenario: Test Long Text field with comprehensive invalid data
-    Given I use my saved session
+    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
@@ -26,7 +26,7 @@ Feature: Long Text Field
     Then I save the long text field settings
 
   Scenario: Validate long text field settings with invalid data
-    Given I use my saved session
+    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder

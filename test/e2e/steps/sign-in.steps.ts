@@ -40,8 +40,12 @@ Given('I am on the sign in page', async function (this: CustomWorld) {
   await this.page?.goto('/signin');
 });
 
-When('I sign in with valid credentials', async function (this: CustomWorld) {
-  await signInViaUi(this, { skipGoto: true });
+Given('I sign in with valid credentials', async function (this: CustomWorld) {
+  await signInViaUi(this, { skipGoto: false });
+  
+  // Wait for sign-in to complete
+  const sidebar = this.page!.getByTestId('app-sidebar');
+  await expect(sidebar).toBeVisible({ timeout: 30_000 });
 });
 
 Then('I should see the dashboard', async function (this: CustomWorld) {

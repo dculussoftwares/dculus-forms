@@ -1,7 +1,7 @@
 Feature: Checkbox Field
 
   Scenario: Test Checkbox field with valid data
-    Given I use my saved session
+    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
@@ -11,7 +11,7 @@ Feature: Checkbox Field
     Then I fill the checkbox field settings with valid data
 
   Scenario: Test Checkbox field with invalid selection limits
-    Given I use my saved session
+    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
@@ -21,7 +21,7 @@ Feature: Checkbox Field
     Then I test selection limits validation for checkbox
 
   Scenario: Test Checkbox field with comprehensive invalid data
-    Given I use my saved session
+    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder

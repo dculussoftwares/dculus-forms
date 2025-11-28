@@ -1,7 +1,7 @@
 Feature: Form Creation
 
   Scenario: Create a form from a template
-    Given I use my saved session
+    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder

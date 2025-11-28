@@ -1,7 +1,7 @@
 Feature: Email Field
 
   Scenario: Test Email field with valid data
-    Given I use my saved session
+    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
@@ -11,7 +11,7 @@ Feature: Email Field
     Then I fill the email field settings with valid data
 
   Scenario: Test Email field with comprehensive invalid data
-    Given I use my saved session
+    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
