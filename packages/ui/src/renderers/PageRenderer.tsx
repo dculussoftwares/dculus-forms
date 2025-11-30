@@ -284,7 +284,10 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
 
       {/* Validation error summary - shown at top for visibility */}
       {showPageNavigation && showValidationSummary && validationErrors.length > 0 && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4 mb-6">
+        <div 
+          className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4 mb-6"
+          data-testid="validation-error-summary"
+        >
           <div className="flex items-start">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-red-400 dark:text-red-500" viewBox="0 0 20 20" fill="currentColor">

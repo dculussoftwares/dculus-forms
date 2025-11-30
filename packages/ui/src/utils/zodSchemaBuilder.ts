@@ -34,11 +34,34 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
   switch (field.type) {
     case FieldType.TEXT_INPUT_FIELD:
     case FieldType.TEXT_AREA_FIELD: {
+      const textField = field as any; // Cast to access validation
+      const textValidation = textField.validation;
+      
+      let schema: z.ZodTypeAny;
+      
       if (isRequired) {
-        return z.string().min(1, `${fillableField.label} is required`);
+        schema = z.string().min(1, `${fillableField.label} is required`);
       } else {
-        return z.string().optional();
+        schema = z.string().optional();
       }
+      
+      // Add minLength validation if specified
+      if (textValidation?.minLength !== undefined && textValidation.minLength > 0) {
+        schema = (schema as z.ZodString).min(
+          textValidation.minLength, 
+          `${fillableField.label} must be at least ${textValidation.minLength} characters`
+        );
+      }
+      
+      // Add maxLength validation if specified
+      if (textValidation?.maxLength !== undefined && textValidation.maxLength > 0) {
+        schema = (schema as z.ZodString).max(
+          textValidation.maxLength, 
+          `${fillableField.label} must be at most ${textValidation.maxLength} characters`
+        );
+      }
+      
+      return schema;
     }
 
     case FieldType.EMAIL_FIELD: {

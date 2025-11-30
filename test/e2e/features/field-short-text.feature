@@ -1,6 +1,6 @@
-Feature: Short Text Field
+Feature: Short Text Field Comprehensive Validations
 
-  Scenario: Validate short text field settings with invalid data
+  Scenario: Validate short text field settings with invalid data in builder
     Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
@@ -17,3 +17,36 @@ Feature: Short Text Field
     And I test invalid max length data
     And I test min greater than max validation
     And I verify all validations work correctly
+
+  Scenario: Create short text field via GraphQL and validate all validations in viewer
+    Given I sign in with valid credentials
+    When I create a form via GraphQL with short text field validations
+    Then I should be on the new form dashboard
+    
+    # Publish and verify in viewer
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    And I navigate to the form viewer with the short URL
+    Then I should see the form in the viewer
+    
+    # Test validation error summary section
+    When I try to submit with empty fields
+    Then I should see the validation error summary section
+    And the error summary should contain "Please fix the following errors to continue"
+    
+    # Test 1: Required validation
+    When I test required validation for short text in viewer
+    
+    # Test 2: Min length validation
+    When I test min length validation for short text in viewer
+    
+    # Test 3: Max length validation
+    When I test max length validation for short text in viewer
+    
+    # Test 4: Valid submission
+    When I fill short text field with valid data in viewer
+    And I should be able to submit the form in viewer
+    Then the validation error summary should not be visible
+
+
