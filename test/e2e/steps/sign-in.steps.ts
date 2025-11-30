@@ -3195,3 +3195,475 @@ When('I fill long text field with valid data in viewer', async function (this: C
   // Wait for all to be filled
   await this.viewerPage.waitForTimeout(500);
 });
+
+
+// Email Field Viewer Validation Steps
+
+function createFormSchemaWithEmailValidations() {
+  return {
+    layout: {
+      theme: "light",
+      textColor: "#000000",
+      spacing: "normal",
+      code: "L9",
+      content: "<h1>Email Validations Test</h1>",
+      customBackGroundColor: "#ffffff",
+      backgroundImageKey: "",
+      pageMode: "multipage",
+      isCustomBackgroundColorEnabled: false
+    },
+    pages: [
+      {
+        id: "page-1",
+        title: "Email Field Validations",
+        fields: [
+          {
+            id: "field-required",
+            type: "email_field",
+            label: "Required Email",
+            defaultValue: "",
+            prefix: "",
+            hint: "This field is required",
+            placeholder: "Enter your email",
+            validation: {
+              required: true
+            }
+          },
+          {
+            id: "field-format",
+            type: "email_field",
+            label: "Email Format",
+            defaultValue: "",
+            prefix: "",
+            hint: "Must be a valid email format",
+            placeholder: "example@domain.com",
+            validation: {
+              required: true
+            }
+          }
+        ]
+      }
+    ]
+  };
+}
+
+When('I create a form via GraphQL with email field validations', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Navigate to dashboard first
+  await this.page.goto(`${this.baseUrl}/dashboard`);
+  await this.page.waitForTimeout(2000);
+
+  // Extract organization ID
+  const organizationId = await this.page.evaluate(() => {
+    const orgFromStorage = localStorage.getItem('organizationId');
+    if (orgFromStorage) return orgFromStorage;
+
+    const apolloClient = (window as any).__APOLLO_CLIENT__;
+    if (apolloClient && apolloClient.cache) {
+      try {
+        const cacheData = apolloClient.cache.extract();
+        const orgKeys = Object.keys(cacheData).filter((key: string) => key.startsWith('Organization:'));
+        if (orgKeys.length > 0) {
+          return orgKeys[0].split(':')[1];
+        }
+      } catch (e) {
+        console.error('Failed to extract org from cache:', e);
+      }
+    }
+
+    return null;
+  });
+
+  if (!organizationId) {
+    throw new Error('Organization ID not found');
+  }
+
+  const formSchema = createFormSchemaWithEmailValidations();
+  const timestamp = Date.now();
+  const formTitle = `E2E Email Validations ${timestamp}`;
+
+  // Make GraphQL request to create form
+  const response = await this.page.evaluate(async ({ orgId, title, schema }) => {
+    const query = `
+      mutation CreateForm($input: CreateFormInput!) {
+        createForm(input: $input) {
+          id
+          title
+          shortUrl
+        }
+      }
+    `;
+
+    const variables = {
+      input: {
+        title,
+        formSchema: schema,
+        organizationId: orgId
+      }
+    };
+
+    const res = await fetch('http://localhost:4000/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ query, variables })
+    });
+
+    return res.json();
+  }, { orgId: organizationId, title: formTitle, schema: formSchema });
+
+  if (response.errors) {
+    throw new Error(`GraphQL error: ${JSON.stringify(response.errors)}`);
+  }
+
+  const formId = response.data.createForm.id;
+  this.newFormTitle = formTitle;
+
+  // Navigate to the form dashboard
+  await this.page.goto(`${this.baseUrl}/dashboard/form/${formId}`);
+  
+  // Wait for dashboard to load
+  const sidebar = this.page.getByTestId('app-sidebar');
+  await expect(sidebar).toBeVisible({ timeout: 30_000 });
+});
+
+When('I test required validation for email in viewer', async function (this: CustomWorld) {
+  if (!this.viewerPage) {
+    throw new Error('Viewer page is not initialized');
+  }
+
+  // Locate the required field
+  const requiredField = this.viewerPage.locator('input[name="field-required"]');
+  await expect(requiredField).toBeVisible({ timeout: 10_000 });
+
+  // Try to submit without filling
+  const nextButton = this.viewerPage.getByTestId('viewer-next-button');
+  if (await nextButton.isVisible()) {
+    await nextButton.click();
+    await this.viewerPage.waitForTimeout(500);
+  }
+
+  // Check for required error message
+  const requiredError = this.viewerPage.locator('text=/required/i').first();
+  await expect(requiredError).toBeVisible({ timeout: 5_000 });
+
+  // Fill the field to clear error
+  await requiredField.fill('test@example.com');
+  await requiredField.blur();
+  
+  // Wait for error to disappear
+  await this.viewerPage.waitForTimeout(500);
+});
+
+When('I test email format validation in viewer', async function (this: CustomWorld) {
+  if (!this.viewerPage) {
+    throw new Error('Viewer page is not initialized');
+  }
+
+  // Locate the format field
+  const formatField = this.viewerPage.locator('input[name="field-format"]');
+  await expect(formatField).toBeVisible({ timeout: 10_000 });
+
+  // Fill with invalid email format
+  await formatField.fill('invalid-email');
+  await formatField.blur();
+  
+  // Wait a bit for validation
+  await this.viewerPage.waitForTimeout(1000);
+  
+  // Check for email format error
+  const formatError = this.viewerPage.locator('text=/valid email|email.*valid|invalid.*email/i').first();
+  await expect(formatError).toBeVisible({ timeout: 5_000 });
+
+  // Fill with valid email
+  await formatField.fill('valid@example.com');
+  await formatField.blur();
+  
+  // Wait for error to disappear
+  await this.viewerPage.waitForTimeout(500);
+});
+
+When('I fill email field with valid data in viewer', async function (this: CustomWorld) {
+  if (!this.viewerPage) {
+    throw new Error('Viewer page is not initialized');
+  }
+
+  // Fill all fields with valid emails
+  await this.viewerPage.locator('input[name="field-required"]').fill('user@example.com');
+  await this.viewerPage.locator('input[name="field-format"]').fill('test@domain.com');
+  
+  // Wait for all to be filled
+  await this.viewerPage.waitForTimeout(500);
+});
+
+
+// Number Field Viewer Validation Steps
+
+function createFormSchemaWithNumberValidations() {
+  return {
+    layout: {
+      theme: "light",
+      textColor: "#000000",
+      spacing: "normal",
+      code: "L9",
+      content: "<h1>Number Validations Test</h1>",
+      customBackGroundColor: "#ffffff",
+      backgroundImageKey: "",
+      pageMode: "multipage",
+      isCustomBackgroundColorEnabled: false
+    },
+    pages: [
+      {
+        id: "page-1",
+        title: "Number Field Validations",
+        fields: [
+          {
+            id: "field-required",
+            type: "number_field",
+            label: "Required Number",
+            defaultValue: "",
+            prefix: "",
+            hint: "This field is required",
+            placeholder: "Enter a number",
+            validation: {
+              required: true
+            },
+            min: undefined,
+            max: undefined
+          },
+          {
+            id: "field-min",
+            type: "number_field",
+            label: "Min Value Field",
+            defaultValue: "",
+            prefix: "",
+            hint: "Minimum value is 10",
+            placeholder: "Enter at least 10",
+            validation: {
+              required: true
+            },
+            min: 10,
+            max: undefined
+          },
+          {
+            id: "field-max",
+            type: "number_field",
+            label: "Max Value Field",
+            defaultValue: "",
+            prefix: "",
+            hint: "Maximum value is 100",
+            placeholder: "Enter up to 100",
+            validation: {
+              required: true
+            },
+            min: undefined,
+            max: 100
+          },
+          {
+            id: "field-range",
+            type: "number_field",
+            label: "Range Field",
+            defaultValue: "",
+            prefix: "",
+            hint: "Must be between 1 and 50",
+            placeholder: "1-50",
+            validation: {
+              required: true
+            },
+            min: 1,
+            max: 50
+          }
+        ]
+      }
+    ]
+  };
+}
+
+When('I create a form via GraphQL with number field validations', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Navigate to dashboard first
+  await this.page.goto(`${this.baseUrl}/dashboard`);
+  await this.page.waitForTimeout(2000);
+
+  // Extract organization ID
+  const organizationId = await this.page.evaluate(() => {
+    const orgFromStorage = localStorage.getItem('organizationId');
+    if (orgFromStorage) return orgFromStorage;
+
+    const apolloClient = (window as any).__APOLLO_CLIENT__;
+    if (apolloClient && apolloClient.cache) {
+      try {
+        const cacheData = apolloClient.cache.extract();
+        const orgKeys = Object.keys(cacheData).filter((key: string) => key.startsWith('Organization:'));
+        if (orgKeys.length > 0) {
+          return orgKeys[0].split(':')[1];
+        }
+      } catch (e) {
+        console.error('Failed to extract org from cache:', e);
+      }
+    }
+
+    return null;
+  });
+
+  if (!organizationId) {
+    throw new Error('Organization ID not found');
+  }
+
+  const formSchema = createFormSchemaWithNumberValidations();
+  const timestamp = Date.now();
+  const formTitle = `E2E Number Validations ${timestamp}`;
+
+  // Make GraphQL request to create form
+  const response = await this.page.evaluate(async ({ orgId, title, schema }) => {
+    const query = `
+      mutation CreateForm($input: CreateFormInput!) {
+        createForm(input: $input) {
+          id
+          title
+          shortUrl
+        }
+      }
+    `;
+
+    const variables = {
+      input: {
+        title,
+        formSchema: schema,
+        organizationId: orgId
+      }
+    };
+
+    const res = await fetch('http://localhost:4000/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ query, variables })
+    });
+
+    return res.json();
+  }, { orgId: organizationId, title: formTitle, schema: formSchema });
+
+  if (response.errors) {
+    throw new Error(`GraphQL error: ${JSON.stringify(response.errors)}`);
+  }
+
+  const formId = response.data.createForm.id;
+  this.newFormTitle = formTitle;
+
+  // Navigate to the form dashboard
+  await this.page.goto(`${this.baseUrl}/dashboard/form/${formId}`);
+  
+  // Wait for dashboard to load
+  const sidebar = this.page.getByTestId('app-sidebar');
+  await expect(sidebar).toBeVisible({ timeout: 30_000 });
+});
+
+When('I test required validation for number in viewer', async function (this: CustomWorld) {
+  if (!this.viewerPage) {
+    throw new Error('Viewer page is not initialized');
+  }
+
+  // Locate the required field
+  const requiredField = this.viewerPage.locator('input[name="field-required"]');
+  await expect(requiredField).toBeVisible({ timeout: 10_000 });
+
+  // Try to submit without filling
+  const nextButton = this.viewerPage.getByTestId('viewer-next-button');
+  if (await nextButton.isVisible()) {
+    await nextButton.click();
+    await this.viewerPage.waitForTimeout(500);
+  }
+
+  // Check for required error message
+  const requiredError = this.viewerPage.locator('text=/required/i').first();
+  await expect(requiredError).toBeVisible({ timeout: 5_000 });
+
+  // Fill the field to clear error
+  await requiredField.fill('42');
+  await requiredField.blur();
+  
+  // Wait for error to disappear
+  await this.viewerPage.waitForTimeout(500);
+});
+
+When('I test min value validation in viewer', async function (this: CustomWorld) {
+  if (!this.viewerPage) {
+    throw new Error('Viewer page is not initialized');
+  }
+
+  // Locate the min value field
+  const minField = this.viewerPage.locator('input[name="field-min"]');
+  await expect(minField).toBeVisible({ timeout: 10_000 });
+
+  // Fill with less than minimum (10 required, fill with 5)
+  await minField.fill('5');
+  await minField.blur();
+  
+  // Wait a bit for validation
+  await this.viewerPage.waitForTimeout(1000);
+  
+  // Check for min value error
+  const minError = this.viewerPage.locator('text=/10|minimum.*10|at least 10|greater.*10/i').first();
+  await expect(minError).toBeVisible({ timeout: 5_000 });
+
+  // Fill with valid value
+  await minField.fill('15');
+  await minField.blur();
+  
+  // Wait for error to disappear
+  await this.viewerPage.waitForTimeout(500);
+});
+
+When('I test max value validation in viewer', async function (this: CustomWorld) {
+  if (!this.viewerPage) {
+    throw new Error('Viewer page is not initialized');
+  }
+
+  // Locate the max value field
+  const maxField = this.viewerPage.locator('input[name="field-max"]');
+  await expect(maxField).toBeVisible({ timeout: 10_000 });
+
+  // Fill with more than maximum (100 max, fill with 150)
+  await maxField.fill('150');
+  await maxField.blur();
+  
+  // Wait a bit for validation
+  await this.viewerPage.waitForTimeout(1000);
+  
+  // Check for max value error
+  const maxError = this.viewerPage.locator('text=/100|maximum.*100|at most 100|less.*100/i').first();
+  await expect(maxError).toBeVisible({ timeout: 5_000 });
+
+  // Fill with valid value
+  await maxField.fill('75');
+  await maxField.blur();
+  
+  // Wait for error to disappear
+  await this.viewerPage.waitForTimeout(500);
+});
+
+When('I fill number field with valid data in viewer', async function (this: CustomWorld) {
+  if (!this.viewerPage) {
+    throw new Error('Viewer page is not initialized');
+  }
+
+  // Fill all fields with valid numbers
+  await this.viewerPage.locator('input[name="field-required"]').fill('42');
+  await this.viewerPage.locator('input[name="field-min"]').fill('20');
+  await this.viewerPage.locator('input[name="field-max"]').fill('50');
+  await this.viewerPage.locator('input[name="field-range"]').fill('25');
+  
+  // Wait for all to be filled
+  await this.viewerPage.waitForTimeout(500);
+});

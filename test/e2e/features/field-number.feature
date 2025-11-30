@@ -1,4 +1,4 @@
-Feature: Number Field
+Feature: Number Field Comprehensive Validations
 
   Scenario: Test Number field with valid data
     Given I sign in with valid credentials
@@ -25,3 +25,34 @@ Feature: Number Field
     And I fix all validation errors for number
     And I verify save button is enabled
     Then I save the number field settings
+
+  Scenario: Create number field via GraphQL and validate all validations in viewer
+    Given I sign in with valid credentials
+    When I create a form via GraphQL with number field validations
+    Then I should be on the new form dashboard
+    
+    # Publish and verify in viewer
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    And I navigate to the form viewer with the short URL
+    Then I should see the form in the viewer
+    
+    # Test validation error summary section
+    When I try to submit with empty fields
+    Then I should see the validation error summary section
+    And the error summary should contain "Please fix the following errors to continue"
+    
+    # Test 1: Required validation
+    When I test required validation for number in viewer
+    
+    # Test 2: Min value validation
+    When I test min value validation in viewer
+    
+    # Test 3: Max value validation
+    When I test max value validation in viewer
+    
+    # Test 4: Valid submission
+    When I fill number field with valid data in viewer
+    And I should be able to submit the form in viewer
+    Then the validation error summary should not be visible
