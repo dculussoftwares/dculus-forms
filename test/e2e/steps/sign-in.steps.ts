@@ -3667,3 +3667,318 @@ When('I fill number field with valid data in viewer', async function (this: Cust
   // Wait for all to be filled
   await this.viewerPage.waitForTimeout(500);
 });
+
+
+// Date Field Viewer Validation Steps
+
+function createFormSchemaWithDateValidations() {
+  // Calculate dates relative to today for consistent testing
+  const today = new Date();
+  const minDate = new Date(today);
+  minDate.setDate(today.getDate() + 1); // Tomorrow
+  const maxDate = new Date(today);
+  maxDate.setDate(today.getDate() + 30); // 30 days from now
+  
+  const formatDate = (date: Date) => {
+    return date.toISOString().split('T')[0]; // YYYY-MM-DD format
+  };
+
+  return {
+    layout: {
+      theme: "light",
+      textColor: "#000000",
+      spacing: "normal",
+      code: "L9",
+      content: "<h1>Date Validations Test</h1>",
+      customBackGroundColor: "#ffffff",
+      backgroundImageKey: "",
+      pageMode: "multipage",
+      isCustomBackgroundColorEnabled: false
+    },
+    pages: [
+      {
+        id: "page-1",
+        title: "Date Field Validations",
+        fields: [
+          {
+            id: "field-required",
+            type: "date_field",
+            label: "Required Date",
+            defaultValue: "",
+            prefix: "",
+            hint: "This field is required",
+            placeholder: "Select a date",
+            validation: {
+              required: true
+            },
+            minDate: undefined,
+            maxDate: undefined
+          },
+          {
+            id: "field-min",
+            type: "date_field",
+            label: "Min Date Field",
+            defaultValue: "",
+            prefix: "",
+            hint: `Date must be on or after ${formatDate(minDate)}`,
+            placeholder: "Select a future date",
+            validation: {
+              required: true
+            },
+            minDate: formatDate(minDate),
+            maxDate: undefined
+          },
+          {
+            id: "field-max",
+            type: "date_field",
+            label: "Max Date Field",
+            defaultValue: "",
+            prefix: "",
+            hint: `Date must be on or before ${formatDate(maxDate)}`,
+            placeholder: "Select a date within 30 days",
+            validation: {
+              required: true
+            },
+            minDate: undefined,
+            maxDate: formatDate(maxDate)
+          },
+          {
+            id: "field-range",
+            type: "date_field",
+            label: "Date Range Field",
+            defaultValue: "",
+            prefix: "",
+            hint: `Date must be between ${formatDate(minDate)} and ${formatDate(maxDate)}`,
+            placeholder: "Select a date in range",
+            validation: {
+              required: true
+            },
+            minDate: formatDate(minDate),
+            maxDate: formatDate(maxDate)
+          }
+        ]
+      }
+    ]
+  };
+}
+
+When('I create a form via GraphQL with date field validations', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Navigate to dashboard first
+  await this.page.goto(`${this.baseUrl}/dashboard`);
+  await this.page.waitForTimeout(2000);
+
+  // Extract organization ID
+  const organizationId = await this.page.evaluate(() => {
+    const orgFromStorage = localStorage.getItem('organizationId');
+    if (orgFromStorage) return orgFromStorage;
+
+    const apolloClient = (window as any).__APOLLO_CLIENT__;
+    if (apolloClient && apolloClient.cache) {
+      try {
+        const cacheData = apolloClient.cache.extract();
+        const orgKeys = Object.keys(cacheData).filter((key: string) => key.startsWith('Organization:'));
+        if (orgKeys.length > 0) {
+          return orgKeys[0].split(':')[1];
+        }
+      } catch (e) {
+        console.error('Failed to extract org from cache:', e);
+      }
+    }
+
+    return null;
+  });
+
+  if (!organizationId) {
+    throw new Error('Organization ID not found');
+  }
+
+  const formSchema = createFormSchemaWithDateValidations();
+  const timestamp = Date.now();
+  const formTitle = `E2E Date Validations ${timestamp}`;
+
+  // Make GraphQL request to create form
+  const response = await this.page.evaluate(async ({ orgId, title, schema }) => {
+    const query = `
+      mutation CreateForm($input: CreateFormInput!) {
+        createForm(input: $input) {
+          id
+          title
+          shortUrl
+        }
+      }
+    `;
+
+    const variables = {
+      input: {
+        title,
+        formSchema: schema,
+        organizationId: orgId
+      }
+    };
+
+    const res = await fetch('http://localhost:4000/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ query, variables })
+    });
+
+    return res.json();
+  }, { orgId: organizationId, title: formTitle, schema: formSchema });
+
+  if (response.errors) {
+    throw new Error(`GraphQL error: ${JSON.stringify(response.errors)}`);
+  }
+
+  const formId = response.data.createForm.id;
+  this.newFormTitle = formTitle;
+
+  // Navigate to the form dashboard
+  await this.page.goto(`${this.baseUrl}/dashboard/form/${formId}`);
+  
+  // Wait for dashboard to load
+  const sidebar = this.page.getByTestId('app-sidebar');
+  await expect(sidebar).toBeVisible({ timeout: 30_000 });
+});
+
+When('I test required validation for date in viewer', async function (this: CustomWorld) {
+  if (!this.viewerPage) {
+    throw new Error('Viewer page is not initialized');
+  }
+
+  // Locate the required field (date fields use input elements)
+  const requiredField = this.viewerPage.locator('input[name="field-required"]');
+  await expect(requiredField).toBeVisible({ timeout: 10_000 });
+
+  // Try to submit without filling
+  const nextButton = this.viewerPage.getByTestId('viewer-next-button');
+  if (await nextButton.isVisible()) {
+    await nextButton.click();
+    await this.viewerPage.waitForTimeout(500);
+  }
+
+  // Check for required error message
+  const requiredError = this.viewerPage.locator('text=/required/i').first();
+  await expect(requiredError).toBeVisible({ timeout: 5_000 });
+
+  // Fill the field to clear error - use a valid future date
+  const futureDate = new Date();
+  futureDate.setDate(futureDate.getDate() + 15);
+  const formattedDate = futureDate.toISOString().split('T')[0];
+  
+  await requiredField.fill(formattedDate);
+  await requiredField.blur();
+  
+  // Wait for error to disappear
+  await this.viewerPage.waitForTimeout(500);
+});
+
+When('I test min date validation in viewer', async function (this: CustomWorld) {
+  if (!this.viewerPage) {
+    throw new Error('Viewer page is not initialized');
+  }
+
+  // Locate the min date field
+  const minField = this.viewerPage.locator('input[name="field-min"]');
+  await expect(minField).toBeVisible({ timeout: 10_000 });
+
+  // Fill with a date before minimum (today, when min is tomorrow)
+  const today = new Date();
+  const formattedToday = today.toISOString().split('T')[0];
+  
+  await minField.fill(formattedToday);
+  await minField.blur();
+  
+  // Wait a bit for validation
+  await this.viewerPage.waitForTimeout(1000);
+  
+  // Check for min date error
+  const minError = this.viewerPage.locator('text=/after|minimum date|earliest|on or after/i').first();
+  await expect(minError).toBeVisible({ timeout: 5_000 });
+
+  // Fill with valid future date
+  const validDate = new Date();
+  validDate.setDate(today.getDate() + 10);
+  const formattedValidDate = validDate.toISOString().split('T')[0];
+  
+  await minField.fill(formattedValidDate);
+  await minField.blur();
+  
+  // Wait for error to disappear
+  await this.viewerPage.waitForTimeout(500);
+});
+
+When('I test max date validation in viewer', async function (this: CustomWorld) {
+  if (!this.viewerPage) {
+    throw new Error('Viewer page is not initialized');
+  }
+
+  // Locate the max date field
+  const maxField = this.viewerPage.locator('input[name="field-max"]');
+  await expect(maxField).toBeVisible({ timeout: 10_000 });
+
+  // Fill with a date after maximum (60 days from now, when max is 30 days)
+  const farFuture = new Date();
+  farFuture.setDate(farFuture.getDate() + 60);
+  const formattedFarFuture = farFuture.toISOString().split('T')[0];
+  
+  await maxField.fill(formattedFarFuture);
+  await maxField.blur();
+  
+  // Wait a bit for validation
+  await this.viewerPage.waitForTimeout(1000);
+  
+  // Check for max date error
+  const maxError = this.viewerPage.locator('text=/before|maximum date|latest|on or before/i').first();
+  await expect(maxError).toBeVisible({ timeout: 5_000 });
+
+  // Fill with valid date within range
+  const validDate = new Date();
+  validDate.setDate(validDate.getDate() + 15);
+  const formattedValidDate = validDate.toISOString().split('T')[0];
+  
+  await maxField.fill(formattedValidDate);
+  await maxField.blur();
+  
+  // Wait for error to disappear
+  await this.viewerPage.waitForTimeout(500);
+});
+
+When('I fill date field with valid data in viewer', async function (this: CustomWorld) {
+  if (!this.viewerPage) {
+    throw new Error('Viewer page is not initialized');
+  }
+
+  // Fill all fields with valid dates
+  const today = new Date();
+  
+  // Required field - any date works
+  const date1 = new Date();
+  date1.setDate(today.getDate() + 5);
+  
+  // Min field - must be tomorrow or later
+  const date2 = new Date();
+  date2.setDate(today.getDate() + 7);
+  
+  // Max field - must be within 30 days
+  const date3 = new Date();
+  date3.setDate(today.getDate() + 10);
+  
+  // Range field - between tomorrow and 30 days
+  const date4 = new Date();
+  date4.setDate(today.getDate() + 12);
+  
+  await this.viewerPage.locator('input[name="field-required"]').fill(date1.toISOString().split('T')[0]);
+  await this.viewerPage.locator('input[name="field-min"]').fill(date2.toISOString().split('T')[0]);
+  await this.viewerPage.locator('input[name="field-max"]').fill(date3.toISOString().split('T')[0]);
+  await this.viewerPage.locator('input[name="field-range"]').fill(date4.toISOString().split('T')[0]);
+  
+  // Wait for all to be filled
+  await this.viewerPage.waitForTimeout(500);
+});
