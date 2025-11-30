@@ -3982,3 +3982,212 @@ When('I fill date field with valid data in viewer', async function (this: Custom
   // Wait for all to be filled
   await this.viewerPage.waitForTimeout(500);
 });
+
+
+// Dropdown (Select) Field Viewer Validation Steps
+
+function createFormSchemaWithDropdownValidations() {
+  return {
+    layout: {
+      theme: "light",
+      textColor: "#000000",
+      spacing: "normal",
+      code: "L9",
+      content: "<h1>Dropdown Validations Test</h1>",
+      customBackGroundColor: "#ffffff",
+      backgroundImageKey: "",
+      pageMode: "multipage",
+      isCustomBackgroundColorEnabled: false
+    },
+    pages: [
+      {
+        id: "page-1",
+        title: "Dropdown Field Validations",
+        fields: [
+          {
+            id: "field-required",
+            type: "select_field",
+            label: "Required Dropdown",
+            defaultValue: "",
+            prefix: "",
+            hint: "This field is required",
+            placeholder: "",
+            validation: {
+              required: true
+            },
+            options: ["Option 1", "Option 2", "Option 3"]
+          },
+          {
+            id: "field-selection",
+            type: "select_field",
+            label: "Selection Test",
+            defaultValue: "",
+            prefix: "",
+            hint: "Test option selection",
+            placeholder: "",
+            validation: {
+              required: true
+            },
+            options: ["Choice A", "Choice B", "Choice C", "Choice D"]
+          }
+        ]
+      }
+    ]
+  };
+}
+
+When('I create a form via GraphQL with dropdown field validations', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Navigate to dashboard first
+  await this.page.goto(`${this.baseUrl}/dashboard`);
+  await this.page.waitForTimeout(2000);
+
+  // Extract organization ID
+  const organizationId = await this.page.evaluate(() => {
+    const orgFromStorage = localStorage.getItem('organizationId');
+    if (orgFromStorage) return orgFromStorage;
+
+    const apolloClient = (window as any).__APOLLO_CLIENT__;
+    if (apolloClient && apolloClient.cache) {
+      try {
+        const cacheData = apolloClient.cache.extract();
+        const orgKeys = Object.keys(cacheData).filter((key: string) => key.startsWith('Organization:'));
+        if (orgKeys.length > 0) {
+          return orgKeys[0].split(':')[1];
+        }
+      } catch (e) {
+        console.error('Failed to extract org from cache:', e);
+      }
+    }
+
+    return null;
+  });
+
+  if (!organizationId) {
+    throw new Error('Organization ID not found');
+  }
+
+  const formSchema = createFormSchemaWithDropdownValidations();
+  const timestamp = Date.now();
+  const formTitle = `E2E Dropdown Validations ${timestamp}`;
+
+  // Make GraphQL request to create form
+  const response = await this.page.evaluate(async ({ orgId, title, schema }) => {
+    const query = `
+      mutation CreateForm($input: CreateFormInput!) {
+        createForm(input: $input) {
+          id
+          title
+          shortUrl
+        }
+      }
+    `;
+
+    const variables = {
+      input: {
+        title,
+        formSchema: schema,
+        organizationId: orgId
+      }
+    };
+
+    const res = await fetch('http://localhost:4000/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ query, variables })
+    });
+
+    return res.json();
+  }, { orgId: organizationId, title: formTitle, schema: formSchema });
+
+  if (response.errors) {
+    throw new Error(`GraphQL error: ${JSON.stringify(response.errors)}`);
+  }
+
+  const formId = response.data.createForm.id;
+  this.newFormTitle = formTitle;
+
+  // Navigate to the form dashboard
+  await this.page.goto(`${this.baseUrl}/dashboard/form/${formId}`);
+  
+  // Wait for dashboard to load
+  const sidebar = this.page.getByTestId('app-sidebar');
+  await expect(sidebar).toBeVisible({ timeout: 30_000 });
+});
+
+When('I test required validation for dropdown in viewer', async function (this: CustomWorld) {
+  if (!this.viewerPage) {
+    throw new Error('Viewer page is not initialized');
+  }
+
+  // Locate the required dropdown field (select element)
+  const requiredField = this.viewerPage.locator('select[name="field-required"]');
+  await expect(requiredField).toBeVisible({ timeout: 10_000 });
+
+  // Try to submit without selecting
+  const nextButton = this.viewerPage.getByTestId('viewer-next-button');
+  if (await nextButton.isVisible()) {
+    await nextButton.click();
+    await this.viewerPage.waitForTimeout(500);
+  }
+
+  // Check for required error message
+  const requiredError = this.viewerPage.locator('text=/required/i').first();
+  await expect(requiredError).toBeVisible({ timeout: 5_000 });
+
+  // Select an option to clear error
+  await requiredField.selectOption('Option 1');
+  await requiredField.blur();
+  
+  // Wait for error to disappear
+  await this.viewerPage.waitForTimeout(500);
+});
+
+When('I test dropdown option selection in viewer', async function (this: CustomWorld) {
+  if (!this.viewerPage) {
+    throw new Error('Viewer page is not initialized');
+  }
+
+  // Locate the selection test field
+  const selectionField = this.viewerPage.locator('select[name="field-selection"]');
+  await expect(selectionField).toBeVisible({ timeout: 10_000 });
+
+  // Select first option
+  await selectionField.selectOption('Choice A');
+  await this.viewerPage.waitForTimeout(300);
+  
+  // Verify selection
+  const selectedValue1 = await selectionField.inputValue();
+  if (selectedValue1 !== 'Choice A') {
+    throw new Error(`Expected 'Choice A' to be selected, but got '${selectedValue1}'`);
+  }
+
+  // Change to different option
+  await selectionField.selectOption('Choice C');
+  await this.viewerPage.waitForTimeout(300);
+  
+  // Verify new selection
+  const selectedValue2 = await selectionField.inputValue();
+  if (selectedValue2 !== 'Choice C') {
+    throw new Error(`Expected 'Choice C' to be selected, but got '${selectedValue2}'`);
+  }
+});
+
+When('I fill dropdown field with valid data in viewer', async function (this: CustomWorld) {
+  if (!this.viewerPage) {
+    throw new Error('Viewer page is not initialized');
+  }
+
+  // Fill all dropdown fields with valid selections
+  await this.viewerPage.locator('select[name="field-required"]').selectOption('Option 2');
+  await this.viewerPage.locator('select[name="field-selection"]').selectOption('Choice B');
+  
+  // Wait for all to be filled
+  await this.viewerPage.waitForTimeout(500);
+});
