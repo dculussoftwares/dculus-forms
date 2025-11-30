@@ -1218,17 +1218,11 @@ Then('I drag a number field onto the page', async function (this: CustomWorld) {
 
   const fieldTile = this.page.getByTestId('field-type-number');
   const droppablePage = this.page.getByTestId('droppable-page').first();
-  
-  // Get initial field count
-  const initialCount = await droppablePage.locator('[data-testid^="field-content-"]').count();
 
   await fieldTile.dragTo(droppablePage);
 
-  // Wait for count to increase
-  await expect(async () => {
-    const newCount = await droppablePage.locator('[data-testid^="field-content-"]').count();
-    expect(newCount).toBeGreaterThan(initialCount);
-  }).toPass({ timeout: 15000 });
+  const fieldContent = droppablePage.getByTestId('field-content-1');
+  await expect(fieldContent).toBeVisible({ timeout: 15_000 });
 });
 
 When('I open the number field settings', async function (this: CustomWorld) {
@@ -4186,8 +4180,173 @@ When('I fill dropdown field with valid data in viewer', async function (this: Cu
 
   // Fill all dropdown fields with valid selections
   await this.viewerPage.locator('select[name="field-required"]').selectOption('Option 2');
-  await this.viewerPage.locator('select[name="field-selection"]').selectOption('Choice B');
+   await this.viewerPage.locator('select[name="field-selection"]').selectOption('Choice B');
   
   // Wait for all to be filled
+  await this.viewerPage.waitForTimeout(500);
+});
+
+
+// Checkbox Field Viewer Validation Steps
+
+function createFormSchemaWithCheckboxValidations() {
+  return {
+    layout: {
+      theme: "light",
+      textColor: "#000000",
+      spacing: "normal",
+      code: "L9",
+      content: "<h1>Checkbox Validations Test</h1>",
+      customBackGroundColor: "#ffffff",
+      backgroundImageKey: "",
+      pageMode: "multipage",
+      isCustomBackgroundColorEnabled: false
+    },
+    pages: [
+      {
+        id: "page-1",
+        title: "Checkbox Field Validations",
+        fields: [
+          {
+            id: "field-required",
+            type: "checkbox_field",
+            label: "Required Checkbox",
+            defaultValues: [],
+            prefix: "",
+            hint: "At least one option must be selected",
+            placeholder: "",
+            validation: {
+              required: true,
+              type: "checkbox_field_validation"
+            },
+            options: ["Option 1", "Option 2", "Option 3"]
+          },
+          {
+            id: "field-multi",
+            type: "checkbox_field",
+            label: "Multiple Selection",
+            defaultValues: [],
+            prefix: "",
+            hint: "Select multiple options",
+            placeholder: "",
+            validation: {
+              required: true,
+              type: "checkbox_field_validation"
+            },
+            options: ["Choice A", "Choice B", "Choice C", "Choice D"]
+          }
+        ]
+      }
+    ]
+  };
+}
+
+When('I create a form via GraphQL with checkbox field validations', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Navigate to dashboard first
+  await this.page.goto(`${this.baseUrl}/dashboard`);
+  await this.page.waitForTimeout(2000);
+
+  // Extract organization ID
+  const organizationId = await this.page.evaluate(() => {
+    const orgFromStorage = localStorage.getItem('organizationId');
+    if (orgFromStorage) return orgFromStorage;
+
+    const apolloClient = (window as any).__APOLLO_CLIENT__;
+    if (apolloClient && apolloClient.cache) {
+      try {
+        const cacheData = apolloClient.cache.extract();
+        const orgKeys = Object.keys(cacheData).filter((key: string) => key.startsWith('Organization:'));
+        if (orgKeys.length > 0) {
+          return orgKeys[0].split(':')[1];
+        }
+      } catch (e) {
+        console.error('Failed to extract org from cache:', e);
+      }
+    }
+
+    return null;
+  });
+
+  if (!organizationId) {
+    throw new Error('Organization ID not found');
+  }
+
+  const formSchema = createFormSchemaWithCheckboxValidations();
+  const timestamp = Date.now();
+  const formTitle = `E2E Checkbox Validations ${timestamp}`;
+
+  // Make GraphQL request to create form
+  const response = await this.page.evaluate(async ({ orgId, title, schema }) => {
+    const query = `
+      mutation CreateForm($input: CreateFormInput!) {
+        createForm(input: $input) {
+          id
+          title
+          shortUrl
+        }
+      }
+    `;
+
+    const variables = {
+      input: {
+        title,
+        formSchema: schema,
+        organizationId: orgId
+      }
+    };
+
+    const res = await fetch('http://localhost:4000/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ query, variables })
+    });
+
+    return res.json();
+  }, { orgId: organizationId, title: formTitle, schema: formSchema });
+
+  if (response.errors) {
+    throw new Error(`GraphQL error: ${JSON.stringify(response.errors)}`);
+  }
+
+  const formId = response.data.createForm.id;
+  this.newFormTitle = formTitle;
+
+  // Navigate to the form dashboard
+  await this.page.goto(`${this.baseUrl}/dashboard/form/${formId}`);
+  
+  // Wait for dashboard to load
+  const sidebar = this.page.getByTestId('app-sidebar');
+  await expect(sidebar).toBeVisible({ timeout: 30_000 });
+});
+
+When('I test checkbox required and select options in viewer', async function (this: CustomWorld) {
+  if (!this.viewerPage) {
+    throw new Error('Viewer page is not initialized');
+  }
+
+  // Checkboxes use shadcn Checkbox component with id="{field.id}-{index}"
+  // Click the label for the first checkbox (field-required-0)
+  // Using label click is more reliable than trying to click the checkbox button directly
+  const firstCheckboxLabel = this.viewerPage.locator('label[for="field-required-0"]');
+  await expect(firstCheckboxLabel).toBeVisible({ timeout: 10_000 });
+  await firstCheckboxLabel.click();
+  await this.viewerPage.waitForTimeout(500);
+
+  // Click second checkbox for multi-selection field
+  const secondFieldLabel = this.viewerPage.locator('label[for="field-multi-0"]');
+  await expect(secondFieldLabel).toBeVisible({ timeout: 10_000 });
+  await secondFieldLabel.click();
+  await this.viewerPage.waitForTimeout(300);
+  
+  // Click another option for good measure
+  const thirdFieldLabel = this.viewerPage.locator('label[for="field-multi-1"]');
+  await thirdFieldLabel.click();
   await this.viewerPage.waitForTimeout(500);
 });
