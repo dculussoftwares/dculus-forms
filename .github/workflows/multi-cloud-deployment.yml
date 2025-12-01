@@ -1682,7 +1682,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ needs.terraform-infrastructure-deploy.outputs.r2_access_key_id }}
           AWS_SECRET_ACCESS_KEY: ${{ needs.terraform-infrastructure-deploy.outputs.r2_secret_access_key }}
           AWS_DEFAULT_REGION: auto
-          AWS_ENDPOINT_URL: ${{ needs.terraform-infrastructure-deploy.outputs.r2_endpoint_url }}
+          AWS_ENDPOINT_URL: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
           FORM_APP_BUCKET: ${{ needs.terraform-infrastructure-deploy.outputs.form_app_bucket }}
           FORM_VIEWER_BUCKET: ${{ needs.terraform-infrastructure-deploy.outputs.form_viewer_bucket }}
           ADMIN_APP_BUCKET: ${{ needs.terraform-infrastructure-deploy.outputs.admin_app_bucket }}
