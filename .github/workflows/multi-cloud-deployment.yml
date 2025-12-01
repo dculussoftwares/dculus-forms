@@ -625,6 +625,13 @@ jobs:
       health_endpoint: ${{ steps.azure-outputs.outputs.health_endpoint }}
       container_app_name: ${{ steps.azure-outputs.outputs.container_app_name }}
       backend_fqdn: ${{ steps.azure-outputs.outputs.backend_fqdn }}
+      # R2 Hosting outputs
+      form_app_bucket: ${{ steps.cloudflare-outputs.outputs.form_app_bucket }}
+      form_viewer_bucket: ${{ steps.cloudflare-outputs.outputs.form_viewer_bucket }}
+      admin_app_bucket: ${{ steps.cloudflare-outputs.outputs.admin_app_bucket }}
+      r2_access_key_id: ${{ steps.cloudflare-outputs.outputs.r2_access_key_id }}
+      r2_secret_access_key: ${{ steps.cloudflare-outputs.outputs.r2_secret_access_key }}
+      r2_endpoint: ${{ steps.cloudflare-outputs.outputs.r2_endpoint }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -699,6 +706,9 @@ jobs:
           echo "R2_ACCESS_KEY_ID=$(terraform output -raw r2_access_key_id)" >> $GITHUB_ENV
           echo "R2_SECRET_ACCESS_KEY=$(terraform output -raw r2_secret_access_key)" >> $GITHUB_ENV
           echo "R2_ENDPOINT=https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com" >> $GITHUB_ENV
+          echo "FORM_APP_BUCKET=$(terraform output -raw form_app_bucket_name)" >> $GITHUB_ENV
+          echo "FORM_VIEWER_BUCKET=$(terraform output -raw form_viewer_bucket_name)" >> $GITHUB_ENV
+          echo "ADMIN_APP_BUCKET=$(terraform output -raw admin_app_bucket_name)" >> $GITHUB_ENV
 
           echo "✅ Cloudflare R2 deployed successfully"
 
@@ -709,6 +719,12 @@ jobs:
           echo "private_bucket=${{ env.R2_PRIVATE_BUCKET }}" >> $GITHUB_OUTPUT
           echo "public_bucket=${{ env.R2_PUBLIC_BUCKET }}" >> $GITHUB_OUTPUT
           echo "public_cdn_url=${{ env.R2_PUBLIC_CDN_URL }}" >> $GITHUB_OUTPUT
+          echo "form_app_bucket=${{ env.FORM_APP_BUCKET }}" >> $GITHUB_OUTPUT
+          echo "form_viewer_bucket=${{ env.FORM_VIEWER_BUCKET }}" >> $GITHUB_OUTPUT
+          echo "admin_app_bucket=${{ env.ADMIN_APP_BUCKET }}" >> $GITHUB_OUTPUT
+          echo "r2_access_key_id=${{ env.R2_ACCESS_KEY_ID }}" >> $GITHUB_OUTPUT
+          echo "r2_secret_access_key=${{ env.R2_SECRET_ACCESS_KEY }}" >> $GITHUB_OUTPUT
+          echo "r2_endpoint=${{ env.R2_ENDPOINT }}" >> $GITHUB_OUTPUT
 
       # ==================== AZURE CONTAINER APPS DEPLOYMENT ====================
       - name: Retrieve PostgreSQL connection string from Terraform state
@@ -1260,6 +1276,7 @@ jobs:
       needs.determine-environment.outputs.should_deploy == 'true' &&
       needs.determine-environment.outputs.deploy_cloudflare == 'true' &&
       needs.terraform-cloudflare-service-domain.result == 'success' &&
+
       needs.terraform-cloudflare-pages-admin.result == 'success'
     environment: ${{ needs.determine-environment.outputs.environment }}
     steps:
@@ -1617,6 +1634,74 @@ jobs:
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
+  deploy-r2-hosting:
+    name: 6.4. Deploy to R2 Hosting
+    runs-on: ubuntu-latest
+    needs: [determine-environment, terraform-infrastructure-deploy]
+    if: |
+      always() && !cancelled() && !failure() &&
+      needs.determine-environment.outputs.should_deploy == 'true' &&
+      needs.determine-environment.outputs.deploy_cloudflare == 'true' &&
+      needs.terraform-infrastructure-deploy.result == 'success'
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: dculus-forms
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        working-directory: dculus-forms
+        run: |
+          pnpm install --frozen-lockfile
+
+      - name: Build shared packages
+        working-directory: dculus-forms
+        run: |
+          pnpm --filter @dculus/types build
+          pnpm --filter @dculus/utils build
+          pnpm --filter @dculus/ui build
+
+      - name: Build Apps
+        working-directory: dculus-forms
+        env:
+          VITE_API_URL: ${{ needs.terraform-infrastructure-deploy.outputs.backend_url }}
+          VITE_GRAPHQL_URL: ${{ needs.terraform-infrastructure-deploy.outputs.graphql_endpoint }}
+          VITE_CDN_ENDPOINT: ${{ needs.terraform-infrastructure-deploy.outputs.public_cdn_url }}
+        run: |
+          pnpm --filter form-app build
+          pnpm --filter form-viewer build
+          pnpm --filter admin-app build
+
+      - name: Sync to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ needs.terraform-infrastructure-deploy.outputs.r2_access_key_id }}
+          AWS_SECRET_ACCESS_KEY: ${{ needs.terraform-infrastructure-deploy.outputs.r2_secret_access_key }}
+          AWS_DEFAULT_REGION: auto
+          AWS_ENDPOINT_URL: ${{ needs.terraform-infrastructure-deploy.outputs.r2_endpoint }}
+          FORM_APP_BUCKET: ${{ needs.terraform-infrastructure-deploy.outputs.form_app_bucket }}
+          FORM_VIEWER_BUCKET: ${{ needs.terraform-infrastructure-deploy.outputs.form_viewer_bucket }}
+          ADMIN_APP_BUCKET: ${{ needs.terraform-infrastructure-deploy.outputs.admin_app_bucket }}
+        run: |
+          echo "Syncing form-app to s3://${FORM_APP_BUCKET}"
+          aws s3 sync dculus-forms/apps/form-app/dist s3://${FORM_APP_BUCKET} --endpoint-url ${{ env.AWS_ENDPOINT_URL }} --delete
+
+          echo "Syncing form-viewer to s3://${FORM_VIEWER_BUCKET}"
+          aws s3 sync dculus-forms/apps/form-viewer/dist s3://${FORM_VIEWER_BUCKET} --endpoint-url ${{ env.AWS_ENDPOINT_URL }} --delete
+
+          echo "Syncing admin-app to s3://${ADMIN_APP_BUCKET}"
+          aws s3 sync dculus-forms/apps/admin-app/dist s3://${ADMIN_APP_BUCKET} --endpoint-url ${{ env.AWS_ENDPOINT_URL }} --delete
+
   run-form-app-e2e:
     name: 7.2. Run form-app E2E (Cloudflare Pages)
     runs-on: ubuntu-latest
@@ -1833,6 +1918,7 @@ jobs:
       deploy-cloudflare-pages-form-app,
       deploy-cloudflare-pages-admin-app,
       deploy-cloudflare-pages-viewer-app,
+      deploy-r2-hosting,
       run-form-app-e2e,
       configure-azure-custom-domain,
       health-checks
@@ -1862,6 +1948,7 @@ jobs:
           echo "| form-app Deployment (Pages) | ${{ needs.deploy-cloudflare-pages-form-app.result == 'success' && '✅' || needs.deploy-cloudflare-pages-form-app.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| admin-app Deployment (Pages) | ${{ needs.deploy-cloudflare-pages-admin-app.result == 'success' && '✅' || needs.deploy-cloudflare-pages-admin-app.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| viewer-app Deployment (Pages) | ${{ needs.deploy-cloudflare-pages-viewer-app.result == 'success' && '✅' || needs.deploy-cloudflare-pages-viewer-app.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| R2 Hosting Deployment | ${{ needs.deploy-r2-hosting.result == 'success' && '✅' || needs.deploy-r2-hosting.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| form-app E2E (Cloudflare Pages) | ${{ needs.run-form-app-e2e.result == 'success' && '✅' || needs.run-form-app-e2e.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Custom Domain & Certificate | ${{ needs.configure-azure-custom-domain.result == 'success' && '✅' || needs.configure-azure-custom-domain.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Health Checks | ${{ needs.health-checks.result == 'success' && '✅' || needs.health-checks.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
@@ -1938,6 +2025,17 @@ jobs:
             echo "- **Pages URL**: [${{ needs.terraform-cloudflare-pages-viewer.outputs.pages_url }}](${{ needs.terraform-cloudflare-pages-viewer.outputs.pages_url }})" >> $GITHUB_STEP_SUMMARY
             echo "- **Backend**: \`https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}\`" >> $GITHUB_STEP_SUMMARY
             echo "- **Status**: ✅ Deployed and health check passed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # R2 Hosting Deployment Summary
+          if [ "${{ needs.deploy-r2-hosting.result }}" = "success" ]; then
+            echo "## 🚀 R2 Hosting Deployment" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **form-app**: \`s3://${{ needs.terraform-infrastructure-deploy.outputs.form_app_bucket }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **form-viewer**: \`s3://${{ needs.terraform-infrastructure-deploy.outputs.form_viewer_bucket }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **admin-app**: \`s3://${{ needs.terraform-infrastructure-deploy.outputs.admin_app_bucket }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Status**: ✅ Synced successfully" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
 
