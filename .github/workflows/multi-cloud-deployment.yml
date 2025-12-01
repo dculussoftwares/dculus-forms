@@ -663,7 +663,7 @@ jobs:
 
       # ==================== CLOUDFLARE R2 DEPLOYMENT ====================
       - name: Deploy Cloudflare R2
-        id: cloudflare-deploy
+        id: cloudflare-outputs
         if: needs.determine-environment.outputs.deploy_cloudflare == 'true'
         working-directory: dculus-forms/infrastructure/multi-cloud/terraform/cloudflare/environments/${{ needs.determine-environment.outputs.environment }}
         env:
@@ -699,34 +699,26 @@ jobs:
             -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
             -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
 
-          # Capture outputs to environment variables (stays within job)
-          echo "R2_PRIVATE_BUCKET=$(terraform output -raw private_bucket_name)" >> $GITHUB_ENV
-          echo "R2_PUBLIC_BUCKET=$(terraform output -raw public_bucket_name)" >> $GITHUB_ENV
-          echo "R2_PUBLIC_CDN_URL=$(terraform output -raw public_cdn_url)" >> $GITHUB_ENV
-          echo "R2_ACCESS_KEY_ID=$(terraform output -raw r2_access_key_id)" >> $GITHUB_ENV
+          # Capture outputs directly to job outputs
+          echo "private_bucket=$(terraform output -raw private_bucket_name)" >> $GITHUB_OUTPUT
+          echo "public_bucket=$(terraform output -raw public_bucket_name)" >> $GITHUB_OUTPUT
+          echo "public_cdn_url=$(terraform output -raw public_cdn_url)" >> $GITHUB_OUTPUT
+          
+          echo "r2_access_key_id=$(terraform output -raw r2_access_key_id)" >> $GITHUB_OUTPUT
+          
+          # Handle sensitive secret key
           R2_SECRET=$(terraform output -json r2_secret_access_key | jq -r '.')
           echo "::add-mask::$R2_SECRET"
-          echo "R2_SECRET_ACCESS_KEY=$R2_SECRET" >> $GITHUB_ENV
-          echo "R2_ENDPOINT_URL=https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com" >> $GITHUB_ENV
-          echo "FORM_APP_BUCKET=$(terraform output -raw form_app_bucket_name)" >> $GITHUB_ENV
-          echo "FORM_VIEWER_BUCKET=$(terraform output -raw form_viewer_bucket_name)" >> $GITHUB_ENV
-          echo "ADMIN_APP_BUCKET=$(terraform output -raw admin_app_bucket_name)" >> $GITHUB_ENV
+          echo "r2_secret_access_key=$R2_SECRET" >> $GITHUB_OUTPUT
+          
+          # Construct Endpoint URL
+          echo "r2_endpoint_url=https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com" >> $GITHUB_OUTPUT
+          
+          echo "form_app_bucket=$(terraform output -raw form_app_bucket_name)" >> $GITHUB_OUTPUT
+          echo "form_viewer_bucket=$(terraform output -raw form_viewer_bucket_name)" >> $GITHUB_OUTPUT
+          echo "admin_app_bucket=$(terraform output -raw admin_app_bucket_name)" >> $GITHUB_OUTPUT
 
           echo "✅ Cloudflare R2 deployed successfully"
-
-      - name: Set Cloudflare outputs
-        id: cloudflare-outputs
-        if: needs.determine-environment.outputs.deploy_cloudflare == 'true'
-        run: |
-          echo "private_bucket=${{ env.R2_PRIVATE_BUCKET }}" >> $GITHUB_OUTPUT
-          echo "public_bucket=${{ env.R2_PUBLIC_BUCKET }}" >> $GITHUB_OUTPUT
-          echo "public_cdn_url=${{ env.R2_PUBLIC_CDN_URL }}" >> $GITHUB_OUTPUT
-          echo "form_app_bucket=${{ env.FORM_APP_BUCKET }}" >> $GITHUB_OUTPUT
-          echo "form_viewer_bucket=${{ env.FORM_VIEWER_BUCKET }}" >> $GITHUB_OUTPUT
-          echo "admin_app_bucket=${{ env.ADMIN_APP_BUCKET }}" >> $GITHUB_OUTPUT
-          echo "r2_access_key_id=${{ env.R2_ACCESS_KEY_ID }}" >> $GITHUB_OUTPUT
-          echo "r2_secret_access_key=${{ env.R2_SECRET_ACCESS_KEY }}" >> $GITHUB_OUTPUT
-          echo "r2_endpoint_url=${{ env.R2_ENDPOINT_URL }}" >> $GITHUB_OUTPUT
 
       # ==================== AZURE CONTAINER APPS DEPLOYMENT ====================
       - name: Retrieve PostgreSQL connection string from Terraform state
