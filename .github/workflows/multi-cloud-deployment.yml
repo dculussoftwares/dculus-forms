@@ -1696,13 +1696,13 @@ jobs:
           ADMIN_APP_BUCKET: ${{ needs.terraform-infrastructure-deploy.outputs.admin_app_bucket }}
         run: |
           echo "Syncing form-app to s3://${FORM_APP_BUCKET}"
-          aws s3 sync dculus-forms/apps/form-app/dist s3://${FORM_APP_BUCKET} --endpoint-url ${{ env.AWS_ENDPOINT_URL }} --delete
+          aws s3 sync dculus-forms/apps/form-app/dist s3://${FORM_APP_BUCKET} --endpoint-url $AWS_ENDPOINT_URL --delete
 
           echo "Syncing form-viewer to s3://${FORM_VIEWER_BUCKET}"
-          aws s3 sync dculus-forms/apps/form-viewer/dist s3://${FORM_VIEWER_BUCKET} --endpoint-url ${{ env.AWS_ENDPOINT_URL }} --delete
+          aws s3 sync dculus-forms/apps/form-viewer/dist s3://${FORM_VIEWER_BUCKET} --endpoint-url $AWS_ENDPOINT_URL --delete
 
           echo "Syncing admin-app to s3://${ADMIN_APP_BUCKET}"
-          aws s3 sync dculus-forms/apps/admin-app/dist s3://${ADMIN_APP_BUCKET} --endpoint-url ${{ env.AWS_ENDPOINT_URL }} --delete
+          aws s3 sync dculus-forms/apps/admin-app/dist s3://${ADMIN_APP_BUCKET} --endpoint-url $AWS_ENDPOINT_URL --delete
 
   run-form-app-e2e:
     name: 7.2. Run form-app E2E (Cloudflare Pages)
