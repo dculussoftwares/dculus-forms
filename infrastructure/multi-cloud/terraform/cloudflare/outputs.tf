@@ -74,7 +74,8 @@ output "r2_access_key_id" {
 
 output "r2_secret_access_key" {
   description = "R2 Secret Access Key (SHA256 of Token Value) - Used as AWS_SECRET_ACCESS_KEY"
-  value       = nonsensitive(sha256(cloudflare_api_token.r2_access.value))
+  value     = cloudflare_api_token.r2_access.value
+  sensitive = true
 }
 
 output "next_steps" {

@@ -704,7 +704,9 @@ jobs:
           echo "R2_PUBLIC_BUCKET=$(terraform output -raw public_bucket_name)" >> $GITHUB_ENV
           echo "R2_PUBLIC_CDN_URL=$(terraform output -raw public_cdn_url)" >> $GITHUB_ENV
           echo "R2_ACCESS_KEY_ID=$(terraform output -raw r2_access_key_id)" >> $GITHUB_ENV
-          echo "R2_SECRET_ACCESS_KEY=$(terraform output -raw r2_secret_access_key)" >> $GITHUB_ENV
+          R2_SECRET=$(terraform output -json r2_secret_access_key | jq -r '.')
+          echo "::add-mask::$R2_SECRET"
+          echo "R2_SECRET_ACCESS_KEY=$R2_SECRET" >> $GITHUB_ENV
           echo "R2_ENDPOINT=https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com" >> $GITHUB_ENV
           echo "FORM_APP_BUCKET=$(terraform output -raw form_app_bucket_name)" >> $GITHUB_ENV
           echo "FORM_VIEWER_BUCKET=$(terraform output -raw form_viewer_bucket_name)" >> $GITHUB_ENV
