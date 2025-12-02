@@ -74,3 +74,10 @@ export const emailConfig: EmailConfig = {
   password: optionalEnv('EMAIL_PASSWORD', 'some-password')!,
   from: optionalEnv('EMAIL_FROM', 'no-reply@dculus.com')!,
 };
+
+// E2E R2 origins for testing environments
+export const E2E_R2_ORIGINS = [
+  'https://pub-27fc7242bcb845619c865bebd8d62f05.r2.dev', // E2E Form Admin App
+  'https://pub-26e8f5ee93614e90b5acfd3b376988bd.r2.dev', // E2E Form App
+  'https://pub-5143728b714240d195f989f5cfd70dd2.r2.dev', // E2E Form Viewer
+] as const;

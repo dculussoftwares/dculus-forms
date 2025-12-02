@@ -23,7 +23,7 @@ import { edgeGeolocationMiddleware } from './middleware/edge-geolocation.js';
 import { createBetterAuthContext } from './middleware/better-auth-middleware.js';
 import { prisma } from './lib/prisma.js';
 import { createHocuspocusServer } from './services/hocuspocus.js';
-import { appConfig } from './lib/env.js';
+import { appConfig, E2E_R2_ORIGINS } from './lib/env.js';
 import { initializePluginSystem } from './plugins/index.js';
 import { initializeSubscriptionSystem } from './subscriptions/index.js';
 import { logger } from './lib/logger.js';
@@ -114,7 +114,8 @@ app.use(
 const corsOrigins = process.env.CORS_ORIGINS?.split(',').map(origin => origin.trim()) || [
   'http://localhost:3000',
   'http://localhost:3002', // Admin app
-  'http://localhost:5173'
+  'http://localhost:5173',
+  ...E2E_R2_ORIGINS,
 ];
 
 // Add Apollo Studio domains for GraphQL playground
