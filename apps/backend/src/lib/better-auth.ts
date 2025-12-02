@@ -2,7 +2,7 @@ import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { admin, bearer, emailOTP, organization } from 'better-auth/plugins';
 import { prisma } from './prisma.js';
-import { authConfig, E2E_R2_ORIGINS } from './env.js';
+import { authConfig } from './env.js';
 import { logger } from '../lib/logger.js';
 import {
   sendInvitationEmail,
@@ -21,7 +21,6 @@ const getTrustedOrigins = (): string[] => {
     'http://localhost:3002', // Admin app
     'http://localhost:4000', // Backend (for GraphQL playground)
     'http://localhost:5173', // Form viewer (Vite dev server)
-    ...E2E_R2_ORIGINS,
   ];
 
   // Combine environment-specific origins with defaults (removing duplicates)

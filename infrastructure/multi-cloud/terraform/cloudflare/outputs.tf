@@ -18,21 +18,6 @@ output "public_bucket_id" {
   value       = cloudflare_r2_bucket.public.id
 }
 
-output "form_app_bucket_name" {
-  description = "Name of the form-app hosting R2 bucket"
-  value       = cloudflare_r2_bucket.form_app_hosting.name
-}
-
-output "form_viewer_bucket_name" {
-  description = "Name of the form-viewer hosting R2 bucket"
-  value       = cloudflare_r2_bucket.form_viewer_hosting.name
-}
-
-output "admin_app_bucket_name" {
-  description = "Name of the admin-app hosting R2 bucket"
-  value       = cloudflare_r2_bucket.admin_app_hosting.name
-}
-
 output "r2_endpoint_url" {
   description = "R2 S3-compatible API endpoint URL"
   value       = "https://${var.cloudflare_account_id}.r2.cloudflarestorage.com"
@@ -74,8 +59,7 @@ output "r2_access_key_id" {
 
 output "r2_secret_access_key" {
   description = "R2 Secret Access Key (SHA256 of Token Value) - Used as AWS_SECRET_ACCESS_KEY"
-  value     = cloudflare_api_token.r2_access.value
-  sensitive = true
+  value       = nonsensitive(sha256(cloudflare_api_token.r2_access.value))
 }
 
 output "next_steps" {
