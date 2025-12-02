@@ -100,6 +100,11 @@ output "next_steps" {
     PUBLIC CDN URL:
     → https://public-cdn-${var.environment}.dculus.com
 
+    APP HOSTING BUCKETS:
+    ✓ Form App Bucket: ${cloudflare_r2_bucket.form_app_hosting.name}
+    ✓ Form Viewer Bucket: ${cloudflare_r2_bucket.form_viewer_hosting.name}
+    ✓ Admin App Bucket: ${cloudflare_r2_bucket.admin_app_hosting.name}
+
     NEXT STEPS:
 
     1. R2 API Tokens (Generated Automatically):
@@ -115,7 +120,23 @@ output "next_steps" {
        PUBLIC_S3_ACCESS_KEY=<your-r2-access-key-id>
        PUBLIC_S3_SECRET_KEY=<your-r2-secret-access-key>
 
-    3. Test CDN Access (wait 1-2 minutes for DNS propagation):
+    3. Enable Public Access for App Hosting Buckets:
+       Go to Cloudflare Dashboard > R2 and enable public access:
+       
+       For each bucket (${cloudflare_r2_bucket.form_app_hosting.name}, 
+                        ${cloudflare_r2_bucket.form_viewer_hosting.name}, 
+                        ${cloudflare_r2_bucket.admin_app_hosting.name}):
+       
+       a. Navigate to Settings > Public Access
+       b. Click "Allow Access" to enable public r2.dev URL
+       c. Copy the generated URL (format: https://pub-<hash>.r2.dev)
+       d. Add to GitHub Actions secrets:
+          - FORM_APP_PUBLIC_URL
+          - FORM_VIEWER_PUBLIC_URL
+          - ADMIN_APP_PUBLIC_URL
+       e. Add to backend CORS allowed origins
+
+    4. Test CDN Access (wait 1-2 minutes for DNS propagation):
        # Upload test file
        aws s3 cp test.jpg s3://${cloudflare_r2_bucket.public.name}/ \
          --endpoint-url https://${var.cloudflare_account_id}.r2.cloudflarestorage.com
@@ -129,3 +150,42 @@ output "next_steps" {
     ========================================
   EOT
 }
+
+# App Hosting Bucket Public URL Outputs
+# Note: These URLs will be generated after enabling public access via dashboard
+output "form_app_public_url_instructions" {
+  description = "Instructions to enable public URL for form-app bucket"
+  value       = "Enable public access in Cloudflare Dashboard > R2 > ${cloudflare_r2_bucket.form_app_hosting.name} > Settings > Public Access > Allow Access"
+}
+
+output "form_viewer_public_url_instructions" {
+  description = "Instructions to enable public URL for form-viewer bucket"
+  value       = "Enable public access in Cloudflare Dashboard > R2 > ${cloudflare_r2_bucket.form_viewer_hosting.name} > Settings > Public Access > Allow Access"
+}
+
+output "admin_app_public_url_instructions" {
+  description = "Instructions to enable public URL for admin-app bucket"
+  value       = "Enable public access in Cloudflare Dashboard > R2 > ${cloudflare_r2_bucket.admin_app_hosting.name} > Settings > Public Access > Allow Access"
+}
+
+output "app_buckets_summary" {
+  description = "Summary of app hosting buckets requiring public access"
+  value = {
+    form_app = {
+      bucket_name = cloudflare_r2_bucket.form_app_hosting.name
+      action      = "Enable public access via Cloudflare Dashboard"
+      url_format  = "https://pub-<hash>.r2.dev (generated after enabling)"
+    }
+    form_viewer = {
+      bucket_name = cloudflare_r2_bucket.form_viewer_hosting.name
+      action      = "Enable public access via Cloudflare Dashboard"
+      url_format  = "https://pub-<hash>.r2.dev (generated after enabling)"
+    }
+    admin_app = {
+      bucket_name = cloudflare_r2_bucket.admin_app_hosting.name
+      action      = "Enable public access via Cloudflare Dashboard"
+      url_format  = "https://pub-<hash>.r2.dev (generated after enabling)"
+    }
+  }
+}
+
