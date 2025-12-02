@@ -1677,24 +1677,35 @@ jobs:
           pnpm --filter form-viewer build
           pnpm --filter admin-app build
 
-      - name: Sync to R2
-        env:
-          AWS_ACCESS_KEY_ID: ${{ needs.terraform-infrastructure-deploy.outputs.r2_access_key_id }}
-          AWS_SECRET_ACCESS_KEY: ${{ needs.terraform-infrastructure-deploy.outputs.r2_secret_access_key }}
-          AWS_DEFAULT_REGION: auto
-          AWS_ENDPOINT_URL: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
-          FORM_APP_BUCKET: ${{ needs.terraform-infrastructure-deploy.outputs.form_app_bucket }}
-          FORM_VIEWER_BUCKET: ${{ needs.terraform-infrastructure-deploy.outputs.form_viewer_bucket }}
-          ADMIN_APP_BUCKET: ${{ needs.terraform-infrastructure-deploy.outputs.admin_app_bucket }}
-        run: |
-          echo "Syncing form-app to s3://${FORM_APP_BUCKET}"
-          aws s3 sync dculus-forms/apps/form-app/dist s3://${FORM_APP_BUCKET} --endpoint-url $AWS_ENDPOINT_URL --delete
+      - name: Deploy form-app to R2
+        uses: ryand56/r2-upload-action@latest
+        with:
+          r2-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          r2-access-key-id: ${{ secrets.R2_S3_DEPLOYMENT_ACCESS_KEY }}
+          r2-secret-access-key: ${{ secrets.R2_S3_DEPLOYMENT_SECRET_KEY }}
+          r2-bucket: ${{ needs.terraform-infrastructure-deploy.outputs.form_app_bucket }}
+          source-dir: dculus-forms/apps/form-app/dist
+          destination-dir: ./
 
-          echo "Syncing form-viewer to s3://${FORM_VIEWER_BUCKET}"
-          aws s3 sync dculus-forms/apps/form-viewer/dist s3://${FORM_VIEWER_BUCKET} --endpoint-url $AWS_ENDPOINT_URL --delete
+      - name: Deploy form-viewer to R2
+        uses: ryand56/r2-upload-action@latest
+        with:
+          r2-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          r2-access-key-id: ${{ secrets.R2_S3_DEPLOYMENT_ACCESS_KEY }}
+          r2-secret-access-key: ${{ secrets.R2_S3_DEPLOYMENT_SECRET_KEY }}
+          r2-bucket: ${{ needs.terraform-infrastructure-deploy.outputs.form_viewer_bucket }}
+          source-dir: dculus-forms/apps/form-viewer/dist
+          destination-dir: ./
 
-          echo "Syncing admin-app to s3://${ADMIN_APP_BUCKET}"
-          aws s3 sync dculus-forms/apps/admin-app/dist s3://${ADMIN_APP_BUCKET} --endpoint-url $AWS_ENDPOINT_URL --delete
+      - name: Deploy admin-app to R2
+        uses: ryand56/r2-upload-action@latest
+        with:
+          r2-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          r2-access-key-id: ${{ secrets.R2_S3_DEPLOYMENT_ACCESS_KEY }}
+          r2-secret-access-key: ${{ secrets.R2_S3_DEPLOYMENT_SECRET_KEY }}
+          r2-bucket: ${{ needs.terraform-infrastructure-deploy.outputs.admin_app_bucket }}
+          source-dir: dculus-forms/apps/admin-app/dist
+          destination-dir: ./
 
   run-form-app-e2e:
     name: 7.2. Run form-app E2E (Cloudflare Pages)
