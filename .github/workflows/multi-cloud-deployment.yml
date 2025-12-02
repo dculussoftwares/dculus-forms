@@ -1112,6 +1112,28 @@ jobs:
 
           echo "✅ Deployment completed"
 
+      - name: Purge Cloudflare cache
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        run: |
+          echo "🔄 Purging Cloudflare cache for immediate visibility..."
+          
+          PURGE_RESPONSE=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}' \
+            --silent \
+            --show-error)
+          
+          if echo "$PURGE_RESPONSE" | grep -q '"success":true'; then
+            echo "✅ Cache purged successfully"
+            echo "💡 Changes should be visible immediately without CDN cache delays"
+          else
+            echo "⚠️ Cache purge may have failed, but deployment was successful"
+            echo "Response: $PURGE_RESPONSE"
+          fi
+
       - name: Health check deployment
         run: |
           CUSTOM_DOMAIN="${{ needs.terraform-cloudflare-pages.outputs.custom_domain }}"
@@ -1340,6 +1362,28 @@ jobs:
 
           echo "✅ Deployment completed"
 
+      - name: Purge Cloudflare cache
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        run: |
+          echo "🔄 Purging Cloudflare cache for immediate visibility..."
+          
+          PURGE_RESPONSE=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}' \
+            --silent \
+            --show-error)
+          
+          if echo "$PURGE_RESPONSE" | grep -q '"success":true'; then
+            echo "✅ Cache purged successfully"
+            echo "💡 Changes should be visible immediately without CDN cache delays"
+          else
+            echo "⚠️ Cache purge may have failed, but deployment was successful"
+            echo "Response: $PURGE_RESPONSE"
+          fi
+
       - name: Health check deployment
         run: |
           CUSTOM_DOMAIN="${{ needs.terraform-cloudflare-pages-admin.outputs.custom_domain }}"
@@ -1567,6 +1611,28 @@ jobs:
             --commit-message="Deploy release ${RELEASE_TAG} to ${{ needs.determine-environment.outputs.environment }}"
 
           echo "✅ Deployment completed"
+
+      - name: Purge Cloudflare cache
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        run: |
+          echo "🔄 Purging Cloudflare cache for immediate visibility..."
+          
+          PURGE_RESPONSE=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}' \
+            --silent \
+            --show-error)
+          
+          if echo "$PURGE_RESPONSE" | grep -q '"success":true'; then
+            echo "✅ Cache purged successfully"
+            echo "💡 Changes should be visible immediately without CDN cache delays"
+          else
+            echo "⚠️ Cache purge may have failed, but deployment was successful"
+            echo "Response: $PURGE_RESPONSE"
+          fi
 
       - name: Health check deployment
         run: |
