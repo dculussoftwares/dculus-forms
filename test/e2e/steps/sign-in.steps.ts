@@ -2526,7 +2526,7 @@ When('I create a form via GraphQL with all field types', async function (this: C
   const formTitle = `E2E Multi-Page Form ${timestamp}`;
 
   // Make GraphQL request to create form
-  const response = await this.page.evaluate(async ({ orgId, title, schema }) => {
+  const response = await this.page.evaluate(async ({ orgId, title, schema, backendUrl }) => {
     const query = `
       mutation CreateForm($input: CreateFormInput!) {
         createForm(input: $input) {
@@ -2545,7 +2545,7 @@ When('I create a form via GraphQL with all field types', async function (this: C
       }
     };
 
-    const res = await fetch('http://localhost:4000/graphql', {
+    const res = await fetch(backendUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -2555,7 +2555,7 @@ When('I create a form via GraphQL with all field types', async function (this: C
     });
 
     return res.json();
-  }, { orgId: organizationId, title: formTitle, schema: formSchema });
+  }, { orgId: organizationId, title: formTitle, schema: formSchema, backendUrl: this.backendUrl });
 
   if (response.errors) {
     throw new Error(`GraphQL error: ${JSON.stringify(response.errors)}`);
@@ -2696,7 +2696,7 @@ When('I create a form via GraphQL with short text field validations', async func
   const formTitle = `E2E Short Text Validations ${timestamp}`;
 
   // Make GraphQL request to create form
-  const response = await this.page.evaluate(async ({ orgId, title, schema }) => {
+  const response = await this.page.evaluate(async ({ orgId, title, schema, backendUrl }) => {
     const query = `
       mutation CreateForm($input: CreateFormInput!) {
         createForm(input: $input) {
@@ -2715,7 +2715,7 @@ When('I create a form via GraphQL with short text field validations', async func
       }
     };
 
-    const res = await fetch('http://localhost:4000/graphql', {
+    const res = await fetch(backendUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -2725,7 +2725,7 @@ When('I create a form via GraphQL with short text field validations', async func
     });
 
     return res.json();
-  }, { orgId: organizationId, title: formTitle, schema: formSchema });
+  }, { orgId: organizationId, title: formTitle, schema: formSchema, backendUrl: this.backendUrl });
 
   if (response.errors) {
     throw new Error(`GraphQL error: ${JSON.stringify(response.errors)}`);
@@ -3045,7 +3045,7 @@ When('I create a form via GraphQL with long text field validations', async funct
   const formTitle = `E2E Long Text Validations ${timestamp}`;
 
   // Make GraphQL request to create form
-  const response = await this.page.evaluate(async ({ orgId, title, schema }) => {
+  const response = await this.page.evaluate(async ({ orgId, title, schema, backendUrl }) => {
     const query = `
       mutation CreateForm($input: CreateFormInput!) {
         createForm(input: $input) {
@@ -3064,7 +3064,7 @@ When('I create a form via GraphQL with long text field validations', async funct
       }
     };
 
-    const res = await fetch('http://localhost:4000/graphql', {
+    const res = await fetch(backendUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -3074,7 +3074,7 @@ When('I create a form via GraphQL with long text field validations', async funct
     });
 
     return res.json();
-  }, { orgId: organizationId, title: formTitle, schema: formSchema });
+  }, { orgId: organizationId, title: formTitle, schema: formSchema, backendUrl: this.backendUrl });
 
   if (response.errors) {
     throw new Error(`GraphQL error: ${JSON.stringify(response.errors)}`);
@@ -3280,7 +3280,7 @@ When('I create a form via GraphQL with email field validations', async function 
   const formTitle = `E2E Email Validations ${timestamp}`;
 
   // Make GraphQL request to create form
-  const response = await this.page.evaluate(async ({ orgId, title, schema }) => {
+  const response = await this.page.evaluate(async ({ orgId, title, schema, backendUrl }) => {
     const query = `
       mutation CreateForm($input: CreateFormInput!) {
         createForm(input: $input) {
@@ -3299,7 +3299,7 @@ When('I create a form via GraphQL with email field validations', async function 
       }
     };
 
-    const res = await fetch('http://localhost:4000/graphql', {
+    const res = await fetch(backendUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -3309,7 +3309,7 @@ When('I create a form via GraphQL with email field validations', async function 
     });
 
     return res.json();
-  }, { orgId: organizationId, title: formTitle, schema: formSchema });
+  }, { orgId: organizationId, title: formTitle, schema: formSchema, backendUrl: this.backendUrl });
 
   if (response.errors) {
     throw new Error(`GraphQL error: ${JSON.stringify(response.errors)}`);
@@ -3517,7 +3517,7 @@ When('I create a form via GraphQL with number field validations', async function
   const formTitle = `E2E Number Validations ${timestamp}`;
 
   // Make GraphQL request to create form
-  const response = await this.page.evaluate(async ({ orgId, title, schema }) => {
+  const response = await this.page.evaluate(async ({ orgId, title, schema, backendUrl }) => {
     const query = `
       mutation CreateForm($input: CreateFormInput!) {
         createForm(input: $input) {
@@ -3536,7 +3536,7 @@ When('I create a form via GraphQL with number field validations', async function
       }
     };
 
-    const res = await fetch('http://localhost:4000/graphql', {
+    const res = await fetch(backendUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -3546,7 +3546,7 @@ When('I create a form via GraphQL with number field validations', async function
     });
 
     return res.json();
-  }, { orgId: organizationId, title: formTitle, schema: formSchema });
+  }, { orgId: organizationId, title: formTitle, schema: formSchema, backendUrl: this.backendUrl });
 
   if (response.errors) {
     throw new Error(`GraphQL error: ${JSON.stringify(response.errors)}`);
@@ -3795,7 +3795,7 @@ When('I create a form via GraphQL with date field validations', async function (
   const formTitle = `E2E Date Validations ${timestamp}`;
 
   // Make GraphQL request to create form
-  const response = await this.page.evaluate(async ({ orgId, title, schema }) => {
+  const response = await this.page.evaluate(async ({ orgId, title, schema, backendUrl }) => {
     const query = `
       mutation CreateForm($input: CreateFormInput!) {
         createForm(input: $input) {
@@ -3814,7 +3814,7 @@ When('I create a form via GraphQL with date field validations', async function (
       }
     };
 
-    const res = await fetch('http://localhost:4000/graphql', {
+    const res = await fetch(backendUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -3824,7 +3824,7 @@ When('I create a form via GraphQL with date field validations', async function (
     });
 
     return res.json();
-  }, { orgId: organizationId, title: formTitle, schema: formSchema });
+  }, { orgId: organizationId, title: formTitle, schema: formSchema, backendUrl: this.backendUrl });
 
   if (response.errors) {
     throw new Error(`GraphQL error: ${JSON.stringify(response.errors)}`);
@@ -4069,7 +4069,7 @@ When('I create a form via GraphQL with dropdown field validations', async functi
   const formTitle = `E2E Dropdown Validations ${timestamp}`;
 
   // Make GraphQL request to create form
-  const response = await this.page.evaluate(async ({ orgId, title, schema }) => {
+  const response = await this.page.evaluate(async ({ orgId, title, schema, backendUrl }) => {
     const query = `
       mutation CreateForm($input: CreateFormInput!) {
         createForm(input: $input) {
@@ -4088,7 +4088,7 @@ When('I create a form via GraphQL with dropdown field validations', async functi
       }
     };
 
-    const res = await fetch('http://localhost:4000/graphql', {
+    const res = await fetch(backendUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -4098,7 +4098,7 @@ When('I create a form via GraphQL with dropdown field validations', async functi
     });
 
     return res.json();
-  }, { orgId: organizationId, title: formTitle, schema: formSchema });
+  }, { orgId: organizationId, title: formTitle, schema: formSchema, backendUrl: this.backendUrl });
 
   if (response.errors) {
     throw new Error(`GraphQL error: ${JSON.stringify(response.errors)}`);
@@ -4280,7 +4280,7 @@ When('I create a form via GraphQL with checkbox field validations', async functi
   const formTitle = `E2E Checkbox Validations ${timestamp}`;
 
   // Make GraphQL request to create form
-  const response = await this.page.evaluate(async ({ orgId, title, schema }) => {
+  const response = await this.page.evaluate(async ({ orgId, title, schema, backendUrl }) => {
     const query = `
       mutation CreateForm($input: CreateFormInput!) {
         createForm(input: $input) {
@@ -4299,7 +4299,7 @@ When('I create a form via GraphQL with checkbox field validations', async functi
       }
     };
 
-    const res = await fetch('http://localhost:4000/graphql', {
+    const res = await fetch(backendUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -4309,7 +4309,7 @@ When('I create a form via GraphQL with checkbox field validations', async functi
     });
 
     return res.json();
-  }, { orgId: organizationId, title: formTitle, schema: formSchema });
+  }, { orgId: organizationId, title: formTitle, schema: formSchema, backendUrl: this.backendUrl });
 
   if (response.errors) {
     throw new Error(`GraphQL error: ${JSON.stringify(response.errors)}`);

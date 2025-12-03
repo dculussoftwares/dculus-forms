@@ -1699,8 +1699,9 @@ jobs:
     env:
       E2E_EMAIL: ${{ secrets.E2E_INTEGRATION_TEST_EMAIL_ID }}
       E2E_PASSWORD: ${{ secrets.E2E_INTEGRATION_TEST_PASSWORD }}
-      E2E_BASE_URL: ${{ secrets.E2E_INTEGRATION_TEST_FORM_APP_URL }}
-      FORM_VIEWER_URL: ${{ secrets.E2E_INTEGRATION_TEST_FORM_VIEWER_URL }}
+      E2E_FORM_APP_URL: ${{ secrets.E2E_INTEGRATION_TEST_FORM_APP_URL }}
+      E2E_BACKEND_URL: ${{ secrets.E2E_INTEGRATION_TEST_BACKEND_URL }}
+      E2E_FORM_VIEWER_URL: ${{ secrets.E2E_INTEGRATION_TEST_FORM_VIEWER_URL }}
       E2E_HEADLESS: 'true'
       CI: 'true'
     steps:
@@ -1712,8 +1713,8 @@ jobs:
 
       - name: Validate e2e secrets
         run: |
-          if [ -z "$E2E_EMAIL" ] || [ -z "$E2E_PASSWORD" ] || [ -z "$E2E_BASE_URL" ] || [ -z "$FORM_VIEWER_URL" ]; then
-            echo "❌ E2E secrets are not configured (E2E_EMAIL/E2E_PASSWORD/E2E_BASE_URL/FORM_VIEWER_URL)."
+          if [ -z "$E2E_EMAIL" ] || [ -z "$E2E_PASSWORD" ] || [ -z "$E2E_FORM_APP_URL" ] || [ -z "$E2E_FORM_VIEWER_URL" ]; then
+            echo "❌ E2E secrets are not configured (E2E_EMAIL/E2E_PASSWORD/E2E_FORM_APP_URL/E2E_FORM_VIEWER_URL)."
             exit 1
           fi
 
