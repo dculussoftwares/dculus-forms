@@ -810,6 +810,24 @@ Then('I test invalid max length data', async function (this: CustomWorld) {
   await expect(exceedsLimitError).not.toBeVisible();
 });
 
+Then('I test selection limits validation for checkbox', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Test 1: Min > Max
+  await this.page.fill('#field-validation\\.minSelections', '3');
+  await this.page.fill('#field-validation\\.maxSelections', '2');
+  await this.page.locator('#field-label').click(); // Blur
+  
+  const minMaxError = this.page.locator('text=/Minimum selections must be less than or equal to maximum selections/i').first();
+  await expect(minMaxError).toBeVisible({ timeout: 5_000 });
+
+  // Fix: Set valid range
+  await this.page.fill('#field-validation\\.minLength', '10');
+  await this.page.fill('#field-validation\\.maxLength', '100');
+});
+
 Then('I test min greater than max validation', async function (this: CustomWorld) {
   if (!this.page) {
     throw new Error('Page is not initialized');
@@ -2180,34 +2198,7 @@ Then('I test options validation for checkbox', async function (this: CustomWorld
   }
 });
 
-Then('I test selection limits validation for checkbox', async function (this: CustomWorld) {
-  if (!this.page) {
-    throw new Error('Page is not initialized');
-  }
 
-  // First fix options to have valid values
-  const optionInputs = this.page.locator('input[placeholder="Enter option value"]');
-  if (await optionInputs.count() > 0) {
-    await optionInputs.nth(0).fill('Reading');
-  }
-  if (await optionInputs.count() > 1) {
-    await optionInputs.nth(1).fill('Gaming');
-  }
-  if (await optionInputs.count() > 2) {
-    await optionInputs.nth(2).fill('Sports');
-  }
-
-  // Test 1: minSelections > maxSelections
-  await this.page.fill('input[name="validation.minSelections"]', '3');
-  await this.page.fill('input[name="validation.maxSelections"]', '2');
-  await this.page.locator('#field-label').click(); // Blur
-  
-  const minMaxError = this.page.locator('text=/Minimum selections must be less than or equal to maximum selections/i').first();
-  await expect(minMaxError).toBeVisible({ timeout: 5_000 });
-
-  // Note: The maxSelections > options count validation exists in schema but is validated on form submit
-  // We verify it prevents save in the "save button disabled" step
-});
 
 Then('I fix all validation errors for checkbox', async function (this: CustomWorld) {
   if (!this.page) {

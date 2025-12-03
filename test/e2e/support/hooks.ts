@@ -15,7 +15,17 @@ Before(async function (this: CustomWorld) {
   this.page = await this.context.newPage();
 });
 
-After(async function (this: CustomWorld) {
+After(async function (this: CustomWorld, scenario) {
+  if (scenario.result?.status === 'FAILED') {
+    const screenshotPath = `test-results/screenshots/${scenario.pickle.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.png`;
+    await this.page?.screenshot({ path: screenshotPath, fullPage: true });
+    console.log(`Screenshot saved to: ${screenshotPath}`);
+    
+    // Also log current URL
+    const url = this.page?.url();
+    console.log(`Failed at URL: ${url}`);
+  }
+
   await this.page?.close();
   await this.context?.close();
   await this.browser?.close();
