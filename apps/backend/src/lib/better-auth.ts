@@ -13,21 +13,24 @@ import {
 // Parse trusted origins from environment variable, with fallback to localhost
 const getTrustedOrigins = (): string[] => {
   const corsOrigins = process.env.CORS_ORIGINS?.split(',').map(origin => origin.trim()) || [];
-  
+
   // Default localhost origins for development
   const defaultOrigins = [
     'http://localhost:3000', // Form app
     'http://localhost:3001', // Form viewer
     'http://localhost:3002', // Admin app
     'http://localhost:4000', // Backend (for GraphQL playground)
-    'http://localhost:5173', // Form viewer (Vite dev server)
+    'http://localhost:5173', // Form viewer (Vite dev server),
+    'http://localhost:4173', // Form App (Prod)
+    'http://localhost:4174', // Form Viewer (Prod)
+    'http://localhost:4175', // Admin App (Prod)
   ];
 
   // Combine environment-specific origins with defaults (removing duplicates)
   const allOrigins = [...new Set([...corsOrigins, ...defaultOrigins])];
-  
+
   logger.info('🔐 Better Auth trusted origins:', allOrigins);
-  
+
   return allOrigins;
 };
 

@@ -110,16 +110,22 @@ app.use(
     },
   })
 );
-// Parse CORS origins from environment variable
-const corsOrigins = process.env.CORS_ORIGINS?.split(',').map(origin => origin.trim()) || [
+// Default origins
+const defaultOrigins = [
   'http://localhost:3000',
   'http://localhost:3002', // Admin app
-  'http://localhost:5173'
+  'http://localhost:5173',
+  'http://localhost:4173', // Form App (Prod)
+  'http://localhost:4174', // Form Viewer (Prod)
+  'http://localhost:4175', // Admin App (Prod)
 ];
+
+// Parse CORS origins from environment variable
+const envCorsOrigins = process.env.CORS_ORIGINS?.split(',').map(origin => origin.trim()) || [];
 
 // Add Apollo Studio domains for GraphQL playground
 const allOrigins = [
-  ...corsOrigins,
+  ...new Set([...envCorsOrigins, ...defaultOrigins]),
   'https://studio.apollographql.com',
   'https://sandbox.embed.apollographql.com',
 ];

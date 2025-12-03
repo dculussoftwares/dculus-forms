@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "dev": "pnpm --parallel --filter backend --filter form-app --filter form-viewer --filter admin-app run dev",
+    "prod": "./scripts/local-prod.sh",
     "build": "pnpm run --recursive build",
     "clean": "pnpm run --recursive clean",
     "lint": "pnpm run --recursive lint",
