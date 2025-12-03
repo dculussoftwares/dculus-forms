@@ -17,13 +17,13 @@ export interface PageValidationResult {
 export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
   // Check if field is fillable to access validation properties
   const isFillableField = (field: FormField): field is FillableFormField => {
-    return field instanceof FillableFormField || 
-           (field as any).label !== undefined ||
-           field.type !== FieldType.FORM_FIELD;
+    return field instanceof FillableFormField ||
+      (field as any).label !== undefined ||
+      field.type !== FieldType.FORM_FIELD;
   };
 
   const fillableField = isFillableField(field) ? field as FillableFormField : null;
-  
+
   if (!fillableField) {
     // Non-fillable fields don't require validation
     return z.any().optional();
@@ -36,31 +36,31 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
     case FieldType.TEXT_AREA_FIELD: {
       const textField = field as any; // Cast to access validation
       const textValidation = textField.validation;
-      
+
       let schema: z.ZodTypeAny;
-      
+
       if (isRequired) {
         schema = z.string().min(1, `${fillableField.label} is required`);
       } else {
         schema = z.string().optional();
       }
-      
+
       // Add minLength validation if specified
       if (textValidation?.minLength !== undefined && textValidation.minLength > 0) {
         schema = (schema as z.ZodString).min(
-          textValidation.minLength, 
+          textValidation.minLength,
           `${fillableField.label} must be at least ${textValidation.minLength} characters`
         );
       }
-      
+
       // Add maxLength validation if specified
       if (textValidation?.maxLength !== undefined && textValidation.maxLength > 0) {
         schema = (schema as z.ZodString).max(
-          textValidation.maxLength, 
+          textValidation.maxLength,
           `${fillableField.label} must be at most ${textValidation.maxLength} characters`
         );
       }
-      
+
       return schema;
     }
 
@@ -68,13 +68,16 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
       if (isRequired) {
         return z.string().min(1, `${fillableField.label} is required`).email(`Please enter a valid email address`);
       } else {
-        return z.string().email(`Please enter a valid email address`).optional();
+        return z.union([
+          z.literal(''),
+          z.string().email(`Please enter a valid email address`)
+        ]).optional();
       }
     }
 
     case FieldType.NUMBER_FIELD: {
       const numberField = field as NumberField;
-      
+
       // Create a schema that handles empty strings and numbers
       let schema: z.ZodTypeAny = z.union([
         z.string().length(0), // Allow empty string
@@ -92,7 +95,7 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
         schema = (schema as any).refine((val: any) => {
           if (val === undefined) return !isRequired; // Allow undefined if not required
           if (typeof val !== 'number') return false;
-          
+
           if (numberField.min !== undefined && val < numberField.min) {
             return false;
           }
@@ -108,7 +111,7 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
       if (!isRequired) {
         return (schema as any).optional();
       }
-      
+
       // For required fields, ensure we have a number
       return (schema as any).refine((val: any) => val !== undefined && typeof val === 'number', {
         message: `${fillableField.label} is required`
@@ -127,7 +130,7 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
       schema = schema.refine((dateStr: string) => {
         if (!dateStr && !isRequired) return true;
         if (!dateStr && isRequired) return false;
-        
+
         const date = new Date(dateStr);
         return !isNaN(date.getTime());
       }, {
@@ -138,17 +141,17 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
       if (dateField.minDate || dateField.maxDate) {
         schema = (schema as any).refine((dateStr: string) => {
           if (!dateStr) return !isRequired;
-          
+
           const date = new Date(dateStr);
-          
+
           if (dateField.minDate && date < new Date(dateField.minDate)) {
             return false;
           }
-          
+
           if (dateField.maxDate && date > new Date(dateField.maxDate)) {
             return false;
           }
-          
+
           return true;
         }, {
           message: `Date must be ${dateField.minDate ? `after ${dateField.minDate}` : ''}${dateField.minDate && dateField.maxDate ? ' and ' : ''}${dateField.maxDate ? `before ${dateField.maxDate}` : ''}`
@@ -158,7 +161,7 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
       if (!isRequired) {
         return schema.optional();
       }
-      
+
       return schema;
     }
 
@@ -213,9 +216,9 @@ export const createPageDefaultValues = (page: FormPage): Record<string, any> => 
 
   page.fields.forEach((field) => {
     const isFillableField = (field: FormField): field is FillableFormField => {
-      return field instanceof FillableFormField || 
-             (field as any).label !== undefined ||
-             field.type !== FieldType.FORM_FIELD;
+      return field instanceof FillableFormField ||
+        (field as any).label !== undefined ||
+        field.type !== FieldType.FORM_FIELD;
     };
 
     const fillableField = isFillableField(field) ? field as FillableFormField : null;
@@ -248,7 +251,7 @@ export const createPageDefaultValues = (page: FormPage): Record<string, any> => 
  */
 export const validatePageData = (page: FormPage, data: Record<string, any>): PageValidationResult => {
   const schema = createPageSchema(page);
-  
+
   try {
     schema.parse(data);
     return {
@@ -261,13 +264,13 @@ export const validatePageData = (page: FormPage, data: Record<string, any>): Pag
         field: err.path.join('.'),
         message: err.message
       }));
-      
+
       return {
         isValid: false,
         errors: validationErrors
       };
     }
-    
+
     return {
       isValid: false,
       errors: [{ field: 'general', message: 'Validation failed' }]
