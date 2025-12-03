@@ -1,5 +1,5 @@
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useZodResolver } from '../useZodResolver';
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { DateField } from '@dculus/types';
 import { z } from 'zod';
@@ -42,12 +42,12 @@ const parseDateValue = (value: any): string | undefined => {
   if (value === null || value === undefined || value === '') {
     return undefined;
   }
-  
+
   // If it's already a valid ISO string, return it
   if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return value;
   }
-  
+
   // Try to parse as Date and convert to ISO string
   try {
     const date = new Date(value);
@@ -107,9 +107,9 @@ const dateFieldValidationSchema = z.object({
   (data) => {
     // Cross-field validation: default value should be within min/max date range
     if (!data.defaultValue) return true;
-    
+
     const defaultDate = new Date(data.defaultValue);
-    
+
     if (data.minDate && defaultDate < new Date(data.minDate)) {
       return false;
     }
@@ -127,7 +127,7 @@ const dateFieldValidationSchema = z.object({
 // Helper function to extract data from date field
 const extractDateFieldData = (field: DateField): DateFieldFormData => {
   const validation = (field as any).validation || {};
-  
+
   return {
     label: field.label || '',
     hint: field.hint || '',
@@ -149,9 +149,10 @@ export function useDateFieldForm({ field, onSave, onCancel }: UseDateFieldFormPr
 
   // Memoized validation schema to prevent unnecessary re-renders
   const validationSchema = useMemo(() => dateFieldValidationSchema, []);
+  const resolver = useZodResolver(validationSchema);
 
   const form = useForm<DateFieldFormData>({
-    resolver: zodResolver(validationSchema as any),
+    resolver,
     mode: 'onChange',
     reValidateMode: 'onChange',
     criteriaMode: 'all',
@@ -167,10 +168,10 @@ export function useDateFieldForm({ field, onSave, onCancel }: UseDateFieldFormPr
     },
   });
 
-  const { 
-    handleSubmit, 
-    reset, 
-    watch, 
+  const {
+    handleSubmit,
+    reset,
+    watch,
     trigger,
     formState: { errors, isValid, isDirty },
     setValue,
@@ -210,7 +211,7 @@ export function useDateFieldForm({ field, onSave, onCancel }: UseDateFieldFormPr
   // Save form data with proper error handling and date conversion
   const handleSave = useCallback(handleSubmit(async (data) => {
     if (!field) return;
-    
+
     setIsSaving(true);
     try {
       // Transform form data to field updates with proper date handling
@@ -229,7 +230,7 @@ export function useDateFieldForm({ field, onSave, onCancel }: UseDateFieldFormPr
       };
 
       await onSave(updates);
-      
+
       // Reset form to mark it as clean after successful save
       reset(data, { keepDefaultValues: false });
     } catch (error) {

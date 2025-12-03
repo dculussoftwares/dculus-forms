@@ -1,5 +1,5 @@
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useZodResolver } from '../useZodResolver';
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { SelectField, RadioField, CheckboxField } from '@dculus/types';
 import { z } from 'zod';
@@ -104,9 +104,9 @@ const selectionFieldValidationSchema = z.object({
   (data) => {
     // Cross-field validation: default value should be valid option(s)
     if (!data.defaultValue || data.options.length === 0) return true;
-    
+
     const validOptions = data.options.filter(option => option.trim().length > 0);
-    
+
     if (Array.isArray(data.defaultValue)) {
       return data.defaultValue.every(value => validOptions.includes(value));
     } else {
@@ -121,7 +121,7 @@ const selectionFieldValidationSchema = z.object({
   (data) => {
     // Cross-field validation: selection limits should be reasonable for checkbox fields
     if (!data.validation || data.validation.maxSelections === undefined) return true;
-    
+
     const validOptionsCount = data.options.filter(option => option.trim().length > 0).length;
     return data.validation.maxSelections <= validOptionsCount;
   },
@@ -134,11 +134,11 @@ const selectionFieldValidationSchema = z.object({
 // Helper function to extract data from selection field
 const extractSelectionFieldData = (field: SelectField | RadioField | CheckboxField): SelectionFieldFormData => {
   const validation = (field as any).validation || {};
-  
+
   // Handle different field types
   const isSelectField = field.type === 'select_field';
   const isCheckboxField = field.type === 'checkbox_field';
-  
+
   // Get the correct default value property based on field type
   let defaultValue;
   if (isCheckboxField) {
@@ -148,7 +148,7 @@ const extractSelectionFieldData = (field: SelectField | RadioField | CheckboxFie
     // SelectField and RadioField use 'defaultValue' (singular) property
     defaultValue = field.defaultValue || '';
   }
-  
+
   return {
     label: field.label || '',
     hint: field.hint || '',
@@ -173,9 +173,10 @@ export function useSelectionFieldForm({ field, onSave, onCancel }: UseSelectionF
 
   // Memoized validation schema to prevent unnecessary re-renders
   const validationSchema = useMemo(() => selectionFieldValidationSchema, []);
+  const resolver = useZodResolver(validationSchema);
 
   const form = useForm<SelectionFieldFormData>({
-    resolver: zodResolver(validationSchema as any),
+    resolver,
     mode: 'onChange',
     reValidateMode: 'onChange',
     criteriaMode: 'all',
@@ -191,10 +192,10 @@ export function useSelectionFieldForm({ field, onSave, onCancel }: UseSelectionF
     },
   });
 
-  const { 
-    handleSubmit, 
-    reset, 
-    watch, 
+  const {
+    handleSubmit,
+    reset,
+    watch,
     trigger,
     formState: { errors, isValid, isDirty },
     setValue,
@@ -219,7 +220,7 @@ export function useSelectionFieldForm({ field, onSave, onCancel }: UseSelectionF
   const fieldData = useMemo(() => {
     return field ? extractSelectionFieldData(field) : null;
   }, [
-    field?.id, 
+    field?.id,
     field?.type,
     field?.label,
     field?.hint,
@@ -271,12 +272,12 @@ export function useSelectionFieldForm({ field, onSave, onCancel }: UseSelectionF
   // Save form data with proper error handling
   const handleSave = useCallback(handleSubmit(async (data) => {
     if (!field) return;
-    
+
     setIsSaving(true);
     try {
       // Filter out empty options
       const validOptions = data.options.filter(option => option.trim().length > 0);
-      
+
       // Transform form data to field updates
       const updates: Record<string, any> = {
         label: data.label,
@@ -307,7 +308,7 @@ export function useSelectionFieldForm({ field, onSave, onCancel }: UseSelectionF
       }
 
       await onSave(updates);
-      
+
       // Reset form to mark it as clean after successful save
       reset(data, { keepDefaultValues: false });
     } catch (error) {

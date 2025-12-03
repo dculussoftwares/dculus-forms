@@ -1,5 +1,5 @@
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useZodResolver } from '../useZodResolver';
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { RichTextFormField } from '@dculus/types';
 import { z } from 'zod';
@@ -41,13 +41,13 @@ const richTextFieldValidationSchema = z.object({
 // Helper function to sanitize HTML content
 const sanitizeHtmlContent = (content: string): string => {
   if (!content) return '';
-  
+
   // Basic HTML sanitization - remove script tags and dangerous attributes
   const sanitized = content
     .replace(/<script[^>]*>.*?<\/script>/gi, '')
     .replace(/javascript:/gi, '')
     .replace(/on\w+\s*=/gi, '');
-    
+
   return sanitized.trim();
 };
 
@@ -69,10 +69,11 @@ export function useRichTextFieldForm({ field, onSave, onCancel }: UseRichTextFie
 
   // Memoized validation schema to prevent unnecessary re-renders
   const validationSchema = useMemo(() => richTextFieldValidationSchema, []);
+  const resolver = useZodResolver(validationSchema);
 
   // Create form with stable default values
   const form = useForm<RichTextFieldFormData>({
-    resolver: zodResolver(validationSchema as any),
+    resolver,
     mode: 'onChange',
     reValidateMode: 'onChange',
     criteriaMode: 'all',
@@ -81,10 +82,10 @@ export function useRichTextFieldForm({ field, onSave, onCancel }: UseRichTextFie
     },
   });
 
-  const { 
-    handleSubmit, 
-    reset, 
-    watch, 
+  const {
+    handleSubmit,
+    reset,
+    watch,
     trigger,
     formState: { errors, isValid, isDirty },
     setValue,
@@ -104,7 +105,7 @@ export function useRichTextFieldForm({ field, onSave, onCancel }: UseRichTextFie
     if (validationTimeoutRef.current) {
       clearTimeout(validationTimeoutRef.current);
     }
-    
+
     // Debounce validation to avoid excessive triggering while typing
     validationTimeoutRef.current = setTimeout(() => {
       trigger(['content']);
@@ -125,7 +126,7 @@ export function useRichTextFieldForm({ field, onSave, onCancel }: UseRichTextFie
       // Reset for new field or if content has changed
       if (field.id !== initializedFieldRef.current) {
         setIsContentLoading(true);
-        
+
         // Reset immediately without delay to prevent empty state
         reset(fieldData);
         setIsContentLoading(false);
@@ -141,7 +142,7 @@ export function useRichTextFieldForm({ field, onSave, onCancel }: UseRichTextFie
   // Save form data with proper error handling and content sanitization
   const handleSave = useCallback(handleSubmit(async (data) => {
     if (!field) return;
-    
+
     setIsSaving(true);
     try {
       // Transform form data to field updates with sanitization
@@ -150,7 +151,7 @@ export function useRichTextFieldForm({ field, onSave, onCancel }: UseRichTextFie
       };
 
       await onSave(updates);
-      
+
       // Reset form to mark it as clean after successful save
       reset(data, { keepDefaultValues: false });
     } catch (error) {

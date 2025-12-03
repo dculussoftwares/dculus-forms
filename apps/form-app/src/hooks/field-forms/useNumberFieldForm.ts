@@ -1,5 +1,5 @@
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useZodResolver } from '../useZodResolver';
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { NumberField } from '@dculus/types';
 import { z } from 'zod';
@@ -63,7 +63,7 @@ const numberFieldValidationSchema = z.object({
   (data) => {
     // Cross-field validation: default value should be within min/max range
     if (data.defaultValue === undefined) return true;
-    
+
     if (data.min !== undefined && data.defaultValue < data.min) {
       return false;
     }
@@ -90,7 +90,7 @@ const parseNumberValue = (value: any): number | undefined => {
 // Helper function to extract data from number field
 const extractNumberFieldData = (field: NumberField): NumberFieldFormData => {
   const validation = (field as any).validation || {};
-  
+
   return {
     label: field.label || '',
     hint: field.hint || '',
@@ -112,9 +112,10 @@ export function useNumberFieldForm({ field, onSave, onCancel }: UseNumberFieldFo
 
   // Memoized validation schema to prevent unnecessary re-renders
   const validationSchema = useMemo(() => numberFieldValidationSchema, []);
+  const resolver = useZodResolver(validationSchema);
 
   const form = useForm<NumberFieldFormData>({
-    resolver: zodResolver(validationSchema as any),
+    resolver,
     mode: 'onChange',
     reValidateMode: 'onChange',
     criteriaMode: 'all',
@@ -130,10 +131,10 @@ export function useNumberFieldForm({ field, onSave, onCancel }: UseNumberFieldFo
     },
   });
 
-  const { 
-    handleSubmit, 
-    reset, 
-    watch, 
+  const {
+    handleSubmit,
+    reset,
+    watch,
     trigger,
     formState: { errors, isValid, isDirty },
     setValue,
@@ -173,7 +174,7 @@ export function useNumberFieldForm({ field, onSave, onCancel }: UseNumberFieldFo
   // Save form data with proper error handling and number conversion
   const handleSave = useCallback(handleSubmit(async (data) => {
     if (!field) return;
-    
+
     setIsSaving(true);
     try {
       // Transform form data to field updates with proper number handling
@@ -192,7 +193,7 @@ export function useNumberFieldForm({ field, onSave, onCancel }: UseNumberFieldFo
       };
 
       await onSave(updates);
-      
+
       // Reset form to mark it as clean after successful save
       reset(data, { keepDefaultValues: false });
     } catch (error) {

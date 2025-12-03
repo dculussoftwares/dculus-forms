@@ -1,6 +1,6 @@
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useZodResolver } from '../useZodResolver';
 import { EmailField, TextAreaField, TextInputField } from '@dculus/types';
 import { z } from 'zod';
 
@@ -154,8 +154,11 @@ export function useTextFieldForm({
   // Memoized validation schema to prevent unnecessary re-renders
   const validationSchema = useMemo(() => textFieldValidationSchema, []);
 
+  // Use shared zodResolver wrapper for consistent error handling
+  const customResolver = useZodResolver(validationSchema);
+
   const form = useForm<TextFieldFormData>({
-    resolver: zodResolver(validationSchema as any),
+    resolver: customResolver,
     mode: 'onChange',
     reValidateMode: 'onChange',
     criteriaMode: 'all',

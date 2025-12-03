@@ -2,6 +2,7 @@ import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { useTranslation } from '../../../hooks/useTranslation';
 import { useLocale } from '../../../hooks/useLocale';
+import { flattenErrors } from '../../../utils/formErrors';
 
 interface ValidationSummaryProps {
   errors: Record<string, any>;
@@ -39,16 +40,23 @@ export const ValidationSummary: React.FC<ValidationSummaryProps> = ({ errors }) 
   const { t } = useTranslation('validationSummary');
   const translateMessage = useMessageTranslator();
   
-  const errorMessages = Object.entries(errors)
+  // Flatten nested errors from react-hook-form
+  const flatErrors = flattenErrors(errors);
+  
+  const errorMessages = Object.entries(flatErrors)
     .filter(([_, error]) => {
       const message = error?.message || (typeof error === 'string' ? error : null);
       return Boolean(message);
     })
-    .map(([field, error]) => ({
-      field,
-      message: translateMessage(error?.message || (typeof error === 'string' ? error : '')),
-      isGlobalError: ['minDate', 'maxDate', 'defaultValue', 'min', 'max', 'options'].includes(field)
-    }));
+    .map(([field, error]) => {
+      const translatedMessage = translateMessage(error?.message || (typeof error === 'string' ? error : ''));
+      return {
+        field,
+        message: translatedMessage,
+        // Check both the full path and the last part for global errors
+        isGlobalError: ['minDate', 'maxDate', 'defaultValue', 'min', 'max', 'options', 'validation.minLength', 'validation.maxLength', 'validation.minSelections', 'validation.maxSelections'].includes(field)
+      };
+    });
 
   if (errorMessages.length === 0) return null;
 
