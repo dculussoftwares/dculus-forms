@@ -2890,7 +2890,7 @@ Then('I should be able to submit the form in viewer', async function (this: Cust
   // The submit button should exist and be enabled
   const submitButton = this.viewerPage.getByTestId('viewer-submit-button');
   const buttonText = await submitButton.textContent();
-  console.log('Submit button text:', buttonText);
+
 
   await expect(submitButton).toBeVisible({ timeout: 10_000 });
   await expect(submitButton).toBeEnabled({ timeout: 5_000 });
@@ -2908,7 +2908,7 @@ Then('I should be able to submit the form in viewer', async function (this: Cust
 
   // If there are no errors, consider the submission successful
   if (errorCount === 0) {
-    console.log('Form submitted successfully - no validation errors present');
+
   } else {
     const firstError = await errorMessages.first().textContent();
     throw new Error(`Form submission failed with errors: ${firstError}`);
