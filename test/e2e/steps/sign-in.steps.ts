@@ -2494,7 +2494,7 @@ When('I create a form via GraphQL with all field types', async function (this: C
   // Extract organization ID from page context (from Apollo Client or localStorage)
   const organizationId = await this.page.evaluate(() => {
     // Try localStorage first
-    const orgFromStorage = localStorage.getItem('organizationId');
+    const orgFromStorage = localStorage.getItem('organization_id');
     if (orgFromStorage) return orgFromStorage;
 
     // Try from Apollo cache
@@ -2666,7 +2666,7 @@ When('I create a form via GraphQL with short text field validations', async func
   // Extract organization ID from page context
   const organizationId = await this.page.evaluate(() => {
     // Try localStorage first
-    const orgFromStorage = localStorage.getItem('organizationId');
+    const orgFromStorage = localStorage.getItem('organization_id');
     if (orgFromStorage) return orgFromStorage;
 
     // Try from Apollo cache
@@ -3016,7 +3016,7 @@ When('I create a form via GraphQL with long text field validations', async funct
 
   // Extract organization ID from page context
   const organizationId = await this.page.evaluate(() => {
-    const orgFromStorage = localStorage.getItem('organizationId');
+    const orgFromStorage = localStorage.getItem('organization_id');
     if (orgFromStorage) return orgFromStorage;
 
     const apolloClient = (window as any).__APOLLO_CLIENT__;
@@ -3252,7 +3252,7 @@ When('I create a form via GraphQL with email field validations', async function 
 
   // Extract organization ID
   const organizationId = await this.page.evaluate(() => {
-    const orgFromStorage = localStorage.getItem('organizationId');
+    const orgFromStorage = localStorage.getItem('organization_id');
     if (orgFromStorage) return orgFromStorage;
 
     const apolloClient = (window as any).__APOLLO_CLIENT__;
@@ -3489,7 +3489,7 @@ When('I create a form via GraphQL with number field validations', async function
 
   // Extract organization ID
   const organizationId = await this.page.evaluate(() => {
-    const orgFromStorage = localStorage.getItem('organizationId');
+    const orgFromStorage = localStorage.getItem('organization_id');
     if (orgFromStorage) return orgFromStorage;
 
     const apolloClient = (window as any).__APOLLO_CLIENT__;
@@ -3767,7 +3767,7 @@ When('I create a form via GraphQL with date field validations', async function (
 
   // Extract organization ID
   const organizationId = await this.page.evaluate(() => {
-    const orgFromStorage = localStorage.getItem('organizationId');
+    const orgFromStorage = localStorage.getItem('organization_id');
     if (orgFromStorage) return orgFromStorage;
 
     const apolloClient = (window as any).__APOLLO_CLIENT__;
@@ -4041,7 +4041,7 @@ When('I create a form via GraphQL with dropdown field validations', async functi
 
   // Extract organization ID
   const organizationId = await this.page.evaluate(() => {
-    const orgFromStorage = localStorage.getItem('organizationId');
+    const orgFromStorage = localStorage.getItem('organization_id');
     if (orgFromStorage) return orgFromStorage;
 
     const apolloClient = (window as any).__APOLLO_CLIENT__;
@@ -4252,7 +4252,7 @@ When('I create a form via GraphQL with checkbox field validations', async functi
 
   // Extract organization ID
   const organizationId = await this.page.evaluate(() => {
-    const orgFromStorage = localStorage.getItem('organizationId');
+    const orgFromStorage = localStorage.getItem('organization_id');
     if (orgFromStorage) return orgFromStorage;
 
     const apolloClient = (window as any).__APOLLO_CLIENT__;
