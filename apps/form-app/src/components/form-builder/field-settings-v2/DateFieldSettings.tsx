@@ -3,7 +3,7 @@ import { DateField } from '@dculus/types';
 import { Settings } from 'lucide-react';
 import { Controller } from 'react-hook-form';
 import { Label, Checkbox } from '@dculus/ui';
-import { useDateFieldForm } from '../../../hooks/field-forms';
+import { useFieldEditor } from '../../../hooks';
 import {
   ValidationSummary,
   FieldSettingsHeader,
@@ -34,15 +34,22 @@ export const DateFieldSettings: React.FC<DateFieldSettingsProps> = ({
     form,
     isSaving,
     isValid,
-    errors,
+    errors: formErrors,
     handleSave,
     handleCancel,
     handleReset,
-  } = useDateFieldForm({
+  } = useFieldEditor({
     field,
-    onSave: (updates) => onUpdate?.(updates),
+    onSave: async (updates) => {
+      if (onUpdate) {
+        await onUpdate(updates);
+      }
+    },
     onCancel: () => console.log('Date field edit cancelled'),
   });
+
+  // Cast errors to any to handle union type properties
+  const errors = formErrors as any;
 
   const { control, formState: { isDirty } } = form;
 
@@ -183,7 +190,7 @@ export const DateFieldSettings: React.FC<DateFieldSettingsProps> = ({
             {/* Required field toggle */}
             <div className="flex items-center space-x-2">
               <Controller
-                name="required"
+                name="validation.required"
                 control={control}
                 render={({ field: controllerField }) => (
                   <Checkbox

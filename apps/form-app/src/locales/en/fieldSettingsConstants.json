@@ -11,6 +11,7 @@
     "maxLengthInvalid": "Maximum length must be 1 or greater",
     "characterLimitExceeded": "Cannot exceed 5000 characters",
     "minGreaterThanMax": "Minimum length must be less than or equal to maximum length",
+    "minSelectionsGreaterThanMax": "Minimum selections must be less than or equal to maximum selections",
     "minValueGreaterThanMax": "Minimum value must be less than or equal to maximum value",
     "defaultBelowMin": "Default value must be greater than or equal to minimum value",
     "defaultAboveMax": "Default value must be less than or equal to maximum value",

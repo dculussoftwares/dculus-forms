@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { RichTextFormField } from '@dculus/types';
 import { Settings } from 'lucide-react';
-import { useRichTextFieldForm } from '../../../hooks/field-forms';
+import { useFieldEditor } from '../../../hooks';
 import { useTranslation } from '../../../hooks/useTranslation';
 import {
   ValidationSummary,
@@ -18,6 +18,19 @@ interface RichTextFieldSettingsProps {
   onFieldSwitch?: () => void;
 }
 
+// Helper function to sanitize HTML content
+const sanitizeHtmlContent = (content: string): string => {
+  if (!content) return '';
+
+  // Basic HTML sanitization - remove script tags and dangerous attributes
+  const sanitized = content
+    .replace(/<script[^>]*>.*?<\/script>/gi, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+\s*=/gi, '');
+
+  return sanitized.trim();
+};
+
 /**
  * Specialized settings component for rich text fields
  * Handles RICH_TEXT_FIELD type with content management and loading states
@@ -30,20 +43,46 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
 }) => {
   const { t } = useTranslation('richTextFieldSettings');
   const constants = useFieldSettingsConstants();
+  
+  // Local loading state to prevent flashing
+  const [isContentLoading, setIsContentLoading] = useState(false);
+  const prevFieldIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (field?.id && field.id !== prevFieldIdRef.current) {
+      setIsContentLoading(true);
+      const timer = setTimeout(() => {
+        setIsContentLoading(false);
+      }, 100); // Small delay to allow editor to reset
+      prevFieldIdRef.current = field.id;
+      return () => clearTimeout(timer);
+    }
+  }, [field?.id]);
+
   const {
     form,
     isSaving,
     isValid,
-    errors,
+    errors: formErrors,
     handleSave,
     handleCancel,
     handleReset,
-    isContentLoading,
-  } = useRichTextFieldForm({
+  } = useFieldEditor({
     field,
-    onSave: (updates) => onUpdate?.(updates),
+    onSave: async (updates) => {
+      // Sanitize content before saving
+      if (updates.content) {
+        updates.content = sanitizeHtmlContent(updates.content);
+      }
+      if (onUpdate) {
+        await onUpdate(updates);
+      }
+    },
     onCancel: () => console.log('Rich text field edit cancelled'),
   });
+
+  // Cast errors to any to handle union type properties
+  const errors = formErrors as any;
 
   const { control, formState: { isDirty } } = form;
 

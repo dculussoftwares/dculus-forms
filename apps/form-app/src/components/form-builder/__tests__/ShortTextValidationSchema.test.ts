@@ -36,7 +36,7 @@ describe('Real Short Text Validation Schema', () => {
     expect(result.success).toBe(false);
     expect(
       result?.error?.issues.some((issue: any) =>
-        issue.message.includes('5000')
+        issue.message.includes('fieldSettingsConstants:errorMessages.characterLimitExceeded')
       )
     ).toBe(true);
   });

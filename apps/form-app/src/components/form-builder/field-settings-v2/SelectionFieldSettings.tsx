@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { SelectField, RadioField, CheckboxField } from '@dculus/types';
 import { Settings } from 'lucide-react';
 import { Controller } from 'react-hook-form';
@@ -11,7 +11,7 @@ import {
   SelectValue,
   Checkbox
 } from '@dculus/ui';
-import { useSelectionFieldForm } from '../../../hooks/field-forms';
+import { useFieldEditor } from '../../../hooks';
 import {
   ValidationSummary,
   FieldSettingsHeader,
@@ -43,21 +43,48 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
     form,
     isSaving,
     isValid,
-    errors,
+    errors: formErrors,
     handleSave,
     handleCancel,
     handleReset,
-    addOption,
-    updateOption,
-    removeOption,
-  } = useSelectionFieldForm({
+  } = useFieldEditor({
     field,
-    onSave: (updates) => onUpdate?.(updates),
+    onSave: async (updates) => {
+      if (onUpdate) {
+        await onUpdate(updates);
+      }
+    },
     onCancel: () => console.log('Selection field edit cancelled'),
   });
 
-  const { control, watch, formState: { isDirty } } = form;
+  // Cast errors to any to handle union type properties
+  const errors = formErrors as any;
+
+  const { control, watch, setValue, getValues, formState: { isDirty } } = form;
   const options = watch('options') || [];
+
+  // Option management functions
+  const addOption = useCallback(() => {
+    const currentOptions = getValues('options') || [];
+    setValue('options', [...currentOptions, ''], { shouldDirty: true });
+  }, [getValues, setValue]);
+
+  const updateOption = useCallback((index: number, value: string) => {
+    const currentOptions = getValues('options') || [];
+    const newOptions = [...currentOptions];
+    newOptions[index] = value;
+    setValue('options', newOptions, { shouldDirty: true });
+  }, [getValues, setValue]);
+
+  const removeOption = useCallback((index: number) => {
+    const currentOptions = getValues('options') || [];
+    const newOptions = currentOptions.filter((_, i) => i !== index);
+    // Ensure at least one option remains
+    if (newOptions.length === 0) {
+      newOptions.push('');
+    }
+    setValue('options', newOptions, { shouldDirty: true });
+  }, [getValues, setValue]);
 
   // Track field changes (auto-save disabled)
   const fieldIdRef = useRef<string | null>(null);
@@ -339,7 +366,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
               {/* Required field toggle */}
               <div className="flex items-center space-x-2">
                 <Controller
-                  name="required"
+                  name="validation.required"
                   control={control}
                   render={({ field: controllerField }) => (
                     <Checkbox

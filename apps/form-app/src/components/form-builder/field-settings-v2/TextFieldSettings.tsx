@@ -3,7 +3,7 @@ import { TextInputField, TextAreaField, EmailField } from '@dculus/types';
 import { Settings } from 'lucide-react';
 import { Controller } from 'react-hook-form';
 import { Label, Checkbox } from '@dculus/ui';
-import { useTextFieldForm } from '@/hooks';
+import { useFieldEditor } from '@/hooks';
 import {
   ValidationSummary,
   FieldSettingsHeader,
@@ -34,15 +34,17 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
     form,
     isSaving,
     isValid,
-    errors,
+    errors: formErrors,
     handleSave,
     handleCancel,
     handleReset,
-  } = useTextFieldForm({
+  } = useFieldEditor({
     field,
     onSave: (updates) => onUpdate?.(updates),
     onCancel: () => console.log('Text field edit cancelled'),
   });
+
+  const errors = formErrors as any;
 
   const { control, formState: { isDirty } } = form;
 

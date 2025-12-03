@@ -3,11 +3,11 @@ import { FieldType } from './index.js';
 
 // Base validation schema for common field properties
 export const baseFieldValidationSchema = z.object({
-  label: z.string().min(1, 'Field label is required').max(200, 'Label is too long'),
-  hint: z.string().max(500, 'Help text is too long').optional(),
-  placeholder: z.string().max(100, 'Placeholder is too long').optional(),
-  defaultValue: z.string().max(1000, 'Default value is too long').optional(),
-  prefix: z.string().max(10, 'Prefix is too long').optional(),
+  label: z.string().min(1, 'fieldSettingsConstants:errorMessages.labelRequired').max(200, 'fieldSettingsConstants:errorMessages.labelTooLong'),
+  hint: z.string().max(500, 'fieldSettingsConstants:errorMessages.hintTooLong').optional(),
+  placeholder: z.string().max(100, 'fieldSettingsConstants:errorMessages.placeholderTooLong').optional(),
+  defaultValue: z.string().max(1000, 'fieldSettingsConstants:errorMessages.defaultValueTooLong').optional(),
+  prefix: z.string().max(10, 'fieldSettingsConstants:errorMessages.prefixTooLong').optional(),
   required: z.boolean().default(false),
 });
 
@@ -15,13 +15,13 @@ export const baseFieldValidationSchema = z.object({
 export const textInputFieldValidationSchema = baseFieldValidationSchema.extend({
   validation: z.object({
     required: z.boolean().default(false),
-    minLength: z.number().min(0, 'Minimum length must be 0 or greater').max(5000, 'Minimum length cannot exceed 5000 characters').optional().or(z.string().regex(/^\d*$/, 'Minimum length must be a valid number').refine(
+    minLength: z.number().min(0, 'fieldSettingsConstants:errorMessages.minLengthInvalid').max(5000, 'fieldSettingsConstants:errorMessages.characterLimitExceeded').optional().or(z.string().regex(/^\d*$/, 'fieldSettingsConstants:errorMessages.minLengthInvalid').refine(
       (val) => !val || parseInt(val) <= 5000,
-      'Minimum length cannot exceed 5000 characters'
+      'fieldSettingsConstants:errorMessages.characterLimitExceeded'
     ).optional()),
-    maxLength: z.number().min(1, 'Maximum length must be 1 or greater').max(5000, 'Maximum length cannot exceed 5000 characters').optional().or(z.string().regex(/^\d*$/, 'Maximum length must be a valid number').refine(
+    maxLength: z.number().min(1, 'fieldSettingsConstants:errorMessages.maxLengthInvalid').max(5000, 'fieldSettingsConstants:errorMessages.characterLimitExceeded').optional().or(z.string().regex(/^\d*$/, 'fieldSettingsConstants:errorMessages.maxLengthInvalid').refine(
       (val) => !val || parseInt(val) <= 5000,
-      'Maximum length cannot exceed 5000 characters'
+      'fieldSettingsConstants:errorMessages.characterLimitExceeded'
     ).optional()),
   }).optional().refine(
     (validation) => {
@@ -35,22 +35,46 @@ export const textInputFieldValidationSchema = baseFieldValidationSchema.extend({
       return true;
     },
     {
-      message: 'Minimum length must be less than or equal to maximum length',
+      message: 'fieldSettingsConstants:errorMessages.minGreaterThanMax',
       path: ['maxLength'],
     }
   ),
-});
+}).refine(
+  (data) => {
+    // Check if default value meets minimum length requirement
+    if (!data.defaultValue || !data.validation?.minLength) return true;
+    const defaultLength = data.defaultValue.length;
+    const minLength = typeof data.validation.minLength === 'string' ? parseInt(data.validation.minLength) : data.validation.minLength;
+    return isNaN(minLength) || defaultLength >= minLength;
+  },
+  {
+    message: 'fieldSettingsConstants:errorMessages.defaultValueTooShort',
+    path: ['defaultValue'],
+  }
+).refine(
+  (data) => {
+    // Check if default value meets maximum length requirement
+    if (!data.defaultValue || !data.validation?.maxLength) return true;
+    const defaultLength = data.defaultValue.length;
+    const maxLength = typeof data.validation.maxLength === 'string' ? parseInt(data.validation.maxLength) : data.validation.maxLength;
+    return isNaN(maxLength) || defaultLength <= maxLength;
+  },
+  {
+    message: 'fieldSettingsConstants:errorMessages.defaultValueTooLongForMax',
+    path: ['defaultValue'],
+  }
+);
 
 export const textAreaFieldValidationSchema = baseFieldValidationSchema.extend({
   validation: z.object({
     required: z.boolean().default(false),
-    minLength: z.number().min(0, 'Minimum length must be 0 or greater').max(5000, 'Minimum length cannot exceed 5000 characters').optional().or(z.string().regex(/^\d*$/, 'Minimum length must be a valid number').refine(
+    minLength: z.number().min(0, 'fieldSettingsConstants:errorMessages.minLengthInvalid').max(5000, 'fieldSettingsConstants:errorMessages.characterLimitExceeded').optional().or(z.string().regex(/^\d*$/, 'fieldSettingsConstants:errorMessages.minLengthInvalid').refine(
       (val) => !val || parseInt(val) <= 5000,
-      'Minimum length cannot exceed 5000 characters'
+      'fieldSettingsConstants:errorMessages.characterLimitExceeded'
     ).optional()),
-    maxLength: z.number().min(1, 'Maximum length must be 1 or greater').max(5000, 'Maximum length cannot exceed 5000 characters').optional().or(z.string().regex(/^\d*$/, 'Maximum length must be a valid number').refine(
+    maxLength: z.number().min(1, 'fieldSettingsConstants:errorMessages.maxLengthInvalid').max(5000, 'fieldSettingsConstants:errorMessages.characterLimitExceeded').optional().or(z.string().regex(/^\d*$/, 'fieldSettingsConstants:errorMessages.maxLengthInvalid').refine(
       (val) => !val || parseInt(val) <= 5000,
-      'Maximum length cannot exceed 5000 characters'
+      'fieldSettingsConstants:errorMessages.characterLimitExceeded'
     ).optional()),
   }).optional().refine(
     (validation) => {
@@ -64,14 +88,38 @@ export const textAreaFieldValidationSchema = baseFieldValidationSchema.extend({
       return true;
     },
     {
-      message: 'Minimum length must be less than or equal to maximum length',
+      message: 'fieldSettingsConstants:errorMessages.minGreaterThanMax',
       path: ['maxLength'],
     }
   ),
-});
+}).refine(
+  (data) => {
+    // Check if default value meets minimum length requirement
+    if (!data.defaultValue || !data.validation?.minLength) return true;
+    const defaultLength = data.defaultValue.length;
+    const minLength = typeof data.validation.minLength === 'string' ? parseInt(data.validation.minLength) : data.validation.minLength;
+    return isNaN(minLength) || defaultLength >= minLength;
+  },
+  {
+    message: 'fieldSettingsConstants:errorMessages.defaultValueTooShort',
+    path: ['defaultValue'],
+  }
+).refine(
+  (data) => {
+    // Check if default value meets maximum length requirement
+    if (!data.defaultValue || !data.validation?.maxLength) return true;
+    const defaultLength = data.defaultValue.length;
+    const maxLength = typeof data.validation.maxLength === 'string' ? parseInt(data.validation.maxLength) : data.validation.maxLength;
+    return isNaN(maxLength) || defaultLength <= maxLength;
+  },
+  {
+    message: 'fieldSettingsConstants:errorMessages.defaultValueTooLongForMax',
+    path: ['defaultValue'],
+  }
+);
 
 export const emailFieldValidationSchema = baseFieldValidationSchema.extend({
-  placeholder: z.string().max(100, 'Placeholder is too long').optional(),
+  placeholder: z.string().max(100, 'fieldSettingsConstants:errorMessages.placeholderTooLong').optional(),
 });
 
 export const numberFieldValidationSchema = baseFieldValidationSchema.extend({
@@ -79,7 +127,7 @@ export const numberFieldValidationSchema = baseFieldValidationSchema.extend({
   max: z.number().optional().or(z.string().regex(/^-?\d*\.?\d*$/, 'Maximum must be a valid number').optional()),
   defaultValue: z.string().optional().refine(
     (value) => !value || !isNaN(parseFloat(value)),
-    'Default value must be a valid number'
+    'fieldSettingsConstants:errorMessages.invalidNumber'
   ),
 }).refine(
   (data) => {
@@ -91,7 +139,7 @@ export const numberFieldValidationSchema = baseFieldValidationSchema.extend({
     return true;
   },
   {
-    message: 'Minimum value must be less than or equal to maximum value',
+    message: 'fieldSettingsConstants:errorMessages.minValueGreaterThanMax',
     path: ['max'],
   }
 ).refine(
@@ -104,7 +152,7 @@ export const numberFieldValidationSchema = baseFieldValidationSchema.extend({
     return true;
   },
   {
-    message: 'Default value must be greater than or equal to minimum value',
+    message: 'fieldSettingsConstants:errorMessages.defaultBelowMin',
     path: ['defaultValue'],
   }
 ).refine(
@@ -117,33 +165,33 @@ export const numberFieldValidationSchema = baseFieldValidationSchema.extend({
     return true;
   },
   {
-    message: 'Default value must be less than or equal to maximum value',
+    message: 'fieldSettingsConstants:errorMessages.defaultAboveMax',
     path: ['defaultValue'],
   }
 );
 
 export const selectFieldValidationSchema = baseFieldValidationSchema.omit({ placeholder: true }).extend({
-  options: z.array(z.string().min(1, 'Option text cannot be empty')).min(1, 'Add at least one option for the dropdown').refine(
+  options: z.array(z.string().min(1, 'fieldSettingsConstants:errorMessages.optionEmpty')).min(1, 'fieldSettingsConstants:errorMessages.minOptionsRequired').refine(
     (options) => new Set(options.filter(opt => opt.trim())).size === options.filter(opt => opt.trim()).length,
-    'Duplicate options are not allowed'
+    'fieldSettingsConstants:errorMessages.duplicateOptions'
   ),
 });
 
 export const radioFieldValidationSchema = baseFieldValidationSchema.omit({ placeholder: true }).extend({
-  options: z.array(z.string().min(1, 'Option text cannot be empty')).min(2, 'Radio fields need at least 2 options to choose from').refine(
+  options: z.array(z.string().min(1, 'fieldSettingsConstants:errorMessages.optionEmpty')).min(2, 'fieldSettingsConstants:errorMessages.minRadioOptionsRequired').refine(
     (options) => new Set(options.filter(opt => opt.trim())).size === options.filter(opt => opt.trim()).length,
-    'Duplicate options are not allowed'
+    'fieldSettingsConstants:errorMessages.duplicateOptions'
   ),
 });
 
 export const checkboxFieldValidationSchema = baseFieldValidationSchema.extend({
   // Override defaultValue to accept string[] for checkbox fields
-  defaultValue: z.array(z.string()).max(100, 'Too many default values selected').optional().or(
-    z.string().max(1000, 'Default value is too long').optional()
+  defaultValue: z.array(z.string()).max(100, 'fieldSettingsConstants:errorMessages.characterLimitExceeded').optional().or(
+    z.string().max(1000, 'fieldSettingsConstants:errorMessages.defaultValueTooLong').optional()
   ),
-  options: z.array(z.string().min(1, 'Option text cannot be empty')).min(1, 'Add at least one option for checkboxes').refine(
+  options: z.array(z.string().min(1, 'fieldSettingsConstants:errorMessages.optionEmpty')).min(1, 'fieldSettingsConstants:errorMessages.minOptionsRequired').refine(
     (options) => new Set(options.filter(opt => opt.trim())).size === options.filter(opt => opt.trim()).length,
-    'Duplicate options are not allowed'
+    'fieldSettingsConstants:errorMessages.duplicateOptions'
   ),
   validation: z.object({
     required: z.boolean().default(false),
@@ -161,7 +209,7 @@ export const checkboxFieldValidationSchema = baseFieldValidationSchema.extend({
       return true;
     },
     {
-      message: 'Minimum selections must be less than or equal to maximum selections',
+      message: 'fieldSettingsConstants:errorMessages.minSelectionsGreaterThanMax',
       path: ['maxSelections'],
     }
   ),
@@ -169,16 +217,16 @@ export const checkboxFieldValidationSchema = baseFieldValidationSchema.extend({
   (data) => {
     // Validate that default values exist in options
     if (data.defaultValue && data.options) {
-      const defaultValues = Array.isArray(data.defaultValue) ? data.defaultValue : 
+      const defaultValues = Array.isArray(data.defaultValue) ? data.defaultValue :
         (data.defaultValue ? data.defaultValue.split(',').map(s => s.trim()).filter(Boolean) : []);
-      
+
       const invalidDefaults = defaultValues.filter(val => !data.options.includes(val));
       return invalidDefaults.length === 0;
     }
     return true;
   },
   {
-    message: 'Default values must be from the available options',
+    message: 'fieldSettingsConstants:errorMessages.defaultValuesInvalid',
     path: ['defaultValue'],
   }
 ).refine(
@@ -195,7 +243,7 @@ export const checkboxFieldValidationSchema = baseFieldValidationSchema.extend({
     return true;
   },
   {
-    message: 'Maximum selections cannot exceed the number of available options',
+    message: 'fieldSettingsConstants:errorMessages.characterLimitExceeded',
     path: ['validation', 'maxSelections'],
   }
 );
@@ -203,15 +251,15 @@ export const checkboxFieldValidationSchema = baseFieldValidationSchema.extend({
 export const dateFieldValidationSchema = baseFieldValidationSchema.extend({
   minDate: z.string().optional().refine(
     (date) => !date || !isNaN(Date.parse(date)),
-    'Invalid minimum date format'
+    'fieldSettingsConstants:errorMessages.invalidDate'
   ),
   maxDate: z.string().optional().refine(
     (date) => !date || !isNaN(Date.parse(date)),
-    'Invalid maximum date format'
+    'fieldSettingsConstants:errorMessages.invalidDate'
   ),
   defaultValue: z.string().optional().refine(
     (date) => !date || !isNaN(Date.parse(date)),
-    'Default value must be a valid date'
+    'fieldSettingsConstants:errorMessages.invalidDate'
   ),
 }).refine(
   (data) => {
@@ -221,7 +269,7 @@ export const dateFieldValidationSchema = baseFieldValidationSchema.extend({
     return true;
   },
   {
-    message: 'Minimum date must be before or equal to maximum date',
+    message: 'fieldSettingsConstants:errorMessages.minDateAfterMax',
     path: ['maxDate'],
   }
 ).refine(
@@ -232,7 +280,7 @@ export const dateFieldValidationSchema = baseFieldValidationSchema.extend({
     return true;
   },
   {
-    message: 'Default date must be after or equal to minimum date',
+    message: 'fieldSettingsConstants:errorMessages.defaultDateBelowMin',
     path: ['defaultValue'],
   }
 ).refine(
@@ -243,14 +291,14 @@ export const dateFieldValidationSchema = baseFieldValidationSchema.extend({
     return true;
   },
   {
-    message: 'Default date must be before or equal to maximum date',
+    message: 'fieldSettingsConstants:errorMessages.defaultDateAboveMax',
     path: ['defaultValue'],
   }
 );
 
 // Rich text field validation schema
 export const richTextFieldValidationSchema = z.object({
-  content: z.string().max(50000, 'Content is too long (max 50,000 characters)').default(''),
+  content: z.string().max(50000, 'fieldSettingsConstants:errorMessages.characterLimitExceeded').default(''),
 });
 
 // Factory function to get validation schema by field type
@@ -292,7 +340,7 @@ export type DateFieldFormData = z.infer<typeof dateFieldValidationSchema>;
 export type RichTextFieldFormData = z.infer<typeof richTextFieldValidationSchema>;
 
 // Union type for all field form data
-export type FieldFormData = 
+export type FieldFormData =
   | TextInputFieldFormData
   | TextAreaFieldFormData
   | EmailFieldFormData
