@@ -366,7 +366,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
               {/* Required field toggle */}
               <div className="flex items-center space-x-2">
                 <Controller
-                  name="validation.required"
+                  name="required"
                   control={control}
                   render={({ field: controllerField }) => (
                     <Checkbox

@@ -26,12 +26,12 @@ export function extractBaseFieldData(field: FormField): BaseFieldData {
  */
 function getFieldDefaultValue(field: FormField): string | string[] {
   const fieldWithDefaults = field as any;
-  
+
   // Handle checkbox fields with array default values
   if (field.type === FieldType.CHECKBOX_FIELD) {
     return fieldWithDefaults.defaultValues || [];
   }
-  
+
   // Handle regular default values
   return fieldWithDefaults.defaultValue || '';
 }
@@ -41,7 +41,7 @@ function getFieldDefaultValue(field: FormField): string | string[] {
  */
 export function extractValidationData(field: FormField): ValidationFieldData {
   const validation = (field as any).validation || {};
-  
+
   return {
     validation: {
       required: validation.required || false,
@@ -56,7 +56,7 @@ export function extractValidationData(field: FormField): ValidationFieldData {
  */
 export function extractCheckboxValidationData(field: FormField): CheckboxValidationFieldData {
   const validation = (field as any).validation || {};
-  
+
   return {
     validation: {
       required: validation.required || false,
@@ -127,32 +127,73 @@ const FIELD_DATA_EXTRACTORS: Partial<Record<FieldType, (field: FormField) => Rec
     ...extractBaseFieldData(field),
   }),
 
-  [FieldType.NUMBER_FIELD]: (field: FormField) => ({
-    ...extractBaseFieldData(field),
-    ...extractNumberRangeData(field),
-  }),
+  [FieldType.NUMBER_FIELD]: (field: FormField) => {
+    const baseData = extractBaseFieldData(field);
+    const { required, ...restBaseData } = baseData;
+    return {
+      ...restBaseData,
+      required,
+      ...extractNumberRangeData(field),
+      validation: {
+        required: required,
+      },
+    };
+  },
 
-  [FieldType.SELECT_FIELD]: (field: FormField) => ({
-    ...extractBaseFieldData(field),
-    ...extractOptionData(field),
-  }),
+  [FieldType.SELECT_FIELD]: (field: FormField) => {
+    const baseData = extractBaseFieldData(field);
+    const { required, ...restBaseData } = baseData;
+    return {
+      ...restBaseData,
+      required,
+      ...extractOptionData(field),
+      validation: {
+        required: required,
+      },
+    };
+  },
 
-  [FieldType.RADIO_FIELD]: (field: FormField) => ({
-    ...extractBaseFieldData(field),
-    ...extractOptionData(field),
-  }),
+  [FieldType.RADIO_FIELD]: (field: FormField) => {
+    const baseData = extractBaseFieldData(field);
+    const { required, ...restBaseData } = baseData;
+    return {
+      ...restBaseData,
+      required,
+      ...extractOptionData(field),
+      validation: {
+        required: required,
+      },
+    };
+  },
 
-  [FieldType.CHECKBOX_FIELD]: (field: FormField) => ({
-    ...extractBaseFieldData(field),
-    ...extractOptionData(field),
-    ...extractCheckboxValidationData(field),
-    multiple: ('multiple' in field && field.multiple) || true,
-  }),
+  [FieldType.CHECKBOX_FIELD]: (field: FormField) => {
+    const baseData = extractBaseFieldData(field);
+    const { required, ...restBaseData } = baseData;
+    const checkboxValidation = extractCheckboxValidationData(field);
+    return {
+      ...restBaseData,
+      required,
+      ...extractOptionData(field),
+      validation: {
+        ...checkboxValidation.validation,
+        required: required,
+      },
+      multiple: ('multiple' in field && field.multiple) || true,
+    };
+  },
 
-  [FieldType.DATE_FIELD]: (field: FormField) => ({
-    ...extractBaseFieldData(field),
-    ...extractDateRangeData(field),
-  }),
+  [FieldType.DATE_FIELD]: (field: FormField) => {
+    const baseData = extractBaseFieldData(field);
+    const { required, ...restBaseData } = baseData;
+    return {
+      ...restBaseData,
+      required,
+      ...extractDateRangeData(field),
+      validation: {
+        required: required,
+      },
+    };
+  },
 
   [FieldType.RICH_TEXT_FIELD]: (field: FormField) => ({
     ...extractRichTextData(field),
@@ -165,12 +206,12 @@ const FIELD_DATA_EXTRACTORS: Partial<Record<FieldType, (field: FormField) => Rec
  */
 export function extractFieldData(field: FormField): Record<string, any> {
   const extractor = FIELD_DATA_EXTRACTORS[field.type];
-  
+
   if (!extractor) {
     // Fallback to base data for unknown field types
     return extractBaseFieldData(field);
   }
-  
+
   return extractor(field);
 }
 
