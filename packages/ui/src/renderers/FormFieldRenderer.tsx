@@ -60,9 +60,10 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
       <Controller
         name={field.id as Path<FieldValues>}
         control={control}
-        render={({ field: controllerField, fieldState }) => {
-          const { error, isTouched } = fieldState;
-          const hasError = error && isTouched;
+        render={({ field: controllerField, fieldState, formState }) => {
+         const { error, isTouched } = fieldState;
+          // Show error if field is touched OR if form has been submitted
+          const hasError = error && (isTouched || formState.isSubmitted);
           
           const inputProps = {
             ...controllerField,

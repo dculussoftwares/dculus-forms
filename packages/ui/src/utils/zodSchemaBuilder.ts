@@ -37,17 +37,12 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
       const textField = field as any; // Cast to access validation
       const textValidation = textField.validation;
 
-      let schema: z.ZodTypeAny;
-
-      if (isRequired) {
-        schema = z.string().min(1, `${fillableField.label} is required`);
-      } else {
-        schema = z.string().optional();
-      }
+      // Start with base string schema
+      let schema: z.ZodString = z.string();
 
       // Add minLength validation if specified
       if (textValidation?.minLength !== undefined && textValidation.minLength > 0) {
-        schema = (schema as z.ZodString).min(
+        schema = schema.min(
           textValidation.minLength,
           `${fillableField.label} must be at least ${textValidation.minLength} characters`
         );
@@ -55,13 +50,18 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
 
       // Add maxLength validation if specified
       if (textValidation?.maxLength !== undefined && textValidation.maxLength > 0) {
-        schema = (schema as z.ZodString).max(
+        schema = schema.max(
           textValidation.maxLength,
           `${fillableField.label} must be at most ${textValidation.maxLength} characters`
         );
       }
 
-      return schema;
+      // Apply required/optional AFTER min/max constraints
+      if (isRequired) {
+        return schema.min(1, `${fillableField.label} is required`);
+      } else {
+        return schema.optional();
+      }
     }
 
     case FieldType.EMAIL_FIELD: {
@@ -183,11 +183,48 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
     }
 
     case FieldType.CHECKBOX_FIELD: {
-      if (isRequired) {
-        return z.array(z.string()).min(1, `Please select at least one ${fillableField.label.toLowerCase()}`);
-      } else {
-        return z.array(z.string()).optional();
+      const checkboxField = field as CheckboxField;
+      const checkboxValidation = checkboxField.validation;
+
+      let schema: z.ZodTypeAny = z.array(z.string());
+
+      // If field is required OR has minSelections, apply validation
+      if (isRequired || (checkboxValidation?.minSelections !== undefined && checkboxValidation.minSelections > 0)) {
+        const minSelections = checkboxValidation?.minSelections || 1;
+
+        if (isRequired) {
+          // Required: enforce minimum selections
+          schema = (schema as z.ZodArray<z.ZodString>).min(
+            minSelections,
+            `Please select at least ${minSelections} ${minSelections === 1 ? 'option' : 'options'}`
+          );
+        } else {
+          // Not required but has minSelections: allow empty OR enforce min when selected
+          schema = (schema as z.ZodArray<z.ZodString>).refine(
+            (val) => val.length === 0 || val.length >= minSelections,
+            {
+              message: `Please select at least ${minSelections} ${minSelections === 1 ? 'option' : 'options'}, or leave empty`
+            }
+          );
+        }
       }
+
+      // Add maxSelections validation if specified
+      if (checkboxValidation?.maxSelections !== undefined && checkboxValidation.maxSelections > 0) {
+        schema = (schema as z.ZodArray<z.ZodString>).refine(
+          (val) => val.length <= checkboxValidation.maxSelections!,
+          {
+            message: `Please select at most ${checkboxValidation.maxSelections} ${checkboxValidation.maxSelections === 1 ? 'option' : 'options'}`
+          }
+        );
+      }
+
+      // Make optional if not required and no minSelections
+      if (!isRequired && !checkboxValidation?.minSelections) {
+        return schema.optional();
+      }
+
+      return schema;
     }
 
     default:

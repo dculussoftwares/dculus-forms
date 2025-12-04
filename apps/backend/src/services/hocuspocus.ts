@@ -465,7 +465,27 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
 
               fieldMap.set('prefix', field.prefix || '');
               fieldMap.set('hint', field.hint || '');
-              fieldMap.set('required', field.validation?.required || false);
+
+              // Create validation map with all validation properties
+              const validationMap = new Y.Map();
+              validationMap.set('required', field.validation?.required || false);
+              validationMap.set('type', field.validation?.type || field.type);
+
+              // Add field-specific validation properties
+              if (field.validation?.minLength !== undefined) {
+                validationMap.set('minLength', field.validation.minLength);
+              }
+              if (field.validation?.maxLength !== undefined) {
+                validationMap.set('maxLength', field.validation.maxLength);
+              }
+              if (field.validation?.minSelections !== undefined) {
+                validationMap.set('minSelections', field.validation.minSelections);
+              }
+              if (field.validation?.maxSelections !== undefined) {
+                validationMap.set('maxSelections', field.validation.maxSelections);
+              }
+
+              fieldMap.set('validation', validationMap);
 
               // Handle field-specific properties
               if (field.options && Array.isArray(field.options)) {
