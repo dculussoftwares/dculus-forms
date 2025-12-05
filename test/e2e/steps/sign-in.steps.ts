@@ -4582,6 +4582,47 @@ When('I fill all date field settings with test data', async function (this: Cust
   await expect(this.page.locator('#field-maxDate')).toHaveValue(testData.maxDate);
 });
 
+When('I fill all dropdown field settings with test data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Define the test data for dropdown field
+  // Note: Dropdown fields don't have prefix or placeholder
+  // Dropdown fields have an options array that comes with defaults
+  // We're not setting defaultValue as it requires interacting with a dropdown of dynamic options
+  const testData = {
+    label: 'Dropdown Persistence Test',
+    hint: 'This is a test hint for dropdown persistence',
+    defaultValue: '',  // Empty means no default selected
+    required: true,
+  };
+
+  // Store for later verification
+  this.expectedFieldSettings = testData;
+
+  // Fill basic fields
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+  await this.page.fill('#field-label', testData.label);
+  await this.page.fill('#field-hint', testData.hint);
+
+  // Wait a bit for the form to be ready
+  await this.page.waitForTimeout(500);
+
+  // Set required checkbox
+  const requiredToggle = this.page.locator('#field-required');
+  const isChecked = await requiredToggle.isChecked();
+  if (!isChecked && testData.required) {
+    await requiredToggle.click();
+  }
+
+  // Verify basic values are set
+  await expect(this.page.locator('#field-label')).toHaveValue(testData.label);
+  await expect(this.page.locator('#field-hint')).toHaveValue(testData.hint);
+
+  console.log('✅ Dropdown field basic settings filled successfully');
+});
+
 When('I save the field settings', async function (this: CustomWorld) {
   if (!this.page) {
     throw new Error('Page is not initialized');
@@ -4706,9 +4747,13 @@ Then('the JSON schema should contain the persisted field settings', async functi
 
   expect(field.label).toBe(expected.label);
   expect(field.hint).toBe(expected.hint);
-  expect(field.placeholder).toBe(expected.placeholder);
 
-  // Verify prefix only if it exists in expected data (date fields don't have prefix)
+  // Verify placeholder only if it exists in expected data (dropdown/radio/checkbox fields don't have placeholder)
+  if (expected.placeholder !== undefined) {
+    expect(field.placeholder).toBe(expected.placeholder);
+  }
+
+  // Verify prefix only if it exists in expected data (date and selection fields don't have prefix)
   if (expected.prefix !== undefined) {
     expect(field.prefix).toBe(expected.prefix);
   }
@@ -4720,7 +4765,7 @@ Then('the JSON schema should contain the persisted field settings', async functi
   expect(field.validation.required).toBe(expected.required);
 
   // Verify minLength and maxLength only if they exist in expected data
-  // (Email, Number, and Date fields don't have these validations)
+  // (Email, Number, Date, and selection fields don't have these validations)
   if (expected.minLength !== undefined) {
     expect(field.validation.minLength).toBe(expected.minLength);
   }
@@ -4742,6 +4787,13 @@ Then('the JSON schema should contain the persisted field settings', async functi
   }
   if (expected.maxDate !== undefined) {
     expect(field.maxDate).toBe(expected.maxDate);
+  }
+
+  // Verify options array (for dropdown, radio, checkbox fields)
+  if (expected.options !== undefined) {
+    expect(field.options).toBeDefined();
+    expect(Array.isArray(field.options)).toBe(true);
+    expect(field.options).toEqual(expected.options);
   }
 
   console.log('✅ All field settings verified successfully in JSON schema');
