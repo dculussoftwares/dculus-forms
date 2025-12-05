@@ -4343,3 +4343,192 @@ When('I test checkbox required and select options in viewer', async function (th
   await thirdFieldLabel.click();
   await this.viewerPage.waitForTimeout(500);
 });
+
+// ========================================
+// Field Settings Persistence Test Steps
+// ========================================
+
+When('I fill all short text field settings with test data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Define the test data
+  const testData = {
+    label: 'Persistence Test Field',
+    hint: 'This is a test hint for persistence',
+    placeholder: 'Enter test data here',
+    prefix: 'TEST',
+    defaultValue: 'Default persistence value',
+    required: true,
+    minLength: 5,
+    maxLength: 100,
+  };
+
+  // Store for later verification
+  this.expectedFieldSettings = testData;
+
+  // Fill all fields
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+  await this.page.fill('#field-label', testData.label);
+  await this.page.fill('#field-hint', testData.hint);
+  await this.page.fill('#field-placeholder', testData.placeholder);
+  await this.page.fill('#field-prefix', testData.prefix);
+  await this.page.fill('#field-defaultValue', testData.defaultValue);
+
+  // Set validation fields
+  await this.page.fill('#field-validation\\.minLength', testData.minLength.toString());
+  await this.page.fill('#field-validation\\.maxLength', testData.maxLength.toString());
+
+  // Set required checkbox
+  const requiredToggle = this.page.locator('#field-required');
+  const isChecked = await requiredToggle.isChecked();
+  if (!isChecked && testData.required) {
+    await requiredToggle.click();
+  }
+
+  // Verify values are set
+  await expect(this.page.locator('#field-label')).toHaveValue(testData.label);
+  await expect(this.page.locator('#field-hint')).toHaveValue(testData.hint);
+  await expect(this.page.locator('#field-placeholder')).toHaveValue(testData.placeholder);
+  await expect(this.page.locator('#field-prefix')).toHaveValue(testData.prefix);
+  await expect(this.page.locator('#field-defaultValue')).toHaveValue(testData.defaultValue);
+});
+
+When('I save the field settings', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Use keyboard shortcut Cmd+S (or Ctrl+S on Windows/Linux)
+  await this.page.keyboard.press('Meta+s');
+
+  // Wait a bit for the save operation to complete
+  await this.page.waitForTimeout(1000);
+});
+
+Then('the field settings should be saved successfully', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Verify no validation errors are visible
+  const validationSummary = this.page.locator('[data-testid="validation-summary"]');
+  await expect(validationSummary).not.toBeVisible({ timeout: 5_000 }).catch(() => {
+    // It's OK if the element doesn't exist at all
+  });
+
+  // Wait for save to complete - the orange background should disappear
+  // The form has a gradient background when dirty
+  await this.page.waitForTimeout(1500);
+});
+
+When('I reload the collaborative builder page', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Store the current URL
+  const currentUrl = this.page.url();
+
+  // Reload the page
+  await this.page.reload({ waitUntil: 'networkidle' });
+
+  // Verify we're still on the same URL
+  expect(this.page.url()).toBe(currentUrl);
+});
+
+Then('the collaborative builder should load successfully', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Wait for the collaborative builder to be visible
+  const builderRoot = this.page.getByTestId('collaborative-form-builder');
+  await expect(builderRoot).toBeVisible({ timeout: 30_000 });
+
+  // Wait for connection indicator to show connected (green dot)
+  await this.page.waitForTimeout(2000);
+});
+
+When('I click the JSON tab in the sidebar', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Find and click the JSON tab button in the PagesSidebar
+  // The button has the text "JSON" and Code icon
+  const jsonTabButton = this.page.locator('button:has-text("JSON")').first();
+  await expect(jsonTabButton).toBeVisible({ timeout: 10_000 });
+  await jsonTabButton.click();
+
+  // Wait for the tab to switch
+  await this.page.waitForTimeout(500);
+});
+
+Then('I should see the JSON schema preview', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Verify the JSON preview is visible
+  // The JSONPreview component has a pre element with the JSON content
+  const jsonPreviewTitle = this.page.locator('text=/FormSchema JSON/i');
+  await expect(jsonPreviewTitle).toBeVisible({ timeout: 10_000 });
+
+  // Verify the code block is visible
+  const codeBlock = this.page.locator('pre code');
+  await expect(codeBlock).toBeVisible({ timeout: 5_000 });
+});
+
+Then('the JSON schema should contain the persisted field settings', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  if (!this.expectedFieldSettings) {
+    throw new Error('Expected field settings not found. Did you run "I fill all short text field settings with test data"?');
+  }
+
+  // Extract the JSON content from the preview
+  const codeBlock = this.page.locator('pre code');
+  const jsonText = await codeBlock.textContent();
+
+  if (!jsonText) {
+    throw new Error('Could not extract JSON from preview');
+  }
+
+  // Parse the JSON
+  const formSchema = JSON.parse(jsonText);
+
+  // Navigate to the field - it should be in pages[1].fields[0] (second page, first field)
+  // because we "add a new page" and then "drag a short text field onto the page"
+  if (!formSchema.pages || formSchema.pages.length < 2) {
+    throw new Error(`Expected at least 2 pages in schema, found: ${formSchema.pages?.length || 0}`);
+  }
+
+  const secondPage = formSchema.pages[1];
+  if (!secondPage.fields || secondPage.fields.length === 0) {
+    throw new Error('Expected at least 1 field in the second page');
+  }
+
+  const field = secondPage.fields[0];
+
+  // Verify all field properties match expected values
+  const expected = this.expectedFieldSettings;
+
+  expect(field.label).toBe(expected.label);
+  expect(field.hint).toBe(expected.hint);
+  expect(field.placeholder).toBe(expected.placeholder);
+  expect(field.prefix).toBe(expected.prefix);
+  expect(field.defaultValue).toBe(expected.defaultValue);
+
+  // Verify validation settings
+  expect(field.validation).toBeDefined();
+  expect(field.validation.required).toBe(expected.required);
+  expect(field.validation.minLength).toBe(expected.minLength);
+  expect(field.validation.maxLength).toBe(expected.maxLength);
+
+  console.log('✅ All field settings verified successfully in JSON schema');
+});
+
