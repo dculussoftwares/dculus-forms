@@ -4442,6 +4442,48 @@ When('I fill all long text field settings with test data', async function (this:
   await expect(this.page.locator('#field-defaultValue')).toHaveValue(testData.defaultValue);
 });
 
+When('I fill all email field settings with test data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Define the test data for email field
+  // Note: Email fields don't have minLength/maxLength validation
+  const testData = {
+    label: 'Email Persistence Test',
+    hint: 'This is a test hint for email persistence',
+    placeholder: 'Enter your email address',
+    prefix: 'EM',
+    defaultValue: 'test@example.com',
+    required: true,
+  };
+
+  // Store for later verification
+  this.expectedFieldSettings = testData;
+
+  // Fill all fields
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+  await this.page.fill('#field-label', testData.label);
+  await this.page.fill('#field-hint', testData.hint);
+  await this.page.fill('#field-placeholder', testData.placeholder);
+  await this.page.fill('#field-prefix', testData.prefix);
+  await this.page.fill('#field-defaultValue', testData.defaultValue);
+
+  // Set required checkbox
+  const requiredToggle = this.page.locator('#field-required');
+  const isChecked = await requiredToggle.isChecked();
+  if (!isChecked && testData.required) {
+    await requiredToggle.click();
+  }
+
+  // Verify values are set
+  await expect(this.page.locator('#field-label')).toHaveValue(testData.label);
+  await expect(this.page.locator('#field-hint')).toHaveValue(testData.hint);
+  await expect(this.page.locator('#field-placeholder')).toHaveValue(testData.placeholder);
+  await expect(this.page.locator('#field-prefix')).toHaveValue(testData.prefix);
+  await expect(this.page.locator('#field-defaultValue')).toHaveValue(testData.defaultValue);
+});
+
 When('I save the field settings', async function (this: CustomWorld) {
   if (!this.page) {
     throw new Error('Page is not initialized');
@@ -4573,8 +4615,15 @@ Then('the JSON schema should contain the persisted field settings', async functi
   // Verify validation settings
   expect(field.validation).toBeDefined();
   expect(field.validation.required).toBe(expected.required);
-  expect(field.validation.minLength).toBe(expected.minLength);
-  expect(field.validation.maxLength).toBe(expected.maxLength);
+
+  // Verify minLength and maxLength only if they exist in expected data
+  // (Email fields don't have these validations)
+  if (expected.minLength !== undefined) {
+    expect(field.validation.minLength).toBe(expected.minLength);
+  }
+  if (expected.maxLength !== undefined) {
+    expect(field.validation.maxLength).toBe(expected.maxLength);
+  }
 
   console.log('✅ All field settings verified successfully in JSON schema');
 });
