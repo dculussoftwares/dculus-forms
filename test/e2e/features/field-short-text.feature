@@ -49,6 +49,7 @@ Feature: Short Text Field Comprehensive Validations
     And I should be able to submit the form in viewer
     Then the validation error summary should not be visible
 
+  @persistence
   Scenario: Verify short text field settings persistence in collaborative builder
     Given I sign in with valid credentials
     When I create a form from the first template
