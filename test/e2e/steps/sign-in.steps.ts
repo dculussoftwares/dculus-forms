@@ -4484,6 +4484,56 @@ When('I fill all email field settings with test data', async function (this: Cus
   await expect(this.page.locator('#field-defaultValue')).toHaveValue(testData.defaultValue);
 });
 
+When('I fill all number field settings with test data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Define the test data for number field
+  // Note: Number fields have min/max for value constraints (not validation.minLength/maxLength)
+  const testData = {
+    label: 'Number Persistence Test',
+    hint: 'This is a test hint for number persistence',
+    placeholder: 'Enter a number',
+    prefix: '#',
+    defaultValue: '42',
+    min: 1,
+    max: 100,
+    required: true,
+  };
+
+  // Store for later verification
+  this.expectedFieldSettings = testData;
+
+  // Fill all fields
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+  await this.page.fill('#field-label', testData.label);
+  await this.page.fill('#field-hint', testData.hint);
+  await this.page.fill('#field-placeholder', testData.placeholder);
+  await this.page.fill('#field-prefix', testData.prefix);
+  await this.page.fill('#field-defaultValue', testData.defaultValue);
+
+  // Fill min/max value constraints
+  await this.page.fill('#field-min', testData.min.toString());
+  await this.page.fill('#field-max', testData.max.toString());
+
+  // Set required checkbox
+  const requiredToggle = this.page.locator('#field-required');
+  const isChecked = await requiredToggle.isChecked();
+  if (!isChecked && testData.required) {
+    await requiredToggle.click();
+  }
+
+  // Verify values are set
+  await expect(this.page.locator('#field-label')).toHaveValue(testData.label);
+  await expect(this.page.locator('#field-hint')).toHaveValue(testData.hint);
+  await expect(this.page.locator('#field-placeholder')).toHaveValue(testData.placeholder);
+  await expect(this.page.locator('#field-prefix')).toHaveValue(testData.prefix);
+  await expect(this.page.locator('#field-defaultValue')).toHaveValue(testData.defaultValue);
+  await expect(this.page.locator('#field-min')).toHaveValue(testData.min.toString());
+  await expect(this.page.locator('#field-max')).toHaveValue(testData.max.toString());
+});
+
 When('I save the field settings', async function (this: CustomWorld) {
   if (!this.page) {
     throw new Error('Page is not initialized');
@@ -4617,7 +4667,7 @@ Then('the JSON schema should contain the persisted field settings', async functi
   expect(field.validation.required).toBe(expected.required);
 
   // Verify minLength and maxLength only if they exist in expected data
-  // (Email fields don't have these validations)
+  // (Email and Number fields don't have these validations)
   if (expected.minLength !== undefined) {
     expect(field.validation.minLength).toBe(expected.minLength);
   }
@@ -4625,6 +4675,13 @@ Then('the JSON schema should contain the persisted field settings', async functi
     expect(field.validation.maxLength).toBe(expected.maxLength);
   }
 
+  // Verify min and max (field-level properties for number fields)
+  if (expected.min !== undefined) {
+    expect(field.min).toBe(expected.min);
+  }
+  if (expected.max !== undefined) {
+    expect(field.max).toBe(expected.max);
+  }
+
   console.log('✅ All field settings verified successfully in JSON schema');
 });
-
