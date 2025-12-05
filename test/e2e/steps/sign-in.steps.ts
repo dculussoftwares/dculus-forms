@@ -4395,6 +4395,53 @@ When('I fill all short text field settings with test data', async function (this
   await expect(this.page.locator('#field-defaultValue')).toHaveValue(testData.defaultValue);
 });
 
+When('I fill all long text field settings with test data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Define the test data for long text field
+  const testData = {
+    label: 'Long Text Persistence Test',
+    hint: 'This is a test hint for long text persistence',
+    placeholder: 'Enter long text here',
+    prefix: 'LT',
+    defaultValue: 'Default long text value for testing persistence',
+    required: true,
+    minLength: 10,
+    maxLength: 500,
+  };
+
+  // Store for later verification
+  this.expectedFieldSettings = testData;
+
+  // Fill all fields
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+  await this.page.fill('#field-label', testData.label);
+  await this.page.fill('#field-hint', testData.hint);
+  await this.page.fill('#field-placeholder', testData.placeholder);
+  await this.page.fill('#field-prefix', testData.prefix);
+  await this.page.fill('#field-defaultValue', testData.defaultValue);
+
+  // Set validation fields
+  await this.page.fill('#field-validation\\.minLength', testData.minLength.toString());
+  await this.page.fill('#field-validation\\.maxLength', testData.maxLength.toString());
+
+  // Set required checkbox
+  const requiredToggle = this.page.locator('#field-required');
+  const isChecked = await requiredToggle.isChecked();
+  if (!isChecked && testData.required) {
+    await requiredToggle.click();
+  }
+
+  // Verify values are set
+  await expect(this.page.locator('#field-label')).toHaveValue(testData.label);
+  await expect(this.page.locator('#field-hint')).toHaveValue(testData.hint);
+  await expect(this.page.locator('#field-placeholder')).toHaveValue(testData.placeholder);
+  await expect(this.page.locator('#field-prefix')).toHaveValue(testData.prefix);
+  await expect(this.page.locator('#field-defaultValue')).toHaveValue(testData.defaultValue);
+});
+
 When('I save the field settings', async function (this: CustomWorld) {
   if (!this.page) {
     throw new Error('Page is not initialized');
