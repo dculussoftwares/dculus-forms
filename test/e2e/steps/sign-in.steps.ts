@@ -4623,6 +4623,46 @@ When('I fill all dropdown field settings with test data', async function (this: 
   console.log('✅ Dropdown field basic settings filled successfully');
 });
 
+When('I fill all radio field settings with test data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Define the test data for radio field
+  // Note: Radio fields are identical to dropdown - don't have prefix or placeholder
+  // Radio fields have an options array that comes with defaults
+  const testData = {
+    label: 'Radio Persistence Test',
+    hint: 'This is a test hint for radio persistence',
+    defaultValue: '',  // Empty means no default selected
+    required: true,
+  };
+
+  // Store for later verification
+  this.expectedFieldSettings = testData;
+
+  // Fill basic fields
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+  await this.page.fill('#field-label', testData.label);
+  await this.page.fill('#field-hint', testData.hint);
+
+  // Wait a bit for the form to be ready
+  await this.page.waitForTimeout(500);
+
+  // Set required checkbox
+  const requiredToggle = this.page.locator('#field-required');
+  const isChecked = await requiredToggle.isChecked();
+  if (!isChecked && testData.required) {
+    await requiredToggle.click();
+  }
+
+  // Verify basic values are set
+  await expect(this.page.locator('#field-label')).toHaveValue(testData.label);
+  await expect(this.page.locator('#field-hint')).toHaveValue(testData.hint);
+
+  console.log('✅ Radio field basic settings filled successfully');
+});
+
 When('I save the field settings', async function (this: CustomWorld) {
   if (!this.page) {
     throw new Error('Page is not initialized');
