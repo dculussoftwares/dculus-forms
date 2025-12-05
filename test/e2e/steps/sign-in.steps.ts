@@ -289,7 +289,7 @@ When('I create a form from the first template', async function (this: CustomWorl
 
   // Fill popover form
   await this.page.waitForSelector('#form-title', { timeout: 10_000 });
-  const formTitle = `E2E Form ${Date.now()}`;
+  const formTitle = `E2E Template Test ${Date.now()}`;
   this.newFormTitle = formTitle;
 
   await this.page.fill('#form-title', formTitle);
@@ -394,7 +394,7 @@ Then('I fill the short text field settings with valid data', async function (thi
   await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
 
   await this.page.waitForSelector('#field-label', { timeout: 10_000 });
-  await this.page.fill('#field-label', `Short Answer ${Date.now()}`);
+  await this.page.fill('#field-label', `Short Answer Field ${Date.now()}`);
   await this.page.fill('#field-hint', 'Provide a concise answer.');
   await this.page.fill('#field-placeholder', 'Enter your response');
   await this.page.fill('#field-prefix', 'QA');
@@ -1040,7 +1040,7 @@ Then('I fill the long text field settings with valid data', async function (this
   await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
 
   await this.page.waitForSelector('#field-label', { timeout: 10_000 });
-  await this.page.fill('#field-label', `Long Answer ${Date.now()}`);
+  await this.page.fill('#field-label', `Long Answer Field ${Date.now()}`);
   await this.page.fill('#field-hint', 'Please provide a detailed answer.');
   await this.page.fill('#field-placeholder', 'Type your response here...');
   await this.page.fill('#field-defaultValue', 'Default long text response');
@@ -1108,7 +1108,7 @@ Then('I fill the email field settings with valid data', async function (this: Cu
   await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
 
   await this.page.waitForSelector('#field-label', { timeout: 10_000 });
-  await this.page.fill('#field-label', `Email Address ${Date.now()}`);
+  await this.page.fill('#field-label', `Email Address Field ${Date.now()}`);
   await this.page.fill('#field-hint', 'We will never share your email with anyone.');
   await this.page.fill('#field-placeholder', 'you@example.com');
   await this.page.fill('#field-defaultValue', 'test@example.com');
@@ -1192,7 +1192,7 @@ Then('I fix all validation errors for email', async function (this: CustomWorld)
   }
 
   // Fix label: Set valid length (< 200 chars)
-  await this.page.fill('#field-label', `Email Address ${Date.now()}`);
+  await this.page.fill('#field-label', `Email Field ${Date.now()}`);
 
   // Fix hint: Set valid length (< 500 chars)
   await this.page.fill('#field-hint', 'We will never share your email.');
@@ -1284,7 +1284,7 @@ Then('I fill the number field settings with valid data', async function (this: C
   await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
 
   await this.page.waitForSelector('#field-label', { timeout: 10_000 });
-  await this.page.fill('#field-label', `Quantity ${Date.now()}`);
+  await this.page.fill('#field-label', `Quantity Field ${Date.now()}`);
   await this.page.fill('#field-hint', 'Enter the amount.');
   await this.page.fill('#field-placeholder', '0');
   await this.page.fill('#field-defaultValue', '10');
@@ -1370,7 +1370,7 @@ Then('I fix all validation errors for number', async function (this: CustomWorld
   }
 
   // Fix label: Set valid length (< 200 chars)
-  await this.page.fill('#field-label', `Quantity ${Date.now()}`);
+  await this.page.fill('#field-label', `Number Field ${Date.now()}`);
 
   // Fix min/max: Set valid range
   await this.page.fill('#field-min', '0');
@@ -1466,7 +1466,7 @@ Then('I fill the date field settings with valid data', async function (this: Cus
   await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
 
   await this.page.waitForSelector('#field-label', { timeout: 10_000 });
-  await this.page.fill('#field-label', `Event Date ${Date.now()}`);
+  await this.page.fill('#field-label', `Event Date Field ${Date.now()}`);
   await this.page.fill('#field-hint', 'Select the date of the event.');
   await this.page.fill('#field-placeholder', 'MM/DD/YYYY');
 
@@ -1570,7 +1570,7 @@ Then('I fix all validation errors for date', async function (this: CustomWorld) 
   }
 
   // Fix label: Set valid length (< 200 chars)
-  await this.page.fill('#field-label', `Event Date ${Date.now()}`);
+  await this.page.fill('#field-label', `Date Field ${Date.now()}`);
 
   // Fix hint: Set valid length (< 500 chars)
   await this.page.fill('#field-hint', 'Select the date of the event.');
@@ -1672,7 +1672,7 @@ Then('I fill the dropdown field settings with valid data', async function (this:
   await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
 
   await this.page.waitForSelector('#field-label', { timeout: 10_000 });
-  await this.page.fill('#field-label', `Country Selection ${Date.now()}`);
+  await this.page.fill('#field-label', `Country Selection Field ${Date.now()}`);
   await this.page.fill('#field-hint', 'Select your country from the list.');
 
   // Fill option values - we need to find option input fields
@@ -1778,7 +1778,7 @@ Then('I fix all validation errors for dropdown', async function (this: CustomWor
   }
 
   // Fix label: Set valid length (< 200 chars)
-  await this.page.fill('#field-label', `Country Selection ${Date.now()}`);
+  await this.page.fill('#field-label', `Dropdown Field ${Date.now()}`);
 
   // Fix hint: Set valid length (< 500 chars)
   await this.page.fill('#field-hint', 'Select your country from the list.');
@@ -1882,7 +1882,7 @@ Then('I fill the radio field settings with valid data', async function (this: Cu
   await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
 
   await this.page.waitForSelector('#field-label', { timeout: 10_000 });
-  await this.page.fill('#field-label', `Gender Selection ${Date.now()}`);
+  await this.page.fill('#field-label', `Gender Selection Field ${Date.now()}`);
   await this.page.fill('#field-hint', 'Please select your gender.');
 
   // Fill option values
@@ -1988,7 +1988,7 @@ Then('I fix all validation errors for radio', async function (this: CustomWorld)
   }
 
   // Fix label: Set valid length (< 200 chars)
-  await this.page.fill('#field-label', `Gender Selection ${Date.now()}`);
+  await this.page.fill('#field-label', `Radio Field ${Date.now()}`);
 
   // Fix hint: Set valid length (< 500 chars)
   await this.page.fill('#field-hint', 'Please select your gender.');
@@ -2092,7 +2092,7 @@ Then('I fill the checkbox field settings with valid data', async function (this:
   await expect(settingsPanel).toBeVisible({ timeout: 15_000 });
 
   await this.page.waitForSelector('#field-label', { timeout: 10_000 });
-  await this.page.fill('#field-label', `Hobbies ${Date.now()}`);
+  await this.page.fill('#field-label', `Hobbies Selection Field ${Date.now()}`);
   await this.page.fill('#field-hint', 'Select your favorite hobbies.');
 
   // Fill option values
@@ -2208,7 +2208,7 @@ Then('I fix all validation errors for checkbox', async function (this: CustomWor
   }
 
   // Fix label: Set valid length (< 200 chars)
-  await this.page.fill('#field-label', `Hobbies ${Date.now()}`);
+  await this.page.fill('#field-label', `Checkbox Field ${Date.now()}`);
 
   // Fix hint: Set valid length (< 500 chars)
   await this.page.fill('#field-hint', 'Select your favorite hobbies.');
@@ -2516,7 +2516,7 @@ When('I create a form via GraphQL with all field types', async function (this: C
 
   const formSchema = createFormSchemaWithAllFields();
   const timestamp = Date.now();
-  const formTitle = `E2E Multi-Page Form ${timestamp}`;
+  const formTitle = `E2E Multi-Page Navigation Test ${timestamp}`;
 
   // Make GraphQL request to create form
   const response = await this.page.evaluate(async ({ orgId, title, schema, backendUrl }) => {
@@ -2686,7 +2686,7 @@ When('I create a form via GraphQL with short text field validations', async func
 
   const formSchema = createFormSchemaWithShortTextValidations();
   const timestamp = Date.now();
-  const formTitle = `E2E Short Text Validations ${timestamp}`;
+  const formTitle = `E2E Short Text Validation Test ${timestamp}`;
 
   // Make GraphQL request to create form
   const response = await this.page.evaluate(async ({ orgId, title, schema, backendUrl }) => {
@@ -3035,7 +3035,7 @@ When('I create a form via GraphQL with long text field validations', async funct
 
   const formSchema = createFormSchemaWithLongTextValidations();
   const timestamp = Date.now();
-  const formTitle = `E2E Long Text Validations ${timestamp}`;
+  const formTitle = `E2E Long Text Validation Test ${timestamp}`;
 
   // Make GraphQL request to create form
   const response = await this.page.evaluate(async ({ orgId, title, schema, backendUrl }) => {
@@ -3270,7 +3270,7 @@ When('I create a form via GraphQL with email field validations', async function 
 
   const formSchema = createFormSchemaWithEmailValidations();
   const timestamp = Date.now();
-  const formTitle = `E2E Email Validations ${timestamp}`;
+  const formTitle = `E2E Email Validation Test ${timestamp}`;
 
   // Make GraphQL request to create form
   const response = await this.page.evaluate(async ({ orgId, title, schema, backendUrl }) => {
@@ -3507,7 +3507,7 @@ When('I create a form via GraphQL with number field validations', async function
 
   const formSchema = createFormSchemaWithNumberValidations();
   const timestamp = Date.now();
-  const formTitle = `E2E Number Validations ${timestamp}`;
+  const formTitle = `E2E Number Validation Test ${timestamp}`;
 
   // Make GraphQL request to create form
   const response = await this.page.evaluate(async ({ orgId, title, schema, backendUrl }) => {
@@ -3785,7 +3785,7 @@ When('I create a form via GraphQL with date field validations', async function (
 
   const formSchema = createFormSchemaWithDateValidations();
   const timestamp = Date.now();
-  const formTitle = `E2E Date Validations ${timestamp}`;
+  const formTitle = `E2E Date Validation Test ${timestamp}`;
 
   // Make GraphQL request to create form
   const response = await this.page.evaluate(async ({ orgId, title, schema, backendUrl }) => {
@@ -4059,7 +4059,7 @@ When('I create a form via GraphQL with dropdown field validations', async functi
 
   const formSchema = createFormSchemaWithDropdownValidations();
   const timestamp = Date.now();
-  const formTitle = `E2E Dropdown Validations ${timestamp}`;
+  const formTitle = `E2E Dropdown Validation Test ${timestamp}`;
 
   // Make GraphQL request to create form
   const response = await this.page.evaluate(async ({ orgId, title, schema, backendUrl }) => {
@@ -4270,7 +4270,7 @@ When('I create a form via GraphQL with checkbox field validations', async functi
 
   const formSchema = createFormSchemaWithCheckboxValidations();
   const timestamp = Date.now();
-  const formTitle = `E2E Checkbox Validations ${timestamp}`;
+  const formTitle = `E2E Checkbox Validation Test ${timestamp}`;
 
   // Make GraphQL request to create form
   const response = await this.page.evaluate(async ({ orgId, title, schema, backendUrl }) => {
