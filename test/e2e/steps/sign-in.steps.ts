@@ -4619,8 +4619,6 @@ When('I fill all dropdown field settings with test data', async function (this: 
   // Verify basic values are set
   await expect(this.page.locator('#field-label')).toHaveValue(testData.label);
   await expect(this.page.locator('#field-hint')).toHaveValue(testData.hint);
-
-  console.log('✅ Dropdown field basic settings filled successfully');
 });
 
 When('I fill all radio field settings with test data', async function (this: CustomWorld) {
@@ -4659,8 +4657,6 @@ When('I fill all radio field settings with test data', async function (this: Cus
   // Verify basic values are set
   await expect(this.page.locator('#field-label')).toHaveValue(testData.label);
   await expect(this.page.locator('#field-hint')).toHaveValue(testData.hint);
-
-  console.log('✅ Radio field basic settings filled successfully');
 });
 
 When('I fill all checkbox field settings with test data', async function (this: CustomWorld) {
@@ -4699,8 +4695,6 @@ When('I fill all checkbox field settings with test data', async function (this: 
   // Verify basic values are set
   await expect(this.page.locator('#field-label')).toHaveValue(testData.label);
   await expect(this.page.locator('#field-hint')).toHaveValue(testData.hint);
-
-  console.log('✅ Checkbox field basic settings filled successfully');
 });
 
 When('I save the field settings', async function (this: CustomWorld) {
@@ -4891,6 +4885,4 @@ Then('the JSON schema should contain the persisted field settings', async functi
   if (expected.maxSelections !== undefined) {
     expect(field.validation.maxSelections).toBe(expected.maxSelections);
   }
-
-  console.log('✅ All field settings verified successfully in JSON schema');
 });
