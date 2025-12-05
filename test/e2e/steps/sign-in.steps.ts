@@ -4663,6 +4663,46 @@ When('I fill all radio field settings with test data', async function (this: Cus
   console.log('✅ Radio field basic settings filled successfully');
 });
 
+When('I fill all checkbox field settings with test data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Define the test data for checkbox field
+  // Note: Checkbox fields don't have prefix or placeholder
+  // Checkbox fields have defaultValues (array) and minSelections/maxSelections validation
+  const testData = {
+    label: 'Checkbox Persistence Test',
+    hint: 'This is a test hint for checkbox persistence',
+    defaultValue: [],  // Empty array means no defaults selected
+    required: true,
+  };
+
+  // Store for later verification
+  this.expectedFieldSettings = testData;
+
+  // Fill basic fields
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+  await this.page.fill('#field-label', testData.label);
+  await this.page.fill('#field-hint', testData.hint);
+
+  // Wait a bit for the form to be ready
+  await this.page.waitForTimeout(500);
+
+  // Set required checkbox
+  const requiredToggle = this.page.locator('#field-required');
+  const isChecked = await requiredToggle.isChecked();
+  if (!isChecked && testData.required) {
+    await requiredToggle.click();
+  }
+
+  // Verify basic values are set
+  await expect(this.page.locator('#field-label')).toHaveValue(testData.label);
+  await expect(this.page.locator('#field-hint')).toHaveValue(testData.hint);
+
+  console.log('✅ Checkbox field basic settings filled successfully');
+});
+
 When('I save the field settings', async function (this: CustomWorld) {
   if (!this.page) {
     throw new Error('Page is not initialized');
@@ -4798,7 +4838,15 @@ Then('the JSON schema should contain the persisted field settings', async functi
     expect(field.prefix).toBe(expected.prefix);
   }
 
-  expect(field.defaultValue).toBe(expected.defaultValue);
+  // Verify defaultValue - handle both single values and arrays (for checkbox fields)
+  if (Array.isArray(expected.defaultValue)) {
+    // For checkbox fields, defaultValue is an array
+    const fieldDefaultValue = Array.isArray(field.defaultValue) ? field.defaultValue :
+      (field.defaultValues || []);
+    expect(fieldDefaultValue).toEqual(expected.defaultValue);
+  } else {
+    expect(field.defaultValue).toBe(expected.defaultValue);
+  }
 
   // Verify validation settings
   expect(field.validation).toBeDefined();
@@ -4834,6 +4882,14 @@ Then('the JSON schema should contain the persisted field settings', async functi
     expect(field.options).toBeDefined();
     expect(Array.isArray(field.options)).toBe(true);
     expect(field.options).toEqual(expected.options);
+  }
+
+  // Verify minSelections and maxSelections (for checkbox fields)
+  if (expected.minSelections !== undefined) {
+    expect(field.validation.minSelections).toBe(expected.minSelections);
+  }
+  if (expected.maxSelections !== undefined) {
+    expect(field.validation.maxSelections).toBe(expected.maxSelections);
   }
 
   console.log('✅ All field settings verified successfully in JSON schema');
