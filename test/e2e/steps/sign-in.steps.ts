@@ -4534,6 +4534,54 @@ When('I fill all number field settings with test data', async function (this: Cu
   await expect(this.page.locator('#field-max')).toHaveValue(testData.max.toString());
 });
 
+When('I fill all date field settings with test data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Define the test data for date field
+  // Note: Date fields have minDate/maxDate for date range constraints
+  // Date fields DON'T have a prefix field
+  const testData = {
+    label: 'Date Persistence Test',
+    hint: 'This is a test hint for date persistence',
+    placeholder: 'Select a date',
+    defaultValue: '2025-06-15',
+    minDate: '2025-01-01',
+    maxDate: '2025-12-31',
+    required: true,
+  };
+
+  // Store for later verification
+  this.expectedFieldSettings = testData;
+
+  // Fill all fields
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+  await this.page.fill('#field-label', testData.label);
+  await this.page.fill('#field-hint', testData.hint);
+  await this.page.fill('#field-placeholder', testData.placeholder);
+  await this.page.fill('#field-defaultValue', testData.defaultValue);
+
+  // Fill minDate/maxDate constraints
+  await this.page.fill('#field-minDate', testData.minDate);
+  await this.page.fill('#field-maxDate', testData.maxDate);
+
+  // Set required checkbox
+  const requiredToggle = this.page.locator('#field-required');
+  const isChecked = await requiredToggle.isChecked();
+  if (!isChecked && testData.required) {
+    await requiredToggle.click();
+  }
+
+  // Verify values are set
+  await expect(this.page.locator('#field-label')).toHaveValue(testData.label);
+  await expect(this.page.locator('#field-hint')).toHaveValue(testData.hint);
+  await expect(this.page.locator('#field-placeholder')).toHaveValue(testData.placeholder);
+  await expect(this.page.locator('#field-defaultValue')).toHaveValue(testData.defaultValue);
+  await expect(this.page.locator('#field-minDate')).toHaveValue(testData.minDate);
+  await expect(this.page.locator('#field-maxDate')).toHaveValue(testData.maxDate);
+});
+
 When('I save the field settings', async function (this: CustomWorld) {
   if (!this.page) {
     throw new Error('Page is not initialized');
@@ -4659,7 +4707,12 @@ Then('the JSON schema should contain the persisted field settings', async functi
   expect(field.label).toBe(expected.label);
   expect(field.hint).toBe(expected.hint);
   expect(field.placeholder).toBe(expected.placeholder);
-  expect(field.prefix).toBe(expected.prefix);
+
+  // Verify prefix only if it exists in expected data (date fields don't have prefix)
+  if (expected.prefix !== undefined) {
+    expect(field.prefix).toBe(expected.prefix);
+  }
+
   expect(field.defaultValue).toBe(expected.defaultValue);
 
   // Verify validation settings
@@ -4667,7 +4720,7 @@ Then('the JSON schema should contain the persisted field settings', async functi
   expect(field.validation.required).toBe(expected.required);
 
   // Verify minLength and maxLength only if they exist in expected data
-  // (Email and Number fields don't have these validations)
+  // (Email, Number, and Date fields don't have these validations)
   if (expected.minLength !== undefined) {
     expect(field.validation.minLength).toBe(expected.minLength);
   }
@@ -4681,6 +4734,14 @@ Then('the JSON schema should contain the persisted field settings', async functi
   }
   if (expected.max !== undefined) {
     expect(field.max).toBe(expected.max);
+  }
+
+  // Verify minDate and maxDate (field-level properties for date fields)
+  if (expected.minDate !== undefined) {
+    expect(field.minDate).toBe(expected.minDate);
+  }
+  if (expected.maxDate !== undefined) {
+    expect(field.maxDate).toBe(expected.maxDate);
   }
 
   console.log('✅ All field settings verified successfully in JSON schema');
