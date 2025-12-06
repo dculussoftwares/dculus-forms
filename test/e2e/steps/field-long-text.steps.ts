@@ -449,13 +449,30 @@ When('I fill all long text field settings with test data', async function (this:
     throw new Error('Page is not initialized');
   }
 
+  // Define test data
+  const timestamp = Date.now();
+  const testData = {
+    label: `Complete Long Text Field ${timestamp}`,
+    hint: 'Comprehensive help text',
+    placeholder: 'Full placeholder',
+    prefix: 'LT',
+    defaultValue: 'Default value',
+    minLength: 5,
+    maxLength: 500,
+    required: true,
+  };
+
+  // Store for later verification
+  this.expectedFieldSettings = testData;
+
   await this.page.waitForSelector('#field-label', { timeout: 10_000 });
-  await this.page.fill('#field-label', `Complete Long Text Field ${Date.now()}`);
-  await this.page.fill('#field-hint', 'Comprehensive help text');
-  await this.page.fill('#field-placeholder', 'Full placeholder');
-  await this.page.fill('#field-defaultValue', 'Default value');
-  await this.page.fill('#field-validation\\.minLength', '5');
-  await this.page.fill('#field-validation\\.maxLength', '500');
+  await this.page.fill('#field-label', testData.label);
+  await this.page.fill('#field-hint', testData.hint);
+  await this.page.fill('#field-placeholder', testData.placeholder);
+  await this.page.fill('#field-prefix', testData.prefix);
+  await this.page.fill('#field-defaultValue', testData.defaultValue);
+  await this.page.fill('#field-validation\\.minLength', testData.minLength.toString());
+  await this.page.fill('#field-validation\\.maxLength', testData.maxLength.toString());
 
   const requiredToggle = this.page.locator('#field-required');
   const isChecked = await requiredToggle.isChecked();

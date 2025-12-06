@@ -216,3 +216,36 @@ When('I fill and save the radio field with label {string}', async function (this
 
   await this.page.waitForTimeout(1000);
 });
+
+// Settings persistence step
+When('I fill all radio field settings with test data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Define test data
+  const testData = {
+    label: 'Radio Persistence Test',
+    hint: 'This is a test hint for radio persistence',
+    defaultValue: '',  // Empty means no default selected
+    required: true,
+  };
+
+  // Store for later verification
+  this.expectedFieldSettings = testData;
+
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+  await this.page.fill('#field-label', testData.label);
+  await this.page.fill('#field-hint', testData.hint);
+
+  await this.page.waitForTimeout(500);
+
+  const requiredToggle = this.page.locator('#field-required');
+  const isChecked = await requiredToggle.isChecked();
+  if (!isChecked && testData.required) {
+    await requiredToggle.click();
+  }
+
+  await expect(this.page.locator('#field-label')).toHaveValue(testData.label);
+  await expect(this.page.locator('#field-hint')).toHaveValue(testData.hint);
+});

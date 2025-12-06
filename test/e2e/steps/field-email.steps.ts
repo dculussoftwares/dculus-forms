@@ -352,3 +352,39 @@ When('I fill email field with valid data in viewer', async function (this: Custo
 
   await this.viewerPage.waitForTimeout(500);
 });
+
+// Settings persistence step
+When('I fill all email field settings with test data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Define test data
+  const timestamp = Date.now();
+  const testData = {
+    label: `Complete Email Field ${timestamp}`,
+    hint: 'This is comprehensive help text for email',
+    placeholder: 'Enter your email address',
+    prefix: 'EM',
+    defaultValue: 'test@example.com',
+    required: true,
+  };
+
+  // Store for later verification
+  this.expectedFieldSettings = testData;
+
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+  await this.page.fill('#field-label', testData.label);
+  await this.page.fill('#field-hint', testData.hint);
+  await this.page.fill('#field-placeholder', testData.placeholder);
+  await this.page.fill('#field-prefix', testData.prefix);
+  await this.page.fill('#field-defaultValue', testData.defaultValue);
+
+  const requiredToggle = this.page.locator('#field-required');
+  const isChecked = await requiredToggle.isChecked();
+  if (!isChecked && testData.required) {
+    await requiredToggle.click();
+  }
+
+  await this.page.waitForTimeout(500);
+});

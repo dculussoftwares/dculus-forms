@@ -463,7 +463,7 @@ Then('I should be able to submit the form in viewer', async function (this: Cust
 
   // The submit button should exist and be enabled
   const submitButton = this.viewerPage.getByTestId('viewer-submit-button');
-  
+
   await expect(submitButton).toBeVisible({ timeout: 10_000 });
   await expect(submitButton).toBeEnabled({ timeout: 5_000 });
 
@@ -491,15 +491,31 @@ When('I fill all short text field settings with test data', async function (this
     throw new Error('Page is not initialized');
   }
 
+  // Define test data
+  const timestamp = Date.now();
+  const testData = {
+    label: `Complete Short Text Field ${timestamp}`,
+    hint: 'This is comprehensive help text',
+    placeholder: 'Full placeholder text',
+    prefix: 'PREFIX',
+    defaultValue: 'Default value text',
+    minLength: 5,
+    maxLength: 100,
+    required: true,
+  };
+
+  // Store for later verification
+  this.expectedFieldSettings = testData;
+
   // Fill comprehensive test data (settings panel should already be open)
   await this.page.waitForSelector('#field-label', { timeout: 10_000 });
-  await this.page.fill('#field-label', `Complete Short Text Field ${Date.now()}`);
-  await this.page.fill('#field-hint', 'This is comprehensive help text');
-  await this.page.fill('#field-placeholder', 'Full placeholder text');
-  await this.page.fill('#field-prefix', 'PREFIX');
-  await this.page.fill('#field-defaultValue', 'Default value text');
-  await this.page.fill('#field-validation\\.minLength', '5');
-  await this.page.fill('#field-validation\\.maxLength', '100');
+  await this.page.fill('#field-label', testData.label);
+  await this.page.fill('#field-hint', testData.hint);
+  await this.page.fill('#field-placeholder', testData.placeholder);
+  await this.page.fill('#field-prefix', testData.prefix);
+  await this.page.fill('#field-defaultValue', testData.defaultValue);
+  await this.page.fill('#field-validation\\.minLength', testData.minLength.toString());
+  await this.page.fill('#field-validation\\.maxLength', testData.maxLength.toString());
 
   const requiredToggle = this.page.locator('#field-required');
   const isChecked = await requiredToggle.isChecked();

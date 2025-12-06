@@ -118,6 +118,28 @@ Then('I test label and hint validation for checkbox', async function (this: Cust
   await expect(hintTooLongError).toBeVisible({ timeout: 5_000 });
 });
 
+Then('I test selection limits validation for checkbox', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Test 1: Min greater than max
+  await this.page.fill('input[name="validation.minSelections"]', '5');
+  await this.page.fill('input[name="validation.maxSelections"]', '2');
+  await this.page.locator('#field-label').click();
+
+  const minGreaterThanMaxError = this.page.locator('text=/Minimum.*maximum|Min.*less.*max/i').first();
+  await expect(minGreaterThanMaxError).toBeVisible({ timeout: 5_000 });
+
+  // Fix: Set valid range
+  await this.page.fill('input[name="validation.minSelections"]', '1');
+  await this.page.fill('input[name="validation.maxSelections"]', '3');
+  await this.page.locator('#field-label').click();
+
+  // Verify error is gone
+  await expect(minGreaterThanMaxError).not.toBeVisible();
+});
+
 Then('I test options validation for checkbox', async function (this: CustomWorld) {
   if (!this.page) {
     throw new Error('Page is not initialized');
@@ -419,4 +441,37 @@ When('I test checkbox required and select options in viewer', async function (th
   const thirdFieldLabel = this.viewerPage.locator('label[for="field-multi-1"]');
   await thirdFieldLabel.click();
   await this.viewerPage.waitForTimeout(500);
+});
+
+// Settings persistence step
+When('I fill all checkbox field settings with test data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Define test data
+  const testData = {
+    label: 'Checkbox Persistence Test',
+    hint: 'This is a test hint for checkbox persistence',
+    defaultValue: [],  // Empty array means no defaults selected
+    required: true,
+  };
+
+  // Store for later verification
+  this.expectedFieldSettings = testData;
+
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+  await this.page.fill('#field-label', testData.label);
+  await this.page.fill('#field-hint', testData.hint);
+
+  await this.page.waitForTimeout(500);
+
+  const requiredToggle = this.page.locator('#field-required');
+  const isChecked = await requiredToggle.isChecked();
+  if (!isChecked && testData.required) {
+    await requiredToggle.click();
+  }
+
+  await expect(this.page.locator('#field-label')).toHaveValue(testData.label);
+  await expect(this.page.locator('#field-hint')).toHaveValue(testData.hint);
 });

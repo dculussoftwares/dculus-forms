@@ -413,3 +413,43 @@ When('I fill number field with valid data in viewer', async function (this: Cust
 
   await this.viewerPage.waitForTimeout(500);
 });
+
+// Settings persistence step
+When('I fill all number field settings with test data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Define test data
+  const timestamp = Date.now();
+  const testData = {
+    label: `Complete Number Field ${timestamp}`,
+    hint: 'This is comprehensive help text for number',
+    placeholder: 'Enter a number',
+    prefix: '#',
+    defaultValue: '42',
+    min: 1,
+    max: 100,
+    required: true,
+  };
+
+  // Store for later verification
+  this.expectedFieldSettings = testData;
+
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+  await this.page.fill('#field-label', testData.label);
+  await this.page.fill('#field-hint', testData.hint);
+  await this.page.fill('#field-placeholder', testData.placeholder);
+  await this.page.fill('#field-prefix', testData.prefix);
+  await this.page.fill('#field-defaultValue', testData.defaultValue);
+  await this.page.fill('#field-min', testData.min.toString());
+  await this.page.fill('#field-max', testData.max.toString());
+
+  const requiredToggle = this.page.locator('#field-required');
+  const isChecked = await requiredToggle.isChecked();
+  if (!isChecked && testData.required) {
+    await requiredToggle.click();
+  }
+
+  await this.page.waitForTimeout(500);
+});

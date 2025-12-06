@@ -478,3 +478,41 @@ When('I fill and save the date field with label {string}', async function (this:
 
   await this.page.waitForTimeout(1000);
 });
+
+// Settings persistence step
+When('I fill all date field settings with test data', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // Define test data
+  const timestamp = Date.now();
+  const testData = {
+    label: `Complete Date Field ${timestamp}`,
+    hint: 'This is comprehensive help text for date',
+    placeholder: 'Select a date',
+    defaultValue: '2025-06-15',
+    minDate: '2025-01-01',
+    maxDate: '2025-12-31',
+    required: true,
+  };
+
+  // Store for later verification
+  this.expectedFieldSettings = testData;
+
+  await this.page.waitForSelector('#field-label', { timeout: 10_000 });
+  await this.page.fill('#field-label', testData.label);
+  await this.page.fill('#field-hint', testData.hint);
+  await this.page.fill('#field-placeholder', testData.placeholder);
+  await this.page.fill('#field-defaultValue', testData.defaultValue);
+  await this.page.fill('#field-minDate', testData.minDate);
+  await this.page.fill('#field-maxDate', testData.maxDate);
+
+  const requiredToggle = this.page.locator('#field-required');
+  const isChecked = await requiredToggle.isChecked();
+  if (!isChecked && testData.required) {
+    await requiredToggle.click();
+  }
+
+  await this.page.waitForTimeout(500);
+});

@@ -135,3 +135,22 @@ Then('I test invalid default value data', async function (this: CustomWorld) {
   // Verify error is gone
   await expect(defaultValueError).not.toBeVisible();
 });
+
+/**
+ * Verify all field validations work correctly
+ * This step confirms that after fixing all validation errors,
+ * the field settings are in a valid state with no error messages.
+ */
+Then('I verify all validations work correctly', async function (this: CustomWorld) {
+  if (!this.page) {
+    throw new Error('Page is not initialized');
+  }
+
+  // After all validation tests have passed and errors were fixed,
+  // confirm there are no remaining validation error messages
+  const validationErrors = this.page.locator('[role="alert"], .text-destructive, [data-testid*="error"]');
+  const errorCount = await validationErrors.count();
+
+  // All validation errors should be cleared at this point
+  expect(errorCount).toBe(0);
+});
