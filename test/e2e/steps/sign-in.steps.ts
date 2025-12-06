@@ -1772,56 +1772,6 @@ When('I fill and save the checkbox field with label {string}', async function (t
   await fillAndSaveField(this, 'checkbox', label);
 });
 
-// Navigation Steps
-
-When('I click next in the viewer', async function (this: CustomWorld) {
-  if (!this.viewerPage) {
-    throw new Error('Viewer page is not initialized');
-  }
-
-  const nextButton = this.viewerPage.getByTestId('viewer-next-button');
-  await expect(nextButton).toBeVisible({ timeout: 10_000 });
-  await nextButton.click();
-
-  // Wait for page transition
-  await this.viewerPage.waitForTimeout(500);
-});
-
-When('I click previous in the viewer', async function (this: CustomWorld) {
-  if (!this.viewerPage) {
-    throw new Error('Viewer page is not initialized');
-  }
-
-  const prevButton = this.viewerPage.getByTestId('viewer-prev-button');
-  await expect(prevButton).toBeVisible({ timeout: 10_000 });
-  await prevButton.click();
-
-  // Wait for page transition
-  await this.viewerPage.waitForTimeout(500);
-});
-
-// Verification Steps
-
-Then('I should be on viewer page {int} of {int}', async function (this: CustomWorld, currentPage: number, totalPages: number) {
-  if (!this.viewerPage) {
-    throw new Error('Viewer page is not initialized');
-  }
-
-  const indicator = this.viewerPage.getByTestId('viewer-page-indicator');
-  await expect(indicator).toBeVisible({ timeout: 30_000 });
-  await expect(indicator).toContainText(`Page ${currentPage} of ${totalPages}`);
-});
-
-Then('I should see field {string} on the current page', async function (this: CustomWorld, fieldLabel: string) {
-  if (!this.viewerPage) {
-    throw new Error('Viewer page is not initialized');
-  }
-
-  // Check if the field label is visible on the current page
-  const field = this.viewerPage.getByText(fieldLabel).first();
-  await expect(field).toBeVisible({ timeout: 10_000 });
-});
-
 // GraphQL Form Creation
 
 When('I create a form via GraphQL with all field types', async function (this: CustomWorld) {
