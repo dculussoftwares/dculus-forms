@@ -243,7 +243,7 @@ export const checkboxFieldValidationSchema = baseFieldValidationSchema.extend({
     return true;
   },
   {
-    message: 'fieldSettingsConstants:errorMessages.maxSelectionsExceedsOptions',
+    message: 'fieldSettingsConstants:errorMessages.characterLimitExceeded',
     path: ['validation', 'maxSelections'],
   }
 );
