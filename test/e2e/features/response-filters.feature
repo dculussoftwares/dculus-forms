@@ -440,3 +440,118 @@ Feature: Response Table Filters
     And I add a filter for field "Dropdown Field" with operator "is not empty"
     And I apply the filters
     Then I should see 4 responses in the table
+  # ==================== CHECKBOX FIELD FILTERS ====================
+
+  Scenario: Filter Checkbox - IN operator (Includes any)
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with checkbox "Apple"
+    And I submit response with checkbox "Banana"
+    And I submit response with checkbox "Apple,Cherry"
+    And I submit response with checkbox "Banana,Cherry"
+    And I submit response with empty checkbox
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply IN filter - responses containing "Apple" OR "Cherry"
+    When I open the filter modal
+    And I add a filter for field "Checkbox Field" with operator "includes any" and options "Apple,Cherry"
+    And I apply the filters
+    Then I should see 3 responses in the table
+
+  Scenario: Filter Checkbox - IS_EMPTY operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with checkbox "Apple"
+    And I submit response with checkbox "Banana"
+    And I submit response with checkbox "Apple,Cherry"
+    And I submit response with checkbox "Banana,Cherry"
+    And I submit response with empty checkbox
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply IS_EMPTY filter
+    When I open the filter modal
+    And I add a filter for field "Checkbox Field" with operator "is empty"
+    And I apply the filters
+    Then I should see 1 responses in the table
+
+  Scenario: Filter Checkbox - IS_NOT_EMPTY operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with checkbox "Apple"
+    And I submit response with checkbox "Banana"
+    And I submit response with checkbox "Apple,Cherry"
+    And I submit response with checkbox "Banana,Cherry"
+    And I submit response with empty checkbox
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply IS_NOT_EMPTY filter
+    When I open the filter modal
+    And I add a filter for field "Checkbox Field" with operator "is not empty"
+    And I apply the filters
+    Then I should see 4 responses in the table
+
+  Scenario: Filter Checkbox - NOT_IN operator (Does not include any)
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with checkbox "Apple"
+    And I submit response with checkbox "Banana"
+    And I submit response with checkbox "Apple,Cherry"
+    And I submit response with checkbox "Banana,Cherry"
+    And I submit response with empty checkbox
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply NOT_IN filter - responses NOT containing "Apple" OR "Cherry"
+    When I open the filter modal
+    And I add a filter for field "Checkbox Field" with operator "does not include any" and options "Apple,Cherry"
+    And I apply the filters
+    Then I should see 2 responses in the table
+
+  Scenario: Filter Checkbox - CONTAINS_ALL operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with checkbox "Apple"
+    And I submit response with checkbox "Banana"
+    And I submit response with checkbox "Apple,Cherry"
+    And I submit response with checkbox "Apple,Banana,Cherry"
+    And I submit response with empty checkbox
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply CONTAINS_ALL filter - responses containing BOTH "Apple" AND "Cherry"
+    When I open the filter modal
+    And I add a filter for field "Checkbox Field" with operator "contains all" and options "Apple,Cherry"
+    And I apply the filters
+    Then I should see 2 responses in the table
+
+  Scenario: Filter Checkbox - EQUALS operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with checkbox "Apple"
+    And I submit response with checkbox "Apple,Cherry"
+    And I submit response with checkbox "Apple,Banana,Cherry"
+    And I submit response with checkbox "Apple"
+    And I submit response with empty checkbox
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply EQUALS filter - responses with exactly "Apple" only
+    When I open the filter modal
+    And I add a filter for field "Checkbox Field" with operator "equals" and options "Apple"
+    And I apply the filters
+    Then I should see 2 responses in the table

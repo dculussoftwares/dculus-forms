@@ -267,6 +267,68 @@ async function submitResponseWithDropdown(
     }
 }
 
+// Checkbox response submission steps
+When('I submit response with checkbox {string}', async function (
+    this: CustomWorld,
+    checkboxValues: string
+) {
+    // checkboxValues is a comma-separated string like "Apple,Cherry"
+    const values = checkboxValues.split(',').map(v => v.trim());
+    await submitResponseWithCheckbox(this, values);
+});
+
+When('I submit response with empty checkbox', async function (
+    this: CustomWorld
+) {
+    await submitResponseWithCheckbox(this, []);
+});
+
+// Helper function to submit response with checkbox values (array)
+async function submitResponseWithCheckbox(
+    world: CustomWorld,
+    checkboxValues: string[]
+) {
+    if (!world.page || !currentFormId) {
+        throw new Error('Page or form ID is not initialized');
+    }
+
+    const responseData: Record<string, any> = {};
+    // Checkbox responses are stored as arrays
+    responseData['field-checkbox-filter'] = checkboxValues;
+
+    const response = await world.page.evaluate(async ({ formId, data, backendUrl }) => {
+        const query = `
+      mutation SubmitResponse($input: SubmitResponseInput!) {
+        submitResponse(input: $input) {
+          id
+        }
+      }
+    `;
+
+        const variables = {
+            input: {
+                formId,
+                data
+            }
+        };
+
+        const res = await fetch(backendUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ query, variables })
+        });
+
+        return res.json();
+    }, { formId: currentFormId, data: responseData, backendUrl: world.backendUrl });
+
+    if (response.errors) {
+        throw new Error(`GraphQL error submitting checkbox response: ${JSON.stringify(response.errors)}`);
+    }
+}
+
 When('I navigate to the responses page', async function (this: CustomWorld) {
     if (!this.page || !currentFormId) {
         throw new Error('Page or form ID is not initialized');
@@ -618,10 +680,16 @@ When('I add a filter for field {string} with operator {string} and options {stri
     await operatorSelect.click();
     await this.page.waitForTimeout(300);
 
-    // Map operator text to actual i18n labels
+    // Map operator text to actual i18n labels (for dropdown, checkbox, radio filters)
     const operatorMap: Record<string, string> = {
         'includes': 'Includes',
+        'includes any': 'Includes any',
         'not includes': 'Does not include',
+        'does not include any': 'Does not include any',
+        'contains': 'Contains',
+        'does not contain': 'Does not contain',
+        'contains all': 'Contains all',
+        'equals': 'Equals',
         'is empty': 'Is empty',
         'is not empty': 'Is not empty'
     };

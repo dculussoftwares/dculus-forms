@@ -220,6 +220,20 @@ export function createFilterTestFormSchema() {
               required: false,
               type: "fillable_form_field"
             }
+          },
+          {
+            id: "field-checkbox-filter",
+            type: "checkbox_field",
+            label: "Checkbox Field",
+            defaultValues: [],
+            prefix: "",
+            hint: "Select options for filter testing",
+            placeholder: "",
+            options: ["Apple", "Banana", "Cherry"],
+            validation: {
+              required: false,
+              type: "checkbox_field_validation"
+            }
           }
         ]
       }
