@@ -323,7 +323,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                   Selection Limits
                 </h4>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-4">
                   {/* Minimum Selections */}
                   <FormInputField
                     name="validation.minSelections"

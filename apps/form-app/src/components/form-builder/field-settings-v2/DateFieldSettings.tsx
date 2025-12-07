@@ -156,7 +156,7 @@ export const DateFieldSettings: React.FC<DateFieldSettingsProps> = ({
               {constants.SECTION_TITLES.DATE_RANGE}
             </h4>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               {/* Minimum Date */}
               <FormDatePickerField
                 name="minDate"
