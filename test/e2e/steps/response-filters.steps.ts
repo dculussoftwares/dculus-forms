@@ -194,6 +194,79 @@ When('I submit response with text {string} number {int} and empty date', async f
     await submitResponseWithDate(this, textValue, numberValue, null);
 });
 
+// Dropdown response submission steps
+When('I submit response with text {string} number {int} and dropdown {string}', async function (
+    this: CustomWorld,
+    textValue: string,
+    numberValue: number,
+    dropdownValue: string
+) {
+    await submitResponseWithDropdown(this, textValue, numberValue, dropdownValue);
+});
+
+When('I submit response with text {string} number {int} and empty dropdown', async function (
+    this: CustomWorld,
+    textValue: string,
+    numberValue: number
+) {
+    await submitResponseWithDropdown(this, textValue, numberValue, null);
+});
+
+// Helper function to submit response with dropdown value
+async function submitResponseWithDropdown(
+    world: CustomWorld,
+    textValue: string | null,
+    numberValue: number | null,
+    dropdownValue: string | null
+) {
+    if (!world.page || !currentFormId) {
+        throw new Error('Page or form ID is not initialized');
+    }
+
+    const responseData: Record<string, any> = {};
+    if (textValue !== null && textValue !== '') {
+        responseData['field-text-filter'] = textValue;
+    }
+    if (numberValue !== null) {
+        responseData['field-number-filter'] = numberValue;
+    }
+    if (dropdownValue !== null && dropdownValue !== '') {
+        responseData['field-dropdown-filter'] = dropdownValue;
+    }
+
+    const response = await world.page.evaluate(async ({ formId, data, backendUrl }) => {
+        const query = `
+      mutation SubmitResponse($input: SubmitResponseInput!) {
+        submitResponse(input: $input) {
+          id
+        }
+      }
+    `;
+
+        const variables = {
+            input: {
+                formId,
+                data
+            }
+        };
+
+        const res = await fetch(backendUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ query, variables })
+        });
+
+        return res.json();
+    }, { formId: currentFormId, data: responseData, backendUrl: world.backendUrl });
+
+    if (response.errors) {
+        throw new Error(`GraphQL error submitting response: ${JSON.stringify(response.errors)}`);
+    }
+}
+
 When('I navigate to the responses page', async function (this: CustomWorld) {
     if (!this.page || !currentFormId) {
         throw new Error('Page or form ID is not initialized');
@@ -517,3 +590,68 @@ When('I add a filter for field {string} with operator {string} and date range {s
     await this.page.waitForTimeout(500);
 });
 
+// Step definition for dropdown/select field filter with multi-select options
+When('I add a filter for field {string} with operator {string} and options {string}', async function (
+    this: CustomWorld,
+    fieldName: string,
+    operator: string,
+    optionsString: string
+) {
+    if (!this.page) {
+        throw new Error('Page is not initialized');
+    }
+
+    // Click add filter button
+    const addFilterButton = this.page.getByTestId('add-filter-button');
+    await addFilterButton.click();
+    await this.page.waitForTimeout(500);
+
+    // Select field
+    const fieldSelect = this.page.getByTestId('filter-field-select').last();
+    await fieldSelect.click();
+    await this.page.waitForTimeout(300);
+    await this.page.locator(`[role="option"]:has-text("${fieldName}")`).click();
+    await this.page.waitForTimeout(300);
+
+    // Select operator
+    const operatorSelect = this.page.getByTestId('filter-operator-select').last();
+    await operatorSelect.click();
+    await this.page.waitForTimeout(300);
+
+    // Map operator text to actual i18n labels
+    const operatorMap: Record<string, string> = {
+        'includes': 'Includes',
+        'not includes': 'Does not include',
+        'is empty': 'Is empty',
+        'is not empty': 'Is not empty'
+    };
+
+    const operatorText = operatorMap[operator.toLowerCase()] || operator;
+    await this.page.locator(`[role="option"]:has-text("${operatorText}")`).click();
+    await this.page.waitForTimeout(500);
+
+    // For dropdown/select IN/NOT_IN filters, we need to check option checkboxes
+    // The options string is comma-separated like "Red,Green"
+    const options = optionsString.split(',').map(o => o.trim());
+
+    // Find the value container and click the select trigger to open the dropdown
+    const valueContainer = this.page.getByTestId('filter-value-container').last();
+    const selectTrigger = valueContainer.locator('button').first();
+    await selectTrigger.click();
+    await this.page.waitForTimeout(500);
+
+    // The SelectContent is rendered as a portal, so labels are NOT inside valueContainer
+    // We need to find them globally on the page
+    for (const option of options) {
+        // Find the label with this option text (rendered in the portal)
+        const labelLocator = this.page.locator(`label:has-text("${option}")`);
+        if (await labelLocator.count() > 0) {
+            await labelLocator.first().click();
+            await this.page.waitForTimeout(200);
+        }
+    }
+
+    // Close the dropdown by pressing Escape
+    await this.page.keyboard.press('Escape');
+    await this.page.waitForTimeout(300);
+});

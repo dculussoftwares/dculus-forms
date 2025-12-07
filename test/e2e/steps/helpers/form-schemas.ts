@@ -206,6 +206,20 @@ export function createFilterTestFormSchema() {
               required: false,
               type: "fillable_form_field"
             }
+          },
+          {
+            id: "field-dropdown-filter",
+            type: "select_field",
+            label: "Dropdown Field",
+            defaultValue: "",
+            prefix: "",
+            hint: "Select option for filter testing",
+            placeholder: "Select option",
+            options: ["Red", "Green", "Blue"],
+            validation: {
+              required: false,
+              type: "fillable_form_field"
+            }
           }
         ]
       }
