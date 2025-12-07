@@ -9,6 +9,7 @@ import {
   Label,
   Checkbox,
   Input,
+  DatePicker,
   toastError,
 } from '@dculus/ui';
 import { Shield, Save, Calendar, Users } from 'lucide-react';
@@ -69,7 +70,8 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
     }
   };
 
-  const handleStartDateChange = (value: string) => {
+  const handleStartDateChange = (date: Date | undefined) => {
+    const value = date ? date.toISOString().split('T')[0] : '';
     const endDate = settings.timeWindow?.endDate;
     if (endDate && value && new Date(value) > new Date(endDate)) {
       toastError(t('validation.invalidDateRange'), t('validation.endAfterStart'));
@@ -82,7 +84,8 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
     );
   };
 
-  const handleEndDateChange = (value: string) => {
+  const handleEndDateChange = (date: Date | undefined) => {
+    const value = date ? date.toISOString().split('T')[0] : '';
     const startDate = settings.timeWindow?.startDate;
     if (startDate && value && new Date(value) < new Date(startDate)) {
       toastError(t('validation.invalidDateRange'), t('validation.endAfterStart'));
@@ -207,22 +210,20 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
                   <Label htmlFor="start-date" className="text-sm">
                     {t('timeWindow.startDate')}
                   </Label>
-                  <Input
-                    id="start-date"
-                    type="date"
-                    value={settings.timeWindow?.startDate || ''}
-                    onChange={(e) => handleStartDateChange(e.target.value)}
+                  <DatePicker
+                    date={settings.timeWindow?.startDate ? new Date(settings.timeWindow.startDate) : undefined}
+                    onDateChange={handleStartDateChange}
+                    placeholder="Select start date"
                   />
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="end-date" className="text-sm">
                     {t('timeWindow.endDate')}
                   </Label>
-                  <Input
-                    id="end-date"
-                    type="date"
-                    value={settings.timeWindow?.endDate || ''}
-                    onChange={(e) => handleEndDateChange(e.target.value)}
+                  <DatePicker
+                    date={settings.timeWindow?.endDate ? new Date(settings.timeWindow.endDate) : undefined}
+                    onDateChange={handleEndDateChange}
+                    placeholder="Select end date"
                   />
                 </div>
               </div>

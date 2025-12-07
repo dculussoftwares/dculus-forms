@@ -9,6 +9,7 @@ import {
   SelectValue,
   Input,
   Checkbox,
+  DatePicker,
 } from '@dculus/ui';
 import { FillableFormField, FieldType, SelectField, RadioField, CheckboxField } from '@dculus/types';
 import { FilterState } from './FilterPanel';
@@ -184,27 +185,27 @@ const renderFilterInput = (
       if (filter.operator === 'DATE_BETWEEN') {
         return (
           <div className="flex items-center gap-2">
-            <Input
-              type="date"
-              value={filter.dateRange?.from || ''}
-              onChange={(e) => handleDateRangeChange('from', e.target.value)}
+            <DatePicker
+              date={filter.dateRange?.from ? new Date(filter.dateRange.from) : undefined}
+              onDateChange={(date) => handleDateRangeChange('from', date ? date.toISOString().split('T')[0] : '')}
+              placeholder="From"
               className="h-9 w-36"
             />
             <span className="text-slate-500">and</span>
-            <Input
-              type="date"
-              value={filter.dateRange?.to || ''}
-              onChange={(e) => handleDateRangeChange('to', e.target.value)}
+            <DatePicker
+              date={filter.dateRange?.to ? new Date(filter.dateRange.to) : undefined}
+              onDateChange={(date) => handleDateRangeChange('to', date ? date.toISOString().split('T')[0] : '')}
+              placeholder="To"
               className="h-9 w-36"
             />
           </div>
         );
       }
       return (
-        <Input
-          type="date"
-          value={filter.value || ''}
-          onChange={(e) => handleValueChange(e.target.value)}
+        <DatePicker
+          date={filter.value ? new Date(filter.value) : undefined}
+          onDateChange={(date) => handleValueChange(date ? date.toISOString().split('T')[0] : '')}
+          placeholder="Select date"
           className="h-9 min-w-[200px]"
         />
       );

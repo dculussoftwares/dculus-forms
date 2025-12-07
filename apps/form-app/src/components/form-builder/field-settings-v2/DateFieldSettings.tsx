@@ -9,6 +9,7 @@ import {
   FieldSettingsHeader,
   FieldSettingsFooter,
   FormInputField,
+  FormDatePickerField,
   useFieldSettingsConstants
 } from '../field-settings';
 
@@ -139,11 +140,10 @@ export const DateFieldSettings: React.FC<DateFieldSettingsProps> = ({
             />
 
             {/* Default Value */}
-            <FormInputField
+            <FormDatePickerField
               name="defaultValue"
               label={constants.LABELS.DEFAULT_VALUE}
               placeholder={constants.PLACEHOLDERS.DEFAULT_VALUE}
-              type="date"
               control={control}
               error={errors.defaultValue}
               disabled={!isConnected}
@@ -158,22 +158,20 @@ export const DateFieldSettings: React.FC<DateFieldSettingsProps> = ({
             
             <div className="grid grid-cols-2 gap-4">
               {/* Minimum Date */}
-              <FormInputField
+              <FormDatePickerField
                 name="minDate"
                 label={constants.LABELS.MINIMUM_DATE}
                 placeholder={constants.PLACEHOLDERS.NO_MINIMUM}
-                type="date"
                 control={control}
                 error={errors.minDate}
                 disabled={!isConnected}
               />
 
               {/* Maximum Date */}
-              <FormInputField
+              <FormDatePickerField
                 name="maxDate"
                 label={constants.LABELS.MAXIMUM_DATE}
                 placeholder={constants.PLACEHOLDERS.NO_MAXIMUM}
-                type="date"
                 control={control}
                 error={errors.maxDate}
                 disabled={!isConnected}

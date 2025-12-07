@@ -20,6 +20,7 @@ export { RichTextSettings } from './RichTextSettings';
 
 // Shared components
 export { FormInputField } from './FormInputField';
+export { FormDatePickerField } from './FormDatePickerField';
 export { RangeSettings } from './RangeSettings';
 
 // Configuration and utilities

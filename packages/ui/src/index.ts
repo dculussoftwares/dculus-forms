@@ -65,7 +65,7 @@ export {
   DrawerTitle,
   DrawerDescription,
 } from "./drawer"
-export { Calendar } from "./calendar"
+export { Calendar, CalendarDayButton, type CalendarProps } from "./calendar"
 export { DatePicker, DateRangePicker } from "./date-picker"
 export { Switch } from "./switch"
 export { Toggle, toggleVariants } from "./toggle"
@@ -82,7 +82,7 @@ export {
   CommandShortcut,
 } from "./command"
 export { OTPInput } from "./otp-input"
-export { 
+export {
   Pagination,
   PaginationRoot,
   PaginationContent,
@@ -124,7 +124,7 @@ export {
   SelectSeparator,
   SelectScrollUpButton,
   SelectScrollDownButton,
-} from "./select" 
+} from "./select"
 export { Avatar, AvatarImage, AvatarFallback } from "./avatar"
 export {
   Breadcrumb,
@@ -210,7 +210,7 @@ export {
 } from "./typography"
 export { Popover, PopoverTrigger, PopoverContent } from "./popover"
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "./tabs"
-export { PageWrapper } from "./page-wrapper" 
+export { PageWrapper } from "./page-wrapper"
 export { LoadingSpinner } from "./loading-spinner"
 export {
   AlertDialog,

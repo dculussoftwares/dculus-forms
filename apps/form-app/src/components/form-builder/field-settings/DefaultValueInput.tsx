@@ -8,7 +8,8 @@ import {
   SelectTrigger, 
   SelectValue,
   Label,
-  Checkbox
+  Checkbox,
+  DatePicker
 } from '@dculus/ui';
 import { FormField, FieldType } from '@dculus/types';
 import { useFieldSettingsConstants } from './useFieldSettingsConstants';
@@ -72,15 +73,15 @@ export const DefaultValueInput: React.FC<DefaultValueInputProps> = ({
           const maxDateValue = watch('maxDate');
           
           return (
-            <Input
-              {...controlField}
-              id="field-default"
-              type="date"
-              min={minDateValue || undefined}
-              max={maxDateValue || undefined}
+            <DatePicker
+              id="field-defaultValue"
+              date={controlField.value ? new Date(controlField.value) : undefined}
+              onDateChange={(date) => controlField.onChange(date ? date.toISOString().split('T')[0] : '')}
+              minDate={minDateValue ? new Date(minDateValue) : undefined}
+              maxDate={maxDateValue ? new Date(maxDateValue) : undefined}
               disabled={!isConnected}
-              className={`text-sm ${errors.defaultValue ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
-              value={controlField.value || ''}
+              error={!!errors.defaultValue}
+              placeholder="Select default date"
             />
           );
         }

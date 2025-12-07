@@ -3,7 +3,7 @@ import { Controller, Control, FieldValues, Path } from 'react-hook-form';
 import { FormField, FieldType, FillableFormField, TextFieldValidation, RichTextFormField } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { LexicalRichTextEditor } from '../rich-text-editor/LexicalRichTextEditor';
-import { Checkbox, RadioGroup, RadioGroupItem } from '../index';
+import { Checkbox, RadioGroup, RadioGroupItem, DatePicker } from '../index';
 
 interface FieldStyles {
   container: string;
@@ -289,14 +289,31 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
 
             case FieldType.DATE_FIELD:
               const dateField = field as any;
+              // Convert string date to Date object for DatePicker
+              const dateValue = controllerField.value 
+                ? new Date(controllerField.value) 
+                : undefined;
+              const minDateValue = dateField.minDate 
+                ? new Date(dateField.minDate) 
+                : undefined;
+              const maxDateValue = dateField.maxDate 
+                ? new Date(dateField.maxDate) 
+                : undefined;
+              
               return (
                 <div>
-                  <input
-                    {...inputProps}
-                    type="date"
-                    min={dateField.minDate}
-                    max={dateField.maxDate}
-                    className={getInputClassName(styles.input)}
+                  <DatePicker
+                    name={field.id}
+                    date={dateValue}
+                    onDateChange={(date) => {
+                      // Store as ISO date string (YYYY-MM-DD) for form submission
+                      controllerField.onChange(date ? date.toISOString().split('T')[0] : '');
+                    }}
+                    minDate={minDateValue}
+                    maxDate={maxDateValue}
+                    placeholder={fillableField?.placeholder || 'Pick a date'}
+                    disabled={!isInteractive}
+                    error={hasError}
                   />
                   {hasError && (
                     <p className="mt-1 text-sm text-red-600" role="alert">
