@@ -195,7 +195,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   // Copy link functionality
   const handleCopyLink = async () => {
-    const formUrl = `${window.location.origin}/form/${formShortUrl}`;
+    const formUrl = `${window.location.origin}/dashboard/form/${formId}`;
     try {
       await navigator.clipboard.writeText(formUrl);
       setLinkCopied(true);
