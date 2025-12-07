@@ -94,19 +94,28 @@ When('I create a form via GraphQL for filter testing', async function (this: Cus
     await expect(sidebar).toBeVisible({ timeout: 30_000 });
 });
 
-// Submit response helper function
-async function submitResponse(world: CustomWorld, textValue: string | null, numberValue: number | null) {
+// Submit response helper function - supports text, number, and date fields
+async function submitResponseWithDate(
+    world: CustomWorld,
+    textValue: string | null,
+    numberValue: number | null,
+    dateValue: string | null
+) {
     if (!world.page || !currentFormId) {
         throw new Error('Page or form ID is not initialized');
     }
 
     // Submit via GraphQL API directly for speed
     const responseData: Record<string, any> = {};
-    if (textValue !== null) {
+    if (textValue !== null && textValue !== '') {
         responseData['field-text-filter'] = textValue;
     }
     if (numberValue !== null) {
         responseData['field-number-filter'] = numberValue;
+    }
+    if (dateValue !== null && dateValue !== '') {
+        // Convert date string to timestamp for storage
+        responseData['field-date-filter'] = new Date(dateValue).getTime();
     }
 
     const response = await world.page.evaluate(async ({ formId, data, backendUrl }) => {
@@ -142,6 +151,11 @@ async function submitResponse(world: CustomWorld, textValue: string | null, numb
     }
 }
 
+// Legacy submit response function (text + number only)
+async function submitResponse(world: CustomWorld, textValue: string | null, numberValue: number | null) {
+    await submitResponseWithDate(world, textValue, numberValue, null);
+}
+
 When('I submit response {int} with text {string} and number {int}', async function (
     this: CustomWorld,
     _responseNum: number,
@@ -160,6 +174,24 @@ When('I submit response {int} with empty text and empty number', async function 
     _responseNum: number
 ) {
     await submitResponse(this, '', null);
+});
+
+// Date response submission steps
+When('I submit response with text {string} number {int} and date {string}', async function (
+    this: CustomWorld,
+    textValue: string,
+    numberValue: number,
+    dateValue: string
+) {
+    await submitResponseWithDate(this, textValue, numberValue, dateValue);
+});
+
+When('I submit response with text {string} number {int} and empty date', async function (
+    this: CustomWorld,
+    textValue: string,
+    numberValue: number
+) {
+    await submitResponseWithDate(this, textValue, numberValue, null);
 });
 
 When('I navigate to the responses page', async function (this: CustomWorld) {
@@ -365,5 +397,123 @@ When('I apply the filters', async function (this: CustomWorld) {
 
     // Wait for modal to close and filters to apply
     await this.page.waitForTimeout(2000);
+});
+
+// Date filter step definitions
+When('I add a filter for field {string} with operator {string} and date {string}', async function (
+    this: CustomWorld,
+    fieldName: string,
+    operator: string,
+    dateValue: string
+) {
+    if (!this.page) {
+        throw new Error('Page is not initialized');
+    }
+
+    // Click add filter button
+    const addFilterButton = this.page.getByTestId('add-filter-button');
+    await addFilterButton.click();
+    await this.page.waitForTimeout(500);
+
+    // Select field
+    const fieldSelect = this.page.getByTestId('filter-field-select').last();
+    await fieldSelect.click();
+    await this.page.waitForTimeout(300);
+    await this.page.locator(`[role="option"]:has-text("${fieldName}")`).click();
+    await this.page.waitForTimeout(300);
+
+    // Select operator
+    const operatorSelect = this.page.getByTestId('filter-operator-select').last();
+    await operatorSelect.click();
+    await this.page.waitForTimeout(300);
+
+    // Map operator text to the actual option text for date fields
+    const operatorMap: Record<string, string> = {
+        'equals': 'Equals',
+        'before': 'Before',
+        'after': 'After',
+        'between': 'Between',
+        'is empty': 'Is empty',
+        'is not empty': 'Is not empty'
+    };
+
+    const operatorText = operatorMap[operator.toLowerCase()] || operator;
+    await this.page.locator(`[role="option"]:has-text("${operatorText}")`).click();
+    await this.page.waitForTimeout(300);
+
+    // For date fields, we need to interact with the date picker
+    // Find the date input within the value container
+    const valueContainer = this.page.getByTestId('filter-value-container').last();
+
+    // Click on the date picker button to open calendar
+    const dateButton = valueContainer.locator('button').first();
+    await dateButton.click();
+    await this.page.waitForTimeout(300);
+
+    // The date picker uses a hidden input - find it and set value directly
+    // or use the calendar interface
+    const hiddenInput = valueContainer.locator('input[type="hidden"]');
+    if (await hiddenInput.count() > 0) {
+        await hiddenInput.fill(dateValue);
+    } else {
+        // Try direct input if available
+        const dateInput = valueContainer.locator('input');
+        if (await dateInput.count() > 0) {
+            await dateInput.fill(dateValue);
+        }
+    }
+
+    // Close calendar by clicking elsewhere
+    await this.page.keyboard.press('Escape');
+    await this.page.waitForTimeout(300);
+});
+
+When('I add a filter for field {string} with operator {string} and date range {string} to {string}', async function (
+    this: CustomWorld,
+    fieldName: string,
+    operator: string,
+    fromDate: string,
+    toDate: string
+) {
+    if (!this.page) {
+        throw new Error('Page is not initialized');
+    }
+
+    // Click add filter button
+    const addFilterButton = this.page.getByTestId('add-filter-button');
+    await addFilterButton.click();
+    await this.page.waitForTimeout(500);
+
+    // Select field
+    const fieldSelect = this.page.getByTestId('filter-field-select').last();
+    await fieldSelect.click();
+    await this.page.waitForTimeout(300);
+    await this.page.locator(`[role="option"]:has-text("${fieldName}")`).click();
+    await this.page.waitForTimeout(300);
+
+    // Select operator
+    const operatorSelect = this.page.getByTestId('filter-operator-select').last();
+    await operatorSelect.click();
+    await this.page.waitForTimeout(300);
+    await this.page.locator(`[role="option"]:has-text("Between")`).click();
+    await this.page.waitForTimeout(500);
+
+    // For date range, we have two date pickers (from and to)
+    // DatePicker component has a hidden input[type=date] for E2E testing
+    const valueContainer = this.page.getByTestId('filter-value-container').last();
+    const dateInputs = valueContainer.locator('input[type="date"]');
+
+    // Wait for date inputs to be available
+    await this.page.waitForTimeout(300);
+
+    // Set "from" date using the first date input
+    const fromInput = dateInputs.first();
+    await fromInput.fill(fromDate);
+    await this.page.waitForTimeout(300);
+
+    // Set "to" date using the second date input
+    const toInput = dateInputs.nth(1);
+    await toInput.fill(toDate);
+    await this.page.waitForTimeout(500);
 });
 

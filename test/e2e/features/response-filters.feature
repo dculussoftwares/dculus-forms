@@ -263,3 +263,125 @@ Feature: Response Table Filters
     And I add a filter for field "Number Field" with operator "is not empty"
     And I apply the filters
     Then I should see 4 responses in the table
+
+  # ==================== DATE FIELD FILTERS ====================
+
+  Scenario: Filter Date - DATE_EQUALS operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with text "Response 1" number 100 and date "2024-01-15"
+    And I submit response with text "Response 2" number 50 and date "2024-01-20"
+    And I submit response with text "Response 3" number 200 and date "2024-02-10"
+    And I submit response with text "Response 4" number 75 and empty date
+    And I submit response with text "Response 5" number 150 and date "2024-01-15"
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    
+    # Apply DATE_EQUALS filter - should find responses with 2024-01-15
+    When I open the filter modal
+    And I add a filter for field "Date Field" with operator "equals" and date "2024-01-15"
+    And I apply the filters
+    Then I should see 2 responses in the table
+
+  Scenario: Filter Date - DATE_BEFORE operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with text "Response 1" number 100 and date "2024-01-15"
+    And I submit response with text "Response 2" number 50 and date "2024-01-20"
+    And I submit response with text "Response 3" number 200 and date "2024-02-10"
+    And I submit response with text "Response 4" number 75 and empty date
+    And I submit response with text "Response 5" number 150 and date "2024-01-10"
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    
+    # Apply DATE_BEFORE filter - should find dates before 2024-01-20
+    When I open the filter modal
+    And I add a filter for field "Date Field" with operator "before" and date "2024-01-20"
+    And I apply the filters
+    Then I should see 2 responses in the table
+
+  Scenario: Filter Date - DATE_AFTER operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with text "Response 1" number 100 and date "2024-01-15"
+    And I submit response with text "Response 2" number 50 and date "2024-01-20"
+    And I submit response with text "Response 3" number 200 and date "2024-02-10"
+    And I submit response with text "Response 4" number 75 and empty date
+    And I submit response with text "Response 5" number 150 and date "2024-01-10"
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    
+    # Apply DATE_AFTER filter - should find dates after 2024-01-15
+    When I open the filter modal
+    And I add a filter for field "Date Field" with operator "after" and date "2024-01-15"
+    And I apply the filters
+    Then I should see 2 responses in the table
+
+  Scenario: Filter Date - DATE_BETWEEN operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with text "Response 1" number 100 and date "2024-01-15"
+    And I submit response with text "Response 2" number 50 and date "2024-01-20"
+    And I submit response with text "Response 3" number 200 and date "2024-02-10"
+    And I submit response with text "Response 4" number 75 and empty date
+    And I submit response with text "Response 5" number 150 and date "2024-01-10"
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    
+    # Apply DATE_BETWEEN filter - dates between 2024-01-10 and 2024-01-20 inclusive
+    When I open the filter modal
+    And I add a filter for field "Date Field" with operator "between" and date range "2024-01-10" to "2024-01-20"
+    And I apply the filters
+    Then I should see 3 responses in the table
+
+  Scenario: Filter Date - IS_EMPTY operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with text "Response 1" number 100 and date "2024-01-15"
+    And I submit response with text "Response 2" number 50 and date "2024-01-20"
+    And I submit response with text "Response 3" number 200 and date "2024-02-10"
+    And I submit response with text "Response 4" number 75 and empty date
+    And I submit response with text "Response 5" number 150 and date "2024-01-10"
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    
+    # Apply IS_EMPTY filter
+    When I open the filter modal
+    And I add a filter for field "Date Field" with operator "is empty"
+    And I apply the filters
+    Then I should see 1 responses in the table
+
+  Scenario: Filter Date - IS_NOT_EMPTY operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with text "Response 1" number 100 and date "2024-01-15"
+    And I submit response with text "Response 2" number 50 and date "2024-01-20"
+    And I submit response with text "Response 3" number 200 and date "2024-02-10"
+    And I submit response with text "Response 4" number 75 and empty date
+    And I submit response with text "Response 5" number 150 and date "2024-01-10"
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    
+    # Apply IS_NOT_EMPTY filter
+    When I open the filter modal
+    And I add a filter for field "Date Field" with operator "is not empty"
+    And I apply the filters
+    Then I should see 4 responses in the table

@@ -148,7 +148,7 @@ export function createFormSchemaWithAllFields() {
 
 /**
  * Helper function to create form schema for filter testing
- * Contains only Short Text and Number fields for focused filter tests
+ * Contains Short Text, Number, and Date fields for filter tests
  */
 export function createFilterTestFormSchema() {
   return {
@@ -189,6 +189,19 @@ export function createFilterTestFormSchema() {
             prefix: "",
             hint: "Enter number for filter testing",
             placeholder: "Enter number",
+            validation: {
+              required: false,
+              type: "fillable_form_field"
+            }
+          },
+          {
+            id: "field-date-filter",
+            type: "date_field",
+            label: "Date Field",
+            defaultValue: "",
+            prefix: "",
+            hint: "Select date for filter testing",
+            placeholder: "Select date",
             validation: {
               required: false,
               type: "fillable_form_field"
