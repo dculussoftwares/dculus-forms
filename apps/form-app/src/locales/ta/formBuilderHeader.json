@@ -8,7 +8,12 @@
   "buttons": {
     "preview": "முன்னோட்டம்",
     "share": "பகிரவும்",
-    "save": "சேமிக்கவும்"
+    "save": "சேமிக்கவும்",
+    "viewLiveForm": "நேரடி படிவத்தைக் காண்க",
+    "publishForm": "வெளியிடு",
+    "unpublishForm": "நிறுத்து",
+    "publishing": "வெளியிடுகிறது...",
+    "unpublishing": "நிறுத்துகிறது..."
   },
   "menu": {
     "formSettings": "படிவ அமைப்புகள்",
@@ -18,7 +23,10 @@
   "tooltips": {
     "noEditPermission": "படிவத்தின் தலைப்பைத் திருத்த உங்களுக்கு அனுமதி இல்லை",
     "noSharePermission": "பகிர்வை நிர்வகிக்க இந்தப் படிவத்தை அணுக வேண்டும்",
-    "noSavePermission": "மாற்றங்களைச் சேமிக்க உங்களுக்கு அனுமதி இல்லை"
+    "noSavePermission": "மாற்றங்களைச் சேமிக்க உங்களுக்கு அனுமதி இல்லை",
+    "viewLiveFormTooltip": "வெளியிடப்பட்ட படிவத்தைக் காண்க",
+    "publishFormTooltip": "இந்தப் படிவத்தை நேரடியாக்கி பதிலளிப்பவர்களுக்குக் கிடைக்கச் செய்யவும்",
+    "unpublishFormTooltip": "இந்தப் படிவத்தை ஆஃப்லைனில் எடுக்கவும்"
   },
   "toasts": {
     "duplicateSuccess": {

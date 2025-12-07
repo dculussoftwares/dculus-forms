@@ -8,7 +8,12 @@
   "buttons": {
     "preview": "Preview",
     "share": "Share",
-    "save": "Save"
+    "save": "Save",
+    "viewLiveForm": "View Live Form",
+    "publishForm": "Publish",
+    "unpublishForm": "Unpublish",
+    "publishing": "Publishing...",
+    "unpublishing": "Unpublishing..."
   },
   "menu": {
     "formSettings": "Form Settings",
@@ -18,7 +23,10 @@
   "tooltips": {
     "noEditPermission": "You don't have permission to edit the form title",
     "noSharePermission": "You need access to this form to manage sharing",
-    "noSavePermission": "You don't have permission to save changes"
+    "noSavePermission": "You don't have permission to save changes",
+    "viewLiveFormTooltip": "View the published form",
+    "publishFormTooltip": "Make this form live and available to respondents",
+    "unpublishFormTooltip": "Take this form offline"
   },
   "toasts": {
     "duplicateSuccess": {

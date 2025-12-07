@@ -19,6 +19,9 @@ import {
     ArrowLeft,
     Copy,
     Edit3,
+    Eye,
+    EyeOff,
+    ExternalLink,
     MoreVertical,
     Share2,
     Users
@@ -31,29 +34,38 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { ShareModal } from '../sharing/ShareModal';
 import { PermissionBadge } from './PermissionBadge';
 import { DUPLICATE_FORM, UPDATE_FORM } from '../../graphql/mutations';
+import { getFormViewerUrl } from '../../lib/config';
 
 interface FormBuilderHeaderProps {
     formId: string;
     formTitle?: string;
     formShortUrl?: string;
+    isPublished?: boolean;
     organizationId?: string;
     currentUserId?: string;
     isLoading: boolean;
     isConnected: boolean;
     onAddPage: () => void;
     onNavigateBack?: () => void;
+    onPublish?: () => void;
+    onUnpublish?: () => void;
+    updateLoading?: boolean;
 }
 
 export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({ 
     formId: _formId, 
     formTitle: initialFormTitle,
     formShortUrl,
+    isPublished,
     organizationId,
     currentUserId,
     isLoading, 
     isConnected, 
     onAddPage: _onAddPage,
-    onNavigateBack
+    onNavigateBack,
+    onPublish,
+    onUnpublish,
+    updateLoading = false
 }) => {
     const { t } = useTranslation('formBuilderHeader');
     const [formTitle, setFormTitle] = useState(initialFormTitle || t('defaultTitle'));
@@ -185,6 +197,13 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
             setDuplicateProgress(0);
         }
     };
+
+    const handleViewLiveForm = () => {
+        if (formShortUrl) {
+            const viewerUrl = getFormViewerUrl(formShortUrl);
+            window.open(viewerUrl, '_blank');
+        }
+    };
     
     return (
         <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50">
@@ -266,6 +285,48 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
 
                     {/* Right side - Actions */}
                     <div className="flex items-center space-x-3">
+                        {/* Publish/Unpublish Button */}
+                        {permissions.canEdit && (
+                            isPublished ? (
+                                <Button 
+                                    variant="outline"
+                                    size="sm" 
+                                    className="text-gray-600 dark:text-gray-400 border-amber-200 hover:border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950"
+                                    onClick={onUnpublish}
+                                    disabled={updateLoading}
+                                    title={t('tooltips.unpublishFormTooltip')}
+                                >
+                                    <EyeOff className="w-4 h-4 mr-2" />
+                                    {updateLoading ? t('buttons.unpublishing') : t('buttons.unpublishForm')}
+                                </Button>
+                            ) : (
+                                <Button 
+                                    size="sm" 
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    onClick={onPublish}
+                                    disabled={updateLoading}
+                                    title={t('tooltips.publishFormTooltip')}
+                                >
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    {updateLoading ? t('buttons.publishing') : t('buttons.publishForm')}
+                                </Button>
+                            )
+                        )}
+
+                        {/* View Live Form Button */}
+                        {isPublished && formShortUrl && (
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-gray-600 dark:text-gray-400"
+                                onClick={handleViewLiveForm}
+                                title={t('tooltips.viewLiveFormTooltip')}
+                            >
+                                <ExternalLink className="w-4 h-4 mr-2" />
+                                {t('buttons.viewLiveForm')}
+                            </Button>
+                        )}
+                        
                         {permissions.canShareForm() && (
                             <Button 
                                 variant="ghost" 

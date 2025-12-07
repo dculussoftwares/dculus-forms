@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
 import { useAuthContext } from '../contexts/AuthContext';
 import { FormPermissionProvider, PermissionLevel } from '../contexts/FormPermissionContext';
 import { useTranslation } from '../hooks/useTranslation';
@@ -31,6 +31,7 @@ import { useDragAndDrop } from '../hooks/useDragAndDrop';
 import { useCollisionDetection } from '../hooks/useCollisionDetection';
 import { useFieldCreation } from '../hooks/useFieldCreation';
 import { GET_FORM_BY_ID } from '../graphql/queries';
+import { UPDATE_FORM } from '../graphql/mutations';
 
 interface CollaborativeFormBuilderProps {
   className?: string;
@@ -58,6 +59,8 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
     skip: !formId,
     errorPolicy: 'all'
   });
+
+  const [updateForm, { loading: updateLoading }] = useMutation(UPDATE_FORM);
 
   const {
     isConnected,
@@ -153,6 +156,26 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
   const handleNavigateBack = useCallback(() => {
     navigate(`/dashboard/form/${formId}`);
   }, [formId, navigate]);
+
+  const handlePublish = useCallback(() => {
+    if (!formId) return;
+    updateForm({
+      variables: {
+        id: formId,
+        input: { isPublished: true }
+      }
+    });
+  }, [formId, updateForm]);
+
+  const handleUnpublish = useCallback(() => {
+    if (!formId) return;
+    updateForm({
+      variables: {
+        id: formId,
+        input: { isPublished: false }
+      }
+    });
+  }, [formId, updateForm]);
 
   const autoSelectFirstPage = useCallback(() => {
     if (pages.length > 0 && !selectedPageId) {
@@ -314,12 +337,16 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
             formId={formId}
             formTitle={formData?.form?.title}
             formShortUrl={formData?.form?.shortUrl}
+            isPublished={formData?.form?.isPublished}
             organizationId={formData?.form?.organization?.id}
             currentUserId={user?.id}
             isLoading={isLoading}
             isConnected={isConnected}
             onAddPage={() => {}}
             onNavigateBack={handleNavigateBack}
+            onPublish={handlePublish}
+            onUnpublish={handleUnpublish}
+            updateLoading={updateLoading}
           />
 
           <div className="flex-1 overflow-hidden relative">
