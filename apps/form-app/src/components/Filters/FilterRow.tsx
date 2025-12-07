@@ -362,7 +362,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
       {/* Row 1: Field Selection */}
       <div>
         <Select value={filter.fieldId || ''} onValueChange={handleFieldChange}>
-          <SelectTrigger className="h-10 w-full bg-blue-50 border-blue-200 hover:bg-blue-100">
+          <SelectTrigger className="h-10 w-full bg-blue-50 border-blue-200 hover:bg-blue-100" data-testid="filter-field-select">
             <SelectValue placeholder={t('placeholders.selectField')}>
               {currentField && (
                 <div className="flex items-center gap-2">
@@ -399,7 +399,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
           {/* Operator Selection */}
           <div className="min-w-0 flex-shrink-0">
             <Select value={filter.operator || ''} onValueChange={handleOperatorChange}>
-              <SelectTrigger className="h-10 min-w-[140px]">
+              <SelectTrigger className="h-10 min-w-[140px]" data-testid="filter-operator-select">
                 <SelectValue placeholder={t('placeholders.selectCondition')} />
               </SelectTrigger>
               <SelectContent>
@@ -414,7 +414,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
 
           {/* Value Input */}
           {filter.operator && (
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0" data-testid="filter-value-container">
               {renderFilterInput(currentField, filter, onChange, t)}
             </div>
           )}

@@ -80,7 +80,7 @@ export const ResponsesTable: React.FC<ResponsesTableProps> = ({
   });
 
   return (
-    <div className="flex-1 overflow-hidden">
+    <div className="flex-1 overflow-hidden" data-testid="responses-table">
       <ServerDataTable
         columns={visibleColumns}
         data={filteredResponses}

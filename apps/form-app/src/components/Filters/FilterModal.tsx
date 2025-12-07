@@ -69,7 +69,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
       />
       
       {/* Modal Content */}
-      <div className="relative bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
+      <div className="relative bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden" data-testid="filter-modal">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <div>
@@ -154,6 +154,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                 variant="outline"
                 onClick={handleAddFilter}
                 className="text-slate-600 hover:text-slate-900 border-dashed border-2 hover:border-solid hover:border-slate-300"
+                data-testid="add-filter-button"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 {t('buttons.addFilter')}
@@ -171,6 +172,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                 variant="ghost"
                 onClick={onClearAllFilters}
                 className="text-slate-600 hover:text-slate-900"
+                data-testid="clear-all-filters-button"
               >
                 {t('buttons.clearAll')}
               </Button>
@@ -188,6 +190,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
               onClick={handleApply}
               className="bg-slate-900 hover:bg-slate-800 text-white"
               disabled={activeFilterCount === 0}
+              data-testid="apply-filters-button"
             >
               {t('buttons.apply')} {activeFilterCount > 0 && `(${activeFilterCount})`}
             </Button>

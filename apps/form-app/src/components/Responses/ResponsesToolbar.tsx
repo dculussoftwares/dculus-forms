@@ -106,6 +106,7 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
           size="sm"
           onClick={onShowFilterModal}
           className="flex-shrink-0"
+          data-testid="filter-button"
         >
           <Filter className="h-4 w-4 mr-2" />
           {t('toolbar.filters.buttonLabel')}

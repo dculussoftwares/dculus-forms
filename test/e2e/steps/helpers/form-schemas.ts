@@ -145,3 +145,57 @@ export function createFormSchemaWithAllFields() {
     ]
   };
 }
+
+/**
+ * Helper function to create form schema for filter testing
+ * Contains only Short Text and Number fields for focused filter tests
+ */
+export function createFilterTestFormSchema() {
+  return {
+    layout: {
+      theme: "light",
+      textColor: "#000000",
+      spacing: "normal",
+      code: "L9",
+      content: "<h1>Filter Test Form</h1>",
+      customBackGroundColor: "#ffffff",
+      backgroundImageKey: "",
+      pageMode: "single",
+      isCustomBackgroundColorEnabled: false
+    },
+    pages: [
+      {
+        id: "page-1",
+        title: "Filter Test Fields",
+        fields: [
+          {
+            id: "field-text-filter",
+            type: "text_input_field",
+            label: "Text Field",
+            defaultValue: "",
+            prefix: "",
+            hint: "Enter text for filter testing",
+            placeholder: "Enter text",
+            validation: {
+              required: false,
+              type: "text_field_validation"
+            }
+          },
+          {
+            id: "field-number-filter",
+            type: "number_field",
+            label: "Number Field",
+            defaultValue: "",
+            prefix: "",
+            hint: "Enter number for filter testing",
+            placeholder: "Enter number",
+            validation: {
+              required: false,
+              type: "fillable_form_field"
+            }
+          }
+        ]
+      }
+    ]
+  };
+}
