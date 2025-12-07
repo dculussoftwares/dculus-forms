@@ -234,6 +234,19 @@ export function createFilterTestFormSchema() {
               required: false,
               type: "checkbox_field_validation"
             }
+          },
+          {
+            id: "field-radio-filter",
+            type: "radio_field",
+            label: "Radio Field",
+            defaultValue: "",
+            prefix: "",
+            hint: "Select option for filter testing",
+            options: ["Yes", "No", "Maybe"],
+            validation: {
+              required: false,
+              type: "fillable_form_field"
+            }
           }
         ]
       }

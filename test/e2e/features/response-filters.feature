@@ -555,3 +555,80 @@ Feature: Response Table Filters
     And I add a filter for field "Checkbox Field" with operator "equals" and options "Apple"
     And I apply the filters
     Then I should see 2 responses in the table
+  # ==================== RADIO FIELD FILTERS ====================
+
+  Scenario: Filter Radio - IN operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with radio "Yes"
+    And I submit response with radio "No"
+    And I submit response with radio "Maybe"
+    And I submit response with radio "Yes"
+    And I submit response with empty radio
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply IN filter - responses with "Yes" OR "No"
+    When I open the filter modal
+    And I add a filter for field "Radio Field" with operator "includes" and options "Yes,No"
+    And I apply the filters
+    Then I should see 3 responses in the table
+
+  Scenario: Filter Radio - NOT_IN operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with radio "Yes"
+    And I submit response with radio "No"
+    And I submit response with radio "Maybe"
+    And I submit response with radio "Yes"
+    And I submit response with empty radio
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply NOT_IN filter - responses NOT with "Yes" OR "No" (so Maybe + empty)
+    When I open the filter modal
+    And I add a filter for field "Radio Field" with operator "not includes" and options "Yes,No"
+    And I apply the filters
+    Then I should see 2 responses in the table
+
+  Scenario: Filter Radio - IS_EMPTY operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with radio "Yes"
+    And I submit response with radio "No"
+    And I submit response with radio "Maybe"
+    And I submit response with radio "Yes"
+    And I submit response with empty radio
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply IS_EMPTY filter
+    When I open the filter modal
+    And I add a filter for field "Radio Field" with operator "is empty"
+    And I apply the filters
+    Then I should see 1 responses in the table
+
+  Scenario: Filter Radio - IS_NOT_EMPTY operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with radio "Yes"
+    And I submit response with radio "No"
+    And I submit response with radio "Maybe"
+    And I submit response with radio "Yes"
+    And I submit response with empty radio
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply IS_NOT_EMPTY filter
+    When I open the filter modal
+    And I add a filter for field "Radio Field" with operator "is not empty"
+    And I apply the filters
+    Then I should see 4 responses in the table

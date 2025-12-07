@@ -329,6 +329,68 @@ async function submitResponseWithCheckbox(
     }
 }
 
+// Radio response submission steps
+When('I submit response with radio {string}', async function (
+    this: CustomWorld,
+    radioValue: string
+) {
+    await submitResponseWithRadio(this, radioValue);
+});
+
+When('I submit response with empty radio', async function (
+    this: CustomWorld
+) {
+    await submitResponseWithRadio(this, null);
+});
+
+// Helper function to submit response with radio value (single string)
+async function submitResponseWithRadio(
+    world: CustomWorld,
+    radioValue: string | null
+) {
+    if (!world.page || !currentFormId) {
+        throw new Error('Page or form ID is not initialized');
+    }
+
+    const responseData: Record<string, any> = {};
+    // Radio responses are stored as single strings
+    if (radioValue !== null && radioValue !== '') {
+        responseData['field-radio-filter'] = radioValue;
+    }
+
+    const response = await world.page.evaluate(async ({ formId, data, backendUrl }) => {
+        const query = `
+      mutation SubmitResponse($input: SubmitResponseInput!) {
+        submitResponse(input: $input) {
+          id
+        }
+      }
+    `;
+
+        const variables = {
+            input: {
+                formId,
+                data
+            }
+        };
+
+        const res = await fetch(backendUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ query, variables })
+        });
+
+        return res.json();
+    }, { formId: currentFormId, data: responseData, backendUrl: world.backendUrl });
+
+    if (response.errors) {
+        throw new Error(`GraphQL error submitting radio response: ${JSON.stringify(response.errors)}`);
+    }
+}
+
 When('I navigate to the responses page', async function (this: CustomWorld) {
     if (!this.page || !currentFormId) {
         throw new Error('Page or form ID is not initialized');
