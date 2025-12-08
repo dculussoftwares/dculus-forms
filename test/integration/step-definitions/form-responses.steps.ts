@@ -3,18 +3,30 @@ import { randomBytes } from 'crypto';
 import { CustomWorld } from '../support/world';
 import { expect, expectDefined, expectDeepEqual, expectEqual } from '../utils/expect-helper';
 
+/**
+ * Generates unbiased random index using rejection sampling.
+ */
+function unbiasedRandomIndex(max: number, randomByte: number): number | null {
+  const limit = 256 - (256 % max);
+  if (randomByte >= limit) return null;
+  return randomByte % max;
+}
+
 function generateId(length: number = 21): string {
   const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-  const bytes = randomBytes(length);
   let id = '';
-  for (let i = 0; i < length; i++) {
-    id += alphabet[bytes[i] % alphabet.length];
+  while (id.length < length) {
+    const bytes = randomBytes(length - id.length + 10);
+    for (let i = 0; i < bytes.length && id.length < length; i++) {
+      const index = unbiasedRandomIndex(alphabet.length, bytes[i]);
+      if (index !== null) id += alphabet[index];
+    }
   }
   return id;
 }
 
 Given('I publish the created form',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Created form must exist before publishing');
     expectDefined(this.authToken, 'Auth token is required to publish form');
@@ -29,7 +41,7 @@ Given('I publish the created form',
 );
 
 Given('I create an unpublished form from template {string} with title {string}',
-  async function(this: CustomWorld, templateName: string, title: string) {
+  async function (this: CustomWorld, templateName: string, title: string) {
     expectDefined(this.authToken, 'Auth token is required to create forms');
     expectDefined(this.currentOrganization, 'Organization context is required to create forms');
 
@@ -49,7 +61,7 @@ Given('I create an unpublished form from template {string} with title {string}',
 );
 
 Given('I set the submission limit to {int} response on the published form',
-  async function(this: CustomWorld, limit: number) {
+  async function (this: CustomWorld, limit: number) {
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist before configuring submission limits');
     expectDefined(this.authToken, 'Auth token is required to update form settings');
@@ -85,7 +97,7 @@ Given('I set the submission limit to {int} response on the published form',
 );
 
 Given('I configure a custom thank you message {string} on the published form',
-  async function(this: CustomWorld, messageTemplate: string) {
+  async function (this: CustomWorld, messageTemplate: string) {
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist before configuring thank you message');
     expectDefined(this.authToken, 'Auth token is required to update form settings');
@@ -119,7 +131,7 @@ Given('I configure a custom thank you message {string} on the published form',
 );
 
 When('a public user submits a response to the published form',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Published form must exist before submitting response');
 
@@ -149,7 +161,7 @@ When('a public user submits a response to the published form',
 );
 
 When('another public user attempts to submit a response to the published form',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist before submitting response');
 
@@ -177,7 +189,7 @@ When('another public user attempts to submit a response to the published form',
 );
 
 When('a public user attempts to submit a response to the unpublished form titled {string}',
-  async function(this: CustomWorld, title: string) {
+  async function (this: CustomWorld, title: string) {
     const form = this.getSharedTestData(`unpublishedForm:${title}`);
     expectDefined(form, `Unpublished form "${title}" must exist before submitting response`);
 
@@ -206,7 +218,7 @@ When('a public user attempts to submit a response to the unpublished form titled
 );
 
 Then('the submission should succeed with thank you message {string}',
-  function(this: CustomWorld, expectedMessage: string) {
+  function (this: CustomWorld, expectedMessage: string) {
     const response = this.getSharedTestData('lastResponse');
     expectDefined(response, 'Response should exist after successful submission');
     expectEqual(
@@ -219,7 +231,7 @@ Then('the submission should succeed with thank you message {string}',
 );
 
 Then('the form should have {int} stored responses',
-  async function(this: CustomWorld, expectedCount: number) {
+  async function (this: CustomWorld, expectedCount: number) {
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form should exist to verify response count');
     expectDefined(this.prisma, 'Prisma client must be available to verify database state');
@@ -234,7 +246,7 @@ Then('the form should have {int} stored responses',
 );
 
 Then('the stored response data should match the submitted payload',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     const submittedData = this.getSharedTestData('lastSubmittedData');
     const response = this.getSharedTestData('lastResponse');
 
@@ -245,7 +257,7 @@ Then('the stored response data should match the submitted payload',
 );
 
 Then('the submission should fail with error {string}',
-  function(this: CustomWorld, expectedMessage: string) {
+  function (this: CustomWorld, expectedMessage: string) {
     const error = this.getSharedTestData('responseError') as Error | undefined;
     expectDefined(error, 'Error should be captured for failed submission');
     expectEqual(error.message, expectedMessage, 'Error message should match expected value');
@@ -253,7 +265,7 @@ Then('the submission should fail with error {string}',
 );
 
 Then('the custom thank you message should render with submitted data',
-  function(this: CustomWorld) {
+  function (this: CustomWorld) {
     const response = this.getSharedTestData('lastResponse');
     const submittedData = this.getSharedTestData('lastSubmittedData');
     const template = this.getSharedTestData('thankYouTemplate');

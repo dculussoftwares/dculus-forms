@@ -3,13 +3,25 @@ import { CustomWorld } from '../support/world';
 import { expect, expectDefined, expectEqual, expectNoGraphQLErrors } from '../utils/expect-helper';
 import { randomBytes } from 'crypto';
 
-// Generate nanoid-like IDs using crypto (CommonJS compatible)
+/**
+ * Generates unbiased random index using rejection sampling.
+ */
+function unbiasedRandomIndex(max: number, randomByte: number): number | null {
+  const limit = 256 - (256 % max);
+  if (randomByte >= limit) return null;
+  return randomByte % max;
+}
+
+// Generate nanoid-like IDs using crypto with unbiased selection
 function generateId(length: number = 21): string {
   const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-  const bytes = randomBytes(length);
   let id = '';
-  for (let i = 0; i < length; i++) {
-    id += alphabet[bytes[i] % alphabet.length];
+  while (id.length < length) {
+    const bytes = randomBytes(length - id.length + 10);
+    for (let i = 0; i < bytes.length && id.length < length; i++) {
+      const index = unbiasedRandomIndex(alphabet.length, bytes[i]);
+      if (index !== null) id += alphabet[index];
+    }
   }
   return id;
 }
@@ -21,7 +33,7 @@ let testOrganizationName: string;
 let testFormTitle: string;
 
 Given('I am a new user with email {string} and password {string}',
-  function(this: CustomWorld, email: string, password: string) {
+  function (this: CustomWorld, email: string, password: string) {
     testEmail = email;
     testPassword = password;
     console.log(`📝 Test user credentials prepared: ${email}`);
@@ -29,7 +41,7 @@ Given('I am a new user with email {string} and password {string}',
 );
 
 When('I sign up with my credentials',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     console.log(`🔐 Creating user in database: ${testEmail}`);
 
     // Create user directly in database (bypassing better-auth for now to avoid Prisma connection issues)
@@ -104,7 +116,7 @@ When('I sign up with my credentials',
 );
 
 Then('I should be successfully signed up',
-  function(this: CustomWorld) {
+  function (this: CustomWorld) {
     expectDefined(this.currentUser, 'Current user should be defined after sign up');
     expectEqual(this.currentUser!.email, testEmail, 'User email should match');
     console.log(`✅ Sign up verified for user: ${this.currentUser!.email}`);
@@ -112,7 +124,7 @@ Then('I should be successfully signed up',
 );
 
 Then('I should have an authentication token',
-  function(this: CustomWorld) {
+  function (this: CustomWorld) {
     expectDefined(this.authToken, 'Authentication token should be defined');
     expect(this.authToken!.length > 0, 'Authentication token should not be empty');
     console.log(`✅ Authentication token verified: ${this.authToken!.substring(0, 20)}...`);
@@ -120,7 +132,7 @@ Then('I should have an authentication token',
 );
 
 When('I create an organization named {string}',
-  async function(this: CustomWorld, organizationName: string) {
+  async function (this: CustomWorld, organizationName: string) {
     // Organization was already created during sign up
     // This step just verifies it exists
     testOrganizationName = organizationName;
@@ -135,7 +147,7 @@ When('I create an organization named {string}',
 );
 
 Then('the organization should be created successfully',
-  function(this: CustomWorld) {
+  function (this: CustomWorld) {
     expectDefined(this.currentOrganization, 'Current organization should be defined');
     expect(this.currentOrganization!.name.length > 0, 'Organization name should not be empty');
     console.log(`✅ Organization creation verified: ${this.currentOrganization!.name}`);
@@ -143,7 +155,7 @@ Then('the organization should be created successfully',
 );
 
 Then('I should be set as the organization owner',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     expectDefined(this.currentOrganization, 'Current organization must exist');
     expectDefined(this.currentUser, 'Current user must exist');
 
@@ -163,7 +175,7 @@ Then('I should be set as the organization owner',
 );
 
 When('I create a form with title {string}',
-  async function(this: CustomWorld, title: string) {
+  async function (this: CustomWorld, title: string) {
     testFormTitle = title;
 
     expectDefined(this.authToken, 'Auth token must exist to create form');
@@ -221,7 +233,7 @@ When('I create a form with title {string}',
 );
 
 Then('the form should be created successfully',
-  function(this: CustomWorld) {
+  function (this: CustomWorld) {
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Created form should be stored in shared test data');
     expectEqual(form.title, testFormTitle, 'Form title should match');
@@ -230,7 +242,7 @@ Then('the form should be created successfully',
 );
 
 Then('the form should belong to my organization',
-  function(this: CustomWorld) {
+  function (this: CustomWorld) {
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Created form should exist');
     expectDefined(this.currentOrganization, 'Current organization should exist');

@@ -4,13 +4,25 @@ import { expectDefined, expectEqual } from '../utils/assertion-utils';
 import { expect, expectContains } from '../utils/expect-helper';
 import { randomBytes } from 'crypto';
 
+/**
+ * Generates unbiased random index using rejection sampling.
+ */
+function unbiasedRandomIndex(max: number, randomByte: number): number | null {
+  const limit = 256 - (256 % max);
+  if (randomByte >= limit) return null;
+  return randomByte % max;
+}
+
 // Generate nanoid-like IDs
 function generateId(length: number = 21): string {
   const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-  const bytes = randomBytes(length);
   let id = '';
-  for (let i = 0; i < length; i++) {
-    id += alphabet[bytes[i] % alphabet.length];
+  while (id.length < length) {
+    const bytes = randomBytes(length - id.length + 10);
+    for (let i = 0; i < bytes.length && id.length < length; i++) {
+      const index = unbiasedRandomIndex(alphabet.length, bytes[i]);
+      if (index !== null) id += alphabet[index];
+    }
   }
   return id;
 }
@@ -43,7 +55,7 @@ function getAuthTokenByEmail(world: CustomWorld, email: string): string {
 // ==================== GIVEN Steps ====================
 
 Given('another user {string} exists with password {string} in the same organization',
-  async function(this: CustomWorld, email: string, password: string) {
+  async function (this: CustomWorld, email: string, password: string) {
     expectDefined(this.authToken, 'Owner auth token required');
     expectDefined(this.currentOrganization, 'Organization must exist');
     const organization = this.currentOrganization;
@@ -89,7 +101,7 @@ Given('another user {string} exists with password {string} in the same organizat
 );
 
 Given('another user {string} exists with password {string} in a different organization {string}',
-  async function(this: CustomWorld, email: string, password: string, orgName: string) {
+  async function (this: CustomWorld, email: string, password: string, orgName: string) {
     console.log(`👤 Creating user: ${email} in new organization: ${orgName}`);
 
     // Create new user account
@@ -137,7 +149,7 @@ Given('another user {string} exists with password {string} in a different organi
 );
 
 Given('I share the form with user {string} with {string} permission using scope {string}',
-  async function(this: CustomWorld, userEmail: string, permission: string, scope: string) {
+  async function (this: CustomWorld, userEmail: string, permission: string, scope: string) {
     expectDefined(this.authToken, 'Auth token required');
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist');
@@ -158,7 +170,7 @@ Given('I share the form with user {string} with {string} permission using scope 
 );
 
 Given('I create another form from template {string} with title {string}',
-  async function(this: CustomWorld, templateName: string, title: string) {
+  async function (this: CustomWorld, templateName: string, title: string) {
     expectDefined(this.authToken, 'Auth token required');
     expectDefined(this.currentOrganization, 'Organization must exist');
 
@@ -179,7 +191,7 @@ Given('I create another form from template {string} with title {string}',
 // ==================== WHEN Steps ====================
 
 When('I share the form with multiple users:',
-  async function(this: CustomWorld, dataTable: any) {
+  async function (this: CustomWorld, dataTable: any) {
     expectDefined(this.authToken, 'Auth token required');
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist');
@@ -205,7 +217,7 @@ When('I share the form with multiple users:',
 );
 
 When('I share the form with scope {string} and default permission {string}',
-  async function(this: CustomWorld, scope: string, defaultPermission: string) {
+  async function (this: CustomWorld, scope: string, defaultPermission: string) {
     expectDefined(this.authToken, 'Auth token required');
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist');
@@ -229,7 +241,7 @@ When('I share the form with scope {string} and default permission {string}',
 );
 
 When('I update user {string} permission to {string} on the form',
-  async function(this: CustomWorld, userEmail: string, permission: string) {
+  async function (this: CustomWorld, userEmail: string, permission: string) {
     expectDefined(this.authToken, 'Auth token required');
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist');
@@ -249,7 +261,7 @@ When('I update user {string} permission to {string} on the form',
 );
 
 When('I remove user {string} access from the form',
-  async function(this: CustomWorld, userEmail: string) {
+  async function (this: CustomWorld, userEmail: string) {
     expectDefined(this.authToken, 'Auth token required');
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist');
@@ -265,7 +277,7 @@ When('I remove user {string} access from the form',
 );
 
 When('I try to remove user {string} access from the form',
-  async function(this: CustomWorld, userEmail: string) {
+  async function (this: CustomWorld, userEmail: string) {
     expectDefined(this.authToken, 'Auth token required');
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist');
@@ -286,7 +298,7 @@ When('I try to remove user {string} access from the form',
 );
 
 When('I try to share the form with user {string} with {string} permission using scope {string}',
-  async function(this: CustomWorld, userEmail: string, permission: string, scope: string) {
+  async function (this: CustomWorld, userEmail: string, permission: string, scope: string) {
     expectDefined(this.authToken, 'Auth token required');
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist');
@@ -311,7 +323,7 @@ When('I try to share the form with user {string} with {string} permission using 
 );
 
 When('I switch to user {string}',
-  async function(this: CustomWorld, email: string) {
+  async function (this: CustomWorld, email: string) {
     const token = getAuthTokenByEmail(this, email);
     this.authToken = token;
     console.log(`🔄 Switched to user: ${email}`);
@@ -319,7 +331,7 @@ When('I switch to user {string}',
 );
 
 When('I query forms with category {string}',
-  async function(this: CustomWorld, category: string) {
+  async function (this: CustomWorld, category: string) {
     expectDefined(this.authToken, 'Auth token required');
     expectDefined(this.currentOrganization, 'Organization must exist');
 
@@ -337,7 +349,7 @@ When('I query forms with category {string}',
 );
 
 When('I query formPermissions for the form',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     expectDefined(this.authToken, 'Auth token required');
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist');
@@ -352,7 +364,7 @@ When('I query formPermissions for the form',
 );
 
 When('I query organizationMembers',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     expectDefined(this.authToken, 'Auth token required');
     expectDefined(this.currentOrganization, 'Organization must exist');
 
@@ -369,7 +381,7 @@ When('I query organizationMembers',
 );
 
 When('I try to update the form title to {string}',
-  async function(this: CustomWorld, newTitle: string) {
+  async function (this: CustomWorld, newTitle: string) {
     expectDefined(this.authToken, 'Auth token required');
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist');
@@ -394,7 +406,7 @@ When('I try to update the form title to {string}',
 // ==================== THEN Steps ====================
 
 Then('the form sharing scope should be {string}',
-  async function(this: CustomWorld, expectedScope: string) {
+  async function (this: CustomWorld, expectedScope: string) {
     const sharingSettings = this.getSharedTestData('formSharingSettings');
     expectDefined(sharingSettings, 'Sharing settings must exist');
 
@@ -404,7 +416,7 @@ Then('the form sharing scope should be {string}',
 );
 
 Then('the form default permission should be {string}',
-  async function(this: CustomWorld, expectedPermission: string) {
+  async function (this: CustomWorld, expectedPermission: string) {
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist');
 
@@ -414,7 +426,7 @@ Then('the form default permission should be {string}',
 );
 
 Then('user {string} should have {string} permission on the form',
-  async function(this: CustomWorld, userEmail: string, expectedPermission: string) {
+  async function (this: CustomWorld, userEmail: string, expectedPermission: string) {
     expectDefined(this.authToken, 'Auth token required');
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist');
@@ -432,7 +444,7 @@ Then('user {string} should have {string} permission on the form',
 );
 
 Then('user {string} should not have permission on the form',
-  async function(this: CustomWorld, userEmail: string) {
+  async function (this: CustomWorld, userEmail: string) {
     expectDefined(this.authToken, 'Auth token required');
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist');
@@ -449,7 +461,7 @@ Then('user {string} should not have permission on the form',
 );
 
 Then('I should see the form {string} in the results',
-  async function(this: CustomWorld, formTitle: string) {
+  async function (this: CustomWorld, formTitle: string) {
     const queryResult = this.getSharedTestData('queryResult');
     expectDefined(queryResult, 'Query result must exist');
 
@@ -460,7 +472,7 @@ Then('I should see the form {string} in the results',
 );
 
 Then('I should not see the form {string} in the results',
-  async function(this: CustomWorld, formTitle: string) {
+  async function (this: CustomWorld, formTitle: string) {
     const queryResult = this.getSharedTestData('queryResult');
     expectDefined(queryResult, 'Query result must exist');
 
@@ -471,7 +483,7 @@ Then('I should not see the form {string} in the results',
 );
 
 Then('the form should have userPermission {string}',
-  async function(this: CustomWorld, expectedPermission: string) {
+  async function (this: CustomWorld, expectedPermission: string) {
     const queriedForm = this.getSharedTestData('queriedForm');
     expectDefined(queriedForm, 'Queried form must exist');
 
@@ -481,7 +493,7 @@ Then('the form should have userPermission {string}',
 );
 
 Then('I should see {int} permissions in the list',
-  async function(this: CustomWorld, expectedCount: number) {
+  async function (this: CustomWorld, expectedCount: number) {
     const permissions = this.getSharedTestData('formPermissions');
     expectDefined(permissions, 'Form permissions must exist');
 
@@ -494,7 +506,7 @@ Then('I should see {int} permissions in the list',
 );
 
 Then('user {string} should be in the permissions list with {string} permission',
-  async function(this: CustomWorld, userEmail: string, expectedPermission: string) {
+  async function (this: CustomWorld, userEmail: string, expectedPermission: string) {
     const permissions = this.getSharedTestData('formPermissions');
     expectDefined(permissions, 'Form permissions must exist');
 
@@ -508,7 +520,7 @@ Then('user {string} should be in the permissions list with {string} permission',
 );
 
 Then('I should see {int} forms in the results',
-  async function(this: CustomWorld, expectedCount: number) {
+  async function (this: CustomWorld, expectedCount: number) {
     const queryResult = this.getSharedTestData('queryResult');
     expectDefined(queryResult, 'Query result must exist');
 
@@ -518,7 +530,7 @@ Then('I should see {int} forms in the results',
 );
 
 Then('I should see {int} form in the results',
-  async function(this: CustomWorld, expectedCount: number) {
+  async function (this: CustomWorld, expectedCount: number) {
     const queryResult = this.getSharedTestData('queryResult');
     expectDefined(queryResult, 'Query result must exist');
 
@@ -528,7 +540,7 @@ Then('I should see {int} form in the results',
 );
 
 Then('I should see {int} members in the list',
-  async function(this: CustomWorld, expectedCount: number) {
+  async function (this: CustomWorld, expectedCount: number) {
     const members = this.getSharedTestData('organizationMembers');
     expectDefined(members, 'Organization members must exist');
 
@@ -538,7 +550,7 @@ Then('I should see {int} members in the list',
 );
 
 Then('user {string} should be in the members list',
-  async function(this: CustomWorld, userEmail: string) {
+  async function (this: CustomWorld, userEmail: string) {
     const members = this.getSharedTestData('organizationMembers');
     expectDefined(members, 'Organization members must exist');
 
@@ -551,7 +563,7 @@ Then('user {string} should be in the members list',
 );
 
 Then('the operation should fail with error {string}',
-  async function(this: CustomWorld, expectedErrorSubstring: string) {
+  async function (this: CustomWorld, expectedErrorSubstring: string) {
     expectDefined(this.lastOperationError, 'An error should have occurred');
     expectContains(this.lastOperationError!, expectedErrorSubstring, 'Error message should contain expected text');
     console.log(`✅ Operation failed with expected error: ${expectedErrorSubstring}`);

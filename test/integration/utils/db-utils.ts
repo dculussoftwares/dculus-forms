@@ -1,13 +1,37 @@
 import { randomBytes } from 'crypto';
 import { PrismaClient, User, Organization, Form, Response, FormTemplate, FormPlugin } from '@prisma/client';
 
+/**
+ * Generates unbiased random index using rejection sampling.
+ * This avoids the bias introduced by simple modulo operations.
+ */
+function unbiasedRandomIndex(max: number, randomByte: number): number | null {
+  // Calculate the largest multiple of max that fits in a byte (256)
+  const limit = 256 - (256 % max);
+  // Reject values that would introduce bias
+  if (randomByte >= limit) {
+    return null; // Signal to regenerate
+  }
+  return randomByte % max;
+}
+
 function generateId(length: number = 21): string {
   const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-  const array = randomBytes(length);
   let id = '';
-  for (let i = 0; i < length; i++) {
-    id += alphabet[array[i] % alphabet.length];
+  let position = 0;
+
+  while (id.length < length) {
+    // Generate more random bytes as needed
+    const bytes = randomBytes(length - id.length + 10); // Extra bytes for rejections
+
+    for (let i = 0; i < bytes.length && id.length < length; i++) {
+      const index = unbiasedRandomIndex(alphabet.length, bytes[i]);
+      if (index !== null) {
+        id += alphabet[index];
+      }
+    }
   }
+
   return id;
 }
 

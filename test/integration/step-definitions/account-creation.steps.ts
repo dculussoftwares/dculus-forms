@@ -3,13 +3,25 @@ import { CustomWorld } from '../support/world';
 import { expect, expectDefined, expectEqual } from '../utils/expect-helper';
 import { randomBytes } from 'crypto';
 
-// Generate nanoid-like IDs using crypto (CommonJS compatible)
+/**
+ * Generates unbiased random index using rejection sampling.
+ */
+function unbiasedRandomIndex(max: number, randomByte: number): number | null {
+  const limit = 256 - (256 % max);
+  if (randomByte >= limit) return null;
+  return randomByte % max;
+}
+
+// Generate nanoid-like IDs using crypto with unbiased selection
 function generateId(length: number = 21): string {
   const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-  const bytes = randomBytes(length);
   let id = '';
-  for (let i = 0; i < length; i++) {
-    id += alphabet[bytes[i] % alphabet.length];
+  while (id.length < length) {
+    const bytes = randomBytes(length - id.length + 10);
+    for (let i = 0; i < bytes.length && id.length < length; i++) {
+      const index = unbiasedRandomIndex(alphabet.length, bytes[i]);
+      if (index !== null) id += alphabet[index];
+    }
   }
   return id;
 }
@@ -22,7 +34,7 @@ let signupResponse: any;
 let signupError: any;
 
 Given('the database is clean',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     console.log('🗑️  Cleaning database before scenario...');
     await this.clearDatabase();
     console.log('✅ Database cleaned');
@@ -30,7 +42,7 @@ Given('the database is clean',
 );
 
 Given('I want to sign up with email {string} and password {string}',
-  function(this: CustomWorld, email: string, password: string) {
+  function (this: CustomWorld, email: string, password: string) {
     signupEmail = email;
     signupPassword = password;
     signupName = 'Test User';
@@ -41,7 +53,7 @@ Given('I want to sign up with email {string} and password {string}',
 );
 
 Given('I want to sign up with email {string}, password {string}, and name {string}',
-  function(this: CustomWorld, email: string, password: string, name: string) {
+  function (this: CustomWorld, email: string, password: string, name: string) {
     signupEmail = email;
     signupPassword = password;
     signupName = name;
@@ -52,7 +64,7 @@ Given('I want to sign up with email {string}, password {string}, and name {strin
 );
 
 Given('a user already exists with email {string}',
-  async function(this: CustomWorld, email: string) {
+  async function (this: CustomWorld, email: string) {
     console.log(`👤 Creating existing user: ${email}`);
 
     // Create a user directly in the database
@@ -72,7 +84,7 @@ Given('a user already exists with email {string}',
 );
 
 Given('I prepare a signup request without email',
-  function(this: CustomWorld) {
+  function (this: CustomWorld) {
     signupEmail = ''; // Empty email to trigger validation
     signupPassword = 'SecurePass123!';
     signupName = 'Test User';
@@ -83,7 +95,7 @@ Given('I prepare a signup request without email',
 );
 
 When('I submit the signup request',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     console.log(`🔐 Submitting signup request for: ${signupEmail}`);
 
     try {
@@ -111,7 +123,7 @@ When('I submit the signup request',
 );
 
 When('I submit the signup request with name',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     console.log(`🔐 Submitting signup request with name: ${signupName}`);
 
     try {
@@ -139,7 +151,7 @@ When('I submit the signup request with name',
 );
 
 When('I try to sign up with email {string} and password {string}',
-  async function(this: CustomWorld, email: string, password: string) {
+  async function (this: CustomWorld, email: string, password: string) {
     signupEmail = email;
     signupPassword = password;
     signupName = 'Test User';
@@ -169,7 +181,7 @@ When('I try to sign up with email {string} and password {string}',
 );
 
 When('I submit the incomplete signup request',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     console.log('🔐 Submitting incomplete signup request');
 
     try {
@@ -190,7 +202,7 @@ When('I submit the incomplete signup request',
 );
 
 Then('the signup should be successful',
-  function(this: CustomWorld) {
+  function (this: CustomWorld) {
     expect(!signupError, 'Signup should not have an error');
     expectDefined(signupResponse, 'Signup response should be defined');
     expect(signupResponse.status === 200, 'Signup should return 200 status');
@@ -200,7 +212,7 @@ Then('the signup should be successful',
 );
 
 Then('the signup should fail with error code {int}',
-  function(this: CustomWorld, expectedStatusCode: number) {
+  function (this: CustomWorld, expectedStatusCode: number) {
     expectDefined(signupError, 'Signup should have failed with an error');
     const actualStatusCode = signupError.response?.status;
     expectEqual(
@@ -213,7 +225,7 @@ Then('the signup should fail with error code {int}',
 );
 
 Then('the user should exist in the database with email {string}',
-  async function(this: CustomWorld, email: string) {
+  async function (this: CustomWorld, email: string) {
     const user = await this.prisma.user.findUnique({
       where: { email: email }
     });
@@ -225,7 +237,7 @@ Then('the user should exist in the database with email {string}',
 );
 
 Then('the user should have role {string}',
-  async function(this: CustomWorld, expectedRole: string) {
+  async function (this: CustomWorld, expectedRole: string) {
     expectDefined(this.currentUser, 'Current user should be defined');
 
     const user = await this.prisma.user.findUnique({
@@ -239,7 +251,7 @@ Then('the user should have role {string}',
 );
 
 Then('a session token should be returned',
-  function(this: CustomWorld) {
+  function (this: CustomWorld) {
     expectDefined(this.authToken, 'Authentication token should be defined');
     expect(this.authToken!.length > 0, 'Authentication token should not be empty');
     console.log(`✅ Session token verified: ${this.authToken!.substring(0, 20)}...`);
@@ -247,12 +259,12 @@ Then('a session token should be returned',
 );
 
 Then('the error message should mention {string}',
-  function(this: CustomWorld, expectedText: string) {
+  function (this: CustomWorld, expectedText: string) {
     expectDefined(signupError, 'Signup error should exist');
 
     const errorMessage = signupError.response?.data?.error?.message ||
-                        signupError.response?.data?.message ||
-                        JSON.stringify(signupError.response?.data);
+      signupError.response?.data?.message ||
+      JSON.stringify(signupError.response?.data);
 
     const lowerErrorMessage = errorMessage.toLowerCase();
     const lowerExpectedText = expectedText.toLowerCase();
@@ -267,22 +279,22 @@ Then('the error message should mention {string}',
 );
 
 Then('the error should indicate duplicate email',
-  function(this: CustomWorld) {
+  function (this: CustomWorld) {
     expectDefined(signupError, 'Signup error should exist');
 
     const statusCode = signupError.response?.status;
     const errorMessage = signupError.response?.data?.error?.message ||
-                        signupError.response?.data?.message ||
-                        JSON.stringify(signupError.response?.data);
+      signupError.response?.data?.message ||
+      JSON.stringify(signupError.response?.data);
 
     // Better-auth typically returns 422 for duplicate email
     expectEqual(statusCode, 422, 'Should return 422 for duplicate email');
 
     const lowerErrorMessage = errorMessage.toLowerCase();
     const hasDuplicateIndicator = lowerErrorMessage.includes('already') ||
-                                  lowerErrorMessage.includes('exists') ||
-                                  lowerErrorMessage.includes('duplicate') ||
-                                  lowerErrorMessage.includes('taken');
+      lowerErrorMessage.includes('exists') ||
+      lowerErrorMessage.includes('duplicate') ||
+      lowerErrorMessage.includes('taken');
 
     expect(
       hasDuplicateIndicator,
@@ -294,21 +306,21 @@ Then('the error should indicate duplicate email',
 );
 
 Then('the error should indicate missing required field',
-  function(this: CustomWorld) {
+  function (this: CustomWorld) {
     expectDefined(signupError, 'Signup error should exist');
 
     const statusCode = signupError.response?.status;
     const errorMessage = signupError.response?.data?.error?.message ||
-                        signupError.response?.data?.message ||
-                        JSON.stringify(signupError.response?.data);
+      signupError.response?.data?.message ||
+      JSON.stringify(signupError.response?.data);
 
     expectEqual(statusCode, 400, 'Should return 400 for missing required field');
 
     const lowerErrorMessage = errorMessage.toLowerCase();
     const hasMissingFieldIndicator = lowerErrorMessage.includes('required') ||
-                                     lowerErrorMessage.includes('missing') ||
-                                     lowerErrorMessage.includes('must') ||
-                                     lowerErrorMessage.includes('email');
+      lowerErrorMessage.includes('missing') ||
+      lowerErrorMessage.includes('must') ||
+      lowerErrorMessage.includes('email');
 
     expect(
       hasMissingFieldIndicator,
@@ -320,7 +332,7 @@ Then('the error should indicate missing required field',
 );
 
 Then('the user name should be {string}',
-  async function(this: CustomWorld, expectedName: string) {
+  async function (this: CustomWorld, expectedName: string) {
     expectDefined(this.currentUser, 'Current user should be defined');
 
     const user = await this.prisma.user.findUnique({

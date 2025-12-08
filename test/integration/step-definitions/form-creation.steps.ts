@@ -4,18 +4,30 @@ import { CustomWorld } from '../support/world';
 import { expect, expectDefined, expectEqual } from '../utils/expect-helper';
 import { seedTestTemplate } from '../utils/db-utils';
 
+/**
+ * Generates unbiased random index using rejection sampling.
+ */
+function unbiasedRandomIndex(max: number, randomByte: number): number | null {
+  const limit = 256 - (256 % max);
+  if (randomByte >= limit) return null;
+  return randomByte % max;
+}
+
 function generateId(length: number = 21): string {
   const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-  const bytes = randomBytes(length);
   let id = '';
-  for (let i = 0; i < length; i++) {
-    id += alphabet[bytes[i] % alphabet.length];
+  while (id.length < length) {
+    const bytes = randomBytes(length - id.length + 10);
+    for (let i = 0; i < bytes.length && id.length < length; i++) {
+      const index = unbiasedRandomIndex(alphabet.length, bytes[i]);
+      if (index !== null) id += alphabet[index];
+    }
   }
   return id;
 }
 
 Given('an organization owner {string} exists with password {string} and organization {string}',
-  async function(this: CustomWorld, email: string, password: string, organizationName: string) {
+  async function (this: CustomWorld, email: string, password: string, organizationName: string) {
     expectDefined(this.authUtils, 'Auth utils must be available');
 
     // Make email unique per test run to avoid conflicts during retries
@@ -68,7 +80,7 @@ Given('an organization owner {string} exists with password {string} and organiza
 );
 
 Given('an active form template named {string} with {int} fields exists',
-  async function(this: CustomWorld, templateName: string, fieldCount: number) {
+  async function (this: CustomWorld, templateName: string, fieldCount: number) {
     expectDefined(this.prisma, 'Prisma client must be available to seed templates');
     const pageId = `page-${generateId(8)}`;
 
@@ -125,7 +137,7 @@ Given('an active form template named {string} with {int} fields exists',
 );
 
 When('I create a form from template {string} with title {string} and description {string}',
-  async function(this: CustomWorld, templateName: string, title: string, description: string) {
+  async function (this: CustomWorld, templateName: string, title: string, description: string) {
     expectDefined(this.authToken, 'Auth token must be available for GraphQL requests');
     expectDefined(this.currentOrganization, 'Current organization must be set before creating a form');
 
@@ -147,7 +159,7 @@ When('I create a form from template {string} with title {string} and description
 );
 
 Then('the form creation response should include the title {string}',
-  function(this: CustomWorld, expectedTitle: string) {
+  function (this: CustomWorld, expectedTitle: string) {
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form should be stored after creation');
     expectEqual(form.title, expectedTitle, 'Form title should match request');
@@ -155,7 +167,7 @@ Then('the form creation response should include the title {string}',
 );
 
 Then('the form should not be published by default',
-  function(this: CustomWorld) {
+  function (this: CustomWorld) {
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form should be stored after creation');
     expect(form.isPublished === false, 'New forms should be created as unpublished');
@@ -163,7 +175,7 @@ Then('the form should not be published by default',
 );
 
 Then('the form schema should have {int} fields',
-  function(this: CustomWorld, expectedFieldCount: number) {
+  function (this: CustomWorld, expectedFieldCount: number) {
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form should exist to verify schema');
 
@@ -194,7 +206,7 @@ Then('the form schema should have {int} fields',
 
 // New steps for formSchema creation
 When('I create a form directly from schema with title {string}',
-  async function(this: CustomWorld, title: string) {
+  async function (this: CustomWorld, title: string) {
     expectDefined(this.authToken, 'Auth token must be available for GraphQL requests');
     expectDefined(this.currentOrganization, 'Current organization must be set before creating a form');
 
@@ -254,7 +266,7 @@ When('I create a form directly from schema with title {string}',
 );
 
 When('I attempt to create a form with both templateId and formSchema',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     expectDefined(this.authToken, 'Auth token must be available for GraphQL requests');
     expectDefined(this.currentOrganization, 'Current organization must be set');
 
@@ -276,7 +288,7 @@ When('I attempt to create a form with both templateId and formSchema',
 );
 
 When('I attempt to create a form with neither templateId nor formSchema',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     expectDefined(this.authToken, 'Auth token must be available for GraphQL requests');
     expectDefined(this.currentOrganization, 'Current organization must be set');
 
@@ -293,7 +305,7 @@ When('I attempt to create a form with neither templateId nor formSchema',
 );
 
 Then('the form creation should fail with error {string}',
-  function(this: CustomWorld, expectedError: string) {
+  function (this: CustomWorld, expectedError: string) {
     const error = this.getSharedTestData('creationError');
     expectDefined(error, 'An error should have been thrown');
     expect(error.includes(expectedError), `Error message should contain "${expectedError}", got: ${error}`);

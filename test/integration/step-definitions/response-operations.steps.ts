@@ -9,7 +9,7 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 // ==================== GIVEN Steps ====================
 
 Given('the form has {int} submitted response(s)',
-  async function(this: CustomWorld, count: number) {
+  async function (this: CustomWorld, count: number) {
     expectDefined(this.authToken, 'Auth token required');
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist');
@@ -46,7 +46,7 @@ Given('the form has {int} submitted response(s)',
 );
 
 Given('the form has {int} responses submitted at different times',
-  async function(this: CustomWorld, count: number) {
+  async function (this: CustomWorld, count: number) {
     expectDefined(this.authToken, 'Auth token required');
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist');
@@ -76,7 +76,7 @@ Given('the form has {int} responses submitted at different times',
 );
 
 Given('the form has {int} responses with various field values',
-  async function(this: CustomWorld, count: number) {
+  async function (this: CustomWorld, count: number) {
     expectDefined(this.authToken, 'Auth token required');
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist');
@@ -107,7 +107,7 @@ Given('the form has {int} responses with various field values',
 );
 
 Given('another user {string} exists in a different organization {string}',
-  async function(this: CustomWorld, email: string, orgName: string) {
+  async function (this: CustomWorld, email: string, orgName: string) {
     console.log(`👤 Creating user: ${email} in new organization: ${orgName}`);
 
     // Create new user account
@@ -124,12 +124,21 @@ Given('another user {string} exists in a different organization {string}',
     console.log(`✅ User created: ${newUser.id}`);
 
     // Create a new organization
+    const unbiasedRandomIndex = (max: number, randomByte: number): number | null => {
+      const limit = 256 - (256 % max);
+      if (randomByte >= limit) return null;
+      return randomByte % max;
+    };
+
     const generateId = (length: number = 21): string => {
       const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-      const bytes = require('crypto').randomBytes(length);
       let id = '';
-      for (let i = 0; i < length; i++) {
-        id += alphabet[bytes[i] % alphabet.length];
+      while (id.length < length) {
+        const bytes = require('crypto').randomBytes(length - id.length + 10);
+        for (let i = 0; i < bytes.length && id.length < length; i++) {
+          const index = unbiasedRandomIndex(alphabet.length, bytes[i]);
+          if (index !== null) id += alphabet[index];
+        }
       }
       return id;
     };
@@ -167,7 +176,7 @@ Given('another user {string} exists in a different organization {string}',
 // ==================== WHEN Steps ====================
 
 When('I query responses for the form with page={int} and limit={int}',
-  async function(this: CustomWorld, page: number, limit: number) {
+  async function (this: CustomWorld, page: number, limit: number) {
     expectDefined(this.authToken, 'Auth token required');
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist');
@@ -187,7 +196,7 @@ When('I query responses for the form with page={int} and limit={int}',
 );
 
 When('I query responses sorted by {string} in {string} order',
-  async function(this: CustomWorld, sortBy: string, sortOrder: string) {
+  async function (this: CustomWorld, sortBy: string, sortOrder: string) {
     expectDefined(this.authToken, 'Auth token required');
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist');
@@ -209,7 +218,7 @@ When('I query responses sorted by {string} in {string} order',
 );
 
 When('I filter responses where field {string} contains {string}',
-  async function(this: CustomWorld, fieldId: string, value: string) {
+  async function (this: CustomWorld, fieldId: string, value: string) {
     expectDefined(this.authToken, 'Auth token required');
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist');
@@ -239,7 +248,7 @@ When('I filter responses where field {string} contains {string}',
 );
 
 When('I update the response data with editReason {string}',
-  async function(this: CustomWorld, editReason: string) {
+  async function (this: CustomWorld, editReason: string) {
     expectDefined(this.authToken, 'Auth token required');
     const responses = this.getSharedTestData('submittedResponses');
     expectDefined(responses, 'Responses must exist');
@@ -268,7 +277,7 @@ When('I update the response data with editReason {string}',
 );
 
 When('I update field {string} to {string} with reason {string}',
-  async function(this: CustomWorld, fieldId: string, newValue: string, reason: string) {
+  async function (this: CustomWorld, fieldId: string, newValue: string, reason: string) {
     expectDefined(this.authToken, 'Auth token required');
     const responses = this.getSharedTestData('submittedResponses');
     expectDefined(responses, 'Responses must exist');
@@ -296,7 +305,7 @@ When('I update field {string} to {string} with reason {string}',
 );
 
 When('user {string} attempts to update the response',
-  async function(this: CustomWorld, userEmail: string) {
+  async function (this: CustomWorld, userEmail: string) {
     const testUsers = this.getSharedTestData('testUsers') || {};
     const user = testUsers[userEmail];
     expectDefined(user, `User ${userEmail} must exist`);
@@ -332,7 +341,7 @@ When('user {string} attempts to update the response',
 );
 
 When('I delete the second response',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     expectDefined(this.authToken, 'Auth token required');
     const responses = this.getSharedTestData('submittedResponses');
     expectDefined(responses, 'Responses must exist');
@@ -353,7 +362,7 @@ When('I delete the second response',
 );
 
 When('user {string} attempts to delete the response',
-  async function(this: CustomWorld, userEmail: string) {
+  async function (this: CustomWorld, userEmail: string) {
     const testUsers = this.getSharedTestData('testUsers') || {};
     const user = testUsers[userEmail];
     expectDefined(user, `User ${userEmail} must exist`);
@@ -380,7 +389,7 @@ When('user {string} attempts to delete the response',
 );
 
 When('I query the first response by ID',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     expectDefined(this.authToken, 'Auth token required');
     const responses = this.getSharedTestData('submittedResponses');
     expectDefined(responses, 'Responses must exist');
@@ -401,7 +410,7 @@ When('I query the first response by ID',
 // ==================== THEN Steps ====================
 
 Then('I should receive {int} responses',
-  async function(this: CustomWorld, expectedCount: number) {
+  async function (this: CustomWorld, expectedCount: number) {
     const queryResult = this.getSharedTestData('queryResult');
     expectDefined(queryResult, 'Query result must exist');
 
@@ -411,7 +420,7 @@ Then('I should receive {int} responses',
 );
 
 Then('the total count should be {int}',
-  async function(this: CustomWorld, expectedTotal: number) {
+  async function (this: CustomWorld, expectedTotal: number) {
     const queryResult = this.getSharedTestData('queryResult');
     expectDefined(queryResult, 'Query result must exist');
 
@@ -421,7 +430,7 @@ Then('the total count should be {int}',
 );
 
 Then('the total pages should be {int}',
-  async function(this: CustomWorld, expectedPages: number) {
+  async function (this: CustomWorld, expectedPages: number) {
     const queryResult = this.getSharedTestData('queryResult');
     expectDefined(queryResult, 'Query result must exist');
 
@@ -431,7 +440,7 @@ Then('the total pages should be {int}',
 );
 
 Then('the current page should be {int}',
-  async function(this: CustomWorld, expectedPage: number) {
+  async function (this: CustomWorld, expectedPage: number) {
     const queryResult = this.getSharedTestData('queryResult');
     expectDefined(queryResult, 'Query result must exist');
 
@@ -441,7 +450,7 @@ Then('the current page should be {int}',
 );
 
 Then('the responses should be ordered from newest to oldest',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     const queryResult = this.getSharedTestData('queryResult');
     expectDefined(queryResult, 'Query result must exist');
 
@@ -460,7 +469,7 @@ Then('the responses should be ordered from newest to oldest',
 );
 
 Then('the responses should be ordered from oldest to newest',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     const queryResult = this.getSharedTestData('queryResult');
     expectDefined(queryResult, 'Query result must exist');
 
@@ -479,7 +488,7 @@ Then('the responses should be ordered from oldest to newest',
 );
 
 Then('I should only receive responses matching that criteria',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     const queryResult = this.getSharedTestData('queryResult');
     const filterCriteria = this.getSharedTestData('filterCriteria');
     expectDefined(queryResult, 'Query result must exist');
@@ -501,7 +510,7 @@ Then('I should only receive responses matching that criteria',
 );
 
 Then('the count should reflect the filtered results',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     const queryResult = this.getSharedTestData('queryResult');
     expectDefined(queryResult, 'Query result must exist');
 
@@ -514,7 +523,7 @@ Then('the count should reflect the filtered results',
 );
 
 Then('the response should be updated successfully',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     const updatedResponse = this.getSharedTestData('updatedResponse');
     expectDefined(updatedResponse, 'Updated response must exist');
 
@@ -535,7 +544,7 @@ async function editHistoryCountCheck(this: CustomWorld, expectedEditCount: numbe
 }
 
 Then('hasBeenEdited should be true',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     const updatedResponse = this.getSharedTestData('updatedResponse');
     expectDefined(updatedResponse, 'Updated response must exist');
 
@@ -545,7 +554,7 @@ Then('hasBeenEdited should be true',
 );
 
 Then('lastEditedBy should be the current user',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     const updatedResponse = this.getSharedTestData('updatedResponse');
     expectDefined(updatedResponse, 'Updated response must exist');
     expectDefined(updatedResponse.lastEditedBy, 'lastEditedBy must exist');
@@ -557,7 +566,7 @@ Then('lastEditedBy should be the current user',
 );
 
 Then('each edit should track which fields changed',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     const updatedResponse = this.getSharedTestData('updatedResponse');
     expectDefined(updatedResponse, 'Updated response must exist');
     expectDefined(updatedResponse.editHistory, 'Edit history must exist');
@@ -576,7 +585,7 @@ Then('each edit should track which fields changed',
 // They are reused here for response update failures
 
 Then('the deletion should succeed',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     const deleteResult = this.getSharedTestData('deleteResult');
     expectDefined(deleteResult, 'Delete result must exist');
     expectEqual(deleteResult, true, 'Deletion should return true');
@@ -585,7 +594,7 @@ Then('the deletion should succeed',
 );
 
 Then('the form should have {int} responses remaining',
-  async function(this: CustomWorld, expectedCount: number) {
+  async function (this: CustomWorld, expectedCount: number) {
     expectDefined(this.authToken, 'Auth token required');
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist');
@@ -604,7 +613,7 @@ Then('the form should have {int} responses remaining',
 );
 
 Then('the deleted response should not be retrievable',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     expectDefined(this.authToken, 'Auth token required');
     const deletedResponseId = this.getSharedTestData('deletedResponseId');
     expectDefined(deletedResponseId, 'Deleted response ID must exist');
@@ -622,7 +631,7 @@ Then('the deleted response should not be retrievable',
 );
 
 Then('I should receive the complete response data',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     const queriedResponse = this.getSharedTestData('queriedResponse');
     expectDefined(queriedResponse, 'Queried response must exist');
     expectDefined(queriedResponse.id, 'Response ID must exist');
@@ -632,7 +641,7 @@ Then('I should receive the complete response data',
 );
 
 Then('it should include the form ID',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     const queriedResponse = this.getSharedTestData('queriedResponse');
     const form = this.getSharedTestData('createdForm');
     expectDefined(queriedResponse, 'Queried response must exist');
@@ -644,7 +653,7 @@ Then('it should include the form ID',
 );
 
 Then('it should include the submission timestamp',
-  async function(this: CustomWorld) {
+  async function (this: CustomWorld) {
     const queriedResponse = this.getSharedTestData('queriedResponse');
     expectDefined(queriedResponse, 'Queried response must exist');
     expectDefined(queriedResponse.submittedAt, 'submittedAt must exist');

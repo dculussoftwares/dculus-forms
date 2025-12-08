@@ -62,8 +62,14 @@ export function slugify(str: string): string {
       lastWasHyphen = false;
     }
   }
-  // Remove leading/trailing hyphens
-  return finalResult.replace(/^-+|-+$/g, '');
+  // Remove leading/trailing hyphens using loops (avoids polynomial regex ReDoS)
+  while (finalResult.startsWith('-')) {
+    finalResult = finalResult.substring(1);
+  }
+  while (finalResult.endsWith('-')) {
+    finalResult = finalResult.substring(0, finalResult.length - 1);
+  }
+  return finalResult;
 }
 
 // Use nanoid with custom alphabet for secure random string generation
