@@ -368,7 +368,6 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                     onClose={() => setShowShareModal(false)}
                     formId={_formId}
                     formTitle={formTitle}
-                    formShortUrl={formShortUrl}
                     organizationId={organizationId}
                     currentUserId={currentUserId}
                 />

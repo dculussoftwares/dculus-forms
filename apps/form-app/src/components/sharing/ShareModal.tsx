@@ -58,7 +58,6 @@ interface ShareModalProps {
   formTitle: string;
   organizationId: string;
   currentUserId: string;
-  formShortUrl: string;
 }
 
 export const ShareModal: React.FC<ShareModalProps> = ({
@@ -67,8 +66,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   formId,
   formTitle,
   organizationId,
-  currentUserId,
-  formShortUrl
+  currentUserId
 }) => {
   const { t } = useTranslation('sharing');
   const [sharingScope, setSharingScope] = useState<SharingScope>(SharingScope.PRIVATE);

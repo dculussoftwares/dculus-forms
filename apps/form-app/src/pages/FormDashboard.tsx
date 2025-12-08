@@ -315,7 +315,6 @@ const FormDashboard: React.FC = () => {
             onClose={() => setShowShareModal(false)}
             formId={form.id}
             formTitle={form.title}
-            formShortUrl={form.shortUrl}
             organizationId={organizationId}
             currentUserId={user.id}
           />
