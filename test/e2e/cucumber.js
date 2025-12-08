@@ -9,7 +9,7 @@ module.exports = {
     format: ['progress'],
     paths: ['test/e2e/features/**/*.feature'],
     publishQuiet: true,
-    parallel: 8,
+    parallel: 3,
     retry: 3,
   },
 };
