@@ -1,9 +1,11 @@
 // Dependencies
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { nanoid, customAlphabet } from "nanoid";
 
+// Use nanoid for secure ID generation
 export const generateId = (): string => {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+  return nanoid();
 };
 
 export const createApiResponse = <T>(
@@ -33,21 +35,42 @@ export const parseDate = (dateString: string): Date => {
 };
 
 export function slugify(str: string): string {
-  str = str.replace(/^\s+|\s+$/g, ''); // trim leading/trailing white space
-  str = str.toLowerCase(); // convert string to lowercase
-  str = str.replace(/[^a-z0-9 -]/g, '') // remove any non-alphanumeric characters
-    .replace(/\s+/g, '-') // replace spaces with hyphens
-    .replace(/-+/g, '-'); // remove consecutive hyphens
-  return str;
+  // Trim leading/trailing whitespace
+  str = str.trim();
+  // Convert to lowercase
+  str = str.toLowerCase();
+  // Remove non-alphanumeric characters (keeping spaces and hyphens)
+  let result = '';
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    if ((char >= 'a' && char <= 'z') || (char >= '0' && char <= '9') || char === ' ' || char === '-') {
+      result += char;
+    }
+  }
+  // Replace spaces with hyphens and collapse consecutive hyphens
+  let finalResult = '';
+  let lastWasHyphen = false;
+  for (let i = 0; i < result.length; i++) {
+    const char = result[i];
+    if (char === ' ' || char === '-') {
+      if (!lastWasHyphen) {
+        finalResult += '-';
+        lastWasHyphen = true;
+      }
+    } else {
+      finalResult += char;
+      lastWasHyphen = false;
+    }
+  }
+  // Remove leading/trailing hyphens
+  return finalResult.replace(/^-+|-+$/g, '');
 }
 
+// Use nanoid with custom alphabet for secure random string generation
+const alphanumericNanoid = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789');
+
 export function generateRandomString(length: number): string {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return result;
+  return alphanumericNanoid(length);
 }
 
 export async function generateShortUrl(length: number = 8): Promise<string> {
@@ -117,13 +140,15 @@ export function stripHtmlAndTruncate(html: string, maxLength: number = 50): stri
   plainText = plainText.trim();
 
   // Decode common HTML entities
+  // IMPORTANT: Decode &amp; LAST to avoid double-unescaping issues
+  // (e.g., &amp;lt; -> &lt; -> <)
   const decodedText = plainText
     .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&');
 
   // Truncate with ellipsis if needed
   if (decodedText.length <= maxLength) {
