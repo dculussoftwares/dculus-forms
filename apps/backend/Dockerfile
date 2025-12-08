@@ -2,7 +2,7 @@
 # This Dockerfile should be built from the repository root
 # docker build -f apps/backend/Dockerfile .
 
-FROM --platform=$BUILDPLATFORM node:18-alpine
+FROM --platform=$BUILDPLATFORM node:20-alpine
 
 # Install pnpm globally
 RUN npm install -g pnpm
