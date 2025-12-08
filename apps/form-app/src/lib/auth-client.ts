@@ -10,19 +10,19 @@ export const authClient = createAuthClient({
   fetchOptions: {
     onSuccess: (ctx) => {
       // console.log('Authentication successful', ctx);
-      console.log("ctx.data.session?.activeOrganizationId",ctx.data.session?.activeOrganizationId);
+      console.log("ctx.data.session?.activeOrganizationId", ctx.data.session?.activeOrganizationId);
       const authToken = ctx.response.headers.get('set-auth-token'); // get the token from the response headers
       // Store the token securely (e.g., in localStorage)
       if (authToken) {
         localStorage.setItem('bearer_token', authToken);
         // if (ctx.data?.session?.activeOrganizationId) {
-         
+
         // }
       }
-       localStorage.setItem(
-            'organization_id',
-            ctx.data.session?.activeOrganizationId || ''
-          );
+      localStorage.setItem(
+        'organization_id',
+        ctx.data.session?.activeOrganizationId || ''
+      );
     },
     onError: (ctx) => {
       // Clear token on authentication errors
@@ -46,6 +46,11 @@ const customSignOut = async (options?: any) => {
   return authClient.signOut(options);
 };
 
-export const { signIn, signUp, useSession, getSession, emailOtp, forgetPassword, organization } = authClient;
+export const { signIn, signUp, useSession, getSession, emailOtp, organization } = authClient;
+
+// For better-auth 1.4.x, forgetPassword is now requestPasswordReset
+export const forgetPassword = authClient.forgetPassword;
+// Helper to access requestPasswordReset if available
+export const requestPasswordReset = (authClient as any).requestPasswordReset || authClient.forgetPassword;
 
 export const signOut = customSignOut;

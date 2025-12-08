@@ -59,7 +59,12 @@ export const ForgotPassword = () => {
     setErrors({});
     
     try {
-      const response = await forgetPassword({
+      // In better-auth 1.4.x, forgetPassword is an object with emailOtp method
+      const forgetPasswordFn = typeof forgetPassword === 'function' 
+        ? forgetPassword 
+        : (forgetPassword as any)?.emailOtp || ((_opts: any) => Promise.resolve({ error: { message: 'Password reset not supported' } }));
+      
+      const response = await forgetPasswordFn({
         email: email.trim(),
         redirectTo: `${window.location.origin}/forgot-password`,
       });

@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { FormResponse, FormSchema, FieldType } from '@dculus/types';
 import { getPluginTypesWithData, getPluginExport } from '../plugins/exportRegistry.js';
 
@@ -32,7 +32,7 @@ const formatFieldValue = (value: any, fieldType?: FieldType, format: ExportForma
 
   // Convert to string
   let stringValue = String(value);
-  
+
   // Handle specific field types
   if (fieldType) {
     switch (fieldType) {
@@ -73,7 +73,7 @@ const extractFieldInfo = (formSchema: FormSchema, responses: FormResponse[]): { 
 
   if (formSchema.pages.length === 0 && responses.length > 0) {
     logger.info('Unified Export - Form schema is empty, extracting field info from response data...');
-    
+
     // Get all unique field IDs from all responses
     const allFieldIds = new Set<string>();
     responses.forEach(response => {
@@ -81,10 +81,10 @@ const extractFieldInfo = (formSchema: FormSchema, responses: FormResponse[]): { 
         allFieldIds.add(fieldId);
       });
     });
-    
+
     // Convert to array and sort for consistent column order
     orderedFieldIds = Array.from(allFieldIds).sort();
-    
+
     // Create a mapping of field ID to a human-readable label
     orderedFieldIds.forEach(fieldId => {
       let label = fieldId;
@@ -100,7 +100,7 @@ const extractFieldInfo = (formSchema: FormSchema, responses: FormResponse[]): { 
       }
       fieldInfo[fieldId] = label;
     });
-    
+
     logger.info('Unified Export - Extracted field info:', Object.keys(fieldInfo).length, 'fields');
   } else {
     // Extract field info from form schema
@@ -210,46 +210,74 @@ const generateCsvContent = (data: UnifiedExportData): string => {
   return csvContent;
 };
 
-// Generate Excel content
-const generateExcelContent = (data: UnifiedExportData): Buffer => {
+// Generate Excel content using exceljs
+const generateExcelContent = async (data: UnifiedExportData): Promise<Buffer> => {
   const { responses, formSchema } = data;
   const { fieldInfo, orderedFieldIds } = extractFieldInfo(formSchema, responses);
 
   // Get plugin types that have data in any response
   const activePluginTypes = getPluginTypesWithData(responses);
 
-  // Prepare data for Excel export
-  const excelData = responses.map((response: FormResponse) => {
-    const row: any = {
-      'Response ID': response.id,
-      'Submitted At': new Date(
-        typeof response.submittedAt === 'string'
-          ? parseInt(response.submittedAt, 10)
-          : response.submittedAt
-      ).toLocaleString('en-US', {
-        timeZone: 'UTC',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-      }),
+  // Create workbook and worksheet
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Responses');
+
+  // Build headers
+  const headers = ['Response ID', 'Submitted At'];
+
+  // Add plugin columns to headers
+  activePluginTypes.forEach(pluginType => {
+    const pluginExport = getPluginExport(pluginType);
+    if (pluginExport) {
+      headers.push(...pluginExport.getColumns());
+    }
+  });
+
+  // Add form field columns
+  orderedFieldIds.forEach(fieldId => {
+    headers.push(fieldInfo[fieldId]);
+  });
+
+  // Add header row with styling
+  const headerRow = worksheet.addRow(headers);
+  headerRow.font = { bold: true };
+  headerRow.eachCell((cell) => {
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
     };
+  });
+
+  // Add data rows
+  responses.forEach((response: FormResponse) => {
+    const rowData: any[] = [];
+
+    // Add basic fields
+    rowData.push(response.id);
+    rowData.push(new Date(
+      typeof response.submittedAt === 'string'
+        ? parseInt(response.submittedAt, 10)
+        : response.submittedAt
+    ).toLocaleString('en-US', {
+      timeZone: 'UTC',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }));
 
     // Add plugin data
     activePluginTypes.forEach(pluginType => {
       const pluginExport = getPluginExport(pluginType);
       if (pluginExport) {
         const pluginMetadata = response.metadata?.[pluginType];
-        const columns = pluginExport.getColumns();
         const values = pluginExport.getValues(pluginMetadata);
-
-        // Add each plugin column with its value
-        columns.forEach((columnName, index) => {
-          const value = values[index];
-          row[columnName] = value !== null && value !== undefined ? String(value) : '';
+        values.forEach(value => {
+          rowData.push(value !== null && value !== undefined ? String(value) : '');
         });
       }
     });
@@ -270,42 +298,20 @@ const generateExcelContent = (data: UnifiedExportData): Buffer => {
         }
       }
 
-      row[fieldInfo[fieldId]] = formatFieldValue(value, fieldType, 'excel') || '';
+      rowData.push(formatFieldValue(value, fieldType, 'excel') || '');
     });
 
-    return row;
+    worksheet.addRow(rowData);
   });
 
-  // Create workbook and worksheet
-  const workbook = XLSX.utils.book_new();
-  const worksheet = XLSX.utils.json_to_sheet(excelData);
-
   // Auto-size columns based on content
-  const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-  const colWidths: any[] = [];
-  
-  for (let C = range.s.c; C <= range.e.c; ++C) {
+  worksheet.columns.forEach((column, index) => {
     let maxWidth = 10; // minimum width
-    for (let R = range.s.r; R <= range.e.r; ++R) {
-      const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-      const cell = worksheet[cellAddress];
-      if (cell && cell.v) {
-        const cellValue = String(cell.v);
-        maxWidth = Math.max(maxWidth, Math.min(cellValue.length + 2, 50)); // max width 50
-      }
-    }
-    colWidths[C] = { wch: maxWidth };
-  }
-  worksheet['!cols'] = colWidths;
-
-  // Add the worksheet to the workbook
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Responses');
-
-  // Generate buffer
-  const buffer = XLSX.write(workbook, { 
-    type: 'buffer', 
-    bookType: 'xlsx',
-    compression: true
+    column.eachCell?.({ includeEmpty: true }, (cell) => {
+      const cellValue = cell.value?.toString() || '';
+      maxWidth = Math.max(maxWidth, Math.min(cellValue.length + 2, 50)); // max width 50
+    });
+    column.width = maxWidth;
   });
 
   // Calculate total columns (basic + plugin + form fields)
@@ -316,6 +322,9 @@ const generateExcelContent = (data: UnifiedExportData): Buffer => {
   const totalColumns = 2 + pluginColumnCount + orderedFieldIds.length; // 2 for Response ID + Submitted At
 
   logger.info(`Unified Export - Generated Excel with ${responses.length} rows and ${totalColumns} columns (${pluginColumnCount} plugin columns)`);
+
+  // Generate buffer
+  const buffer = await workbook.xlsx.writeBuffer();
   return Buffer.from(buffer);
 };
 
@@ -334,7 +343,7 @@ export async function generateExportFile(data: UnifiedExportData): Promise<Expor
   let contentType: string;
 
   if (format === 'excel') {
-    buffer = generateExcelContent(data);
+    buffer = await generateExcelContent(data);
     filename = generateExcelFilename(formTitle);
     contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
   } else {
