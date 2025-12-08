@@ -224,6 +224,13 @@ export class AnalyticsTestUtils {
     const os = ['Windows', 'macOS', 'Linux', 'iOS', 'Android'];
     const countries = ['USA', 'CAN', 'GBR', 'DEU', 'FRA', 'JPN', 'AUS'];
 
+    // Helper function for unbiased random array index selection
+    const getRandomIndex = (arrayLength: number): number => {
+      const randomBytes = new Uint32Array(1);
+      crypto.getRandomValues(randomBytes);
+      return randomBytes[0] % arrayLength;
+    };
+
     for (let i = 0; i < count; i++) {
       const viewData: Partial<FormViewData> = {
         formId,
@@ -231,9 +238,9 @@ export class AnalyticsTestUtils {
       };
 
       if (variance) {
-        viewData.browser = browsers[Math.floor(Math.random() * browsers.length)];
-        viewData.operatingSystem = os[Math.floor(Math.random() * os.length)];
-        viewData.countryCode = countries[Math.floor(Math.random() * countries.length)];
+        viewData.browser = browsers[getRandomIndex(browsers.length)];
+        viewData.operatingSystem = os[getRandomIndex(os.length)];
+        viewData.countryCode = countries[getRandomIndex(countries.length)];
       }
 
       await this.trackFormView(formId, viewData);

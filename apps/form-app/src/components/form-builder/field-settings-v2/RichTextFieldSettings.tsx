@@ -18,17 +18,39 @@ interface RichTextFieldSettingsProps {
   onFieldSwitch?: () => void;
 }
 
-// Helper function to sanitize HTML content
+// Helper function to sanitize HTML content using DOMParser for safe parsing
 const sanitizeHtmlContent = (content: string): string => {
   if (!content) return '';
 
-  // Basic HTML sanitization - remove script tags and dangerous attributes
-  const sanitized = content
-    .replace(/<script[^>]*>.*?<\/script>/gi, '')
-    .replace(/javascript:/gi, '')
-    .replace(/on\w+\s*=/gi, '');
+  // Use DOMParser for safe HTML parsing instead of regex
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(content, 'text/html');
 
-  return sanitized.trim();
+  // Remove all script elements
+  const scripts = doc.querySelectorAll('script');
+  scripts.forEach(script => script.remove());
+
+  // Remove all elements with dangerous event handlers
+  const allElements = doc.querySelectorAll('*');
+  allElements.forEach(element => {
+    // Get all attributes
+    const attributeNames = element.getAttributeNames();
+    attributeNames.forEach(attrName => {
+      const lowerAttr = attrName.toLowerCase();
+      // Remove event handlers (on*)
+      if (lowerAttr.startsWith('on')) {
+        element.removeAttribute(attrName);
+      }
+      // Remove javascript: URIs from href/src
+      const attrValue = element.getAttribute(attrName);
+      if (attrValue && /^\s*javascript:/i.test(attrValue)) {
+        element.removeAttribute(attrName);
+      }
+    });
+  });
+
+  // Return sanitized HTML from body
+  return doc.body.innerHTML.trim();
 };
 
 /**

@@ -89,6 +89,11 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
         const pageResponses: Record<string, Record<string, any>> = {};
 
         Object.entries(existingResponseData).forEach(([fieldId, value]) => {
+          // Prevent prototype pollution by checking fieldId is not a prototype property
+          if (fieldId === '__proto__' || fieldId === 'constructor' || fieldId === 'prototype') {
+            console.warn('FormRenderer - Skipping potentially dangerous field ID:', fieldId);
+            return;
+          }
           const pageId = fieldToPageMap[fieldId] || formSchema.pages[0]?.id || 'default';
           console.log(`FormRenderer - Mapping field ${fieldId} to page ${pageId}`);
           if (!pageResponses[pageId]) {

@@ -36,8 +36,8 @@ export function slugify(str: string): string {
   str = str.replace(/^\s+|\s+$/g, ''); // trim leading/trailing white space
   str = str.toLowerCase(); // convert string to lowercase
   str = str.replace(/[^a-z0-9 -]/g, '') // remove any non-alphanumeric characters
-           .replace(/\s+/g, '-') // replace spaces with hyphens
-           .replace(/-+/g, '-'); // remove consecutive hyphens
+    .replace(/\s+/g, '-') // replace spaces with hyphens
+    .replace(/-+/g, '-'); // remove consecutive hyphens
   return str;
 }
 
@@ -79,13 +79,13 @@ export function getImageUrl(s3Key: string, cdnEndpoint: string): string {
   if (!s3Key || !cdnEndpoint) {
     return '';
   }
-  
+
   // Remove leading slash if present
   const cleanKey = s3Key.startsWith('/') ? s3Key.slice(1) : s3Key;
-  
+
   // Ensure endpoint doesn't end with slash
   const cleanEndpoint = cdnEndpoint.endsWith('/') ? cdnEndpoint.slice(0, -1) : cdnEndpoint;
-  
+
   return `${cleanEndpoint}/${cleanKey}`;
 }
 
@@ -97,10 +97,25 @@ export function getImageUrl(s3Key: string, cdnEndpoint: string): string {
  */
 export function stripHtmlAndTruncate(html: string, maxLength: number = 50): string {
   if (!html) return '';
-  
-  // Strip HTML tags using regex
-  const plainText = html.replace(/<[^>]*>/g, '').trim();
-  
+
+  // Safe HTML tag removal without polynomial regex (avoids ReDoS)
+  // Use split-based approach that processes tags linearly
+  let plainText = '';
+  let inTag = false;
+
+  for (let i = 0; i < html.length; i++) {
+    const char = html[i];
+    if (char === '<') {
+      inTag = true;
+    } else if (char === '>') {
+      inTag = false;
+    } else if (!inTag) {
+      plainText += char;
+    }
+  }
+
+  plainText = plainText.trim();
+
   // Decode common HTML entities
   const decodedText = plainText
     .replace(/&nbsp;/g, ' ')
@@ -109,12 +124,12 @@ export function stripHtmlAndTruncate(html: string, maxLength: number = 50): stri
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'");
-  
+
   // Truncate with ellipsis if needed
   if (decodedText.length <= maxLength) {
     return decodedText;
   }
-  
+
   return decodedText.substring(0, maxLength - 3).trim() + '...';
 }
 

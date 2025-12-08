@@ -35,7 +35,8 @@ export function substituteMentions(
   let result = html;
 
   // First, handle simple placeholder substitution {{field-id}}
-  const placeholderRegex = /\{\{([^}]+)\}\}/g;
+  // Use non-greedy quantifier with limit to prevent ReDoS
+  const placeholderRegex = /\{\{([^}]{1,500})\}\}/g;
   result = result.replace(placeholderRegex, (match, fieldId) => {
     const responseValue = responses[fieldId];
 
@@ -62,7 +63,8 @@ export function substituteMentions(
   // 3. Lexical with data: <span data-lexical-beautiful-mention="true" ... data-lexical-beautiful-mention-data="{...}">content</span>
 
   // First try the standard format with data-value or data-lexical-beautiful-mention-value
-  const mentionRegex = /<span[^>]+data-(?:lexical-)?beautiful-mention="true"[^>]+data-(?:lexical-beautiful-mention-)?value="([^"]+)"[^>]*>([^<]*)<\/span>/gi;
+  // Use length-limited patterns to prevent ReDoS while maintaining functionality
+  const mentionRegex = /<span[^>]{0,500}data-(?:lexical-)?beautiful-mention="true"[^>]{0,500}data-(?:lexical-beautiful-mention-)?value="([^"]{1,200})"[^>]{0,200}>([^<]{0,5000})<\/span>/gi;
 
   result = result.replace(mentionRegex, (match, fieldId, originalContent) => {
     // Get the actual response value for this field ID
@@ -98,7 +100,8 @@ export function substituteMentions(
 export function extractMentionFieldIds(html: string): string[] {
   if (!html) return [];
 
-  const mentionRegex = /<span[^>]+data-(?:lexical-)?beautiful-mention="true"[^>]+data-(?:lexical-beautiful-mention-)?value="([^"]+)"[^>]*>/gi;
+  // Use length-limited patterns to prevent ReDoS while maintaining functionality
+  const mentionRegex = /<span[^>]{0,500}data-(?:lexical-)?beautiful-mention="true"[^>]{0,500}data-(?:lexical-beautiful-mention-)?value="([^"]{1,200})"[^>]{0,200}>/gi;
   const fieldIds: string[] = [];
   let match;
 
@@ -120,7 +123,7 @@ export function extractMentionFieldIds(html: string): string[] {
  */
 function escapeHtml(text: string): string {
   if (!text) return text;
-  
+
   const htmlEscapes: Record<string, string> = {
     '&': '&amp;',
     '<': '&lt;',
@@ -128,7 +131,7 @@ function escapeHtml(text: string): string {
     '"': '&quot;',
     "'": '&#39;'
   };
-  
+
   return text.replace(/[&<>"']/g, (match) => htmlEscapes[match] || match);
 }
 
@@ -141,18 +144,18 @@ function escapeHtml(text: string): string {
  */
 export function createFieldLabelsMap(formSchema: any): Record<string, string> {
   const fieldLabels: Record<string, string> = {};
-  
+
   if (!formSchema?.pages) return fieldLabels;
-  
+
   for (const page of formSchema.pages) {
     if (!page?.fields) continue;
-    
+
     for (const field of page.fields) {
       if (field?.id && field?.label) {
         fieldLabels[field.id] = field.label;
       }
     }
   }
-  
+
   return fieldLabels;
 }

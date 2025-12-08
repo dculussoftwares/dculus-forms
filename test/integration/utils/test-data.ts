@@ -1,6 +1,8 @@
-// Use crypto.randomUUID for Node 14.17+ instead of nanoid to avoid ES module issues
+import { randomUUID } from 'crypto';
+
+// Use crypto.randomUUID for cryptographically secure ID generation
 const generateId = (): string => {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  return randomUUID().replace(/-/g, '').substring(0, 21);
 };
 
 export interface TestUser {
@@ -75,7 +77,7 @@ export function generateTestUserWithOrganization(
 ): TestUserWithOrganization {
   const user = generateTestUser(userPrefix);
   const org = generateTestOrganization(orgPrefix);
-  
+
   return {
     ...user,
     organizationName: org.name,
@@ -86,7 +88,7 @@ export function generateTestUserWithOrganization(
  * Generate multiple test users
  */
 export function generateTestUsers(count: number, prefix: string = 'testuser'): TestUser[] {
-  return Array.from({ length: count }, (_, index) => 
+  return Array.from({ length: count }, (_, index) =>
     generateTestUser(`${prefix}-${index + 1}`)
   );
 }
@@ -153,24 +155,24 @@ export function generateTestSuperAdminCredentials(): SuperAdminTestUser {
 export const TEST_CONFIG = {
   // Default test environment configuration
   BASE_URL: process.env.TEST_BASE_URL || 'http://localhost:4000',
-  
+
   // Common test passwords
   DEFAULT_PASSWORD: 'TestPassword123!',
   WEAK_PASSWORD: 'weak',
   STRONG_PASSWORD: 'StrongP@ssw0rd123!',
-  
+
   // Test timeouts - increased for remote backends
   AUTH_TIMEOUT: process.env.TEST_BASE_URL?.includes('localhost') ? 5000 : 15000,
   API_TIMEOUT: process.env.TEST_BASE_URL?.includes('localhost') ? 10000 : 20000,
-  
+
   // Test data cleanup
   CLEANUP_ENABLED: process.env.TEST_CLEANUP !== 'false',
-  
+
   // Common test organization names
   DEFAULT_ORG_NAME: 'Test Organization',
   PREMIUM_ORG_NAME: 'Premium Test Organization',
   ENTERPRISE_ORG_NAME: 'Enterprise Test Organization',
-  
+
   // Admin test configuration
   ADMIN_ROLES: ['admin', 'superAdmin'] as const,
   DEFAULT_ADMIN_EMAIL: 'admin@dculus.com',
