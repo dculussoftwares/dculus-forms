@@ -596,7 +596,9 @@ When('I add a filter for field {string} with operator {string} and value {string
     // Map operator text to the actual option text
     const operatorMap: Record<string, string> = {
         'contains': 'Contains',
+        'does not contain': 'Does not contain',
         'equals': 'Equals',
+        'does not equal': 'Does not equal',
         'not equals': 'Not equals',
         'starts with': 'Starts with',
         'ends with': 'Ends with',
@@ -608,7 +610,7 @@ When('I add a filter for field {string} with operator {string} and value {string
     };
 
     const operatorText = operatorMap[operator.toLowerCase()] || operator;
-    await this.page.locator(`[role="option"]:has-text("${operatorText}")`).click();
+    await this.page.getByRole('option', { name: operatorText, exact: true }).click();
     await this.page.waitForTimeout(300);
 
     // Enter value if not empty operator
@@ -660,7 +662,7 @@ When('I add a filter for field {string} with operator {string}', async function 
     };
 
     const operatorText = operatorMap[operator.toLowerCase()] || operator;
-    await this.page.locator(`[role="option"]:has-text("${operatorText}")`).click();
+    await this.page.getByRole('option', { name: operatorText, exact: true }).click();
     await this.page.waitForTimeout(300);
 });
 
@@ -691,7 +693,7 @@ When('I add a filter for field {string} with operator {string} and range {int} t
     const operatorSelect = this.page.getByTestId('filter-operator-select').last();
     await operatorSelect.click();
     await this.page.waitForTimeout(300);
-    await this.page.locator(`[role="option"]:has-text("Between")`).click();
+    await this.page.getByRole('option', { name: 'Between', exact: true }).click();
     await this.page.waitForTimeout(300);
 
     // Enter min and max values
@@ -757,7 +759,7 @@ When('I add a filter for field {string} with operator {string} and date {string}
     };
 
     const operatorText = operatorMap[operator.toLowerCase()] || operator;
-    await this.page.locator(`[role="option"]:has-text("${operatorText}")`).click();
+    await this.page.getByRole('option', { name: operatorText, exact: true }).click();
     await this.page.waitForTimeout(300);
 
     // For date fields, we need to interact with the date picker
@@ -814,7 +816,7 @@ When('I add a filter for field {string} with operator {string} and date range {s
     const operatorSelect = this.page.getByTestId('filter-operator-select').last();
     await operatorSelect.click();
     await this.page.waitForTimeout(300);
-    await this.page.locator(`[role="option"]:has-text("Between")`).click();
+    await this.page.getByRole('option', { name: 'Between', exact: true }).click();
     await this.page.waitForTimeout(500);
 
     // For date range, we have two date pickers (from and to)
@@ -879,11 +881,11 @@ When('I add a filter for field {string} with operator {string} and options {stri
     };
 
     const operatorText = operatorMap[operator.toLowerCase()] || operator;
-    await this.page.locator(`[role="option"]:has-text("${operatorText}")`).click();
+    await this.page.getByRole('option', { name: operatorText, exact: true }).click();
     await this.page.waitForTimeout(500);
 
     // For dropdown/select IN/NOT_IN filters, we need to check option checkboxes
-    // The options string is comma-separated like "Red,Green"
+    // For CONTAINS/NOT_CONTAINS on checkbox fields, we use simple dropdown selection
     const options = optionsString.split(',').map(o => o.trim());
 
     // Find the value container and click the select trigger to open the dropdown
@@ -892,18 +894,27 @@ When('I add a filter for field {string} with operator {string} and options {stri
     await selectTrigger.click();
     await this.page.waitForTimeout(500);
 
-    // The SelectContent is rendered as a portal, so labels are NOT inside valueContainer
-    // We need to find them globally on the page
-    for (const option of options) {
-        // Find the label with this option text (rendered in the portal)
-        const labelLocator = this.page.locator(`label:has-text("${option}")`);
-        if (await labelLocator.count() > 0) {
-            await labelLocator.first().click();
-            await this.page.waitForTimeout(200);
+    // Check if this is CONTAINS or NOT_CONTAINS operator (uses simple dropdown, not checkboxes)
+    if (operator.toLowerCase() === 'contains' || operator.toLowerCase() === 'does not contain') {
+        // For CONTAINS/NOT_CONTAINS, use simple SelectItem selection
+        // We only select the first option since it's a single value dropdown
+        const optionToSelect = options[0];
+        await this.page.getByRole('option', { name: optionToSelect, exact: true }).click();
+        await this.page.waitForTimeout(300);
+    } else {
+        // The SelectContent is rendered as a portal, so labels are NOT inside valueContainer
+        // We need to find them globally on the page
+        for (const option of options) {
+            // Find the label with this option text (rendered in the portal)
+            const labelLocator = this.page.locator(`label:has-text("${option}")`);
+            if (await labelLocator.count() > 0) {
+                await labelLocator.first().click();
+                await this.page.waitForTimeout(200);
+            }
         }
-    }
 
-    // Close the dropdown by pressing Escape
-    await this.page.keyboard.press('Escape');
-    await this.page.waitForTimeout(300);
+        // Close the dropdown by pressing Escape
+        await this.page.keyboard.press('Escape');
+        await this.page.waitForTimeout(300);
+    }
 });

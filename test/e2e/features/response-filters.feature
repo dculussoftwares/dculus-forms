@@ -767,3 +767,215 @@ Feature: Response Table Filters
     And I add a filter for field "Long Text Field" with operator "is not empty"
     And I apply the filters
     Then I should see 4 responses in the table
+  # ==================== ADDITIONAL LONG TEXT FIELD FILTERS ====================
+
+  Scenario: Filter Long Text - NOT_CONTAINS operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with longtext "This is a long description about testing"
+    And I submit response with longtext "Short note"
+    And I submit response with longtext "Another description with details"
+    And I submit response with longtext "Final testing notes"
+    And I submit response with empty longtext
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply NOT_CONTAINS filter - text NOT containing "description"
+    When I open the filter modal
+    And I add a filter for field "Long Text Field" with operator "does not contain" and value "description"
+    And I apply the filters
+    Then I should see 3 responses in the table
+
+  Scenario: Filter Long Text - EQUALS operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with longtext "Exact match text"
+    And I submit response with longtext "Short note"
+    And I submit response with longtext "Exact match text"
+    And I submit response with longtext "Different text"
+    And I submit response with empty longtext
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply EQUALS filter - exact match
+    When I open the filter modal
+    And I add a filter for field "Long Text Field" with operator "equals" and value "Exact match text"
+    And I apply the filters
+    Then I should see 2 responses in the table
+
+  Scenario: Filter Long Text - NOT_EQUALS operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with longtext "Exact match text"
+    And I submit response with longtext "Short note"
+    And I submit response with longtext "Exact match text"
+    And I submit response with longtext "Different text"
+    And I submit response with empty longtext
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply NOT_EQUALS filter - NOT exact match
+    When I open the filter modal
+    And I add a filter for field "Long Text Field" with operator "does not equal" and value "Exact match text"
+    And I apply the filters
+    Then I should see 2 responses in the table
+
+  Scenario: Filter Long Text - STARTS_WITH operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with longtext "Testing is important"
+    And I submit response with longtext "Short note"
+    And I submit response with longtext "Testing again here"
+    And I submit response with longtext "Different text"
+    And I submit response with empty longtext
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply STARTS_WITH filter
+    When I open the filter modal
+    And I add a filter for field "Long Text Field" with operator "starts with" and value "Testing"
+    And I apply the filters
+    Then I should see 2 responses in the table
+
+  Scenario: Filter Long Text - ENDS_WITH operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with longtext "This ends with notes"
+    And I submit response with longtext "Short note"
+    And I submit response with longtext "Another one with notes"
+    And I submit response with longtext "Different text"
+    And I submit response with empty longtext
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply ENDS_WITH filter
+    When I open the filter modal
+    And I add a filter for field "Long Text Field" with operator "ends with" and value "notes"
+    And I apply the filters
+    Then I should see 2 responses in the table
+  # ==================== ADDITIONAL EMAIL FIELD FILTERS ====================
+
+  Scenario: Filter Email - NOT_CONTAINS operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with email "john@gmail.com"
+    And I submit response with email "jane@yahoo.com"
+    And I submit response with email "bob@gmail.com"
+    And I submit response with email "alice@company.org"
+    And I submit response with empty email
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply NOT_CONTAINS filter - emails NOT containing "gmail"
+    When I open the filter modal
+    And I add a filter for field "Email Field" with operator "does not contain" and value "gmail"
+    And I apply the filters
+    Then I should see 3 responses in the table
+
+  Scenario: Filter Email - EQUALS operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with email "john@gmail.com"
+    And I submit response with email "jane@yahoo.com"
+    And I submit response with email "john@gmail.com"
+    And I submit response with email "alice@company.org"
+    And I submit response with empty email
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply EQUALS filter - exact email match
+    When I open the filter modal
+    And I add a filter for field "Email Field" with operator "equals" and value "john@gmail.com"
+    And I apply the filters
+    Then I should see 2 responses in the table
+
+  Scenario: Filter Email - NOT_EQUALS operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with email "john@gmail.com"
+    And I submit response with email "jane@yahoo.com"
+    And I submit response with email "john@gmail.com"
+    And I submit response with email "alice@company.org"
+    And I submit response with empty email
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply NOT_EQUALS filter - NOT exact email match
+    When I open the filter modal
+    And I add a filter for field "Email Field" with operator "does not equal" and value "john@gmail.com"
+    And I apply the filters
+    Then I should see 2 responses in the table
+
+  Scenario: Filter Email - STARTS_WITH operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with email "john@gmail.com"
+    And I submit response with email "jane@yahoo.com"
+    And I submit response with email "john.doe@company.org"
+    And I submit response with email "alice@company.org"
+    And I submit response with empty email
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply STARTS_WITH filter - emails starting with "john"
+    When I open the filter modal
+    And I add a filter for field "Email Field" with operator "starts with" and value "john"
+    And I apply the filters
+    Then I should see 2 responses in the table
+  # ==================== ADDITIONAL CHECKBOX FIELD FILTERS ====================
+
+  Scenario: Filter Checkbox - CONTAINS operator (single value check)
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with checkbox "Apple,Banana"
+    And I submit response with checkbox "Banana,Cherry"
+    And I submit response with checkbox "Apple"
+    And I submit response with checkbox "Cherry"
+    And I submit response with empty checkbox
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply CONTAINS filter - responses containing "Apple"
+    When I open the filter modal
+    And I add a filter for field "Checkbox Field" with operator "contains" and options "Apple"
+    And I apply the filters
+    Then I should see 2 responses in the table
+
+  Scenario: Filter Checkbox - NOT_CONTAINS operator (single value check)
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with checkbox "Apple,Banana"
+    And I submit response with checkbox "Banana,Cherry"
+    And I submit response with checkbox "Apple"
+    And I submit response with checkbox "Cherry"
+    And I submit response with empty checkbox
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply NOT_CONTAINS filter - responses NOT containing "Apple"
+    When I open the filter modal
+    And I add a filter for field "Checkbox Field" with operator "does not contain" and options "Apple"
+    And I apply the filters
+    Then I should see 3 responses in the table
