@@ -247,6 +247,36 @@ export function createFilterTestFormSchema() {
               required: false,
               type: "fillable_form_field"
             }
+          },
+          {
+            id: "field-email-filter",
+            type: "email_field",
+            label: "Email Field",
+            defaultValue: "",
+            prefix: "",
+            hint: "Enter email for filter testing",
+            placeholder: "email@example.com",
+            validation: {
+              required: false,
+              type: "text_field_validation",
+              minLength: 0,
+              maxLength: 5000
+            }
+          },
+          {
+            id: "field-longtext-filter",
+            type: "text_area_field",
+            label: "Long Text Field",
+            defaultValue: "",
+            prefix: "",
+            hint: "Enter long text for filter testing",
+            placeholder: "Enter your text...",
+            validation: {
+              required: false,
+              type: "text_field_validation",
+              minLength: 0,
+              maxLength: 5000
+            }
           }
         ]
       }

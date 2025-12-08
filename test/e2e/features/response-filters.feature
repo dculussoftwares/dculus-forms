@@ -632,3 +632,138 @@ Feature: Response Table Filters
     And I add a filter for field "Radio Field" with operator "is not empty"
     And I apply the filters
     Then I should see 4 responses in the table
+  # ==================== EMAIL FIELD FILTERS ====================
+
+  Scenario: Filter Email - CONTAINS operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with email "john@gmail.com"
+    And I submit response with email "jane@yahoo.com"
+    And I submit response with email "bob@gmail.com"
+    And I submit response with email "alice@company.org"
+    And I submit response with empty email
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply CONTAINS filter - emails containing "gmail"
+    When I open the filter modal
+    And I add a filter for field "Email Field" with operator "contains" and value "gmail"
+    And I apply the filters
+    Then I should see 2 responses in the table
+
+  Scenario: Filter Email - ENDS_WITH operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with email "john@gmail.com"
+    And I submit response with email "jane@yahoo.com"
+    And I submit response with email "bob@gmail.com"
+    And I submit response with email "alice@company.org"
+    And I submit response with empty email
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply ENDS_WITH filter - emails ending with ".org"
+    When I open the filter modal
+    And I add a filter for field "Email Field" with operator "ends with" and value ".org"
+    And I apply the filters
+    Then I should see 1 responses in the table
+
+  Scenario: Filter Email - IS_EMPTY operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with email "john@gmail.com"
+    And I submit response with email "jane@yahoo.com"
+    And I submit response with email "bob@gmail.com"
+    And I submit response with email "alice@company.org"
+    And I submit response with empty email
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply IS_EMPTY filter
+    When I open the filter modal
+    And I add a filter for field "Email Field" with operator "is empty"
+    And I apply the filters
+    Then I should see 1 responses in the table
+
+  Scenario: Filter Email - IS_NOT_EMPTY operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with email "john@gmail.com"
+    And I submit response with email "jane@yahoo.com"
+    And I submit response with email "bob@gmail.com"
+    And I submit response with email "alice@company.org"
+    And I submit response with empty email
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply IS_NOT_EMPTY filter
+    When I open the filter modal
+    And I add a filter for field "Email Field" with operator "is not empty"
+    And I apply the filters
+    Then I should see 4 responses in the table
+  # ==================== LONG TEXT FIELD FILTERS ====================
+
+  Scenario: Filter Long Text - CONTAINS operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with longtext "This is a long description about testing"
+    And I submit response with longtext "Short note"
+    And I submit response with longtext "Another description with details"
+    And I submit response with longtext "Final testing notes"
+    And I submit response with empty longtext
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply CONTAINS filter - text containing "description"
+    When I open the filter modal
+    And I add a filter for field "Long Text Field" with operator "contains" and value "description"
+    And I apply the filters
+    Then I should see 2 responses in the table
+
+  Scenario: Filter Long Text - IS_EMPTY operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with longtext "This is a long description"
+    And I submit response with longtext "Short note"
+    And I submit response with longtext "Another text"
+    And I submit response with longtext "Final notes"
+    And I submit response with empty longtext
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply IS_EMPTY filter
+    When I open the filter modal
+    And I add a filter for field "Long Text Field" with operator "is empty"
+    And I apply the filters
+    Then I should see 1 responses in the table
+
+  Scenario: Filter Long Text - IS_NOT_EMPTY operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response with longtext "This is a long description"
+    And I submit response with longtext "Short note"
+    And I submit response with longtext "Another text"
+    And I submit response with longtext "Final notes"
+    And I submit response with empty longtext
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply IS_NOT_EMPTY filter
+    When I open the filter modal
+    And I add a filter for field "Long Text Field" with operator "is not empty"
+    And I apply the filters
+    Then I should see 4 responses in the table

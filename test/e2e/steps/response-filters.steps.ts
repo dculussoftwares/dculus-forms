@@ -391,6 +391,128 @@ async function submitResponseWithRadio(
     }
 }
 
+// Email response submission steps
+When('I submit response with email {string}', async function (
+    this: CustomWorld,
+    emailValue: string
+) {
+    await submitResponseWithEmail(this, emailValue);
+});
+
+When('I submit response with empty email', async function (
+    this: CustomWorld
+) {
+    await submitResponseWithEmail(this, null);
+});
+
+// Helper function to submit response with email value
+async function submitResponseWithEmail(
+    world: CustomWorld,
+    emailValue: string | null
+) {
+    if (!world.page || !currentFormId) {
+        throw new Error('Page or form ID is not initialized');
+    }
+
+    const responseData: Record<string, any> = {};
+    if (emailValue !== null && emailValue !== '') {
+        responseData['field-email-filter'] = emailValue;
+    }
+
+    const response = await world.page.evaluate(async ({ formId, data, backendUrl }) => {
+        const query = `
+      mutation SubmitResponse($input: SubmitResponseInput!) {
+        submitResponse(input: $input) {
+          id
+        }
+      }
+    `;
+
+        const variables = {
+            input: {
+                formId,
+                data
+            }
+        };
+
+        const res = await fetch(backendUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ query, variables })
+        });
+
+        return res.json();
+    }, { formId: currentFormId, data: responseData, backendUrl: world.backendUrl });
+
+    if (response.errors) {
+        throw new Error(`GraphQL error submitting email response: ${JSON.stringify(response.errors)}`);
+    }
+}
+
+// Long Text response submission steps
+When('I submit response with longtext {string}', async function (
+    this: CustomWorld,
+    longtextValue: string
+) {
+    await submitResponseWithLongtext(this, longtextValue);
+});
+
+When('I submit response with empty longtext', async function (
+    this: CustomWorld
+) {
+    await submitResponseWithLongtext(this, null);
+});
+
+// Helper function to submit response with long text value
+async function submitResponseWithLongtext(
+    world: CustomWorld,
+    longtextValue: string | null
+) {
+    if (!world.page || !currentFormId) {
+        throw new Error('Page or form ID is not initialized');
+    }
+
+    const responseData: Record<string, any> = {};
+    if (longtextValue !== null && longtextValue !== '') {
+        responseData['field-longtext-filter'] = longtextValue;
+    }
+
+    const response = await world.page.evaluate(async ({ formId, data, backendUrl }) => {
+        const query = `
+      mutation SubmitResponse($input: SubmitResponseInput!) {
+        submitResponse(input: $input) {
+          id
+        }
+      }
+    `;
+
+        const variables = {
+            input: {
+                formId,
+                data
+            }
+        };
+
+        const res = await fetch(backendUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ query, variables })
+        });
+
+        return res.json();
+    }, { formId: currentFormId, data: responseData, backendUrl: world.backendUrl });
+
+    if (response.errors) {
+        throw new Error(`GraphQL error submitting longtext response: ${JSON.stringify(response.errors)}`);
+    }
+}
+
 When('I navigate to the responses page', async function (this: CustomWorld) {
     if (!this.page || !currentFormId) {
         throw new Error('Page or form ID is not initialized');
@@ -463,7 +585,7 @@ When('I add a filter for field {string} with operator {string} and value {string
     const fieldSelect = this.page.getByTestId('filter-field-select').last();
     await fieldSelect.click();
     await this.page.waitForTimeout(300);
-    await this.page.locator(`[role="option"]:has-text("${fieldName}")`).click();
+    await this.page.getByRole('option', { name: fieldName, exact: true }).click();
     await this.page.waitForTimeout(300);
 
     // Select operator
@@ -516,7 +638,7 @@ When('I add a filter for field {string} with operator {string}', async function 
     const fieldSelect = this.page.getByTestId('filter-field-select').last();
     await fieldSelect.click();
     await this.page.waitForTimeout(300);
-    await this.page.locator(`[role="option"]:has-text("${fieldName}")`).click();
+    await this.page.getByRole('option', { name: fieldName, exact: true }).click();
     await this.page.waitForTimeout(300);
 
     // Select operator
@@ -562,7 +684,7 @@ When('I add a filter for field {string} with operator {string} and range {int} t
     const fieldSelect = this.page.getByTestId('filter-field-select').last();
     await fieldSelect.click();
     await this.page.waitForTimeout(300);
-    await this.page.locator(`[role="option"]:has-text("${fieldName}")`).click();
+    await this.page.getByRole('option', { name: fieldName, exact: true }).click();
     await this.page.waitForTimeout(300);
 
     // Select operator
@@ -616,7 +738,7 @@ When('I add a filter for field {string} with operator {string} and date {string}
     const fieldSelect = this.page.getByTestId('filter-field-select').last();
     await fieldSelect.click();
     await this.page.waitForTimeout(300);
-    await this.page.locator(`[role="option"]:has-text("${fieldName}")`).click();
+    await this.page.getByRole('option', { name: fieldName, exact: true }).click();
     await this.page.waitForTimeout(300);
 
     // Select operator
@@ -685,7 +807,7 @@ When('I add a filter for field {string} with operator {string} and date range {s
     const fieldSelect = this.page.getByTestId('filter-field-select').last();
     await fieldSelect.click();
     await this.page.waitForTimeout(300);
-    await this.page.locator(`[role="option"]:has-text("${fieldName}")`).click();
+    await this.page.getByRole('option', { name: fieldName, exact: true }).click();
     await this.page.waitForTimeout(300);
 
     // Select operator
@@ -734,7 +856,7 @@ When('I add a filter for field {string} with operator {string} and options {stri
     const fieldSelect = this.page.getByTestId('filter-field-select').last();
     await fieldSelect.click();
     await this.page.waitForTimeout(300);
-    await this.page.locator(`[role="option"]:has-text("${fieldName}")`).click();
+    await this.page.getByRole('option', { name: fieldName, exact: true }).click();
     await this.page.waitForTimeout(300);
 
     // Select operator
