@@ -195,8 +195,6 @@ import enRichTextFieldSettings from './en/richTextFieldSettings.json';
 import taRichTextFieldSettings from './ta/richTextFieldSettings.json';
 import enUsageChart from './en/usageChart.json';
 import taUsageChart from './ta/usageChart.json';
-import enPlanComparison from './en/planComparison.json';
-import taPlanComparison from './ta/planComparison.json';
 import enValidationSummary from './en/validationSummary.json';
 import taValidationSummary from './ta/validationSummary.json';
 import enAuthContext from './en/authContext.json';
@@ -320,7 +318,6 @@ const enTranslations = {
   fieldSettingsFooter: enFieldSettingsFooter,
   richTextFieldSettings: enRichTextFieldSettings,
   usageChart: enUsageChart,
-  planComparison: enPlanComparison,
   validationSummary: enValidationSummary,
   authContext: enAuthContext,
   fieldFilter: enFieldFilter,
@@ -434,7 +431,6 @@ const taTranslations = {
   fieldSettingsFooter: taFieldSettingsFooter,
   richTextFieldSettings: taRichTextFieldSettings,
   usageChart: taUsageChart,
-  planComparison: taPlanComparison,
   validationSummary: taValidationSummary,
   authContext: taAuthContext,
   fieldFilter: taFieldFilter,

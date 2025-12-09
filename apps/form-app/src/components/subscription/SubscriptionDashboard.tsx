@@ -5,7 +5,6 @@ import { CreditCard, TrendingUp, Eye, FileText, Calendar, AlertTriangle, Info, E
 import { useState } from 'react';
 import { UpgradeModal } from './UpgradeModal';
 import { UsageChart } from './UsageChart';
-import { PlanComparison } from './PlanComparison';
 import { useTranslation } from '../../hooks/useTranslation';
 
 export const SubscriptionDashboard = () => {
@@ -13,7 +12,6 @@ export const SubscriptionDashboard = () => {
   const { data, loading } = useQuery(GET_SUBSCRIPTION);
   const [createPortalSession, { loading: portalLoading }] = useMutation(CREATE_PORTAL_SESSION);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [showPlanComparison, setShowPlanComparison] = useState(false);
 
   const subscription = data?.activeOrganization?.subscription;
 
@@ -344,19 +342,6 @@ export const SubscriptionDashboard = () => {
         currentPeriodStart={currentPeriodStart}
         currentPeriodEnd={currentPeriodEnd}
       />
-
-      {/* Plan Comparison */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">{t('planComparison.title')}</h3>
-        <Button
-          variant="outline"
-          onClick={() => setShowPlanComparison(!showPlanComparison)}
-        >
-          {showPlanComparison ? t('planComparison.hide') : t('planComparison.show')}
-        </Button>
-      </div>
-
-      {showPlanComparison && <PlanComparison currentPlan={planId} />}
 
       {/* Upgrade Modal */}
       {showUpgradeModal && (
