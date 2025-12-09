@@ -1,6 +1,5 @@
 import React from "react"
 import { AppSidebar } from "../components/app-sidebar"
-import { UserProfileMenu } from "../components/UserProfileMenu"
 import { LocaleSwitcher } from "./LocaleSwitcher"
 import { PageWrapper, SidebarProvider, SidebarInset } from "@dculus/ui"
 
@@ -20,12 +19,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children, title, subtitl
           title={title ?? ""}
           subtitle={subtitle}
           breadcrumbs={breadcrumbs}
-          userProfile={
-            <div className="flex items-center gap-2">
-              <LocaleSwitcher />
-              <UserProfileMenu />
-            </div>
-          }
+          userProfile={<LocaleSwitcher />}
         >
           {children}
         </PageWrapper>

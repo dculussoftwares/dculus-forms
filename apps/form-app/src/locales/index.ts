@@ -110,8 +110,7 @@ import enHeader from './en/header.json';
 import taHeader from './ta/header.json';
 import enCreateFormPopover from './en/createFormPopover.json';
 import taCreateFormPopover from './ta/createFormPopover.json';
-import enUserProfileMenu from './en/userProfileMenu.json';
-import taUserProfileMenu from './ta/userProfileMenu.json';
+
 import enNavMain from './en/navMain.json';
 import taNavMain from './ta/navMain.json';
 import enTeamSwitcher from './en/teamSwitcher.json';
@@ -278,7 +277,7 @@ const enTranslations = {
   layoutThumbnails: enLayoutThumbnails,
   header: enHeader,
   createFormPopover: enCreateFormPopover,
-  userProfileMenu: enUserProfileMenu,
+
   navMain: enNavMain,
   teamSwitcher: enTeamSwitcher,
   navUser: enNavUser,
@@ -392,7 +391,7 @@ const taTranslations = {
   layoutThumbnails: taLayoutThumbnails,
   header: taHeader,
   createFormPopover: taCreateFormPopover,
-  userProfileMenu: taUserProfileMenu,
+
   navMain: taNavMain,
   teamSwitcher: taTeamSwitcher,
   navUser: taNavUser,
