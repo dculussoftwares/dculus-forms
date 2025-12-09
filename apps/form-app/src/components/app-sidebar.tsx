@@ -3,6 +3,7 @@ import { LayoutDashboard, Settings, Layers } from 'lucide-react';
 
 import { NavMain } from './nav-main';
 import { NavUser } from './nav-user';
+import { NavLocale } from './nav-locale';
 import { TeamSwitcher } from './team-switcher';
 import {
   Sidebar,
@@ -45,6 +46,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={navMainItems} />
       </SidebarContent>
       <SidebarFooter>
+        <NavLocale />
         <NavUser />
       </SidebarFooter>
       <SidebarRail />

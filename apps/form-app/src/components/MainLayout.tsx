@@ -1,6 +1,5 @@
 import React from "react"
 import { AppSidebar } from "../components/app-sidebar"
-import { LocaleSwitcher } from "./LocaleSwitcher"
 import { PageWrapper, SidebarProvider, SidebarInset } from "@dculus/ui"
 
 interface MainLayoutProps {
@@ -19,7 +18,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children, title, subtitl
           title={title ?? ""}
           subtitle={subtitle}
           breadcrumbs={breadcrumbs}
-          userProfile={<LocaleSwitcher />}
         >
           {children}
         </PageWrapper>
