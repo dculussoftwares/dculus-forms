@@ -136,25 +136,29 @@ export const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ init
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <SettingsIcon className="h-5 w-5" />
-                {activeOrganization.name}
-              </CardTitle>
-              <CardDescription>
-                {t('organization.cardDescription')}
-              </CardDescription>
+        <CardHeader className="border-b pb-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                <SettingsIcon className="h-6 w-6 text-primary" />
+              </div>
+              <div className="space-y-1">
+                <CardTitle className="text-xl font-semibold tracking-tight">
+                  {activeOrganization.name}
+                </CardTitle>
+                <CardDescription className="text-sm text-muted-foreground">
+                  {t('organization.cardDescription')}
+                </CardDescription>
+              </div>
             </div>
-            <Button onClick={() => setIsInviteDialogOpen(true)} className="flex items-center gap-2">
-              <UserPlus className="h-4 w-4" />
+            <Button onClick={() => setIsInviteDialogOpen(true)} variant="default">
+              <UserPlus className="mr-2 h-4 w-4" />
               {t('organization.inviteButton')}
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-6 w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="team" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
