@@ -226,7 +226,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
               {t('navigation.allFields')}
             </Button>
           )}
-          <h1 className="text-2xl font-bold text-gray-900 w-40">
+          <h1 className="text-2xl font-bold text-gray-900">
             {view === 'grid' ? t('titles.fieldAnalytics') : t('titles.fieldInsights')}
           </h1>
           {view === 'grid' && (

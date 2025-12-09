@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Card, Button } from '@dculus/ui';
-import { Users, Monitor, Globe, TrendingUp, TrendingDown, FileCheck, Target, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import React from 'react';
+import { Card } from '@dculus/ui';
+import { Users, Monitor, Globe, TrendingUp, TrendingDown, FileCheck, Target, Clock } from 'lucide-react';
 import { FormAnalyticsData, FormSubmissionAnalyticsData } from '../../hooks/useFormAnalytics';
 import { useTranslation } from '../../hooks/useTranslation';
 
@@ -121,41 +121,6 @@ export const AnalyticsOverview: React.FC<AnalyticsOverviewProps> = ({
   loading
 }) => {
   const { t } = useTranslation('formAnalytics');
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [showLeftArrow, setShowLeftArrow] = useState(false);
-  const [showRightArrow, setShowRightArrow] = useState(true);
-
-  const handleScroll = () => {
-    if (scrollContainerRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
-      setShowLeftArrow(scrollLeft > 0);
-      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
-    }
-  };
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollContainerRef.current) {
-      const scrollAmount = 320; // Width of one card + gap
-      const currentScroll = scrollContainerRef.current.scrollLeft;
-      const targetScroll = direction === 'left' 
-        ? currentScroll - scrollAmount 
-        : currentScroll + scrollAmount;
-      
-      scrollContainerRef.current.scrollTo({
-        left: targetScroll,
-        behavior: 'smooth'
-      });
-    }
-  };
-
-  // Initialize arrow visibility on mount and when metrics change
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      handleScroll();
-    }, 100);
-    
-    return () => clearTimeout(timer);
-  }, [loading]);
 
   const metrics = [
     {
@@ -234,52 +199,15 @@ export const AnalyticsOverview: React.FC<AnalyticsOverviewProps> = ({
   ];
 
   return (
-    <div className="relative">
-      {/* Left Arrow */}
-      {showLeftArrow && (
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => scroll('left')}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 rounded-full shadow-lg"
-          aria-label={t('overview.scrollLeft')}
-        >
-          <ChevronLeft className="h-5 w-5 text-gray-600" />
-        </Button>
-      )}
-
-      {/* Right Arrow */}
-      {showRightArrow && (
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => scroll('right')}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 rounded-full shadow-lg"
-          aria-label={t('overview.scrollRight')}
-        >
-          <ChevronRight className="h-5 w-5 text-gray-600" />
-        </Button>
-      )}
-
-      {/* Scrollable Container */}
-      <div
-        ref={scrollContainerRef}
-        onScroll={handleScroll}
-        className="flex gap-6 overflow-x-auto pb-2 px-10 hide-scrollbar"
-        style={{
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-        }}
-      >
-        {metrics.map((metric, index) => (
-          <div key={index} className="flex-shrink-0 w-80">
-            <MetricCard
-              {...metric}
-              loading={loading}
-            />
-          </div>
-        ))}
-      </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+      {metrics.map((metric, index) => (
+        <div key={index}>
+          <MetricCard
+            {...metric}
+            loading={loading}
+          />
+        </div>
+      ))}
     </div>
   );
 };

@@ -320,13 +320,17 @@ export const NumberFieldAnalytics: React.FC<NumberFieldAnalyticsProps> = ({
 
   if (!data) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
-        <div className="text-center">
-          <Calculator className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-          <p className="text-lg font-medium">{t('emptyState.title')}</p>
-          <p className="text-sm">{t('emptyState.subtitle')}</p>
-        </div>
-      </div>
+      <Card className="w-full">
+        <CardContent className="p-8">
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
+              <Calculator className="h-8 w-8 text-blue-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('emptyState.title')}</h3>
+            <p className="text-gray-600 max-w-md mx-auto">{t('emptyState.subtitle')}</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 

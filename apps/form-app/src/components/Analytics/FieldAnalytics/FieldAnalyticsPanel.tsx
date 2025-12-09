@@ -76,7 +76,7 @@ export const FieldAnalyticsPanel: React.FC<FieldAnalyticsPanelProps> = ({
   const Icon = getAnalyticsIcon(field.fieldType as any);
 
   return (
-    <div>
+    <div className="w-full">
       {/* Field Header */}
       <div className="mb-6 pb-4 border-b border-gray-200">
         <div className="flex items-center gap-3 mb-2">
