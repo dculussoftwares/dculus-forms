@@ -194,6 +194,7 @@ export const L2ModernLayout: React.FC<LayoutProps> = ({
                         <div className="flex justify-center">
                           <button 
                             onClick={() => setShowPages(true)}
+                            data-testid="viewer-cta-button"
                             className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors shadow-md max-w-sm w-full"
                           >
                             {layout?.customCTAButtonName || 'Start Survey'}

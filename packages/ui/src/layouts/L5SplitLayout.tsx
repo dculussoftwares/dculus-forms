@@ -185,6 +185,7 @@ export const L5SplitLayout: React.FC<LayoutProps> = ({
                         <div className="flex justify-center">
                           <button 
                             onClick={() => setShowPages(true)}
+                            data-testid="viewer-cta-button"
                             className="bg-slate-800 hover:bg-slate-900 text-white font-light py-3 px-8 rounded-lg transition-colors shadow-sm max-w-xs w-full tracking-wide"
                           >
                             {layout?.customCTAButtonName || 'Continue'}

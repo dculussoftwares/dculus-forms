@@ -23,6 +23,7 @@ interface ActionCardProps {
   iconColor: string;
   hoverColor: string;
   onClick: () => void;
+  testId?: string;
 }
 
 const ActionCard: React.FC<ActionCardProps> = ({
@@ -33,11 +34,13 @@ const ActionCard: React.FC<ActionCardProps> = ({
   iconColor,
   hoverColor,
   onClick,
+  testId,
 }) => {
   return (
     <Button
       variant="outline"
       onClick={onClick}
+      data-testid={testId}
       className="group relative text-left w-full h-auto rounded-2xl bg-white border-slate-200 p-6 transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-slate-300 justify-start"
     >
       <div className="flex items-start gap-4 w-full">
@@ -60,6 +63,7 @@ const ActionCard: React.FC<ActionCardProps> = ({
   );
 };
 
+
 export const QuickActions: React.FC<QuickActionsProps> = ({ formId }) => {
   const navigate = useNavigate();
   const { t } = useTranslation('formDashboard');
@@ -73,6 +77,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId }) => {
       iconColor: 'text-emerald-600',
       hoverColor: 'group-hover:text-emerald-600',
       path: `/dashboard/form/${formId}/collaborate`,
+      testId: 'quick-action-collaborate',
     },
     {
       title: t('quickActions.items.responses.title'),
@@ -82,6 +87,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId }) => {
       iconColor: 'text-blue-600',
       hoverColor: 'group-hover:text-blue-600',
       path: `/dashboard/form/${formId}/responses`,
+      testId: 'quick-action-responses',
     },
     {
       title: t('quickActions.items.analytics.title'),
@@ -91,6 +97,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId }) => {
       iconColor: 'text-purple-600',
       hoverColor: 'group-hover:text-purple-600',
       path: `/dashboard/form/${formId}/analytics`,
+      testId: 'quick-action-analytics',
     },
     {
       title: t('quickActions.items.plugins.title'),
@@ -100,6 +107,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId }) => {
       iconColor: 'text-orange-600',
       hoverColor: 'group-hover:text-orange-600',
       path: `/dashboard/form/${formId}/plugins`,
+      testId: 'quick-action-plugins',
     },
     {
       title: t('quickActions.items.settings.title'),
@@ -109,6 +117,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId }) => {
       iconColor: 'text-slate-600',
       hoverColor: 'group-hover:text-slate-600',
       path: `/dashboard/form/${formId}/settings`,
+      testId: 'quick-action-settings',
     },
   ];
 
@@ -134,9 +143,11 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId }) => {
             iconColor={action.iconColor}
             hoverColor={action.hoverColor}
             onClick={() => navigate(action.path)}
+            testId={action.testId}
           />
         ))}
       </div>
     </div>
   );
+
 };

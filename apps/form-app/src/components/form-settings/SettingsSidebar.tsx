@@ -55,6 +55,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
               <Button
                 variant="ghost"
                 onClick={() => onSectionChange(setting.id)}
+                data-testid={`settings-section-${setting.id}`}
                 className={cn(
                   'w-full flex items-center justify-between px-3 py-2 h-auto text-sm rounded-lg',
                   isSelected

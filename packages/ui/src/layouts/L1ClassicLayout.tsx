@@ -200,6 +200,7 @@ export const L1ClassicLayout: React.FC<LayoutProps> = ({
                         <div className="flex justify-center">
                           <button 
                             onClick={() => setShowPages(true)}
+                            data-testid="viewer-cta-button"
                             className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors shadow-md max-w-sm w-full"
                           >
                             {layout?.customCTAButtonName || 'Get Started'}

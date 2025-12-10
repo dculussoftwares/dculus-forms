@@ -131,6 +131,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
           <div className="flex items-center space-x-2">
             <Checkbox
               id="max-responses-enabled"
+              data-testid="max-responses-enabled-checkbox"
               checked={settings.maxResponses?.enabled || false}
               onCheckedChange={handleMaxResponsesToggle}
             />
@@ -156,6 +157,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
                 </Label>
                 <Input
                   id="max-responses-limit"
+                  data-testid="max-responses-limit-input"
                   type="number"
                   min="1"
                   max="10000"
@@ -279,6 +281,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
           <Button 
             onClick={onSave}
             disabled={isSaving}
+            data-testid="save-submission-limits-button"
             className="bg-green-600 hover:bg-green-700 text-white"
           >
             <Save className="mr-2 h-4 w-4" />
