@@ -203,26 +203,34 @@ const FormSettings: React.FC = () => {
     >
       <div className="px-4 py-8 space-y-8">
         {/* Header Section */}
-        <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
-          <div>
-            <div className="flex items-center space-x-2 mb-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate(`/dashboard/form/${formId}`)}
-                className="mr-2"
-              >
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                {t('header.backButton')}
-              </Button>
+        <div className="flex flex-col space-y-6">
+          {/* Back Navigation */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(`/dashboard/form/${formId}`)}
+            className="w-fit -ml-2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            {t('header.backButton')}
+          </Button>
+          
+          {/* Main Header */}
+          <div className="flex items-start gap-5">
+            {/* Icon Container */}
+            <div className="bg-blue-50 p-3 rounded-xl">
+              <Settings className="h-5 w-5 text-blue-600" />
             </div>
-            <TypographyH1 className="mb-2 flex items-center">
-              <Settings className="mr-3 h-8 w-8" />
-              {t('header.title')}
-            </TypographyH1>
-            <TypographyP className="text-slate-600">
-              {t('header.description', { values: { formTitle: form.title } })}
-            </TypographyP>
+            
+            {/* Title and Description */}
+            <div className="flex-1 min-w-0">
+              <TypographyH1 className="text-2xl font-semibold tracking-tight mb-1">
+                {t('header.title')}
+              </TypographyH1>
+              <TypographyP className="text-muted-foreground text-sm">
+                {t('header.description', { values: { formTitle: form.title } })}
+              </TypographyP>
+            </div>
           </div>
         </div>
 

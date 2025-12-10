@@ -502,6 +502,15 @@ test/
 - GraphQL: `apps/form-app/src/graphql/`
 - Pages: `apps/*/src/pages/`
 
+### Icon Design Pattern
+When displaying icons in headers or cards, use this consistent styling:
+```tsx
+<div className="bg-blue-50 p-3 rounded-xl">
+  <YourIcon className="h-5 w-5 text-blue-600" />
+</div>
+```
+Reference: `apps/form-app/src/components/FormDashboard/StatsGrid.tsx`
+
 ### Toast Notifications
 ```typescript
 import { toastSuccess, toastError } from '@dculus/ui';
