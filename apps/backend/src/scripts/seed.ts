@@ -9,21 +9,21 @@ import { logger } from '../lib/logger.js';
 
 async function uploadStaticFiles() {
   logger.info('📁 Uploading static files...');
-  
+
   const staticFilesPath = path.join(process.cwd(), '..', '..', 'static-files');
-  
+
   if (!fs.existsSync(staticFilesPath)) {
     logger.info('⚠️  Static files folder not found, skipping upload');
     return [];
   }
-  
+
   const files = fs.readdirSync(staticFilesPath);
   const uploadedFiles = [];
-  
+
   for (const fileName of files) {
     const filePath = path.join(staticFilesPath, fileName);
     const fileStats = fs.statSync(filePath);
-    
+
     if (fileStats.isFile()) {
       try {
         // Get file extension and determine mimetype
@@ -35,9 +35,9 @@ async function uploadStaticFiles() {
           '.gif': 'image/gif',
           '.webp': 'image/webp'
         };
-        
+
         const mimetype = mimeTypes[ext] || 'application/octet-stream';
-        
+
         // Create a readable stream from the file
         const fileBuffer = fs.readFileSync(filePath);
         const readableStream = new Readable({
@@ -46,7 +46,7 @@ async function uploadStaticFiles() {
             this.push(null);
           }
         });
-        
+
         // Create file object for upload
         const fileObject = {
           filename: fileName,
@@ -54,7 +54,7 @@ async function uploadStaticFiles() {
           encoding: '7bit',
           createReadStream: () => readableStream
         };
-        
+
         // Determine file type based on filename
         let fileType = 'FormTemplate'; // default
         if (fileName.includes('logo')) {
@@ -62,21 +62,21 @@ async function uploadStaticFiles() {
         } else if (fileName.includes('background')) {
           fileType = 'FormBackground';
         }
-        
+
         const result = await uploadFile({
           file: fileObject,
           type: fileType
         });
-        
+
         uploadedFiles.push(result);
         logger.info(`✅ Uploaded ${fileName} -> ${result.key}`);
-        
+
       } catch (error) {
         logger.error(`❌ Failed to upload ${fileName}:`, error);
       }
     }
   }
-  
+
   logger.info(`📁 Uploaded ${uploadedFiles.length} static files`);
   return uploadedFiles;
 }
@@ -93,30 +93,32 @@ async function seed() {
       return;
     }
 
-    // Only clear data in non-production environments
+    // Data deletion disabled to preserve existing data
+    // If you need to clear data, do it manually before running seed
     const isProduction = process.env.NODE_ENV === 'production';
-    if (!isProduction) {
-      logger.info('🧹 Clearing existing data (non-production environment)...');
-      await prisma.response.deleteMany();
-      await prisma.form.deleteMany();
-      await prisma.formTemplate.deleteMany();
-      await prisma.member.deleteMany();
-      await prisma.invitation.deleteMany();
-      await prisma.organization.deleteMany();
-      await prisma.session.deleteMany();
-      await prisma.account.deleteMany();
-      await prisma.user.deleteMany();
-      logger.info('✅ Database cleared successfully');
-    } else {
-      logger.info('⏭️  Skipping data clearing in production environment');
-    }
-    
+    logger.info('⏭️  Skipping data clearing to preserve existing data');
+    // if (!isProduction) {
+    //   logger.info('🧹 Clearing existing data (non-production environment)...');
+    //   await prisma.response.deleteMany();
+    //   await prisma.form.deleteMany();
+    //   await prisma.formTemplate.deleteMany();
+    //   await prisma.member.deleteMany();
+    //   await prisma.invitation.deleteMany();
+    //   await prisma.organization.deleteMany();
+    //   await prisma.session.deleteMany();
+    //   await prisma.account.deleteMany();
+    //   await prisma.user.deleteMany();
+    //   logger.info('✅ Database cleared successfully');
+    // } else {
+    //   logger.info('⏭️  Skipping data clearing in production environment');
+    // }
+
     // Upload static files
     const uploadedFiles = await uploadStaticFiles();
-    
+
     // Seed templates with uploaded files
     await seedTemplates(uploadedFiles);
-    
+
     logger.info('🌱 Seed completed. Use Better Auth endpoints to create users and organizations.');
     logger.info(`📁 ${uploadedFiles.length} static files uploaded to CDN`);
 
