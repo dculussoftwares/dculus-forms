@@ -19,11 +19,27 @@ export const processDateFieldAnalytics = (
 ): FieldAnalyticsBase & DateFieldAnalytics => {
   const validDates = fieldResponses
     .map(r => {
-      // Handle both Date objects and string dates
+      // Handle Date objects
       if (r.value instanceof Date) {
         return r.value;
       }
-      return new Date(String(r.value));
+
+      // Handle Unix timestamps (numbers)
+      if (typeof r.value === 'number') {
+        return new Date(r.value);
+      }
+
+      // Handle string dates and timestamps
+      const stringValue = String(r.value);
+
+      // If it's a numeric string, treat as Unix timestamp
+      if (/^\d+$/.test(stringValue)) {
+        const timestamp = parseInt(stringValue, 10);
+        return new Date(timestamp);
+      }
+
+      // Otherwise, try parsing as date string
+      return new Date(stringValue);
     })
     .filter(date => !isNaN(date.getTime()))
     .sort((a, b) => a.getTime() - b.getTime());

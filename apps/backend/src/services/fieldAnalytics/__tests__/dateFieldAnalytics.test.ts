@@ -233,6 +233,32 @@ describe('fieldAnalytics/dateFieldAnalytics', () => {
       expect(result.totalResponses).toBe(2);
     });
 
+    it('should handle Unix timestamps as numbers', () => {
+      const fieldResponses: FieldResponse[] = [
+        { value: 1705363200000, submittedAt: toDate('2024-01-16T10:00:00Z'), responseId: 'r1' }, // 2024-01-16
+        { value: 1708387200000, submittedAt: toDate('2024-02-21T10:00:00Z'), responseId: 'r2' }, // 2024-02-20
+      ];
+
+      const result = processDateFieldAnalytics(fieldResponses, 'field-1', 'Birth Date', 10);
+
+      expect(result.totalResponses).toBe(2);
+      expect(result.earliestDate.toISOString()).toBe('2024-01-16T00:00:00.000Z');
+      expect(result.latestDate.toISOString()).toBe('2024-02-20T00:00:00.000Z');
+    });
+
+    it('should handle Unix timestamps as strings', () => {
+      const fieldResponses: FieldResponse[] = [
+        { value: '1705363200000', submittedAt: toDate('2024-01-16T10:00:00Z'), responseId: 'r1' }, // 2024-01-16
+        { value: '1708387200000', submittedAt: toDate('2024-02-21T10:00:00Z'), responseId: 'r2' }, // 2024-02-20
+      ];
+
+      const result = processDateFieldAnalytics(fieldResponses, 'field-1', 'Birth Date', 10);
+
+      expect(result.totalResponses).toBe(2);
+      expect(result.earliestDate.toISOString()).toBe('2024-01-16T00:00:00.000Z');
+      expect(result.latestDate.toISOString()).toBe('2024-02-20T00:00:00.000Z');
+    });
+
     it('should set lastUpdated to current time', () => {
       const fieldResponses: FieldResponse[] = [
         { value: '2024-01-15', submittedAt: toDate('2024-01-16T10:00:00Z'), responseId: 'r1' },
