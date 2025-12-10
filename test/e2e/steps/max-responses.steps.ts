@@ -237,9 +237,21 @@ Then('the submission limits should be saved successfully', async function (this:
         throw new Error('Page is not initialized');
     }
 
-    // Check for success toast or verify the checkbox is still checked
-    const checkbox = this.page.getByTestId('max-responses-enabled-checkbox');
-    await expect(checkbox).toBeChecked({ timeout: 5_000 });
+    // Wait for save to complete
+    await this.page.waitForTimeout(1000);
+
+    // Check that at least one of the limits is enabled
+    const maxResponsesCheckbox = this.page.getByTestId('max-responses-enabled-checkbox');
+    const timeWindowCheckbox = this.page.getByTestId('time-window-enabled-checkbox');
+
+    // Get checked status of both checkboxes
+    const maxResponsesChecked = await maxResponsesCheckbox.isChecked().catch(() => false);
+    const timeWindowChecked = await timeWindowCheckbox.isChecked().catch(() => false);
+
+    // At least one should be checked after saving
+    if (!maxResponsesChecked && !timeWindowChecked) {
+        throw new Error('Neither max responses nor time window is enabled after save');
+    }
 });
 
 /**
@@ -413,5 +425,108 @@ Then('I should see the max responses error message', async function (this: Custo
 
     if (!isMaxResponsesError) {
         throw new Error(`Expected max responses error but got: ${messageText}`);
+    }
+});
+
+// ============================================
+// TIME WINDOW STEPS
+// ============================================
+
+/**
+ * Enable the time window setting
+ */
+When('I enable the time window', async function (this: CustomWorld) {
+    if (!this.page) {
+        throw new Error('Page is not initialized');
+    }
+
+    // Find and click the time window checkbox to enable it
+    const checkbox = this.page.getByTestId('time-window-enabled-checkbox');
+    await expect(checkbox).toBeVisible({ timeout: 10_000 });
+
+    // Check if it's already enabled
+    const isChecked = await checkbox.isChecked();
+    if (!isChecked) {
+        await checkbox.click();
+        // Wait for the date pickers to appear
+        await this.page.waitForTimeout(500);
+    }
+});
+
+/**
+ * Set the time window to past dates (already ended)
+ */
+When('I set the time window to past dates', async function (this: CustomWorld) {
+    if (!this.page) {
+        throw new Error('Page is not initialized');
+    }
+
+    // Calculate past dates: 30 days ago to 1 day ago
+    const today = new Date();
+    const startDate = new Date(today);
+    startDate.setDate(startDate.getDate() - 30);
+    const endDate = new Date(today);
+    endDate.setDate(endDate.getDate() - 1);
+
+    // Format dates as YYYY-MM-DD
+    const startDateStr = startDate.toISOString().split('T')[0];
+    const endDateStr = endDate.toISOString().split('T')[0];
+
+    // The DatePicker has a hidden input with name attribute that we can fill
+    // Using fill() will trigger the change event handler in the DatePicker
+    const startDateInput = this.page.locator('input[name="time-window-start-date"]');
+    const endDateInput = this.page.locator('input[name="time-window-end-date"]');
+
+    // Fill the hidden inputs - this triggers the handleNativeInputChange handler
+    await startDateInput.fill(startDateStr);
+    await this.page.waitForTimeout(300);
+    await endDateInput.fill(endDateStr);
+    await this.page.waitForTimeout(500);
+});
+
+/**
+ * Set the time window to current active dates (now is within the window)
+ */
+When('I set the time window to current active dates', async function (this: CustomWorld) {
+    if (!this.page) {
+        throw new Error('Page is not initialized');
+    }
+
+    // The default behavior when enabling time window sets:
+    // Start date: today
+    // End date: 30 days from now
+    // So we don't need to change anything - just verify it's within the window
+
+    // Wait a moment for the dates to be set by the enable action
+    await this.page.waitForTimeout(500);
+});
+
+/**
+ * Verify the time window ended error message is shown
+ */
+Then('I should see the time window ended error message', async function (this: CustomWorld) {
+    if (!this.viewerPage) {
+        throw new Error('Viewer page is not initialized');
+    }
+
+    // Wait for the error state to be visible
+    const errorState = this.viewerPage.getByTestId('form-viewer-error');
+    await expect(errorState).toBeVisible({ timeout: 30_000 });
+
+    // Verify the error message indicates time window has ended
+    const errorMessage = this.viewerPage.getByTestId('form-viewer-error-message');
+    await expect(errorMessage).toBeVisible({ timeout: 5_000 });
+
+    const messageText = await errorMessage.textContent();
+
+    // Accept error messages related to time window
+    const isTimeWindowError = messageText?.toLowerCase().includes('time') ||
+        messageText?.toLowerCase().includes('window') ||
+        messageText?.toLowerCase().includes('closed') ||
+        messageText?.toLowerCase().includes('period') ||
+        messageText?.toLowerCase().includes('no longer accepting');
+
+    if (!isTimeWindowError) {
+        throw new Error(`Expected time window error but got: ${messageText}`);
     }
 });

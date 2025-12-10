@@ -188,6 +188,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
           <div className="flex items-center space-x-2">
             <Checkbox
               id="time-window-enabled"
+              data-testid="time-window-enabled-checkbox"
               checked={settings.timeWindow?.enabled || false}
               onCheckedChange={handleTimeWindowToggle}
             />
@@ -213,6 +214,8 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
                     {t('timeWindow.startDate')}
                   </Label>
                   <DatePicker
+                    id="time-window-start-date"
+                    name="time-window-start-date"
                     date={settings.timeWindow?.startDate ? new Date(settings.timeWindow.startDate) : undefined}
                     onDateChange={handleStartDateChange}
                     placeholder="Select start date"
@@ -223,6 +226,8 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
                     {t('timeWindow.endDate')}
                   </Label>
                   <DatePicker
+                    id="time-window-end-date"
+                    name="time-window-end-date"
                     date={settings.timeWindow?.endDate ? new Date(settings.timeWindow.endDate) : undefined}
                     onDateChange={handleEndDateChange}
                     placeholder="Select end date"
