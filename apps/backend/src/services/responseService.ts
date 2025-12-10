@@ -1,7 +1,7 @@
 import { FormResponse, FieldType, FormSchema } from '@dculus/types';
 import { ResponseFilter, applyResponseFilters } from './responseFilterService.js';
-import { 
-  buildPostgreSQLFilter, 
+import {
+  buildPostgreSQLFilter,
   canFilterAtDatabase
 } from './responseQueryBuilder.js';
 import { responseRepository } from '../repositories/index.js';
@@ -41,7 +41,7 @@ const transformDateFields = async (formId: string, responseData: Record<string, 
       for (const field of page.fields) {
         if (field.type === FieldType.DATE_FIELD && transformed[field.id]) {
           const dateValue = transformed[field.id];
-          
+
           // Convert string dates to Date objects for MongoDB
           if (typeof dateValue === 'string' && dateValue.trim() !== '') {
             try {
@@ -78,7 +78,7 @@ export const getAllResponses = async (organizationId?: string): Promise<FormResp
       form: true,
     },
   });
-  
+
   return responses.map((response) => ({
     id: response.id,
     formId: response.formId,
@@ -96,9 +96,9 @@ export const getResponseById = async (id: string): Promise<FormResponse | null> 
         form: true,
       },
     });
-    
+
     if (!response) return null;
-    
+
     return {
       id: response.id,
       formId: response.formId,
@@ -136,11 +136,11 @@ export async function getResponsesByFormId(
   // Validate and prepare sorting
   const allowedSortFields = ['id', 'submittedAt'];
   const validSortOrder = ['asc', 'desc'].includes(sortOrder.toLowerCase()) ? sortOrder.toLowerCase() : 'desc';
-  
+
   // Check if sorting by a form field (starts with 'data.')
   const isFormFieldSort = sortBy.startsWith('data.');
   let validSortBy = sortBy;
-  
+
   if (!isFormFieldSort && !allowedSortFields.includes(sortBy)) {
     validSortBy = 'submittedAt';
   }
@@ -155,24 +155,25 @@ export async function getResponsesByFormId(
     // OPTIMIZED PATH: Use database-level filtering with PostgreSQL raw SQL
     // PostgreSQL supports all operators including date comparisons with JSONB
     logger.info(`Using database-level filtering for ${filters?.length || 0} filters`);
-    
+
     try {
       // Build PostgreSQL filter using raw SQL
       const { conditions, params } = buildPostgreSQLFilter(formId, filters, filterLogic);
-      
+
       // Build WHERE clause with dynamic logic (AND/OR)
       const logicOperator = filterLogic === 'OR' ? ' OR ' : ' AND ';
-      const whereClause = conditions.length > 0 
+      const whereClause = conditions.length > 0
         ? `WHERE "formId" = $1 AND (${conditions.join(logicOperator)})`
         : `WHERE "formId" = $1`;
-      
+
+
       // Count total matching documents
       const countQuery = `SELECT COUNT(*) as count FROM "response" ${whereClause}`;
       const countResult = await prisma.$queryRawUnsafe<[{ count: bigint }]>(countQuery, ...params);
       total = Number(countResult[0].count);
 
       // Build ORDER BY clause
-      const orderClause = validSortBy === 'submittedAt' 
+      const orderClause = validSortBy === 'submittedAt'
         ? `ORDER BY "submittedAt" ${validSortOrder.toUpperCase()}`
         : `ORDER BY "id" ${validSortOrder.toUpperCase()}`; // Fallback to id sorting
 
@@ -184,7 +185,7 @@ export async function getResponsesByFormId(
         ${orderClause}
         LIMIT ${validLimit} OFFSET ${skip}
       `;
-      
+
       const dbResponses = await prisma.$queryRawUnsafe<Array<{
         id: string;
         formId: string;
@@ -215,39 +216,39 @@ export async function getResponsesByFormId(
     // MEMORY PATH: Form field sorting or with filters
     // Note: Form field sorting requires memory processing to access nested data fields
     logger.info(`Using memory filtering for ${filters?.length || 0} filters (form field sort: ${isFormFieldSort})`);
-    
+
     const allResponses = await responseRepository.listByForm(formId);
     const filteredResponses = hasFilters ? applyResponseFilters(allResponses, filters, filterLogic) : allResponses;
     total = filteredResponses.length;
-    
+
     // Apply sorting
     if (isFormFieldSort) {
       const fieldId = validSortBy.replace('data.', '');
-      
+
       filteredResponses.sort((a, b) => {
         const aValue = (a.data as Record<string, unknown>)[fieldId];
         const bValue = (b.data as Record<string, unknown>)[fieldId];
-        
+
         // Handle null/undefined values
         if (aValue == null && bValue == null) return 0;
         if (aValue == null) return validSortOrder === 'asc' ? -1 : 1;
         if (bValue == null) return validSortOrder === 'asc' ? 1 : -1;
-        
+
         // Convert to strings for comparison
         const aStr = String(aValue).toLowerCase();
         const bStr = String(bValue).toLowerCase();
-        
+
         let comparison = 0;
         if (aStr < bStr) comparison = -1;
         if (aStr > bStr) comparison = 1;
-        
+
         return validSortOrder === 'asc' ? comparison : -comparison;
       });
     } else {
       // Sort by regular fields
       filteredResponses.sort((a, b) => {
         let aValue, bValue;
-        
+
         if (validSortBy === 'submittedAt') {
           aValue = new Date(a.submittedAt).getTime();
           bValue = new Date(b.submittedAt).getTime();
@@ -255,22 +256,22 @@ export async function getResponsesByFormId(
           aValue = a[validSortBy];
           bValue = b[validSortBy];
         }
-        
+
         if (aValue < bValue) return validSortOrder === 'asc' ? -1 : 1;
         if (aValue > bValue) return validSortOrder === 'asc' ? 1 : -1;
         return 0;
       });
     }
-    
+
     // Apply pagination
     responses = filteredResponses.slice(skip, skip + validLimit);
-    
+
   } else {
     // No filters and regular sorting - use database query for better performance
     total = await responseRepository.count({
       where: { formId },
     });
-    
+
     responses = await responseRepository.findMany({
       where: { formId },
       orderBy: { [validSortBy]: validSortOrder },
@@ -278,7 +279,7 @@ export async function getResponsesByFormId(
       take: validLimit,
     });
   }
-  
+
   const data = responses.map((response) => ({
     id: response.id,
     formId: response.formId,
@@ -301,11 +302,11 @@ export async function getResponsesByFormId(
 export const getAllResponsesByFormId = async (formId: string): Promise<FormResponse[]> => {
   try {
     logger.info(`Fetching ALL responses for form: ${formId}`);
-    
+
     const responses = await responseRepository.listByForm(formId);
-    
+
     logger.info(`Found ${responses.length} total responses for form: ${formId}`);
-    
+
     return responses.map((response) => ({
       id: response.id,
       formId: response.formId,
@@ -321,13 +322,13 @@ export const getAllResponsesByFormId = async (formId: string): Promise<FormRespo
 
 export const submitResponse = async (responseData: Partial<FormResponse>): Promise<FormResponse> => {
   const { generateId } = await import('@dculus/utils');
-  
+
   // Transform date field values from strings to Date objects
   const transformedData = await transformDateFields(
     responseData.formId!,
     responseData.data || {}
   );
-  
+
   const newResponse = await responseRepository.create({
     data: {
       id: generateId(),

@@ -882,7 +882,9 @@ export const typeDefs = gql`
     IS_EMPTY
     IS_NOT_EMPTY
     GREATER_THAN
+    GREATER_THAN_OR_EQUAL
     LESS_THAN
+    LESS_THAN_OR_EQUAL
     BETWEEN
     IN
     NOT_IN
@@ -890,6 +892,8 @@ export const typeDefs = gql`
     DATE_BETWEEN
     DATE_BEFORE
     DATE_AFTER
+    DATE_TODAY
+    DATE_LAST_N_DAYS
   }
 
   input DateRangeInput {

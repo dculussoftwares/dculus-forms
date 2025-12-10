@@ -50,7 +50,9 @@ const getOperatorOptions = (fieldType: FieldType, t: (key: string) => string) =>
         { value: 'EQUALS', label: t('operators.equals') },
         { value: 'NOT_EQUALS', label: t('operators.notEquals') },
         { value: 'GREATER_THAN', label: t('operators.greaterThan') },
+        { value: 'GREATER_THAN_OR_EQUAL', label: t('operators.greaterThanOrEqual') },
         { value: 'LESS_THAN', label: t('operators.lessThan') },
+        { value: 'LESS_THAN_OR_EQUAL', label: t('operators.lessThanOrEqual') },
         { value: 'BETWEEN', label: t('operators.between') },
         ...baseOptions,
       ];
@@ -61,6 +63,8 @@ const getOperatorOptions = (fieldType: FieldType, t: (key: string) => string) =>
         { value: 'DATE_BEFORE', label: t('operators.before') },
         { value: 'DATE_AFTER', label: t('operators.after') },
         { value: 'DATE_BETWEEN', label: t('operators.between') },
+        { value: 'DATE_TODAY', label: t('operators.today') },
+        { value: 'DATE_LAST_N_DAYS', label: t('operators.lastNDays') },
         ...baseOptions,
       ];
 
@@ -76,8 +80,8 @@ const getOperatorOptions = (fieldType: FieldType, t: (key: string) => string) =>
       return [
         { value: 'IN', label: t('operators.includesAny') },
         { value: 'NOT_IN', label: t('operators.notIncludesAny') },
-        { value: 'CONTAINS', label: t('operators.contains') },
-        { value: 'NOT_CONTAINS', label: t('operators.notContains') },
+        { value: 'CONTAINS', label: t('operators.includesSingle') },
+        { value: 'NOT_CONTAINS', label: t('operators.excludesSingle') },
         { value: 'CONTAINS_ALL', label: t('operators.containsAll') },
         { value: 'EQUALS', label: t('operators.equals') },
         ...baseOptions,
@@ -182,6 +186,23 @@ const renderFilterInput = (
       );
 
     case FieldType.DATE_FIELD:
+      // DATE_TODAY doesn't need any input
+      if (filter.operator === 'DATE_TODAY') {
+        return null;
+      }
+      // DATE_LAST_N_DAYS needs a number input for days
+      if (filter.operator === 'DATE_LAST_N_DAYS') {
+        return (
+          <Input
+            type="number"
+            placeholder={t('placeholders.enterDays')}
+            value={filter.value || '7'}
+            min={1}
+            onChange={(e) => handleValueChange(e.target.value)}
+            className="h-9 w-24"
+          />
+        );
+      }
       if (filter.operator === 'DATE_BETWEEN') {
         return (
           <div className="flex items-center gap-2">
@@ -326,14 +347,17 @@ export const FilterRow: React.FC<FilterRowProps> = ({
   };
 
   const handleOperatorChange = (operator: string) => {
+    // Set default value for DATE_LAST_N_DAYS operator
+    const defaultValue = operator === 'DATE_LAST_N_DAYS' ? '7' : undefined;
+    
     onChange({
       fieldId: filter.fieldId, // Preserve the selected field
       operator,
-      value: undefined,
+      value: defaultValue,
       values: undefined,
       dateRange: undefined,
       numberRange: undefined,
-      active: operator === 'IS_EMPTY' || operator === 'IS_NOT_EMPTY',
+      active: operator === 'IS_EMPTY' || operator === 'IS_NOT_EMPTY' || operator === 'DATE_TODAY' || operator === 'DATE_LAST_N_DAYS',
     });
   };
 

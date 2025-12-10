@@ -9,14 +9,20 @@
     "startsWith": "உடன் தொடங்குகிறது",
     "endsWith": "உடன் முடிகிறது",
     "greaterThan": "விட பெரியது",
+    "greaterThanOrEqual": "விட பெரியது அல்லது சமம்",
     "lessThan": "விட குறைவாக",
+    "lessThanOrEqual": "விட குறைவாக அல்லது சமம்",
     "between": "இடையில்",
     "before": "முன்பு",
     "after": "பிறகு",
+    "today": "இன்று",
+    "lastNDays": "கடந்த N நாட்களில்",
     "includes": "அடங்கும்",
     "notIncludes": "அடங்காது",
     "includesAny": "ஏதேனும் அடங்கும்",
     "notIncludesAny": "ஏதேனும் அடங்காது",
+    "includesSingle": "அடங்கும் (ஒற்றை)",
+    "excludesSingle": "அடங்காது (ஒற்றை)",
     "containsAll": "அனைத்தையும் கொண்டுள்ளது"
   },
   "placeholders": {
@@ -24,6 +30,7 @@
     "min": "குறைந்தபட்சம்",
     "max": "அதிகபட்சம்",
     "enterNumber": "எண்ணை உள்ளிடவும்",
+    "enterDays": "நாட்கள்",
     "selectField": "ஒரு புலத்தைத் தேர்ந்தெடுக்கவும்",
     "selectCondition": "அடங்கும்"
   }

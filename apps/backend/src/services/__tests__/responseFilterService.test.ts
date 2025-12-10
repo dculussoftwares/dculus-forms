@@ -594,5 +594,175 @@ describe('Response Filter Service', () => {
       expect(result.find(r => r.id === 'resp-2')).toBeDefined();
     });
   });
+
+  describe('New Number Operators (>= and <=)', () => {
+    it('should filter with GREATER_THAN_OR_EQUAL operator', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-age', operator: 'GREATER_THAN_OR_EQUAL', value: '30' },
+      ];
+
+      const result = applyResponseFilters(mockResponses, filters);
+
+      expect(result).toHaveLength(2);
+      expect(result.map(r => r.id)).toContain('resp-2'); // age 30
+      expect(result.map(r => r.id)).toContain('resp-3'); // age 35
+    });
+
+    it('should filter with GREATER_THAN_OR_EQUAL including boundary', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-age', operator: 'GREATER_THAN_OR_EQUAL', value: '25' },
+      ];
+
+      const result = applyResponseFilters(mockResponses, filters);
+
+      expect(result).toHaveLength(3); // All responses have age >= 25
+    });
+
+    it('should filter with LESS_THAN_OR_EQUAL operator', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-age', operator: 'LESS_THAN_OR_EQUAL', value: '30' },
+      ];
+
+      const result = applyResponseFilters(mockResponses, filters);
+
+      expect(result).toHaveLength(2);
+      expect(result.map(r => r.id)).toContain('resp-1'); // age 25
+      expect(result.map(r => r.id)).toContain('resp-2'); // age 30
+    });
+
+    it('should filter with LESS_THAN_OR_EQUAL including boundary', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-age', operator: 'LESS_THAN_OR_EQUAL', value: '25' },
+      ];
+
+      const result = applyResponseFilters(mockResponses, filters);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('resp-1'); // age 25
+    });
+
+    it('should return false for GREATER_THAN_OR_EQUAL with invalid value', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-age', operator: 'GREATER_THAN_OR_EQUAL' },
+      ];
+
+      const result = applyResponseFilters(mockResponses, filters);
+      expect(result).toHaveLength(0);
+    });
+
+    it('should return false for LESS_THAN_OR_EQUAL with invalid value', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-age', operator: 'LESS_THAN_OR_EQUAL' },
+      ];
+
+      const result = applyResponseFilters(mockResponses, filters);
+      expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('New Date Operators (TODAY, LAST_N_DAYS)', () => {
+    const createResponsesWithTodayDate = () => {
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const lastWeek = new Date(today);
+      lastWeek.setDate(lastWeek.getDate() - 7);
+      const twoWeeksAgo = new Date(today);
+      twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+      return [
+        {
+          id: 'resp-today',
+          responseData: { 'field-date': today.getTime().toString() },
+        },
+        {
+          id: 'resp-yesterday',
+          responseData: { 'field-date': yesterday.getTime().toString() },
+        },
+        {
+          id: 'resp-lastweek',
+          responseData: { 'field-date': lastWeek.getTime().toString() },
+        },
+        {
+          id: 'resp-twoweeksago',
+          responseData: { 'field-date': twoWeeksAgo.getTime().toString() },
+        },
+      ];
+    };
+
+    it('should filter with DATE_TODAY operator', () => {
+      const responses = createResponsesWithTodayDate();
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-date', operator: 'DATE_TODAY' },
+      ];
+
+      const result = applyResponseFilters(responses, filters);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('resp-today');
+    });
+
+    it('should filter with DATE_LAST_N_DAYS operator (7 days)', () => {
+      const responses = createResponsesWithTodayDate();
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-date', operator: 'DATE_LAST_N_DAYS', value: '7' },
+      ];
+
+      const result = applyResponseFilters(responses, filters);
+
+      // Should include today, yesterday, and last week (exactly 7 days ago)
+      expect(result.length).toBeGreaterThanOrEqual(2);
+      expect(result.find(r => r.id === 'resp-today')).toBeDefined();
+      expect(result.find(r => r.id === 'resp-yesterday')).toBeDefined();
+    });
+
+    it('should filter with DATE_LAST_N_DAYS operator (default 7 days)', () => {
+      const responses = createResponsesWithTodayDate();
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-date', operator: 'DATE_LAST_N_DAYS' },
+      ];
+
+      const result = applyResponseFilters(responses, filters);
+
+      // With default 7 days, should include recent responses
+      expect(result.find(r => r.id === 'resp-today')).toBeDefined();
+    });
+
+    it('should filter with DATE_LAST_N_DAYS operator (14 days)', () => {
+      const responses = createResponsesWithTodayDate();
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-date', operator: 'DATE_LAST_N_DAYS', value: '14' },
+      ];
+
+      const result = applyResponseFilters(responses, filters);
+
+      // Should include all except twoWeeksAgo (exactly 14 days ago may or may not be included)
+      expect(result.find(r => r.id === 'resp-today')).toBeDefined();
+      expect(result.find(r => r.id === 'resp-yesterday')).toBeDefined();
+      expect(result.find(r => r.id === 'resp-lastweek')).toBeDefined();
+    });
+
+    it('should return false for DATE_TODAY with invalid date', () => {
+      const responses = [
+        { id: 'resp-invalid', responseData: { 'field-date': 'not-a-date' } },
+      ];
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-date', operator: 'DATE_TODAY' },
+      ];
+
+      const result = applyResponseFilters(responses, filters);
+      expect(result).toHaveLength(0);
+    });
+
+    it('should return false for DATE_LAST_N_DAYS with negative days', () => {
+      const responses = createResponsesWithTodayDate();
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-date', operator: 'DATE_LAST_N_DAYS', value: '-5' },
+      ];
+
+      const result = applyResponseFilters(responses, filters);
+      expect(result).toHaveLength(0);
+    });
+  });
 });
 

@@ -9,14 +9,20 @@
     "startsWith": "Starts with",
     "endsWith": "Ends with",
     "greaterThan": "Greater than",
+    "greaterThanOrEqual": "Greater than or equal",
     "lessThan": "Less than",
+    "lessThanOrEqual": "Less than or equal",
     "between": "Between",
     "before": "Before",
     "after": "After",
+    "today": "Is today",
+    "lastNDays": "In last N days",
     "includes": "Includes",
     "notIncludes": "Does not include",
     "includesAny": "Includes any",
     "notIncludesAny": "Does not include any",
+    "includesSingle": "Includes (single)",
+    "excludesSingle": "Excludes (single)",
     "containsAll": "Contains all"
   },
   "placeholders": {
@@ -24,6 +30,7 @@
     "min": "Min",
     "max": "Max",
     "enterNumber": "Enter number",
+    "enterDays": "Days",
     "selectField": "Select a field",
     "selectCondition": "includes"
   }

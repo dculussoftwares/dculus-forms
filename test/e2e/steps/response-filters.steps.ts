@@ -194,6 +194,23 @@ When('I submit response with text {string} number {int} and empty date', async f
     await submitResponseWithDate(this, textValue, numberValue, null);
 });
 
+When("I submit response with today's date", async function (
+    this: CustomWorld
+) {
+    const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    await submitResponseWithDate(this, 'Today Response', 100, today);
+});
+
+When("I submit response with yesterday's date", async function (
+    this: CustomWorld
+) {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    await submitResponseWithDate(this, 'Yesterday Response', 100, yesterdayStr);
+});
+
+
 // Dropdown response submission steps
 When('I submit response with text {string} number {int} and dropdown {string}', async function (
     this: CustomWorld,
@@ -605,20 +622,26 @@ When('I add a filter for field {string} with operator {string} and value {string
         'is empty': 'Is empty',
         'is not empty': 'Is not empty',
         'greater than': 'Greater than',
+        'greater than or equal': 'Greater than or equal',
         'less than': 'Less than',
-        'between': 'Between'
+        'less than or equal': 'Less than or equal',
+        'between': 'Between',
+        'is today': 'Is today',
+        'in last n days': 'In last N days'
     };
 
     const operatorText = operatorMap[operator.toLowerCase()] || operator;
     await this.page.getByRole('option', { name: operatorText, exact: true }).click();
     await this.page.waitForTimeout(300);
 
-    // Enter value if not empty operator
-    if (!operator.toLowerCase().includes('empty')) {
+    // Enter value if not empty operator or 'is today'
+    if (!operator.toLowerCase().includes('empty') && operator.toLowerCase() !== 'is today') {
         const valueContainer = this.page.getByTestId('filter-value-container').last();
         const valueInput = valueContainer.locator('input');
+        // Clear any existing value first, then fill
+        await valueInput.clear();
         await valueInput.fill(value);
-        await this.page.waitForTimeout(300);
+        await this.page.waitForTimeout(500);
     }
 });
 
@@ -657,8 +680,12 @@ When('I add a filter for field {string} with operator {string}', async function 
         'is empty': 'Is empty',
         'is not empty': 'Is not empty',
         'greater than': 'Greater than',
+        'greater than or equal': 'Greater than or equal',
         'less than': 'Less than',
-        'between': 'Between'
+        'less than or equal': 'Less than or equal',
+        'between': 'Between',
+        'is today': 'Is today',
+        'in last n days': 'In last N days'
     };
 
     const operatorText = operatorMap[operator.toLowerCase()] || operator;
@@ -755,7 +782,9 @@ When('I add a filter for field {string} with operator {string} and date {string}
         'after': 'After',
         'between': 'Between',
         'is empty': 'Is empty',
-        'is not empty': 'Is not empty'
+        'is not empty': 'Is not empty',
+        'is today': 'Is today',
+        'in last n days': 'In last N days'
     };
 
     const operatorText = operatorMap[operator.toLowerCase()] || operator;

@@ -141,13 +141,16 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
     const activeFilters = Object.values(filters).filter((f) => f.active);
     return activeFilters.length > 0
       ? activeFilters.map((filter) => ({
-          fieldId: filter.fieldId,
-          operator: filter.operator,
-          value: filter.value,
-          values: filter.values,
-          dateRange: filter.dateRange,
-          numberRange: filter.numberRange,
-        }))
+        fieldId: filter.fieldId,
+        operator: filter.operator,
+        // Use default value of '7' for DATE_LAST_N_DAYS if value is empty
+        value: filter.operator === 'DATE_LAST_N_DAYS' && (!filter.value || filter.value.trim() === '')
+          ? '7'
+          : filter.value,
+        values: filter.values,
+        dateRange: filter.dateRange,
+        numberRange: filter.numberRange,
+      }))
       : null;
   }, [filters]);
 
@@ -162,15 +165,15 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
         values: filter.values || undefined,
         dateRange: filter.dateRange
           ? {
-              from: filter.dateRange.from || undefined,
-              to: filter.dateRange.to || undefined,
-            }
+            from: filter.dateRange.from || undefined,
+            to: filter.dateRange.to || undefined,
+          }
           : undefined,
         numberRange: filter.numberRange
           ? {
-              min: filter.numberRange.min || undefined,
-              max: filter.numberRange.max || undefined,
-            }
+            min: filter.numberRange.min || undefined,
+            max: filter.numberRange.max || undefined,
+          }
           : undefined,
       }));
   };

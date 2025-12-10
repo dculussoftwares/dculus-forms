@@ -213,6 +213,19 @@ function buildRawSQLCondition(
         values: [filter.value],
       };
 
+    case 'GREATER_THAN_OR_EQUAL':
+      if (filter.value === undefined) return { sql: '', values: [] };
+      return {
+        sql: `(
+          CASE 
+            WHEN ${textAccessor} ~ '^-?[0-9]+(\\.[0-9]+)?$' 
+            THEN (${textAccessor})::numeric >= $${startIndex}::numeric
+            ELSE FALSE
+          END
+        )`,
+        values: [filter.value],
+      };
+
     case 'LESS_THAN':
       if (filter.value === undefined) return { sql: '', values: [] };
       // Safe numeric cast: validate the value is a number before casting
@@ -227,16 +240,29 @@ function buildRawSQLCondition(
         values: [filter.value],
       };
 
+    case 'LESS_THAN_OR_EQUAL':
+      if (filter.value === undefined) return { sql: '', values: [] };
+      return {
+        sql: `(
+          CASE 
+            WHEN ${textAccessor} ~ '^-?[0-9]+(\\.[0-9]+)?$' 
+            THEN (${textAccessor})::numeric <= $${startIndex}::numeric
+            ELSE FALSE
+          END
+        )`,
+        values: [filter.value],
+      };
+
     case 'BETWEEN': {
       if (!filter.numberRange) return { sql: '', values: [] };
       const conditions: string[] = [];
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const values: any[] = [];
       let idx = startIndex;
-      
+
       // Safe numeric cast: only process if value matches numeric pattern
       const numericCheck = `${textAccessor} ~ '^-?[0-9]+(\\.[0-9]+)?$'`;
-      
+
       if (filter.numberRange.min !== undefined) {
         conditions.push(`(${textAccessor})::numeric >= $${idx}::numeric`);
         values.push(filter.numberRange.min);
@@ -246,7 +272,7 @@ function buildRawSQLCondition(
         conditions.push(`(${textAccessor})::numeric <= $${idx}::numeric`);
         values.push(filter.numberRange.max);
       }
-      
+
       if (conditions.length === 0) return { sql: '', values: [] };
       return {
         sql: `(
@@ -364,10 +390,10 @@ function buildRawSQLCondition(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const dateValues: any[] = [];
       let dateIdx = startIndex;
-      
+
       // Safe date cast: validate timestamp format before casting
       const dateCheck = `${textAccessor} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' OR ${textAccessor} ~ '^[0-9]+$'`;
-      
+
       if (filter.dateRange.from) {
         dateConditions.push(`(${textAccessor})::timestamp >= $${dateIdx}::timestamp`);
         dateValues.push(filter.dateRange.from);
@@ -377,7 +403,7 @@ function buildRawSQLCondition(
         dateConditions.push(`(${textAccessor})::timestamp <= $${dateIdx}::timestamp`);
         dateValues.push(filter.dateRange.to);
       }
-      
+
       if (dateConditions.length === 0) return { sql: '', values: [] };
       return {
         sql: `(
@@ -388,6 +414,48 @@ function buildRawSQLCondition(
           END
         )`,
         values: dateValues,
+      };
+    }
+
+    case 'DATE_TODAY': {
+      // Compare field date to today's date (date only, not time)
+      // Dates are stored as epoch milliseconds, so we use to_timestamp and divide by 1000
+      const dateCheck = `${textAccessor} ~ '^[0-9]+$'`;
+      return {
+        sql: `(
+          CASE 
+            WHEN ${dateCheck}
+            THEN DATE(to_timestamp((${textAccessor})::bigint / 1000)) = CURRENT_DATE
+            ELSE FALSE
+          END
+        )`,
+        values: [],
+      };
+    }
+
+    case 'DATE_LAST_N_DAYS': {
+      // filter.value contains the number of days
+      // Dates are stored as epoch milliseconds, so we use to_timestamp and divide by 1000
+      // Default to 7 days if no value provided (handles empty string case)
+      const daysValue = filter.value && filter.value.trim() !== '' ? filter.value : '7';
+      const days = parseInt(daysValue, 10);
+      if (isNaN(days) || days < 0) {
+        return { sql: '', values: [] };
+      }
+
+      const dateCheck = `${textAccessor} ~ '^[0-9]+$'`;
+      const sql = `(
+          CASE 
+            WHEN ${dateCheck}
+            THEN to_timestamp((${textAccessor})::bigint / 1000) >= (CURRENT_DATE - $${startIndex}::integer) 
+              AND to_timestamp((${textAccessor})::bigint / 1000) <= NOW()
+            ELSE FALSE
+          END
+        )`;
+
+      return {
+        sql,
+        values: [days],
       };
     }
 

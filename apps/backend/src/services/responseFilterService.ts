@@ -82,36 +82,50 @@ export function applyResponseFilters(
           }
           // String equality
           return String(fieldValue).toLowerCase() === String(filter.value || '').toLowerCase();
-        
+
         case 'NOT_EQUALS':
           return String(fieldValue).toLowerCase() !== String(filter.value || '').toLowerCase();
-        
+
         case 'CONTAINS':
           return fieldValue && String(fieldValue).toLowerCase().includes(String(filter.value || '').toLowerCase());
-        
+
         case 'NOT_CONTAINS':
           return !fieldValue || !String(fieldValue).toLowerCase().includes(String(filter.value || '').toLowerCase());
-        
+
         case 'STARTS_WITH':
           return fieldValue && String(fieldValue).toLowerCase().startsWith(String(filter.value || '').toLowerCase());
-        
+
         case 'ENDS_WITH':
           return fieldValue && String(fieldValue).toLowerCase().endsWith(String(filter.value || '').toLowerCase());
-        
+
         case 'GREATER_THAN': {
           const filterNum = parseFilterNumber(filter.value);
           if (filterNum === null) return false;
           const numValue = toNumber(fieldValue);
           return numValue !== null && numValue > filterNum;
         }
-        
+
+        case 'GREATER_THAN_OR_EQUAL': {
+          const filterNum = parseFilterNumber(filter.value);
+          if (filterNum === null) return false;
+          const numValue = toNumber(fieldValue);
+          return numValue !== null && numValue >= filterNum;
+        }
+
         case 'LESS_THAN': {
           const filterNum = parseFilterNumber(filter.value);
           if (filterNum === null) return false;
           const numValue = toNumber(fieldValue);
           return numValue !== null && numValue < filterNum;
         }
-        
+
+        case 'LESS_THAN_OR_EQUAL': {
+          const filterNum = parseFilterNumber(filter.value);
+          if (filterNum === null) return false;
+          const numValue = toNumber(fieldValue);
+          return numValue !== null && numValue <= filterNum;
+        }
+
         case 'BETWEEN': {
           if (!filter.numberRange) return false;
           const numValue3 = toNumber(fieldValue);
@@ -119,11 +133,11 @@ export function applyResponseFilters(
           const max = filter.numberRange.max;
           if (numValue3 === null) return false;
           return (
-                 (min === undefined || numValue3 >= min) && 
-                 (max === undefined || numValue3 <= max)
+            (min === undefined || numValue3 >= min) &&
+            (max === undefined || numValue3 <= max)
           );
         }
-        
+
         case 'DATE_EQUALS': {
           try {
             const fieldDate = new Date(Number(fieldValue) || fieldValue);
@@ -137,7 +151,7 @@ export function applyResponseFilters(
             return false;
           }
         }
-        
+
         case 'DATE_BEFORE': {
           try {
             const fieldDate = new Date(Number(fieldValue) || fieldValue);
@@ -165,7 +179,7 @@ export function applyResponseFilters(
             return false;
           }
         }
-        
+
         case 'DATE_BETWEEN': {
           if (!filter.dateRange) return false;
           try {
@@ -184,49 +198,83 @@ export function applyResponseFilters(
             }
 
             return (!fromDate || fieldDate >= fromDate) &&
-                   (!toDate || fieldDate <= toDate);
+              (!toDate || fieldDate <= toDate);
           } catch {
             return false;
           }
         }
-        
+
+        case 'DATE_TODAY': {
+          try {
+            const fieldDate = new Date(Number(fieldValue) || fieldValue);
+            if (isNaN(fieldDate.getTime())) {
+              return false;
+            }
+            const today = new Date();
+            return fieldDate.toDateString() === today.toDateString();
+          } catch {
+            return false;
+          }
+        }
+
+        case 'DATE_LAST_N_DAYS': {
+          try {
+            const fieldDate = new Date(Number(fieldValue) || fieldValue);
+            if (isNaN(fieldDate.getTime())) {
+              return false;
+            }
+            // filter.value contains the number of days
+            const days = parseInt(filter.value || '7', 10);
+            if (isNaN(days) || days < 0) {
+              return false;
+            }
+            const now = new Date();
+            const startDate = new Date(now);
+            startDate.setDate(startDate.getDate() - days);
+            startDate.setHours(0, 0, 0, 0);
+            return fieldDate >= startDate && fieldDate <= now;
+          } catch {
+            return false;
+          }
+        }
+
         case 'IN': {
           // For arrays (checkbox fields), check if any selected value matches
           if (Array.isArray(fieldValue)) {
-            return filter.values?.some(value => 
+            return filter.values?.some(value =>
               fieldValue.some(v => String(v).toLowerCase() === String(value).toLowerCase())
             ) ?? false;
           }
           // For strings (select/radio fields)
-          return filter.values?.some(value => 
+          return filter.values?.some(value =>
             String(fieldValue).toLowerCase() === String(value).toLowerCase()
           ) ?? false;
         }
-        
+
         case 'NOT_IN': {
           // For arrays (checkbox fields)
           if (Array.isArray(fieldValue)) {
-            return !(filter.values?.some(value => 
+            return !(filter.values?.some(value =>
               fieldValue.some(v => String(v).toLowerCase() === String(value).toLowerCase())
             ) ?? false);
           }
           // For strings (select/radio fields)
-          return !(filter.values?.some(value => 
+          return !(filter.values?.some(value =>
             String(fieldValue).toLowerCase() === String(value).toLowerCase()
           ) ?? false);
         }
-        
+
         case 'CONTAINS_ALL': {
           // Check if array contains ALL of the specified values
           if (!filter.values || filter.values.length === 0) return false;
           if (!Array.isArray(fieldValue)) return false;
-          
+
           const fieldValuesLower = fieldValue.map(v => String(v).toLowerCase());
-          return filter.values.every(value => 
+          return filter.values.every(value =>
             fieldValuesLower.includes(String(value).toLowerCase())
           );
         }
-        
+
         default:
           return true;
       }

@@ -979,3 +979,102 @@ Feature: Response Table Filters
     And I add a filter for field "Checkbox Field" with operator "does not contain" and options "Apple"
     And I apply the filters
     Then I should see 3 responses in the table
+  # ==================== NEW NUMBER OPERATORS (>= and <=) ====================
+
+  @new-operators
+  Scenario: Filter Number - GREATER_THAN_OR_EQUAL operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response 1 with text "Response 1" and number 100
+    And I submit response 2 with text "Response 2" and number 50
+    And I submit response 3 with text "Response 3" and number 200
+    And I submit response 4 with empty text and empty number
+    And I submit response 5 with text "Response 5" and number 100
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply GREATER_THAN_OR_EQUAL filter - numbers >= 100 (should include 100, 200, 100)
+    When I open the filter modal
+    And I add a filter for field "Number Field" with operator "greater than or equal" and value "100"
+    And I apply the filters
+    Then I should see 3 responses in the table
+
+  @new-operators
+  Scenario: Filter Number - LESS_THAN_OR_EQUAL operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    When I submit response 1 with text "Response 1" and number 100
+    And I submit response 2 with text "Response 2" and number 50
+    And I submit response 3 with text "Response 3" and number 200
+    And I submit response 4 with empty text and empty number
+    And I submit response 5 with text "Response 5" and number 100
+    When I navigate to the responses page
+    Then I should see 5 responses in the table
+    # Apply LESS_THAN_OR_EQUAL filter - numbers <= 100 (should include 100, 50, 100)
+    When I open the filter modal
+    And I add a filter for field "Number Field" with operator "less than or equal" and value "100"
+    And I apply the filters
+    Then I should see 3 responses in the table
+  # ==================== NEW DATE OPERATORS (TODAY, LAST_N_DAYS) ====================
+
+  @new-operators
+  Scenario: Filter Date - DATE_TODAY operator
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    # Submit responses with today's date and other dates
+    When I submit response with today's date
+    And I submit response with text "Response 2" number 100 and date "2024-01-15"
+    And I submit response with text "Response 3" number 200 and date "2024-06-20"
+    When I navigate to the responses page
+    Then I should see 3 responses in the table
+    # Apply DATE_TODAY filter - should find only today's response
+    When I open the filter modal
+    And I add a filter for field "Date Field" with operator "is today"
+    And I apply the filters
+    Then I should see 1 responses in the table
+
+  @new-operators
+  Scenario: Filter Date - DATE_LAST_N_DAYS operator (7 days)
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    # Submit responses with various dates
+    When I submit response with today's date
+    And I submit response with yesterday's date
+    And I submit response with text "Response 3" number 200 and date "2020-01-15"
+    When I navigate to the responses page
+    Then I should see 3 responses in the table
+    # Apply DATE_LAST_N_DAYS filter - should find today and yesterday's responses
+    When I open the filter modal
+    And I add a filter for field "Date Field" with operator "in last n days" and value "7"
+    And I apply the filters
+    Then I should see 2 responses in the table
+
+  @new-operators
+  Scenario: Filter Date - DATE_LAST_N_DAYS operator (1 day - today and yesterday)
+    When I create a form via GraphQL for filter testing
+    Then I should be on the new form dashboard
+    When I publish the form
+    Then the form should be published
+    When I get the form short URL
+    # Submit responses with various dates
+    When I submit response with today's date
+    And I submit response with yesterday's date
+    And I submit response with text "Response 3" number 200 and date "2020-01-15"
+    When I navigate to the responses page
+    Then I should see 3 responses in the table
+    # Apply DATE_LAST_N_DAYS filter with 1 day - means "since yesterday" so includes today and yesterday
+    When I open the filter modal
+    And I add a filter for field "Date Field" with operator "in last n days" and value "1"
+    And I apply the filters
+    Then I should see 2 responses in the table
