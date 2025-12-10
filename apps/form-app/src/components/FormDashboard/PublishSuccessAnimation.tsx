@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
-import { CheckCircle, Sparkles, Eye, Link as LinkIcon } from 'lucide-react';
-import { Button } from '@dculus/ui';
+import { CheckCircle, Eye, Link as LinkIcon, X } from 'lucide-react';
+import { Button, Card } from '@dculus/ui';
 import { useTranslation } from '../../hooks/useTranslation';
 
 interface PublishSuccessAnimationProps {
@@ -109,100 +109,88 @@ export const PublishSuccessAnimation: React.FC<PublishSuccessAnimationProps> = (
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-500 ${
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-300 ${
         visible ? 'opacity-100' : 'opacity-0'
       }`}
       style={{
-        background: animationPhase === 'entering'
-          ? 'rgba(0, 0, 0, 0)'
-          : animationPhase === 'showing'
-          ? 'rgba(0, 0, 0, 0.4)'
-          : 'rgba(0, 0, 0, 0)',
-        backdropFilter: animationPhase === 'showing' ? 'blur(8px)' : 'blur(0px)',
+        background: animationPhase === 'showing' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0)',
       }}
       onClick={handleClose}
     >
-      <div
-        className={`relative max-w-lg w-full bg-white rounded-3xl shadow-2xl p-8 text-center transition-all duration-700 ${
+      <Card
+        className={`relative max-w-md w-full p-6 text-center transition-all duration-300 ${
           animationPhase === 'entering'
-            ? 'scale-50 opacity-0 rotate-12'
+            ? 'scale-95 opacity-0'
             : animationPhase === 'showing'
-            ? 'scale-100 opacity-100 rotate-0'
+            ? 'scale-100 opacity-100'
             : 'scale-95 opacity-0'
         }`}
         onClick={(e) => e.stopPropagation()}
-        style={{
-          transform: animationPhase === 'showing'
-            ? 'translateY(0) scale(1) rotate(0deg)'
-            : animationPhase === 'entering'
-            ? 'translateY(50px) scale(0.5) rotate(12deg)'
-            : 'translateY(-20px) scale(0.95)',
-        }}
       >
-        {/* Animated background glow */}
-        <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-emerald-100 via-green-50 to-teal-100 opacity-50 animate-pulse" />
+        {/* Close button */}
+        <button
+          onClick={handleClose}
+          className="absolute top-4 right-4 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          aria-label="Close"
+        >
+          <X className="h-4 w-4" />
+        </button>
 
         {/* Content */}
-        <div className="relative z-10 space-y-6">
-          {/* Success Icon with animation */}
-          <div className="relative inline-block">
-            <div className="absolute inset-0 bg-emerald-400 rounded-full blur-2xl opacity-40 animate-ping" />
-            <div className="relative bg-gradient-to-br from-emerald-500 to-green-600 rounded-full p-6 shadow-lg transform transition-transform hover:scale-110">
-              <CheckCircle className="w-16 h-16 text-white" strokeWidth={2.5} />
+        <div className="space-y-6">
+          {/* Success Icon */}
+          <div className="flex justify-center">
+            <div className="bg-emerald-100 rounded-full p-4">
+              <CheckCircle className="w-12 h-12 text-emerald-600" strokeWidth={2} />
             </div>
-            <Sparkles className="absolute -top-2 -right-2 w-8 h-8 text-yellow-400 animate-spin" style={{ animationDuration: '3s' }} />
           </div>
 
           {/* Success Message */}
-          <div className="space-y-3">
-            <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold text-foreground">
               {t('publishSuccess.title')}
             </h2>
-            <p className="text-lg text-slate-600">
+            <p className="text-sm text-muted-foreground">
               {t('publishSuccess.description', { values: { formTitle } })}
             </p>
           </div>
 
           {/* Form URL Display */}
-          <div className="bg-slate-50 rounded-2xl p-4 border-2 border-slate-200">
-            <p className="text-xs text-slate-500 uppercase tracking-wide mb-2 font-semibold">
+          <div className="bg-muted rounded-lg p-4 border">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2 font-medium">
               {t('publishSuccess.linkLabel')}
             </p>
-            <p className="text-sm text-slate-700 font-mono break-all bg-white px-3 py-2 rounded-lg border border-slate-200">
+            <p className="text-sm text-foreground font-mono break-all bg-background px-3 py-2 rounded-md border">
               {formUrl}
             </p>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Button
               id="copy-link-btn"
               onClick={handleCopyLink}
-              className="flex-1 h-12 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+              className="flex-1"
             >
-              <LinkIcon className="mr-2 h-5 w-5" />
+              <LinkIcon className="mr-2 h-4 w-4" />
               {t('publishSuccess.actions.copyLink')}
             </Button>
             <Button
               onClick={handleViewForm}
               variant="outline"
-              className="flex-1 h-12 border-2 border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50 text-emerald-700 font-semibold rounded-xl transition-all transform hover:scale-105"
+              className="flex-1"
             >
-              <Eye className="mr-2 h-5 w-5" />
+              <Eye className="mr-2 h-4 w-4" />
               {t('publishSuccess.actions.viewForm')}
             </Button>
           </div>
 
           {/* Close hint */}
-          <p className="text-xs text-slate-400 pt-2">
+          <p className="text-xs text-muted-foreground">
             {t('publishSuccess.autoCloseHint')}
           </p>
         </div>
-
-        {/* Decorative elements */}
-        <div className="absolute top-4 left-4 w-20 h-20 bg-emerald-200 rounded-full blur-3xl opacity-30 animate-pulse" />
-        <div className="absolute bottom-4 right-4 w-24 h-24 bg-green-200 rounded-full blur-3xl opacity-30 animate-pulse" style={{ animationDelay: '1s' }} />
-      </div>
+      </Card>
     </div>
   );
 };
