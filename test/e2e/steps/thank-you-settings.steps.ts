@@ -335,8 +335,8 @@ When('I add a field mention to the thank you message', async function (this: Cus
     await contentEditable.click();
     await this.page.waitForTimeout(300);
 
-    // Clear existing content (use Meta for macOS, Control for Windows/Linux)
-    await this.page.keyboard.press('Meta+a');
+    // Clear existing content - triple-click to select all (cross-platform)
+    await contentEditable.click({ clickCount: 3 });
     await this.page.keyboard.press('Backspace');
     await this.page.waitForTimeout(200);
 
