@@ -121,32 +121,22 @@ const FormAnalytics: React.FC = () => {
       ]}
     >
       {/* Container with consistent styling */}
-      <div className="w-full px-4 py-8 space-y-8 overflow-x-hidden">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{t('header.title')}</h1>
-            <p className="text-gray-600 mt-1">
-              {t('header.description', { values: { formTitle: form.title } })}
-            </p>
-          </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            {activeTab === 'overview' && (
-              <TimeRangeSelector
-                value={timeRangePreset}
-                customRange={customTimeRange}
-                onChange={updateTimeRange}
-                onRefresh={refreshData}
-                loading={analyticsLoading}
-              />
-            )}
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleViewForm}>
-                <ExternalLink className="w-4 h-4 mr-2" />
-                {t('header.viewFormButton')}
-              </Button>
-            </div>
-          </div>
+      <div className="w-full px-4 py-4 space-y-4 overflow-x-hidden">
+        {/* Header Actions */}
+        <div className="flex items-center justify-end gap-3">
+          {activeTab === 'overview' && (
+            <TimeRangeSelector
+              value={timeRangePreset}
+              customRange={customTimeRange}
+              onChange={updateTimeRange}
+              onRefresh={refreshData}
+              loading={analyticsLoading}
+            />
+          )}
+          <Button variant="outline" size="sm" onClick={handleViewForm}>
+            <ExternalLink className="w-4 h-4 mr-2" />
+            {t('header.viewFormButton')}
+          </Button>
         </div>
 
         {/* Tab Navigation */}
