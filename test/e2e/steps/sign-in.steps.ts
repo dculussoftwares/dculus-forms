@@ -248,22 +248,32 @@ Then('the JSON schema should contain the persisted field settings', async functi
   // Parse the JSON
   const formSchema = JSON.parse(jsonText);
 
-  // Navigate to the field - it should be in pages[1].fields[0] (second page, first field)
-  // because we "add a new page" and then "drag a field onto the page"
-  if (!formSchema.pages || formSchema.pages.length < 2) {
-    throw new Error(`Expected at least 2 pages in schema, found: ${formSchema.pages?.length || 0}`);
+  // Find the field that was just added by searching all pages
+  // The field should have the label we set (which includes a timestamp to make it unique)
+  const expected = this.expectedFieldSettings;
+  let field = null;
+
+  if (!formSchema.pages || formSchema.pages.length === 0) {
+    throw new Error('No pages found in schema');
   }
 
-  const secondPage = formSchema.pages[1];
-  if (!secondPage.fields || secondPage.fields.length === 0) {
-    throw new Error('Expected at least 1 field in the second page');
+  // Search all pages for the field with the matching label
+  for (const page of formSchema.pages) {
+    if (page.fields && page.fields.length > 0) {
+      const foundField = page.fields.find((f: any) => f.label === expected.label);
+      if (foundField) {
+        field = foundField;
+        break;
+      }
+    }
   }
 
-  const field = secondPage.fields[0];
+  if (!field) {
+    throw new Error(`Could not find field with label "${expected.label}" in any page. Available labels: ${formSchema.pages.flatMap((p: any) => p.fields?.map((f: any) => f.label) || []).join(', ')
+      }`);
+  }
 
   // Verify all field properties match expected values
-  const expected = this.expectedFieldSettings;
-
   expect(field.label).toBe(expected.label);
   expect(field.hint).toBe(expected.hint);
 

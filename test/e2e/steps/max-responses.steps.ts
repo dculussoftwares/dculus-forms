@@ -320,7 +320,8 @@ When('I fill and submit the max responses test form', async function (this: Cust
         throw new Error('Viewer page is not initialized');
     }
 
-    // Wait for form to be ready
+    // Wait for form to be ready after CTA button click
+    // The CTA button click should have been done before calling this step
     await this.viewerPage.waitForTimeout(2000);
 
     // Try to find any text input on the page
@@ -329,16 +330,26 @@ When('I fill and submit the max responses test form', async function (this: Cust
     let inputVisible = await nameInput.isVisible().catch(() => false);
 
     if (!inputVisible) {
-        console.log('Trying to find input by type=text');
+        console.log('Field "field-name" not visible, trying to find input by type=text');
         nameInput = this.viewerPage.locator('input[type="text"]').first();
-        inputVisible = await nameInput.isVisible().catch(() => false);
+        inputVisible = await nameInput.isVisible({ timeout: 5000 }).catch(() => false);
     }
 
     if (!inputVisible) {
-        // Debug: log what's on the page
-        const html = await this.viewerPage.content();
-        console.log('Page HTML preview:', html.substring(0, 1000));
-        throw new Error('Could not find any text input on the form viewer page');
+        // Debug: check if we need to scroll or if there's a rendering issue
+        console.log('No text input visible, checking page state...');
+        const pageContent = await this.viewerPage.content();
+        console.log('Page HTML preview:', pageContent.substring(0, 1000));
+
+        // Check if there's an error message that might explain why form is not visible
+        const errorElement = this.viewerPage.getByTestId('form-viewer-error');
+        const hasError = await errorElement.isVisible().catch(() => false);
+        if (hasError) {
+            const errorText = await errorElement.textContent();
+            throw new Error(`Form viewer shows error instead of form: ${errorText}`);
+        }
+
+        throw new Error('Could not find any text input on the form viewer page. Make sure CTA button was clicked.');
     }
 
     await nameInput.fill('Test User');

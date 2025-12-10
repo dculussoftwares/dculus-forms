@@ -24,7 +24,8 @@ Feature: Submission Limits (Maximum Responses and Time Window)
     When I get the form short URL
     And I navigate to the form viewer with the short URL
     Then I should see the form in the viewer
-    When I fill and submit the max responses test form
+    When I click the CTA button to start the form
+    And I fill and submit the max responses test form
     Then the form submission should succeed
     # Try to submit a second response (should be blocked)
     When I navigate to the form viewer with the short URL in a new context
@@ -73,7 +74,8 @@ Feature: Submission Limits (Maximum Responses and Time Window)
     When I get the form short URL
     And I navigate to the form viewer with the short URL
     Then I should see the form in the viewer
-    When I fill and submit the max responses test form
+    When I click the CTA button to start the form
+    And I fill and submit the max responses test form
     Then the form submission should succeed
     # Try to submit a second response (should be blocked by max responses limit)
     When I navigate to the form viewer with the short URL in a new context
