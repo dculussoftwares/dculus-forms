@@ -3,8 +3,6 @@ import React from 'react';
 import {
   Card,
   LoadingSpinner,
-  TypographyH1,
-  TypographyP,
   Button
 } from '@dculus/ui';
 import { useQuery } from '@apollo/client';
@@ -24,22 +22,8 @@ const Templates: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100/50">
-      {/* Hero Section */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-6 py-12">
-          <div className="text-center">
-            <TypographyH1 className="mb-4 text-slate-900">
-              {t('hero.title')}
-            </TypographyH1>
-            <TypographyP className="text-lg text-slate-600 max-w-2xl mx-auto">
-              {t('hero.subtitle')}
-            </TypographyP>
-          </div>
-        </div>
-      </div>
-
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="max-w-7xl mx-auto px-6 py-6">
         {loading && (
           <div className="flex items-center justify-center py-20">
             <LoadingSpinner aria-label={t('status.loadingAria')} />
