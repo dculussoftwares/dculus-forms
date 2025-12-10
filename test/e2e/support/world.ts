@@ -13,6 +13,7 @@ export class CustomWorld {
   formShortUrl?: string;
   viewerPage?: Page;
   expectedFieldSettings?: Record<string, any>;
+  massResponseSuccessCount?: number;
 
   constructor() {
     this.baseUrl = process.env.E2E_FORM_APP_URL ?? 'http://localhost:5173';

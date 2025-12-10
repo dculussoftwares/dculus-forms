@@ -283,3 +283,166 @@ export function createFilterTestFormSchema() {
     ]
   };
 }
+
+/**
+ * Create comprehensive form schema for mass response testing
+ * Contains 9 fields across 3 pages with variety for data generation
+ */
+export function createMassResponseTestFormSchema() {
+  return {
+    layout: {
+      theme: "light",
+      textColor: "#000000",
+      spacing: "normal",
+      code: "L9",
+      content: "<h1>Mass Response Test Form</h1><p>Testing form with 120+ varied responses</p>",
+      customBackGroundColor: "#ffffff",
+      backgroundImageKey: "",
+      pageMode: "multipage",
+      isCustomBackgroundColorEnabled: false
+    },
+    pages: [
+      {
+        id: "page-1",
+        title: "Personal Information",
+        fields: [
+          {
+            id: "field-name",
+            type: "text_input_field",
+            label: "Full Name",
+            defaultValue: "",
+            prefix: "",
+            hint: "Enter your full name",
+            placeholder: "John Doe",
+            validation: {
+              required: true,
+              type: "text_field_validation"
+            }
+          },
+          {
+            id: "field-email",
+            type: "email_field",
+            label: "Email Address",
+            defaultValue: "",
+            prefix: "",
+            hint: "Enter your email address",
+            placeholder: "email@example.com",
+            validation: {
+              required: true,
+              type: "text_field_validation"
+            }
+          },
+          {
+            id: "field-birth-date",
+            type: "date_field",
+            label: "Date of Birth",
+            defaultValue: "",
+            prefix: "",
+            hint: "Select your birth date",
+            placeholder: "Select date",
+            validation: {
+              required: true,
+              type: "fillable_form_field"
+            }
+          }
+        ]
+      },
+      {
+        id: "page-2",
+        title: "Preferences",
+        fields: [
+          {
+            id: "field-favorite-color",
+            type: "select_field",
+            label: "Favorite Color",
+            defaultValue: "",
+            prefix: "",
+            hint: "Select your favorite color",
+            validation: {
+              required: true,
+              type: "fillable_form_field"
+            },
+            options: ["Red", "Blue", "Green", "Yellow", "Purple"]
+          },
+          {
+            id: "field-experience-level",
+            type: "radio_field",
+            label: "Experience Level",
+            defaultValue: "",
+            prefix: "",
+            hint: "Select your experience level",
+            validation: {
+              required: true,
+              type: "fillable_form_field"
+            },
+            options: ["Beginner", "Intermediate", "Advanced", "Expert"]
+          },
+          {
+            id: "field-years",
+            type: "number_field",
+            label: "Years of Experience",
+            defaultValue: "",
+            prefix: "",
+            hint: "Enter years of experience (0-50)",
+            placeholder: "0",
+            min: 0,
+            max: 50,
+            validation: {
+              required: true,
+              type: "fillable_form_field"
+            }
+          }
+        ]
+      },
+      {
+        id: "page-3",
+        title: "Feedback",
+        fields: [
+          {
+            id: "field-interests",
+            type: "checkbox_field",
+            label: "Areas of Interest",
+            defaultValues: [],
+            prefix: "",
+            hint: "Select all that apply",
+            placeholder: "",
+            validation: {
+              required: true,
+              type: "checkbox_field_validation",
+              minSelections: 1,
+              maxSelections: 6
+            },
+            options: ["Technology", "Sports", "Music", "Art", "Travel", "Food"]
+          },
+          {
+            id: "field-comments",
+            type: "text_area_field",
+            label: "Additional Comments",
+            defaultValue: "",
+            prefix: "",
+            hint: "Share your thoughts",
+            placeholder: "Enter your comments here...",
+            validation: {
+              required: true,
+              type: "text_field_validation"
+            }
+          },
+          {
+            id: "field-satisfaction",
+            type: "radio_field",
+            label: "Overall Satisfaction",
+            defaultValue: "",
+            prefix: "",
+            hint: "Rate your experience",
+            validation: {
+              required: true,
+              type: "fillable_form_field"
+            },
+            options: ["Very Dissatisfied", "Dissatisfied", "Neutral", "Satisfied", "Very Satisfied"]
+          }
+        ]
+      }
+    ]
+  };
+}
+

@@ -54,7 +54,8 @@
     "test:integration:health:production": "cross-env TEST_BASE_URL=https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io CI_TEST_PASSWORD=TestPassword123! TS_NODE_PROJECT=test/integration/tsconfig.json cucumber-js 'test/integration/features/health.feature' --require-module ts-node/register --require test/integration/support/world.ts --require test/integration/support/hooks.ts --require test/integration/step-definitions/common.steps.ts --require 'test/integration/step-definitions/*.steps.ts'",
     "test:integration:coverage": "rm -rf coverage/* && NODE_V8_COVERAGE=coverage/tmp TS_NODE_PROJECT=test/integration/tsconfig.json cucumber-js 'test/integration/features/*.feature' --config test/integration/cucumber.coverage.js && c8 report --config .c8rc.json",
     "test:integration:coverage:health": "rm -rf coverage/* && NODE_V8_COVERAGE=coverage/tmp TS_NODE_PROJECT=test/integration/tsconfig.json cucumber-js 'test/integration/features/health.feature' --config test/integration/cucumber.coverage.js && c8 report --config .c8rc.json",
-    "test:e2e": "TS_NODE_PROJECT=test/e2e/tsconfig.json cucumber-js --config test/e2e/cucumber.js"
+    "test:e2e": "TS_NODE_PROJECT=test/e2e/tsconfig.json cucumber-js --config test/e2e/cucumber.js",
+    "test:e2e:mass-responses": "E2E_FORM_APP_URL=${E2E_FORM_APP_URL:-http://localhost:3000} E2E_HEADLESS=${E2E_HEADLESS:-false} E2E_FORM_VIEWER_URL=${E2E_FORM_VIEWER_URL:-http://localhost:5173} E2E_BACKEND_URL=${E2E_BACKEND_URL:-http://localhost:4000} pnpm test:e2e --tags '@mass-responses'"
   },
   "devDependencies": {
     "@cucumber/cucumber": "12.2.0",
