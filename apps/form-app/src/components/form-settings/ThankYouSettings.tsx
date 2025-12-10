@@ -83,6 +83,7 @@ const ThankYouSettings: React.FC<ThankYouSettingsProps> = ({
         <div className="flex items-center space-x-2">
           <Checkbox
             id="thank-you-enabled"
+            data-testid="thank-you-enabled-checkbox"
             checked={settings.enabled}
             onCheckedChange={onToggleEnabled}
           />
@@ -108,13 +109,15 @@ const ThankYouSettings: React.FC<ThankYouSettingsProps> = ({
               >
                 {t('thankYouSettings.messageLabel')}
               </Label>
-              <RichTextEditor
-                value={settings.message}
-                onChange={onMessageChange}
-                placeholder={t('thankYouSettings.messagePlaceholder')}
-                className="w-full"
-                mentionFields={mentionFields}
-              />
+              <div data-testid="thank-you-message-editor">
+                <RichTextEditor
+                  value={settings.message}
+                  onChange={onMessageChange}
+                  placeholder={t('thankYouSettings.messagePlaceholder')}
+                  className="w-full"
+                  mentionFields={mentionFields}
+                />
+              </div>
               <p className="text-xs text-gray-500">
                 {t('thankYouSettings.messageHelp')}
                 {mentionFields.length > 0 ? (
@@ -136,6 +139,7 @@ const ThankYouSettings: React.FC<ThankYouSettingsProps> = ({
             onClick={onSave}
             disabled={isSaving}
             className="bg-green-600 hover:bg-green-700 text-white"
+            data-testid="save-thank-you-settings-button"
           >
             <Save className="mr-2 h-4 w-4" />
             {isSaving ? t('thankYouSettings.saving') : t('thankYouSettings.saveButton')}

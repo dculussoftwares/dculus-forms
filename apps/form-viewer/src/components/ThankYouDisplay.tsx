@@ -13,7 +13,7 @@ const ThankYouDisplay: React.FC<ThankYouDisplayProps> = ({
   if (isCustom) {
     // Display custom rich text message
     return (
-      <div className="text-center p-8 max-w-2xl mx-auto">
+      <div className="text-center p-8 max-w-2xl mx-auto" data-testid="thank-you-display">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <svg
             className="w-8 h-8 text-green-600"
@@ -30,7 +30,7 @@ const ThankYouDisplay: React.FC<ThankYouDisplayProps> = ({
           </svg>
         </div>
         
-        <div className="mb-6 prose prose-lg max-w-none mx-auto">
+        <div className="mb-6 prose prose-lg max-w-none mx-auto" data-testid="thank-you-custom-message">
           <RichTextEditor
             value={message}
             editable={false}
@@ -45,7 +45,7 @@ const ThankYouDisplay: React.FC<ThankYouDisplayProps> = ({
 
   // Display default success message
   return (
-    <div className="text-center p-8 max-w-md mx-auto">
+    <div className="text-center p-8 max-w-md mx-auto" data-testid="thank-you-display">
       <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
         <svg
           className="w-8 h-8 text-green-600"
@@ -61,8 +61,8 @@ const ThankYouDisplay: React.FC<ThankYouDisplayProps> = ({
           />
         </svg>
       </div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Success!</h1>
-      <p className="text-gray-600 mb-6">{message}</p>
+      <h1 className="text-2xl font-bold text-gray-900 mb-2" data-testid="thank-you-default-title">Success!</h1>
+      <p className="text-gray-600 mb-6" data-testid="thank-you-default-message">{message}</p>
     </div>
   );
 };
