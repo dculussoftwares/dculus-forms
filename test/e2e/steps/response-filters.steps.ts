@@ -896,13 +896,14 @@ When('I add a filter for field {string} with operator {string} and options {stri
     await this.page.waitForTimeout(300);
 
     // Map operator text to actual i18n labels (for dropdown, checkbox, radio filters)
+    // Note: Checkbox CONTAINS/NOT_CONTAINS operators use "Includes (single)" / "Excludes (single)" labels
     const operatorMap: Record<string, string> = {
         'includes': 'Includes',
         'includes any': 'Includes any',
         'not includes': 'Does not include',
         'does not include any': 'Does not include any',
-        'contains': 'Contains',
-        'does not contain': 'Does not contain',
+        'contains': 'Includes (single)',
+        'does not contain': 'Excludes (single)',
         'contains all': 'Contains all',
         'equals': 'Equals',
         'is empty': 'Is empty',
