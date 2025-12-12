@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useMutation } from '@apollo/client';
+import { useMutation, useApolloClient } from '@apollo/client';
 import {
   Button,
   Input,
@@ -36,6 +36,7 @@ export const SignUp = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const location = useLocation();
+  const apolloClient = useApolloClient();
   const { t } = useTranslation('signUp');
 
   // GraphQL mutation for initializing organization subscription
@@ -254,6 +255,11 @@ export const SignUp = () => {
               organizationId: orgResult.data.id,
             });
             await authClient.getSession();
+            
+            // Refetch Apollo queries to ensure activeOrganization is up to date
+            await apolloClient.refetchQueries({
+              include: ['ActiveOrganization'],
+            });
           } catch (sessionError) {
             console.error('[SignUp] Error setting active organization:', sessionError);
           }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useMutation } from '@apollo/client';
+import { useMutation, useApolloClient } from '@apollo/client';
 import {
   Button,
   Card,
@@ -39,6 +39,7 @@ export const EmailVerification = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const location = useLocation();
+  const apolloClient = useApolloClient();
   const { t } = useTranslation('emailVerification');
 
   // GraphQL mutation for initializing organization subscription
@@ -180,6 +181,11 @@ export const EmailVerification = () => {
                 organizationId: orgResult.data.id,
               });
               await authClient.getSession();
+              
+              // Refetch Apollo queries to ensure activeOrganization is up to date
+              await apolloClient.refetchQueries({
+                include: ['ActiveOrganization'],
+              });
             } catch (sessionError) {
               console.error('[EmailVerification] Error setting active organization:', sessionError);
             }
