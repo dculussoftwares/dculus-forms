@@ -1,0 +1,37 @@
+{
+    "hero": {
+        "productName": "Dculus Forms",
+        "tagline": "Build beautiful forms collaboratively with your team. Create, share, and analyze responses all in one place.",
+        "attribution": "Team Dculus"
+    },
+    "meta": {
+        "heading": "Verify Your Email",
+        "subheading": "We sent a verification code to {{email}}"
+    },
+    "card": {
+        "title": "Enter Verification Code",
+        "description": "Check your inbox for the 6-digit code"
+    },
+    "form": {
+        "otpLabel": "Verification Code",
+        "countdown": "Resend code in {{seconds}}s",
+        "resend": "Resend verification code",
+        "actions": {
+            "submit": "Verify Email",
+            "submitting": "Verifying..."
+        }
+    },
+    "messages": {
+        "otpIncomplete": "Please enter a complete 6-digit code",
+        "otpInvalid": "Invalid verification code",
+        "unexpectedError": "An unexpected error occurred. Please try again.",
+        "resendFailed": "Failed to resend code. Please try again.",
+        "signInFailed": "Email verified but sign-in failed. Please try signing in manually."
+    },
+    "links": {
+        "backToSignIn": "Remember your password?",
+        "backToSignUp": "Want to start over?",
+        "signIn": "Sign in",
+        "signUp": "Sign up"
+    }
+}

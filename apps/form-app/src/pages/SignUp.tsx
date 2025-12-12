@@ -140,6 +140,13 @@ export const SignUp = () => {
         return;
       }
 
+      // Store signup data in sessionStorage for recovery if user exits OTP page
+      sessionStorage.setItem('pendingSignupData', JSON.stringify({
+        email: formData.email,
+        password: formData.password,
+        organizationName: formData.organizationName,
+      }));
+
       // Move to OTP verification step
       setStep('verify');
       setCountdown(60);
@@ -252,6 +259,9 @@ export const SignUp = () => {
           }
         }
       }
+
+      // Clear the pending signup data
+      sessionStorage.removeItem('pendingSignupData');
 
       // Navigate to dashboard
       navigate('/');

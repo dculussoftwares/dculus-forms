@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button, Input, Label, Card, CardContent, CardDescription, CardHeader, CardTitle, TypographyH2, TypographyP, TypographySmall } from "@dculus/ui";
-import { signIn } from "../lib/auth-client";
+import { signIn, emailOtp } from "../lib/auth-client";
 import { useTranslation } from "../hooks/useTranslation";
 
 export const SignIn = () => {
@@ -67,9 +67,32 @@ export const SignIn = () => {
       });
 
       if (response.error) {
-        setErrors({ 
-          submit: response.error.message || t('messages.invalidCredentials') 
-        });
+        // Check if the error is related to email verification
+        const errorMessage = response.error.message?.toLowerCase() || '';
+        if (errorMessage.includes('email') && (errorMessage.includes('verified') || errorMessage.includes('verification'))) {
+          // Send a new verification OTP
+          try {
+            await emailOtp.sendVerificationOtp({
+              email: formData.email,
+              type: 'email-verification',
+            });
+          } catch (otpError) {
+            console.error('Failed to send OTP:', otpError);
+          }
+          
+          // Redirect to email verification page with credentials
+          navigate('/verify-email', {
+            state: {
+              email: formData.email,
+              password: formData.password,
+              fromSignIn: true,
+            },
+          });
+        } else {
+          setErrors({ 
+            submit: response.error.message || t('messages.invalidCredentials') 
+          });
+        }
       } else {
         // Successful signin, redirect to dashboard
         navigate("/");

@@ -45,7 +45,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false, // For development
+    requireEmailVerification: true, // Block sign-in for unverified emails
     sendResetPassword: async ({ user, url }, _request) => {
       await sendResetPasswordEmail({
         to: user.email,
