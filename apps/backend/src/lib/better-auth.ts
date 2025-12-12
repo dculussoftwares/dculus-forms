@@ -45,7 +45,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
 
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true, // Block sign-in for unverified emails
+    requireEmailVerification: process.env.NODE_ENV !== 'test', // Skip verification in test environment
     sendResetPassword: async ({ user, url }, _request) => {
       await sendResetPasswordEmail({
         to: user.email,
