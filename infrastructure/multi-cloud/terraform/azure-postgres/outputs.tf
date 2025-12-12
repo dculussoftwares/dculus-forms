@@ -25,7 +25,13 @@ output "admin_password" {
 }
 
 output "connection_string" {
-  description = "PostgreSQL connection string (password is alphanumeric, no encoding needed)"
+  description = "PostgreSQL connection string via PgBouncer (port 6432)"
+  value       = "postgresql://${azurerm_postgresql_flexible_server.main.administrator_login}:${var.admin_password}@${azurerm_postgresql_flexible_server.main.fqdn}:6432/${azurerm_postgresql_flexible_server_database.main.name}?sslmode=require"
+  sensitive   = true
+}
+
+output "direct_connection_string" {
+  description = "PostgreSQL direct connection string (port 5432, bypasses PgBouncer)"
   value       = "postgresql://${azurerm_postgresql_flexible_server.main.administrator_login}:${var.admin_password}@${azurerm_postgresql_flexible_server.main.fqdn}:5432/${azurerm_postgresql_flexible_server_database.main.name}?sslmode=require"
   sensitive   = true
 }

@@ -105,16 +105,17 @@ resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_all" {
 }
 
 # PostgreSQL Configuration - Optimize for low resource usage
-resource "azurerm_postgresql_flexible_server_configuration" "max_connections" {
-  name      = "max_connections"
-  server_id = azurerm_postgresql_flexible_server.main.id
-  value     = "50"
-}
-
 resource "azurerm_postgresql_flexible_server_configuration" "shared_buffers" {
   name      = "shared_buffers"
   server_id = azurerm_postgresql_flexible_server.main.id
   value     = "16384" # 128MB in 8KB pages
+}
+
+# PgBouncer - Free connection pooling for better connection handling
+resource "azurerm_postgresql_flexible_server_configuration" "pgbouncer_enabled" {
+  name      = "pgbouncer.enabled"
+  server_id = azurerm_postgresql_flexible_server.main.id
+  value     = "true"
 }
 
 # Database
