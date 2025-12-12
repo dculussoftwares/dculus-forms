@@ -96,12 +96,6 @@ The Terraform configuration provides these outputs:
 
 ## Connection String Format
 
-**Via PgBouncer (recommended):**
-```
-postgresql://pgadmin:PASSWORD@SERVER.postgres.database.azure.com:6432/DATABASE_NAME?sslmode=require
-```
-
-**Direct connection (bypasses pooling):**
 ```
 postgresql://pgadmin:PASSWORD@SERVER.postgres.database.azure.com:5432/DATABASE_NAME?sslmode=require
 ```
@@ -129,7 +123,7 @@ If you need more performance, you can modify the SKU:
 - **SSL is required** by default (enforced in connection string)
 - **Collation**: en_US.UTF8
 - **Charset**: UTF8
-- **PgBouncer enabled**: Free connection pooling on port 6432 for efficient connection handling
+- **Maximum connections**: Limited to 50 for cost optimization
 - **Shared buffers**: Optimized for low resource usage (128MB)
 
 ## Parallel Deployment with MongoDB
