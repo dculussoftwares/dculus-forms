@@ -3,11 +3,8 @@ import { ApolloError } from '@apollo/client';
 import { Alert, AlertDescription, Card, CardContent, CardHeader, CardTitle, Button, ScrollArea } from '@dculus/ui';
 import { AlertTriangle, RefreshCw, LogIn, Home } from 'lucide-react';
 import { useTranslation } from '../hooks/useTranslation';
-import {
-  GRAPHQL_ERROR_CODES,
-  type GraphQLErrorCode,
-} from '@dculus/types/graphql';
-import { extractGraphQLErrorCode } from '../utils/graphqlErrors';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql';
+import { getErrorDetails } from '../utils/graphqlErrors';
 
 interface AuthorizationErrorBoundaryProps {
   children: React.ReactNode;
@@ -24,29 +21,18 @@ export const AuthorizationErrorBoundary: React.FC<AuthorizationErrorBoundaryProp
   fallbackTitle,
   fallbackDescription
 }) => {
-  const { t } = useTranslation('authorizationError');
+  const { t } = useTranslation('graphqlErrors');
   
   if (!error) {
     return <>{children}</>;
   }
 
   const errorMessage = error.message || 'An unknown error occurred';
-  const errorCode = extractGraphQLErrorCode(error);
-  const matchesCode = (code: GraphQLErrorCode) => errorCode === code;
+  const { code, titleKey, messageKey } = getErrorDetails(error);
 
-  const messageIncludes = (snippet: string) =>
-    errorMessage.toLowerCase().includes(snippet.toLowerCase());
-
-  const isAuthError =
-    matchesCode(GRAPHQL_ERROR_CODES.AUTHENTICATION_REQUIRED) ||
-    messageIncludes('authentication required');
-  const isAccessError =
-    matchesCode(GRAPHQL_ERROR_CODES.NO_ACCESS) ||
-    messageIncludes('access denied') ||
-    messageIncludes('not a member');
-  const isForbiddenError =
-    matchesCode(GRAPHQL_ERROR_CODES.FORBIDDEN) ||
-    messageIncludes('permission denied');
+  const isAuthError = code === GRAPHQL_ERROR_CODES.AUTHENTICATION_REQUIRED;
+  const isAccessError = code === GRAPHQL_ERROR_CODES.NO_ACCESS;
+  const isForbiddenError = code === GRAPHQL_ERROR_CODES.FORBIDDEN;
 
   const getErrorIcon = () => {
     if (isAuthError) return <LogIn className="h-4 w-4" />;
@@ -55,23 +41,17 @@ export const AuthorizationErrorBoundary: React.FC<AuthorizationErrorBoundaryProp
   };
 
   const getErrorTitle = () => {
-    if (isAuthError) return t('titles.authenticationRequired');
-    if (isAccessError) return t('titles.accessDenied');
-    if (isForbiddenError) return t('titles.permissionDenied');
-    return fallbackTitle || t('titles.fallback');
+    // Use translation if available, fallback to prop
+    const translatedTitle = t(titleKey);
+    if (translatedTitle !== titleKey) return translatedTitle;
+    return fallbackTitle || t('defaultTitle');
   };
 
   const getErrorDescription = () => {
-    if (isAuthError) {
-      return t('descriptions.authenticationRequired');
-    }
-    if (isAccessError) {
-      return t('descriptions.accessDenied');
-    }
-    if (isForbiddenError) {
-      return t('descriptions.permissionDenied');
-    }
-    return fallbackDescription || t('descriptions.fallback');
+    // Use translation if available, fallback to prop
+    const translatedMessage = t(messageKey);
+    if (translatedMessage !== messageKey) return translatedMessage;
+    return fallbackDescription || t('defaultMessage');
   };
 
   const getErrorVariant = (): "destructive" | "default" => {

@@ -1,0 +1,78 @@
+{
+    "codes": {
+        "AUTHENTICATION_REQUIRED": {
+            "title": "Authentication Required",
+            "message": "You need to sign in to access this resource."
+        },
+        "NO_ACCESS": {
+            "title": "Access Denied",
+            "message": "You don't have permission to access this resource."
+        },
+        "FORBIDDEN": {
+            "title": "Forbidden",
+            "message": "You don't have permission to perform this action."
+        },
+        "NOT_FOUND": {
+            "title": "Not Found",
+            "message": "The requested resource was not found."
+        },
+        "FORM_NOT_FOUND": {
+            "title": "Form Not Found",
+            "message": "The form you're looking for doesn't exist or has been deleted."
+        },
+        "FORM_NOT_PUBLISHED": {
+            "title": "Form Not Available",
+            "message": "This form is not currently published and cannot accept responses."
+        },
+        "RESPONSE_NOT_FOUND": {
+            "title": "Response Not Found",
+            "message": "The response you're looking for doesn't exist."
+        },
+        "TEMPLATE_NOT_FOUND": {
+            "title": "Template Not Found",
+            "message": "The template you're looking for doesn't exist."
+        },
+        "ORGANIZATION_NOT_FOUND": {
+            "title": "Organization Not Found",
+            "message": "The organization doesn't exist or you're not a member."
+        },
+        "SUBMISSION_LIMIT_EXCEEDED": {
+            "title": "Submission Limit Reached",
+            "message": "This form has reached its submission limit for the current subscription plan."
+        },
+        "VIEW_LIMIT_EXCEEDED": {
+            "title": "View Limit Reached",
+            "message": "This form has reached its view limit for the current subscription plan."
+        },
+        "MAX_RESPONSES_REACHED": {
+            "title": "Maximum Responses Reached",
+            "message": "This form has reached its maximum number of allowed responses."
+        },
+        "FORM_NOT_YET_OPEN": {
+            "title": "Form Not Yet Open",
+            "message": "This form is not yet open for submissions. Please check back later."
+        },
+        "FORM_CLOSED": {
+            "title": "Form Closed",
+            "message": "The submission period for this form has ended."
+        },
+        "BAD_USER_INPUT": {
+            "title": "Invalid Input",
+            "message": "The data you provided is invalid. Please check and try again."
+        },
+        "INTERNAL_SERVER_ERROR": {
+            "title": "Server Error",
+            "message": "Something went wrong on our end. Please try again later."
+        }
+    },
+    "defaultTitle": "Error",
+    "defaultMessage": "An unexpected error occurred. Please try again.",
+    "actions": {
+        "retry": "Try Again",
+        "goHome": "Go to Homepage",
+        "signIn": "Sign In"
+    },
+    "labels": {
+        "technicalError": "Technical Error"
+    }
+}

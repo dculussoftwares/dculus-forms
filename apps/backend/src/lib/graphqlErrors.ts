@@ -13,53 +13,28 @@ type CreateGraphQLErrorOptions = Omit<GraphQLErrorOptions, 'extensions'> & {
   extensions?: Record<string, unknown>;
 };
 
-const normalizeMessage = (message: string) => message.toLowerCase();
-
-const inferGraphQLErrorCode = (
-  message: string,
-  extensionCode?: unknown
-): GraphQLErrorCode => {
+/**
+ * Get error code from extensions or use fallback.
+ * No inference from message - code must be explicitly provided.
+ */
+const getErrorCode = (extensionCode?: unknown): GraphQLErrorCode => {
   if (isGraphQLErrorCode(extensionCode)) {
     return extensionCode;
   }
-
-  const normalizedMessage = normalizeMessage(message);
-
-  if (normalizedMessage.includes('authentication required')) {
-    return GRAPHQL_ERROR_CODES.AUTHENTICATION_REQUIRED;
-  }
-
-  if (
-    normalizedMessage.includes('access denied') ||
-    normalizedMessage.includes('permission denied') ||
-    normalizedMessage.includes('not a member') ||
-    normalizedMessage.includes('no access')
-  ) {
-    return GRAPHQL_ERROR_CODES.NO_ACCESS;
-  }
-
-  if (normalizedMessage.includes('not found')) {
-    return GRAPHQL_ERROR_CODES.NOT_FOUND;
-  }
-
-  if (
-    normalizedMessage.includes('validation') ||
-    normalizedMessage.includes('invalid') ||
-    normalizedMessage.includes('bad request')
-  ) {
-    return GRAPHQL_ERROR_CODES.BAD_USER_INPUT;
-  }
-
   return GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR;
 };
 
+/**
+ * Custom GraphQL error that requires an explicit error code.
+ * Use createGraphQLError() helper for cleaner syntax.
+ */
 export class GraphQLError extends BaseGraphQLError {
   constructor(message: string, options?: GraphQLErrorOptions) {
     const extensions = {
       ...options?.extensions,
     };
 
-    const code = inferGraphQLErrorCode(message, extensions.code);
+    const code = getErrorCode(extensions.code);
 
     super(message, {
       ...options,
@@ -71,6 +46,13 @@ export class GraphQLError extends BaseGraphQLError {
   }
 }
 
+/**
+ * Create a GraphQL error with an explicit error code.
+ * This is the preferred way to throw errors in resolvers.
+ * 
+ * @example
+ * throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
+ */
 export const createGraphQLError = (
   message: string,
   code: GraphQLErrorCode,
@@ -85,8 +67,12 @@ export const createGraphQLError = (
   });
 };
 
+/**
+ * Extract error code from a formatted GraphQL error.
+ * Returns the code from extensions or INTERNAL_SERVER_ERROR as fallback.
+ */
 export const deriveGraphQLErrorCode = (
   error: Pick<GraphQLFormattedError, 'message' | 'extensions'>
 ): GraphQLErrorCode => {
-  return inferGraphQLErrorCode(error.message, error.extensions?.code);
+  return getErrorCode(error.extensions?.code);
 };

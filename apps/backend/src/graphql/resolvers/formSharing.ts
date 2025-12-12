@@ -1,12 +1,13 @@
 import { prisma } from '../../lib/prisma.js';
 import { BetterAuthContext, requireAuth, requireOrganizationMembership } from '../../middleware/better-auth-middleware.js';
 import { randomUUID } from 'crypto';
-import { GraphQLError } from '#graphql-errors';
+import { createGraphQLError } from '#graphql-errors';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 
 // Permission levels mapping
 export const PermissionLevel = {
   OWNER: 'OWNER',
-  EDITOR: 'EDITOR', 
+  EDITOR: 'EDITOR',
   VIEWER: 'VIEWER',
   NO_ACCESS: 'NO_ACCESS'
 } as const;
@@ -45,7 +46,7 @@ export const checkFormAccess = async (userId: string, formId: string, requiredPe
   });
 
   if (!form) {
-    throw new GraphQLError('Form not found');
+    throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
   }
 
   // 🔒 SECURITY: Check organization membership FIRST (before owner check)
@@ -65,20 +66,20 @@ export const checkFormAccess = async (userId: string, formId: string, requiredPe
   const explicitPermission = form.permissions.find(p => p.userId === userId);
   if (explicitPermission) {
     const hasRequiredAccess = checkPermissionLevel(explicitPermission.permission as Permission, requiredPermission);
-    return { 
-      hasAccess: hasRequiredAccess, 
-      permission: explicitPermission.permission as Permission, 
-      form 
+    return {
+      hasAccess: hasRequiredAccess,
+      permission: explicitPermission.permission as Permission,
+      form
     };
   }
 
   // Check sharing scope for organization members
   if (form.sharingScope === SharingScope.ALL_ORG_MEMBERS) {
     const hasRequiredAccess = checkPermissionLevel(form.defaultPermission as Permission, requiredPermission);
-    return { 
-      hasAccess: hasRequiredAccess, 
-      permission: form.defaultPermission as Permission, 
-      form 
+    return {
+      hasAccess: hasRequiredAccess,
+      permission: form.defaultPermission as Permission,
+      form
     };
   }
 
@@ -102,11 +103,11 @@ export const formSharingResolvers = {
   Query: {
     formPermissions: async (_: any, { formId }: { formId: string }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);
-      
+
       // Check if user has access to manage permissions (must be owner or editor)
       const accessCheck = await checkFormAccess(context.auth.user!.id, formId, PermissionLevel.EDITOR);
       if (!accessCheck.hasAccess) {
-        throw new GraphQLError('Access denied: Insufficient permissions');
+        throw createGraphQLError('Access denied: Insufficient permissions', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
       return await prisma.formPermission.findMany({
@@ -167,11 +168,11 @@ export const formSharingResolvers = {
       const searchTerm = filters?.search?.trim();
       const searchFilter = searchTerm
         ? {
-            OR: [
-              { title: { contains: searchTerm, mode: 'insensitive' } },
-              { description: { contains: searchTerm, mode: 'insensitive' } }
-            ]
-          }
+          OR: [
+            { title: { contains: searchTerm, mode: 'insensitive' } },
+            { description: { contains: searchTerm, mode: 'insensitive' } }
+          ]
+        }
         : null;
 
       let whereCondition: any;
@@ -199,9 +200,9 @@ export const formSharingResolvers = {
         case 'ALL': {
           const ownerClause = searchFilter
             ? {
-                createdById: userId,
-                AND: [searchFilter]
-              }
+              createdById: userId,
+              AND: [searchFilter]
+            }
             : { createdById: userId };
 
           const sharedClause = {
@@ -219,7 +220,7 @@ export const formSharingResolvers = {
           break;
         }
         default: {
-          throw new GraphQLError(`Invalid category: ${category}. Must be OWNER, SHARED, or ALL`);
+          throw createGraphQLError(`Invalid category: ${category}. Must be OWNER, SHARED, or ALL`, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
         }
       }
 
@@ -286,7 +287,7 @@ export const formSharingResolvers = {
       // Check if user has permission to share the form (must be owner or editor)
       const accessCheck = await checkFormAccess(userId, input.formId, PermissionLevel.EDITOR);
       if (!accessCheck.hasAccess) {
-        throw new GraphQLError('Access denied: Insufficient permissions to share this form');
+        throw createGraphQLError('Access denied: Insufficient permissions to share this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
       // Update form sharing settings
@@ -315,8 +316,9 @@ export const formSharingResolvers = {
         const invalidUsers = userIds.filter(id => !validUserIds.has(id));
 
         if (invalidUsers.length > 0) {
-          throw new GraphQLError(
-            `Cannot grant permissions to users outside organization: ${invalidUsers.join(', ')}`
+          throw createGraphQLError(
+            `Cannot grant permissions to users outside organization: ${invalidUsers.join(', ')}`,
+            GRAPHQL_ERROR_CODES.NO_ACCESS
           );
         }
 
@@ -373,7 +375,7 @@ export const formSharingResolvers = {
       // Check if user has permission to manage permissions
       const accessCheck = await checkFormAccess(grantedById, input.formId, PermissionLevel.EDITOR);
       if (!accessCheck.hasAccess) {
-        throw new GraphQLError('Access denied: Insufficient permissions');
+        throw createGraphQLError('Access denied: Insufficient permissions', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
       // 🔒 SECURITY: Verify target user is a member of the form's organization
@@ -385,12 +387,12 @@ export const formSharingResolvers = {
       });
 
       if (!isMember) {
-        throw new GraphQLError('Cannot grant permissions to users outside organization');
+        throw createGraphQLError('Cannot grant permissions to users outside organization', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
       // Prevent users from changing owner permissions
       if (accessCheck.form.createdById === input.userId) {
-        throw new GraphQLError('Cannot change permissions for form owner');
+        throw createGraphQLError('Cannot change permissions for form owner', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
       // Remove access if permission is NO_ACCESS
@@ -401,7 +403,7 @@ export const formSharingResolvers = {
             userId: input.userId
           }
         });
-        
+
         return {
           id: '',
           formId: input.formId,
@@ -453,12 +455,12 @@ export const formSharingResolvers = {
       // Check if user has permission to manage permissions
       const accessCheck = await checkFormAccess(grantedById, formId, PermissionLevel.EDITOR);
       if (!accessCheck.hasAccess) {
-        throw new GraphQLError('Access denied: Insufficient permissions');
+        throw createGraphQLError('Access denied: Insufficient permissions', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
       // Prevent removing access from form owner
       if (accessCheck.form.createdById === userId) {
-        throw new GraphQLError('Cannot remove access from form owner');
+        throw createGraphQLError('Cannot remove access from form owner', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
       const result = await prisma.formPermission.deleteMany({

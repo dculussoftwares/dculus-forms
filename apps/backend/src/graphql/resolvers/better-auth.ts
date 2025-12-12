@@ -5,7 +5,8 @@ import {
 } from '../../middleware/better-auth-middleware.js';
 import { prisma } from '../../lib/prisma.js';
 import { nanoid } from 'nanoid';
-import { GraphQLError } from '#graphql-errors';
+import { createGraphQLError } from '#graphql-errors';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { logger } from '../../lib/logger.js';
 import {
   createChargebeeCustomer,
@@ -104,7 +105,7 @@ export const betterAuthResolvers = {
       });
 
       if (existingMembership) {
-        throw new GraphQLError('User can only belong to one organization. You are already a member of an organization.');
+        throw createGraphQLError('User can only belong to one organization. You are already a member of an organization.', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
       }
 
       const organizationId = nanoid();
@@ -189,7 +190,7 @@ export const betterAuthResolvers = {
       });
 
       if (!organization) {
-        throw new GraphQLError('Organization not found');
+        throw createGraphQLError('Organization not found', GRAPHQL_ERROR_CODES.ORGANIZATION_NOT_FOUND);
       }
 
       return organization;

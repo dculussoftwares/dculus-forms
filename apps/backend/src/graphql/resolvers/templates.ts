@@ -1,4 +1,5 @@
-import { GraphQLError } from '#graphql-errors';
+import { createGraphQLError, GraphQLError } from '#graphql-errors';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import {
   getAllTemplates,
   getTemplateById,
@@ -56,7 +57,7 @@ export const templatesResolvers = {
         if (error instanceof GraphQLError) {
           throw error;
         }
-        throw new GraphQLError('Failed to fetch templates');
+        throw createGraphQLError('Failed to fetch templates', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
 
@@ -66,7 +67,7 @@ export const templatesResolvers = {
         requireAuthentication(context);
         const template = await getTemplateById(args.id);
         if (!template) {
-          throw new GraphQLError('Template not found');
+          throw createGraphQLError('Template not found', GRAPHQL_ERROR_CODES.TEMPLATE_NOT_FOUND);
         }
         return template;
       } catch (error) {
@@ -75,7 +76,7 @@ export const templatesResolvers = {
         if (error instanceof GraphQLError) {
           throw error;
         }
-        throw new GraphQLError('Failed to fetch template');
+        throw createGraphQLError('Failed to fetch template', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
 
@@ -94,7 +95,7 @@ export const templatesResolvers = {
         if (error instanceof GraphQLError) {
           throw error;
         }
-        throw new GraphQLError('Failed to fetch templates by category');
+        throw createGraphQLError('Failed to fetch templates by category', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
 
@@ -109,7 +110,7 @@ export const templatesResolvers = {
         if (error instanceof GraphQLError) {
           throw error;
         }
-        throw new GraphQLError('Failed to fetch template categories');
+        throw createGraphQLError('Failed to fetch template categories', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
   },
@@ -126,7 +127,7 @@ export const templatesResolvers = {
         if (error instanceof GraphQLError) {
           throw error;
         }
-        throw new GraphQLError('Failed to create template');
+        throw createGraphQLError('Failed to create template', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
 
@@ -136,7 +137,7 @@ export const templatesResolvers = {
         requireSystemLevelRole(context);
         const updatedTemplate = await updateTemplate(args.id, args.input);
         if (!updatedTemplate) {
-          throw new GraphQLError('Template not found');
+          throw createGraphQLError('Template not found', GRAPHQL_ERROR_CODES.TEMPLATE_NOT_FOUND);
         }
         return updatedTemplate;
       } catch (error) {
@@ -145,7 +146,7 @@ export const templatesResolvers = {
         if (error instanceof GraphQLError) {
           throw error;
         }
-        throw new GraphQLError('Failed to update template');
+        throw createGraphQLError('Failed to update template', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
 
@@ -160,7 +161,7 @@ export const templatesResolvers = {
         if (error instanceof GraphQLError) {
           throw error;
         }
-        throw new GraphQLError('Failed to delete template');
+        throw createGraphQLError('Failed to delete template', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
 
@@ -175,25 +176,25 @@ export const templatesResolvers = {
         // Get the template
         const template = await getTemplateById(args.templateId);
         if (!template) {
-          throw new GraphQLError('Template not found');
+          throw createGraphQLError('Template not found', GRAPHQL_ERROR_CODES.TEMPLATE_NOT_FOUND);
         }
 
         // Generate form ID upfront
         const newFormId = randomUUID();
-        
+
         // Clone the template schema to avoid modifying the original
         const formSchema = JSON.parse(JSON.stringify(template.formSchema));
-        
+
         // Check if template has a background image and copy it for the new form
         // Check for both truthy value AND non-empty string
         if (formSchema.layout && formSchema.layout.backgroundImageKey && formSchema.layout.backgroundImageKey.trim() !== '') {
           try {
             // Copy the background image file
             const copiedFile = await copyFileForForm(formSchema.layout.backgroundImageKey, newFormId);
-            
+
             // Update the form schema with the new background image key
             formSchema.layout.backgroundImageKey = copiedFile.key;
-            
+
             // Create FormFile record for the copied image
             await prisma.formFile.create({
               data: {
@@ -238,7 +239,7 @@ export const templatesResolvers = {
         if (error instanceof GraphQLError) {
           throw error;
         }
-        throw new GraphQLError('Failed to create form from template');
+        throw createGraphQLError('Failed to create form from template', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
   },

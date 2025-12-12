@@ -1,4 +1,5 @@
-import { GraphQLError } from '#graphql-errors';
+import { createGraphQLError, GraphQLError } from '#graphql-errors';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { analyticsService } from '../../services/analyticsService.js';
 import { prisma } from '../../lib/prisma.js';
 import { emitFormViewed } from '../../subscriptions/events.js';
@@ -9,11 +10,11 @@ export const analyticsResolvers = {
     trackFormView: async (_: any, { input }: { input: TrackFormViewInput }, context: any) => {
       try {
         // Get client IP from request
-        const clientIP = context.req?.ip || 
-                        context.req?.connection?.remoteAddress || 
-                        context.req?.socket?.remoteAddress || 
-                        (context.req?.headers?.['x-forwarded-for'] as string)?.split(',')[0];
-        
+        const clientIP = context.req?.ip ||
+          context.req?.connection?.remoteAddress ||
+          context.req?.socket?.remoteAddress ||
+          (context.req?.headers?.['x-forwarded-for'] as string)?.split(',')[0];
+
         // Verify form exists and is published
         const form = await prisma.form.findUnique({
           where: { id: input.formId },
@@ -21,11 +22,11 @@ export const analyticsResolvers = {
         });
 
         if (!form) {
-          throw new GraphQLError('Form not found');
+          throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
         }
 
         if (!form.isPublished) {
-          throw new GraphQLError('Form is not published');
+          throw createGraphQLError('Form is not published', GRAPHQL_ERROR_CODES.FORM_NOT_PUBLISHED);
         }
 
         const visitorGeo = context.req?.visitorGeo || context.res?.locals?.visitorGeo;
@@ -57,11 +58,11 @@ export const analyticsResolvers = {
         };
       } catch (error) {
         logger.error('Error in trackFormView mutation:', error);
-        
+
         if (error instanceof GraphQLError) {
           throw error;
         }
-        
+
         // Don't throw error for analytics failures to avoid disrupting form viewing
         return {
           success: false
@@ -76,13 +77,13 @@ export const analyticsResolvers = {
           where: { id: input.formId },
           select: { id: true, isPublished: true }
         });
-        
+
         if (!form) {
-          throw new GraphQLError('Form not found');
+          throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
         }
-        
+
         if (!form.isPublished) {
-          throw new GraphQLError('Form is not published');
+          throw createGraphQLError('Form is not published', GRAPHQL_ERROR_CODES.FORM_NOT_PUBLISHED);
         }
 
         await analyticsService.updateFormStartTime({
@@ -105,23 +106,23 @@ export const analyticsResolvers = {
     trackFormSubmission: async (_: any, { input }: { input: TrackFormSubmissionInput }, context: any) => {
       try {
         // Get client IP from request
-        const clientIP = context.req?.ip || 
-                        context.req?.connection?.remoteAddress || 
-                        context.req?.socket?.remoteAddress || 
-                        (context.req?.headers?.['x-forwarded-for'] as string)?.split(',')[0];
-        
+        const clientIP = context.req?.ip ||
+          context.req?.connection?.remoteAddress ||
+          context.req?.socket?.remoteAddress ||
+          (context.req?.headers?.['x-forwarded-for'] as string)?.split(',')[0];
+
         // Verify form exists and is published
         const form = await prisma.form.findUnique({
           where: { id: input.formId },
           select: { id: true, isPublished: true }
         });
-        
+
         if (!form) {
-          throw new GraphQLError('Form not found');
+          throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
         }
-        
+
         if (!form.isPublished) {
-          throw new GraphQLError('Form is not published');
+          throw createGraphQLError('Form is not published', GRAPHQL_ERROR_CODES.FORM_NOT_PUBLISHED);
         }
 
         // Verify response exists
@@ -131,13 +132,13 @@ export const analyticsResolvers = {
         });
 
         if (!response) {
-          throw new GraphQLError('Response not found');
+          throw createGraphQLError('Response not found', GRAPHQL_ERROR_CODES.RESPONSE_NOT_FOUND);
         }
 
         if (response.formId !== input.formId) {
-          throw new GraphQLError('Response does not belong to this form');
+          throw createGraphQLError('Response does not belong to this form', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
         }
-        
+
         const visitorGeo = context.req?.visitorGeo || context.res?.locals?.visitorGeo;
 
         // Track the submission analytics
@@ -151,17 +152,17 @@ export const analyticsResolvers = {
           completionTimeSeconds: input.completionTimeSeconds,
           visitorGeo
         }, clientIP);
-        
+
         return {
           success: true
         };
       } catch (error) {
         logger.error('Error in trackFormSubmission mutation:', error);
-        
+
         if (error instanceof GraphQLError) {
           throw error;
         }
-        
+
         // Don't throw error for analytics failures to avoid disrupting form submission
         return {
           success: false
@@ -169,15 +170,15 @@ export const analyticsResolvers = {
       }
     }
   },
-  
+
   Query: {
     formAnalytics: async (_: any, { formId, timeRange }: { formId: string; timeRange?: TimeRangeInput }, context: any) => {
       try {
         // Verify user has access to this form
         if (!context.user) {
-          throw new GraphQLError('Authentication required');
+          throw createGraphQLError('Authentication required', GRAPHQL_ERROR_CODES.AUTHENTICATION_REQUIRED);
         }
-        
+
         // Check if user has access to the form (either owner or member of organization)
         const form = await prisma.form.findUnique({
           where: { id: formId },
@@ -191,16 +192,16 @@ export const analyticsResolvers = {
             }
           }
         });
-        
+
         if (!form) {
-          throw new GraphQLError('Form not found');
+          throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
         }
-        
+
         // Check if user is a member of the organization
         if (form.organization.members.length === 0) {
-          throw new GraphQLError('Access denied');
+          throw createGraphQLError('Access denied', GRAPHQL_ERROR_CODES.NO_ACCESS);
         }
-        
+
         // Parse time range if provided
         let parsedTimeRange;
         if (timeRange) {
@@ -209,19 +210,19 @@ export const analyticsResolvers = {
             end: new Date(timeRange.end)
           };
         }
-        
+
         // Get analytics data
         const analytics = await analyticsService.getFormAnalytics(formId, parsedTimeRange);
-        
+
         return analytics;
       } catch (error) {
         logger.error('Error in formAnalytics query:', error);
-        
+
         if (error instanceof GraphQLError) {
           throw error;
         }
-        
-        throw new GraphQLError('Failed to fetch analytics data');
+
+        throw createGraphQLError('Failed to fetch analytics data', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
 
@@ -229,9 +230,9 @@ export const analyticsResolvers = {
       try {
         // Verify user has access to this form
         if (!context.user) {
-          throw new GraphQLError('Authentication required');
+          throw createGraphQLError('Authentication required', GRAPHQL_ERROR_CODES.AUTHENTICATION_REQUIRED);
         }
-        
+
         // Check if user has access to the form (either owner or member of organization)
         const form = await prisma.form.findUnique({
           where: { id: formId },
@@ -245,16 +246,16 @@ export const analyticsResolvers = {
             }
           }
         });
-        
+
         if (!form) {
-          throw new GraphQLError('Form not found');
+          throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
         }
-        
+
         // Check if user is a member of the organization
         if (form.organization.members.length === 0) {
-          throw new GraphQLError('Access denied');
+          throw createGraphQLError('Access denied', GRAPHQL_ERROR_CODES.NO_ACCESS);
         }
-        
+
         // Parse time range if provided
         let parsedTimeRange;
         if (timeRange) {
@@ -263,19 +264,19 @@ export const analyticsResolvers = {
             end: new Date(timeRange.end)
           };
         }
-        
+
         // Get submission analytics data
         const submissionAnalytics = await analyticsService.getFormSubmissionAnalytics(formId, parsedTimeRange);
-        
+
         return submissionAnalytics;
       } catch (error) {
         logger.error('Error in formSubmissionAnalytics query:', error);
-        
+
         if (error instanceof GraphQLError) {
           throw error;
         }
-        
-        throw new GraphQLError('Failed to fetch submission analytics data');
+
+        throw createGraphQLError('Failed to fetch submission analytics data', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     }
   }

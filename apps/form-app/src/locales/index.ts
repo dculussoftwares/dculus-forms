@@ -121,6 +121,8 @@ import enUpgradeModal from './en/upgradeModal.json';
 import taUpgradeModal from './ta/upgradeModal.json';
 import enAuthorizationError from './en/authorizationError.json';
 import taAuthorizationError from './ta/authorizationError.json';
+import enGraphqlErrors from './en/graphqlErrors.json';
+import taGraphqlErrors from './ta/graphqlErrors.json';
 import enFormViewer from './en/formViewer.json';
 import taFormViewer from './ta/formViewer.json';
 import enFormBuilder from './en/formBuilder.json';
@@ -281,6 +283,7 @@ const enTranslations = {
   appSidebar: enAppSidebar,
   upgradeModal: enUpgradeModal,
   authorizationError: enAuthorizationError,
+  graphqlErrors: enGraphqlErrors,
   formViewer: enFormViewer,
   formBuilder: enFormBuilder,
   responseHistory: enResponseHistory,
@@ -394,6 +397,7 @@ const taTranslations = {
   appSidebar: taAppSidebar,
   upgradeModal: taUpgradeModal,
   authorizationError: taAuthorizationError,
+  graphqlErrors: taGraphqlErrors,
   formViewer: taFormViewer,
   formBuilder: taFormBuilder,
   responseHistory: taResponseHistory,

@@ -15,7 +15,8 @@ import { copyFileForForm } from '../../services/fileUploadService.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 import { prisma } from '../../lib/prisma.js';
 import { randomUUID } from 'crypto';
-import { GraphQLError } from '#graphql-errors';
+import { createGraphQLError } from '#graphql-errors';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
 import { logger } from '../../lib/logger.js';
 
@@ -23,61 +24,61 @@ export const formsResolvers = {
   Query: {
     form: async (_: any, { id }: { id: string }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);
-      
+
       // Check if user has access to this form
       const accessCheck = await checkFormAccess(context.auth.user!.id, id, PermissionLevel.VIEWER);
       if (!accessCheck.hasAccess) {
-        throw new GraphQLError('Access denied: You do not have permission to view this form');
+        throw createGraphQLError('Access denied: You do not have permission to view this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
-      
+
       return accessCheck.form;
     },
     formByShortUrl: async (_: any, { shortUrl }: { shortUrl: string }) => {
       const form = await getFormByShortUrl(shortUrl);
-      if (!form) throw new Error("Form not found");
-      if (!form.isPublished) throw new Error("Form is not published");
+      if (!form) throw createGraphQLError("Form not found", GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
+      if (!form.isPublished) throw createGraphQLError("Form is not published", GRAPHQL_ERROR_CODES.FORM_NOT_PUBLISHED);
 
       // Check subscription usage limits
       const usageExceeded = await checkUsageExceeded(form.organizationId);
       if (usageExceeded.viewsExceeded) {
-        throw new Error("Form view limit exceeded for this organization's subscription plan");
+        throw createGraphQLError("Form view limit exceeded for this organization's subscription plan", GRAPHQL_ERROR_CODES.VIEW_LIMIT_EXCEEDED);
       }
 
       // Check submission limits
       if (form.settings?.submissionLimits) {
         const limits = form.settings.submissionLimits;
-        
+
         // Check maximum responses limit
         if (limits.maxResponses?.enabled) {
           const currentResponseCount = await prisma.response.count({
             where: { formId: form.id }
           });
-          
+
           if (currentResponseCount >= limits.maxResponses.limit) {
-            throw new Error("Form has reached its maximum response limit");
+            throw createGraphQLError("Form has reached its maximum response limit", GRAPHQL_ERROR_CODES.MAX_RESPONSES_REACHED);
           }
         }
-        
+
         // Check time window limits
         if (limits.timeWindow?.enabled) {
           const now = new Date();
-          
+
           if (limits.timeWindow.startDate) {
             const startDate = new Date(limits.timeWindow.startDate + 'T00:00:00');
             if (now < startDate) {
-              throw new Error("Form is not yet open for submissions");
+              throw createGraphQLError("Form is not yet open for submissions", GRAPHQL_ERROR_CODES.FORM_NOT_YET_OPEN);
             }
           }
-          
+
           if (limits.timeWindow.endDate) {
             const endDate = new Date(limits.timeWindow.endDate + 'T23:59:59');
             if (now > endDate) {
-              throw new Error("Form submission period has ended");
+              throw createGraphQLError("Form submission period has ended", GRAPHQL_ERROR_CODES.FORM_CLOSED);
             }
           }
         }
       }
-      
+
       return form;
     },
   },
@@ -85,11 +86,11 @@ export const formsResolvers = {
     metadata: async (parent: any) => {
       const formId = parent.id;
       const metadata = await getFormMetadata(formId);
-      
+
       if (!metadata) {
         return null;
       }
-      
+
       return {
         pageCount: metadata.pageCount,
         fieldCount: metadata.fieldCount,
@@ -164,12 +165,15 @@ export const formsResolvers = {
 
         // Get submission analytics for average completion time
         prisma.formSubmissionAnalytics.findMany({
-          where: { responseId: { in:
-            await prisma.response.findMany({
-              where: { formId },
-              select: { id: true }
-            }).then(responses => responses.map(r => r.id))
-          }},
+          where: {
+            responseId: {
+              in:
+                await prisma.response.findMany({
+                  where: { formId },
+                  select: { id: true }
+                }).then(responses => responses.map(r => r.id))
+            }
+          },
           select: { completionTimeSeconds: true }
         })
       ]);
@@ -213,16 +217,16 @@ export const formsResolvers = {
       const hasFormSchema = !!input.formSchema;
 
       if (!hasTemplateId && !hasFormSchema) {
-        throw new GraphQLError('Either templateId or formSchema must be provided');
+        throw createGraphQLError('Either templateId or formSchema must be provided', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
       }
 
       if (hasTemplateId && hasFormSchema) {
-        throw new GraphQLError('Cannot provide both templateId and formSchema');
+        throw createGraphQLError('Cannot provide both templateId and formSchema', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
       }
 
       // Generate form ID upfront
       const newFormId = generateId();
-      
+
       let formSchema: any;
 
       // 📋 Get schema from template OR use provided schema
@@ -230,7 +234,7 @@ export const formsResolvers = {
         // Existing flow: Fetch template and clone schema
         const template = await getTemplateById(input.templateId!);
         if (!template) {
-          throw new Error('Template not found');
+          throw createGraphQLError('Template not found', GRAPHQL_ERROR_CODES.TEMPLATE_NOT_FOUND);
         }
         formSchema = JSON.parse(JSON.stringify(template.formSchema));
       } else {
@@ -239,11 +243,11 @@ export const formsResolvers = {
 
         // Validate schema structure
         if (!formSchema.pages || !Array.isArray(formSchema.pages)) {
-          throw new GraphQLError('Invalid formSchema: pages array is required');
+          throw createGraphQLError('Invalid formSchema: pages array is required', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
         }
 
         if (!formSchema.layout || typeof formSchema.layout !== 'object') {
-          throw new GraphQLError('Invalid formSchema: layout object is required');
+          throw createGraphQLError('Invalid formSchema: layout object is required', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
         }
 
         // Ensure backgroundImageKey is initialized
@@ -251,20 +255,20 @@ export const formsResolvers = {
           formSchema.layout.backgroundImageKey = '';
         }
       }
-      
+
       // Track if we need to create FormFile record after form creation
       let copiedFileInfo: any = null;
-      
+
       // Always copy background images from templates to ensure unique keys for each form
       // Check for both truthy value AND non-empty string
       if (formSchema.layout && formSchema.layout.backgroundImageKey && formSchema.layout.backgroundImageKey.trim() !== '') {
         try {
           // Always copy the background image to create a unique key with formId
           const copiedFile = await copyFileForForm(formSchema.layout.backgroundImageKey, newFormId);
-          
+
           // Update the form schema with the new unique key
           formSchema.layout.backgroundImageKey = copiedFile.key;
-          
+
           // Store file info to create FormFile record AFTER form is created
           copiedFileInfo = copiedFile;
         } catch (copyError) {
@@ -289,10 +293,10 @@ export const formsResolvers = {
         organizationId: input.organizationId,
         createdById: context.auth.user!.id,
       };
-      
+
       // Create the form first (this creates the database record)
       const newForm = await createForm(formData, formSchema);
-      
+
       // NOW create the FormFile record after the form exists in the database
       if (copiedFileInfo) {
         try {
@@ -318,7 +322,7 @@ export const formsResolvers = {
     },
     updateForm: async (_: any, { id, input }: { id: string; input: any }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);
-      
+
       // Analyze input to determine required permission level
       const hasProp = (prop: string) =>
         Object.prototype.hasOwnProperty.call(input, prop);
@@ -326,10 +330,10 @@ export const formsResolvers = {
         ['title', 'description', 'settings'].some(hasProp);
       const hasCriticalChanges =
         ['isPublished', 'shortUrl', 'organizationId'].some(hasProp);
-      
+
       // Determine required permission level based on update type
       let requiredPermission: string = PermissionLevel.EDITOR;
-      
+
       if (hasCriticalChanges) {
         // Critical changes like publishing, URL changes, org changes require OWNER
         requiredPermission = PermissionLevel.OWNER;
@@ -337,25 +341,25 @@ export const formsResolvers = {
         // Layout and content changes require EDITOR
         requiredPermission = PermissionLevel.EDITOR;
       }
-      
+
       // Check if user has required access level
       const accessCheck = await checkFormAccess(context.auth.user!.id, id, requiredPermission as any);
       if (!accessCheck.hasAccess) {
         const permissionName = requiredPermission === 'OWNER' ? 'owner' : 'editor';
-        throw new GraphQLError(`Access denied: ${permissionName} permissions required for this type of update`);
+        throw createGraphQLError(`Access denied: ${permissionName} permissions required for this type of update`, GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
-      
+
       // Additional validation for specific fields
       if (hasProp('organizationId') && input.organizationId !== accessCheck.form.organizationId) {
         // Only allow moving forms within same organization for now
-        throw new GraphQLError('Access denied: Cannot transfer form to different organization');
+        throw createGraphQLError('Access denied: Cannot transfer form to different organization', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
-      
+
       if (hasProp('createdById')) {
         // Never allow changing form ownership through update
-        throw new GraphQLError('Access denied: Cannot change form ownership through update');
+        throw createGraphQLError('Access denied: Cannot change form ownership through update', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
-      
+
       const updateData = {
         ...input,
         updatedAt: new Date(),
@@ -364,13 +368,13 @@ export const formsResolvers = {
     },
     deleteForm: async (_: any, { id }: { id: string }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);
-      
+
       // Check if user has OWNER access to delete this form
       const accessCheck = await checkFormAccess(context.auth.user!.id, id, PermissionLevel.OWNER);
       if (!accessCheck.hasAccess) {
-        throw new GraphQLError('Access denied: Only the form owner can delete this form');
+        throw createGraphQLError('Access denied: Only the form owner can delete this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
-      
+
       return await deleteForm(id, context.auth.user!.id);
     },
     regenerateShortUrl: async (_: any, { id }: { id: string }, context: { auth: BetterAuthContext }) => {
@@ -380,7 +384,7 @@ export const formsResolvers = {
       // Regenerating URL breaks all existing shared links - this is a critical operation
       const accessCheck = await checkFormAccess(context.auth.user!.id, id, PermissionLevel.OWNER);
       if (!accessCheck.hasAccess) {
-        throw new GraphQLError('Access denied: Only form owners can regenerate the URL (this breaks all existing shared links)');
+        throw createGraphQLError('Access denied: Only form owners can regenerate the URL (this breaks all existing shared links)', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
       return await regenerateShortUrl(id);
@@ -391,7 +395,7 @@ export const formsResolvers = {
       // Duplicating requires edit access to the source form
       const accessCheck = await checkFormAccess(context.auth.user!.id, id, PermissionLevel.EDITOR);
       if (!accessCheck.hasAccess) {
-        throw new GraphQLError('Access denied: You do not have permission to duplicate this form');
+        throw createGraphQLError('Access denied: You do not have permission to duplicate this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
       return await duplicateFormService(id, context.auth.user!.id);

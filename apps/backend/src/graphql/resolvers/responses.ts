@@ -23,7 +23,8 @@ import { emitFormSubmitted } from '../../plugins/events.js';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
 import { emitFormSubmitted as emitSubscriptionFormSubmitted } from '../../subscriptions/events.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
-import { GraphQLError } from '#graphql-errors';
+import { createGraphQLError } from '#graphql-errors';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { logger } from '../../lib/logger.js';
 
 export const responsesResolvers = {
@@ -45,7 +46,7 @@ export const responsesResolvers = {
     ) => {
       requireAuth(context.auth);
       const response = await getResponseById(id);
-      if (!response) throw new Error('Response not found');
+      if (!response) throw createGraphQLError('Response not found', GRAPHQL_ERROR_CODES.RESPONSE_NOT_FOUND);
       return response;
     },
     responsesByForm: async (
@@ -74,7 +75,7 @@ export const responsesResolvers = {
       // Check if the user has access to this form before allowing response access
       const form = await getFormById(formId);
       if (!form) {
-        throw new Error('Form not found');
+        throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
       }
 
       // Check if user is a member of the organization that owns this form
@@ -83,8 +84,9 @@ export const responsesResolvers = {
         !userSession ||
         userSession.activeOrganizationId !== form.organizationId
       ) {
-        throw new Error(
-          'Access denied: You do not have permission to view responses for this form'
+        throw createGraphQLError(
+          'Access denied: You do not have permission to view responses for this form',
+          GRAPHQL_ERROR_CODES.NO_ACCESS
         );
       }
 
@@ -104,18 +106,18 @@ export const responsesResolvers = {
       // Get form first to check if it exists and is published
       const form = await getFormById(input.formId);
       if (!form) {
-        throw new Error('Form not found');
+        throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
       }
 
       // Check if form is published - critical business rule
       if (!form.isPublished) {
-        throw new Error('Form is not published and cannot accept responses');
+        throw createGraphQLError('Form is not published and cannot accept responses', GRAPHQL_ERROR_CODES.FORM_NOT_PUBLISHED);
       }
 
       // Check subscription usage limits
       const usageExceeded = await checkUsageExceeded(form.organizationId);
       if (usageExceeded.submissionsExceeded) {
-        throw new Error('Form submission limit exceeded for this organization subscription plan');
+        throw createGraphQLError('Form submission limit exceeded for this organization subscription plan', GRAPHQL_ERROR_CODES.SUBMISSION_LIMIT_EXCEEDED);
       }
 
       // Check submission limits if they exist
@@ -133,7 +135,7 @@ export const responsesResolvers = {
           );
 
           if (currentResponseCount >= limits.maxResponses.limit) {
-            throw new Error('Form has reached its maximum response limit');
+            throw createGraphQLError('Form has reached its maximum response limit', GRAPHQL_ERROR_CODES.MAX_RESPONSES_REACHED);
           }
         }
 
@@ -146,14 +148,14 @@ export const responsesResolvers = {
               limits.timeWindow.startDate + 'T00:00:00'
             );
             if (now < startDate) {
-              throw new Error('Form is not yet open for submissions');
+              throw createGraphQLError('Form is not yet open for submissions', GRAPHQL_ERROR_CODES.FORM_NOT_YET_OPEN);
             }
           }
 
           if (limits.timeWindow.endDate) {
             const endDate = new Date(limits.timeWindow.endDate + 'T23:59:59');
             if (now > endDate) {
-              throw new Error('Form submission period has ended');
+              throw createGraphQLError('Form submission period has ended', GRAPHQL_ERROR_CODES.FORM_CLOSED);
             }
           }
         }
@@ -286,13 +288,13 @@ export const responsesResolvers = {
       // 1. Validate response exists
       const existingResponse = await getResponseById(input.responseId);
       if (!existingResponse) {
-        throw new Error('Response not found');
+        throw createGraphQLError('Response not found', GRAPHQL_ERROR_CODES.RESPONSE_NOT_FOUND);
       }
 
       // 2. Check user permissions (form owner/editor access)
       const form = await getFormById(existingResponse.formId);
       if (!form) {
-        throw new Error('Form not found');
+        throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
       }
 
       const userSession = context.auth.session;
@@ -300,8 +302,9 @@ export const responsesResolvers = {
         !userSession ||
         userSession.activeOrganizationId !== form.organizationId
       ) {
-        throw new Error(
-          'Access denied: You do not have permission to edit this response'
+        throw createGraphQLError(
+          'Access denied: You do not have permission to edit this response',
+          GRAPHQL_ERROR_CODES.NO_ACCESS
         );
       }
 
@@ -330,7 +333,7 @@ export const responsesResolvers = {
       // 🔒 SECURITY: Fetch response with form information
       const existingResponse = await getResponseById(id);
       if (!existingResponse) {
-        throw new Error('Response not found');
+        throw createGraphQLError('Response not found', GRAPHQL_ERROR_CODES.RESPONSE_NOT_FOUND);
       }
 
       // 🔒 SECURITY: Verify user has OWNER access to the form before allowing response deletion
@@ -340,7 +343,7 @@ export const responsesResolvers = {
         PermissionLevel.OWNER
       );
       if (!accessCheck.hasAccess) {
-        throw new GraphQLError('Access denied: You need OWNER access to delete responses for this form');
+        throw createGraphQLError('Access denied: You need OWNER access to delete responses for this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
       return await deleteResponse(id);
@@ -368,12 +371,12 @@ export const extendedResponsesResolvers = {
       // Check permissions
       const existingResponse = await getResponseById(responseId);
       if (!existingResponse) {
-        throw new Error('Response not found');
+        throw createGraphQLError('Response not found', GRAPHQL_ERROR_CODES.RESPONSE_NOT_FOUND);
       }
 
       const form = await getFormById(existingResponse.formId);
       if (!form) {
-        throw new Error('Form not found');
+        throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
       }
 
       const userSession = context.auth.session;
@@ -381,8 +384,9 @@ export const extendedResponsesResolvers = {
         !userSession ||
         userSession.activeOrganizationId !== form.organizationId
       ) {
-        throw new Error(
-          'Access denied: You do not have permission to view edit history for this response'
+        throw createGraphQLError(
+          'Access denied: You do not have permission to view edit history for this response',
+          GRAPHQL_ERROR_CODES.NO_ACCESS
         );
       }
 

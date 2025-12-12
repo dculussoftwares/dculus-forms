@@ -1,4 +1,5 @@
-import { GraphQLError } from '#graphql-errors';
+import { createGraphQLError, GraphQLError } from '#graphql-errors';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { prisma } from '../../lib/prisma.js';
 import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
@@ -25,7 +26,7 @@ export const formFileResolvers = {
           PermissionLevel.VIEWER
         );
         if (!accessCheck.hasAccess) {
-          throw new GraphQLError('Access denied: You do not have permission to view files for this form');
+          throw createGraphQLError('Access denied: You do not have permission to view files for this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
         }
 
         // Build where clause
@@ -48,7 +49,7 @@ export const formFileResolvers = {
         if (error instanceof GraphQLError) {
           throw error;
         }
-        throw new GraphQLError(`Failed to fetch form files: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw createGraphQLError(`Failed to fetch form files: ${error instanceof Error ? error.message : 'Unknown error'}`, GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
   },
