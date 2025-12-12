@@ -3,6 +3,16 @@
 ## Overview
 Dculus Forms is a modern, full-stack form builder and management system designed for creating, managing, and analyzing forms with advanced features including quiz grading, analytics, and subscription management.
 
+## ⚠️ Public Repository
+
+This is a **public open-source repository**. When contributing, please ensure:
+
+- **No secrets in code**: Never commit API keys, passwords, connection strings, or tokens
+- **Use environment variables**: All sensitive configuration must use `.env` files (which are gitignored)
+- **Infrastructure secrets**: Terraform variables for passwords/keys must be provided via GitHub Secrets or CI/CD variables
+- **Review before commit**: Double-check that no sensitive data is included in commits
+- **Follow security best practices**: See the Security Best Practices section in [conventions.md](./conventions.md)
+
 ## Architecture
 
 ### Monorepo Structure
