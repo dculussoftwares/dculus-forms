@@ -13,7 +13,6 @@ import ResponsesAnalytics from './pages/ResponsesAnalytics';
 import ResponsesIndividual from './pages/ResponsesIndividual';
 import { SignUp } from './pages/SignUp';
 import { SignIn } from './pages/SignIn';
-import { SignInOTP } from './pages/SignInOTP';
 import { ForgotPassword } from './pages/ForgotPassword';
 import Settings from './pages/Settings';
 import InviteAcceptance from './pages/InviteAcceptance';
@@ -36,7 +35,6 @@ function App() {
           <Routes>
           {/* Public routes */}
           <Route path="/signin" element={<SignIn />} />
-          <Route path="/signin/otp" element={<SignInOTP />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/invite/:invitationId" element={<InviteAcceptance />} />

@@ -6,8 +6,6 @@ import enSignUp from './en/signUp.json';
 import taSignUp from './ta/signUp.json';
 import enForgotPassword from './en/forgotPassword.json';
 import taForgotPassword from './ta/forgotPassword.json';
-import enSignInOtp from './en/signInOtp.json';
-import taSignInOtp from './ta/signInOtp.json';
 import enInviteAcceptance from './en/inviteAcceptance.json';
 import taInviteAcceptance from './ta/inviteAcceptance.json';
 import enSettings from './en/settings.json';
@@ -223,7 +221,6 @@ const enTranslations = {
   signIn: enSignIn,
   signUp: enSignUp,
   forgotPassword: enForgotPassword,
-  signInOtp: enSignInOtp,
   inviteAcceptance: enInviteAcceptance,
   settings: enSettings,
   formsList: enFormsList,
@@ -336,7 +333,6 @@ const taTranslations = {
   signIn: taSignIn,
   signUp: taSignUp,
   forgotPassword: taForgotPassword,
-  signInOtp: taSignInOtp,
   inviteAcceptance: taInviteAcceptance,
   settings: taSettings,
   formsList: taFormsList,

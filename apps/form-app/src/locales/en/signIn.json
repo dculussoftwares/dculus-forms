@@ -35,10 +35,8 @@
     },
     "actions": {
       "submit": "Sign in",
-      "submitting": "Signing in...",
-      "useOtp": "Sign in with Email Code"
-    },
-    "divider": "Or"
+      "submitting": "Signing in..."
+    }
   },
   "links": {
     "forgotPassword": "Forgot your password?",
