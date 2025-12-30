@@ -6,14 +6,16 @@ resource "cloudflare_api_token" "r2_access" {
 
   policies = [{
     effect = "allow"
-    permission_groups = [
-      "bf7481a1826f439697cb59a20b22293e", # Workers R2 Storage Write
-      "6a018a9f2fc74eb6b293b0c548f38b39", # Workers R2 Storage Bucket Item Read
-      "2efd5506f9c8494dacb1fa10a3e7d5b6", # Workers R2 Storage Bucket Item Write
-    ]
-    resources = {
+    permission_groups = [{
+      id = "bf7481a1826f439697cb59a20b22293e" # Workers R2 Storage Write
+      }, {
+      id = "6a018a9f2fc74eb6b293b0c548f38b39" # Workers R2 Storage Bucket Item Read
+      }, {
+      id = "2efd5506f9c8494dacb1fa10a3e7d5b6" # Workers R2 Storage Bucket Item Write
+    }]
+    resources = jsonencode({
       # Grant access to all R2 buckets in the account
       "com.cloudflare.api.account.${var.cloudflare_account_id}" = "*"
-    }
+    })
   }]
 }
