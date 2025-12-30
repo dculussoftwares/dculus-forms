@@ -214,7 +214,7 @@ if [ -n "$CERT_EXISTS" ]; then
     print_warning "Managed certificate already exists: ${CERT_EXISTS}"
     CERT_NAME="${CERT_EXISTS}"
 else
-    CERT_NAME="mc-${CONTAINER_APP_NAME}-$(echo ${CUSTOM_DOMAIN} | tr '.' '-')"
+    CERT_NAME="mc-$(echo ${CUSTOM_DOMAIN} | tr '.' '-')"
 
     print_info "Creating new managed certificate: ${CERT_NAME}"
     print_warning "This may take up to 15 minutes..."
