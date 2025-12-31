@@ -17,29 +17,26 @@ provider "azurerm" {
 
 # Locals for resource naming with environment suffix
 locals {
-  resource_group_name   = "${var.project_name}-${var.environment}-rg"
-  app_name              = "${var.project_name}-${var.environment}"
-  full_container_image  = "${var.container_image}:${var.container_image_tag}"
-  public_cdn_domain     = "public-cdn-${var.environment}.dculus.com"
-  resolved_s3_cdn_url   = var.public_s3_cdn_url != "" ? var.public_s3_cdn_url : "https://${local.public_cdn_domain}"
-  
+  resource_group_name  = "${var.project_name}-${var.environment}-rg"
+  app_name             = "${var.project_name}-${var.environment}"
+  full_container_image = "${var.container_image}:${var.container_image_tag}"
+  public_cdn_domain    = "public-cdn-${var.environment}.dculus.com"
+  resolved_s3_cdn_url  = var.public_s3_cdn_url != "" ? var.public_s3_cdn_url : "https://${local.public_cdn_domain}"
+
   # Cloudflare service domain for BETTER_AUTH_URL
-  service_domain        = "form-services-${var.environment}.dculus.com"
-  resolved_auth_url     = var.better_auth_url != "" ? var.better_auth_url : "https://${local.service_domain}"
-  
+  # Production uses clean domain without -production suffix
+  service_domain    = var.environment == "production" ? "form-services.dculus.com" : "form-services-${var.environment}.dculus.com"
+  resolved_auth_url = var.better_auth_url != "" ? var.better_auth_url : "https://${local.service_domain}"
+
   # Dynamically generate frontend URLs based on environment
-  # These match the Cloudflare Pages deployment URLs
-  form_app_domain       = "form-app-${var.environment}.${var.root_domain}"
-  form_viewer_domain    = "viewer-app-${var.environment}.${var.root_domain}"
-  admin_app_domain      = "form-admin-app-${var.environment}.${var.root_domain}"
-  
-  # For production, also include the apex domain aliases
-  production_domains    = var.environment == "production" ? [
-    "https://form-app.${var.root_domain}",
-    "https://viewer-app.${var.root_domain}",
-    "https://form-admin-app.${var.root_domain}"
-  ] : []
-  
+  # Production uses clean domains (form-app.dculus.com) while dev/staging use suffixed domains
+  form_app_domain    = var.environment == "production" ? "form-app.${var.root_domain}" : "form-app-${var.environment}.${var.root_domain}"
+  form_viewer_domain = var.environment == "production" ? "viewer-app.${var.root_domain}" : "viewer-app-${var.environment}.${var.root_domain}"
+  admin_app_domain   = var.environment == "production" ? "form-admin-app.${var.root_domain}" : "form-admin-app-${var.environment}.${var.root_domain}"
+
+  # Production domains are now primary (no separate aliases needed)
+  production_domains = []
+
   # Build CORS origins dynamically
   # 1. Environment-specific frontend domains
   frontend_domains = [
@@ -47,17 +44,17 @@ locals {
     "https://${local.form_viewer_domain}",
     "https://${local.admin_app_domain}"
   ]
-  
+
   # 2. Development localhost URLs (only for dev/staging)
   localhost_origins = var.environment != "production" ? [
     "http://localhost:3000",
     "http://localhost:3002",
     "http://localhost:5173"
   ] : []
-  
+
   # 3. Additional custom origins from variable (if any)
   custom_origins = var.cors_origins != "" ? split(",", var.cors_origins) : []
-  
+
   # Combine all origins and remove duplicates
   all_cors_origins = distinct(concat(
     local.frontend_domains,
@@ -65,7 +62,7 @@ locals {
     local.localhost_origins,
     local.custom_origins
   ))
-  
+
   # Convert to comma-separated string for environment variable
   cors_origins_string = join(",", local.all_cors_origins)
 }

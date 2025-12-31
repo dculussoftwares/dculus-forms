@@ -13,7 +13,7 @@ provider "cloudflare" {
 }
 
 locals {
-  service_hostname = "${var.service_domain_prefix}-${var.environment}.${var.root_domain}"
+  service_hostname = var.environment == "production" ? "${var.service_domain_prefix}.${var.root_domain}" : "${var.service_domain_prefix}-${var.environment}.${var.root_domain}"
 }
 
 # DNS record that routes the service hostname through Cloudflare to the Azure Container App ingress
