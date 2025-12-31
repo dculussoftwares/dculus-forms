@@ -1,8 +1,20 @@
 import React, { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle, Tabs, TabsList, TabsTrigger } from '@dculus/ui';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+} from '@dculus/ui';
 import { Globe, TrendingUp, BarChart3, Map } from 'lucide-react';
-import { CountryStats, RegionStats, CityStats } from '../../hooks/useFormAnalytics';
+import {
+  CountryStats,
+  RegionStats,
+  CityStats,
+} from '../../hooks/useFormAnalytics';
 import { WorldMapVisualization } from './WorldMapVisualization';
 import { useTranslation } from '../../hooks/useTranslation';
 
@@ -32,7 +44,8 @@ const COLORS = [
 const CustomTooltip = ({ active, payload, dataMode, t }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
-    const metricLabel = dataMode === 'submissions' ? t('submissions') : t('views');
+    const metricLabel =
+      dataMode === 'submissions' ? t('submissions') : t('views');
     return (
       <div className="bg-white p-3 border rounded-lg shadow-lg">
         <p className="font-semibold text-gray-900">{data.name}</p>
@@ -61,9 +74,10 @@ const GeographicBreakdown: React.FC<GeographicBreakdownProps> = ({
   regions,
   cities,
   dataMode,
-  t
+  t,
 }) => {
-  const metricLabel = dataMode === 'submissions' ? t('submissions') : t('views');
+  const metricLabel =
+    dataMode === 'submissions' ? t('submissions') : t('views');
 
   const sections: Array<{
     key: string;
@@ -93,7 +107,9 @@ const GeographicBreakdown: React.FC<GeographicBreakdownProps> = ({
       formatName: (entry) => (entry as CityStats).name,
       formatMeta: (entry) => {
         const city = entry as CityStats;
-        const parts = [city.region, city.countryCode?.toUpperCase()].filter(Boolean);
+        const parts = [city.region, city.countryCode?.toUpperCase()].filter(
+          Boolean
+        );
         return parts.length ? parts.join(' • ') : undefined;
       },
     },
@@ -114,32 +130,32 @@ const GeographicBreakdown: React.FC<GeographicBreakdownProps> = ({
             ) : (
               <div className="space-y-3">
                 {section.data.slice(0, 5).map((entry, index) => {
-                  const meta = section.formatMeta ? section.formatMeta(entry) : undefined;
+                  const meta = section.formatMeta
+                    ? section.formatMeta(entry)
+                    : undefined;
                   return (
-                  <div
-                    key={`${section.key}-${index}`}
-                    className="flex items-center justify-between"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {section.formatName(entry)}
-                      </p>
-                      {meta && (
-                        <p className="text-xs text-gray-500">
-                          {meta}
+                    <div
+                      key={`${section.key}-${index}`}
+                      className="flex items-center justify-between"
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {section.formatName(entry)}
                         </p>
-                      )}
+                        {meta && (
+                          <p className="text-xs text-gray-500">{meta}</p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {entry.count}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {entry.percentage.toFixed(1)}% · {metricLabel}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-gray-900">
-                        {entry.count}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {entry.percentage.toFixed(1)}% · {metricLabel}
-                      </p>
-                    </div>
-                  </div>
-                );
+                  );
                 })}
                 {section.data.length > 5 && (
                   <p className="text-xs text-gray-400 text-center">
@@ -157,20 +173,27 @@ const GeographicBreakdown: React.FC<GeographicBreakdownProps> = ({
   );
 };
 
-const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+const renderCustomLabel = ({
+  cx,
+  cy,
+  midAngle,
+  innerRadius,
+  outerRadius,
+  percent,
+}: any) => {
   if (percent < 0.05) return null; // Don't show labels for slices < 5%
-  
+
   const RADIAN = Math.PI / 180;
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
   return (
-    <text 
-      x={x} 
-      y={y} 
-      fill="white" 
-      textAnchor={x > cx ? 'start' : 'end'} 
+    <text
+      x={x}
+      y={y}
+      fill="white"
+      textAnchor={x > cx ? 'start' : 'end'}
       dominantBaseline="central"
       className="text-xs font-medium"
     >
@@ -191,16 +214,19 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
   citySubmissionData = [],
   totalViews,
   totalSubmissions = 0,
-  loading = false
+  loading = false,
 }) => {
   const { t } = useTranslation('geographicChart');
   const [viewType, setViewType] = useState<ViewType>('map');
   const [dataMode, setDataMode] = useState<DataMode>('views');
   // Get current data based on mode
   const currentData = dataMode === 'submissions' ? submissionData : data;
-  const currentRegions = dataMode === 'submissions' ? regionSubmissionData : regionData;
-  const currentCities = dataMode === 'submissions' ? citySubmissionData : cityData;
-  const currentTotal = dataMode === 'submissions' ? totalSubmissions : totalViews;
+  const currentRegions =
+    dataMode === 'submissions' ? regionSubmissionData : regionData;
+  const currentCities =
+    dataMode === 'submissions' ? citySubmissionData : cityData;
+  const currentTotal =
+    dataMode === 'submissions' ? totalSubmissions : totalViews;
 
   // Show world map if requested
   if (viewType === 'map') {
@@ -213,7 +239,10 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
           onDataModeChange={setDataMode}
           loading={loading}
           headerActions={
-            <ViewToggleButtons viewType={viewType} onViewTypeChange={setViewType} />
+            <ViewToggleButtons
+              viewType={viewType}
+              onViewTypeChange={setViewType}
+            />
           }
         />
         <GeographicBreakdown
@@ -236,9 +265,15 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
               <Globe className="h-4 w-4 mr-2 text-blue-600" />
               {t('title')}
             </div>
-            <div className="flex items-center gap-2">
-              <DataModeToggle dataMode={dataMode} onDataModeChange={setDataMode} />
-              <ViewToggleButtons viewType={viewType} onViewTypeChange={setViewType} />
+            <div className="flex items-center gap-3">
+              <DataModeToggle
+                dataMode={dataMode}
+                onDataModeChange={setDataMode}
+              />
+              <ViewToggleButtons
+                viewType={viewType}
+                onViewTypeChange={setViewType}
+              />
             </div>
           </CardTitle>
         </CardHeader>
@@ -252,10 +287,11 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
   }
 
   if (!currentData || currentData.length === 0) {
-    const emptyMessage = dataMode === 'submissions' 
-      ? 'Data will appear once visitors submit your form'
-      : 'Data will appear once visitors access your form';
-    
+    const emptyMessage =
+      dataMode === 'submissions'
+        ? 'Data will appear once visitors submit your form'
+        : 'Data will appear once visitors access your form';
+
     return (
       <Card>
         <CardHeader className="pb-3">
@@ -264,9 +300,15 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
               <Globe className="h-4 w-4 mr-2 text-blue-600" />
               {t('title')}
             </div>
-            <div className="flex items-center gap-2">
-              <DataModeToggle dataMode={dataMode} onDataModeChange={setDataMode} />
-              <ViewToggleButtons viewType={viewType} onViewTypeChange={setViewType} />
+            <div className="flex items-center gap-3">
+              <DataModeToggle
+                dataMode={dataMode}
+                onDataModeChange={setDataMode}
+              />
+              <ViewToggleButtons
+                viewType={viewType}
+                onViewTypeChange={setViewType}
+              />
             </div>
           </CardTitle>
         </CardHeader>
@@ -274,9 +316,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
           <div className="h-64 flex flex-col items-center justify-center text-gray-500">
             <Globe className="h-12 w-12 mb-3 text-gray-300" />
             <p className="text-sm">{t('noData')}</p>
-            <p className="text-xs text-gray-400 mt-1">
-              {emptyMessage}
-            </p>
+            <p className="text-xs text-gray-400 mt-1">{emptyMessage}</p>
           </div>
         </CardContent>
       </Card>
@@ -286,20 +326,22 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
   // Prepare data for the pie chart
   const chartData = currentData.slice(0, 8).map((country, index) => ({
     ...country,
-    color: COLORS[index % COLORS.length]
+    color: COLORS[index % COLORS.length],
   }));
 
   // Calculate "Others" if there are more than 8 countries
   if (currentData.length > 8) {
-    const othersCount = currentData.slice(8).reduce((sum, country) => sum + country.count, 0);
+    const othersCount = currentData
+      .slice(8)
+      .reduce((sum, country) => sum + country.count, 0);
     const othersPercentage = (othersCount / currentTotal) * 100;
-    
+
     chartData.push({
       name: 'Others',
       code: 'OTH',
       count: othersCount,
       percentage: othersPercentage,
-      color: '#6b7280' // gray-500
+      color: '#6b7280', // gray-500
     });
   }
 
@@ -319,86 +361,102 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
                 <TrendingUp className="h-3 w-3 mr-1" />
                 {currentData.length} countries
               </div>
-              <DataModeToggle dataMode={dataMode} onDataModeChange={setDataMode} />
-              <ViewToggleButtons viewType={viewType} onViewTypeChange={setViewType} />
+              <DataModeToggle
+                dataMode={dataMode}
+                onDataModeChange={setDataMode}
+              />
+              <ViewToggleButtons
+                viewType={viewType}
+                onViewTypeChange={setViewType}
+              />
             </div>
           </CardTitle>
         </CardHeader>
-      <CardContent>
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={renderCustomLabel}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="count"
-              >
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip dataMode={dataMode} t={t} />} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-        
-        {/* Top Country Summary */}
-        {topCountry && (
-          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-900">{t('topCountry')}</p>
-                <p className="text-lg font-bold text-blue-800">{topCountry.name}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-blue-600">
-                  {topCountry.count} {dataMode === 'submissions' ? t('submissions') : t('views')}
-                </p>
-                <p className="text-lg font-bold text-blue-800">
-                  {topCountry.percentage.toFixed(1)}%
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Countries List */}
-        <div className="mt-4 space-y-2">
-          {currentData.slice(0, 5).map((country, index) => (
-            <div key={country.code || country.name} className="flex items-center justify-between py-1">
-              <div className="flex items-center">
-                <div 
-                  className="w-3 h-3 rounded-full mr-3" 
-                  style={{ backgroundColor: COLORS[index % COLORS.length] }}
+        <CardContent>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={chartData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={renderCustomLabel}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="count"
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  content={<CustomTooltip dataMode={dataMode} t={t} />}
                 />
-                <span className="text-sm text-gray-700">{country.name}</span>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Top Country Summary */}
+          {topCountry && (
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-blue-900">
+                    {t('topCountry')}
+                  </p>
+                  <p className="text-lg font-bold text-blue-800">
+                    {topCountry.name}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-blue-600">
+                    {topCountry.count}{' '}
+                    {dataMode === 'submissions' ? t('submissions') : t('views')}
+                  </p>
+                  <p className="text-lg font-bold text-blue-800">
+                    {topCountry.percentage.toFixed(1)}%
+                  </p>
+                </div>
               </div>
-              <div className="text-right">
-                <span className="text-sm font-medium text-gray-900">
-                  {country.count}
-                </span>
-                <span className="text-xs text-gray-500 ml-2">
-                  ({country.percentage.toFixed(1)}%)
-                </span>
-              </div>
-            </div>
-          ))}
-          
-          {currentData.length > 5 && (
-            <div className="pt-2 border-t">
-              <p className="text-xs text-gray-500 text-center">
-                +{currentData.length - 5} more countries
-              </p>
             </div>
           )}
-        </div>
-      </CardContent>
-    </Card>
+
+          {/* Countries List */}
+          <div className="mt-4 space-y-2">
+            {currentData.slice(0, 5).map((country, index) => (
+              <div
+                key={country.code || country.name}
+                className="flex items-center justify-between py-1"
+              >
+                <div className="flex items-center">
+                  <div
+                    className="w-3 h-3 rounded-full mr-3"
+                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                  />
+                  <span className="text-sm text-gray-700">{country.name}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-sm font-medium text-gray-900">
+                    {country.count}
+                  </span>
+                  <span className="text-xs text-gray-500 ml-2">
+                    ({country.percentage.toFixed(1)}%)
+                  </span>
+                </div>
+              </div>
+            ))}
+
+            {currentData.length > 5 && (
+              <div className="pt-2 border-t">
+                <p className="text-xs text-gray-500 text-center">
+                  +{currentData.length - 5} more countries
+                </p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
       <GeographicBreakdown
         countries={currentData}
         regions={currentRegions}
@@ -416,7 +474,10 @@ interface ViewToggleButtonsProps {
   onViewTypeChange: (viewType: ViewType) => void;
 }
 
-const ViewToggleButtons: React.FC<ViewToggleButtonsProps> = ({ viewType, onViewTypeChange }) => {
+const ViewToggleButtons: React.FC<ViewToggleButtonsProps> = ({
+  viewType,
+  onViewTypeChange,
+}) => {
   const { t } = useTranslation('geographicChart');
 
   return (
@@ -445,7 +506,10 @@ interface DataModeToggleProps {
   onDataModeChange: (mode: DataMode) => void;
 }
 
-const DataModeToggle: React.FC<DataModeToggleProps> = ({ dataMode, onDataModeChange }) => {
+const DataModeToggle: React.FC<DataModeToggleProps> = ({
+  dataMode,
+  onDataModeChange,
+}) => {
   const { t } = useTranslation('geographicChart');
 
   return (
