@@ -264,6 +264,7 @@ export class CollaborationManager {
       this.updateFromYJS();
       this.loadingCallback(false);
       this.setupUndoManager();
+      this.setupAwarenessListener();
     };
 
     this.provider.on('connect', onConnect);
@@ -277,6 +278,53 @@ export class CollaborationManager {
     });
   }
 
+
+  /**
+   * Set up awareness listener for tracking collaborators
+   */
+  private setupAwarenessListener(): void {
+    if (!this.provider?.awareness || !this.awarenessCallback) return;
+
+    const awareness = this.provider.awareness;
+
+    const handleAwarenessChange = () => {
+      const collaborators = this.getCollaborators();
+      this.awarenessCallback?.(collaborators);
+    };
+
+    awareness.on('change', handleAwarenessChange);
+    this.observerCleanups.push(() => awareness.off('change', handleAwarenessChange));
+
+    // Trigger initial callback
+    handleAwarenessChange();
+  }
+
+  /**
+   * Get current collaborators from awareness
+   */
+  getCollaborators(): CollaboratorInfo[] {
+    if (!this.provider?.awareness) return [];
+
+    const awareness = this.provider.awareness;
+    const states = awareness.getStates();
+    const collaborators: CollaboratorInfo[] = [];
+
+    states.forEach((state: any, clientId: number) => {
+      if (clientId === awareness.clientID) return; // Skip self
+      if (state.user) {
+        collaborators.push({
+          id: state.user.id || String(clientId),
+          name: state.user.name || 'Anonymous',
+          email: state.user.email,
+          color: state.user.color || generateUserColor(String(clientId)),
+          pageId: state.user.pageId,
+          fieldId: state.user.fieldId,
+        });
+      }
+    });
+
+    return collaborators;
+  }
   private setupObservers(): void {
     if (!this.ydoc) return;
 
@@ -509,10 +557,28 @@ export class CollaborationManager {
     this.ydoc.transact(fn, userId);
   }
 
+
   /**
    * Get the current user origin
    */
   getUserOrigin(): string {
     return this.currentUserId || 'local-user';
+  }
+
+  /**
+   * Set the current user's information for awareness
+   */
+  setCurrentUser(userId: string, userName: string, email?: string): void {
+    this.currentUserId = userId;
+    this.currentUserName = userName;
+
+    if (this.provider?.awareness) {
+      this.provider.awareness.setLocalStateField('user', {
+        id: userId,
+        name: userName,
+        email,
+        color: generateUserColor(userId),
+      });
+    }
   }
 }

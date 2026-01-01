@@ -51,6 +51,13 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
     set({ isLoading });
   };
 
+  /**
+   * Callback when collaborators change (awareness)
+   */
+  const awarenessCallback = (collaborators: any[]) => {
+    set({ collaborators });
+  };
+
   return {
     // Initial state
     isConnected: false,
@@ -59,6 +66,7 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
     ydoc: null,
     provider: null,
     observerCleanups: [],
+    collaborators: [],
 
     /**
      * Initialize collaboration for a form
@@ -72,7 +80,8 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
         collaborationManager = new CollaborationManager(
           updateCallback,
           connectionCallback,
-          loadingCallback
+          loadingCallback,
+          awarenessCallback
         );
       }
 

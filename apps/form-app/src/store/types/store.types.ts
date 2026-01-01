@@ -17,6 +17,7 @@ import { FieldData } from '../collaboration/CollaborationManager';
 export interface CollaborationSlice {
   // Connection state
   isConnected: boolean;
+  collaborators: import('../collaboration/CollaborationManager').CollaboratorInfo[];
   isLoading: boolean;
   formId: string | null;
 

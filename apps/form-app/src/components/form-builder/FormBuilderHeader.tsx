@@ -34,6 +34,7 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { ShareModal } from '../sharing/ShareModal';
 import { PermissionBadge } from './PermissionBadge';
 import { UndoRedoButtons } from './UndoRedoButtons';
+import { CollaboratorAvatars } from './CollaboratorAvatars';
 import { DUPLICATE_FORM, UPDATE_FORM } from '../../graphql/mutations';
 import { getFormViewerUrl } from '../../lib/config';
 
@@ -270,6 +271,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
             <div className="flex items-center space-x-3">
               <PermissionBadge />
               <UndoRedoButtons />
+              <CollaboratorAvatars />
               <div className="flex items-center space-x-2">
                 {isLoading ? (
                   <>
