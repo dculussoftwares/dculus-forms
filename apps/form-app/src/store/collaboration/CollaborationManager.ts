@@ -99,36 +99,36 @@ const deserializePagesFromYJS = (pagesArray: Y.Array<Y.Map<any>>): FormPage[] =>
 
     const fields: FormField[] = fieldsArray
       ? fieldsArray.toArray().map(fieldMap => {
-          const fieldData = extractFieldData(fieldMap);
+        const fieldData = extractFieldData(fieldMap);
 
-          const validationYMap = fieldMap.get('validation');
-          let validationObj: any;
+        const validationYMap = fieldMap.get('validation');
+        let validationObj: any;
 
-          if (validationYMap && validationYMap instanceof Y.Map) {
-            validationObj = {
-              required: validationYMap.get('required') || false,
-              type: validationYMap.get('type') || FieldType.FILLABLE_FORM_FIELD,
-              minLength: validationYMap.get('minLength'),
-              maxLength: validationYMap.get('maxLength'),
-              minSelections: validationYMap.get('minSelections'),
-              maxSelections: validationYMap.get('maxSelections'),
-            };
-          } else {
-            validationObj = {
-              required: fieldData.required,
-              type:
-                fieldData.type === FieldType.TEXT_INPUT_FIELD || fieldData.type === FieldType.TEXT_AREA_FIELD
-                  ? FieldType.TEXT_FIELD_VALIDATION
-                  : fieldData.type === FieldType.CHECKBOX_FIELD
-                    ? FieldType.CHECKBOX_FIELD_VALIDATION
-                    : FieldType.FILLABLE_FORM_FIELD,
-              minLength: fieldData.min,
-              maxLength: fieldData.max,
-            };
-          }
+        if (validationYMap && validationYMap instanceof Y.Map) {
+          validationObj = {
+            required: validationYMap.get('required') || false,
+            type: validationYMap.get('type') || FieldType.FILLABLE_FORM_FIELD,
+            minLength: validationYMap.get('minLength'),
+            maxLength: validationYMap.get('maxLength'),
+            minSelections: validationYMap.get('minSelections'),
+            maxSelections: validationYMap.get('maxSelections'),
+          };
+        } else {
+          validationObj = {
+            required: fieldData.required,
+            type:
+              fieldData.type === FieldType.TEXT_INPUT_FIELD || fieldData.type === FieldType.TEXT_AREA_FIELD
+                ? FieldType.TEXT_FIELD_VALIDATION
+                : fieldData.type === FieldType.CHECKBOX_FIELD
+                  ? FieldType.CHECKBOX_FIELD_VALIDATION
+                  : FieldType.FILLABLE_FORM_FIELD,
+            minLength: fieldData.min,
+            maxLength: fieldData.max,
+          };
+        }
 
-          return deserializeFormField({ ...fieldData, validation: validationObj });
-        })
+        return deserializeFormField({ ...fieldData, validation: validationObj });
+      })
       : [];
 
     return {
@@ -153,7 +153,7 @@ export class CollaborationManager {
     private readonly updateCallback: UpdateCallback,
     private readonly connectionCallback: ConnectionCallback,
     private readonly loadingCallback: LoadingCallback
-  ) {}
+  ) { }
 
   async initialize(formId: string): Promise<void> {
     if (!formId || formId.trim() === '') {
@@ -366,6 +366,7 @@ export class CollaborationManager {
         customCTAButtonName: layoutMap.get('customCTAButtonName') || 'Submit',
         backgroundImageKey: layoutMap.get('backgroundImageKey') || '',
         pageMode: layoutMap.get('pageMode') || PageModeType.MULTIPAGE,
+        isCustomBackgroundColorEnabled: layoutMap.get('isCustomBackgroundColorEnabled') || false,
       };
     }
 
