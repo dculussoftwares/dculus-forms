@@ -127,12 +127,6 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
 
       if (!ydoc || !isReady) return;
 
-      console.log(`🔄 FieldsSlice - Updating field ${fieldId} in page ${pageId}:`, {
-        updates,
-        isRichTextUpdate: updates.content !== undefined,
-        richTextContent: updates.content ? updates.content.substring(0, 100) + '...' : 'N/A',
-      });
-
       const formSchemaMap = ydoc.getMap('formSchema');
       const pagesArray = getOrCreatePagesArray(formSchemaMap);
 
@@ -165,14 +159,6 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       }
 
       Object.entries(updates).forEach(([key, value]) => {
-        console.log(`📝 FieldsSlice - Processing update key '${key}':`, {
-          fieldId,
-          key,
-          value: key === 'content' ? (typeof value === 'string' ? value.substring(0, 100) + '...' : value) : value,
-          valueType: typeof value,
-          fieldType,
-        });
-
         if (key === 'options' && Array.isArray(value)) {
           const optionsArray = new Y.Array();
           value
@@ -189,7 +175,6 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
         } else if (key === 'validation' && value && typeof value === 'object' && !Array.isArray(value)) {
           // Handle validation object from field editor
           const validationData = value as any;
-          console.log(`🔄 Setting validation.required to: ${validationData.required} for field ${fieldId}`);
           if (validationData.required !== undefined) {
             validationMap.set('required', validationData.required);
           }
@@ -224,11 +209,6 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
           // For text fields, max maps to maxLength in validation (fallback for old format)
           validationMap.set('maxLength', value);
         } else if (value !== undefined) {
-          console.log(`✅ FieldsSlice - Setting field property:`, {
-            fieldId,
-            key,
-            value: key === 'content' ? `[${value.length} chars]` : value,
-          });
           fieldMap.set(key, value);
         }
       });
@@ -314,8 +294,6 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       }
 
       if (oldIndex === newIndex) return;
-
-      console.log(`Reordering field from index ${oldIndex} to ${newIndex} in page ${pageId}`);
 
       const allFields = fieldsArray.toArray().map((fieldMap) => extractFieldData(fieldMap));
 
@@ -420,10 +398,6 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       const fieldMap = sourceFieldsArray.get(fieldIndex);
       const fieldData = extractFieldData(fieldMap);
 
-      console.log(
-        `Moving field ${fieldId} from page ${sourcePageId} to page ${targetPageId} at index ${insertIndex || targetFieldsArray.length}`
-      );
-
       // Remove field from source page
       sourceFieldsArray.delete(fieldIndex, 1);
 
@@ -496,8 +470,6 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       // Create a copy with new ID and modified label
       fieldData.id = `field-${Date.now()}-copy`;
       fieldData.label = `${fieldData.label} (Copy)`;
-
-      console.log(`Copying field ${fieldId} from page ${sourcePageId} to page ${targetPageId}`);
 
       // Add the copied field to target page at the end
       const copiedFieldMap = createYJSFieldMap(fieldData);

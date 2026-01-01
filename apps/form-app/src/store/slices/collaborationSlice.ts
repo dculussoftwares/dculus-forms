@@ -133,5 +133,47 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
       const { ydoc, isConnected } = get();
       return !!ydoc && isConnected;
     },
+
+    /**
+     * Internal helper: Get CollaborationManager instance
+     */
+    _getCollaborationManager: () => {
+      return collaborationManager;
+    },
+
+    /**
+     * Undo the last change (per-user)
+     */
+    undo: () => {
+      return collaborationManager?.undo() ?? false;
+    },
+
+    /**
+     * Redo the last undone change (per-user)
+     */
+    redo: () => {
+      return collaborationManager?.redo() ?? false;
+    },
+
+    /**
+     * Check if undo is available
+     */
+    canUndo: () => {
+      return collaborationManager?.canUndo() ?? false;
+    },
+
+    /**
+     * Check if redo is available
+     */
+    canRedo: () => {
+      return collaborationManager?.canRedo() ?? false;
+    },
+
+    /**
+     * Set current user for per-user undo tracking
+     */
+    setCurrentUser: (userId: string, userName: string, email?: string) => {
+      collaborationManager?.setCurrentUser(userId, userName, email);
+    },
   };
 };

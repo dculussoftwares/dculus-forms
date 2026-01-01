@@ -167,11 +167,6 @@ export const createFormField = (
     }
     case FieldType.RICH_TEXT_FIELD: {
       const content = (fieldData as any).content || '<p>Enter your rich text content here...</p>';
-      console.log('🏗️ createFormField - Creating Rich Text Field:', {
-        fieldId,
-        contentLength: content.length,
-        content: content.substring(0, 100) + '...',
-      });
       return new RichTextFormField(fieldId, content);
     }
     default:

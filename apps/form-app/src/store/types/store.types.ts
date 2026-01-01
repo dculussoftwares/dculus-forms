@@ -34,6 +34,14 @@ export interface CollaborationSlice {
   // Internal helpers (exposed for other slices)
   _getYDoc: () => Y.Doc | null;
   _isYJSReady: () => boolean;
+  _getCollaborationManager: () => any;
+
+  // Undo/Redo actions (per-user)
+  undo: () => boolean;
+  redo: () => boolean;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
+  setCurrentUser: (userId: string, userName: string, email?: string) => void;
 }
 
 /**

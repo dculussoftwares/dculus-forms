@@ -226,7 +226,7 @@ export const createPagesSlice: SliceCreator<PagesSlice> = (set, get) => {
 
       if (oldIndex === newIndex) return;
 
-      console.log(`Reordering page from index ${oldIndex} to ${newIndex}`);
+
 
       // Extract all pages as plain data
       const allPages = pagesArray.toArray().map((pageMap) => {
