@@ -6,7 +6,7 @@ container_image_tag = "latest"
 better_auth_url     = "https://dculus-forms-production-backend.kindocean-e9e3f3f1.eastus.azurecontainerapps.io"
 
 # Root domain for frontend applications (CORS origins will be auto-generated)
-root_domain         = "dculus.com"
+root_domain = "dculus.com"
 
 # Additional custom CORS origins (optional, comma-separated)
 # Frontend URLs are automatically included:
@@ -16,20 +16,20 @@ root_domain         = "dculus.com"
 #   - https://form-viewer.dculus.com (production alias)
 #   - https://admin-app-production.dculus.com
 #   - https://admin-app.dculus.com (production alias)
-cors_origins        = ""
+cors_origins = ""
 
 # Resource configuration
-cpu_cores    = 1.0
-memory_gb    = 2.0
-min_replicas = 2
-max_replicas = 10
+cpu_cores    = 0.25
+memory_gb    = 0.5
+min_replicas = 1
+max_replicas = 3
 
 # Container configuration
-container_port           = 4000
-target_port              = 4000
-external_enabled         = true
-allow_insecure_traffic   = false
-ingress_transport        = "auto"
+container_port         = 4000
+target_port            = 4000
+external_enabled       = true
+allow_insecure_traffic = false
+ingress_transport      = "auto"
 
 # Monitoring
 # Tags
