@@ -15,14 +15,19 @@ WORKDIR /app
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY packages/ ./packages/
 COPY apps/backend/package.json ./apps/backend/
+# We must copy OTHER apps' package.json files so the workspace is valid for the lockfile
+COPY apps/admin-app/package.json ./apps/admin-app/
+COPY apps/form-app/package.json ./apps/form-app/
+COPY apps/form-viewer/package.json ./apps/form-viewer/
 
-# Install all dependencies (frozen lockfile for reproducibility)
-RUN pnpm install --frozen-lockfile
+# Install only backend dependencies to keep the layer small
+# We use --filter backend to avoid installing dependencies for other apps
+RUN pnpm install --frozen-lockfile --filter backend
 
 # Copy source code
 COPY . .
 
-# Build shared packages
+# Build shared packages (backend depends on them)
 RUN pnpm --filter @dculus/types build
 RUN pnpm --filter @dculus/utils build
 
@@ -32,6 +37,7 @@ RUN pnpm db:generate
 RUN pnpm build
 
 # Prune dev dependencies to reduce size for the next stage
+# This relies on the fact that 'prisma' is in 'dependencies' not 'devDependencies'
 RUN pnpm prune --prod
 
 # --- Stage 2: Runner ---
@@ -42,7 +48,7 @@ WORKDIR /app
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
-    adduser -S backend -u 1001
+  adduser -S backend -u 1001
 
 # Copy built artifacts from builder
 COPY --from=builder /app/package.json ./package.json
@@ -72,19 +78,19 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 
 # Create startup script
 RUN echo '#!/bin/sh' > /app/apps/backend/start.sh && \
-    echo 'echo "🔄 Running database migrations..."' >> /app/apps/backend/start.sh && \
-    echo 'npx prisma db push --accept-data-loss || { echo "❌ Migration failed"; exit 1; }' >> /app/apps/backend/start.sh && \
-    echo 'echo "✅ Database migrations completed"' >> /app/apps/backend/start.sh && \
-    echo 'echo "🔍 Checking if database needs seeding..."' >> /app/apps/backend/start.sh && \
-    echo 'if [ "$RUN_SEED" = "true" ]; then' >> /app/apps/backend/start.sh && \
-    echo '  echo "🌱 Running database seed..."' >> /app/apps/backend/start.sh && \
-    echo '  node dist/apps/backend/src/scripts/seed.js || echo "⚠️  Seed failed, continuing anyway"' >> /app/apps/backend/start.sh && \
-    echo 'else' >> /app/apps/backend/start.sh && \
-    echo '  echo "⏭️  Skipping seed (RUN_SEED not set to true)"' >> /app/apps/backend/start.sh && \
-    echo 'fi' >> /app/apps/backend/start.sh && \
-    echo 'echo "🚀 Starting application..."' >> /app/apps/backend/start.sh && \
-    echo 'exec node dist/apps/backend/src/index.js' >> /app/apps/backend/start.sh && \
-    chmod +x /app/apps/backend/start.sh
+  echo 'echo "🔄 Running database migrations..."' >> /app/apps/backend/start.sh && \
+  echo 'npx prisma db push --accept-data-loss || { echo "❌ Migration failed"; exit 1; }' >> /app/apps/backend/start.sh && \
+  echo 'echo "✅ Database migrations completed"' >> /app/apps/backend/start.sh && \
+  echo 'echo "🔍 Checking if database needs seeding..."' >> /app/apps/backend/start.sh && \
+  echo 'if [ "$RUN_SEED" = "true" ]; then' >> /app/apps/backend/start.sh && \
+  echo '  echo "🌱 Running database seed..."' >> /app/apps/backend/start.sh && \
+  echo '  node dist/apps/backend/src/scripts/seed.js || echo "⚠️  Seed failed, continuing anyway"' >> /app/apps/backend/start.sh && \
+  echo 'else' >> /app/apps/backend/start.sh && \
+  echo '  echo "⏭️  Skipping seed (RUN_SEED not set to true)"' >> /app/apps/backend/start.sh && \
+  echo 'fi' >> /app/apps/backend/start.sh && \
+  echo 'echo "🚀 Starting application..."' >> /app/apps/backend/start.sh && \
+  echo 'exec node dist/apps/backend/src/index.js' >> /app/apps/backend/start.sh && \
+  chmod +x /app/apps/backend/start.sh
 
 # Start the application
 CMD ["/bin/sh", "/app/apps/backend/start.sh"]
