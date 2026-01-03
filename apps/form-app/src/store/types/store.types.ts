@@ -17,7 +17,6 @@ import { FieldData } from '../collaboration/CollaborationManager';
 export interface CollaborationSlice {
   // Connection state
   isConnected: boolean;
-  collaborators: import('../collaboration/CollaborationManager').CollaboratorInfo[];
   isLoading: boolean;
   formId: string | null;
 
@@ -35,14 +34,6 @@ export interface CollaborationSlice {
   // Internal helpers (exposed for other slices)
   _getYDoc: () => Y.Doc | null;
   _isYJSReady: () => boolean;
-  _getCollaborationManager: () => any;
-
-  // Undo/Redo actions (per-user)
-  undo: () => boolean;
-  redo: () => boolean;
-  canUndo: () => boolean;
-  canRedo: () => boolean;
-  setCurrentUser: (userId: string, userName: string, email?: string) => void;
 }
 
 /**

@@ -51,13 +51,6 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
     set({ isLoading });
   };
 
-  /**
-   * Callback when collaborators change (awareness)
-   */
-  const awarenessCallback = (collaborators: any[]) => {
-    set({ collaborators });
-  };
-
   return {
     // Initial state
     isConnected: false,
@@ -66,7 +59,6 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
     ydoc: null,
     provider: null,
     observerCleanups: [],
-    collaborators: [],
 
     /**
      * Initialize collaboration for a form
@@ -80,8 +72,7 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
         collaborationManager = new CollaborationManager(
           updateCallback,
           connectionCallback,
-          loadingCallback,
-          awarenessCallback
+          loadingCallback
         );
       }
 
@@ -141,48 +132,6 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
     _isYJSReady: () => {
       const { ydoc, isConnected } = get();
       return !!ydoc && isConnected;
-    },
-
-    /**
-     * Internal helper: Get CollaborationManager instance
-     */
-    _getCollaborationManager: () => {
-      return collaborationManager;
-    },
-
-    /**
-     * Undo the last change (per-user)
-     */
-    undo: () => {
-      return collaborationManager?.undo() ?? false;
-    },
-
-    /**
-     * Redo the last undone change (per-user)
-     */
-    redo: () => {
-      return collaborationManager?.redo() ?? false;
-    },
-
-    /**
-     * Check if undo is available
-     */
-    canUndo: () => {
-      return collaborationManager?.canUndo() ?? false;
-    },
-
-    /**
-     * Check if redo is available
-     */
-    canRedo: () => {
-      return collaborationManager?.canRedo() ?? false;
-    },
-
-    /**
-     * Set current user for per-user undo tracking
-     */
-    setCurrentUser: (userId: string, userName: string, email?: string) => {
-      collaborationManager?.setCurrentUser(userId, userName, email);
     },
   };
 };

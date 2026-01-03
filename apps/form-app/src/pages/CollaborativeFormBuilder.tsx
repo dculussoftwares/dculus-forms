@@ -190,7 +190,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({ cla
   useEffect(() => {
     if (!formId) return;
 
-    initializeCollaboration(formId).then(() => { const { setCurrentUser } = useFormBuilderStore.getState(); if (user?.id && user?.name) { setCurrentUser(user.id, user.name, user.email); } }).catch(error => {
+    initializeCollaboration(formId).catch(error => {
       console.error('Failed to initialize collaboration:', error);
     });
 

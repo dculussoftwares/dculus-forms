@@ -22,7 +22,6 @@ const DEFAULT_LAYOUT: FormLayout = {
   customCTAButtonName: 'Submit',
   backgroundImageKey: '',
   pageMode: PageModeType.MULTIPAGE,
-  isCustomBackgroundColorEnabled: false,
 };
 
 /**

@@ -80,6 +80,12 @@ export const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
 
   if (fieldType === FieldType.RICH_TEXT_FIELD) {
     const extractedContent = fieldMap.get('content') || '';
+    console.log('📥 extractFieldData - Rich Text from YJS:', {
+      fieldId: result.id,
+      hasContent: !!fieldMap.get('content'),
+      contentLength: extractedContent.length,
+      content: `${extractedContent.substring(0, 100)}...`,
+    });
     result.content = extractedContent;
   }
 
@@ -93,36 +99,36 @@ const deserializePagesFromYJS = (pagesArray: Y.Array<Y.Map<any>>): FormPage[] =>
 
     const fields: FormField[] = fieldsArray
       ? fieldsArray.toArray().map(fieldMap => {
-        const fieldData = extractFieldData(fieldMap);
+          const fieldData = extractFieldData(fieldMap);
 
-        const validationYMap = fieldMap.get('validation');
-        let validationObj: any;
+          const validationYMap = fieldMap.get('validation');
+          let validationObj: any;
 
-        if (validationYMap && validationYMap instanceof Y.Map) {
-          validationObj = {
-            required: validationYMap.get('required') || false,
-            type: validationYMap.get('type') || FieldType.FILLABLE_FORM_FIELD,
-            minLength: validationYMap.get('minLength'),
-            maxLength: validationYMap.get('maxLength'),
-            minSelections: validationYMap.get('minSelections'),
-            maxSelections: validationYMap.get('maxSelections'),
-          };
-        } else {
-          validationObj = {
-            required: fieldData.required,
-            type:
-              fieldData.type === FieldType.TEXT_INPUT_FIELD || fieldData.type === FieldType.TEXT_AREA_FIELD
-                ? FieldType.TEXT_FIELD_VALIDATION
-                : fieldData.type === FieldType.CHECKBOX_FIELD
-                  ? FieldType.CHECKBOX_FIELD_VALIDATION
-                  : FieldType.FILLABLE_FORM_FIELD,
-            minLength: fieldData.min,
-            maxLength: fieldData.max,
-          };
-        }
+          if (validationYMap && validationYMap instanceof Y.Map) {
+            validationObj = {
+              required: validationYMap.get('required') || false,
+              type: validationYMap.get('type') || FieldType.FILLABLE_FORM_FIELD,
+              minLength: validationYMap.get('minLength'),
+              maxLength: validationYMap.get('maxLength'),
+              minSelections: validationYMap.get('minSelections'),
+              maxSelections: validationYMap.get('maxSelections'),
+            };
+          } else {
+            validationObj = {
+              required: fieldData.required,
+              type:
+                fieldData.type === FieldType.TEXT_INPUT_FIELD || fieldData.type === FieldType.TEXT_AREA_FIELD
+                  ? FieldType.TEXT_FIELD_VALIDATION
+                  : fieldData.type === FieldType.CHECKBOX_FIELD
+                    ? FieldType.CHECKBOX_FIELD_VALIDATION
+                    : FieldType.FILLABLE_FORM_FIELD,
+              minLength: fieldData.min,
+              maxLength: fieldData.max,
+            };
+          }
 
-        return deserializeFormField({ ...fieldData, validation: validationObj });
-      })
+          return deserializeFormField({ ...fieldData, validation: validationObj });
+        })
       : [];
 
     return {
@@ -138,54 +144,16 @@ type UpdateCallback = (pages: FormPage[], layout?: FormLayout, isShuffleEnabled?
 type ConnectionCallback = (isConnected: boolean) => void;
 type LoadingCallback = (isLoading: boolean) => void;
 
-/**
- * Represents a collaborator's presence information
- */
-export interface CollaboratorInfo {
-  id: string;
-  name: string;
-  email?: string;
-  color: string;
-  pageId?: string;
-  fieldId?: string;
-}
-
-type AwarenessCallback = (collaborators: CollaboratorInfo[]) => void;
-
-/**
- * Generate a consistent color for a user based on their ID
- */
-const generateUserColor = (userId: string): string => {
-  const colors = [
-    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-    '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
-  ];
-  let hash = 0;
-  for (let i = 0; i < userId.length; i++) {
-    hash = userId.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return colors[Math.abs(hash) % colors.length];
-};
-
 export class CollaborationManager {
   private ydoc: Y.Doc | null = null;
   private provider: HocuspocusProvider | null = null;
   private observerCleanups: Array<() => void> = [];
-  private pageObserverCleanups: Array<() => void> = [];
-  private fieldObserverCleanups: Array<() => void> = [];
-  private awarenessCallback: AwarenessCallback | null = null;
-  private currentUserId: string | null = null;
-  private currentUserName: string | null = null;
-  private undoManager: Y.UndoManager | null = null;
 
   constructor(
     private readonly updateCallback: UpdateCallback,
     private readonly connectionCallback: ConnectionCallback,
-    private readonly loadingCallback: LoadingCallback,
-    awarenessCallback?: AwarenessCallback
-  ) {
-    this.awarenessCallback = awarenessCallback || null;
-  }
+    private readonly loadingCallback: LoadingCallback
+  ) {}
 
   async initialize(formId: string): Promise<void> {
     if (!formId || formId.trim() === '') {
@@ -202,9 +170,12 @@ export class CollaborationManager {
       const wsUrl = getWebSocketUrl();
 
       const authToken = localStorage.getItem('bearer_token');
+      console.log('🔐 Initializing Hocuspocus with auth token:', !!authToken);
+
+      const wsUrlWithAuth = authToken ? `${wsUrl}?token=${encodeURIComponent(authToken)}` : wsUrl;
 
       this.provider = new HocuspocusProvider({
-        url: wsUrl,
+        url: wsUrlWithAuth,
         name: formId,
         document: this.ydoc,
         token: authToken || undefined,
@@ -221,11 +192,6 @@ export class CollaborationManager {
   }
 
   disconnect(): void {
-    // Clean up all observer types
-    this.fieldObserverCleanups.forEach(cleanup => cleanup());
-    this.fieldObserverCleanups = [];
-    this.pageObserverCleanups.forEach(cleanup => cleanup());
-    this.pageObserverCleanups = [];
     this.observerCleanups.forEach(cleanup => cleanup());
     this.observerCleanups = [];
 
@@ -252,19 +218,20 @@ export class CollaborationManager {
     if (!this.provider) return;
 
     const onConnect = () => {
+      console.log('🔗 Collaboration connected');
       this.connectionCallback(true);
       this.updateFromYJS();
     };
 
     const onDisconnect = () => {
+      console.log('🔗 Collaboration disconnected');
       this.connectionCallback(false);
     };
 
     const onSynced = () => {
+      console.log('🔄 Document synced');
       this.updateFromYJS();
       this.loadingCallback(false);
-      this.setupUndoManager();
-      this.setupAwarenessListener();
     };
 
     this.provider.on('connect', onConnect);
@@ -278,66 +245,17 @@ export class CollaborationManager {
     });
   }
 
-
-  /**
-   * Set up awareness listener for tracking collaborators
-   */
-  private setupAwarenessListener(): void {
-    if (!this.provider?.awareness || !this.awarenessCallback) return;
-
-    const awareness = this.provider.awareness;
-
-    const handleAwarenessChange = () => {
-      const collaborators = this.getCollaborators();
-      this.awarenessCallback?.(collaborators);
-    };
-
-    awareness.on('change', handleAwarenessChange);
-    this.observerCleanups.push(() => awareness.off('change', handleAwarenessChange));
-
-    // Trigger initial callback
-    handleAwarenessChange();
-  }
-
-  /**
-   * Get current collaborators from awareness
-   */
-  getCollaborators(): CollaboratorInfo[] {
-    if (!this.provider?.awareness) return [];
-
-    const awareness = this.provider.awareness;
-    const states = awareness.getStates();
-    const collaborators: CollaboratorInfo[] = [];
-
-    states.forEach((state: any, clientId: number) => {
-      if (clientId === awareness.clientID) return; // Skip self
-      if (state.user) {
-        collaborators.push({
-          id: state.user.id || String(clientId),
-          name: state.user.name || 'Anonymous',
-          email: state.user.email,
-          color: state.user.color || generateUserColor(String(clientId)),
-          pageId: state.user.pageId,
-          fieldId: state.user.fieldId,
-        });
-      }
-    });
-
-    return collaborators;
-  }
   private setupObservers(): void {
     if (!this.ydoc) return;
 
     const formSchemaMap = this.ydoc.getMap('formSchema');
 
     const formSchemaObserver = (event: Y.YMapEvent<any>) => {
+      console.log('📡 FormSchema changed:', event.keysChanged);
       this.updateFromYJS();
 
       if (event.keysChanged.has('pages')) {
         this.setupPageObservers();
-      }
-      if (event.keysChanged.has('layout')) {
-        this.setupLayoutObserver();
       }
     };
 
@@ -345,49 +263,10 @@ export class CollaborationManager {
     this.observerCleanups.push(() => formSchemaMap.unobserve(formSchemaObserver));
 
     this.setupPageObservers();
-    this.setupLayoutObserver();
-  }
-
-  /**
-   * Set up observer for layout map changes
-   * This enables real-time sync of layout properties (background, colors, etc.)
-   */
-  private layoutObserverCleanup: (() => void) | null = null;
-
-  private setupLayoutObserver(): void {
-    if (!this.ydoc) return;
-
-    // Clean up existing layout observer
-    if (this.layoutObserverCleanup) {
-      this.layoutObserverCleanup();
-      this.layoutObserverCleanup = null;
-    }
-
-    const formSchemaMap = this.ydoc.getMap('formSchema');
-    const layoutMap = formSchemaMap.get('layout') as Y.Map<any>;
-
-    if (!layoutMap) return;
-
-    const layoutObserver = () => {
-      this.updateFromYJS();
-    };
-
-    layoutMap.observe(layoutObserver);
-    this.layoutObserverCleanup = () => layoutMap.unobserve(layoutObserver);
-    this.observerCleanups.push(() => {
-      if (this.layoutObserverCleanup) {
-        this.layoutObserverCleanup();
-        this.layoutObserverCleanup = null;
-      }
-    });
   }
 
   private setupPageObservers(): void {
     if (!this.ydoc) return;
-
-    // Clean up existing page observers before setting new ones
-    this.pageObserverCleanups.forEach(cleanup => cleanup());
-    this.pageObserverCleanups = [];
 
     const formSchemaMap = this.ydoc.getMap('formSchema');
     const pagesArray = formSchemaMap.get('pages') as Y.Array<Y.Map<any>>;
@@ -400,7 +279,7 @@ export class CollaborationManager {
     };
 
     pagesArray.observe(pagesObserver);
-    this.pageObserverCleanups.push(() => pagesArray.unobserve(pagesObserver));
+    this.observerCleanups.push(() => pagesArray.unobserve(pagesObserver));
 
     // Add observers for each individual page map to detect property changes (e.g., title)
     pagesArray.toArray().forEach(pageMap => {
@@ -409,7 +288,7 @@ export class CollaborationManager {
       };
 
       pageMap.observe(pageMapObserver);
-      this.pageObserverCleanups.push(() => pageMap.unobserve(pageMapObserver));
+      this.observerCleanups.push(() => pageMap.unobserve(pageMapObserver));
     });
 
     this.setupFieldObservers();
@@ -417,10 +296,6 @@ export class CollaborationManager {
 
   private setupFieldObservers(): void {
     if (!this.ydoc) return;
-
-    // Clean up existing field observers before setting new ones
-    this.fieldObserverCleanups.forEach(cleanup => cleanup());
-    this.fieldObserverCleanups = [];
 
     const formSchemaMap = this.ydoc.getMap('formSchema');
     const pagesArray = formSchemaMap.get('pages') as Y.Array<Y.Map<any>>;
@@ -432,12 +307,13 @@ export class CollaborationManager {
       if (!fieldsArray) return;
 
       const fieldsObserver = () => {
+        console.log('📡 Fields array changed');
         this.updateFromYJS();
         this.setupIndividualFieldObservers(fieldsArray);
       };
 
       fieldsArray.observe(fieldsObserver);
-      this.fieldObserverCleanups.push(() => fieldsArray.unobserve(fieldsObserver));
+      this.observerCleanups.push(() => fieldsArray.unobserve(fieldsObserver));
 
       this.setupIndividualFieldObservers(fieldsArray);
     });
@@ -449,19 +325,21 @@ export class CollaborationManager {
       if (!fieldId) return;
 
       const fieldObserver = () => {
+        console.log(`📡 Field ${fieldId} properties changed`);
         this.updateFromYJS();
       };
 
       fieldMap.observe(fieldObserver);
-      this.fieldObserverCleanups.push(() => fieldMap.unobserve(fieldObserver));
+      this.observerCleanups.push(() => fieldMap.unobserve(fieldObserver));
 
       const validationMap = fieldMap.get('validation');
       if (validationMap && validationMap instanceof Y.Map) {
         const validationObserver = () => {
+          console.log(`📡 Field ${fieldId} validation changed`);
           this.updateFromYJS();
         };
         validationMap.observe(validationObserver);
-        this.fieldObserverCleanups.push(() => validationMap.unobserve(validationObserver));
+        this.observerCleanups.push(() => validationMap.unobserve(validationObserver));
       }
     });
   }
@@ -488,97 +366,11 @@ export class CollaborationManager {
         customCTAButtonName: layoutMap.get('customCTAButtonName') || 'Submit',
         backgroundImageKey: layoutMap.get('backgroundImageKey') || '',
         pageMode: layoutMap.get('pageMode') || PageModeType.MULTIPAGE,
-        isCustomBackgroundColorEnabled: layoutMap.get('isCustomBackgroundColorEnabled') || false,
       };
     }
 
     const isShuffleEnabled = formSchemaMap.get('isShuffleEnabled') as boolean | undefined;
 
     this.updateCallback(pages, layout, isShuffleEnabled);
-  }
-
-  /**
-   * Set up undo manager for the form schema
-   */
-  private setupUndoManager(): void {
-    if (!this.ydoc) return;
-
-    const formSchemaMap = this.ydoc.getMap('formSchema');
-    this.undoManager = new Y.UndoManager([formSchemaMap], {
-      captureTimeout: 500,
-      
-    });
-  }
-
-  /**
-   * Undo the last change
-   */
-  undo(): boolean {
-    if (!this.undoManager) return false;
-    if (this.undoManager.canUndo()) {
-      this.undoManager.undo();
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * Redo the last undone change
-   */
-  redo(): boolean {
-    if (!this.undoManager) return false;
-    if (this.undoManager.canRedo()) {
-      this.undoManager.redo();
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * Check if undo is available
-   */
-  canUndo(): boolean {
-    return this.undoManager?.canUndo() ?? false;
-  }
-
-  /**
-   * Check if redo is available
-   */
-  canRedo(): boolean {
-    return this.undoManager?.canRedo() ?? false;
-  }
-
-  /**
-   * Execute a transaction with the current user origin for per-user undo
-   */
-  transact(fn: () => void): void {
-    if (!this.ydoc) return;
-    const userId = this.currentUserId || 'local-user';
-    this.ydoc.transact(fn, userId);
-  }
-
-
-  /**
-   * Get the current user origin
-   */
-  getUserOrigin(): string {
-    return this.currentUserId || 'local-user';
-  }
-
-  /**
-   * Set the current user's information for awareness
-   */
-  setCurrentUser(userId: string, userName: string, email?: string): void {
-    this.currentUserId = userId;
-    this.currentUserName = userName;
-
-    if (this.provider?.awareness) {
-      this.provider.awareness.setLocalStateField('user', {
-        id: userId,
-        name: userName,
-        email,
-        color: generateUserColor(userId),
-      });
-    }
   }
 }
