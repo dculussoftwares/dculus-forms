@@ -19,9 +19,9 @@ root_domain         = "dculus.com"
 cors_origins        = ""
 
 # Resource configuration
-cpu_cores    = 1.0
-memory_gb    = 2.0
-min_replicas = 2
+cpu_cores    = 0.25
+memory_gb    = 0.5
+min_replicas = 1
 max_replicas = 10
 
 # Container configuration
