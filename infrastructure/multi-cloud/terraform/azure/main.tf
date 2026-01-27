@@ -29,9 +29,9 @@ locals {
   resolved_auth_url = var.better_auth_url != "" ? var.better_auth_url : "https://${local.service_domain}"
 
   # Dynamically generate frontend URLs based on environment
-  # Production uses clean domains (form-app.dculus.com) while dev/staging use suffixed domains
-  form_app_domain    = var.environment == "production" ? "form-app.${var.root_domain}" : "form-app-${var.environment}.${var.root_domain}"
-  form_viewer_domain = var.environment == "production" ? "viewer-app.${var.root_domain}" : "viewer-app-${var.environment}.${var.root_domain}"
+  # Production uses clean domains (forms.dculus.com) while dev/staging use suffixed domains
+  form_app_domain    = var.environment == "production" ? "forms.${var.root_domain}" : "form-app-${var.environment}.${var.root_domain}"
+  form_viewer_domain = var.environment == "production" ? "viewer.${var.root_domain}" : "viewer-app-${var.environment}.${var.root_domain}"
   admin_app_domain   = var.environment == "production" ? "form-admin-app.${var.root_domain}" : "form-admin-app-${var.environment}.${var.root_domain}"
 
   # Production domains are now primary (no separate aliases needed)

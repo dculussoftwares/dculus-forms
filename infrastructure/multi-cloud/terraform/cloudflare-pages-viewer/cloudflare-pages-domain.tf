@@ -1,7 +1,7 @@
 # Custom domain for Cloudflare Pages project
 locals {
-  custom_domain = var.environment == "production" ? "viewer-app.${var.root_domain}" : "viewer-app-${var.environment}.${var.root_domain}"
-  cname_name    = var.environment == "production" ? "viewer-app" : "viewer-app-${var.environment}"
+  custom_domain = var.environment == "production" ? "viewer.${var.root_domain}" : "viewer-app-${var.environment}.${var.root_domain}"
+  cname_name    = var.environment == "production" ? "viewer" : "viewer-app-${var.environment}"
 }
 
 resource "cloudflare_pages_domain" "viewer_app" {

@@ -1,7 +1,7 @@
 # Custom domain for Cloudflare Pages project
 locals {
-  custom_domain = var.environment == "production" ? "form-app.${var.root_domain}" : "form-app-${var.environment}.${var.root_domain}"
-  cname_name    = var.environment == "production" ? "form-app" : "form-app-${var.environment}"
+  custom_domain = var.environment == "production" ? "forms.${var.root_domain}" : "form-app-${var.environment}.${var.root_domain}"
+  cname_name    = var.environment == "production" ? "forms" : "form-app-${var.environment}"
 }
 
 resource "cloudflare_pages_domain" "form_app" {
