@@ -92,6 +92,8 @@ import enSettingsTab from './en/settingsTab.json';
 import taSettingsTab from './ta/settingsTab.json';
 import enPageBuilderTab from './en/pageBuilderTab.json';
 import taPageBuilderTab from './ta/pageBuilderTab.json';
+import enNewPageBuilderTab from './en/newPageBuilderTab.json';
+import taNewPageBuilderTab from './ta/newPageBuilderTab.json';
 import enFieldSettingsHeader from './en/fieldSettingsHeader.json';
 import taFieldSettingsHeader from './ta/fieldSettingsHeader.json';
 import enFieldSettingsConstants from './en/fieldSettingsConstants.json';
@@ -268,6 +270,7 @@ const enTranslations = {
   confirmationDialog: enConfirmationDialog,
   settingsTab: enSettingsTab,
   pageBuilderTab: enPageBuilderTab,
+  newPageBuilderTab: enNewPageBuilderTab,
   fieldSettingsHeader: enFieldSettingsHeader,
   fieldSettingsConstants: enFieldSettingsConstants,
   collaborationStatus: enCollaborationStatus,
@@ -382,6 +385,7 @@ const taTranslations = {
   confirmationDialog: taConfirmationDialog,
   settingsTab: taSettingsTab,
   pageBuilderTab: taPageBuilderTab,
+  newPageBuilderTab: taNewPageBuilderTab,
   fieldSettingsHeader: taFieldSettingsHeader,
   fieldSettingsConstants: taFieldSettingsConstants,
   collaborationStatus: taCollaborationStatus,

@@ -1,0 +1,27 @@
+{
+    "title": "New Form Builder",
+    "sidebar": {
+        "fieldTypes": {
+            "title": "Field Types",
+            "description": "Drag fields to add them",
+            "placeholder": "Field types will appear here"
+        },
+        "pages": {
+            "title": "Pages",
+            "pageCount": "{{count}} page",
+            "pageCount_plural": "{{count}} pages",
+            "noPages": "No pages yet"
+        }
+    },
+    "formArea": {
+        "untitledPage": "Untitled Page",
+        "noPageSelected": "No page selected",
+        "fieldCount": "{{count}} field",
+        "fieldCount_plural": "{{count}} fields",
+        "placeholder": "Form fields will appear here"
+    },
+    "status": {
+        "connected": "Connected",
+        "connecting": "Connecting..."
+    }
+}

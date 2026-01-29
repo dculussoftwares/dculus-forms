@@ -28,6 +28,7 @@ import {
   TabKeyboardShortcuts,
   LayoutTab,
   PageBuilderTab,
+  NewPageBuilderTab,
   SettingsTab,
   PreviewTab,
   type BuilderTab,
@@ -45,6 +46,7 @@ interface CollaborativeFormBuilderProps {
 const VALID_TABS: readonly BuilderTab[] = [
   'layout',
   'page-builder',
+  'new-builder',
   'settings',
   'preview',
 ] as const;
@@ -290,6 +292,8 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
             onFieldDeselect={handleFieldDeselect}
           />
         );
+      case 'new-builder':
+        return <NewPageBuilderTab />;
       case 'settings':
         return <SettingsTab />;
       case 'preview':
