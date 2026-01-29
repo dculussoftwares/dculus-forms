@@ -1,8 +1,8 @@
-import { 
-  Form as IForm, 
-  FormSchema, 
-  FormPage, 
-  FormField, 
+import {
+  Form as IForm,
+  FormSchema,
+  FormPage,
+  FormField,
   FormLayout,
   ThemeType,
   SpacingType,
@@ -34,25 +34,25 @@ const generateUniqueShortUrl = async (): Promise<string> => {
 
   while (!isUnique && attempts < maxAttempts) {
     shortUrl = await generateShortUrl(8); // Generate 8-character short URL
-    
+
     // Check if this short URL already exists
     const existingForm = await formRepository.findByShortUrl(shortUrl);
-    
+
     if (!existingForm) {
       isUnique = true;
       return shortUrl;
     }
-    
+
     attempts++;
   }
-  
+
   // If we couldn't generate a unique short URL after max attempts, use a longer one
   return await generateShortUrl(12);
 };
 
 export const getAllForms = async (organizationId?: string): Promise<Form[]> => {
   const forms = await formRepository.listByOrganization(organizationId);
-  
+
   return forms.map((form: any) => ({
     ...form,
     description: form.description || undefined,
@@ -62,9 +62,9 @@ export const getAllForms = async (organizationId?: string): Promise<Form[]> => {
 export const getFormById = async (id: string): Promise<Form | null> => {
   try {
     const form = await formRepository.findById(id);
-    
+
     if (!form) return null;
-    
+
     return {
       ...form,
       description: form.description || undefined,
@@ -78,9 +78,9 @@ export const getFormById = async (id: string): Promise<Form | null> => {
 export const getFormByShortUrl = async (shortUrl: string): Promise<Form | null> => {
   try {
     const form = await formRepository.findByShortUrl(shortUrl);
-    
+
     if (!form) return null;
-    
+
     return {
       ...form,
       description: form.description || undefined,
@@ -92,7 +92,7 @@ export const getFormByShortUrl = async (shortUrl: string): Promise<Form | null> 
 };
 
 export const createForm = async (
-  formData: Omit<Form, 'createdAt' | 'updatedAt' | 'formSchema'>, 
+  formData: Omit<Form, 'createdAt' | 'updatedAt' | 'formSchema'>,
   templateFormSchema?: FormSchema
 ): Promise<Form> => {
   const normalizedSettings = (() => {
@@ -122,14 +122,15 @@ export const createForm = async (
       customBackGroundColor: '#ffffff',
       customCTAButtonName: 'Submit',
       backgroundImageKey: '',
-      pageMode: PageModeType.MULTIPAGE
+      pageMode: PageModeType.MULTIPAGE,
+      isCustomBackgroundColorEnabled: false
     },
     isShuffleEnabled: false
   };
-  
+
   // Generate unique short URL
   const shortUrl = await generateUniqueShortUrl();
-  
+
   // Create form without formSchema field in database
   const newForm = await formRepository.createForm({
     id: formData.id,
@@ -142,7 +143,7 @@ export const createForm = async (
     createdById: formData.createdById,
     settings: normalizedSettings,
   });
-  
+
   const result = {
     ...newForm,
     description: newForm.description || undefined,
@@ -165,7 +166,7 @@ export const createForm = async (
   // Initialize Hocuspocus document for collaborative editing
   const schemaToInitialize = templateFormSchema || defaultFormSchema;
   logger.info(`🔄 Initializing Hocuspocus document for form: ${result.id}`);
-  
+
   try {
     await initializeHocuspocusDocument(result.id, schemaToInitialize);
     logger.info(`✅ Hocuspocus document initialized successfully for form: ${result.id}`);
@@ -243,11 +244,11 @@ export const updateForm = async (id: string, formData: Partial<Omit<Form, 'id' |
   try {
     // First, get the current form state to check if it's being published
     const currentForm = await formRepository.findById(id);
-    
+
     if (!currentForm) {
       throw new Error('Form not found');
     }
-    
+
     // If userId is provided, validate permissions at service layer
     if (userId) {
       // Analyze formData to determine required permission level
@@ -256,10 +257,10 @@ export const updateForm = async (id: string, formData: Partial<Omit<Form, 'id' |
       const hasLayoutChanges =
         ['title', 'description', 'settings'].some(hasProp);
       const hasCriticalChanges = hasProp('isPublished');
-      
+
       // Determine required permission level based on update type
       let requiredPermission: string = PermissionLevel.EDITOR;
-      
+
       if (hasCriticalChanges) {
         // Critical changes like publishing require OWNER
         requiredPermission = PermissionLevel.OWNER;
@@ -267,48 +268,48 @@ export const updateForm = async (id: string, formData: Partial<Omit<Form, 'id' |
         // Layout and content changes require EDITOR
         requiredPermission = PermissionLevel.EDITOR;
       }
-      
+
       // Check if user has required access level
       const accessCheck = await checkFormAccess(userId, id, requiredPermission as any);
       if (!accessCheck.hasAccess) {
         const permissionName = requiredPermission === 'OWNER' ? 'owner' : 'editor';
         throw new Error(`Access denied: ${permissionName} permissions required for this type of update`);
       }
-      
+
       logger.info(`✅ Permission validated for user ${userId} on form ${id}: ${requiredPermission}`);
     }
-    
+
     const updateData: any = {};
-    
+
     if (formData.title) updateData.title = formData.title;
     if (formData.description !== undefined) updateData.description = formData.description;
     if (formData.isPublished !== undefined) updateData.isPublished = formData.isPublished;
     if (formData.settings !== undefined) updateData.settings = formData.settings;
-    
+
     const updatedForm = await formRepository.updateForm(id, updateData);
-    
+
     // Check if form is being published (changed from false to true)
     const isBeingPublished = !currentForm.isPublished && formData.isPublished === true;
-    
+
     if (isBeingPublished) {
       try {
         // Send email notification to form owner
         const formUrl = `${process.env.FORM_VIEWER_URL || 'http://localhost:5173'}/form/${updatedForm.shortUrl}`;
-        
+
         await sendFormPublishedNotification({
           formTitle: updatedForm.title,
           formDescription: updatedForm.description || undefined,
           formUrl,
           ownerName: updatedForm.createdBy.name || updatedForm.createdBy.email,
         }, updatedForm.createdBy.email);
-        
+
         logger.info(`Form published notification sent to: ${updatedForm.createdBy.email}`);
       } catch (emailError) {
         // Log email error but don't fail the form update
         logger.error('Failed to send form published notification:', emailError);
       }
     }
-    
+
     return {
       ...updatedForm,
       description: updatedForm.description || undefined,
@@ -323,9 +324,9 @@ export const regenerateShortUrl = async (id: string): Promise<Form | null> => {
   try {
     // Generate a new unique short URL
     const newShortUrl = await generateUniqueShortUrl();
-    
+
     const updatedForm = await formRepository.updateForm(id, { shortUrl: newShortUrl });
-    
+
     return {
       ...updatedForm,
       description: updatedForm.description || undefined,
@@ -345,10 +346,10 @@ export const deleteForm = async (id: string, userId?: string): Promise<boolean> 
       if (!accessCheck.hasAccess) {
         throw new Error('Access denied: Only the form owner can delete this form');
       }
-      
+
       logger.info(`✅ Permission validated for user ${userId} to delete form ${id}: OWNER`);
     }
-    
+
     await formRepository.deleteForm(id);
     return true;
   } catch (error) {

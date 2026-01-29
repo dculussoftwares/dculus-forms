@@ -388,6 +388,7 @@ export const getFormSchemaFromHocuspocus = async (formId: string): Promise<any |
         convertedLayout.customCTAButtonName = layout.get('customCTAButtonName');
         convertedLayout.backgroundImageKey = layout.get('backgroundImageKey');
         convertedLayout.pageMode = layout.get('pageMode');
+        convertedLayout.isCustomBackgroundColorEnabled = layout.get('isCustomBackgroundColorEnabled') || false;
       }
 
       return {
@@ -535,6 +536,7 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
     layoutMap.set('customCTAButtonName', layout.customCTAButtonName || 'Submit');
     layoutMap.set('backgroundImageKey', layout.backgroundImageKey || '');
     layoutMap.set('pageMode', layout.pageMode || 'multipage');
+    layoutMap.set('isCustomBackgroundColorEnabled', layout.isCustomBackgroundColorEnabled || false);
 
     formSchemaMap.set('layout', layoutMap);
     formSchemaMap.set('isShuffleEnabled', Boolean(formSchema.isShuffleEnabled));
