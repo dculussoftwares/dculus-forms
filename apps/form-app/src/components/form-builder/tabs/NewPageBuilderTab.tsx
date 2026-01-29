@@ -680,7 +680,7 @@ export const NewPageBuilderTab: React.FC = () => {
     useState<FieldTypeConfig | null>(null);
 
   // Get store actions
-  const { addField, addFieldAtIndex } = useFormBuilderStore();
+  const { addField, addFieldAtIndex, reorderFields } = useFormBuilderStore();
 
   // Configure sensors - require slight movement before drag starts
   const sensors = useSensors(
@@ -699,7 +699,7 @@ export const NewPageBuilderTab: React.FC = () => {
     }
   };
 
-  // Handle drag end - add field if dropped on form area
+  // Handle drag end - add field or reorder existing fields
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
@@ -709,34 +709,64 @@ export const NewPageBuilderTab: React.FC = () => {
     // Check if we have a valid drop target
     if (!over) return;
 
-    // Only handle field-type drags
-    if (active.data.current?.type !== 'field-type') return;
+    const dragType = active.data.current?.type;
 
-    const fieldTypeConfig = active.data.current.fieldType as FieldTypeConfig;
+    // Handle existing-field reordering
+    if (dragType === 'existing-field') {
+      const sourceIndex = active.data.current?.index as number;
+      const sourcePageId = active.data.current?.pageId as string;
 
-    // Check if dropping onto a field-insert zone (between fields)
-    if (over.data.current?.type === 'field-insert') {
-      const targetPageId = over.data.current.pageId as string;
-      const insertIndex = over.data.current.insertIndex as number;
+      // Dropped on a field-insert zone
+      if (over.data.current?.type === 'field-insert') {
+        const targetPageId = over.data.current.pageId as string;
+        let targetIndex = over.data.current.insertIndex as number;
 
-      if (targetPageId && fieldTypeConfig) {
-        console.log(
-          `Inserting field ${fieldTypeConfig.type} at index ${insertIndex} in page ${targetPageId}`
-        );
-        addFieldAtIndex(targetPageId, fieldTypeConfig.type, {}, insertIndex);
+        // Only reorder within the same page for now
+        if (sourcePageId === targetPageId) {
+          // Adjust target index if moving down (since we remove first)
+          if (targetIndex > sourceIndex) {
+            targetIndex = targetIndex - 1;
+          }
+
+          if (sourceIndex !== targetIndex) {
+            console.log(
+              `Reordering field from ${sourceIndex} to ${targetIndex}`
+            );
+            reorderFields(sourcePageId, sourceIndex, targetIndex);
+          }
+        }
       }
       return;
     }
 
-    // Check if dropping onto the form area (append to end)
-    if (over.data.current?.type === 'form-area') {
-      const targetPageId = over.data.current.pageId as string;
+    // Handle new field-type drops
+    if (dragType === 'field-type') {
+      const fieldTypeConfig = active.data.current?.fieldType as FieldTypeConfig;
 
-      if (targetPageId && fieldTypeConfig) {
-        console.log(
-          `Adding field ${fieldTypeConfig.type} to end of page ${targetPageId}`
-        );
-        addField(targetPageId, fieldTypeConfig.type, {});
+      // Check if dropping onto a field-insert zone (between fields)
+      if (over.data.current?.type === 'field-insert') {
+        const targetPageId = over.data.current.pageId as string;
+        const insertIndex = over.data.current.insertIndex as number;
+
+        if (targetPageId && fieldTypeConfig) {
+          console.log(
+            `Inserting field ${fieldTypeConfig.type} at index ${insertIndex} in page ${targetPageId}`
+          );
+          addFieldAtIndex(targetPageId, fieldTypeConfig.type, {}, insertIndex);
+        }
+        return;
+      }
+
+      // Check if dropping onto the form area (append to end)
+      if (over.data.current?.type === 'form-area') {
+        const targetPageId = over.data.current.pageId as string;
+
+        if (targetPageId && fieldTypeConfig) {
+          console.log(
+            `Adding field ${fieldTypeConfig.type} to end of page ${targetPageId}`
+          );
+          addField(targetPageId, fieldTypeConfig.type, {});
+        }
       }
     }
   };
