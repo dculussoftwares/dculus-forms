@@ -12,6 +12,7 @@ import {
   DndContext,
   DragOverlay,
   useDraggable,
+  useDroppable,
   PointerSensor,
   useSensor,
   useSensors,
@@ -449,11 +450,20 @@ const EmptyFormAreaPlaceholder: React.FC<{ isConnected: boolean }> = ({
 };
 
 /**
- * FormArea - Center column displaying form fields
+ * FormArea - Center column displaying form fields (drop zone)
  */
 const FormArea: React.FC = () => {
   const { isConnected, pages, selectedPageId } = useFormBuilderStore();
   const selectedPage = pages.find((p) => p.id === selectedPageId);
+
+  // Make the form area a drop zone
+  const { setNodeRef, isOver } = useDroppable({
+    id: 'form-area-drop-zone',
+    data: {
+      type: 'form-area',
+      pageId: selectedPageId,
+    },
+  });
 
   return (
     <div className="flex-1 flex flex-col bg-gradient-to-br from-gray-50 to-blue-50/30 dark:from-gray-800 dark:to-blue-950/30">
@@ -463,9 +473,18 @@ const FormArea: React.FC = () => {
             {/* Page Header */}
             <PageHeader selectedPage={selectedPage} />
 
-            {/* Form Fields Container */}
+            {/* Form Fields Container - Drop Zone */}
             <div
-              className="min-h-[400px] p-4 bg-white dark:bg-gray-900 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600"
+              ref={setNodeRef}
+              className={`
+                min-h-[400px] p-4 bg-white dark:bg-gray-900 rounded-xl border-2 border-dashed
+                transition-all duration-200
+                ${
+                  isOver
+                    ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 ring-2 ring-blue-500/20'
+                    : 'border-gray-300 dark:border-gray-600'
+                }
+              `}
               data-testid="form-fields-area"
             >
               {selectedPage && selectedPage.fields.length > 0 ? (
@@ -476,6 +495,13 @@ const FormArea: React.FC = () => {
                 </div>
               ) : (
                 <EmptyFormAreaPlaceholder isConnected={isConnected} />
+              )}
+
+              {/* Drop indicator when dragging over */}
+              {isOver && (
+                <div className="mt-3 p-3 border-2 border-dashed border-blue-400 bg-blue-50 dark:bg-blue-950/50 rounded-lg text-center text-blue-600 dark:text-blue-400 text-sm font-medium animate-pulse">
+                  Drop here to add field
+                </div>
               )}
             </div>
           </div>
