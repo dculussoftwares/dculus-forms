@@ -675,9 +675,15 @@ const ConnectionStatus: React.FC<{ isConnected: boolean }> = ({
  * Each phase adds functionality incrementally for thorough testing.
  */
 export const NewPageBuilderTab: React.FC = () => {
-  // Track the currently dragged field type
+  // Track the currently dragged field type (from sidebar)
   const [activeFieldType, setActiveFieldType] =
     useState<FieldTypeConfig | null>(null);
+
+  // Track the currently dragged existing field (for reordering)
+  const [activeField, setActiveField] = useState<{
+    field: FormField;
+    index: number;
+  } | null>(null);
 
   // Get store actions
   const { addField, addFieldAtIndex, reorderFields } = useFormBuilderStore();
@@ -691,11 +697,16 @@ export const NewPageBuilderTab: React.FC = () => {
     })
   );
 
-  // Handle drag start - store the active field type
+  // Handle drag start - store the active dragged item
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     if (active.data.current?.type === 'field-type') {
       setActiveFieldType(active.data.current.fieldType as FieldTypeConfig);
+    } else if (active.data.current?.type === 'existing-field') {
+      setActiveField({
+        field: active.data.current.field as FormField,
+        index: active.data.current.index as number,
+      });
     }
   };
 
@@ -703,8 +714,9 @@ export const NewPageBuilderTab: React.FC = () => {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
-    // Always clear the active field type
+    // Always clear the active items
     setActiveFieldType(null);
+    setActiveField(null);
 
     // Check if we have a valid drop target
     if (!over) return;
@@ -793,6 +805,16 @@ export const NewPageBuilderTab: React.FC = () => {
         {activeFieldType && (
           <div className="w-72">
             <FieldTypeCardContent fieldType={activeFieldType} isOverlay />
+          </div>
+        )}
+        {activeField && (
+          <div className="w-[500px] max-w-[90vw]">
+            <FieldCard
+              field={activeField.field}
+              index={activeField.index}
+              isDragging={false}
+              dragHandleProps={{}}
+            />
           </div>
         )}
       </DragOverlay>
