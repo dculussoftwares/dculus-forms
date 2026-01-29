@@ -14,3 +14,4 @@ export { DraggableField } from './DraggableField.js';
 export { DroppablePage } from './DroppablePage.js';
 export { PagesSidebar } from './PagesSidebar.js';
 export { EmptyDropZone } from './EmptyDropZone.js';
+export { CompactFieldCard } from './CompactFieldCard.js';
