@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { useDndContext } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
@@ -74,8 +74,33 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
   const { active } = useDndContext();
   const isAnyDragActive = !!active;
 
+  // Track drag end with delay for smooth transition
+  const [isExpandDelayed, setIsExpandDelayed] = useState(false);
+  const wasActiveRef = useRef(false);
+
+  // Effect to handle delayed expansion after drop
+  useEffect(() => {
+    if (isAnyDragActive) {
+      // Drag started - mark as active
+      wasActiveRef.current = true;
+      setIsExpandDelayed(false);
+    } else if (wasActiveRef.current) {
+      // Drag just ended - delay the expansion
+      setIsExpandDelayed(true);
+      const timer = setTimeout(() => {
+        setIsExpandDelayed(false);
+        wasActiveRef.current = false;
+      }, 300); // 300ms delay before expanding
+      return () => clearTimeout(timer);
+    }
+  }, [isAnyDragActive]);
+
   // Check if this specific field is being dragged
   const isFieldBeingDragged = active?.data?.current?.type === 'field';
+
+  // Show compact mode during drag OR during delayed expansion
+  const shouldShowCompact =
+    (isFieldBeingDragged && isAnyDragActive) || isExpandDelayed;
 
   // Function to get translated field type labels
   const getFieldTypeLabel = (fieldType: FieldType): string => {
@@ -143,8 +168,8 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
     }
   };
 
-  // Render compact card when ANY field drag is active
-  if (isFieldBeingDragged && isAnyDragActive) {
+  // Render compact card when dragging OR during delayed expansion
+  if (shouldShowCompact) {
     return (
       <div
         ref={setNodeRef}
