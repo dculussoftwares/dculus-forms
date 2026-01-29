@@ -30,6 +30,7 @@ import {
   PageBuilderTab,
   SettingsTab,
   PreviewTab,
+  NewPageBuilderTab,
   type BuilderTab,
 } from '../components/form-builder/tabs';
 import { useDragAndDrop } from '../hooks/useDragAndDrop';
@@ -45,6 +46,7 @@ interface CollaborativeFormBuilderProps {
 const VALID_TABS: readonly BuilderTab[] = [
   'layout',
   'page-builder',
+  'new-page-builder',
   'settings',
   'preview',
 ] as const;
@@ -282,6 +284,17 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
       case 'page-builder':
         return (
           <PageBuilderTab
+            sidebarWidth={sidebarWidth}
+            onSidebarWidthChange={setSidebarWidth}
+            selectedFieldId={selectedFieldId}
+            onFieldEdit={handleFieldEdit}
+            onFieldUpdate={handleFieldUpdate}
+            onFieldDeselect={handleFieldDeselect}
+          />
+        );
+      case 'new-page-builder':
+        return (
+          <NewPageBuilderTab
             sidebarWidth={sidebarWidth}
             onSidebarWidthChange={setSidebarWidth}
             selectedFieldId={selectedFieldId}

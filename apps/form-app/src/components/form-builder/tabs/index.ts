@@ -3,3 +3,4 @@ export { LayoutTab } from './LayoutTab.js';
 export { PageBuilderTab } from './PageBuilderTab.js';
 export { SettingsTab } from './SettingsTab.js';
 export { PreviewTab } from './PreviewTab.js';
+export { NewPageBuilderTab } from './NewPageBuilderTab.js';
