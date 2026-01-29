@@ -46,15 +46,19 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
     duplicateField,
     moveFieldBetweenPages,
     copyFieldToPage,
-    getSelectedField
+    reorderFields,
+    getSelectedField,
   } = useFormBuilderStore();
 
-  const selectedPage = pages.find(p => p.id === selectedPageId);
+  const selectedPage = pages.find((p) => p.id === selectedPageId);
 
-  const handlePageSelect = useCallback((pageId: string) => {
-    setSelectedPage(pageId);
-    setSelectedField(null);
-  }, [setSelectedPage, setSelectedField]);
+  const handlePageSelect = useCallback(
+    (pageId: string) => {
+      setSelectedPage(pageId);
+      setSelectedField(null);
+    },
+    [setSelectedPage, setSelectedField]
+  );
 
   return (
     <div className="flex h-full">
@@ -78,7 +82,7 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
                 <DroppablePage
                   key={`${selectedPage.id}-${selectedPage.title}`}
                   page={selectedPage}
-                  index={pages.findIndex(p => p.id === selectedPage.id)}
+                  index={pages.findIndex((p) => p.id === selectedPage.id)}
                   isSelected={true}
                   isConnected={isConnected}
                   selectedFieldId={selectedFieldId}
@@ -90,7 +94,10 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
                   onEditField={onFieldEdit}
                   onMoveFieldBetweenPages={moveFieldBetweenPages}
                   onCopyFieldToPage={copyFieldToPage}
-                  onUpdatePageTitle={(title) => updatePageTitle(selectedPage.id, title)}
+                  onReorderField={reorderFields}
+                  onUpdatePageTitle={(title) =>
+                    updatePageTitle(selectedPage.id, title)
+                  }
                 />
               </div>
             ) : (
@@ -105,8 +112,14 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
       </div>
 
       {/* Right Sidebar - Pages Sidebar */}
-      <div className="border-l border-gray-200 dark:border-gray-700" style={{ width: `${sidebarWidth}px` }}>
-        <SortableContext items={pages.map(p => p.id)} strategy={verticalListSortingStrategy}>
+      <div
+        className="border-l border-gray-200 dark:border-gray-700"
+        style={{ width: `${sidebarWidth}px` }}
+      >
+        <SortableContext
+          items={pages.map((p) => p.id)}
+          strategy={verticalListSortingStrategy}
+        >
           <PagesSidebar
             pages={pages}
             layout={layout}

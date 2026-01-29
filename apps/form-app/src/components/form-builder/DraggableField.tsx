@@ -21,6 +21,8 @@ import {
   Settings,
   FileCode,
   MoreVertical,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { PageActionsSelector } from './PageActionsSelector';
 import { CompactFieldCard } from './CompactFieldCard';
@@ -42,6 +44,7 @@ interface DraggableFieldProps {
   field: FormField;
   pageId: string;
   index: number; // Required for test IDs and field positioning
+  totalFields: number; // Total fields count for disabling buttons
   isConnected: boolean;
   isSelected?: boolean;
   pages?: FormPage[];
@@ -51,12 +54,15 @@ interface DraggableFieldProps {
   onEdit?: () => void;
   onMoveToPage?: (fieldId: string, targetPageId: string) => void;
   onCopyToPage?: (fieldId: string, targetPageId: string) => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
 }
 
 export const DraggableField: React.FC<DraggableFieldProps> = ({
   field,
   pageId,
   index,
+  totalFields,
   isConnected,
   isSelected = false,
   pages = [],
@@ -66,6 +72,8 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
   onEdit,
   onMoveToPage,
   onCopyToPage,
+  onMoveUp,
+  onMoveDown,
 }) => {
   const { t } = useTranslation('draggableField');
   const permissions = useFormPermissions();
@@ -324,6 +332,31 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
                           }
                         />
                       )}
+                    {/* Arrow buttons for reordering */}
+                    {permissions.canReorderFields() && (
+                      <>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={onMoveUp}
+                          disabled={!isConnected || index === 0}
+                          className="h-8 w-8 text-gray-500 hover:text-blue-600 disabled:opacity-30"
+                          title={t('tooltips.moveUp') || 'Move up'}
+                        >
+                          <ArrowUp className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={onMoveDown}
+                          disabled={!isConnected || index === totalFields - 1}
+                          className="h-8 w-8 text-gray-500 hover:text-blue-600 disabled:opacity-30"
+                          title={t('tooltips.moveDown') || 'Move down'}
+                        >
+                          <ArrowDown className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
                     {permissions.canDeleteFields() && (
                       <Button
                         size="icon"

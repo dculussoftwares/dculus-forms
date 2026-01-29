@@ -39,6 +39,7 @@ interface DroppablePageProps {
     targetPageId: string,
     fieldId: string
   ) => void;
+  onReorderField?: (pageId: string, oldIndex: number, newIndex: number) => void;
   onUpdatePageTitle?: (title: string) => void;
 }
 
@@ -56,6 +57,7 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
   onEditField,
   onMoveFieldBetweenPages,
   onCopyFieldToPage,
+  onReorderField,
   onUpdatePageTitle,
 }) => {
   const { t } = useTranslation('droppablePage');
@@ -286,6 +288,7 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
                     field={field}
                     pageId={page.id}
                     index={fieldIndex}
+                    totalFields={page.fields.length}
                     isConnected={isConnected}
                     isSelected={selectedFieldId === field.id}
                     pages={pages}
@@ -302,6 +305,18 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
                     }
                     onCopyToPage={(fieldId: string, targetPageId: string) =>
                       onCopyFieldToPage(page.id, targetPageId, fieldId)
+                    }
+                    onMoveUp={
+                      onReorderField && fieldIndex > 0
+                        ? () =>
+                            onReorderField(page.id, fieldIndex, fieldIndex - 1)
+                        : undefined
+                    }
+                    onMoveDown={
+                      onReorderField && fieldIndex < page.fields.length - 1
+                        ? () =>
+                            onReorderField(page.id, fieldIndex, fieldIndex + 1)
+                        : undefined
                     }
                   />
 
