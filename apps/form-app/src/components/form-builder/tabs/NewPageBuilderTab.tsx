@@ -29,6 +29,7 @@ import {
   CheckSquare,
   Calendar,
   FileCode,
+  GripVertical,
 } from 'lucide-react';
 
 // =============================================================================
@@ -371,12 +372,14 @@ const PagesSidebar: React.FC = () => {
 };
 
 /**
- * FieldCard - Displays a single existing field (read-only for now)
+ * FieldCard - Displays a single existing field with optional drag handle
  */
-const FieldCard: React.FC<{ field: FormField; index: number }> = ({
-  field,
-  index,
-}) => {
+const FieldCard: React.FC<{
+  field: FormField;
+  index: number;
+  isDragging?: boolean;
+  dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
+}> = ({ field, index, isDragging = false, dragHandleProps }) => {
   // Get label for fillable fields, or use type name for others
   const label: string =
     'label' in field && typeof field.label === 'string' && field.label
@@ -392,12 +395,26 @@ const FieldCard: React.FC<{ field: FormField; index: number }> = ({
 
   return (
     <div
-      className="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg
-                 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm
-                 transition-all duration-200 group"
+      className={`
+        p-4 bg-white dark:bg-gray-800 border rounded-lg transition-all duration-200 group
+        ${
+          isDragging
+            ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-950/30 opacity-50 shadow-lg'
+            : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm'
+        }
+      `}
       data-testid={`field-${field.id}`}
     >
       <div className="flex items-center gap-3">
+        {/* Drag handle */}
+        <div
+          {...dragHandleProps}
+          className="flex-shrink-0 p-1 -ml-2 cursor-grab hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+          title="Drag to reorder"
+        >
+          <GripVertical className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+        </div>
+
         {/* Field number badge */}
         <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs flex items-center justify-center font-medium">
           {index + 1}
@@ -426,6 +443,36 @@ const FieldCard: React.FC<{ field: FormField; index: number }> = ({
             <span className="text-xs text-red-500 font-medium">Required</span>
           )}
       </div>
+    </div>
+  );
+};
+
+/**
+ * DraggableFieldCard - Wrapper that makes FieldCard draggable via grip handle
+ */
+const DraggableFieldCard: React.FC<{
+  field: FormField;
+  index: number;
+  pageId: string;
+}> = ({ field, index, pageId }) => {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `existing-field-${field.id}`,
+    data: {
+      type: 'existing-field',
+      field,
+      pageId,
+      index,
+    },
+  });
+
+  return (
+    <div ref={setNodeRef}>
+      <FieldCard
+        field={field}
+        index={index}
+        isDragging={isDragging}
+        dragHandleProps={{ ...attributes, ...listeners }}
+      />
     </div>
   );
 };
@@ -508,7 +555,7 @@ const FieldListWithDropZones: React.FC<{
 
       {fields.map((field, index) => (
         <div key={field.id}>
-          <FieldCard field={field} index={index} />
+          <DraggableFieldCard field={field} index={index} pageId={pageId} />
           {/* Drop zone after each field */}
           <DropIndicator index={index + 1} pageId={pageId} />
         </div>
