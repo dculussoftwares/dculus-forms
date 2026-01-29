@@ -450,6 +450,74 @@ const EmptyFormAreaPlaceholder: React.FC<{ isConnected: boolean }> = ({
 };
 
 /**
+ * DropIndicator - A drop zone between fields for inserting new fields
+ */
+const DropIndicator: React.FC<{
+  index: number;
+  pageId: string;
+}> = ({ index, pageId }) => {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `drop-indicator-${pageId}-${index}`,
+    data: {
+      type: 'field-insert',
+      pageId,
+      insertIndex: index,
+    },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`
+        transition-all duration-200
+        ${isOver ? 'h-14 py-1' : 'h-1 py-0'}
+      `}
+    >
+      <div
+        className={`
+          w-full h-full rounded-lg border-2 border-dashed flex items-center justify-center
+          transition-all duration-200
+          ${
+            isOver
+              ? 'border-blue-500 bg-blue-100 dark:bg-blue-950/50'
+              : 'border-transparent'
+          }
+        `}
+      >
+        {isOver && (
+          <span className="text-xs text-blue-600 dark:text-blue-400 font-medium animate-pulse">
+            Drop here to insert
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * FieldListWithDropZones - Renders fields with drop indicators between them
+ */
+const FieldListWithDropZones: React.FC<{
+  fields: FormField[];
+  pageId: string;
+}> = ({ fields, pageId }) => {
+  return (
+    <div>
+      {/* Drop zone at the beginning */}
+      <DropIndicator index={0} pageId={pageId} />
+
+      {fields.map((field, index) => (
+        <div key={field.id}>
+          <FieldCard field={field} index={index} />
+          {/* Drop zone after each field */}
+          <DropIndicator index={index + 1} pageId={pageId} />
+        </div>
+      ))}
+    </div>
+  );
+};
+
+/**
  * FormArea - Center column displaying form fields (drop zone)
  */
 const FormArea: React.FC = () => {
@@ -488,20 +556,12 @@ const FormArea: React.FC = () => {
               data-testid="form-fields-area"
             >
               {selectedPage && selectedPage.fields.length > 0 ? (
-                <div className="space-y-3">
-                  {selectedPage.fields.map((field, index) => (
-                    <FieldCard key={field.id} field={field} index={index} />
-                  ))}
-                </div>
+                <FieldListWithDropZones
+                  fields={selectedPage.fields}
+                  pageId={selectedPage.id}
+                />
               ) : (
                 <EmptyFormAreaPlaceholder isConnected={isConnected} />
-              )}
-
-              {/* Drop indicator when dragging over */}
-              {isOver && (
-                <div className="mt-3 p-3 border-2 border-dashed border-blue-400 bg-blue-50 dark:bg-blue-950/50 rounded-lg text-center text-blue-600 dark:text-blue-400 text-sm font-medium animate-pulse">
-                  Drop here to add field
-                </div>
               )}
             </div>
           </div>
@@ -572,6 +632,9 @@ export const NewPageBuilderTab: React.FC = () => {
   const [activeFieldType, setActiveFieldType] =
     useState<FieldTypeConfig | null>(null);
 
+  // Get store actions
+  const { addField, addFieldAtIndex } = useFormBuilderStore();
+
   // Configure sensors - require slight movement before drag starts
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -589,9 +652,46 @@ export const NewPageBuilderTab: React.FC = () => {
     }
   };
 
-  // Handle drag end - clear active field type (Phase 6 will add field creation)
-  const handleDragEnd = (_event: DragEndEvent) => {
+  // Handle drag end - add field if dropped on form area
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    // Always clear the active field type
     setActiveFieldType(null);
+
+    // Check if we have a valid drop target
+    if (!over) return;
+
+    // Only handle field-type drags
+    if (active.data.current?.type !== 'field-type') return;
+
+    const fieldTypeConfig = active.data.current.fieldType as FieldTypeConfig;
+
+    // Check if dropping onto a field-insert zone (between fields)
+    if (over.data.current?.type === 'field-insert') {
+      const targetPageId = over.data.current.pageId as string;
+      const insertIndex = over.data.current.insertIndex as number;
+
+      if (targetPageId && fieldTypeConfig) {
+        console.log(
+          `Inserting field ${fieldTypeConfig.type} at index ${insertIndex} in page ${targetPageId}`
+        );
+        addFieldAtIndex(targetPageId, fieldTypeConfig.type, {}, insertIndex);
+      }
+      return;
+    }
+
+    // Check if dropping onto the form area (append to end)
+    if (over.data.current?.type === 'form-area') {
+      const targetPageId = over.data.current.pageId as string;
+
+      if (targetPageId && fieldTypeConfig) {
+        console.log(
+          `Adding field ${fieldTypeConfig.type} to end of page ${targetPageId}`
+        );
+        addField(targetPageId, fieldTypeConfig.type, {});
+      }
+    }
   };
 
   return (
