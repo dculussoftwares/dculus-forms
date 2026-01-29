@@ -10,7 +10,7 @@ on:
         options:
           - dev
           - staging
-          - production
+          # Production is NOT available - must be destroyed manually with approval
       destroy_mongodb:
         description: '🔥 Destroy MongoDB Atlas (PERMANENT DATA LOSS - Cannot be recovered)'
         required: false
