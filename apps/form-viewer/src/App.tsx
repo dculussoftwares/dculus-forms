@@ -14,19 +14,24 @@ function App() {
           <Routes>
             {/* Public form routes - no header */}
             <Route path="/f/:shortUrl" element={<FormViewer />} />
-            
+            {/* Legacy URL format support (without /f/ prefix) */}
+            <Route path="/:shortUrl" element={<FormViewer />} />
+
             {/* Main app routes - with header */}
-            <Route path="/*" element={
-              <>
-                <Header />
-                <main className="container mx-auto px-4 py-8">
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/demo" element={<DemoPage />} />
-                  </Routes>
-                </main>
-              </>
-            } />
+            <Route
+              path="/*"
+              element={
+                <>
+                  <Header />
+                  <main className="container mx-auto px-4 py-8">
+                    <Routes>
+                      <Route path="/" element={<Home />} />
+                      <Route path="/demo" element={<DemoPage />} />
+                    </Routes>
+                  </main>
+                </>
+              }
+            />
           </Routes>
         </div>
       </Router>
