@@ -1,8 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ScrollArea } from '@dculus/ui';
 import { FormPage, FieldType } from '@dculus/types';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useTranslation } from '../../../hooks';
+import {
+  DndContext,
+  DragOverlay,
+  useDraggable,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragStartEvent,
+  type DragEndEvent,
+} from '@dnd-kit/core';
 import {
   Type,
   FileText,
@@ -168,29 +178,40 @@ const CATEGORY_STYLES = {
 };
 
 /**
- * FieldTypeCard - Static display of a field type (no drag yet)
+ * FieldTypeCardContent - Display content of a field type card
  */
-const FieldTypeCard: React.FC<{ fieldType: FieldTypeConfig }> = ({
-  fieldType,
-}) => {
+const FieldTypeCardContent: React.FC<{
+  fieldType: FieldTypeConfig;
+  isDragging?: boolean;
+  isOverlay?: boolean;
+}> = ({ fieldType, isDragging = false, isOverlay = false }) => {
   const categoryStyle = CATEGORY_STYLES[fieldType.category];
 
   return (
     <div
-      className="p-3 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg 
-                 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-950/30
-                 cursor-pointer transition-all duration-200 group"
+      className={`
+        p-3 border-2 border-dashed rounded-lg transition-all duration-200 group
+        ${
+          isOverlay
+            ? 'border-blue-500 bg-white dark:bg-gray-800 shadow-xl cursor-grabbing'
+            : isDragging
+              ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-950/30 opacity-50'
+              : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 cursor-grab'
+        }
+      `}
       data-testid={`field-type-${fieldType.type}`}
     >
       <div className="flex items-start gap-3">
         <div
-          className={`p-2 rounded-lg ${categoryStyle.iconBg} ${categoryStyle.iconText} 
-                      group-hover:scale-110 transition-transform duration-200`}
+          className={`p-2 rounded-lg ${categoryStyle.iconBg} ${categoryStyle.iconText}
+                      ${!isDragging && !isOverlay ? 'group-hover:scale-110' : ''} transition-transform duration-200`}
         >
           {fieldType.icon}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
+          <div
+            className={`text-sm font-medium ${isOverlay ? 'text-gray-900 dark:text-white' : 'text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400'}`}
+          >
             {fieldType.label}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -198,6 +219,27 @@ const FieldTypeCard: React.FC<{ fieldType: FieldTypeConfig }> = ({
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+/**
+ * DraggableFieldTypeCard - Wrapper that makes field type cards draggable
+ */
+const DraggableFieldTypeCard: React.FC<{ fieldType: FieldTypeConfig }> = ({
+  fieldType,
+}) => {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `field-type-${fieldType.type}`,
+    data: {
+      type: 'field-type',
+      fieldType,
+    },
+  });
+
+  return (
+    <div ref={setNodeRef} {...attributes} {...listeners}>
+      <FieldTypeCardContent fieldType={fieldType} isDragging={isDragging} />
     </div>
   );
 };
@@ -235,7 +277,10 @@ const FieldTypesSidebar: React.FC = () => {
             </h3>
             <div className="space-y-2">
               {inputFields.map((fieldType) => (
-                <FieldTypeCard key={fieldType.type} fieldType={fieldType} />
+                <DraggableFieldTypeCard
+                  key={fieldType.type}
+                  fieldType={fieldType}
+                />
               ))}
             </div>
           </div>
@@ -247,7 +292,10 @@ const FieldTypesSidebar: React.FC = () => {
             </h3>
             <div className="space-y-2">
               {choiceFields.map((fieldType) => (
-                <FieldTypeCard key={fieldType.type} fieldType={fieldType} />
+                <DraggableFieldTypeCard
+                  key={fieldType.type}
+                  fieldType={fieldType}
+                />
               ))}
             </div>
           </div>
@@ -259,7 +307,10 @@ const FieldTypesSidebar: React.FC = () => {
             </h3>
             <div className="space-y-2">
               {contentFields.map((fieldType) => (
-                <FieldTypeCard key={fieldType.type} fieldType={fieldType} />
+                <DraggableFieldTypeCard
+                  key={fieldType.type}
+                  fieldType={fieldType}
+                />
               ))}
             </div>
           </div>
@@ -408,23 +459,62 @@ const ConnectionStatus: React.FC<{ isConnected: boolean }> = ({
 // =============================================================================
 
 /**
- * NewPageBuilderTab - Phase 1: Basic 3-Column Layout
- *
- * This is a fresh reimplementation of the page builder with stable drag-and-drop.
+ * NewPageBuilderTab - Reimplemented page builder with stable drag-and-drop.
  * Each phase adds functionality incrementally for thorough testing.
  */
 export const NewPageBuilderTab: React.FC = () => {
+  // Track the currently dragged field type
+  const [activeFieldType, setActiveFieldType] =
+    useState<FieldTypeConfig | null>(null);
+
+  // Configure sensors - require slight movement before drag starts
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5, // 5px movement to start drag
+      },
+    })
+  );
+
+  // Handle drag start - store the active field type
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    if (active.data.current?.type === 'field-type') {
+      setActiveFieldType(active.data.current.fieldType as FieldTypeConfig);
+    }
+  };
+
+  // Handle drag end - clear active field type (Phase 6 will add field creation)
+  const handleDragEnd = (_event: DragEndEvent) => {
+    setActiveFieldType(null);
+  };
+
   return (
-    <div className="flex h-full" data-testid="new-page-builder-tab">
-      {/* Left: Field Types */}
-      <FieldTypesSidebar />
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="flex h-full" data-testid="new-page-builder-tab">
+        {/* Left: Field Types */}
+        <FieldTypesSidebar />
 
-      {/* Center: Form Area */}
-      <FormArea />
+        {/* Center: Form Area */}
+        <FormArea />
 
-      {/* Right: Pages */}
-      <PagesSidebar />
-    </div>
+        {/* Right: Pages */}
+        <PagesSidebar />
+      </div>
+
+      {/* Drag Overlay - follows cursor during drag */}
+      <DragOverlay dropAnimation={null}>
+        {activeFieldType && (
+          <div className="w-72">
+            <FieldTypeCardContent fieldType={activeFieldType} isOverlay />
+          </div>
+        )}
+      </DragOverlay>
+    </DndContext>
   );
 };
 
