@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { ScrollArea } from '@dculus/ui';
-import { FormPage, FieldType } from '@dculus/types';
+import {
+  FormPage,
+  FieldType,
+  FormField,
+  FillableFormField,
+} from '@dculus/types';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useTranslation } from '../../../hooks';
 import {
@@ -365,10 +370,88 @@ const PagesSidebar: React.FC = () => {
 };
 
 /**
+ * FieldCard - Displays a single existing field (read-only for now)
+ */
+const FieldCard: React.FC<{ field: FormField; index: number }> = ({
+  field,
+  index,
+}) => {
+  // Get label for fillable fields, or use type name for others
+  const label: string =
+    'label' in field && typeof field.label === 'string' && field.label
+      ? field.label
+      : field.type.replace(/_/g, ' ').toLowerCase();
+
+  // Get the icon for this field type
+  const fieldTypeConfig = FIELD_TYPES.find((ft) => ft.type === field.type);
+  const icon = fieldTypeConfig?.icon || <Type className="w-5 h-5" />;
+  const categoryStyle = fieldTypeConfig
+    ? CATEGORY_STYLES[fieldTypeConfig.category]
+    : CATEGORY_STYLES.input;
+
+  return (
+    <div
+      className="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg
+                 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm
+                 transition-all duration-200 group"
+      data-testid={`field-${field.id}`}
+    >
+      <div className="flex items-center gap-3">
+        {/* Field number badge */}
+        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs flex items-center justify-center font-medium">
+          {index + 1}
+        </div>
+
+        {/* Field icon */}
+        <div
+          className={`p-2 rounded-lg ${categoryStyle.iconBg} ${categoryStyle.iconText}`}
+        >
+          {icon}
+        </div>
+
+        {/* Field info */}
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+            {label}
+          </div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            {field.type.replace(/_/g, ' ')}
+          </div>
+        </div>
+
+        {/* Required indicator */}
+        {'validation' in field &&
+          (field as FillableFormField).validation?.required && (
+            <span className="text-xs text-red-500 font-medium">Required</span>
+          )}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * EmptyFormAreaPlaceholder - Shows when no fields exist
+ */
+const EmptyFormAreaPlaceholder: React.FC<{ isConnected: boolean }> = ({
+  isConnected,
+}) => {
+  const { t } = useTranslation('newPageBuilderTab');
+
+  return (
+    <div className="flex items-center justify-center h-full min-h-[200px] text-gray-500 dark:text-gray-400">
+      <div className="text-center">
+        <p className="text-lg font-medium">{t('formArea.placeholder')}</p>
+        <ConnectionStatus isConnected={isConnected} />
+        <p className="text-sm mt-2">Drag a field type here to add it</p>
+      </div>
+    </div>
+  );
+};
+
+/**
  * FormArea - Center column displaying form fields
  */
 const FormArea: React.FC = () => {
-  const { t } = useTranslation('newPageBuilderTab');
   const { isConnected, pages, selectedPageId } = useFormBuilderStore();
   const selectedPage = pages.find((p) => p.id === selectedPageId);
 
@@ -382,22 +465,18 @@ const FormArea: React.FC = () => {
 
             {/* Form Fields Container */}
             <div
-              className="min-h-[400px] p-6 bg-white dark:bg-gray-900 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600"
+              className="min-h-[400px] p-4 bg-white dark:bg-gray-900 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600"
               data-testid="form-fields-area"
             >
-              <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
-                <div className="text-center">
-                  <p className="text-lg font-medium">
-                    {t('formArea.placeholder')}
-                  </p>
-                  <ConnectionStatus isConnected={isConnected} />
-                  {selectedPage && (
-                    <p className="text-sm mt-1">
-                      Page has {selectedPage.fields.length} field(s)
-                    </p>
-                  )}
+              {selectedPage && selectedPage.fields.length > 0 ? (
+                <div className="space-y-3">
+                  {selectedPage.fields.map((field, index) => (
+                    <FieldCard key={field.id} field={field} index={index} />
+                  ))}
                 </div>
-              </div>
+              ) : (
+                <EmptyFormAreaPlaceholder isConnected={isConnected} />
+              )}
             </div>
           </div>
         </div>
