@@ -1,8 +1,19 @@
 import React from 'react';
 import { ScrollArea } from '@dculus/ui';
-import { FormPage } from '@dculus/types';
+import { FormPage, FieldType } from '@dculus/types';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useTranslation } from '../../../hooks';
+import {
+  Type,
+  FileText,
+  Mail,
+  Hash,
+  ChevronDown,
+  Circle,
+  CheckSquare,
+  Calendar,
+  FileCode,
+} from 'lucide-react';
 
 // =============================================================================
 // Types
@@ -57,11 +68,150 @@ const PageCard: React.FC<PageCardProps> = ({
   );
 };
 
+// =============================================================================
+// Field Types Configuration
+// =============================================================================
+
+interface FieldTypeConfig {
+  type: FieldType;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  category: 'input' | 'choice' | 'content';
+}
+
+const FIELD_TYPES: FieldTypeConfig[] = [
+  // Input Fields
+  {
+    type: FieldType.TEXT_INPUT_FIELD,
+    label: 'Short Text',
+    description: 'Single line text input',
+    icon: <Type className="w-5 h-5" />,
+    category: 'input',
+  },
+  {
+    type: FieldType.TEXT_AREA_FIELD,
+    label: 'Long Text',
+    description: 'Multi-line text area',
+    icon: <FileText className="w-5 h-5" />,
+    category: 'input',
+  },
+  {
+    type: FieldType.EMAIL_FIELD,
+    label: 'Email',
+    description: 'Email address input',
+    icon: <Mail className="w-5 h-5" />,
+    category: 'input',
+  },
+  {
+    type: FieldType.NUMBER_FIELD,
+    label: 'Number',
+    description: 'Numeric input',
+    icon: <Hash className="w-5 h-5" />,
+    category: 'input',
+  },
+  {
+    type: FieldType.DATE_FIELD,
+    label: 'Date',
+    description: 'Date picker',
+    icon: <Calendar className="w-5 h-5" />,
+    category: 'input',
+  },
+  // Choice Fields
+  {
+    type: FieldType.SELECT_FIELD,
+    label: 'Dropdown',
+    description: 'Single choice dropdown',
+    icon: <ChevronDown className="w-5 h-5" />,
+    category: 'choice',
+  },
+  {
+    type: FieldType.RADIO_FIELD,
+    label: 'Radio',
+    description: 'Single choice options',
+    icon: <Circle className="w-5 h-5" />,
+    category: 'choice',
+  },
+  {
+    type: FieldType.CHECKBOX_FIELD,
+    label: 'Checkbox',
+    description: 'Multiple choice options',
+    icon: <CheckSquare className="w-5 h-5" />,
+    category: 'choice',
+  },
+  // Content Fields
+  {
+    type: FieldType.RICH_TEXT_FIELD,
+    label: 'Rich Text',
+    description: 'Formatted content block',
+    icon: <FileCode className="w-5 h-5" />,
+    category: 'content',
+  },
+];
+
+const CATEGORY_STYLES = {
+  input: {
+    label: 'Input',
+    iconBg: 'bg-blue-100 dark:bg-blue-900/50',
+    iconText: 'text-blue-600 dark:text-blue-400',
+  },
+  choice: {
+    label: 'Choice',
+    iconBg: 'bg-purple-100 dark:bg-purple-900/50',
+    iconText: 'text-purple-600 dark:text-purple-400',
+  },
+  content: {
+    label: 'Content',
+    iconBg: 'bg-green-100 dark:bg-green-900/50',
+    iconText: 'text-green-600 dark:text-green-400',
+  },
+};
+
+/**
+ * FieldTypeCard - Static display of a field type (no drag yet)
+ */
+const FieldTypeCard: React.FC<{ fieldType: FieldTypeConfig }> = ({
+  fieldType,
+}) => {
+  const categoryStyle = CATEGORY_STYLES[fieldType.category];
+
+  return (
+    <div
+      className="p-3 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg 
+                 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-950/30
+                 cursor-pointer transition-all duration-200 group"
+      data-testid={`field-type-${fieldType.type}`}
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className={`p-2 rounded-lg ${categoryStyle.iconBg} ${categoryStyle.iconText} 
+                      group-hover:scale-110 transition-transform duration-200`}
+        >
+          {fieldType.icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
+            {fieldType.label}
+          </div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            {fieldType.description}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /**
  * FieldTypesSidebar - Left column displaying available field types
  */
 const FieldTypesSidebar: React.FC = () => {
   const { t } = useTranslation('newPageBuilderTab');
+
+  // Group field types by category
+  const inputFields = FIELD_TYPES.filter((f) => f.category === 'input');
+  const choiceFields = FIELD_TYPES.filter((f) => f.category === 'choice');
+  const contentFields = FIELD_TYPES.filter((f) => f.category === 'content');
 
   return (
     <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col">
@@ -77,10 +227,41 @@ const FieldTypesSidebar: React.FC = () => {
 
       {/* Field Types List */}
       <ScrollArea className="flex-1 p-4">
-        <div className="space-y-2">
-          {/* Phase 2 will populate this with field type cards */}
-          <div className="p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-center text-gray-500 dark:text-gray-400">
-            {t('sidebar.fieldTypes.placeholder')}
+        <div className="space-y-6">
+          {/* Input Fields */}
+          <div>
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+              {CATEGORY_STYLES.input.label}
+            </h3>
+            <div className="space-y-2">
+              {inputFields.map((fieldType) => (
+                <FieldTypeCard key={fieldType.type} fieldType={fieldType} />
+              ))}
+            </div>
+          </div>
+
+          {/* Choice Fields */}
+          <div>
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+              {CATEGORY_STYLES.choice.label}
+            </h3>
+            <div className="space-y-2">
+              {choiceFields.map((fieldType) => (
+                <FieldTypeCard key={fieldType.type} fieldType={fieldType} />
+              ))}
+            </div>
+          </div>
+
+          {/* Content Fields */}
+          <div>
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+              {CATEGORY_STYLES.content.label}
+            </h3>
+            <div className="space-y-2">
+              {contentFields.map((fieldType) => (
+                <FieldTypeCard key={fieldType.type} fieldType={fieldType} />
+              ))}
+            </div>
           </div>
         </div>
       </ScrollArea>
