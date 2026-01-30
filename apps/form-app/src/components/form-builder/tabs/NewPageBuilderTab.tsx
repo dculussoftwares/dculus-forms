@@ -378,8 +378,17 @@ const FieldCard: React.FC<{
   field: FormField;
   index: number;
   isDragging?: boolean;
+  isSelected?: boolean;
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
-}> = ({ field, index, isDragging = false, dragHandleProps }) => {
+  onClick?: () => void;
+}> = ({
+  field,
+  index,
+  isDragging = false,
+  isSelected = false,
+  dragHandleProps,
+  onClick,
+}) => {
   // Get label for fillable fields, or use type name for others
   const label: string =
     'label' in field && typeof field.label === 'string' && field.label
@@ -395,12 +404,15 @@ const FieldCard: React.FC<{
 
   return (
     <div
+      onClick={onClick}
       className={`
         p-4 bg-white dark:bg-gray-800 border rounded-lg transition-all duration-200 group
         ${
           isDragging
             ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-950/30 opacity-50 shadow-lg'
-            : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm'
+            : isSelected
+              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/50 ring-2 ring-blue-500/20 shadow-md'
+              : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm cursor-pointer'
         }
       `}
       data-testid={`field-${field.id}`}
@@ -411,6 +423,7 @@ const FieldCard: React.FC<{
           {...dragHandleProps}
           className="flex-shrink-0 p-1 -ml-2 cursor-grab hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
           title="Drag to reorder"
+          onClick={(e) => e.stopPropagation()}
         >
           <GripVertical className="w-4 h-4 text-gray-400 dark:text-gray-500" />
         </div>
@@ -455,6 +468,7 @@ const DraggableFieldCard: React.FC<{
   index: number;
   pageId: string;
 }> = ({ field, index, pageId }) => {
+  const { selectedFieldId, setSelectedField } = useFormBuilderStore();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `existing-field-${field.id}`,
     data: {
@@ -465,13 +479,21 @@ const DraggableFieldCard: React.FC<{
     },
   });
 
+  const isSelected = selectedFieldId === field.id;
+
+  const handleClick = () => {
+    setSelectedField(field.id);
+  };
+
   return (
     <div ref={setNodeRef}>
       <FieldCard
         field={field}
         index={index}
         isDragging={isDragging}
+        isSelected={isSelected}
         dragHandleProps={{ ...attributes, ...listeners }}
+        onClick={handleClick}
       />
     </div>
   );
