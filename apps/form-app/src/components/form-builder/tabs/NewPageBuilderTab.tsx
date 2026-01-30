@@ -31,6 +31,7 @@ import {
   Calendar,
   FileCode,
   GripVertical,
+  Trash2,
 } from 'lucide-react';
 
 // =============================================================================
@@ -287,8 +288,14 @@ const FieldTypesSidebar: React.FC = () => {
  * RightSidebar - Shows field settings when a field is selected
  */
 const RightSidebar: React.FC = () => {
-  const { selectedFieldId, updateField, isConnected, pages } =
-    useFormBuilderStore();
+  const {
+    selectedFieldId,
+    updateField,
+    removeField,
+    isConnected,
+    pages,
+    setSelectedField,
+  } = useFormBuilderStore();
   const selectedField = useFormBuilderStore((state) => {
     if (!selectedFieldId) return null;
     for (const page of state.pages) {
@@ -310,12 +317,26 @@ const RightSidebar: React.FC = () => {
     }
   };
 
+  const handleDelete = () => {
+    if (selectedFieldId) {
+      // Find which page contains this field
+      const pageWithField = pages.find((page) =>
+        page.fields.some((f) => f.id === selectedFieldId)
+      );
+      if (pageWithField) {
+        removeField(pageWithField.id, selectedFieldId);
+        setSelectedField(null); // Clear selection after delete
+      }
+    }
+  };
+
   return (
     <div className="w-80 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col">
       <FieldSettingsV2
         field={selectedField}
         isConnected={isConnected}
         onUpdate={handleUpdate}
+        onDelete={handleDelete}
       />
     </div>
   );
@@ -331,6 +352,7 @@ const FieldCard: React.FC<{
   isSelected?: boolean;
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
   onClick?: () => void;
+  onDelete?: () => void;
 }> = ({
   field,
   index,
@@ -338,6 +360,7 @@ const FieldCard: React.FC<{
   isSelected = false,
   dragHandleProps,
   onClick,
+  onDelete,
 }) => {
   // Get label for fillable fields, or use type name for others
   const label: string =
@@ -403,8 +426,24 @@ const FieldCard: React.FC<{
         {/* Required indicator */}
         {'validation' in field &&
           (field as FillableFormField).validation?.required && (
-            <span className="text-xs text-red-500 font-medium">Required</span>
+            <span className="text-xs text-red-500 font-medium mr-2">
+              Required
+            </span>
           )}
+
+        {/* Delete Button - only show on hover if not dragging */}
+        {!isDragging && onDelete && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-all opacity-0 group-hover:opacity-100"
+            title="Delete field"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -418,7 +457,8 @@ const DraggableFieldCard: React.FC<{
   index: number;
   pageId: string;
 }> = ({ field, index, pageId }) => {
-  const { selectedFieldId, setSelectedField } = useFormBuilderStore();
+  const { selectedFieldId, setSelectedField, removeField } =
+    useFormBuilderStore();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `existing-field-${field.id}`,
     data: {
@@ -435,6 +475,13 @@ const DraggableFieldCard: React.FC<{
     setSelectedField(field.id);
   };
 
+  const handleDelete = () => {
+    removeField(pageId, field.id);
+    if (isSelected) {
+      setSelectedField(null);
+    }
+  };
+
   return (
     <div ref={setNodeRef}>
       <FieldCard
@@ -444,6 +491,7 @@ const DraggableFieldCard: React.FC<{
         isSelected={isSelected}
         dragHandleProps={{ ...attributes, ...listeners }}
         onClick={handleClick}
+        onDelete={handleDelete}
       />
     </div>
   );

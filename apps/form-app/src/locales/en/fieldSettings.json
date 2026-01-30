@@ -5,5 +5,8 @@
   "unsupportedField": {
     "title": "Unsupported field type: {{fieldType}}",
     "subtitle": "Please select a different field or contact support"
+  },
+  "deleteField": {
+    "button": "Delete Field"
   }
 }

@@ -23,5 +23,8 @@
     "status": {
         "connected": "Connected",
         "connecting": "Connecting..."
+    },
+    "deleteField": {
+        "button": "Delete Field"
     }
 }

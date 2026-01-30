@@ -7,13 +7,14 @@ import {
   NumberFieldSettings,
   SelectionFieldSettings,
   DateFieldSettings,
-  RichTextFieldSettings
+  RichTextFieldSettings,
 } from './field-settings-v2';
 
 interface FieldSettingsV2Props {
   field: FormField | null;
   isConnected: boolean;
   onUpdate?: (updates: Record<string, any>) => void;
+  onDelete?: () => void;
   onFieldSwitch?: () => void;
 }
 
@@ -26,6 +27,7 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
   field,
   isConnected,
   onUpdate,
+  onDelete,
 }) => {
   const { t } = useTranslation('fieldSettings');
   // Show empty state if no field is selected
@@ -43,63 +45,97 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
     );
   }
 
+  // Wrapper to add delete button to all field settings
+  const FieldSettingsWrapper: React.FC<{ children: React.ReactNode }> = ({
+    children,
+  }) => (
+    <div data-testid="field-settings-panel" className="h-full flex flex-col">
+      <div className="flex-1 overflow-y-auto">{children}</div>
+      {onDelete && isConnected && (
+        <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+          <button
+            onClick={onDelete}
+            className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
+            </svg>
+            {t('deleteField.button')}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
   // Route to the appropriate field-specific settings component
   switch (field.type) {
     case FieldType.TEXT_INPUT_FIELD:
     case FieldType.TEXT_AREA_FIELD:
     case FieldType.EMAIL_FIELD:
       return (
-        <div data-testid="field-settings-panel" className="h-full flex flex-col">
+        <FieldSettingsWrapper>
           <TextFieldSettings
             field={field as any}
             isConnected={isConnected}
             onUpdate={onUpdate}
           />
-        </div>
+        </FieldSettingsWrapper>
       );
 
     case FieldType.NUMBER_FIELD:
       return (
-        <div data-testid="field-settings-panel" className="h-full flex flex-col">
+        <FieldSettingsWrapper>
           <NumberFieldSettings
             field={field as any}
             isConnected={isConnected}
             onUpdate={onUpdate}
           />
-        </div>
+        </FieldSettingsWrapper>
       );
 
     case FieldType.SELECT_FIELD:
     case FieldType.RADIO_FIELD:
     case FieldType.CHECKBOX_FIELD:
       return (
-        <SelectionFieldSettings
-          field={field as any}
-          isConnected={isConnected}
-          onUpdate={onUpdate}
-        />
+        <FieldSettingsWrapper>
+          <SelectionFieldSettings
+            field={field as any}
+            isConnected={isConnected}
+            onUpdate={onUpdate}
+          />
+        </FieldSettingsWrapper>
       );
 
     case FieldType.DATE_FIELD:
       return (
-        <div data-testid="field-settings-panel" className="h-full flex flex-col">
+        <FieldSettingsWrapper>
           <DateFieldSettings
             field={field as any}
             isConnected={isConnected}
             onUpdate={onUpdate}
           />
-        </div>
+        </FieldSettingsWrapper>
       );
 
     case FieldType.RICH_TEXT_FIELD:
       return (
-        <div data-testid="field-settings-panel" className="h-full flex flex-col">
+        <FieldSettingsWrapper>
           <RichTextFieldSettings
             field={field as any}
             isConnected={isConnected}
             onUpdate={onUpdate}
           />
-        </div>
+        </FieldSettingsWrapper>
       );
 
     default:
@@ -110,7 +146,11 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
         >
           <div className="text-center">
             <Settings className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">{t('unsupportedField.title', { values: { fieldType: field.type } })}</p>
+            <p className="text-sm">
+              {t('unsupportedField.title', {
+                values: { fieldType: field.type },
+              })}
+            </p>
             <p className="text-xs mt-1">{t('unsupportedField.subtitle')}</p>
           </div>
         </div>
