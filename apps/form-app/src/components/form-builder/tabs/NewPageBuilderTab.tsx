@@ -536,8 +536,8 @@ const DropIndicator: React.FC<{
     <div
       ref={setNodeRef}
       className={`
-        transition-all duration-200
-        ${isOver ? 'h-14 py-1' : 'h-1 py-0'}
+        transition-all duration-200 rounded-lg my-1
+        ${isOver ? 'h-16 py-2' : 'h-3 hover:h-6 py-0'}
       `}
     >
       <div
@@ -828,7 +828,7 @@ export const NewPageBuilderTab: React.FC = () => {
           </div>
         )}
         {activeField && (
-          <div className="w-[500px] max-w-[90vw]">
+          <div className="w-[500px] max-w-[90vw] pointer-events-none">
             <FieldCard
               field={activeField.field}
               index={activeField.index}
