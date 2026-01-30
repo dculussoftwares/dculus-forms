@@ -8,6 +8,7 @@ import {
 } from '@dculus/types';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useTranslation } from '../../../hooks';
+import FieldSettingsV2 from '../FieldSettingsV2';
 import {
   DndContext,
   DragOverlay,
@@ -36,54 +37,9 @@ import {
 // Types
 // =============================================================================
 
-interface PageCardProps {
-  pageId: string;
-  pageTitle: string;
-  fieldCount: number;
-  pageNumber: number;
-  isSelected: boolean;
-}
-
 // =============================================================================
 // Sub-Components
 // =============================================================================
-
-/**
- * PageCard - Displays a single page in the pages sidebar
- */
-const PageCard: React.FC<PageCardProps> = ({
-  pageTitle,
-  fieldCount,
-  pageNumber,
-  isSelected,
-}) => {
-  const { t } = useTranslation('newPageBuilderTab');
-
-  return (
-    <div
-      className={`
-        p-3 rounded-lg border-2 cursor-pointer transition-all
-        ${
-          isSelected
-            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
-            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-        }
-      `}
-    >
-      <div className="flex items-center gap-2">
-        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center font-medium">
-          {pageNumber}
-        </span>
-        <span className="font-medium text-gray-900 dark:text-white truncate">
-          {pageTitle || t('formArea.untitledPage')}
-        </span>
-      </div>
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-8">
-        {fieldCount} {fieldCount === 1 ? 'field' : 'fields'}
-      </p>
-    </div>
-  );
-};
 
 // =============================================================================
 // Field Types Configuration
@@ -328,45 +284,39 @@ const FieldTypesSidebar: React.FC = () => {
 };
 
 /**
- * PagesSidebar - Right column displaying form pages
+ * RightSidebar - Shows field settings when a field is selected
  */
-const PagesSidebar: React.FC = () => {
-  const { t } = useTranslation('newPageBuilderTab');
-  const { pages, selectedPageId } = useFormBuilderStore();
+const RightSidebar: React.FC = () => {
+  const { selectedFieldId, updateField, isConnected, pages } =
+    useFormBuilderStore();
+  const selectedField = useFormBuilderStore((state) => {
+    if (!selectedFieldId) return null;
+    for (const page of state.pages) {
+      const field = page.fields.find((f) => f.id === selectedFieldId);
+      if (field) return field;
+    }
+    return null;
+  });
+
+  const handleUpdate = (updates: Record<string, any>) => {
+    if (selectedFieldId) {
+      // Find which page contains this field
+      const pageWithField = pages.find((page) =>
+        page.fields.some((f) => f.id === selectedFieldId)
+      );
+      if (pageWithField) {
+        updateField(pageWithField.id, selectedFieldId, updates);
+      }
+    }
+  };
 
   return (
     <div className="w-80 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          {t('sidebar.pages.title')}
-        </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          {pages.length} {pages.length === 1 ? 'page' : 'pages'}
-        </p>
-      </div>
-
-      {/* Pages List */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-2">
-          {pages.length === 0 ? (
-            <div className="p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-center text-gray-500 dark:text-gray-400">
-              {t('sidebar.pages.noPages')}
-            </div>
-          ) : (
-            pages.map((page, index) => (
-              <PageCard
-                key={page.id}
-                pageId={page.id}
-                pageTitle={page.title}
-                fieldCount={page.fields.length}
-                pageNumber={index + 1}
-                isSelected={selectedPageId === page.id}
-              />
-            ))
-          )}
-        </div>
-      </ScrollArea>
+      <FieldSettingsV2
+        field={selectedField}
+        isConnected={isConnected}
+        onUpdate={handleUpdate}
+      />
     </div>
   );
 };
@@ -818,8 +768,8 @@ export const NewPageBuilderTab: React.FC = () => {
         {/* Center: Form Area */}
         <FormArea />
 
-        {/* Right: Pages */}
-        <PagesSidebar />
+        {/* Right: Field Settings */}
+        <RightSidebar />
       </div>
 
       {/* Drag Overlay - follows cursor during drag */}
