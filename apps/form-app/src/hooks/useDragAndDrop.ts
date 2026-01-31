@@ -6,12 +6,14 @@ import { FieldTypeConfig } from '../components/form-builder/FieldTypesPanel';
 interface DragState {
   activeId: string | null;
   draggedItem: FieldTypeConfig | FormField | FormPage | null;
+  localFieldOrder: Record<string, FormField[]>;
 }
 
 interface DragHandlers {
   handleDragStart: (event: DragStartEvent) => void;
   handleDragOver: (event: DragOverEvent) => void;
   handleDragEnd: (event: DragEndEvent) => void;
+  handleDragCancel: () => void;
 }
 
 interface UseDragAndDropProps {
@@ -31,6 +33,11 @@ export const useDragAndDrop = ({
 }: UseDragAndDropProps): DragState & DragHandlers => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draggedItem, setDraggedItem] = useState<FieldTypeConfig | FormField | FormPage | null>(null);
+  
+  // Phase 1A: Shadow state for local field reordering during drag
+  // This map stores temporary field order per page while dragging
+  // Structure: { [pageId: string]: FormField[] }
+  const [localFieldOrder, setLocalFieldOrder] = useState<Record<string, FormField[]>>({});
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const { active } = event;
@@ -40,21 +47,143 @@ export const useDragAndDrop = ({
       setDraggedItem(active.data.current.fieldType);
     } else if (active.data.current?.field) {
       setDraggedItem(active.data.current.field);
+      
+      // Initialize shadow state with current page field order
+      const pageId = active.data.current.pageId as string;
+      const currentPage = pages.find(p => p.id === pageId);
+      if (currentPage) {
+        setLocalFieldOrder({
+          [pageId]: [...currentPage.fields]
+        });
+      }
     } else if (active.data.current?.page) {
       setDraggedItem(active.data.current.page);
     } else if (active.data.current?.type === 'page-item') {
       setDraggedItem(active.data.current.page);
     }
-  }, []);
+  }, [pages]);
 
-  const handleDragOver = useCallback((_event: DragOverEvent) => {
-    // Handle drag over logic if needed
-  }, []);
+  // Phase 1B: Real-time drag over handler for local preview
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    const { active, over } = event;
+    
+    if (!over || !active.data.current) return;
+    
+    const activeData = active.data.current;
+    const overData = over.data.current;
+    
+    // Only handle field reordering (not field types from sidebar, not pages)
+    if (activeData?.type !== 'field') return;
+    
+    const activeField = activeData.field as FormField;
+    const activePageId = activeData.pageId as string;
+    
+    // Handle drag over another field
+    if (overData?.type === 'field') {
+      const overPageId = overData.pageId as string;
+      const targetPage = pages.find(p => p.id === overPageId);
+      
+      if (!targetPage) return;
+      
+      // Find indices
+      const overIndex = targetPage.fields.findIndex(f => f.id === over.id);
+      if (overIndex === -1) return;
+      
+      // Same page reordering
+      if (activePageId === overPageId) {
+        const currentOrder = localFieldOrder[activePageId] || [...targetPage.fields];
+        const activeIndex = currentOrder.findIndex(f => f.id === activeField.id);
+        
+        if (activeIndex === -1 || activeIndex === overIndex) return;
+        
+        // Create new order with field moved to hover position
+        const newOrder = [...currentOrder];
+        newOrder.splice(activeIndex, 1); // Remove from old position
+        newOrder.splice(overIndex, 0, activeField); // Insert at new position
+        
+        setLocalFieldOrder({
+          [activePageId]: newOrder
+        });
+      } else {
+        // Cross-page move: update both source and target pages
+        const sourcePage = pages.find(p => p.id === activePageId);
+        if (!sourcePage) return;
+        
+        const sourceOrder = localFieldOrder[activePageId] || [...sourcePage.fields];
+        const targetOrder = localFieldOrder[overPageId] || [...targetPage.fields];
+        
+        // Remove from source
+        const newSourceOrder = sourceOrder.filter(f => f.id !== activeField.id);
+        
+        // Add to target at hover position
+        const newTargetOrder = [...targetOrder];
+        if (!newTargetOrder.some(f => f.id === activeField.id)) {
+          newTargetOrder.splice(overIndex, 0, activeField);
+        }
+        
+        setLocalFieldOrder({
+          [activePageId]: newSourceOrder,
+          [overPageId]: newTargetOrder
+        });
+      }
+    }
+    // Handle drag over empty page area or page container
+    else if (overData?.type === 'page' || overData?.type === 'page-item') {
+      const overPageId = overData?.type === 'page-item' ? overData.page?.id : overData.pageId;
+      if (!overPageId) return;
+      
+      const targetPage = pages.find(p => p.id === overPageId);
+      if (!targetPage) return;
+      
+      // Same page - move to end
+      if (activePageId === overPageId) {
+        const currentOrder = localFieldOrder[activePageId] || [...targetPage.fields];
+        const activeIndex = currentOrder.findIndex(f => f.id === activeField.id);
+        
+        if (activeIndex === -1) return;
+        
+        // Only update if not already at end
+        if (activeIndex !== currentOrder.length - 1) {
+          const newOrder = [...currentOrder];
+          newOrder.splice(activeIndex, 1);
+          newOrder.push(activeField);
+          
+          setLocalFieldOrder({
+            [activePageId]: newOrder
+          });
+        }
+      } else {
+        // Cross-page - move to end of target page
+        const sourcePage = pages.find(p => p.id === activePageId);
+        if (!sourcePage) return;
+        
+        const sourceOrder = localFieldOrder[activePageId] || [...sourcePage.fields];
+        const targetOrder = localFieldOrder[overPageId] || [...targetPage.fields];
+        
+        // Remove from source
+        const newSourceOrder = sourceOrder.filter(f => f.id !== activeField.id);
+        
+        // Add to end of target if not already there
+        const newTargetOrder = [...targetOrder];
+        if (!newTargetOrder.some(f => f.id === activeField.id)) {
+          newTargetOrder.push(activeField);
+        }
+        
+        setLocalFieldOrder({
+          [activePageId]: newSourceOrder,
+          [overPageId]: newTargetOrder
+        });
+      }
+    }
+  }, [pages, localFieldOrder]);
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
+    
+    // Phase 1A: Clear shadow state on drop
     setActiveId(null);
     setDraggedItem(null);
+    setLocalFieldOrder({});
 
     if (!over) return;
 
@@ -170,11 +299,20 @@ export const useDragAndDrop = ({
     }
   }, [pages, onAddField, onReorderFields, onReorderPages, onMoveFieldBetweenPages]);
 
+  // Phase 1A: Handle drag cancel (ESC key or drop outside valid target)
+  const handleDragCancel = useCallback(() => {
+    setActiveId(null);
+    setDraggedItem(null);
+    setLocalFieldOrder({});
+  }, []);
+
   return {
     activeId,
     draggedItem,
+    localFieldOrder,
     handleDragStart,
     handleDragOver,
     handleDragEnd,
+    handleDragCancel,
   };
 };

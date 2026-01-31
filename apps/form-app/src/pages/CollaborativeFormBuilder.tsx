@@ -144,9 +144,11 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   const {
     activeId,
     draggedItem,
+    localFieldOrder,
     handleDragStart,
     handleDragOver,
     handleDragEnd,
+    handleDragCancel,
   } = useDragAndDrop({
     pages,
     onAddField: handleAddField,
@@ -364,6 +366,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
       >
         <div
           data-testid="collaborative-form-builder"
