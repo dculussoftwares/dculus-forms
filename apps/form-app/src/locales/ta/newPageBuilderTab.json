@@ -21,8 +21,14 @@
         "placeholder": "Form fields will appear here"
     },
     "status": {
-        "connected": "Connected",
-        "connecting": "Connecting..."
+        "connected": "இணைக்கப்பட்டது",
+        "connecting": "இணைக்கிறது..."
+    },
+    "tabs": {
+        "field": "பண்புகள்"
+    },
+    "emptyState": {
+        "title": "அமைப்புகளைத் திருத்த ஒரு புலத்தைத் தேர்ந்தெடுக்கவும்"
     },
     "deleteField": {
         "button": "Delete Field"

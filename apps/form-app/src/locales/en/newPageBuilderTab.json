@@ -24,6 +24,12 @@
         "connected": "Connected",
         "connecting": "Connecting..."
     },
+    "tabs": {
+        "field": "Properties"
+    },
+    "emptyState": {
+        "title": "Select a field to edit settings"
+    },
     "deleteField": {
         "button": "Delete Field"
     }

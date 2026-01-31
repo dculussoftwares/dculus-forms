@@ -35,6 +35,7 @@ import {
   Layers,
   StickyNote,
   Plus,
+  Settings,
 } from 'lucide-react';
 import {
   SortableContext,
@@ -220,27 +221,143 @@ const DraggableFieldTypeCard: React.FC<{ fieldType: FieldTypeConfig }> = ({
 /**
  * LeftSidebar - Tabbed sidebar for Components and Pages
  */
+/**
+ * LeftSidebar - Shows available field types to drag and drop
+ */
 const LeftSidebar: React.FC = () => {
   const { t } = useTranslation('newPageBuilderTab');
-  const [activeTab, setActiveTab] = useState<'components' | 'pages'>(
-    'components'
-  );
-  const {
-    pages,
-    selectedPageId,
-    setSelectedPage,
-    addEmptyPage,
-    removePage,
-    duplicatePage,
-    updatePageTitle,
-    isConnected,
-  } = useFormBuilderStore();
-  const permissions = useFormPermissions();
 
   // Group field types by category
   const inputFields = FIELD_TYPES.filter((f) => f.category === 'input');
   const choiceFields = FIELD_TYPES.filter((f) => f.category === 'choice');
   const contentFields = FIELD_TYPES.filter((f) => f.category === 'content');
+
+  return (
+    <div className="w-64 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col">
+      {/* Header */}
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center space-x-2 text-gray-900 dark:text-white mb-1">
+          <Layers className="w-5 h-5" />
+          <h2 className="text-sm font-semibold uppercase tracking-wider">
+            {t('sidebar.fieldTypes.title')}
+          </h2>
+        </div>
+      </div>
+
+      <ScrollArea className="flex-1 p-4">
+        <div className="space-y-6">
+          {/* Input Fields */}
+          <div>
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+              {CATEGORY_STYLES.input.label}
+            </h3>
+            <div className="space-y-2">
+              {inputFields.map((fieldType) => (
+                <DraggableFieldTypeCard
+                  key={fieldType.type}
+                  fieldType={fieldType}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Choice Fields */}
+          <div>
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+              {CATEGORY_STYLES.choice.label}
+            </h3>
+            <div className="space-y-2">
+              {choiceFields.map((fieldType) => (
+                <DraggableFieldTypeCard
+                  key={fieldType.type}
+                  fieldType={fieldType}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Content Fields */}
+          <div>
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+              {CATEGORY_STYLES.content.label}
+            </h3>
+            <div className="space-y-2">
+              {contentFields.map((fieldType) => (
+                <DraggableFieldTypeCard
+                  key={fieldType.type}
+                  fieldType={fieldType}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </ScrollArea>
+    </div>
+  );
+};
+
+/**
+ * RightSidebar - Shows field settings when a field is selected
+ */
+const RightSidebar: React.FC = () => {
+  const { t } = useTranslation('newPageBuilderTab');
+  const [activeTab, setActiveTab] = useState<'pages' | 'properties'>('pages');
+
+  const {
+    selectedFieldId,
+    updateField,
+    removeField,
+    isConnected,
+    pages,
+    selectedPageId,
+    setSelectedPage,
+    setSelectedField,
+    addEmptyPage,
+    removePage,
+    duplicatePage,
+    updatePageTitle,
+  } = useFormBuilderStore();
+
+  const permissions = useFormPermissions();
+
+  const selectedField = useFormBuilderStore((state) => {
+    if (!selectedFieldId) return null;
+    for (const page of state.pages) {
+      const field = page.fields.find((f) => f.id === selectedFieldId);
+      if (field) return field;
+    }
+    return null;
+  });
+
+  // Auto-switch to properties when a field is selected
+  React.useEffect(() => {
+    if (selectedFieldId) {
+      setActiveTab('properties');
+    }
+  }, [selectedFieldId]);
+
+  const handleUpdate = (updates: Record<string, any>) => {
+    if (selectedFieldId) {
+      const pageWithField = pages.find((page) =>
+        page.fields.some((f) => f.id === selectedFieldId)
+      );
+      if (pageWithField) {
+        updateField(pageWithField.id, selectedFieldId, updates);
+      }
+    }
+  };
+
+  const handleDelete = () => {
+    if (selectedFieldId) {
+      const pageWithField = pages.find((page) =>
+        page.fields.some((f) => f.id === selectedFieldId)
+      );
+      if (pageWithField) {
+        removeField(pageWithField.id, selectedFieldId);
+        setSelectedField(null);
+      }
+    }
+  };
 
   const handleAddPage = () => {
     if (permissions.canAddPages() && isConnected) {
@@ -249,23 +366,9 @@ const LeftSidebar: React.FC = () => {
   };
 
   return (
-    <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col">
+    <div className="w-80 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col">
       {/* Tab Navigation */}
       <div className="flex border-b border-gray-200 dark:border-gray-700">
-        <button
-          onClick={() => setActiveTab('components')}
-          className={`
-            flex-1 flex items-center justify-center py-3 text-sm font-medium transition-colors
-            ${
-              activeTab === 'components'
-                ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-            }
-          `}
-        >
-          <Layers className="w-4 h-4 mr-2" />
-          {t('sidebar.fieldTypes.title')}
-        </button>
         <button
           onClick={() => setActiveTab('pages')}
           className={`
@@ -280,62 +383,24 @@ const LeftSidebar: React.FC = () => {
           <StickyNote className="w-4 h-4 mr-2" />
           {t('sidebar.pages.title')}
         </button>
+        <button
+          onClick={() => setActiveTab('properties')}
+          className={`
+            flex-1 flex items-center justify-center py-3 text-sm font-medium transition-colors
+            ${
+              activeTab === 'properties'
+                ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+            }
+          `}
+        >
+          <Settings className="w-4 h-4 mr-2" />
+          {t('tabs.field')}
+        </button>
       </div>
 
       <ScrollArea className="flex-1">
-        {activeTab === 'components' ? (
-          /* Components Tab Content */
-          <div className="p-4 space-y-6">
-            <div className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              {t('sidebar.fieldTypes.description')}
-            </div>
-
-            {/* Input Fields */}
-            <div>
-              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                {CATEGORY_STYLES.input.label}
-              </h3>
-              <div className="space-y-2">
-                {inputFields.map((fieldType) => (
-                  <DraggableFieldTypeCard
-                    key={fieldType.type}
-                    fieldType={fieldType}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Choice Fields */}
-            <div>
-              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                {CATEGORY_STYLES.choice.label}
-              </h3>
-              <div className="space-y-2">
-                {choiceFields.map((fieldType) => (
-                  <DraggableFieldTypeCard
-                    key={fieldType.type}
-                    fieldType={fieldType}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Content Fields */}
-            <div>
-              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                {CATEGORY_STYLES.content.label}
-              </h3>
-              <div className="space-y-2">
-                {contentFields.map((fieldType) => (
-                  <DraggableFieldTypeCard
-                    key={fieldType.type}
-                    fieldType={fieldType}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : (
+        {activeTab === 'pages' ? (
           /* Pages Tab Content */
           <div className="p-4">
             <div className="mb-4 flex items-center justify-between">
@@ -391,66 +456,25 @@ const LeftSidebar: React.FC = () => {
               </div>
             )}
           </div>
+        ) : (
+          /* Properties Tab Content */
+          <div className="h-full flex flex-col">
+            {selectedField ? (
+              <FieldSettingsV2
+                field={selectedField}
+                isConnected={isConnected}
+                onUpdate={handleUpdate}
+                onDelete={handleDelete}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-gray-400 p-8 text-center">
+                <Settings className="w-12 h-12 mb-4 opacity-20" />
+                <p>{t('emptyState.title')}</p>
+              </div>
+            )}
+          </div>
         )}
       </ScrollArea>
-    </div>
-  );
-};
-
-/**
- * RightSidebar - Shows field settings when a field is selected
- */
-const RightSidebar: React.FC = () => {
-  const {
-    selectedFieldId,
-    updateField,
-    removeField,
-    isConnected,
-    pages,
-    setSelectedField,
-  } = useFormBuilderStore();
-  const selectedField = useFormBuilderStore((state) => {
-    if (!selectedFieldId) return null;
-    for (const page of state.pages) {
-      const field = page.fields.find((f) => f.id === selectedFieldId);
-      if (field) return field;
-    }
-    return null;
-  });
-
-  const handleUpdate = (updates: Record<string, any>) => {
-    if (selectedFieldId) {
-      // Find which page contains this field
-      const pageWithField = pages.find((page) =>
-        page.fields.some((f) => f.id === selectedFieldId)
-      );
-      if (pageWithField) {
-        updateField(pageWithField.id, selectedFieldId, updates);
-      }
-    }
-  };
-
-  const handleDelete = () => {
-    if (selectedFieldId) {
-      // Find which page contains this field
-      const pageWithField = pages.find((page) =>
-        page.fields.some((f) => f.id === selectedFieldId)
-      );
-      if (pageWithField) {
-        removeField(pageWithField.id, selectedFieldId);
-        setSelectedField(null); // Clear selection after delete
-      }
-    }
-  };
-
-  return (
-    <div className="w-80 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col">
-      <FieldSettingsV2
-        field={selectedField}
-        isConnected={isConnected}
-        onUpdate={handleUpdate}
-        onDelete={handleDelete}
-      />
     </div>
   );
 };
