@@ -6,6 +6,7 @@ import {
 import { ScrollArea } from '@dculus/ui';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useTranslation } from '../../../hooks';
+import { FormField } from '@dculus/types';
 import { FieldTypesPanel } from '../FieldTypesPanel';
 import { PagesSidebar } from '../PagesSidebar';
 import { DroppablePage } from '../DroppablePage';
@@ -18,6 +19,7 @@ interface PageBuilderTabProps {
   onFieldEdit: (fieldId: string) => void;
   onFieldUpdate: (updates: Record<string, any>) => void;
   onFieldDeselect: () => void;
+  localFieldOrder?: Record<string, FormField[]>;
 }
 
 export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
@@ -27,6 +29,7 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
   onFieldEdit,
   onFieldUpdate,
   onFieldDeselect,
+  localFieldOrder,
 }) => {
   const { t } = useTranslation('pageBuilderTab');
   const {
@@ -87,6 +90,7 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
                   isConnected={isConnected}
                   selectedFieldId={selectedFieldId}
                   pages={pages}
+                  localFieldOrder={localFieldOrder}
                   onSelect={() => {}}
                   onUpdateField={updateField}
                   onRemoveField={removeField}

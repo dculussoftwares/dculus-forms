@@ -292,6 +292,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
             onFieldEdit={handleFieldEdit}
             onFieldUpdate={handleFieldUpdate}
             onFieldDeselect={handleFieldDeselect}
+            localFieldOrder={localFieldOrder}
           />
         );
       case 'new-builder':
@@ -309,6 +310,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
             onFieldEdit={handleFieldEdit}
             onFieldUpdate={handleFieldUpdate}
             onFieldDeselect={handleFieldDeselect}
+            localFieldOrder={localFieldOrder}
           />
         );
     }
@@ -321,6 +323,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     handleFieldDeselect,
     formId,
     updateLayout,
+    localFieldOrder,
   ]);
 
   if (!formId) {

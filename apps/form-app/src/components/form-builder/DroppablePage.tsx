@@ -4,7 +4,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { FormPage } from '@dculus/types';
+import { FormPage, FormField } from '@dculus/types';
 import { Card, TypographyH3, Button, Input } from '@dculus/ui';
 import { Eye, MoreVertical } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -20,6 +20,7 @@ interface DroppablePageProps {
   isConnected: boolean;
   selectedFieldId?: string | null;
   pages: FormPage[];
+  localFieldOrder?: Record<string, FormField[]>;
   onSelect: () => void;
   onUpdateField: (
     pageId: string,
@@ -50,6 +51,7 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
   isConnected,
   selectedFieldId,
   pages,
+  localFieldOrder,
   onSelect,
   onUpdateField,
   onRemoveField,
@@ -127,12 +129,18 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
   });
 
   const { active, over } = useDndContext();
-  const fieldIds = page.fields.map((field) => field.id);
 
   // Check if we're dragging a field type from sidebar
   const isDraggingFieldType = active?.data?.current?.type === 'field-type';
   const isDraggingField = active?.data?.current?.type === 'field';
   const isDraggingOverThisPage = over?.data?.current?.pageId === page.id;
+  
+  // Phase 1C: Use shadow state during drag for real-time preview
+  const displayFields = isDraggingField && localFieldOrder?.[page.id]
+    ? localFieldOrder[page.id]
+    : page.fields;
+  
+  const fieldIds = displayFields.map((field) => field.id);
   const shouldShowDropIndicators =
     (isDraggingFieldType || isDraggingField) && isDraggingOverThisPage;
   const isCompactMode = isDraggingField; // Use compact mode when dragging fields
@@ -267,13 +275,13 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
             items={fieldIds}
             strategy={verticalListSortingStrategy}
           >
-            <div className={isCompactMode ? 'space-y-2' : 'space-y-3'}>
+            <div className={`${isCompactMode ? 'space-y-2' : 'space-y-3'} transition-all duration-200`}>
               {/* Drop indicator at the beginning */}
               {shouldShowDropIndicators && dropInsertIndex === 0 && (
                 <DropIndicator compact={isCompactMode} />
               )}
 
-              {page.fields.map((field, fieldIndex) => (
+              {displayFields.map((field, fieldIndex) => (
                 <React.Fragment
                   key={`${page.id}-field-${field.id}-${fieldIndex}`}
                 >
@@ -288,7 +296,7 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
                     field={field}
                     pageId={page.id}
                     index={fieldIndex}
-                    totalFields={page.fields.length}
+                    totalFields={displayFields.length}
                     isConnected={isConnected}
                     isSelected={selectedFieldId === field.id}
                     pages={pages}
@@ -313,7 +321,7 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
                         : undefined
                     }
                     onMoveDown={
-                      onReorderField && fieldIndex < page.fields.length - 1
+                      onReorderField && fieldIndex < displayFields.length - 1
                         ? () =>
                             onReorderField(page.id, fieldIndex, fieldIndex + 1)
                         : undefined
@@ -330,7 +338,7 @@ export const DroppablePage: React.FC<DroppablePageProps> = ({
 
               {/* Drop indicator at the end */}
               {shouldShowDropIndicators &&
-                dropInsertIndex === page.fields.length && (
+                dropInsertIndex === displayFields.length && (
                   <DropIndicator compact={isCompactMode} />
                 )}
             </div>
