@@ -113,10 +113,10 @@ export const CompactFieldCard: React.FC<CompactFieldCardProps> = ({
           content: 'opacity-40',
         };
       case 'overlay':
-        // The dragged item overlay - distinguished styling
+        // Phase 1D: The dragged item overlay - premium elevation and depth
         return {
           container:
-            'h-[52px] border-2 border-solid border-blue-500 bg-white dark:bg-gray-800 shadow-xl ring-2 ring-blue-200/50 dark:ring-blue-800/50',
+            'h-[52px] border-2 border-solid border-blue-500 bg-white dark:bg-gray-800 shadow-2xl',
           content: '',
         };
       case 'normal':

@@ -256,8 +256,10 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
       (draggedItemWithType.id && draggedItemWithType.type)
     ) {
       return (
-        <div className="transform rotate-2">
-          <CompactFieldCard field={draggedItemWithType} variant="overlay" />
+        <div className="transform scale-105 opacity-90 transition-all duration-200">
+          <div className="shadow-2xl ring-4 ring-blue-500/20">
+            <CompactFieldCard field={draggedItemWithType} variant="overlay" />
+          </div>
         </div>
       );
     }
@@ -269,8 +271,10 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     ) {
       const pageIndex = pages.findIndex((p) => p.id === draggedItemWithType.id);
       return (
-        <div className="flex items-center justify-center w-14 h-14 bg-blue-500 text-white rounded-full shadow-xl border-4 border-white text-xl font-bold transform rotate-6 opacity-90">
-          {pageIndex + 1}
+        <div className="transform scale-105 transition-all duration-200">
+          <div className="flex items-center justify-center w-14 h-14 bg-blue-500 text-white rounded-full shadow-2xl border-4 border-white ring-4 ring-blue-500/30 text-xl font-bold opacity-90">
+            {pageIndex + 1}
+          </div>
         </div>
       );
     }
