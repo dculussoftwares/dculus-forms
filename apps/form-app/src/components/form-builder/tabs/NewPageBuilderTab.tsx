@@ -32,7 +32,16 @@ import {
   FileCode,
   GripVertical,
   Trash2,
+  Layers,
+  StickyNote,
+  Plus,
 } from 'lucide-react';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { DraggablePageItem } from '../DraggablePageItem';
+import { useFormPermissions } from '../../../hooks/useFormPermissions';
 
 // =============================================================================
 // Types
@@ -209,76 +218,180 @@ const DraggableFieldTypeCard: React.FC<{ fieldType: FieldTypeConfig }> = ({
 };
 
 /**
- * FieldTypesSidebar - Left column displaying available field types
+ * LeftSidebar - Tabbed sidebar for Components and Pages
  */
-const FieldTypesSidebar: React.FC = () => {
+const LeftSidebar: React.FC = () => {
   const { t } = useTranslation('newPageBuilderTab');
+  const [activeTab, setActiveTab] = useState<'components' | 'pages'>(
+    'components'
+  );
+  const {
+    pages,
+    selectedPageId,
+    setSelectedPage,
+    addEmptyPage,
+    removePage,
+    duplicatePage,
+    updatePageTitle,
+    isConnected,
+  } = useFormBuilderStore();
+  const permissions = useFormPermissions();
 
   // Group field types by category
   const inputFields = FIELD_TYPES.filter((f) => f.category === 'input');
   const choiceFields = FIELD_TYPES.filter((f) => f.category === 'choice');
   const contentFields = FIELD_TYPES.filter((f) => f.category === 'content');
 
+  const handleAddPage = () => {
+    if (permissions.canAddPages() && isConnected) {
+      addEmptyPage();
+    }
+  };
+
   return (
     <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+      {/* Tab Navigation */}
+      <div className="flex border-b border-gray-200 dark:border-gray-700">
+        <button
+          onClick={() => setActiveTab('components')}
+          className={`
+            flex-1 flex items-center justify-center py-3 text-sm font-medium transition-colors
+            ${
+              activeTab === 'components'
+                ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+            }
+          `}
+        >
+          <Layers className="w-4 h-4 mr-2" />
           {t('sidebar.fieldTypes.title')}
-        </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          {t('sidebar.fieldTypes.description')}
-        </p>
+        </button>
+        <button
+          onClick={() => setActiveTab('pages')}
+          className={`
+            flex-1 flex items-center justify-center py-3 text-sm font-medium transition-colors
+            ${
+              activeTab === 'pages'
+                ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+            }
+          `}
+        >
+          <StickyNote className="w-4 h-4 mr-2" />
+          {t('sidebar.pages.title')}
+        </button>
       </div>
 
-      {/* Field Types List */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-6">
-          {/* Input Fields */}
-          <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-              {CATEGORY_STYLES.input.label}
-            </h3>
-            <div className="space-y-2">
-              {inputFields.map((fieldType) => (
-                <DraggableFieldTypeCard
-                  key={fieldType.type}
-                  fieldType={fieldType}
-                />
-              ))}
+      <ScrollArea className="flex-1">
+        {activeTab === 'components' ? (
+          /* Components Tab Content */
+          <div className="p-4 space-y-6">
+            <div className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              {t('sidebar.fieldTypes.description')}
             </div>
-          </div>
 
-          {/* Choice Fields */}
-          <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-              {CATEGORY_STYLES.choice.label}
-            </h3>
-            <div className="space-y-2">
-              {choiceFields.map((fieldType) => (
-                <DraggableFieldTypeCard
-                  key={fieldType.type}
-                  fieldType={fieldType}
-                />
-              ))}
+            {/* Input Fields */}
+            <div>
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                {CATEGORY_STYLES.input.label}
+              </h3>
+              <div className="space-y-2">
+                {inputFields.map((fieldType) => (
+                  <DraggableFieldTypeCard
+                    key={fieldType.type}
+                    fieldType={fieldType}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Content Fields */}
-          <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-              {CATEGORY_STYLES.content.label}
-            </h3>
-            <div className="space-y-2">
-              {contentFields.map((fieldType) => (
-                <DraggableFieldTypeCard
-                  key={fieldType.type}
-                  fieldType={fieldType}
-                />
-              ))}
+            {/* Choice Fields */}
+            <div>
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                {CATEGORY_STYLES.choice.label}
+              </h3>
+              <div className="space-y-2">
+                {choiceFields.map((fieldType) => (
+                  <DraggableFieldTypeCard
+                    key={fieldType.type}
+                    fieldType={fieldType}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Content Fields */}
+            <div>
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                {CATEGORY_STYLES.content.label}
+              </h3>
+              <div className="space-y-2">
+                {contentFields.map((fieldType) => (
+                  <DraggableFieldTypeCard
+                    key={fieldType.type}
+                    fieldType={fieldType}
+                  />
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          /* Pages Tab Content */
+          <div className="p-4">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                {t('sidebar.pages.pageCount', {
+                  values: { count: pages.length },
+                })}
+              </div>
+              {permissions.canAddPages() && (
+                <button
+                  onClick={handleAddPage}
+                  disabled={!isConnected}
+                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors text-blue-600 dark:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={t('menu.addPage')}
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+
+            <SortableContext
+              items={pages.map((p) => p.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-2">
+                {pages.map((page, index) => (
+                  <DraggablePageItem
+                    key={page.id}
+                    page={page}
+                    index={index}
+                    isSelected={selectedPageId === page.id}
+                    isConnected={isConnected}
+                    onSelect={() => setSelectedPage(page.id)}
+                    onRemove={() => removePage(page.id)}
+                    onDuplicate={() => duplicatePage(page.id)}
+                    onUpdateTitle={(title) => updatePageTitle(page.id, title)}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+
+            {pages.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                {t('sidebar.pages.noPages')}
+                {permissions.canAddPages() && (
+                  <button
+                    onClick={handleAddPage}
+                    className="mt-2 text-blue-600 dark:text-blue-400 text-sm font-medium hover:underline"
+                  >
+                    Create your first page
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </ScrollArea>
     </div>
   );
@@ -706,7 +819,8 @@ export const NewPageBuilderTab: React.FC = () => {
   } | null>(null);
 
   // Get store actions
-  const { addField, addFieldAtIndex, reorderFields } = useFormBuilderStore();
+  const { addField, addFieldAtIndex, reorderFields, reorderPages, pages } =
+    useFormBuilderStore();
 
   // Configure sensors - require slight movement before drag starts
   const sensors = useSensors(
@@ -742,6 +856,19 @@ export const NewPageBuilderTab: React.FC = () => {
     if (!over) return;
 
     const dragType = active.data.current?.type;
+
+    // Handle page reordering
+    if (dragType === 'page-item') {
+      if (active.id !== over.id) {
+        const oldIndex = pages.findIndex((p) => p.id === active.id);
+        const newIndex = pages.findIndex((p) => p.id === over.id);
+
+        if (oldIndex !== -1 && newIndex !== -1) {
+          reorderPages(oldIndex, newIndex);
+        }
+      }
+      return;
+    }
 
     // Handle existing-field reordering
     if (dragType === 'existing-field') {
@@ -810,8 +937,8 @@ export const NewPageBuilderTab: React.FC = () => {
       onDragEnd={handleDragEnd}
     >
       <div className="flex h-full" data-testid="new-page-builder-tab">
-        {/* Left: Field Types */}
-        <FieldTypesSidebar />
+        {/* Left: Field Types & Pages */}
+        <LeftSidebar />
 
         {/* Center: Form Area */}
         <FormArea />
