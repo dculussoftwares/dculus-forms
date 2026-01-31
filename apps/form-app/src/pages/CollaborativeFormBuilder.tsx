@@ -374,6 +374,14 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
+        autoScroll={{
+          threshold: {
+            x: 0.2,
+            y: 0.2,
+          },
+          acceleration: 10,
+          interval: 5,
+        }}
       >
         <div
           data-testid="collaborative-form-builder"
