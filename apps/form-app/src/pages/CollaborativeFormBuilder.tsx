@@ -11,9 +11,11 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { useFormBuilderStore } from '../store/useFormBuilderStore';
 import {
   FieldTypeDisplay,
@@ -108,6 +110,10 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
       activationConstraint: {
         distance: 8,
       },
+    }),
+    // Phase 2A: Keyboard sensor for accessibility
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 
@@ -381,6 +387,56 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
           },
           acceleration: 10,
           interval: 5,
+        }}
+        accessibility={{
+          announcements: {
+            onDragStart({ active }) {
+              const item = active.data.current;
+              if (item?.type === 'field' && item?.field) {
+                const fieldLabel = 'label' in item.field ? item.field.label : 'Field';
+                return `Picked up ${fieldLabel}. Use arrow keys to move.`;
+              }
+              if (item?.type === 'page-item' && item?.page) {
+                return `Picked up page ${item.page.title}. Use arrow keys to reorder.`;
+              }
+              return 'Item picked up. Use arrow keys to move.';
+            },
+            onDragOver({ over }) {
+              if (over) {
+                const overData = over.data.current;
+                if (overData?.type === 'field' && overData?.field) {
+                  const overLabel = 'label' in overData.field ? overData.field.label : 'field';
+                  return `Over ${overLabel}`;
+                }
+                if (overData?.type === 'page') {
+                  return `Over page`;
+                }
+              }
+              return undefined;
+            },
+            onDragEnd({ active, over }) {
+              const item = active.data.current;
+              if (!over) {
+                return 'Item dropped. Position unchanged.';
+              }
+              if (item?.type === 'field' && item?.field) {
+                const fieldLabel = 'label' in item.field ? item.field.label : 'Field';
+                return `${fieldLabel} dropped successfully.`;
+              }
+              if (item?.type === 'page-item' && item?.page) {
+                return `Page ${item.page.title} moved successfully.`;
+              }
+              return 'Item dropped successfully.';
+            },
+            onDragCancel({ active }) {
+              const item = active.data.current;
+              if (item?.type === 'field' && item?.field) {
+                const fieldLabel = 'label' in item.field ? item.field.label : 'Field';
+                return `${fieldLabel} move cancelled.`;
+              }
+              return 'Movement cancelled.';
+            },
+          },
         }}
       >
         <div
