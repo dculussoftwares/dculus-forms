@@ -36,6 +36,9 @@ import {
   StickyNote,
   Plus,
   Settings,
+  Copy,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import {
   SortableContext,
@@ -490,6 +493,9 @@ const FieldCard: React.FC<{
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
   onClick?: () => void;
   onDelete?: () => void;
+  onDuplicate?: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
 }> = ({
   field,
   index,
@@ -498,6 +504,9 @@ const FieldCard: React.FC<{
   dragHandleProps,
   onClick,
   onDelete,
+  onDuplicate,
+  onMoveUp,
+  onMoveDown,
 }) => {
   // Get label for fillable fields, or use type name for others
   const label: string =
@@ -568,18 +577,61 @@ const FieldCard: React.FC<{
             </span>
           )}
 
-        {/* Delete Button - only show on hover if not dragging */}
-        {!isDragging && onDelete && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-all opacity-0 group-hover:opacity-100"
-            title="Delete field"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+        {/* Actions - only show on hover if not dragging */}
+        {!isDragging && (
+          <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {onMoveUp && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMoveUp();
+                }}
+                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all"
+                title="Move Up"
+              >
+                <ArrowUp className="w-4 h-4" />
+              </button>
+            )}
+
+            {onMoveDown && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMoveDown();
+                }}
+                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all"
+                title="Move Down"
+              >
+                <ArrowDown className="w-4 h-4" />
+              </button>
+            )}
+
+            {onDuplicate && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDuplicate();
+                }}
+                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all"
+                title="Duplicate Field"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
+            )}
+
+            {onDelete && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-all"
+                title="Delete field"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>
@@ -593,9 +645,15 @@ const DraggableFieldCard: React.FC<{
   field: FormField;
   index: number;
   pageId: string;
-}> = ({ field, index, pageId }) => {
-  const { selectedFieldId, setSelectedField, removeField } =
-    useFormBuilderStore();
+  totalFields: number;
+}> = ({ field, index, pageId, totalFields }) => {
+  const {
+    selectedFieldId,
+    setSelectedField,
+    removeField,
+    duplicateField,
+    reorderFields,
+  } = useFormBuilderStore();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `existing-field-${field.id}`,
     data: {
@@ -619,6 +677,22 @@ const DraggableFieldCard: React.FC<{
     }
   };
 
+  const handleDuplicate = () => {
+    duplicateField(pageId, field.id);
+  };
+
+  const handleMoveUp = () => {
+    if (index > 0) {
+      reorderFields(pageId, index, index - 1);
+    }
+  };
+
+  const handleMoveDown = () => {
+    if (index < totalFields - 1) {
+      reorderFields(pageId, index, index + 1);
+    }
+  };
+
   return (
     <div ref={setNodeRef}>
       <FieldCard
@@ -629,6 +703,9 @@ const DraggableFieldCard: React.FC<{
         dragHandleProps={{ ...attributes, ...listeners }}
         onClick={handleClick}
         onDelete={handleDelete}
+        onDuplicate={handleDuplicate}
+        onMoveUp={index > 0 ? handleMoveUp : undefined}
+        onMoveDown={index < totalFields - 1 ? handleMoveDown : undefined}
       />
     </div>
   );
@@ -712,7 +789,12 @@ const FieldListWithDropZones: React.FC<{
 
       {fields.map((field, index) => (
         <div key={field.id}>
-          <DraggableFieldCard field={field} index={index} pageId={pageId} />
+          <DraggableFieldCard
+            field={field}
+            index={index}
+            pageId={pageId}
+            totalFields={fields.length}
+          />
           {/* Drop zone after each field */}
           <DropIndicator index={index + 1} pageId={pageId} />
         </div>
