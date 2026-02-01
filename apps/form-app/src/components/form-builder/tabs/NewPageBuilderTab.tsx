@@ -435,21 +435,20 @@ const FieldCard: React.FC<{
 
         {/* Field info */}
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
-            {label}
+          <div className="text-sm font-medium text-gray-900 dark:text-white truncate flex items-center gap-1">
+            <span className="truncate">{label}</span>
+            {/* Required indicator - red asterisk */}
+            {'validation' in field &&
+              (field as FillableFormField).validation?.required && (
+                <span className="text-red-500 text-sm flex-shrink-0" title="Required field">
+                  *
+                </span>
+              )}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">
             {typeConfig.label}
           </div>
         </div>
-
-        {/* Required indicator */}
-        {'validation' in field &&
-          (field as FillableFormField).validation?.required && (
-            <span className="text-xs text-red-500 font-medium mr-2">
-              Required
-            </span>
-          )}
 
         {/* Actions - only show on hover if not dragging */}
         {!isDragging && (
