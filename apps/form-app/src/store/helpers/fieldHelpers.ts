@@ -110,6 +110,8 @@ export const createFormField = (
     }
     case FieldType.SELECT_FIELD: {
       const validation = new FillableFormFieldValidation(fieldData.required || false);
+      // Initialize with default options if none provided
+      const defaultOptions = fieldData.options || ['Option 1', 'Option 2', 'Option 3'];
       return new SelectField(
         fieldId,
         label,
@@ -117,11 +119,13 @@ export const createFormField = (
         prefix,
         hint,
         validation,
-        fieldData.options || []
+        defaultOptions
       );
     }
     case FieldType.RADIO_FIELD: {
       const validation = new FillableFormFieldValidation(fieldData.required || false);
+      // Initialize with default options if none provided
+      const defaultOptions = fieldData.options || ['Option 1', 'Option 2', 'Option 3'];
       return new RadioField(
         fieldId,
         label,
@@ -129,7 +133,7 @@ export const createFormField = (
         prefix,
         hint,
         validation,
-        fieldData.options || []
+        defaultOptions
       );
     }
     case FieldType.CHECKBOX_FIELD: {
@@ -140,6 +144,8 @@ export const createFormField = (
       );
       // For checkbox fields, use defaultValue as array (it could be string or array from fieldData)
       const checkboxDefaults = fieldData.defaultValue || [];
+      // Initialize with default options if none provided
+      const defaultOptions = fieldData.options || ['Option 1', 'Option 2', 'Option 3'];
       return new CheckboxField(
         fieldId,
         label,
@@ -148,7 +154,7 @@ export const createFormField = (
         hint,
         placeholder,
         validation,
-        fieldData.options || []
+        defaultOptions
       );
     }
     case FieldType.DATE_FIELD: {
