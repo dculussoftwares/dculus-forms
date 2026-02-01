@@ -49,58 +49,42 @@ export const PageActionsSelector: React.FC<PageActionsSelectorProps> = ({
         </div>
         
         <div className="py-1">
-          {/* Move to Page Section */}
-          <DropdownMenuLabel className="flex items-center space-x-2 text-sm font-medium text-gray-500 dark:text-gray-400 px-2 py-1">
-            <ArrowRight className="w-3 h-3" />
-            <span>{t('sections.moveToPage')}</span>
-          </DropdownMenuLabel>
           {availablePages.map((page, index) => (
-            <DropdownMenuItem
-              key={`move-${page.id}`}
-              onClick={() => onMoveToPage(page.id)}
-              className="flex items-center space-x-3 py-2 ml-2"
-            >
-              <div className="w-5 h-5 bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center text-xs font-semibold">
-                {index + (currentPageId === pages[0]?.id ? 2 : 1)}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center space-x-2">
-                  <FileText className="w-3 h-3 text-gray-500" />
-                  <span className="font-medium text-sm">{page.title}</span>
+            <div key={page.id} className="px-2 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md transition-colors">
+              {/* Page Info */}
+              <div className="flex items-center space-x-2 mb-2">
+                <div className="w-5 h-5 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center text-xs font-semibold">
+                  {index + (currentPageId === pages[0]?.id ? 2 : 1)}
                 </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {page.fields.length} {page.fields.length === 1 ? t('fieldCount.singular') : t('fieldCount.plural')}
-                </div>
-              </div>
-            </DropdownMenuItem>
-          ))}
-          
-          <DropdownMenuSeparator />
-          
-          {/* Copy to Page Section */}
-          <DropdownMenuLabel className="flex items-center space-x-2 text-sm font-medium text-gray-500 dark:text-gray-400 px-2 py-1">
-            <Copy className="w-3 h-3" />
-            <span>{t('sections.copyToPage')}</span>
-          </DropdownMenuLabel>
-          {availablePages.map((page, index) => (
-            <DropdownMenuItem
-              key={`copy-${page.id}`}
-              onClick={() => onCopyToPage(page.id)}
-              className="flex items-center space-x-3 py-2 ml-2"
-            >
-              <div className="w-5 h-5 bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400 rounded-full flex items-center justify-center text-xs font-semibold">
-                {index + (currentPageId === pages[0]?.id ? 2 : 1)}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center space-x-2">
-                  <FileText className="w-3 h-3 text-gray-500" />
-                  <span className="font-medium text-sm">{page.title}</span>
-                </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {page.fields.length} {page.fields.length === 1 ? t('fieldCount.singular') : t('fieldCount.plural')}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-1">
+                    <FileText className="w-3 h-3 text-gray-500 flex-shrink-0" />
+                    <span className="font-medium text-sm truncate">{page.title}</span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {page.fields.length} {page.fields.length === 1 ? t('fieldCount.singular') : t('fieldCount.plural')}
+                  </div>
                 </div>
               </div>
-            </DropdownMenuItem>
+              
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onMoveToPage(page.id)}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 dark:text-green-400 dark:bg-green-950/50 dark:hover:bg-green-950 rounded-md transition-colors"
+                >
+                  <ArrowRight className="w-3 h-3" />
+                  <span>Move</span>
+                </button>
+                <button
+                  onClick={() => onCopyToPage(page.id)}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 dark:text-purple-400 dark:bg-purple-950/50 dark:hover:bg-purple-950 rounded-md transition-colors"
+                >
+                  <Copy className="w-3 h-3" />
+                  <span>Copy</span>
+                </button>
+              </div>
+            </div>
           ))}
         </div>
       </DropdownMenuContent>

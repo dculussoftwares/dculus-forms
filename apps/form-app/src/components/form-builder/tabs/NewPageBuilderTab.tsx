@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { ScrollArea } from '@dculus/ui';
 import {
   FormPage,
-  FieldType,
   FormField,
   FillableFormField,
 } from '@dculus/types';
@@ -21,6 +20,16 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import {
+  GripVertical,
+  Trash2,
+  StickyNote,
+  Plus,
+  Settings,
+  Copy,
+  ArrowUp,
+  ArrowDown,
+  Code,
+  GripHorizontal,
   Type,
   FileText,
   Mail,
@@ -30,15 +39,6 @@ import {
   CheckSquare,
   Calendar,
   FileCode,
-  GripVertical,
-  Trash2,
-  Layers,
-  StickyNote,
-  Plus,
-  Settings,
-  Copy,
-  ArrowUp,
-  ArrowDown,
 } from 'lucide-react';
 import {
   SortableContext,
@@ -46,265 +46,71 @@ import {
 } from '@dnd-kit/sortable';
 import { DraggablePageItem } from '../DraggablePageItem';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
+import { FieldTypesPanel, FieldTypeDisplay, type FieldTypeConfig } from '../FieldTypesPanel';
+import { JSONPreview } from '../JSONPreview';
+import { PageActionsSelector } from '../PageActionsSelector';
 
 // =============================================================================
-// Types
+// Field Type Configuration
 // =============================================================================
+
+/**
+ * Helper to get field type icon and category for display
+ */
+const getFieldTypeConfig = (type: string): { icon: React.ElementType; category: string; label: string } => {
+  const configs: Record<string, { icon: React.ElementType; category: string; label: string }> = {
+    text_input_field: { icon: Type, category: 'input', label: 'Short Text' },
+    text_area_field: { icon: FileText, category: 'input', label: 'Long Text' },
+    email_field: { icon: Mail, category: 'input', label: 'Email' },
+    number_field: { icon: Hash, category: 'input', label: 'Number' },
+    select_field: { icon: ChevronDown, category: 'choice', label: 'Dropdown' },
+    radio_field: { icon: Circle, category: 'choice', label: 'Multiple Choice' },
+    checkbox_field: { icon: CheckSquare, category: 'choice', label: 'Checkboxes' },
+    date_field: { icon: Calendar, category: 'input', label: 'Date' },
+    rich_text_field: { icon: FileCode, category: 'content', label: 'Rich Text' },
+  };
+  return configs[type] || { icon: Type, category: 'input', label: 'Unknown' };
+};
+
+const getCategoryColor = (category: string) => {
+  switch (category) {
+    case 'input':
+      return 'bg-blue-500/10 text-blue-600 dark:text-blue-400';
+    case 'choice':
+      return 'bg-purple-500/10 text-purple-600 dark:text-purple-400';
+    case 'content':
+      return 'bg-green-500/10 text-green-600 dark:text-green-400';
+    default:
+      return 'bg-gray-500/10 text-gray-600 dark:text-gray-400';
+  }
+};
 
 // =============================================================================
 // Sub-Components
 // =============================================================================
 
-// =============================================================================
-// Field Types Configuration
-// =============================================================================
-
-interface FieldTypeConfig {
-  type: FieldType;
-  label: string;
-  description: string;
-  icon: React.ReactNode;
-  category: 'input' | 'choice' | 'content';
-}
-
-const FIELD_TYPES: FieldTypeConfig[] = [
-  // Input Fields
-  {
-    type: FieldType.TEXT_INPUT_FIELD,
-    label: 'Short Text',
-    description: 'Single line text input',
-    icon: <Type className="w-5 h-5" />,
-    category: 'input',
-  },
-  {
-    type: FieldType.TEXT_AREA_FIELD,
-    label: 'Long Text',
-    description: 'Multi-line text area',
-    icon: <FileText className="w-5 h-5" />,
-    category: 'input',
-  },
-  {
-    type: FieldType.EMAIL_FIELD,
-    label: 'Email',
-    description: 'Email address input',
-    icon: <Mail className="w-5 h-5" />,
-    category: 'input',
-  },
-  {
-    type: FieldType.NUMBER_FIELD,
-    label: 'Number',
-    description: 'Numeric input',
-    icon: <Hash className="w-5 h-5" />,
-    category: 'input',
-  },
-  {
-    type: FieldType.DATE_FIELD,
-    label: 'Date',
-    description: 'Date picker',
-    icon: <Calendar className="w-5 h-5" />,
-    category: 'input',
-  },
-  // Choice Fields
-  {
-    type: FieldType.SELECT_FIELD,
-    label: 'Dropdown',
-    description: 'Single choice dropdown',
-    icon: <ChevronDown className="w-5 h-5" />,
-    category: 'choice',
-  },
-  {
-    type: FieldType.RADIO_FIELD,
-    label: 'Radio',
-    description: 'Single choice options',
-    icon: <Circle className="w-5 h-5" />,
-    category: 'choice',
-  },
-  {
-    type: FieldType.CHECKBOX_FIELD,
-    label: 'Checkbox',
-    description: 'Multiple choice options',
-    icon: <CheckSquare className="w-5 h-5" />,
-    category: 'choice',
-  },
-  // Content Fields
-  {
-    type: FieldType.RICH_TEXT_FIELD,
-    label: 'Rich Text',
-    description: 'Formatted content block',
-    icon: <FileCode className="w-5 h-5" />,
-    category: 'content',
-  },
-];
-
-const CATEGORY_STYLES = {
-  input: {
-    label: 'Input',
-    iconBg: 'bg-blue-100 dark:bg-blue-900/50',
-    iconText: 'text-blue-600 dark:text-blue-400',
-  },
-  choice: {
-    label: 'Choice',
-    iconBg: 'bg-purple-100 dark:bg-purple-900/50',
-    iconText: 'text-purple-600 dark:text-purple-400',
-  },
-  content: {
-    label: 'Content',
-    iconBg: 'bg-green-100 dark:bg-green-900/50',
-    iconText: 'text-green-600 dark:text-green-400',
-  },
-};
-
 /**
- * FieldTypeCardContent - Display content of a field type card
- */
-const FieldTypeCardContent: React.FC<{
-  fieldType: FieldTypeConfig;
-  isDragging?: boolean;
-  isOverlay?: boolean;
-}> = ({ fieldType, isDragging = false, isOverlay = false }) => {
-  const categoryStyle = CATEGORY_STYLES[fieldType.category];
-
-  return (
-    <div
-      className={`
-        p-3 border-2 border-dashed rounded-lg transition-all duration-200 group
-        ${
-          isOverlay
-            ? 'border-blue-500 bg-white dark:bg-gray-800 shadow-xl cursor-grabbing'
-            : isDragging
-              ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-950/30 opacity-50'
-              : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 cursor-grab'
-        }
-      `}
-      data-testid={`field-type-${fieldType.type}`}
-    >
-      <div className="flex items-start gap-3">
-        <div
-          className={`p-2 rounded-lg ${categoryStyle.iconBg} ${categoryStyle.iconText}
-                      ${!isDragging && !isOverlay ? 'group-hover:scale-110' : ''} transition-transform duration-200`}
-        >
-          {fieldType.icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div
-            className={`text-sm font-medium ${isOverlay ? 'text-gray-900 dark:text-white' : 'text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400'}`}
-          >
-            {fieldType.label}
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            {fieldType.description}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-/**
- * DraggableFieldTypeCard - Wrapper that makes field type cards draggable
- */
-const DraggableFieldTypeCard: React.FC<{ fieldType: FieldTypeConfig }> = ({
-  fieldType,
-}) => {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `field-type-${fieldType.type}`,
-    data: {
-      type: 'field-type',
-      fieldType,
-    },
-  });
-
-  return (
-    <div ref={setNodeRef} {...attributes} {...listeners}>
-      <FieldTypeCardContent fieldType={fieldType} isDragging={isDragging} />
-    </div>
-  );
-};
-
-/**
- * LeftSidebar - Tabbed sidebar for Components and Pages
- */
-/**
- * LeftSidebar - Shows available field types to drag and drop
+ * LeftSidebar - Shows available field types using shared FieldTypesPanel
  */
 const LeftSidebar: React.FC = () => {
-  const { t } = useTranslation('newPageBuilderTab');
-
-  // Group field types by category
-  const inputFields = FIELD_TYPES.filter((f) => f.category === 'input');
-  const choiceFields = FIELD_TYPES.filter((f) => f.category === 'choice');
-  const contentFields = FIELD_TYPES.filter((f) => f.category === 'content');
-
   return (
-    <div className="w-64 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center space-x-2 text-gray-900 dark:text-white mb-1">
-          <Layers className="w-5 h-5" />
-          <h2 className="text-sm font-semibold uppercase tracking-wider">
-            {t('sidebar.fieldTypes.title')}
-          </h2>
-        </div>
-      </div>
-
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-6">
-          {/* Input Fields */}
-          <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-              {CATEGORY_STYLES.input.label}
-            </h3>
-            <div className="space-y-2">
-              {inputFields.map((fieldType) => (
-                <DraggableFieldTypeCard
-                  key={fieldType.type}
-                  fieldType={fieldType}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Choice Fields */}
-          <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-              {CATEGORY_STYLES.choice.label}
-            </h3>
-            <div className="space-y-2">
-              {choiceFields.map((fieldType) => (
-                <DraggableFieldTypeCard
-                  key={fieldType.type}
-                  fieldType={fieldType}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Content Fields */}
-          <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-              {CATEGORY_STYLES.content.label}
-            </h3>
-            <div className="space-y-2">
-              {contentFields.map((fieldType) => (
-                <DraggableFieldTypeCard
-                  key={fieldType.type}
-                  fieldType={fieldType}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </ScrollArea>
+    <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+      <FieldTypesPanel />
     </div>
   );
 };
 
 /**
- * RightSidebar - Shows field settings when a field is selected
+ * RightSidebar - Shows field settings, pages, and JSON preview with resizable width
  */
-const RightSidebar: React.FC = () => {
+const RightSidebar: React.FC<{
+  width: number;
+  onWidthChange: (width: number) => void;
+}> = ({ width, onWidthChange }) => {
   const { t } = useTranslation('newPageBuilderTab');
-  const [activeTab, setActiveTab] = useState<'pages' | 'properties'>('pages');
+  const [activeTab, setActiveTab] = useState<'pages' | 'properties' | 'json'>('pages');
+  const [isResizing, setIsResizing] = useState(false);
+  const prevSelectedFieldIdRef = useRef<string | null>(null);
 
   const {
     selectedFieldId,
@@ -313,6 +119,8 @@ const RightSidebar: React.FC = () => {
     isConnected,
     pages,
     selectedPageId,
+    layout,
+    isShuffleEnabled,
     setSelectedPage,
     setSelectedField,
     addEmptyPage,
@@ -332,14 +140,16 @@ const RightSidebar: React.FC = () => {
     return null;
   });
 
-  // Auto-switch to properties when a field is selected
+  // Auto-switch to properties when a field is newly selected (but not on field move)
   React.useEffect(() => {
-    if (selectedFieldId) {
+    if (selectedFieldId && selectedFieldId !== prevSelectedFieldIdRef.current) {
+      // Switch to properties when a different field is selected
       setActiveTab('properties');
     }
+    prevSelectedFieldIdRef.current = selectedFieldId;
   }, [selectedFieldId]);
 
-  const handleUpdate = (updates: Record<string, any>) => {
+  const handleUpdate = (updates: Record<string, unknown>) => {
     if (selectedFieldId) {
       const pageWithField = pages.find((page) =>
         page.fields.some((f) => f.id === selectedFieldId)
@@ -368,8 +178,48 @@ const RightSidebar: React.FC = () => {
     }
   };
 
+  // Resize handle functionality
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    setIsResizing(true);
+    e.preventDefault();
+    
+    const startX = e.clientX;
+    const startWidth = width;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaX = startX - e.clientX;
+      const newWidth = Math.max(200, Math.min(600, startWidth + deltaX));
+      onWidthChange(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [width, onWidthChange]);
+
   return (
-    <div className="w-80 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col">
+    <div
+      className="border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col relative"
+      style={{ width: `${width}px` }}
+    >
+      {/* Resize handle */}
+      <div
+        className={`
+          absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500/50
+          ${isResizing ? 'bg-blue-500' : ''}
+        `}
+        onMouseDown={handleMouseDown}
+      >
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <GripHorizontal className="w-4 h-4 text-gray-400 rotate-90" />
+        </div>
+      </div>
+
       {/* Tab Navigation */}
       <div className="flex border-b border-gray-200 dark:border-gray-700">
         <button
@@ -399,6 +249,20 @@ const RightSidebar: React.FC = () => {
         >
           <Settings className="w-4 h-4 mr-2" />
           {t('tabs.field')}
+        </button>
+        <button
+          onClick={() => setActiveTab('json')}
+          className={`
+            flex-1 flex items-center justify-center py-3 text-sm font-medium transition-colors
+            ${
+              activeTab === 'json'
+                ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+            }
+          `}
+        >
+          <Code className="w-4 h-4 mr-2" />
+          JSON
         </button>
       </div>
 
@@ -459,7 +323,7 @@ const RightSidebar: React.FC = () => {
               </div>
             )}
           </div>
-        ) : (
+        ) : activeTab === 'properties' ? (
           /* Properties Tab Content */
           <div className="h-full flex flex-col">
             {selectedField ? (
@@ -476,6 +340,15 @@ const RightSidebar: React.FC = () => {
               </div>
             )}
           </div>
+        ) : (
+          /* JSON Tab Content */
+          <div className="h-full">
+            <JSONPreview
+              pages={pages}
+              layout={layout}
+              isShuffleEnabled={isShuffleEnabled}
+            />
+          </div>
         )}
       </ScrollArea>
     </div>
@@ -487,7 +360,10 @@ const RightSidebar: React.FC = () => {
  */
 const FieldCard: React.FC<{
   field: FormField;
+  pageId: string;
   index: number;
+  totalFields: number;
+  pages: FormPage[];
   isDragging?: boolean;
   isSelected?: boolean;
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
@@ -496,9 +372,14 @@ const FieldCard: React.FC<{
   onDuplicate?: () => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
+  onMoveToPage?: (targetPageId: string) => void;
+  onCopyToPage?: (targetPageId: string) => void;
 }> = ({
   field,
+  pageId,
   index,
+  totalFields,
+  pages,
   isDragging = false,
   isSelected = false,
   dragHandleProps,
@@ -507,6 +388,8 @@ const FieldCard: React.FC<{
   onDuplicate,
   onMoveUp,
   onMoveDown,
+  onMoveToPage,
+  onCopyToPage,
 }) => {
   // Get label for fillable fields, or use type name for others
   const label: string =
@@ -514,12 +397,10 @@ const FieldCard: React.FC<{
       ? field.label
       : field.type.replace(/_/g, ' ').toLowerCase();
 
-  // Get the icon for this field type
-  const fieldTypeConfig = FIELD_TYPES.find((ft) => ft.type === field.type);
-  const icon = fieldTypeConfig?.icon || <Type className="w-5 h-5" />;
-  const categoryStyle = fieldTypeConfig
-    ? CATEGORY_STYLES[fieldTypeConfig.category]
-    : CATEGORY_STYLES.input;
+  // Get field type config for icon and category
+  const typeConfig = getFieldTypeConfig(field.type);
+  const Icon = typeConfig.icon;
+  const categoryColor = getCategoryColor(typeConfig.category);
 
   return (
     <div
@@ -547,16 +428,9 @@ const FieldCard: React.FC<{
           <GripVertical className="w-4 h-4 text-gray-400 dark:text-gray-500" />
         </div>
 
-        {/* Field number badge */}
-        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs flex items-center justify-center font-medium">
-          {index + 1}
-        </div>
-
-        {/* Field icon */}
-        <div
-          className={`p-2 rounded-lg ${categoryStyle.iconBg} ${categoryStyle.iconText}`}
-        >
-          {icon}
+        {/* Field type icon badge */}
+        <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${categoryColor}`}>
+          <Icon className="w-4 h-4" />
         </div>
 
         {/* Field info */}
@@ -565,7 +439,7 @@ const FieldCard: React.FC<{
             {label}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">
-            {field.type.replace(/_/g, ' ')}
+            {typeConfig.label}
           </div>
         </div>
 
@@ -580,7 +454,7 @@ const FieldCard: React.FC<{
         {/* Actions - only show on hover if not dragging */}
         {!isDragging && (
           <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            {onMoveUp && (
+            {onMoveUp && index > 0 && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -593,7 +467,7 @@ const FieldCard: React.FC<{
               </button>
             )}
 
-            {onMoveDown && (
+            {onMoveDown && index < totalFields - 1 && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -617,6 +491,25 @@ const FieldCard: React.FC<{
               >
                 <Copy className="w-4 h-4" />
               </button>
+            )}
+            
+            {/* Cross-page actions menu */}
+            {pages.length > 1 && onMoveToPage && onCopyToPage && (
+              <PageActionsSelector
+                pages={pages}
+                currentPageId={pageId}
+                triggerElement={
+                  <button
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all"
+                    title="Move/Copy to another page"
+                  >
+                    <ArrowUp className="w-4 h-4 rotate-90" />
+                  </button>
+                }
+                onMoveToPage={onMoveToPage}
+                onCopyToPage={onCopyToPage}
+              />
             )}
 
             {onDelete && (
@@ -653,6 +546,9 @@ const DraggableFieldCard: React.FC<{
     removeField,
     duplicateField,
     reorderFields,
+    moveFieldBetweenPages,
+    copyFieldToPage,
+    pages,
   } = useFormBuilderStore();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `existing-field-${field.id}`,
@@ -693,11 +589,22 @@ const DraggableFieldCard: React.FC<{
     }
   };
 
+  const handleMoveToPage = (targetPageId: string) => {
+    moveFieldBetweenPages(pageId, targetPageId, field.id);
+  };
+
+  const handleCopyToPage = (targetPageId: string) => {
+    copyFieldToPage(pageId, targetPageId, field.id);
+  };
+
   return (
     <div ref={setNodeRef}>
       <FieldCard
         field={field}
+        pageId={pageId}
         index={index}
+        totalFields={totalFields}
+        pages={pages}
         isDragging={isDragging}
         isSelected={isSelected}
         dragHandleProps={{ ...attributes, ...listeners }}
@@ -706,6 +613,8 @@ const DraggableFieldCard: React.FC<{
         onDuplicate={handleDuplicate}
         onMoveUp={index > 0 ? handleMoveUp : undefined}
         onMoveDown={index < totalFields - 1 ? handleMoveDown : undefined}
+        onMoveToPage={handleMoveToPage}
+        onCopyToPage={handleCopyToPage}
       />
     </div>
   );
@@ -910,8 +819,7 @@ const ConnectionStatus: React.FC<{ isConnected: boolean }> = ({
 // =============================================================================
 
 /**
- * NewPageBuilderTab - Reimplemented page builder with stable drag-and-drop.
- * Each phase adds functionality incrementally for thorough testing.
+ * NewPageBuilderTab - Reimplemented page builder with stable drag-and-drop and all features from old PageBuilderTab
  */
 export const NewPageBuilderTab: React.FC = () => {
   // Track the currently dragged field type (from sidebar)
@@ -924,9 +832,18 @@ export const NewPageBuilderTab: React.FC = () => {
     index: number;
   } | null>(null);
 
-  // Get store actions
-  const { addField, addFieldAtIndex, reorderFields, reorderPages, pages } =
-    useFormBuilderStore();
+  // Resizable sidebar width
+  const [sidebarWidth, setSidebarWidth] = useState(320);
+
+  // Get store actions including cross-page operations
+  const {
+    addField,
+    addFieldAtIndex,
+    reorderFields,
+    reorderPages,
+    moveFieldBetweenPages,
+    pages,
+  } = useFormBuilderStore();
 
   // Configure sensors - require slight movement before drag starts
   const sensors = useSensors(
@@ -950,7 +867,7 @@ export const NewPageBuilderTab: React.FC = () => {
     }
   };
 
-  // Handle drag end - add field or reorder existing fields
+  // Handle drag end - add field, reorder, or move between pages
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
@@ -976,7 +893,7 @@ export const NewPageBuilderTab: React.FC = () => {
       return;
     }
 
-    // Handle existing-field reordering
+    // Handle existing-field reordering and cross-page moves
     if (dragType === 'existing-field') {
       const sourceIndex = active.data.current?.index as number;
       const sourcePageId = active.data.current?.pageId as string;
@@ -986,9 +903,8 @@ export const NewPageBuilderTab: React.FC = () => {
         const targetPageId = over.data.current.pageId as string;
         let targetIndex = over.data.current.insertIndex as number;
 
-        // Only reorder within the same page for now
         if (sourcePageId === targetPageId) {
-          // Adjust target index if moving down (since we remove first)
+          // Same page - reorder
           if (targetIndex > sourceIndex) {
             targetIndex = targetIndex - 1;
           }
@@ -999,6 +915,13 @@ export const NewPageBuilderTab: React.FC = () => {
             );
             reorderFields(sourcePageId, sourceIndex, targetIndex);
           }
+        } else {
+          // Cross-page move
+          const fieldId = active.data.current?.field?.id as string;
+          console.log(
+            `Moving field ${fieldId} from page ${sourcePageId} to page ${targetPageId} at index ${targetIndex}`
+          );
+          moveFieldBetweenPages(sourcePageId, targetPageId, fieldId, targetIndex);
         }
       }
       return;
@@ -1043,28 +966,31 @@ export const NewPageBuilderTab: React.FC = () => {
       onDragEnd={handleDragEnd}
     >
       <div className="flex h-full" data-testid="new-page-builder-tab">
-        {/* Left: Field Types & Pages */}
+        {/* Left: Field Types */}
         <LeftSidebar />
 
         {/* Center: Form Area */}
         <FormArea />
 
-        {/* Right: Field Settings */}
-        <RightSidebar />
+        {/* Right: Field Settings with Resizable Width */}
+        <RightSidebar width={sidebarWidth} onWidthChange={setSidebarWidth} />
       </div>
 
       {/* Drag Overlay - follows cursor during drag */}
       <DragOverlay dropAnimation={null}>
         {activeFieldType && (
           <div className="w-72">
-            <FieldTypeCardContent fieldType={activeFieldType} isOverlay />
+            <FieldTypeDisplay fieldType={activeFieldType} isOverlay />
           </div>
         )}
         {activeField && (
-          <div className="w-[500px] max-w-[90vw] pointer-events-none">
+          <div className="w-[500px] max-w-[90vw] pointer-events-none opacity-90">
             <FieldCard
               field={activeField.field}
+              pageId={""} 
               index={activeField.index}
+              totalFields={1}
+              pages={[]}
               isDragging={false}
               dragHandleProps={{}}
             />
