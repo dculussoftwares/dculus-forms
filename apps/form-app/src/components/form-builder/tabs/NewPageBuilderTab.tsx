@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { ScrollArea } from '@dculus/ui';
+import { ScrollArea, FieldPreview } from '@dculus/ui';
 import {
   FormPage,
   FormField,
@@ -13,6 +13,7 @@ import {
   DragOverlay,
   useDraggable,
   useDroppable,
+  useDndContext,
   PointerSensor,
   useSensor,
   useSensors,
@@ -374,6 +375,7 @@ const FieldCard: React.FC<{
   onMoveDown?: () => void;
   onMoveToPage?: (targetPageId: string) => void;
   onCopyToPage?: (targetPageId: string) => void;
+  isAnyDragActive?: boolean;
 }> = ({
   field,
   pageId,
@@ -390,6 +392,7 @@ const FieldCard: React.FC<{
   onMoveDown,
   onMoveToPage,
   onCopyToPage,
+  isAnyDragActive = false,
 }) => {
   // Get label for fillable fields, or use type name for others
   const label: string =
@@ -401,6 +404,9 @@ const FieldCard: React.FC<{
   const typeConfig = getFieldTypeConfig(field.type);
   const Icon = typeConfig.icon;
   const categoryColor = getCategoryColor(typeConfig.category);
+
+  // Show compact view when ANY drag is active (not just this field)
+  const shouldShowCompact = isAnyDragActive;
 
   return (
     <div
@@ -417,115 +423,166 @@ const FieldCard: React.FC<{
       `}
       data-testid={`field-${field.id}`}
     >
-      <div className="flex items-center gap-3">
-        {/* Drag handle */}
-        <div
-          {...dragHandleProps}
-          className="flex-shrink-0 p-1 -ml-2 cursor-grab hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-          title="Drag to reorder"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <GripVertical className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-        </div>
-
-        {/* Field type icon badge */}
-        <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${categoryColor}`}>
-          <Icon className="w-4 h-4" />
-        </div>
-
-        {/* Field info */}
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-gray-900 dark:text-white truncate flex items-center gap-1">
-            <span className="truncate">{label}</span>
-            {/* Required indicator - red asterisk */}
-            {'validation' in field &&
-              (field as FillableFormField).validation?.required && (
-                <span className="text-red-500 text-sm flex-shrink-0" title="Required field">
-                  *
-                </span>
-              )}
+      {/* Compact view when any drag is active */}
+      {shouldShowCompact ? (
+        <div className="flex items-center gap-3">
+          {/* Drag handle */}
+          <div
+            {...dragHandleProps}
+            className="flex-shrink-0 p-1 -ml-2 cursor-grab hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+            title="Drag to reorder"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <GripVertical className="w-4 h-4 text-gray-400 dark:text-gray-500" />
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">
-            {typeConfig.label}
+
+          {/* Field type icon badge */}
+          <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${categoryColor}`}>
+            <Icon className="w-4 h-4" />
+          </div>
+
+          {/* Field info */}
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium text-gray-900 dark:text-white truncate flex items-center gap-1">
+              <span className="truncate">{label}</span>
+              {/* Required indicator - red asterisk */}
+              {'validation' in field &&
+                (field as FillableFormField).validation?.required && (
+                  <span className="text-red-500 text-sm flex-shrink-0" title="Required field">
+                    *
+                  </span>
+                )}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              {typeConfig.label}
+            </div>
           </div>
         </div>
+      ) : (
+        /* Full preview when not dragging */
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            {/* Drag handle */}
+            <div
+              {...dragHandleProps}
+              className="flex-shrink-0 p-1 -ml-2 cursor-grab hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+              title="Drag to reorder"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <GripVertical className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+            </div>
 
-        {/* Actions - only show on hover if not dragging */}
-        {!isDragging && (
-          <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            {onMoveUp && index > 0 && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMoveUp();
-                }}
-                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all"
-                title="Move Up"
-              >
-                <ArrowUp className="w-4 h-4" />
-              </button>
-            )}
+            {/* Field type icon badge */}
+            <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${categoryColor}`}>
+              <Icon className="w-4 h-4" />
+            </div>
 
-            {onMoveDown && index < totalFields - 1 && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMoveDown();
-                }}
-                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all"
-                title="Move Down"
-              >
-                <ArrowDown className="w-4 h-4" />
-              </button>
-            )}
+            {/* Field info */}
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-gray-900 dark:text-white truncate flex items-center gap-1">
+                <span className="truncate">{label}</span>
+                {/* Required indicator - red asterisk */}
+                {'validation' in field &&
+                  (field as FillableFormField).validation?.required && (
+                    <span className="text-red-500 text-sm flex-shrink-0" title="Required field">
+                      *
+                    </span>
+                  )}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {typeConfig.label}
+              </div>
+            </div>
+          </div>
 
-            {onDuplicate && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDuplicate();
-                }}
-                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all"
-                title="Duplicate Field"
-              >
-                <Copy className="w-4 h-4" />
-              </button>
-            )}
-            
-            {/* Cross-page actions menu */}
-            {pages.length > 1 && onMoveToPage && onCopyToPage && (
-              <PageActionsSelector
-                pages={pages}
-                currentPageId={pageId}
-                triggerElement={
-                  <button
-                    onClick={(e) => e.stopPropagation()}
-                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all"
-                    title="Move/Copy to another page"
-                  >
-                    <ArrowUp className="w-4 h-4 rotate-90" />
-                  </button>
-                }
-                onMoveToPage={onMoveToPage}
-                onCopyToPage={onCopyToPage}
+          {/* Field Preview */}
+          <div className="pl-9 pr-2">
+            <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-md border border-gray-200 dark:border-gray-700">
+              <FieldPreview
+                field={field}
+                disabled={true}
+                showValidation={false}
               />
-            )}
-
-            {onDelete && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete();
-                }}
-                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-all"
-                title="Delete field"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            )}
+            </div>
           </div>
-        )}
-      </div>
+
+          {/* Actions - only show on hover */}
+          <div className="pl-9 pr-2">
+            <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              {onMoveUp && index > 0 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMoveUp();
+                  }}
+                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all"
+                  title="Move Up"
+                >
+                  <ArrowUp className="w-4 h-4" />
+                </button>
+              )}
+
+              {onMoveDown && index < totalFields - 1 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMoveDown();
+                  }}
+                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all"
+                  title="Move Down"
+                >
+                  <ArrowDown className="w-4 h-4" />
+                </button>
+              )}
+
+              {onDuplicate && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDuplicate();
+                  }}
+                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all"
+                  title="Duplicate Field"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+              )}
+              
+              {/* Cross-page actions menu */}
+              {pages.length > 1 && onMoveToPage && onCopyToPage && (
+                <PageActionsSelector
+                  pages={pages}
+                  currentPageId={pageId}
+                  triggerElement={
+                    <button
+                      onClick={(e) => e.stopPropagation()}
+                      className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all"
+                      title="Move/Copy to another page"
+                    >
+                      <ArrowUp className="w-4 h-4 rotate-90" />
+                    </button>
+                  }
+                  onMoveToPage={onMoveToPage}
+                  onCopyToPage={onCopyToPage}
+                />
+              )}
+
+              {onDelete && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-all"
+                  title="Delete field"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -549,6 +606,11 @@ const DraggableFieldCard: React.FC<{
     copyFieldToPage,
     pages,
   } = useFormBuilderStore();
+  
+  // Detect if ANY drag is active
+  const { active } = useDndContext();
+  const isAnyDragActive = !!active;
+  
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `existing-field-${field.id}`,
     data: {
@@ -606,6 +668,7 @@ const DraggableFieldCard: React.FC<{
         pages={pages}
         isDragging={isDragging}
         isSelected={isSelected}
+        isAnyDragActive={isAnyDragActive}
         dragHandleProps={{ ...attributes, ...listeners }}
         onClick={handleClick}
         onDelete={handleDelete}
@@ -986,11 +1049,12 @@ export const NewPageBuilderTab: React.FC = () => {
           <div className="w-[500px] max-w-[90vw] pointer-events-none opacity-90">
             <FieldCard
               field={activeField.field}
-              pageId={""} 
+              pageId={activeField.pageId} 
               index={activeField.index}
               totalFields={1}
               pages={[]}
-              isDragging={false}
+              isDragging={true}
+              isAnyDragActive={true}
               dragHandleProps={{}}
             />
           </div>
