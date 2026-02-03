@@ -1,4 +1,9 @@
+provider "neon" {
+  api_key = var.neon_api_key
+}
+
 resource "neon_project" "main" {
+
   name      = "${var.project_name}-${var.environment}"
   region_id = var.region_id
 }
