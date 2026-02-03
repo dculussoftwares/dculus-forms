@@ -863,6 +863,7 @@ jobs:
       - name: Terraform Init
         env:
           TF_VAR_neon_api_key: ${{ secrets.NEON_API_KEY }}
+          TF_VAR_environment: ${{ github.event.inputs.environment }}
         run: |
           terraform init \
             -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
@@ -873,6 +874,7 @@ jobs:
       - name: Terraform Destroy
         env:
           TF_VAR_neon_api_key: ${{ secrets.NEON_API_KEY }}
+          TF_VAR_environment: ${{ github.event.inputs.environment }}
         run: |
           echo "🔥 Destroying NeonDB database..."
           terraform destroy -auto-approve

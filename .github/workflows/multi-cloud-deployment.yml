@@ -671,6 +671,7 @@ jobs:
       - name: Terraform Init
         env:
           TF_VAR_neon_api_key: ${{ secrets.NEON_API_KEY }}
+          TF_VAR_environment: ${{ needs.determine-environment.outputs.environment }}
         run: |
           terraform init \
             -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
@@ -681,11 +682,13 @@ jobs:
       - name: Terraform Validate
         env:
           TF_VAR_neon_api_key: ${{ secrets.NEON_API_KEY }}
+          TF_VAR_environment: ${{ needs.determine-environment.outputs.environment }}
         run: terraform validate
 
       - name: Terraform Plan
         env:
           TF_VAR_neon_api_key: ${{ secrets.NEON_API_KEY }}
+          TF_VAR_environment: ${{ needs.determine-environment.outputs.environment }}
         run: terraform plan -out=tfplan
 
       - name: Terraform Apply
@@ -693,6 +696,7 @@ jobs:
         if: needs.determine-environment.outputs.should_deploy == 'true'
         env:
           TF_VAR_neon_api_key: ${{ secrets.NEON_API_KEY }}
+          TF_VAR_environment: ${{ needs.determine-environment.outputs.environment }}
         run: |
           terraform apply -auto-approve tfplan
 
