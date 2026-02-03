@@ -1,0 +1,22 @@
+resource "neon_project" "main" {
+  name      = "${var.project_name}-${var.environment}"
+  region_id = var.region_id
+}
+
+resource "neon_branch" "main" {
+  project_id = neon_project.main.id
+  name       = var.branch_name
+}
+
+resource "neon_role" "main" {
+  project_id = neon_project.main.id
+  branch_id  = neon_branch.main.id
+  name       = var.role_name
+}
+
+resource "neon_database" "main" {
+  project_id = neon_project.main.id
+  branch_id  = neon_branch.main.id
+  name       = var.database_name
+  owner_name = neon_role.main.name
+}

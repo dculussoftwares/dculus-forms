@@ -284,6 +284,21 @@ jobs:
             echo "✅ Container exists: $POSTGRES_CONTAINER"
           fi
 
+          # Create NeonDB container
+          NEON_CONTAINER="dculus-forms-neon-${ENV}-state"
+          if ! az storage container show \
+            --name "$NEON_CONTAINER" \
+            --account-name "$STORAGE_ACCOUNT" &>/dev/null; then
+            echo "📦 Creating container: $NEON_CONTAINER"
+            az storage container create \
+              --name "$NEON_CONTAINER" \
+              --account-name "$STORAGE_ACCOUNT" \
+              --auth-mode login
+            echo "✅ Container created: $NEON_CONTAINER"
+          else
+            echo "✅ Container exists: $NEON_CONTAINER"
+          fi
+
   # Cleanup Azure Custom Domain and Certificate before destroying infrastructure
   cleanup-azure-custom-domain:
     name: Cleanup Custom Domain & Certificate
@@ -796,6 +811,72 @@ jobs:
           echo "🔥 Destroying Azure PostgreSQL database..."
           terraform destroy -auto-approve
           echo "✅ Azure PostgreSQL database destroyed - ALL DATA PERMANENTLY DELETED"
+
+  # Destroy NeonDB Database
+  terraform-neon-destroy:
+    name: Destroy NeonDB Database
+    runs-on: ubuntu-latest
+    needs: [validate-destroy-request, terraform-postgres-destroy]
+    if: |
+      always() && !cancelled() &&
+      (needs.terraform-postgres-destroy.result == 'success' || needs.terraform-postgres-destroy.result == 'skipped') &&
+      github.event.inputs.destroy_postgres == 'true'
+    environment: ${{ github.event.inputs.environment }}
+    defaults:
+      run:
+        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/neon-postgres/environments/${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: dculus-forms
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get Azure Storage Account Key
+        run: |
+          ACCOUNT_KEY=$(az storage account keys list \
+            --resource-group dculus-global-terraform-assets-resource-grp \
+            --account-name dculusterraformstates \
+            --query '[0].value' -o tsv)
+          echo "::add-mask::$ACCOUNT_KEY"
+          echo "ARM_ACCESS_KEY=$ACCOUNT_KEY" >> $GITHUB_ENV
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Copy shared Terraform files
+        run: |
+          cp ../../main.tf .
+          cp ../../variables.tf .
+          cp ../../outputs.tf .
+          cp ../../versions.tf .
+          echo "✅ Copied shared Terraform files"
+
+      - name: Terraform Init
+        env:
+          TF_VAR_neon_api_key: ${{ secrets.NEON_API_KEY }}
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
+            -backend-config="storage_account_name=dculusterraformstates" \
+            -backend-config="container_name=dculus-forms-neon-${{ github.event.inputs.environment }}-state" \
+            -backend-config="key=terraform.tfstate"
+
+      - name: Terraform Destroy
+        env:
+          TF_VAR_neon_api_key: ${{ secrets.NEON_API_KEY }}
+        run: |
+          echo "🔥 Destroying NeonDB database..."
+          terraform destroy -auto-approve
+          echo "✅ NeonDB database destroyed"
 
   # Generate destruction summary
   destroy-summary:
