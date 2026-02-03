@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { ScrollArea, FieldPreview } from '@dculus/ui';
 import {
   FormPage,
@@ -376,6 +376,8 @@ const FieldCard: React.FC<{
   onMoveToPage?: (targetPageId: string) => void;
   onCopyToPage?: (targetPageId: string) => void;
   isAnyDragActive?: boolean;
+  isRecentlyDropped?: boolean;
+  isDelayingExpansion?: boolean;
 }> = ({
   field,
   pageId,
@@ -393,6 +395,8 @@ const FieldCard: React.FC<{
   onMoveToPage,
   onCopyToPage,
   isAnyDragActive = false,
+  isRecentlyDropped = false,
+  isDelayingExpansion = false,
 }) => {
   // Get label for fillable fields, or use type name for others
   const label: string =
@@ -405,8 +409,8 @@ const FieldCard: React.FC<{
   const Icon = typeConfig.icon;
   const categoryColor = getCategoryColor(typeConfig.category);
 
-  // Show compact view when ANY drag is active (not just this field)
-  const shouldShowCompact = isAnyDragActive;
+  // Show compact view when any drag is active OR during expansion delay
+  const shouldShowCompact = isAnyDragActive || isDelayingExpansion;
 
   return (
     <div
@@ -416,7 +420,9 @@ const FieldCard: React.FC<{
         ${
           isDragging
             ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-950/30 opacity-50 shadow-lg'
-            : isSelected
+            : isRecentlyDropped
+              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/50 ring-2 ring-blue-500 animate-pulse shadow-lg'
+              : isSelected
               ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/50 ring-2 ring-blue-500/20 shadow-md'
               : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm cursor-pointer'
         }
@@ -425,7 +431,7 @@ const FieldCard: React.FC<{
     >
       {/* Compact view when any drag is active */}
       {shouldShowCompact ? (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full">
           {/* Drag handle */}
           <div
             {...dragHandleProps}
@@ -442,7 +448,7 @@ const FieldCard: React.FC<{
           </div>
 
           {/* Field info */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 max-w-[280px]">
             <div className="text-sm font-medium text-gray-900 dark:text-white truncate flex items-center gap-1">
               <span className="truncate">{label}</span>
               {/* Required indicator - red asterisk */}
@@ -595,7 +601,9 @@ const DraggableFieldCard: React.FC<{
   index: number;
   pageId: string;
   totalFields: number;
-}> = ({ field, index, pageId, totalFields }) => {
+  isRecentlyDropped?: boolean;
+  isDelayingExpansion?: boolean;
+}> = ({ field, index, pageId, totalFields, isRecentlyDropped = false, isDelayingExpansion = false }) => {
   const {
     selectedFieldId,
     setSelectedField,
@@ -669,6 +677,8 @@ const DraggableFieldCard: React.FC<{
         isDragging={isDragging}
         isSelected={isSelected}
         isAnyDragActive={isAnyDragActive}
+        isRecentlyDropped={isRecentlyDropped}
+        isDelayingExpansion={isDelayingExpansion}
         dragHandleProps={{ ...attributes, ...listeners }}
         onClick={handleClick}
         onDelete={handleDelete}
@@ -752,7 +762,9 @@ const DropIndicator: React.FC<{
 const FieldListWithDropZones: React.FC<{
   fields: FormField[];
   pageId: string;
-}> = ({ fields, pageId }) => {
+  recentlyDroppedFieldId?: string | null;
+  isDelayingExpansion?: boolean;
+}> = ({ fields, pageId, recentlyDroppedFieldId, isDelayingExpansion = false }) => {
   return (
     <div>
       {/* Drop zone at the beginning */}
@@ -765,6 +777,8 @@ const FieldListWithDropZones: React.FC<{
             index={index}
             pageId={pageId}
             totalFields={fields.length}
+            isRecentlyDropped={field.id === recentlyDroppedFieldId}
+            isDelayingExpansion={isDelayingExpansion}
           />
           {/* Drop zone after each field */}
           <DropIndicator index={index + 1} pageId={pageId} />
@@ -777,7 +791,10 @@ const FieldListWithDropZones: React.FC<{
 /**
  * FormArea - Center column displaying form fields (drop zone)
  */
-const FormArea: React.FC = () => {
+const FormArea: React.FC<{
+  recentlyDroppedFieldId?: string | null;
+  isDelayingExpansion?: boolean;
+}> = ({ recentlyDroppedFieldId, isDelayingExpansion = false }) => {
   const { isConnected, pages, selectedPageId } = useFormBuilderStore();
   const selectedPage = pages.find((p) => p.id === selectedPageId);
 
@@ -816,6 +833,8 @@ const FormArea: React.FC = () => {
                 <FieldListWithDropZones
                   fields={selectedPage.fields}
                   pageId={selectedPage.id}
+                  recentlyDroppedFieldId={recentlyDroppedFieldId}
+                  isDelayingExpansion={isDelayingExpansion}
                 />
               ) : (
                 <EmptyFormAreaPlaceholder isConnected={isConnected} />
@@ -892,10 +911,17 @@ export const NewPageBuilderTab: React.FC = () => {
   const [activeField, setActiveField] = useState<{
     field: FormField;
     index: number;
+    pageId: string;
   } | null>(null);
 
   // Resizable sidebar width
   const [sidebarWidth, setSidebarWidth] = useState(320);
+
+  // Track recently dropped field for highlight animation
+  const [recentlyDroppedFieldId, setRecentlyDroppedFieldId] = useState<string | null>(null);
+  
+  // Delay compact view exit after drop
+  const [isDelayingExpansion, setIsDelayingExpansion] = useState(false);
 
   // Get store actions including cross-page operations
   const {
@@ -916,6 +942,28 @@ export const NewPageBuilderTab: React.FC = () => {
     })
   );
 
+  // Auto-scroll to recently dropped field for better UX
+  useEffect(() => {
+    if (recentlyDroppedFieldId) {
+      // Delay scroll until after expansion completes (400ms expansion + 100ms buffer)
+      const scrollTimeout = setTimeout(() => {
+        const fieldElement = document.querySelector(
+          `[data-testid="field-${recentlyDroppedFieldId}"]`
+        );
+        
+        if (fieldElement) {
+          fieldElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'nearest',
+          });
+        }
+      }, 500); // Scroll after expansion completes
+
+      return () => clearTimeout(scrollTimeout);
+    }
+  }, [recentlyDroppedFieldId]);
+
   // Handle drag start - store the active dragged item
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
@@ -925,6 +973,7 @@ export const NewPageBuilderTab: React.FC = () => {
       setActiveField({
         field: active.data.current.field as FormField,
         index: active.data.current.index as number,
+        pageId: active.data.current.pageId as string,
       });
     }
   };
@@ -933,12 +982,22 @@ export const NewPageBuilderTab: React.FC = () => {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
-    // Always clear the active items
-    setActiveFieldType(null);
-    setActiveField(null);
+    // Track which field was dropped for highlighting
+    let droppedFieldId: string | null = null;
+
+    // Start delayed expansion
+    setIsDelayingExpansion(true);
 
     // Check if we have a valid drop target
-    if (!over) return;
+    if (!over) {
+      // No valid drop - clear expansion delay after a short time
+      setTimeout(() => {
+        setActiveFieldType(null);
+        setActiveField(null);
+        setIsDelayingExpansion(false);
+      }, 300);
+      return;
+    }
 
     const dragType = active.data.current?.type;
 
@@ -952,6 +1011,12 @@ export const NewPageBuilderTab: React.FC = () => {
           reorderPages(oldIndex, newIndex);
         }
       }
+      // Clear state and exit expansion delay
+      setTimeout(() => {
+        setActiveFieldType(null);
+        setActiveField(null);
+        setIsDelayingExpansion(false);
+      }, 300);
       return;
     }
 
@@ -959,6 +1024,7 @@ export const NewPageBuilderTab: React.FC = () => {
     if (dragType === 'existing-field') {
       const sourceIndex = active.data.current?.index as number;
       const sourcePageId = active.data.current?.pageId as string;
+      droppedFieldId = active.data.current?.field?.id as string;
 
       // Dropped on a field-insert zone
       if (over.data.current?.type === 'field-insert') {
@@ -979,13 +1045,24 @@ export const NewPageBuilderTab: React.FC = () => {
           }
         } else {
           // Cross-page move
-          const fieldId = active.data.current?.field?.id as string;
           console.log(
-            `Moving field ${fieldId} from page ${sourcePageId} to page ${targetPageId} at index ${targetIndex}`
+            `Moving field ${droppedFieldId} from page ${sourcePageId} to page ${targetPageId} at index ${targetIndex}`
           );
-          moveFieldBetweenPages(sourcePageId, targetPageId, fieldId, targetIndex);
+          moveFieldBetweenPages(sourcePageId, targetPageId, droppedFieldId, targetIndex);
         }
       }
+      
+      // Set highlight and clear state after delay
+      if (droppedFieldId) {
+        setRecentlyDroppedFieldId(droppedFieldId);
+        setTimeout(() => setRecentlyDroppedFieldId(null), 2000); // Keep highlight for 2s
+      }
+      
+      setTimeout(() => {
+        setActiveFieldType(null);
+        setActiveField(null);
+        setIsDelayingExpansion(false);
+      }, 400); // 400ms delay before expansion
       return;
     }
 
@@ -1003,7 +1080,23 @@ export const NewPageBuilderTab: React.FC = () => {
             `Inserting field ${fieldTypeConfig.type} at index ${insertIndex} in page ${targetPageId}`
           );
           addFieldAtIndex(targetPageId, fieldTypeConfig.type, {}, insertIndex);
+          
+          // Find the newly added field ID (it will be the last one added)
+          setTimeout(() => {
+            const targetPage = pages.find(p => p.id === targetPageId);
+            if (targetPage && targetPage.fields[insertIndex]) {
+              const newFieldId = targetPage.fields[insertIndex].id;
+              setRecentlyDroppedFieldId(newFieldId);
+              setTimeout(() => setRecentlyDroppedFieldId(null), 2000);
+            }
+          }, 50);
         }
+        
+        setTimeout(() => {
+          setActiveFieldType(null);
+          setActiveField(null);
+          setIsDelayingExpansion(false);
+        }, 400);
         return;
       }
 
@@ -1016,9 +1109,32 @@ export const NewPageBuilderTab: React.FC = () => {
             `Adding field ${fieldTypeConfig.type} to end of page ${targetPageId}`
           );
           addField(targetPageId, fieldTypeConfig.type, {});
+          
+          // Find the newly added field ID
+          setTimeout(() => {
+            const targetPage = pages.find(p => p.id === targetPageId);
+            if (targetPage && targetPage.fields.length > 0) {
+              const newFieldId = targetPage.fields[targetPage.fields.length - 1].id;
+              setRecentlyDroppedFieldId(newFieldId);
+              setTimeout(() => setRecentlyDroppedFieldId(null), 2000);
+            }
+          }, 50);
         }
+        
+        setTimeout(() => {
+          setActiveFieldType(null);
+          setActiveField(null);
+          setIsDelayingExpansion(false);
+        }, 400);
       }
     }
+    
+    // Fallback: clear state after delay
+    setTimeout(() => {
+      setActiveFieldType(null);
+      setActiveField(null);
+      setIsDelayingExpansion(false);
+    }, 400);
   };
 
   return (
@@ -1032,7 +1148,10 @@ export const NewPageBuilderTab: React.FC = () => {
         <LeftSidebar />
 
         {/* Center: Form Area */}
-        <FormArea />
+        <FormArea 
+          recentlyDroppedFieldId={recentlyDroppedFieldId} 
+          isDelayingExpansion={isDelayingExpansion}
+        />
 
         {/* Right: Field Settings with Resizable Width */}
         <RightSidebar width={sidebarWidth} onWidthChange={setSidebarWidth} />
@@ -1046,7 +1165,7 @@ export const NewPageBuilderTab: React.FC = () => {
           </div>
         )}
         {activeField && (
-          <div className="w-[500px] max-w-[90vw] pointer-events-none opacity-90">
+          <div className="w-[400px] pointer-events-none opacity-90">
             <FieldCard
               field={activeField.field}
               pageId={activeField.pageId} 
