@@ -1,12 +1,9 @@
 import React from 'react';
 import { FormPage } from '@dculus/types';
-import { 
   DropdownMenu, 
   DropdownMenuContent, 
-  DropdownMenuItem, 
   DropdownMenuTrigger,
   DropdownMenuLabel,
-  DropdownMenuSeparator
 } from '@dculus/ui';
 import { useTranslation } from '../../hooks/useTranslation';
 import { FileText, ArrowRight, Copy, MoreVertical } from 'lucide-react';
