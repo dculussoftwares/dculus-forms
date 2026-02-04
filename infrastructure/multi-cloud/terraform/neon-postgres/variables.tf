@@ -26,7 +26,7 @@ variable "region_id" {
 variable "database_name" {
   description = "Name of the database to create"
   type        = string
-  default     = "neondb"
+  default     = "dculus-forms"
 }
 
 variable "branch_name" {
