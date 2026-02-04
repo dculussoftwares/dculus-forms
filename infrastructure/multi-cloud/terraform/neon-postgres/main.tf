@@ -9,20 +9,15 @@ resource "neon_project" "main" {
   history_retention_seconds = 0
 }
 
-resource "neon_branch" "main" {
-  project_id = neon_project.main.id
-  name       = var.branch_name
-}
-
 resource "neon_role" "main" {
   project_id = neon_project.main.id
-  branch_id  = neon_branch.main.id
+  branch_id  = neon_project.main.default_branch_id
   name       = var.role_name
 }
 
 resource "neon_database" "main" {
   project_id = neon_project.main.id
-  branch_id  = neon_branch.main.id
+  branch_id  = neon_project.main.default_branch_id
   name       = var.database_name
   owner_name = neon_role.main.name
 }
