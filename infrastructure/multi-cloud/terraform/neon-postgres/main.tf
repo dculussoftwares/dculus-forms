@@ -4,8 +4,9 @@ provider "neon" {
 
 resource "neon_project" "main" {
 
-  name      = "${var.project_name}-${var.environment}"
-  region_id = var.region_id
+  name                      = "${var.project_name}-${var.environment}"
+  region_id                 = var.region_id
+  history_retention_seconds = 0
 }
 
 resource "neon_branch" "main" {
