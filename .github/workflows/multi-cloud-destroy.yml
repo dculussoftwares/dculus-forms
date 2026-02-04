@@ -16,6 +16,11 @@ on:
         required: false
         type: boolean
         default: false
+      destroy_neon:
+        description: '🔥 Destroy NeonDB Postgres (PERMANENT DATA LOSS - Cannot be recovered)'
+        required: false
+        type: boolean
+        default: false
       destroy_cloudflare_pages:
         description: 'Destroy Cloudflare Pages (form-app, admin-app, viewer-app - Static sites)'
         required: false
@@ -81,6 +86,7 @@ jobs:
       - name: Verify At Least One Provider Selected
         run: |
           if [ "${{ github.event.inputs.destroy_postgres }}" != "true" ] && \
+             [ "${{ github.event.inputs.destroy_neon }}" != "true" ] && \
              [ "${{ github.event.inputs.destroy_cloudflare_pages }}" != "true" ] && \
              [ "${{ github.event.inputs.destroy_cloudflare_r2 }}" != "true" ] && \
              [ "${{ github.event.inputs.destroy_azure }}" != "true" ]; then
@@ -820,7 +826,7 @@ jobs:
     if: |
       always() && !cancelled() &&
       (needs.terraform-postgres-destroy.result == 'success' || needs.terraform-postgres-destroy.result == 'skipped') &&
-      github.event.inputs.destroy_postgres == 'true'
+      github.event.inputs.destroy_neon == 'true'
     environment: ${{ github.event.inputs.environment }}
     defaults:
       run:
@@ -946,7 +952,7 @@ jobs:
           fi
 
           # NeonDB Status
-          if [ "${{ github.event.inputs.destroy_postgres }}" = "true" ]; then
+          if [ "${{ github.event.inputs.destroy_neon }}" = "true" ]; then
             NEON_STATUS="${{ needs.terraform-neon-destroy.result == 'success' && '✅ Destroyed' || '❌ Failed' }}"
             echo "| NeonDB Postgres | ✅ Yes | $NEON_STATUS | ⚠️⚠️ ALL DATA LOST |" >> $GITHUB_STEP_SUMMARY
           else
