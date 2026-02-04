@@ -889,7 +889,8 @@ jobs:
       terraform-cloudflare-pages-destroy,
       terraform-cloudflare-service-domain-destroy,
       terraform-cloudflare-destroy,
-      terraform-postgres-destroy
+      terraform-postgres-destroy,
+      terraform-neon-destroy
     ]
     if: always()
     steps:
@@ -936,12 +937,20 @@ jobs:
             echo "| Cloudflare R2 | ❌ No | ⏭️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
           fi
 
-          # PostgreSQL Status
+          # Azure PostgreSQL Status
           if [ "${{ github.event.inputs.destroy_postgres }}" = "true" ]; then
             POSTGRES_STATUS="${{ needs.terraform-postgres-destroy.result == 'success' && '✅ Destroyed' || '❌ Failed' }}"
             echo "| Azure PostgreSQL | ✅ Yes | $POSTGRES_STATUS | ⚠️⚠️ ALL DATA LOST |" >> $GITHUB_STEP_SUMMARY
           else
             echo "| Azure PostgreSQL | ❌ No | ⏭️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # NeonDB Status
+          if [ "${{ github.event.inputs.destroy_postgres }}" = "true" ]; then
+            NEON_STATUS="${{ needs.terraform-neon-destroy.result == 'success' && '✅ Destroyed' || '❌ Failed' }}"
+            echo "| NeonDB Postgres | ✅ Yes | $NEON_STATUS | ⚠️⚠️ ALL DATA LOST |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| NeonDB Postgres | ❌ No | ⏭️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
           fi
 
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -1004,6 +1013,15 @@ jobs:
             echo "- **SKU**: B_Standard_B1ms (Burstable, 1 vCore, 2 GiB RAM)" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "⚠️ **WARNING**: 7-day backup retention has NO recovery after deletion." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.terraform-neon-destroy.result }}" = "success" ]; then
+            echo "## 🟢 NeonDB Database Destroyed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Project**: \`dculus-forms-${{ github.event.inputs.environment }}\` - DELETED" >> $GITHUB_STEP_SUMMARY
+            echo "- **Database**: \`dculus-forms-${{ github.event.inputs.environment }}\` - DELETED" >> $GITHUB_STEP_SUMMARY
+            echo "- **Data**: All application data - PERMANENTLY LOST" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
 
