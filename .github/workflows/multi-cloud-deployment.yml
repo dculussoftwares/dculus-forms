@@ -709,7 +709,7 @@ jobs:
   terraform-infrastructure-deploy:
     name: 4.1. Deploy Core Infrastructure (R2 Storage + Azure Container Apps)
     runs-on: ubuntu-latest
-    needs: [determine-environment, setup-azure-backend, check-docker-image, terraform-mongodb-deploy, terraform-postgres-deploy]
+    needs: [determine-environment, setup-azure-backend, check-docker-image, terraform-mongodb-deploy, terraform-neon-deploy]
     if: |
       always() && !cancelled() && !failure() &&
       (needs.determine-environment.outputs.deploy_cloudflare == 'true' ||
@@ -812,45 +812,46 @@ jobs:
           echo "public_cdn_url=${{ env.R2_PUBLIC_CDN_URL }}" >> $GITHUB_OUTPUT
 
       # ==================== AZURE CONTAINER APPS DEPLOYMENT ====================
-      - name: Retrieve PostgreSQL connection string from Terraform state
+      - name: Retrieve Neon DB connection string from Terraform state
         id: get-postgres-connection
         if: needs.determine-environment.outputs.deploy_azure == 'true'
-        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/azure-postgres/environments/${{ needs.determine-environment.outputs.environment }}
+        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/neon-postgres/environments/${{ needs.determine-environment.outputs.environment }}
         env:
-          TF_VAR_admin_password: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
+          TF_VAR_neon_api_key: ${{ secrets.NEON_API_KEY }}
         run: |
-          # If PostgreSQL was deployed in this run, use its output
-          if [ -n "${{ needs.terraform-postgres-deploy.outputs.connection_string }}" ]; then
-            echo "Using PostgreSQL connection string from current deployment"
-            echo "connection_string=${{ needs.terraform-postgres-deploy.outputs.connection_string }}" >> $GITHUB_OUTPUT
+          # If Neon DB was deployed in this run, use its output
+          if [ -n "${{ needs.terraform-neon-deploy.outputs.connection_string }}" ]; then
+            echo "Using Neon DB connection string from current deployment"
+            echo "connection_string=${{ needs.terraform-neon-deploy.outputs.connection_string }}" >> $GITHUB_OUTPUT
             exit 0
           fi
 
           # Otherwise, retrieve from existing Terraform state
-          echo "Retrieving PostgreSQL connection string from Terraform state..."
+          echo "Retrieving Neon DB connection string from Terraform state..."
 
           # Copy shared Terraform files (needed for state access)
           cp ../../main.tf .
           cp ../../variables.tf .
           cp ../../outputs.tf .
+          cp ../../versions.tf .
 
           # Initialize Terraform to access remote state
           terraform init \
             -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
             -backend-config="storage_account_name=dculusterraformstates" \
-            -backend-config="container_name=dculus-forms-postgres-${{ needs.determine-environment.outputs.environment }}-state" \
+            -backend-config="container_name=dculus-forms-neon-${{ needs.determine-environment.outputs.environment }}-state" \
             -backend-config="key=terraform.tfstate"
 
           # Retrieve connection string from state
           CONNECTION_STRING=$(terraform output -raw connection_string 2>/dev/null || echo "")
 
           if [ -z "$CONNECTION_STRING" ]; then
-            echo "❌ Error: Could not retrieve PostgreSQL connection string from Terraform state"
-            echo "💡 Tip: Ensure PostgreSQL has been deployed (deploy_postgres=true)"
+            echo "❌ Error: Could not retrieve Neon DB connection string from Terraform state"
+            echo "💡 Tip: Ensure Neon DB has been deployed (deploy_postgres=true)"
             exit 1
           fi
 
-          echo "✅ Retrieved PostgreSQL connection string from existing infrastructure"
+          echo "✅ Retrieved Neon DB connection string from existing infrastructure"
           echo "::add-mask::$CONNECTION_STRING"
           echo "connection_string=$CONNECTION_STRING" >> $GITHUB_OUTPUT
 
