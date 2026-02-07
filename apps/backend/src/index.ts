@@ -143,15 +143,6 @@ app.use(
 app.use(compression());
 app.use(morgan('combined'));
 
-// Handle OPTIONS preflight requests for Better Auth routes explicitly
-// This ensures CORS headers are sent before Better Auth can handle the request
-app.options('/api/auth/*', cors({
-  origin: allOrigins,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-}));
-
 // Mount Better Auth handler AFTER CORS middleware
 app.all('/api/auth/*', toNodeHandler(auth));
 
