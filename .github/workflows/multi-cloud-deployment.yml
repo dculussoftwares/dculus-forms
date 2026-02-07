@@ -314,8 +314,6 @@ jobs:
             echo "✅ Container exists: $CLOUDFLARE_PAGES_VIEWER_CONTAINER"
           fi
 
-          fi
-
           # Create NeonDB container
           NEON_CONTAINER="dculus-forms-neon-${ENV}-state"
           if ! az storage container show \
