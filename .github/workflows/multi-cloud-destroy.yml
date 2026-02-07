@@ -10,7 +10,7 @@ on:
         options:
           - dev
           - staging
-          # Production is NOT available - must be destroyed manually with approval
+          - production
       destroy_postgres:
         description: '🔥 Destroy Azure PostgreSQL (PERMANENT DATA LOSS - Cannot be recovered)'
         required: false
