@@ -11,6 +11,11 @@ on:
           - dev
           - staging
           - production
+      destroy_mongodb:
+        description: '🔥 Destroy MongoDB Atlas (PERMANENT DATA LOSS - Cannot be recovered)'
+        required: false
+        type: boolean
+        default: false
       destroy_postgres:
         description: '🔥 Destroy Azure PostgreSQL (PERMANENT DATA LOSS - Cannot be recovered)'
         required: false
@@ -47,6 +52,7 @@ permissions:
 
 env:
   TERRAFORM_VERSION: '1.6.0'
+  MONGODB_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/mongodb'
   POSTGRES_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/azure-postgres'
   CLOUDFLARE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare'
   CLOUDFLARE_SERVICE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-service-domain'
@@ -85,7 +91,8 @@ jobs:
 
       - name: Verify At Least One Provider Selected
         run: |
-          if [ "${{ github.event.inputs.destroy_postgres }}" != "true" ] && \
+          if [ "${{ github.event.inputs.destroy_mongodb }}" != "true" ] && \
+             [ "${{ github.event.inputs.destroy_postgres }}" != "true" ] && \
              [ "${{ github.event.inputs.destroy_neon }}" != "true" ] && \
              [ "${{ github.event.inputs.destroy_cloudflare_pages }}" != "true" ] && \
              [ "${{ github.event.inputs.destroy_cloudflare_r2 }}" != "true" ] && \
@@ -124,10 +131,22 @@ jobs:
             echo "  ⏭️ Cloudflare R2 & CDN (Skipped)"
           fi
 
+          if [ "${{ github.event.inputs.destroy_mongodb }}" = "true" ]; then
+            echo "  ⚠️⚠️⚠️ MongoDB Atlas (PERMANENT DATA LOSS)"
+          else
+            echo "  ⏭️ MongoDB Atlas (Skipped)"
+          fi
+
           if [ "${{ github.event.inputs.destroy_postgres }}" = "true" ]; then
             echo "  ⚠️⚠️⚠️ Azure PostgreSQL (PERMANENT DATA LOSS)"
           else
             echo "  ⏭️ Azure PostgreSQL (Skipped)"
+          fi
+
+          if [ "${{ github.event.inputs.destroy_neon }}" = "true" ]; then
+            echo "  ⚠️⚠️⚠️ NeonDB Postgres (PERMANENT DATA LOSS)"
+          else
+            echo "  ⏭️ NeonDB Postgres (Skipped)"
           fi
 
           echo ""
@@ -733,14 +752,107 @@ jobs:
             -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
           echo "✅ Cloudflare R2 buckets and CDN destroyed successfully"
 
-  # Destroy Azure PostgreSQL Database
-  terraform-postgres-destroy:
-    name: Destroy Azure PostgreSQL Database
+  # Destroy MongoDB Atlas Database
+  terraform-mongodb-destroy:
+    name: Destroy MongoDB Atlas Database
     runs-on: ubuntu-latest
     needs: [validate-destroy-request, terraform-cloudflare-destroy]
     if: |
       always() && !cancelled() &&
       (needs.terraform-cloudflare-destroy.result == 'success' || needs.terraform-cloudflare-destroy.result == 'skipped') &&
+      github.event.inputs.destroy_mongodb == 'true'
+    environment: ${{ github.event.inputs.environment }}
+    defaults:
+      run:
+        working-directory: ${{ env.MONGODB_TERRAFORM_DIR }}/environments/${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: dculus-forms
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get Azure Storage Account Key
+        run: |
+          ACCOUNT_KEY=$(az storage account keys list \
+            --resource-group dculus-global-terraform-assets-resource-grp \
+            --account-name dculusterraformstates \
+            --query '[0].value' -o tsv)
+          echo "::add-mask::$ACCOUNT_KEY"
+          echo "ARM_ACCESS_KEY=$ACCOUNT_KEY" >> $GITHUB_ENV
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Copy shared Terraform files
+        run: |
+          cp ../../main.tf .
+          cp ../../variables.tf .
+          cp ../../cluster.tf .
+          cp ../../database-user.tf .
+          cp ../../network-access.tf .
+          cp ../../outputs.tf .
+          echo "✅ Copied shared Terraform files"
+
+      - name: Terraform Init
+        env:
+          TF_VAR_mongodb_atlas_public_key: ${{ secrets.MONGODB_ATLAS_PUBLIC_KEY }}
+          TF_VAR_mongodb_atlas_private_key: ${{ secrets.MONGODB_ATLAS_PRIVATE_KEY }}
+          TF_VAR_mongodb_atlas_org_id: ${{ secrets.MONGODB_ATLAS_ORG_ID }}
+          TF_VAR_database_password: ${{ secrets.MONGODB_DATABASE_PASSWORD }}
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
+            -backend-config="storage_account_name=dculusterraformstates" \
+            -backend-config="container_name=dculus-forms-mongodb-${{ github.event.inputs.environment }}-state" \
+            -backend-config="key=terraform.tfstate"
+
+      - name: FINAL WARNING - MongoDB Destruction
+        run: |
+          echo "⚠️⚠️⚠️ FINAL WARNING ⚠️⚠️⚠️"
+          echo ""
+          echo "You are about to PERMANENTLY DELETE the MongoDB Atlas cluster:"
+          echo "  Project: dculus-forms-${{ github.event.inputs.environment }}"
+          echo "  Cluster: dculus-forms-${{ github.event.inputs.environment }}-cluster"
+          echo ""
+          echo "This will DELETE ALL DATA including:"
+          echo "  - All collections and documents"
+          echo "  - All database records"
+          echo "  - All configurations"
+          echo ""
+          echo "⚠️ NO BACKUPS AVAILABLE - DATA CANNOT BE RECOVERED ⚠️"
+          echo "⚠️ THIS IS PERMANENT AND IRREVERSIBLE ⚠️"
+          echo ""
+          echo "Proceeding with destruction in 10 seconds..."
+          sleep 10
+
+      - name: Terraform Destroy
+        env:
+          TF_VAR_mongodb_atlas_public_key: ${{ secrets.MONGODB_ATLAS_PUBLIC_KEY }}
+          TF_VAR_mongodb_atlas_private_key: ${{ secrets.MONGODB_ATLAS_PRIVATE_KEY }}
+          TF_VAR_mongodb_atlas_org_id: ${{ secrets.MONGODB_ATLAS_ORG_ID }}
+          TF_VAR_database_password: ${{ secrets.MONGODB_DATABASE_PASSWORD }}
+        run: |
+          echo "🔥 Destroying MongoDB Atlas cluster..."
+          terraform destroy -auto-approve
+          echo "✅ MongoDB Atlas cluster destroyed - ALL DATA PERMANENTLY DELETED"
+
+  # Destroy Azure PostgreSQL Database
+  terraform-postgres-destroy:
+    name: Destroy Azure PostgreSQL Database
+    runs-on: ubuntu-latest
+    needs: [validate-destroy-request, terraform-mongodb-destroy]
+    if: |
+      always() && !cancelled() &&
+      (needs.terraform-mongodb-destroy.result == 'success' || needs.terraform-mongodb-destroy.result == 'skipped') &&
       github.event.inputs.destroy_postgres == 'true'
     environment: ${{ github.event.inputs.environment }}
     defaults:
@@ -895,6 +1007,7 @@ jobs:
       terraform-cloudflare-pages-destroy,
       terraform-cloudflare-service-domain-destroy,
       terraform-cloudflare-destroy,
+      terraform-mongodb-destroy,
       terraform-postgres-destroy,
       terraform-neon-destroy
     ]
@@ -941,6 +1054,14 @@ jobs:
           else
             echo "| Backend Service Domain | ❌ No | ⏭️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
             echo "| Cloudflare R2 | ❌ No | ⏭️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # MongoDB Status
+          if [ "${{ github.event.inputs.destroy_mongodb }}" = "true" ]; then
+            MONGODB_STATUS="${{ needs.terraform-mongodb-destroy.result == 'success' && '✅ Destroyed' || '❌ Failed' }}"
+            echo "| MongoDB Atlas | ✅ Yes | $MONGODB_STATUS | ⚠️⚠️ ALL DATA LOST |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| MongoDB Atlas | ❌ No | ⏭️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
           fi
 
           # Azure PostgreSQL Status
@@ -1006,6 +1127,18 @@ jobs:
             echo "  - DNS record removed" >> $GITHUB_STEP_SUMMARY
             echo "  - Custom domain disconnected" >> $GITHUB_STEP_SUMMARY
             echo "  - Page rule removed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.terraform-mongodb-destroy.result }}" = "success" ]; then
+            echo "## 🍃 MongoDB Atlas Cluster Destroyed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Project**: \`dculus-forms-${{ github.event.inputs.environment }}\` - DELETED" >> $GITHUB_STEP_SUMMARY
+            echo "- **Cluster**: \`dculus-forms-${{ github.event.inputs.environment }}-cluster\` - DELETED" >> $GITHUB_STEP_SUMMARY
+            echo "- **Data**: All collections, documents, and configurations - PERMANENTLY LOST" >> $GITHUB_STEP_SUMMARY
+            echo "- **Region**: Central India (CENTRAL_INDIA)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ **WARNING**: MongoDB Atlas does NOT provide automatic backups for destroyed clusters." >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
 
