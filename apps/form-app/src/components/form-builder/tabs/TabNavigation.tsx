@@ -1,23 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import {
-  Palette,
-  FileText,
-  Settings,
-  Eye,
-  Users,
-  FlaskConical,
-} from 'lucide-react';
+import { Palette, FileText, Settings, Eye, Users } from 'lucide-react';
 import { Button } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import { useTranslation } from '../../../hooks/useTranslation';
 
-export type BuilderTab =
-  | 'layout'
-  | 'page-builder'
-  | 'new-builder'
-  | 'settings'
-  | 'preview';
+export type BuilderTab = 'layout' | 'page-builder' | 'settings' | 'preview';
 
 interface TabConfig {
   id: BuilderTab;
@@ -39,12 +27,7 @@ const getTabsConfig = (t: (key: string) => string): TabConfig[] => [
     icon: FileText,
     description: t('tabs.pageBuilder.description'),
   },
-  {
-    id: 'new-builder',
-    label: 'New Builder',
-    icon: FlaskConical,
-    description: 'Experimental new page builder',
-  },
+
   {
     id: 'preview',
     label: t('tabs.preview.label'),

@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState, useMemo } from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
 import { useAuthContext } from '../contexts/AuthContext';
@@ -30,7 +30,6 @@ import {
   TabKeyboardShortcuts,
   LayoutTab,
   PageBuilderTab,
-  NewPageBuilderTab,
   SettingsTab,
   PreviewTab,
   type BuilderTab,
@@ -48,12 +47,10 @@ interface CollaborativeFormBuilderProps {
 const VALID_TABS: readonly BuilderTab[] = [
   'layout',
   'page-builder',
-  'new-builder',
   'settings',
   'preview',
 ] as const;
 const DEFAULT_TAB: BuilderTab = 'page-builder';
-const DEFAULT_SIDEBAR_WIDTH = 320;
 
 const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   className,
@@ -61,7 +58,6 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   const { formId, tab } = useParams<{ formId: string; tab?: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation('collaborativeFormBuilder');
-  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
   const { user } = useAuthContext();
 
   const activeTab: BuilderTab = useMemo(() => {
@@ -87,18 +83,18 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     isLoading,
     pages,
     selectedPageId,
-    selectedFieldId,
+
     initializeCollaboration,
     disconnectCollaboration,
     setSelectedPage,
-    setSelectedField,
+
     addField,
     addFieldAtIndex,
-    updateField,
+
     reorderFields,
     reorderPages,
     moveFieldBetweenPages,
-    getSelectedField,
+
     updateLayout,
   } = useFormBuilderStore();
 
@@ -150,7 +146,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   const {
     activeId,
     draggedItem,
-    localFieldOrder,
+
     handleDragStart,
     handleDragOver,
     handleDragEnd,
@@ -162,35 +158,6 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     onReorderPages: reorderPages,
     onMoveFieldBetweenPages: moveFieldBetweenPages,
   });
-
-  const handleFieldEdit = useCallback(
-    (fieldId: string) => {
-      setSelectedField(fieldId);
-    },
-    [setSelectedField]
-  );
-
-  const handleFieldUpdate = useCallback(
-    (updates: Record<string, any>) => {
-      const selectedField = getSelectedField();
-      if (!selectedField) return;
-
-      // Get current pages from store to ensure we have the latest state
-      const currentPages = useFormBuilderStore.getState().pages;
-      const pageWithField = currentPages.find((page) =>
-        page.fields.some((field) => field.id === selectedField.id)
-      );
-
-      if (pageWithField) {
-        updateField(pageWithField.id, selectedField.id, updates);
-      }
-    },
-    [getSelectedField, updateField]
-  );
-
-  const handleFieldDeselect = useCallback(() => {
-    setSelectedField(null);
-  }, [setSelectedField]);
 
   const handleNavigateBack = useCallback(() => {
     navigate(`/dashboard/form/${formId}`);
@@ -294,47 +261,15 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
       case 'layout':
         return <LayoutTab onLayoutChange={updateLayout} />;
       case 'page-builder':
-        return (
-          <PageBuilderTab
-            sidebarWidth={sidebarWidth}
-            onSidebarWidthChange={setSidebarWidth}
-            selectedFieldId={selectedFieldId}
-            onFieldEdit={handleFieldEdit}
-            onFieldUpdate={handleFieldUpdate}
-            onFieldDeselect={handleFieldDeselect}
-            localFieldOrder={localFieldOrder}
-          />
-        );
-      case 'new-builder':
-        return <NewPageBuilderTab />;
+        return <PageBuilderTab />;
       case 'settings':
         return <SettingsTab />;
       case 'preview':
         return <PreviewTab formId={formId || ''} />;
       default:
-        return (
-          <PageBuilderTab
-            sidebarWidth={sidebarWidth}
-            onSidebarWidthChange={setSidebarWidth}
-            selectedFieldId={selectedFieldId}
-            onFieldEdit={handleFieldEdit}
-            onFieldUpdate={handleFieldUpdate}
-            onFieldDeselect={handleFieldDeselect}
-            localFieldOrder={localFieldOrder}
-          />
-        );
+        return <PageBuilderTab />;
     }
-  }, [
-    activeTab,
-    sidebarWidth,
-    selectedFieldId,
-    handleFieldEdit,
-    handleFieldUpdate,
-    handleFieldDeselect,
-    formId,
-    updateLayout,
-    localFieldOrder,
-  ]);
+  }, [activeTab, formId, updateLayout]);
 
   if (!formId) {
     return (
@@ -393,7 +328,8 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
             onDragStart({ active }) {
               const item = active.data.current;
               if (item?.type === 'field' && item?.field) {
-                const fieldLabel = 'label' in item.field ? item.field.label : 'Field';
+                const fieldLabel =
+                  'label' in item.field ? item.field.label : 'Field';
                 return `Picked up ${fieldLabel}. Use arrow keys to move.`;
               }
               if (item?.type === 'page-item' && item?.page) {
@@ -405,7 +341,8 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
               if (over) {
                 const overData = over.data.current;
                 if (overData?.type === 'field' && overData?.field) {
-                  const overLabel = 'label' in overData.field ? overData.field.label : 'field';
+                  const overLabel =
+                    'label' in overData.field ? overData.field.label : 'field';
                   return `Over ${overLabel}`;
                 }
                 if (overData?.type === 'page') {
@@ -420,7 +357,8 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
                 return 'Item dropped. Position unchanged.';
               }
               if (item?.type === 'field' && item?.field) {
-                const fieldLabel = 'label' in item.field ? item.field.label : 'Field';
+                const fieldLabel =
+                  'label' in item.field ? item.field.label : 'Field';
                 return `${fieldLabel} dropped successfully.`;
               }
               if (item?.type === 'page-item' && item?.page) {
@@ -431,7 +369,8 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
             onDragCancel({ active }) {
               const item = active.data.current;
               if (item?.type === 'field' && item?.field) {
-                const fieldLabel = 'label' in item.field ? item.field.label : 'Field';
+                const fieldLabel =
+                  'label' in item.field ? item.field.label : 'Field';
                 return `${fieldLabel} move cancelled.`;
               }
               return 'Movement cancelled.';

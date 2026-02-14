@@ -11,7 +11,7 @@ export { getFieldLabel, isFieldRequired, isFillableFormField } from './utils.js'
 // New drag and drop components
 export { FieldTypesPanel } from './FieldTypesPanel.js';
 export { DraggableField } from './DraggableField.js';
-export { DroppablePage } from './DroppablePage.js';
-export { PagesSidebar } from './PagesSidebar.js';
+
+
 export { EmptyDropZone } from './EmptyDropZone.js';
 export { CompactFieldCard } from './CompactFieldCard.js';
