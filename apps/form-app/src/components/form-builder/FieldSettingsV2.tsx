@@ -2,6 +2,7 @@ import React from 'react';
 import { FormField, FieldType } from '@dculus/types';
 import { Settings } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
+import { useFormPermissions } from '../../hooks/useFormPermissions';
 import {
   TextFieldSettings,
   NumberFieldSettings,
@@ -30,6 +31,11 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
   onDelete,
 }) => {
   const { t } = useTranslation('fieldSettings');
+  const permissions = useFormPermissions();
+  const canEdit = permissions.canEditFields();
+  const isReadOnly = !canEdit;
+  const updateHandler = canEdit ? onUpdate : undefined;
+  const deleteHandler = canEdit ? onDelete : undefined;
   // Show empty state if no field is selected
   if (!field) {
     return (
@@ -51,10 +57,10 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
   }) => (
     <div data-testid="field-settings-panel" className="h-full flex flex-col">
       <div className="flex-1 overflow-y-auto">{children}</div>
-      {onDelete && isConnected && (
+      {deleteHandler && isConnected && (
         <div className="border-t border-gray-200 dark:border-gray-700 p-4">
           <button
-            onClick={onDelete}
+            onClick={deleteHandler}
             className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
           >
             <svg
@@ -87,7 +93,8 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
           <TextFieldSettings
             field={field as any}
             isConnected={isConnected}
-            onUpdate={onUpdate}
+            isReadOnly={isReadOnly}
+            onUpdate={updateHandler}
           />
         </FieldSettingsWrapper>
       );
@@ -98,7 +105,8 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
           <NumberFieldSettings
             field={field as any}
             isConnected={isConnected}
-            onUpdate={onUpdate}
+            isReadOnly={isReadOnly}
+            onUpdate={updateHandler}
           />
         </FieldSettingsWrapper>
       );
@@ -111,7 +119,8 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
           <SelectionFieldSettings
             field={field as any}
             isConnected={isConnected}
-            onUpdate={onUpdate}
+            isReadOnly={isReadOnly}
+            onUpdate={updateHandler}
           />
         </FieldSettingsWrapper>
       );
@@ -122,7 +131,8 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
           <DateFieldSettings
             field={field as any}
             isConnected={isConnected}
-            onUpdate={onUpdate}
+            isReadOnly={isReadOnly}
+            onUpdate={updateHandler}
           />
         </FieldSettingsWrapper>
       );
@@ -133,7 +143,8 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
           <RichTextFieldSettings
             field={field as any}
             isConnected={isConnected}
-            onUpdate={onUpdate}
+            isReadOnly={isReadOnly}
+            onUpdate={updateHandler}
           />
         </FieldSettingsWrapper>
       );

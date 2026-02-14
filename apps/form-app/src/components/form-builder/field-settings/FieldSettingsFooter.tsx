@@ -7,6 +7,7 @@ interface FieldSettingsFooterProps {
   isDirty: boolean;
   isValid: boolean;
   isConnected: boolean;
+  isReadOnly?: boolean;
   isSaving: boolean;
   errors: Record<string, any>;
   onReset: () => void;
@@ -18,6 +19,7 @@ export const FieldSettingsFooter: React.FC<FieldSettingsFooterProps> = ({
   isDirty,
   isValid,
   isConnected,
+  isReadOnly = false,
   isSaving,
   errors,
   onReset,
@@ -25,6 +27,7 @@ export const FieldSettingsFooter: React.FC<FieldSettingsFooterProps> = ({
   onSave
 }) => {
   const { t } = useTranslation('fieldSettingsFooter');
+  const isEditable = isConnected && !isReadOnly;
   
   return (
     <div 
@@ -42,7 +45,7 @@ export const FieldSettingsFooter: React.FC<FieldSettingsFooterProps> = ({
             variant="ghost"
             size="sm"
             onClick={onReset}
-            disabled={!isDirty || !isConnected}
+            disabled={!isDirty || !isEditable}
             className="text-gray-500 hover:text-gray-700"
           >
             <RotateCcw className="w-4 h-4 mr-1" />
@@ -56,7 +59,7 @@ export const FieldSettingsFooter: React.FC<FieldSettingsFooterProps> = ({
             variant="ghost"
             size="sm"
             onClick={onCancel}
-            disabled={!isDirty || !isConnected}
+            disabled={!isDirty || !isEditable}
           >
             {t('cancel')}
           </Button>
@@ -65,7 +68,7 @@ export const FieldSettingsFooter: React.FC<FieldSettingsFooterProps> = ({
               type="button"
               size="sm"
               onClick={onSave}
-              disabled={!isDirty || !isValid || !isConnected || isSaving}
+              disabled={!isDirty || !isValid || !isEditable || isSaving}
               className={`transition-all duration-200 ${
                 isDirty 
                   ? 'bg-orange-600 hover:bg-orange-700 ring-2 ring-orange-200 dark:ring-orange-800 scale-105' 

@@ -3,6 +3,7 @@ import { useDroppable, useDndContext } from '@dnd-kit/core';
 import { FormPage } from '@dculus/types';
 import { Card } from '@dculus/ui';
 import { Plus } from 'lucide-react';
+import { useFormPermissions } from '../../hooks/useFormPermissions';
 import { useTranslation } from '../../hooks/useTranslation';
 
 interface PageThumbnailProps {
@@ -21,6 +22,7 @@ export const PageThumbnail: React.FC<PageThumbnailProps> = ({
   onSelect,
 }) => {
   const { t } = useTranslation('pageThumbnail');
+  const permissions = useFormPermissions();
   const { active, over } = useDndContext();
 
   // Helper function for field count with proper pluralization
@@ -39,6 +41,7 @@ export const PageThumbnail: React.FC<PageThumbnailProps> = ({
       pageId: page.id,
       accepts: ['field', 'field-type'], // Accept field drops from other pages and new field types
     },
+    disabled: !permissions.canEditFields(),
   });
 
   // Check if we're dragging a field from a different page or new field type

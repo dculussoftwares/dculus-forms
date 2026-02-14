@@ -16,6 +16,7 @@ import {
 interface DateFieldSettingsProps {
   field: DateField | null;
   isConnected: boolean;
+  isReadOnly?: boolean;
   onUpdate?: (updates: Record<string, any>) => void;
   onFieldSwitch?: () => void;
 }
@@ -27,10 +28,12 @@ interface DateFieldSettingsProps {
 export const DateFieldSettings: React.FC<DateFieldSettingsProps> = ({
   field,
   isConnected,
+  isReadOnly = false,
   onUpdate,
   onFieldSwitch: _onFieldSwitch,
 }) => {
   const constants = useFieldSettingsConstants();
+  const isEditable = isConnected && !isReadOnly;
   const {
     form,
     isSaving,
@@ -116,7 +119,7 @@ export const DateFieldSettings: React.FC<DateFieldSettingsProps> = ({
               rows={2}
               control={control}
               error={errors.label}
-              disabled={!isConnected}
+              disabled={!isEditable}
             />
 
             {/* Hint */}
@@ -128,7 +131,7 @@ export const DateFieldSettings: React.FC<DateFieldSettingsProps> = ({
               rows={2}
               control={control}
               error={errors.hint}
-              disabled={!isConnected}
+              disabled={!isEditable}
             />
 
             {/* Placeholder */}
@@ -138,7 +141,7 @@ export const DateFieldSettings: React.FC<DateFieldSettingsProps> = ({
               placeholder={constants.PLACEHOLDERS.PLACEHOLDER_TEXT}
               control={control}
               error={errors.placeholder}
-              disabled={!isConnected}
+              disabled={!isEditable}
             />
 
             {/* Default Value */}
@@ -148,7 +151,7 @@ export const DateFieldSettings: React.FC<DateFieldSettingsProps> = ({
               placeholder={constants.PLACEHOLDERS.DEFAULT_VALUE}
               control={control}
               error={errors.defaultValue}
-              disabled={!isConnected}
+              disabled={!isEditable}
             />
           </div>
 
@@ -166,7 +169,7 @@ export const DateFieldSettings: React.FC<DateFieldSettingsProps> = ({
                 placeholder={constants.PLACEHOLDERS.NO_MINIMUM}
                 control={control}
                 error={errors.minDate}
-                disabled={!isConnected}
+                disabled={!isEditable}
               />
 
               {/* Maximum Date */}
@@ -176,7 +179,7 @@ export const DateFieldSettings: React.FC<DateFieldSettingsProps> = ({
                 placeholder={constants.PLACEHOLDERS.NO_MAXIMUM}
                 control={control}
                 error={errors.maxDate}
-                disabled={!isConnected}
+                disabled={!isEditable}
               />
             </div>
           </div>
@@ -197,7 +200,7 @@ export const DateFieldSettings: React.FC<DateFieldSettingsProps> = ({
                     id="field-required"
                     checked={controllerField.value || false}
                     onCheckedChange={controllerField.onChange}
-                    disabled={!isConnected}
+                    disabled={!isEditable}
                   />
                 )}
               />
@@ -219,6 +222,7 @@ export const DateFieldSettings: React.FC<DateFieldSettingsProps> = ({
         isDirty={isDirty}
         isValid={isValid}
         isConnected={isConnected}
+        isReadOnly={isReadOnly}
         isSaving={isSaving}
         errors={errors}
         onReset={handleReset}

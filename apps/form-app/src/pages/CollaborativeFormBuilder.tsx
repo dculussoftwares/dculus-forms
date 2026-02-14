@@ -305,16 +305,17 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   // Get user permission from form data, default to VIEWER if not available
   const userPermission =
     (formData?.form?.userPermission as PermissionLevel) || 'VIEWER';
+  const canEdit = userPermission === 'OWNER' || userPermission === 'EDITOR';
 
   return (
     <FormPermissionProvider userPermission={userPermission}>
       <DndContext
-        sensors={sensors}
+        sensors={canEdit ? sensors : []}
         collisionDetection={collisionDetectionStrategy}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-        onDragCancel={handleDragCancel}
+        onDragStart={canEdit ? handleDragStart : undefined}
+        onDragOver={canEdit ? handleDragOver : undefined}
+        onDragEnd={canEdit ? handleDragEnd : undefined}
+        onDragCancel={canEdit ? handleDragCancel : undefined}
         autoScroll={{
           threshold: {
             x: 0.2,

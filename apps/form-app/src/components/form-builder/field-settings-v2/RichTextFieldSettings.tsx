@@ -14,6 +14,7 @@ import {
 interface RichTextFieldSettingsProps {
   field: RichTextFormField | null;
   isConnected: boolean;
+  isReadOnly?: boolean;
   onUpdate?: (updates: Record<string, any>) => void;
   onFieldSwitch?: () => void;
 }
@@ -60,11 +61,13 @@ const sanitizeHtmlContent = (content: string): string => {
 export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
   field,
   isConnected,
+  isReadOnly = false,
   onUpdate,
   onFieldSwitch: _onFieldSwitch,
 }) => {
   const { t } = useTranslation('richTextFieldSettings');
   const constants = useFieldSettingsConstants();
+  const isEditable = isConnected && !isReadOnly;
   
   // Local loading state to prevent flashing
   const [isContentLoading, setIsContentLoading] = useState(false);
@@ -176,6 +179,7 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
                 control={control}
                 errors={errors}
                 isConnected={isConnected}
+                isReadOnly={isReadOnly}
               />
             </div>
           )}
@@ -224,6 +228,7 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
         isDirty={isDirty}
         isValid={isValid}
         isConnected={isConnected}
+        isReadOnly={isReadOnly}
         isSaving={isSaving}
         errors={errors}
         onReset={handleReset}

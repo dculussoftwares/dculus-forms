@@ -24,6 +24,7 @@ import {
 interface SelectionFieldSettingsProps {
   field: SelectField | RadioField | CheckboxField | null;
   isConnected: boolean;
+  isReadOnly?: boolean;
   onUpdate?: (updates: Record<string, any>) => void;
   onFieldSwitch?: () => void;
 }
@@ -35,10 +36,12 @@ interface SelectionFieldSettingsProps {
 const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
   field,
   isConnected,
+  isReadOnly = false,
   onUpdate,
   onFieldSwitch: _onFieldSwitch,
 }) => {
   const constants = useFieldSettingsConstants();
+  const isEditable = isConnected && !isReadOnly;
   const {
     form,
     isSaving,
@@ -152,7 +155,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                 rows={2}
                 control={control}
                 error={errors.label}
-                disabled={!isConnected}
+                disabled={!isEditable}
               />
 
               {/* Hint */}
@@ -164,7 +167,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                 rows={2}
                 control={control}
                 error={errors.hint}
-                disabled={!isConnected}
+                disabled={!isEditable}
               />
 
 
@@ -185,7 +188,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                           const actualValue = value === '__no_default__' ? '' : value;
                           controllerField.onChange(actualValue);
                         }}
-                        disabled={!isConnected}
+                        disabled={!isEditable}
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder={constants.PLACEHOLDERS.SELECT_DEFAULT_OPTION} />
@@ -272,7 +275,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                                         }
                                         controllerField.onChange(newValues);
                                       }}
-                                      disabled={!isConnected}
+                                      disabled={!isEditable}
                                     />
                                     <Label 
                                       htmlFor={`default-${option.id || index}`}
@@ -303,6 +306,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                 control={control}
                 errors={errors}
                 isConnected={isConnected}
+                isReadOnly={isReadOnly}
                 options={options}
                 addOption={addOption}
                 updateOption={updateOption}
@@ -335,7 +339,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                     min="0"
                     control={control}
                     error={(errors.validation as any)?.minSelections}
-                    disabled={!isConnected}
+                    disabled={!isEditable}
                     transform={{
                       output: (value: string) => value === '' ? undefined : parseInt(value)
                     }}
@@ -350,7 +354,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                     min="1"
                     control={control}
                     error={(errors.validation as any)?.maxSelections}
-                    disabled={!isConnected}
+                    disabled={!isEditable}
                     transform={{
                       output: (value: string) => value === '' ? undefined : parseInt(value)
                     }}
@@ -375,7 +379,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                       id="field-required"
                       checked={controllerField.value || false}
                       onCheckedChange={controllerField.onChange}
-                      disabled={!isConnected}
+                      disabled={!isEditable}
                     />
                   )}
                 />
@@ -397,6 +401,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
           isDirty={isDirty}
           isValid={isValid}
           isConnected={isConnected}
+          isReadOnly={isReadOnly}
           isSaving={isSaving}
           errors={errors}
           onReset={handleReset}

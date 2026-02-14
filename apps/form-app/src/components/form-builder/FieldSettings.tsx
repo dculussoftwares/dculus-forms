@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { FormField, FieldType, FillableFormField } from '@dculus/types';
 import { Settings } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
+import { useFormPermissions } from '../../hooks/useFormPermissions';
 import { useFieldEditor } from '../../hooks/useFieldEditor';
 import {
   ValidationSummary,
@@ -54,6 +55,10 @@ export const FieldSettings: React.FC<FieldSettingsProps> = ({
   onUpdate,
 }) => {
   const { t } = useTranslation('fieldSettings');
+  const permissions = useFormPermissions();
+  const canEdit = permissions.canEditFields();
+  const updateHandler = canEdit ? onUpdate : undefined;
+  const isEditable = isConnected && canEdit;
   const {
     form,
     isSaving,
@@ -69,7 +74,7 @@ export const FieldSettings: React.FC<FieldSettingsProps> = ({
     setValue,
   } = useFieldEditor({
     field,
-    onSave: (updates) => onUpdate?.(updates),
+    onSave: (updates) => updateHandler?.(updates),
     onCancel: () => console.log('Edit cancelled'),
   });
 
@@ -131,7 +136,7 @@ export const FieldSettings: React.FC<FieldSettingsProps> = ({
             <BasicSettings
               control={control}
               errors={errors}
-              isConnected={isConnected}
+              isConnected={isEditable}
               field={field}
               watch={watch}
               setValue={setValue}
@@ -143,7 +148,7 @@ export const FieldSettings: React.FC<FieldSettingsProps> = ({
             field={field}
             control={control}
             errors={errors}
-            isConnected={isConnected}
+            isConnected={isEditable}
             options={options}
             addOption={addOption}
             updateOption={updateOption}
@@ -152,7 +157,7 @@ export const FieldSettings: React.FC<FieldSettingsProps> = ({
 
           {/* Validation - only for fields that support validation */}
           {supportsValidation(field) && (
-            <ValidationSettings control={control} isConnected={isConnected} errors={errors} field={field} />
+            <ValidationSettings control={control} isConnected={isEditable} errors={errors} field={field} />
           )}
 
           {/* Add some bottom padding to prevent content from being hidden behind the floating actions */}
@@ -164,6 +169,7 @@ export const FieldSettings: React.FC<FieldSettingsProps> = ({
         isDirty={isDirty}
         isValid={isValid}
         isConnected={isConnected}
+        isReadOnly={!canEdit}
         isSaving={isSaving}
         errors={errors}
         onReset={handleReset}

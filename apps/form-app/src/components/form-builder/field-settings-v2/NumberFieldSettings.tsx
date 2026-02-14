@@ -15,6 +15,7 @@ import {
 interface NumberFieldSettingsProps {
   field: NumberField | null;
   isConnected: boolean;
+  isReadOnly?: boolean;
   onUpdate?: (updates: Record<string, any>) => void;
   onFieldSwitch?: () => void;
 }
@@ -26,10 +27,12 @@ interface NumberFieldSettingsProps {
 export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
   field,
   isConnected,
+  isReadOnly = false,
   onUpdate,
   onFieldSwitch: _onFieldSwitch,
 }) => {
   const constants = useFieldSettingsConstants();
+  const isEditable = isConnected && !isReadOnly;
   const {
     form,
     isSaving,
@@ -115,7 +118,7 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
               rows={2}
               control={control}
               error={errors.label}
-              disabled={!isConnected}
+              disabled={!isEditable}
             />
 
             {/* Hint */}
@@ -127,7 +130,7 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
               rows={2}
               control={control}
               error={errors.hint}
-              disabled={!isConnected}
+              disabled={!isEditable}
             />
 
             {/* Placeholder */}
@@ -137,7 +140,7 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
               placeholder={constants.PLACEHOLDERS.PLACEHOLDER_TEXT}
               control={control}
               error={errors.placeholder}
-              disabled={!isConnected}
+              disabled={!isEditable}
             />
 
             {/* Prefix */}
@@ -147,7 +150,7 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
               placeholder={constants.PLACEHOLDERS.PREFIX_TEXT}
               control={control}
               error={errors.prefix}
-              disabled={!isConnected}
+              disabled={!isEditable}
             />
 
             {/* Default Value */}
@@ -158,7 +161,7 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
               type="number"
               control={control}
               error={errors.defaultValue}
-              disabled={!isConnected}
+              disabled={!isEditable}
               transform={{
                 output: (value: string) => value === '' ? undefined : value // Let useFieldEditor handle type conversion or keep as string for now
               }}
@@ -180,7 +183,7 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
                 type="number"
                 control={control}
                 error={errors.min}
-                disabled={!isConnected}
+                disabled={!isEditable}
                 transform={{
                   output: (value: string) => value === '' ? undefined : parseFloat(value)
                 }}
@@ -194,7 +197,7 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
                 type="number"
                 control={control}
                 error={errors.max}
-                disabled={!isConnected}
+                disabled={!isEditable}
                 transform={{
                   output: (value: string) => value === '' ? undefined : parseFloat(value)
                 }}
@@ -218,7 +221,7 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
                     id="field-required"
                     checked={controllerField.value || false}
                     onCheckedChange={controllerField.onChange}
-                    disabled={!isConnected}
+                    disabled={!isEditable}
                   />
                 )}
               />
@@ -240,6 +243,7 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
         isDirty={isDirty}
         isValid={isValid}
         isConnected={isConnected}
+        isReadOnly={isReadOnly}
         isSaving={isSaving}
         errors={errors}
         onReset={handleReset}

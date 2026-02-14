@@ -11,6 +11,8 @@ export interface BaseFieldSettingsProps {
   errors: FieldErrors<any>;
   /** WebSocket connection status */
   isConnected: boolean;
+  /** View-only state */
+  isReadOnly?: boolean;
 }
 
 /**

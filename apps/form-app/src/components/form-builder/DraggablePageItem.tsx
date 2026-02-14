@@ -122,6 +122,7 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
       pageId: page.id,
       accepts: ['field', 'field-type'], // Accept field drops and new field types
     },
+    disabled: !permissions.canEditFields(),
   });
 
   const style = {

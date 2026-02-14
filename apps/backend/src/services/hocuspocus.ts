@@ -103,7 +103,7 @@ export const createHocuspocusServer = () => {
         },
       }),
     ],
-    onAuthenticate: async ({ documentName, token, requestHeaders, requestParameters, ...rest }) => {
+    onAuthenticate: async ({ documentName, token, requestHeaders, requestParameters, connectionConfig, ...rest }) => {
       logger.info('🔐 [onAuthenticate] Called with:', {
         documentName,
         hasToken: !!token,
@@ -154,6 +154,10 @@ export const createHocuspocusServer = () => {
 
         // Validate user authentication and form access
         const userAccess = await validateUserAccess(authToken, formId, PermissionLevel.VIEWER);
+
+        if (connectionConfig) {
+          connectionConfig.readOnly = userAccess.permission === PermissionLevel.VIEWER;
+        }
 
         logger.info(`✅ [onAuthenticate] User ${userAccess.user.email} authenticated for form ${formId} with ${userAccess.permission} permission`);
 

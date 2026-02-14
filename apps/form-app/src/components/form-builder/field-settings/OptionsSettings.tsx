@@ -12,12 +12,14 @@ import { OptionsSettingsProps } from './types';
 export const OptionsSettings: React.FC<OptionsSettingsProps> = ({
   options,
   isConnected,
+  isReadOnly = false,
   errors,
   addOption,
   updateOption,
   removeOption
 }) => {
   const constants = useFieldSettingsConstants();
+  const isEditable = isConnected && !isReadOnly;
   
   return (
     <div className={constants.CSS_CLASSES.SECTION_SPACING}>
@@ -29,7 +31,7 @@ export const OptionsSettings: React.FC<OptionsSettingsProps> = ({
           size="sm"
           variant="ghost"
           onClick={addOption}
-          disabled={!isConnected}
+          disabled={!isEditable}
           className="h-8 px-2"
           type="button"
         >
@@ -50,7 +52,7 @@ export const OptionsSettings: React.FC<OptionsSettingsProps> = ({
                   value={option}
                   onChange={(e) => updateOption(index, e.target.value)}
                   placeholder={constants.PLACEHOLDERS.OPTION_PLACEHOLDER(index)}
-                  disabled={!isConnected}
+                  disabled={!isEditable}
                   className={`${constants.CSS_CLASSES.TEXT_SMALL} flex-1 ${
                     isEmpty ? constants.CSS_CLASSES.EMPTY_OPTION : ''
                   }`}
@@ -59,7 +61,7 @@ export const OptionsSettings: React.FC<OptionsSettingsProps> = ({
                   size="icon"
                   variant="ghost"
                   onClick={() => removeOption(index)}
-                  disabled={!isConnected}
+                  disabled={!isEditable}
                   className="h-8 w-8 text-gray-500 hover:text-red-600"
                   type="button"
                 >

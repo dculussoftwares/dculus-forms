@@ -15,6 +15,7 @@ import {
 interface TextFieldSettingsProps {
   field: TextInputField | TextAreaField | EmailField | null;
   isConnected: boolean;
+  isReadOnly?: boolean;
   onUpdate?: (updates: Record<string, any>) => void;
   onFieldSwitch?: () => void;
 }
@@ -26,10 +27,12 @@ interface TextFieldSettingsProps {
 export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
   field,
   isConnected,
+  isReadOnly = false,
   onUpdate,
   onFieldSwitch: _onFieldSwitch,
 }) => {
   const constants = useFieldSettingsConstants();
+  const isEditable = isConnected && !isReadOnly;
   const {
     form,
     isSaving,
@@ -110,7 +113,7 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
               rows={2}
               control={control}
               error={errors.label}
-              disabled={!isConnected}
+              disabled={!isEditable}
             />
 
             {/* Hint */}
@@ -122,7 +125,7 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
               rows={2}
               control={control}
               error={errors.hint}
-              disabled={!isConnected}
+              disabled={!isEditable}
             />
 
             {/* Placeholder */}
@@ -132,7 +135,7 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
               placeholder={constants.PLACEHOLDERS.PLACEHOLDER_TEXT}
               control={control}
               error={errors.placeholder}
-              disabled={!isConnected}
+              disabled={!isEditable}
             />
 
             {/* Prefix (if supported) */}
@@ -142,7 +145,7 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
               placeholder={constants.PLACEHOLDERS.PREFIX_TEXT}
               control={control}
               error={errors.prefix}
-              disabled={!isConnected}
+              disabled={!isEditable}
             />
 
             {/* Default Value */}
@@ -152,7 +155,7 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
               placeholder={constants.PLACEHOLDERS.DEFAULT_VALUE}
               control={control}
               error={errors.defaultValue}
-              disabled={!isConnected}
+              disabled={!isEditable}
             />
           </div>
 
@@ -172,7 +175,7 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
                     id="field-required"
                     checked={controllerField.value || false}
                     onCheckedChange={controllerField.onChange}
-                    disabled={!isConnected}
+                    disabled={!isEditable}
                   />
                 )}
               />
@@ -195,7 +198,7 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
                   min="0"
                   control={control}
                   error={(errors.validation as any)?.minLength}
-                  disabled={!isConnected}
+                  disabled={!isEditable}
                   transform={{
                     output: (value: string) => value === '' ? undefined : parseInt(value)
                   }}
@@ -209,7 +212,7 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
                   min="1"
                   control={control}
                   error={(errors.validation as any)?.maxLength}
-                  disabled={!isConnected}
+                  disabled={!isEditable}
                   transform={{
                     output: (value: string) => value === '' ? undefined : parseInt(value)
                   }}
@@ -227,6 +230,7 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
         isDirty={isDirty}
         isValid={isValid}
         isConnected={isConnected}
+        isReadOnly={isReadOnly}
         isSaving={isSaving}
         errors={errors}
         onReset={handleReset}

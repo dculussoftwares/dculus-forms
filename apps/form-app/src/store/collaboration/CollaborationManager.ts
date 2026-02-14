@@ -148,6 +148,9 @@ export class CollaborationManager {
   private ydoc: Y.Doc | null = null;
   private provider: HocuspocusProvider | null = null;
   private observerCleanups: Array<() => void> = [];
+  private pageObserverCleanups: Array<() => void> = [];
+  private fieldObserverCleanups: Array<() => void> = [];
+  private updateQueued = false;
 
   constructor(
     private readonly updateCallback: UpdateCallback,
@@ -194,6 +197,8 @@ export class CollaborationManager {
   disconnect(): void {
     this.observerCleanups.forEach(cleanup => cleanup());
     this.observerCleanups = [];
+    this.clearPageObservers();
+    this.clearFieldObservers();
 
     if (this.provider) {
       this.provider.disconnect();
@@ -220,7 +225,7 @@ export class CollaborationManager {
     const onConnect = () => {
       console.log('🔗 Collaboration connected');
       this.connectionCallback(true);
-      this.updateFromYJS();
+      this.scheduleUpdateFromYJS();
     };
 
     const onDisconnect = () => {
@@ -230,7 +235,7 @@ export class CollaborationManager {
 
     const onSynced = () => {
       console.log('🔄 Document synced');
-      this.updateFromYJS();
+      this.scheduleUpdateFromYJS();
       this.loadingCallback(false);
     };
 
@@ -252,7 +257,7 @@ export class CollaborationManager {
 
     const formSchemaObserver = (event: Y.YMapEvent<any>) => {
       console.log('📡 FormSchema changed:', event.keysChanged);
-      this.updateFromYJS();
+      this.scheduleUpdateFromYJS();
 
       if (event.keysChanged.has('pages')) {
         this.setupPageObservers();
@@ -268,27 +273,30 @@ export class CollaborationManager {
   private setupPageObservers(): void {
     if (!this.ydoc) return;
 
+    this.clearPageObservers();
+    this.clearFieldObservers();
+
     const formSchemaMap = this.ydoc.getMap('formSchema');
     const pagesArray = formSchemaMap.get('pages') as Y.Array<Y.Map<any>>;
 
     if (!pagesArray) return;
 
     const pagesObserver = (_event: Y.YArrayEvent<Y.Map<any>>) => {
-      this.updateFromYJS();
+      this.scheduleUpdateFromYJS();
       this.setupFieldObservers();
     };
 
     pagesArray.observe(pagesObserver);
-    this.observerCleanups.push(() => pagesArray.unobserve(pagesObserver));
+    this.pageObserverCleanups.push(() => pagesArray.unobserve(pagesObserver));
 
     // Add observers for each individual page map to detect property changes (e.g., title)
     pagesArray.toArray().forEach(pageMap => {
       const pageMapObserver = () => {
-        this.updateFromYJS();
+        this.scheduleUpdateFromYJS();
       };
 
       pageMap.observe(pageMapObserver);
-      this.observerCleanups.push(() => pageMap.unobserve(pageMapObserver));
+      this.pageObserverCleanups.push(() => pageMap.unobserve(pageMapObserver));
     });
 
     this.setupFieldObservers();
@@ -296,6 +304,8 @@ export class CollaborationManager {
 
   private setupFieldObservers(): void {
     if (!this.ydoc) return;
+
+    this.clearFieldObservers();
 
     const formSchemaMap = this.ydoc.getMap('formSchema');
     const pagesArray = formSchemaMap.get('pages') as Y.Array<Y.Map<any>>;
@@ -308,12 +318,12 @@ export class CollaborationManager {
 
       const fieldsObserver = () => {
         console.log('📡 Fields array changed');
-        this.updateFromYJS();
+        this.scheduleUpdateFromYJS();
         this.setupIndividualFieldObservers(fieldsArray);
       };
 
       fieldsArray.observe(fieldsObserver);
-      this.observerCleanups.push(() => fieldsArray.unobserve(fieldsObserver));
+      this.fieldObserverCleanups.push(() => fieldsArray.unobserve(fieldsObserver));
 
       this.setupIndividualFieldObservers(fieldsArray);
     });
@@ -326,21 +336,41 @@ export class CollaborationManager {
 
       const fieldObserver = () => {
         console.log(`📡 Field ${fieldId} properties changed`);
-        this.updateFromYJS();
+        this.scheduleUpdateFromYJS();
       };
 
       fieldMap.observe(fieldObserver);
-      this.observerCleanups.push(() => fieldMap.unobserve(fieldObserver));
+      this.fieldObserverCleanups.push(() => fieldMap.unobserve(fieldObserver));
 
       const validationMap = fieldMap.get('validation');
       if (validationMap && validationMap instanceof Y.Map) {
         const validationObserver = () => {
           console.log(`📡 Field ${fieldId} validation changed`);
-          this.updateFromYJS();
+          this.scheduleUpdateFromYJS();
         };
         validationMap.observe(validationObserver);
-        this.observerCleanups.push(() => validationMap.unobserve(validationObserver));
+        this.fieldObserverCleanups.push(() => validationMap.unobserve(validationObserver));
       }
+    });
+  }
+
+  private clearPageObservers(): void {
+    this.pageObserverCleanups.forEach(cleanup => cleanup());
+    this.pageObserverCleanups = [];
+  }
+
+  private clearFieldObservers(): void {
+    this.fieldObserverCleanups.forEach(cleanup => cleanup());
+    this.fieldObserverCleanups = [];
+  }
+
+  private scheduleUpdateFromYJS(): void {
+    if (this.updateQueued) return;
+    this.updateQueued = true;
+
+    queueMicrotask(() => {
+      this.updateQueued = false;
+      this.updateFromYJS();
     });
   }
 

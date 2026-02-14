@@ -14,9 +14,11 @@ import { BaseFieldSettingsProps } from './types';
 export const RichTextSettings: React.FC<BaseFieldSettingsProps> = ({
   control,
   errors,
-  isConnected
+  isConnected,
+  isReadOnly = false
 }) => {
   const constants = useFieldSettingsConstants();
+  const isEditable = isConnected && !isReadOnly;
   const [isFormReady, setIsFormReady] = useState(false);
   
   // Watch the content value to track form initialization
@@ -78,7 +80,7 @@ export const RichTextSettings: React.FC<BaseFieldSettingsProps> = ({
                   value={editorValue}
                   onChange={field.onChange}
                   placeholder={constants.PLACEHOLDERS.RICH_TEXT_CONTENT}
-                  editable={isConnected}
+                  editable={isEditable}
                   className="min-h-32"
                 />
               </div>
