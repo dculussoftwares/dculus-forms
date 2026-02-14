@@ -193,6 +193,7 @@ export const createPagesSlice: SliceCreator<PagesSlice> = (set, get) => {
      * Reorder pages
      *
      * Moves a page from one position to another.
+     * Uses atomic move operation wrapped in transaction for CRDT safety.
      */
     reorderPages: (oldIndex: number, newIndex: number) => {
       const { _getYDoc, _isYJSReady } = get() as any;
@@ -228,51 +229,56 @@ export const createPagesSlice: SliceCreator<PagesSlice> = (set, get) => {
 
       console.log(`Reordering page from index ${oldIndex} to ${newIndex}`);
 
-      // Extract all pages as plain data
-      const allPages = pagesArray.toArray().map((pageMap) => {
+      // Atomic move operation wrapped in transaction
+      // This is CRDT-safe and preserves the entire page structure including all fields
+      ydoc.transact(() => {
+        // Extract page data including all fields
+        const oldPageMap = pagesArray.get(oldIndex);
         const pageData: {
           id: string;
           title: string;
           description: string;
           fields: FieldData[];
         } = {
-          id: pageMap.get('id'),
-          title: pageMap.get('title'),
-          description: pageMap.get('description') || '',
+          id: oldPageMap.get('id'),
+          title: oldPageMap.get('title'),
+          description: oldPageMap.get('description') || '',
           fields: [],
         };
 
-        const fieldsArray = pageMap.get('fields') as Y.Array<Y.Map<any>>;
+        const fieldsArray = oldPageMap.get('fields') as Y.Array<Y.Map<any>>;
         if (fieldsArray) {
           pageData.fields = fieldsArray.toArray().map((fieldMap) => extractFieldData(fieldMap));
         }
 
-        return pageData;
-      });
+        // Remove page from old position
+        pagesArray.delete(oldIndex, 1);
 
-      // Perform the reorder
-      const pageToMove = allPages[oldIndex];
-      allPages.splice(oldIndex, 1);
-      allPages.splice(newIndex, 0, pageToMove);
-
-      // Clear and rebuild the pages array
-      pagesArray.delete(0, pagesArray.length);
-
-      allPages.forEach((pageData, index) => {
+        // Recreate page at new position
         const pageMap = new Y.Map();
         pageMap.set('id', pageData.id);
         pageMap.set('title', pageData.title);
         pageMap.set('description', pageData.description);
-        pageMap.set('order', index);
+        pageMap.set('order', newIndex);
 
-        const fieldsArray = new Y.Array();
+        const newFieldsArray = new Y.Array();
         pageData.fields.forEach((fieldData) => {
           const fieldMap = createYJSFieldMap(fieldData);
-          fieldsArray.push([fieldMap]);
+          newFieldsArray.push([fieldMap]);
         });
-        pageMap.set('fields', fieldsArray);
+        pageMap.set('fields', newFieldsArray);
 
-        pagesArray.push([pageMap]);
+        // Insert at new position
+        pagesArray.insert(newIndex, [pageMap]);
+
+        // Update order indices for affected pages
+        const start = Math.min(oldIndex, newIndex);
+        const end = Math.max(oldIndex, newIndex);
+        for (let i = start; i <= end; i++) {
+          if (i !== newIndex && i < pagesArray.length) {
+            pagesArray.get(i).set('order', i);
+          }
+        }
       });
     },
 

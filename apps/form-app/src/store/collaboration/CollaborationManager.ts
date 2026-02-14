@@ -150,6 +150,7 @@ export class CollaborationManager {
   private observerCleanups: Array<() => void> = [];
   private pageObserverCleanups: Array<() => void> = [];
   private fieldObserverCleanups: Array<() => void> = [];
+  private fieldObserverMap: Map<string, Array<() => void>> = new Map();
   private updateQueued = false;
 
   constructor(
@@ -175,10 +176,8 @@ export class CollaborationManager {
       const authToken = localStorage.getItem('bearer_token');
       console.log('🔐 Initializing Hocuspocus with auth token:', !!authToken);
 
-      const wsUrlWithAuth = authToken ? `${wsUrl}?token=${encodeURIComponent(authToken)}` : wsUrl;
-
       this.provider = new HocuspocusProvider({
-        url: wsUrlWithAuth,
+        url: wsUrl,
         name: formId,
         document: this.ydoc,
         token: authToken || undefined,
@@ -199,6 +198,12 @@ export class CollaborationManager {
     this.observerCleanups = [];
     this.clearPageObservers();
     this.clearFieldObservers();
+
+    // Clean up all individual field observers
+    this.fieldObserverMap.forEach(cleanups => {
+      cleanups.forEach(cleanup => cleanup());
+    });
+    this.fieldObserverMap.clear();
 
     if (this.provider) {
       this.provider.disconnect();
@@ -334,14 +339,23 @@ export class CollaborationManager {
       const fieldId = fieldMap.get('id');
       if (!fieldId) return;
 
+      // Clean up existing observers for this field
+      const existingCleanups = this.fieldObserverMap.get(fieldId);
+      if (existingCleanups) {
+        existingCleanups.forEach(cleanup => cleanup());
+      }
+
+      const cleanups: Array<() => void> = [];
+
+      // Observer for field properties
       const fieldObserver = () => {
         console.log(`📡 Field ${fieldId} properties changed`);
         this.scheduleUpdateFromYJS();
       };
-
       fieldMap.observe(fieldObserver);
-      this.fieldObserverCleanups.push(() => fieldMap.unobserve(fieldObserver));
+      cleanups.push(() => fieldMap.unobserve(fieldObserver));
 
+      // Observer for validation sub-map
       const validationMap = fieldMap.get('validation');
       if (validationMap && validationMap instanceof Y.Map) {
         const validationObserver = () => {
@@ -349,8 +363,11 @@ export class CollaborationManager {
           this.scheduleUpdateFromYJS();
         };
         validationMap.observe(validationObserver);
-        this.fieldObserverCleanups.push(() => validationMap.unobserve(validationObserver));
+        cleanups.push(() => validationMap.unobserve(validationObserver));
       }
+
+      // Store cleanups by field ID for surgical removal
+      this.fieldObserverMap.set(fieldId, cleanups);
     });
   }
 

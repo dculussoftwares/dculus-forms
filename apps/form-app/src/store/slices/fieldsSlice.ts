@@ -268,6 +268,7 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
      * Reorder fields within a page
      *
      * Moves a field from one position to another within the same page.
+     * Uses atomic move operation wrapped in transaction for CRDT safety.
      */
     reorderFields: (pageId: string, oldIndex: number, newIndex: number) => {
       const { _getYDoc, _isYJSReady } = get() as any;
@@ -317,17 +318,18 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
 
       console.log(`Reordering field from index ${oldIndex} to ${newIndex} in page ${pageId}`);
 
-      const allFields = fieldsArray.toArray().map((fieldMap) => extractFieldData(fieldMap));
+      // Atomic move operation wrapped in transaction
+      // This is CRDT-safe and produces only 2 observer events (1 delete + 1 insert)
+      ydoc.transact(() => {
+        // Extract the field data from old position
+        const fieldData = extractFieldData(fieldsArray.get(oldIndex));
 
-      const fieldToMove = allFields[oldIndex];
-      allFields.splice(oldIndex, 1);
-      allFields.splice(newIndex, 0, fieldToMove);
+        // Remove from old position
+        fieldsArray.delete(oldIndex, 1);
 
-      fieldsArray.delete(0, fieldsArray.length);
-
-      allFields.forEach((fieldData) => {
+        // Insert at new position
         const fieldMap = createYJSFieldMap(fieldData);
-        fieldsArray.push([fieldMap]);
+        fieldsArray.insert(newIndex, [fieldMap]);
       });
     },
 
