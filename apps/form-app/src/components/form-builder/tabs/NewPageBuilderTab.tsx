@@ -7,6 +7,7 @@ import {
 } from '@dculus/types';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useTranslation } from '../../../hooks';
+import { useFieldCreation } from '../../../hooks/useFieldCreation';
 import FieldSettingsV2 from '../FieldSettingsV2';
 import {
   DndContext,
@@ -933,6 +934,42 @@ export const NewPageBuilderTab: React.FC = () => {
     pages,
   } = useFormBuilderStore();
 
+  const { createFieldData } = useFieldCreation();
+
+  const getPageFieldIdSet = (pageId: string): Set<string> => {
+    const page = useFormBuilderStore
+      .getState()
+      .pages.find((p) => p.id === pageId);
+    return new Set(page?.fields.map((field) => field.id) ?? []);
+  };
+
+  const highlightNewField = (
+    pageId: string,
+    previousFieldIds: Set<string>,
+    fallbackIndex?: number
+  ) => {
+    setTimeout(() => {
+      const currentPage = useFormBuilderStore
+        .getState()
+        .pages.find((p) => p.id === pageId);
+      if (!currentPage) return;
+
+      const newlyAddedField = currentPage.fields.find(
+        (field) => !previousFieldIds.has(field.id)
+      );
+      const fallbackField =
+        fallbackIndex !== undefined
+          ? currentPage.fields[fallbackIndex]
+          : undefined;
+      const fieldToHighlight = newlyAddedField || fallbackField;
+
+      if (fieldToHighlight) {
+        setRecentlyDroppedFieldId(fieldToHighlight.id);
+        setTimeout(() => setRecentlyDroppedFieldId(null), 2000);
+      }
+    }, 80);
+  };
+
   // Configure sensors - require slight movement before drag starts
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -1076,20 +1113,14 @@ export const NewPageBuilderTab: React.FC = () => {
         const insertIndex = over.data.current.insertIndex as number;
 
         if (targetPageId && fieldTypeConfig) {
+          const previousFieldIds = getPageFieldIdSet(targetPageId);
           console.log(
             `Inserting field ${fieldTypeConfig.type} at index ${insertIndex} in page ${targetPageId}`
           );
-          addFieldAtIndex(targetPageId, fieldTypeConfig.type, {}, insertIndex);
+          const fieldData = createFieldData(fieldTypeConfig);
+          addFieldAtIndex(targetPageId, fieldTypeConfig.type, fieldData, insertIndex);
           
-          // Find the newly added field ID (it will be the last one added)
-          setTimeout(() => {
-            const targetPage = pages.find(p => p.id === targetPageId);
-            if (targetPage && targetPage.fields[insertIndex]) {
-              const newFieldId = targetPage.fields[insertIndex].id;
-              setRecentlyDroppedFieldId(newFieldId);
-              setTimeout(() => setRecentlyDroppedFieldId(null), 2000);
-            }
-          }, 50);
+          highlightNewField(targetPageId, previousFieldIds, insertIndex);
         }
         
         setTimeout(() => {
@@ -1105,20 +1136,15 @@ export const NewPageBuilderTab: React.FC = () => {
         const targetPageId = over.data.current.pageId as string;
 
         if (targetPageId && fieldTypeConfig) {
+          const previousFieldIds = getPageFieldIdSet(targetPageId);
           console.log(
             `Adding field ${fieldTypeConfig.type} to end of page ${targetPageId}`
           );
-          addField(targetPageId, fieldTypeConfig.type, {});
+          const fieldData = createFieldData(fieldTypeConfig);
+          addField(targetPageId, fieldTypeConfig.type, fieldData);
           
-          // Find the newly added field ID
-          setTimeout(() => {
-            const targetPage = pages.find(p => p.id === targetPageId);
-            if (targetPage && targetPage.fields.length > 0) {
-              const newFieldId = targetPage.fields[targetPage.fields.length - 1].id;
-              setRecentlyDroppedFieldId(newFieldId);
-              setTimeout(() => setRecentlyDroppedFieldId(null), 2000);
-            }
-          }, 50);
+          const fallbackIndex = previousFieldIds.size;
+          highlightNewField(targetPageId, previousFieldIds, fallbackIndex);
         }
         
         setTimeout(() => {
