@@ -67,7 +67,6 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
 }) => {
   const { t } = useTranslation('richTextFieldSettings');
   const constants = useFieldSettingsConstants();
-  const isEditable = isConnected && !isReadOnly;
   
   // Local loading state to prevent flashing
   const [isContentLoading, setIsContentLoading] = useState(false);
