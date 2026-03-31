@@ -143,7 +143,7 @@ describe('Upload Routes', () => {
         .field('type', 'FormBackground');
 
       expect(response.status).toBe(400);
-      expect(response.body).toEqual({ error: 'No file provided' });
+      expect(response.body).toEqual({ error: 'No file provided', code: 'BAD_USER_INPUT' });
       expect(uploadFile).not.toHaveBeenCalled();
     });
 
@@ -153,7 +153,7 @@ describe('Upload Routes', () => {
         .attach('file', Buffer.from('test file content'), 'test.jpg');
 
       expect(response.status).toBe(400);
-      expect(response.body).toEqual({ error: 'File type is required' });
+      expect(response.body).toEqual({ error: 'File type is required', code: 'BAD_USER_INPUT' });
       expect(uploadFile).not.toHaveBeenCalled();
     });
 
@@ -182,6 +182,7 @@ describe('Upload Routes', () => {
       expect(response.status).toBe(500);
       expect(response.body).toEqual({
         error: 'Failed to upload file: S3 upload failed',
+        code: 'UPLOAD_FAILED',
       });
       expect(logger.error).toHaveBeenCalledWith('Error uploading file:', expect.any(Error));
     });
@@ -221,6 +222,7 @@ describe('Upload Routes', () => {
       expect(response.status).toBe(500);
       expect(response.body).toEqual({
         error: 'Failed to upload file: Unknown error',
+        code: 'UPLOAD_FAILED',
       });
     });
 
