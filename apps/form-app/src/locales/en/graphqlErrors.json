@@ -63,6 +63,30 @@
         "INTERNAL_SERVER_ERROR": {
             "title": "Server Error",
             "message": "Something went wrong on our end. Please try again later."
+        },
+        "UNAUTHENTICATED": {
+            "title": "Session Expired",
+            "message": "Your session has expired. Please sign in again."
+        },
+        "UNSUPPORTED_FIELD_TYPE": {
+            "title": "Unsupported Field Type",
+            "message": "Analytics are not supported for this field type."
+        },
+        "FILE_TOO_LARGE": {
+            "title": "File Too Large",
+            "message": "The file exceeds the 5MB limit. Please choose a smaller image."
+        },
+        "FILE_TYPE_NOT_ALLOWED": {
+            "title": "File Type Not Allowed",
+            "message": "This file type is not supported. Please upload a valid image file."
+        },
+        "UPLOAD_FAILED": {
+            "title": "Upload Failed",
+            "message": "Failed to upload the file. Please try again."
+        },
+        "EDITOR_ACCESS_REQUIRED": {
+            "title": "Editor Access Required",
+            "message": "You need editor access to upload files to this form."
         }
     },
     "defaultTitle": "Error",

@@ -4,6 +4,9 @@ export const GRAPHQL_ERROR_CODES = {
   NO_ACCESS: 'NO_ACCESS',
   FORBIDDEN: 'FORBIDDEN',
 
+  // Auth — session errors (used by fieldAnalytics & global Apollo error link)
+  UNAUTHENTICATED: 'UNAUTHENTICATED',
+
   // Generic resource errors
   NOT_FOUND: 'NOT_FOUND',
 
@@ -20,6 +23,15 @@ export const GRAPHQL_ERROR_CODES = {
   MAX_RESPONSES_REACHED: 'MAX_RESPONSES_REACHED',
   FORM_NOT_YET_OPEN: 'FORM_NOT_YET_OPEN',
   FORM_CLOSED: 'FORM_CLOSED',
+
+  // Analytics errors
+  UNSUPPORTED_FIELD_TYPE: 'UNSUPPORTED_FIELD_TYPE',
+
+  // File upload errors
+  FILE_TOO_LARGE: 'FILE_TOO_LARGE',
+  FILE_TYPE_NOT_ALLOWED: 'FILE_TYPE_NOT_ALLOWED',
+  UPLOAD_FAILED: 'UPLOAD_FAILED',
+  EDITOR_ACCESS_REQUIRED: 'EDITOR_ACCESS_REQUIRED',
 
   // Validation errors
   BAD_USER_INPUT: 'BAD_USER_INPUT',

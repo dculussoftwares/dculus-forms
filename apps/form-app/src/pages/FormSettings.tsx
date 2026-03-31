@@ -19,6 +19,7 @@ import { FormSettingsContainer } from '../components/form-settings';
 import { useFormSettings } from '../hooks/useFormSettings';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { REGENERATE_SHORT_URL, UPDATE_FORM } from '../graphql/mutations';
+import { getErrorDetails } from '../utils/graphqlErrors';
 import {
   AlertCircle,
   ArrowLeft,
@@ -29,6 +30,7 @@ const FormSettings: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation('formSettings');
+  const { t: tErr } = useTranslation('graphqlErrors');
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -72,8 +74,9 @@ const FormSettings: React.FC = () => {
     },
     onError: (error) => {
       setIsSaving(false);
+      const { messageKey } = getErrorDetails(error);
       setErrors({ general: error.message });
-      toastError(t('toasts.settingsSaveError'), error.message);
+      toastError(t('toasts.settingsSaveError'), tErr(messageKey));
     },
   });
 
@@ -86,8 +89,9 @@ const FormSettings: React.FC = () => {
     },
     onError: (error) => {
       setIsSaving(false);
+      const { messageKey } = getErrorDetails(error);
       setErrors({ general: error.message });
-      toastError(t('toasts.shortUrlRegenerateError'), error.message);
+      toastError(t('toasts.shortUrlRegenerateError'), tErr(messageKey));
     },
   });
 

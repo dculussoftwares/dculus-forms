@@ -1,4 +1,6 @@
 import { GraphQLError } from '#graphql-errors';
+import { createGraphQLError } from '#graphql-errors';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { uploadFile, deleteFile } from '../../services/fileUploadService.js';
 import { prisma } from '../../lib/prisma.js';
 import { randomUUID } from 'crypto';
@@ -52,7 +54,7 @@ export const fileUploadResolvers = {
         // 🔒 SECURITY: Validate the type first
         const allowedTypes = ['FormTemplate', 'FormBackground', 'UserAvatar', 'OrganizationLogo'];
         if (!allowedTypes.includes(type)) {
-          throw new GraphQLError(`Invalid file type. Allowed types: ${allowedTypes.join(', ')}`);
+          throw createGraphQLError(`Invalid file type. Allowed types: ${allowedTypes.join(', ')}`, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
         }
 
         // 🔒 SECURITY: Role-based access control based on file type
@@ -62,7 +64,7 @@ export const fileUploadResolvers = {
         } else if (type === 'FormBackground') {
           // Must have EDITOR access to the form
           if (!formId) {
-            throw new GraphQLError('formId is required for FormBackground uploads');
+            throw createGraphQLError('formId is required for FormBackground uploads', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
           }
           requireAuth(context.auth);
           const accessCheck = await checkFormAccess(
@@ -71,7 +73,7 @@ export const fileUploadResolvers = {
             PermissionLevel.EDITOR
           );
           if (!accessCheck.hasAccess) {
-            throw new GraphQLError('Access denied: You need EDITOR access to upload background images for this form');
+            throw createGraphQLError('Access denied: You need EDITOR access to upload background images for this form', GRAPHQL_ERROR_CODES.EDITOR_ACCESS_REQUIRED);
           }
         } else if (type === 'UserAvatar') {
           // User can only upload their own avatar
@@ -80,7 +82,7 @@ export const fileUploadResolvers = {
         } else if (type === 'OrganizationLogo') {
           // Must be a member of the organization
           if (!organizationId) {
-            throw new GraphQLError('organizationId is required for OrganizationLogo uploads');
+            throw createGraphQLError('organizationId is required for OrganizationLogo uploads', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
           }
           await requireOrganizationMembership(context.auth, organizationId);
         }
@@ -129,7 +131,7 @@ export const fileUploadResolvers = {
         if (error instanceof GraphQLError) {
           throw error;
         }
-        throw new GraphQLError(`Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw createGraphQLError(`Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`, GRAPHQL_ERROR_CODES.UPLOAD_FAILED);
       }
     },
 
@@ -166,7 +168,7 @@ export const fileUploadResolvers = {
         if (error instanceof GraphQLError) {
           throw error;
         }
-        throw new GraphQLError(`Failed to delete file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw createGraphQLError(`Failed to delete file: ${error instanceof Error ? error.message : 'Unknown error'}`, GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
   },

@@ -1,4 +1,5 @@
-import { GraphQLError } from '#graphql-errors';
+import { createGraphQLError } from '#graphql-errors';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { FieldType } from '@dculus/types';
 import {
   getFieldAnalytics,
@@ -32,9 +33,7 @@ const checkFormAccess = async (formId: string, userId: string, includeSchema: bo
   });
 
   if (!form) {
-    throw new GraphQLError('Form not found or access denied', {
-      extensions: { code: 'FORBIDDEN' }
-    });
+    throw createGraphQLError('Form not found or access denied', GRAPHQL_ERROR_CODES.FORBIDDEN);
   }
 
   return form;
@@ -184,9 +183,7 @@ export const fieldAnalyticsResolvers = {
       context: any
     ) => {
       if (!context.user) {
-        throw new GraphQLError('Authentication required', {
-          extensions: { code: 'UNAUTHENTICATED' }
-        });
+        throw createGraphQLError('Authentication required', GRAPHQL_ERROR_CODES.UNAUTHENTICATED);
       }
 
       // Check form access (don't need schema from DB since we'll get it from Hocuspocus)
@@ -219,25 +216,19 @@ export const fieldAnalyticsResolvers = {
         });
         
         if (!fallbackSchema) {
-          throw new GraphQLError('No form schema found in either collaborative document or database', {
-            extensions: { code: 'NOT_FOUND' }
-          });
+          throw createGraphQLError('No form schema found in either collaborative document or database', GRAPHQL_ERROR_CODES.NOT_FOUND);
         }
         
         // Get field information from fallback schema
         const fieldInfo = getFieldInfo(fallbackSchema, fieldId);
         if (!fieldInfo) {
-          throw new GraphQLError(`Field not found: ${fieldId}`, {
-            extensions: { code: 'NOT_FOUND' }
-          });
+          throw createGraphQLError(`Field not found: ${fieldId}`, GRAPHQL_ERROR_CODES.NOT_FOUND);
         }
       } else {
         // Get field information from Hocuspocus schema
         const fieldInfo = getFieldInfo(formSchemaFromHocuspocus, fieldId);
         if (!fieldInfo) {
-          throw new GraphQLError(`Field not found: ${fieldId}`, {
-            extensions: { code: 'NOT_FOUND' }
-          });
+          throw createGraphQLError(`Field not found: ${fieldId}`, GRAPHQL_ERROR_CODES.NOT_FOUND);
         }
       }
       
@@ -245,9 +236,7 @@ export const fieldAnalyticsResolvers = {
       const activeSchema = formSchemaFromHocuspocus || (form.formSchema as any);
       const fieldInfo = getFieldInfo(activeSchema, fieldId);
       if (!fieldInfo) {
-        throw new GraphQLError(`Field not found: ${fieldId}`, {
-          extensions: { code: 'NOT_FOUND' }
-        });
+        throw createGraphQLError(`Field not found: ${fieldId}`, GRAPHQL_ERROR_CODES.NOT_FOUND);
       }
 
       // Check if field type is supported for analytics
@@ -263,9 +252,7 @@ export const fieldAnalyticsResolvers = {
       ];
 
       if (!supportedTypes.includes(fieldInfo.type)) {
-        throw new GraphQLError(`Analytics not supported for field type: ${fieldInfo.type}`, {
-          extensions: { code: 'UNSUPPORTED_FIELD_TYPE' }
-        });
+        throw createGraphQLError(`Analytics not supported for field type: ${fieldInfo.type}`, GRAPHQL_ERROR_CODES.UNSUPPORTED_FIELD_TYPE);
       }
 
       try {
@@ -279,9 +266,7 @@ export const fieldAnalyticsResolvers = {
         return transformAnalyticsToGraphQL(analytics);
       } catch (error) {
         logger.error('Error getting field analytics:', error);
-        throw new GraphQLError('Failed to get field analytics', {
-          extensions: { code: 'INTERNAL_ERROR' }
-        });
+        throw createGraphQLError('Failed to get field analytics', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
 
@@ -294,9 +279,7 @@ export const fieldAnalyticsResolvers = {
       context: any
     ) => {
       if (!context.user) {
-        throw new GraphQLError('Authentication required', {
-          extensions: { code: 'UNAUTHENTICATED' }
-        });
+        throw createGraphQLError('Authentication required', GRAPHQL_ERROR_CODES.UNAUTHENTICATED);
       }
 
       // Check form access (no need for schema here)
@@ -312,9 +295,7 @@ export const fieldAnalyticsResolvers = {
         };
       } catch (error) {
         logger.error('Error getting all fields analytics:', error);
-        throw new GraphQLError('Failed to get all fields analytics', {
-          extensions: { code: 'INTERNAL_ERROR' }
-        });
+        throw createGraphQLError('Failed to get all fields analytics', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
 

@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Plus } from 'lucide-react';
-import { Button } from '@dculus/ui';
-import { uploadFileHTTP } from '../../../../services/fileUploadService';
+import { Button, toastError, toastSuccess } from '@dculus/ui';
+import { uploadFileHTTP, UploadError } from '../../../../services/fileUploadService';
 import { useTranslation } from '../../../../hooks';
 
 interface BackgroundImageUploadProps {
@@ -24,9 +24,20 @@ export const BackgroundImageUpload: React.FC<BackgroundImageUploadProps> = ({
     setLoading(true);
     try {
       await uploadFileHTTP(file, 'FormBackground', formId);
+      toastSuccess(t('upload.success'));
       onUploadSuccess();
     } catch (error) {
-      console.error('Error uploading file:', error);
+      if (error instanceof UploadError) {
+        if (error.code === 'FILE_TOO_LARGE') {
+          toastError(t('upload.errors.fileTooLarge.title'), t('upload.errors.fileTooLarge.message'));
+        } else if (error.code === 'EDITOR_ACCESS_REQUIRED') {
+          toastError(t('upload.errors.accessDenied.title'), t('upload.errors.accessDenied.message'));
+        } else {
+          toastError(t('upload.errors.failed.title'), t('upload.errors.failed.message'));
+        }
+      } else {
+        toastError(t('upload.errors.failed.title'), t('upload.errors.failed.message'));
+      }
     } finally {
       setLoading(false);
     }

@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { useTranslation } from '../../../../hooks/useTranslation';
-import { Input, Button, Card } from '@dculus/ui';
+import { Input, Button, Card, toastError, toastSuccess } from '@dculus/ui';
 import { Search, Download, Eye, Heart, Loader2, X } from 'lucide-react';
 import { searchPixabayImages, downloadPixabayImage, type PixabayImage } from '../../../../services/pixabayService';
+import { UploadError } from '../../../../services/fileUploadService';
 
 interface PixabayModalProps {
   isOpen: boolean;
@@ -35,9 +36,8 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onUpload
       }
       setHasMore(response.hits.length === 20);
       setPage(pageNum);
-    } catch (error) {
-      console.error('Pixabay search error:', error);
-      console.error('Failed to search images:', error);
+    } catch {
+      toastError('Search failed', 'Failed to search Pixabay images. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -57,18 +57,17 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onUpload
     setUploading(true);
     try {
       const uploadResult = await downloadPixabayImage(image.largeImageURL, formId);
-      console.log('Image uploaded successfully');
-      
-      // Apply the image immediately using the returned key
+      toastSuccess('Image applied successfully');
       onImageApplied(uploadResult.key);
-      
-      // Refresh the form files list
       onUploadSuccess();
       setSelectedImage(null);
       onClose();
     } catch (error) {
-      console.error('Upload error:', error);
-      console.error('Failed to upload image:', error);
+      if (error instanceof UploadError && error.code === 'FILE_TOO_LARGE') {
+        toastError('Image too large', 'The selected image exceeds the 5MB limit.');
+      } else {
+        toastError('Upload failed', 'Failed to apply image. Please try again.');
+      }
       setSelectedImage(null);
     } finally {
       setUploading(false);

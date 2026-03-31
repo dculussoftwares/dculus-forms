@@ -4,6 +4,21 @@
   },
   "upload": {
     "uploading": "Uploading...",
-    "uploadImage": "Upload Image"
+    "uploadImage": "Upload Image",
+    "success": "Image uploaded successfully",
+    "errors": {
+      "fileTooLarge": {
+        "title": "File Too Large",
+        "message": "The image exceeds the 5MB limit. Please choose a smaller image."
+      },
+      "accessDenied": {
+        "title": "Access Denied",
+        "message": "You need editor access to upload images to this form."
+      },
+      "failed": {
+        "title": "Upload Failed",
+        "message": "Failed to upload image. Please try again."
+      }
+    }
   }
 }

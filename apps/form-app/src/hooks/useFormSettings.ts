@@ -3,6 +3,8 @@ import { useMutation } from '@apollo/client';
 import { UPDATE_FORM } from '../graphql/mutations';
 import type { SubmissionLimitsSettings } from '@dculus/types';
 import { toastSuccess, toastError } from '@dculus/ui';
+import { getErrorDetails } from '../utils/graphqlErrors';
+import { useTranslation } from './useTranslation';
 
 interface FormSettingsData {
   thankYou: {
@@ -35,6 +37,8 @@ export const useFormSettings = ({
   
   const [isSaving, setIsSaving] = useState(false);
 
+  const { t: tErr } = useTranslation('graphqlErrors');
+
   const [updateForm] = useMutation(UPDATE_FORM, {
     onCompleted: () => {
       setIsSaving(false);
@@ -42,7 +46,8 @@ export const useFormSettings = ({
     },
     onError: (error) => {
       setIsSaving(false);
-      toastError('Failed to save settings', error.message);
+      const { messageKey } = getErrorDetails(error);
+      toastError('Failed to save settings', tErr(messageKey));
       onError?.(error.message);
     },
   });

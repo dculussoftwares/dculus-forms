@@ -17,6 +17,7 @@ import { CREATE_FORM } from '../graphql/mutations';
 import { useNavigate } from 'react-router-dom';
 import { useAppConfig } from '@/hooks';
 import { useTranslation } from '../hooks/useTranslation';
+import { getErrorDetails } from '../utils/graphqlErrors';
 
 interface CreateFormData {
   title: string;
@@ -30,6 +31,7 @@ interface CreateFormPopoverProps {
 export const CreateFormPopover: React.FC<CreateFormPopoverProps> = ({ onFormCreated }) => {
   const navigate = useNavigate();
   const { t } = useTranslation('createFormPopover');
+  const { t: tErr } = useTranslation('graphqlErrors');
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<CreateFormData>({
     title: '',
@@ -47,10 +49,12 @@ export const CreateFormPopover: React.FC<CreateFormPopoverProps> = ({ onFormCrea
       navigate(`/forms/${data.createForm.id}/edit`);
     },
     onError: (error) => {
+      const { messageKey } = getErrorDetails(error);
       setErrors({ submit: error.message });
-      toastError(t('error.title'), error.message);
+      toastError(t('error.title'), tErr(messageKey));
     },
   });
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
