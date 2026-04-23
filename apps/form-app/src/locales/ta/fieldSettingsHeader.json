@@ -8,7 +8,8 @@
     "radio": "வானொலி",
     "checkbox": "தேர்வுப்பெட்டி",
     "date": "தேதி",
-    "formField": "படிவம் புலம்"
+    "formField": "படிவம் புலம்",
+    "richText": "வளமான உரை"
   },
   "header": {
     "settings": "அமைப்புகள்",

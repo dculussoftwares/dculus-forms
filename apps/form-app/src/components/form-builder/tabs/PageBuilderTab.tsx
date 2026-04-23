@@ -418,13 +418,13 @@ const FieldCard: React.FC<{
   isDelayingExpansion = false,
 }) => {
   // Get label for fillable fields, or use type name for others
+  const typeConfig = getFieldTypeConfig(field.type);
   const label: string =
     'label' in field && typeof field.label === 'string' && field.label
       ? field.label
-      : field.type.replace(/_/g, ' ').toLowerCase();
+      : typeConfig.label;
 
   // Get field type config for icon and category
-  const typeConfig = getFieldTypeConfig(field.type);
   const Icon = typeConfig.icon;
   const categoryColor = getCategoryColor(typeConfig.category);
 
@@ -723,12 +723,16 @@ const DraggableFieldCard: React.FC<{
         isAnyDragActive={isAnyDragActive}
         isRecentlyDropped={isRecentlyDropped}
         isDelayingExpansion={isDelayingExpansion}
-        dragHandleProps={canReorder ? { ...attributes, ...listeners } : undefined}
+        dragHandleProps={
+          canReorder ? { ...attributes, ...listeners } : undefined
+        }
         onClick={handleClick}
         onDelete={canEdit ? handleDelete : undefined}
         onDuplicate={canEdit ? handleDuplicate : undefined}
         onMoveUp={canReorder && index > 0 ? handleMoveUp : undefined}
-        onMoveDown={canReorder && index < totalFields - 1 ? handleMoveDown : undefined}
+        onMoveDown={
+          canReorder && index < totalFields - 1 ? handleMoveDown : undefined
+        }
         onMoveToPage={canEdit ? handleMoveToPage : undefined}
         onCopyToPage={canEdit ? handleCopyToPage : undefined}
       />
