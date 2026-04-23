@@ -1,68 +1,42 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Controller, useWatch } from 'react-hook-form';
 import { RichTextEditor } from '@dculus/ui';
 import { useFieldSettingsConstants } from './useFieldSettingsConstants';
 import { BaseFieldSettingsProps } from './types';
 
+interface RichTextSettingsProps extends BaseFieldSettingsProps {
+  /** Field ID used to remount the editor when switching between fields */
+  fieldId?: string;
+}
+
 /**
  * Settings component for Rich Text fields
  * Allows editing of rich text content using Lexical editor
- * 
+ *
  * Since RichTextFormField is non-fillable, it doesn't have the typical
  * label, placeholder, or validation properties - only content
  */
-export const RichTextSettings: React.FC<BaseFieldSettingsProps> = ({
+export const RichTextSettings: React.FC<RichTextSettingsProps> = ({
   control,
   errors,
   isConnected,
-  isReadOnly = false
+  isReadOnly = false,
+  fieldId,
 }) => {
   const constants = useFieldSettingsConstants();
   const isEditable = isConnected && !isReadOnly;
-  const [isFormReady, setIsFormReady] = useState(false);
-  
+
   // Watch the content value to track form initialization
   const contentValue = useWatch({
     control,
     name: 'content',
-    defaultValue: ''
+    defaultValue: '',
   });
-  
-  // Track when the form has been properly initialized
-  useEffect(() => {
-    // Wait for the form to be initialized with actual content
-    // The form is ready when we either have content or explicitly have an empty state
-    const timer = setTimeout(() => {
-      setIsFormReady(true);
-    }, 50); // Small delay to ensure form reset has completed
-    
-    return () => clearTimeout(timer);
-  }, [control]);
-
-  if (!isFormReady) {
-    return (
-      <div className={constants.CSS_CLASSES.SECTION_SPACING}>
-        <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
-          Rich Text Content
-        </h4>
-        <div className="space-y-2">
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
-            Content
-          </label>
-          <div className="border border-gray-200 rounded-lg min-h-32 flex items-center justify-center text-gray-500">
-            Loading editor...
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className={constants.CSS_CLASSES.SECTION_SPACING}>
-      <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
-        Rich Text Content
-      </h4>
-      
+      <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>Rich Text Content</h4>
+
       <div className="space-y-2">
         <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
           Content
@@ -71,12 +45,12 @@ export const RichTextSettings: React.FC<BaseFieldSettingsProps> = ({
           name="content"
           control={control}
           render={({ field }) => {
-            // Use the watched value instead of field.value for better synchronization
             const editorValue = contentValue ?? field.value ?? '';
-            
+
             return (
               <div className="border border-gray-200 rounded-lg">
                 <RichTextEditor
+                  key={fieldId}
                   value={editorValue}
                   onChange={field.onChange}
                   placeholder={constants.PLACEHOLDERS.RICH_TEXT_CONTENT}
@@ -93,7 +67,7 @@ export const RichTextSettings: React.FC<BaseFieldSettingsProps> = ({
           </p>
         )}
       </div>
-      
+
       <div className="mt-2 text-xs text-gray-500">
         This content will be displayed as read-only text in the form.
       </div>

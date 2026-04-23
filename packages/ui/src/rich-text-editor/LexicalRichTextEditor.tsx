@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin';
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
@@ -12,7 +12,12 @@ import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin';
 import { ToolbarPlugin } from './ToolbarPlugin';
 import { $generateHtmlFromNodes } from '@lexical/html';
 import { $generateNodesFromDOM } from '@lexical/html';
-import { $getRoot, $insertNodes, type EditorState } from 'lexical';
+import {
+  $getRoot,
+  $insertNodes,
+  type EditorState,
+  type LexicalEditor,
+} from 'lexical';
 import { HeadingNode, QuoteNode } from '@lexical/rich-text';
 import { ListItemNode, ListNode } from '@lexical/list';
 import { LinkNode, AutoLinkNode } from '@lexical/link';
@@ -23,7 +28,7 @@ import {
   type BeautifulMentionsMenuProps,
   type BeautifulMentionsMenuItemProps,
   type BeautifulMentionComponentProps,
-  createBeautifulMentionNode
+  createBeautifulMentionNode,
 } from 'lexical-beautiful-mentions';
 import { forwardRef } from 'react';
 import { cn } from '../utils';
@@ -98,11 +103,22 @@ const theme = {
   beautifulMentions: {
     '@': 'editor-mention bg-blue-100 text-blue-800 px-2 py-1 rounded-md border border-blue-200 mx-1 inline-block',
   },
-  beautifulMentionsMenu: 'bg-white border border-gray-200 rounded-lg shadow-lg py-2 max-h-48 overflow-y-auto z-50',
-  beautifulMentionsMenuItem: 'px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer transition-colors duration-150',
+  beautifulMentionsMenu:
+    'bg-white border border-gray-200 rounded-lg shadow-lg py-2 max-h-48 overflow-y-auto z-50',
+  beautifulMentionsMenuItem:
+    'px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer transition-colors duration-150',
   beautifulMentionsMenuItemFocused: 'bg-blue-50 text-blue-900',
 };
 
+// Normalize Lexical's empty-editor HTML to empty string for consistent comparison
+function normalizeHtmlContent(html: string): string {
+  if (!html) return '';
+  // Lexical empty editor outputs: <p class="editor-paragraph"><br></p> or similar
+  const stripped = html
+    .replace(/<p[^>]*>\s*<br\s*\/?\s*>\s*<\/p>/gi, '')
+    .trim();
+  return stripped;
+}
 
 function OnChangeHandler({ onChange }: { onChange?: (html: string) => void }) {
   const [editor] = useLexicalComposerContext();
@@ -112,7 +128,10 @@ function OnChangeHandler({ onChange }: { onChange?: (html: string) => void }) {
       onChange={(editorState: EditorState) => {
         editorState.read(() => {
           const htmlString = $generateHtmlFromNodes(editor, null);
-          onChange?.(htmlString);
+          // Normalize empty Lexical output to '' so it matches the stored empty value
+          const normalized =
+            normalizeHtmlContent(htmlString) === '' ? '' : htmlString;
+          onChange?.(normalized);
         });
       }}
     />
@@ -121,48 +140,33 @@ function OnChangeHandler({ onChange }: { onChange?: (html: string) => void }) {
 
 function InitialContentPlugin({ value }: { value: string }) {
   const [editor] = useLexicalComposerContext();
-  const [lastLoadedValue, setLastLoadedValue] = useState<string>('');
-  const [isInternalUpdate, setIsInternalUpdate] = useState(false);
+  // Use a ref (not state) to avoid async React state race conditions
+  const lastLoadedValueRef = useRef<string>(value);
 
   useEffect(() => {
-    // Skip update if this is caused by internal editor changes
-    if (isInternalUpdate) {
-      setIsInternalUpdate(false);
-      return;
-    }
+    // Skip if the value hasn't changed from what we last loaded
+    if (value === lastLoadedValueRef.current) return;
 
-    // Only sync if the value prop is different from what we last loaded
-    // AND different from current editor content
-    if (value !== lastLoadedValue) {
-      editor.update(() => {
-        const currentHtml = $generateHtmlFromNodes(editor, null);
-        
-        // Only update if the external value is actually different from current content
-        if (currentHtml !== value) {
-          // Handle empty or default values
-          if (!value || value === '<p></p>' || value === '<p class="editor-paragraph"><br></p>') {
-            $getRoot().clear();
-            $getRoot().append($generateNodesFromDOM(editor, new DOMParser().parseFromString('<p></p>', 'text/html'))[0]);
-          } else {
-            // Load new content only if it's truly different
-            const parser = new DOMParser();
-            const dom = parser.parseFromString(value, 'text/html');
-            const nodes = $generateNodesFromDOM(editor, dom);
-            $getRoot().clear();
-            $insertNodes(nodes);
-          }
+    editor.update(() => {
+      const currentHtml = $generateHtmlFromNodes(editor, null);
+      const currentNormalized = normalizeHtmlContent(currentHtml);
+      const incomingNormalized = normalizeHtmlContent(value);
+
+      // Only update if the incoming value is actually different from current content
+      if (currentNormalized !== incomingNormalized) {
+        if (!value || incomingNormalized === '') {
+          $getRoot().clear();
+        } else {
+          const parser = new DOMParser();
+          const dom = parser.parseFromString(value, 'text/html');
+          const nodes = $generateNodesFromDOM(editor, dom);
+          $getRoot().clear();
+          $insertNodes(nodes);
         }
-      });
-      setLastLoadedValue(value);
-    }
-  }, [editor, value, lastLoadedValue, isInternalUpdate]);
-
-  // Register listener to detect internal changes
-  useEffect(() => {
-    return editor.registerUpdateListener(() => {
-      setIsInternalUpdate(true);
+      }
     });
-  }, [editor]);
+    lastLoadedValueRef.current = value;
+  }, [editor, value]);
 
   return null;
 }
@@ -187,62 +191,60 @@ interface MentionField {
 }
 
 // Custom menu component that fixes the loading prop warning
-const CustomMentionMenu = forwardRef<HTMLUListElement, BeautifulMentionsMenuProps>(
-  ({ loading, ...props }, ref) => {
-    // Don't pass loading as a prop to the ul element, just use it for logic if needed
-    return (
-      <ul
-        {...props}
-        ref={ref}
-        className="beautiful-mentions-menu"
-      />
-    );
-  }
-);
+const CustomMentionMenu = forwardRef<
+  HTMLUListElement,
+  BeautifulMentionsMenuProps
+>(({ loading, ...props }, ref) => {
+  // Don't pass loading as a prop to the ul element, just use it for logic if needed
+  return <ul {...props} ref={ref} className="beautiful-mentions-menu" />;
+});
 
 CustomMentionMenu.displayName = 'CustomMentionMenu';
 
 // Custom menu item component that shows the label instead of field ID
-const CustomMentionMenuItem = forwardRef<HTMLLIElement, BeautifulMentionsMenuItemProps>(
-  ({ selected, item, ...props }, ref) => {
-    // item.value is now the fieldId, so we need to show the label from item data
-    const displayText = (item?.data as any)?.label || item?.value || '';
+const CustomMentionMenuItem = forwardRef<
+  HTMLLIElement,
+  BeautifulMentionsMenuItemProps
+>(({ selected, item, ...props }, ref) => {
+  // item.value is now the fieldId, so we need to show the label from item data
+  const displayText = (item?.data as any)?.label || item?.value || '';
 
-    return (
-      <li
-        {...props}
-        ref={ref}
-        className={`mention-menu-item ${selected ? 'selected' : ''}`}
-      >
-        <span className="mention-prefix">@</span>
-        {displayText}
-      </li>
-    );
-  }
-);
+  return (
+    <li
+      {...props}
+      ref={ref}
+      className={`mention-menu-item ${selected ? 'selected' : ''}`}
+    >
+      <span className="mention-prefix">@</span>
+      {displayText}
+    </li>
+  );
+});
 
 CustomMentionMenuItem.displayName = 'CustomMentionMenuItem';
 
 // Custom mention component that displays labels in the editor
-const CustomMentionComponent = forwardRef<HTMLSpanElement, BeautifulMentionComponentProps>(
-  ({ value, data, trigger, ...props }, ref) => {
-    // value is now the fieldId (for substitution)
-    // data contains label for display
-    const fieldId = value;
-    const displayText = (data as any)?.label || value;
+const CustomMentionComponent = forwardRef<
+  HTMLSpanElement,
+  BeautifulMentionComponentProps
+>(({ value, data, trigger, ...props }, ref) => {
+  // value is now the fieldId (for substitution)
+  // data contains label for display
+  const fieldId = value;
+  const displayText = (data as any)?.label || value;
 
-    return (
-      <span
-        {...props}
-        ref={ref}
-        className="editor-mention bg-blue-100 text-blue-800 px-2 py-1 rounded-md border border-blue-200 mx-1 inline-block"
-        data-field-id={fieldId}
-      >
-        {trigger}{displayText}
-      </span>
-    );
-  }
-);
+  return (
+    <span
+      {...props}
+      ref={ref}
+      className="editor-mention bg-blue-100 text-blue-800 px-2 py-1 rounded-md border border-blue-200 mx-1 inline-block"
+      data-field-id={fieldId}
+    >
+      {trigger}
+      {displayText}
+    </span>
+  );
+});
 
 CustomMentionComponent.displayName = 'CustomMentionComponent';
 
@@ -263,6 +265,9 @@ export const LexicalRichTextEditor: React.FC<LexicalRichTextEditorProps> = ({
   editable = true,
   mentionFields = [],
 }) => {
+  // Capture the initial value at mount time (used by initialConfig.editorState)
+  const initialValueRef = useRef(value);
+
   const mentionItems = useMemo((): Record<string, BeautifulMentionsItem[]> => {
     if (mentionFields.length === 0) return {};
 
@@ -272,9 +277,9 @@ export const LexicalRichTextEditor: React.FC<LexicalRichTextEditorProps> = ({
         // The Beautiful Mentions library stores 'value' in data-lexical-beautiful-mention-value
         // Our substitution logic uses this to lookup user responses by fieldId
         const item: BeautifulMentionsItem = {
-          value: field.fieldId,   // ✅ Store fieldId as value for substitution lookup
+          value: field.fieldId, // ✅ Store fieldId as value for substitution lookup
           fieldId: field.fieldId, // Keep fieldId in data for reference
-          label: field.label,     // Label for display purposes
+          label: field.label, // Label for display purposes
         };
         return item;
       }),
@@ -295,11 +300,33 @@ export const LexicalRichTextEditor: React.FC<LexicalRichTextEditorProps> = ({
       AutoLinkNode,
       ...createBeautifulMentionNode(CustomMentionComponent),
     ],
+    // Load initial content synchronously so OnChangeHandler fires with correct value on first render
+    editorState: (editor: LexicalEditor) => {
+      const initialValue = initialValueRef.current;
+      if (initialValue && normalizeHtmlContent(initialValue) !== '') {
+        try {
+          const parser = new DOMParser();
+          const dom = parser.parseFromString(initialValue, 'text/html');
+          const nodes = $generateNodesFromDOM(editor, dom);
+          if (nodes.length > 0) {
+            $getRoot().clear();
+            $insertNodes(nodes);
+          }
+        } catch {
+          // Fall back to empty editor on parse error
+        }
+      }
+    },
   };
 
-
   return (
-    <div className={cn('border border-gray-200 rounded-lg relative mention-editor-container', className)} style={{ overflow: 'visible' }}>
+    <div
+      className={cn(
+        'border border-gray-200 rounded-lg relative mention-editor-container',
+        className
+      )}
+      style={{ overflow: 'visible' }}
+    >
       <LexicalComposer initialConfig={initialConfig}>
         {editable && <ToolbarPlugin />}
         <div className="relative" style={{ overflow: 'visible' }}>
