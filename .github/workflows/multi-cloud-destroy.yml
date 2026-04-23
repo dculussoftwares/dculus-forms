@@ -42,7 +42,7 @@ permissions:
   contents: read       # Required for checking out code
 
 env:
-  TERRAFORM_VERSION: '1.6.0'
+  TERRAFORM_VERSION: '1.9.8'
   CLOUDFLARE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare'
 
   CLOUDFLARE_SERVICE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-service-domain'
