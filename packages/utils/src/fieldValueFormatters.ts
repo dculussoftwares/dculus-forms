@@ -39,7 +39,11 @@ export const formatDateFieldValue = (
 
   try {
     // Parse timestamp from various formats
-    const timestamp = typeof value === 'string' ? parseInt(value, 10) : value;
+    // Only parseInt if value is a purely numeric string (Unix timestamp), not an ISO date string
+    const timestamp =
+      typeof value === 'string' && /^\d+$/.test(value.trim())
+        ? parseInt(value, 10)
+        : value;
     const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
 
     // Check if date is valid
@@ -312,7 +316,11 @@ export const parseFormattedValue = (
   formattedValue: string,
   fieldType: FieldType
 ): any => {
-  if (formattedValue === null || formattedValue === undefined || formattedValue === '') {
+  if (
+    formattedValue === null ||
+    formattedValue === undefined ||
+    formattedValue === ''
+  ) {
     return null;
   }
 
@@ -320,7 +328,10 @@ export const parseFormattedValue = (
     case FieldType.CHECKBOX_FIELD:
     case FieldType.SELECT_FIELD:
       // Split comma-separated values back into array
-      return formattedValue.split(',').map((v) => v.trim()).filter(Boolean);
+      return formattedValue
+        .split(',')
+        .map((v) => v.trim())
+        .filter(Boolean);
 
     case FieldType.DATE_FIELD:
       // Parse date string back to Date object
