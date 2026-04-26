@@ -275,11 +275,13 @@ jobs:
       - name: Export integration database environment
         run: |
           echo "DATABASE_URL=postgresql://dculus:dculus_dev_password@127.0.0.1:5543/dculus_forms?sslmode=disable&gssencmode=disable" >> $GITHUB_ENV
+          echo "DIRECT_URL=postgresql://dculus:dculus_dev_password@127.0.0.1:5543/dculus_forms?sslmode=disable&gssencmode=disable" >> $GITHUB_ENV
           echo "MANAGE_INTEGRATION_DOCKER=false" >> $GITHUB_ENV
 
       - name: Apply Prisma schema to integration database
         env:
           DATABASE_URL: ${{ env.DATABASE_URL }}
+          DIRECT_URL: ${{ env.DIRECT_URL }}
         run: pnpm --filter backend db:push
 
       - name: Run integration tests
@@ -287,6 +289,7 @@ jobs:
         env:
           NODE_ENV: test
           DATABASE_URL: ${{ env.DATABASE_URL }}
+          DIRECT_URL: ${{ env.DIRECT_URL }}
           MANAGE_INTEGRATION_DOCKER: ${{ env.MANAGE_INTEGRATION_DOCKER }}
         run: pnpm test:integration
 
