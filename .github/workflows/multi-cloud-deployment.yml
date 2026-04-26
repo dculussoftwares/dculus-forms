@@ -1,10 +1,11 @@
-name: Multi-Cloud Deployment (Cloudflare R2 + Azure Container Apps + Cloudflare Pages + Cloudflare DNS)
+name: Multi-Cloud Deployment (Cloudflare R2 + Azure Container Apps + Cloudflare
+  Pages + Cloudflare DNS)
 
 on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to deploy'
+        description: "Environment to deploy"
         required: true
         type: choice
         options:
@@ -12,16 +13,16 @@ on:
           - staging
           - production
       release_tag:
-        description: 'Git tag/version to deploy (e.g., v1.2.3)'
+        description: "Git tag/version to deploy (e.g., v1.2.3)"
         required: true
         type: string
       deploy_cloudflare:
-        description: 'Deploy Cloudflare R2 infrastructure'
+        description: "Deploy Cloudflare R2 infrastructure"
         required: false
         type: boolean
         default: true
       deploy_azure:
-        description: 'Deploy Azure Container Apps backend'
+        description: "Deploy Azure Container Apps backend"
         required: false
         type: boolean
         default: true
@@ -30,28 +31,28 @@ on:
     branches:
       - main
     paths:
-      - 'infrastructure/multi-cloud/terraform/**'
-      - '.github/workflows/multi-cloud-deployment.yml'
+      - "infrastructure/multi-cloud/terraform/**"
+      - ".github/workflows/multi-cloud-deployment.yml"
   workflow_run:
-    workflows: ["Build Pipeline"]
+    workflows: [ "Build Pipeline" ]
     types:
       - completed
     branches:
       - main
 
 permissions:
-  id-token: write      # Required for OIDC authentication with Azure
-  contents: read       # Required for checking out code
+  id-token: write # Required for OIDC authentication with Azure
+  contents: read # Required for checking out code
   pull-requests: write # Required for commenting on PRs
 
 env:
-  TERRAFORM_VERSION: '1.9.8'
-  CLOUDFLARE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare'
-  CLOUDFLARE_SERVICE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-service-domain'
-  CLOUDFLARE_PAGES_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages'
-  CLOUDFLARE_PAGES_ADMIN_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages-admin'
-  CLOUDFLARE_PAGES_VIEWER_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages-viewer'
-  AZURE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/azure'
+  TERRAFORM_VERSION: "1.9.8"
+  CLOUDFLARE_TERRAFORM_DIR: "dculus-forms/infrastructure/multi-cloud/terraform/cloudflare"
+  CLOUDFLARE_SERVICE_TERRAFORM_DIR: "dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-service-domain"
+  CLOUDFLARE_PAGES_TERRAFORM_DIR: "dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages"
+  CLOUDFLARE_PAGES_ADMIN_TERRAFORM_DIR: "dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages-admin"
+  CLOUDFLARE_PAGES_VIEWER_TERRAFORM_DIR: "dculus-forms/infrastructure/multi-cloud/terraform/cloudflare-pages-viewer"
+  AZURE_TERRAFORM_DIR: "dculus-forms/infrastructure/multi-cloud/terraform/azure"
 
 jobs:
   # ============================================================
@@ -67,7 +68,8 @@ jobs:
       deploy_cloudflare: ${{ steps.set-env.outputs.deploy_cloudflare }}
       deploy_azure: ${{ steps.set-env.outputs.deploy_azure }}
       release_tag: ${{ steps.set-env.outputs.release_tag }}
-      release_commit: ${{ steps.resolve-release.outputs.release_commit || steps.set-env.outputs.release_commit }}
+      release_commit: ${{ steps.resolve-release.outputs.release_commit ||
+        steps.set-env.outputs.release_commit }}
     steps:
       - name: Determine environment
         id: set-env
@@ -336,7 +338,7 @@ jobs:
   check-docker-image:
     name: 2.1. Validate Docker Image Availability
     runs-on: ubuntu-latest
-    needs: [determine-environment, setup-azure-backend]
+    needs: [ determine-environment, setup-azure-backend ]
     if: needs.determine-environment.outputs.deploy_azure == 'true'
     outputs:
       image_exists: ${{ steps.check-image.outputs.exists }}
@@ -357,7 +359,7 @@ jobs:
 
           # Try to pull the image manifest (without silencing output to see errors)
           echo "Executing: docker manifest inspect ${IMAGE_NAME}:${TAG}"
-          
+
           if docker manifest inspect "${IMAGE_NAME}:${TAG}"; then
             echo "✅ Docker image exists: ${IMAGE_NAME}:${TAG}"
             echo "exists=true" >> $GITHUB_OUTPUT
@@ -375,7 +377,7 @@ jobs:
   terraform-neon-deploy:
     name: 3.3. Deploy NeonDB Infrastructure
     runs-on: ubuntu-latest
-    needs: [determine-environment, setup-azure-backend]
+    needs: [ determine-environment, setup-azure-backend ]
     if: |
       always() && !cancelled() && !failure() &&
       needs.determine-environment.outputs.deploy_postgres == 'true'
@@ -385,7 +387,8 @@ jobs:
       database_host: ${{ steps.apply.outputs.database_host }}
     defaults:
       run:
-        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/neon-postgres/environments/${{ needs.determine-environment.outputs.environment }}
+        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/neon-postgres/environments/${{
+          needs.determine-environment.outputs.environment }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -463,7 +466,13 @@ jobs:
   terraform-infrastructure-deploy:
     name: 4.1. Deploy Core Infrastructure (R2 Storage + Azure Container Apps)
     runs-on: ubuntu-latest
-    needs: [determine-environment, setup-azure-backend, check-docker-image, terraform-neon-deploy]
+    needs:
+      [
+        determine-environment,
+        setup-azure-backend,
+        check-docker-image,
+        terraform-neon-deploy,
+      ]
     if: |
       always() && !cancelled() && !failure() &&
       (needs.determine-environment.outputs.deploy_cloudflare == 'true' ||
@@ -513,7 +522,8 @@ jobs:
       - name: Deploy Cloudflare R2
         id: cloudflare-deploy
         if: needs.determine-environment.outputs.deploy_cloudflare == 'true'
-        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/cloudflare/environments/${{ needs.determine-environment.outputs.environment }}
+        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/cloudflare/environments/${{
+          needs.determine-environment.outputs.environment }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -566,55 +576,20 @@ jobs:
           echo "public_cdn_url=${{ env.R2_PUBLIC_CDN_URL }}" >> $GITHUB_OUTPUT
 
       # ==================== AZURE CONTAINER APPS DEPLOYMENT ====================
-      - name: Retrieve Neon DB connection string from Terraform state
+      - name: Set database connection string
         id: get-postgres-connection
         if: needs.determine-environment.outputs.deploy_azure == 'true'
-        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/neon-postgres/environments/${{ needs.determine-environment.outputs.environment }}
-        env:
-          TF_VAR_neon_api_key: ${{ secrets.NEON_API_KEY }}
         run: |
-          # If Neon DB was deployed in this run, use its output
-          if [ -n "${{ needs.terraform-neon-deploy.outputs.connection_string }}" ]; then
-            echo "Using Neon DB connection string from current deployment"
-            echo "connection_string=${{ needs.terraform-neon-deploy.outputs.connection_string }}" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          # Otherwise, retrieve from existing Terraform state
-          echo "Retrieving Neon DB connection string from Terraform state..."
-
-          # Copy shared Terraform files (needed for state access)
-          cp ../../main.tf .
-          cp ../../variables.tf .
-          cp ../../outputs.tf .
-          cp ../../versions.tf .
-
-          # Initialize Terraform to access remote state
-          terraform init \
-            -backend-config="resource_group_name=dculus-global-terraform-assets-resource-grp" \
-            -backend-config="storage_account_name=dculusterraformstates" \
-            -backend-config="container_name=dculus-forms-neon-${{ needs.determine-environment.outputs.environment }}-state" \
-            -backend-config="key=terraform.tfstate"
-
-          # Retrieve connection string from state
-          CONNECTION_STRING=$(terraform output -raw connection_string 2>/dev/null || echo "")
-
-          if [ -z "$CONNECTION_STRING" ]; then
-            echo "❌ Error: Could not retrieve Neon DB connection string from Terraform state"
-            echo "💡 Tip: Ensure Neon DB has been deployed (deploy_postgres=true)"
-            exit 1
-          fi
-
-          echo "✅ Retrieved Neon DB connection string from existing infrastructure"
-          echo "::add-mask::$CONNECTION_STRING"
-          echo "connection_string=$CONNECTION_STRING" >> $GITHUB_OUTPUT
+          echo "::add-mask::${{ secrets.DATABASE_URL }}"
+          echo "connection_string=${{ secrets.DATABASE_URL }}" >> $GITHUB_OUTPUT
 
       - name: Deploy Azure Container Apps
         id: azure-deploy
         if: needs.determine-environment.outputs.deploy_azure == 'true'
-        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/azure/environments/${{ needs.determine-environment.outputs.environment }}
+        working-directory: dculus-forms/infrastructure/multi-cloud/terraform/azure/environments/${{
+          needs.determine-environment.outputs.environment }}
         env:
-          TF_VAR_postgres_connection_string: ${{ steps.get-postgres-connection.outputs.connection_string }}
+          TF_VAR_postgres_connection_string: ${{ secrets.DATABASE_URL }}
           TF_VAR_better_auth_secret: ${{ secrets.BETTER_AUTH_SECRET }}
           TF_VAR_public_s3_access_key: ${{ env.R2_ACCESS_KEY_ID }}
           TF_VAR_public_s3_secret_key: ${{ env.R2_SECRET_ACCESS_KEY }}
@@ -681,7 +656,8 @@ jobs:
 
       - name: Set Azure outputs
         id: azure-outputs
-        if: needs.determine-environment.outputs.deploy_azure == 'true' && needs.determine-environment.outputs.should_deploy == 'true'
+        if: needs.determine-environment.outputs.deploy_azure == 'true' &&
+          needs.determine-environment.outputs.should_deploy == 'true'
         run: |
           echo "backend_url=${{ env.BACKEND_URL }}" >> $GITHUB_OUTPUT
           echo "backend_fqdn=${{ env.BACKEND_FQDN }}" >> $GITHUB_OUTPUT
@@ -696,7 +672,12 @@ jobs:
   terraform-cloudflare-service-domain:
     name: 5.1. Configure Backend Service Domain DNS
     runs-on: ubuntu-latest
-    needs: [determine-environment, setup-azure-backend, terraform-infrastructure-deploy]
+    needs:
+      [
+        determine-environment,
+        setup-azure-backend,
+        terraform-infrastructure-deploy,
+      ]
     if: |
       always() && !cancelled() && !failure() &&
       needs.determine-environment.outputs.should_deploy == 'true' &&
@@ -709,7 +690,8 @@ jobs:
       target_backend_fqdn: ${{ steps.apply.outputs.target_backend_fqdn }}
     defaults:
       run:
-        working-directory: ${{ env.CLOUDFLARE_SERVICE_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
+        working-directory: ${{ env.CLOUDFLARE_SERVICE_TERRAFORM_DIR }}/environments/${{
+          needs.determine-environment.outputs.environment }}
     env:
       TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
       TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -783,7 +765,12 @@ jobs:
   terraform-cloudflare-pages:
     name: 5.2. Setup Pages Infrastructure & Domain (form-app)
     runs-on: ubuntu-latest
-    needs: [determine-environment, setup-azure-backend, terraform-infrastructure-deploy]
+    needs:
+      [
+        determine-environment,
+        setup-azure-backend,
+        terraform-infrastructure-deploy,
+      ]
     if: |
       always() && !cancelled() && !failure() &&
       needs.determine-environment.outputs.should_deploy == 'true' &&
@@ -796,7 +783,8 @@ jobs:
       custom_domain: ${{ steps.apply.outputs.custom_domain }}
     defaults:
       run:
-        working-directory: ${{ env.CLOUDFLARE_PAGES_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
+        working-directory: ${{ env.CLOUDFLARE_PAGES_TERRAFORM_DIR }}/environments/${{
+          needs.determine-environment.outputs.environment }}
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -903,7 +891,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
@@ -929,8 +917,11 @@ jobs:
       - name: Build form-app with environment-specific variables
         working-directory: ./source
         env:
-          VITE_GRAPHQL_URL: https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}/graphql
-          VITE_API_URL: https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}
+          VITE_GRAPHQL_URL: https://${{
+            needs.terraform-cloudflare-service-domain.outputs.service_domain
+            }}/graphql
+          VITE_API_URL: https://${{
+            needs.terraform-cloudflare-service-domain.outputs.service_domain }}
           VITE_CDN_ENDPOINT: ${{ needs.terraform-infrastructure-deploy.outputs.public_cdn_url }}
           VITE_PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           VITE_FORM_VIEWER_URL: ${{ needs.terraform-cloudflare-pages-viewer.outputs.custom_domain }}
@@ -974,14 +965,14 @@ jobs:
           CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
         run: |
           echo "🔄 Purging Cloudflare cache for immediate visibility..."
-          
+
           PURGE_RESPONSE=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
             -H "Content-Type: application/json" \
             --data '{"purge_everything":true}' \
             --silent \
             --show-error)
-          
+
           if echo "$PURGE_RESPONSE" | grep -q '"success":true'; then
             echo "✅ Cache purged successfully"
             echo "💡 Changes should be visible immediately without CDN cache delays"
@@ -1042,7 +1033,12 @@ jobs:
   terraform-cloudflare-pages-admin:
     name: 5.3. Setup Pages Infrastructure & Domain (admin-app)
     runs-on: ubuntu-latest
-    needs: [determine-environment, setup-azure-backend, terraform-infrastructure-deploy]
+    needs:
+      [
+        determine-environment,
+        setup-azure-backend,
+        terraform-infrastructure-deploy,
+      ]
     if: |
       always() && !cancelled() && !failure() &&
       needs.determine-environment.outputs.should_deploy == 'true' &&
@@ -1055,7 +1051,8 @@ jobs:
       custom_domain: ${{ steps.apply.outputs.custom_domain }}
     defaults:
       run:
-        working-directory: ${{ env.CLOUDFLARE_PAGES_ADMIN_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
+        working-directory: ${{ env.CLOUDFLARE_PAGES_ADMIN_TERRAFORM_DIR
+          }}/environments/${{ needs.determine-environment.outputs.environment }}
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -1156,7 +1153,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
@@ -1182,8 +1179,11 @@ jobs:
       - name: Build admin-app with environment-specific variables
         working-directory: ./source
         env:
-          VITE_GRAPHQL_URL: https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}/graphql
-          VITE_API_URL: https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}
+          VITE_GRAPHQL_URL: https://${{
+            needs.terraform-cloudflare-service-domain.outputs.service_domain
+            }}/graphql
+          VITE_API_URL: https://${{
+            needs.terraform-cloudflare-service-domain.outputs.service_domain }}
           VITE_CDN_ENDPOINT: ${{ needs.terraform-infrastructure-deploy.outputs.public_cdn_url }}
         run: |
           echo "🔨 Building admin-app for environment: ${{ needs.determine-environment.outputs.environment }}"
@@ -1224,14 +1224,14 @@ jobs:
           CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
         run: |
           echo "🔄 Purging Cloudflare cache for immediate visibility..."
-          
+
           PURGE_RESPONSE=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
             -H "Content-Type: application/json" \
             --data '{"purge_everything":true}' \
             --silent \
             --show-error)
-          
+
           if echo "$PURGE_RESPONSE" | grep -q '"success":true'; then
             echo "✅ Cache purged successfully"
             echo "💡 Changes should be visible immediately without CDN cache delays"
@@ -1292,7 +1292,12 @@ jobs:
   terraform-cloudflare-pages-viewer:
     name: 5.4. Setup Pages Infrastructure & Domain (form-viewer)
     runs-on: ubuntu-latest
-    needs: [determine-environment, setup-azure-backend, terraform-infrastructure-deploy]
+    needs:
+      [
+        determine-environment,
+        setup-azure-backend,
+        terraform-infrastructure-deploy,
+      ]
     if: |
       always() && !cancelled() && !failure() &&
       needs.determine-environment.outputs.should_deploy == 'true' &&
@@ -1305,7 +1310,8 @@ jobs:
       custom_domain: ${{ steps.apply.outputs.custom_domain }}
     defaults:
       run:
-        working-directory: ${{ env.CLOUDFLARE_PAGES_VIEWER_TERRAFORM_DIR }}/environments/${{ needs.determine-environment.outputs.environment }}
+        working-directory: ${{ env.CLOUDFLARE_PAGES_VIEWER_TERRAFORM_DIR
+          }}/environments/${{ needs.determine-environment.outputs.environment }}
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -1406,7 +1412,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
@@ -1432,8 +1438,11 @@ jobs:
       - name: Build form-viewer with environment-specific variables
         working-directory: ./source
         env:
-          VITE_GRAPHQL_URL: https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}/graphql
-          VITE_API_URL: https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}
+          VITE_GRAPHQL_URL: https://${{
+            needs.terraform-cloudflare-service-domain.outputs.service_domain
+            }}/graphql
+          VITE_API_URL: https://${{
+            needs.terraform-cloudflare-service-domain.outputs.service_domain }}
           VITE_CDN_ENDPOINT: ${{ needs.terraform-infrastructure-deploy.outputs.public_cdn_url }}
         run: |
           echo "🔨 Building form-viewer for environment: ${{ needs.determine-environment.outputs.environment }}"
@@ -1474,14 +1483,14 @@ jobs:
           CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
         run: |
           echo "🔄 Purging Cloudflare cache for immediate visibility..."
-          
+
           PURGE_RESPONSE=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
             -H "Content-Type: application/json" \
             --data '{"purge_everything":true}' \
             --silent \
             --show-error)
-          
+
           if echo "$PURGE_RESPONSE" | grep -q '"success":true'; then
             echo "✅ Cache purged successfully"
             echo "💡 Changes should be visible immediately without CDN cache delays"
@@ -1558,8 +1567,8 @@ jobs:
       E2E_FORM_APP_URL: ${{ secrets.E2E_INTEGRATION_TEST_FORM_APP_URL }}
       E2E_BACKEND_URL: ${{ secrets.E2E_INTEGRATION_TEST_BACKEND_URL }}
       E2E_FORM_VIEWER_URL: ${{ secrets.E2E_INTEGRATION_TEST_FORM_VIEWER_URL }}
-      E2E_HEADLESS: 'true'
-      CI: 'true'
+      E2E_HEADLESS: "true"
+      CI: "true"
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -1577,7 +1586,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
@@ -1612,7 +1621,12 @@ jobs:
   configure-azure-custom-domain:
     name: 7.1. Configure Backend SSL Certificate
     runs-on: ubuntu-latest
-    needs: [determine-environment, terraform-infrastructure-deploy, terraform-cloudflare-service-domain]
+    needs:
+      [
+        determine-environment,
+        terraform-infrastructure-deploy,
+        terraform-cloudflare-service-domain,
+      ]
     if: |
       always() && !cancelled() && !failure() &&
       needs.determine-environment.outputs.should_deploy == 'true' &&
@@ -1688,7 +1702,7 @@ jobs:
   health-checks:
     name: 8.1. Run Health Checks
     runs-on: ubuntu-latest
-    needs: [determine-environment, terraform-infrastructure-deploy]
+    needs: [ determine-environment, terraform-infrastructure-deploy ]
     if: |
       always() && !cancelled() &&
       needs.terraform-infrastructure-deploy.result == 'success'
@@ -1746,20 +1760,21 @@ jobs:
   deployment-summary:
     name: 9.1. Generate Deployment Summary
     runs-on: ubuntu-latest
-    needs: [
-      determine-environment,
-      terraform-infrastructure-deploy,
-      terraform-cloudflare-service-domain,
-      terraform-cloudflare-pages,
-      terraform-cloudflare-pages-admin,
-      terraform-cloudflare-pages-viewer,
-      deploy-cloudflare-pages-form-app,
-      deploy-cloudflare-pages-admin-app,
-      deploy-cloudflare-pages-viewer-app,
-      run-form-app-e2e,
-      configure-azure-custom-domain,
-      health-checks
-    ]
+    needs:
+      [
+        determine-environment,
+        terraform-infrastructure-deploy,
+        terraform-cloudflare-service-domain,
+        terraform-cloudflare-pages,
+        terraform-cloudflare-pages-admin,
+        terraform-cloudflare-pages-viewer,
+        deploy-cloudflare-pages-form-app,
+        deploy-cloudflare-pages-admin-app,
+        deploy-cloudflare-pages-viewer-app,
+        run-form-app-e2e,
+        configure-azure-custom-domain,
+        health-checks,
+      ]
     if: always()
     steps:
       - name: Generate Summary
