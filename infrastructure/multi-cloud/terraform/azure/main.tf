@@ -105,6 +105,10 @@ resource "azurerm_container_app" "backend" {
         value = var.postgres_connection_string
       }
 
+      env {
+        name  = "DIRECT_URL"
+        value = var.postgres_direct_url
+      }
 
       env {
         name  = "BETTER_AUTH_SECRET"

@@ -590,6 +590,7 @@ jobs:
           needs.determine-environment.outputs.environment }}
         env:
           TF_VAR_postgres_connection_string: ${{ secrets.DATABASE_URL }}
+          TF_VAR_postgres_direct_url: ${{ secrets.DIRECT_URL }}
           TF_VAR_better_auth_secret: ${{ secrets.BETTER_AUTH_SECRET }}
           TF_VAR_public_s3_access_key: ${{ env.R2_ACCESS_KEY_ID }}
           TF_VAR_public_s3_secret_key: ${{ env.R2_SECRET_ACCESS_KEY }}
