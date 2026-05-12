@@ -843,14 +843,12 @@ export const FileUploadFieldAnalytics: React.FC<
         <StatCard
           title="Responses with Files"
           value={data.responsesWithFiles}
-          icon={<FileCheck className="h-5 w-5" />}
-          color="green"
+          icon={<FileCheck className="h-5 w-5 text-green-500" />}
         />
         <StatCard
           title="Responses without Files"
           value={data.responsesWithoutFiles}
-          icon={<FileX className="h-5 w-5" />}
-          color="red"
+          icon={<FileX className="h-5 w-5 text-red-500" />}
         />
       </div>
 
