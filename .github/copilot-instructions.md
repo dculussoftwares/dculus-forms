@@ -118,37 +118,45 @@ dculus-forms/
 
 ## Technology Stack
 
-| Layer          | Technology                                          |
-|----------------|-----------------------------------------------------|
-| Frontend       | React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui |
-| State          | Apollo Client (server), Zustand (local forms)       |
-| GraphQL Client | `@apollo/client` with `useQuery` / `useMutation`    |
+| Layer          | Technology                                           |
+| -------------- | ---------------------------------------------------- |
+| Frontend       | React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui  |
+| State          | Apollo Client (server), Zustand (local forms)        |
+| GraphQL Client | `@apollo/client` with `useQuery` / `useMutation`     |
 | Backend        | Express.js, Apollo Server (code-first SDL via `gql`) |
-| Database       | PostgreSQL + Prisma ORM                             |
-| Auth           | better-auth (cookie + bearer, org plugin, admin)    |
-| Realtime       | Y.js + Hocuspocus (WebSocket collab editing)        |
-| Subscriptions  | Chargebee (Free, Starter, Advanced plans)           |
-| Validation     | Zod (frontend + backend)                            |
-| i18n           | Custom hook (`useTranslation`) with JSON files      |
-| Testing        | Playwright + Cucumber (E2E), Cucumber.js (API)      |
-| CI/CD          | GitHub Actions → Azure Container Apps + Cloudflare  |
-| Package Mgr    | pnpm 8+ with workspaces                             |
+| Database       | PostgreSQL + Prisma ORM                              |
+| Auth           | better-auth (cookie + bearer, org plugin, admin)     |
+| Realtime       | Y.js + Hocuspocus (WebSocket collab editing)         |
+| Subscriptions  | Chargebee (Free, Starter, Advanced plans)            |
+| Validation     | Zod (frontend + backend)                             |
+| i18n           | Custom hook (`useTranslation`) with JSON files       |
+| Testing        | Playwright + Cucumber (E2E), Cucumber.js (API)       |
+| CI/CD          | GitHub Actions → Azure Container Apps + Cloudflare   |
+| Package Mgr    | pnpm 8+ with workspaces                              |
 
 ---
 
 ## Critical Rules — ALWAYS Follow
 
 ### 1. GraphQL-First
+
 - **All data operations** go through GraphQL. No REST endpoints except `better-auth` routes.
 - Schema defined in `apps/backend/src/graphql/schema.ts` using `gql` tagged template.
 - Resolvers are domain-split in `apps/backend/src/graphql/resolvers/`.
 - Register new resolvers in `apps/backend/src/graphql/resolvers.ts` barrel.
 
 ### 2. Import from Shared Packages Only
+
 ```typescript
 // ✅ CORRECT — always import from shared packages
 import { Button, Card, Dialog } from '@dculus/ui';
-import { generateId, cn, RendererMode, getImageUrl, API_ENDPOINTS } from '@dculus/utils';
+import {
+  generateId,
+  cn,
+  RendererMode,
+  getImageUrl,
+  API_ENDPOINTS,
+} from '@dculus/utils';
 import type { Form, FormSchema, FormPage, User } from '@dculus/types';
 import { TextInputField, EmailField, FillableFormField } from '@dculus/types';
 
@@ -157,15 +165,18 @@ import { Button } from '../../../packages/ui/src/button';
 ```
 
 ### 3. TypeScript Strict Mode
+
 - All code fully typed. No `any` unless absolutely necessary.
 - Use Zod schemas for runtime validation.
 - Use generics and utility types where appropriate.
 
 ### 4. Functional Programming
+
 - Prefer pure functions, immutability, and composition.
 - Exception: `FormField` class hierarchy in `@dculus/types` uses OOP inheritance.
 
 ### 5. Internationalization (i18n)
+
 - **Every user-facing string must be translated.** No hardcoded text in JSX.
 - Use: `const { t } = useTranslation('namespace');` then `{t('key.path')}`.
 - Translation files: `apps/form-app/src/locales/{en,ta}/*.json`.
@@ -177,23 +188,24 @@ import { Button } from '../../../packages/ui/src/button';
 
 ### Core Models
 
-| Model | Key Fields | Notes |
-|-------|-----------|-------|
-| `User` | id, name, email, role (`user`/`admin`/`superAdmin`), banned | better-auth managed |
-| `Organization` | id, name, slug, logo, metadata | Multi-tenant container |
-| `Member` | organizationId, userId, role (`member`/`owner`) | Org membership |
-| `Form` | id, title, shortUrl, formSchema (JSON), settings (JSON), isPublished, sharingScope, defaultPermission | Core entity |
-| `Response` | id, formId, data (JSONB), metadata (JSONB) | Form submissions |
-| `FormPermission` | formId, userId, permission (`OWNER`/`EDITOR`/`VIEWER`/`NO_ACCESS`) | ACL |
-| `FormPlugin` | formId, type, name, enabled, config (JSON), events[] | Plugin config |
-| `PluginDelivery` | pluginId, eventType, status, payload, response | Plugin execution log |
-| `CollaborativeDocument` | documentName, state (Bytes) | Y.js persistence |
-| `FormViewAnalytics` | formId, sessionId, geo/device fields | Privacy-first views |
-| `FormSubmissionAnalytics` | formId, responseId, sessionId, completionTimeSeconds | Submission tracking |
-| `Subscription` | organizationId, planId, status, usage counters | Chargebee billing |
-| `ResponseEditHistory` | responseId, editedById, fieldChanges[] | Audit trail |
+| Model                     | Key Fields                                                                                            | Notes                  |
+| ------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------- |
+| `User`                    | id, name, email, role (`user`/`admin`/`superAdmin`), banned                                           | better-auth managed    |
+| `Organization`            | id, name, slug, logo, metadata                                                                        | Multi-tenant container |
+| `Member`                  | organizationId, userId, role (`member`/`owner`)                                                       | Org membership         |
+| `Form`                    | id, title, shortUrl, formSchema (JSON), settings (JSON), isPublished, sharingScope, defaultPermission | Core entity            |
+| `Response`                | id, formId, data (JSONB), metadata (JSONB)                                                            | Form submissions       |
+| `FormPermission`          | formId, userId, permission (`OWNER`/`EDITOR`/`VIEWER`/`NO_ACCESS`)                                    | ACL                    |
+| `FormPlugin`              | formId, type, name, enabled, config (JSON), events[]                                                  | Plugin config          |
+| `PluginDelivery`          | pluginId, eventType, status, payload, response                                                        | Plugin execution log   |
+| `CollaborativeDocument`   | documentName, state (Bytes)                                                                           | Y.js persistence       |
+| `FormViewAnalytics`       | formId, sessionId, geo/device fields                                                                  | Privacy-first views    |
+| `FormSubmissionAnalytics` | formId, responseId, sessionId, completionTimeSeconds                                                  | Submission tracking    |
+| `Subscription`            | organizationId, planId, status, usage counters                                                        | Chargebee billing      |
+| `ResponseEditHistory`     | responseId, editedById, fieldChanges[]                                                                | Audit trail            |
 
 ### Sharing Scopes
+
 - `PRIVATE` — Only users with explicit `FormPermission`
 - `SPECIFIC_MEMBERS` — Selected org members
 - `ALL_ORG_MEMBERS` — All org members get `defaultPermission`
@@ -203,19 +215,24 @@ import { Button } from '../../../packages/ui/src/button';
 ## FormSchema & Field System
 
 ### Schema Structure
+
 ```typescript
 interface FormSchema {
   pages: FormPage[];
-  layout: FormLayout;        // theme, spacing, backgroundImageKey
+  layout: FormLayout; // theme, spacing, backgroundImageKey
   isShuffleEnabled: boolean;
 }
 
 interface FormPage {
-  id: string; title: string; fields: FormField[]; order: number;
+  id: string;
+  title: string;
+  fields: FormField[];
+  order: number;
 }
 ```
 
 ### Field Class Hierarchy
+
 ```
 FormField (base: id, type)
 ├── FillableFormField (label, defaultValue, hint, validation{required, minLength, maxLength})
@@ -232,12 +249,13 @@ FormField (base: id, type)
 ```
 
 ### Serialization (CRITICAL)
+
 ```typescript
 // Always serialize before storing in DB or Y.js
-serializeFormField(field) / serializeFormSchema(schema)
+serializeFormField(field) / serializeFormSchema(schema);
 
 // Always deserialize when reading from DB or Y.js
-deserializeFormField(data) / deserializeFormSchema(data)
+deserializeFormField(data) / deserializeFormSchema(data);
 ```
 
 ---
@@ -246,11 +264,11 @@ deserializeFormField(data) / deserializeFormSchema(data)
 
 Forms render differently based on context:
 
-| Mode | Purpose | Labels Editable | Fields Interactive | Validation |
-|------|---------|-----------------|-------------------|------------|
-| `BUILDER` | Form editing | ✅ (in edit mode) | ❌ | ❌ |
-| `PREVIEW` | Read-only | ❌ | ✅ | ✅ |
-| `SUBMISSION` | User submits | ❌ | ✅ | ✅ |
+| Mode         | Purpose      | Labels Editable   | Fields Interactive | Validation |
+| ------------ | ------------ | ----------------- | ------------------ | ---------- |
+| `BUILDER`    | Form editing | ✅ (in edit mode) | ❌                 | ❌         |
+| `PREVIEW`    | Read-only    | ❌                | ✅                 | ✅         |
+| `SUBMISSION` | User submits | ❌                | ✅                 | ✅         |
 
 Pass mode: `LayoutRenderer` → Layout (L1–L9) → `PageRenderer` → `FormFieldRenderer`.
 
@@ -259,22 +277,26 @@ Pass mode: `LayoutRenderer` → Layout (L1–L9) → `PageRenderer` → `FormFie
 ## Authentication & Authorization
 
 ### better-auth
+
 - Config: `apps/backend/src/lib/better-auth.ts`
 - Plugins: bearer tokens, organization, admin, emailOTP
 - Sessions: Cookie-based (7-day) + Bearer token support
 
 ### Roles
+
 - **System**: `user` → `admin` → `superAdmin`
 - **Org**: `member` → `owner`
 - **Form**: `VIEWER` → `EDITOR` → `OWNER`
 
 ### Context Pattern (Backend)
+
 ```typescript
 const { userId, organizationId } = await getUserAndOrgFromContext(context);
 if (!userId) throw new Error('Authentication required');
 ```
 
 ### Admin App
+
 - Cookie-based auth (NOT bearer). Apollo uses `credentials: 'include'`.
 - Default admin: `admin@dculus.com` / `admin123!@#` (role: `superAdmin`).
 
@@ -293,17 +315,20 @@ if (!userId) throw new Error('Authentication required');
 ## Plugin System (Event-Driven)
 
 ### Built-in Plugin Types
+
 - `webhook` — HTTP POST to external URL
 - `email` — Email notifications
 - `quiz-grading` — Auto-grade quiz responses
 
 ### Events
+
 ```typescript
-'form.submitted'  // Triggers enabled plugins
-'plugin.test'     // Manual test trigger
+'form.submitted'; // Triggers enabled plugins
+'plugin.test'; // Manual test trigger
 ```
 
 ### Adding a New Plugin
+
 1. Create handler: `apps/backend/src/plugins/{type}/handler.ts`
 2. Register: `apps/backend/src/plugins/registry.ts`
 3. Frontend UI: `apps/form-app/src/components/plugins/`
@@ -313,12 +338,14 @@ if (!userId) throw new Error('Authentication required');
 ## State Management
 
 ### Apollo Client (Server State)
+
 ```typescript
 const { data } = useQuery(GET_FORM, { variables: { id } });
 const [updateForm] = useMutation(UPDATE_FORM);
 ```
 
 ### Zustand Store (Form Responses — `@dculus/ui`)
+
 ```typescript
 const { setFieldValue, getFieldValue } = useFormResponseStore();
 const { getFormattedResponses } = useFormResponseUtils();
@@ -352,8 +379,11 @@ pnpm lint               # ESLint
 # Testing
 pnpm test:integration              # API integration tests
 pnpm test:integration:production   # Against production
+pnpm test:integration:by-tags      # Filter by Cucumber tag (e.g., @forms)
 pnpm test:e2e                      # Playwright + Cucumber E2E
 pnpm test:unit                     # Backend unit tests
+pnpm test:unit:watch               # Unit tests in watch mode
+pnpm test:unit:coverage            # Unit tests with coverage
 ```
 
 ---
@@ -361,6 +391,7 @@ pnpm test:unit                     # Backend unit tests
 ## Common Patterns
 
 ### Toast Notifications
+
 ```typescript
 import { toastSuccess, toastError } from '@dculus/ui';
 toastSuccess('Form created', 'Ready for editing');
@@ -368,6 +399,7 @@ toastError('Permission denied', 'Need EDITOR access');
 ```
 
 ### Icon Design Pattern
+
 ```tsx
 <div className="bg-blue-50 p-3 rounded-xl">
   <YourIcon className="h-5 w-5 text-blue-600" />
@@ -375,16 +407,28 @@ toastError('Permission denied', 'Need EDITOR access');
 ```
 
 ### GraphQL Error Handling
+
+Always use `createGraphQLError` with a typed code from `GRAPHQL_ERROR_CODES`. Never `throw new Error()` in resolvers.
+
 ```typescript
-try {
-  return await businessLogic();
-} catch (error) {
-  console.error('Error in resolver:', error);
-  throw new Error('User-friendly message');
-}
+import { createGraphQLError } from '../lib/graphqlErrors.js';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
+
+// ✅ CORRECT — typed error with code
+throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
+throw createGraphQLError(
+  'Authentication required',
+  GRAPHQL_ERROR_CODES.AUTHENTICATION_REQUIRED
+);
+
+// ❌ WRONG — untyped, bypasses Apollo error normalization
+throw new Error('Form not found');
 ```
 
+Available codes are defined in `packages/types/src/graphql.ts` — covers auth, not-found, business logic, file upload, and validation categories.
+
 ### File Uploads
+
 - Upload via GraphQL: `uploadFile(input: UploadFileInput!)` returns `{ key, url }`
 - URL construction: `getImageUrl(key)` from `@dculus/utils`
 - Storage: `static-files/` directory
@@ -393,14 +437,15 @@ try {
 
 ## Deployment
 
-| Component | Platform | URL |
-|-----------|----------|-----|
-| Backend | Azure Container Apps | `https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io` |
-| Form App | Cloudflare Pages | `https://dculus-forms-app.pages.dev` |
-| Form Viewer | Cloudflare Pages | `https://dculus-forms-viewer-app.pages.dev` |
-| Database | PostgreSQL (Neon/Azure) | Via `DATABASE_URL` env var |
+| Component   | Platform                | URL                                                                          |
+| ----------- | ----------------------- | ---------------------------------------------------------------------------- |
+| Backend     | Azure Container Apps    | `https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io` |
+| Form App    | Cloudflare Pages        | `https://dculus-forms-app.pages.dev`                                         |
+| Form Viewer | Cloudflare Pages        | `https://dculus-forms-viewer-app.pages.dev`                                  |
+| Database    | PostgreSQL (Neon/Azure) | Via `DATABASE_URL` env var                                                   |
 
 ### Environment Variables (Backend)
+
 ```bash
 DATABASE_URL="postgresql://..."
 BETTER_AUTH_SECRET="..."
@@ -411,21 +456,21 @@ BETTER_AUTH_BASE_URL="http://localhost:4000"
 
 ## Quick Reference Table
 
-| Task | Location |
-|------|----------|
-| Add GraphQL type/query/mutation | `apps/backend/src/graphql/schema.ts` |
-| Add GraphQL resolver | `apps/backend/src/graphql/resolvers/{domain}.ts` → register in `resolvers.ts` |
-| Add business logic | `apps/backend/src/services/{service}.ts` |
-| Create shared UI component | `packages/ui/src/{component}.tsx` → export from `index.ts` |
-| Add shared utility | `packages/utils/src/index.ts` |
-| Define shared type | `packages/types/src/index.ts` |
-| Add new field type | Extend `FillableFormField` in `@dculus/types` |
-| Add form layout | `packages/ui/src/layouts/L{N}.tsx` |
-| Add page component | `apps/{app}/src/pages/{Page}.tsx` |
-| Add translation | `apps/form-app/src/locales/{lang}/{namespace}.json` → register in `index.ts` |
-| Add integration test | `test/integration/features/*.feature` + `step-definitions/*.steps.ts` |
-| Add E2E test | `test/e2e/features/*.feature` + Playwright steps |
-| Add plugin handler | `apps/backend/src/plugins/{type}/handler.ts` → register in `registry.ts` |
+| Task                            | Location                                                                      |
+| ------------------------------- | ----------------------------------------------------------------------------- |
+| Add GraphQL type/query/mutation | `apps/backend/src/graphql/schema.ts`                                          |
+| Add GraphQL resolver            | `apps/backend/src/graphql/resolvers/{domain}.ts` → register in `resolvers.ts` |
+| Add business logic              | `apps/backend/src/services/{service}.ts`                                      |
+| Create shared UI component      | `packages/ui/src/{component}.tsx` → export from `index.ts`                    |
+| Add shared utility              | `packages/utils/src/index.ts`                                                 |
+| Define shared type              | `packages/types/src/index.ts`                                                 |
+| Add new field type              | Extend `FillableFormField` in `@dculus/types`                                 |
+| Add form layout                 | `packages/ui/src/layouts/L{N}.tsx`                                            |
+| Add page component              | `apps/{app}/src/pages/{Page}.tsx`                                             |
+| Add translation                 | `apps/form-app/src/locales/{lang}/{namespace}.json` → register in `index.ts`  |
+| Add integration test            | `test/integration/features/*.feature` + `step-definitions/*.steps.ts`         |
+| Add E2E test                    | `test/e2e/features/*.feature` + Playwright steps                              |
+| Add plugin handler              | `apps/backend/src/plugins/{type}/handler.ts` → register in `registry.ts`      |
 
 ---
 
