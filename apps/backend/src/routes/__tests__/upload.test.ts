@@ -143,7 +143,10 @@ describe('Upload Routes', () => {
         .field('type', 'FormBackground');
 
       expect(response.status).toBe(400);
-      expect(response.body).toEqual({ error: 'No file provided', code: 'BAD_USER_INPUT' });
+      expect(response.body).toEqual({
+        error: 'No file provided',
+        code: 'BAD_USER_INPUT',
+      });
       expect(uploadFile).not.toHaveBeenCalled();
     });
 
@@ -153,14 +156,17 @@ describe('Upload Routes', () => {
         .attach('file', Buffer.from('test file content'), 'test.jpg');
 
       expect(response.status).toBe(400);
-      expect(response.body).toEqual({ error: 'File type is required', code: 'BAD_USER_INPUT' });
+      expect(response.body).toEqual({
+        error: 'File type is required',
+        code: 'BAD_USER_INPUT',
+      });
       expect(uploadFile).not.toHaveBeenCalled();
     });
 
     it('should handle file size limit exceeded (multer error)', async () => {
-      // Multer will reject files exceeding the 5MB limit automatically
-      // This test verifies the error handling
-      const largeBuffer = Buffer.alloc(6 * 1024 * 1024); // 6MB
+      // Multer rejects files exceeding the 50MB limit automatically.
+      // Send 51MB to reliably trigger LIMIT_FILE_SIZE.
+      const largeBuffer = Buffer.alloc(51 * 1024 * 1024); // 51MB
 
       const response = await request(app)
         .post('/api/upload/upload')
@@ -184,7 +190,10 @@ describe('Upload Routes', () => {
         error: 'Failed to upload file: S3 upload failed',
         code: 'UPLOAD_FAILED',
       });
-      expect(logger.error).toHaveBeenCalledWith('Error uploading file:', expect.any(Error));
+      expect(logger.error).toHaveBeenCalledWith(
+        'Error uploading file:',
+        expect.any(Error)
+      );
     });
 
     it('should handle FormFile creation errors', async () => {
@@ -198,7 +207,9 @@ describe('Upload Routes', () => {
       };
 
       vi.mocked(uploadFile).mockResolvedValue(mockResult);
-      vi.mocked(prisma.formFile.create).mockRejectedValue(new Error('Database error'));
+      vi.mocked(prisma.formFile.create).mockRejectedValue(
+        new Error('Database error')
+      );
 
       const response = await request(app)
         .post('/api/upload/upload')
@@ -261,7 +272,6 @@ describe('Upload Routes', () => {
         'FormTemplate',
         'UserAvatar',
         'OrganizationLogo',
-        'Other',
       ];
 
       for (const type of types) {
