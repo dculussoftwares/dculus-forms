@@ -47,7 +47,50 @@ const ALLOWED_IMAGE_TYPES = [
   'image/gif',
 ];
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB (for image uploads; FormResponse uses multer limit)
+
+/**
+ * Bucket routing — determines which R2 bucket and access model each upload type uses.
+ *
+ * PUBLIC  → publicBucketName  + ACL: public-read  (served via CDN, no auth needed)
+ * PRIVATE → privateBucketName + no ACL            (accessed only via pre-signed URLs)
+ */
+type BucketMode = 'PUBLIC' | 'PRIVATE';
+
+const UPLOAD_TYPE_BUCKET_MAP: Record<string, BucketMode> = {
+  FormTemplate: 'PUBLIC', // Template thumbnails shown in the UI
+  FormBackground: 'PUBLIC', // Form background images served in the viewer
+  UserAvatar: 'PUBLIC', // Profile pictures shown across the app
+  OrganizationLogo: 'PUBLIC', // Org logos shown in the UI
+  FormResponse: 'PRIVATE', // Respondent-uploaded files — only form owners/editors may access
+};
+
+function getBucketForType(type: string): {
+  bucketName: string;
+  mode: BucketMode;
+} {
+  const mode = UPLOAD_TYPE_BUCKET_MAP[type] ?? 'PRIVATE'; // default-private for unknown types
+  const bucketName =
+    mode === 'PUBLIC' ? s3Config.publicBucketName : s3Config.privateBucketName;
+  return { bucketName, mode };
+}
+
+// MIME types that must never be stored regardless of field config (prevent stored XSS / execution)
+const BLOCKED_MIME_TYPES = new Set([
+  'text/html',
+  'application/xhtml+xml',
+  'application/javascript',
+  'text/javascript',
+  'application/x-javascript',
+  'application/x-httpd-php',
+  'application/x-sh',
+  'application/x-shellscript',
+  'application/x-executable',
+  'application/x-elf',
+  'application/x-mach-binary',
+  'application/x-dosexec',
+  'application/vnd.microsoft.portable-executable',
+]);
 
 /**
  * Generate a unique S3 key for the uploaded file
@@ -146,7 +189,14 @@ export async function uploadFile(
     throw new Error('Filename is required');
   }
 
-  // Validate file type — FormResponse allows any MIME type (enforced client-side per field config)
+  // Block dangerous MIME types unconditionally (prevents stored XSS / code execution via CDN)
+  if (finalMimetype && BLOCKED_MIME_TYPES.has(finalMimetype)) {
+    throw new Error(
+      `File type ${finalMimetype} is not allowed for security reasons`
+    );
+  }
+
+  // For non-FormResponse uploads, additionally restrict to known image MIME types
   if (
     type !== 'FormResponse' &&
     (!finalMimetype || !ALLOWED_IMAGE_TYPES.includes(finalMimetype))
@@ -164,28 +214,32 @@ export async function uploadFile(
     const stream = createReadStream();
     const buffer = await streamToBuffer(stream);
 
-    // Check file size
-    if (buffer.length > MAX_FILE_SIZE) {
+    // Check file size — FormResponse relies on multer's 50 MB limit (enforced before this point);
+    // all other upload types are capped at MAX_FILE_SIZE (5 MB)
+    if (type !== 'FormResponse' && buffer.length > MAX_FILE_SIZE) {
       throw new Error(
         `File size ${buffer.length} bytes exceeds maximum allowed size of ${MAX_FILE_SIZE} bytes`
       );
     }
 
+    // Resolve bucket and access mode from the upload type
+    const { bucketName, mode } = getBucketForType(type);
+
     // Upload to Cloudflare R2
     const putObjectCommand = new PutObjectCommand({
-      Bucket: s3Config.publicBucketName,
+      Bucket: bucketName,
       Key: s3Key,
       Body: buffer,
       ContentType: finalMimetype,
       ContentLength: buffer.length,
-      // Make the object publicly readable
-      ACL: 'public-read',
+      // Only set public-read ACL for public-bucket uploads
+      ...(mode === 'PUBLIC' ? { ACL: 'public-read' } : {}),
     });
 
     await s3Client.send(putObjectCommand);
 
-    // Construct CDN URL
-    const cdnUrl = constructCdnUrl(s3Key)!;
+    // CDN URL only makes sense for public-bucket objects
+    const cdnUrl = mode === 'PUBLIC' ? constructCdnUrl(s3Key)! : '';
 
     return {
       key: s3Key,
@@ -204,6 +258,16 @@ export async function uploadFile(
 }
 
 /**
+ * Infer the bucket for a given R2 key based on its path prefix.
+ * Keys under files/form-response/ were written to the private bucket.
+ */
+function getBucketForKey(s3Key: string): string {
+  return s3Key.startsWith('files/form-response/')
+    ? s3Config.privateBucketName
+    : s3Config.publicBucketName;
+}
+
+/**
  * Delete file from Cloudflare R2
  */
 export async function deleteFile(s3Key: string): Promise<boolean> {
@@ -211,7 +275,7 @@ export async function deleteFile(s3Key: string): Promise<boolean> {
     const { DeleteObjectCommand } = await import('@aws-sdk/client-s3');
 
     const deleteObjectCommand = new DeleteObjectCommand({
-      Bucket: s3Config.publicBucketName,
+      Bucket: getBucketForKey(s3Key),
       Key: s3Key,
     });
 

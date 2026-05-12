@@ -11,6 +11,15 @@ import { prisma } from '../lib/prisma.js';
 import { randomUUID } from 'crypto';
 import { logger } from '../lib/logger.js';
 
+// Allowed upload type values — prevents arbitrary path injection via type param
+const ALLOWED_UPLOAD_TYPES = new Set([
+  'FormTemplate',
+  'FormBackground',
+  'UserAvatar',
+  'OrganizationLogo',
+  'FormResponse',
+]);
+
 const router: Router = Router();
 
 // Configure multer for memory storage
@@ -37,6 +46,42 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       return res
         .status(400)
         .json({ error: 'File type is required', code: 'BAD_USER_INPUT' });
+    }
+
+    // Whitelist check — reject unknown type values
+    if (!ALLOWED_UPLOAD_TYPES.has(type)) {
+      return res
+        .status(400)
+        .json({ error: 'Invalid upload type', code: 'BAD_USER_INPUT' });
+    }
+
+    // For FormResponse uploads, validate the form exists and is published
+    if (type === 'FormResponse') {
+      if (!formId) {
+        return res
+          .status(400)
+          .json({
+            error: 'formId is required for form response uploads',
+            code: 'BAD_USER_INPUT',
+          });
+      }
+      const form = await prisma.form.findUnique({
+        where: { id: formId },
+        select: { id: true, isPublished: true },
+      });
+      if (!form) {
+        return res
+          .status(404)
+          .json({ error: 'Form not found', code: 'NOT_FOUND' });
+      }
+      if (!form.isPublished) {
+        return res
+          .status(403)
+          .json({
+            error: 'Form is not accepting submissions',
+            code: 'FORBIDDEN',
+          });
+      }
     }
 
     // Create a file-like object for the upload service
