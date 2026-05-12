@@ -25,7 +25,11 @@
     "minRadioOptionsRequired": "ரேடியோ புலங்களைத் தேர்வுசெய்ய குறைந்தது 2 விருப்பங்கள் தேவை",
     "defaultValuesInvalid": "இயல்புநிலை மதிப்புகள் கிடைக்கக்கூடிய விருப்பங்களிலிருந்து இருக்க வேண்டும்",
     "defaultValueTooShort": "இயல்புநிலை மதிப்பு குறைந்தபட்ச நீள தேவையை விட குறுகியது",
-    "defaultValueTooLongForMax": "இயல்புநிலை மதிப்பு அதிகபட்ச நீள தேவையை விட நீளமானது"
+    "defaultValueTooLongForMax": "இயல்புநிலை மதிப்பு அதிகபட்ச நீள தேவையை விட நீளமானது",
+    "minFileSizeInvalid": "அதிகபட்ச கோப்பு அளவு குறைந்தது  1 MB ஆக இருக்க வேண்டும்",
+    "maxFileSizeExceeded": "அதிகபட்ச கோப்பு அளவு 50 MB க்கு மேலாக இருக்கக்கூடாது",
+    "minFilesInvalid": "குறைந்தது 1 கோப்பை அனுமதிக்க வேண்டும்",
+    "maxFilesExceeded": "10 கோப்புகளுக்கு மேலாக அனுமதிக்க முடியாது"
   },
   "placeholders": {
     "fieldLabel": "புல முத்திரை",
@@ -48,7 +52,8 @@
     "characterLimits": "எழுத்து வரம்புகள்",
     "numberRange": "எண் வரம்பு",
     "dateRange": "தேதி வரம்பு",
-    "prefixSettings": "முன்னொட்டு அமைப்புகள்"
+    "prefixSettings": "முன்னொட்டு அமைப்புகள்",
+    "fileUploadSettings": "பதிவேற்ற கட்டுப்பாடுகள்"
   },
   "labels": {
     "label": "லேபிள்",
@@ -63,7 +68,10 @@
     "maximumLength": "அதிகபட்ச நீளம்",
     "minimumDate": "குறைந்தபட்ச தேதி",
     "maximumDate": "அதிகபட்ச தேதி",
-    "none": "இல்லை"
+    "none": "இல்லை",
+    "allowedFileTypes": "அனுமதிக்கப்பட்ட கோப்பு வகைகள்",
+    "maxFileSizeMb": "அதிகபட்ச கோப்பு அளவு (MB)",
+    "maxFiles": "அதிகபட்ச கோப்புகள் அனுமதிக்கப்பட்டன"
   },
   "buttons": {
     "add": "சேர்",

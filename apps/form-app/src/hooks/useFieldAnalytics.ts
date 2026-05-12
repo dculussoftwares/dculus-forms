@@ -12,7 +12,7 @@ const GET_FIELD_ANALYTICS = gql`
       totalResponses
       responseRate
       lastUpdated
-      
+
       textAnalytics {
         averageLength
         minLength
@@ -36,7 +36,7 @@ const GET_FIELD_ANALYTICS = gql`
           responseId
         }
       }
-      
+
       numberAnalytics {
         min
         max
@@ -61,7 +61,7 @@ const GET_FIELD_ANALYTICS = gql`
           p95
         }
       }
-      
+
       selectionAnalytics {
         options {
           option
@@ -78,7 +78,7 @@ const GET_FIELD_ANALYTICS = gql`
         topOption
         responseDistribution
       }
-      
+
       checkboxAnalytics {
         individualOptions {
           option
@@ -102,7 +102,7 @@ const GET_FIELD_ANALYTICS = gql`
           correlation
         }
       }
-      
+
       dateAnalytics {
         earliestDate
         latestDate
@@ -127,7 +127,7 @@ const GET_FIELD_ANALYTICS = gql`
           percentage
         }
       }
-      
+
       emailAnalytics {
         validEmails
         invalidEmails
@@ -153,6 +153,18 @@ const GET_FIELD_ANALYTICS = gql`
           percentage
         }
       }
+
+      fileUploadAnalytics {
+        totalFilesUploaded
+        averageFilesPerResponse
+        extensionDistribution {
+          extension
+          count
+          percentage
+        }
+        responsesWithFiles
+        responsesWithoutFiles
+      }
     }
   }
 `;
@@ -169,7 +181,7 @@ const GET_ALL_FIELDS_ANALYTICS = gql`
         totalResponses
         responseRate
         lastUpdated
-        
+
         textAnalytics {
           averageLength
           minLength
@@ -193,7 +205,7 @@ const GET_ALL_FIELDS_ANALYTICS = gql`
             responseId
           }
         }
-        
+
         numberAnalytics {
           min
           max
@@ -218,7 +230,7 @@ const GET_ALL_FIELDS_ANALYTICS = gql`
             p95
           }
         }
-        
+
         selectionAnalytics {
           options {
             option
@@ -235,7 +247,7 @@ const GET_ALL_FIELDS_ANALYTICS = gql`
           topOption
           responseDistribution
         }
-        
+
         checkboxAnalytics {
           individualOptions {
             option
@@ -259,7 +271,7 @@ const GET_ALL_FIELDS_ANALYTICS = gql`
             correlation
           }
         }
-        
+
         dateAnalytics {
           earliestDate
           latestDate
@@ -284,7 +296,7 @@ const GET_ALL_FIELDS_ANALYTICS = gql`
             percentage
           }
         }
-        
+
         emailAnalytics {
           validEmails
           invalidEmails
@@ -310,6 +322,18 @@ const GET_ALL_FIELDS_ANALYTICS = gql`
             percentage
           }
         }
+
+        fileUploadAnalytics {
+          totalFilesUploaded
+          averageFilesPerResponse
+          extensionDistribution {
+            extension
+            count
+            percentage
+          }
+          responsesWithFiles
+          responsesWithoutFiles
+        }
       }
     }
   }
@@ -329,6 +353,7 @@ export interface FieldAnalyticsData {
   checkboxAnalytics?: CheckboxFieldAnalyticsData;
   dateAnalytics?: DateFieldAnalyticsData;
   emailAnalytics?: EmailFieldAnalyticsData;
+  fileUploadAnalytics?: FileUploadFieldAnalyticsData;
 }
 
 export interface TextFieldAnalyticsData {
@@ -338,7 +363,11 @@ export interface TextFieldAnalyticsData {
   wordCloud: Array<{ word: string; count: number; weight: number }>;
   lengthDistribution: Array<{ range: string; count: number }>;
   commonPhrases: Array<{ phrase: string; count: number }>;
-  recentResponses: Array<{ value: string; submittedAt: string; responseId: string }>;
+  recentResponses: Array<{
+    value: string;
+    submittedAt: string;
+    responseId: string;
+  }>;
 }
 
 export interface NumberFieldAnalyticsData {
@@ -360,17 +389,36 @@ export interface NumberFieldAnalyticsData {
 
 export interface SelectionFieldAnalyticsData {
   options: Array<{ option: string; count: number; percentage: number }>;
-  trend: Array<{ date: string; options: Array<{ option: string; count: number }> }>;
+  trend: Array<{
+    date: string;
+    options: Array<{ option: string; count: number }>;
+  }>;
   topOption: string;
   responseDistribution: string;
 }
 
 export interface CheckboxFieldAnalyticsData {
-  individualOptions: Array<{ option: string; count: number; percentage: number }>;
-  combinations: Array<{ combination: string[]; count: number; percentage: number }>;
+  individualOptions: Array<{
+    option: string;
+    count: number;
+    percentage: number;
+  }>;
+  combinations: Array<{
+    combination: string[];
+    count: number;
+    percentage: number;
+  }>;
   averageSelections: number;
-  selectionDistribution: Array<{ selectionCount: number; responseCount: number; percentage: number }>;
-  correlations: Array<{ option1: string; option2: string; correlation: number }>;
+  selectionDistribution: Array<{
+    selectionCount: number;
+    responseCount: number;
+    percentage: number;
+  }>;
+  correlations: Array<{
+    option1: string;
+    option2: string;
+    correlation: number;
+  }>;
 }
 
 export interface DateFieldAnalyticsData {
@@ -378,9 +426,21 @@ export interface DateFieldAnalyticsData {
   latestDate: string;
   mostCommonDate: string;
   dateDistribution: Array<{ date: string; count: number }>;
-  weekdayDistribution: Array<{ weekday: string; count: number; percentage: number }>;
-  monthlyDistribution: Array<{ month: string; count: number; percentage: number }>;
-  seasonalPatterns: Array<{ season: string; count: number; percentage: number }>;
+  weekdayDistribution: Array<{
+    weekday: string;
+    count: number;
+    percentage: number;
+  }>;
+  monthlyDistribution: Array<{
+    month: string;
+    count: number;
+    percentage: number;
+  }>;
+  seasonalPatterns: Array<{
+    season: string;
+    count: number;
+    percentage: number;
+  }>;
 }
 
 export interface EmailFieldAnalyticsData {
@@ -390,7 +450,23 @@ export interface EmailFieldAnalyticsData {
   domains: Array<{ domain: string; count: number; percentage: number }>;
   topLevelDomains: Array<{ tld: string; count: number; percentage: number }>;
   corporateVsPersonal: { corporate: number; personal: number; unknown: number };
-  popularProviders: Array<{ provider: string; count: number; percentage: number }>;
+  popularProviders: Array<{
+    provider: string;
+    count: number;
+    percentage: number;
+  }>;
+}
+
+export interface FileUploadFieldAnalyticsData {
+  totalFilesUploaded: number;
+  averageFilesPerResponse: number;
+  extensionDistribution: Array<{
+    extension: string;
+    count: number;
+    percentage: number;
+  }>;
+  responsesWithFiles: number;
+  responsesWithoutFiles: number;
 }
 
 export interface AllFieldsAnalyticsData {
@@ -409,11 +485,12 @@ export const useFieldAnalytics = (formId: string, fieldId: string) => {
   });
 
   // Performance monitoring
-  const { startDataFetch, endDataFetch, markLoadComplete } = usePerformanceMonitor({
-    componentName: `FieldAnalytics-${fieldId}`,
-    enableLogging: false, // Disable to reduce console spam
-    trackDataFetching: true,
-  });
+  const { startDataFetch, endDataFetch, markLoadComplete } =
+    usePerformanceMonitor({
+      componentName: `FieldAnalytics-${fieldId}`,
+      enableLogging: false, // Disable to reduce console spam
+      trackDataFetching: true,
+    });
 
   // Track data fetch performance
   useEffect(() => {
@@ -451,11 +528,12 @@ export const useAllFieldsAnalytics = (formId: string) => {
   });
 
   // Performance monitoring
-  const { startDataFetch, endDataFetch, markLoadComplete } = usePerformanceMonitor({
-    componentName: 'AllFieldsAnalytics',
-    enableLogging: false, // Disable to reduce console spam
-    trackDataFetching: true,
-  });
+  const { startDataFetch, endDataFetch, markLoadComplete } =
+    usePerformanceMonitor({
+      componentName: 'AllFieldsAnalytics',
+      enableLogging: false, // Disable to reduce console spam
+      trackDataFetching: true,
+    });
 
   // Track data fetch performance
   useEffect(() => {
@@ -537,7 +615,7 @@ export const useFieldAnalyticsCacheStats = () => {
 
 export const useFieldAnalyticsManager = (formId: string) => {
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
-  
+
   const allFieldsQuery = useAllFieldsAnalytics(formId);
   const fieldQuery = useFieldAnalytics(formId, selectedFieldId || '');
 
@@ -565,20 +643,21 @@ export const useFieldAnalyticsManager = (formId: string) => {
     allFieldsLoading: allFieldsQuery.loading,
     allFieldsError: allFieldsQuery.error,
     totalResponses: allFieldsQuery.data?.totalResponses || 0,
-    
+
     // Selected field data
     selectedFieldId,
     selectedField,
     selectedFieldLoading: fieldQuery.loading,
     selectedFieldError: fieldQuery.error,
-    
+
     // Actions
     selectField,
     clearSelection,
     refreshAll,
-    
+
     // Loading states
-    loading: allFieldsQuery.loading || (selectedFieldId ? fieldQuery.loading : false),
+    loading:
+      allFieldsQuery.loading || (selectedFieldId ? fieldQuery.loading : false),
     error: allFieldsQuery.error || fieldQuery.error,
   };
 };

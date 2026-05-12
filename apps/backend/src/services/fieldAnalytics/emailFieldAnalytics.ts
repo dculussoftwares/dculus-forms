@@ -5,7 +5,11 @@
  */
 
 import { FieldType } from '@dculus/types';
-import { FieldResponse, FieldAnalyticsBase, EmailFieldAnalytics } from './types.js';
+import {
+  FieldResponse,
+  FieldAnalyticsBase,
+  EmailFieldAnalytics,
+} from './types.js';
 
 /**
  * Process email field analytics
@@ -17,19 +21,26 @@ export const processEmailFieldAnalytics = (
   totalFormResponses: number
 ): FieldAnalyticsBase & EmailFieldAnalytics => {
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const emails = fieldResponses.map(r => String(r.value || '').trim().toLowerCase()).filter(e => e.length > 0);
+  const emails = fieldResponses
+    .map((r) =>
+      String(r.value || '')
+        .trim()
+        .toLowerCase()
+    )
+    .filter((e) => e.length > 0);
   const totalResponses = emails.length;
 
   // Validation
-  const validEmails = emails.filter(email => emailPattern.test(email));
+  const validEmails = emails.filter((email) => emailPattern.test(email));
   const invalidEmails = totalResponses - validEmails.length;
-  const validationRate = totalResponses > 0 ? (validEmails.length / totalResponses) * 100 : 0;
+  const validationRate =
+    totalResponses > 0 ? (validEmails.length / totalResponses) * 100 : 0;
 
   // Domain analysis
   const domainCounts = new Map<string, number>();
   const tldCounts = new Map<string, number>();
 
-  validEmails.forEach(email => {
+  validEmails.forEach((email) => {
     const domain = email.split('@')[1];
     if (domain) {
       domainCounts.set(domain, (domainCounts.get(domain) || 0) + 1);
@@ -60,12 +71,19 @@ export const processEmailFieldAnalytics = (
 
   // Popular email providers
   const popularProviderDomains = [
-    'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com',
-    'icloud.com', 'protonmail.com', 'mail.com', 'zoho.com'
+    'gmail.com',
+    'yahoo.com',
+    'hotmail.com',
+    'outlook.com',
+    'aol.com',
+    'icloud.com',
+    'protonmail.com',
+    'mail.com',
+    'zoho.com',
   ];
 
   const providerCounts = new Map<string, number>();
-  validEmails.forEach(email => {
+  validEmails.forEach((email) => {
     const domain = email.split('@')[1];
     if (domain && popularProviderDomains.includes(domain)) {
       const provider = domain.replace('.com', '').replace('.', '');
@@ -89,7 +107,7 @@ export const processEmailFieldAnalytics = (
   let personal = 0;
   let unknown = 0;
 
-  validEmails.forEach(email => {
+  validEmails.forEach((email) => {
     const domain = email.split('@')[1];
     if (domain) {
       if (personalDomains.has(domain)) {
@@ -115,7 +133,8 @@ export const processEmailFieldAnalytics = (
     fieldType: FieldType.EMAIL_FIELD,
     fieldLabel,
     totalResponses,
-    responseRate: totalFormResponses > 0 ? (totalResponses / totalFormResponses) * 100 : 0,
+    responseRate:
+      totalFormResponses > 0 ? (totalResponses / totalFormResponses) * 100 : 0,
     lastUpdated: new Date(),
     validEmails: validEmails.length,
     invalidEmails,

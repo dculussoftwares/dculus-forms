@@ -291,13 +291,11 @@ export const typeDefs = gql`
     format: ExportFormat!
   }
 
-
   # Input Types
   input CreateOrganizationInput {
     name: String!
     slug: String!
   }
-
 
   input CreateFormInput {
     templateId: ID
@@ -408,6 +406,7 @@ export const typeDefs = gql`
     file: Upload!
     type: String!
     formId: ID
+    organizationId: ID
   }
 
   # Form File Types
@@ -517,7 +516,7 @@ export const typeDefs = gql`
     topBrowsers: [BrowserStats!]!
     viewsOverTime: [ViewsOverTimeData!]!
   }
-  
+
   type ViewsOverTimeData {
     date: String!
     views: Int!
@@ -590,24 +589,27 @@ export const typeDefs = gql`
     totalResponses: Int!
     responseRate: Float!
     lastUpdated: String!
-    
+
     # Text field analytics
     textAnalytics: TextFieldAnalytics
-    
+
     # Number field analytics
     numberAnalytics: NumberFieldAnalytics
-    
+
     # Selection field analytics (Select/Radio)
     selectionAnalytics: SelectionFieldAnalytics
-    
+
     # Checkbox field analytics
     checkboxAnalytics: CheckboxFieldAnalytics
-    
+
     # Date field analytics
     dateAnalytics: DateFieldAnalytics
-    
+
     # Email field analytics
     emailAnalytics: EmailFieldAnalytics
+
+    # File upload field analytics
+    fileUploadAnalytics: FileUploadFieldAnalytics
   }
 
   type TextFieldAnalytics {
@@ -789,6 +791,20 @@ export const typeDefs = gql`
     percentage: Float!
   }
 
+  type FileUploadFieldAnalytics {
+    totalFilesUploaded: Int!
+    averageFilesPerResponse: Float!
+    extensionDistribution: [FileExtensionStats!]!
+    responsesWithFiles: Int!
+    responsesWithoutFiles: Int!
+  }
+
+  type FileExtensionStats {
+    extension: String!
+    count: Int!
+    percentage: Float!
+  }
+
   type AllFieldsAnalytics {
     formId: ID!
     totalResponses: Int!
@@ -957,23 +973,37 @@ export const typeDefs = gql`
     # Auth Queries
     me: User
     activeOrganization: Organization
-    
+
     # Public Queries (no auth required)
     getInvitationPublic(id: ID!): Invitation
-    
+
     # Form Queries
     form(id: ID!): Form
     formByShortUrl(shortUrl: String!): Form
     responses(organizationId: ID!): [FormResponse!]!
     response(id: ID!): FormResponse
-    responsesByForm(formId: ID!, page: Int = 1, limit: Int = 10, sortBy: String = "submittedAt", sortOrder: String = "desc", filters: [ResponseFilterInput!], filterLogic: FilterLogic = AND): PaginatedResponses!
+    responsesByForm(
+      formId: ID!
+      page: Int = 1
+      limit: Int = 10
+      sortBy: String = "submittedAt"
+      sortOrder: String = "desc"
+      filters: [ResponseFilterInput!]
+      filterLogic: FilterLogic = AND
+    ): PaginatedResponses!
 
     # Response Edit Tracking Queries
     responseEditHistory(responseId: ID!): [ResponseEditHistory!]!
 
     # Form Sharing Queries
     formPermissions(formId: ID!): [FormPermission!]!
-    forms(organizationId: ID!, category: FormCategory!, page: Int = 1, limit: Int = 10, filters: FormsFilterInput): PaginatedForms!
+    forms(
+      organizationId: ID!
+      category: FormCategory!
+      page: Int = 1
+      limit: Int = 10
+      filters: FormsFilterInput
+    ): PaginatedForms!
     organizationMembers(organizationId: ID!): [User!]!
 
     # Template Queries
@@ -995,8 +1025,11 @@ export const typeDefs = gql`
 
     # Analytics Queries
     formAnalytics(formId: ID!, timeRange: TimeRangeInput): FormAnalytics!
-    formSubmissionAnalytics(formId: ID!, timeRange: TimeRangeInput): FormSubmissionAnalytics!
-    
+    formSubmissionAnalytics(
+      formId: ID!
+      timeRange: TimeRangeInput
+    ): FormSubmissionAnalytics!
+
     # Field Analytics Queries
     fieldAnalytics(formId: ID!, fieldId: ID!): FieldAnalytics!
     allFieldsAnalytics(formId: ID!): AllFieldsAnalytics!
@@ -1008,7 +1041,6 @@ export const typeDefs = gql`
 
     # Subscription Queries
     availablePlans: [AvailablePlan!]!
-
   }
 
   # Subscription Mutation Response Types
@@ -1055,8 +1087,9 @@ export const typeDefs = gql`
     # Subscription Mutations
     createCheckoutSession(itemPriceId: String!): CheckoutSessionResponse!
     createPortalSession: PortalSessionResponse!
-    initializeOrganizationSubscription(organizationId: ID!): SubscriptionInitResult!
-
+    initializeOrganizationSubscription(
+      organizationId: ID!
+    ): SubscriptionInitResult!
 
     # Form Mutations
     createForm(input: CreateFormInput!): Form!
@@ -1077,29 +1110,39 @@ export const typeDefs = gql`
     createTemplate(input: CreateTemplateInput!): FormTemplate!
     updateTemplate(id: ID!, input: UpdateTemplateInput!): FormTemplate!
     deleteTemplate(id: ID!): Boolean!
-    createFormFromTemplate(templateId: ID!, organizationId: ID!, title: String!): Form!
+    createFormFromTemplate(
+      templateId: ID!
+      organizationId: ID!
+      title: String!
+    ): Form!
 
     # File Upload Mutations
     uploadFile(input: UploadFileInput!): FileUploadResponse!
     deleteFile(key: String!): Boolean!
 
     # Export Mutations
-    generateFormResponseReport(formId: ID!, format: ExportFormat!, filters: [ResponseFilterInput!], filterLogic: FilterLogic = AND): ExportResult!
+    generateFormResponseReport(
+      formId: ID!
+      format: ExportFormat!
+      filters: [ResponseFilterInput!]
+      filterLogic: FilterLogic = AND
+    ): ExportResult!
 
     # Analytics Mutations
     trackFormView(input: TrackFormViewInput!): TrackFormViewResponse!
-    updateFormStartTime(input: UpdateFormStartTimeInput!): TrackFormViewResponse!
-    trackFormSubmission(input: TrackFormSubmissionInput!): TrackFormViewResponse!
+    updateFormStartTime(
+      input: UpdateFormStartTimeInput!
+    ): TrackFormViewResponse!
+    trackFormSubmission(
+      input: TrackFormSubmissionInput!
+    ): TrackFormViewResponse!
 
     # Plugin Mutations
     createFormPlugin(input: CreateFormPluginInput!): FormPlugin!
     updateFormPlugin(id: ID!, input: UpdateFormPluginInput!): FormPlugin!
     deleteFormPlugin(id: ID!): PluginMutationResponse!
     testFormPlugin(id: ID!): PluginMutationResponse!
-
   }
 
-
-
   scalar Upload
-`; 
+`;

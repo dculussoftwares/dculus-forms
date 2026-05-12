@@ -27,7 +27,11 @@
     "minRadioOptionsRequired": "Radio fields need at least 2 options to choose from",
     "defaultValuesInvalid": "Default values must be from the available options",
     "defaultValueTooShort": "Default value is too short for the minimum length requirement",
-    "defaultValueTooLongForMax": "Default value is too long for the maximum length requirement"
+    "defaultValueTooLongForMax": "Default value is too long for the maximum length requirement",
+    "minFileSizeInvalid": "Maximum file size must be at least 1 MB",
+    "maxFileSizeExceeded": "Maximum file size cannot exceed 50 MB",
+    "minFilesInvalid": "Must allow at least 1 file",
+    "maxFilesExceeded": "Cannot allow more than 10 files"
   },
   "placeholders": {
     "fieldLabel": "Field label",
@@ -50,7 +54,8 @@
     "characterLimits": "Character Limits",
     "numberRange": "Number Range",
     "dateRange": "Date Range",
-    "prefixSettings": "Prefix Settings"
+    "prefixSettings": "Prefix Settings",
+    "fileUploadSettings": "Upload Constraints"
   },
   "labels": {
     "label": "Label",
@@ -65,7 +70,10 @@
     "maximumLength": "Maximum Length",
     "minimumDate": "Minimum Date",
     "maximumDate": "Maximum Date",
-    "none": "None"
+    "none": "None",
+    "allowedFileTypes": "Allowed File Types",
+    "maxFileSizeMb": "Max File Size (MB)",
+    "maxFiles": "Max Files Allowed"
   },
   "buttons": {
     "add": "Add",

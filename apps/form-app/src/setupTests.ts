@@ -11,7 +11,7 @@ global.ResizeObserver = class ResizeObserver {
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: jest.fn().mockImplementation(query => ({
+  value: jest.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -38,17 +38,22 @@ jest.mock('@apollo/client', () => ({
   from: jest.fn(),
 }));
 
-
 // Mock @dculus/ui components
 jest.mock('@dculus/ui', () => {
   return {
-    Button: ({ children, ...props }: any) => React.createElement('button', props, children),
+    Button: ({ children, ...props }: any) =>
+      React.createElement('button', props, children),
     Input: (props: any) => React.createElement('input', props),
-    Label: ({ children, ...props }: any) => React.createElement('label', props, children),
-    Card: ({ children, ...props }: any) => React.createElement('div', props, children),
-    CardContent: ({ children, ...props }: any) => React.createElement('div', props, children),
-    CardHeader: ({ children, ...props }: any) => React.createElement('div', props, children),
-    CardTitle: ({ children, ...props }: any) => React.createElement('h3', props, children),
+    Label: ({ children, ...props }: any) =>
+      React.createElement('label', props, children),
+    Card: ({ children, ...props }: any) =>
+      React.createElement('div', props, children),
+    CardContent: ({ children, ...props }: any) =>
+      React.createElement('div', props, children),
+    CardHeader: ({ children, ...props }: any) =>
+      React.createElement('div', props, children),
+    CardTitle: ({ children, ...props }: any) =>
+      React.createElement('h3', props, children),
   };
 });
 
@@ -63,6 +68,7 @@ jest.mock('@dculus/types', () => {
     RADIO_FIELD: 'radio_field',
     CHECKBOX_FIELD: 'checkbox_field',
     DATE_FIELD: 'date_field',
+    FILE_UPLOAD_FIELD: 'file_upload_field',
   };
 
   class TextFieldValidation {
@@ -124,78 +130,138 @@ jest.mock('@dculus/types', () => {
     }
   }
 
+  class FillableFormFieldValidation {
+    required: boolean;
+    type: string;
+    constructor(required: boolean) {
+      this.required = required;
+      this.type = 'fillable_form_field';
+    }
+  }
+
+  class FileUploadField {
+    id: string;
+    label: string;
+    prefix: string;
+    hint: string;
+    validation: FillableFormFieldValidation;
+    allowedMimeTypes?: string[];
+    maxFileSizeMb?: number;
+    maxFiles?: number;
+    type: string;
+
+    constructor(
+      id: string,
+      label: string,
+      prefix: string,
+      hint: string,
+      validation: FillableFormFieldValidation,
+      allowedMimeTypes?: string[],
+      maxFileSizeMb?: number,
+      maxFiles?: number
+    ) {
+      this.id = id;
+      this.label = label;
+      this.prefix = prefix;
+      this.hint = hint;
+      this.validation = validation;
+      this.allowedMimeTypes = allowedMimeTypes;
+      this.maxFileSizeMb = maxFileSizeMb;
+      this.maxFiles = maxFiles;
+      this.type = FieldType.FILE_UPLOAD_FIELD;
+    }
+  }
+
   // Mock validation schema
   const textInputFieldValidationSchema = {
     safeParse: jest.fn((data: any) => {
       const errors = [];
-      
+
       // Test label requirement
       if (!data.label || data.label.trim() === '') {
         errors.push({ message: 'Field label is required' });
       }
-      
+
       // Test label length
       if (data.label && data.label.length > 200) {
         errors.push({ message: 'Label is too long' });
       }
-      
+
       // Test hint length
       if (data.hint && data.hint.length > 500) {
         errors.push({ message: 'Help text is too long' });
       }
-      
+
       // Test placeholder length
       if (data.placeholder && data.placeholder.length > 100) {
         errors.push({ message: 'Placeholder is too long' });
       }
-      
+
       // Test character limits
       if (data.validation) {
         const { minLength, maxLength } = data.validation;
-        
+
         // Test min length limits
         if (minLength !== undefined && minLength !== '') {
-          const minNum = typeof minLength === 'string' ? parseInt(minLength) : minLength;
+          const minNum =
+            typeof minLength === 'string' ? parseInt(minLength) : minLength;
           if (minNum < 0) {
             errors.push({ message: 'Minimum length must be 0 or greater' });
           }
           if (minNum > 5000) {
-            errors.push({ message: 'Minimum length cannot exceed 5000 characters' });
+            errors.push({
+              message: 'Minimum length cannot exceed 5000 characters',
+            });
           }
         }
-        
+
         // Test max length limits
         if (maxLength !== undefined && maxLength !== '') {
-          const maxNum = typeof maxLength === 'string' ? parseInt(maxLength) : maxLength;
+          const maxNum =
+            typeof maxLength === 'string' ? parseInt(maxLength) : maxLength;
           if (maxNum < 1) {
             errors.push({ message: 'Maximum length must be 1 or greater' });
           }
           if (maxNum > 5000) {
-            errors.push({ message: 'Maximum length cannot exceed 5000 characters' });
+            errors.push({
+              message: 'Maximum length cannot exceed 5000 characters',
+            });
           }
         }
-        
+
         // Test min <= max
-        if (minLength !== undefined && maxLength !== undefined && minLength !== '' && maxLength !== '') {
-          const minNum = typeof minLength === 'string' ? parseInt(minLength) : minLength;
-          const maxNum = typeof maxLength === 'string' ? parseInt(maxLength) : maxLength;
+        if (
+          minLength !== undefined &&
+          maxLength !== undefined &&
+          minLength !== '' &&
+          maxLength !== ''
+        ) {
+          const minNum =
+            typeof minLength === 'string' ? parseInt(minLength) : minLength;
+          const maxNum =
+            typeof maxLength === 'string' ? parseInt(maxLength) : maxLength;
           if (minNum > maxNum) {
-            errors.push({ message: 'Minimum length must be less than or equal to maximum length' });
+            errors.push({
+              message:
+                'Minimum length must be less than or equal to maximum length',
+            });
           }
         }
       }
-      
-      return errors.length === 0 
+
+      return errors.length === 0
         ? { success: true, data }
         : { success: false, error: { issues: errors } };
-    })
+    }),
   };
 
   return {
     FieldType,
     TextFieldValidation,
+    FillableFormFieldValidation,
     TextInputField,
     TextAreaField,
+    FileUploadField,
     textInputFieldValidationSchema,
     getFieldValidationSchema: jest.fn(() => ({})),
   };

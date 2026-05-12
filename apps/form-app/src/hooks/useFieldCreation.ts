@@ -22,7 +22,22 @@ export const useFieldCreation = () => {
       return {
         ...baseData,
         options: ['Option 1', 'Option 2'],
-        ...(fieldType.type === FieldType.SELECT_FIELD ? { multiple: false } : {}),
+        ...(fieldType.type === FieldType.SELECT_FIELD
+          ? { multiple: false }
+          : {}),
+      };
+    }
+
+    // File upload field has specific structure (no placeholder/defaultValue)
+    if (fieldType.type === FieldType.FILE_UPLOAD_FIELD) {
+      return {
+        label: fieldType.label,
+        required: false,
+        hint: '',
+        prefix: '',
+        allowedMimeTypes: [],
+        maxFileSizeMb: 5,
+        maxFiles: 1,
       };
     }
 

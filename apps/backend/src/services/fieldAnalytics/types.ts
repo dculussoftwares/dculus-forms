@@ -20,7 +20,11 @@ export interface TextFieldAnalytics {
   wordCloud: Array<{ word: string; count: number; weight: number }>;
   lengthDistribution: Array<{ range: string; count: number }>;
   commonPhrases: Array<{ phrase: string; count: number }>;
-  recentResponses: Array<{ value: string; submittedAt: Date; responseId: string }>;
+  recentResponses: Array<{
+    value: string;
+    submittedAt: Date;
+    responseId: string;
+  }>;
 }
 
 export interface NumberFieldAnalytics {
@@ -107,6 +111,19 @@ export interface DateFieldAnalytics {
   }>;
 }
 
+export interface FileUploadFieldAnalytics {
+  totalResponses: number;
+  totalFilesUploaded: number;
+  averageFilesPerResponse: number;
+  extensionDistribution: Array<{
+    extension: string;
+    count: number;
+    percentage: number;
+  }>;
+  responsesWithFiles: number;
+  responsesWithoutFiles: number;
+}
+
 export interface EmailFieldAnalytics {
   totalResponses: number;
   validEmails: number;
@@ -143,11 +160,17 @@ export interface FieldAnalyticsBase {
   lastUpdated: Date;
 }
 
-export type FieldAnalytics = FieldAnalyticsBase & (
-  | ({ fieldType: FieldType.TEXT_INPUT_FIELD | FieldType.TEXT_AREA_FIELD } & TextFieldAnalytics)
-  | ({ fieldType: FieldType.NUMBER_FIELD } & NumberFieldAnalytics)
-  | ({ fieldType: FieldType.SELECT_FIELD | FieldType.RADIO_FIELD } & SelectionFieldAnalytics)
-  | ({ fieldType: FieldType.CHECKBOX_FIELD } & CheckboxFieldAnalytics)
-  | ({ fieldType: FieldType.DATE_FIELD } & DateFieldAnalytics)
-  | ({ fieldType: FieldType.EMAIL_FIELD } & EmailFieldAnalytics)
-);
+export type FieldAnalytics = FieldAnalyticsBase &
+  (
+    | ({
+        fieldType: FieldType.TEXT_INPUT_FIELD | FieldType.TEXT_AREA_FIELD;
+      } & TextFieldAnalytics)
+    | ({ fieldType: FieldType.NUMBER_FIELD } & NumberFieldAnalytics)
+    | ({
+        fieldType: FieldType.SELECT_FIELD | FieldType.RADIO_FIELD;
+      } & SelectionFieldAnalytics)
+    | ({ fieldType: FieldType.CHECKBOX_FIELD } & CheckboxFieldAnalytics)
+    | ({ fieldType: FieldType.DATE_FIELD } & DateFieldAnalytics)
+    | ({ fieldType: FieldType.EMAIL_FIELD } & EmailFieldAnalytics)
+    | ({ fieldType: FieldType.FILE_UPLOAD_FIELD } & FileUploadFieldAnalytics)
+  );

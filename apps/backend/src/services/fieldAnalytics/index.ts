@@ -10,7 +10,12 @@ import { formRepository } from '../../repositories/index.js';
 import { getFormSchemaFromHocuspocus } from '../hocuspocus.js';
 
 // Import types
-import { FieldAnalytics } from './types.js';
+import {
+  FieldAnalytics,
+  FieldAnalyticsBase,
+  FileUploadFieldAnalytics,
+  FieldResponse,
+} from './types.js';
 
 // Import base utilities
 import { getFormResponses, extractFieldValues } from './base.js';
@@ -22,6 +27,67 @@ import { processSelectionFieldAnalytics } from './selectionFieldAnalytics.js';
 import { processCheckboxFieldAnalytics } from './checkboxFieldAnalytics.js';
 import { processDateFieldAnalytics } from './dateFieldAnalytics.js';
 import { processEmailFieldAnalytics } from './emailFieldAnalytics.js';
+
+/**
+ * Process file upload field analytics
+ * Values stored as arrays of R2 file keys (strings)
+ */
+const processFileUploadFieldAnalytics = (
+  fieldResponses: FieldResponse[],
+  fieldId: string,
+  fieldLabel: string,
+  totalFormResponses: number
+): FieldAnalyticsBase & FileUploadFieldAnalytics => {
+  const totalResponses = fieldResponses.length;
+  const responsesWithFiles = fieldResponses.filter(
+    (r) => Array.isArray(r.value) && r.value.length > 0
+  ).length;
+  const responsesWithoutFiles = totalResponses - responsesWithFiles;
+
+  // Collect all file keys
+  const allKeys: string[] = fieldResponses.flatMap((r) =>
+    Array.isArray(r.value) ? (r.value as string[]) : []
+  );
+  const totalFilesUploaded = allKeys.length;
+  const averageFilesPerResponse =
+    totalResponses > 0 ? totalFilesUploaded / totalResponses : 0;
+
+  // Extension distribution derived from R2 key path
+  const extCounts = new Map<string, number>();
+  allKeys.forEach((key) => {
+    const filename = key.split('/').pop() || '';
+    const dotIdx = filename.lastIndexOf('.');
+    const ext =
+      dotIdx >= 0 ? filename.slice(dotIdx + 1).toLowerCase() : 'unknown';
+    extCounts.set(ext, (extCounts.get(ext) || 0) + 1);
+  });
+
+  const extensionDistribution = Array.from(extCounts.entries())
+    .map(([extension, count]) => ({
+      extension,
+      count,
+      percentage:
+        totalFilesUploaded > 0 ? (count / totalFilesUploaded) * 100 : 0,
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  const responseRate =
+    totalFormResponses > 0 ? (totalResponses / totalFormResponses) * 100 : 0;
+
+  return {
+    fieldId,
+    fieldType: FieldType.FILE_UPLOAD_FIELD,
+    fieldLabel,
+    totalResponses,
+    responseRate,
+    lastUpdated: new Date(),
+    totalFilesUploaded,
+    averageFilesPerResponse,
+    extensionDistribution,
+    responsesWithFiles,
+    responsesWithoutFiles,
+  };
+};
 
 /**
  * Main function to get field analytics for any field type
@@ -46,33 +112,72 @@ export const getFieldAnalytics = async (
     case FieldType.TEXT_INPUT_FIELD:
     case FieldType.TEXT_AREA_FIELD:
       result = {
-        ...processTextFieldAnalytics(fieldResponses, fieldId, fieldLabel, totalFormResponses),
+        ...processTextFieldAnalytics(
+          fieldResponses,
+          fieldId,
+          fieldLabel,
+          totalFormResponses
+        ),
         fieldType,
       } as FieldAnalytics;
       break;
 
     case FieldType.NUMBER_FIELD:
-      result = processNumberFieldAnalytics(fieldResponses, fieldId, fieldLabel, totalFormResponses) as FieldAnalytics;
+      result = processNumberFieldAnalytics(
+        fieldResponses,
+        fieldId,
+        fieldLabel,
+        totalFormResponses
+      ) as FieldAnalytics;
       break;
 
     case FieldType.SELECT_FIELD:
     case FieldType.RADIO_FIELD:
       result = {
-        ...processSelectionFieldAnalytics(fieldResponses, fieldId, fieldLabel, totalFormResponses),
+        ...processSelectionFieldAnalytics(
+          fieldResponses,
+          fieldId,
+          fieldLabel,
+          totalFormResponses
+        ),
         fieldType,
       } as FieldAnalytics;
       break;
 
     case FieldType.CHECKBOX_FIELD:
-      result = processCheckboxFieldAnalytics(fieldResponses, fieldId, fieldLabel, totalFormResponses) as FieldAnalytics;
+      result = processCheckboxFieldAnalytics(
+        fieldResponses,
+        fieldId,
+        fieldLabel,
+        totalFormResponses
+      ) as FieldAnalytics;
       break;
 
     case FieldType.DATE_FIELD:
-      result = processDateFieldAnalytics(fieldResponses, fieldId, fieldLabel, totalFormResponses) as FieldAnalytics;
+      result = processDateFieldAnalytics(
+        fieldResponses,
+        fieldId,
+        fieldLabel,
+        totalFormResponses
+      ) as FieldAnalytics;
       break;
 
     case FieldType.EMAIL_FIELD:
-      result = processEmailFieldAnalytics(fieldResponses, fieldId, fieldLabel, totalFormResponses) as FieldAnalytics;
+      result = processEmailFieldAnalytics(
+        fieldResponses,
+        fieldId,
+        fieldLabel,
+        totalFormResponses
+      ) as FieldAnalytics;
+      break;
+
+    case FieldType.FILE_UPLOAD_FIELD:
+      result = processFileUploadFieldAnalytics(
+        fieldResponses,
+        fieldId,
+        fieldLabel,
+        totalFormResponses
+      ) as FieldAnalytics;
       break;
 
     default:
@@ -85,7 +190,9 @@ export const getFieldAnalytics = async (
 /**
  * Get analytics for all fields in a form
  */
-export const getAllFieldsAnalytics = async (formId: string): Promise<{
+export const getAllFieldsAnalytics = async (
+  formId: string
+): Promise<{
   formId: string;
   totalResponses: number;
   fields: FieldAnalytics[];
@@ -127,7 +234,12 @@ export const getAllFieldsAnalytics = async (formId: string): Promise<{
       if (page.fields) {
         page.fields.forEach((field: any) => {
           // Only process fillable fields
-          if (field.type !== FieldType.RICH_TEXT_FIELD && field.type !== FieldType.FORM_FIELD) {
+          if (
+            field.type !== FieldType.RICH_TEXT_FIELD &&
+            field.type !== FieldType.FORM_FIELD &&
+            field.type !== FieldType.FILLABLE_FORM_FIELD &&
+            field.type !== FieldType.NON_FILLABLE_FORM_FIELD
+          ) {
             const fieldLabel = field.label || `Field ${field.id}`;
             allFields.push({
               id: field.id,
@@ -147,7 +259,7 @@ export const getAllFieldsAnalytics = async (formId: string): Promise<{
   for (let i = 0; i < allFields.length; i += batchSize) {
     const batch = allFields.slice(i, i + batchSize);
     const batchResults = await Promise.all(
-      batch.map(field =>
+      batch.map((field) =>
         getFieldAnalytics(formId, field.id, field.type, field.label)
       )
     );

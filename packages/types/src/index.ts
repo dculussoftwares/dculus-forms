@@ -1,35 +1,35 @@
 /**
  * @fileoverview FormField Type System - Central type definitions for the collaborative form builder
- * 
+ *
  * This file contains the core FormField class hierarchy and type definitions used throughout
  * the dculus-forms monorepo. All form fields extend from the base FormField class.
- * 
+ *
  * 🚨 IMPORTANT: When adding new field types or modifying existing ones, you must update
  * multiple files across the codebase. See the checklist in the FormField class documentation.
- * 
+ *
  * ARCHITECTURE OVERVIEW:
- * 
+ *
  * FormField (base)
  * └── FillableFormField (adds label, validation, etc.)
  *     ├── TextInputField (uses TextFieldValidation for character limits)
- *     ├── TextAreaField (uses TextFieldValidation for character limits)  
+ *     ├── TextAreaField (uses TextFieldValidation for character limits)
  *     ├── EmailField (uses base FillableFormFieldValidation)
  *     ├── NumberField (adds min/max properties)
  *     ├── SelectField (adds options array, multiple boolean)
  *     ├── RadioField (adds options array)
  *     ├── CheckboxField (adds options array)
  *     └── DateField (adds minDate/maxDate properties)
- * 
+ *
  * VALIDATION SYSTEM:
- * 
+ *
  * FillableFormFieldValidation (base)
  * └── TextFieldValidation (adds minLength/maxLength for text fields)
- * 
+ *
  * SERIALIZATION:
  * - serializeFormField() converts instances to plain objects for storage
  * - deserializeFormField() reconstructs instances from stored data
  * - Used for database storage and YJS collaborative editing
- * 
+ *
  * RECENT CHANGES:
  * - Added TextFieldValidation class for character limit support
  * - Updated TextInputField and TextAreaField to use specialized validation
@@ -52,7 +52,7 @@ export interface MaxResponsesSettings {
 export interface TimeWindowSettings {
   enabled: boolean;
   startDate?: string; // ISO date string
-  endDate?: string;   // ISO date string
+  endDate?: string; // ISO date string
 }
 
 export interface SubmissionLimitsSettings {
@@ -93,7 +93,16 @@ export interface FormPage {
   order: number;
 }
 
-export type LayoutCode = 'L1' | 'L2' | 'L3' | 'L4' | 'L5' | 'L6' | 'L7' | 'L8' | 'L9';
+export type LayoutCode =
+  | 'L1'
+  | 'L2'
+  | 'L3'
+  | 'L4'
+  | 'L5'
+  | 'L6'
+  | 'L7'
+  | 'L8'
+  | 'L9';
 
 export interface FormLayout {
   theme: ThemeType;
@@ -126,10 +135,10 @@ export enum PageModeType {
 
 /**
  * Base FormField class - all form fields extend from this
- * 
+ *
  * When adding new field types or properties, ensure you update:
  * 1. Field class definitions (below)
- * 2. FieldType enum (below) 
+ * 2. FieldType enum (below)
  * 3. Serialization/deserialization functions (deserializeFormField)
  * 4. Validation schemas (validation.ts - getFieldValidationSchema)
  * 5. Form renderer (packages/ui/src/renderers/FormFieldRenderer.tsx)
@@ -138,12 +147,12 @@ export enum PageModeType {
  * 8. Form builder store (apps/form-app/src/store/useFormBuilderStore.ts):
  *    - createFormField function for field creation
  *    - serializeFieldToYMap function for YJS storage
- *    - extractFieldData function for YJS retrieval  
+ *    - extractFieldData function for YJS retrieval
  *    - createYJSFieldMap function for validation storage
  *    - updateField function for field updates (handle validation object format)
  *    - deserializePagesFromYJS function for page loading
  * 9. Seed templates (apps/backend/src/scripts/seed-templates.ts)
- * 
+ *
  * CRITICAL: For fields with specialized validation (like TextFieldValidation):
  * - Ensure validation data is properly stored in YJS validation maps
  * - Update updateField function to handle validation object format from field editor
@@ -160,7 +169,7 @@ export class FormField {
 
 /**
  * Base validation class for fillable form fields
- * 
+ *
  * When creating specialized validation classes:
  * 1. Extend this class (like TextFieldValidation)
  * 2. Update field classes to use specialized validation
@@ -180,7 +189,7 @@ export class FillableFormFieldValidation {
 /**
  * Specialized validation class for text fields (TextInputField and TextAreaField)
  * Contains character limit validation properties
- * 
+ *
  * Example of extending validation for other field types:
  * - Create similar classes for specific validation needs
  * - Update corresponding field classes to use the specialized validation
@@ -189,12 +198,8 @@ export class FillableFormFieldValidation {
 export class TextFieldValidation extends FillableFormFieldValidation {
   minLength?: number;
   maxLength?: number;
-  
-  constructor(
-    required: boolean, 
-    minLength?: number, 
-    maxLength?: number
-  ) {
+
+  constructor(required: boolean, minLength?: number, maxLength?: number) {
     super(required);
     this.type = FieldType.TEXT_FIELD_VALIDATION;
     this.minLength = minLength;
@@ -205,16 +210,16 @@ export class TextFieldValidation extends FillableFormFieldValidation {
 /**
  * Specialized validation class for checkbox fields
  * Contains selection limit validation properties (minSelections/maxSelections)
- * 
+ *
  * Similar to TextFieldValidation but for validating checkbox selection constraints
  */
 export class CheckboxFieldValidation extends FillableFormFieldValidation {
   minSelections?: number;
   maxSelections?: number;
-  
+
   constructor(
-    required: boolean, 
-    minSelections?: number, 
+    required: boolean,
+    minSelections?: number,
     maxSelections?: number
   ) {
     super(required);
@@ -227,7 +232,7 @@ export class CheckboxFieldValidation extends FillableFormFieldValidation {
 /**
  * Base class for fields that can be filled by users
  * Contains common properties like label, placeholder, validation, etc.
- * 
+ *
  * When adding new fillable properties:
  * 1. Add the property here
  * 2. Update constructor parameters
@@ -266,7 +271,7 @@ export class FillableFormField extends FormField {
 /**
  * Base class for fields that don't accept user input
  * Used for display-only fields like rich text, instructions, etc.
- * 
+ *
  * When adding new non-fillable properties:
  * 1. Add properties to specific field classes (not here)
  * 2. Update FieldType enum
@@ -285,7 +290,7 @@ export class NonFillableFormField extends FormField {
 /**
  * Rich text field for displaying formatted content (read-only)
  * Contains content property for storing HTML
- * 
+ *
  * When modifying:
  * 1. Update RichTextSettings component
  * 2. Update FormFieldRenderer case
@@ -295,11 +300,8 @@ export class NonFillableFormField extends FormField {
  */
 export class RichTextFormField extends NonFillableFormField {
   content: string;
-  
-  constructor(
-    id: string,
-    content: string = ''
-  ) {
+
+  constructor(id: string, content: string = '') {
     super(id);
     this.content = content;
     this.type = FieldType.RICH_TEXT_FIELD;
@@ -309,7 +311,7 @@ export class RichTextFormField extends NonFillableFormField {
 /**
  * Text input field with character limit support
  * Uses TextFieldValidation for minLength/maxLength validation
- * 
+ *
  * When adding field-specific properties:
  * 1. Add properties to this class
  * 2. Update constructor parameters
@@ -323,7 +325,7 @@ export class RichTextFormField extends NonFillableFormField {
  */
 export class TextInputField extends FillableFormField {
   validation: TextFieldValidation;
-  
+
   constructor(
     id: string,
     label: string,
@@ -342,12 +344,12 @@ export class TextInputField extends FillableFormField {
 /**
  * Text area field with character limit support
  * Uses TextFieldValidation for minLength/maxLength validation
- * 
+ *
  * Example of field with specialized validation - follows same pattern as TextInputField
  */
 export class TextAreaField extends FillableFormField {
   validation: TextFieldValidation;
-  
+
   constructor(
     id: string,
     label: string,
@@ -381,7 +383,7 @@ export class EmailField extends FillableFormField {
 /**
  * Number field with min/max range validation
  * Example of field-specific properties (min, max) stored directly on field
- * 
+ *
  * Pattern for fields with constraints:
  * - Add constraint properties to field class
  * - Include in constructor parameters
@@ -393,7 +395,7 @@ export class EmailField extends FillableFormField {
 export class NumberField extends FillableFormField {
   min?: number;
   max?: number;
-  
+
   constructor(
     id: string,
     label: string,
@@ -414,7 +416,7 @@ export class NumberField extends FillableFormField {
 
 export class SelectField extends FillableFormField {
   options: string[];
-  
+
   constructor(
     id: string,
     label: string,
@@ -433,7 +435,7 @@ export class SelectField extends FillableFormField {
 
 export class RadioField extends FillableFormField {
   options: string[];
-  
+
   constructor(
     id: string,
     label: string,
@@ -454,7 +456,7 @@ export class CheckboxField extends FillableFormField {
   options: string[];
   defaultValues: string[]; // Array of default selected values
   validation: CheckboxFieldValidation;
-  
+
   constructor(
     id: string,
     label: string,
@@ -470,17 +472,23 @@ export class CheckboxField extends FillableFormField {
     this.type = FieldType.CHECKBOX_FIELD;
     this.validation = validation;
     this.options = options;
-    
+
     // Set array values
-    this.defaultValues = Array.isArray(defaultValues) ? defaultValues : 
-      (defaultValues ? defaultValues.split(',').map(s => s.trim()).filter(Boolean) : []);
+    this.defaultValues = Array.isArray(defaultValues)
+      ? defaultValues
+      : defaultValues
+        ? defaultValues
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [];
   }
 }
 
 export class DateField extends FillableFormField {
   minDate?: string;
   maxDate?: string;
-  
+
   constructor(
     id: string,
     label: string,
@@ -499,6 +507,29 @@ export class DateField extends FillableFormField {
   }
 }
 
+export class FileUploadField extends FillableFormField {
+  allowedMimeTypes?: string[];
+  maxFileSizeMb?: number;
+  maxFiles?: number;
+
+  constructor(
+    id: string,
+    label: string,
+    prefix: string,
+    hint: string,
+    validation: FillableFormFieldValidation,
+    allowedMimeTypes?: string[],
+    maxFileSizeMb?: number,
+    maxFiles?: number
+  ) {
+    super(id, label, '', prefix, hint, '', validation);
+    this.type = FieldType.FILE_UPLOAD_FIELD;
+    this.allowedMimeTypes = allowedMimeTypes;
+    this.maxFileSizeMb = maxFileSizeMb;
+    this.maxFiles = maxFiles;
+  }
+}
+
 export enum FieldType {
   TEXT = 'text',
   TEXT_INPUT_FIELD = 'text_input_field',
@@ -509,6 +540,7 @@ export enum FieldType {
   CHECKBOX_FIELD = 'checkbox_field',
   RADIO_FIELD = 'radio_field',
   DATE_FIELD = 'date_field',
+  FILE_UPLOAD_FIELD = 'file_upload_field',
   RICH_TEXT_FIELD = 'rich_text_field',
   FORM_FIELD = 'form_field',
   FILLABLE_FORM_FIELD = 'fillable_form_field',
@@ -520,26 +552,26 @@ export enum FieldType {
 /**
  * Serialization utility for FormField classes
  * Converts field instances to plain objects for storage
- * 
+ *
  * When adding new field types: No changes needed here - uses spread operator
  */
 export const serializeFormField = (field: FormField): any => {
   return {
     ...field,
-    __type: field.type
+    __type: field.type,
   };
 };
 
 /**
  * Deserialization utility for FormField classes
  * Reconstructs field instances from stored data
- * 
+ *
  * CRITICAL: When adding new field types, you MUST:
  * 1. Add new case to switch statement
  * 2. Create appropriate validation object using getValidation helper
  * 3. Pass all constructor parameters in correct order
  * 4. Handle any field-specific properties (like min/max, options, etc.)
- * 
+ *
  * The getValidation helper automatically handles:
  * - TextFieldValidation for TEXT_INPUT_FIELD and TEXT_AREA_FIELD
  * - FillableFormFieldValidation for all other field types
@@ -547,22 +579,28 @@ export const serializeFormField = (field: FormField): any => {
 export const deserializeFormField = (data: any): FormField => {
   const getValidation = (data: any, fieldType: FieldType) => {
     if (!data.validation) {
-      if (fieldType === FieldType.TEXT_INPUT_FIELD || fieldType === FieldType.TEXT_AREA_FIELD) {
+      if (
+        fieldType === FieldType.TEXT_INPUT_FIELD ||
+        fieldType === FieldType.TEXT_AREA_FIELD
+      ) {
         return new TextFieldValidation(false);
       } else if (fieldType === FieldType.CHECKBOX_FIELD) {
         return new CheckboxFieldValidation(false);
       }
       return new FillableFormFieldValidation(false);
     }
-    
-    if (fieldType === FieldType.TEXT_INPUT_FIELD || fieldType === FieldType.TEXT_AREA_FIELD) {
+
+    if (
+      fieldType === FieldType.TEXT_INPUT_FIELD ||
+      fieldType === FieldType.TEXT_AREA_FIELD
+    ) {
       return new TextFieldValidation(
         data.validation.required || false,
         data.validation.minLength,
         data.validation.maxLength
       );
     }
-    
+
     if (fieldType === FieldType.CHECKBOX_FIELD) {
       return new CheckboxFieldValidation(
         data.validation.required || false,
@@ -570,10 +608,10 @@ export const deserializeFormField = (data: any): FormField => {
         data.validation.maxSelections
       );
     }
-    
+
     return new FillableFormFieldValidation(data.validation.required || false);
   };
-  
+
   switch (data.type || data.__type) {
     case FieldType.TEXT_INPUT_FIELD:
       return new TextInputField(
@@ -603,7 +641,10 @@ export const deserializeFormField = (data: any): FormField => {
         data.prefix || '',
         data.hint || '',
         data.placeholder || '',
-        getValidation(data, FieldType.EMAIL_FIELD) as FillableFormFieldValidation
+        getValidation(
+          data,
+          FieldType.EMAIL_FIELD
+        ) as FillableFormFieldValidation
       );
     case FieldType.NUMBER_FIELD:
       return new NumberField(
@@ -613,7 +654,10 @@ export const deserializeFormField = (data: any): FormField => {
         data.prefix || '',
         data.hint || '',
         data.placeholder || '',
-        getValidation(data, FieldType.NUMBER_FIELD) as FillableFormFieldValidation,
+        getValidation(
+          data,
+          FieldType.NUMBER_FIELD
+        ) as FillableFormFieldValidation,
         data.min,
         data.max
       );
@@ -624,7 +668,10 @@ export const deserializeFormField = (data: any): FormField => {
         data.defaultValue || '',
         data.prefix || '',
         data.hint || '',
-        getValidation(data, FieldType.SELECT_FIELD) as FillableFormFieldValidation,
+        getValidation(
+          data,
+          FieldType.SELECT_FIELD
+        ) as FillableFormFieldValidation,
         data.options || []
       );
     case FieldType.RADIO_FIELD:
@@ -634,7 +681,10 @@ export const deserializeFormField = (data: any): FormField => {
         data.defaultValue || '',
         data.prefix || '',
         data.hint || '',
-        getValidation(data, FieldType.RADIO_FIELD) as FillableFormFieldValidation,
+        getValidation(
+          data,
+          FieldType.RADIO_FIELD
+        ) as FillableFormFieldValidation,
         data.options || []
       );
     case FieldType.CHECKBOX_FIELD:
@@ -645,7 +695,10 @@ export const deserializeFormField = (data: any): FormField => {
         data.prefix || '',
         data.hint || '',
         data.placeholder || '',
-        getValidation(data, FieldType.CHECKBOX_FIELD) as CheckboxFieldValidation,
+        getValidation(
+          data,
+          FieldType.CHECKBOX_FIELD
+        ) as CheckboxFieldValidation,
         data.options || []
       );
     case FieldType.DATE_FIELD:
@@ -656,16 +709,30 @@ export const deserializeFormField = (data: any): FormField => {
         data.prefix || '',
         data.hint || '',
         data.placeholder || '',
-        getValidation(data, FieldType.DATE_FIELD) as FillableFormFieldValidation,
+        getValidation(
+          data,
+          FieldType.DATE_FIELD
+        ) as FillableFormFieldValidation,
         data.minDate,
         data.maxDate
       );
+    case FieldType.FILE_UPLOAD_FIELD:
+      return new FileUploadField(
+        data.id,
+        data.label || '',
+        data.prefix || '',
+        data.hint || '',
+        getValidation(
+          data,
+          FieldType.FILE_UPLOAD_FIELD
+        ) as FillableFormFieldValidation,
+        data.allowedMimeTypes,
+        data.maxFileSizeMb,
+        data.maxFiles
+      );
     case FieldType.RICH_TEXT_FIELD:
       const richTextContent = data.content || '';
-      return new RichTextFormField(
-        data.id,
-        richTextContent
-      );
+      return new RichTextFormField(data.id, richTextContent);
     default:
       return new FormField(data.id);
   }
@@ -675,10 +742,10 @@ export const serializeFormSchema = (schema: FormSchema): any => {
   return {
     ...schema,
     layout: schema.layout, // Explicitly preserve layout object
-    pages: schema.pages.map(page => ({
+    pages: schema.pages.map((page) => ({
       ...page,
-      fields: page.fields.map(serializeFormField)
-    }))
+      fields: page.fields.map(serializeFormField),
+    })),
   };
 };
 
@@ -688,11 +755,10 @@ export const deserializeFormSchema = (data: any): FormSchema => {
     layout: data.layout, // Explicitly preserve layout object
     pages: (data.pages || []).map((page: any) => ({
       ...page,
-      fields: (page.fields || []).map(deserializeFormField)
-    }))
+      fields: (page.fields || []).map(deserializeFormField),
+    })),
   };
 };
-
 
 // Plugin Metadata Types
 export type PluginMetadata = Record<string, any>;
@@ -768,13 +834,13 @@ export interface User {
 export enum EditType {
   MANUAL = 'MANUAL',
   SYSTEM = 'SYSTEM',
-  BULK = 'BULK'
+  BULK = 'BULK',
 }
 
 export enum ChangeType {
   ADD = 'ADD',
   UPDATE = 'UPDATE',
-  DELETE = 'DELETE'
+  DELETE = 'DELETE',
 }
 
 // Input types for mutations
@@ -823,34 +889,34 @@ export * from './plugins.js';
 
 /**
  * 📋 INTEGRATION CHECKLIST - When adding new field types or properties:
- * 
+ *
  * REQUIRED FILES TO UPDATE:
- * 
+ *
  * 1. 📄 packages/types/src/index.ts (THIS FILE)
  *    - Add field class with proper inheritance
- *    - Add FieldType enum value  
+ *    - Add FieldType enum value
  *    - Update deserializeFormField switch case
  *    - Add validation class if needed
- * 
+ *
  * 2. 📄 packages/types/src/validation.ts
  *    - Add Zod validation schema for new field type
  *    - Update getFieldValidationSchema function
  *    - Add cross-field validation if needed
- * 
+ *
  * 3. 📄 packages/ui/src/renderers/FormFieldRenderer.tsx
  *    - Add switch case for new field type
  *    - Handle rendering logic and validation display
  *    - Add character counting or constraint display
- * 
+ *
  * 4. 📄 apps/form-app/src/components/form-builder/field-settings/
  *    - Create new settings component for field-specific properties
  *    - Update FieldTypeSpecificSettings.tsx to include new component
- * 
+ *
  * 5. 📄 apps/form-app/src/hooks/useFieldEditor.ts
  *    - Update extractFieldData function to handle new properties
  *    - Update handleSave function if specialized validation is used
  *    - Add field watching for validation triggers
- * 
+ *
  * 6. 📄 apps/form-app/src/store/useFormBuilderStore.ts (CRITICAL for YJS collaboration)
  *    - Update createFormField function for proper field instantiation
  *    - Update serializeFieldToYMap function for YJS storage
@@ -858,15 +924,15 @@ export * from './plugins.js';
  *    - Update createYJSFieldMap function for validation object storage
  *    - Update updateField function to handle validation object format from field editor
  *    - Update deserializePagesFromYJS function for proper deserialization
- * 
+ *
  * 7. 📄 apps/backend/src/scripts/seed-templates.ts
  *    - Update template examples to use new field types
  *    - Ensure proper validation objects are used
- * 
+ *
  * TESTING CHECKLIST:
- * 
+ *
  * ✅ Field creation in form builder
- * ✅ Field settings save/load correctly  
+ * ✅ Field settings save/load correctly
  * ✅ Field duplication preserves all properties (including validation constraints)
  * ✅ Field rendering in form viewer
  * ✅ Form submission with validation
@@ -875,18 +941,18 @@ export * from './plugins.js';
  * ✅ Template seeding succeeds
  * ✅ Character limits display and validate (for text fields)
  * ✅ Cross-field validation works (min ≤ max constraints)
- * 
+ *
  * EXAMPLES:
- * 
+ *
  * For reference on implementing character limits (TextInputField/TextAreaField):
  * - See TextFieldValidation class implementation
  * - See CharacterLimitSettings component
  * - See FormFieldRenderer character count display
  * - See validation schema with cross-field validation
- * 
+ *
  * For reference on field constraints (NumberField):
  * - See min/max properties stored directly on field
- * - See NumberRangeSettings component  
+ * - See NumberRangeSettings component
  * - See validation schema with range validation
  */
 

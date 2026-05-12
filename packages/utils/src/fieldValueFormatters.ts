@@ -225,6 +225,15 @@ export const formatFieldValue = (
     case FieldType.CHECKBOX_FIELD:
       return formatCheckboxFieldValue(value, options?.separator);
 
+    case FieldType.FILE_UPLOAD_FIELD:
+      // Display the number of files uploaded (values are R2 file keys)
+      if (Array.isArray(value)) {
+        return value.length === 0
+          ? ''
+          : `${value.length} file${value.length > 1 ? 's' : ''} uploaded`;
+      }
+      return String(value);
+
     case FieldType.DATE_FIELD:
       return formatDateFieldValue(value, options?.locale, options?.dateOptions);
 
@@ -332,6 +341,10 @@ export const parseFormattedValue = (
         .split(',')
         .map((v) => v.trim())
         .filter(Boolean);
+
+    case FieldType.FILE_UPLOAD_FIELD:
+      // File upload values are stored as arrays of R2 keys, not parsed from display strings
+      return [];
 
     case FieldType.DATE_FIELD:
       // Parse date string back to Date object

@@ -8,14 +8,48 @@ import { GET_FORM_BY_SHORT_URL, SUBMIT_RESPONSE } from '../graphql/queries';
 import ThankYouDisplay from '../components/ThankYouDisplay';
 import { useFormAnalytics } from '../hooks/useFormAnalytics';
 import { useFormSubmissionAnalytics } from '../hooks/useFormSubmissionAnalytics';
-import { getCdnEndpoint } from '../lib/config';
+import { getCdnEndpoint, getUploadUrl } from '../lib/config';
+
+/**
+ * Upload a single File to the backend REST endpoint and return its R2 storage key.
+ */
+async function uploadFormResponseFile(
+  file: File,
+  formId: string,
+  uploadUrl: string
+): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('type', 'FormResponse');
+  formData.append('formId', formId);
+
+  const response = await fetch(uploadUrl, { method: 'POST', body: formData });
+
+  if (!response.ok) {
+    let body: { error?: string; code?: string } = {};
+    try {
+      body = await response.json();
+    } catch {
+      /* non-JSON body */
+    }
+    throw new Error(body.error ?? `Upload failed (${response.status})`);
+  }
+
+  const data = (await response.json()) as { key: string };
+  return data.key;
+}
 
 const FormViewer: React.FC = () => {
   const { shortUrl } = useParams<{ shortUrl: string }>();
   const cdnEndpoint = getCdnEndpoint();
-  const [submissionState, setSubmissionState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [submissionState, setSubmissionState] = useState<
+    'idle' | 'submitting' | 'success' | 'error'
+  >('idle');
   const [submissionMessage, setSubmissionMessage] = useState<string>('');
-  const [thankYouData, setThankYouData] = useState<{message: string; isCustom: boolean} | null>(null);
+  const [thankYouData, setThankYouData] = useState<{
+    message: string;
+    isCustom: boolean;
+  } | null>(null);
   const [hasStartedForm, setHasStartedForm] = useState<boolean>(false);
 
   const { loading, error, data } = useQuery(GET_FORM_BY_SHORT_URL, {
@@ -26,15 +60,15 @@ const FormViewer: React.FC = () => {
   const [submitResponse] = useMutation(SUBMIT_RESPONSE);
 
   // Track form analytics when form is loaded
-  const { trackFormStartTime } = useFormAnalytics({ 
-    formId: data?.formByShortUrl?.id || '', 
-    enabled: !!data?.formByShortUrl?.id 
+  const { trackFormStartTime } = useFormAnalytics({
+    formId: data?.formByShortUrl?.id || '',
+    enabled: !!data?.formByShortUrl?.id,
   });
 
   // Hook for gathering submission analytics data
   const { getSubmissionAnalyticsData } = useFormSubmissionAnalytics({
     formId: data?.formByShortUrl?.id || '',
-    enabled: !!data?.formByShortUrl?.id
+    enabled: !!data?.formByShortUrl?.id,
   });
 
   // Handle first form interaction to track start time
@@ -45,11 +79,31 @@ const FormViewer: React.FC = () => {
     }
   };
 
-  const handleFormSubmit = async (formId: string, responses: Record<string, unknown>) => {
+  const handleFormSubmit = async (
+    formId: string,
+    responses: Record<string, unknown>
+  ) => {
     setSubmissionState('submitting');
     setSubmissionMessage('');
 
     try {
+      // Upload any File[] values (from FILE_UPLOAD_FIELD) before submitting the response
+      const processedResponses: Record<string, unknown> = { ...responses };
+      const uploadUrl = getUploadUrl();
+
+      const fileFieldEntries = Object.entries(processedResponses).filter(
+        ([, value]) =>
+          Array.isArray(value) && value.length > 0 && value[0] instanceof File
+      );
+
+      for (const [fieldId, files] of fileFieldEntries) {
+        const keys = await Promise.all(
+          (files as File[]).map((file) =>
+            uploadFormResponseFile(file, formId, uploadUrl)
+          )
+        );
+        processedResponses[fieldId] = keys;
+      }
       // Get analytics data for submission tracking
       const analyticsData = getSubmissionAnalyticsData();
 
@@ -61,7 +115,9 @@ const FormViewer: React.FC = () => {
         if (startTimeStr) {
           const startTime = new Date(startTimeStr);
           const endTime = new Date();
-          completionTimeSeconds = Math.round((endTime.getTime() - startTime.getTime()) / 1000);
+          completionTimeSeconds = Math.round(
+            (endTime.getTime() - startTime.getTime()) / 1000
+          );
 
           // Clean up the stored start time
           localStorage.removeItem(startTimeKey);
@@ -72,38 +128,43 @@ const FormViewer: React.FC = () => {
         variables: {
           input: {
             formId,
-            data: responses,
+            data: processedResponses,
             // Include analytics data for submission tracking (optional)
             ...(analyticsData && {
               sessionId: analyticsData.sessionId,
               userAgent: analyticsData.userAgent,
               timezone: analyticsData.timezone,
               language: analyticsData.language,
-              ...(completionTimeSeconds && { completionTimeSeconds })
+              ...(completionTimeSeconds && { completionTimeSeconds }),
             }),
           },
         },
       });
 
-      const { thankYouMessage, showCustomThankYou } = result.data.submitResponse;
+      const { thankYouMessage, showCustomThankYou } =
+        result.data.submitResponse;
 
       setSubmissionState('success');
       setThankYouData({
         message: thankYouMessage,
-        isCustom: showCustomThankYou
+        isCustom: showCustomThankYou,
       });
     } catch (err: unknown) {
       console.error('Form submission error:', err);
       setSubmissionState('error');
       setSubmissionMessage(
-        (err instanceof Error ? err.message : null) || 'An error occurred while submitting the form. Please try again.'
+        (err instanceof Error ? err.message : null) ||
+          'An error occurred while submitting the form. Please try again.'
       );
     }
   };
 
   if (loading) {
     return (
-      <div className="h-screen w-full flex items-center justify-center" data-testid="form-viewer-loading">
+      <div
+        className="h-screen w-full flex items-center justify-center"
+        data-testid="form-viewer-loading"
+      >
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading form...</p>
@@ -114,26 +175,33 @@ const FormViewer: React.FC = () => {
 
   if (error) {
     // Handle submission limit errors specifically
-    const isSubmissionLimitError = error.message.includes('maximum response limit') || 
-                                   error.message.includes('not yet open') || 
-                                   error.message.includes('submission period has ended');
-    
+    const isSubmissionLimitError =
+      error.message.includes('maximum response limit') ||
+      error.message.includes('not yet open') ||
+      error.message.includes('submission period has ended');
+
     return (
-      <div className="h-screen w-full flex items-center justify-center" data-testid="form-viewer-error">
+      <div
+        className="h-screen w-full flex items-center justify-center"
+        data-testid="form-viewer-error"
+      >
         <div className="text-center p-8">
           <h1 className="text-2xl font-bold text-red-600 mb-2">
             {isSubmissionLimitError ? 'Form Unavailable' : 'Form Not Found'}
           </h1>
-          <p className="text-gray-600 mb-4" data-testid="form-viewer-error-message">
+          <p
+            className="text-gray-600 mb-4"
+            data-testid="form-viewer-error-message"
+          >
             {error.message === 'Form is not published'
               ? 'This form is not yet published.'
               : error.message.includes('maximum response limit')
-              ? 'This form has reached its maximum number of responses and is no longer accepting submissions.'
-              : error.message.includes('not yet open')
-              ? 'This form is not yet open for submissions. Please check back later.'
-              : error.message.includes('submission period has ended')
-              ? 'The submission period for this form has ended.'
-              : "The form you're looking for doesn't exist or has been removed."}
+                ? 'This form has reached its maximum number of responses and is no longer accepting submissions.'
+                : error.message.includes('not yet open')
+                  ? 'This form is not yet open for submissions. Please check back later.'
+                  : error.message.includes('submission period has ended')
+                    ? 'The submission period for this form has ended.'
+                    : "The form you're looking for doesn't exist or has been removed."}
           </p>
           <p className="text-sm text-gray-500">Error: {error.message}</p>
         </div>
@@ -186,7 +254,7 @@ const FormViewer: React.FC = () => {
     return (
       <div className="h-screen w-full flex items-center justify-center">
         <div className="w-full">
-          <ThankYouDisplay 
+          <ThankYouDisplay
             message={thankYouData.message}
             isCustom={thankYouData.isCustom}
           />
@@ -214,8 +282,16 @@ const FormViewer: React.FC = () => {
         <div className="bg-red-50 border border-red-200 rounded-md p-4 m-4">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              <svg
+                className="h-5 w-5 text-red-400"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
               </svg>
             </div>
             <div className="ml-3">
@@ -227,15 +303,23 @@ const FormViewer: React.FC = () => {
                 className="text-red-800 hover:text-red-900"
               >
                 <span className="sr-only">Dismiss</span>
-                <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                <svg
+                  className="h-4 w-4"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </button>
             </div>
           </div>
         </div>
       )}
-      
+
       <FormRenderer
         cdnEndpoint={cdnEndpoint}
         formSchema={formSchema}
@@ -245,7 +329,7 @@ const FormViewer: React.FC = () => {
         onFormSubmit={handleFormSubmit}
         onResponseChange={handleFirstFormInteraction}
       />
-      
+
       {/* Loading overlay during submission */}
       {submissionState === 'submitting' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -253,8 +337,12 @@ const FormViewer: React.FC = () => {
             <div className="flex items-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
               <div>
-                <p className="text-lg font-medium text-gray-900">Submitting...</p>
-                <p className="text-sm text-gray-500">Please wait while we save your response.</p>
+                <p className="text-lg font-medium text-gray-900">
+                  Submitting...
+                </p>
+                <p className="text-sm text-gray-500">
+                  Please wait while we save your response.
+                </p>
               </div>
             </div>
           </div>

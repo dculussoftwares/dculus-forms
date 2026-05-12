@@ -4,7 +4,11 @@ import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { uploadFile, deleteFile } from '../../services/fileUploadService.js';
 import { prisma } from '../../lib/prisma.js';
 import { randomUUID } from 'crypto';
-import { BetterAuthContext, requireAuth, requireOrganizationMembership } from '../../middleware/better-auth-middleware.js';
+import {
+  BetterAuthContext,
+  requireAuth,
+  requireOrganizationMembership,
+} from '../../middleware/better-auth-middleware.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import { logger } from '../../lib/logger.js';
 
@@ -47,14 +51,27 @@ function requireAdminRole(context: { auth: BetterAuthContext }) {
 
 export const fileUploadResolvers = {
   Mutation: {
-    uploadFile: async (_: any, args: UploadFileArgs, context: { auth: BetterAuthContext }) => {
+    uploadFile: async (
+      _: any,
+      args: UploadFileArgs,
+      context: { auth: BetterAuthContext }
+    ) => {
       try {
         const { file: filePromise, type, formId, organizationId } = args.input;
 
         // 🔒 SECURITY: Validate the type first
-        const allowedTypes = ['FormTemplate', 'FormBackground', 'UserAvatar', 'OrganizationLogo'];
+        const allowedTypes = [
+          'FormTemplate',
+          'FormBackground',
+          'UserAvatar',
+          'OrganizationLogo',
+          'FormResponse',
+        ];
         if (!allowedTypes.includes(type)) {
-          throw createGraphQLError(`Invalid file type. Allowed types: ${allowedTypes.join(', ')}`, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+          throw createGraphQLError(
+            `Invalid file type. Allowed types: ${allowedTypes.join(', ')}`,
+            GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+          );
         }
 
         // 🔒 SECURITY: Role-based access control based on file type
@@ -64,7 +81,10 @@ export const fileUploadResolvers = {
         } else if (type === 'FormBackground') {
           // Must have EDITOR access to the form
           if (!formId) {
-            throw createGraphQLError('formId is required for FormBackground uploads', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+            throw createGraphQLError(
+              'formId is required for FormBackground uploads',
+              GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+            );
           }
           requireAuth(context.auth);
           const accessCheck = await checkFormAccess(
@@ -73,7 +93,10 @@ export const fileUploadResolvers = {
             PermissionLevel.EDITOR
           );
           if (!accessCheck.hasAccess) {
-            throw createGraphQLError('Access denied: You need EDITOR access to upload background images for this form', GRAPHQL_ERROR_CODES.EDITOR_ACCESS_REQUIRED);
+            throw createGraphQLError(
+              'Access denied: You need EDITOR access to upload background images for this form',
+              GRAPHQL_ERROR_CODES.EDITOR_ACCESS_REQUIRED
+            );
           }
         } else if (type === 'UserAvatar') {
           // User can only upload their own avatar
@@ -82,16 +105,22 @@ export const fileUploadResolvers = {
         } else if (type === 'OrganizationLogo') {
           // Must be a member of the organization
           if (!organizationId) {
-            throw createGraphQLError('organizationId is required for OrganizationLogo uploads', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+            throw createGraphQLError(
+              'organizationId is required for OrganizationLogo uploads',
+              GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+            );
           }
           await requireOrganizationMembership(context.auth, organizationId);
+        } else if (type === 'FormResponse') {
+          // Any authenticated user can upload files as part of a form response
+          requireAuth(context.auth);
         }
 
         // Resolve the file upload promise
         const fileUpload = await filePromise;
 
         // Extract the actual file object from the upload wrapper
-        const file = ('file' in fileUpload) ? fileUpload.file : fileUpload;
+        const file = 'file' in fileUpload ? fileUpload.file : fileUpload;
 
         // Debug logging - more detailed
         logger.info('File upload details:', {
@@ -100,7 +129,7 @@ export const fileUploadResolvers = {
           encoding: file?.encoding,
           type: type,
           fileKeys: file ? Object.keys(file) : 'file is null/undefined',
-          hasCreateReadStream: typeof file?.createReadStream === 'function'
+          hasCreateReadStream: typeof file?.createReadStream === 'function',
         });
 
         // Upload the file
@@ -121,7 +150,7 @@ export const fileUploadResolvers = {
               url: result.url,
               size: result.size,
               mimeType: result.mimeType,
-            }
+            },
           });
         }
 
@@ -131,11 +160,18 @@ export const fileUploadResolvers = {
         if (error instanceof GraphQLError) {
           throw error;
         }
-        throw createGraphQLError(`Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`, GRAPHQL_ERROR_CODES.UPLOAD_FAILED);
+        throw createGraphQLError(
+          `Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          GRAPHQL_ERROR_CODES.UPLOAD_FAILED
+        );
       }
     },
 
-    deleteFile: async (_: any, args: { key: string }, context: { auth: BetterAuthContext }) => {
+    deleteFile: async (
+      _: any,
+      args: { key: string },
+      context: { auth: BetterAuthContext }
+    ) => {
       try {
         // 🔒 SECURITY: Check if user is authenticated
         requireAuth(context.auth);
@@ -144,7 +180,7 @@ export const fileUploadResolvers = {
         // Check if this file belongs to a form the user has access to
         const formFile = await prisma.formFile.findUnique({
           where: { key: args.key },
-          include: { form: true }
+          include: { form: true },
         });
 
         if (formFile) {
@@ -155,7 +191,9 @@ export const fileUploadResolvers = {
             PermissionLevel.EDITOR
           );
           if (!accessCheck.hasAccess) {
-            throw new GraphQLError('Access denied: You need EDITOR access to delete files from this form');
+            throw new GraphQLError(
+              'Access denied: You need EDITOR access to delete files from this form'
+            );
           }
         }
         // If file is not in FormFile table (UserAvatar, OrganizationLogo, FormTemplate),
@@ -168,7 +206,10 @@ export const fileUploadResolvers = {
         if (error instanceof GraphQLError) {
           throw error;
         }
-        throw createGraphQLError(`Failed to delete file: ${error instanceof Error ? error.message : 'Unknown error'}`, GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
+        throw createGraphQLError(
+          `Failed to delete file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR
+        );
       }
     },
   },

@@ -1,5 +1,11 @@
 import React from 'react';
-import { FormField, FillableFormField, NonFillableFormField, RichTextFormField, FieldType } from '@dculus/types';
+import {
+  FormField,
+  FillableFormField,
+  NonFillableFormField,
+  RichTextFormField,
+  FieldType,
+} from '@dculus/types';
 import { stripHtmlAndTruncate } from '@dculus/utils';
 import { Card } from './index';
 import {
@@ -11,24 +17,30 @@ import {
   Circle,
   CheckSquare,
   Calendar,
-  FileCode
+  FileCode,
+  Upload,
 } from 'lucide-react';
 
 interface FieldDragPreviewProps {
   field: FormField;
 }
 
-export const FieldDragPreview: React.FC<FieldDragPreviewProps> = ({ field }) => {
+export const FieldDragPreview: React.FC<FieldDragPreviewProps> = ({
+  field,
+}) => {
   const getPreviewText = (): string => {
     // For fillable form fields, show the label
     if (field instanceof FillableFormField) {
       return field.label || getDefaultFieldLabel(field.type);
     }
-    
+
     // For non-fillable form fields
     if (field instanceof NonFillableFormField) {
       // For rich text fields, show content with ellipsis
-      if (field.type === FieldType.RICH_TEXT_FIELD && field instanceof RichTextFormField) {
+      if (
+        field.type === FieldType.RICH_TEXT_FIELD &&
+        field instanceof RichTextFormField
+      ) {
         const content = field.content;
         if (content && content.trim()) {
           return stripHtmlAndTruncate(content, 40);
@@ -36,7 +48,7 @@ export const FieldDragPreview: React.FC<FieldDragPreviewProps> = ({ field }) => 
         return 'Rich Text';
       }
     }
-    
+
     // Fallback to default field label
     return getDefaultFieldLabel(field.type);
   };
@@ -59,6 +71,8 @@ export const FieldDragPreview: React.FC<FieldDragPreviewProps> = ({ field }) => 
         return 'Checkbox';
       case FieldType.DATE_FIELD:
         return 'Date';
+      case FieldType.FILE_UPLOAD_FIELD:
+        return 'File Upload';
       case FieldType.RICH_TEXT_FIELD:
         return 'Rich Text';
       default:
@@ -84,6 +98,8 @@ export const FieldDragPreview: React.FC<FieldDragPreviewProps> = ({ field }) => 
         return <CheckSquare className="w-4 h-4" />;
       case FieldType.DATE_FIELD:
         return <Calendar className="w-4 h-4" />;
+      case FieldType.FILE_UPLOAD_FIELD:
+        return <Upload className="w-4 h-4" />;
       case FieldType.RICH_TEXT_FIELD:
         return <FileCode className="w-4 h-4" />;
       default:
@@ -98,7 +114,7 @@ export const FieldDragPreview: React.FC<FieldDragPreviewProps> = ({ field }) => 
         <div className="flex-shrink-0 p-2 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded-lg">
           {getFieldIcon(field.type)}
         </div>
-        
+
         {/* Field Content */}
         <div className="flex-1 min-w-0">
           <div className="text-sm font-medium text-gray-900 dark:text-white truncate">

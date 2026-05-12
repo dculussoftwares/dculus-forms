@@ -5,7 +5,7 @@
   },
   "categories": {
     "input": "Input Fields",
-    "choice": "Choice Fields", 
+    "choice": "Choice Fields",
     "content": "Content",
     "advanced": "Advanced"
   },
@@ -45,6 +45,10 @@
     "richText": {
       "label": "Rich Text",
       "description": "Formatted text content (read-only)"
+    },
+    "fileUpload": {
+      "label": "File Upload",
+      "description": "Allow respondents to upload files"
     }
   }
 }

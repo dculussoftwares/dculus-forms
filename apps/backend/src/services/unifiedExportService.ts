@@ -1,6 +1,9 @@
 import ExcelJS from 'exceljs';
 import { FormResponse, FormSchema, FieldType } from '@dculus/types';
-import { getPluginTypesWithData, getPluginExport } from '../plugins/exportRegistry.js';
+import {
+  getPluginTypesWithData,
+  getPluginExport,
+} from '../plugins/exportRegistry.js';
 
 // Import plugin export registrations
 import '../plugins/quiz/export.js';
@@ -22,7 +25,11 @@ export interface ExportResult {
 }
 
 // Helper function to format values based on field type
-const formatFieldValue = (value: any, fieldType?: FieldType, format: ExportFormat = 'excel'): string => {
+const formatFieldValue = (
+  value: any,
+  fieldType?: FieldType,
+  format: ExportFormat = 'excel'
+): string => {
   if (value === null || value === undefined) return '';
 
   // Handle arrays (checkboxes, multi-select)
@@ -37,9 +44,21 @@ const formatFieldValue = (value: any, fieldType?: FieldType, format: ExportForma
   if (fieldType) {
     switch (fieldType) {
       case FieldType.DATE_FIELD: {
-        const timestamp = typeof value === 'string' ? parseInt(value, 10) : value;
+        const timestamp =
+          typeof value === 'string' ? parseInt(value, 10) : value;
         const date = new Date(timestamp);
-        stringValue = isNaN(date.getTime()) ? 'Invalid date' : date.toLocaleDateString();
+        stringValue = isNaN(date.getTime())
+          ? 'Invalid date'
+          : date.toLocaleDateString();
+        break;
+      }
+      case FieldType.FILE_UPLOAD_FIELD: {
+        // Values are arrays of R2 keys — export as comma-separated filenames
+        if (Array.isArray(value)) {
+          stringValue = value
+            .map((key: string) => String(key).split('/').pop() || key)
+            .join(format === 'csv' ? '; ' : ', ');
+        }
         break;
       }
       default:
@@ -50,7 +69,12 @@ const formatFieldValue = (value: any, fieldType?: FieldType, format: ExportForma
 
   // CSV-specific escaping
   if (format === 'csv') {
-    if (stringValue.includes('"') || stringValue.includes(',') || stringValue.includes('\n') || stringValue.includes('\r')) {
+    if (
+      stringValue.includes('"') ||
+      stringValue.includes(',') ||
+      stringValue.includes('\n') ||
+      stringValue.includes('\r')
+    ) {
       stringValue = '"' + stringValue.replace(/"/g, '""') + '"';
     }
   }
@@ -60,24 +84,34 @@ const formatFieldValue = (value: any, fieldType?: FieldType, format: ExportForma
 
 // Helper function to escape CSV field names
 const escapeCsvFieldName = (fieldName: string): string => {
-  if (fieldName.includes('"') || fieldName.includes(',') || fieldName.includes('\n') || fieldName.includes('\r')) {
+  if (
+    fieldName.includes('"') ||
+    fieldName.includes(',') ||
+    fieldName.includes('\n') ||
+    fieldName.includes('\r')
+  ) {
     return '"' + fieldName.replace(/"/g, '""') + '"';
   }
   return fieldName;
 };
 
 // Extract field information from responses or schema
-const extractFieldInfo = (formSchema: FormSchema, responses: FormResponse[]): { fieldInfo: Record<string, string>, orderedFieldIds: string[] } => {
+const extractFieldInfo = (
+  formSchema: FormSchema,
+  responses: FormResponse[]
+): { fieldInfo: Record<string, string>; orderedFieldIds: string[] } => {
   const fieldInfo: Record<string, string> = {};
   let orderedFieldIds: string[] = [];
 
   if (formSchema.pages.length === 0 && responses.length > 0) {
-    logger.info('Unified Export - Form schema is empty, extracting field info from response data...');
+    logger.info(
+      'Unified Export - Form schema is empty, extracting field info from response data...'
+    );
 
     // Get all unique field IDs from all responses
     const allFieldIds = new Set<string>();
-    responses.forEach(response => {
-      Object.keys(response.data).forEach(fieldId => {
+    responses.forEach((response) => {
+      Object.keys(response.data).forEach((fieldId) => {
         allFieldIds.add(fieldId);
       });
     });
@@ -86,7 +120,7 @@ const extractFieldInfo = (formSchema: FormSchema, responses: FormResponse[]): { 
     orderedFieldIds = Array.from(allFieldIds).sort();
 
     // Create a mapping of field ID to a human-readable label
-    orderedFieldIds.forEach(fieldId => {
+    orderedFieldIds.forEach((fieldId) => {
       let label = fieldId;
       if (fieldId.includes('field-')) {
         const parts = fieldId.split('-');
@@ -101,12 +135,21 @@ const extractFieldInfo = (formSchema: FormSchema, responses: FormResponse[]): { 
       fieldInfo[fieldId] = label;
     });
 
-    logger.info('Unified Export - Extracted field info:', Object.keys(fieldInfo).length, 'fields');
+    logger.info(
+      'Unified Export - Extracted field info:',
+      Object.keys(fieldInfo).length,
+      'fields'
+    );
   } else {
     // Extract field info from form schema
-    formSchema.pages.forEach(page => {
-      page.fields.forEach(field => {
-        if (field.type && field.id && 'label' in field && (field as any).label) {
+    formSchema.pages.forEach((page) => {
+      page.fields.forEach((field) => {
+        if (
+          field.type &&
+          field.id &&
+          'label' in field &&
+          (field as any).label
+        ) {
           fieldInfo[field.id] = (field as any).label;
           orderedFieldIds.push(field.id);
         }
@@ -120,7 +163,10 @@ const extractFieldInfo = (formSchema: FormSchema, responses: FormResponse[]): { 
 // Generate CSV content
 const generateCsvContent = (data: UnifiedExportData): string => {
   const { responses, formSchema } = data;
-  const { fieldInfo, orderedFieldIds } = extractFieldInfo(formSchema, responses);
+  const { fieldInfo, orderedFieldIds } = extractFieldInfo(
+    formSchema,
+    responses
+  );
 
   // Get plugin types that have data in any response
   const activePluginTypes = getPluginTypesWithData(responses);
@@ -129,16 +175,16 @@ const generateCsvContent = (data: UnifiedExportData): string => {
   const headers = ['Response ID', 'Submitted At'];
 
   // Add plugin columns
-  activePluginTypes.forEach(pluginType => {
+  activePluginTypes.forEach((pluginType) => {
     const pluginExport = getPluginExport(pluginType);
     if (pluginExport) {
       const pluginColumns = pluginExport.getColumns();
-      pluginColumns.forEach(col => headers.push(escapeCsvFieldName(col)));
+      pluginColumns.forEach((col) => headers.push(escapeCsvFieldName(col)));
     }
   });
 
   // Add form field columns
-  orderedFieldIds.forEach(fieldId => {
+  orderedFieldIds.forEach((fieldId) => {
     headers.push(escapeCsvFieldName(fieldInfo[fieldId]));
   });
 
@@ -146,47 +192,55 @@ const generateCsvContent = (data: UnifiedExportData): string => {
   let csvContent = headers.join(',') + '\n';
 
   // Add data rows
-  responses.forEach(response => {
+  responses.forEach((response) => {
     const row: string[] = [];
 
     // Add basic fields
     row.push(escapeCsvFieldName(response.id));
-    row.push(escapeCsvFieldName(new Date(
-      typeof response.submittedAt === 'string'
-        ? parseInt(response.submittedAt, 10)
-        : response.submittedAt
-    ).toLocaleString('en-US', {
-      timeZone: 'UTC',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    })));
+    row.push(
+      escapeCsvFieldName(
+        new Date(
+          typeof response.submittedAt === 'string'
+            ? parseInt(response.submittedAt, 10)
+            : response.submittedAt
+        ).toLocaleString('en-US', {
+          timeZone: 'UTC',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false,
+        })
+      )
+    );
 
     // Add plugin data
-    activePluginTypes.forEach(pluginType => {
+    activePluginTypes.forEach((pluginType) => {
       const pluginExport = getPluginExport(pluginType);
       if (pluginExport) {
         const pluginMetadata = response.metadata?.[pluginType];
         const values = pluginExport.getValues(pluginMetadata);
-        values.forEach(value => {
-          row.push(escapeCsvFieldName(value !== null && value !== undefined ? String(value) : ''));
+        values.forEach((value) => {
+          row.push(
+            escapeCsvFieldName(
+              value !== null && value !== undefined ? String(value) : ''
+            )
+          );
         });
       }
     });
 
     // Add form field data in consistent order
-    orderedFieldIds.forEach(fieldId => {
+    orderedFieldIds.forEach((fieldId) => {
       const value = response.data[fieldId];
 
       // Find field type if available from schema
       let fieldType: FieldType | undefined;
       if (formSchema.pages.length > 0) {
         for (const page of formSchema.pages) {
-          const field = page.fields.find(f => f.id === fieldId);
+          const field = page.fields.find((f) => f.id === fieldId);
           if (field) {
             fieldType = field.type;
             break;
@@ -206,14 +260,21 @@ const generateCsvContent = (data: UnifiedExportData): string => {
     return count + (pluginExport ? pluginExport.getColumns().length : 0);
   }, 0);
 
-  logger.info(`Unified Export - Generated CSV with ${responses.length} rows and ${headers.length} columns (${pluginColumnCount} plugin columns)`);
+  logger.info(
+    `Unified Export - Generated CSV with ${responses.length} rows and ${headers.length} columns (${pluginColumnCount} plugin columns)`
+  );
   return csvContent;
 };
 
 // Generate Excel content using exceljs
-const generateExcelContent = async (data: UnifiedExportData): Promise<Buffer> => {
+const generateExcelContent = async (
+  data: UnifiedExportData
+): Promise<Buffer> => {
   const { responses, formSchema } = data;
-  const { fieldInfo, orderedFieldIds } = extractFieldInfo(formSchema, responses);
+  const { fieldInfo, orderedFieldIds } = extractFieldInfo(
+    formSchema,
+    responses
+  );
 
   // Get plugin types that have data in any response
   const activePluginTypes = getPluginTypesWithData(responses);
@@ -226,7 +287,7 @@ const generateExcelContent = async (data: UnifiedExportData): Promise<Buffer> =>
   const headers = ['Response ID', 'Submitted At'];
 
   // Add plugin columns to headers
-  activePluginTypes.forEach(pluginType => {
+  activePluginTypes.forEach((pluginType) => {
     const pluginExport = getPluginExport(pluginType);
     if (pluginExport) {
       headers.push(...pluginExport.getColumns());
@@ -234,7 +295,7 @@ const generateExcelContent = async (data: UnifiedExportData): Promise<Buffer> =>
   });
 
   // Add form field columns
-  orderedFieldIds.forEach(fieldId => {
+  orderedFieldIds.forEach((fieldId) => {
     headers.push(fieldInfo[fieldId]);
   });
 
@@ -245,7 +306,7 @@ const generateExcelContent = async (data: UnifiedExportData): Promise<Buffer> =>
     cell.fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'FFE0E0E0' }
+      fgColor: { argb: 'FFE0E0E0' },
     };
   });
 
@@ -255,42 +316,46 @@ const generateExcelContent = async (data: UnifiedExportData): Promise<Buffer> =>
 
     // Add basic fields
     rowData.push(response.id);
-    rowData.push(new Date(
-      typeof response.submittedAt === 'string'
-        ? parseInt(response.submittedAt, 10)
-        : response.submittedAt
-    ).toLocaleString('en-US', {
-      timeZone: 'UTC',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    }));
+    rowData.push(
+      new Date(
+        typeof response.submittedAt === 'string'
+          ? parseInt(response.submittedAt, 10)
+          : response.submittedAt
+      ).toLocaleString('en-US', {
+        timeZone: 'UTC',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      })
+    );
 
     // Add plugin data
-    activePluginTypes.forEach(pluginType => {
+    activePluginTypes.forEach((pluginType) => {
       const pluginExport = getPluginExport(pluginType);
       if (pluginExport) {
         const pluginMetadata = response.metadata?.[pluginType];
         const values = pluginExport.getValues(pluginMetadata);
-        values.forEach(value => {
-          rowData.push(value !== null && value !== undefined ? String(value) : '');
+        values.forEach((value) => {
+          rowData.push(
+            value !== null && value !== undefined ? String(value) : ''
+          );
         });
       }
     });
 
     // Add form field data in consistent order
-    orderedFieldIds.forEach(fieldId => {
+    orderedFieldIds.forEach((fieldId) => {
       const value = response.data[fieldId];
 
       // Find field type if available from schema
       let fieldType: FieldType | undefined;
       if (formSchema.pages.length > 0) {
         for (const page of formSchema.pages) {
-          const field = page.fields.find(f => f.id === fieldId);
+          const field = page.fields.find((f) => f.id === fieldId);
           if (field) {
             fieldType = field.type;
             break;
@@ -321,7 +386,9 @@ const generateExcelContent = async (data: UnifiedExportData): Promise<Buffer> =>
   }, 0);
   const totalColumns = 2 + pluginColumnCount + orderedFieldIds.length; // 2 for Response ID + Submitted At
 
-  logger.info(`Unified Export - Generated Excel with ${responses.length} rows and ${totalColumns} columns (${pluginColumnCount} plugin columns)`);
+  logger.info(
+    `Unified Export - Generated Excel with ${responses.length} rows and ${totalColumns} columns (${pluginColumnCount} plugin columns)`
+  );
 
   // Generate buffer
   const buffer = await workbook.xlsx.writeBuffer();
@@ -331,11 +398,17 @@ const generateExcelContent = async (data: UnifiedExportData): Promise<Buffer> =>
 /**
  * Generate export file (Excel or CSV) from form responses
  */
-export async function generateExportFile(data: UnifiedExportData): Promise<ExportResult> {
+export async function generateExportFile(
+  data: UnifiedExportData
+): Promise<ExportResult> {
   const { formTitle, format } = data;
 
-  logger.info(`Unified Export - Generating ${format.toUpperCase()} export for form: ${formTitle}`);
-  logger.info(`Unified Export - Form schema pages: ${data.formSchema.pages.length}`);
+  logger.info(
+    `Unified Export - Generating ${format.toUpperCase()} export for form: ${formTitle}`
+  );
+  logger.info(
+    `Unified Export - Form schema pages: ${data.formSchema.pages.length}`
+  );
   logger.info(`Unified Export - Total responses: ${data.responses.length}`);
 
   let buffer: Buffer;
@@ -345,7 +418,8 @@ export async function generateExportFile(data: UnifiedExportData): Promise<Expor
   if (format === 'excel') {
     buffer = await generateExcelContent(data);
     filename = generateExcelFilename(formTitle);
-    contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    contentType =
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
   } else {
     const csvContent = generateCsvContent(data);
     buffer = Buffer.from(csvContent, 'utf-8');
@@ -353,12 +427,14 @@ export async function generateExportFile(data: UnifiedExportData): Promise<Expor
     contentType = 'text/csv';
   }
 
-  logger.info(`Unified Export - Generated ${format.toUpperCase()} file, size: ${buffer.length} bytes`);
+  logger.info(
+    `Unified Export - Generated ${format.toUpperCase()} file, size: ${buffer.length} bytes`
+  );
 
   return {
     buffer,
     filename,
-    contentType
+    contentType,
   };
 }
 

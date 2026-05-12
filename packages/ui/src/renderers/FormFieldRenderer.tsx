@@ -1,7 +1,14 @@
 import React from 'react';
 import { Controller, Control, FieldValues, Path } from 'react-hook-form';
-import { FormField, FieldType, FillableFormField, TextFieldValidation, RichTextFormField } from '@dculus/types';
+import {
+  FormField,
+  FieldType,
+  FillableFormField,
+  TextFieldValidation,
+  RichTextFormField,
+} from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
+import { Upload } from 'lucide-react';
 import { LexicalRichTextEditor } from '../rich-text-editor/LexicalRichTextEditor';
 import { Checkbox, RadioGroup, RadioGroupItem, DatePicker } from '../index';
 
@@ -26,16 +33,20 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
   control,
   fieldStyles,
   className = '',
-  mode = RendererMode.PREVIEW
+  mode = RendererMode.PREVIEW,
 }) => {
   // Check if field is fillable to access additional properties
   const isFillableField = (field: FormField): field is FillableFormField => {
-    return field instanceof FillableFormField || 
-           (field as any).label !== undefined ||
-           field.type !== FieldType.FORM_FIELD;
+    return (
+      field instanceof FillableFormField ||
+      (field as any).label !== undefined ||
+      field.type !== FieldType.FORM_FIELD
+    );
   };
 
-  const fillableField = isFillableField(field) ? field as FillableFormField : null;
+  const fillableField = isFillableField(field)
+    ? (field as FillableFormField)
+    : null;
 
   const isRequired = fillableField?.validation?.required || false;
 
@@ -43,9 +54,12 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
   const baseStyles = fieldStyles || {
     container: 'mb-4',
     label: 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2',
-    input: 'w-full h-10 bg-white border border-gray-300 rounded-md px-3 text-gray-500',
-    textarea: 'w-full h-24 bg-white border border-gray-300 rounded-md px-3 py-2 text-gray-500',
-    select: 'w-full h-10 bg-white border border-gray-300 rounded-md px-3 text-gray-500',
+    input:
+      'w-full h-10 bg-white border border-gray-300 rounded-md px-3 text-gray-500',
+    textarea:
+      'w-full h-24 bg-white border border-gray-300 rounded-md px-3 py-2 text-gray-500',
+    select:
+      'w-full h-10 bg-white border border-gray-300 rounded-md px-3 text-gray-500',
   };
 
   const styles = baseStyles;
@@ -53,18 +67,21 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
   // Determine if field should be interactive
   // PREVIEW, SUBMISSION, and EDIT modes: interactive
   // BUILDER mode: disabled/read-only
-  const isInteractive = mode === RendererMode.PREVIEW || mode === RendererMode.SUBMISSION || mode === RendererMode.EDIT;
-  
+  const isInteractive =
+    mode === RendererMode.PREVIEW ||
+    mode === RendererMode.SUBMISSION ||
+    mode === RendererMode.EDIT;
+
   const renderControlledField = () => {
     return (
       <Controller
         name={field.id as Path<FieldValues>}
         control={control}
         render={({ field: controllerField, fieldState, formState }) => {
-         const { error, isTouched } = fieldState;
+          const { error, isTouched } = fieldState;
           // Show error if field is touched OR if form has been submitted
           const hasError = error && (isTouched || formState.isSubmitted);
-          
+
           const inputProps = {
             ...controllerField,
             value: controllerField.value ?? '', // Ensure value is never undefined
@@ -75,20 +92,26 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
           // Add error styling classes
           const getInputClassName = (baseClassName: string) => {
             return `${baseClassName} ${
-              hasError 
-                ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+              hasError
+                ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
                 : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
             } transition-colors`;
           };
 
           switch (field.type) {
             case FieldType.TEXT_INPUT_FIELD:
-              const textValidation = fillableField?.validation as TextFieldValidation;
+              const textValidation =
+                fillableField?.validation as TextFieldValidation;
               const currentLength = String(controllerField.value || '').length;
-              const showCharacterCount = textValidation?.minLength || textValidation?.maxLength;
-              const isOverLimit = textValidation?.maxLength && currentLength > textValidation.maxLength;
-              const isUnderLimit = textValidation?.minLength && currentLength < textValidation.minLength;
-              
+              const showCharacterCount =
+                textValidation?.minLength || textValidation?.maxLength;
+              const isOverLimit =
+                textValidation?.maxLength &&
+                currentLength > textValidation.maxLength;
+              const isUnderLimit =
+                textValidation?.minLength &&
+                currentLength < textValidation.minLength;
+
               return (
                 <div>
                   <input
@@ -100,12 +123,19 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                   />
                   {showCharacterCount && (
                     <div className="flex justify-between items-center mt-1">
-                      <span className={`text-xs ${
-                        isOverLimit || isUnderLimit ? 'text-red-500' : 'text-gray-500'
-                      }`}>
+                      <span
+                        className={`text-xs ${
+                          isOverLimit || isUnderLimit
+                            ? 'text-red-500'
+                            : 'text-gray-500'
+                        }`}
+                      >
                         {currentLength}
-                        {textValidation?.maxLength && `/${textValidation.maxLength}`} characters
-                        {textValidation?.minLength && !textValidation?.maxLength && 
+                        {textValidation?.maxLength &&
+                          `/${textValidation.maxLength}`}{' '}
+                        characters
+                        {textValidation?.minLength &&
+                          !textValidation?.maxLength &&
                           ` (min ${textValidation.minLength})`}
                       </span>
                     </div>
@@ -149,10 +179,13 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                     min={numberField.min}
                     max={numberField.max}
                     className={getInputClassName(styles.input)}
-                    placeholder={fillableField?.placeholder || 'Enter number...'}
+                    placeholder={
+                      fillableField?.placeholder || 'Enter number...'
+                    }
                     disabled={!isInteractive}
                     onChange={(e) => {
-                      const value = e.target.value === '' ? '' : Number(e.target.value);
+                      const value =
+                        e.target.value === '' ? '' : Number(e.target.value);
                       controllerField.onChange(value);
                     }}
                   />
@@ -165,28 +198,43 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
               );
 
             case FieldType.TEXT_AREA_FIELD:
-              const textAreaValidation = fillableField?.validation as TextFieldValidation;
+              const textAreaValidation =
+                fillableField?.validation as TextFieldValidation;
               const textAreaLength = String(controllerField.value || '').length;
-              const showTextAreaCharacterCount = textAreaValidation?.minLength || textAreaValidation?.maxLength;
-              const isTextAreaOverLimit = textAreaValidation?.maxLength && textAreaLength > textAreaValidation.maxLength;
-              const isTextAreaUnderLimit = textAreaValidation?.minLength && textAreaLength < textAreaValidation.minLength;
-              
+              const showTextAreaCharacterCount =
+                textAreaValidation?.minLength || textAreaValidation?.maxLength;
+              const isTextAreaOverLimit =
+                textAreaValidation?.maxLength &&
+                textAreaLength > textAreaValidation.maxLength;
+              const isTextAreaUnderLimit =
+                textAreaValidation?.minLength &&
+                textAreaLength < textAreaValidation.minLength;
+
               return (
                 <div>
                   <textarea
                     {...inputProps}
                     className={getInputClassName(styles.textarea)}
-                    placeholder={fillableField?.placeholder || 'Enter message...'}
+                    placeholder={
+                      fillableField?.placeholder || 'Enter message...'
+                    }
                     maxLength={textAreaValidation?.maxLength}
                   />
                   {showTextAreaCharacterCount && (
                     <div className="flex justify-between items-center mt-1">
-                      <span className={`text-xs ${
-                        isTextAreaOverLimit || isTextAreaUnderLimit ? 'text-red-500' : 'text-gray-500'
-                      }`}>
+                      <span
+                        className={`text-xs ${
+                          isTextAreaOverLimit || isTextAreaUnderLimit
+                            ? 'text-red-500'
+                            : 'text-gray-500'
+                        }`}
+                      >
                         {textAreaLength}
-                        {textAreaValidation?.maxLength && `/${textAreaValidation.maxLength}`} characters
-                        {textAreaValidation?.minLength && !textAreaValidation?.maxLength && 
+                        {textAreaValidation?.maxLength &&
+                          `/${textAreaValidation.maxLength}`}{' '}
+                        characters
+                        {textAreaValidation?.minLength &&
+                          !textAreaValidation?.maxLength &&
                           ` (min ${textAreaValidation.minLength})`}
                       </span>
                     </div>
@@ -202,13 +250,20 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
             case FieldType.SELECT_FIELD:
               return (
                 <div>
-                  <select {...inputProps} className={getInputClassName(styles.select)}>
-                    <option value="">{fillableField?.placeholder || 'Select option...'}</option>
-                    {(fillableField as any)?.options?.map((option: string, index: number) => (
-                      <option key={index} value={option}>
-                        {option}
-                      </option>
-                    ))}
+                  <select
+                    {...inputProps}
+                    className={getInputClassName(styles.select)}
+                  >
+                    <option value="">
+                      {fillableField?.placeholder || 'Select option...'}
+                    </option>
+                    {(fillableField as any)?.options?.map(
+                      (option: string, index: number) => (
+                        <option key={index} value={option}>
+                          {option}
+                        </option>
+                      )
+                    )}
                   </select>
                   {hasError && (
                     <p className="mt-1 text-sm text-red-600" role="alert">
@@ -221,25 +276,39 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
             case FieldType.RADIO_FIELD:
               return (
                 <div>
-                  <div className={`${hasError ? 'border-l-2 border-red-300 pl-3' : ''}`}>
+                  <div
+                    className={`${hasError ? 'border-l-2 border-red-300 pl-3' : ''}`}
+                  >
                     <RadioGroup
                       value={controllerField.value ?? ''}
                       onValueChange={controllerField.onChange}
                       disabled={!isInteractive}
                       className="space-y-2"
                     >
-                      {(fillableField as any)?.options?.map((option: string, index: number) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <RadioGroupItem 
-                            value={option} 
-                            id={`${field.id}-${index}`}
-                            className={hasError ? 'border-red-300 focus:ring-red-500' : ''}
-                          />
-                          <label htmlFor={`${field.id}-${index}`} className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                            {option}
-                          </label>
-                        </div>
-                      ))}
+                      {(fillableField as any)?.options?.map(
+                        (option: string, index: number) => (
+                          <div
+                            key={index}
+                            className="flex items-center space-x-2"
+                          >
+                            <RadioGroupItem
+                              value={option}
+                              id={`${field.id}-${index}`}
+                              className={
+                                hasError
+                                  ? 'border-red-300 focus:ring-red-500'
+                                  : ''
+                              }
+                            />
+                            <label
+                              htmlFor={`${field.id}-${index}`}
+                              className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
+                            >
+                              {option}
+                            </label>
+                          </div>
+                        )
+                      )}
                     </RadioGroup>
                   </div>
                   {hasError && (
@@ -254,30 +323,39 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
               const currentValues = controllerField.value ?? [];
               return (
                 <div>
-                  <div className={`space-y-2 ${hasError ? 'border-l-2 border-red-300 pl-3' : ''}`}>
-                    {(fillableField as any)?.options?.map((option: string, index: number) => (
-                      <div key={index} className="flex items-center">
-                        <Checkbox
-                          id={`${field.id}-${index}`}
-                          checked={currentValues.includes(option)}
-                          onCheckedChange={(checked) => {
-                            const newValues = checked
-                              ? [...currentValues, option]
-                              : currentValues.filter((v: string) => v !== option);
-                            controllerField.onChange(newValues);
-                          }}
-                          className={`${
-                            hasError 
-                              ? 'text-red-600 focus:ring-red-500 border-red-300' 
-                              : 'text-blue-600 focus:ring-blue-500'
-                          }`}
-                          disabled={!isInteractive}
-                        />
-                        <label htmlFor={`${field.id}-${index}`} className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                          {option}
-                        </label>
-                      </div>
-                    ))}
+                  <div
+                    className={`space-y-2 ${hasError ? 'border-l-2 border-red-300 pl-3' : ''}`}
+                  >
+                    {(fillableField as any)?.options?.map(
+                      (option: string, index: number) => (
+                        <div key={index} className="flex items-center">
+                          <Checkbox
+                            id={`${field.id}-${index}`}
+                            checked={currentValues.includes(option)}
+                            onCheckedChange={(checked) => {
+                              const newValues = checked
+                                ? [...currentValues, option]
+                                : currentValues.filter(
+                                    (v: string) => v !== option
+                                  );
+                              controllerField.onChange(newValues);
+                            }}
+                            className={`${
+                              hasError
+                                ? 'text-red-600 focus:ring-red-500 border-red-300'
+                                : 'text-blue-600 focus:ring-blue-500'
+                            }`}
+                            disabled={!isInteractive}
+                          />
+                          <label
+                            htmlFor={`${field.id}-${index}`}
+                            className="ml-2 text-sm text-gray-700 dark:text-gray-300"
+                          >
+                            {option}
+                          </label>
+                        </div>
+                      )
+                    )}
                   </div>
                   {hasError && (
                     <p className="mt-1 text-sm text-red-600" role="alert">
@@ -290,16 +368,16 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
             case FieldType.DATE_FIELD:
               const dateField = field as any;
               // Convert string date to Date object for DatePicker
-              const dateValue = controllerField.value 
-                ? new Date(controllerField.value) 
+              const dateValue = controllerField.value
+                ? new Date(controllerField.value)
                 : undefined;
-              const minDateValue = dateField.minDate 
-                ? new Date(dateField.minDate) 
+              const minDateValue = dateField.minDate
+                ? new Date(dateField.minDate)
                 : undefined;
-              const maxDateValue = dateField.maxDate 
-                ? new Date(dateField.maxDate) 
+              const maxDateValue = dateField.maxDate
+                ? new Date(dateField.maxDate)
                 : undefined;
-              
+
               return (
                 <div>
                   <DatePicker
@@ -307,7 +385,9 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                     date={dateValue}
                     onDateChange={(date) => {
                       // Store as ISO date string (YYYY-MM-DD) for form submission
-                      controllerField.onChange(date ? date.toISOString().split('T')[0] : '');
+                      controllerField.onChange(
+                        date ? date.toISOString().split('T')[0] : ''
+                      );
                     }}
                     minDate={minDateValue}
                     maxDate={maxDateValue}
@@ -322,6 +402,125 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                   )}
                 </div>
               );
+
+            case FieldType.FILE_UPLOAD_FIELD: {
+              const fileUploadField = field as any;
+              const currentFiles: File[] = Array.isArray(controllerField.value)
+                ? controllerField.value
+                : [];
+              const maxFiles: number = fileUploadField.maxFiles || 1;
+              const maxFileSizeMb: number = fileUploadField.maxFileSizeMb || 5;
+              const allowedMimeTypes: string[] =
+                fileUploadField.allowedMimeTypes || [];
+              const acceptAttr =
+                allowedMimeTypes.length > 0
+                  ? allowedMimeTypes.join(',')
+                  : undefined;
+
+              const handleFiles = (files: FileList | null) => {
+                if (!files || !isInteractive) return;
+                const incoming = Array.from(files).filter((f) => {
+                  if (f.size > maxFileSizeMb * 1024 * 1024) return false;
+                  if (
+                    allowedMimeTypes.length > 0 &&
+                    !allowedMimeTypes.includes(f.type)
+                  )
+                    return false;
+                  return true;
+                });
+                const combined = [...currentFiles, ...incoming].slice(
+                  0,
+                  maxFiles
+                );
+                controllerField.onChange(combined);
+              };
+
+              return (
+                <div>
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                      hasError
+                        ? 'border-red-300 bg-red-50'
+                        : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50'
+                    } ${!isInteractive ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    onClick={() => {
+                      if (isInteractive) {
+                        (
+                          document.getElementById(
+                            `file-input-${field.id}`
+                          ) as HTMLInputElement | null
+                        )?.click();
+                      }
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleFiles(e.dataTransfer.files);
+                    }}
+                  >
+                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600">
+                      {isInteractive
+                        ? 'Click or drag files here to upload'
+                        : 'File upload'}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Max {maxFiles} file{maxFiles > 1 ? 's' : ''}, up to{' '}
+                      {maxFileSizeMb}MB each
+                      {allowedMimeTypes.length > 0 &&
+                        ` · ${allowedMimeTypes.join(', ')}`}
+                    </p>
+                    <input
+                      id={`file-input-${field.id}`}
+                      type="file"
+                      multiple={maxFiles > 1}
+                      accept={acceptAttr}
+                      className="hidden"
+                      disabled={!isInteractive}
+                      onChange={(e) => handleFiles(e.target.files)}
+                    />
+                  </div>
+                  {currentFiles.length > 0 && (
+                    <ul className="mt-2 space-y-1">
+                      {currentFiles.map((file, idx) => (
+                        <li
+                          key={idx}
+                          className="flex items-center justify-between text-sm bg-gray-100 dark:bg-gray-700 rounded px-3 py-1"
+                        >
+                          <span className="truncate text-gray-700 dark:text-gray-300">
+                            {file.name}
+                          </span>
+                          {isInteractive && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = currentFiles.filter(
+                                  (_, i) => i !== idx
+                                );
+                                controllerField.onChange(updated);
+                              }}
+                              className="ml-2 text-gray-400 hover:text-red-500 flex-shrink-0 text-lg leading-none"
+                              aria-label={`Remove ${file.name}`}
+                            >
+                              &times;
+                            </button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {hasError && (
+                    <p className="mt-1 text-sm text-red-600" role="alert">
+                      {error.message}
+                    </p>
+                  )}
+                </div>
+              );
+            }
 
             default:
               return (
@@ -356,7 +555,9 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
           <span>
             {fillableField.label}
             {isRequired && (
-              <span className="text-red-500 ml-1" aria-label="required">*</span>
+              <span className="text-red-500 ml-1" aria-label="required">
+                *
+              </span>
             )}
           </span>
           {/* Validation status indicator */}
@@ -367,9 +568,11 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
               render={({ fieldState }) => {
                 const { error, isTouched } = fieldState;
                 if (!isTouched) return <span></span>;
-                
+
                 return (
-                  <span className={`text-xs ${error ? 'text-red-500' : 'text-green-500'}`}>
+                  <span
+                    className={`text-xs ${error ? 'text-red-500' : 'text-green-500'}`}
+                  >
                     {error ? '✕' : '✓'}
                   </span>
                 );

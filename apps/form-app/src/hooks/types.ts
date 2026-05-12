@@ -100,6 +100,15 @@ export interface RichTextFieldData {
 }
 
 /**
+ * File upload configuration for file upload fields
+ */
+export interface FileUploadFieldData {
+  allowedMimeTypes?: string[];
+  maxFileSizeMb?: number;
+  maxFiles?: number;
+}
+
+/**
  * Base field data that all fields share
  */
 export interface BaseFieldData {

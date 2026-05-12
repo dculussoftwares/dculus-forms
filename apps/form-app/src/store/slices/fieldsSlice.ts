@@ -14,7 +14,10 @@ import {
   createYJSFieldMap,
   serializeFieldToYMap,
 } from '../helpers/fieldHelpers';
-import { extractFieldData, FieldData } from '../collaboration/CollaborationManager';
+import {
+  extractFieldData,
+  FieldData,
+} from '../collaboration/CollaborationManager';
 
 /**
  * Create the fields slice
@@ -35,13 +38,19 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
      *
      * Adds a new field at the end of the page's fields array.
      */
-    addField: (pageId: string, fieldType: FieldType, fieldData: Partial<FieldData> = {}) => {
+    addField: (
+      pageId: string,
+      fieldType: FieldType,
+      fieldData: Partial<FieldData> = {}
+    ) => {
       const { _getYDoc, _isYJSReady } = get() as any;
       const ydoc = _getYDoc();
       const isReady = _isYJSReady();
 
       if (!ydoc || !isReady) {
-        console.warn('Cannot add field: YJS document not available or not connected');
+        console.warn(
+          'Cannot add field: YJS document not available or not connected'
+        );
         return;
       }
 
@@ -49,7 +58,9 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       const formSchemaMap = ydoc.getMap('formSchema');
       const pagesArray = getOrCreatePagesArray(formSchemaMap);
 
-      const pageIndex = pagesArray.toArray().findIndex((pageMap) => pageMap.get('id') === pageId);
+      const pageIndex = pagesArray
+        .toArray()
+        .findIndex((pageMap) => pageMap.get('id') === pageId);
       if (pageIndex === -1) {
         console.warn(`Page with id ${pageId} not found`);
         return;
@@ -83,7 +94,9 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       const isReady = _isYJSReady();
 
       if (!ydoc || !isReady) {
-        console.warn('Cannot add field at index: YJS document not available or not connected');
+        console.warn(
+          'Cannot add field at index: YJS document not available or not connected'
+        );
         return;
       }
 
@@ -91,7 +104,9 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       const formSchemaMap = ydoc.getMap('formSchema');
       const pagesArray = getOrCreatePagesArray(formSchemaMap);
 
-      const pageIndex = pagesArray.toArray().findIndex((pageMap) => pageMap.get('id') === pageId);
+      const pageIndex = pagesArray
+        .toArray()
+        .findIndex((pageMap) => pageMap.get('id') === pageId);
       if (pageIndex === -1) {
         console.warn(`Page with id ${pageId} not found`);
         return;
@@ -120,29 +135,42 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
      *
      * Updates specific properties of a field while preserving others.
      */
-    updateField: (pageId: string, fieldId: string, updates: Partial<FieldData>) => {
+    updateField: (
+      pageId: string,
+      fieldId: string,
+      updates: Partial<FieldData>
+    ) => {
       const { _getYDoc, _isYJSReady } = get() as any;
       const ydoc = _getYDoc();
       const isReady = _isYJSReady();
 
       if (!ydoc || !isReady) return;
 
-      console.log(`🔄 FieldsSlice - Updating field ${fieldId} in page ${pageId}:`, {
-        updates,
-        isRichTextUpdate: updates.content !== undefined,
-        richTextContent: updates.content ? updates.content.substring(0, 100) + '...' : 'N/A',
-      });
+      console.log(
+        `🔄 FieldsSlice - Updating field ${fieldId} in page ${pageId}:`,
+        {
+          updates,
+          isRichTextUpdate: updates.content !== undefined,
+          richTextContent: updates.content
+            ? updates.content.substring(0, 100) + '...'
+            : 'N/A',
+        }
+      );
 
       const formSchemaMap = ydoc.getMap('formSchema');
       const pagesArray = getOrCreatePagesArray(formSchemaMap);
 
-      const pageIndex = pagesArray.toArray().findIndex((pageMap) => pageMap.get('id') === pageId);
+      const pageIndex = pagesArray
+        .toArray()
+        .findIndex((pageMap) => pageMap.get('id') === pageId);
 
       if (pageIndex === -1) return;
 
       const pageMap = pagesArray.get(pageIndex);
       const fieldsArray = pageMap.get('fields') as Y.Array<Y.Map<any>>;
-      const fieldIndex = fieldsArray.toArray().findIndex((fieldMap) => fieldMap.get('id') === fieldId);
+      const fieldIndex = fieldsArray
+        .toArray()
+        .findIndex((fieldMap) => fieldMap.get('id') === fieldId);
 
       if (fieldIndex === -1) return;
 
@@ -154,7 +182,10 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       if (!validationMap || !(validationMap instanceof Y.Map)) {
         validationMap = new Y.Map();
         validationMap.set('required', false);
-        if (fieldType === FieldType.TEXT_INPUT_FIELD || fieldType === FieldType.TEXT_AREA_FIELD) {
+        if (
+          fieldType === FieldType.TEXT_INPUT_FIELD ||
+          fieldType === FieldType.TEXT_AREA_FIELD
+        ) {
           validationMap.set('type', FieldType.TEXT_FIELD_VALIDATION);
         } else if (fieldType === FieldType.CHECKBOX_FIELD) {
           validationMap.set('type', FieldType.CHECKBOX_FIELD_VALIDATION);
@@ -168,7 +199,12 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
         console.log(`📝 FieldsSlice - Processing update key '${key}':`, {
           fieldId,
           key,
-          value: key === 'content' ? (typeof value === 'string' ? value.substring(0, 100) + '...' : value) : value,
+          value:
+            key === 'content'
+              ? typeof value === 'string'
+                ? value.substring(0, 100) + '...'
+                : value
+              : value,
           valueType: typeof value,
           fieldType,
         });
@@ -179,21 +215,39 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
             .filter((option) => option && option.trim() !== '')
             .forEach((option: string) => optionsArray.push([option]));
           fieldMap.set('options', optionsArray);
-        } else if (key === 'defaultValue' && Array.isArray(value) && fieldType === FieldType.CHECKBOX_FIELD) {
+        } else if (key === 'allowedMimeTypes' && Array.isArray(value)) {
+          const mimeArray = new Y.Array();
+          value.forEach((mime: string) => mimeArray.push([mime]));
+          fieldMap.set('allowedMimeTypes', mimeArray);
+        } else if (
+          key === 'defaultValue' &&
+          Array.isArray(value) &&
+          fieldType === FieldType.CHECKBOX_FIELD
+        ) {
           // Handle checkbox defaultValue arrays
           const defaultValueArray = new Y.Array();
           value
             .filter((val) => val && val.trim() !== '')
             .forEach((val: string) => defaultValueArray.push([val]));
           fieldMap.set('defaultValue', defaultValueArray);
-        } else if (key === 'validation' && value && typeof value === 'object' && !Array.isArray(value)) {
+        } else if (
+          key === 'validation' &&
+          value &&
+          typeof value === 'object' &&
+          !Array.isArray(value)
+        ) {
           // Handle validation object from field editor
           const validationData = value as any;
-          console.log(`🔄 Setting validation.required to: ${validationData.required} for field ${fieldId}`);
+          console.log(
+            `🔄 Setting validation.required to: ${validationData.required} for field ${fieldId}`
+          );
           if (validationData.required !== undefined) {
             validationMap.set('required', validationData.required);
           }
-          if (fieldType === FieldType.TEXT_INPUT_FIELD || fieldType === FieldType.TEXT_AREA_FIELD) {
+          if (
+            fieldType === FieldType.TEXT_INPUT_FIELD ||
+            fieldType === FieldType.TEXT_AREA_FIELD
+          ) {
             if (validationData.minLength !== undefined) {
               validationMap.set('minLength', validationData.minLength);
             }
@@ -213,13 +267,15 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
           validationMap.set('required', value);
         } else if (
           key === 'min' &&
-          (fieldType === FieldType.TEXT_INPUT_FIELD || fieldType === FieldType.TEXT_AREA_FIELD)
+          (fieldType === FieldType.TEXT_INPUT_FIELD ||
+            fieldType === FieldType.TEXT_AREA_FIELD)
         ) {
           // For text fields, min maps to minLength in validation (fallback for old format)
           validationMap.set('minLength', value);
         } else if (
           key === 'max' &&
-          (fieldType === FieldType.TEXT_INPUT_FIELD || fieldType === FieldType.TEXT_AREA_FIELD)
+          (fieldType === FieldType.TEXT_INPUT_FIELD ||
+            fieldType === FieldType.TEXT_AREA_FIELD)
         ) {
           // For text fields, max maps to maxLength in validation (fallback for old format)
           validationMap.set('maxLength', value);
@@ -251,13 +307,17 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
         console.warn('YJS formSchema pages array not found');
         return;
       }
-      const pageIndex = pagesArray.toArray().findIndex((pageMap) => pageMap.get('id') === pageId);
+      const pageIndex = pagesArray
+        .toArray()
+        .findIndex((pageMap) => pageMap.get('id') === pageId);
 
       if (pageIndex === -1) return;
 
       const pageMap = pagesArray.get(pageIndex);
       const fieldsArray = pageMap.get('fields') as Y.Array<Y.Map<any>>;
-      const fieldIndex = fieldsArray.toArray().findIndex((fieldMap) => fieldMap.get('id') === fieldId);
+      const fieldIndex = fieldsArray
+        .toArray()
+        .findIndex((fieldMap) => fieldMap.get('id') === fieldId);
 
       if (fieldIndex !== -1) {
         fieldsArray.delete(fieldIndex, 1);
@@ -276,7 +336,9 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       const isReady = _isYJSReady();
 
       if (!ydoc || !isReady) {
-        console.warn('Cannot reorder fields: YJS document not available or not connected');
+        console.warn(
+          'Cannot reorder fields: YJS document not available or not connected'
+        );
         return;
       }
 
@@ -288,7 +350,9 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
         return;
       }
 
-      const pageIndex = pagesArray.toArray().findIndex((pageMap) => pageMap.get('id') === pageId);
+      const pageIndex = pagesArray
+        .toArray()
+        .findIndex((pageMap) => pageMap.get('id') === pageId);
       if (pageIndex === -1) {
         console.warn(`Page with id ${pageId} not found`);
         return;
@@ -316,7 +380,9 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
 
       if (oldIndex === newIndex) return;
 
-      console.log(`Reordering field from index ${oldIndex} to ${newIndex} in page ${pageId}`);
+      console.log(
+        `Reordering field from index ${oldIndex} to ${newIndex} in page ${pageId}`
+      );
 
       // Atomic move operation wrapped in transaction
       // This is CRDT-safe and produces only 2 observer events (1 delete + 1 insert)
@@ -350,12 +416,16 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
 
       if (!pagesArray) return;
 
-      const pageIndex = pagesArray.toArray().findIndex((pageMap) => pageMap.get('id') === pageId);
+      const pageIndex = pagesArray
+        .toArray()
+        .findIndex((pageMap) => pageMap.get('id') === pageId);
       if (pageIndex === -1) return;
 
       const pageMap = pagesArray.get(pageIndex);
       const fieldsArray = pageMap.get('fields') as Y.Array<Y.Map<any>>;
-      const fieldIndex = fieldsArray.toArray().findIndex((fieldMap) => fieldMap.get('id') === fieldId);
+      const fieldIndex = fieldsArray
+        .toArray()
+        .findIndex((fieldMap) => fieldMap.get('id') === fieldId);
 
       if (fieldIndex === -1) return;
 
@@ -385,12 +455,16 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       const isReady = _isYJSReady();
 
       if (!ydoc || !isReady) {
-        console.warn('Cannot move field between pages: YJS document not available or not connected');
+        console.warn(
+          'Cannot move field between pages: YJS document not available or not connected'
+        );
         return;
       }
 
       if (sourcePageId === targetPageId) {
-        console.warn('Cannot move field to same page - use reorderFields instead');
+        console.warn(
+          'Cannot move field to same page - use reorderFields instead'
+        );
         return;
       }
 
@@ -398,23 +472,37 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       const pagesArray = getOrCreatePagesArray(formSchemaMap);
 
       // Find source and target pages
-      const sourcePageIndex = pagesArray.toArray().findIndex((pageMap) => pageMap.get('id') === sourcePageId);
-      const targetPageIndex = pagesArray.toArray().findIndex((pageMap) => pageMap.get('id') === targetPageId);
+      const sourcePageIndex = pagesArray
+        .toArray()
+        .findIndex((pageMap) => pageMap.get('id') === sourcePageId);
+      const targetPageIndex = pagesArray
+        .toArray()
+        .findIndex((pageMap) => pageMap.get('id') === targetPageId);
 
       if (sourcePageIndex === -1 || targetPageIndex === -1) {
-        console.warn(`Page not found - source: ${sourcePageId}, target: ${targetPageId}`);
+        console.warn(
+          `Page not found - source: ${sourcePageId}, target: ${targetPageId}`
+        );
         return;
       }
 
       const sourcePageMap = pagesArray.get(sourcePageIndex);
       const targetPageMap = pagesArray.get(targetPageIndex);
-      const sourceFieldsArray = sourcePageMap.get('fields') as Y.Array<Y.Map<any>>;
-      const targetFieldsArray = targetPageMap.get('fields') as Y.Array<Y.Map<any>>;
+      const sourceFieldsArray = sourcePageMap.get('fields') as Y.Array<
+        Y.Map<any>
+      >;
+      const targetFieldsArray = targetPageMap.get('fields') as Y.Array<
+        Y.Map<any>
+      >;
 
       // Find the field to move
-      const fieldIndex = sourceFieldsArray.toArray().findIndex((fieldMap) => fieldMap.get('id') === fieldId);
+      const fieldIndex = sourceFieldsArray
+        .toArray()
+        .findIndex((fieldMap) => fieldMap.get('id') === fieldId);
       if (fieldIndex === -1) {
-        console.warn(`Field ${fieldId} not found in source page ${sourcePageId}`);
+        console.warn(
+          `Field ${fieldId} not found in source page ${sourcePageId}`
+        );
         return;
       }
 
@@ -432,7 +520,9 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       // Add field to target page at specified index
       const newFieldMap = createYJSFieldMap(fieldData);
       const safeInsertIndex =
-        insertIndex !== undefined ? Math.max(0, Math.min(insertIndex, targetFieldsArray.length)) : targetFieldsArray.length;
+        insertIndex !== undefined
+          ? Math.max(0, Math.min(insertIndex, targetFieldsArray.length))
+          : targetFieldsArray.length;
 
       if (safeInsertIndex === targetFieldsArray.length) {
         targetFieldsArray.push([newFieldMap]);
@@ -452,18 +542,26 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
      *
      * Creates a duplicate of the field on the target page.
      */
-    copyFieldToPage: (sourcePageId: string, targetPageId: string, fieldId: string) => {
+    copyFieldToPage: (
+      sourcePageId: string,
+      targetPageId: string,
+      fieldId: string
+    ) => {
       const { _getYDoc, _isYJSReady } = get() as any;
       const ydoc = _getYDoc();
       const isReady = _isYJSReady();
 
       if (!ydoc || !isReady) {
-        console.warn('Cannot copy field to page: YJS document not available or not connected');
+        console.warn(
+          'Cannot copy field to page: YJS document not available or not connected'
+        );
         return;
       }
 
       if (sourcePageId === targetPageId) {
-        console.warn('Cannot copy field to same page - use duplicateField instead');
+        console.warn(
+          'Cannot copy field to same page - use duplicateField instead'
+        );
         return;
       }
 
@@ -471,23 +569,37 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       const pagesArray = getOrCreatePagesArray(formSchemaMap);
 
       // Find source and target pages
-      const sourcePageIndex = pagesArray.toArray().findIndex((pageMap) => pageMap.get('id') === sourcePageId);
-      const targetPageIndex = pagesArray.toArray().findIndex((pageMap) => pageMap.get('id') === targetPageId);
+      const sourcePageIndex = pagesArray
+        .toArray()
+        .findIndex((pageMap) => pageMap.get('id') === sourcePageId);
+      const targetPageIndex = pagesArray
+        .toArray()
+        .findIndex((pageMap) => pageMap.get('id') === targetPageId);
 
       if (sourcePageIndex === -1 || targetPageIndex === -1) {
-        console.warn(`Page not found - source: ${sourcePageId}, target: ${targetPageId}`);
+        console.warn(
+          `Page not found - source: ${sourcePageId}, target: ${targetPageId}`
+        );
         return;
       }
 
       const sourcePageMap = pagesArray.get(sourcePageIndex);
       const targetPageMap = pagesArray.get(targetPageIndex);
-      const sourceFieldsArray = sourcePageMap.get('fields') as Y.Array<Y.Map<any>>;
-      const targetFieldsArray = targetPageMap.get('fields') as Y.Array<Y.Map<any>>;
+      const sourceFieldsArray = sourcePageMap.get('fields') as Y.Array<
+        Y.Map<any>
+      >;
+      const targetFieldsArray = targetPageMap.get('fields') as Y.Array<
+        Y.Map<any>
+      >;
 
       // Find the field to copy
-      const fieldIndex = sourceFieldsArray.toArray().findIndex((fieldMap) => fieldMap.get('id') === fieldId);
+      const fieldIndex = sourceFieldsArray
+        .toArray()
+        .findIndex((fieldMap) => fieldMap.get('id') === fieldId);
       if (fieldIndex === -1) {
-        console.warn(`Field ${fieldId} not found in source page ${sourcePageId}`);
+        console.warn(
+          `Field ${fieldId} not found in source page ${sourcePageId}`
+        );
         return;
       }
 
@@ -499,7 +611,9 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       fieldData.id = `field-${Date.now()}-copy`;
       fieldData.label = `${fieldData.label} (Copy)`;
 
-      console.log(`Copying field ${fieldId} from page ${sourcePageId} to page ${targetPageId}`);
+      console.log(
+        `Copying field ${fieldId} from page ${sourcePageId} to page ${targetPageId}`
+      );
 
       // Add the copied field to target page at the end
       const copiedFieldMap = createYJSFieldMap(fieldData);
@@ -511,7 +625,9 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
      *
      * Returns both the page and field if found.
      */
-    _findFieldInPages: (fieldId: string): { page: FormPage; field: FormField } | null => {
+    _findFieldInPages: (
+      fieldId: string
+    ): { page: FormPage; field: FormField } | null => {
       const { pages } = get() as any;
 
       for (const page of pages) {

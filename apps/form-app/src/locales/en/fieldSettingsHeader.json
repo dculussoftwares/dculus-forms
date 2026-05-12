@@ -9,7 +9,8 @@
     "checkbox": "Checkbox",
     "date": "Date",
     "formField": "Form Field",
-    "richText": "Rich Text"
+    "richText": "Rich Text",
+    "fileUpload": "File Upload"
   },
   "header": {
     "settings": "Settings",

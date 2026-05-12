@@ -25,7 +25,8 @@ export {
   ListOrdered,
   CheckSquare,
   CircleDot,
-  BarChart3
+  BarChart3,
+  Upload,
 } from 'lucide-react';
 
 /**
@@ -41,6 +42,7 @@ export const FIELD_TYPE_ICON_MAP: Record<FieldType, string> = {
   [FieldType.SELECT_FIELD]: 'ListOrdered',
   [FieldType.RADIO_FIELD]: 'CircleDot',
   [FieldType.CHECKBOX_FIELD]: 'CheckSquare',
+  [FieldType.FILE_UPLOAD_FIELD]: 'Upload',
   [FieldType.RICH_TEXT_FIELD]: 'FileText',
   // Base types - fallback to generic icon
   [FieldType.TEXT]: 'BarChart3',
@@ -79,6 +81,7 @@ export const FIELD_TYPE_TRANSLATION_KEYS: Record<FieldType, string> = {
   [FieldType.SELECT_FIELD]: 'fieldTypes.select_field',
   [FieldType.RADIO_FIELD]: 'fieldTypes.radio_field',
   [FieldType.CHECKBOX_FIELD]: 'fieldTypes.checkbox_field',
+  [FieldType.FILE_UPLOAD_FIELD]: 'fieldTypes.file_upload_field',
   [FieldType.RICH_TEXT_FIELD]: 'fieldTypes.rich_text_field',
   // Base types
   [FieldType.TEXT]: 'fieldTypes.unknown',
@@ -126,6 +129,7 @@ export const isFillableFieldType = (fieldType: string): boolean => {
     FieldType.SELECT_FIELD,
     FieldType.RADIO_FIELD,
     FieldType.CHECKBOX_FIELD,
+    FieldType.FILE_UPLOAD_FIELD,
   ];
   return fillableTypes.includes(fieldType as FieldType);
 };
@@ -184,6 +188,7 @@ export const getAllFillableFieldTypes = (): FieldType[] => {
     FieldType.SELECT_FIELD,
     FieldType.RADIO_FIELD,
     FieldType.CHECKBOX_FIELD,
+    FieldType.FILE_UPLOAD_FIELD,
   ];
 };
 
@@ -201,5 +206,6 @@ export const getAnalyticsEnabledFieldTypes = (): FieldType[] => {
     FieldType.SELECT_FIELD,
     FieldType.RADIO_FIELD,
     FieldType.CHECKBOX_FIELD,
+    FieldType.FILE_UPLOAD_FIELD,
   ];
 };

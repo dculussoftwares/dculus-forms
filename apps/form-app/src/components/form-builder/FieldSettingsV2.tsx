@@ -1,8 +1,18 @@
 import React from 'react';
-import { FormField, FieldType } from '@dculus/types';
+import { FormField, FieldType, FileUploadField } from '@dculus/types';
 import { Settings } from 'lucide-react';
+import { Controller } from 'react-hook-form';
+import { Label, Checkbox } from '@dculus/ui';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useFormPermissions } from '../../hooks/useFormPermissions';
+import { useFieldEditor } from '../../hooks';
+import {
+  ValidationSummary,
+  FieldSettingsHeader,
+  FieldSettingsFooter,
+  FormInputField,
+  useFieldSettingsConstants,
+} from './field-settings';
 import {
   TextFieldSettings,
   NumberFieldSettings,
@@ -10,6 +20,231 @@ import {
   DateFieldSettings,
   RichTextFieldSettings,
 } from './field-settings-v2';
+
+/** Common MIME type options for the file upload field settings UI */
+const MIME_TYPE_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: 'image/*', label: 'Images (all)' },
+  { value: 'image/jpeg', label: 'JPEG' },
+  { value: 'image/png', label: 'PNG' },
+  { value: 'image/webp', label: 'WebP' },
+  { value: 'image/gif', label: 'GIF' },
+  { value: 'application/pdf', label: 'PDF' },
+  { value: 'application/msword', label: 'Word (.doc)' },
+  {
+    value:
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    label: 'Word (.docx)',
+  },
+  { value: 'application/vnd.ms-excel', label: 'Excel (.xls)' },
+  {
+    value: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    label: 'Excel (.xlsx)',
+  },
+  { value: 'text/plain', label: 'Text (.txt)' },
+  { value: 'text/csv', label: 'CSV' },
+  { value: 'video/*', label: 'Videos (all)' },
+  { value: 'audio/*', label: 'Audio (all)' },
+];
+
+interface FileUploadFieldSettingsInnerProps {
+  field: FileUploadField;
+  isConnected: boolean;
+  isReadOnly?: boolean;
+  onUpdate?: (updates: Record<string, any>) => void;
+}
+
+const FileUploadFieldSettingsInner: React.FC<
+  FileUploadFieldSettingsInnerProps
+> = ({ field, isConnected, isReadOnly = false, onUpdate }) => {
+  const constants = useFieldSettingsConstants();
+  const isEditable = isConnected && !isReadOnly;
+  const {
+    form,
+    isSaving,
+    isValid,
+    errors: formErrors,
+    handleSave,
+    handleCancel,
+    handleReset,
+  } = useFieldEditor({
+    field,
+    onSave: (updates) => onUpdate?.(updates),
+    onCancel: () => {},
+  });
+
+  const errors = formErrors as any;
+  const {
+    control,
+    watch,
+    setValue,
+    formState: { isDirty },
+  } = form;
+  const allowedMimeTypes: string[] = watch('allowedMimeTypes') || [];
+
+  const toggleMimeType = (value: string) => {
+    const next = allowedMimeTypes.includes(value)
+      ? allowedMimeTypes.filter((m) => m !== value)
+      : [...allowedMimeTypes, value];
+    setValue('allowedMimeTypes', next, { shouldDirty: true });
+  };
+
+  return (
+    <div className="h-full flex flex-col">
+      <FieldSettingsHeader field={field} isDirty={isDirty} />
+
+      <div className="flex-1 overflow-y-auto">
+        <form
+          onSubmit={handleSave}
+          className={`p-4 space-y-6 transition-all duration-200 ${
+            isDirty
+              ? 'bg-gradient-to-b from-orange-25 to-transparent dark:from-orange-950/10'
+              : ''
+          }`}
+        >
+          {!isValid && Object.keys(errors).length > 0 && (
+            <ValidationSummary errors={errors} />
+          )}
+
+          {/* Basic Settings */}
+          <div className={constants.CSS_CLASSES.SECTION_SPACING}>
+            <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
+              {constants.SECTION_TITLES.BASIC_SETTINGS}
+            </h4>
+
+            <FormInputField
+              name="label"
+              label={constants.LABELS.LABEL}
+              placeholder={constants.PLACEHOLDERS.FIELD_LABEL}
+              multiline={true}
+              rows={2}
+              control={control}
+              error={errors.label}
+              disabled={!isEditable}
+            />
+
+            <FormInputField
+              name="hint"
+              label={constants.LABELS.HELP_TEXT}
+              placeholder={constants.PLACEHOLDERS.HELP_TEXT}
+              multiline={true}
+              rows={2}
+              control={control}
+              error={errors.hint}
+              disabled={!isEditable}
+            />
+          </div>
+
+          {/* Validation */}
+          <div className={constants.CSS_CLASSES.SECTION_SPACING}>
+            <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
+              {constants.SECTION_TITLES.VALIDATION}
+            </h4>
+
+            <div className="flex items-center space-x-2">
+              <Controller
+                name="required"
+                control={control}
+                render={({ field: ctrl }) => (
+                  <Checkbox
+                    id="file-upload-required"
+                    checked={ctrl.value || false}
+                    onCheckedChange={ctrl.onChange}
+                    disabled={!isEditable}
+                  />
+                )}
+              />
+              <Label
+                htmlFor="file-upload-required"
+                className={constants.CSS_CLASSES.LABEL_STYLE}
+              >
+                {constants.LABELS.REQUIRED_FIELD}
+              </Label>
+            </div>
+          </div>
+
+          {/* Upload Constraints */}
+          <div className={constants.CSS_CLASSES.SECTION_SPACING}>
+            <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>
+              {constants.SECTION_TITLES.FILE_UPLOAD_SETTINGS}
+            </h4>
+
+            <FormInputField
+              name="maxFileSizeMb"
+              label={constants.LABELS.MAX_FILE_SIZE_MB}
+              placeholder="5"
+              type="number"
+              min="1"
+              max="50"
+              control={control}
+              error={errors.maxFileSizeMb}
+              disabled={!isEditable}
+              transform={{
+                output: (v: string) => (v === '' ? undefined : parseInt(v)),
+              }}
+            />
+
+            <FormInputField
+              name="maxFiles"
+              label={constants.LABELS.MAX_FILES}
+              placeholder="1"
+              type="number"
+              min="1"
+              max="10"
+              control={control}
+              error={errors.maxFiles}
+              disabled={!isEditable}
+              transform={{
+                output: (v: string) => (v === '' ? undefined : parseInt(v)),
+              }}
+            />
+
+            {/* Allowed File Types */}
+            <div className="space-y-2">
+              <Label className={constants.CSS_CLASSES.LABEL_STYLE}>
+                {constants.LABELS.ALLOWED_FILE_TYPES}
+              </Label>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Leave all unchecked to allow any file type.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {MIME_TYPE_OPTIONS.map(({ value, label }) => (
+                  <div key={value} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`mime-${value}`}
+                      checked={allowedMimeTypes.includes(value)}
+                      onCheckedChange={() => toggleMimeType(value)}
+                      disabled={!isEditable}
+                    />
+                    <Label
+                      htmlFor={`mime-${value}`}
+                      className="text-xs text-gray-700 dark:text-gray-300 cursor-pointer"
+                    >
+                      {label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="pb-4" />
+        </form>
+      </div>
+
+      <FieldSettingsFooter
+        isDirty={isDirty}
+        isValid={isValid}
+        isConnected={isConnected}
+        isReadOnly={isReadOnly}
+        isSaving={isSaving}
+        errors={errors}
+        onReset={handleReset}
+        onCancel={handleCancel}
+        onSave={handleSave}
+      />
+    </div>
+  );
+};
 
 interface FieldSettingsV2Props {
   field: FormField | null;
@@ -142,6 +377,18 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
         <FieldSettingsWrapper>
           <RichTextFieldSettings
             field={field as any}
+            isConnected={isConnected}
+            isReadOnly={isReadOnly}
+            onUpdate={updateHandler}
+          />
+        </FieldSettingsWrapper>
+      );
+
+    case FieldType.FILE_UPLOAD_FIELD:
+      return (
+        <FieldSettingsWrapper>
+          <FileUploadFieldSettingsInner
+            field={field as FileUploadField}
             isConnected={isConnected}
             isReadOnly={isReadOnly}
             onUpdate={updateHandler}

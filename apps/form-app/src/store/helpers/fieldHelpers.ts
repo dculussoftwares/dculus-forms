@@ -18,6 +18,7 @@ import {
   CheckboxField,
   DateField,
   RichTextFormField,
+  FileUploadField,
   FillableFormFieldValidation,
   TextFieldValidation,
   CheckboxFieldValidation,
@@ -27,7 +28,9 @@ import { FieldData } from '../collaboration/CollaborationManager';
 /**
  * Field configuration for default labels and placeholders
  */
-export const FIELD_CONFIGS: Partial<Record<FieldType, { label: string; placeholder?: string }>> = {
+export const FIELD_CONFIGS: Partial<
+  Record<FieldType, { label: string; placeholder?: string }>
+> = {
   [FieldType.TEXT_INPUT_FIELD]: { label: 'Text Input' },
   [FieldType.TEXT_AREA_FIELD]: { label: 'Text Area' },
   [FieldType.EMAIL_FIELD]: { label: 'Email' },
@@ -36,6 +39,7 @@ export const FIELD_CONFIGS: Partial<Record<FieldType, { label: string; placehold
   [FieldType.RADIO_FIELD]: { label: 'Radio' },
   [FieldType.CHECKBOX_FIELD]: { label: 'Checkbox' },
   [FieldType.DATE_FIELD]: { label: 'Date' },
+  [FieldType.FILE_UPLOAD_FIELD]: { label: 'File Upload' },
   // NOTE: RICH_TEXT_FIELD omitted intentionally - it's non-fillable and shouldn't have a label
 };
 
@@ -49,7 +53,9 @@ export const generateUniqueId = (): string => {
 /**
  * Check if a field is fillable (has label, validation, etc.)
  */
-export const isFillableFormField = (field: FormField): field is FillableFormField => {
+export const isFillableFormField = (
+  field: FormField
+): field is FillableFormField => {
   return (
     field instanceof FillableFormField ||
     (field as any).label !== undefined ||
@@ -80,7 +86,15 @@ export const createFormField = (
         fieldData.min,
         fieldData.max
       );
-      return new TextInputField(fieldId, label, defaultValue, prefix, hint, placeholder, textValidation);
+      return new TextInputField(
+        fieldId,
+        label,
+        defaultValue,
+        prefix,
+        hint,
+        placeholder,
+        textValidation
+      );
     }
     case FieldType.TEXT_AREA_FIELD: {
       const textValidation = new TextFieldValidation(
@@ -88,14 +102,34 @@ export const createFormField = (
         fieldData.min,
         fieldData.max
       );
-      return new TextAreaField(fieldId, label, defaultValue, prefix, hint, placeholder, textValidation);
+      return new TextAreaField(
+        fieldId,
+        label,
+        defaultValue,
+        prefix,
+        hint,
+        placeholder,
+        textValidation
+      );
     }
     case FieldType.EMAIL_FIELD: {
-      const validation = new FillableFormFieldValidation(fieldData.required || false);
-      return new EmailField(fieldId, label, defaultValue, prefix, hint, placeholder, validation);
+      const validation = new FillableFormFieldValidation(
+        fieldData.required || false
+      );
+      return new EmailField(
+        fieldId,
+        label,
+        defaultValue,
+        prefix,
+        hint,
+        placeholder,
+        validation
+      );
     }
     case FieldType.NUMBER_FIELD: {
-      const validation = new FillableFormFieldValidation(fieldData.required || false);
+      const validation = new FillableFormFieldValidation(
+        fieldData.required || false
+      );
       return new NumberField(
         fieldId,
         label,
@@ -109,9 +143,15 @@ export const createFormField = (
       );
     }
     case FieldType.SELECT_FIELD: {
-      const validation = new FillableFormFieldValidation(fieldData.required || false);
+      const validation = new FillableFormFieldValidation(
+        fieldData.required || false
+      );
       // Initialize with default options if none provided
-      const defaultOptions = fieldData.options || ['Option 1', 'Option 2', 'Option 3'];
+      const defaultOptions = fieldData.options || [
+        'Option 1',
+        'Option 2',
+        'Option 3',
+      ];
       return new SelectField(
         fieldId,
         label,
@@ -123,9 +163,15 @@ export const createFormField = (
       );
     }
     case FieldType.RADIO_FIELD: {
-      const validation = new FillableFormFieldValidation(fieldData.required || false);
+      const validation = new FillableFormFieldValidation(
+        fieldData.required || false
+      );
       // Initialize with default options if none provided
-      const defaultOptions = fieldData.options || ['Option 1', 'Option 2', 'Option 3'];
+      const defaultOptions = fieldData.options || [
+        'Option 1',
+        'Option 2',
+        'Option 3',
+      ];
       return new RadioField(
         fieldId,
         label,
@@ -145,7 +191,11 @@ export const createFormField = (
       // For checkbox fields, use defaultValue as array (it could be string or array from fieldData)
       const checkboxDefaults = fieldData.defaultValue || [];
       // Initialize with default options if none provided
-      const defaultOptions = fieldData.options || ['Option 1', 'Option 2', 'Option 3'];
+      const defaultOptions = fieldData.options || [
+        'Option 1',
+        'Option 2',
+        'Option 3',
+      ];
       return new CheckboxField(
         fieldId,
         label,
@@ -158,7 +208,9 @@ export const createFormField = (
       );
     }
     case FieldType.DATE_FIELD: {
-      const validation = new FillableFormFieldValidation(fieldData.required || false);
+      const validation = new FillableFormFieldValidation(
+        fieldData.required || false
+      );
       return new DateField(
         fieldId,
         label,
@@ -172,13 +224,30 @@ export const createFormField = (
       );
     }
     case FieldType.RICH_TEXT_FIELD: {
-      const content = (fieldData as any).content || '<p>Enter your rich text content here...</p>';
+      const content =
+        (fieldData as any).content ||
+        '<p>Enter your rich text content here...</p>';
       console.log('🏗️ createFormField - Creating Rich Text Field:', {
         fieldId,
         contentLength: content.length,
         content: content.substring(0, 100) + '...',
       });
       return new RichTextFormField(fieldId, content);
+    }
+    case FieldType.FILE_UPLOAD_FIELD: {
+      const validation = new FillableFormFieldValidation(
+        fieldData.required || false
+      );
+      return new FileUploadField(
+        fieldId,
+        label,
+        prefix,
+        hint,
+        validation,
+        (fieldData as any).allowedMimeTypes,
+        (fieldData as any).maxFileSizeMb,
+        (fieldData as any).maxFiles
+      );
     }
     default:
       return new FormField(fieldId);
@@ -194,15 +263,24 @@ export const createYJSFieldMap = (fieldData: FieldData): Y.Map<any> => {
   Object.entries(fieldData).forEach(([key, value]) => {
     if (key === 'options' && Array.isArray(value)) {
       const optionsArray = new Y.Array();
-      value.filter((option) => option && option.trim() !== '').forEach((option) => optionsArray.push([option]));
+      value
+        .filter((option) => option && option.trim() !== '')
+        .forEach((option) => optionsArray.push([option]));
       fieldMap.set('options', optionsArray);
+    } else if (key === 'allowedMimeTypes' && Array.isArray(value)) {
+      const mimeArray = new Y.Array();
+      value.forEach((mime: string) => mimeArray.push([mime]));
+      fieldMap.set('allowedMimeTypes', mimeArray);
     } else if (value !== undefined) {
       fieldMap.set(key, value);
     }
   });
 
   // Store validation object for fields that have specialized validation
-  if (fieldData.type === FieldType.TEXT_INPUT_FIELD || fieldData.type === FieldType.TEXT_AREA_FIELD) {
+  if (
+    fieldData.type === FieldType.TEXT_INPUT_FIELD ||
+    fieldData.type === FieldType.TEXT_AREA_FIELD
+  ) {
     const validationMap = new Y.Map();
     validationMap.set('required', fieldData.required || false);
     validationMap.set('type', FieldType.TEXT_FIELD_VALIDATION);
@@ -227,6 +305,12 @@ export const createYJSFieldMap = (fieldData: FieldData): Y.Map<any> => {
   } else if (fieldData.type === FieldType.RICH_TEXT_FIELD) {
     // Rich Text fields don't have validation - skip validation setup
     // Content is already handled in the Object.entries loop above
+  } else if (fieldData.type === FieldType.FILE_UPLOAD_FIELD) {
+    // File upload fields use basic required validation
+    const validationMap = new Y.Map();
+    validationMap.set('required', fieldData.required || false);
+    validationMap.set('type', FieldType.FILLABLE_FORM_FIELD);
+    fieldMap.set('validation', validationMap);
   } else {
     // For other field types, store basic validation
     const validationMap = new Y.Map();
@@ -270,6 +354,9 @@ export const serializeFieldToYMap = (field: FormField): Y.Map<any> => {
     max: fillableField.validation?.maxLength || fillableField.max,
     minDate: fillableField.minDate,
     maxDate: fillableField.maxDate,
+    allowedMimeTypes: fillableField.allowedMimeTypes,
+    maxFileSizeMb: fillableField.maxFileSizeMb,
+    maxFiles: fillableField.maxFiles,
   };
 
   return createYJSFieldMap(fieldData);

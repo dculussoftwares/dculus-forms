@@ -9,7 +9,8 @@
     "checkbox": "தேர்வுப்பெட்டி",
     "date": "தேதி",
     "formField": "படிவம் புலம்",
-    "richText": "வளமான உரை"
+    "richText": "வளமான உரை",
+    "fileUpload": "கோப்பு பதிவேற்றம்"
   },
   "header": {
     "settings": "அமைப்புகள்",

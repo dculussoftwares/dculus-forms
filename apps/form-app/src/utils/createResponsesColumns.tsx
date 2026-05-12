@@ -23,6 +23,7 @@ import {
 import {
   Calendar,
   CheckSquare,
+  Download,
   Edit,
   Eye,
   Hash,
@@ -30,10 +31,21 @@ import {
   List,
   MoreHorizontal,
   Type,
+  Upload,
   X,
 } from 'lucide-react';
-import { deserializeFormSchema, FieldType, FillableFormField, FormResponse, FormSchema } from '@dculus/types';
-import { formatFieldValue as formatFieldValueUtil } from '@dculus/utils';
+import {
+  deserializeFormSchema,
+  FieldType,
+  FillableFormField,
+  FormResponse,
+  FormSchema,
+} from '@dculus/types';
+import {
+  formatFieldValue as formatFieldValueUtil,
+  getImageUrl,
+} from '@dculus/utils';
+import { getCdnEndpoint } from '../lib/config';
 import { getPluginColumns } from '../components/plugins/response-table';
 
 interface CreateResponsesColumnsOptions {
@@ -41,8 +53,18 @@ interface CreateResponsesColumnsOptions {
   formId: string;
   pluginsData: any;
   locale: string;
-  onPluginClick: (pluginType: string, metadata: any, responseId: string) => void;
-  t: (key: string, options?: { values?: Record<string, string | number>; defaultValue?: string }) => string;
+  onPluginClick: (
+    pluginType: string,
+    metadata: any,
+    responseId: string
+  ) => void;
+  t: (
+    key: string,
+    options?: {
+      values?: Record<string, string | number>;
+      defaultValue?: string;
+    }
+  ) => string;
 }
 
 /**
@@ -59,6 +81,8 @@ const getFieldIcon = (fieldType: FieldType) => {
     case FieldType.SELECT_FIELD:
     case FieldType.RADIO_FIELD:
       return <List className="h-4 w-4" />;
+    case FieldType.FILE_UPLOAD_FIELD:
+      return <Upload className="h-4 w-4" />;
     default:
       return <Type className="h-4 w-4" />;
   }
@@ -75,7 +99,10 @@ const createBaseColumns = (
     {
       accessorKey: 'id',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('table.columns.responseId')} />
+        <DataTableColumnHeader
+          column={column}
+          title={t('table.columns.responseId')}
+        />
       ),
       cell: ({ row }) => {
         const id = row.getValue('id') as string;
@@ -95,7 +122,10 @@ const createBaseColumns = (
     {
       accessorKey: 'submittedAt',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('table.columns.submittedAt')} />
+        <DataTableColumnHeader
+          column={column}
+          title={t('table.columns.submittedAt')}
+        />
       ),
       cell: ({ row }) => {
         const submittedAt = row.getValue('submittedAt') as string | number;
@@ -138,7 +168,10 @@ const createBaseColumns = (
     {
       accessorKey: 'hasBeenEdited',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t('table.columns.editStatus')} />
+        <DataTableColumnHeader
+          column={column}
+          title={t('table.columns.editStatus')}
+        />
       ),
       cell: ({ row }) => {
         const response = row.original;
@@ -151,7 +184,9 @@ const createBaseColumns = (
           return (
             <div className="flex items-center space-x-2">
               <div className="h-2 w-2 bg-green-500 rounded-full" />
-              <span className="text-sm text-muted-foreground">{t('table.editStatus.original')}</span>
+              <span className="text-sm text-muted-foreground">
+                {t('table.editStatus.original')}
+              </span>
             </div>
           );
         }
@@ -161,22 +196,35 @@ const createBaseColumns = (
             <div className="h-2 w-2 bg-orange-500 rounded-full" />
             <div className="flex flex-col">
               <div className="flex items-center space-x-1">
-                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                <Badge
+                  variant="outline"
+                  className="bg-orange-50 text-orange-700 border-orange-200"
+                >
                   <History className="h-3 w-3 mr-1" />
                   {totalEdits === 1
-                    ? t('table.editStatus.editBadge', { values: { count: totalEdits } })
-                    : t('table.editStatus.editBadgePlural', { values: { count: totalEdits } })}
+                    ? t('table.editStatus.editBadge', {
+                        values: { count: totalEdits },
+                      })
+                    : t('table.editStatus.editBadgePlural', {
+                        values: { count: totalEdits },
+                      })}
                 </Badge>
               </div>
               {lastEditedAt && (
                 <div className="flex items-center space-x-1 mt-1">
                   <span className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(lastEditedAt), { addSuffix: true })}
+                    {formatDistanceToNow(new Date(lastEditedAt), {
+                      addSuffix: true,
+                    })}
                   </span>
                   {lastEditedBy && (
                     <>
-                      <span className="text-xs text-muted-foreground">{t('table.editStatus.editedBy')}</span>
-                      <span className="text-xs font-medium text-muted-foreground">{lastEditedBy.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {t('table.editStatus.editedBy')}
+                      </span>
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {lastEditedBy.name}
+                      </span>
                     </>
                   )}
                 </div>
@@ -190,6 +238,16 @@ const createBaseColumns = (
     },
   ];
 };
+
+/**
+ * Extract a user-friendly display name from an R2 key.
+ * Key format: files/form-response/{formId}/{timestamp}-{uuid}-{sanitizedName}{ext}
+ */
+function extractFileName(key: string): string {
+  const segment = key.split('/').pop() || key;
+  // Strip leading "{13-digit timestamp}-{UUID v4}-"
+  return segment.replace(/^\d{13}-[0-9a-f-]{36}-/, '') || segment;
+}
 
 /**
  * Create field columns based on form schema
@@ -208,28 +266,77 @@ const createFieldColumns = (
           id: `field-${field.id}`,
           header: ({ column }) => (
             <div className="flex items-center space-x-2">
-              <div className="text-muted-foreground">{getFieldIcon(field.type)}</div>
+              <div className="text-muted-foreground">
+                {getFieldIcon(field.type)}
+              </div>
               <DataTableColumnHeader column={column} title={field.label} />
             </div>
           ),
           cell: ({ row }) => {
             const value = row.original.data[field.id];
+
+            // File upload fields: render clickable download links
+            if (field.type === FieldType.FILE_UPLOAD_FIELD) {
+              const keys: string[] = Array.isArray(value) ? value : [];
+              if (keys.length === 0) {
+                return (
+                  <div className="flex items-center space-x-2 text-muted-foreground">
+                    <Upload className="h-4 w-4" />
+                    <span className="text-sm italic">
+                      {t('table.fieldResponses.noResponse')}
+                    </span>
+                  </div>
+                );
+              }
+              const cdnEndpoint = getCdnEndpoint();
+              return (
+                <div className="flex flex-col gap-1">
+                  {keys.map((key, idx) => {
+                    const href = getImageUrl(key, cdnEndpoint);
+                    const name = extractFileName(key);
+                    return (
+                      <a
+                        key={idx}
+                        href={href}
+                        download={name}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 hover:underline truncate max-w-[180px]"
+                        title={name}
+                      >
+                        <Download className="h-3 w-3 flex-shrink-0" />
+                        <span className="truncate">{name}</span>
+                      </a>
+                    );
+                  })}
+                </div>
+              );
+            }
+
             const formattedValue = formatFieldValueUtil(value, field.type);
 
             if (!formattedValue) {
               return (
                 <div className="flex items-center space-x-2 text-muted-foreground">
                   {getFieldIcon(field.type)}
-                  <span className="text-sm italic">{t('table.fieldResponses.noResponse')}</span>
+                  <span className="text-sm italic">
+                    {t('table.fieldResponses.noResponse')}
+                  </span>
                 </div>
               );
             }
 
             return (
               <div className="flex items-center space-x-2">
-                <div className="text-muted-foreground">{getFieldIcon(field.type)}</div>
+                <div className="text-muted-foreground">
+                  {getFieldIcon(field.type)}
+                </div>
                 <div className="flex-1 min-w-0">
-                  <span className="text-sm font-medium truncate block" title={formattedValue}>
+                  <span
+                    className="text-sm font-medium truncate block"
+                    title={formattedValue}
+                  >
                     {formattedValue}
                   </span>
                 </div>
@@ -283,7 +390,9 @@ const ResponsesActionsCell: React.FC<{
         <DropdownMenuContent align="end">
           <DropdownMenuItem
             onClick={() =>
-              navigate(`/dashboard/form/${formId}/responses/${row.original.id}/edit`)
+              navigate(
+                `/dashboard/form/${formId}/responses/${row.original.id}/edit`
+              )
             }
           >
             <Edit className="mr-2 h-4 w-4" />
@@ -291,7 +400,9 @@ const ResponsesActionsCell: React.FC<{
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() =>
-              navigate(`/dashboard/form/${formId}/responses/${row.original.id}/history`)
+              navigate(
+                `/dashboard/form/${formId}/responses/${row.original.id}/history`
+              )
             }
             disabled={!row.original.hasBeenEdited}
           >
@@ -306,7 +417,9 @@ const ResponsesActionsCell: React.FC<{
               </Badge>
             )}
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => console.log('Delete response:', row.original.id)}>
+          <DropdownMenuItem
+            onClick={() => console.log('Delete response:', row.original.id)}
+          >
             <X className="mr-2 h-4 w-4" />
             {t('table.actions.delete')}
           </DropdownMenuItem>
@@ -326,7 +439,9 @@ const createActionsColumn = (
 ): ColumnDef<FormResponse> => {
   return {
     id: 'actions',
-    header: () => <div className="text-center">{t('table.columns.actions')}</div>,
+    header: () => (
+      <div className="text-center">{t('table.columns.actions')}</div>
+    ),
     cell: ({ row }) => <ResponsesActionsCell row={row} formId={formId} t={t} />,
     enableSorting: false,
     enableHiding: false,
@@ -356,11 +471,15 @@ export const createResponsesColumns = ({
   const fieldColumns = createFieldColumns(deserializedSchema, t);
 
   // Plugin columns
-  const enabledPluginTypes = pluginsData?.formPlugins
-    ?.filter((plugin: any) => plugin.enabled)
-    ?.map((plugin: any) => plugin.type) || [];
+  const enabledPluginTypes =
+    pluginsData?.formPlugins
+      ?.filter((plugin: any) => plugin.enabled)
+      ?.map((plugin: any) => plugin.type) || [];
 
-  const pluginColumns = getPluginColumns<FormResponse>(enabledPluginTypes, onPluginClick);
+  const pluginColumns = getPluginColumns<FormResponse>(
+    enabledPluginTypes,
+    onPluginClick
+  );
 
   // Actions column
   const actionsColumn = createActionsColumn(formId, t);

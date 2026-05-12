@@ -9,6 +9,7 @@
     "checkbox": "Checkbox",
     "date": "Date",
     "richText": "Rich Text",
+    "fileUpload": "File Upload",
     "formField": "Form Field",
     "fallback": "Field"
   },

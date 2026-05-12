@@ -19,6 +19,7 @@ import {
   Calendar,
   FileCode,
   GripVertical,
+  Upload,
 } from 'lucide-react';
 
 export type CompactFieldCardVariant = 'normal' | 'dragSource' | 'overlay';
@@ -39,6 +40,7 @@ const FIELD_TYPE_LABELS: Partial<Record<FieldType, string>> = {
   [FieldType.CHECKBOX_FIELD]: 'Checkbox',
   [FieldType.DATE_FIELD]: 'Date',
   [FieldType.RICH_TEXT_FIELD]: 'Rich Text',
+  [FieldType.FILE_UPLOAD_FIELD]: 'File Upload',
 };
 
 const getFieldIcon = (type: FieldType): React.ReactNode => {
@@ -60,6 +62,8 @@ const getFieldIcon = (type: FieldType): React.ReactNode => {
       return <CheckSquare className={iconClass} />;
     case FieldType.DATE_FIELD:
       return <Calendar className={iconClass} />;
+    case FieldType.FILE_UPLOAD_FIELD:
+      return <Upload className={iconClass} />;
     case FieldType.RICH_TEXT_FIELD:
       return <FileCode className={iconClass} />;
     default:

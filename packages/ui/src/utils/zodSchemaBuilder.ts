@@ -1,5 +1,16 @@
 import { z } from 'zod';
-import { FormField, FormPage, FieldType, FillableFormField, NumberField, DateField, SelectField, RadioField, CheckboxField } from '@dculus/types';
+import {
+  FormField,
+  FormPage,
+  FieldType,
+  FillableFormField,
+  NumberField,
+  DateField,
+  SelectField,
+  RadioField,
+  CheckboxField,
+  FileUploadField,
+} from '@dculus/types';
 
 export interface ValidationError {
   field: string;
@@ -17,12 +28,16 @@ export interface PageValidationResult {
 export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
   // Check if field is fillable to access validation properties
   const isFillableField = (field: FormField): field is FillableFormField => {
-    return field instanceof FillableFormField ||
+    return (
+      field instanceof FillableFormField ||
       (field as any).label !== undefined ||
-      field.type !== FieldType.FORM_FIELD;
+      field.type !== FieldType.FORM_FIELD
+    );
   };
 
-  const fillableField = isFillableField(field) ? field as FillableFormField : null;
+  const fillableField = isFillableField(field)
+    ? (field as FillableFormField)
+    : null;
 
   if (!fillableField) {
     // Non-fillable fields don't require validation
@@ -41,7 +56,10 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
       let schema: z.ZodString = z.string();
 
       // Add minLength validation if specified
-      if (textValidation?.minLength !== undefined && textValidation.minLength > 0) {
+      if (
+        textValidation?.minLength !== undefined &&
+        textValidation.minLength > 0
+      ) {
         schema = schema.min(
           textValidation.minLength,
           `${fillableField.label} must be at least ${textValidation.minLength} characters`
@@ -49,7 +67,10 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
       }
 
       // Add maxLength validation if specified
-      if (textValidation?.maxLength !== undefined && textValidation.maxLength > 0) {
+      if (
+        textValidation?.maxLength !== undefined &&
+        textValidation.maxLength > 0
+      ) {
         schema = schema.max(
           textValidation.maxLength,
           `${fillableField.label} must be at most ${textValidation.maxLength} characters`
@@ -66,12 +87,17 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
 
     case FieldType.EMAIL_FIELD: {
       if (isRequired) {
-        return z.string().min(1, `${fillableField.label} is required`).email(`Please enter a valid email address`);
+        return z
+          .string()
+          .min(1, `${fillableField.label} is required`)
+          .email(`Please enter a valid email address`);
       } else {
-        return z.union([
-          z.literal(''),
-          z.string().email(`Please enter a valid email address`)
-        ]).optional();
+        return z
+          .union([
+            z.literal(''),
+            z.string().email(`Please enter a valid email address`),
+          ])
+          .optional();
       }
     }
 
@@ -79,33 +105,38 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
       const numberField = field as NumberField;
 
       // Create a schema that handles empty strings and numbers
-      let schema: z.ZodTypeAny = z.union([
-        z.string().length(0), // Allow empty string
-        z.number({
-          invalid_type_error: `${fillableField.label} must be a number`,
-        })
-      ]).transform((val) => {
-        // Transform empty string to undefined, keep numbers as is
-        if (val === '') return undefined;
-        return val as number;
-      });
+      let schema: z.ZodTypeAny = z
+        .union([
+          z.string().length(0), // Allow empty string
+          z.number({
+            invalid_type_error: `${fillableField.label} must be a number`,
+          }),
+        ])
+        .transform((val) => {
+          // Transform empty string to undefined, keep numbers as is
+          if (val === '') return undefined;
+          return val as number;
+        });
 
       // Add min/max constraints if specified
       if (numberField.min !== undefined || numberField.max !== undefined) {
-        schema = (schema as any).refine((val: any) => {
-          if (val === undefined) return !isRequired; // Allow undefined if not required
-          if (typeof val !== 'number') return false;
+        schema = (schema as any).refine(
+          (val: any) => {
+            if (val === undefined) return !isRequired; // Allow undefined if not required
+            if (typeof val !== 'number') return false;
 
-          if (numberField.min !== undefined && val < numberField.min) {
-            return false;
+            if (numberField.min !== undefined && val < numberField.min) {
+              return false;
+            }
+            if (numberField.max !== undefined && val > numberField.max) {
+              return false;
+            }
+            return true;
+          },
+          {
+            message: `${fillableField.label} must be ${numberField.min !== undefined ? `at least ${numberField.min}` : ''}${numberField.min !== undefined && numberField.max !== undefined ? ' and ' : ''}${numberField.max !== undefined ? `at most ${numberField.max}` : ''}`,
           }
-          if (numberField.max !== undefined && val > numberField.max) {
-            return false;
-          }
-          return true;
-        }, {
-          message: `${fillableField.label} must be ${numberField.min !== undefined ? `at least ${numberField.min}` : ''}${numberField.min !== undefined && numberField.max !== undefined ? ' and ' : ''}${numberField.max !== undefined ? `at most ${numberField.max}` : ''}`
-        });
+        );
       }
 
       if (!isRequired) {
@@ -113,9 +144,12 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
       }
 
       // For required fields, ensure we have a number
-      return (schema as any).refine((val: any) => val !== undefined && typeof val === 'number', {
-        message: `${fillableField.label} is required`
-      });
+      return (schema as any).refine(
+        (val: any) => val !== undefined && typeof val === 'number',
+        {
+          message: `${fillableField.label} is required`,
+        }
+      );
     }
 
     case FieldType.DATE_FIELD: {
@@ -123,39 +157,48 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
       let schema: z.ZodTypeAny = z.string();
 
       if (isRequired) {
-        schema = (schema as z.ZodString).min(1, `${fillableField.label} is required`);
+        schema = (schema as z.ZodString).min(
+          1,
+          `${fillableField.label} is required`
+        );
       }
 
       // Convert string to date for validation
-      schema = schema.refine((dateStr: string) => {
-        if (!dateStr && !isRequired) return true;
-        if (!dateStr && isRequired) return false;
+      schema = schema.refine(
+        (dateStr: string) => {
+          if (!dateStr && !isRequired) return true;
+          if (!dateStr && isRequired) return false;
 
-        const date = new Date(dateStr);
-        return !isNaN(date.getTime());
-      }, {
-        message: `Please enter a valid date`
-      });
+          const date = new Date(dateStr);
+          return !isNaN(date.getTime());
+        },
+        {
+          message: `Please enter a valid date`,
+        }
+      );
 
       // Add min/max date constraints if specified
       if (dateField.minDate || dateField.maxDate) {
-        schema = (schema as any).refine((dateStr: string) => {
-          if (!dateStr) return !isRequired;
+        schema = (schema as any).refine(
+          (dateStr: string) => {
+            if (!dateStr) return !isRequired;
 
-          const date = new Date(dateStr);
+            const date = new Date(dateStr);
 
-          if (dateField.minDate && date < new Date(dateField.minDate)) {
-            return false;
+            if (dateField.minDate && date < new Date(dateField.minDate)) {
+              return false;
+            }
+
+            if (dateField.maxDate && date > new Date(dateField.maxDate)) {
+              return false;
+            }
+
+            return true;
+          },
+          {
+            message: `Date must be ${dateField.minDate ? `after ${dateField.minDate}` : ''}${dateField.minDate && dateField.maxDate ? ' and ' : ''}${dateField.maxDate ? `before ${dateField.maxDate}` : ''}`,
           }
-
-          if (dateField.maxDate && date > new Date(dateField.maxDate)) {
-            return false;
-          }
-
-          return true;
-        }, {
-          message: `Date must be ${dateField.minDate ? `after ${dateField.minDate}` : ''}${dateField.minDate && dateField.maxDate ? ' and ' : ''}${dateField.maxDate ? `before ${dateField.maxDate}` : ''}`
-        });
+        );
       }
 
       if (!isRequired) {
@@ -168,7 +211,9 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
     case FieldType.SELECT_FIELD: {
       // SelectField is always single-select (no multiple property)
       if (isRequired) {
-        return z.string().min(1, `Please select a ${fillableField.label.toLowerCase()}`);
+        return z
+          .string()
+          .min(1, `Please select a ${fillableField.label.toLowerCase()}`);
       } else {
         return z.string().optional();
       }
@@ -176,7 +221,9 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
 
     case FieldType.RADIO_FIELD: {
       if (isRequired) {
-        return z.string().min(1, `Please select a ${fillableField.label.toLowerCase()}`);
+        return z
+          .string()
+          .min(1, `Please select a ${fillableField.label.toLowerCase()}`);
       } else {
         return z.string().optional();
       }
@@ -189,7 +236,11 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
       let schema: z.ZodTypeAny = z.array(z.string());
 
       // If field is required OR has minSelections, apply validation
-      if (isRequired || (checkboxValidation?.minSelections !== undefined && checkboxValidation.minSelections > 0)) {
+      if (
+        isRequired ||
+        (checkboxValidation?.minSelections !== undefined &&
+          checkboxValidation.minSelections > 0)
+      ) {
         const minSelections = checkboxValidation?.minSelections || 1;
 
         if (isRequired) {
@@ -203,24 +254,53 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
           schema = (schema as z.ZodArray<z.ZodString>).refine(
             (val) => val.length === 0 || val.length >= minSelections,
             {
-              message: `Please select at least ${minSelections} ${minSelections === 1 ? 'option' : 'options'}, or leave empty`
+              message: `Please select at least ${minSelections} ${minSelections === 1 ? 'option' : 'options'}, or leave empty`,
             }
           );
         }
       }
 
       // Add maxSelections validation if specified
-      if (checkboxValidation?.maxSelections !== undefined && checkboxValidation.maxSelections > 0) {
+      if (
+        checkboxValidation?.maxSelections !== undefined &&
+        checkboxValidation.maxSelections > 0
+      ) {
         schema = (schema as z.ZodArray<z.ZodString>).refine(
           (val) => val.length <= checkboxValidation.maxSelections!,
           {
-            message: `Please select at most ${checkboxValidation.maxSelections} ${checkboxValidation.maxSelections === 1 ? 'option' : 'options'}`
+            message: `Please select at most ${checkboxValidation.maxSelections} ${checkboxValidation.maxSelections === 1 ? 'option' : 'options'}`,
           }
         );
       }
 
       // Make optional if not required and no minSelections
       if (!isRequired && !checkboxValidation?.minSelections) {
+        return schema.optional();
+      }
+
+      return schema;
+    }
+
+    case FieldType.FILE_UPLOAD_FIELD: {
+      const fileUploadField = field as FileUploadField;
+      // Values are File[] objects stored by the UI; validate presence for required fields
+      let schema: z.ZodTypeAny = z.array(z.any());
+
+      if (isRequired) {
+        schema = (schema as z.ZodArray<z.ZodTypeAny>).min(
+          1,
+          `${fillableField.label} is required — please upload at least one file`
+        );
+      }
+
+      if (fileUploadField.maxFiles) {
+        schema = (schema as z.ZodArray<z.ZodTypeAny>).max(
+          fileUploadField.maxFiles,
+          `You can upload at most ${fileUploadField.maxFiles} file${fileUploadField.maxFiles > 1 ? 's' : ''}`
+        );
+      }
+
+      if (!isRequired) {
         return schema.optional();
       }
 
@@ -248,17 +328,23 @@ export const createPageSchema = (page: FormPage): z.ZodObject<any> => {
 /**
  * Creates default values for a page based on field types and default values
  */
-export const createPageDefaultValues = (page: FormPage): Record<string, any> => {
+export const createPageDefaultValues = (
+  page: FormPage
+): Record<string, any> => {
   const defaultValues: Record<string, any> = {};
 
   page.fields.forEach((field) => {
     const isFillableField = (field: FormField): field is FillableFormField => {
-      return field instanceof FillableFormField ||
+      return (
+        field instanceof FillableFormField ||
         (field as any).label !== undefined ||
-        field.type !== FieldType.FORM_FIELD;
+        field.type !== FieldType.FORM_FIELD
+      );
     };
 
-    const fillableField = isFillableField(field) ? field as FillableFormField : null;
+    const fillableField = isFillableField(field)
+      ? (field as FillableFormField)
+      : null;
 
     switch (field.type) {
       case FieldType.TEXT_INPUT_FIELD:
@@ -270,9 +356,12 @@ export const createPageDefaultValues = (page: FormPage): Record<string, any> => 
         defaultValues[field.id] = fillableField?.defaultValue || '';
         break;
       case FieldType.NUMBER_FIELD:
-        defaultValues[field.id] = fillableField?.defaultValue ? Number(fillableField.defaultValue) : '';
+        defaultValues[field.id] = fillableField?.defaultValue
+          ? Number(fillableField.defaultValue)
+          : '';
         break;
       case FieldType.CHECKBOX_FIELD:
+      case FieldType.FILE_UPLOAD_FIELD:
         defaultValues[field.id] = [];
         break;
       default:
@@ -286,31 +375,36 @@ export const createPageDefaultValues = (page: FormPage): Record<string, any> => 
 /**
  * Validates a page's data and returns validation result
  */
-export const validatePageData = (page: FormPage, data: Record<string, any>): PageValidationResult => {
+export const validatePageData = (
+  page: FormPage,
+  data: Record<string, any>
+): PageValidationResult => {
   const schema = createPageSchema(page);
 
   try {
     schema.parse(data);
     return {
       isValid: true,
-      errors: []
+      errors: [],
     };
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
-      const validationErrors: ValidationError[] = error.errors.map((err: any) => ({
-        field: err.path.join('.'),
-        message: err.message
-      }));
+      const validationErrors: ValidationError[] = error.errors.map(
+        (err: any) => ({
+          field: err.path.join('.'),
+          message: err.message,
+        })
+      );
 
       return {
         isValid: false,
-        errors: validationErrors
+        errors: validationErrors,
       };
     }
 
     return {
       isValid: false,
-      errors: [{ field: 'general', message: 'Validation failed' }]
+      errors: [{ field: 'general', message: 'Validation failed' }],
     };
   }
 };
@@ -318,7 +412,10 @@ export const validatePageData = (page: FormPage, data: Record<string, any>): Pag
 /**
  * Gets validation error for a specific field
  */
-export const getFieldError = (validationResult: PageValidationResult, fieldId: string): string | undefined => {
-  const error = validationResult.errors.find(err => err.field === fieldId);
+export const getFieldError = (
+  validationResult: PageValidationResult,
+  fieldId: string
+): string | undefined => {
+  const error = validationResult.errors.find((err) => err.field === fieldId);
   return error?.message;
 };

@@ -13,14 +13,14 @@ export function createPageResolver(_page: FormPage) {
  */
 export function generatePageDefaultValues(page: FormPage): Record<string, any> {
   const defaultValues: Record<string, any> = {};
-  
+
   for (const field of page.fields) {
     const fieldValue = getDefaultValueForField(field);
     if (fieldValue !== undefined) {
       defaultValues[field.id] = fieldValue;
     }
   }
-  
+
   return defaultValues;
 }
 
@@ -28,6 +28,11 @@ export function generatePageDefaultValues(page: FormPage): Record<string, any> {
  * Get the default value for a specific field type
  */
 function getDefaultValueForField(field: FormField): any {
+  // Handle file upload fields (response value is an array of uploaded file keys)
+  if (field.type === FieldType.FILE_UPLOAD_FIELD) {
+    return [];
+  }
+
   // Handle checkbox fields specially since they don't have string defaultValue
   if (field.type === FieldType.CHECKBOX_FIELD) {
     if (field instanceof CheckboxField) {
@@ -51,7 +56,9 @@ function getDefaultValueForField(field: FormField): any {
         // Check if this is a multi-select field
         const isMultiple = (field as any).multiple;
         if (isMultiple) {
-          return field.defaultValue ? field.defaultValue.split(',').map(s => s.trim()) : [];
+          return field.defaultValue
+            ? field.defaultValue.split(',').map((s) => s.trim())
+            : [];
         }
         return field.defaultValue;
       default:
@@ -71,7 +78,6 @@ function getDefaultValueForField(field: FormField): any {
   }
 }
 
-
 /**
  * Create field registration options for React Hook Form
  * Note: Validation has been removed - returns empty object
@@ -85,9 +91,8 @@ export function createFieldRegistration(_field: FormField) {
  * Note: Validation modes have been removed
  */
 export const FORM_VALIDATION_MODE = {
-  shouldUnregister: false,        // Keep values when fields are unmounted
+  shouldUnregister: false, // Keep values when fields are unmounted
 } as const;
-
 
 /**
  * Transform form data before submission
@@ -97,10 +102,10 @@ export function transformFormDataForSubmission(
   formData: Record<string, any>
 ): Record<string, any> {
   const transformed: Record<string, any> = {};
-  
+
   for (const field of page.fields) {
     const value = formData[field.id];
-    
+
     // Handle field-specific transformations
     switch (field.type) {
       case FieldType.NUMBER_FIELD:
@@ -109,6 +114,10 @@ export function transformFormDataForSubmission(
         break;
       case FieldType.CHECKBOX_FIELD:
         // Ensure checkboxes are arrays
+        transformed[field.id] = Array.isArray(value) ? value : [];
+        break;
+      case FieldType.FILE_UPLOAD_FIELD:
+        // Ensure file upload values are arrays of R2 file keys
         transformed[field.id] = Array.isArray(value) ? value : [];
         break;
       case FieldType.SELECT_FIELD:
@@ -123,6 +132,6 @@ export function transformFormDataForSubmission(
         transformed[field.id] = value || '';
     }
   }
-  
+
   return transformed;
 }

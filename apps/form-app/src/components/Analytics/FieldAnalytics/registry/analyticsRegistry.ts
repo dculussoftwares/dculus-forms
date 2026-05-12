@@ -14,14 +14,18 @@ import {
   ListOrdered,
   CheckSquare,
   CircleDot,
-  BarChart3
+  BarChart3,
+  Upload,
 } from 'lucide-react';
 import { TextFieldAnalytics } from '../TextFieldAnalytics';
 import { NumberFieldAnalytics } from '../NumberFieldAnalytics';
 import { SelectionFieldAnalytics } from '../SelectionFieldAnalytics';
 import { CheckboxFieldAnalytics } from '../CheckboxFieldAnalytics';
 import { DateFieldAnalytics } from '../DateFieldAnalytics';
-import { EmailFieldAnalytics } from '../EmailFieldAnalytics';
+import {
+  EmailFieldAnalytics,
+  FileUploadFieldAnalytics,
+} from '../EmailFieldAnalytics';
 import { AnalyticsRegistry } from './types';
 
 /**
@@ -72,6 +76,11 @@ export const analyticsRegistry: AnalyticsRegistry = {
     component: EmailFieldAnalytics,
     dataKey: 'emailAnalytics',
     icon: Mail,
+  },
+  [FieldType.FILE_UPLOAD_FIELD]: {
+    component: FileUploadFieldAnalytics,
+    dataKey: 'fileUploadAnalytics',
+    icon: Upload,
   },
 };
 

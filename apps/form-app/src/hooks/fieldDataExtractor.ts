@@ -1,5 +1,14 @@
 import { FormField, FieldType } from '@dculus/types';
-import { BaseFieldData, OptionFieldData, ValidationFieldData, NumberRangeFieldData, DateRangeFieldData, CheckboxValidationFieldData, RichTextFieldData } from './types';
+import {
+  BaseFieldData,
+  OptionFieldData,
+  ValidationFieldData,
+  NumberRangeFieldData,
+  DateRangeFieldData,
+  CheckboxValidationFieldData,
+  RichTextFieldData,
+  FileUploadFieldData,
+} from './types';
 
 /**
  * Type-safe field data extraction utilities
@@ -54,7 +63,9 @@ export function extractValidationData(field: FormField): ValidationFieldData {
 /**
  * Extract validation data for checkbox fields
  */
-export function extractCheckboxValidationData(field: FormField): CheckboxValidationFieldData {
+export function extractCheckboxValidationData(
+  field: FormField
+): CheckboxValidationFieldData {
   const validation = (field as any).validation || {};
 
   return {
@@ -112,7 +123,9 @@ export function extractRichTextData(field: FormField): RichTextFieldData {
 /**
  * Field type specific data extractors
  */
-const FIELD_DATA_EXTRACTORS: Partial<Record<FieldType, (field: FormField) => Record<string, any>>> = {
+const FIELD_DATA_EXTRACTORS: Partial<
+  Record<FieldType, (field: FormField) => Record<string, any>>
+> = {
   [FieldType.TEXT_INPUT_FIELD]: (field: FormField) => ({
     ...extractBaseFieldData(field),
     ...extractValidationData(field),
@@ -195,6 +208,19 @@ const FIELD_DATA_EXTRACTORS: Partial<Record<FieldType, (field: FormField) => Rec
     };
   },
 
+  [FieldType.FILE_UPLOAD_FIELD]: (field: FormField) => {
+    const baseData = extractBaseFieldData(field);
+    const { required, ...restBaseData } = baseData;
+    return {
+      ...restBaseData,
+      required,
+      ...extractFileUploadData(field),
+      validation: {
+        required: required,
+      },
+    };
+  },
+
   [FieldType.RICH_TEXT_FIELD]: (field: FormField) => ({
     ...extractRichTextData(field),
   }),
@@ -218,41 +244,77 @@ export function extractFieldData(field: FormField): Record<string, any> {
 /**
  * Type predicate to check if a field has options
  */
-export function fieldHasOptions(field: FormField): field is FormField & OptionFieldData {
+export function fieldHasOptions(
+  field: FormField
+): field is FormField & OptionFieldData {
   return 'options' in field;
 }
 
 /**
  * Type predicate to check if a field has validation settings
  */
-export function fieldHasValidation(field: FormField): field is FormField & ValidationFieldData {
-  return field.type === FieldType.TEXT_INPUT_FIELD || field.type === FieldType.TEXT_AREA_FIELD;
+export function fieldHasValidation(
+  field: FormField
+): field is FormField & ValidationFieldData {
+  return (
+    field.type === FieldType.TEXT_INPUT_FIELD ||
+    field.type === FieldType.TEXT_AREA_FIELD
+  );
 }
 
 /**
  * Type predicate to check if a field has checkbox validation settings
  */
-export function fieldHasCheckboxValidation(field: FormField): field is FormField & CheckboxValidationFieldData {
+export function fieldHasCheckboxValidation(
+  field: FormField
+): field is FormField & CheckboxValidationFieldData {
   return field.type === FieldType.CHECKBOX_FIELD;
+}
+
+/**
+ * Extract file upload specific data
+ */
+export function extractFileUploadData(field: FormField): FileUploadFieldData {
+  const f = field as any;
+  return {
+    allowedMimeTypes: f.allowedMimeTypes || [],
+    maxFileSizeMb: f.maxFileSizeMb,
+    maxFiles: f.maxFiles,
+  };
 }
 
 /**
  * Type predicate to check if a field has number range settings
  */
-export function fieldHasNumberRange(field: FormField): field is FormField & NumberRangeFieldData {
+export function fieldHasNumberRange(
+  field: FormField
+): field is FormField & NumberRangeFieldData {
   return field.type === FieldType.NUMBER_FIELD;
+}
+
+/**
+ * Type predicate to check if a field has file upload settings
+ */
+export function fieldHasFileUpload(
+  field: FormField
+): field is FormField & FileUploadFieldData {
+  return field.type === FieldType.FILE_UPLOAD_FIELD;
 }
 
 /**
  * Type predicate to check if a field has date range settings
  */
-export function fieldHasDateRange(field: FormField): field is FormField & DateRangeFieldData {
+export function fieldHasDateRange(
+  field: FormField
+): field is FormField & DateRangeFieldData {
   return field.type === FieldType.DATE_FIELD;
 }
 
 /**
  * Type predicate to check if a field has rich text content
  */
-export function fieldHasRichTextContent(field: FormField): field is FormField & RichTextFieldData {
+export function fieldHasRichTextContent(
+  field: FormField
+): field is FormField & RichTextFieldData {
   return field.type === FieldType.RICH_TEXT_FIELD;
 }

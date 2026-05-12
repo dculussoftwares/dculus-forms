@@ -4,7 +4,7 @@ import { FieldType } from '@dculus/types';
 import {
   getFieldAnalytics,
   getAllFieldsAnalytics,
-  type FieldAnalytics
+  type FieldAnalytics,
 } from '../../services/fieldAnalytics/index.js';
 import { prisma } from '../../lib/prisma.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
@@ -13,27 +13,34 @@ import { logger } from '../../lib/logger.js';
 /**
  * Check if user has access to the form (optimized query)
  */
-const checkFormAccess = async (formId: string, userId: string, includeSchema: boolean = false) => {
-  const selectClause = includeSchema 
+const checkFormAccess = async (
+  formId: string,
+  userId: string,
+  includeSchema: boolean = false
+) => {
+  const selectClause = includeSchema
     ? { id: true, formSchema: true, organization: true }
     : { id: true, organization: true };
-    
+
   const form = await prisma.form.findFirst({
     where: {
       id: formId,
       organization: {
         members: {
           some: {
-            userId: userId
-          }
-        }
-      }
+            userId: userId,
+          },
+        },
+      },
     },
-    select: selectClause
+    select: selectClause,
   });
 
   if (!form) {
-    throw createGraphQLError('Form not found or access denied', GRAPHQL_ERROR_CODES.FORBIDDEN);
+    throw createGraphQLError(
+      'Form not found or access denied',
+      GRAPHQL_ERROR_CODES.FORBIDDEN
+    );
   }
 
   return form;
@@ -42,7 +49,10 @@ const checkFormAccess = async (formId: string, userId: string, includeSchema: bo
 /**
  * Get field info from form schema
  */
-const getFieldInfo = (formSchema: any, fieldId: string): { type: FieldType; label: string } | null => {
+const getFieldInfo = (
+  formSchema: any,
+  fieldId: string
+): { type: FieldType; label: string } | null => {
   if (!formSchema.pages) return null;
 
   for (const page of formSchema.pages) {
@@ -51,7 +61,7 @@ const getFieldInfo = (formSchema: any, fieldId: string): { type: FieldType; labe
       if (field) {
         return {
           type: field.type as FieldType,
-          label: field.label || `Field ${fieldId}`
+          label: field.label || `Field ${fieldId}`,
         };
       }
     }
@@ -78,6 +88,7 @@ const transformAnalyticsToGraphQL = (analytics: FieldAnalytics) => {
     checkboxAnalytics: null,
     dateAnalytics: null,
     emailAnalytics: null,
+    fileUploadAnalytics: null,
   };
 
   // Add field-specific analytics based on type
@@ -92,7 +103,7 @@ const transformAnalyticsToGraphQL = (analytics: FieldAnalytics) => {
           wordCloud: analytics.wordCloud,
           lengthDistribution: analytics.lengthDistribution,
           commonPhrases: analytics.commonPhrases,
-          recentResponses: analytics.recentResponses.map(r => ({
+          recentResponses: analytics.recentResponses.map((r) => ({
             value: r.value,
             submittedAt: r.submittedAt.toISOString(),
             responseId: r.responseId,
@@ -167,6 +178,18 @@ const transformAnalyticsToGraphQL = (analytics: FieldAnalytics) => {
         };
       }
       break;
+
+    case FieldType.FILE_UPLOAD_FIELD:
+      if ('totalFilesUploaded' in analytics) {
+        base.fileUploadAnalytics = {
+          totalFilesUploaded: analytics.totalFilesUploaded,
+          averageFilesPerResponse: analytics.averageFilesPerResponse,
+          extensionDistribution: analytics.extensionDistribution,
+          responsesWithFiles: analytics.responsesWithFiles,
+          responsesWithoutFiles: analytics.responsesWithoutFiles,
+        };
+      }
+      break;
   }
 
   return base;
@@ -183,60 +206,85 @@ export const fieldAnalyticsResolvers = {
       context: any
     ) => {
       if (!context.user) {
-        throw createGraphQLError('Authentication required', GRAPHQL_ERROR_CODES.UNAUTHENTICATED);
+        throw createGraphQLError(
+          'Authentication required',
+          GRAPHQL_ERROR_CODES.UNAUTHENTICATED
+        );
       }
 
       // Check form access (don't need schema from DB since we'll get it from Hocuspocus)
       const form = await checkFormAccess(formId, context.user.id, false);
 
-      logger.info('🔍 Getting form schema from Hocuspocus collaborative document...');
-      
+      logger.info(
+        '🔍 Getting form schema from Hocuspocus collaborative document...'
+      );
+
       // Get the proper form schema from YJS collaborative document
-      const formSchemaFromHocuspocus = await getFormSchemaFromHocuspocus(formId);
-      
+      const formSchemaFromHocuspocus =
+        await getFormSchemaFromHocuspocus(formId);
+
       logger.info('📋 Hocuspocus schema structure:', {
         hasSchema: !!formSchemaFromHocuspocus,
         hasPages: !!formSchemaFromHocuspocus?.pages,
         pagesCount: formSchemaFromHocuspocus?.pages?.length || 0,
-        firstPageFields: formSchemaFromHocuspocus?.pages?.[0]?.fields?.length || 0
+        firstPageFields:
+          formSchemaFromHocuspocus?.pages?.[0]?.fields?.length || 0,
       });
-      
+
       if (!formSchemaFromHocuspocus) {
-        logger.info('❌ No collaborative schema found, falling back to database schema');
-        
+        logger.info(
+          '❌ No collaborative schema found, falling back to database schema'
+        );
+
         // Fallback to database schema if collaborative document doesn't exist
-        const fallbackForm = await checkFormAccess(formId, context.user.id, true);
+        const fallbackForm = await checkFormAccess(
+          formId,
+          context.user.id,
+          true
+        );
         const fallbackSchema = fallbackForm.formSchema as any; // Type assertion for Prisma JSON field
-        
+
         logger.info('📋 Fallback DB schema structure:', {
           hasFormSchema: !!fallbackSchema,
           hasPages: !!fallbackSchema?.pages,
           pagesCount: fallbackSchema?.pages?.length || 0,
-          firstPageFields: fallbackSchema?.pages?.[0]?.fields?.length || 0
+          firstPageFields: fallbackSchema?.pages?.[0]?.fields?.length || 0,
         });
-        
+
         if (!fallbackSchema) {
-          throw createGraphQLError('No form schema found in either collaborative document or database', GRAPHQL_ERROR_CODES.NOT_FOUND);
+          throw createGraphQLError(
+            'No form schema found in either collaborative document or database',
+            GRAPHQL_ERROR_CODES.NOT_FOUND
+          );
         }
-        
+
         // Get field information from fallback schema
         const fieldInfo = getFieldInfo(fallbackSchema, fieldId);
         if (!fieldInfo) {
-          throw createGraphQLError(`Field not found: ${fieldId}`, GRAPHQL_ERROR_CODES.NOT_FOUND);
+          throw createGraphQLError(
+            `Field not found: ${fieldId}`,
+            GRAPHQL_ERROR_CODES.NOT_FOUND
+          );
         }
       } else {
         // Get field information from Hocuspocus schema
         const fieldInfo = getFieldInfo(formSchemaFromHocuspocus, fieldId);
         if (!fieldInfo) {
-          throw createGraphQLError(`Field not found: ${fieldId}`, GRAPHQL_ERROR_CODES.NOT_FOUND);
+          throw createGraphQLError(
+            `Field not found: ${fieldId}`,
+            GRAPHQL_ERROR_CODES.NOT_FOUND
+          );
         }
       }
-      
+
       // Use the schema we found (prefer Hocuspocus over database)
       const activeSchema = formSchemaFromHocuspocus || (form.formSchema as any);
       const fieldInfo = getFieldInfo(activeSchema, fieldId);
       if (!fieldInfo) {
-        throw createGraphQLError(`Field not found: ${fieldId}`, GRAPHQL_ERROR_CODES.NOT_FOUND);
+        throw createGraphQLError(
+          `Field not found: ${fieldId}`,
+          GRAPHQL_ERROR_CODES.NOT_FOUND
+        );
       }
 
       // Check if field type is supported for analytics
@@ -252,7 +300,10 @@ export const fieldAnalyticsResolvers = {
       ];
 
       if (!supportedTypes.includes(fieldInfo.type)) {
-        throw createGraphQLError(`Analytics not supported for field type: ${fieldInfo.type}`, GRAPHQL_ERROR_CODES.UNSUPPORTED_FIELD_TYPE);
+        throw createGraphQLError(
+          `Analytics not supported for field type: ${fieldInfo.type}`,
+          GRAPHQL_ERROR_CODES.UNSUPPORTED_FIELD_TYPE
+        );
       }
 
       try {
@@ -266,7 +317,10 @@ export const fieldAnalyticsResolvers = {
         return transformAnalyticsToGraphQL(analytics);
       } catch (error) {
         logger.error('Error getting field analytics:', error);
-        throw createGraphQLError('Failed to get field analytics', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
+        throw createGraphQLError(
+          'Failed to get field analytics',
+          GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR
+        );
       }
     },
 
@@ -279,7 +333,10 @@ export const fieldAnalyticsResolvers = {
       context: any
     ) => {
       if (!context.user) {
-        throw createGraphQLError('Authentication required', GRAPHQL_ERROR_CODES.UNAUTHENTICATED);
+        throw createGraphQLError(
+          'Authentication required',
+          GRAPHQL_ERROR_CODES.UNAUTHENTICATED
+        );
       }
 
       // Check form access (no need for schema here)
@@ -295,10 +352,12 @@ export const fieldAnalyticsResolvers = {
         };
       } catch (error) {
         logger.error('Error getting all fields analytics:', error);
-        throw createGraphQLError('Failed to get all fields analytics', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
+        throw createGraphQLError(
+          'Failed to get all fields analytics',
+          GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR
+        );
       }
     },
-
   },
   Mutation: {},
 };

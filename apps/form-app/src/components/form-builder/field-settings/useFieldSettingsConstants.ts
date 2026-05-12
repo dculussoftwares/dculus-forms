@@ -31,7 +31,8 @@ export const useFieldSettingsConstants = () => {
     CSS_CLASSES: {
       ERROR_INPUT: 'border-red-500 focus:border-red-500 focus:ring-red-500',
       EMPTY_OPTION: 'border-red-300 focus:border-red-500 focus:ring-red-500',
-      DIRTY_BACKGROUND: 'bg-gradient-to-b from-orange-25 to-transparent dark:from-orange-950/10',
+      DIRTY_BACKGROUND:
+        'bg-gradient-to-b from-orange-25 to-transparent dark:from-orange-950/10',
       SECTION_SPACING: 'space-y-4',
       INPUT_SPACING: 'space-y-2',
       TEXT_SMALL: 'text-sm',
@@ -79,7 +80,8 @@ export const useFieldSettingsConstants = () => {
       NO_MAXIMUM: t('placeholders.noMaximum'),
       MIN_PLACEHOLDER: t('placeholders.minPlaceholder'),
       MAX_PLACEHOLDER: t('placeholders.maxPlaceholder'),
-      OPTION_PLACEHOLDER: (index: number) => t('placeholders.optionPlaceholder', { values: { index: index + 1 } }),
+      OPTION_PLACEHOLDER: (index: number) =>
+        t('placeholders.optionPlaceholder', { values: { index: index + 1 } }),
       SELECT_DEFAULT_OPTION: t('placeholders.selectDefaultOption'),
       RICH_TEXT_CONTENT: t('placeholders.richTextContent'),
     },
@@ -152,6 +154,7 @@ export const useFieldSettingsConstants = () => {
       NUMBER_RANGE: t('sectionTitles.numberRange'),
       DATE_RANGE: t('sectionTitles.dateRange'),
       PREFIX_SETTINGS: t('sectionTitles.prefixSettings'),
+      FILE_UPLOAD_SETTINGS: t('sectionTitles.fileUploadSettings'),
     },
 
     // Labels (translated)
@@ -169,6 +172,9 @@ export const useFieldSettingsConstants = () => {
       MINIMUM_DATE: t('labels.minimumDate'),
       MAXIMUM_DATE: t('labels.maximumDate'),
       NONE: t('labels.none'),
+      ALLOWED_FILE_TYPES: t('labels.allowedFileTypes'),
+      MAX_FILE_SIZE_MB: t('labels.maxFileSizeMb'),
+      MAX_FILES: t('labels.maxFiles'),
     },
 
     // Button texts (translated)
@@ -182,12 +188,13 @@ export const useFieldSettingsConstants = () => {
     // Info messages (translated)
     INFO_MESSAGES: {
       NO_OPTIONS_AVAILABLE: t('infoMessages.noOptionsAvailable'),
-      SELECTED_COUNT: (count: number) => t('infoMessages.selectedCount', { 
-        values: { 
-          count, 
-          plural: count === 1 ? '' : t('infoMessages.selectedCountPlural')
-        } 
-      }),
+      SELECTED_COUNT: (count: number) =>
+        t('infoMessages.selectedCount', {
+          values: {
+            count,
+            plural: count === 1 ? '' : t('infoMessages.selectedCountPlural'),
+          },
+        }),
       SELECT_FIELD_TO_EDIT: t('infoMessages.selectFieldToEdit'),
     },
   } as const;

@@ -1,6 +1,20 @@
 import React, { useMemo } from 'react';
 import { FormField, FieldType, RichTextFormField } from '@dculus/types';
-import { Input, Textarea, Select, SelectTrigger, SelectContent, SelectValue, SelectItem, Label, RichTextEditor, Checkbox, RadioGroup, RadioGroupItem } from './index';
+import { Upload } from 'lucide-react';
+import {
+  Input,
+  Textarea,
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectValue,
+  SelectItem,
+  Label,
+  RichTextEditor,
+  Checkbox,
+  RadioGroup,
+  RadioGroupItem,
+} from './index';
 
 interface FieldPreviewProps {
   field: FormField;
@@ -26,6 +40,8 @@ const getDefaultLabel = (type: FieldType): string => {
       return 'Checkbox';
     case FieldType.DATE_FIELD:
       return 'Date';
+    case FieldType.FILE_UPLOAD_FIELD:
+      return 'File Upload';
     case FieldType.RICH_TEXT_FIELD:
       return 'Rich Text';
     default:
@@ -36,7 +52,7 @@ const getDefaultLabel = (type: FieldType): string => {
 export const FieldPreview: React.FC<FieldPreviewProps> = ({
   field,
   disabled = true,
-  showValidation = true
+  showValidation = true,
 }) => {
   // Memoize field data extraction to make it reactive to field changes
   const fieldData = useMemo(() => {
@@ -55,21 +71,33 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
     };
 
     const getFieldPlaceholder = (): string => {
-      if ('placeholder' in field && typeof field.placeholder === 'string' && field.placeholder) {
+      if (
+        'placeholder' in field &&
+        typeof field.placeholder === 'string' &&
+        field.placeholder
+      ) {
         return field.placeholder;
       }
       return '';
     };
 
     const getFieldPrefix = (): string => {
-      if ('prefix' in field && typeof field.prefix === 'string' && field.prefix) {
+      if (
+        'prefix' in field &&
+        typeof field.prefix === 'string' &&
+        field.prefix
+      ) {
         return field.prefix;
       }
       return '';
     };
 
     const getFieldDefaultValue = (): string => {
-      if ('defaultValue' in field && typeof field.defaultValue === 'string' && field.defaultValue) {
+      if (
+        'defaultValue' in field &&
+        typeof field.defaultValue === 'string' &&
+        field.defaultValue
+      ) {
         return field.defaultValue;
       }
       return '';
@@ -77,7 +105,10 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
 
     const getFieldDefaultValueArray = (): string[] => {
       // CheckboxField should have defaultValues array
-      if ('defaultValues' in field && Array.isArray((field as any).defaultValues)) {
+      if (
+        'defaultValues' in field &&
+        Array.isArray((field as any).defaultValues)
+      ) {
         return (field as any).defaultValues;
       }
       return [];
@@ -91,7 +122,11 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
     };
 
     const getFieldRequired = (): boolean => {
-      if ('validation' in field && field.validation && typeof field.validation === 'object') {
+      if (
+        'validation' in field &&
+        field.validation &&
+        typeof field.validation === 'object'
+      ) {
         return (field.validation as any).required || false;
       }
       return false;
@@ -105,7 +140,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
       defaultValue: getFieldDefaultValue(),
       defaultValueArray: getFieldDefaultValueArray(),
       options: getFieldOptions(),
-      required: getFieldRequired()
+      required: getFieldRequired(),
     };
   }, [
     field,
@@ -121,9 +156,9 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
     'content' in field ? (field as any).content : null, // Add content dependency for Rich Text fields
   ]);
 
-
   const renderFieldInput = () => {
-    const placeholder = fieldData.placeholder || `Enter your ${fieldData.label.toLowerCase()}`;
+    const placeholder =
+      fieldData.placeholder || `Enter your ${fieldData.label.toLowerCase()}`;
     const defaultValue = fieldData.defaultValue;
     const prefix = fieldData.prefix;
     const options = fieldData.options;
@@ -174,7 +209,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
             )}
             <Input
               type="email"
-              placeholder={placeholder || "Enter your email"}
+              placeholder={placeholder || 'Enter your email'}
               defaultValue={defaultValue}
               disabled={disabled}
               className={`text-sm ${prefix ? 'pl-8' : ''}`}
@@ -193,7 +228,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
             )}
             <Input
               type="number"
-              placeholder={placeholder || "Enter a number"}
+              placeholder={placeholder || 'Enter a number'}
               defaultValue={defaultValue}
               min={numberField.min}
               max={numberField.max}
@@ -205,17 +240,22 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
 
       case FieldType.SELECT_FIELD:
         return (
-          <Select disabled={disabled} defaultValue={fieldData.defaultValue || undefined}>
+          <Select
+            disabled={disabled}
+            defaultValue={fieldData.defaultValue || undefined}
+          >
             <SelectTrigger className="text-sm">
-              <SelectValue placeholder={placeholder || "Choose an option"} />
+              <SelectValue placeholder={placeholder || 'Choose an option'} />
             </SelectTrigger>
             <SelectContent>
               {options.length > 0 ? (
-                options.filter(option => option && option.trim() !== '').map((option, index) => (
-                  <SelectItem key={index} value={option}>
-                    {option}
-                  </SelectItem>
-                ))
+                options
+                  .filter((option) => option && option.trim() !== '')
+                  .map((option, index) => (
+                    <SelectItem key={index} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))
               ) : (
                 <SelectItem value="no-options-placeholder" disabled>
                   No options added yet
@@ -229,15 +269,15 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
         return (
           <div>
             {options.length > 0 ? (
-              <RadioGroup 
+              <RadioGroup
                 defaultValue={fieldData.defaultValue || undefined}
                 disabled={disabled}
                 className="space-y-2"
               >
                 {options.map((option, index) => (
                   <div key={index} className="flex items-center space-x-2">
-                    <RadioGroupItem 
-                      value={option} 
+                    <RadioGroupItem
+                      value={option}
                       id={`${field.id}-${index}`}
                     />
                     <label
@@ -250,7 +290,9 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
                 ))}
               </RadioGroup>
             ) : (
-              <div className="text-sm text-gray-500 italic">No options added yet</div>
+              <div className="text-sm text-gray-500 italic">
+                No options added yet
+              </div>
             )}
           </div>
         );
@@ -280,7 +322,9 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
                 );
               })
             ) : (
-              <div className="text-sm text-gray-500 italic">No options added yet</div>
+              <div className="text-sm text-gray-500 italic">
+                No options added yet
+              </div>
             )}
           </div>
         );
@@ -298,9 +342,29 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
           />
         );
 
+      case FieldType.FILE_UPLOAD_FIELD: {
+        const fileUploadField = field as any;
+        const maxFiles: number = fileUploadField.maxFiles || 1;
+        const maxFileSizeMb: number = fileUploadField.maxFileSizeMb || 5;
+        return (
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-5 text-center bg-gray-50 opacity-60 cursor-not-allowed">
+            <Upload className="w-7 h-7 text-gray-400 mx-auto mb-1" />
+            <p className="text-sm text-gray-500">
+              Click or drag files here to upload
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              Max {maxFiles} file{maxFiles > 1 ? 's' : ''}, up to{' '}
+              {maxFileSizeMb}MB each
+            </p>
+          </div>
+        );
+      }
+
       case FieldType.RICH_TEXT_FIELD:
         const richTextField = field as RichTextFormField;
-        const richTextContent = richTextField.content || '<p>Rich text content will appear here...</p>';
+        const richTextContent =
+          richTextField.content ||
+          '<p>Rich text content will appear here...</p>';
         return (
           <div className="border border-gray-200 rounded-lg">
             <RichTextEditor
@@ -326,9 +390,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
       <div className="flex items-center space-x-1">
         <Label className="text-sm font-medium text-gray-900 dark:text-white">
           {fieldData.label}
-          {fieldData.required && (
-            <span className="text-red-500 ml-1">*</span>
-          )}
+          {fieldData.required && <span className="text-red-500 ml-1">*</span>}
         </Label>
       </div>
 

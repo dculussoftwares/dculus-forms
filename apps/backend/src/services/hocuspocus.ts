@@ -1,7 +1,13 @@
 import { Hocuspocus } from '@hocuspocus/server';
 import { Database } from '@hocuspocus/extension-database';
-import { extractFormStatsFromYDoc, updateFormMetadata } from './formMetadataService.js';
-import { checkFormAccess, PermissionLevel } from '../graphql/resolvers/formSharing.js';
+import {
+  extractFormStatsFromYDoc,
+  updateFormMetadata,
+} from './formMetadataService.js';
+import {
+  checkFormAccess,
+  PermissionLevel,
+} from '../graphql/resolvers/formSharing.js';
 import { auth } from '../lib/better-auth.js';
 import { collaborativeDocumentRepository } from '../repositories/index.js';
 import { logger } from '../lib/logger.js';
@@ -11,7 +17,11 @@ const METADATA_UPDATE_DEBOUNCE_MS = 5000; // 5 seconds
 const metadataUpdateTimeouts = new Map<string, NodeJS.Timeout>();
 
 // Helper function to validate user session and form access
-const validateUserAccess = async (token: string, formId: string, requiredPermission: string = PermissionLevel.VIEWER) => {
+const validateUserAccess = async (
+  token: string,
+  formId: string,
+  requiredPermission: string = PermissionLevel.VIEWER
+) => {
   try {
     // Parse bearer token
     const authToken = token?.replace('Bearer ', '');
@@ -25,7 +35,7 @@ const validateUserAccess = async (token: string, formId: string, requiredPermiss
     headers.set('content-type', 'application/json');
 
     const sessionData = await auth.api.getSession({
-      headers: headers
+      headers: headers,
     });
 
     if (!sessionData?.user) {
@@ -33,15 +43,21 @@ const validateUserAccess = async (token: string, formId: string, requiredPermiss
     }
 
     // Check form access permissions
-    const accessCheck = await checkFormAccess(sessionData.user.id, formId, requiredPermission as any);
+    const accessCheck = await checkFormAccess(
+      sessionData.user.id,
+      formId,
+      requiredPermission as any
+    );
     if (!accessCheck.hasAccess) {
-      throw new Error(`Access denied: Insufficient permissions for form ${formId}`);
+      throw new Error(
+        `Access denied: Insufficient permissions for form ${formId}`
+      );
     }
 
     return {
       user: sessionData.user,
       permission: accessCheck.permission,
-      form: accessCheck.form
+      form: accessCheck.form,
     };
   } catch (error) {
     logger.error(`[validateUserAccess] Error:`, error);
@@ -64,7 +80,9 @@ export const createHocuspocusServer = () => {
               );
 
             if (document && document.state) {
-              logger.info(`✅ [Hocuspocus] Document found for ${documentName}:`);
+              logger.info(
+                `✅ [Hocuspocus] Document found for ${documentName}:`
+              );
               logger.info(`   - ID: ${document.id}`);
               logger.info(`   - State length: ${document.state.length} bytes`);
               logger.info(`   - Updated: ${document.updatedAt}`);
@@ -72,21 +90,32 @@ export const createHocuspocusServer = () => {
               return new Uint8Array(document.state);
             }
 
-            logger.info(`❌ [Hocuspocus] Document not found for: ${documentName}`);
+            logger.info(
+              `❌ [Hocuspocus] Document not found for: ${documentName}`
+            );
 
             // List all documents for debugging
-            const allDocs = await collaborativeDocumentRepository.listDocumentNames();
-            logger.info(`📋 [Hocuspocus] Available documents:`, allDocs.map((d: { documentName: string }) => d.documentName));
+            const allDocs =
+              await collaborativeDocumentRepository.listDocumentNames();
+            logger.info(
+              `📋 [Hocuspocus] Available documents:`,
+              allDocs.map((d: { documentName: string }) => d.documentName)
+            );
 
             return null;
           } catch (error) {
-            logger.error(`💥 [Hocuspocus] Error fetching document ${documentName}:`, error);
+            logger.error(
+              `💥 [Hocuspocus] Error fetching document ${documentName}:`,
+              error
+            );
             return null;
           }
         },
         store: async ({ documentName, state }) => {
           try {
-            logger.info(`[Hocuspocus] Storing document ${documentName} with state length: ${state.length}`);
+            logger.info(
+              `[Hocuspocus] Storing document ${documentName} with state length: ${state.length}`
+            );
 
             // Try to find existing document first
             await collaborativeDocumentRepository.saveDocumentState(
@@ -95,26 +124,40 @@ export const createHocuspocusServer = () => {
               (name) => `collab-${name}`
             );
 
-            logger.info(`[Hocuspocus] Document ${documentName} stored successfully`);
+            logger.info(
+              `[Hocuspocus] Document ${documentName} stored successfully`
+            );
           } catch (error) {
-            logger.error(`[Hocuspocus] Error storing document ${documentName}:`, error);
+            logger.error(
+              `[Hocuspocus] Error storing document ${documentName}:`,
+              error
+            );
             // Don't throw the error to prevent server crashes
           }
         },
       }),
     ],
-    onAuthenticate: async ({ documentName, token, requestHeaders, requestParameters, connectionConfig, ...rest }) => {
+    onAuthenticate: async ({
+      documentName,
+      token,
+      requestHeaders,
+      requestParameters,
+      connectionConfig,
+      ...rest
+    }) => {
       logger.info('🔐 [onAuthenticate] Called with:', {
         documentName,
         hasToken: !!token,
         hasHeaders: !!requestHeaders,
         hasParams: !!requestParameters,
-        restKeys: Object.keys(rest)
+        restKeys: Object.keys(rest),
       });
 
       try {
         if (!documentName || documentName.trim() === '') {
-          logger.warn('⚠️ [onAuthenticate] Empty or undefined documentName received');
+          logger.warn(
+            '⚠️ [onAuthenticate] Empty or undefined documentName received'
+          );
           throw new Error('Document name is required');
         }
 
@@ -136,55 +179,73 @@ export const createHocuspocusServer = () => {
         if (!authToken && requestHeaders) {
           try {
             // Handle both Map-like and Headers-like objects
-            const authHeader = (requestHeaders as any).get?.('authorization') ||
+            const authHeader =
+              (requestHeaders as any).get?.('authorization') ||
               (requestHeaders as any).get?.('Authorization') ||
               (requestHeaders as any)['authorization'] ||
               (requestHeaders as any)['Authorization'];
 
             if (authHeader && typeof authHeader === 'string') {
               authToken = authHeader.replace('Bearer ', '');
-              logger.info('🔍 [onAuthenticate] Found token in Authorization header');
+              logger.info(
+                '🔍 [onAuthenticate] Found token in Authorization header'
+              );
             }
           } catch (error) {
-            logger.info('🔍 [onAuthenticate] Could not extract token from headers:', error);
+            logger.info(
+              '🔍 [onAuthenticate] Could not extract token from headers:',
+              error
+            );
           }
         }
 
-        logger.info('🔐 [onAuthenticate] Final token status:', { hasToken: !!authToken });
+        logger.info('🔐 [onAuthenticate] Final token status:', {
+          hasToken: !!authToken,
+        });
 
         // Validate user authentication and form access
-        const userAccess = await validateUserAccess(authToken, formId, PermissionLevel.VIEWER);
+        const userAccess = await validateUserAccess(
+          authToken,
+          formId,
+          PermissionLevel.VIEWER
+        );
 
         if (connectionConfig) {
-          connectionConfig.readOnly = userAccess.permission === PermissionLevel.VIEWER;
+          connectionConfig.readOnly =
+            userAccess.permission === PermissionLevel.VIEWER;
         }
 
-        logger.info(`✅ [onAuthenticate] User ${userAccess.user.email} authenticated for form ${formId} with ${userAccess.permission} permission`);
+        logger.info(
+          `✅ [onAuthenticate] User ${userAccess.user.email} authenticated for form ${formId} with ${userAccess.permission} permission`
+        );
 
         return {
           user: {
             id: userAccess.user.id,
             email: userAccess.user.email,
             permission: userAccess.permission,
-            formId
-          }
+            formId,
+          },
         };
       } catch (error) {
-        logger.error(`❌ [onAuthenticate] Authentication failed for form ${documentName}:`, error);
+        logger.error(
+          `❌ [onAuthenticate] Authentication failed for form ${documentName}:`,
+          error
+        );
         throw error; // This will reject the connection
       }
     },
     onConnect: async ({ documentName, ...rest }) => {
       logger.info('🔌 [onConnect] Called with:', {
         documentName,
-        restKeys: Object.keys(rest)
+        restKeys: Object.keys(rest),
       });
       logger.info(`🔌 User connected to document: "${documentName}"`);
     },
     onDisconnect: async ({ documentName, ...rest }) => {
       logger.info('🔌 [onDisconnect] Called with:', {
         documentName,
-        restKeys: Object.keys(rest)
+        restKeys: Object.keys(rest),
       });
       logger.info(`🔌 User disconnected from document: "${documentName}"`);
     },
@@ -192,19 +253,27 @@ export const createHocuspocusServer = () => {
       // Check if user has edit permissions before processing changes
       const userContext = context?.user;
       if (userContext?.permission === PermissionLevel.VIEWER) {
-        logger.warn(`⚠️ [onChange] VIEWER user ${userContext.email} attempted to modify form ${documentName} - change ignored`);
+        logger.warn(
+          `⚠️ [onChange] VIEWER user ${userContext.email} attempted to modify form ${documentName} - change ignored`
+        );
         return; // Don't process changes for viewers
       }
 
-      logger.info(`📝 [onChange] Processing changes for form ${documentName} by user ${userContext?.email || 'unknown'} (${userContext?.permission || 'unknown'})`);
+      logger.info(
+        `📝 [onChange] Processing changes for form ${documentName} by user ${userContext?.email || 'unknown'} (${userContext?.permission || 'unknown'})`
+      );
 
       // Debounce metadata updates to handle frequent collaborative changes
       if (!metadataUpdateTimeouts.has(documentName)) {
-        logger.info(`📊 [onChange] Scheduling metadata update for form: ${documentName}`);
+        logger.info(
+          `📊 [onChange] Scheduling metadata update for form: ${documentName}`
+        );
 
         const timeoutId = setTimeout(async () => {
           try {
-            logger.info(`🔄 [Metadata] Updating metadata for form: ${documentName}`);
+            logger.info(
+              `🔄 [Metadata] Updating metadata for form: ${documentName}`
+            );
 
             // Extract stats from the current YJS document
             const stats = extractFormStatsFromYDoc(document);
@@ -212,9 +281,15 @@ export const createHocuspocusServer = () => {
             // Update metadata cache
             await updateFormMetadata(documentName, stats);
 
-            logger.info(`✅ [Metadata] Updated for form ${documentName}:`, stats);
+            logger.info(
+              `✅ [Metadata] Updated for form ${documentName}:`,
+              stats
+            );
           } catch (error) {
-            logger.error(`❌ [Metadata] Failed to update for form ${documentName}:`, error);
+            logger.error(
+              `❌ [Metadata] Failed to update for form ${documentName}:`,
+              error
+            );
           } finally {
             // Clean up timeout reference
             metadataUpdateTimeouts.delete(documentName);
@@ -229,7 +304,9 @@ export const createHocuspocusServer = () => {
 
         const timeoutId = setTimeout(async () => {
           try {
-            logger.info(`🔄 [Metadata] Updating metadata for form: ${documentName}`);
+            logger.info(
+              `🔄 [Metadata] Updating metadata for form: ${documentName}`
+            );
 
             // Extract stats from the current YJS document
             const stats = extractFormStatsFromYDoc(document);
@@ -237,9 +314,15 @@ export const createHocuspocusServer = () => {
             // Update metadata cache
             await updateFormMetadata(documentName, stats);
 
-            logger.info(`✅ [Metadata] Updated for form ${documentName}:`, stats);
+            logger.info(
+              `✅ [Metadata] Updated for form ${documentName}:`,
+              stats
+            );
           } catch (error) {
-            logger.error(`❌ [Metadata] Failed to update for form ${documentName}:`, error);
+            logger.error(
+              `❌ [Metadata] Failed to update for form ${documentName}:`,
+              error
+            );
           } finally {
             // Clean up timeout reference
             metadataUpdateTimeouts.delete(documentName);
@@ -255,7 +338,9 @@ export const createHocuspocusServer = () => {
 /**
  * Get form schema from Hocuspocus collaborative document
  */
-export const getFormSchemaFromHocuspocus = async (formId: string): Promise<any | null> => {
+export const getFormSchemaFromHocuspocus = async (
+  formId: string
+): Promise<any | null> => {
   try {
     logger.info(`🔍 Getting form schema from Hocuspocus for form: ${formId}`);
 
@@ -300,7 +385,7 @@ export const getFormSchemaFromHocuspocus = async (formId: string): Promise<any |
               id: pageMap.get('id'),
               title: pageMap.get('title'),
               order: pageMap.get('order'),
-              fields: [] as any[]
+              fields: [] as any[],
             };
 
             const fieldsArray = pageMap.get('fields');
@@ -315,7 +400,42 @@ export const getFormSchemaFromHocuspocus = async (formId: string): Promise<any |
                     const field: any = {
                       id: fieldMap.get('id'),
                       type: fieldType,
-                      content: fieldMap.get('content') || ''
+                      content: fieldMap.get('content') || '',
+                    };
+                    page.fields.push(field);
+                  } else if (fieldType === 'file_upload_field') {
+                    // File upload fields: extract base fillable props + upload constraints
+                    const validationMap = fieldMap.get('validation');
+                    const validationData: any =
+                      validationMap instanceof Y.Map
+                        ? {
+                            required: validationMap.get('required') || false,
+                            type: validationMap.get('type') || fieldType,
+                          }
+                        : {
+                            required: fieldMap.get('required') || false,
+                            type: fieldType,
+                          };
+
+                    const allowedMimeTypesData =
+                      fieldMap.get('allowedMimeTypes');
+                    const allowedMimeTypes =
+                      allowedMimeTypesData instanceof Y.Array
+                        ? allowedMimeTypesData.toArray()
+                        : Array.isArray(allowedMimeTypesData)
+                          ? allowedMimeTypesData
+                          : [];
+
+                    const field: any = {
+                      id: fieldMap.get('id'),
+                      type: fieldType,
+                      label: fieldMap.get('label'),
+                      prefix: fieldMap.get('prefix'),
+                      hint: fieldMap.get('hint'),
+                      validation: validationData,
+                      allowedMimeTypes,
+                      maxFileSizeMb: fieldMap.get('maxFileSizeMb'),
+                      maxFiles: fieldMap.get('maxFiles'),
                     };
                     page.fields.push(field);
                   } else {
@@ -339,7 +459,7 @@ export const getFormSchemaFromHocuspocus = async (formId: string): Promise<any |
                       // Fallback to direct field properties (legacy structure)
                       validationData = {
                         required: fieldMap.get('required') || false,
-                        type: fieldType
+                        type: fieldType,
                       };
                     }
 
@@ -350,7 +470,7 @@ export const getFormSchemaFromHocuspocus = async (formId: string): Promise<any |
                       defaultValue: fieldMap.get('defaultValue'),
                       prefix: fieldMap.get('prefix'),
                       hint: fieldMap.get('hint'),
-                      validation: validationData
+                      validation: validationData,
                     };
 
                     // Handle field-specific properties
@@ -364,11 +484,14 @@ export const getFormSchemaFromHocuspocus = async (formId: string): Promise<any |
                       }
                     }
 
-                    if (fieldMap.has('multiple')) field.multiple = fieldMap.get('multiple');
+                    if (fieldMap.has('multiple'))
+                      field.multiple = fieldMap.get('multiple');
                     if (fieldMap.has('min')) field.min = fieldMap.get('min');
                     if (fieldMap.has('max')) field.max = fieldMap.get('max');
-                    if (fieldMap.has('minDate')) field.minDate = fieldMap.get('minDate');
-                    if (fieldMap.has('maxDate')) field.maxDate = fieldMap.get('maxDate');
+                    if (fieldMap.has('minDate'))
+                      field.minDate = fieldMap.get('minDate');
+                    if (fieldMap.has('maxDate'))
+                      field.maxDate = fieldMap.get('maxDate');
 
                     page.fields.push(field);
                   }
@@ -388,17 +511,20 @@ export const getFormSchemaFromHocuspocus = async (formId: string): Promise<any |
         convertedLayout.spacing = layout.get('spacing');
         convertedLayout.code = layout.get('code');
         convertedLayout.content = layout.get('content');
-        convertedLayout.customBackGroundColor = layout.get('customBackGroundColor');
+        convertedLayout.customBackGroundColor = layout.get(
+          'customBackGroundColor'
+        );
         convertedLayout.customCTAButtonName = layout.get('customCTAButtonName');
         convertedLayout.backgroundImageKey = layout.get('backgroundImageKey');
         convertedLayout.pageMode = layout.get('pageMode');
-        convertedLayout.isCustomBackgroundColorEnabled = layout.get('isCustomBackgroundColorEnabled') || false;
+        convertedLayout.isCustomBackgroundColorEnabled =
+          layout.get('isCustomBackgroundColorEnabled') || false;
       }
 
       return {
         pages: convertedPages,
         layout: convertedLayout,
-        isShuffleEnabled: Boolean(isShuffleEnabled)
+        isShuffleEnabled: Boolean(isShuffleEnabled),
       };
     };
 
@@ -410,7 +536,10 @@ export const getFormSchemaFromHocuspocus = async (formId: string): Promise<any |
 
     return formSchema;
   } catch (error) {
-    logger.error(`❌ Error getting form schema from Hocuspocus for form ${formId}:`, error);
+    logger.error(
+      `❌ Error getting form schema from Hocuspocus for form ${formId}:`,
+      error
+    );
     return null;
   }
 };
@@ -419,14 +548,20 @@ export const getFormSchemaFromHocuspocus = async (formId: string): Promise<any |
  * Initialize a Hocuspocus document with form schema
  * This ensures the collaboration service has the correct document structure
  */
-export const initializeHocuspocusDocument = async (formId: string, formSchema: any): Promise<void> => {
+export const initializeHocuspocusDocument = async (
+  formId: string,
+  formSchema: any
+): Promise<void> => {
   try {
     logger.info(`🚀 Initializing Hocuspocus document for form: ${formId}`);
-    logger.info(`📥 Form schema input:`, JSON.stringify({
-      pages: formSchema.pages?.length || 0,
-      fields: formSchema.pages?.[0]?.fields?.length || 0,
-      layout: !!formSchema.layout
-    }));
+    logger.info(
+      `📥 Form schema input:`,
+      JSON.stringify({
+        pages: formSchema.pages?.length || 0,
+        fields: formSchema.pages?.[0]?.fields?.length || 0,
+        layout: !!formSchema.layout,
+      })
+    );
 
     // Create temporary YJS document with form schema
     const Y = await import('yjs');
@@ -437,7 +572,9 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
     const pagesArray = new Y.Array();
 
     if (formSchema.pages && formSchema.pages.length > 0) {
-      logger.info(`📄 Initializing ${formSchema.pages.length} pages with form data`);
+      logger.info(
+        `📄 Initializing ${formSchema.pages.length} pages with form data`
+      );
       formSchema.pages.forEach((page: any, pageIndex: number) => {
         const pageMap = new Y.Map();
         pageMap.set('id', page.id);
@@ -446,7 +583,9 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
 
         const fieldsArray = new Y.Array();
         if (page.fields && page.fields.length > 0) {
-          logger.info(`  📝 Page ${pageIndex + 1} (${page.title}): Adding ${page.fields.length} fields`);
+          logger.info(
+            `  📝 Page ${pageIndex + 1} (${page.title}): Adding ${page.fields.length} fields`
+          );
           page.fields.forEach((field: any, fieldIndex: number) => {
             const fieldMap = new Y.Map();
             fieldMap.set('id', field.id);
@@ -455,6 +594,33 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
             // Handle Rich Text fields differently (they only need content property)
             if (field.type === 'rich_text_field') {
               fieldMap.set('content', field.content || '');
+            } else if (field.type === 'file_upload_field') {
+              fieldMap.set('label', field.label || '');
+              fieldMap.set('prefix', field.prefix || '');
+              fieldMap.set('hint', field.hint || '');
+
+              const validationMap = new Y.Map();
+              validationMap.set(
+                'required',
+                field.validation?.required || false
+              );
+              validationMap.set('type', field.validation?.type || field.type);
+              fieldMap.set('validation', validationMap);
+
+              if (
+                field.allowedMimeTypes &&
+                Array.isArray(field.allowedMimeTypes)
+              ) {
+                const mimeArray = new Y.Array();
+                field.allowedMimeTypes.forEach((mime: string) =>
+                  mimeArray.push([mime])
+                );
+                fieldMap.set('allowedMimeTypes', mimeArray);
+              }
+              if (field.maxFileSizeMb !== undefined)
+                fieldMap.set('maxFileSizeMb', field.maxFileSizeMb);
+              if (field.maxFiles !== undefined)
+                fieldMap.set('maxFiles', field.maxFiles);
             } else {
               // Handle all other field types with fillable properties
               fieldMap.set('label', field.label || '');
@@ -462,7 +628,9 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
               // Handle defaultValue - use defaultValues for CheckboxField
               if (field.type === 'checkbox_field' && field.defaultValues) {
                 const defaultValuesArray = new Y.Array();
-                field.defaultValues.filter((val: any) => val && val.trim() !== '').forEach((val: string) => defaultValuesArray.push([val]));
+                field.defaultValues
+                  .filter((val: any) => val && val.trim() !== '')
+                  .forEach((val: string) => defaultValuesArray.push([val]));
                 fieldMap.set('defaultValue', defaultValuesArray);
               } else {
                 fieldMap.set('defaultValue', field.defaultValue || '');
@@ -473,7 +641,10 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
 
               // Create validation map with all validation properties
               const validationMap = new Y.Map();
-              validationMap.set('required', field.validation?.required || false);
+              validationMap.set(
+                'required',
+                field.validation?.required || false
+              );
               validationMap.set('type', field.validation?.type || field.type);
 
               // Add field-specific validation properties
@@ -484,10 +655,16 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
                 validationMap.set('maxLength', field.validation.maxLength);
               }
               if (field.validation?.minSelections !== undefined) {
-                validationMap.set('minSelections', field.validation.minSelections);
+                validationMap.set(
+                  'minSelections',
+                  field.validation.minSelections
+                );
               }
               if (field.validation?.maxSelections !== undefined) {
-                validationMap.set('maxSelections', field.validation.maxSelections);
+                validationMap.set(
+                  'maxSelections',
+                  field.validation.maxSelections
+                );
               }
 
               fieldMap.set('validation', validationMap);
@@ -496,18 +673,25 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
               if (field.options && Array.isArray(field.options)) {
                 const optionsArray = new Y.Array();
                 // Filter out empty or whitespace-only options
-                field.options.filter((option: any) => option && option.trim() !== '').forEach((option: string) => optionsArray.push([option]));
+                field.options
+                  .filter((option: any) => option && option.trim() !== '')
+                  .forEach((option: string) => optionsArray.push([option]));
                 fieldMap.set('options', optionsArray);
               }
 
-              if (field.multiple !== undefined) fieldMap.set('multiple', field.multiple);
+              if (field.multiple !== undefined)
+                fieldMap.set('multiple', field.multiple);
               if (field.min !== undefined) fieldMap.set('min', field.min);
               if (field.max !== undefined) fieldMap.set('max', field.max);
-              if (field.minDate !== undefined) fieldMap.set('minDate', field.minDate);
-              if (field.maxDate !== undefined) fieldMap.set('maxDate', field.maxDate);
+              if (field.minDate !== undefined)
+                fieldMap.set('minDate', field.minDate);
+              if (field.maxDate !== undefined)
+                fieldMap.set('maxDate', field.maxDate);
             }
 
-            logger.info(`    ⚙️ Field ${fieldIndex + 1}: ${field.type} - "${field.label}"`);
+            logger.info(
+              `    ⚙️ Field ${fieldIndex + 1}: ${field.type} - "${field.label}"`
+            );
             fieldsArray.push([fieldMap]);
           });
         }
@@ -536,18 +720,29 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
     layoutMap.set('spacing', layout.spacing || 'normal');
     layoutMap.set('code', layout.code || '');
     layoutMap.set('content', layout.content || '');
-    layoutMap.set('customBackGroundColor', layout.customBackGroundColor || '#ffffff');
-    layoutMap.set('customCTAButtonName', layout.customCTAButtonName || 'Submit');
+    layoutMap.set(
+      'customBackGroundColor',
+      layout.customBackGroundColor || '#ffffff'
+    );
+    layoutMap.set(
+      'customCTAButtonName',
+      layout.customCTAButtonName || 'Submit'
+    );
     layoutMap.set('backgroundImageKey', layout.backgroundImageKey || '');
     layoutMap.set('pageMode', layout.pageMode || 'multipage');
-    layoutMap.set('isCustomBackgroundColorEnabled', layout.isCustomBackgroundColorEnabled || false);
+    layoutMap.set(
+      'isCustomBackgroundColorEnabled',
+      layout.isCustomBackgroundColorEnabled || false
+    );
 
     formSchemaMap.set('layout', layoutMap);
     formSchemaMap.set('isShuffleEnabled', Boolean(formSchema.isShuffleEnabled));
 
     // Store the document state directly in the database
     const fullUpdate = Y.encodeStateAsUpdate(tempDoc);
-    logger.info(`💾 Storing document state to PostgreSQL for form: ${formId}, update size: ${fullUpdate.length} bytes`);
+    logger.info(
+      `💾 Storing document state to PostgreSQL for form: ${formId}, update size: ${fullUpdate.length} bytes`
+    );
 
     // Create the collaborative document
     await collaborativeDocumentRepository.saveDocumentState(
@@ -556,13 +751,17 @@ export const initializeHocuspocusDocument = async (formId: string, formSchema: a
       (name) => `collab-${name}`
     );
 
-    logger.info(`✅ Hocuspocus document initialized successfully for form: ${formId}`);
+    logger.info(
+      `✅ Hocuspocus document initialized successfully for form: ${formId}`
+    );
 
     // Clean up temporary document
     tempDoc.destroy();
-
   } catch (error) {
-    logger.error(`❌ Failed to initialize Hocuspocus document for form ${formId}:`, error);
+    logger.error(
+      `❌ Failed to initialize Hocuspocus document for form ${formId}:`,
+      error
+    );
     throw error;
   }
 };

@@ -11,7 +11,13 @@ import {
   Checkbox,
   DatePicker,
 } from '@dculus/ui';
-import { FillableFormField, FieldType, SelectField, RadioField, CheckboxField } from '@dculus/types';
+import {
+  FillableFormField,
+  FieldType,
+  SelectField,
+  RadioField,
+  CheckboxField,
+} from '@dculus/types';
 import { FilterState } from './FilterPanel';
 import { getFieldIcon } from '../utils/fieldIcons';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -25,7 +31,10 @@ interface FilterRowProps {
   filterLogic: 'AND' | 'OR';
 }
 
-const getOperatorOptions = (fieldType: FieldType, t: (key: string) => string) => {
+const getOperatorOptions = (
+  fieldType: FieldType,
+  t: (key: string) => string
+) => {
   const baseOptions = [
     { value: 'IS_EMPTY', label: t('operators.isEmpty') },
     { value: 'IS_NOT_EMPTY', label: t('operators.isNotEmpty') },
@@ -50,7 +59,10 @@ const getOperatorOptions = (fieldType: FieldType, t: (key: string) => string) =>
         { value: 'EQUALS', label: t('operators.equals') },
         { value: 'NOT_EQUALS', label: t('operators.notEquals') },
         { value: 'GREATER_THAN', label: t('operators.greaterThan') },
-        { value: 'GREATER_THAN_OR_EQUAL', label: t('operators.greaterThanOrEqual') },
+        {
+          value: 'GREATER_THAN_OR_EQUAL',
+          label: t('operators.greaterThanOrEqual'),
+        },
         { value: 'LESS_THAN', label: t('operators.lessThan') },
         { value: 'LESS_THAN_OR_EQUAL', label: t('operators.lessThanOrEqual') },
         { value: 'BETWEEN', label: t('operators.between') },
@@ -87,6 +99,12 @@ const getOperatorOptions = (fieldType: FieldType, t: (key: string) => string) =>
         ...baseOptions,
       ];
 
+    case FieldType.FILE_UPLOAD_FIELD:
+      return [
+        { value: 'HAS_FILES', label: t('operators.hasFiles') },
+        ...baseOptions,
+      ];
+
     default:
       return baseOptions;
   }
@@ -102,16 +120,20 @@ const renderFilterInput = (
   onChange: (filter: Partial<FilterState>) => void,
   t: (key: string) => string
 ) => {
-  if (!filter.operator || filter.operator === 'IS_EMPTY' || filter.operator === 'IS_NOT_EMPTY') {
+  if (
+    !filter.operator ||
+    filter.operator === 'IS_EMPTY' ||
+    filter.operator === 'IS_NOT_EMPTY'
+  ) {
     return null;
   }
 
   const handleValueChange = (value: string) => {
-    onChange({ 
+    onChange({
       fieldId: filter.fieldId,
       operator: filter.operator,
-      value, 
-      active: true 
+      value,
+      active: true,
     });
   };
 
@@ -207,15 +229,31 @@ const renderFilterInput = (
         return (
           <div className="flex items-center gap-2">
             <DatePicker
-              date={filter.dateRange?.from ? new Date(filter.dateRange.from) : undefined}
-              onDateChange={(date) => handleDateRangeChange('from', date ? date.toISOString().split('T')[0] : '')}
+              date={
+                filter.dateRange?.from
+                  ? new Date(filter.dateRange.from)
+                  : undefined
+              }
+              onDateChange={(date) =>
+                handleDateRangeChange(
+                  'from',
+                  date ? date.toISOString().split('T')[0] : ''
+                )
+              }
               placeholder="From"
               className="h-9 w-36"
             />
             <span className="text-slate-500">and</span>
             <DatePicker
-              date={filter.dateRange?.to ? new Date(filter.dateRange.to) : undefined}
-              onDateChange={(date) => handleDateRangeChange('to', date ? date.toISOString().split('T')[0] : '')}
+              date={
+                filter.dateRange?.to ? new Date(filter.dateRange.to) : undefined
+              }
+              onDateChange={(date) =>
+                handleDateRangeChange(
+                  'to',
+                  date ? date.toISOString().split('T')[0] : ''
+                )
+              }
               placeholder="To"
               className="h-9 w-36"
             />
@@ -225,7 +263,9 @@ const renderFilterInput = (
       return (
         <DatePicker
           date={filter.value ? new Date(filter.value) : undefined}
-          onDateChange={(date) => handleValueChange(date ? date.toISOString().split('T')[0] : '')}
+          onDateChange={(date) =>
+            handleValueChange(date ? date.toISOString().split('T')[0] : '')
+          }
           placeholder="Select date"
           className="h-9 min-w-[200px]"
         />
@@ -234,13 +274,17 @@ const renderFilterInput = (
     case FieldType.SELECT_FIELD:
     case FieldType.RADIO_FIELD:
     case FieldType.CHECKBOX_FIELD: {
-      const options = (field as SelectField | RadioField | CheckboxField).options || [];
-      
+      const options =
+        (field as SelectField | RadioField | CheckboxField).options || [];
+
       // CONTAINS and NOT_CONTAINS use single value selection (dropdown)
-      if (filter.operator === 'CONTAINS' || filter.operator === 'NOT_CONTAINS') {
+      if (
+        filter.operator === 'CONTAINS' ||
+        filter.operator === 'NOT_CONTAINS'
+      ) {
         return (
-          <Select 
-            value={filter.value || ''} 
+          <Select
+            value={filter.value || ''}
             onValueChange={(value) => {
               onChange({
                 fieldId: filter.fieldId,
@@ -263,7 +307,7 @@ const renderFilterInput = (
           </Select>
         );
       }
-      
+
       // IN, NOT_IN, CONTAINS_ALL, EQUALS use multi-select (checkboxes)
       return (
         <div className="relative min-w-[200px]">
@@ -272,15 +316,21 @@ const renderFilterInput = (
               <SelectValue>
                 <div className="flex items-center gap-2">
                   <span className="text-slate-500">
-                    {filter.values?.length ? `${filter.values.length} selected` : 'Select options...'}
+                    {filter.values?.length
+                      ? `${filter.values.length} selected`
+                      : 'Select options...'}
                   </span>
                 </div>
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="max-h-60">{options.map((option, index) => {
+            <SelectContent className="max-h-60">
+              {options.map((option, index) => {
                 const isSelected = filter.values?.includes(option) ?? false;
                 return (
-                  <div key={index} className="flex items-center space-x-2 p-2 hover:bg-slate-50">
+                  <div
+                    key={index}
+                    className="flex items-center space-x-2 p-2 hover:bg-slate-50"
+                  >
                     <Checkbox
                       id={`${field.id}-${index}`}
                       checked={isSelected}
@@ -289,7 +339,7 @@ const renderFilterInput = (
                         const newValues =
                           checked && typeof checked === 'boolean'
                             ? [...currentValues, option]
-                            : currentValues.filter(v => v !== option);
+                            : currentValues.filter((v) => v !== option);
                         onChange({
                           fieldId: filter.fieldId,
                           operator: filter.operator,
@@ -328,11 +378,13 @@ export const FilterRow: React.FC<FilterRowProps> = ({
   filterLogic,
 }) => {
   const { t } = useTranslation('filterRow');
-  const currentField = fields.find(f => f.id === filter.fieldId);
-  const operatorOptions = currentField ? getOperatorOptions(currentField.type, t) : [];
+  const currentField = fields.find((f) => f.id === filter.fieldId);
+  const operatorOptions = currentField
+    ? getOperatorOptions(currentField.type, t)
+    : [];
 
   const handleFieldChange = (fieldId: string) => {
-    const field = fields.find(f => f.id === fieldId);
+    const field = fields.find((f) => f.id === fieldId);
     if (field) {
       onChange({
         fieldId,
@@ -349,7 +401,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
   const handleOperatorChange = (operator: string) => {
     // Set default value for DATE_LAST_N_DAYS operator
     const defaultValue = operator === 'DATE_LAST_N_DAYS' ? '7' : undefined;
-    
+
     onChange({
       fieldId: filter.fieldId, // Preserve the selected field
       operator,
@@ -357,7 +409,11 @@ export const FilterRow: React.FC<FilterRowProps> = ({
       values: undefined,
       dateRange: undefined,
       numberRange: undefined,
-      active: operator === 'IS_EMPTY' || operator === 'IS_NOT_EMPTY' || operator === 'DATE_TODAY' || operator === 'DATE_LAST_N_DAYS',
+      active:
+        operator === 'IS_EMPTY' ||
+        operator === 'IS_NOT_EMPTY' ||
+        operator === 'DATE_TODAY' ||
+        operator === 'DATE_LAST_N_DAYS',
     });
   };
 
@@ -372,7 +428,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
         ) : (
           <div></div>
         )}
-        
+
         <Button
           variant="ghost"
           size="sm"
@@ -386,7 +442,10 @@ export const FilterRow: React.FC<FilterRowProps> = ({
       {/* Row 1: Field Selection */}
       <div>
         <Select value={filter.fieldId || ''} onValueChange={handleFieldChange}>
-          <SelectTrigger className="h-10 w-full bg-blue-50 border-blue-200 hover:bg-blue-100" data-testid="filter-field-select">
+          <SelectTrigger
+            className="h-10 w-full bg-blue-50 border-blue-200 hover:bg-blue-100"
+            data-testid="filter-field-select"
+          >
             <SelectValue placeholder={t('placeholders.selectField')}>
               {currentField && (
                 <div className="flex items-center gap-2">
@@ -422,8 +481,14 @@ export const FilterRow: React.FC<FilterRowProps> = ({
         <div className="flex items-center gap-3">
           {/* Operator Selection */}
           <div className="min-w-0 flex-shrink-0">
-            <Select value={filter.operator || ''} onValueChange={handleOperatorChange}>
-              <SelectTrigger className="h-10 min-w-[140px]" data-testid="filter-operator-select">
+            <Select
+              value={filter.operator || ''}
+              onValueChange={handleOperatorChange}
+            >
+              <SelectTrigger
+                className="h-10 min-w-[140px]"
+                data-testid="filter-operator-select"
+              >
                 <SelectValue placeholder={t('placeholders.selectCondition')} />
               </SelectTrigger>
               <SelectContent>
@@ -438,7 +503,10 @@ export const FilterRow: React.FC<FilterRowProps> = ({
 
           {/* Value Input */}
           {filter.operator && (
-            <div className="flex-1 min-w-0" data-testid="filter-value-container">
+            <div
+              className="flex-1 min-w-0"
+              data-testid="filter-value-container"
+            >
               {renderFilterInput(currentField, filter, onChange, t)}
             </div>
           )}

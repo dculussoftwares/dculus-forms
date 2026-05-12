@@ -11,6 +11,7 @@
     "select_field": "Select Dropdown",
     "radio_field": "Radio Buttons",
     "checkbox_field": "Checkboxes",
+    "file_upload_field": "File Upload",
     "unknown": "Unknown Field"
   },
   "miniChart": {

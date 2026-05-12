@@ -1,10 +1,31 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
-import { StatCard, EnhancedPieChart, CHART_COLORS } from './BaseChartComponents';
+import {
+  StatCard,
+  EnhancedPieChart,
+  CHART_COLORS,
+} from './BaseChartComponents';
 import { EmailFieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
-import { Mail, Shield, Building, User, Globe, AlertTriangle, CheckCircle } from 'lucide-react';
+import {
+  Mail,
+  Shield,
+  Building,
+  User,
+  Globe,
+  AlertTriangle,
+  CheckCircle,
+} from 'lucide-react';
 import { MetricHelper, METRIC_HELPERS } from './MetricHelper';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
 import { useTranslation } from '../../../hooks/useTranslation';
 
 interface EmailFieldAnalyticsProps {
@@ -21,7 +42,7 @@ const ValidationIndicator: React.FC<{
   validationRate: number;
 }> = ({ validEmails, invalidEmails, validationRate }) => {
   const { t } = useTranslation('emailFieldAnalytics');
-  
+
   const isHighValidation = validationRate >= 90;
   const isMediumValidation = validationRate >= 70;
 
@@ -33,7 +54,10 @@ const ValidationIndicator: React.FC<{
       <CardContent>
         <div className="flex items-center justify-center mb-6">
           <div className="relative w-32 h-32">
-            <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
+            <svg
+              className="w-32 h-32 transform -rotate-90"
+              viewBox="0 0 100 100"
+            >
               {/* Background circle */}
               <circle
                 cx="50"
@@ -49,7 +73,13 @@ const ValidationIndicator: React.FC<{
                 cy="50"
                 r="45"
                 fill="none"
-                stroke={isHighValidation ? "#10b981" : isMediumValidation ? "#f59e0b" : "#ef4444"}
+                stroke={
+                  isHighValidation
+                    ? '#10b981'
+                    : isMediumValidation
+                      ? '#f59e0b'
+                      : '#ef4444'
+                }
                 strokeWidth="8"
                 strokeLinecap="round"
                 strokeDasharray={`${validationRate * 2.83} 283`}
@@ -58,13 +88,20 @@ const ValidationIndicator: React.FC<{
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
-                <div className={`text-2xl font-bold ${
-                  isHighValidation ? "text-green-600" : 
-                  isMediumValidation ? "text-yellow-600" : "text-red-600"
-                }`}>
+                <div
+                  className={`text-2xl font-bold ${
+                    isHighValidation
+                      ? 'text-green-600'
+                      : isMediumValidation
+                        ? 'text-yellow-600'
+                        : 'text-red-600'
+                  }`}
+                >
                   {validationRate.toFixed(1)}%
                 </div>
-                <div className="text-xs text-gray-500">{t('validationStatus.valid')}</div>
+                <div className="text-xs text-gray-500">
+                  {t('validationStatus.valid')}
+                </div>
               </div>
             </div>
           </div>
@@ -74,28 +111,47 @@ const ValidationIndicator: React.FC<{
           <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
             <CheckCircle className="h-8 w-8 text-green-500" />
             <div>
-              <div className="text-lg font-bold text-gray-900">{validEmails}</div>
-              <div className="text-sm text-gray-600">{t('validationStatus.validEmails')}</div>
+              <div className="text-lg font-bold text-gray-900">
+                {validEmails}
+              </div>
+              <div className="text-sm text-gray-600">
+                {t('validationStatus.validEmails')}
+              </div>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
             <AlertTriangle className="h-8 w-8 text-red-500" />
             <div>
-              <div className="text-lg font-bold text-gray-900">{invalidEmails}</div>
-              <div className="text-sm text-gray-600">{t('validationStatus.invalidEmails')}</div>
+              <div className="text-lg font-bold text-gray-900">
+                {invalidEmails}
+              </div>
+              <div className="text-sm text-gray-600">
+                {t('validationStatus.invalidEmails')}
+              </div>
             </div>
           </div>
         </div>
 
         <div className="mt-4 p-3 bg-gray-50 rounded-lg">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">{t('validationStatus.qualityScore')}</span>
-            <span className={`font-bold ${
-              isHighValidation ? "text-green-600" : 
-              isMediumValidation ? "text-yellow-600" : "text-red-600"
-            }`}>
-              {isHighValidation ? t('validationStatus.excellent') : isMediumValidation ? t('validationStatus.good') : t('validationStatus.needsAttention')}
+            <span className="text-gray-600">
+              {t('validationStatus.qualityScore')}
+            </span>
+            <span
+              className={`font-bold ${
+                isHighValidation
+                  ? 'text-green-600'
+                  : isMediumValidation
+                    ? 'text-yellow-600'
+                    : 'text-red-600'
+              }`}
+            >
+              {isHighValidation
+                ? t('validationStatus.excellent')
+                : isMediumValidation
+                  ? t('validationStatus.good')
+                  : t('validationStatus.needsAttention')}
             </span>
           </div>
         </div>
@@ -110,15 +166,29 @@ const CorporatePersonalBreakdown: React.FC<{
   totalEmails: number;
 }> = ({ corporateVsPersonal, totalEmails }) => {
   const { t } = useTranslation('emailFieldAnalytics');
-  
-  const chartData = [
-    { name: t('corporatePersonal.corporate'), value: corporateVsPersonal.corporate, color: CHART_COLORS.primary[0] },
-    { name: t('corporatePersonal.personal'), value: corporateVsPersonal.personal, color: CHART_COLORS.primary[1] },
-    { name: t('corporatePersonal.unknown'), value: corporateVsPersonal.unknown, color: CHART_COLORS.primary[2] }
-  ].filter(item => item.value > 0);
 
-  const corporatePercentage = totalEmails > 0 ? (corporateVsPersonal.corporate / totalEmails) * 100 : 0;
-  const personalPercentage = totalEmails > 0 ? (corporateVsPersonal.personal / totalEmails) * 100 : 0;
+  const chartData = [
+    {
+      name: t('corporatePersonal.corporate'),
+      value: corporateVsPersonal.corporate,
+      color: CHART_COLORS.primary[0],
+    },
+    {
+      name: t('corporatePersonal.personal'),
+      value: corporateVsPersonal.personal,
+      color: CHART_COLORS.primary[1],
+    },
+    {
+      name: t('corporatePersonal.unknown'),
+      value: corporateVsPersonal.unknown,
+      color: CHART_COLORS.primary[2],
+    },
+  ].filter((item) => item.value > 0);
+
+  const corporatePercentage =
+    totalEmails > 0 ? (corporateVsPersonal.corporate / totalEmails) * 100 : 0;
+  const personalPercentage =
+    totalEmails > 0 ? (corporateVsPersonal.personal / totalEmails) * 100 : 0;
 
   return (
     <Card>
@@ -136,10 +206,11 @@ const CorporatePersonalBreakdown: React.FC<{
                     {corporateVsPersonal.corporate}
                   </div>
                   <div className="text-sm text-gray-600">
-                    {t('corporatePersonal.corporate')} ({corporatePercentage.toFixed(1)}%)
+                    {t('corporatePersonal.corporate')} (
+                    {corporatePercentage.toFixed(1)}%)
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                    <div 
+                    <div
                       className="bg-blue-500 h-2 rounded-full transition-all duration-500"
                       style={{ width: `${corporatePercentage}%` }}
                     />
@@ -154,10 +225,11 @@ const CorporatePersonalBreakdown: React.FC<{
                     {corporateVsPersonal.personal}
                   </div>
                   <div className="text-sm text-gray-600">
-                    {t('corporatePersonal.personal')} ({personalPercentage.toFixed(1)}%)
+                    {t('corporatePersonal.personal')} (
+                    {personalPercentage.toFixed(1)}%)
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                    <div 
+                    <div
                       className="bg-green-500 h-2 rounded-full transition-all duration-500"
                       style={{ width: `${personalPercentage}%` }}
                     />
@@ -173,7 +245,12 @@ const CorporatePersonalBreakdown: React.FC<{
                       {corporateVsPersonal.unknown}
                     </div>
                     <div className="text-sm text-gray-600">
-                      {t('corporatePersonal.unknown')} ({((corporateVsPersonal.unknown / totalEmails) * 100).toFixed(1)}%)
+                      {t('corporatePersonal.unknown')} (
+                      {(
+                        (corporateVsPersonal.unknown / totalEmails) *
+                        100
+                      ).toFixed(1)}
+                      %)
                     </div>
                   </div>
                 </div>
@@ -196,7 +273,9 @@ const CorporatePersonalBreakdown: React.FC<{
         <div className="mt-6 p-4 bg-gray-50 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
             <Shield className="h-4 w-4 text-blue-600" />
-            <span className="font-medium text-gray-900">{t('emailTypeComparison.insights')}</span>
+            <span className="font-medium text-gray-900">
+              {t('emailTypeComparison.insights')}
+            </span>
           </div>
           <div className="text-sm text-gray-700 space-y-1">
             <p>• {t('emailTypeComparison.corporateInfo')}</p>
@@ -215,14 +294,14 @@ const TopLevelDomainsChart: React.FC<{
   loading?: boolean;
 }> = ({ topLevelDomains, loading: _loading }) => {
   const { t } = useTranslation('emailFieldAnalytics');
-  
+
   const chartData = useMemo(() => {
     if (!topLevelDomains) return [];
-    return topLevelDomains.slice(0, 10).map(tld => ({
+    return topLevelDomains.slice(0, 10).map((tld) => ({
       name: `.${tld.tld}`,
       value: tld.count,
       percentage: tld.percentage,
-      fullName: `.${tld.tld}`
+      fullName: `.${tld.tld}`,
     }));
   }, [topLevelDomains]);
 
@@ -242,15 +321,15 @@ const TopLevelDomainsChart: React.FC<{
             margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
           >
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis 
-              dataKey="name" 
-              tick={{ fontSize: 12 }}
-              interval={0}
+            <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} />
+            <YAxis
+              label={{
+                value: t('charts.yAxisLabel'),
+                angle: -90,
+                position: 'insideLeft',
+              }}
             />
-            <YAxis 
-              label={{ value: t('charts.yAxisLabel'), angle: -90, position: 'insideLeft' }}
-            />
-            <Tooltip 
+            <Tooltip
               content={({ active, payload, label: _label }) => {
                 if (active && payload && payload.length) {
                   const data = payload[0].payload;
@@ -273,10 +352,7 @@ const TopLevelDomainsChart: React.FC<{
             />
             <Bar dataKey="value" radius={[4, 4, 0, 0]}>
               {chartData.map((_entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={CHART_COLORS.primary[3]} 
-                />
+                <Cell key={`cell-${index}`} fill={CHART_COLORS.primary[3]} />
               ))}
             </Bar>
           </BarChart>
@@ -292,7 +368,7 @@ const PopularProviders: React.FC<{
   loading?: boolean;
 }> = ({ providers, loading }) => {
   const { t } = useTranslation('emailFieldAnalytics');
-  
+
   if (loading || !providers || providers.length === 0) {
     return null;
   }
@@ -300,17 +376,30 @@ const PopularProviders: React.FC<{
   const getProviderIcon = (provider: string) => {
     const providerLower = provider.toLowerCase();
     switch (providerLower) {
-      case 'gmail': return '📧';
-      case 'yahoo': return '💌';
-      case 'hotmail': case 'outlook': return '📮';
-      case 'icloud': return '☁️';
-      case 'aol': return '📨';
-      default: return '✉️';
+      case 'gmail':
+        return '📧';
+      case 'yahoo':
+        return '💌';
+      case 'hotmail':
+      case 'outlook':
+        return '📮';
+      case 'icloud':
+        return '☁️';
+      case 'aol':
+        return '📨';
+      default:
+        return '✉️';
     }
   };
 
   const getProviderColor = (index: number) => {
-    const colors = ['bg-red-100 border-red-300', 'bg-blue-100 border-blue-300', 'bg-green-100 border-green-300', 'bg-yellow-100 border-yellow-300', 'bg-purple-100 border-purple-300'];
+    const colors = [
+      'bg-red-100 border-red-300',
+      'bg-blue-100 border-blue-300',
+      'bg-green-100 border-green-300',
+      'bg-yellow-100 border-yellow-300',
+      'bg-purple-100 border-purple-300',
+    ];
     return colors[index % colors.length];
   };
 
@@ -322,28 +411,31 @@ const PopularProviders: React.FC<{
       <CardContent>
         <div className="space-y-3">
           {providers.map((provider, index) => (
-            <div 
+            <div
               key={provider.provider}
               className={`flex items-center justify-between p-3 border-2 rounded-lg ${getProviderColor(index)}`}
             >
               <div className="flex items-center gap-3">
-                <span className="text-2xl">{getProviderIcon(provider.provider)}</span>
+                <span className="text-2xl">
+                  {getProviderIcon(provider.provider)}
+                </span>
                 <div>
                   <div className="font-medium text-gray-900 capitalize">
                     {provider.provider}
                   </div>
                   <div className="text-sm text-gray-600">
-                    {provider.count} {provider.count !== 1 ? t('providers.emails') : 'email'}
+                    {provider.count}{' '}
+                    {provider.count !== 1 ? t('providers.emails') : 'email'}
                   </div>
                 </div>
               </div>
-              
+
               <div className="text-right">
                 <div className="text-lg font-bold text-gray-900">
                   {provider.percentage.toFixed(1)}%
                 </div>
                 <div className="w-20 bg-gray-200 rounded-full h-2 mt-1">
-                  <div 
+                  <div
                     className="bg-blue-500 h-2 rounded-full transition-all duration-500"
                     style={{ width: `${Math.max(5, provider.percentage)}%` }}
                   />
@@ -352,7 +444,7 @@ const PopularProviders: React.FC<{
             </div>
           ))}
         </div>
-        
+
         {providers.length > 5 && (
           <div className="mt-4 text-center text-sm text-gray-500">
             Showing top {providers.length} email providers
@@ -367,18 +459,21 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
   data,
   fieldLabel: _fieldLabel,
   totalResponses,
-  loading
+  loading,
 }) => {
   const { t } = useTranslation('emailFieldAnalytics');
   const { t: tCommon } = useTranslation('common');
-  
+
   const domainChartData = useMemo(() => {
     if (!data?.domains) return [];
-    return data.domains.slice(0, 15).map(domain => ({
-      name: domain.domain.length > 20 ? `${domain.domain.substring(0, 20)}...` : domain.domain,
+    return data.domains.slice(0, 15).map((domain) => ({
+      name:
+        domain.domain.length > 20
+          ? `${domain.domain.substring(0, 20)}...`
+          : domain.domain,
       value: domain.count,
       fullName: domain.domain,
-      percentage: domain.percentage
+      percentage: domain.percentage,
     }));
   }, [data?.domains]);
 
@@ -387,11 +482,11 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <StatCard 
+            <StatCard
               key={i}
-              title={tCommon('loading')} 
-              value="--" 
-              loading={true} 
+              title={tCommon('loading')}
+              value="--"
+              loading={true}
             />
           ))}
         </div>
@@ -411,8 +506,12 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
             <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
               <Mail className="h-8 w-8 text-blue-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('emptyState.title')}</h3>
-            <p className="text-gray-600 max-w-md mx-auto">{t('emptyState.subtitle')}</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {t('emptyState.title')}
+            </h3>
+            <p className="text-gray-600 max-w-md mx-auto">
+              {t('emptyState.subtitle')}
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -421,8 +520,10 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
 
   const totalEmails = data.validEmails + data.invalidEmails;
   const topDomain = data.domains.length > 0 ? data.domains[0] : null;
-  const topProvider = data.popularProviders.length > 0 ? data.popularProviders[0] : null;
-  const responseRate = totalResponses > 0 ? (totalEmails / totalResponses) * 100 : 0;
+  const topProvider =
+    data.popularProviders.length > 0 ? data.popularProviders[0] : null;
+  const responseRate =
+    totalResponses > 0 ? (totalEmails / totalResponses) * 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -443,16 +544,21 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
         <StatCard
           title={t('stats.topDomain')}
           value={topDomain ? `${topDomain.percentage.toFixed(1)}%` : 'N/A'}
-          subtitle={topDomain ? 
-            (topDomain.domain.length > 20 ? `${topDomain.domain.substring(0, 20)}...` : topDomain.domain) : 
-            t('stats.noDomains')
+          subtitle={
+            topDomain
+              ? topDomain.domain.length > 20
+                ? `${topDomain.domain.substring(0, 20)}...`
+                : topDomain.domain
+              : t('stats.noDomains')
           }
           icon={<Globe className="h-5 w-5" />}
         />
         <StatCard
           title={t('stats.topProvider')}
           value={topProvider ? topProvider.provider : 'N/A'}
-          subtitle={topProvider ? `${topProvider.count} emails` : t('stats.noProviders')}
+          subtitle={
+            topProvider ? `${topProvider.count} emails` : t('stats.noProviders')
+          }
           icon={<Building className="h-5 w-5" />}
         />
       </div>
@@ -482,17 +588,21 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
                   margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="name" 
+                  <XAxis
+                    dataKey="name"
                     tick={{ fontSize: 12 }}
                     interval={0}
                     angle={-45}
                     textAnchor="end"
                   />
-                  <YAxis 
-                    label={{ value: t('charts.yAxisLabel'), angle: -90, position: 'insideLeft' }}
+                  <YAxis
+                    label={{
+                      value: t('charts.yAxisLabel'),
+                      angle: -90,
+                      position: 'insideLeft',
+                    }}
                   />
-                  <Tooltip 
+                  <Tooltip
                     content={({ active, payload, label: _label }) => {
                       if (active && payload && payload.length) {
                         const data = payload[0].payload;
@@ -504,7 +614,8 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
                             <div className="flex items-center gap-2 text-sm">
                               <div className="w-3 h-3 rounded-full bg-orange-600" />
                               <span className="text-gray-700">
-                                Emails: {data.value} ({data.percentage.toFixed(1)}%)
+                                Emails: {data.value} (
+                                {data.percentage.toFixed(1)}%)
                               </span>
                             </div>
                           </div>
@@ -515,9 +626,13 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
                   />
                   <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                     {domainChartData.map((_entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={CHART_COLORS.primary[index % CHART_COLORS.primary.length]} 
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={
+                          CHART_COLORS.primary[
+                            index % CHART_COLORS.primary.length
+                          ]
+                        }
                       />
                     ))}
                   </Bar>
@@ -558,63 +673,239 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">{t('summary.validationTitle')}</h4>
+              <h4 className="font-medium text-gray-900">
+                {t('summary.validationTitle')}
+              </h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('summary.validRate')}</span>
-                  <span className="font-medium">{data.validationRate.toFixed(1)}%</span>
+                  <span className="text-gray-600">
+                    {t('summary.validRate')}
+                  </span>
+                  <span className="font-medium">
+                    {data.validationRate.toFixed(1)}%
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('summary.invalidCount')}</span>
+                  <span className="text-gray-600">
+                    {t('summary.invalidCount')}
+                  </span>
                   <span className="font-medium">{data.invalidEmails}</span>
                 </div>
               </div>
             </div>
-            
+
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">{t('summary.domainDiversityTitle')}</h4>
+              <h4 className="font-medium text-gray-900">
+                {t('summary.domainDiversityTitle')}
+              </h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('summary.uniqueDomains')}</span>
+                  <span className="text-gray-600">
+                    {t('summary.uniqueDomains')}
+                  </span>
                   <span className="font-medium">{data.domains.length}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">{t('summary.tldTypes')}</span>
-                  <span className="font-medium">{data.topLevelDomains.length}</span>
+                  <span className="font-medium">
+                    {data.topLevelDomains.length}
+                  </span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">{t('summary.emailTypesTitle')}</h4>
+              <h4 className="font-medium text-gray-900">
+                {t('summary.emailTypesTitle')}
+              </h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('summary.corporate')}</span>
-                  <span className="font-medium">{data.corporateVsPersonal.corporate}</span>
+                  <span className="text-gray-600">
+                    {t('summary.corporate')}
+                  </span>
+                  <span className="font-medium">
+                    {data.corporateVsPersonal.corporate}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">{t('summary.personal')}</span>
-                  <span className="font-medium">{data.corporateVsPersonal.personal}</span>
+                  <span className="font-medium">
+                    {data.corporateVsPersonal.personal}
+                  </span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">{t('summary.dataQualityTitle')}</h4>
+              <h4 className="font-medium text-gray-900">
+                {t('summary.dataQualityTitle')}
+              </h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('summary.totalEmails')}</span>
-                  <span className="font-medium">{data.popularProviders.length}</span>
+                  <span className="text-gray-600">
+                    {t('summary.totalEmails')}
+                  </span>
+                  <span className="font-medium">
+                    {data.popularProviders.length}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('summary.completeness')}</span>
-                  <span className="font-medium">{topProvider?.provider || 'N/A'}</span>
+                  <span className="text-gray-600">
+                    {t('summary.completeness')}
+                  </span>
+                  <span className="font-medium">
+                    {topProvider?.provider || 'N/A'}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FileUploadFieldAnalytics
+// ─────────────────────────────────────────────────────────────────────────────
+import { FileUploadFieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
+import { Upload, Files, FileCheck, FileX } from 'lucide-react';
+
+interface FileUploadFieldAnalyticsProps {
+  data: FileUploadFieldAnalyticsData;
+  fieldLabel: string;
+  totalResponses: number;
+  loading?: boolean;
+}
+
+export const FileUploadFieldAnalytics: React.FC<
+  FileUploadFieldAnalyticsProps
+> = ({ data, fieldLabel: _fieldLabel, totalResponses, loading }) => {
+  const { t: tCommon } = useTranslation('common');
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <StatCard
+              key={i}
+              title={tCommon('loading')}
+              value="--"
+              loading={true}
+            />
+          ))}
+        </div>
+        <div className="animate-pulse h-64 bg-gray-200 rounded" />
+      </div>
+    );
+  }
+
+  if (!data || data.totalFilesUploaded === 0) {
+    return (
+      <Card className="w-full">
+        <CardContent className="p-8">
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
+              <Upload className="h-8 w-8 text-blue-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              No files uploaded yet
+            </h3>
+            <p className="text-gray-600">
+              File upload analytics will appear here once respondents start
+              uploading files.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const responseRate =
+    totalResponses > 0 ? (data.responsesWithFiles / totalResponses) * 100 : 0;
+
+  return (
+    <div className="space-y-6">
+      {/* Summary Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard
+          title="Total Files"
+          value={data.totalFilesUploaded}
+          icon={<Files className="h-5 w-5" />}
+        />
+        <StatCard
+          title="Avg Files / Response"
+          value={data.averageFilesPerResponse.toFixed(2)}
+          icon={<Upload className="h-5 w-5" />}
+        />
+        <StatCard
+          title="Responses with Files"
+          value={data.responsesWithFiles}
+          icon={<FileCheck className="h-5 w-5" />}
+          color="green"
+        />
+        <StatCard
+          title="Responses without Files"
+          value={data.responsesWithoutFiles}
+          icon={<FileX className="h-5 w-5" />}
+          color="red"
+        />
+      </div>
+
+      {/* Response Coverage */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Upload Coverage</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4">
+            <div className="flex-1 bg-gray-200 rounded-full h-4">
+              <div
+                className="bg-blue-500 h-4 rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(100, responseRate)}%` }}
+              />
+            </div>
+            <span className="text-sm font-medium text-gray-700 min-w-[3rem]">
+              {responseRate.toFixed(1)}%
+            </span>
+          </div>
+          <p className="text-sm text-gray-500 mt-2">
+            {data.responsesWithFiles} of {totalResponses} responses include
+            uploaded files
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* File Type Distribution */}
+      {data.extensionDistribution.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>File Type Distribution</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {data.extensionDistribution.slice(0, 10).map((ext) => (
+                <div key={ext.extension} className="flex items-center gap-3">
+                  <span className="text-sm font-mono bg-gray-100 px-2 py-0.5 rounded min-w-[4rem] text-center">
+                    .{ext.extension}
+                  </span>
+                  <div className="flex-1 bg-gray-100 rounded-full h-3">
+                    <div
+                      className="bg-blue-500 h-3 rounded-full"
+                      style={{ width: `${Math.max(2, ext.percentage)}%` }}
+                    />
+                  </div>
+                  <span className="text-sm text-gray-600 min-w-[3rem] text-right">
+                    {ext.count} ({ext.percentage.toFixed(1)}%)
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

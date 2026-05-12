@@ -18,6 +18,13 @@ export function getGraphQLUrl(): string {
 }
 
 /**
+ * Get the file upload endpoint URL
+ */
+export function getUploadUrl(): string {
+  return `${getApiBaseUrl()}/upload`;
+}
+
+/**
  * Get the CDN endpoint for images
  */
 export function getCdnEndpoint(): string {

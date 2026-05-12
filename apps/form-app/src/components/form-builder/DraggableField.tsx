@@ -122,6 +122,7 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
       [FieldType.CHECKBOX_FIELD]: t('fieldTypes.checkbox'),
       [FieldType.DATE_FIELD]: t('fieldTypes.date'),
       [FieldType.RICH_TEXT_FIELD]: t('fieldTypes.richText'),
+      [FieldType.FILE_UPLOAD_FIELD]: t('fieldTypes.fileUpload'),
       [FieldType.FORM_FIELD]: t('fieldTypes.formField'),
     };
     return labelMap[fieldType] || t('fieldTypes.fallback');

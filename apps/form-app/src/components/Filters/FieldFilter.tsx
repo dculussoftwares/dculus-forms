@@ -11,7 +11,13 @@ import {
   Checkbox,
   DatePicker,
 } from '@dculus/ui';
-import { FillableFormField, FieldType, SelectField, RadioField, CheckboxField } from '@dculus/types';
+import {
+  FillableFormField,
+  FieldType,
+  SelectField,
+  RadioField,
+  CheckboxField,
+} from '@dculus/types';
 import { FilterState } from './FilterPanel';
 import { getFieldIcon } from '../utils/fieldIcons';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -22,7 +28,10 @@ interface FieldFilterProps {
   onChange: (filter: Partial<FilterState>) => void;
 }
 
-const getOperatorOptions = (fieldType: FieldType, t: (key: string) => string) => {
+const getOperatorOptions = (
+  fieldType: FieldType,
+  t: (key: string) => string
+) => {
   const baseOptions = [
     { value: 'IS_EMPTY', label: t('operators.isEmpty') },
     { value: 'IS_NOT_EMPTY', label: t('operators.isNotEmpty') },
@@ -80,6 +89,12 @@ const getOperatorOptions = (fieldType: FieldType, t: (key: string) => string) =>
         ...baseOptions,
       ];
 
+    case FieldType.FILE_UPLOAD_FIELD:
+      return [
+        { value: 'HAS_FILES', label: t('operators.hasFiles') },
+        ...baseOptions,
+      ];
+
     default:
       return baseOptions;
   }
@@ -91,7 +106,11 @@ const renderFilterInput = (
   onChange: (filter: Partial<FilterState>) => void,
   t: (key: string) => string
 ) => {
-  if (!filter?.operator || filter.operator === 'IS_EMPTY' || filter.operator === 'IS_NOT_EMPTY') {
+  if (
+    !filter?.operator ||
+    filter.operator === 'IS_EMPTY' ||
+    filter.operator === 'IS_NOT_EMPTY'
+  ) {
     return null;
   }
 
@@ -169,14 +188,30 @@ const renderFilterInput = (
         return (
           <div className="space-y-2">
             <DatePicker
-              date={filter.dateRange?.from ? new Date(filter.dateRange.from) : undefined}
-              onDateChange={(date) => handleDateRangeChange('from', date ? date.toISOString().split('T')[0] : '')}
+              date={
+                filter.dateRange?.from
+                  ? new Date(filter.dateRange.from)
+                  : undefined
+              }
+              onDateChange={(date) =>
+                handleDateRangeChange(
+                  'from',
+                  date ? date.toISOString().split('T')[0] : ''
+                )
+              }
               placeholder={t('placeholders.fromDate')}
               className="h-8 text-sm"
             />
             <DatePicker
-              date={filter.dateRange?.to ? new Date(filter.dateRange.to) : undefined}
-              onDateChange={(date) => handleDateRangeChange('to', date ? date.toISOString().split('T')[0] : '')}
+              date={
+                filter.dateRange?.to ? new Date(filter.dateRange.to) : undefined
+              }
+              onDateChange={(date) =>
+                handleDateRangeChange(
+                  'to',
+                  date ? date.toISOString().split('T')[0] : ''
+                )
+              }
               placeholder={t('placeholders.toDate')}
               className="h-8 text-sm"
             />
@@ -186,7 +221,9 @@ const renderFilterInput = (
       return (
         <DatePicker
           date={filter.value ? new Date(filter.value) : undefined}
-          onDateChange={(date) => handleValueChange(date ? date.toISOString().split('T')[0] : '')}
+          onDateChange={(date) =>
+            handleValueChange(date ? date.toISOString().split('T')[0] : '')
+          }
           placeholder="Select date"
           className="h-8 text-sm"
         />
@@ -195,13 +232,17 @@ const renderFilterInput = (
     case FieldType.SELECT_FIELD:
     case FieldType.RADIO_FIELD:
     case FieldType.CHECKBOX_FIELD: {
-      const options = (field as SelectField | RadioField | CheckboxField).options || [];
-      
+      const options =
+        (field as SelectField | RadioField | CheckboxField).options || [];
+
       // CONTAINS and NOT_CONTAINS use single value selection (dropdown)
-      if (filter?.operator === 'CONTAINS' || filter?.operator === 'NOT_CONTAINS') {
+      if (
+        filter?.operator === 'CONTAINS' ||
+        filter?.operator === 'NOT_CONTAINS'
+      ) {
         return (
-          <Select 
-            value={filter.value || ''} 
+          <Select
+            value={filter.value || ''}
             onValueChange={(value) => {
               onChange({ value, active: true });
             }}
@@ -219,7 +260,7 @@ const renderFilterInput = (
           </Select>
         );
       }
-      
+
       // IN, NOT_IN, CONTAINS_ALL, EQUALS use multi-select (checkboxes)
       return (
         <div className="border border-slate-200 rounded-md max-h-40 overflow-y-auto">
@@ -232,7 +273,10 @@ const renderFilterInput = (
               {options.map((option, index) => {
                 const isSelected = filter.values?.includes(option) ?? false;
                 return (
-                  <div key={index} className="flex items-center space-x-2 p-1 rounded hover:bg-slate-50">
+                  <div
+                    key={index}
+                    className="flex items-center space-x-2 p-1 rounded hover:bg-slate-50"
+                  >
                     <Checkbox
                       id={`${field.id}-${index}`}
                       checked={isSelected}
@@ -240,8 +284,11 @@ const renderFilterInput = (
                         const currentValues = filter.values || [];
                         const newValues = checked
                           ? [...currentValues, option]
-                          : currentValues.filter(v => v !== option);
-                        onChange({ values: newValues, active: newValues.length > 0 });
+                          : currentValues.filter((v) => v !== option);
+                        onChange({
+                          values: newValues,
+                          active: newValues.length > 0,
+                        });
                       }}
                     />
                     <label
@@ -275,13 +322,13 @@ export const FieldFilter: React.FC<FieldFilterProps> = ({
   const operatorOptions = getOperatorOptions(field.type, t);
 
   const handleOperatorChange = (operator: string) => {
-    onChange({ 
-      operator, 
-      value: undefined, 
-      values: undefined, 
-      dateRange: undefined, 
+    onChange({
+      operator,
+      value: undefined,
+      values: undefined,
+      dateRange: undefined,
       numberRange: undefined,
-      active: operator === 'IS_EMPTY' || operator === 'IS_NOT_EMPTY' 
+      active: operator === 'IS_EMPTY' || operator === 'IS_NOT_EMPTY',
     });
   };
 
@@ -293,11 +340,11 @@ export const FieldFilter: React.FC<FieldFilterProps> = ({
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-3">
-          <div className="text-slate-500">
-            {getFieldIcon(field.type)}
-          </div>
+          <div className="text-slate-500">{getFieldIcon(field.type)}</div>
           <div className="text-left">
-            <div className="font-medium text-slate-900 text-sm">{field.label}</div>
+            <div className="font-medium text-slate-900 text-sm">
+              {field.label}
+            </div>
             {filter?.active && (
               <div className="text-xs text-blue-600 font-medium">Filtered</div>
             )}
@@ -316,7 +363,10 @@ export const FieldFilter: React.FC<FieldFilterProps> = ({
             <label className="text-xs font-medium text-slate-600 mb-2 block">
               Condition
             </label>
-            <Select value={filter?.operator || ''} onValueChange={handleOperatorChange}>
+            <Select
+              value={filter?.operator || ''}
+              onValueChange={handleOperatorChange}
+            >
               <SelectTrigger className="h-8 text-sm">
                 <SelectValue placeholder={t('placeholders.selectCondition')} />
               </SelectTrigger>

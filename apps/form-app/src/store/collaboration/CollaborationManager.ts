@@ -28,6 +28,9 @@ export type FieldData = {
   maxDate?: string;
   validation?: any;
   content?: string;
+  allowedMimeTypes?: string[];
+  maxFileSizeMb?: number;
+  maxFiles?: number;
 };
 
 export const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
@@ -55,7 +58,10 @@ export const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
     } else if (Array.isArray(defaultValueData)) {
       defaultValue = defaultValueData;
     } else if (typeof defaultValueData === 'string' && defaultValueData) {
-      defaultValue = defaultValueData.split(',').map(s => s.trim()).filter(Boolean);
+      defaultValue = defaultValueData
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
     } else {
       defaultValue = [];
     }
@@ -70,12 +76,19 @@ export const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
     defaultValue,
     prefix: fieldMap.get('prefix') || '',
     hint: fieldMap.get('hint') || '',
-    options: fieldMap.get('options') ? fieldMap.get('options').toArray() : undefined,
+    options: fieldMap.get('options')
+      ? fieldMap.get('options').toArray()
+      : undefined,
     min: validation?.minLength || fieldMap.get('min'),
     max: validation?.maxLength || fieldMap.get('max'),
     minDate: fieldMap.get('minDate'),
     maxDate: fieldMap.get('maxDate'),
     validation,
+    allowedMimeTypes: fieldMap.get('allowedMimeTypes')
+      ? fieldMap.get('allowedMimeTypes').toArray()
+      : undefined,
+    maxFileSizeMb: fieldMap.get('maxFileSizeMb'),
+    maxFiles: fieldMap.get('maxFiles'),
   };
 
   if (fieldType === FieldType.RICH_TEXT_FIELD) {
@@ -89,46 +102,66 @@ export const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
     result.content = extractedContent;
   }
 
+  if (fieldType === FieldType.FILE_UPLOAD_FIELD) {
+    const allowedMimeTypesData = fieldMap.get('allowedMimeTypes');
+    if (
+      allowedMimeTypesData &&
+      typeof allowedMimeTypesData.toArray === 'function'
+    ) {
+      result.allowedMimeTypes = allowedMimeTypesData.toArray();
+    } else if (Array.isArray(allowedMimeTypesData)) {
+      result.allowedMimeTypes = allowedMimeTypesData;
+    }
+    result.maxFileSizeMb = fieldMap.get('maxFileSizeMb');
+    result.maxFiles = fieldMap.get('maxFiles');
+  }
+
   return result;
 };
 
-const deserializePagesFromYJS = (pagesArray: Y.Array<Y.Map<any>>): FormPage[] => {
+const deserializePagesFromYJS = (
+  pagesArray: Y.Array<Y.Map<any>>
+): FormPage[] => {
   return pagesArray.toArray().map((pageMap, index) => {
     const fieldsArray = pageMap.get('fields') as Y.Array<Y.Map<any>>;
     const pageId = pageMap.get('id') || `page-${index}`;
 
     const fields: FormField[] = fieldsArray
-      ? fieldsArray.toArray().map(fieldMap => {
-        const fieldData = extractFieldData(fieldMap);
+      ? fieldsArray.toArray().map((fieldMap) => {
+          const fieldData = extractFieldData(fieldMap);
 
-        const validationYMap = fieldMap.get('validation');
-        let validationObj: any;
+          const validationYMap = fieldMap.get('validation');
+          let validationObj: any;
 
-        if (validationYMap && validationYMap instanceof Y.Map) {
-          validationObj = {
-            required: validationYMap.get('required') || false,
-            type: validationYMap.get('type') || FieldType.FILLABLE_FORM_FIELD,
-            minLength: validationYMap.get('minLength'),
-            maxLength: validationYMap.get('maxLength'),
-            minSelections: validationYMap.get('minSelections'),
-            maxSelections: validationYMap.get('maxSelections'),
-          };
-        } else {
-          validationObj = {
-            required: fieldData.required,
-            type:
-              fieldData.type === FieldType.TEXT_INPUT_FIELD || fieldData.type === FieldType.TEXT_AREA_FIELD
-                ? FieldType.TEXT_FIELD_VALIDATION
-                : fieldData.type === FieldType.CHECKBOX_FIELD
-                  ? FieldType.CHECKBOX_FIELD_VALIDATION
-                  : FieldType.FILLABLE_FORM_FIELD,
-            minLength: fieldData.min,
-            maxLength: fieldData.max,
-          };
-        }
+          if (validationYMap && validationYMap instanceof Y.Map) {
+            validationObj = {
+              required: validationYMap.get('required') || false,
+              type: validationYMap.get('type') || FieldType.FILLABLE_FORM_FIELD,
+              minLength: validationYMap.get('minLength'),
+              maxLength: validationYMap.get('maxLength'),
+              minSelections: validationYMap.get('minSelections'),
+              maxSelections: validationYMap.get('maxSelections'),
+            };
+          } else {
+            validationObj = {
+              required: fieldData.required,
+              type:
+                fieldData.type === FieldType.TEXT_INPUT_FIELD ||
+                fieldData.type === FieldType.TEXT_AREA_FIELD
+                  ? FieldType.TEXT_FIELD_VALIDATION
+                  : fieldData.type === FieldType.CHECKBOX_FIELD
+                    ? FieldType.CHECKBOX_FIELD_VALIDATION
+                    : FieldType.FILLABLE_FORM_FIELD,
+              minLength: fieldData.min,
+              maxLength: fieldData.max,
+            };
+          }
 
-        return deserializeFormField({ ...fieldData, validation: validationObj });
-      })
+          return deserializeFormField({
+            ...fieldData,
+            validation: validationObj,
+          });
+        })
       : [];
 
     return {
@@ -140,7 +173,11 @@ const deserializePagesFromYJS = (pagesArray: Y.Array<Y.Map<any>>): FormPage[] =>
   });
 };
 
-type UpdateCallback = (pages: FormPage[], layout?: FormLayout, isShuffleEnabled?: boolean) => void;
+type UpdateCallback = (
+  pages: FormPage[],
+  layout?: FormLayout,
+  isShuffleEnabled?: boolean
+) => void;
 type ConnectionCallback = (isConnected: boolean) => void;
 type LoadingCallback = (isLoading: boolean) => void;
 
@@ -157,7 +194,7 @@ export class CollaborationManager {
     private readonly updateCallback: UpdateCallback,
     private readonly connectionCallback: ConnectionCallback,
     private readonly loadingCallback: LoadingCallback
-  ) { }
+  ) {}
 
   async initialize(formId: string): Promise<void> {
     if (!formId || formId.trim() === '') {
@@ -194,14 +231,14 @@ export class CollaborationManager {
   }
 
   disconnect(): void {
-    this.observerCleanups.forEach(cleanup => cleanup());
+    this.observerCleanups.forEach((cleanup) => cleanup());
     this.observerCleanups = [];
     this.clearPageObservers();
     this.clearFieldObservers();
 
     // Clean up all individual field observers
-    this.fieldObserverMap.forEach(cleanups => {
-      cleanups.forEach(cleanup => cleanup());
+    this.fieldObserverMap.forEach((cleanups) => {
+      cleanups.forEach((cleanup) => cleanup());
     });
     this.fieldObserverMap.clear();
 
@@ -270,7 +307,9 @@ export class CollaborationManager {
     };
 
     formSchemaMap.observe(formSchemaObserver);
-    this.observerCleanups.push(() => formSchemaMap.unobserve(formSchemaObserver));
+    this.observerCleanups.push(() =>
+      formSchemaMap.unobserve(formSchemaObserver)
+    );
 
     this.setupPageObservers();
   }
@@ -295,7 +334,7 @@ export class CollaborationManager {
     this.pageObserverCleanups.push(() => pagesArray.unobserve(pagesObserver));
 
     // Add observers for each individual page map to detect property changes (e.g., title)
-    pagesArray.toArray().forEach(pageMap => {
+    pagesArray.toArray().forEach((pageMap) => {
       const pageMapObserver = () => {
         this.scheduleUpdateFromYJS();
       };
@@ -317,7 +356,7 @@ export class CollaborationManager {
 
     if (!pagesArray) return;
 
-    pagesArray.toArray().forEach(pageMap => {
+    pagesArray.toArray().forEach((pageMap) => {
       const fieldsArray = pageMap.get('fields') as Y.Array<Y.Map<any>>;
       if (!fieldsArray) return;
 
@@ -328,21 +367,25 @@ export class CollaborationManager {
       };
 
       fieldsArray.observe(fieldsObserver);
-      this.fieldObserverCleanups.push(() => fieldsArray.unobserve(fieldsObserver));
+      this.fieldObserverCleanups.push(() =>
+        fieldsArray.unobserve(fieldsObserver)
+      );
 
       this.setupIndividualFieldObservers(fieldsArray);
     });
   }
 
-  private setupIndividualFieldObservers(fieldsArray: Y.Array<Y.Map<any>>): void {
-    fieldsArray.toArray().forEach(fieldMap => {
+  private setupIndividualFieldObservers(
+    fieldsArray: Y.Array<Y.Map<any>>
+  ): void {
+    fieldsArray.toArray().forEach((fieldMap) => {
       const fieldId = fieldMap.get('id');
       if (!fieldId) return;
 
       // Clean up existing observers for this field
       const existingCleanups = this.fieldObserverMap.get(fieldId);
       if (existingCleanups) {
-        existingCleanups.forEach(cleanup => cleanup());
+        existingCleanups.forEach((cleanup) => cleanup());
       }
 
       const cleanups: Array<() => void> = [];
@@ -372,12 +415,12 @@ export class CollaborationManager {
   }
 
   private clearPageObservers(): void {
-    this.pageObserverCleanups.forEach(cleanup => cleanup());
+    this.pageObserverCleanups.forEach((cleanup) => cleanup());
     this.pageObserverCleanups = [];
   }
 
   private clearFieldObservers(): void {
-    this.fieldObserverCleanups.forEach(cleanup => cleanup());
+    this.fieldObserverCleanups.forEach((cleanup) => cleanup());
     this.fieldObserverCleanups = [];
   }
 
@@ -409,15 +452,19 @@ export class CollaborationManager {
         spacing: layoutMap.get('spacing') || SpacingType.NORMAL,
         code: layoutMap.get('code') || '',
         content: layoutMap.get('content') || '',
-        customBackGroundColor: layoutMap.get('customBackGroundColor') || '#ffffff',
+        customBackGroundColor:
+          layoutMap.get('customBackGroundColor') || '#ffffff',
         customCTAButtonName: layoutMap.get('customCTAButtonName') || 'Submit',
         backgroundImageKey: layoutMap.get('backgroundImageKey') || '',
         pageMode: layoutMap.get('pageMode') || PageModeType.MULTIPAGE,
-        isCustomBackgroundColorEnabled: layoutMap.get('isCustomBackgroundColorEnabled') || false,
+        isCustomBackgroundColorEnabled:
+          layoutMap.get('isCustomBackgroundColorEnabled') || false,
       };
     }
 
-    const isShuffleEnabled = formSchemaMap.get('isShuffleEnabled') as boolean | undefined;
+    const isShuffleEnabled = formSchemaMap.get('isShuffleEnabled') as
+      | boolean
+      | undefined;
 
     this.updateCallback(pages, layout, isShuffleEnabled);
   }

@@ -14,6 +14,7 @@ export const useFormInitialization = (page: FormPage) => {
   const getFieldDefaultValue = useCallback((fieldType: FieldType) => {
     switch (fieldType) {
       case FieldType.CHECKBOX_FIELD:
+      case FieldType.FILE_UPLOAD_FIELD:
         return [];
       default:
         return '';
@@ -27,16 +28,17 @@ export const useFormInitialization = (page: FormPage) => {
 
     // Use stored responses if they exist, fallback to defaults
     const hasStoredData = Object.keys(storedResponses).length > 0;
-    const merged = hasStoredData ? { ...defaults, ...storedResponses } : defaults;
+    const merged = hasStoredData
+      ? { ...defaults, ...storedResponses }
+      : defaults;
 
     // Ensure no undefined values in the merged object
     const cleanedValues: Record<string, any> = {};
 
-    page.fields.forEach(field => {
+    page.fields.forEach((field) => {
       const value = merged[field.id];
-      cleanedValues[field.id] = value !== undefined
-        ? value
-        : getFieldDefaultValue(field.type);
+      cleanedValues[field.id] =
+        value !== undefined ? value : getFieldDefaultValue(field.type);
     });
 
     return cleanedValues;
@@ -57,6 +59,6 @@ export const useFormInitialization = (page: FormPage) => {
     getInitialValues,
     hasStoredData,
     currentStoreValues,
-    store
+    store,
   };
 };

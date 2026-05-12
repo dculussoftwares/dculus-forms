@@ -1,4 +1,8 @@
-import { S3Client, PutObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  CopyObjectCommand,
+} from '@aws-sdk/client-s3';
 import { randomUUID } from 'crypto';
 import path from 'path';
 import { s3Config } from '../lib/env.js';
@@ -22,6 +26,7 @@ export interface UploadFileInput {
     createReadStream: () => NodeJS.ReadableStream;
   };
   type: string;
+  formId?: string;
 }
 
 // Initialize S3 client for Cloudflare R2
@@ -36,10 +41,10 @@ const s3Client = new S3Client({
 
 const ALLOWED_IMAGE_TYPES = [
   'image/jpeg',
-  'image/jpg', 
+  'image/jpg',
   'image/png',
   'image/webp',
-  'image/gif'
+  'image/gif',
 ];
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -47,29 +52,41 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 /**
  * Generate a unique S3 key for the uploaded file
  */
-function generateS3Key(originalName: string, type: string, formId?: string): string {
+function generateS3Key(
+  originalName: string,
+  type: string,
+  formId?: string
+): string {
   const timestamp = Date.now();
   const uuid = randomUUID();
   const extension = path.extname(originalName).toLowerCase();
   const baseName = path.basename(originalName, extension);
-  
+
   // Sanitize filename
-  const sanitizedBaseName = baseName.replace(/[^a-zA-Z0-9-_]/g, '-').toLowerCase();
-  
+  const sanitizedBaseName = baseName
+    .replace(/[^a-zA-Z0-9-_]/g, '-')
+    .toLowerCase();
+
   // Create unique filename
   const uniqueFilename = `${timestamp}-${uuid}-${sanitizedBaseName}${extension}`;
-  
+
   // Generate S3 path based on type
   switch (type) {
     case 'FormTemplate':
       return `files/form-template/${uniqueFilename}`;
     case 'FormBackground':
       // Include formId in the path for form-specific backgrounds
-      return formId ? `files/form-background/${formId}/${uniqueFilename}` : `files/form-background/${uniqueFilename}`;
+      return formId
+        ? `files/form-background/${formId}/${uniqueFilename}`
+        : `files/form-background/${uniqueFilename}`;
     case 'UserAvatar':
       return `files/user-avatar/${uniqueFilename}`;
     case 'OrganizationLogo':
       return `files/organization-logo/${uniqueFilename}`;
+    case 'FormResponse':
+      return formId
+        ? `files/form-response/${formId}/${uniqueFilename}`
+        : `files/form-response/${uniqueFilename}`;
     default:
       return `files/misc/${uniqueFilename}`;
   }
@@ -80,7 +97,7 @@ function generateS3Key(originalName: string, type: string, formId?: string): str
  */
 async function streamToBuffer(stream: NodeJS.ReadableStream): Promise<Buffer> {
   const chunks: Buffer[] = [];
-  
+
   return new Promise((resolve, reject) => {
     stream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
     stream.on('error', (err) => reject(err));
@@ -93,14 +110,14 @@ async function streamToBuffer(stream: NodeJS.ReadableStream): Promise<Buffer> {
  */
 function getMimetypeFromExtension(filename: string | undefined): string {
   if (!filename) return '';
-  
+
   const ext = path.extname(filename).toLowerCase();
   const mimeMap: Record<string, string> = {
     '.jpg': 'image/jpeg',
     '.jpeg': 'image/jpeg',
     '.png': 'image/png',
     '.webp': 'image/webp',
-    '.gif': 'image/gif'
+    '.gif': 'image/gif',
   };
   return mimeMap[ext] || '';
 }
@@ -108,18 +125,20 @@ function getMimetypeFromExtension(filename: string | undefined): string {
 /**
  * Upload file to Cloudflare R2
  */
-export async function uploadFile(input: UploadFileInput): Promise<UploadFileResult> {
-  const { file, type } = input;
+export async function uploadFile(
+  input: UploadFileInput
+): Promise<UploadFileResult> {
+  const { file, type, formId } = input;
   const { filename, mimetype, createReadStream } = file;
 
   // Use detected mimetype or fallback to extension-based detection
   const finalMimetype = mimetype || getMimetypeFromExtension(filename);
-  
+
   logger.info('Upload file details:', {
     filename,
     originalMimetype: mimetype,
     finalMimetype,
-    type
+    type,
   });
 
   // Validate we have a filename
@@ -127,13 +146,18 @@ export async function uploadFile(input: UploadFileInput): Promise<UploadFileResu
     throw new Error('Filename is required');
   }
 
-  // Validate file type
-  if (!finalMimetype || !ALLOWED_IMAGE_TYPES.includes(finalMimetype)) {
-    throw new Error(`File type ${finalMimetype || 'unknown'} is not allowed. Allowed types: ${ALLOWED_IMAGE_TYPES.join(', ')}`);
+  // Validate file type — FormResponse allows any MIME type (enforced client-side per field config)
+  if (
+    type !== 'FormResponse' &&
+    (!finalMimetype || !ALLOWED_IMAGE_TYPES.includes(finalMimetype))
+  ) {
+    throw new Error(
+      `File type ${finalMimetype || 'unknown'} is not allowed. Allowed types: ${ALLOWED_IMAGE_TYPES.join(', ')}`
+    );
   }
 
   // Generate S3 key
-  const s3Key = generateS3Key(filename, type);
+  const s3Key = generateS3Key(filename, type, formId);
 
   try {
     // Convert stream to buffer
@@ -142,7 +166,9 @@ export async function uploadFile(input: UploadFileInput): Promise<UploadFileResu
 
     // Check file size
     if (buffer.length > MAX_FILE_SIZE) {
-      throw new Error(`File size ${buffer.length} bytes exceeds maximum allowed size of ${MAX_FILE_SIZE} bytes`);
+      throw new Error(
+        `File size ${buffer.length} bytes exceeds maximum allowed size of ${MAX_FILE_SIZE} bytes`
+      );
     }
 
     // Upload to Cloudflare R2
@@ -171,7 +197,9 @@ export async function uploadFile(input: UploadFileInput): Promise<UploadFileResu
     };
   } catch (error) {
     logger.error('Error uploading file to Cloudflare R2:', error);
-    throw new Error(`Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -181,7 +209,7 @@ export async function uploadFile(input: UploadFileInput): Promise<UploadFileResu
 export async function deleteFile(s3Key: string): Promise<boolean> {
   try {
     const { DeleteObjectCommand } = await import('@aws-sdk/client-s3');
-    
+
     const deleteObjectCommand = new DeleteObjectCommand({
       Bucket: s3Config.publicBucketName,
       Key: s3Key,
@@ -198,14 +226,17 @@ export async function deleteFile(s3Key: string): Promise<boolean> {
 /**
  * Copy file within Cloudflare R2 bucket for form duplication
  */
-export async function copyFileForForm(sourceKey: string, formId: string): Promise<UploadFileResult> {
+export async function copyFileForForm(
+  sourceKey: string,
+  formId: string
+): Promise<UploadFileResult> {
   try {
     // Extract original filename from source key
     const originalFilename = sourceKey.split('/').pop() || 'background-image';
-    
+
     // Generate new unique key for the copied file with formId
     const newKey = generateS3Key(originalFilename, 'FormBackground', formId);
-    
+
     // Copy the file using S3 CopyObjectCommand
     const copyObjectCommand = new CopyObjectCommand({
       Bucket: s3Config.publicBucketName,
@@ -229,6 +260,8 @@ export async function copyFileForForm(sourceKey: string, formId: string): Promis
     };
   } catch (error) {
     logger.error('Error copying file in Cloudflare R2:', error);
-    throw new Error(`Failed to copy file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to copy file: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }

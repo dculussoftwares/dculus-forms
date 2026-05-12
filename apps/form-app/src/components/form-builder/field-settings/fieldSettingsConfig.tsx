@@ -19,7 +19,9 @@ export interface FieldSettingsComponentConfig {
     /** Component to render */
     component: React.ComponentType<any>;
     /** Props to pass to the component */
-    getProps?: (baseProps: BaseFieldSettingsProps & OptionsSettingsProps) => Record<string, any>;
+    getProps?: (
+      baseProps: BaseFieldSettingsProps & OptionsSettingsProps
+    ) => Record<string, any>;
   }>;
   /** Whether this field type supports character limits */
   supportsCharacterLimits: boolean;
@@ -33,7 +35,9 @@ export interface FieldSettingsComponentConfig {
  * Field settings configuration map
  * Defines which components to render for each field type
  */
-export const FIELD_SETTINGS_CONFIG: Partial<Record<FieldType, FieldSettingsComponentConfig>> = {
+export const FIELD_SETTINGS_CONFIG: Partial<
+  Record<FieldType, FieldSettingsComponentConfig>
+> = {
   [FieldType.TEXT_INPUT_FIELD]: {
     components: [
       { component: TextInputSettings },
@@ -55,9 +59,7 @@ export const FIELD_SETTINGS_CONFIG: Partial<Record<FieldType, FieldSettingsCompo
   },
 
   [FieldType.EMAIL_FIELD]: {
-    components: [
-      { component: TextInputSettings },
-    ],
+    components: [{ component: TextInputSettings }],
     supportsCharacterLimits: false,
     supportsPrefix: false,
     hasOptions: false,
@@ -127,18 +129,21 @@ export const FIELD_SETTINGS_CONFIG: Partial<Record<FieldType, FieldSettingsCompo
   },
 
   [FieldType.DATE_FIELD]: {
-    components: [
-      { component: DateRangeSettings },
-    ],
+    components: [{ component: DateRangeSettings }],
+    supportsCharacterLimits: false,
+    supportsPrefix: false,
+    hasOptions: false,
+  },
+
+  [FieldType.FILE_UPLOAD_FIELD]: {
+    components: [{ component: TextInputSettings }],
     supportsCharacterLimits: false,
     supportsPrefix: false,
     hasOptions: false,
   },
 
   [FieldType.RICH_TEXT_FIELD]: {
-    components: [
-      { component: RichTextSettings },
-    ],
+    components: [{ component: RichTextSettings }],
     supportsCharacterLimits: false,
     supportsPrefix: false,
     hasOptions: false,
@@ -148,7 +153,9 @@ export const FIELD_SETTINGS_CONFIG: Partial<Record<FieldType, FieldSettingsCompo
 /**
  * Helper function to get field configuration
  */
-export function getFieldSettingsConfig(fieldType: FieldType): FieldSettingsComponentConfig | null {
+export function getFieldSettingsConfig(
+  fieldType: FieldType
+): FieldSettingsComponentConfig | null {
   return FIELD_SETTINGS_CONFIG[fieldType] || null;
 }
 
@@ -156,8 +163,11 @@ export function getFieldSettingsConfig(fieldType: FieldType): FieldSettingsCompo
  * Helper function to check if a field type supports a specific feature
  */
 export function fieldSupportsFeature(
-  fieldType: FieldType, 
-  feature: keyof Pick<FieldSettingsComponentConfig, 'supportsCharacterLimits' | 'supportsPrefix' | 'hasOptions'>
+  fieldType: FieldType,
+  feature: keyof Pick<
+    FieldSettingsComponentConfig,
+    'supportsCharacterLimits' | 'supportsPrefix' | 'hasOptions'
+  >
 ): boolean {
   const config = getFieldSettingsConfig(fieldType);
   return config ? config[feature] : false;

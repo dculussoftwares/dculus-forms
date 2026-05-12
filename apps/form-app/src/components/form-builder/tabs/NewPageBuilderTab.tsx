@@ -37,6 +37,7 @@ import {
   CheckSquare,
   Calendar,
   FileCode,
+  Upload,
 } from 'lucide-react';
 import {
   SortableContext,
@@ -82,6 +83,11 @@ const getFieldTypeConfig = (
       icon: FileCode,
       category: 'content',
       label: 'Rich Text',
+    },
+    file_upload_field: {
+      icon: Upload,
+      category: 'advanced',
+      label: 'File Upload',
     },
   };
   return configs[type] || { icon: Type, category: 'input', label: 'Unknown' };
