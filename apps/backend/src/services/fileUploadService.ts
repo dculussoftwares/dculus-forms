@@ -299,12 +299,14 @@ export async function generatePresignedDownloadUrl(
 ): Promise<string> {
   const bucket = getBucketForKey(s3Key);
   const command = new GetObjectCommand({ Bucket: bucket, Key: s3Key });
-  // Cast required: pnpm resolves @smithy/types@4.3.1 for client-s3 and @4.3.2 for
-  // s3-request-presigner, causing a structural mismatch on S3Client despite being
-  // runtime-compatible. The cast is safe — same S3Client instance is used throughout.
-  return getSignedUrl(s3Client as Parameters<typeof getSignedUrl>[0], command, {
-    expiresIn: expiresInSeconds,
-  });
+  // `as unknown as` required: @aws-sdk/client-s3@3.859 and @aws-sdk/s3-request-presigner@3.872
+  // declare private `handlers` independently, making S3Client structurally incompatible at
+  // compile time. They are the same runtime object — the cast is safe.
+  return getSignedUrl(
+    s3Client as unknown as Parameters<typeof getSignedUrl>[0],
+    command as unknown as Parameters<typeof getSignedUrl>[1],
+    { expiresIn: expiresInSeconds }
+  );
 }
 
 /**
