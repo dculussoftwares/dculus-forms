@@ -1,4 +1,10 @@
-import { FormSchema, deserializeFormSchema, ThemeType, SpacingType, PageModeType } from '@dculus/types';
+import {
+  FormSchema,
+  deserializeFormSchema,
+  ThemeType,
+  SpacingType,
+  PageModeType,
+} from '@dculus/types';
 import { generateId } from '@dculus/utils';
 import { responseRepository } from '../repositories/index.js';
 import { logger } from '../lib/logger.js';
@@ -25,7 +31,6 @@ export interface EditContext {
  * Service for tracking response edits with field-level change detection
  */
 export class ResponseEditTrackingService {
-
   /**
    * Detects changes between old and new response data
    */
@@ -42,7 +47,7 @@ export class ResponseEditTrackingService {
     // Get all unique field IDs from both old and new data
     const allFieldIds = new Set([
       ...Object.keys(oldData || {}),
-      ...Object.keys(newData || {})
+      ...Object.keys(newData || {}),
     ]);
 
     for (const fieldId of allFieldIds) {
@@ -59,23 +64,31 @@ export class ResponseEditTrackingService {
       let changeType: 'ADD' | 'UPDATE' | 'DELETE';
       if (oldValue === undefined || oldValue === null || oldValue === '') {
         changeType = 'ADD';
-      } else if (newValue === undefined || newValue === null || newValue === '') {
+      } else if (
+        newValue === undefined ||
+        newValue === null ||
+        newValue === ''
+      ) {
         changeType = 'DELETE';
       } else {
         changeType = 'UPDATE';
       }
 
       // Calculate value change size for text fields
-      const valueChangeSize = this.calculateValueChangeSize(oldValue, newValue, fieldInfo?.type);
+      const valueChangeSize = this.calculateValueChangeSize(
+        oldValue,
+        newValue,
+        fieldInfo?.type
+      );
 
       changes.push({
         fieldId,
         fieldLabel: fieldInfo?.label || fieldId,
         fieldType: fieldInfo?.type || 'unknown',
-        previousValue: oldValue,
-        newValue: newValue,
+        previousValue: this.humanizeFieldValue(oldValue, fieldInfo?.type),
+        newValue: this.humanizeFieldValue(newValue, fieldInfo?.type),
         changeType,
-        valueChangeSize
+        valueChangeSize,
       });
     }
 
@@ -85,24 +98,34 @@ export class ResponseEditTrackingService {
   /**
    * Creates a metadata map for all fields in the form schema
    */
-  private static createFieldMetadataMap(formSchema: FormSchema): Record<string, { label: string; type: string }> {
+  private static createFieldMetadataMap(
+    formSchema: FormSchema
+  ): Record<string, { label: string; type: string }> {
     const metadata: Record<string, { label: string; type: string }> = {};
 
     logger.info('Creating field metadata map from form schema');
-    logger.info('Form schema structure:', JSON.stringify(formSchema, null, 2).substring(0, 500));
+    logger.info(
+      'Form schema structure:',
+      JSON.stringify(formSchema, null, 2).substring(0, 500)
+    );
 
     if (formSchema?.pages) {
       logger.info(`Processing ${formSchema.pages.length} pages`);
 
       for (const page of formSchema.pages) {
         if (page?.fields) {
-          logger.info(`Processing ${page.fields.length} fields from page "${page.title}"`);
+          logger.info(
+            `Processing ${page.fields.length} fields from page "${page.title}"`
+          );
 
           for (const field of page.fields) {
             if (field?.id) {
               // Debug: log the raw field object
               logger.info(`Raw field object keys:`, Object.keys(field));
-              logger.info(`Field data:`, JSON.stringify(field, null, 2).substring(0, 300));
+              logger.info(
+                `Field data:`,
+                JSON.stringify(field, null, 2).substring(0, 300)
+              );
 
               // Extract label - check multiple possible properties
               let label = field.id; // Default fallback
@@ -116,7 +139,10 @@ export class ResponseEditTrackingService {
               let fieldType = 'unknown';
               if (field.type) {
                 // Convert FieldType enum to string if needed
-                fieldType = typeof field.type === 'string' ? field.type : String(field.type);
+                fieldType =
+                  typeof field.type === 'string'
+                    ? field.type
+                    : String(field.type);
               } else if ((field as any).__type) {
                 // Check for __type property (might be used in serialization)
                 fieldType = (field as any).__type;
@@ -124,10 +150,12 @@ export class ResponseEditTrackingService {
 
               metadata[field.id] = {
                 label,
-                type: fieldType
+                type: fieldType,
               };
 
-              logger.info(`✓ Field metadata: id=${field.id}, label=${label}, type=${fieldType}`);
+              logger.info(
+                `✓ Field metadata: id=${field.id}, label=${label}, type=${fieldType}`
+              );
             }
           }
         }
@@ -145,7 +173,8 @@ export class ResponseEditTrackingService {
    */
   private static areValuesEquivalent(value1: any, value2: any): boolean {
     // Handle null/undefined/empty string equivalence
-    const isEmptyValue = (val: any) => val === null || val === undefined || val === '';
+    const isEmptyValue = (val: any) =>
+      val === null || val === undefined || val === '';
     if (isEmptyValue(value1) && isEmptyValue(value2)) {
       return true;
     }
@@ -153,15 +182,24 @@ export class ResponseEditTrackingService {
     // Handle array comparison
     if (Array.isArray(value1) && Array.isArray(value2)) {
       if (value1.length !== value2.length) return false;
-      return value1.every((item, index) => this.areValuesEquivalent(item, value2[index]));
+      return value1.every((item, index) =>
+        this.areValuesEquivalent(item, value2[index])
+      );
     }
 
     // Handle object comparison
-    if (typeof value1 === 'object' && typeof value2 === 'object' && value1 !== null && value2 !== null) {
+    if (
+      typeof value1 === 'object' &&
+      typeof value2 === 'object' &&
+      value1 !== null &&
+      value2 !== null
+    ) {
       const keys1 = Object.keys(value1);
       const keys2 = Object.keys(value2);
       if (keys1.length !== keys2.length) return false;
-      return keys1.every(key => this.areValuesEquivalent(value1[key], value2[key]));
+      return keys1.every((key) =>
+        this.areValuesEquivalent(value1[key], value2[key])
+      );
     }
 
     // Handle string comparison (trim whitespace)
@@ -174,10 +212,36 @@ export class ResponseEditTrackingService {
   }
 
   /**
+   * Humanizes a field value for storage in edit history.
+   * FILE_UPLOAD_FIELD values are R2 keys — strip the timestamp/uuid prefix so
+   * history records show readable filenames instead of raw object paths.
+   */
+  private static humanizeFieldValue(value: any, fieldType?: string): any {
+    if (fieldType !== 'file_upload_field') return value;
+    if (!Array.isArray(value)) return value;
+
+    return value.map((v: any) => {
+      if (typeof v !== 'string') return v;
+      // R2 key format: files/form-response/{formId}/{13-digit-ts}-{uuid}-{filename}
+      const segment = v.split('/').pop() ?? v;
+      return segment.replace(/^\d{13}-[0-9a-f-]{36}-/i, '');
+    });
+  }
+
+  /**
    * Calculates the size of change for text-based fields
    */
-  private static calculateValueChangeSize(oldValue: any, newValue: any, fieldType?: string): number | undefined {
-    if (!fieldType || !['text_input_field', 'text_area_field', 'email_field'].includes(fieldType)) {
+  private static calculateValueChangeSize(
+    oldValue: any,
+    newValue: any,
+    fieldType?: string
+  ): number | undefined {
+    if (
+      !fieldType ||
+      !['text_input_field', 'text_area_field', 'email_field'].includes(
+        fieldType
+      )
+    ) {
       return undefined;
     }
 
@@ -196,20 +260,26 @@ export class ResponseEditTrackingService {
 
     const summary: string[] = [];
 
-    const addChanges = changes.filter(c => c.changeType === 'ADD');
-    const updateChanges = changes.filter(c => c.changeType === 'UPDATE');
-    const deleteChanges = changes.filter(c => c.changeType === 'DELETE');
+    const addChanges = changes.filter((c) => c.changeType === 'ADD');
+    const updateChanges = changes.filter((c) => c.changeType === 'UPDATE');
+    const deleteChanges = changes.filter((c) => c.changeType === 'DELETE');
 
     if (addChanges.length > 0) {
-      summary.push(`Added ${addChanges.length} field${addChanges.length > 1 ? 's' : ''}`);
+      summary.push(
+        `Added ${addChanges.length} field${addChanges.length > 1 ? 's' : ''}`
+      );
     }
 
     if (updateChanges.length > 0) {
-      summary.push(`Updated ${updateChanges.length} field${updateChanges.length > 1 ? 's' : ''}`);
+      summary.push(
+        `Updated ${updateChanges.length} field${updateChanges.length > 1 ? 's' : ''}`
+      );
     }
 
     if (deleteChanges.length > 0) {
-      summary.push(`Removed ${deleteChanges.length} field${deleteChanges.length > 1 ? 's' : ''}`);
+      summary.push(
+        `Removed ${deleteChanges.length} field${deleteChanges.length > 1 ? 's' : ''}`
+      );
     }
 
     return summary.join(', ');
@@ -246,12 +316,12 @@ export class ResponseEditTrackingService {
         ipAddress: editContext.ipAddress,
         userAgent: editContext.userAgent,
         totalChanges: changes.length,
-        changesSummary
-      }
+        changesSummary,
+      },
     });
 
     // Create field change records
-    const fieldChangePromises = changes.map(change =>
+    const fieldChangePromises = changes.map((change) =>
       responseRepository.createFieldChange({
         data: {
           id: generateId(),
@@ -262,8 +332,8 @@ export class ResponseEditTrackingService {
           previousValue: change.previousValue,
           newValue: change.newValue,
           changeType: change.changeType,
-          valueChangeSize: change.valueChangeSize
-        }
+          valueChangeSize: change.valueChangeSize,
+        },
       })
     );
 
@@ -282,14 +352,14 @@ export class ResponseEditTrackingService {
             id: true,
             name: true,
             email: true,
-            image: true
-          }
+            image: true,
+          },
         },
         fieldChanges: {
-          orderBy: { fieldId: 'asc' }
-        }
+          orderBy: { fieldId: 'asc' },
+        },
       },
-      orderBy: { editedAt: 'desc' }
+      orderBy: { editedAt: 'desc' },
     });
   }
 
@@ -303,10 +373,10 @@ export class ResponseEditTrackingService {
         form: {
           select: {
             id: true,
-            formSchema: true
-          }
-        }
-      }
+            formSchema: true,
+          },
+        },
+      },
     });
 
     if (!response) {
@@ -322,7 +392,11 @@ export class ResponseEditTrackingService {
       // Attempt to get schema from YJS/Hocuspocus
       const yjsSchemaData = await getFormSchemaFromHocuspocus(response.form.id);
 
-      if (yjsSchemaData && yjsSchemaData.pages && yjsSchemaData.pages.length > 0) {
+      if (
+        yjsSchemaData &&
+        yjsSchemaData.pages &&
+        yjsSchemaData.pages.length > 0
+      ) {
         logger.info(`Using form schema from YJS for form ${response.form.id}`);
         // Deserialize the YJS schema data
         formSchema = deserializeFormSchema(yjsSchemaData);
@@ -330,12 +404,20 @@ export class ResponseEditTrackingService {
         throw new Error('YJS schema empty or invalid');
       }
     } catch (yjsError) {
-      logger.warn(`Failed to get schema from YJS for form ${response.form.id}, falling back to database:`, yjsError);
+      logger.warn(
+        `Failed to get schema from YJS for form ${response.form.id}, falling back to database:`,
+        yjsError
+      );
 
       // Fallback to database schema
-      if (response.form.formSchema && JSON.stringify(response.form.formSchema) !== '{}') {
+      if (
+        response.form.formSchema &&
+        JSON.stringify(response.form.formSchema) !== '{}'
+      ) {
         formSchema = deserializeFormSchema(response.form.formSchema);
-        logger.info(`Using form schema from database for form ${response.form.id}`);
+        logger.info(
+          `Using form schema from database for form ${response.form.id}`
+        );
       } else {
         logger.error(`No valid form schema found for form ${response.form.id}`);
         // Return empty schema with proper structure to prevent crashes
@@ -349,16 +431,16 @@ export class ResponseEditTrackingService {
             content: '',
             customBackGroundColor: '#ffffff',
             backgroundImageKey: '',
-            pageMode: PageModeType.MULTIPAGE
+            pageMode: PageModeType.MULTIPAGE,
           },
-          isShuffleEnabled: false
+          isShuffleEnabled: false,
         };
       }
     }
 
     return {
       response,
-      formSchema
+      formSchema,
     };
   }
 }

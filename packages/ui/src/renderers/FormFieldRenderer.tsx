@@ -405,9 +405,20 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
 
             case FieldType.FILE_UPLOAD_FIELD: {
               const fileUploadField = field as any;
-              const currentFiles: File[] = Array.isArray(controllerField.value)
+              // Value is (string | File)[] — strings are existing R2 keys (EDIT mode),
+              // File objects are newly selected files (SUBMISSION / EDIT mode).
+              const rawValue: (string | File)[] = Array.isArray(
+                controllerField.value
+              )
                 ? controllerField.value
                 : [];
+              const existingKeys: string[] = rawValue.filter(
+                (v): v is string => typeof v === 'string'
+              );
+              const newFiles: File[] = rawValue.filter(
+                (v): v is File => v instanceof File
+              );
+
               const maxFiles: number = fileUploadField.maxFiles || 1;
               const maxFileSizeMb: number = fileUploadField.maxFileSizeMb || 5;
               const allowedMimeTypes: string[] =
@@ -416,6 +427,16 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                 allowedMimeTypes.length > 0
                   ? allowedMimeTypes.join(',')
                   : undefined;
+
+              const totalCount = existingKeys.length + newFiles.length;
+
+              // Extracts the original filename from an R2 key like:
+              // files/form-response/{formId}/{13-digit-ts}-{uuid}-{filename}
+              const extractKeyName = (key: string): string => {
+                const segment = key.split('/').pop() ?? key;
+                // Strip leading {timestamp}-{uuid}-
+                return segment.replace(/^\d{13}-[0-9a-f-]{36}-/i, '');
+              };
 
               const handleFiles = (files: FileList | null) => {
                 if (!files || !isInteractive) return;
@@ -428,65 +449,122 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                     return false;
                   return true;
                 });
-                const combined = [...currentFiles, ...incoming].slice(
-                  0,
-                  maxFiles
-                );
+                const combined: (string | File)[] = [
+                  ...existingKeys,
+                  ...newFiles,
+                  ...incoming,
+                ].slice(0, maxFiles);
                 controllerField.onChange(combined);
+              };
+
+              const removeExistingKey = (idx: number) => {
+                const updated: (string | File)[] = [
+                  ...existingKeys.filter((_, i) => i !== idx),
+                  ...newFiles,
+                ];
+                controllerField.onChange(updated);
+              };
+
+              const removeNewFile = (idx: number) => {
+                const updated: (string | File)[] = [
+                  ...existingKeys,
+                  ...newFiles.filter((_, i) => i !== idx),
+                ];
+                controllerField.onChange(updated);
               };
 
               return (
                 <div>
-                  <div
-                    className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                      hasError
-                        ? 'border-red-300 bg-red-50'
-                        : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50'
-                    } ${!isInteractive ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                    onClick={() => {
-                      if (isInteractive) {
-                        (
-                          document.getElementById(
-                            `file-input-${field.id}`
-                          ) as HTMLInputElement | null
-                        )?.click();
-                      }
-                    }}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleFiles(e.dataTransfer.files);
-                    }}
-                  >
-                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600">
-                      {isInteractive
-                        ? 'Click or drag files here to upload'
-                        : 'File upload'}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Max {maxFiles} file{maxFiles > 1 ? 's' : ''}, up to{' '}
-                      {maxFileSizeMb}MB each
-                      {allowedMimeTypes.length > 0 &&
-                        ` · ${allowedMimeTypes.join(', ')}`}
-                    </p>
-                    <input
-                      id={`file-input-${field.id}`}
-                      type="file"
-                      multiple={maxFiles > 1}
-                      accept={acceptAttr}
-                      className="hidden"
-                      disabled={!isInteractive}
-                      onChange={(e) => handleFiles(e.target.files)}
-                    />
-                  </div>
-                  {currentFiles.length > 0 && (
+                  {/* Existing uploaded files (EDIT mode — R2 keys) */}
+                  {existingKeys.length > 0 && (
+                    <ul className="mb-2 space-y-1">
+                      {existingKeys.map((key, idx) => (
+                        <li
+                          key={key}
+                          className="flex items-center justify-between text-sm bg-blue-50 border border-blue-200 rounded px-3 py-1"
+                        >
+                          <span className="truncate text-blue-800">
+                            {extractKeyName(key)}
+                          </span>
+                          {isInteractive && (
+                            <button
+                              type="button"
+                              onClick={() => removeExistingKey(idx)}
+                              className="ml-2 text-blue-400 hover:text-red-500 flex-shrink-0 text-lg leading-none"
+                              aria-label={`Remove ${extractKeyName(key)}`}
+                            >
+                              &times;
+                            </button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {/* Drop zone — only show if more files can be added */}
+                  {(totalCount < maxFiles || maxFiles === 1) &&
+                    isInteractive && (
+                      <div
+                        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                          hasError
+                            ? 'border-red-300 bg-red-50'
+                            : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50'
+                        } cursor-pointer`}
+                        onClick={() => {
+                          (
+                            document.getElementById(
+                              `file-input-${field.id}`
+                            ) as HTMLInputElement | null
+                          )?.click();
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleFiles(e.dataTransfer.files);
+                        }}
+                      >
+                        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600">
+                          {existingKeys.length > 0
+                            ? 'Click or drag to replace / add more files'
+                            : 'Click or drag files here to upload'}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          Max {maxFiles} file{maxFiles > 1 ? 's' : ''}, up to{' '}
+                          {maxFileSizeMb}MB each
+                          {allowedMimeTypes.length > 0 &&
+                            ` · ${allowedMimeTypes.join(', ')}`}
+                        </p>
+                        <input
+                          id={`file-input-${field.id}`}
+                          type="file"
+                          multiple={maxFiles > 1}
+                          accept={acceptAttr}
+                          className="hidden"
+                          disabled={!isInteractive}
+                          onChange={(e) => handleFiles(e.target.files)}
+                        />
+                      </div>
+                    )}
+
+                  {/* Preview-only drop zone (non-interactive) */}
+                  {!isInteractive &&
+                    existingKeys.length === 0 &&
+                    newFiles.length === 0 && (
+                      <div className="border-2 border-dashed rounded-lg p-6 text-center border-gray-300 bg-gray-50 opacity-50 cursor-not-allowed">
+                        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600">File upload</p>
+                      </div>
+                    )}
+
+                  {/* Newly selected files */}
+                  {newFiles.length > 0 && (
                     <ul className="mt-2 space-y-1">
-                      {currentFiles.map((file, idx) => (
+                      {newFiles.map((file, idx) => (
                         <li
                           key={idx}
                           className="flex items-center justify-between text-sm bg-gray-100 dark:bg-gray-700 rounded px-3 py-1"
@@ -497,12 +575,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                           {isInteractive && (
                             <button
                               type="button"
-                              onClick={() => {
-                                const updated = currentFiles.filter(
-                                  (_, i) => i !== idx
-                                );
-                                controllerField.onChange(updated);
-                              }}
+                              onClick={() => removeNewFile(idx)}
                               className="ml-2 text-gray-400 hover:text-red-500 flex-shrink-0 text-lg leading-none"
                               aria-label={`Remove ${file.name}`}
                             >
@@ -513,6 +586,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                       ))}
                     </ul>
                   )}
+
                   {hasError && (
                     <p className="mt-1 text-sm text-red-600" role="alert">
                       {error.message}

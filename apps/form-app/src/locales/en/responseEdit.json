@@ -42,6 +42,16 @@
     "updateError": {
       "title": "Failed to update response",
       "description": "An error occurred while updating the response"
+    },
+    "uploadError": {
+      "title": "File upload failed",
+      "description": "One or more files could not be uploaded. Please try again."
     }
+  },
+  "fileUpload": {
+    "existingFiles": "Uploaded files",
+    "removeFile": "Remove file",
+    "addMoreFiles": "Click or drag to replace / add more files",
+    "uploading": "Uploading files..."
   }
 }

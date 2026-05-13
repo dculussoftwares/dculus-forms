@@ -5,26 +5,80 @@ import { useTranslation } from '../hooks/useTranslation';
 import { FormRenderer } from '@dculus/ui';
 import { RendererMode } from '@dculus/utils';
 import { deserializeFormSchema } from '@dculus/types';
-import { GET_FORM_BY_ID, GET_RESPONSE_BY_ID, UPDATE_RESPONSE, GET_FORM_RESPONSES } from '../graphql/queries';
+import { FieldType } from '@dculus/types';
+import {
+  GET_FORM_BY_ID,
+  GET_RESPONSE_BY_ID,
+  UPDATE_RESPONSE,
+  GET_FORM_RESPONSES,
+} from '../graphql/queries';
+import { DELETE_FILE } from '../graphql/templates';
 import { MainLayout } from '../components/MainLayout';
 import { Button, LoadingSpinner, toastSuccess, toastError } from '@dculus/ui';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
-import { getCdnEndpoint } from '../lib/config';
+import { getCdnEndpoint, getUploadUrl } from '../lib/config';
+
+/**
+ * Upload a single File to the backend REST endpoint and return its R2 storage key.
+ * Sends auth cookies so the server can verify the user has form access even when the
+ * form is not published.
+ */
+async function uploadEditResponseFile(
+  file: File,
+  formId: string,
+  uploadUrl: string
+): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('type', 'FormResponse');
+  formData.append('formId', formId);
+  formData.append('editMode', 'true');
+
+  const response = await fetch(uploadUrl, {
+    method: 'POST',
+    body: formData,
+    credentials: 'include', // send auth cookie so server can bypass isPublished check
+  });
+
+  if (!response.ok) {
+    let body: { error?: string } = {};
+    try {
+      body = await response.json();
+    } catch {
+      /* non-JSON body */
+    }
+    throw new Error(body.error ?? `Upload failed (${response.status})`);
+  }
+
+  const data = (await response.json()) as { key: string };
+  return data.key;
+}
 
 const ResponseEdit: React.FC = () => {
   const { t } = useTranslation('responseEdit');
-  const { formId, responseId } = useParams<{ formId: string; responseId: string }>();
+  const { formId, responseId } = useParams<{
+    formId: string;
+    responseId: string;
+  }>();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch form data
-  const { data: formData, loading: formLoading, error: formError } = useQuery(GET_FORM_BY_ID, {
+  const {
+    data: formData,
+    loading: formLoading,
+    error: formError,
+  } = useQuery(GET_FORM_BY_ID, {
     variables: { id: formId },
     skip: !formId,
   });
 
   // Fetch response data
-  const { data: responseData, loading: responseLoading, error: responseError } = useQuery(GET_RESPONSE_BY_ID, {
+  const {
+    data: responseData,
+    loading: responseLoading,
+    error: responseError,
+  } = useQuery(GET_RESPONSE_BY_ID, {
     variables: { id: responseId },
     skip: !responseId,
   });
@@ -39,31 +93,104 @@ const ResponseEdit: React.FC = () => {
           formId: formId,
           page: 1,
           limit: 20,
-          sortBy: "submittedAt",
-          sortOrder: "desc"
-        }
-      }
+          sortBy: 'submittedAt',
+          sortOrder: 'desc',
+        },
+      },
     ],
     // Update cache optimistically for better UX
-    awaitRefetchQueries: true
+    awaitRefetchQueries: true,
   });
 
-  const handleResponseUpdate = async (responseId: string, data: Record<string, any>) => {
+  const [deleteFileMutation] = useMutation(DELETE_FILE);
+
+  const handleResponseUpdate = async (
+    responseId: string,
+    data: Record<string, any>
+  ) => {
     if (!responseId) return;
 
     setIsSubmitting(true);
     try {
+      // ── File upload handling ────────────────────────────────────────────────
+      // The form renderer stores file field values as (string | File)[]:
+      //   strings  = existing R2 keys loaded from the original response
+      //   File     = newly picked files that must be uploaded first
+      // We also diff against the original response data to find removed keys.
+      const originalData: Record<string, any> =
+        responseData?.response?.data ?? {};
+      const processedData: Record<string, any> = { ...data };
+      const uploadUrl = getUploadUrl();
+
+      // Collect all FILE_UPLOAD_FIELD ids from the form schema
+      const fileFieldIds = new Set<string>();
+      if (formData?.form?.formSchema) {
+        const schema = deserializeFormSchema(formData.form.formSchema);
+        for (const page of schema.pages) {
+          for (const field of page.fields) {
+            if (field.type === FieldType.FILE_UPLOAD_FIELD) {
+              fileFieldIds.add(field.id);
+            }
+          }
+        }
+      }
+
+      for (const fieldId of fileFieldIds) {
+        const rawValue = processedData[fieldId];
+        if (!Array.isArray(rawValue)) continue;
+
+        const existingKeys = rawValue.filter(
+          (v): v is string => typeof v === 'string'
+        );
+        const newFiles = rawValue.filter((v): v is File => v instanceof File);
+
+        // Upload new files → get R2 keys
+        const newKeys = await Promise.all(
+          newFiles.map((file) =>
+            uploadEditResponseFile(file, formId!, uploadUrl)
+          )
+        );
+
+        // Delete R2 objects for keys removed by the user
+        const originalKeys: string[] = Array.isArray(originalData[fieldId])
+          ? (originalData[fieldId] as string[]).filter(
+              (v) => typeof v === 'string'
+            )
+          : [];
+        const removedKeys = originalKeys.filter(
+          (k) => !existingKeys.includes(k)
+        );
+        await Promise.all(
+          removedKeys.map((key) =>
+            deleteFileMutation({ variables: { key } }).catch((err) =>
+              // Non-fatal: log but don't block the save
+              console.error('Failed to delete removed file:', key, err)
+            )
+          )
+        );
+
+        // Final value for this field: kept existing + newly uploaded
+        processedData[fieldId] = [...existingKeys, ...newKeys];
+      }
+      // ── End file handling ───────────────────────────────────────────────────
+
       await updateResponseMutation({
         variables: {
-          input: { responseId, data }
-        }
+          input: { responseId, data: processedData },
+        },
       });
 
-      toastSuccess(t('toasts.updateSuccess.title'), t('toasts.updateSuccess.description'));
+      toastSuccess(
+        t('toasts.updateSuccess.title'),
+        t('toasts.updateSuccess.description')
+      );
       navigate(`/dashboard/form/${formId}/responses/${responseId}/history`);
     } catch (error: any) {
       console.error('Error updating response:', error);
-      toastError(t('toasts.updateError.title'), error.message || t('toasts.updateError.description'));
+      toastError(
+        t('toasts.updateError.title'),
+        error.message || t('toasts.updateError.description')
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -75,9 +202,18 @@ const ResponseEdit: React.FC = () => {
         title={t('layout.title')}
         breadcrumbs={[
           { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
-          { label: t('layout.breadcrumbs.formDashboard'), href: `/dashboard/form/${formId}` },
-          { label: t('layout.breadcrumbs.responses'), href: `/dashboard/form/${formId}/responses` },
-          { label: t('layout.breadcrumbs.editResponse'), href: `/dashboard/form/${formId}/responses/${responseId}/edit` },
+          {
+            label: t('layout.breadcrumbs.formDashboard'),
+            href: `/dashboard/form/${formId}`,
+          },
+          {
+            label: t('layout.breadcrumbs.responses'),
+            href: `/dashboard/form/${formId}/responses`,
+          },
+          {
+            label: t('layout.breadcrumbs.editResponse'),
+            href: `/dashboard/form/${formId}/responses/${responseId}/edit`,
+          },
         ]}
       >
         <div className="flex justify-center items-center min-h-96">
@@ -87,22 +223,38 @@ const ResponseEdit: React.FC = () => {
     );
   }
 
-  if (formError || responseError || !formData?.form || !responseData?.response) {
+  if (
+    formError ||
+    responseError ||
+    !formData?.form ||
+    !responseData?.response
+  ) {
     return (
       <MainLayout
         title={t('layout.title')}
         breadcrumbs={[
           { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
-          { label: t('layout.breadcrumbs.formDashboard'), href: `/dashboard/form/${formId}` },
-          { label: t('layout.breadcrumbs.responses'), href: `/dashboard/form/${formId}/responses` },
-          { label: t('layout.breadcrumbs.editResponse'), href: `/dashboard/form/${formId}/responses/${responseId}/edit` },
+          {
+            label: t('layout.breadcrumbs.formDashboard'),
+            href: `/dashboard/form/${formId}`,
+          },
+          {
+            label: t('layout.breadcrumbs.responses'),
+            href: `/dashboard/form/${formId}/responses`,
+          },
+          {
+            label: t('layout.breadcrumbs.editResponse'),
+            href: `/dashboard/form/${formId}/responses/${responseId}/edit`,
+          },
         ]}
       >
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="max-w-md text-center p-8 bg-white rounded-lg shadow-sm border border-slate-200/60">
             <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
             <h3 className="mb-2 text-xl font-semibold">
-              {!formData?.form ? t('errors.formNotFound.title') : t('errors.responseNotFound.title')}
+              {!formData?.form
+                ? t('errors.formNotFound.title')
+                : t('errors.responseNotFound.title')}
             </h3>
             <p className="text-slate-600 mb-4">
               {!formData?.form
@@ -132,15 +284,26 @@ const ResponseEdit: React.FC = () => {
         title={t('layout.title')}
         breadcrumbs={[
           { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
-          { label: t('layout.breadcrumbs.formDashboard'), href: `/dashboard/form/${formId}` },
-          { label: t('layout.breadcrumbs.responses'), href: `/dashboard/form/${formId}/responses` },
-          { label: t('layout.breadcrumbs.editResponse'), href: `/dashboard/form/${formId}/responses/${responseId}/edit` },
+          {
+            label: t('layout.breadcrumbs.formDashboard'),
+            href: `/dashboard/form/${formId}`,
+          },
+          {
+            label: t('layout.breadcrumbs.responses'),
+            href: `/dashboard/form/${formId}/responses`,
+          },
+          {
+            label: t('layout.breadcrumbs.editResponse'),
+            href: `/dashboard/form/${formId}/responses/${responseId}/edit`,
+          },
         ]}
       >
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="max-w-md text-center p-8 bg-white rounded-lg shadow-sm border border-slate-200/60">
             <AlertCircle className="mx-auto h-12 w-12 text-orange-500 mb-4" />
-            <h3 className="mb-2 text-xl font-semibold">{t('errors.formNotReady.title')}</h3>
+            <h3 className="mb-2 text-xl font-semibold">
+              {t('errors.formNotReady.title')}
+            </h3>
             <p className="text-slate-600 mb-4">
               {t('errors.formNotReady.description')}
             </p>
@@ -167,9 +330,18 @@ const ResponseEdit: React.FC = () => {
       breadcrumbs={[
         { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
         { label: form.title, href: `/dashboard/form/${formId}` },
-        { label: t('layout.breadcrumbs.responses'), href: `/dashboard/form/${formId}/responses` },
-        { label: t('layout.breadcrumbs.tableView'), href: `/dashboard/form/${formId}/responses` },
-        { label: t('layout.breadcrumbs.editResponse'), href: `/dashboard/form/${formId}/responses/${responseId}/edit` },
+        {
+          label: t('layout.breadcrumbs.responses'),
+          href: `/dashboard/form/${formId}/responses`,
+        },
+        {
+          label: t('layout.breadcrumbs.tableView'),
+          href: `/dashboard/form/${formId}/responses`,
+        },
+        {
+          label: t('layout.breadcrumbs.editResponse'),
+          href: `/dashboard/form/${formId}/responses/${responseId}/edit`,
+        },
       ]}
     >
       {/* Header with back button */}
@@ -186,7 +358,9 @@ const ResponseEdit: React.FC = () => {
         </Button>
         <div className="h-4 w-px bg-slate-300 flex-shrink-0" />
         <h1 className="text-lg font-semibold text-slate-900 truncate flex-1">
-          {t('header.editingResponse', { values: { responseId: response.id.slice(-6) } })}
+          {t('header.editingResponse', {
+            values: { responseId: response.id.slice(-6) },
+          })}
         </h1>
       </div>
 
@@ -210,8 +384,12 @@ const ResponseEdit: React.FC = () => {
               <div className="flex items-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
                 <div>
-                  <p className="text-lg font-medium text-gray-900">{t('loading.updating')}</p>
-                  <p className="text-sm text-gray-500">{t('loading.pleaseWait')}</p>
+                  <p className="text-lg font-medium text-gray-900">
+                    {t('loading.updating')}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {t('loading.pleaseWait')}
+                  </p>
                 </div>
               </div>
             </div>

@@ -10,6 +10,8 @@ import { uploadFile } from '../services/fileUploadService.js';
 import { prisma } from '../lib/prisma.js';
 import { randomUUID } from 'crypto';
 import { logger } from '../lib/logger.js';
+import { auth } from '../lib/better-auth.js';
+import { fromNodeHeaders } from 'better-auth/node';
 
 // Allowed upload type values — prevents arbitrary path injection via type param
 const ALLOWED_UPLOAD_TYPES = new Set([
@@ -55,32 +57,73 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         .json({ error: 'Invalid upload type', code: 'BAD_USER_INPUT' });
     }
 
-    // For FormResponse uploads, validate the form exists and is published
+    // For FormResponse uploads, validate the form exists and the uploader is allowed.
+    // Public submissions require isPublished === true.
+    // Authenticated form editors/owners may upload regardless of published state
+    // (e.g. editing a response on an unpublished or closed form).
     if (type === 'FormResponse') {
       if (!formId) {
-        return res
-          .status(400)
-          .json({
-            error: 'formId is required for form response uploads',
-            code: 'BAD_USER_INPUT',
-          });
+        return res.status(400).json({
+          error: 'formId is required for form response uploads',
+          code: 'BAD_USER_INPUT',
+        });
       }
       const form = await prisma.form.findUnique({
         where: { id: formId },
-        select: { id: true, isPublished: true },
+        select: { id: true, isPublished: true, organizationId: true },
       });
       if (!form) {
         return res
           .status(404)
           .json({ error: 'Form not found', code: 'NOT_FOUND' });
       }
-      if (!form.isPublished) {
-        return res
-          .status(403)
-          .json({
-            error: 'Form is not accepting submissions',
-            code: 'FORBIDDEN',
+
+      // Try to get the caller's session (cookie or Bearer token).
+      // form-app sends cookies (credentials: 'include'); public viewer sends nothing.
+      let callerUserId: string | null = null;
+      try {
+        const sessionData = await auth.api.getSession({
+          headers: fromNodeHeaders(req.headers),
+        });
+        callerUserId = sessionData?.user?.id ?? null;
+      } catch {
+        // Session lookup failures are non-fatal; fall through to isPublished check
+      }
+
+      let isAuthorisedEditor = false;
+      if (callerUserId) {
+        // Check for an explicit EDITOR or OWNER FormPermission row
+        const permission = await prisma.formPermission.findUnique({
+          where: { formId_userId: { formId: form.id, userId: callerUserId } },
+          select: { permission: true },
+        });
+        if (
+          permission?.permission === 'EDITOR' ||
+          permission?.permission === 'OWNER'
+        ) {
+          isAuthorisedEditor = true;
+        }
+
+        // Also accept org owners (they implicitly have full access to all org forms)
+        if (!isAuthorisedEditor) {
+          const membership = await prisma.member.findFirst({
+            where: {
+              organizationId: form.organizationId,
+              userId: callerUserId,
+            },
+            select: { role: true },
           });
+          if (membership?.role === 'owner') {
+            isAuthorisedEditor = true;
+          }
+        }
+      }
+
+      if (!isAuthorisedEditor && !form.isPublished) {
+        return res.status(403).json({
+          error: 'Form is not accepting submissions',
+          code: 'FORBIDDEN',
+        });
       }
     }
 
