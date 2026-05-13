@@ -1015,6 +1015,9 @@ export const typeDefs = gql`
     # Form File Queries
     getFormFiles(formId: ID!, type: String): [FormFile!]!
 
+    # Response File Download (pre-signed URL for private bucket objects)
+    getResponseFileDownloadUrl(key: String!): String!
+
     # Admin Queries
     adminOrganizations(limit: Int, offset: Int): AdminOrganizationsResult!
     adminOrganization(id: ID!): AdminOrganization!

@@ -7,10 +7,12 @@
  * - Actions column
  */
 
+import React, { useState } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import type { Row } from '@tanstack/react-table';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { gql, useApolloClient } from '@apollo/client';
 import {
   Badge,
   Button,
@@ -29,6 +31,7 @@ import {
   Hash,
   History,
   List,
+  Loader2,
   MoreHorizontal,
   Type,
   Upload,
@@ -41,11 +44,7 @@ import {
   FormResponse,
   FormSchema,
 } from '@dculus/types';
-import {
-  formatFieldValue as formatFieldValueUtil,
-  getImageUrl,
-} from '@dculus/utils';
-import { getCdnEndpoint } from '../lib/config';
+import { formatFieldValue as formatFieldValueUtil } from '@dculus/utils';
 import { getPluginColumns } from '../components/plugins/response-table';
 
 interface CreateResponsesColumnsOptions {
@@ -239,6 +238,67 @@ const createBaseColumns = (
   ];
 };
 
+const GET_RESPONSE_FILE_DOWNLOAD_URL = gql`
+  query GetResponseFileDownloadUrl($key: String!) {
+    getResponseFileDownloadUrl(key: $key)
+  }
+`;
+
+/**
+ * A single file download link that fetches a pre-signed URL on click.
+ * Files are stored in the private R2 bucket and have no public CDN URL.
+ */
+const FileDownloadLink: React.FC<{ s3Key: string }> = ({ s3Key }) => {
+  const client = useApolloClient();
+  const [loading, setLoading] = useState(false);
+  const name = extractFileName(s3Key);
+
+  const handleClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { data } = await client.query<{
+        getResponseFileDownloadUrl: string;
+      }>({
+        query: GET_RESPONSE_FILE_DOWNLOAD_URL,
+        variables: { key: s3Key },
+        fetchPolicy: 'no-cache', // always get a fresh signed URL
+      });
+      const signedUrl = data.getResponseFileDownloadUrl;
+      // Trigger browser download via a temporary anchor
+      const anchor = document.createElement('a');
+      anchor.href = signedUrl;
+      anchor.download = name;
+      anchor.target = '_blank';
+      anchor.rel = 'noopener noreferrer';
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+    } catch {
+      // Silent fail — user will see nothing downloaded
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={loading}
+      className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 hover:underline truncate max-w-[180px] disabled:opacity-50 disabled:cursor-wait"
+      title={name}
+    >
+      {loading ? (
+        <Loader2 className="h-3 w-3 flex-shrink-0 animate-spin" />
+      ) : (
+        <Download className="h-3 w-3 flex-shrink-0" />
+      )}
+      <span className="truncate">{name}</span>
+    </button>
+  );
+};
+
 /**
  * Extract a user-friendly display name from an R2 key.
  * Key format: files/form-response/{formId}/{timestamp}-{uuid}-{sanitizedName}{ext}
@@ -288,28 +348,11 @@ const createFieldColumns = (
                   </div>
                 );
               }
-              const cdnEndpoint = getCdnEndpoint();
               return (
                 <div className="flex flex-col gap-1">
-                  {keys.map((key, idx) => {
-                    const href = getImageUrl(key, cdnEndpoint);
-                    const name = extractFileName(key);
-                    return (
-                      <a
-                        key={idx}
-                        href={href}
-                        download={name}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 hover:underline truncate max-w-[180px]"
-                        title={name}
-                      >
-                        <Download className="h-3 w-3 flex-shrink-0" />
-                        <span className="truncate">{name}</span>
-                      </a>
-                    );
-                  })}
+                  {keys.map((key, idx) => (
+                    <FileDownloadLink key={idx} s3Key={key} />
+                  ))}
                 </div>
               );
             }

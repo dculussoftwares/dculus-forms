@@ -1,7 +1,11 @@
 import { GraphQLError } from '#graphql-errors';
 import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
-import { uploadFile, deleteFile } from '../../services/fileUploadService.js';
+import {
+  uploadFile,
+  deleteFile,
+  generatePresignedDownloadUrl,
+} from '../../services/fileUploadService.js';
 import { prisma } from '../../lib/prisma.js';
 import { randomUUID } from 'crypto';
 import {
@@ -50,6 +54,48 @@ function requireAdminRole(context: { auth: BetterAuthContext }) {
 }
 
 export const fileUploadResolvers = {
+  Query: {
+    getResponseFileDownloadUrl: async (
+      _: any,
+      { key }: { key: string },
+      context: { auth: BetterAuthContext }
+    ) => {
+      // Must be authenticated
+      requireAuth(context.auth);
+
+      // Key must be a form-response path — reject anything else
+      if (!key.startsWith('files/form-response/')) {
+        throw createGraphQLError(
+          'Only form response files can be accessed via this endpoint',
+          GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+        );
+      }
+
+      // Extract formId from key: files/form-response/{formId}/filename
+      const formId = key.split('/')[2];
+      if (!formId) {
+        throw createGraphQLError(
+          'Invalid file key',
+          GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+        );
+      }
+
+      // Check that caller has at least VIEWER access to the form
+      const accessCheck = await checkFormAccess(
+        context.auth.user!.id,
+        formId,
+        PermissionLevel.VIEWER
+      );
+      if (!accessCheck.hasAccess) {
+        throw createGraphQLError(
+          'Access denied: You do not have permission to download files from this form',
+          GRAPHQL_ERROR_CODES.FORBIDDEN
+        );
+      }
+
+      return generatePresignedDownloadUrl(key);
+    },
+  },
   Mutation: {
     uploadFile: async (
       _: any,

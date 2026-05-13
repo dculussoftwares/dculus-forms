@@ -2,7 +2,9 @@ import {
   S3Client,
   PutObjectCommand,
   CopyObjectCommand,
+  GetObjectCommand,
 } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 import path from 'path';
 import { s3Config } from '../lib/env.js';
@@ -285,6 +287,19 @@ export async function deleteFile(s3Key: string): Promise<boolean> {
     logger.error('Error deleting file from Cloudflare R2:', error);
     return false;
   }
+}
+
+/**
+ * Generate a short-lived pre-signed GET URL for a private R2 object.
+ * Only files in the private bucket (form-response path) should use this.
+ */
+export async function generatePresignedDownloadUrl(
+  s3Key: string,
+  expiresInSeconds = 900 // 15 minutes
+): Promise<string> {
+  const bucket = getBucketForKey(s3Key);
+  const command = new GetObjectCommand({ Bucket: bucket, Key: s3Key });
+  return getSignedUrl(s3Client, command, { expiresIn: expiresInSeconds });
 }
 
 /**

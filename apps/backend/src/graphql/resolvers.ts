@@ -14,7 +14,6 @@ import { pluginsResolvers } from './resolvers/plugins.js';
 import { subscriptionResolvers } from './resolvers/subscriptions.js';
 import { GraphQLJSON } from 'graphql-type-json';
 
-
 export const resolvers = {
   JSON: GraphQLJSON,
   User: {
@@ -28,6 +27,7 @@ export const resolvers = {
     ...formsResolvers.Query,
     ...extendedResponsesResolvers.Query,
     ...templatesResolvers.Query,
+    ...fileUploadResolvers.Query,
     ...formFileResolvers.Query,
     ...adminResolvers.Query,
     ...analyticsResolvers.Query,
@@ -70,4 +70,3 @@ export const resolvers = {
     ...subscriptionResolvers.Subscription,
   },
 };
- 
