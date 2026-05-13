@@ -1,590 +1,206 @@
 # CLAUDE.md
 
-This file provides comprehensive context for AI coding agents (Claude, Copilot, Cursor, etc.) when working with this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ---
 
-## Table of Contents
-1. [Quick Start Commands](#quick-start-commands)
-2. [Business Context](#business-context)
-3. [System Architecture](#system-architecture)
-4. [Monorepo Structure](#monorepo-structure)
-5. [Technology Stack](#technology-stack)
-6. [Database Schema](#database-schema)
-7. [Form Schema & Field System](#form-schema--field-system)
-8. [Real-time Collaboration](#real-time-collaboration)
-9. [Authentication & Authorization](#authentication--authorization)
-10. [Plugin System](#plugin-system)
-11. [Analytics System](#analytics-system)
-12. [Data Flows](#data-flows)
-13. [Testing](#testing)
-14. [Development Guidelines](#development-guidelines)
-15. [Internationalization](#internationalization)
+## Commands
 
----
-
-## Quick Start Commands
-
-### Development Workflow
 ```bash
-pnpm dev              # Start all services (backend, form-app, form-viewer, admin-app)
-pnpm backend:dev      # Express.js + GraphQL API on :4000
-pnpm form-app:dev     # React form builder on :3000
-pnpm form-viewer:dev  # React form viewer on :5173
-pnpm admin-app:dev    # React admin dashboard on :3002
+# Development
+pnpm dev                    # Start all services concurrently
+pnpm backend:dev            # Backend only (:4000)
+pnpm form-app:dev           # Form builder only (:3000)
+pnpm form-viewer:dev        # Form viewer only (:5173)
+pnpm admin-app:dev          # Admin dashboard only (:3002)
+
+# Database (Prisma)
+pnpm db:generate            # Regenerate Prisma client after schema changes
+pnpm db:push                # Push schema changes to PostgreSQL (dev)
+pnpm db:studio              # Open Prisma Studio
+pnpm db:seed                # Seed sample data
+pnpm admin:setup            # Create/update admin user from env vars
+
+# Validation
+pnpm build                  # Build all packages
+pnpm type-check             # TypeScript strict check
+pnpm lint                   # ESLint
+
+# Testing
+pnpm test:unit              # Backend unit tests (vitest)
+pnpm test:unit:watch        # Watch mode
+pnpm test:unit:coverage     # Coverage report
+pnpm test:integration       # Cucumber BDD API tests (local)
+pnpm test:integration:production  # Against production
+pnpm test:e2e               # Playwright + Cucumber E2E
+pnpm test:e2e -- --tags "@tagname"  # Run specific tagged scenarios
 ```
 
-### Database Commands
-```bash
-pnpm db:generate      # Generate Prisma client
-pnpm db:push          # Push schema to PostgreSQL
-pnpm db:studio        # Open Prisma Studio visual editor
-pnpm db:seed          # Seed sample data
-```
-
-### Build & Validation
-```bash
-pnpm build            # Build all packages
-pnpm type-check       # TypeScript check
-pnpm lint             # ESLint
-pnpm test:integration # Run integration tests
-pnpm test:e2e         # Run E2E tests (Playwright + Cucumber)
-```
-
-### Access Points
-| Service | URL |
-|---------|-----|
-| Form Builder | http://localhost:3000 |
-| Form Viewer | http://localhost:5173 |
-| Admin Dashboard | http://localhost:3002 |
-| GraphQL API | http://localhost:4000/graphql |
+**Test credentials** (E2E): `sivam2@mailinator.com` / `password`  
+**Admin credentials**: `admin@dculus.com` / `admin123!@#` (role: `superAdmin`)
 
 ---
 
-## Business Context
+## Architecture
 
-### What is Dculus Forms?
-
-**Dculus Forms** is a comprehensive form building and management platform that enables:
-
-- 📝 **Create Forms**: Drag-and-drop builder with 10+ field types
-- 🤝 **Collaborate**: Real-time collaborative editing with team members
-- 📊 **Collect Responses**: Public form viewer for response collection
-- 📈 **Analyze Data**: View analytics, statistics, and response insights
-- 🔌 **Integrate**: Extend via webhooks, emails, and plugins
-- 🎓 **Quiz Assessment**: Auto-grade quiz responses
-
-### Core Features
-- Multi-page forms with navigation
-- Field validation (required, min/max, character limits)
-- Form sharing with granular permissions (Owner/Editor/Viewer)
-- Response management (view, filter, edit, export)
-- Privacy-first analytics (views, submissions, geographic distribution)
-- Subscription plans via Chargebee (Free, Starter, Advanced)
-
----
-
-## System Architecture
-
-### High-Level Overview
+### Monorepo Layout
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Client Applications                       │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
-│  │  Form App    │  │ Form Viewer  │  │  Admin App   │       │
-│  │  (Builder)   │  │  (Public)    │  │  (System)    │       │
-│  │    :3000     │  │    :5173     │  │    :3002     │       │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘       │
-│         │                  │                 │               │
-│         └──────────────────┼─────────────────┘               │
-│                            │                                 │
-│                     ┌──────┴──────┐                         │
-│                     │   Backend   │                         │
-│                     │  GraphQL    │                         │
-│                     │ + Hocuspocus│                         │
-│                     │    :4000    │                         │
-│                     └──────┬──────┘                         │
-│                            │                                 │
-│         ┌──────────────────┼──────────────────┐             │
-│         │                  │                   │             │
-│  ┌──────┴──────┐    ┌──────┴──────┐    ┌──────┴──────┐     │
-│  │ PostgreSQL  │    │    Y.js     │    │  Plugins    │     │
-│  │  (Prisma)   │    │  Documents  │    │  (Events)   │     │
-│  └─────────────┘    └─────────────┘    └─────────────┘     │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Key Technical Decisions
-- **GraphQL-first**: All business logic via Apollo Server (no REST except auth)
-- **PostgreSQL + Prisma**: Type-safe database access
-- **Y.js + Hocuspocus**: Real-time collaborative editing
-- **better-auth**: Authentication with organization/admin plugins
-- **Centralized packages**: UI, types, utils shared across apps
-
----
-
-## Monorepo Structure
-
-```
-dculus-forms/
-├── apps/
-│   ├── backend/              # Express.js + Apollo GraphQL
-│   │   ├── src/
-│   │   │   ├── graphql/      # Schema & resolvers
-│   │   │   ├── services/     # Business logic
-│   │   │   ├── repositories/ # Data access
-│   │   │   ├── plugins/      # Plugin handlers
-│   │   │   └── lib/          # Prisma, better-auth
-│   │   └── prisma/           # Database schema
-│   ├── form-app/             # React form builder
-│   │   ├── src/
-│   │   │   ├── components/   # React components
-│   │   │   ├── pages/        # Route pages
-│   │   │   ├── hooks/        # Custom hooks
-│   │   │   ├── graphql/      # Queries & mutations
-│   │   │   └── locales/      # i18n translations
-│   ├── form-viewer/          # Public form viewer
-│   └── admin-app/            # Admin dashboard
-│
-├── packages/
-│   ├── ui/                   # @dculus/ui - shadcn/ui components
-│   ├── types/                # @dculus/types - TypeScript types
-│   └── utils/                # @dculus/utils - Utilities
-│
-├── test/
-│   ├── e2e/                  # Playwright + Cucumber E2E tests
-│   └── integration/          # API integration tests
-│
-└── docs/deployment/          # Deployment guides
-```
-
-### Import Patterns
-
-```typescript
-// UI components (ONLY from @dculus/ui)
-import { Button, Card, SidebarProvider } from '@dculus/ui';
-
-// Utilities (ONLY from @dculus/utils)
-import { generateId, cn } from '@dculus/utils';
-
-// Types and field classes
-import type { Form, FormSchema } from '@dculus/types';
-import { TextInputField, EmailField } from '@dculus/types';
-
-// GraphQL
-import { useQuery, useMutation } from '@apollo/client';
-```
-
----
-
-## Technology Stack
-
-### Frontend
-| Technology | Purpose |
-|------------|---------|
-| React 18 | UI framework |
-| Vite | Build tool |
-| TypeScript | Type safety |
-| Tailwind CSS | Styling |
-| shadcn/ui | Component library |
-| Apollo Client | GraphQL client |
-| Y.js | Real-time collaboration |
-| Zod | Runtime validation |
-
-### Backend
-| Technology | Purpose |
-|------------|---------|
-| Express.js | HTTP server |
-| Apollo Server | GraphQL API |
-| Prisma | PostgreSQL ORM |
-| Hocuspocus | Y.js WebSocket server |
-| better-auth | Authentication |
-| Chargebee | Subscriptions |
-
----
-
-## Database Schema
-
-### Core Models
-
-```prisma
-User {
-  id, name, email, role, banned
-  // role: "user" | "admin" | "superAdmin"
-}
-
-Organization {
-  id, name, slug, logo, metadata
-  members[], forms[], subscription
-}
-
-Member {
-  organizationId, userId, role
-  // role: "member" | "owner"
-}
-
-Form {
-  id, title, shortUrl, formSchema, settings
-  isPublished, organizationId, createdById
-  sharingScope, defaultPermission
-  // sharingScope: "PRIVATE" | "SPECIFIC_MEMBERS" | "ALL_ORG_MEMBERS"
-}
-
-Response {
-  id, formId, data (JSONB), metadata (JSONB)
-  submittedAt
-}
-
-FormPermission {
-  formId, userId, permission, grantedById
-  // permission: "OWNER" | "EDITOR" | "VIEWER" | "NO_ACCESS"
-}
-```
-
-### Supporting Models
-- `CollaborativeDocument`: Y.js document state (binary)
-- `FormViewAnalytics` / `FormSubmissionAnalytics`: Privacy-first tracking
-- `FormPlugin` / `PluginDelivery`: Plugin configuration and logs
-- `Subscription`: Chargebee integration
-- `ResponseEditHistory` / `ResponseFieldChange`: Audit trail
-
----
-
-## Form Schema & Field System
-
-### FormSchema Structure
-
-```typescript
-interface FormSchema {
-  pages: FormPage[];
-  layout: FormLayout;
-  isShuffleEnabled: boolean;
-}
-
-interface FormPage {
-  id: string;
-  title: string;
-  fields: FormField[];
-  order: number;
-}
-
-interface FormLayout {
-  theme: 'light' | 'dark' | 'auto';
-  textColor: string;
-  spacing: 'compact' | 'normal' | 'spacious';
-  backgroundImageKey: string;
-  customBackGroundColor: string;
-}
-```
-
-### Field Types
-
-| Field Class | Properties |
-|-------------|------------|
-| `TextInputField` | label, hint, placeholder, prefix, defaultValue, validation (required, minLength, maxLength) |
-| `TextAreaField` | Same as TextInputField |
-| `EmailField` | Same as TextInputField + email validation |
-| `NumberField` | + min, max numeric constraints |
-| `DateField` | + minDate, maxDate constraints |
-| `SelectField` | + options[], multiple boolean |
-| `RadioField` | + options[] |
-| `CheckboxField` | + options[], minSelections, maxSelections |
-
-### Serialization
-```typescript
-// Convert to plain objects for storage/Y.js
-serializeFormField(field: FormField): object
-serializeFormSchema(schema: FormSchema): object
-
-// Reconstruct class instances
-deserializeFormField(data: any): FormField
-deserializeFormSchema(data: any): FormSchema
-```
-
----
-
-## Real-time Collaboration
-
-### Y.js + Hocuspocus
-
-- Each Form has a corresponding Y.js document for real-time editing
-- Document name format: `form:{formId}`
-- Changes sync via WebSocket and persist to PostgreSQL
-- Multiple users can simultaneously edit form structure
-
-### Y.js Document Structure
-
-```typescript
-YDoc {
-  formSchema: YMap {
-    pages: YArray<YMap<FormPage>>
-    layout: YMap<FormLayout>
-    isShuffleEnabled: boolean
-  }
-}
-```
-
-### Key Files
-- `apps/backend/src/services/hocuspocus.ts` - WebSocket server
-- `apps/form-app/src/hooks/useYjsSync.ts` - Client sync hook
-
----
-
-## Authentication & Authorization
-
-### System Roles (User.role)
-| Role | Access |
-|------|--------|
-| `user` | Create orgs, join orgs, manage own forms |
-| `admin` | + Admin dashboard, view all orgs |
-| `superAdmin` | + Create admin users, full system control |
-
-### Organization Roles (Member.role)
-| Role | Access |
-|------|--------|
-| `member` | View org forms, submit responses |
-| `owner` | + Create/manage forms, invite members |
-
-### Form Permissions (FormPermission.permission)
-| Permission | Can View | Can Edit | Can Share | Can Delete |
-|------------|----------|----------|-----------|------------|
-| `VIEWER` | ✅ | ❌ | ❌ | ❌ |
-| `EDITOR` | ✅ | ✅ | ❌ | ❌ |
-| `OWNER` | ✅ | ✅ | ✅ | ✅ |
-
-### Form Sharing Scopes
-- `PRIVATE`: Only users with explicit FormPermission
-- `SPECIFIC_MEMBERS`: Selected org members
-- `ALL_ORG_MEMBERS`: Entire org gets `defaultPermission`
-
----
-
-## Plugin System
-
-### Event-Driven Architecture
-
-Plugins listen to events and execute actions:
-
-```typescript
-// Available events
-'form.submitted'  // When user submits response
-'plugin.test'     // Manual test trigger
-
-// Plugin types
-'webhook'         // HTTP POST to external URL
-'email'           // Send email notifications
-'quiz-grading'    // Auto-grade quiz responses
-```
-
-### Plugin Storage
-
-```typescript
-// FormPlugin model
-{
-  formId, type, name, enabled, config (JSON), events[]
-}
-
-// Results stored in Response.metadata
-Response.metadata = {
-  'quiz-grading': { quizScore: 8, totalMarks: 10, passed: true },
-  'webhook': { statusCode: 200 }
-}
-```
-
-### Adding a New Plugin
-1. Create handler in `apps/backend/src/plugins/{type}/handler.ts`
-2. Register in `apps/backend/src/plugins/registry.ts`
-3. Add frontend UI in `apps/form-app/src/components/plugins/`
-
----
-
-## Analytics System
-
-### Privacy-First Tracking
-
-- Anonymous session IDs (UUID, no personal data)
-- No IP address storage
-- Geographic data via timezone/browser fallback
-
-### Models
-- `FormViewAnalytics`: Page views with device/geo data
-- `FormSubmissionAnalytics`: Submissions with completion time
-
-### GraphQL API
-```graphql
-query formAnalytics($formId: ID!, $timeRange: TimeRangeInput) {
-  formAnalytics(formId: $formId, timeRange: $timeRange) {
-    totalViews, uniqueSessions
-    topCountries { code, name, count }
-    topBrowsers { name, count }
-  }
-}
-```
-
----
-
-## Data Flows
-
-### Form Creation
-1. User clicks "Create Form" → GraphQL `createForm` mutation
-2. Backend generates unique `shortUrl`, creates Form record
-3. User navigates to `/form/{id}/collaborate`
-4. Hocuspocus initializes Y.js document
-
-### Form Submission
-1. Respondent navigates to `/f/{shortUrl}`
-2. Frontend fetches form via `formByShortUrl` query
-3. `trackFormView` mutation records analytics
-4. User submits → `submitFormResponse` mutation
-5. Backend validates, stores Response
-6. Event emitter triggers enabled plugins
-
-### Permission Check
-1. GraphQL resolver receives request
-2. Check user's organization membership
-3. Check form's sharingScope
-4. Look up FormPermission or use defaultPermission
-5. Return data or throw authorization error
-
----
-
-## Testing
-
-### E2E Tests (Playwright + Cucumber)
-```bash
-pnpm test:e2e                              # Run all E2E tests
-pnpm test:e2e -- --tags "@persistence"     # Run tagged tests
-```
-
-**Test credentials**: `sivam2@mailinator.com` / `password`
-
-**Coverage**: All field types, form creation, publishing, viewer validations
-
-### Integration Tests (API)
-```bash
-pnpm test:integration                       # Local
-pnpm test:integration:production            # Production
-```
-
-### Test Structure
-```
+apps/
+  backend/          Express.js + Apollo GraphQL + Hocuspocus (:4000)
+  form-app/         Form builder React app (:3000)
+  form-viewer/      Public form submission React app (:5173)
+  admin-app/        Admin dashboard React app (:3002)
+packages/
+  types/            @dculus/types — field classes, FormSchema, serialization
+  ui/               @dculus/ui — all shadcn/ui components + custom components
+  utils/            @dculus/utils — generateId, cn, formatters, constants
+  plugins/          shared plugin types
 test/
-├── e2e/
-│   ├── features/        # Gherkin scenarios
-│   │   ├── field-short-text.feature
-│   │   ├── field-checkbox.feature
-│   │   └── form-viewer-multipage.feature
-│   └── steps/           # Step definitions
-└── integration/
-    ├── features/        # API test scenarios
-    └── step-definitions/
+  integration/      Cucumber BDD API tests
+  e2e/              Playwright + Cucumber E2E tests
+```
+
+### Backend Architecture
+
+The backend uses a layered pattern: **Resolvers → Services → Repositories → Prisma**.
+
+- `apps/backend/src/graphql/` — code-first GraphQL schema + resolvers (14 resolver files by feature)
+- `apps/backend/src/services/` — business logic
+- `apps/backend/src/repositories/` — data access
+- `apps/backend/src/plugins/` — plugin handlers; register new plugins in `registry.ts`
+- `apps/backend/src/lib/prisma.ts` — Prisma client singleton
+- `apps/backend/src/lib/better-auth.js` — auth setup (organization + admin plugins)
+- `apps/backend/src/services/hocuspocus.ts` — Y.js WebSocket server
+
+REST routes exist only for auth callbacks, file uploads, and health checks. All other API surface is GraphQL.
+
+### Form App State Management (Zustand)
+
+The form builder uses Zustand with slice architecture at `apps/form-app/src/store/`:
+
+```
+useFormBuilderStore.ts      main store hook
+slices/
+  fieldsSlice.ts            field CRUD + field analytics
+  pagesSlice.ts             multi-page management
+  layoutSlice.ts            theme/spacing/background
+  selectionSlice.ts         selected field state
+  collaborationSlice.ts     Y.js sync state
+```
+
+Real-time collaboration syncs store state to Y.js documents via `apps/form-app/src/hooks/useYjsSync.ts`. Y.js document names use the format `form:{formId}`.
+
+### Field Class Hierarchy (`@dculus/types`)
+
+All fields extend a class hierarchy — do not use plain objects:
+
+```
+FormField (base)
+├── FillableFormField
+│   ├── TextInputField       TextFieldValidation (minLength, maxLength)
+│   ├── TextAreaField        same as TextInputField
+│   ├── EmailField           same + email validation
+│   ├── NumberField          + min, max
+│   ├── DateField            + minDate, maxDate
+│   ├── SelectField          + options[], multiple
+│   ├── RadioField           + options[]
+│   ├── CheckboxField        CheckboxFieldValidation (minSelections, maxSelections)
+│   └── FileUploadField
+└── NonFillableFormField
+    └── RichTextFormField
+```
+
+Fields are stored as plain JSON (database + Y.js). Always use the serialization helpers when persisting or syncing:
+
+```typescript
+import { serializeFormSchema, deserializeFormSchema, serializeFormField, deserializeFormField } from '@dculus/types';
 ```
 
 ---
 
-## Development Guidelines
+## Key Conventions
 
-### Code Style
-- **Functional programming** preferred (except FormField classes)
-- **Full TypeScript** with strict mode
-- **Zod schemas** for all validation
-- Import UI only from `@dculus/ui`
-- Import utils only from `@dculus/utils`
+### Import Rules
 
-### Backend Patterns
-- Resolvers: `apps/backend/src/graphql/resolvers/`
-- Services: `apps/backend/src/services/`
-- Prisma: `apps/backend/src/lib/prisma.ts`
+```typescript
+import { Button, Card } from '@dculus/ui';          // UI components ONLY from here
+import { generateId, cn, formatDate } from '@dculus/utils';  // utils ONLY from here
+import type { FormSchema } from '@dculus/types';
+import { TextInputField } from '@dculus/types';
+```
 
-### Frontend Patterns
-- Apollo Client: `apps/form-app/src/services/apolloClient.ts`
-- GraphQL: `apps/form-app/src/graphql/`
-- Pages: `apps/*/src/pages/`
+### Internationalization (mandatory)
 
-### Icon Design Pattern
-When displaying icons in headers or cards, use this consistent styling:
+All user-facing strings in `form-app` must be translated. Hardcoded strings will fail review.
+
+```typescript
+// 1. Create: apps/form-app/src/locales/en/yourComponent.json
+// 2. Register in apps/form-app/src/locales/index.ts
+// 3. Use in component:
+const { t } = useTranslation('yourComponent');
+<p>{t('loading.fieldAnalytics')}</p>
+<p>{t('count', { values: { count: 10 } })}</p>
+```
+
+### Toast Notifications
+
+```typescript
+import { toastSuccess, toastError } from '@dculus/ui';
+toastSuccess('Title', 'Description');
+toastError('Title', 'Description');
+```
+
+### Icon in Card/Header Pattern
+
 ```tsx
 <div className="bg-blue-50 p-3 rounded-xl">
   <YourIcon className="h-5 w-5 text-blue-600" />
 </div>
 ```
-Reference: `apps/form-app/src/components/FormDashboard/StatsGrid.tsx`
-
-### Toast Notifications
-```typescript
-import { toastSuccess, toastError } from '@dculus/ui';
-
-toastSuccess('Form created', 'Ready for editing');
-toastError('Permission denied', 'Need EDITOR access');
-```
 
 ---
 
-## Internationalization
+## Authorization Model
 
-**IMPORTANT**: All user-facing strings MUST be translated.
+Permission checks layer three systems — all three must pass:
 
-### Setup
-1. Create: `apps/form-app/src/locales/en/yourComponent.json`
-2. Register in `apps/form-app/src/locales/index.ts`
-3. Use hook: `const { t } = useTranslation('yourComponent');`
+1. **System role** (`User.role`): `user` | `admin` | `superAdmin`
+2. **Org membership** (`Member.role`): `member` | `owner`
+3. **Form permission** (`FormPermission.permission`): `VIEWER` | `EDITOR` | `OWNER` | `NO_ACCESS`
 
-### Usage
-```typescript
-// ❌ WRONG
-<p>Loading field analytics...</p>
-
-// ✅ CORRECT
-<p>{t('loading.fieldAnalytics')}</p>
-
-// With variables
-<p>{t('count', { values: { count: 10 } })}</p>
-```
-
-### Translation File Structure
-```json
-{
-  "titles": { "main": "Field Analytics" },
-  "buttons": { "save": "Save", "cancel": "Cancel" },
-  "errors": { "loadingFailed": "Failed to load" }
-}
-```
+Form sharing scopes control the default access:
+- `PRIVATE` — explicit `FormPermission` rows only
+- `SPECIFIC_MEMBERS` — selected org members
+- `ALL_ORG_MEMBERS` — whole org gets `defaultPermission`
 
 ---
 
-## Admin Dashboard
+## Plugin System
 
-### Features
-- Organizations management
-- System statistics
-- Cross-organization access
+Plugins are event-driven. Available events: `form.submitted`, `plugin.test`.  
+Plugin types: `webhook`, `email`, `quiz-grading`.
 
-### Default Admin Credentials
-- Email: `admin@dculus.com`
-- Password: `admin123!@#`
-- Role: `superAdmin`
+Adding a new plugin:
+1. Create `apps/backend/src/plugins/{type}/handler.ts`
+2. Register in `apps/backend/src/plugins/registry.ts`
+3. Add frontend config UI in `apps/form-app/src/components/plugins/`
 
-### Setup
-```bash
-pnpm admin:setup  # Create/update admin from env vars
-```
+Quiz grading results and webhook status are stored in `Response.metadata` as JSON keyed by plugin type.
 
 ---
 
-## Environment Setup
+## Environment Variables
 
-**Prerequisites**: Node.js ≥18.0.0, pnpm ≥8.0.0
+Backend needs `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, S3 credentials (`PUBLIC_S3_ACCESS_KEY`, `PUBLIC_S3_SECRET_KEY`, `PUBLIC_S3_ENDPOINT`, `PUBLIC_S3_CDN_URL`, `PUBLIC_S3_BUCKET_NAME`, `PRIVATE_S3_BUCKET_NAME`), and optionally `CORS_ORIGINS`.
 
-```bash
-pnpm install                    # Install dependencies
-pnpm build                      # Build shared packages
-pnpm db:generate && pnpm db:push # Setup database
-pnpm dev                        # Start all services
-```
+Frontend apps need `VITE_API_URL`, `VITE_GRAPHQL_URL`, `VITE_FORM_VIEWER_URL`.
+
+See each app's `.env.example` for the full list.
 
 ---
 
-## Reference Documentation
+## Reference
 
-- `docs/deployment/` - Deployment guides for Azure, Cloudflare
+- `docs/deployment/` — Azure and Cloudflare deployment guides
+- `apps/backend/prisma/schema.prisma` — canonical source for all data models
