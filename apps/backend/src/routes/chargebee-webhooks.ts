@@ -1,5 +1,7 @@
+import crypto from 'crypto';
 import express, { Router } from 'express';
 import { logger } from '../lib/logger.js';
+import { chargebeeConfig } from '../lib/env.js';
 import {
   syncSubscriptionFromWebhook,
   handleSubscriptionRenewal,
@@ -16,6 +18,29 @@ const router: Router = express.Router();
 
 router.post('/webhooks/chargebee', async (req, res) => {
   try {
+    // Verify webhook authenticity using Basic Auth password set in Chargebee dashboard
+    if (chargebeeConfig.webhookPassword) {
+      const authHeader = req.headers.authorization ?? '';
+      const base64 = authHeader.startsWith('Basic ') ? authHeader.slice(6) : '';
+      const decoded = Buffer.from(base64, 'base64').toString('utf8');
+      const incomingPassword = decoded.includes(':') ? decoded.slice(decoded.indexOf(':') + 1) : decoded;
+
+      let valid = false;
+      try {
+        valid = crypto.timingSafeEqual(
+          Buffer.from(incomingPassword),
+          Buffer.from(chargebeeConfig.webhookPassword)
+        );
+      } catch {
+        valid = false;
+      }
+
+      if (!valid) {
+        logger.warn('[Chargebee Webhook] Rejected request with invalid credentials');
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+    }
+
     const event = req.body;
 
     logger.info('[Chargebee Webhook] Received event:', event.event_type);

@@ -10,27 +10,22 @@ import {
   sendResetPasswordEmail,
 } from '../services/emailService.js';
 
-// Parse trusted origins from environment variable, with fallback to localhost
+export const DEV_ORIGINS = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:3002',
+  'http://localhost:4000',
+  'http://localhost:4173',
+  'http://localhost:4174',
+  'http://localhost:4175',
+  'http://localhost:5173',
+];
+
 const getTrustedOrigins = (): string[] => {
-  const corsOrigins = process.env.CORS_ORIGINS?.split(',').map(origin => origin.trim()) || [];
-
-  // Default localhost origins for development
-  const defaultOrigins = [
-    'http://localhost:3000', // Form app
-    'http://localhost:3001', // Form viewer
-    'http://localhost:3002', // Admin app
-    'http://localhost:4000', // Backend (for GraphQL playground)
-    'http://localhost:5173', // Form viewer (Vite dev server),
-    'http://localhost:4173', // Form App (Prod)
-    'http://localhost:4174', // Form Viewer (Prod)
-    'http://localhost:4175', // Admin App (Prod)
-  ];
-
-  // Combine environment-specific origins with defaults (removing duplicates)
-  const allOrigins = [...new Set([...corsOrigins, ...defaultOrigins])];
-
+  const corsOrigins = process.env.CORS_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) ?? [];
+  const isProduction = process.env.NODE_ENV === 'production';
+  const allOrigins = [...new Set([...corsOrigins, ...(isProduction ? [] : DEV_ORIGINS)])];
   logger.info('🔐 Better Auth trusted origins:', allOrigins);
-
   return allOrigins;
 };
 

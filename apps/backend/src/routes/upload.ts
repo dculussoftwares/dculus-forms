@@ -57,11 +57,80 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         .json({ error: 'Invalid upload type', code: 'BAD_USER_INPUT' });
     }
 
-    // For FormResponse uploads, validate the form exists and the uploader is allowed.
-    // Public submissions require isPublished === true.
-    // Authenticated form editors/owners may upload regardless of published state
-    // (e.g. editing a response on an unpublished or closed form).
-    if (type === 'FormResponse') {
+    // Resolve session once — used by all type-specific auth checks below.
+    // form-app sends cookies (credentials: 'include'); public form viewer sends nothing.
+    let callerUser: { id: string; role?: string } | null = null;
+    try {
+      const sessionData = await auth.api.getSession({
+        headers: fromNodeHeaders(req.headers),
+      });
+      callerUser = sessionData?.user ?? null;
+    } catch {
+      // Non-fatal: unauthenticated callers are handled per-type below
+    }
+
+    if (type === 'FormTemplate') {
+      // Only admin / superAdmin may upload templates
+      if (!callerUser) {
+        return res.status(401).json({ error: 'Authentication required', code: 'UNAUTHENTICATED' });
+      }
+      if (callerUser.role !== 'admin' && callerUser.role !== 'superAdmin') {
+        return res.status(403).json({ error: 'Admin privileges required', code: 'FORBIDDEN' });
+      }
+    } else if (type === 'FormBackground') {
+      if (!formId) {
+        return res.status(400).json({ error: 'formId is required for FormBackground uploads', code: 'BAD_USER_INPUT' });
+      }
+      if (!callerUser) {
+        return res.status(401).json({ error: 'Authentication required', code: 'UNAUTHENTICATED' });
+      }
+      const bgForm = await prisma.form.findUnique({
+        where: { id: formId },
+        select: { id: true, createdById: true, organizationId: true },
+      });
+      if (!bgForm) {
+        return res.status(404).json({ error: 'Form not found', code: 'NOT_FOUND' });
+      }
+      const isOwner = bgForm.createdById === callerUser.id;
+      if (!isOwner) {
+        const explicitPermission = await prisma.formPermission.findUnique({
+          where: { formId_userId: { formId: bgForm.id, userId: callerUser.id } },
+          select: { permission: true },
+        });
+        const hasEditorPermission =
+          explicitPermission?.permission === 'EDITOR' ||
+          explicitPermission?.permission === 'OWNER';
+        const orgMembership = !hasEditorPermission
+          ? await prisma.member.findFirst({
+              where: { organizationId: bgForm.organizationId, userId: callerUser.id },
+              select: { role: true },
+            })
+          : null;
+        if (!hasEditorPermission && orgMembership?.role !== 'owner') {
+          return res.status(403).json({ error: 'EDITOR access required', code: 'FORBIDDEN' });
+        }
+      }
+    } else if (type === 'UserAvatar') {
+      if (!callerUser) {
+        return res.status(401).json({ error: 'Authentication required', code: 'UNAUTHENTICATED' });
+      }
+    } else if (type === 'OrganizationLogo') {
+      const orgId = req.body.organizationId as string | undefined;
+      if (!orgId) {
+        return res.status(400).json({ error: 'organizationId is required for OrganizationLogo uploads', code: 'BAD_USER_INPUT' });
+      }
+      if (!callerUser) {
+        return res.status(401).json({ error: 'Authentication required', code: 'UNAUTHENTICATED' });
+      }
+      const membership = await prisma.member.findFirst({
+        where: { organizationId: orgId, userId: callerUser.id },
+      });
+      if (!membership) {
+        return res.status(403).json({ error: 'Organization membership required', code: 'FORBIDDEN' });
+      }
+    } else if (type === 'FormResponse') {
+      // Public submissions require isPublished === true.
+      // Authenticated editors/owners may upload regardless of published state.
       if (!formId) {
         return res.status(400).json({
           error: 'formId is required for form response uploads',
@@ -78,39 +147,18 @@ router.post('/upload', upload.single('file'), async (req, res) => {
           .json({ error: 'Form not found', code: 'NOT_FOUND' });
       }
 
-      // Try to get the caller's session (cookie or Bearer token).
-      // form-app sends cookies (credentials: 'include'); public viewer sends nothing.
-      let callerUserId: string | null = null;
-      try {
-        const sessionData = await auth.api.getSession({
-          headers: fromNodeHeaders(req.headers),
-        });
-        callerUserId = sessionData?.user?.id ?? null;
-      } catch {
-        // Session lookup failures are non-fatal; fall through to isPublished check
-      }
-
       let isAuthorisedEditor = false;
-      if (callerUserId) {
-        // Check for an explicit EDITOR or OWNER FormPermission row
+      if (callerUser) {
         const permission = await prisma.formPermission.findUnique({
-          where: { formId_userId: { formId: form.id, userId: callerUserId } },
+          where: { formId_userId: { formId: form.id, userId: callerUser.id } },
           select: { permission: true },
         });
-        if (
-          permission?.permission === 'EDITOR' ||
-          permission?.permission === 'OWNER'
-        ) {
+        if (permission?.permission === 'EDITOR' || permission?.permission === 'OWNER') {
           isAuthorisedEditor = true;
         }
-
-        // Also accept org owners (they implicitly have full access to all org forms)
         if (!isAuthorisedEditor) {
           const membership = await prisma.member.findFirst({
-            where: {
-              organizationId: form.organizationId,
-              userId: callerUserId,
-            },
+            where: { organizationId: form.organizationId, userId: callerUser.id },
             select: { role: true },
           });
           if (membership?.role === 'owner') {

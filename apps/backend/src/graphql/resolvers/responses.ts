@@ -47,6 +47,12 @@ export const responsesResolvers = {
       requireAuth(context.auth);
       const response = await getResponseById(id);
       if (!response) throw createGraphQLError('Response not found', GRAPHQL_ERROR_CODES.RESPONSE_NOT_FOUND);
+
+      const accessCheck = await checkFormAccess(context.auth.user!.id, response.formId, PermissionLevel.VIEWER);
+      if (!accessCheck.hasAccess) {
+        throw createGraphQLError('Access denied: You do not have permission to view this response', GRAPHQL_ERROR_CODES.NO_ACCESS);
+      }
+
       return response;
     },
     responsesByForm: async (
@@ -78,17 +84,7 @@ export const responsesResolvers = {
         throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
       }
 
-      // Check if user is a member of the organization that owns this form
-      const userSession = context.auth.session;
-      if (
-        !userSession ||
-        userSession.activeOrganizationId !== form.organizationId
-      ) {
-        throw createGraphQLError(
-          'Access denied: You do not have permission to view responses for this form',
-          GRAPHQL_ERROR_CODES.NO_ACCESS
-        );
-      }
+      await requireOrganizationMembership(context.auth, form.organizationId);
 
       return await getResponsesByFormId(
         formId,
@@ -297,16 +293,7 @@ export const responsesResolvers = {
         throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
       }
 
-      const userSession = context.auth.session;
-      if (
-        !userSession ||
-        userSession.activeOrganizationId !== form.organizationId
-      ) {
-        throw createGraphQLError(
-          'Access denied: You do not have permission to edit this response',
-          GRAPHQL_ERROR_CODES.NO_ACCESS
-        );
-      }
+      await requireOrganizationMembership(context.auth, form.organizationId);
 
       // 3. Prepare edit tracking context
       const editContext = {
@@ -379,16 +366,7 @@ export const extendedResponsesResolvers = {
         throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
       }
 
-      const userSession = context.auth.session;
-      if (
-        !userSession ||
-        userSession.activeOrganizationId !== form.organizationId
-      ) {
-        throw createGraphQLError(
-          'Access denied: You do not have permission to view edit history for this response',
-          GRAPHQL_ERROR_CODES.NO_ACCESS
-        );
-      }
+      await requireOrganizationMembership(context.auth, form.organizationId);
 
       // Get edit history
       const editHistory =

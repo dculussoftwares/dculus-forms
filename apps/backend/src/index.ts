@@ -11,7 +11,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
 import { toNodeHandler } from 'better-auth/node';
-import { auth } from './lib/better-auth.js';
+import { auth, DEV_ORIGINS } from './lib/better-auth.js';
 import { typeDefs } from './graphql/schema.js';
 import { resolvers } from './graphql/resolvers.js';
 import { healthRouter } from './routes/health.js';
@@ -110,24 +110,14 @@ app.use(
     },
   })
 );
-// Default origins
-const defaultOrigins = [
-  'http://localhost:3000',
-  'http://localhost:3002', // Admin app
-  'http://localhost:5173',
-  'http://localhost:4173', // Form App (Prod)
-  'http://localhost:4174', // Form Viewer (Prod)
-  'http://localhost:4175', // Admin App (Prod)
-];
-
-// Parse CORS origins from environment variable
-const envCorsOrigins = process.env.CORS_ORIGINS?.split(',').map(origin => origin.trim()) || [];
-
-// Add Apollo Studio domains for GraphQL playground
+const envCorsOrigins = process.env.CORS_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) ?? [];
 const allOrigins = [
-  ...new Set([...envCorsOrigins, ...defaultOrigins]),
-  'https://studio.apollographql.com',
-  'https://sandbox.embed.apollographql.com',
+  ...new Set([
+    ...envCorsOrigins,
+    ...(appConfig.isProduction ? [] : DEV_ORIGINS),
+    'https://studio.apollographql.com',
+    'https://sandbox.embed.apollographql.com',
+  ]),
 ];
 
 logger.info('🔧 Configured CORS origins:', allOrigins);
@@ -187,7 +177,7 @@ const sentryApolloPlugin = {
 const server = new ApolloServer({
   typeDefs,
   resolvers,
-  introspection: true, // Enable introspection for Apollo Studio Sandbox
+  introspection: !appConfig.isProduction,
   plugins: [
     ...(sentryEnabled ? [sentryApolloPlugin] : []),
     // Use the modern Apollo Studio Sandbox (embedded) for development

@@ -39,6 +39,10 @@ export interface EmailConfig {
   from: string;
 }
 
+export interface ChargebeeConfig {
+  webhookPassword: string | undefined;
+}
+
 // Determine environment early to use in config
 const nodeEnv = optionalEnv('NODE_ENV', 'development')!;
 const isTest = nodeEnv === 'test';
@@ -54,10 +58,7 @@ export const s3Config: S3Config = {
 
 export const authConfig: AuthConfig = {
   baseUrl: optionalEnv('BETTER_AUTH_URL', 'http://localhost:4000')!,
-  secret: requireEnv(
-    'BETTER_AUTH_SECRET',
-    'fallback-secret-for-development-only-do-not-use-in-production'
-  ),
+  secret: requireEnv('BETTER_AUTH_SECRET'),
 };
 
 export const appConfig: AppConfig = {
@@ -73,4 +74,8 @@ export const emailConfig: EmailConfig = {
   user: optionalEnv('EMAIL_USER', 'some-user')!,
   password: optionalEnv('EMAIL_PASSWORD', 'some-password')!,
   from: optionalEnv('EMAIL_FROM', 'no-reply@dculus.com')!,
+};
+
+export const chargebeeConfig: ChargebeeConfig = {
+  webhookPassword: optionalEnv('CHARGEBEE_WEBHOOK_PASSWORD'),
 };

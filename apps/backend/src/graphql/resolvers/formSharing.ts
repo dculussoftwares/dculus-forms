@@ -322,6 +322,23 @@ export const formSharingResolvers = {
           );
         }
 
+        // Prevent callers from granting themselves a higher role than they currently hold
+        const callerCurrentPermission = accessCheck.permission;
+        const permissionHierarchy: Record<string, number> = {
+          NO_ACCESS: 0, VIEWER: 1, EDITOR: 2, OWNER: 3,
+        };
+        const selfEscalation = input.userPermissions.find(
+          up =>
+            up.userId === userId &&
+            (permissionHierarchy[up.permission] ?? 0) > (permissionHierarchy[callerCurrentPermission] ?? 0)
+        );
+        if (selfEscalation) {
+          throw createGraphQLError(
+            'Cannot grant yourself a higher permission level than you currently hold',
+            GRAPHQL_ERROR_CODES.NO_ACCESS
+          );
+        }
+
         // Remove existing permissions for these users
         await prisma.formPermission.deleteMany({
           where: {
