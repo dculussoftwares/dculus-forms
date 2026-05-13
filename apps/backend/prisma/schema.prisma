@@ -54,6 +54,7 @@ model Account {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("account")
 }
 
@@ -70,6 +71,7 @@ model Session {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("session")
 }
 
@@ -121,6 +123,8 @@ model Invitation {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   inviter      User         @relation("InvitedBy", fields: [inviterId], references: [id], onDelete: Cascade)
 
+  @@index([organizationId])
+  @@index([status])
   @@map("invitation")
 }
 
@@ -152,6 +156,7 @@ model Form {
   permissions            FormPermission[]
   plugins                FormPlugin[]
 
+  @@index([organizationId])
   @@map("form")
 }
 
@@ -161,14 +166,16 @@ model Response {
   data        Json
   metadata    Json?    // Generic plugin metadata storage
   submittedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   form                       Form                        @relation(fields: [formId], references: [id], onDelete: Cascade)
   formSubmissionAnalytics    FormSubmissionAnalytics?
   editHistory                ResponseEditHistory[]
 
-  @@map("response")
+  @@index([formId])
   @@index([data(ops: JsonbOps)], type: Gin)
   @@index([metadata(ops: JsonbOps)], type: Gin)
+  @@map("response")
 }
 
 model FormTemplate {
@@ -185,13 +192,15 @@ model FormTemplate {
 }
 
 model Verification {
-  id         String    @id @default(cuid())
+  id         String   @id @default(cuid())
   identifier String
   value      String
   expiresAt  DateTime
-  createdAt  DateTime?
-  updatedAt  DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
+  @@index([identifier])
+  @@index([expiresAt])
   @@map("verification")
 }
 
@@ -232,6 +241,7 @@ model FormFile {
 
   form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
 
+  @@index([formId])
   @@map("form_file")
 }
 
@@ -301,13 +311,13 @@ model FormPermission {
   formId      String   // Reference to Form
   userId      String   // Reference to User (organization member)
   permission  String   // OWNER, EDITOR, VIEWER, NO_ACCESS
-  grantedById String   // Who granted this permission
+  grantedById String?  // Who granted this permission (nullable so user deletion is not blocked)
   grantedAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  form      Form @relation(fields: [formId], references: [id], onDelete: Cascade)
-  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  grantedBy User @relation("GrantedPermissions", fields: [grantedById], references: [id])
+  form      Form  @relation(fields: [formId], references: [id], onDelete: Cascade)
+  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  grantedBy User? @relation("GrantedPermissions", fields: [grantedById], references: [id], onDelete: SetNull)
 
   @@unique([formId, userId])
   @@index([formId])
@@ -320,7 +330,7 @@ model FormPermission {
 model ResponseEditHistory {
   id               String   @id @default(cuid())
   responseId       String   // Reference to Response
-  editedById       String   // User who made the edit
+  editedById       String?  // User who made the edit (nullable so user deletion is not blocked)
   editedAt         DateTime @default(now())
   editType         String   @default("MANUAL") // MANUAL, SYSTEM, BULK
   editReason       String?  // Optional reason for the edit
@@ -330,8 +340,8 @@ model ResponseEditHistory {
   changesSummary   String?  // Human-readable summary of changes
 
   // Relations
-  response         Response               @relation(fields: [responseId], references: [id], onDelete: Cascade)
-  editedBy         User                   @relation(fields: [editedById], references: [id])
+  response         Response                @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  editedBy         User?                   @relation(fields: [editedById], references: [id], onDelete: SetNull)
   fieldChanges     ResponseFieldChange[]
 
   @@index([responseId])

@@ -37,31 +37,12 @@ export const createCollaborativeDocumentRepository = (
     documentName: string,
     state: Buffer,
     idFactory: (documentName: string) => string
-  ) => {
-    const existing = await prisma.collaborativeDocument.findUnique({
+  ) =>
+    prisma.collaborativeDocument.upsert({
       where: { documentName },
-      select: { documentName: true },
+      update: { state, updatedAt: new Date() },
+      create: { id: idFactory(documentName), documentName, state, updatedAt: new Date() },
     });
-
-    if (existing) {
-      return prisma.collaborativeDocument.update({
-        where: { documentName },
-        data: {
-          state,
-          updatedAt: new Date(),
-        },
-      });
-    }
-
-    return prisma.collaborativeDocument.create({
-      data: {
-        id: idFactory(documentName),
-        documentName,
-        state,
-        updatedAt: new Date(),
-      },
-    });
-  };
 
   return {
     findUnique,

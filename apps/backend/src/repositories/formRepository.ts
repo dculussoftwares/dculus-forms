@@ -2,8 +2,8 @@ import type { Prisma } from '@prisma/client';
 import { resolvePrisma, type RepositoryContext } from './baseRepository.js';
 
 const defaultFormInclude = {
-  organization: true,
-  createdBy: true,
+  organization: { select: { id: true, name: true, slug: true, logo: true } },
+  createdBy:    { select: { id: true, name: true, email: true, image: true } },
 } satisfies Prisma.FormInclude;
 
 /**

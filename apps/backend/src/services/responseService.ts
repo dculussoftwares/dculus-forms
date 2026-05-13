@@ -177,13 +177,14 @@ export async function getResponsesByFormId(
         ? `ORDER BY "submittedAt" ${validSortOrder.toUpperCase()}`
         : `ORDER BY "id" ${validSortOrder.toUpperCase()}`; // Fallback to id sorting
 
-      // Query with pagination and sorting
+      // Query with pagination and sorting — LIMIT/OFFSET passed as positional params
+      const paginationStart = params.length + 1;
       const selectQuery = `
         SELECT id, "formId", data, metadata, "submittedAt"
         FROM "response"
         ${whereClause}
         ${orderClause}
-        LIMIT ${validLimit} OFFSET ${skip}
+        LIMIT $${paginationStart} OFFSET $${paginationStart + 1}
       `;
 
       const dbResponses = await prisma.$queryRawUnsafe<Array<{
@@ -192,7 +193,7 @@ export async function getResponsesByFormId(
         data: Prisma.JsonValue;
         metadata: Prisma.JsonValue;
         submittedAt: Date;
-      }>>(selectQuery, ...params);
+      }>>(selectQuery, ...params, validLimit, skip);
 
       // Convert to FormResponse format
       responses = dbResponses.map((doc) => ({

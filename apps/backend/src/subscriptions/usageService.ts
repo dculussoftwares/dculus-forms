@@ -7,6 +7,7 @@ import {
 import { SubscriptionEventType } from './types.js';
 import type { FormViewedEvent, FormSubmittedEvent } from './types.js';
 import { logger } from '../lib/logger.js';
+import { subscriptionRepository } from '../repositories/subscriptionRepository.js';
 
 const prisma = new PrismaClient();
 
@@ -182,9 +183,7 @@ export const checkUsageExceeded = async (
   viewsExceeded: boolean;
   submissionsExceeded: boolean;
 }> => {
-  const subscription = await prisma.subscription.findUnique({
-    where: { organizationId },
-  });
+  const subscription = await subscriptionRepository.findByOrganizationPublic(organizationId);
 
   if (!subscription) {
     // No subscription = free plan with limits
@@ -210,9 +209,7 @@ export const checkUsageExceeded = async (
  * @returns Current usage and limits
  */
 export const getUsage = async (organizationId: string) => {
-  const subscription = await prisma.subscription.findUnique({
-    where: { organizationId },
-  });
+  const subscription = await subscriptionRepository.findByOrganizationPublic(organizationId);
 
   if (!subscription) {
     return null;

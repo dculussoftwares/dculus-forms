@@ -26,6 +26,7 @@ import { createHocuspocusServer } from './services/hocuspocus.js';
 import { appConfig } from './lib/env.js';
 import { initializePluginSystem } from './plugins/index.js';
 import { initializeSubscriptionSystem } from './subscriptions/index.js';
+import { cleanupExpiredFiles } from './services/temporaryFileService.js';
 import { logger } from './lib/logger.js';
 import { deriveGraphQLErrorCode } from './lib/graphqlErrors.js';
 
@@ -281,6 +282,7 @@ async function startServer() {
     logger.info(`🚀 Server running on http://localhost:${PORT}`);
     logger.info(`📊 GraphQL endpoint: http://localhost:${PORT}/graphql`);
     logger.info(`🤝 Hocuspocus WebSocket server integrated on port ${PORT}`);
+    cleanupExpiredFiles().catch(err => logger.warn('Startup temp-file cleanup failed:', err));
   });
 }
 

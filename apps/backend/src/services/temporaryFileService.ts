@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 import { s3Config } from '../lib/env.js';
@@ -93,8 +93,9 @@ export async function deleteTemporaryFile(fileKey: string): Promise<boolean> {
 }
 
 /**
- * Schedule file cleanup (simple setTimeout implementation)
- * In production, you'd want to use a proper job queue like Bull, Agenda, or similar
+ * Schedule cleanup for a single file after a delay.
+ * Known limitation: timer is process-local and lost on server restart.
+ * `cleanupExpiredFiles` runs on startup to handle files from previous processes.
  */
 function scheduleFileCleanup(fileKey: string, delayMs: number): void {
   setTimeout(async () => {
@@ -107,12 +108,42 @@ function scheduleFileCleanup(fileKey: string, delayMs: number): void {
 }
 
 /**
- * Cleanup expired temporary files
- * This could be called periodically via a cron job
+ * Delete all temp-exports objects whose embedded timestamp is older than 5 hours.
+ * Key format: temp-exports/{timestamp}-{uuid}-{filename}
+ * Called on server startup to clean up files left by previous process restarts.
  */
-export async function cleanupExpiredFiles(): Promise<void> {
-  // This would need to be implemented with proper S3 listing and metadata checking
-  // For now, we rely on the scheduled cleanup above
-  logger.info('Cleanup expired files task - implement with S3 listing if needed');
+export async function cleanupExpiredFiles(): Promise<{ deleted: number; errors: number }> {
+  const cutoff = Date.now() - 5 * 60 * 60 * 1000;
+  let deleted = 0;
+  let errors = 0;
+  let continuationToken: string | undefined;
+
+  try {
+    do {
+      const result = await s3Client.send(
+        new ListObjectsV2Command({
+          Bucket: s3Config.privateBucketName,
+          Prefix: 'temp-exports/',
+          ContinuationToken: continuationToken,
+        })
+      );
+
+      for (const obj of result.Contents ?? []) {
+        if (!obj.Key) continue;
+        const ts = parseInt(obj.Key.replace('temp-exports/', '').split('-')[0], 10);
+        if (!isNaN(ts) && ts < cutoff) {
+          (await deleteTemporaryFile(obj.Key)) ? deleted++ : errors++;
+        }
+      }
+
+      continuationToken = result.IsTruncated ? result.NextContinuationToken : undefined;
+    } while (continuationToken);
+
+    logger.info(`Temp-file cleanup complete: ${deleted} deleted, ${errors} errors`);
+  } catch (error) {
+    logger.error('Error during temp-file cleanup:', error);
+  }
+
+  return { deleted, errors };
 }
 

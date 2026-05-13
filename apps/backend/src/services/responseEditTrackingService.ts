@@ -7,6 +7,7 @@ import {
 } from '@dculus/types';
 import { generateId } from '@dculus/utils';
 import { responseRepository } from '../repositories/index.js';
+import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 
 export interface FieldChange {
@@ -305,39 +306,40 @@ export class ResponseEditTrackingService {
     const editHistoryId = generateId();
     const changesSummary = this.createChangesSummary(changes);
 
-    // Create edit history record
-    await responseRepository.createEditHistory({
-      data: {
-        id: editHistoryId,
-        responseId,
-        editedById: editContext.userId,
-        editType: editContext.editType || 'MANUAL',
-        editReason: editContext.editReason,
-        ipAddress: editContext.ipAddress,
-        userAgent: editContext.userAgent,
-        totalChanges: changes.length,
-        changesSummary,
-      },
-    });
-
-    // Create field change records
-    const fieldChangePromises = changes.map((change) =>
-      responseRepository.createFieldChange({
+    // Wrap both writes in a transaction so a partial failure leaves no orphan records
+    await prisma.$transaction(async (tx) => {
+      await tx.responseEditHistory.create({
         data: {
-          id: generateId(),
-          editHistoryId,
-          fieldId: change.fieldId,
-          fieldLabel: change.fieldLabel,
-          fieldType: change.fieldType,
-          previousValue: change.previousValue,
-          newValue: change.newValue,
-          changeType: change.changeType,
-          valueChangeSize: change.valueChangeSize,
+          id: editHistoryId,
+          responseId,
+          editedById: editContext.userId,
+          editType: editContext.editType || 'MANUAL',
+          editReason: editContext.editReason,
+          ipAddress: editContext.ipAddress,
+          userAgent: editContext.userAgent,
+          totalChanges: changes.length,
+          changesSummary,
         },
-      })
-    );
+      });
 
-    await Promise.all(fieldChangePromises);
+      await Promise.all(
+        changes.map((change) =>
+          tx.responseFieldChange.create({
+            data: {
+              id: generateId(),
+              editHistoryId,
+              fieldId: change.fieldId,
+              fieldLabel: change.fieldLabel,
+              fieldType: change.fieldType,
+              previousValue: change.previousValue,
+              newValue: change.newValue,
+              changeType: change.changeType,
+              valueChangeSize: change.valueChangeSize,
+            },
+          })
+        )
+      );
+    });
   }
 
   /**

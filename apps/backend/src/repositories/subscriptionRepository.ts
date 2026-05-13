@@ -38,6 +38,25 @@ export const createSubscriptionRepository = (context?: RepositoryContext) => {
       create: createData,
     });
 
+  // Safe read-only accessor — omits Chargebee credential fields.
+  // Use this for usage checks and plan display; use findUnique for billing operations.
+  const findByOrganizationPublic = (organizationId: string) =>
+    prisma.subscription.findUnique({
+      where: { organizationId },
+      select: {
+        id: true,
+        organizationId: true,
+        planId: true,
+        status: true,
+        viewsUsed: true,
+        submissionsUsed: true,
+        viewsLimit: true,
+        submissionsLimit: true,
+        currentPeriodStart: true,
+        currentPeriodEnd: true,
+      },
+    });
+
   return {
     findUnique,
     upsert,
@@ -45,6 +64,7 @@ export const createSubscriptionRepository = (context?: RepositoryContext) => {
     update,
     createSubscription,
     upsertForOrganization,
+    findByOrganizationPublic,
   };
 };
 

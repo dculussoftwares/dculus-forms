@@ -27,27 +27,13 @@ export interface Form extends Omit<IForm, 'formSchema'> {
 export type { FormSchema, FormPage, FormField, FormLayout, ThemeType, SpacingType };
 
 const generateUniqueShortUrl = async (): Promise<string> => {
-  let shortUrl: string;
-  let isUnique = false;
-  let attempts = 0;
-  const maxAttempts = 10;
-
-  while (!isUnique && attempts < maxAttempts) {
-    shortUrl = await generateShortUrl(8); // Generate 8-character short URL
-
-    // Check if this short URL already exists
-    const existingForm = await formRepository.findByShortUrl(shortUrl);
-
-    if (!existingForm) {
-      isUnique = true;
-      return shortUrl;
-    }
-
-    attempts++;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const length = attempt < 8 ? 8 : 12; // escalate to 12 chars after 8 collisions
+    const shortUrl = await generateShortUrl(length);
+    if (!(await formRepository.findByShortUrl(shortUrl))) return shortUrl;
   }
-
-  // If we couldn't generate a unique short URL after max attempts, use a longer one
-  return await generateShortUrl(12);
+  // UUID-based hard stop — effectively collision-proof
+  return randomUUID().replace(/-/g, '').substring(0, 16);
 };
 
 export const getAllForms = async (organizationId?: string): Promise<Form[]> => {

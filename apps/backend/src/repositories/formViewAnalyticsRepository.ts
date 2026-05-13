@@ -17,6 +17,9 @@ export const createFormViewAnalyticsRepository = (
   const count = (args?: Prisma.FormViewAnalyticsCountArgs) =>
     prisma.formViewAnalytics.count(args);
 
+  // Prisma's groupBy overloads require a non-optional `orderBy` in the intersection type,
+  // which the declared GroupByArgs type does not satisfy — `as any` is the standard workaround.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const groupBy = (args: Prisma.FormViewAnalyticsGroupByArgs) =>
     prisma.formViewAnalytics.groupBy(args as any);
 

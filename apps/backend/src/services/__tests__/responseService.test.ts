@@ -357,6 +357,7 @@ describe('Response Service', () => {
           data: { field1: 'old-value' },
           metadata: {},
           submittedAt: new Date('2024-01-01'),
+          updatedAt: new Date('2024-01-01'),
           form: {
             id: 'form-123',
             formSchema: {},

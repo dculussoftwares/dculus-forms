@@ -163,22 +163,12 @@ export const createHocuspocusServer = () => {
 
         const formId = documentName;
 
-        // Extract token from multiple sources
+        // Extract token — priority: protocol token → Authorization header → URL param (least secure)
         let authToken = token;
 
-        // Try to get token from URL query parameters
-        if (!authToken && requestParameters && requestParameters.get) {
-          const tokenParam = requestParameters.get('token');
-          if (tokenParam) {
-            authToken = tokenParam;
-            logger.info('🔍 [onAuthenticate] Found token in URL parameters');
-          }
-        }
-
-        // Try to get token from Authorization header
+        // Try Authorization header before URL params (header does not appear in server logs)
         if (!authToken && requestHeaders) {
           try {
-            // Handle both Map-like and Headers-like objects
             const authHeader =
               (requestHeaders as any).get?.('authorization') ||
               (requestHeaders as any).get?.('Authorization') ||
@@ -187,14 +177,20 @@ export const createHocuspocusServer = () => {
 
             if (authHeader && typeof authHeader === 'string') {
               authToken = authHeader.replace('Bearer ', '');
-              logger.info(
-                '🔍 [onAuthenticate] Found token in Authorization header'
-              );
+              logger.info('🔍 [onAuthenticate] Found token in Authorization header');
             }
           } catch (error) {
-            logger.info(
-              '🔍 [onAuthenticate] Could not extract token from headers:',
-              error
+            logger.info('🔍 [onAuthenticate] Could not extract token from headers:', error);
+          }
+        }
+
+        // URL query param fallback — token appears in server access logs; migrate clients to use header
+        if (!authToken && requestParameters && requestParameters.get) {
+          const tokenParam = requestParameters.get('token');
+          if (tokenParam) {
+            authToken = tokenParam;
+            logger.warn(
+              '🔍 [onAuthenticate] Token received via URL query param — appears in server logs. Migrate client to send Authorization header instead.'
             );
           }
         }

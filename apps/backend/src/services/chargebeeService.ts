@@ -207,14 +207,21 @@ export const syncSubscriptionFromWebhook = async (
     const customerId = subscriptionData.customer_id;
     const organizationId = customerId.replace('org_', '');
 
-    // Determine plan ID from item price ID
+    // Determine plan ID from item_id (stable plan identifier, no currency/period suffix)
+    // Falls back to item_price_id prefix matching only when item_id is absent
     let planId = 'free';
-    if (subscriptionData.subscription_items?.[0]?.item_price_id) {
-      const itemPriceId = subscriptionData.subscription_items[0].item_price_id;
-      if (itemPriceId.startsWith('starter-')) {
-        planId = 'starter';
-      } else if (itemPriceId.startsWith('advanced-')) {
-        planId = 'advanced';
+    const firstItem = subscriptionData.subscription_items?.[0];
+    if (firstItem) {
+      const itemId = (firstItem.item_id ?? '').toLowerCase();
+      if (['starter', 'advanced', 'free'].includes(itemId)) {
+        planId = itemId;
+      } else if (itemId === '') {
+        // item_id not present — fall back to item_price_id with exact prefix isolation
+        const itemPriceId = (firstItem.item_price_id ?? '').toLowerCase();
+        const pricePrefix = itemPriceId.split('-')[0];
+        if (['starter', 'advanced'].includes(pricePrefix)) {
+          planId = pricePrefix;
+        }
       }
     }
 
