@@ -473,15 +473,21 @@ export class CheckboxField extends FillableFormField {
     this.validation = validation;
     this.options = options;
 
-    // Set array values
-    this.defaultValues = Array.isArray(defaultValues)
-      ? defaultValues
-      : defaultValues
-        ? defaultValues
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean)
-        : [];
+    // Normalise legacy string representation to array.
+    // Try JSON.parse first (modern format: '["val1","val2"]') so values
+    // containing commas are preserved; fall back to comma-split for old data.
+    if (Array.isArray(defaultValues)) {
+      this.defaultValues = defaultValues;
+    } else if (defaultValues) {
+      try {
+        const parsed = JSON.parse(defaultValues);
+        this.defaultValues = Array.isArray(parsed) ? parsed : [defaultValues];
+      } catch {
+        this.defaultValues = defaultValues.split(',').map((s) => s.trim()).filter(Boolean);
+      }
+    } else {
+      this.defaultValues = [];
+    }
   }
 }
 
@@ -576,7 +582,7 @@ export const serializeFormField = (field: FormField): any => {
  * - TextFieldValidation for TEXT_INPUT_FIELD and TEXT_AREA_FIELD
  * - FillableFormFieldValidation for all other field types
  */
-export const deserializeFormField = (data: any): FormField => {
+export const deserializeFormField = (data: any): FormField | null => {
   const getValidation = (data: any, fieldType: FieldType) => {
     if (!data.validation) {
       if (
@@ -734,7 +740,10 @@ export const deserializeFormField = (data: any): FormField => {
       const richTextContent = data.content || '';
       return new RichTextFormField(data.id, richTextContent);
     default:
-      return new FormField(data.id);
+      console.warn(
+        `[deserializeFormField] Unknown field type "${(data as { type?: string }).type}" for id "${data.id}". Skipping field.`
+      );
+      return null;
   }
 };
 
@@ -755,7 +764,7 @@ export const deserializeFormSchema = (data: any): FormSchema => {
     layout: data.layout, // Explicitly preserve layout object
     pages: (data.pages || []).map((page: any) => ({
       ...page,
-      fields: (page.fields || []).map(deserializeFormField),
+      fields: (page.fields || []).map(deserializeFormField).filter((f: FormField | null): f is FormField => f !== null),
     })),
   };
 };

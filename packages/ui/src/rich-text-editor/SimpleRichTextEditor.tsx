@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { cn } from '../utils';
 import { Bold, Italic, List, Link } from 'lucide-react';
 import { Button } from '../button';
@@ -19,6 +19,7 @@ export const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
   editable = true,
 }) => {
   const [content, setContent] = useState(value);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = (e.target as HTMLTextAreaElement).value;
@@ -27,10 +28,31 @@ export const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
   };
 
   const insertFormat = (prefix: string, suffix?: string) => {
-    // Simple formatting - just append for now to avoid DOM issues
-    const newText = `${content}${prefix}example text${suffix || ''}`;
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      // Fallback: append if no textarea ref
+      const newText = `${content}${prefix}text${suffix ?? ''}`;
+      setContent(newText);
+      onChange?.(newText);
+      return;
+    }
+    const start = textarea.selectionStart ?? content.length;
+    const end = textarea.selectionEnd ?? content.length;
+    const selected = content.substring(start, end) || 'text';
+    const newText =
+      content.substring(0, start) +
+      prefix +
+      selected +
+      (suffix ?? '') +
+      content.substring(end);
     setContent(newText);
     onChange?.(newText);
+    // Restore focus and move cursor after the inserted format
+    requestAnimationFrame(() => {
+      textarea.focus();
+      const cursor = start + prefix.length + selected.length + (suffix?.length ?? 0);
+      textarea.setSelectionRange(cursor, cursor);
+    });
   };
 
   return (
@@ -83,6 +105,7 @@ export const SimpleRichTextEditor: React.FC<SimpleRichTextEditorProps> = ({
       
       <div className="relative">
         <textarea
+          ref={textareaRef}
           className="w-full min-h-32 p-4 outline-none resize-y border-none"
           style={{ minHeight: '128px' }}
           value={content}

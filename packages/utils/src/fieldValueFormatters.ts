@@ -79,7 +79,8 @@ export const formatCheckboxFieldValue = (
   if (value === null || value === undefined) return '';
 
   if (Array.isArray(value)) {
-    return value.filter(Boolean).join(separator);
+    // filter(Boolean) would drop 0 and false which are valid checkbox values
+    return value.filter((v) => v !== null && v !== undefined).join(separator);
   }
 
   return String(value);
@@ -105,7 +106,7 @@ export const formatSelectFieldValue = (
   if (value === null || value === undefined) return '';
 
   if (Array.isArray(value)) {
-    return value.filter(Boolean).join(separator);
+    return value.filter((v) => v !== null && v !== undefined).join(separator);
   }
 
   return String(value);
@@ -186,7 +187,8 @@ export const formatTextFieldValue = (
   const stringValue = String(value).trim();
 
   if (maxLength && stringValue.length > maxLength) {
-    return stringValue.substring(0, maxLength - 3) + '...';
+    // Guard: when maxLength < 4, substring(0, negative) would produce '...' which exceeds the limit
+    return stringValue.substring(0, Math.max(0, maxLength - 3)) + '...';
   }
 
   return stringValue;

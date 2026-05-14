@@ -160,6 +160,7 @@ const deserializePagesFromYJS = (
             validation: validationObj,
           });
         })
+        .filter((f): f is FormField => f !== null)
       : [];
 
     return {

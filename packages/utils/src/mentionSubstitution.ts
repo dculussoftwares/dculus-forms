@@ -64,7 +64,8 @@ export function substituteMentions(
 
   // First try the standard format with data-value or data-lexical-beautiful-mention-value
   // Use length-limited patterns to prevent ReDoS while maintaining functionality
-  const mentionRegex = /<span[^>]{0,500}data-(?:lexical-)?beautiful-mention="true"[^>]{0,500}data-(?:lexical-beautiful-mention-)?value="([^"]{1,200})"[^>]{0,200}>([^<]{0,5000})<\/span>/gi;
+  // No `i` flag — HTML attribute values for booleans are case-sensitive
+  const mentionRegex = /<span[^>]{0,500}data-(?:lexical-)?beautiful-mention="true"[^>]{0,500}data-(?:lexical-beautiful-mention-)?value="([^"]{1,200})"[^>]{0,200}>([^<]{0,5000})<\/span>/g;
 
   result = result.replace(mentionRegex, (match, fieldId, originalContent) => {
     // Get the actual response value for this field ID
@@ -101,7 +102,7 @@ export function extractMentionFieldIds(html: string): string[] {
   if (!html) return [];
 
   // Use length-limited patterns to prevent ReDoS while maintaining functionality
-  const mentionRegex = /<span[^>]{0,500}data-(?:lexical-)?beautiful-mention="true"[^>]{0,500}data-(?:lexical-beautiful-mention-)?value="([^"]{1,200})"[^>]{0,200}>/gi;
+  const mentionRegex = /<span[^>]{0,500}data-(?:lexical-)?beautiful-mention="true"[^>]{0,500}data-(?:lexical-beautiful-mention-)?value="([^"]{1,200})"[^>]{0,200}>/g;
   const fieldIds: string[] = [];
   let match;
 

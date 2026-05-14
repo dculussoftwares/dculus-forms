@@ -66,7 +66,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
     const currentKey = `${mode}-${JSON.stringify(existingResponseData)}-${formSchema?.pages?.length || 0}`;
 
     if (currentKey !== initializationKey) {
-      console.log('FormRenderer - Synchronously initializing with existing data:', existingResponseData);
+      if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') console.log('FormRenderer - Synchronously initializing with existing data:', existingResponseData);
 
       // Clear existing responses first
       store.clearAllResponses();
@@ -82,8 +82,8 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
           });
         });
 
-        console.log('FormRenderer - Field to page mapping:', fieldToPageMap);
-        console.log('FormRenderer - Existing response data fields:', Object.keys(existingResponseData));
+        if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') console.log('FormRenderer - Field to page mapping:', fieldToPageMap);
+        if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') console.log('FormRenderer - Existing response data fields:', Object.keys(existingResponseData));
 
         // Build page responses object
         const pageResponses: Record<string, Record<string, any>> = {};
@@ -100,18 +100,18 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
             console.warn('FormRenderer - Skipping potentially dangerous page ID:', pageId);
             return;
           }
-          console.log(`FormRenderer - Mapping field ${fieldId} to page ${pageId}`);
+          if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') console.log(`FormRenderer - Mapping field ${fieldId} to page ${pageId}`);
           if (!Object.prototype.hasOwnProperty.call(pageResponses, pageId)) {
             pageResponses[pageId] = {};
           }
           pageResponses[pageId][fieldId] = value;
         });
 
-        console.log('FormRenderer - Final page responses:', pageResponses);
+        if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') console.log('FormRenderer - Final page responses:', pageResponses);
 
         // Set all page responses SYNCHRONOUSLY before render
         Object.entries(pageResponses).forEach(([pageId, responses]) => {
-          console.log(`FormRenderer - Setting page ${pageId} responses:`, responses);
+          if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') console.log(`FormRenderer - Setting page ${pageId} responses:`, responses);
           store.setPageResponses(pageId, responses);
         });
       } else {
@@ -119,7 +119,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
         store.setPageResponses('default', existingResponseData);
       }
 
-      console.log('FormRenderer - Synchronous initialization completed');
+      if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') console.log('FormRenderer - Synchronous initialization completed');
 
       // Update the key to prevent re-running
       setInitializationKey(currentKey);

@@ -254,7 +254,7 @@ export const numberFieldValidationSchema = baseFieldValidationSchema
       .or(
         z
           .string()
-          .regex(/^-?\d*\.?\d*$/, 'Minimum must be a valid number')
+          .regex(/^-?\d+(\.\d+)?$/, 'Minimum must be a valid number')
           .optional()
       ),
     max: z
@@ -263,7 +263,7 @@ export const numberFieldValidationSchema = baseFieldValidationSchema
       .or(
         z
           .string()
-          .regex(/^-?\d*\.?\d*$/, 'Maximum must be a valid number')
+          .regex(/^-?\d+(\.\d+)?$/, 'Maximum must be a valid number')
           .optional()
       ),
     defaultValue: z
@@ -664,7 +664,7 @@ export const formLayoutValidationSchema = z.object({
   theme: z.enum(['light', 'dark', 'auto']),
   textColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color format'),
   spacing: z.enum(['compact', 'normal', 'spacious']),
-  code: z.string().regex(/^L[1-6]$/, 'Invalid layout code'),
+  code: z.string().regex(/^L[1-9]$/, 'Invalid layout code'),
   content: z.string().max(10000, 'Content is too long'),
   customBackGroundColor: z
     .string()

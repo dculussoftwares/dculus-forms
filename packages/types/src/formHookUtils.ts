@@ -53,13 +53,6 @@ function getDefaultValueForField(field: FormField): any {
         const numValue = parseFloat(field.defaultValue);
         return isNaN(numValue) ? undefined : numValue;
       case FieldType.SELECT_FIELD:
-        // Check if this is a multi-select field
-        const isMultiple = (field as any).multiple;
-        if (isMultiple) {
-          return field.defaultValue
-            ? field.defaultValue.split(',').map((s) => s.trim())
-            : [];
-        }
         return field.defaultValue;
       default:
         return field.defaultValue;
@@ -69,8 +62,7 @@ function getDefaultValueForField(field: FormField): any {
   // Return appropriate empty values for each field type
   switch (field.type) {
     case FieldType.SELECT_FIELD:
-      const isMultiple = (field as any).multiple;
-      return isMultiple ? [] : '';
+      return '';
     case FieldType.NUMBER_FIELD:
       return undefined;
     default:
@@ -121,12 +113,7 @@ export function transformFormDataForSubmission(
         transformed[field.id] = Array.isArray(value) ? value : [];
         break;
       case FieldType.SELECT_FIELD:
-        const isMultiple = (field as any).multiple;
-        if (isMultiple) {
-          transformed[field.id] = Array.isArray(value) ? value : [];
-        } else {
-          transformed[field.id] = value || '';
-        }
+        transformed[field.id] = value || '';
         break;
       default:
         transformed[field.id] = value || '';

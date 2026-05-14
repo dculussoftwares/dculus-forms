@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Controller, Control, FieldValues, Path } from 'react-hook-form';
 import {
   FormField,
@@ -284,6 +284,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                       onValueChange={controllerField.onChange}
                       disabled={!isInteractive}
                       className="space-y-2"
+                      aria-label={(fillableField as any)?.label ?? 'Radio group'}
                     >
                       {(fillableField as any)?.options?.map(
                         (option: string, index: number) => (
@@ -611,10 +612,28 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
   // Handle non-fillable fields separately (like RichTextFormField)
   if (field.type === FieldType.RICH_TEXT_FIELD) {
     const richTextField = field as RichTextFormField;
+    // Sanitize form-owner-supplied HTML before rendering to prevent stored XSS.
+    // Same approach used in ThankYouDisplay — DOMParser strips scripts and on* handlers.
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const safeContent = useMemo(() => {
+      try {
+        const doc = new DOMParser().parseFromString(richTextField.content || '', 'text/html');
+        doc.querySelectorAll('script').forEach((el) => el.remove());
+        doc.querySelectorAll('*').forEach((el) => {
+          Array.from(el.attributes).forEach((attr) => {
+            if (attr.name.toLowerCase().startsWith('on')) el.removeAttribute(attr.name);
+          });
+        });
+        return doc.body.innerHTML;
+      } catch {
+        return '';
+      }
+    }, [richTextField.content]);
+
     return (
       <div className={`${styles.container} ${className}`}>
         <LexicalRichTextEditor
-          value={richTextField.content}
+          value={safeContent}
           editable={false}
           className="border-none shadow-none"
         />

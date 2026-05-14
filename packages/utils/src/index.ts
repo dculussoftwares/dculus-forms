@@ -35,6 +35,9 @@ export const parseDate = (dateString: string): Date => {
 };
 
 export function slugify(str: string): string {
+  // Normalise to NFKD so diacritics become base-char + combining mark,
+  // then strip the combining marks — handles é→e, ñ→n, ü→u, Tamil, etc.
+  str = str.normalize('NFKD').replace(/[̀-ͯ]/g, '');
   // Trim leading/trailing whitespace
   str = str.trim();
   // Convert to lowercase
@@ -80,23 +83,16 @@ export function generateRandomString(length: number): string {
 }
 
 export async function generateShortUrl(length: number = 8): Promise<string> {
-  // Use nanoid v5 with custom alphabet (alphanumeric only, no special characters)
-  // This ensures URL-safe characters and better randomness
+  const safeLength = Math.min(Math.max(1, length), 12);
   try {
-    // Dynamic import for ESM nanoid v5
     const { customAlphabet } = await import('nanoid');
     const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    const generateId = customAlphabet(alphabet, Math.min(length, 12)); // Limit to max 12 chars
-    return generateId();
+    return customAlphabet(alphabet, safeLength)();
   } catch (error) {
-    // Fallback to original implementation if nanoid fails
-    console.warn('nanoid failed, using fallback:', error);
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    for (let i = 0; i < Math.min(length, 12); i++) {
-      result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return result;
+    // Fallback uses crypto.randomUUID (cryptographically secure) rather than Math.random
+    console.warn('nanoid failed, using crypto fallback:', error);
+    const uuid = crypto.randomUUID().replace(/-/g, '');
+    return uuid.substring(0, safeLength);
   }
 }
 
@@ -104,8 +100,17 @@ export async function generateShortUrl(length: number = 8): Promise<string> {
  * Frontend-only utility to construct full CDN URL from S3 key
  * Pass the CDN endpoint from your environment variables
  */
+// Allowed pattern: alphanumeric, slashes, hyphens, underscores, dots
+const S3_KEY_PATTERN = /^[a-zA-Z0-9/_.\-]+$/;
+
 export function getImageUrl(s3Key: string, cdnEndpoint: string): string {
   if (!s3Key || !cdnEndpoint) {
+    return '';
+  }
+
+  // Reject keys that contain path traversal or invalid characters
+  if (!S3_KEY_PATTERN.test(s3Key) || s3Key.includes('..')) {
+    console.warn(`[getImageUrl] Rejected potentially unsafe s3Key: "${s3Key}"`);
     return '';
   }
 
