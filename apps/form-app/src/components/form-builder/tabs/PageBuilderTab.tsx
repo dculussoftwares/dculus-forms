@@ -306,6 +306,7 @@ const RightSidebar: React.FC<{
                 <button
                   onClick={handleAddPage}
                   disabled={!isConnected}
+                  data-testid="add-page-button"
                   className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors text-blue-600 dark:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
                   title={t('menu.addPage')}
                 >
@@ -318,7 +319,7 @@ const RightSidebar: React.FC<{
               items={pages.map((p) => p.id)}
               strategy={verticalListSortingStrategy}
             >
-              <div className="space-y-2">
+              <div className="space-y-2" data-testid="pages-list">
                 {pages.map((page, index) => (
                   <DraggablePageItem
                     key={page.id}
@@ -890,7 +891,7 @@ const FormArea: React.FC<{
                     : 'border-gray-300 dark:border-gray-600'
                 }
               `}
-              data-testid="form-fields-area"
+              data-testid="droppable-page"
             >
               {selectedPage && selectedPage.fields.length > 0 ? (
                 <FieldListWithDropZones
