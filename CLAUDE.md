@@ -38,8 +38,8 @@ pnpm test:e2e               # Playwright + Cucumber E2E
 pnpm test:e2e -- --tags "@tagname"  # Run specific tagged scenarios
 ```
 
-**Test credentials** (E2E): `sivam2@mailinator.com` / `password`  
-**Admin credentials**: `admin@dculus.com` / `admin123!@#` (role: `superAdmin`)
+**Test credentials** (E2E): set via environment variables — do not hardcode in this file.  
+**Admin credentials**: set via `ADMIN_EMAIL` / `ADMIN_PASSWORD` env vars and `pnpm admin:setup` — do not hardcode in this file.
 
 ---
 
