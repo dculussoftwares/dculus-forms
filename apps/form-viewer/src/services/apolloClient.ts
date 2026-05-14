@@ -5,6 +5,7 @@ const graphqlUrl = getGraphQLUrl();
 
 const httpLink = createHttpLink({
   uri: graphqlUrl,
+  credentials: 'include', // send cookies for authenticated endpoints (e.g. analytics)
 });
 
 export const client = new ApolloClient({

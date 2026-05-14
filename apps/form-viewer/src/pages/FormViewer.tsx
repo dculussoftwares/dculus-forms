@@ -1,14 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
 import { FormRenderer } from '@dculus/ui';
-import { deserializeFormSchema } from '@dculus/types';
+import { deserializeFormSchema, FieldType } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { GET_FORM_BY_SHORT_URL, SUBMIT_RESPONSE } from '../graphql/queries';
 import ThankYouDisplay from '../components/ThankYouDisplay';
 import { useFormAnalytics } from '../hooks/useFormAnalytics';
 import { useFormSubmissionAnalytics } from '../hooks/useFormSubmissionAnalytics';
 import { getCdnEndpoint, getUploadUrl } from '../lib/config';
+
+const SUBMISSION_TIMEOUT_MS = 30_000;
+const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB — matches backend multer limit
+
+function validateFiles(
+  responses: Record<string, unknown>,
+  formSchema: ReturnType<typeof deserializeFormSchema>
+): string | null {
+  // Build field-level limits from the schema
+  const fieldLimits: Record<string, { maxMb: number; mimeTypes: string[] }> = {};
+  for (const page of formSchema.pages) {
+    for (const field of page.fields) {
+      if (field.type === FieldType.FILE_UPLOAD_FIELD) {
+        const f = field as { maxFileSizeMb?: number; allowedMimeTypes?: string[] } & typeof field;
+        fieldLimits[field.id] = {
+          maxMb: f.maxFileSizeMb ?? 50,
+          mimeTypes: f.allowedMimeTypes ?? [],
+        };
+      }
+    }
+  }
+
+  for (const [fieldId, value] of Object.entries(responses)) {
+    if (!Array.isArray(value) || value[0] instanceof File === false) continue;
+    const limits = fieldLimits[fieldId];
+    const maxBytes = limits ? limits.maxMb * 1024 * 1024 : MAX_FILE_SIZE_BYTES;
+    for (const file of value as File[]) {
+      if (file.size > maxBytes) {
+        return `File "${file.name}" exceeds the maximum allowed size of ${limits?.maxMb ?? 50} MB.`;
+      }
+      if (limits?.mimeTypes.length && !limits.mimeTypes.includes(file.type)) {
+        return `File "${file.name}" has an unsupported type. Allowed: ${limits.mimeTypes.join(', ')}.`;
+      }
+    }
+  }
+  return null;
+}
 
 /**
  * Upload a single File to the backend REST endpoint and return its R2 storage key.
@@ -42,6 +79,8 @@ async function uploadFormResponseFile(
 const FormViewer: React.FC = () => {
   const { shortUrl } = useParams<{ shortUrl: string }>();
   const cdnEndpoint = getCdnEndpoint();
+  // Ref-based guard prevents double-submit even if React batches state updates slowly
+  const isSubmittingRef = useRef(false);
   const [submissionState, setSubmissionState] = useState<
     'idle' | 'submitting' | 'success' | 'error'
   >('idle');
@@ -83,10 +122,24 @@ const FormViewer: React.FC = () => {
     formId: string,
     responses: Record<string, unknown>
   ) => {
+    // Synchronous guard — prevents double-submit even before React re-renders
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
     setSubmissionState('submitting');
     setSubmissionMessage('');
 
     try {
+      // Validate files client-side before uploading to give immediate feedback
+      if (formSchema) {
+        const fileError = validateFiles(responses, formSchema);
+        if (fileError) {
+          setSubmissionState('error');
+          setSubmissionMessage(fileError);
+          isSubmittingRef.current = false;
+          return;
+        }
+      }
+
       // Upload any File[] values (from FILE_UPLOAD_FIELD) before submitting the response
       const processedResponses: Record<string, unknown> = { ...responses };
       const uploadUrl = getUploadUrl();
@@ -124,22 +177,31 @@ const FormViewer: React.FC = () => {
         }
       }
 
-      const result = await submitResponse({
-        variables: {
-          input: {
-            formId,
-            data: processedResponses,
-            // Include analytics data for submission tracking (optional)
-            ...(analyticsData && {
-              sessionId: analyticsData.sessionId,
-              userAgent: analyticsData.userAgent,
-              timezone: analyticsData.timezone,
-              language: analyticsData.language,
-              ...(completionTimeSeconds && { completionTimeSeconds }),
-            }),
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error('Request timed out. Please check your connection and try again.')),
+          SUBMISSION_TIMEOUT_MS
+        )
+      );
+
+      const result = await Promise.race([
+        submitResponse({
+          variables: {
+            input: {
+              formId,
+              data: processedResponses,
+              ...(analyticsData && {
+                sessionId: analyticsData.sessionId,
+                userAgent: analyticsData.userAgent,
+                timezone: analyticsData.timezone,
+                language: analyticsData.language,
+                ...(completionTimeSeconds && { completionTimeSeconds }),
+              }),
+            },
           },
-        },
-      });
+        }),
+        timeoutPromise,
+      ]);
 
       const { thankYouMessage, showCustomThankYou } =
         result.data.submitResponse;
@@ -149,6 +211,7 @@ const FormViewer: React.FC = () => {
         message: thankYouMessage,
         isCustom: showCustomThankYou,
       });
+      // Leave isSubmittingRef true on success — form is done, no re-submit needed
     } catch (err: unknown) {
       console.error('Form submission error:', err);
       setSubmissionState('error');
@@ -156,6 +219,7 @@ const FormViewer: React.FC = () => {
         (err instanceof Error ? err.message : null) ||
           'An error occurred while submitting the form. Please try again.'
       );
+      isSubmittingRef.current = false; // allow retry on error
     }
   };
 
@@ -244,6 +308,43 @@ const FormViewer: React.FC = () => {
 
   // Deserialize the form schema from the backend
   const formSchema = deserializeFormSchema(form.formSchema);
+
+  // Client-side time-window pre-validation — gives immediate feedback instead of
+  // waiting for the server to reject the submission after filling out the form.
+  const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+  const settings = form.settings as Record<string, unknown> | null | undefined;
+  const timeWindow = (settings?.submissionLimits as Record<string, unknown> | undefined)?.timeWindow as
+    | { enabled?: boolean; startDate?: string; endDate?: string }
+    | undefined;
+  if (timeWindow?.enabled) {
+    const now = new Date();
+    if (timeWindow.startDate && ISO_DATE_RE.test(timeWindow.startDate)) {
+      const start = new Date(timeWindow.startDate + 'T00:00:00');
+      if (!isNaN(start.getTime()) && now < start) {
+        return (
+          <div className="h-screen w-full flex items-center justify-center">
+            <div className="text-center p-8">
+              <h1 className="text-2xl font-bold text-orange-600 mb-2">Not Yet Open</h1>
+              <p className="text-gray-600">This form is not yet open for submissions. Please check back later.</p>
+            </div>
+          </div>
+        );
+      }
+    }
+    if (timeWindow.endDate && ISO_DATE_RE.test(timeWindow.endDate)) {
+      const end = new Date(timeWindow.endDate + 'T23:59:59');
+      if (!isNaN(end.getTime()) && now > end) {
+        return (
+          <div className="h-screen w-full flex items-center justify-center">
+            <div className="text-center p-8">
+              <h1 className="text-2xl font-bold text-red-600 mb-2">Submissions Closed</h1>
+              <p className="text-gray-600">The submission period for this form has ended.</p>
+            </div>
+          </div>
+        );
+      }
+    }
+  }
 
   if (!cdnEndpoint) {
     console.warn('No CDN endpoint found. Images may not load properly.');

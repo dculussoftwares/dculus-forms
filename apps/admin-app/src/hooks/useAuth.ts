@@ -32,9 +32,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchSession = async () => {
+  const fetchSession = async (signal?: AbortSignal) => {
     try {
       const sessionData = await authService.getSession();
+      if (signal?.aborted) return; // component unmounted — discard result
       if (sessionData) {
         setUser(sessionData.user);
         setSession(sessionData);
@@ -43,11 +44,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setSession(null);
       }
     } catch (error) {
+      if (signal?.aborted) return;
       console.error('Failed to fetch session:', error);
       setUser(null);
       setSession(null);
     } finally {
-      setIsLoading(false);
+      if (!signal?.aborted) setIsLoading(false);
     }
   };
 
@@ -71,7 +73,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   useEffect(() => {
-    fetchSession();
+    const controller = new AbortController();
+    fetchSession(controller.signal);
+    return () => controller.abort();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const value: AuthContextType = {

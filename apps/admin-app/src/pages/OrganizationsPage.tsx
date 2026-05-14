@@ -110,9 +110,6 @@ export default function OrganizationsPage() {
                 >
                   {t('viewDetails')}
                 </button>
-                <button className="text-sm text-gray-600 hover:text-gray-800">
-                  Manage
-                </button>
               </div>
             </div>
           </Card>

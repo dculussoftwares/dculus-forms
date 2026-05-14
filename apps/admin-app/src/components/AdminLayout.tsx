@@ -3,12 +3,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from '../hooks/useTranslation';
 import { Button } from '@dculus/ui';
-import { 
-  LayoutDashboard, 
-  Building2, 
-  Users, 
-  FileText, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Building2,
+  Users,
+  FileText,
   LogOut,
   Crown
 } from 'lucide-react';
@@ -55,12 +54,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       icon: FileText,
       current: location.pathname === '/templates',
     },
-    {
-      name: t('navigation.settings'),
-      href: '/settings',
-      icon: Settings,
-      current: location.pathname === '/settings',
-    },
+    // Settings route is not yet implemented — removed to avoid a dead link
   ];
 
   const handleSignOut = async () => {

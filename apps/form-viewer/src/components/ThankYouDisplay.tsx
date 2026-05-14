@@ -1,6 +1,28 @@
 import React from 'react';
 import { RichTextEditor } from '@dculus/ui';
 
+/**
+ * Strip executable content from backend-supplied HTML.
+ * Removes <script> elements and all event-handler attributes (on*) before
+ * the message is passed to the rich-text renderer.
+ */
+function sanitizeHtml(raw: string): string {
+  try {
+    const doc = new DOMParser().parseFromString(raw, 'text/html');
+    // Remove all script elements
+    doc.querySelectorAll('script').forEach((el) => el.remove());
+    // Strip on* event attributes from every element
+    doc.querySelectorAll('*').forEach((el) => {
+      Array.from(el.attributes).forEach((attr) => {
+        if (attr.name.toLowerCase().startsWith('on')) el.removeAttribute(attr.name);
+      });
+    });
+    return doc.body.innerHTML;
+  } catch {
+    return '';
+  }
+}
+
 interface ThankYouDisplayProps {
   message: string;
   isCustom: boolean;
@@ -11,6 +33,7 @@ const ThankYouDisplay: React.FC<ThankYouDisplayProps> = ({
   isCustom
 }) => {
   if (isCustom) {
+    const safeMessage = sanitizeHtml(message);
     // Display custom rich text message
     return (
       <div className="text-center p-8 max-w-2xl mx-auto" data-testid="thank-you-display">
@@ -29,12 +52,12 @@ const ThankYouDisplay: React.FC<ThankYouDisplayProps> = ({
             />
           </svg>
         </div>
-        
+
         <div className="mb-6 prose prose-lg max-w-none mx-auto" data-testid="thank-you-custom-message">
           <RichTextEditor
-            value={message}
+            value={safeMessage}
             editable={false}
-            onChange={() => {}} // No-op since it's read-only
+            onChange={() => {}}
             className="border-none shadow-none"
             placeholder=""
           />
