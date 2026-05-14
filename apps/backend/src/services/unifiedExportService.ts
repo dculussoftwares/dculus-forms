@@ -370,7 +370,7 @@ const generateExcelContent = async (
   });
 
   // Auto-size columns based on content
-  worksheet.columns.forEach((column, index) => {
+  worksheet.columns.forEach((column, _index) => {
     let maxWidth = 10; // minimum width
     column.eachCell?.({ includeEmpty: true }, (cell) => {
       const cellValue = cell.value?.toString() || '';

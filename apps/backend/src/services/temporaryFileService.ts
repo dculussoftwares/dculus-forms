@@ -132,7 +132,11 @@ export async function cleanupExpiredFiles(): Promise<{ deleted: number; errors: 
         if (!obj.Key) continue;
         const ts = parseInt(obj.Key.replace('temp-exports/', '').split('-')[0], 10);
         if (!isNaN(ts) && ts < cutoff) {
-          (await deleteTemporaryFile(obj.Key)) ? deleted++ : errors++;
+          if (await deleteTemporaryFile(obj.Key)) {
+            deleted++;
+          } else {
+            errors++;
+          }
         }
       }
 

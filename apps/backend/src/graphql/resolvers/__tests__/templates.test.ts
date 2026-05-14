@@ -6,8 +6,6 @@ import * as formService from '../../../services/formService.js';
 import * as fileUploadService from '../../../services/fileUploadService.js';
 import * as betterAuthMiddleware from '../../../middleware/better-auth-middleware.js';
 import { prisma } from '../../../lib/prisma.js';
-import { logger } from '../../../lib/logger.js';
-
 // Mock all dependencies
 vi.mock('../../../services/templateService.js');
 vi.mock('../../../services/formService.js');

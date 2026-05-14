@@ -5,13 +5,33 @@ import { uploadRouter } from '../upload.js';
 import { uploadFile } from '../../services/fileUploadService.js';
 import { prisma } from '../../lib/prisma.js';
 import { logger } from '../../lib/logger.js';
+import { auth } from '../../lib/better-auth.js';
 
 // Mock dependencies
 vi.mock('../../services/fileUploadService.js');
+vi.mock('../../lib/better-auth.js', () => ({
+  auth: {
+    api: {
+      getSession: vi.fn(),
+    },
+  },
+}));
+vi.mock('better-auth/node', () => ({
+  fromNodeHeaders: vi.fn((headers: any) => headers),
+}));
 vi.mock('../../lib/prisma.js', () => ({
   prisma: {
     formFile: {
       create: vi.fn(),
+    },
+    form: {
+      findUnique: vi.fn(),
+    },
+    formPermission: {
+      findUnique: vi.fn(),
+    },
+    member: {
+      findFirst: vi.fn(),
     },
   },
 }));
@@ -23,6 +43,9 @@ vi.mock('../../lib/logger.js', () => ({
   },
 }));
 
+const mockUser = { id: 'user-123', email: 'test@example.com', role: 'user' };
+const mockForm = { id: 'form-123', createdById: 'user-123', organizationId: 'org-123' };
+
 describe('Upload Routes', () => {
   let app: Express;
 
@@ -31,6 +54,12 @@ describe('Upload Routes', () => {
     app = express();
     app.use(express.json());
     app.use('/api/upload', uploadRouter);
+
+    // Default: authenticated user who owns the form
+    vi.mocked(auth.api.getSession).mockResolvedValue({ user: mockUser, session: { id: 'session-123' } } as any);
+    vi.mocked(prisma.form.findUnique).mockResolvedValue(mockForm as any);
+    vi.mocked(prisma.formPermission.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.member.findFirst).mockResolvedValue({ role: 'owner' } as any);
   });
 
   afterEach(() => {
@@ -40,8 +69,8 @@ describe('Upload Routes', () => {
   describe('POST /upload', () => {
     it('should upload file successfully without formId', async () => {
       const mockResult = {
-        key: 'files/form-background/test-file.jpg',
-        type: 'FormBackground',
+        key: 'files/user-avatar/test-file.jpg',
+        type: 'UserAvatar',
         url: 'https://cdn.example.com/test-file.jpg',
         originalName: 'test-file.jpg',
         size: 1024,
@@ -52,7 +81,7 @@ describe('Upload Routes', () => {
 
       const response = await request(app)
         .post('/api/upload/upload')
-        .field('type', 'FormBackground')
+        .field('type', 'UserAvatar')
         .attach('file', Buffer.from('test file content'), 'test-file.jpg');
 
       expect(response.status).toBe(200);
@@ -63,7 +92,7 @@ describe('Upload Routes', () => {
           mimetype: expect.stringContaining('image/'),
           encoding: 'binary',
         }),
-        type: 'FormBackground',
+        type: 'UserAvatar',
       });
       expect(prisma.formFile.create).not.toHaveBeenCalled();
     });
@@ -182,7 +211,7 @@ describe('Upload Routes', () => {
 
       const response = await request(app)
         .post('/api/upload/upload')
-        .field('type', 'FormBackground')
+        .field('type', 'UserAvatar')
         .attach('file', Buffer.from('test file content'), 'test.jpg');
 
       expect(response.status).toBe(500);
@@ -227,7 +256,7 @@ describe('Upload Routes', () => {
 
       const response = await request(app)
         .post('/api/upload/upload')
-        .field('type', 'FormBackground')
+        .field('type', 'UserAvatar')
         .attach('file', Buffer.from('test file content'), 'test.jpg');
 
       expect(response.status).toBe(500);
@@ -239,8 +268,8 @@ describe('Upload Routes', () => {
 
     it('should create readable stream correctly from buffer', async () => {
       const mockResult = {
-        key: 'files/form-background/test.jpg',
-        type: 'FormBackground',
+        key: 'files/user-avatar/test.jpg',
+        type: 'UserAvatar',
         url: 'https://cdn.example.com/test.jpg',
         originalName: 'test.jpg',
         size: 1024,
@@ -260,7 +289,7 @@ describe('Upload Routes', () => {
 
       const response = await request(app)
         .post('/api/upload/upload')
-        .field('type', 'FormBackground')
+        .field('type', 'UserAvatar')
         .attach('file', Buffer.from('test file content'), 'test.jpg');
 
       expect(response.status).toBe(200);
@@ -268,13 +297,17 @@ describe('Upload Routes', () => {
 
     it('should handle multiple file types correctly', async () => {
       const types = [
-        'FormBackground',
-        'FormTemplate',
         'UserAvatar',
-        'OrganizationLogo',
+        'FormResponse',
       ];
 
       for (const type of types) {
+        vi.clearAllMocks();
+        vi.mocked(auth.api.getSession).mockResolvedValue({ user: mockUser, session: { id: 'session-123' } } as any);
+        vi.mocked(prisma.form.findUnique).mockResolvedValue({ ...mockForm, isPublished: true } as any);
+        vi.mocked(prisma.formPermission.findUnique).mockResolvedValue(null);
+        vi.mocked(prisma.member.findFirst).mockResolvedValue({ role: 'owner' } as any);
+
         const mockResult = {
           key: `files/${type.toLowerCase()}/test.jpg`,
           type,
@@ -286,10 +319,16 @@ describe('Upload Routes', () => {
 
         vi.mocked(uploadFile).mockResolvedValue(mockResult);
 
-        const response = await request(app)
+        const req = request(app)
           .post('/api/upload/upload')
-          .field('type', type)
-          .attach('file', Buffer.from('test'), 'test.jpg');
+          .field('type', type);
+
+        // FormResponse requires formId
+        if (type === 'FormResponse') {
+          req.field('formId', 'form-123');
+        }
+
+        const response = await req.attach('file', Buffer.from('test'), 'test.jpg');
 
         expect(response.status).toBe(200);
         expect(response.body.type).toBe(type);
@@ -298,8 +337,8 @@ describe('Upload Routes', () => {
 
     it('should preserve original filename in upload', async () => {
       const mockResult = {
-        key: 'files/form-background/my-custom-image.png',
-        type: 'FormBackground',
+        key: 'files/user-avatar/my-custom-image.png',
+        type: 'UserAvatar',
         url: 'https://cdn.example.com/my-custom-image.png',
         originalName: 'my-custom-image.png',
         size: 1024,
@@ -310,7 +349,7 @@ describe('Upload Routes', () => {
 
       const response = await request(app)
         .post('/api/upload/upload')
-        .field('type', 'FormBackground')
+        .field('type', 'UserAvatar')
         .attach('file', Buffer.from('test'), 'my-custom-image.png');
 
       expect(response.status).toBe(200);
@@ -319,7 +358,7 @@ describe('Upload Routes', () => {
         file: expect.objectContaining({
           filename: 'my-custom-image.png',
         }),
-        type: 'FormBackground',
+        type: 'UserAvatar',
       });
     });
   });

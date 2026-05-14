@@ -50,7 +50,7 @@ describe('Form Files Resolvers', () => {
   const mockFormFile1 = {
     id: 'file-123',
     formId: 'form-123',
-    type: 'export',
+    type: 'FormBackground',
     filename: 'form-export.xlsx',
     key: 'exports/form-123/form-export.xlsx',
     url: 'https://s3.amazonaws.com/bucket/exports/form-123/form-export.xlsx',
@@ -64,7 +64,7 @@ describe('Form Files Resolvers', () => {
   const mockFormFile2 = {
     id: 'file-456',
     formId: 'form-123',
-    type: 'backup',
+    type: 'FormResponse',
     filename: 'form-backup.json',
     key: 'backups/form-123/form-backup.json',
     url: 'https://s3.amazonaws.com/bucket/backups/form-123/form-backup.json',
@@ -78,7 +78,7 @@ describe('Form Files Resolvers', () => {
   const mockFormFile3 = {
     id: 'file-789',
     formId: 'form-123',
-    type: 'export',
+    type: 'FormBackground',
     filename: 'form-export.csv',
     key: 'exports/form-123/form-export.csv',
     url: 'https://s3.amazonaws.com/bucket/exports/form-123/form-export.csv',
@@ -332,19 +332,19 @@ describe('Form Files Resolvers', () => {
 
         const result = await formFileResolvers.Query.getFormFiles(
           {},
-          { formId: 'form-123', type: 'export' },
+          { formId: 'form-123', type: 'FormBackground' },
           mockContext
         );
 
         expect(prisma.formFile.findMany).toHaveBeenCalledWith({
-          where: { formId: 'form-123', type: 'export' },
+          where: { formId: 'form-123', type: 'FormBackground' },
           orderBy: { createdAt: 'desc' },
         });
         expect(result).toHaveLength(2);
-        expect(result.every((file) => file.type === 'export')).toBe(true);
+        expect(result.every((file) => file.type === 'FormBackground')).toBe(true);
       });
 
-      it('should filter by backup type', async () => {
+      it('should filter by FormResponse type', async () => {
         vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
@@ -355,16 +355,16 @@ describe('Form Files Resolvers', () => {
 
         const result = await formFileResolvers.Query.getFormFiles(
           {},
-          { formId: 'form-123', type: 'backup' },
+          { formId: 'form-123', type: 'FormResponse' },
           mockContext
         );
 
         expect(prisma.formFile.findMany).toHaveBeenCalledWith({
-          where: { formId: 'form-123', type: 'backup' },
+          where: { formId: 'form-123', type: 'FormResponse' },
           orderBy: { createdAt: 'desc' },
         });
         expect(result).toHaveLength(1);
-        expect(result[0].type).toBe('backup');
+        expect(result[0].type).toBe('FormResponse');
       });
 
       it('should return empty array when no files match type filter', async () => {
@@ -378,35 +378,28 @@ describe('Form Files Resolvers', () => {
 
         const result = await formFileResolvers.Query.getFormFiles(
           {},
-          { formId: 'form-123', type: 'template' },
+          { formId: 'form-123', type: 'FormTemplate' },
           mockContext
         );
 
         expect(result).toEqual([]);
       });
 
-      it('should handle custom file types', async () => {
-        const customFile = {
-          ...mockFormFile1,
-          id: 'file-custom',
-          type: 'custom',
-        };
+      it('should reject invalid file type filter', async () => {
         vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
           permission: 'VIEWER' as any,
           form: mockForm as any,
         });
-        vi.mocked(prisma.formFile.findMany).mockResolvedValue([customFile] as any);
 
-        const result = await formFileResolvers.Query.getFormFiles(
-          {},
-          { formId: 'form-123', type: 'custom' },
-          mockContext
-        );
-
-        expect(result).toHaveLength(1);
-        expect(result[0].type).toBe('custom');
+        await expect(
+          formFileResolvers.Query.getFormFiles(
+            {},
+            { formId: 'form-123', type: 'custom' },
+            mockContext
+          )
+        ).rejects.toThrow('Invalid file type filter: custom');
       });
     });
 
@@ -429,7 +422,7 @@ describe('Form Files Resolvers', () => {
         expect(result[0]).toMatchObject({
           id: 'file-123',
           formId: 'form-123',
-          type: 'export',
+          type: 'FormBackground',
           filename: 'form-export.xlsx',
           key: 'exports/form-123/form-export.xlsx',
           url: expect.any(String),
@@ -812,7 +805,7 @@ describe('Form Files Resolvers', () => {
     });
 
     describe('File Types', () => {
-      it('should support export file type', async () => {
+      it('should support FormBackground file type', async () => {
         vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
@@ -823,14 +816,14 @@ describe('Form Files Resolvers', () => {
 
         const result = await formFileResolvers.Query.getFormFiles(
           {},
-          { formId: 'form-123', type: 'export' },
+          { formId: 'form-123', type: 'FormBackground' },
           mockContext
         );
 
-        expect(result[0].type).toBe('export');
+        expect(result[0].type).toBe('FormBackground');
       });
 
-      it('should support backup file type', async () => {
+      it('should support FormResponse file type', async () => {
         vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
@@ -841,11 +834,11 @@ describe('Form Files Resolvers', () => {
 
         const result = await formFileResolvers.Query.getFormFiles(
           {},
-          { formId: 'form-123', type: 'backup' },
+          { formId: 'form-123', type: 'FormResponse' },
           mockContext
         );
 
-        expect(result[0].type).toBe('backup');
+        expect(result[0].type).toBe('FormResponse');
       });
     });
 

@@ -199,7 +199,9 @@ describe('Hocuspocus Service', () => {
       } as any);
 
       expect(auth.api.getSession).toHaveBeenCalled();
-      expect(logger.info).toHaveBeenCalledWith('🔍 [onAuthenticate] Found token in URL parameters');
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Token received via URL query param')
+      );
     });
 
     it('should extract token from Authorization header', async () => {

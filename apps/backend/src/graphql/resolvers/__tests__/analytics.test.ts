@@ -4,10 +4,18 @@ import { GraphQLError } from '#graphql-errors';
 import { analyticsService } from '../../../services/analyticsService.js';
 import { prisma } from '../../../lib/prisma.js';
 import * as events from '../../../subscriptions/events.js';
+import * as betterAuthMiddleware from '../../../middleware/better-auth-middleware.js';
 
 // Mock all dependencies
 vi.mock('../../../services/analyticsService.js');
 vi.mock('../../../subscriptions/events.js');
+vi.mock('../../../middleware/better-auth-middleware.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../middleware/better-auth-middleware.js')>();
+  return {
+    ...actual,
+    requireOrganizationMembership: vi.fn(),
+  };
+});
 vi.mock('../../../lib/prisma.js', () => ({
   prisma: {
     form: {
@@ -65,6 +73,8 @@ describe('Analytics Resolvers', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default: membership check passes
+    vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -548,6 +558,7 @@ describe('Analytics Resolvers', () => {
 
     it('should return analytics data for authenticated user with access', async () => {
       vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
       vi.mocked(analyticsService.getFormAnalytics).mockResolvedValue(mockAnalyticsData);
 
       const result = await analyticsResolvers.Query.formAnalytics(
@@ -558,16 +569,13 @@ describe('Analytics Resolvers', () => {
 
       expect(prisma.form.findUnique).toHaveBeenCalledWith({
         where: { id: 'form-123' },
-        include: {
-          organization: {
-            include: {
-              members: {
-                where: { userId: 'user-123' },
-              },
-            },
-          },
-        },
+        select: { id: true, organizationId: true },
       });
+
+      expect(betterAuthMiddleware.requireOrganizationMembership).toHaveBeenCalledWith(
+        mockContext.auth,
+        'org-123'
+      );
 
       expect(analyticsService.getFormAnalytics).toHaveBeenCalledWith('form-123', undefined);
 
@@ -579,6 +587,11 @@ describe('Analytics Resolvers', () => {
         ...mockContext,
         auth: { user: null, session: null, isAuthenticated: false },
       };
+
+      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockRejectedValue(
+        new GraphQLError('Authentication required')
+      );
 
       await expect(
         analyticsResolvers.Query.formAnalytics(
@@ -616,14 +629,10 @@ describe('Analytics Resolvers', () => {
     });
 
     it('should throw error when user is not a member of organization', async () => {
-      const formWithoutUserMembership = {
-        ...mockPublishedForm,
-        organization: {
-          members: [], // User is not a member
-        },
-      };
-
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(formWithoutUserMembership as any);
+      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockRejectedValue(
+        new GraphQLError('Access denied')
+      );
 
       await expect(
         analyticsResolvers.Query.formAnalytics(
@@ -648,6 +657,7 @@ describe('Analytics Resolvers', () => {
       };
 
       vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
       vi.mocked(analyticsService.getFormAnalytics).mockResolvedValue(mockAnalyticsData);
 
       await analyticsResolvers.Query.formAnalytics(
@@ -742,6 +752,7 @@ describe('Analytics Resolvers', () => {
 
     it('should return submission analytics data for authenticated user with access', async () => {
       vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
       vi.mocked(analyticsService.getFormSubmissionAnalytics).mockResolvedValue(
         mockSubmissionAnalyticsData
       );
@@ -754,16 +765,13 @@ describe('Analytics Resolvers', () => {
 
       expect(prisma.form.findUnique).toHaveBeenCalledWith({
         where: { id: 'form-123' },
-        include: {
-          organization: {
-            include: {
-              members: {
-                where: { userId: 'user-123' },
-              },
-            },
-          },
-        },
+        select: { id: true, organizationId: true },
       });
+
+      expect(betterAuthMiddleware.requireOrganizationMembership).toHaveBeenCalledWith(
+        mockContext.auth,
+        'org-123'
+      );
 
       expect(analyticsService.getFormSubmissionAnalytics).toHaveBeenCalledWith(
         'form-123',
@@ -778,6 +786,11 @@ describe('Analytics Resolvers', () => {
         ...mockContext,
         auth: { user: null, session: null, isAuthenticated: false },
       };
+
+      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockRejectedValue(
+        new GraphQLError('Authentication required')
+      );
 
       await expect(
         analyticsResolvers.Query.formSubmissionAnalytics(
@@ -815,14 +828,10 @@ describe('Analytics Resolvers', () => {
     });
 
     it('should throw error when user is not a member of organization', async () => {
-      const formWithoutUserMembership = {
-        ...mockPublishedForm,
-        organization: {
-          members: [], // User is not a member
-        },
-      };
-
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(formWithoutUserMembership as any);
+      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockRejectedValue(
+        new GraphQLError('Access denied')
+      );
 
       await expect(
         analyticsResolvers.Query.formSubmissionAnalytics(
@@ -847,6 +856,7 @@ describe('Analytics Resolvers', () => {
       };
 
       vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
       vi.mocked(analyticsService.getFormSubmissionAnalytics).mockResolvedValue(
         mockSubmissionAnalyticsData
       );

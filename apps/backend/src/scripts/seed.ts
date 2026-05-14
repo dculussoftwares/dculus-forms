@@ -95,7 +95,6 @@ async function seed() {
 
     // Data deletion disabled to preserve existing data
     // If you need to clear data, do it manually before running seed
-    const isProduction = process.env.NODE_ENV === 'production';
     logger.info('⏭️  Skipping data clearing to preserve existing data');
     // if (!isProduction) {
     //   logger.info('🧹 Clearing existing data (non-production environment)...');

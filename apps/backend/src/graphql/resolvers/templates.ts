@@ -13,7 +13,6 @@ import { createForm } from '../../services/formService.js';
 import { randomUUID } from 'crypto';
 import { copyFileForForm } from '../../services/fileUploadService.js';
 import { prisma } from '../../lib/prisma.js';
-import { constructCdnUrl } from '../../utils/cdn.js';
 import { requireSystemLevelRole, requireAuthentication, type AuthContext } from '../../utils/auth.js';
 import { requireOrganizationMembership, BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 import { logger } from '../../lib/logger.js';

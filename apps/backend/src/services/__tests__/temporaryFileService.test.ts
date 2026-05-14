@@ -28,6 +28,9 @@ vi.mock('@aws-sdk/client-s3', () => {
     GetObjectCommand: vi.fn(function(this: any, params: any) {
       this.input = params;
     }),
+    ListObjectsV2Command: vi.fn(function(this: any, params: any) {
+      this.input = params;
+    }),
     __mockSend: mockSend, // Export mockSend so we can access it
   };
 });
@@ -293,17 +296,19 @@ describe('Temporary File Service', () => {
   describe('cleanupExpiredFiles', () => {
     it('should log cleanup task message', async () => {
       const loggerInfo = vi.spyOn(logger, 'info').mockImplementation(() => {});
+      mockSend.mockResolvedValue({ Contents: [], IsTruncated: false });
 
       await cleanupExpiredFiles();
 
       expect(loggerInfo).toHaveBeenCalledWith(
-        'Cleanup expired files task - implement with S3 listing if needed'
+        'Temp-file cleanup complete: 0 deleted, 0 errors'
       );
       loggerInfo.mockRestore();
     });
 
     it('should complete without errors', async () => {
-      await expect(cleanupExpiredFiles()).resolves.toBeUndefined();
+      mockSend.mockResolvedValue({ Contents: [], IsTruncated: false });
+      await expect(cleanupExpiredFiles()).resolves.toEqual({ deleted: 0, errors: 0 });
     });
   });
 });

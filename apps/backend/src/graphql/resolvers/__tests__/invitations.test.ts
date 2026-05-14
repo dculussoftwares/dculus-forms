@@ -86,7 +86,7 @@ describe('Invitation Resolvers', () => {
 
         await expect(
           invitationResolvers.Query.getInvitationPublic({}, { id: '' })
-        ).rejects.toThrow('Invitation ID is required');
+        ).rejects.toThrow('Invalid invitation ID');
       });
 
       it('should throw error when invitation ID is null', async () => {
@@ -96,7 +96,7 @@ describe('Invitation Resolvers', () => {
 
         await expect(
           invitationResolvers.Query.getInvitationPublic({}, { id: null as any })
-        ).rejects.toThrow('Invitation ID is required');
+        ).rejects.toThrow('Invalid invitation ID');
       });
 
       it('should throw error when invitation ID is undefined', async () => {
@@ -106,7 +106,7 @@ describe('Invitation Resolvers', () => {
 
         await expect(
           invitationResolvers.Query.getInvitationPublic({}, { id: undefined as any })
-        ).rejects.toThrow('Invitation ID is required');
+        ).rejects.toThrow('Invalid invitation ID');
       });
     });
 
@@ -120,18 +120,18 @@ describe('Invitation Resolvers', () => {
 
         await expect(
           invitationResolvers.Query.getInvitationPublic({}, { id: 'nonexistent-id' })
-        ).rejects.toThrow('Invitation not found');
+        ).rejects.toThrow('Invitation not found or has expired');
       });
 
       it('should call prisma with correct parameters', async () => {
         vi.mocked(prisma.invitation.findUnique).mockResolvedValue(null);
 
         await expect(
-          invitationResolvers.Query.getInvitationPublic({}, { id: 'test-id' })
+          invitationResolvers.Query.getInvitationPublic({}, { id: 'test-id-8x' })
         ).rejects.toThrow();
 
         expect(prisma.invitation.findUnique).toHaveBeenCalledWith({
-          where: { id: 'test-id' },
+          where: { id: 'test-id-8x' },
           include: {
             organization: {
               select: {
@@ -166,7 +166,7 @@ describe('Invitation Resolvers', () => {
 
         await expect(
           invitationResolvers.Query.getInvitationPublic({}, { id: 'invitation-123' })
-        ).rejects.toThrow('Invitation has already been accepted');
+        ).rejects.toThrow('Invitation is no longer valid');
       });
 
       it('should throw error when invitation status is cancelled', async () => {
@@ -182,7 +182,7 @@ describe('Invitation Resolvers', () => {
 
         await expect(
           invitationResolvers.Query.getInvitationPublic({}, { id: 'invitation-123' })
-        ).rejects.toThrow('Invitation has already been cancelled');
+        ).rejects.toThrow('Invitation is no longer valid');
       });
 
       it('should throw error when invitation status is rejected', async () => {
@@ -198,7 +198,7 @@ describe('Invitation Resolvers', () => {
 
         await expect(
           invitationResolvers.Query.getInvitationPublic({}, { id: 'invitation-123' })
-        ).rejects.toThrow('Invitation has already been rejected');
+        ).rejects.toThrow('Invitation is no longer valid');
       });
 
       it('should check status before checking expiry', async () => {
@@ -209,10 +209,10 @@ describe('Invitation Resolvers', () => {
         vi.mocked(prisma.invitation.findUnique).mockResolvedValue(acceptedInvitation as any);
         vi.mocked(dateHelpers.isDateExpired).mockReturnValue(true);
 
-        // Should throw "already been accepted" error, not "expired" error
+        // Should throw "no longer valid" error, not "expired" error
         await expect(
           invitationResolvers.Query.getInvitationPublic({}, { id: 'invitation-123' })
-        ).rejects.toThrow('Invitation has already been accepted');
+        ).rejects.toThrow('Invitation is no longer valid');
       });
     });
 
@@ -227,7 +227,7 @@ describe('Invitation Resolvers', () => {
 
         await expect(
           invitationResolvers.Query.getInvitationPublic({}, { id: 'invitation-123' })
-        ).rejects.toThrow('Invitation has expired');
+        ).rejects.toThrow('Invitation not found or has expired');
       });
 
       it('should call isDateExpired with correct date string', async () => {
@@ -482,7 +482,7 @@ describe('Invitation Resolvers', () => {
 
         await expect(
           invitationResolvers.Query.getInvitationPublic({}, { id: longId })
-        ).rejects.toThrow('Invitation not found');
+        ).rejects.toThrow('Invitation not found or has expired');
 
         expect(prisma.invitation.findUnique).toHaveBeenCalledWith(
           expect.objectContaining({ where: { id: longId } })
@@ -531,7 +531,7 @@ describe('Invitation Resolvers', () => {
           } else {
             await expect(
               invitationResolvers.Query.getInvitationPublic({}, { id: 'invitation-123' })
-            ).rejects.toThrow(`Invitation has already been ${status}`);
+            ).rejects.toThrow('Invitation is no longer valid');
           }
         }
       });

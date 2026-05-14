@@ -6,6 +6,23 @@ import { logger } from '../../lib/logger.js';
 
 // Mock dependencies
 vi.mock('../../repositories/index.js');
+
+// Mock prisma with $transaction support
+vi.mock('../../lib/prisma.js', () => {
+  const mockTx = {
+    responseEditHistory: {
+      create: vi.fn().mockResolvedValue({}),
+    },
+    responseFieldChange: {
+      create: vi.fn().mockResolvedValue({}),
+    },
+  };
+  return {
+    prisma: {
+      $transaction: vi.fn((callback: (tx: any) => Promise<any>) => callback(mockTx)),
+    },
+  };
+});
 vi.mock('../hocuspocus.js', () => ({
   getFormSchemaFromHocuspocus: vi.fn(),
 }));
@@ -383,10 +400,14 @@ describe('ResponseEditTrackingService', () => {
   });
 
   describe('recordEdit', () => {
-    it('should record edit with changes', async () => {
-      vi.mocked(responseRepository.createEditHistory).mockResolvedValue({} as any);
-      vi.mocked(responseRepository.createFieldChange).mockResolvedValue({} as any);
+    let mockPrisma: any;
 
+    beforeEach(async () => {
+      const prismaModule = await import('../../lib/prisma.js');
+      mockPrisma = prismaModule.prisma;
+    });
+
+    it('should record edit with changes', async () => {
       const oldData = { 'field-1': 'John' };
       const newData = { 'field-1': 'Jane' };
 
@@ -403,7 +424,17 @@ describe('ResponseEditTrackingService', () => {
         }
       );
 
-      expect(responseRepository.createEditHistory).toHaveBeenCalledWith({
+      expect(mockPrisma.$transaction).toHaveBeenCalled();
+
+      // Verify the transaction callback creates edit history and field changes
+      const txCallback = vi.mocked(mockPrisma.$transaction).mock.calls[0][0];
+      const mockTx = {
+        responseEditHistory: { create: vi.fn().mockResolvedValue({}) },
+        responseFieldChange: { create: vi.fn().mockResolvedValue({}) },
+      };
+      await txCallback(mockTx);
+
+      expect(mockTx.responseEditHistory.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           responseId: 'response-123',
           editedById: 'user-123',
@@ -415,7 +446,7 @@ describe('ResponseEditTrackingService', () => {
         }),
       });
 
-      expect(responseRepository.createFieldChange).toHaveBeenCalledTimes(1);
+      expect(mockTx.responseFieldChange.create).toHaveBeenCalledTimes(1);
     });
 
     it('should skip recording when no changes detected', async () => {
@@ -432,14 +463,10 @@ describe('ResponseEditTrackingService', () => {
         }
       );
 
-      expect(responseRepository.createEditHistory).not.toHaveBeenCalled();
-      expect(responseRepository.createFieldChange).not.toHaveBeenCalled();
+      expect(mockPrisma.$transaction).not.toHaveBeenCalled();
     });
 
     it('should create field change records for all changes', async () => {
-      vi.mocked(responseRepository.createEditHistory).mockResolvedValue({} as any);
-      vi.mocked(responseRepository.createFieldChange).mockResolvedValue({} as any);
-
       const oldData = { 'field-1': 'John', 'field-2': 'old@example.com' };
       const newData = { 'field-1': 'Jane', 'field-2': 'new@example.com' };
 
@@ -453,13 +480,19 @@ describe('ResponseEditTrackingService', () => {
         }
       );
 
-      expect(responseRepository.createFieldChange).toHaveBeenCalledTimes(2);
+      expect(mockPrisma.$transaction).toHaveBeenCalled();
+
+      const txCallback = vi.mocked(mockPrisma.$transaction).mock.calls[0][0];
+      const mockTx = {
+        responseEditHistory: { create: vi.fn().mockResolvedValue({}) },
+        responseFieldChange: { create: vi.fn().mockResolvedValue({}) },
+      };
+      await txCallback(mockTx);
+
+      expect(mockTx.responseFieldChange.create).toHaveBeenCalledTimes(2);
     });
 
     it('should use default edit type when not provided', async () => {
-      vi.mocked(responseRepository.createEditHistory).mockResolvedValue({} as any);
-      vi.mocked(responseRepository.createFieldChange).mockResolvedValue({} as any);
-
       const oldData = {};
       const newData = { 'field-1': 'John' };
 
@@ -473,7 +506,16 @@ describe('ResponseEditTrackingService', () => {
         }
       );
 
-      expect(responseRepository.createEditHistory).toHaveBeenCalledWith({
+      expect(mockPrisma.$transaction).toHaveBeenCalled();
+
+      const txCallback = vi.mocked(mockPrisma.$transaction).mock.calls[0][0];
+      const mockTx = {
+        responseEditHistory: { create: vi.fn().mockResolvedValue({}) },
+        responseFieldChange: { create: vi.fn().mockResolvedValue({}) },
+      };
+      await txCallback(mockTx);
+
+      expect(mockTx.responseEditHistory.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           editType: 'MANUAL',
         }),

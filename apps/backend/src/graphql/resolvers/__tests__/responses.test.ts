@@ -9,6 +9,7 @@ import * as analyticsService from '../../../services/analyticsService.js';
 import * as pluginEvents from '../../../plugins/events.js';
 import * as usageService from '../../../subscriptions/usageService.js';
 import * as subscriptionEvents from '../../../subscriptions/events.js';
+import * as editTrackingService from '../../../services/responseEditTrackingService.js';
 
 // Mock all dependencies
 vi.mock('../../../services/responseService.js');
@@ -33,6 +34,12 @@ vi.mock('@dculus/utils', async () => {
     generateId: vi.fn(() => 'generated-response-id'),
   };
 });
+// Mock the dynamic import used by getEditHistoryMemoised
+vi.mock('../../../services/responseEditTrackingService.js', () => ({
+  ResponseEditTrackingService: {
+    getEditHistory: vi.fn(),
+  },
+}));
 
 describe('Responses Resolvers', () => {
   const mockContext = {
@@ -131,6 +138,11 @@ describe('Responses Resolvers', () => {
     it('should return response by id when user is authenticated', async () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(responseService.getResponseById).mockResolvedValue(mockResponse as any);
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: true,
+        permission: 'VIEWER' as any,
+        form: mockForm as any,
+      });
 
       const result = await responsesResolvers.Query.response(
         {},
@@ -171,6 +183,11 @@ describe('Responses Resolvers', () => {
       limit: 10,
       totalPages: 1,
     };
+
+    beforeEach(() => {
+      // Reset requireOrganizationMembership to default (pass) before each test in this block
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+    });
 
     it('should return paginated responses for form', async () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
@@ -255,6 +272,9 @@ describe('Responses Resolvers', () => {
       };
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockRejectedValue(
+        new GraphQLError('Access denied: You do not have permission to view responses for this form')
+      );
 
       await expect(
         responsesResolvers.Query.responsesByForm(
@@ -275,6 +295,9 @@ describe('Responses Resolvers', () => {
       };
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockRejectedValue(
+        new GraphQLError('Access denied: You do not have permission to view responses for this form')
+      );
 
       await expect(
         responsesResolvers.Query.responsesByForm(
@@ -637,6 +660,8 @@ describe('Responses Resolvers', () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(responseService.getResponseById).mockResolvedValue(mockResponse as any);
       vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
+      // Reset requireOrganizationMembership to default (pass) before each test in this block
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
       vi.mocked(responseService.updateResponse).mockResolvedValue({
         ...mockResponse,
         data: mockUpdateInput.data,
@@ -726,6 +751,9 @@ describe('Responses Resolvers', () => {
           session: { id: 'session-123', activeOrganizationId: 'different-org' },
         },
       };
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockRejectedValue(
+        new GraphQLError('Access denied: You do not have permission to edit this response')
+      );
 
       await expect(
         responsesResolvers.Mutation.updateResponse(
@@ -744,6 +772,9 @@ describe('Responses Resolvers', () => {
           session: null,
         },
       };
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockRejectedValue(
+        new GraphQLError('Access denied: You do not have permission to edit this response')
+      );
 
       await expect(
         responsesResolvers.Mutation.updateResponse(
@@ -858,6 +889,11 @@ describe('Responses Resolvers', () => {
   });
 
   describe('Extended Resolvers: Query.responseEditHistory', () => {
+    beforeEach(() => {
+      // Reset requireOrganizationMembership to default (pass) before each test in this block
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+    });
+
     const mockEditHistory = [
       {
         id: 'edit-1',
@@ -894,13 +930,7 @@ describe('Responses Resolvers', () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(responseService.getResponseById).mockResolvedValue(mockResponse as any);
       vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
-
-      // Mock the dynamic import
-      vi.doMock('../../../services/responseEditTrackingService.js', () => ({
-        ResponseEditTrackingService: {
-          getEditHistory: vi.fn().mockResolvedValue(mockEditHistory),
-        },
-      }));
+      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockResolvedValue(mockEditHistory as any);
 
       const result = await extendedResponsesResolvers.Query.responseEditHistory(
         {},
@@ -953,6 +983,9 @@ describe('Responses Resolvers', () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(responseService.getResponseById).mockResolvedValue(mockResponse as any);
       vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockRejectedValue(
+        new GraphQLError('Access denied: You do not have permission to view edit history for this response')
+      );
 
       await expect(
         extendedResponsesResolvers.Query.responseEditHistory(
@@ -966,37 +999,29 @@ describe('Responses Resolvers', () => {
 
   describe('Extended Resolvers: FormResponse.hasBeenEdited', () => {
     it('should return true when response has been edited', async () => {
-      vi.doMock('../../../services/responseEditTrackingService.js', () => ({
-        ResponseEditTrackingService: {
-          getEditHistory: vi.fn().mockResolvedValue([{ id: 'edit-1' }]),
-        },
-      }));
+      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockResolvedValue([{ id: 'edit-1' }] as any);
+      // Use fresh parent to avoid cached _editHistoryPromise
+      const parent = { ...mockResponse };
 
-      const result = await extendedResponsesResolvers.FormResponse.hasBeenEdited(mockResponse);
+      const result = await extendedResponsesResolvers.FormResponse.hasBeenEdited(parent);
 
       expect(result).toBe(true);
     });
 
     it('should return false when response has not been edited', async () => {
-      vi.doMock('../../../services/responseEditTrackingService.js', () => ({
-        ResponseEditTrackingService: {
-          getEditHistory: vi.fn().mockResolvedValue([]),
-        },
-      }));
+      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockResolvedValue([]);
+      const parent = { ...mockResponse };
 
-      const result = await extendedResponsesResolvers.FormResponse.hasBeenEdited(mockResponse);
+      const result = await extendedResponsesResolvers.FormResponse.hasBeenEdited(parent);
 
       expect(result).toBe(false);
     });
 
     it('should return false when error occurs', async () => {
-      vi.doMock('../../../services/responseEditTrackingService.js', () => ({
-        ResponseEditTrackingService: {
-          getEditHistory: vi.fn().mockRejectedValue(new Error('Database error')),
-        },
-      }));
+      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockRejectedValue(new Error('Database error'));
+      const parent = { ...mockResponse };
 
-      const result = await extendedResponsesResolvers.FormResponse.hasBeenEdited(mockResponse);
+      const result = await extendedResponsesResolvers.FormResponse.hasBeenEdited(parent);
 
       expect(result).toBe(false);
     });
@@ -1004,37 +1029,28 @@ describe('Responses Resolvers', () => {
 
   describe('Extended Resolvers: FormResponse.totalEdits', () => {
     it('should return correct number of edits', async () => {
-      vi.doMock('../../../services/responseEditTrackingService.js', () => ({
-        ResponseEditTrackingService: {
-          getEditHistory: vi.fn().mockResolvedValue([{ id: 'edit-1' }, { id: 'edit-2' }]),
-        },
-      }));
+      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockResolvedValue([{ id: 'edit-1' }, { id: 'edit-2' }] as any);
+      const parent = { ...mockResponse };
 
-      const result = await extendedResponsesResolvers.FormResponse.totalEdits(mockResponse);
+      const result = await extendedResponsesResolvers.FormResponse.totalEdits(parent);
 
       expect(result).toBe(2);
     });
 
     it('should return 0 when no edits', async () => {
-      vi.doMock('../../../services/responseEditTrackingService.js', () => ({
-        ResponseEditTrackingService: {
-          getEditHistory: vi.fn().mockResolvedValue([]),
-        },
-      }));
+      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockResolvedValue([]);
+      const parent = { ...mockResponse };
 
-      const result = await extendedResponsesResolvers.FormResponse.totalEdits(mockResponse);
+      const result = await extendedResponsesResolvers.FormResponse.totalEdits(parent);
 
       expect(result).toBe(0);
     });
 
     it('should return 0 when error occurs', async () => {
-      vi.doMock('../../../services/responseEditTrackingService.js', () => ({
-        ResponseEditTrackingService: {
-          getEditHistory: vi.fn().mockRejectedValue(new Error('Database error')),
-        },
-      }));
+      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockRejectedValue(new Error('Database error'));
+      const parent = { ...mockResponse };
 
-      const result = await extendedResponsesResolvers.FormResponse.totalEdits(mockResponse);
+      const result = await extendedResponsesResolvers.FormResponse.totalEdits(parent);
 
       expect(result).toBe(0);
     });
@@ -1046,37 +1062,28 @@ describe('Responses Resolvers', () => {
         { id: 'edit-2', editedAt: new Date('2024-01-02') },
         { id: 'edit-1', editedAt: new Date('2024-01-01') },
       ];
-      vi.doMock('../../../services/responseEditTrackingService.js', () => ({
-        ResponseEditTrackingService: {
-          getEditHistory: vi.fn().mockResolvedValue(editHistory),
-        },
-      }));
+      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockResolvedValue(editHistory as any);
+      const parent = { ...mockResponse };
 
-      const result = await extendedResponsesResolvers.FormResponse.lastEditedAt(mockResponse);
+      const result = await extendedResponsesResolvers.FormResponse.lastEditedAt(parent);
 
       expect(result).toBe(editHistory[0].editedAt.toISOString());
     });
 
     it('should return null when no edits', async () => {
-      vi.doMock('../../../services/responseEditTrackingService.js', () => ({
-        ResponseEditTrackingService: {
-          getEditHistory: vi.fn().mockResolvedValue([]),
-        },
-      }));
+      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockResolvedValue([]);
+      const parent = { ...mockResponse };
 
-      const result = await extendedResponsesResolvers.FormResponse.lastEditedAt(mockResponse);
+      const result = await extendedResponsesResolvers.FormResponse.lastEditedAt(parent);
 
       expect(result).toBeNull();
     });
 
     it('should return null when error occurs', async () => {
-      vi.doMock('../../../services/responseEditTrackingService.js', () => ({
-        ResponseEditTrackingService: {
-          getEditHistory: vi.fn().mockRejectedValue(new Error('Database error')),
-        },
-      }));
+      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockRejectedValue(new Error('Database error'));
+      const parent = { ...mockResponse };
 
-      const result = await extendedResponsesResolvers.FormResponse.lastEditedAt(mockResponse);
+      const result = await extendedResponsesResolvers.FormResponse.lastEditedAt(parent);
 
       expect(result).toBeNull();
     });
@@ -1096,44 +1103,35 @@ describe('Responses Resolvers', () => {
           editedAt: new Date('2024-01-02'),
         },
       ];
-      vi.doMock('../../../services/responseEditTrackingService.js', () => ({
-        ResponseEditTrackingService: {
-          getEditHistory: vi.fn().mockResolvedValue(editHistory),
-        },
-      }));
+      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockResolvedValue(editHistory as any);
+      const parent = { ...mockResponse };
 
-      const result = await extendedResponsesResolvers.FormResponse.lastEditedBy(mockResponse);
+      const result = await extendedResponsesResolvers.FormResponse.lastEditedBy(parent);
 
       expect(result).toEqual(editHistory[0].editedBy);
     });
 
     it('should return null when no edits', async () => {
-      vi.doMock('../../../services/responseEditTrackingService.js', () => ({
-        ResponseEditTrackingService: {
-          getEditHistory: vi.fn().mockResolvedValue([]),
-        },
-      }));
+      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockResolvedValue([]);
+      const parent = { ...mockResponse };
 
-      const result = await extendedResponsesResolvers.FormResponse.lastEditedBy(mockResponse);
+      const result = await extendedResponsesResolvers.FormResponse.lastEditedBy(parent);
 
       expect(result).toBeNull();
     });
 
     it('should return null when error occurs', async () => {
-      vi.doMock('../../../services/responseEditTrackingService.js', () => ({
-        ResponseEditTrackingService: {
-          getEditHistory: vi.fn().mockRejectedValue(new Error('Database error')),
-        },
-      }));
+      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockRejectedValue(new Error('Database error'));
+      const parent = { ...mockResponse };
 
-      const result = await extendedResponsesResolvers.FormResponse.lastEditedBy(mockResponse);
+      const result = await extendedResponsesResolvers.FormResponse.lastEditedBy(parent);
 
       expect(result).toBeNull();
     });
   });
 
   describe('Extended Resolvers: FormResponse.editHistory', () => {
-    const mockEditHistory = [
+    const mockEditHistoryData = [
       {
         id: 'edit-1',
         editedBy: { id: 'user-123', name: 'User', email: 'user@example.com', image: null },
@@ -1142,37 +1140,28 @@ describe('Responses Resolvers', () => {
     ];
 
     it('should return full edit history', async () => {
-      vi.doMock('../../../services/responseEditTrackingService.js', () => ({
-        ResponseEditTrackingService: {
-          getEditHistory: vi.fn().mockResolvedValue(mockEditHistory),
-        },
-      }));
+      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockResolvedValue(mockEditHistoryData as any);
+      const parent = { ...mockResponse };
 
-      const result = await extendedResponsesResolvers.FormResponse.editHistory(mockResponse);
+      const result = await extendedResponsesResolvers.FormResponse.editHistory(parent);
 
-      expect(result).toEqual(mockEditHistory);
+      expect(result).toEqual(mockEditHistoryData);
     });
 
     it('should return empty array when no edits', async () => {
-      vi.doMock('../../../services/responseEditTrackingService.js', () => ({
-        ResponseEditTrackingService: {
-          getEditHistory: vi.fn().mockResolvedValue([]),
-        },
-      }));
+      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockResolvedValue([]);
+      const parent = { ...mockResponse };
 
-      const result = await extendedResponsesResolvers.FormResponse.editHistory(mockResponse);
+      const result = await extendedResponsesResolvers.FormResponse.editHistory(parent);
 
       expect(result).toEqual([]);
     });
 
     it('should return empty array when error occurs', async () => {
-      vi.doMock('../../../services/responseEditTrackingService.js', () => ({
-        ResponseEditTrackingService: {
-          getEditHistory: vi.fn().mockRejectedValue(new Error('Database error')),
-        },
-      }));
+      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockRejectedValue(new Error('Database error'));
+      const parent = { ...mockResponse };
 
-      const result = await extendedResponsesResolvers.FormResponse.editHistory(mockResponse);
+      const result = await extendedResponsesResolvers.FormResponse.editHistory(parent);
 
       expect(result).toEqual([]);
     });

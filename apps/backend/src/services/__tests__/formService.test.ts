@@ -243,13 +243,13 @@ describe('Form Service', () => {
     });
 
     it('should use longer short URL after max attempts', async () => {
-      // Mock first 10 attempts to return existing URLs
-      for (let i = 0; i < 10; i++) {
+      // Mock first 8 attempts (length 8) to collide
+      for (let i = 0; i < 8; i++) {
         vi.mocked(generateShortUrl).mockResolvedValueOnce('existing' + i);
         vi.mocked(formRepository.findByShortUrl).mockResolvedValueOnce(mockForm as any);
       }
 
-      // 11th attempt with 12-char URL succeeds
+      // 9th attempt uses length 12 and succeeds
       vi.mocked(generateShortUrl).mockResolvedValueOnce('longer12char');
       vi.mocked(formRepository.findByShortUrl).mockResolvedValueOnce(null);
 
@@ -263,7 +263,7 @@ describe('Form Service', () => {
       });
 
       expect(generateShortUrl).toHaveBeenLastCalledWith(12);
-      expect(generateShortUrl).toHaveBeenCalledTimes(11);
+      expect(generateShortUrl).toHaveBeenCalledTimes(9);
     });
 
     it('should create OWNER permission for form creator', async () => {

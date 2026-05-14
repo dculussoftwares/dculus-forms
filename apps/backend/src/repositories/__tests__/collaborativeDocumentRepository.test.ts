@@ -8,6 +8,7 @@ describe('Collaborative Document Repository', () => {
       findMany: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      upsert: vi.fn(),
     },
   };
 
@@ -147,34 +148,38 @@ describe('Collaborative Document Repository', () => {
         state,
       };
 
-      mockPrisma.collaborativeDocument.findUnique.mockResolvedValue(null);
-      mockPrisma.collaborativeDocument.create.mockResolvedValue(newDoc as any);
+      mockPrisma.collaborativeDocument.upsert.mockResolvedValue(newDoc as any);
 
       const result = await repository.saveDocumentState('form-123', state, idFactory);
 
       expect(result).toEqual(newDoc);
       expect(idFactory).toHaveBeenCalledWith('form-123');
-      expect(mockPrisma.collaborativeDocument.create).toHaveBeenCalled();
+      expect(mockPrisma.collaborativeDocument.upsert).toHaveBeenCalledWith({
+        where: { documentName: 'form-123' },
+        update: expect.objectContaining({ state }),
+        create: expect.objectContaining({ id: 'doc-123', documentName: 'form-123', state }),
+      });
     });
 
     it('should update existing document when it exists', async () => {
       const state = Buffer.from([4, 5, 6]);
-      const idFactory = vi.fn();
-      const existingDoc = { documentName: 'form-123' };
+      const idFactory = vi.fn().mockReturnValue('doc-456');
       const updatedDoc = {
         id: 'doc-123',
         documentName: 'form-123',
         state,
       };
 
-      mockPrisma.collaborativeDocument.findUnique.mockResolvedValue(existingDoc as any);
-      mockPrisma.collaborativeDocument.update.mockResolvedValue(updatedDoc as any);
+      mockPrisma.collaborativeDocument.upsert.mockResolvedValue(updatedDoc as any);
 
       const result = await repository.saveDocumentState('form-123', state, idFactory);
 
       expect(result).toEqual(updatedDoc);
-      expect(idFactory).not.toHaveBeenCalled();
-      expect(mockPrisma.collaborativeDocument.update).toHaveBeenCalled();
+      expect(mockPrisma.collaborativeDocument.upsert).toHaveBeenCalledWith({
+        where: { documentName: 'form-123' },
+        update: expect.objectContaining({ state }),
+        create: expect.objectContaining({ state }),
+      });
     });
   });
 });
