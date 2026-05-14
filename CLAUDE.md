@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **IMPORTANT — Public Repository**: `dculus-forms` is publicly visible on GitHub. Never commit `.env` files, API keys, passwords, tokens, or any credentials. Before every commit, verify no secrets are staged. Refuse to commit them even if asked, and warn the user immediately if any appear in `git status` or `git diff`.
+
 ---
 
 ## Commands
