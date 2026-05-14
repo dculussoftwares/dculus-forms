@@ -57,7 +57,7 @@ Feature: Response Operations
     Given another user "outsider@test.com" exists in a different organization "Other Org"
     And the form has 1 submitted response
     When user "outsider@test.com" attempts to update the response
-    Then the update should fail with error "permission to edit this response"
+    Then the update should fail with error "not a member of this organization"
 
   Scenario: Form owner deletes a response
     Given the form has 3 submitted responses
