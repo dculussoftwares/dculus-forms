@@ -1,8 +1,10 @@
-import { GraphQLError } from '#graphql-errors';
+import { createGraphQLError } from '#graphql-errors';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { prisma } from '../../lib/prisma.js';
 import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { s3Config } from '../../lib/env.js';
 import { logger } from '../../lib/logger.js';
+import { type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 
 export interface AdminOrganizationsArgs {
   limit?: number;
@@ -37,18 +39,15 @@ const s3Client = new S3Client({
   },
 });
 
-// Helper function to check if user has admin privileges
-function requireAdminRole(context: any) {
-  if (!context.user) {
-    throw new GraphQLError('Authentication required');
+function requireAdminRole(context: { auth: BetterAuthContext }) {
+  if (!context.auth?.user) {
+    throw createGraphQLError('Authentication required', GRAPHQL_ERROR_CODES.AUTHENTICATION_REQUIRED);
   }
-
-  const userRole = context.user.role;
-  if (!userRole || (userRole !== 'admin' && userRole !== 'superAdmin')) {
-    throw new GraphQLError('Admin privileges required');
+  const role = context.auth.user.role;
+  if (role !== 'admin' && role !== 'superAdmin') {
+    throw createGraphQLError('Admin privileges required', GRAPHQL_ERROR_CODES.NO_ACCESS);
   }
-
-  return context.user;
+  return context.auth.user;
 }
 
 // Helper function to format bytes to human readable format
@@ -121,12 +120,12 @@ async function getMongoStorageStats(): Promise<{ mongoDbSize: string; mongoColle
 
 export const adminResolvers = {
   Query: {
-    adminOrganizations: async (_: any, args: AdminOrganizationsArgs, context: any) => {
-      // Check admin privileges
+    adminOrganizations: async (_: any, args: AdminOrganizationsArgs, context: { auth: BetterAuthContext }) => {
       requireAdminRole(context);
 
       try {
-        const { limit = 50, offset = 0 } = args;
+        const limit = Math.min(Math.max(1, args.limit ?? 50), 100);
+        const offset = Math.max(0, args.offset ?? 0);
 
         const organizations = await prisma.organization.findMany({
           skip: offset,
@@ -179,11 +178,11 @@ export const adminResolvers = {
         };
       } catch (error) {
         logger.error('Error fetching admin organizations:', error);
-        throw new GraphQLError('Failed to fetch organizations');
+        throw createGraphQLError('Failed to fetch organizations', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
 
-    adminOrganization: async (_: any, args: AdminOrganizationArgs, context: any) => {
+    adminOrganization: async (_: any, args: AdminOrganizationArgs, context: { auth: BetterAuthContext }) => {
       // Check admin privileges
       requireAdminRole(context);
 
@@ -223,7 +222,7 @@ export const adminResolvers = {
         });
 
         if (!organization) {
-          throw new GraphQLError('Organization not found');
+          throw createGraphQLError('Organization not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
         }
 
         return {
@@ -233,11 +232,11 @@ export const adminResolvers = {
         };
       } catch (error) {
         logger.error('Error fetching admin organization:', error);
-        throw new GraphQLError('Failed to fetch organization');
+        throw createGraphQLError('Failed to fetch organization', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
 
-    adminStats: async (_: any, __: any, context: any) => {
+    adminStats: async (_: any, __: any, context: { auth: BetterAuthContext }) => {
       // Check admin privileges
       requireAdminRole(context);
 
@@ -270,16 +269,18 @@ export const adminResolvers = {
         };
       } catch (error) {
         logger.error('Error fetching admin stats:', error);
-        throw new GraphQLError('Failed to fetch admin statistics');
+        throw createGraphQLError('Failed to fetch admin statistics', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
 
-    adminUsers: async (_: any, args: AdminUsersArgs, context: any) => {
+    adminUsers: async (_: any, args: AdminUsersArgs, context: { auth: BetterAuthContext }) => {
       // Check admin privileges
       requireAdminRole(context);
 
       try {
-        const { page = 1, limit = 20, search } = args;
+        const page = Math.max(1, args.page ?? 1);
+        const limit = Math.min(Math.max(1, args.limit ?? 20), 100);
+        const search = args.search;
         const skip = (page - 1) * limit;
 
         // Build where clause for search
@@ -341,11 +342,11 @@ export const adminResolvers = {
         };
       } catch (error) {
         logger.error('Error fetching admin users:', error);
-        throw new GraphQLError('Failed to fetch users');
+        throw createGraphQLError('Failed to fetch users', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
 
-    adminUserById: async (_: any, args: AdminUserByIdArgs, context: any) => {
+    adminUserById: async (_: any, args: AdminUserByIdArgs, context: { auth: BetterAuthContext }) => {
       // Check admin privileges
       requireAdminRole(context);
 
@@ -368,7 +369,7 @@ export const adminResolvers = {
         });
 
         if (!user) {
-          throw new GraphQLError('User not found');
+          throw createGraphQLError('User not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
         }
 
         return {
@@ -389,11 +390,11 @@ export const adminResolvers = {
         };
       } catch (error) {
         logger.error('Error fetching admin user:', error);
-        throw new GraphQLError('Failed to fetch user');
+        throw createGraphQLError('Failed to fetch user', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
 
-    adminOrganizationById: async (_: any, args: AdminOrganizationByIdArgs, context: any) => {
+    adminOrganizationById: async (_: any, args: AdminOrganizationByIdArgs, context: { auth: BetterAuthContext }) => {
       // Check admin privileges
       requireAdminRole(context);
 
@@ -418,7 +419,7 @@ export const adminResolvers = {
         });
 
         if (!organization) {
-          throw new GraphQLError('Organization not found');
+          throw createGraphQLError('Organization not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
         }
 
         // Count total responses for this organization
@@ -451,7 +452,7 @@ export const adminResolvers = {
         };
       } catch (error) {
         logger.error('Error fetching admin organization by id:', error);
-        throw new GraphQLError('Failed to fetch organization');
+        throw createGraphQLError('Failed to fetch organization', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
   },

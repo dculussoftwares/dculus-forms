@@ -26,9 +26,10 @@ vi.mock('../../../lib/logger.js', () => ({
 
 describe('Field Analytics Resolvers', () => {
   const mockContext = {
-    user: {
-      id: 'user-123',
-      email: 'test@example.com',
+    auth: {
+      user: { id: 'user-123', email: 'test@example.com' },
+      session: { activeOrganizationId: 'org-123' },
+      isAuthenticated: true,
     },
   };
 
@@ -499,7 +500,7 @@ describe('Field Analytics Resolvers', () => {
     });
 
     it('should throw error when user is not authenticated', async () => {
-      const unauthenticatedContext = { user: null };
+      const unauthenticatedContext = { auth: { user: null, session: null, isAuthenticated: false } };
 
       await expect(
         fieldAnalyticsResolvers.Query.fieldAnalytics(
@@ -832,7 +833,7 @@ describe('Field Analytics Resolvers', () => {
     });
 
     it('should throw error when user is not authenticated', async () => {
-      const unauthenticatedContext = { user: null };
+      const unauthenticatedContext = { auth: { user: null, session: null, isAuthenticated: false } };
 
       await expect(
         fieldAnalyticsResolvers.Query.allFieldsAnalytics(

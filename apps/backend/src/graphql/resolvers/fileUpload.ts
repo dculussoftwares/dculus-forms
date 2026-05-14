@@ -63,22 +63,17 @@ export const fileUploadResolvers = {
       // Must be authenticated
       requireAuth(context.auth);
 
-      // Key must be a form-response path — reject anything else
-      if (!key.startsWith('files/form-response/')) {
+      // Key must match the expected pattern — prevents path traversal via crafted keys
+      const KEY_PATTERN = /^files\/form-response\/([a-zA-Z0-9_-]+)\/[^/]+$/;
+      const keyMatch = key.match(KEY_PATTERN);
+      if (!keyMatch) {
         throw createGraphQLError(
           'Only form response files can be accessed via this endpoint',
           GRAPHQL_ERROR_CODES.BAD_USER_INPUT
         );
       }
 
-      // Extract formId from key: files/form-response/{formId}/filename
-      const formId = key.split('/')[2];
-      if (!formId) {
-        throw createGraphQLError(
-          'Invalid file key',
-          GRAPHQL_ERROR_CODES.BAD_USER_INPUT
-        );
-      }
+      const formId = keyMatch[1];
 
       // Check that caller has at least VIEWER access to the form
       const accessCheck = await checkFormAccess(

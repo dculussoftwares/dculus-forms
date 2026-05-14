@@ -115,35 +115,19 @@ describe('Better-Auth Resolvers', () => {
     it('should return user organizations with members', async () => {
       vi.mocked(prisma.member.findMany).mockResolvedValue([mockMembership] as any);
 
-      const result = await betterAuthResolvers.User.organizations({
-        id: 'user-123',
-        email: 'test@example.com',
-      });
+      const result = await betterAuthResolvers.User.organizations({ id: 'user-123' });
 
       expect(result).toEqual([mockOrganization]);
       expect(prisma.member.findMany).toHaveBeenCalledWith({
         where: { userId: 'user-123' },
-        include: {
-          organization: {
-            include: {
-              members: {
-                include: {
-                  user: true,
-                },
-              },
-            },
-          },
-        },
+        include: { organization: true },
       });
     });
 
     it('should return empty array when user has no organizations', async () => {
       vi.mocked(prisma.member.findMany).mockResolvedValue([]);
 
-      const result = await betterAuthResolvers.User.organizations({
-        id: 'user-789',
-        email: 'noorg@example.com',
-      });
+      const result = await betterAuthResolvers.User.organizations({ id: 'user-789' });
 
       expect(result).toEqual([]);
     });

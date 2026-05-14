@@ -262,14 +262,6 @@ export const typeDefs = gql`
     templates: [FormTemplate!]!
   }
 
-  type PaginatedForms {
-    data: [Form!]!
-    total: Int!
-    page: Int!
-    limit: Int!
-    totalPages: Int!
-  }
-
   type PaginatedResponses {
     data: [FormResponse!]!
     total: Int!

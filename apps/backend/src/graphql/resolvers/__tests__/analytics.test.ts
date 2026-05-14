@@ -32,9 +32,10 @@ describe('Analytics Resolvers', () => {
       ip: '192.168.1.1',
       headers: {},
     },
-    user: {
-      id: 'user-123',
-      email: 'test@example.com',
+    auth: {
+      user: { id: 'user-123', email: 'test@example.com' },
+      session: { activeOrganizationId: 'org-123' },
+      isAuthenticated: true,
     },
   };
 
@@ -576,7 +577,7 @@ describe('Analytics Resolvers', () => {
     it('should throw error when user is not authenticated', async () => {
       const unauthenticatedContext = {
         ...mockContext,
-        user: null,
+        auth: { user: null, session: null, isAuthenticated: false },
       };
 
       await expect(
@@ -775,7 +776,7 @@ describe('Analytics Resolvers', () => {
     it('should throw error when user is not authenticated', async () => {
       const unauthenticatedContext = {
         ...mockContext,
-        user: null,
+        auth: { user: null, session: null, isAuthenticated: false },
       };
 
       await expect(
@@ -969,7 +970,7 @@ describe('Analytics Resolvers', () => {
         req: {
           connection: { remoteAddress: '10.0.0.1' },
         },
-        user: mockContext.user,
+        auth: mockContext.auth,
       };
 
       vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
@@ -998,7 +999,7 @@ describe('Analytics Resolvers', () => {
         req: {
           socket: { remoteAddress: '172.16.0.1' },
         },
-        user: mockContext.user,
+        auth: mockContext.auth,
       };
 
       vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
@@ -1029,7 +1030,7 @@ describe('Analytics Resolvers', () => {
             'x-forwarded-for': '203.0.113.195, 198.51.100.178',
           },
         },
-        user: mockContext.user,
+        auth: mockContext.auth,
       };
 
       vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
@@ -1056,7 +1057,7 @@ describe('Analytics Resolvers', () => {
     it('should handle undefined IP gracefully', async () => {
       const contextWithNoIP = {
         req: {},
-        user: mockContext.user,
+        auth: mockContext.auth,
       };
 
       vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);

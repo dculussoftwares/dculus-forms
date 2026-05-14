@@ -1,14 +1,42 @@
 import { createGraphQLError, GraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { analyticsService } from '../../services/analyticsService.js';
+import { requireOrganizationMembership, type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 import { prisma } from '../../lib/prisma.js';
 import { emitFormViewed } from '../../subscriptions/events.js';
 import { logger } from '../../lib/logger.js';
+
+// UUID v4 / cuid pattern — rejects obviously bogus session IDs
+const SESSION_ID_RE = /^[a-zA-Z0-9_-]{8,128}$/;
+const UA_MAX_LEN = 512;
+
+function validatePublicAnalyticsInput(sessionId: string, userAgent: string): void {
+  if (!SESSION_ID_RE.test(sessionId)) {
+    throw createGraphQLError('Invalid sessionId format', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+  }
+  if (!userAgent || userAgent.length > UA_MAX_LEN) {
+    throw createGraphQLError('Invalid userAgent', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+  }
+}
+
+function validateTimeRange(timeRange: TimeRangeInput): { start: Date; end: Date } {
+  const start = new Date(timeRange.start);
+  const end = new Date(timeRange.end);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    throw createGraphQLError('Invalid date range: dates must be valid ISO 8601 strings', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+  }
+  if (start >= end) {
+    throw createGraphQLError('Invalid date range: start must be before end', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+  }
+  return { start, end };
+}
 
 export const analyticsResolvers = {
   Mutation: {
     trackFormView: async (_: any, { input }: { input: TrackFormViewInput }, context: any) => {
       try {
+        validatePublicAnalyticsInput(input.sessionId, input.userAgent);
+
         // Get client IP from request
         const clientIP = context.req?.ip ||
           context.req?.connection?.remoteAddress ||
@@ -72,6 +100,13 @@ export const analyticsResolvers = {
 
     updateFormStartTime: async (_: any, { input }: { input: UpdateFormStartTimeInput }) => {
       try {
+        if (!SESSION_ID_RE.test(input.sessionId)) {
+          throw createGraphQLError('Invalid sessionId format', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+        }
+        if (!input.startedAt || isNaN(new Date(input.startedAt).getTime())) {
+          throw createGraphQLError('Invalid startedAt: must be a valid ISO 8601 date string', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+        }
+
         // Verify form exists and is published
         const form = await prisma.form.findUnique({
           where: { id: input.formId },
@@ -172,44 +207,16 @@ export const analyticsResolvers = {
   },
 
   Query: {
-    formAnalytics: async (_: any, { formId, timeRange }: { formId: string; timeRange?: TimeRangeInput }, context: any) => {
+    formAnalytics: async (_: any, { formId, timeRange }: { formId: string; timeRange?: TimeRangeInput }, context: { auth: BetterAuthContext }) => {
       try {
-        // Verify user has access to this form
-        if (!context.user) {
-          throw createGraphQLError('Authentication required', GRAPHQL_ERROR_CODES.AUTHENTICATION_REQUIRED);
-        }
-
-        // Check if user has access to the form (either owner or member of organization)
         const form = await prisma.form.findUnique({
           where: { id: formId },
-          include: {
-            organization: {
-              include: {
-                members: {
-                  where: { userId: context.user.id }
-                }
-              }
-            }
-          }
+          select: { id: true, organizationId: true },
         });
+        if (!form) throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
+        await requireOrganizationMembership(context.auth, form.organizationId);
 
-        if (!form) {
-          throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
-        }
-
-        // Check if user is a member of the organization
-        if (form.organization.members.length === 0) {
-          throw createGraphQLError('Access denied', GRAPHQL_ERROR_CODES.NO_ACCESS);
-        }
-
-        // Parse time range if provided
-        let parsedTimeRange;
-        if (timeRange) {
-          parsedTimeRange = {
-            start: new Date(timeRange.start),
-            end: new Date(timeRange.end)
-          };
-        }
+        const parsedTimeRange = timeRange ? validateTimeRange(timeRange) : undefined;
 
         // Get analytics data
         const analytics = await analyticsService.getFormAnalytics(formId, parsedTimeRange);
@@ -226,44 +233,16 @@ export const analyticsResolvers = {
       }
     },
 
-    formSubmissionAnalytics: async (_: any, { formId, timeRange }: { formId: string; timeRange?: TimeRangeInput }, context: any) => {
+    formSubmissionAnalytics: async (_: any, { formId, timeRange }: { formId: string; timeRange?: TimeRangeInput }, context: { auth: BetterAuthContext }) => {
       try {
-        // Verify user has access to this form
-        if (!context.user) {
-          throw createGraphQLError('Authentication required', GRAPHQL_ERROR_CODES.AUTHENTICATION_REQUIRED);
-        }
-
-        // Check if user has access to the form (either owner or member of organization)
         const form = await prisma.form.findUnique({
           where: { id: formId },
-          include: {
-            organization: {
-              include: {
-                members: {
-                  where: { userId: context.user.id }
-                }
-              }
-            }
-          }
+          select: { id: true, organizationId: true },
         });
+        if (!form) throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
+        await requireOrganizationMembership(context.auth, form.organizationId);
 
-        if (!form) {
-          throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
-        }
-
-        // Check if user is a member of the organization
-        if (form.organization.members.length === 0) {
-          throw createGraphQLError('Access denied', GRAPHQL_ERROR_CODES.NO_ACCESS);
-        }
-
-        // Parse time range if provided
-        let parsedTimeRange;
-        if (timeRange) {
-          parsedTimeRange = {
-            start: new Date(timeRange.start),
-            end: new Date(timeRange.end)
-          };
-        }
+        const parsedTimeRange = timeRange ? validateTimeRange(timeRange) : undefined;
 
         // Get submission analytics data
         const submissionAnalytics = await analyticsService.getFormSubmissionAnalytics(formId, parsedTimeRange);

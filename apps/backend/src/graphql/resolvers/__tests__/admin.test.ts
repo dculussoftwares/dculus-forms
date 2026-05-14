@@ -56,34 +56,14 @@ vi.mock('../../../lib/env.js', () => ({
 }));
 
 describe('Admin Resolvers', () => {
-  const mockAdminContext = {
-    user: {
-      id: 'admin-123',
-      email: 'admin@example.com',
-      name: 'Admin User',
-      role: 'admin',
-    },
-  };
+  const makeAuthContext = (user: Record<string, unknown> | null) => ({
+    auth: { user, session: null, isAuthenticated: !!user },
+  });
 
-  const mockSuperAdminContext = {
-    user: {
-      id: 'superadmin-123',
-      email: 'superadmin@example.com',
-      name: 'Super Admin',
-      role: 'superAdmin',
-    },
-  };
-
-  const mockUserContext = {
-    user: {
-      id: 'user-123',
-      email: 'user@example.com',
-      name: 'Regular User',
-      role: 'user',
-    },
-  };
-
-  const mockNoAuthContext = {};
+  const mockAdminContext = makeAuthContext({ id: 'admin-123', email: 'admin@example.com', name: 'Admin User', role: 'admin' });
+  const mockSuperAdminContext = makeAuthContext({ id: 'superadmin-123', email: 'superadmin@example.com', name: 'Super Admin', role: 'superAdmin' });
+  const mockUserContext = makeAuthContext({ id: 'user-123', email: 'user@example.com', name: 'Regular User', role: 'user' });
+  const mockNoAuthContext = makeAuthContext(null);
 
   const mockOrganization = {
     id: 'org-123',
@@ -202,10 +182,7 @@ describe('Admin Resolvers', () => {
 
     it('should throw error when user role is missing', async () => {
       const contextWithoutRole = {
-        user: {
-          id: 'user-123',
-          email: 'user@example.com',
-        },
+        auth: { user: { id: 'user-123', email: 'user@example.com', role: undefined }, session: null, isAuthenticated: true },
       };
 
       await expect(

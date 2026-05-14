@@ -62,16 +62,29 @@ export const formsResolvers = {
         // Check time window limits
         if (limits.timeWindow?.enabled) {
           const now = new Date();
+          const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
           if (limits.timeWindow.startDate) {
+            if (!ISO_DATE_RE.test(limits.timeWindow.startDate)) {
+              throw createGraphQLError('Form has an invalid start date configured', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+            }
             const startDate = new Date(limits.timeWindow.startDate + 'T00:00:00');
+            if (isNaN(startDate.getTime())) {
+              throw createGraphQLError('Form has an invalid start date configured', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+            }
             if (now < startDate) {
               throw createGraphQLError("Form is not yet open for submissions", GRAPHQL_ERROR_CODES.FORM_NOT_YET_OPEN);
             }
           }
 
           if (limits.timeWindow.endDate) {
+            if (!ISO_DATE_RE.test(limits.timeWindow.endDate)) {
+              throw createGraphQLError('Form has an invalid end date configured', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+            }
             const endDate = new Date(limits.timeWindow.endDate + 'T23:59:59');
+            if (isNaN(endDate.getTime())) {
+              throw createGraphQLError('Form has an invalid end date configured', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+            }
             if (now > endDate) {
               throw createGraphQLError("Form submission period has ended", GRAPHQL_ERROR_CODES.FORM_CLOSED);
             }
@@ -120,78 +133,40 @@ export const formsResolvers = {
     dashboardStats: async (parent: any) => {
       const formId = parent.id;
 
-      // Get time boundaries
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
       const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-      // Get response counts for different time periods
       const [
         responsesToday,
         responsesThisWeek,
         responsesThisMonth,
+        totalResponses,
         totalViews,
-        submissionAnalytics
+        submissionAnalytics,
       ] = await Promise.all([
-        // Responses today
-        prisma.response.count({
-          where: {
-            formId,
-            submittedAt: { gte: today }
-          }
-        }),
-
-        // Responses this week
-        prisma.response.count({
-          where: {
-            formId,
-            submittedAt: { gte: weekAgo }
-          }
-        }),
-
-        // Responses this month
-        prisma.response.count({
-          where: {
-            formId,
-            submittedAt: { gte: monthAgo }
-          }
-        }),
-
-        // Total views for response rate calculation
-        prisma.formViewAnalytics.count({
-          where: { formId }
-        }),
-
-        // Get submission analytics for average completion time
+        prisma.response.count({ where: { formId, submittedAt: { gte: today } } }),
+        prisma.response.count({ where: { formId, submittedAt: { gte: weekAgo } } }),
+        prisma.response.count({ where: { formId, submittedAt: { gte: monthAgo } } }),
+        prisma.response.count({ where: { formId } }),
+        prisma.formViewAnalytics.count({ where: { formId } }),
+        // Direct formId filter — FormSubmissionAnalytics has an indexed formId column
         prisma.formSubmissionAnalytics.findMany({
-          where: {
-            responseId: {
-              in:
-                await prisma.response.findMany({
-                  where: { formId },
-                  select: { id: true }
-                }).then(responses => responses.map(r => r.id))
-            }
-          },
-          select: { completionTimeSeconds: true }
-        })
+          where: { formId },
+          select: { completionTimeSeconds: true },
+        }),
       ]);
 
-      // Calculate average completion time in seconds
-      let averageCompletionTime = null;
-      if (submissionAnalytics.length > 0) {
-        const validCompletionTimes = submissionAnalytics
-          .map(s => s.completionTimeSeconds)
-          .filter((t): t is number => t !== null && t > 0);
+      const validCompletionTimes = submissionAnalytics
+        .map(s => s.completionTimeSeconds)
+        .filter((t): t is number => t !== null && t > 0);
 
-        if (validCompletionTimes.length > 0) {
-          averageCompletionTime = validCompletionTimes.reduce((sum, time) => sum + time, 0) / validCompletionTimes.length;
-        }
-      }
+      const averageCompletionTime =
+        validCompletionTimes.length > 0
+          ? validCompletionTimes.reduce((sum, t) => sum + t, 0) / validCompletionTimes.length
+          : null;
 
-      // Calculate response rate as percentage
-      const totalResponses = await prisma.response.count({ where: { formId } });
       const responseRate = totalViews > 0 ? (totalResponses / totalViews) * 100 : 0;
 
       return {
@@ -199,7 +174,7 @@ export const formsResolvers = {
         responseRate,
         responsesToday,
         responsesThisWeek,
-        responsesThisMonth
+        responsesThisMonth,
       };
     },
   },
@@ -211,6 +186,17 @@ export const formsResolvers = {
     ) => {
       // 🔒 SECURITY: Verify user is a member of the target organization
       await requireOrganizationMembership(context.auth, input.organizationId);
+
+      // ✅ VALIDATION: title and description length
+      if (!input.title || input.title.trim().length === 0) {
+        throw createGraphQLError('Title is required', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+      if (input.title.length > 500) {
+        throw createGraphQLError('Title must be 500 characters or less', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+      if (input.description && input.description.length > 5000) {
+        throw createGraphQLError('Description must be 5000 characters or less', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
 
       // ✅ VALIDATION: Ensure exactly one of templateId or formSchema is provided
       const hasTemplateId = !!input.templateId;
@@ -356,8 +342,20 @@ export const formsResolvers = {
       }
 
       if (hasProp('createdById')) {
-        // Never allow changing form ownership through update
         throw createGraphQLError('Access denied: Cannot change form ownership through update', GRAPHQL_ERROR_CODES.NO_ACCESS);
+      }
+
+      // ✅ VALIDATION: title and description length
+      if (hasProp('title')) {
+        if (!input.title || input.title.trim().length === 0) {
+          throw createGraphQLError('Title cannot be empty', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+        }
+        if (input.title.length > 500) {
+          throw createGraphQLError('Title must be 500 characters or less', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+        }
+      }
+      if (hasProp('description') && input.description && input.description.length > 5000) {
+        throw createGraphQLError('Description must be 5000 characters or less', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
       }
 
       const updateData = {

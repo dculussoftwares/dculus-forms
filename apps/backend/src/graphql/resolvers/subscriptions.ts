@@ -39,6 +39,10 @@ export const subscriptionResolvers = {
     ) => {
       requireAuth(context.auth);
 
+      if (!itemPriceId || !/^[a-zA-Z0-9_-]{1,100}$/.test(itemPriceId)) {
+        throw new GraphQLError('Invalid item price ID format');
+      }
+
       // Get active organization
       const session = context.auth.session;
       if (!session?.activeOrganizationId) {

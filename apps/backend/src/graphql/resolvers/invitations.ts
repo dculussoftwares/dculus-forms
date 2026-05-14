@@ -1,55 +1,40 @@
-import { GraphQLError } from '#graphql-errors';
+import { createGraphQLError, GraphQLError } from '#graphql-errors';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { prisma } from '../../lib/prisma.js';
 import { isDateExpired } from '../../utils/dateHelpers.js';
 import { logger } from '../../lib/logger.js';
 
+// Rejects obviously invalid IDs before hitting the DB (reduces enumeration surface)
+const INVITATION_ID_RE = /^[a-zA-Z0-9_-]{8,128}$/;
+
 export const invitationResolvers = {
   Query: {
-    // Public resolver that doesn't require authentication
     getInvitationPublic: async (_: any, { id }: { id: string }) => {
       try {
-        if (!id) {
-          throw new GraphQLError('Invitation ID is required');
+        if (!id || !INVITATION_ID_RE.test(id)) {
+          throw createGraphQLError('Invalid invitation ID', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
         }
 
-        // Find invitation with related data
         const invitation = await prisma.invitation.findUnique({
           where: { id },
           include: {
-            organization: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-              },
-            },
-            inviter: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
+            organization: { select: { id: true, name: true, slug: true } },
+            inviter:      { select: { id: true, name: true, email: true } },
           },
         });
 
         if (!invitation) {
-          throw new GraphQLError('Invitation not found');
+          throw createGraphQLError('Invitation not found or has expired', GRAPHQL_ERROR_CODES.NOT_FOUND);
         }
 
-        // Check if invitation is expired
-        const isExpired = isDateExpired(invitation.expiresAt.toISOString());
-        
-        // Check if invitation is already accepted or cancelled
         if (invitation.status !== 'pending') {
-          throw new GraphQLError(`Invitation has already been ${invitation.status}`);
+          throw createGraphQLError('Invitation is no longer valid', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
         }
 
-        if (isExpired) {
-          throw new GraphQLError('Invitation has expired');
+        if (isDateExpired(invitation.expiresAt.toISOString())) {
+          throw createGraphQLError('Invitation not found or has expired', GRAPHQL_ERROR_CODES.NOT_FOUND);
         }
 
-        // Return only safe, public information
         return {
           id: invitation.id,
           email: invitation.email,
@@ -57,27 +42,17 @@ export const invitationResolvers = {
           status: invitation.status,
           expiresAt: invitation.expiresAt.toISOString(),
           createdAt: invitation.createdAt.toISOString(),
-          organization: invitation.organization ? {
-            id: invitation.organization.id,
-            name: invitation.organization.name,
-            slug: invitation.organization.slug,
-          } : null,
-          inviter: invitation.inviter ? {
-            id: invitation.inviter.id,
-            name: invitation.inviter.name,
-            email: invitation.inviter.email,
-          } : null,
+          organization: invitation.organization
+            ? { id: invitation.organization.id, name: invitation.organization.name, slug: invitation.organization.slug }
+            : null,
+          inviter: invitation.inviter
+            ? { id: invitation.inviter.id, name: invitation.inviter.name, email: invitation.inviter.email }
+            : null,
         };
       } catch (error) {
         logger.error('Error fetching invitation:', error);
-        
-        // Re-throw GraphQLError as is
-        if (error instanceof GraphQLError) {
-          throw error;
-        }
-        
-        // Convert other errors to GraphQLError
-        throw new GraphQLError('Failed to fetch invitation');
+        if (error instanceof GraphQLError) throw error;
+        throw createGraphQLError('Failed to fetch invitation', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
   },

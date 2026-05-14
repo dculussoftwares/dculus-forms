@@ -29,7 +29,11 @@ export const formFileResolvers = {
           throw createGraphQLError('Access denied: You do not have permission to view files for this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
         }
 
-        // Build where clause
+        const ALLOWED_FILE_TYPES = new Set(['FormBackground', 'FormResponse', 'FormTemplate', 'UserAvatar', 'OrganizationLogo']);
+        if (type && !ALLOWED_FILE_TYPES.has(type)) {
+          throw createGraphQLError(`Invalid file type filter: ${type}`, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+        }
+
         const where: any = { formId };
         if (type) {
           where.type = type;

@@ -87,17 +87,15 @@ export const checkFormAccess = async (userId: string, formId: string, requiredPe
   return { hasAccess: false, permission: PermissionLevel.NO_ACCESS, form };
 };
 
-// Helper to compare permission levels
-const checkPermissionLevel = (userPermission: Permission, requiredPermission: Permission): boolean => {
-  const permissionHierarchy = {
-    [PermissionLevel.NO_ACCESS]: 0,
-    [PermissionLevel.VIEWER]: 1,
-    [PermissionLevel.EDITOR]: 2,
-    [PermissionLevel.OWNER]: 3
-  };
-
-  return permissionHierarchy[userPermission] >= permissionHierarchy[requiredPermission];
+export const PERMISSION_HIERARCHY: Record<string, number> = {
+  [PermissionLevel.NO_ACCESS]: 0,
+  [PermissionLevel.VIEWER]: 1,
+  [PermissionLevel.EDITOR]: 2,
+  [PermissionLevel.OWNER]: 3,
 };
+
+const checkPermissionLevel = (userPermission: Permission, requiredPermission: Permission): boolean =>
+  (PERMISSION_HIERARCHY[userPermission] ?? 0) >= (PERMISSION_HIERARCHY[requiredPermission] ?? 0);
 
 export const formSharingResolvers = {
   Query: {
@@ -324,13 +322,10 @@ export const formSharingResolvers = {
 
         // Prevent callers from granting themselves a higher role than they currently hold
         const callerCurrentPermission = accessCheck.permission;
-        const permissionHierarchy: Record<string, number> = {
-          NO_ACCESS: 0, VIEWER: 1, EDITOR: 2, OWNER: 3,
-        };
         const selfEscalation = input.userPermissions.find(
           up =>
             up.userId === userId &&
-            (permissionHierarchy[up.permission] ?? 0) > (permissionHierarchy[callerCurrentPermission] ?? 0)
+            (PERMISSION_HIERARCHY[up.permission] ?? 0) > (PERMISSION_HIERARCHY[callerCurrentPermission] ?? 0)
         );
         if (selfEscalation) {
           throw createGraphQLError(

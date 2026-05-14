@@ -46,12 +46,20 @@ export const unifiedExportResolvers = {
           throw new GraphQLError('Form not found');
         }
 
-        // Get all responses for the form (unlimited)
+        const MAX_EXPORT_RESPONSES = 50_000;
+
         logger.info(`Fetching all responses for unified ${exportFormat.toUpperCase()} export - form: ${formId}`);
         let responses = await getAllResponsesByFormId(formId);
-        
+
         if (responses.length === 0) {
           throw new GraphQLError('No responses found for this form');
+        }
+
+        if (responses.length > MAX_EXPORT_RESPONSES) {
+          throw new GraphQLError(
+            `Export contains ${responses.length.toLocaleString()} responses which exceeds the ` +
+            `${MAX_EXPORT_RESPONSES.toLocaleString()} limit. Apply filters to narrow the dataset before exporting.`
+          );
         }
 
         logger.info(`Found ${responses.length} responses before filtering`);

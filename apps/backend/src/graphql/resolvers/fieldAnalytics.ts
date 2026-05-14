@@ -6,6 +6,7 @@ import {
   getAllFieldsAnalytics,
   type FieldAnalytics,
 } from '../../services/fieldAnalytics/index.js';
+import { requireAuth, type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 import { prisma } from '../../lib/prisma.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 import { logger } from '../../lib/logger.js';
@@ -203,17 +204,12 @@ export const fieldAnalyticsResolvers = {
     fieldAnalytics: async (
       _: any,
       { formId, fieldId }: { formId: string; fieldId: string },
-      context: any
+      context: { auth: BetterAuthContext }
     ) => {
-      if (!context.user) {
-        throw createGraphQLError(
-          'Authentication required',
-          GRAPHQL_ERROR_CODES.UNAUTHENTICATED
-        );
-      }
+      requireAuth(context.auth);
 
       // Check form access (don't need schema from DB since we'll get it from Hocuspocus)
-      const form = await checkFormAccess(formId, context.user.id, false);
+      const form = await checkFormAccess(formId, context.auth.user!.id, false);
 
       logger.info(
         '🔍 Getting form schema from Hocuspocus collaborative document...'
@@ -239,7 +235,7 @@ export const fieldAnalyticsResolvers = {
         // Fallback to database schema if collaborative document doesn't exist
         const fallbackForm = await checkFormAccess(
           formId,
-          context.user.id,
+          context.auth.user!.id,
           true
         );
         const fallbackSchema = fallbackForm.formSchema as any; // Type assertion for Prisma JSON field
@@ -330,17 +326,12 @@ export const fieldAnalyticsResolvers = {
     allFieldsAnalytics: async (
       _: any,
       { formId }: { formId: string },
-      context: any
+      context: { auth: BetterAuthContext }
     ) => {
-      if (!context.user) {
-        throw createGraphQLError(
-          'Authentication required',
-          GRAPHQL_ERROR_CODES.UNAUTHENTICATED
-        );
-      }
+      requireAuth(context.auth);
 
       // Check form access (no need for schema here)
-      await checkFormAccess(formId, context.user.id, false);
+      await checkFormAccess(formId, context.auth.user!.id, false);
 
       try {
         const analytics = await getAllFieldsAnalytics(formId);

@@ -15,24 +15,12 @@ import {
 
 export const betterAuthResolvers = {
   User: {
-    organizations: async (user: any) => {
-      // Get user's organizations through Prisma
+    organizations: async (user: { id: string }) => {
       const memberships = await prisma.member.findMany({
         where: { userId: user.id },
-        include: {
-          organization: {
-            include: {
-              members: {
-                include: {
-                  user: true,
-                },
-              },
-            },
-          },
-        },
+        include: { organization: true },
       });
-
-      return memberships.map((membership: any) => membership.organization);
+      return memberships.map((m) => m.organization);
     },
   },
 

@@ -27,6 +27,23 @@ import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { logger } from '../../lib/logger.js';
 
+interface ResponseParent {
+  id: string;
+  _editHistoryPromise?: Promise<Awaited<ReturnType<typeof import('../../services/responseEditTrackingService.js').ResponseEditTrackingService.getEditHistory>>>;
+}
+
+// Stores a Promise on the parent object so all 5 FormResponse field resolvers that
+// need edit history share one DB query per response per request, instead of firing 5.
+async function getEditHistoryMemoised(parent: ResponseParent) {
+  if (!parent._editHistoryPromise) {
+    const { ResponseEditTrackingService } = await import(
+      '../../services/responseEditTrackingService.js'
+    );
+    parent._editHistoryPromise = ResponseEditTrackingService.getEditHistory(parent.id);
+  }
+  return parent._editHistoryPromise;
+}
+
 export const responsesResolvers = {
   Query: {
     responses: async (
@@ -74,7 +91,7 @@ export const responsesResolvers = {
         filters?: any[];
         filterLogic?: 'AND' | 'OR';
       },
-      context: any
+      context: { auth: BetterAuthContext; req?: any }
     ) => {
       requireAuth(context.auth);
 
@@ -98,7 +115,7 @@ export const responsesResolvers = {
     },
   },
   Mutation: {
-    submitResponse: async (_: any, { input }: { input: any }, context: any) => {
+    submitResponse: async (_: any, { input }: { input: any }, context: { auth: BetterAuthContext; req?: any }) => {
       // Get form first to check if it exists and is published
       const form = await getFormById(input.formId);
       if (!form) {
@@ -138,18 +155,29 @@ export const responsesResolvers = {
         // Check time window limits
         if (limits.timeWindow?.enabled) {
           const now = new Date();
+          const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
           if (limits.timeWindow.startDate) {
-            const startDate = new Date(
-              limits.timeWindow.startDate + 'T00:00:00'
-            );
+            if (!ISO_DATE_RE.test(limits.timeWindow.startDate)) {
+              throw createGraphQLError('Form has an invalid start date configured', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+            }
+            const startDate = new Date(limits.timeWindow.startDate + 'T00:00:00');
+            if (isNaN(startDate.getTime())) {
+              throw createGraphQLError('Form has an invalid start date configured', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+            }
             if (now < startDate) {
               throw createGraphQLError('Form is not yet open for submissions', GRAPHQL_ERROR_CODES.FORM_NOT_YET_OPEN);
             }
           }
 
           if (limits.timeWindow.endDate) {
+            if (!ISO_DATE_RE.test(limits.timeWindow.endDate)) {
+              throw createGraphQLError('Form has an invalid end date configured', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+            }
             const endDate = new Date(limits.timeWindow.endDate + 'T23:59:59');
+            if (isNaN(endDate.getTime())) {
+              throw createGraphQLError('Form has an invalid end date configured', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+            }
             if (now > endDate) {
               throw createGraphQLError('Form submission period has ended', GRAPHQL_ERROR_CODES.FORM_CLOSED);
             }
@@ -418,14 +446,13 @@ export const extendedResponsesResolvers = {
       return parent.submittedAt;
     },
 
+    // Memoised per-response-per-request: all 5 field resolvers share one DB round-trip.
+    // Storing the Promise on `parent` (the same object for all fields on one response)
+    // means the first field to resolve kicks off the query; the rest await the same Promise.
     hasBeenEdited: async (parent: any) => {
-      logger.info('hasBeenEdited resolver executing for response:', parent.id);
       try {
-        const { ResponseEditTrackingService } = await import(
-          '../../services/responseEditTrackingService.js'
-        );
-        const editHistory = await ResponseEditTrackingService.getEditHistory(parent.id);
-        return editHistory.length > 0;
+        const history = await getEditHistoryMemoised(parent);
+        return history.length > 0;
       } catch (error) {
         logger.error('Error getting hasBeenEdited for response:', parent.id, error);
         return false;
@@ -434,11 +461,8 @@ export const extendedResponsesResolvers = {
 
     totalEdits: async (parent: any) => {
       try {
-        const { ResponseEditTrackingService } = await import(
-          '../../services/responseEditTrackingService.js'
-        );
-        const editHistory = await ResponseEditTrackingService.getEditHistory(parent.id);
-        return editHistory.length;
+        const history = await getEditHistoryMemoised(parent);
+        return history.length;
       } catch (error) {
         logger.error('Error getting totalEdits for response:', parent.id, error);
         return 0;
@@ -447,15 +471,8 @@ export const extendedResponsesResolvers = {
 
     lastEditedAt: async (parent: any) => {
       try {
-        const { ResponseEditTrackingService } = await import(
-          '../../services/responseEditTrackingService.js'
-        );
-        const editHistory = await ResponseEditTrackingService.getEditHistory(parent.id);
-        if (editHistory.length > 0) {
-          // Most recent edit is first in the array
-          return editHistory[0].editedAt.toISOString();
-        }
-        return null;
+        const history = await getEditHistoryMemoised(parent);
+        return history.length > 0 ? history[0].editedAt.toISOString() : null;
       } catch (error) {
         logger.error('Error getting lastEditedAt for response:', parent.id, error);
         return null;
@@ -464,17 +481,8 @@ export const extendedResponsesResolvers = {
 
     lastEditedBy: async (parent: any) => {
       try {
-        const { ResponseEditTrackingService } = await import(
-          '../../services/responseEditTrackingService.js'
-        );
-        const editHistory = await ResponseEditTrackingService.getEditHistory(parent.id);
-        if (editHistory.length > 0) {
-          // Most recent edit is first in the array
-          const lastEdit = editHistory[0];
-          // editedBy is already a full User object with id, name, email, image
-          return lastEdit.editedBy;
-        }
-        return null;
+        const history = await getEditHistoryMemoised(parent);
+        return history.length > 0 ? history[0].editedBy : null;
       } catch (error) {
         logger.error('Error getting lastEditedBy for response:', parent.id, error);
         return null;
@@ -483,10 +491,7 @@ export const extendedResponsesResolvers = {
 
     editHistory: async (parent: any) => {
       try {
-        const { ResponseEditTrackingService } = await import(
-          '../../services/responseEditTrackingService.js'
-        );
-        return await ResponseEditTrackingService.getEditHistory(parent.id);
+        return await getEditHistoryMemoised(parent);
       } catch (error) {
         logger.error('Error getting editHistory for response:', parent.id, error);
         return [];
