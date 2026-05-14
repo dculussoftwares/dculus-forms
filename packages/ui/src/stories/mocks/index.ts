@@ -18,6 +18,10 @@ import {
 } from '@dculus/types';
 import { generateId } from '@dculus/utils';
 
+// Wrapper: all calls in this file use known-valid field types, result is never null
+const df = (data: Parameters<typeof deserializeFormField>[0]) => deserializeFormField(data) as ReturnType<typeof deserializeFormField> & {};
+
+
 // Real form data structure
 // Create comprehensive validation test form with all field types
 export const createValidationTestPages = (): FormPage[] => {
@@ -219,7 +223,7 @@ export const createRealFormPages = (): FormPage[] => {
       title: "Subscribe to Our Newsletter",
       order: 0,
       fields: [
-        deserializeFormField({
+        df({
           id: "978328f8-6797-4baa-8257-f9cc68b482cd",
           type: FieldType.TEXT_INPUT_FIELD,
           label: "First Name",
@@ -233,7 +237,7 @@ export const createRealFormPages = (): FormPage[] => {
           },
           __type: FieldType.TEXT_INPUT_FIELD
         }),
-        deserializeFormField({
+        df({
           id: "20e68bec-c6d2-4e82-8b8f-178f3effd1bb",
           type: FieldType.EMAIL_FIELD,
           label: "Email Address",
@@ -247,7 +251,7 @@ export const createRealFormPages = (): FormPage[] => {
           },
           __type: FieldType.EMAIL_FIELD
         }),
-        deserializeFormField({
+        df({
           id: "a80fcfba-a9c5-4422-bf94-58181ca4e328",
           type: FieldType.CHECKBOX_FIELD,
           label: "Newsletter Topics",
@@ -268,7 +272,7 @@ export const createRealFormPages = (): FormPage[] => {
           ],
           __type: FieldType.CHECKBOX_FIELD
         }),
-        deserializeFormField({
+        df({
           id: "ab1fb5b1-dad7-4af8-b3ab-39b01edf58ad",
           type: FieldType.RADIO_FIELD,
           label: "Email Frequency",
@@ -295,7 +299,7 @@ export const createRealFormPages = (): FormPage[] => {
       title: "New Page 2",
       order: 1,
       fields: [
-        deserializeFormField({
+        df({
           id: "field-1755534486892-zg4jm6924",
           type: FieldType.TEXT_AREA_FIELD,
           label: "Long Text",
