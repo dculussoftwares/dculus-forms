@@ -202,6 +202,17 @@ jobs:
       - name: Run unit tests
         env:
           NODE_ENV: test
+          # Phase 2 security fix removed the fallback from requireEnv('BETTER_AUTH_SECRET').
+          # Unit tests don't hit a real auth server, so a deterministic test value is fine here.
+          # Production deployments must set this from Azure Key Vault / GitHub Secrets.
+          BETTER_AUTH_SECRET: test-only-secret-for-unit-tests-not-used-in-production
+          # Stub out S3 env vars so env.ts module loads cleanly in the test environment
+          PUBLIC_S3_ENDPOINT: http://localhost:9000
+          PUBLIC_S3_ACCESS_KEY: test-access-key
+          PUBLIC_S3_SECRET_KEY: test-secret-key
+          PUBLIC_S3_BUCKET_NAME: test-public-bucket
+          PRIVATE_S3_BUCKET_NAME: test-private-bucket
+          PUBLIC_S3_CDN_URL: http://localhost:9000
         run: pnpm --filter backend test
 
       - name: Build backend
