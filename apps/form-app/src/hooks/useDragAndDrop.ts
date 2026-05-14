@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
 import { FormField, FormPage } from '@dculus/types';
 import { FieldTypeConfig } from '../components/form-builder/FieldTypesPanel';
@@ -38,6 +38,19 @@ export const useDragAndDrop = ({
   // This map stores temporary field order per page while dragging
   // Structure: { [pageId: string]: FormField[] }
   const [localFieldOrder, setLocalFieldOrder] = useState<Record<string, FormField[]>>({});
+
+  // When collaborative updates arrive while a drag is in progress, reset the
+  // shadow state so the preview reflects the latest server-side field order.
+  // This prevents dropping at a stale index after a remote reorder.
+  const prevPagesRef = React.useRef(pages);
+  React.useEffect(() => {
+    const hasActivedrags = activeId !== null;
+    const pagesChanged = prevPagesRef.current !== pages;
+    if (hasActivedrags && pagesChanged && Object.keys(localFieldOrder).length > 0) {
+      setLocalFieldOrder({});
+    }
+    prevPagesRef.current = pages;
+  }, [pages, activeId, localFieldOrder]);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const { active } = event;

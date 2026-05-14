@@ -7,23 +7,8 @@
 
 import * as Y from 'yjs';
 import { LayoutSlice, SliceCreator } from '../types/store.types';
-import { FormLayout, ThemeType, SpacingType, LayoutCode, PageModeType } from '@dculus/types';
-
-/**
- * Default layout configuration
- */
-const DEFAULT_LAYOUT: FormLayout = {
-  theme: ThemeType.LIGHT,
-  textColor: '#1f2937',
-  spacing: SpacingType.NORMAL,
-  code: 'L1' as LayoutCode,
-  content: '',
-  customBackGroundColor: '#ffffff',
-  customCTAButtonName: 'Submit',
-  backgroundImageKey: '',
-  pageMode: PageModeType.MULTIPAGE,
-  isCustomBackgroundColorEnabled: false,
-};
+import { FormLayout } from '@dculus/types';
+import { DEFAULT_LAYOUT } from '../helpers/defaultLayout';
 
 /**
  * Create the layout slice

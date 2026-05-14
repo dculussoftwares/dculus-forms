@@ -223,6 +223,20 @@ const ResponseEdit: React.FC = () => {
     );
   }
 
+  // Permission guard — editing responses requires at least EDITOR access.
+  // The backend enforces this too, but redirect early for a clean UX.
+  const userPermission = formData?.form?.userPermission as string | undefined;
+  if (!formLoading && !responseLoading && formData?.form) {
+    if (userPermission !== 'EDITOR' && userPermission !== 'OWNER') {
+      navigate(`/dashboard/form/${formId}/responses`, { replace: true });
+      toastError(
+        t('errors.noPermission.title'),
+        t('errors.noPermission.description')
+      );
+      return null;
+    }
+  }
+
   if (
     formError ||
     responseError ||

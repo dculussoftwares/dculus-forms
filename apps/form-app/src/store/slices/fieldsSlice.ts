@@ -6,6 +6,7 @@
  */
 
 import * as Y from 'yjs';
+import { toastError } from '@dculus/ui';
 import { FieldsSlice, SliceCreator } from '../types/store.types';
 import { FieldType, FormField, FormPage } from '@dculus/types';
 import { getOrCreatePagesArray } from '../helpers/yjsHelpers';
@@ -13,6 +14,7 @@ import {
   createFormField,
   createYJSFieldMap,
   serializeFieldToYMap,
+  generateUniqueId,
 } from '../helpers/fieldHelpers';
 import {
   extractFieldData,
@@ -48,9 +50,7 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       const isReady = _isYJSReady();
 
       if (!ydoc || !isReady) {
-        console.warn(
-          'Cannot add field: YJS document not available or not connected'
-        );
+        toastError('Connection lost', 'Please wait — reconnecting to the collaboration server.');
         return;
       }
 
@@ -94,9 +94,7 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       const isReady = _isYJSReady();
 
       if (!ydoc || !isReady) {
-        console.warn(
-          'Cannot add field at index: YJS document not available or not connected'
-        );
+        toastError('Connection lost', 'Please wait — reconnecting to the collaboration server.');
         return;
       }
 
@@ -175,6 +173,10 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       if (fieldIndex === -1) return;
 
       const fieldMap = fieldsArray.get(fieldIndex);
+
+      // Wrap all property writes in a single transaction so remote collaborators
+      // never see a partially-updated field.
+      ydoc.transact(() => {
       const fieldType = fieldMap.get('type');
 
       // Get or create validation map
@@ -288,6 +290,7 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
           fieldMap.set(key, value);
         }
       });
+      }); // end ydoc.transact
     },
 
     /**
@@ -336,9 +339,7 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       const isReady = _isYJSReady();
 
       if (!ydoc || !isReady) {
-        console.warn(
-          'Cannot reorder fields: YJS document not available or not connected'
-        );
+        toastError('Connection lost', 'Please wait — reconnecting to the collaboration server.');
         return;
       }
 
@@ -432,7 +433,7 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       const originalFieldMap = fieldsArray.get(fieldIndex);
       const fieldData = extractFieldData(originalFieldMap);
 
-      fieldData.id = `field-${Date.now()}-copy`;
+      fieldData.id = generateUniqueId();
       fieldData.label = `${fieldData.label} (Copy)`;
 
       const duplicateFieldMap = createYJSFieldMap(fieldData);
@@ -455,9 +456,7 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       const isReady = _isYJSReady();
 
       if (!ydoc || !isReady) {
-        console.warn(
-          'Cannot move field between pages: YJS document not available or not connected'
-        );
+        toastError('Connection lost', 'Please wait — reconnecting to the collaboration server.');
         return;
       }
 
@@ -514,23 +513,27 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
         `Moving field ${fieldId} from page ${sourcePageId} to page ${targetPageId} at index ${insertIndex || targetFieldsArray.length}`
       );
 
-      // Remove field from source page
-      sourceFieldsArray.delete(fieldIndex, 1);
+      // Wrap delete + insert in a single transaction so the field is never
+      // simultaneously absent from both pages if the connection drops mid-operation.
+      ydoc.transact(() => {
+        // Remove field from source page
+        sourceFieldsArray.delete(fieldIndex, 1);
 
-      // Add field to target page at specified index
-      const newFieldMap = createYJSFieldMap(fieldData);
-      const safeInsertIndex =
-        insertIndex !== undefined
-          ? Math.max(0, Math.min(insertIndex, targetFieldsArray.length))
-          : targetFieldsArray.length;
+        // Add field to target page at specified index
+        const newFieldMap = createYJSFieldMap(fieldData);
+        const safeInsertIndex =
+          insertIndex !== undefined
+            ? Math.max(0, Math.min(insertIndex, targetFieldsArray.length))
+            : targetFieldsArray.length;
 
-      if (safeInsertIndex === targetFieldsArray.length) {
-        targetFieldsArray.push([newFieldMap]);
-      } else {
-        targetFieldsArray.insert(safeInsertIndex, [newFieldMap]);
-      }
+        if (safeInsertIndex === targetFieldsArray.length) {
+          targetFieldsArray.push([newFieldMap]);
+        } else {
+          targetFieldsArray.insert(safeInsertIndex, [newFieldMap]);
+        }
+      });
 
-      // Update selected field if it was the moved field
+      // Update selected page after the transaction completes
       const { selectedFieldId, setSelectedPage } = get() as any;
       if (selectedFieldId === fieldId) {
         setSelectedPage(targetPageId);
@@ -552,9 +555,7 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       const isReady = _isYJSReady();
 
       if (!ydoc || !isReady) {
-        console.warn(
-          'Cannot copy field to page: YJS document not available or not connected'
-        );
+        toastError('Connection lost', 'Please wait — reconnecting to the collaboration server.');
         return;
       }
 
@@ -608,7 +609,7 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       const fieldData = extractFieldData(originalFieldMap);
 
       // Create a copy with new ID and modified label
-      fieldData.id = `field-${Date.now()}-copy`;
+      fieldData.id = generateUniqueId();
       fieldData.label = `${fieldData.label} (Copy)`;
 
       console.log(

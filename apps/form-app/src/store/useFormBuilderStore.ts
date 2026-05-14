@@ -46,6 +46,6 @@ export const useFormBuilderStore = create<FormBuilderState>()(
 /**
  * Expose store to window for debugging (development only)
  */
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
   (window as any).useFormBuilderStore = useFormBuilderStore;
 }

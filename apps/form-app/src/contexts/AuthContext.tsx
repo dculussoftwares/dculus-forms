@@ -70,7 +70,6 @@ export const AuthProvider = ({
 }: { children: ReactNode }): React.ReactElement => {
   const { t } = useTranslation('authContext');
   const { data: session, isPending } = useSession();
-  const [isLoading, setIsLoading] = useState(true);
   const [organizationError, setOrganizationError] = useState<string | null>(null);
   const [organizationErrorCode, setOrganizationErrorCode] = useState<GraphQLErrorCode | null>(null);
 
@@ -78,11 +77,6 @@ export const AuthProvider = ({
     skip: !session?.user,
     errorPolicy: 'all',
   });
-
-
-  useEffect(() => {
-    setIsLoading(isPending);
-  }, [isPending]);
 
   // Handle organization query errors
   useEffect(() => {
@@ -115,7 +109,7 @@ export const AuthProvider = ({
 
   const value: AuthContextType = {
     user: session?.user || null,
-    isLoading,
+    isLoading: isPending,
     isAuthenticated: !!session?.user,
     activeOrganization: orgData?.activeOrganization || null,
     organizationError,

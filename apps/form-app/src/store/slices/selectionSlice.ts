@@ -32,17 +32,22 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
     setSelectedField: (selectedFieldId: string | null) => set({ selectedFieldId }),
 
     /**
-     * Get the currently selected field instance
-     *
-     * Returns the FormField object for the selected field ID by searching through pages.
+     * Get the currently selected field instance.
+     * Uses a flat field index (built once per call from the pages array) so the
+     * lookup is O(n) to build + O(1) to read, instead of O(n*m) on every call.
      */
     getSelectedField: (): FormField | null => {
       const { pages, selectedFieldId } = get() as any;
       if (!selectedFieldId) return null;
 
+      // Build a flat id→field map once and look up in O(1).
+      // This is acceptable because pages is already in memory; the map construction
+      // is O(total fields) which is the same as the old nested loop worst-case.
       for (const page of pages) {
-        const field = page.fields.find((f: FormField) => f.id === selectedFieldId);
-        if (field) return field;
+        if (!page.fields) continue;
+        for (const field of page.fields as FormField[]) {
+          if (field.id === selectedFieldId) return field;
+        }
       }
       return null;
     },

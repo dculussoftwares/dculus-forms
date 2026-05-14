@@ -759,7 +759,7 @@ const EmptyFormAreaPlaceholder: React.FC<{ isConnected: boolean }> = ({
       <div className="text-center">
         <p className="text-lg font-medium">{t('formArea.placeholder')}</p>
         <ConnectionStatus isConnected={isConnected} />
-        <p className="text-sm mt-2">Drag a field type here to add it</p>
+        <p className="text-sm mt-2">{t('dragHint')}</p>
       </div>
     </div>
   );

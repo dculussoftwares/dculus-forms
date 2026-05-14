@@ -12,8 +12,8 @@ export const CheckoutSuccess = () => {
   const [showConfetti, setShowConfetti] = useState(true);
 
   // Fetch subscription to get updated details
-  const { data, loading, refetch } = useQuery(GET_SUBSCRIPTION, {
-    pollInterval: 3000, // Poll every 3 seconds for webhook to sync
+  const { data, loading, stopPolling } = useQuery(GET_SUBSCRIPTION, {
+    pollInterval: 3000, // Poll every 3 seconds for Chargebee webhook to sync
     fetchPolicy: 'network-only',
   });
 
@@ -25,13 +25,13 @@ export const CheckoutSuccess = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Stop polling once we detect the plan has changed
+  // Stop polling as soon as the plan upgrade is confirmed or the component unmounts
   useEffect(() => {
     if (subscription && subscription.planId !== 'free') {
-      // Plan has been upgraded successfully
-      refetch();
+      stopPolling();
     }
-  }, [subscription, refetch]);
+    return () => stopPolling();
+  }, [subscription, stopPolling]);
 
   const getPlanInfo = (planId: string) => {
     const plans: Record<

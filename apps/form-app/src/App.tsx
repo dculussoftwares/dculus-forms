@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { LocaleProvider } from './contexts/LocaleContext';
 import { Toaster } from '@dculus/ui';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { PageErrorBoundary } from './components/PageErrorBoundary';
 import { Dashboard } from './components/Dashboard';
 import FormsList from './pages/FormsList';
 import Responses from './pages/Responses';
@@ -44,97 +45,60 @@ function App() {
           <Route path="/subscription/success" element={<CheckoutSuccess />} />
           <Route path="/subscription/cancel" element={<CheckoutCancel />} />
           
-          {/* Protected routes */}
+          {/* Protected routes — each wrapped in PageErrorBoundary to prevent full-page blank screens */}
           <Route path="/" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Dashboard /></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/*" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Dashboard /></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId" element={
-            <ProtectedRoute>
-              <FormDashboard />
-            </ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><FormDashboard /></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/collaborate/:tab?" element={
-            <ProtectedRoute>
-              <CollaborativeFormBuilder />
-            </ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><CollaborativeFormBuilder /></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/analytics" element={
-            <ProtectedRoute>
-              <FormAnalytics />
-            </ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><FormAnalytics /></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/settings" element={
-            <ProtectedRoute>
-              <FormSettings />
-            </ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><FormSettings /></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/plugins" element={
-            <ProtectedRoute>
-              <Plugins />
-            </ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Plugins /></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/plugins/configure/:pluginType" element={
-            <ProtectedRoute>
-              <PluginConfiguration />
-            </ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><PluginConfiguration /></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/plugins/:pluginId/edit" element={
-            <ProtectedRoute>
-              <PluginConfiguration />
-            </ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><PluginConfiguration /></PageErrorBoundary></ProtectedRoute>
           } />
-
           <Route path="/settings/:tab?" element={
-            <ProtectedRoute>
-              <Settings />
-            </ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Settings /></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/forms" element={
-            <ProtectedRoute>
-              <FormsList />
-            </ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><FormsList /></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/responses" element={
-            <ProtectedRoute>
-              <Responses />
-            </ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Responses /></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/responses/:responseId/edit" element={
-            <ProtectedRoute>
-              <ResponseEdit />
-            </ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><ResponseEdit /></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/responses/:responseId/history" element={
-            <ProtectedRoute>
-              <ResponseEditHistory />
-            </ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><ResponseEditHistory /></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/responses/analytics" element={
-            <ProtectedRoute>
-              <ResponsesAnalytics />
-            </ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><ResponsesAnalytics /></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/responses/individual" element={
-            <ProtectedRoute>
-              <ResponsesIndividual />
-            </ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><ResponsesIndividual /></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/forms/:id/responses" element={
-            <ProtectedRoute>
-              <Responses />
-            </ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Responses /></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/responses" element={
-            <ProtectedRoute>
-              <Responses />
-            </ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Responses /></PageErrorBoundary></ProtectedRoute>
           } />
           {/* Templates is now nested under Dashboard */}
           </Routes>

@@ -6,11 +6,9 @@ import {
   FormField,
   FormLayout,
   FormPage,
-  PageModeType,
-  SpacingType,
-  ThemeType,
 } from '@dculus/types';
 import * as Y from 'yjs';
+import { DEFAULT_LAYOUT } from '../helpers/defaultLayout';
 
 export type FieldData = {
   id: string;
@@ -207,6 +205,15 @@ export class CollaborationManager {
     this.connectionCallback(false);
 
     try {
+      if (!formId || formId.trim() === '') {
+        throw new Error('CollaborationManager: formId must be a non-empty string');
+      }
+      // Sanitize to alphanumeric + hyphen/underscore — prevents malformed WebSocket paths
+      const safeDocumentName = formId.replace(/[^a-zA-Z0-9_-]/g, '');
+      if (!safeDocumentName) {
+        throw new Error(`CollaborationManager: formId "${formId}" contains no valid characters`);
+      }
+
       this.ydoc = new Y.Doc();
       const wsUrl = getWebSocketUrl();
 
@@ -215,7 +222,7 @@ export class CollaborationManager {
 
       this.provider = new HocuspocusProvider({
         url: wsUrl,
-        name: formId,
+        name: safeDocumentName,
         document: this.ydoc,
         token: authToken || undefined,
       });
@@ -446,19 +453,21 @@ export class CollaborationManager {
     let layout: FormLayout | undefined;
 
     if (layoutMap) {
+      // Fall back to DEFAULT_LAYOUT values so this stays in sync with layoutSlice
       layout = {
-        theme: layoutMap.get('theme') || ThemeType.LIGHT,
-        textColor: layoutMap.get('textColor') || '#1f2937',
-        spacing: layoutMap.get('spacing') || SpacingType.NORMAL,
-        code: layoutMap.get('code') || '',
-        content: layoutMap.get('content') || '',
+        theme: layoutMap.get('theme') || DEFAULT_LAYOUT.theme,
+        textColor: layoutMap.get('textColor') || DEFAULT_LAYOUT.textColor,
+        spacing: layoutMap.get('spacing') || DEFAULT_LAYOUT.spacing,
+        code: layoutMap.get('code') || DEFAULT_LAYOUT.code,
+        content: layoutMap.get('content') || DEFAULT_LAYOUT.content,
         customBackGroundColor:
-          layoutMap.get('customBackGroundColor') || '#ffffff',
-        customCTAButtonName: layoutMap.get('customCTAButtonName') || 'Submit',
-        backgroundImageKey: layoutMap.get('backgroundImageKey') || '',
-        pageMode: layoutMap.get('pageMode') || PageModeType.MULTIPAGE,
+          layoutMap.get('customBackGroundColor') || DEFAULT_LAYOUT.customBackGroundColor,
+        customCTAButtonName:
+          layoutMap.get('customCTAButtonName') || DEFAULT_LAYOUT.customCTAButtonName,
+        backgroundImageKey: layoutMap.get('backgroundImageKey') || DEFAULT_LAYOUT.backgroundImageKey,
+        pageMode: layoutMap.get('pageMode') || DEFAULT_LAYOUT.pageMode,
         isCustomBackgroundColorEnabled:
-          layoutMap.get('isCustomBackgroundColorEnabled') || false,
+          layoutMap.get('isCustomBackgroundColorEnabled') ?? DEFAULT_LAYOUT.isCustomBackgroundColorEnabled,
       };
     }
 

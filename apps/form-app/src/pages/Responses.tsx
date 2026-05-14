@@ -145,7 +145,7 @@ const Responses: React.FC = () => {
         title={t('layout.breadcrumbResponses')}
         breadcrumbs={[
           { label: t('layout.breadcrumbDashboard'), href: '/dashboard' },
-          { label: 'Form Dashboard', href: `/dashboard/form/${actualFormId}` },
+          { label: t('breadcrumbs.formDashboard'), href: `/dashboard/form/${actualFormId}` },
           {
             label: t('layout.breadcrumbResponses'),
             href: `/dashboard/form/${actualFormId}/responses`,

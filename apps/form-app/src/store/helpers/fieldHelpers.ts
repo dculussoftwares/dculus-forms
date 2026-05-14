@@ -47,7 +47,9 @@ export const FIELD_CONFIGS: Partial<
  * Generate a unique ID for fields
  */
 export const generateUniqueId = (): string => {
-  return `field-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+  // crypto.randomUUID() is collision-proof and available in all modern browsers.
+  // The previous Date.now() approach could collide at millisecond precision.
+  return `field-${crypto.randomUUID()}`;
 };
 
 /**

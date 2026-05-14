@@ -22,6 +22,10 @@
     "formNotReady": {
       "title": "Form Not Ready",
       "description": "This form is not yet configured. Please try again later."
+    },
+    "noPermission": {
+      "title": "Access Denied",
+      "description": "You need Editor or Owner access to edit responses for this form."
     }
   },
   "navigation": {

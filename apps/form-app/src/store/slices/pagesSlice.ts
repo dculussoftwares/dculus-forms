@@ -271,13 +271,11 @@ export const createPagesSlice: SliceCreator<PagesSlice> = (set, get) => {
         // Insert at new position
         pagesArray.insert(newIndex, [pageMap]);
 
-        // Update order indices for affected pages
-        const start = Math.min(oldIndex, newIndex);
-        const end = Math.max(oldIndex, newIndex);
-        for (let i = start; i <= end; i++) {
-          if (i !== newIndex && i < pagesArray.length) {
-            pagesArray.get(i).set('order', i);
-          }
+        // Rewrite order on every page to match its current array position.
+        // This is simpler and provably correct — the previous range-based loop
+        // had off-by-one errors because indices shift after the delete.
+        for (let i = 0; i < pagesArray.length; i++) {
+          pagesArray.get(i).set('order', i);
         }
       });
     },

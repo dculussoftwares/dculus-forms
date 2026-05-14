@@ -30,7 +30,7 @@
     "export": {
       "buttonLabel": "Export",
       "exporting": "Exporting...",
-      "excel": "Export as Excel", 
+      "excel": "Export as Excel",
       "csv": "Export as CSV"
     }
   },
@@ -78,7 +78,7 @@
     },
     "fieldTypes": {
       "text": "Text",
-      "email": "Email", 
+      "email": "Email",
       "number": "Number",
       "date": "Date",
       "select": "Select",
@@ -109,5 +109,8 @@
   "success": {
     "exportStarted": "Export started. Download will begin shortly.",
     "filtersApplied": "Filters applied successfully"
+  },
+  "breadcrumbs": {
+    "formDashboard": "Form Dashboard"
   }
 }

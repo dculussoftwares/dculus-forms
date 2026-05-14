@@ -27,5 +27,6 @@
     "fromDate": "From date",
     "toDate": "To date",
     "selectCondition": "Select condition"
-  }
+  },
+  "filtered": "Filtered"
 }

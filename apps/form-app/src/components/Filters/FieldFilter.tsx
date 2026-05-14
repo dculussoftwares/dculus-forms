@@ -346,7 +346,7 @@ export const FieldFilter: React.FC<FieldFilterProps> = ({
               {field.label}
             </div>
             {filter?.active && (
-              <div className="text-xs text-blue-600 font-medium">Filtered</div>
+              <div className="text-xs text-blue-600 font-medium">{t('filtered')}</div>
             )}
           </div>
         </div>

@@ -19,6 +19,12 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
   // Singleton CollaborationManager instance (persists across slice calls)
   let collaborationManager: CollaborationManager | null = null;
 
+  // Reconnection state — kept outside Zustand so it doesn't trigger re-renders
+  let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  let reconnectAttempts = 0;
+  const MAX_RECONNECT_ATTEMPTS = 5;
+  const BASE_RECONNECT_DELAY_MS = 2_000;
+
   /**
    * Callback when YJS document updates
    * Updates pages, layout, and isShuffleEnabled in the store
@@ -38,10 +44,42 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
   };
 
   /**
-   * Callback when connection state changes
+   * Callback when connection state changes.
+   * On disconnect, schedules an exponential-backoff reconnect attempt.
    */
   const connectionCallback = (isConnected: boolean) => {
     set({ isConnected });
+
+    if (isConnected) {
+      // Successful (re)connection — reset backoff counter
+      reconnectAttempts = 0;
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+      return;
+    }
+
+    // Disconnected — attempt to reconnect unless we've exceeded the limit
+    const { formId } = get() as any;
+    if (!formId || reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) return;
+
+    const delay = BASE_RECONNECT_DELAY_MS * 2 ** reconnectAttempts;
+    reconnectAttempts += 1;
+    console.warn(
+      `[Collaboration] Disconnected. Reconnect attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} in ${delay}ms`
+    );
+
+    reconnectTimer = setTimeout(async () => {
+      reconnectTimer = null;
+      try {
+        if (collaborationManager) {
+          await collaborationManager.initialize(formId);
+        }
+      } catch (err) {
+        console.error('[Collaboration] Reconnect attempt failed:', err);
+      }
+    }, delay);
   };
 
   /**
@@ -89,6 +127,13 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
      * Disconnect collaboration and cleanup resources
      */
     disconnectCollaboration: () => {
+      // Cancel any pending reconnect before tearing down
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+      reconnectAttempts = MAX_RECONNECT_ATTEMPTS; // prevent further auto-reconnect
+
       if (collaborationManager) {
         collaborationManager.disconnect();
         collaborationManager = null;
