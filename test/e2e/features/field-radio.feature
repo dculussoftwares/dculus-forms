@@ -1,7 +1,9 @@
 Feature: Radio Field
 
-  Scenario: Test Radio field with valid data
+  Background:
     Given I sign in with valid credentials
+
+  Scenario: Test Radio field with valid data
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
@@ -11,7 +13,6 @@ Feature: Radio Field
     Then I fill the radio field settings with valid data
 
   Scenario: Test Radio field with comprehensive invalid data
-    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
@@ -27,7 +28,6 @@ Feature: Radio Field
 
   @persistence
   Scenario: Verify radio field settings persistence in collaborative builder
-    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder

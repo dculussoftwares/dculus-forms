@@ -1,7 +1,9 @@
 Feature: Date Field Comprehensive Validations
 
-  Scenario: Test Date field with valid data
+  Background:
     Given I sign in with valid credentials
+
+  Scenario: Test Date field with valid data
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
@@ -27,7 +29,6 @@ Feature: Date Field Comprehensive Validations
     Then I save the date field settings
 
   Scenario: Create date field via GraphQL and validate all validations in viewer
-    Given I sign in with valid credentials
     When I create a form via GraphQL with date field validations
     Then I should be on the new form dashboard
     
@@ -59,7 +60,6 @@ Feature: Date Field Comprehensive Validations
 
   @persistence
   Scenario: Verify date field settings persistence in collaborative builder
-    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder

@@ -1,7 +1,9 @@
 Feature: Email Field Comprehensive Validations
 
-  Scenario: Test Email field with valid data
+  Background:
     Given I sign in with valid credentials
+
+  Scenario: Test Email field with valid data
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
@@ -11,7 +13,6 @@ Feature: Email Field Comprehensive Validations
     Then I fill the email field settings with valid data
 
   Scenario: Test Email field with comprehensive invalid data
-    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
@@ -27,7 +28,6 @@ Feature: Email Field Comprehensive Validations
     Then I save the email field settings
 
   Scenario: Create email field via GraphQL and validate all validations in viewer
-    Given I sign in with valid credentials
     When I create a form via GraphQL with email field validations
     Then I should be on the new form dashboard
     
@@ -56,7 +56,6 @@ Feature: Email Field Comprehensive Validations
 
   @persistence
   Scenario: Verify email field settings persistence in collaborative builder
-    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder

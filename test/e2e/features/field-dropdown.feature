@@ -1,7 +1,9 @@
 Feature: Dropdown Field Comprehensive Validations
 
-  Scenario: Test Dropdown field with valid data
+  Background:
     Given I sign in with valid credentials
+
+  Scenario: Test Dropdown field with valid data
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
@@ -11,7 +13,6 @@ Feature: Dropdown Field Comprehensive Validations
     Then I fill the dropdown field settings with valid data
 
   Scenario: Test Dropdown field with comprehensive invalid data
-    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
@@ -26,7 +27,6 @@ Feature: Dropdown Field Comprehensive Validations
     Then I save the dropdown field settings
 
   Scenario: Create dropdown field via GraphQL and validate all validations in viewer
-    Given I sign in with valid credentials
     When I create a form via GraphQL with dropdown field validations
     Then I should be on the new form dashboard
     
@@ -55,7 +55,6 @@ Feature: Dropdown Field Comprehensive Validations
 
   @persistence
   Scenario: Verify dropdown field settings persistence in collaborative builder
-    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder

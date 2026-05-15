@@ -1,97 +1,10 @@
 import { Then, When } from '@cucumber/cucumber';
 import { expect } from '@playwright/test';
 import { CustomWorld } from '../support/world';
-import { createFormSchemaWithAllFields } from './helpers';
+import { createFormSchemaWithAllFields, createFormViaGraphQL } from './helpers';
 
 When('I create a form via GraphQL with all field types', async function (this: CustomWorld) {
-  if (!this.page) {
-    throw new Error('Page is not initialized');
-  }
-
-  // Navigate to dashboard first to ensure Apollo Client is loaded
-  await this.page.goto(`${this.baseUrl}/dashboard`);
-  await this.page.waitForTimeout(2000);
-
-  // Extract organization ID from page context (from Apollo Client or localStorage)
-  const organizationId = await this.page.evaluate(() => {
-    // Try localStorage first
-    const orgFromStorage = localStorage.getItem('organization_id');
-    if (orgFromStorage) return orgFromStorage;
-
-    // Try from Apollo cache
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const apolloClient = (window as any).__APOLLO_CLIENT__;
-    if (apolloClient && apolloClient.cache) {
-      try {
-        // Look for organization data in cache
-        const cacheData = apolloClient.cache.extract();
-        const orgKeys = Object.keys(cacheData).filter((key: string) => key.startsWith('Organization:'));
-        if (orgKeys.length > 0) {
-          return orgKeys[0].split(':')[1];
-        }
-      } catch (e) {
-        console.error('Failed to extract org from cache:', e);
-      }
-    }
-
-    // Last resort: check URL params
-    const url = new URL(window.location.href);
-    return url.searchParams.get('org');
-  });
-
-  if (!organizationId) {
-    throw new Error('Organization ID not found');
-  }
-
-  const formSchema = createFormSchemaWithAllFields();
-  const timestamp = Date.now();
-  const formTitle = `E2E Multi-Page Navigation Test ${timestamp}`;
-
-  // Make GraphQL request to create form
-  const response = await this.page.evaluate(async ({ orgId, title, schema, backendUrl }) => {
-    const query = `
-      mutation CreateForm($input: CreateFormInput!) {
-        createForm(input: $input) {
-          id
-          title
-          shortUrl
-        }
-      }
-    `;
-
-    const variables = {
-      input: {
-        title,
-        formSchema: schema,
-        organizationId: orgId
-      }
-    };
-
-    const res = await fetch(backendUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({ query, variables })
-    });
-
-    return res.json();
-  }, { orgId: organizationId, title: formTitle, schema: formSchema, backendUrl: this.backendUrl });
-
-  if (response.errors) {
-    throw new Error(`GraphQL error: ${JSON.stringify(response.errors)}`);
-  }
-
-  const formId = response.data.createForm.id;
-  this.newFormTitle = formTitle;
-
-  // Navigate to the form dashboard
-  await this.page.goto(`${this.baseUrl}/dashboard/form/${formId}`);
-
-  // Wait for dashboard to load
-  const sidebar = this.page.getByTestId('app-sidebar');
-  await expect(sidebar).toBeVisible({ timeout: 30_000 });
+  await createFormViaGraphQL(this, createFormSchemaWithAllFields(), 'E2E Multi-Page Navigation Test');
 });
 
 // Validation Error Summary Steps

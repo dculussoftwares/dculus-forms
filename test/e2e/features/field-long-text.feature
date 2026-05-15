@@ -1,7 +1,9 @@
 Feature: Long Text Field Comprehensive Validations
 
-  Scenario: Test Long Text field with valid data
+  Background:
     Given I sign in with valid credentials
+
+  Scenario: Test Long Text field with valid data
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
@@ -11,7 +13,6 @@ Feature: Long Text Field Comprehensive Validations
     Then I fill the long text field settings with valid data
 
   Scenario: Test Long Text field with comprehensive invalid data
-    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
@@ -26,7 +27,6 @@ Feature: Long Text Field Comprehensive Validations
     Then I save the long text field settings
 
   Scenario: Validate long text field settings with invalid data in builder
-    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
@@ -43,7 +43,6 @@ Feature: Long Text Field Comprehensive Validations
     And I verify all validations work correctly
 
   Scenario: Create long text field via GraphQL and validate all validations in viewer
-    Given I sign in with valid credentials
     When I create a form via GraphQL with long text field validations
     Then I should be on the new form dashboard
     
@@ -75,7 +74,6 @@ Feature: Long Text Field Comprehensive Validations
 
   @persistence
   Scenario: Verify long text field settings persistence in collaborative builder
-    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder

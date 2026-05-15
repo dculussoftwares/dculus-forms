@@ -1,7 +1,9 @@
 Feature: Checkbox Field
 
-  Scenario: Test Checkbox field with valid data
+  Background:
     Given I sign in with valid credentials
+
+  Scenario: Test Checkbox field with valid data
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
@@ -11,7 +13,6 @@ Feature: Checkbox Field
     Then I fill the checkbox field settings with valid data
 
   Scenario: Test Checkbox field with invalid selection limits
-    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
@@ -21,7 +22,6 @@ Feature: Checkbox Field
     Then I test selection limits validation for checkbox
 
   Scenario: Test Checkbox field with comprehensive invalid data
-    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
@@ -36,7 +36,6 @@ Feature: Checkbox Field
     Then I save the checkbox field settings
 
   Scenario: Create checkbox field via GraphQL and validate validations in viewer
-    Given I sign in with valid credentials
     When I create a form via GraphQL with checkbox field validations
     Then I should be on the new form dashboard
     
@@ -59,7 +58,6 @@ Feature: Checkbox Field
 
   @persistence
   Scenario: Verify checkbox field settings persistence in collaborative builder
-    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder

@@ -1,7 +1,9 @@
 Feature: Number Field Comprehensive Validations
 
-  Scenario: Test Number field with valid data
+  Background:
     Given I sign in with valid credentials
+
+  Scenario: Test Number field with valid data
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
@@ -11,7 +13,6 @@ Feature: Number Field Comprehensive Validations
     Then I fill the number field settings with valid data
 
   Scenario: Test Number field with comprehensive invalid data
-    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
@@ -27,7 +28,6 @@ Feature: Number Field Comprehensive Validations
     Then I save the number field settings
 
   Scenario: Create number field via GraphQL and validate all validations in viewer
-    Given I sign in with valid credentials
     When I create a form via GraphQL with number field validations
     Then I should be on the new form dashboard
     
@@ -59,7 +59,6 @@ Feature: Number Field Comprehensive Validations
 
   @persistence
   Scenario: Verify number field settings persistence in collaborative builder
-    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder

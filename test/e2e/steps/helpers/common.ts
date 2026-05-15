@@ -3,6 +3,7 @@
  */
 
 import type { Locator } from 'playwright';
+import { expect } from '@playwright/test';
 import { CustomWorld } from '../../support/world';
 
 export type Credentials = {
@@ -64,6 +65,94 @@ export async function dragOnto(source: Locator, target: Locator): Promise<void> 
   await page.waitForTimeout(300);
   await page.mouse.up();
   await page.waitForTimeout(600);
+}
+
+/**
+ * Adds a field to the current builder page by clicking its tile in FieldTypesPanel.
+ * More reliable than drag-and-drop in headless browsers.
+ */
+export async function addFieldToPage(world: CustomWorld, fieldTestId: string): Promise<void> {
+  if (!world.page) throw new Error('Page is not initialized');
+  const tile = world.page.getByTestId(fieldTestId);
+  await tile.click();
+  const droppable = world.page.getByTestId('droppable-page').first();
+  await expect(droppable.locator('[data-testid^="field-content-"]').first()).toBeVisible({ timeout: 15_000 });
+}
+
+/**
+ * Opens settings for the most recently added field (last in the list).
+ * Hovers to reveal the settings button then clicks it.
+ */
+export async function openLastFieldSettings(world: CustomWorld): Promise<void> {
+  if (!world.page) throw new Error('Page is not initialized');
+  const fieldCards = world.page.locator('[data-testid^="draggable-field-"]');
+  await expect(fieldCards.last()).toBeVisible({ timeout: 10_000 });
+  await fieldCards.last().hover();
+  const settingsBtn = fieldCards.last().locator('[data-testid^="field-settings-button-"]');
+  await expect(settingsBtn).toBeVisible({ timeout: 5_000 });
+  await settingsBtn.click({ force: true });
+  const panel = world.page.getByTestId('field-settings-panel');
+  await expect(panel).toBeVisible({ timeout: 15_000 });
+  await world.page.waitForSelector('#field-label', { timeout: 10_000 });
+}
+
+/**
+ * Creates a form via GraphQL using the currently signed-in user's organization.
+ * Navigates to the form dashboard after creation.
+ */
+export async function createFormViaGraphQL(
+  world: CustomWorld,
+  schema: object,
+  titlePrefix = 'E2E Test'
+): Promise<string> {
+  if (!world.page) throw new Error('Page is not initialized');
+
+  await world.page.goto(`${world.baseUrl}/dashboard`);
+  await world.page.waitForTimeout(2000);
+
+  const organizationId = await world.page.evaluate(() => {
+    const orgFromStorage = localStorage.getItem('organization_id');
+    if (orgFromStorage) return orgFromStorage;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const apolloClient = (window as any).__APOLLO_CLIENT__;
+    if (apolloClient?.cache) {
+      try {
+        const cacheData = apolloClient.cache.extract();
+        const orgKey = Object.keys(cacheData).find((k: string) => k.startsWith('Organization:'));
+        if (orgKey) return orgKey.split(':')[1];
+      } catch { /* ignore */ }
+    }
+    return new URL(window.location.href).searchParams.get('org');
+  });
+
+  if (!organizationId) throw new Error('Organization ID not found');
+
+  const formTitle = `${titlePrefix} ${Date.now()}`;
+  const response = await world.page.evaluate(
+    async ({ orgId, title, formSchema, backendUrl }) => {
+      const res = await fetch(backendUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          query: `mutation CreateForm($input: CreateFormInput!) {
+            createForm(input: $input) { id title shortUrl }
+          }`,
+          variables: { input: { title, formSchema, organizationId: orgId } },
+        }),
+      });
+      return res.json();
+    },
+    { orgId: organizationId, title: formTitle, formSchema: schema, backendUrl: world.backendUrl }
+  );
+
+  if (response.errors) throw new Error(`GraphQL error: ${JSON.stringify(response.errors)}`);
+
+  const formId = response.data.createForm.id;
+  world.newFormTitle = formTitle;
+  await world.page.goto(`${world.baseUrl}/dashboard/form/${formId}`);
+  await expect(world.page.getByTestId('app-sidebar')).toBeVisible({ timeout: 30_000 });
+  return formId;
 }
 
 /**

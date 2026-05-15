@@ -1,7 +1,9 @@
 Feature: Short Text Field Comprehensive Validations
 
-  Scenario: Validate short text field settings with invalid data in builder
+  Background:
     Given I sign in with valid credentials
+
+  Scenario: Validate short text field settings with invalid data in builder
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
@@ -19,7 +21,6 @@ Feature: Short Text Field Comprehensive Validations
     And I verify all validations work correctly
 
   Scenario: Create short text field via GraphQL and validate all validations in viewer
-    Given I sign in with valid credentials
     When I create a form via GraphQL with short text field validations
     Then I should be on the new form dashboard
     
@@ -51,7 +52,6 @@ Feature: Short Text Field Comprehensive Validations
 
   @persistence
   Scenario: Verify short text field settings persistence in collaborative builder
-    Given I sign in with valid credentials
     When I create a form from the first template
     Then I should be on the new form dashboard
     When I open the collaborative builder
