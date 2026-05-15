@@ -1571,6 +1571,16 @@ jobs:
       E2E_FORM_VIEWER_URL: ${{ secrets.E2E_INTEGRATION_TEST_FORM_VIEWER_URL }}
       E2E_HEADLESS: "true"
       CI: "true"
+      # DB access for subscription seeding (dev only)
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DATABASE_URL }}
+      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+      PUBLIC_S3_ENDPOINT: ${{ secrets.PUBLIC_S3_ENDPOINT }}
+      PUBLIC_S3_ACCESS_KEY: ${{ secrets.PUBLIC_S3_ACCESS_KEY }}
+      PUBLIC_S3_SECRET_KEY: ${{ secrets.PUBLIC_S3_SECRET_KEY }}
+      PUBLIC_S3_BUCKET_NAME: ${{ secrets.PUBLIC_S3_BUCKET_NAME }}
+      PRIVATE_S3_BUCKET_NAME: ${{ secrets.PRIVATE_S3_BUCKET_NAME }}
+      PUBLIC_S3_CDN_URL: ${{ secrets.PUBLIC_S3_CDN_URL }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -1598,6 +1608,14 @@ jobs:
       - name: Install dependencies
         working-directory: ./source
         run: pnpm install --frozen-lockfile
+
+      - name: Seed E2E subscription (Advanced plan, dev only)
+        if: needs.determine-environment.outputs.environment == 'dev'
+        working-directory: ./source
+        run: |
+          pnpm db:generate
+          npx tsx apps/backend/src/scripts/seed-e2e-subscription.ts
+          echo "✅ E2E subscription seeded — Advanced plan, counters reset"
 
       - name: Install Playwright browsers
         working-directory: ./source
