@@ -86,10 +86,10 @@ export function DatePicker({
           <Button
             variant={"outline"}
             className={cn(
-              "flex w-full justify-start text-left font-normal",
-              !date && "text-muted-foreground",
-              error && "border-red-300 bg-red-50 focus:ring-red-500 focus:border-red-500",
-              date && "pr-8", // Make room for clear button
+              "flex w-full justify-start text-left font-medium h-12 rounded-xl border-2 border-gray-200 bg-white px-4 hover:border-primary/50 focus:border-primary focus:ring-0 transition-colors duration-150 dark:bg-gray-900 dark:border-gray-700",
+              !date && "text-gray-400",
+              error && "border-red-200 bg-red-50 hover:border-red-300 focus:border-red-400",
+              date && "pr-8",
               className
             )}
             disabled={disabled}
