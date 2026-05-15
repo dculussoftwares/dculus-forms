@@ -1616,7 +1616,7 @@ jobs:
         working-directory: ./source
         run: |
           pnpm db:generate
-          npx tsx apps/backend/src/scripts/seed-e2e-subscription.ts
+          pnpm --filter backend exec tsx src/scripts/seed-e2e-subscription.ts
           echo "✅ E2E subscription seeded — Advanced plan, counters reset"
 
       - name: Install Playwright browsers
