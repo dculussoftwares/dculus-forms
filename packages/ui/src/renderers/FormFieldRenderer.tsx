@@ -10,7 +10,7 @@ import {
 import { RendererMode } from '@dculus/utils';
 import { Upload } from 'lucide-react';
 import { LexicalRichTextEditor } from '../rich-text-editor/LexicalRichTextEditor';
-import { Checkbox, RadioGroup, RadioGroupItem, DatePicker } from '../index';
+import { Checkbox, RadioGroup, RadioGroupItem, DatePicker, Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../index';
 
 interface FieldStyles {
   container: string;
@@ -250,21 +250,33 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
             case FieldType.SELECT_FIELD:
               return (
                 <div>
-                  <select
-                    {...inputProps}
-                    className={getInputClassName(styles.select)}
+                  <Select
+                    value={controllerField.value ?? ''}
+                    onValueChange={controllerField.onChange}
+                    disabled={!isInteractive}
                   >
-                    <option value="">
-                      {fillableField?.placeholder || 'Select option...'}
-                    </option>
-                    {(fillableField as any)?.options?.map(
-                      (option: string, index: number) => (
-                        <option key={index} value={option}>
-                          {option}
-                        </option>
-                      )
-                    )}
-                  </select>
+                    <SelectTrigger
+                      onBlur={controllerField.onBlur}
+                      className={
+                        hasError
+                          ? 'border-red-300 focus:ring-red-500'
+                          : ''
+                      }
+                    >
+                      <SelectValue
+                        placeholder={fillableField?.placeholder || 'Select option...'}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(fillableField as any)?.options?.map(
+                        (option: string, index: number) => (
+                          <SelectItem key={index} value={option}>
+                            {option}
+                          </SelectItem>
+                        )
+                      )}
+                    </SelectContent>
+                  </Select>
                   {hasError && (
                     <p className="mt-1 text-sm text-red-600" role="alert">
                       {error.message}
