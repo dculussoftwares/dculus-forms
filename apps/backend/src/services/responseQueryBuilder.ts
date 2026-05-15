@@ -418,13 +418,15 @@ function buildRawSQLCondition(
     }
 
     case 'DATE_TODAY': {
-      // Compare field date to today's date (date only, not time)
-      // Dates are stored as epoch milliseconds, so we use to_timestamp and divide by 1000
-      const dateCheck = `${textAccessor} ~ '^[0-9]+$'`;
+      // Stored as YYYY-MM-DD string; legacy fallback for epoch-ms numeric strings
+      const isYMD = `${textAccessor} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'`;
+      const isEpoch = `${textAccessor} ~ '^[0-9]+$'`;
       return {
         sql: `(
-          CASE 
-            WHEN ${dateCheck}
+          CASE
+            WHEN ${isYMD}
+            THEN (${textAccessor})::date = CURRENT_DATE
+            WHEN ${isEpoch}
             THEN DATE(to_timestamp((${textAccessor})::bigint / 1000)) = CURRENT_DATE
             ELSE FALSE
           END
@@ -434,20 +436,22 @@ function buildRawSQLCondition(
     }
 
     case 'DATE_LAST_N_DAYS': {
-      // filter.value contains the number of days
-      // Dates are stored as epoch milliseconds, so we use to_timestamp and divide by 1000
-      // Default to 7 days if no value provided (handles empty string case)
       const daysValue = filter.value && filter.value.trim() !== '' ? filter.value : '7';
       const days = parseInt(daysValue, 10);
       if (isNaN(days) || days < 0) {
         return { sql: '', values: [] };
       }
 
-      const dateCheck = `${textAccessor} ~ '^[0-9]+$'`;
+      // Stored as YYYY-MM-DD string; legacy fallback for epoch-ms numeric strings
+      const isYMD = `${textAccessor} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'`;
+      const isEpoch = `${textAccessor} ~ '^[0-9]+$'`;
       const sql = `(
-          CASE 
-            WHEN ${dateCheck}
-            THEN to_timestamp((${textAccessor})::bigint / 1000) >= (CURRENT_DATE - $${startIndex}::integer) 
+          CASE
+            WHEN ${isYMD}
+            THEN (${textAccessor})::date >= (CURRENT_DATE - $${startIndex}::integer)
+              AND (${textAccessor})::date <= CURRENT_DATE
+            WHEN ${isEpoch}
+            THEN to_timestamp((${textAccessor})::bigint / 1000) >= (CURRENT_DATE - $${startIndex}::integer)
               AND to_timestamp((${textAccessor})::bigint / 1000) <= NOW()
             ELSE FALSE
           END

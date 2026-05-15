@@ -1,4 +1,5 @@
 import React from 'react';
+import { parseCalendarDate } from '@dculus/utils';
 import { ResponseFieldChange, ChangeType } from '@dculus/types';
 import {
   Card,
@@ -105,7 +106,11 @@ export const FieldChangeCard: React.FC<FieldChangeCardProps> = ({
     switch (fieldType) {
       case 'date_field':
         try {
-          return new Date(value).toLocaleDateString();
+          // YYYY-MM-DD stored value — parse as local date to avoid UTC day shift
+          if (/^\d{4}-\d{2}-\d{2}/.test(String(value))) {
+            return parseCalendarDate(String(value)).toLocaleDateString();
+          }
+          return new Date(value as string).toLocaleDateString();
         } catch {
           return String(value);
         }

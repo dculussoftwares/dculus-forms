@@ -1,4 +1,4 @@
-import { FormResponse, FieldType, FormSchema } from '@dculus/types';
+import { FormResponse } from '@dculus/types';
 import { ResponseFilter, applyResponseFilters } from './responseFilterService.js';
 import {
   buildPostgreSQLFilter,
@@ -6,65 +6,9 @@ import {
 } from './responseQueryBuilder.js';
 import { responseRepository } from '../repositories/index.js';
 import { logger } from '../lib/logger.js';
-import { getFormSchemaFromHocuspocus } from './hocuspocus.js';
 import { prisma } from '../lib/prisma.js';
 import type { Prisma } from '@prisma/client';
 
-/**
- * Transform date field values from ISO strings to Date objects
- * This enables database-level filtering for date fields
- * 
- * Uses the collaborative form schema from Hocuspocus (YJS) to identify date fields.
- * This ensures we always use the latest schema from the real-time collaborative editor.
- */
-const transformDateFields = async (formId: string, responseData: Record<string, unknown>): Promise<Prisma.InputJsonValue> => {
-  try {
-    // Get form schema from Hocuspocus collaborative document (not database)
-    // This ensures we use the real-time collaborative schema
-    const schemaData = await getFormSchemaFromHocuspocus(formId);
-
-    if (!schemaData) {
-      logger.warn(`No collaborative schema found for form ${formId}, skipping date transformation`);
-      return responseData as Prisma.InputJsonValue;
-    }
-
-    const schema = schemaData as FormSchema;
-    if (!schema || !schema.pages) {
-      return responseData as Prisma.InputJsonValue;
-    }
-
-    // Create a copy to avoid mutating the original
-    const transformed = { ...responseData };
-
-    // Find all date fields in the form schema
-    for (const page of schema.pages) {
-      for (const field of page.fields) {
-        if (field.type === FieldType.DATE_FIELD && transformed[field.id]) {
-          const dateValue = transformed[field.id];
-
-          // Convert string dates to Date objects for MongoDB
-          if (typeof dateValue === 'string' && dateValue.trim() !== '') {
-            try {
-              const parsedDate = new Date(dateValue);
-              if (!isNaN(parsedDate.getTime())) {
-                transformed[field.id] = parsedDate;
-                logger.info(`Converted date field ${field.id} from string to Date object`);
-              }
-            } catch (error) {
-              logger.warn(`Failed to parse date value for field ${field.id}:`, error);
-              // Keep original value if parsing fails
-            }
-          }
-        }
-      }
-    }
-
-    return transformed as Prisma.InputJsonValue;
-  } catch (error) {
-    logger.error('Error transforming date fields:', error);
-    return responseData as Prisma.InputJsonValue; // Return original on error
-  }
-};
 
 export const getAllResponses = async (organizationId?: string): Promise<FormResponse[]> => {
   const responses = await responseRepository.findMany({
@@ -324,17 +268,16 @@ export const getAllResponsesByFormId = async (formId: string): Promise<FormRespo
 export const submitResponse = async (responseData: Partial<FormResponse>): Promise<FormResponse> => {
   const { generateId } = await import('@dculus/utils');
 
-  // Transform date field values from strings to Date objects
-  const transformedData = await transformDateFields(
-    responseData.formId!,
-    responseData.data || {}
-  );
+  // Calendar date values (YYYY-MM-DD) are stored as-is — never convert to Date objects.
+  // JSON has no Date type; converting creates a UTC timestamp that shifts the day
+  // for users in non-UTC timezones when the value is read back.
+  const responseDataForStorage = (responseData.data || {}) as Prisma.InputJsonValue;
 
   const newResponse = await responseRepository.create({
     data: {
       id: generateId(),
       formId: responseData.formId!,
-      data: transformedData as Prisma.InputJsonValue,
+      data: responseDataForStorage,
     },
   });
 

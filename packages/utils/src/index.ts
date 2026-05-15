@@ -34,6 +34,24 @@ export const parseDate = (dateString: string): Date => {
   return new Date(dateString);
 };
 
+/**
+ * Parse a YYYY-MM-DD string as local midnight.
+ * `new Date("YYYY-MM-DD")` parses as UTC and shifts the day in non-UTC timezones.
+ * Calendar dates have no time component and must stay in the user's local day.
+ */
+export const parseCalendarDate = (dateStr: string): Date => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
+
+/**
+ * Format a Date as YYYY-MM-DD using local date parts.
+ * `toISOString()` converts to UTC first, shifting the day in non-UTC timezones.
+ */
+export const formatCalendarDate = (date: Date): string => {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+};
+
 export function slugify(str: string): string {
   // Normalise to NFKD so diacritics become base-char + combining mark,
   // then strip the combining marks — handles é→e, ñ→n, ü→u, Tamil, etc.

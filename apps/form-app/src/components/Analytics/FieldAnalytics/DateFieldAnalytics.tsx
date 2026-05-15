@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { parseCalendarDate } from '@dculus/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
 import { StatCard, CHART_COLORS } from './BaseChartComponents';
 import { DateFieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
@@ -36,13 +37,13 @@ const CalendarHeatmap: React.FC<{
     const monthsMap = new Map<string, Array<{ date: string; count: number; day: number }>>();
     
     dateDistribution.forEach(item => {
-      const date = new Date(item.date);
+      const date = parseCalendarDate(item.date);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      
+
       if (!monthsMap.has(monthKey)) {
         monthsMap.set(monthKey, []);
       }
-      
+
       monthsMap.get(monthKey)!.push({
         date: item.date,
         count: item.count,
@@ -53,7 +54,7 @@ const CalendarHeatmap: React.FC<{
     const months = Array.from(monthsMap.entries())
       .map(([monthKey, days]) => ({
         month: monthKey,
-        monthName: new Date(monthKey + '-01').toLocaleDateString(locale, { month: 'long', year: 'numeric' }),
+        monthName: parseCalendarDate(monthKey + '-01').toLocaleDateString(locale, { month: 'long', year: 'numeric' }),
         days: days.sort((a, b) => a.day - b.day)
       }))
       .sort((a, b) => a.month.localeCompare(b.month));
@@ -121,10 +122,10 @@ const CalendarHeatmap: React.FC<{
                 
                 {/* Calendar days */}
                 {month.days.map(dayData => {
-                  const date = new Date(dayData.date);
+                  const date = parseCalendarDate(dayData.date);
                   const dayOfWeek = date.getDay();
                   const intensity = getIntensityColor(dayData.count, heatmapData.maxCount);
-                  
+
                   return (
                     <div
                       key={dayData.date}
@@ -277,9 +278,9 @@ const DateRangeAnalysis: React.FC<{
   const { t, locale } = useTranslation('dateFieldAnalytics');
   
   const dateRange = useMemo(() => {
-    const earliest = new Date(earliestDate);
-    const latest = new Date(latestDate);
-    const common = new Date(mostCommonDate);
+    const earliest = parseCalendarDate(earliestDate);
+    const latest = parseCalendarDate(latestDate);
+    const common = parseCalendarDate(mostCommonDate);
     
     const daysDifference = Math.ceil((latest.getTime() - earliest.getTime()) / (1000 * 60 * 60 * 24));
     

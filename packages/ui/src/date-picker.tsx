@@ -58,14 +58,15 @@ export function DatePicker({
   const handleNativeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     if (value) {
-      onDateChange?.(new Date(value))
+      const [y, m, d] = value.split('-').map(Number)
+      onDateChange?.(new Date(y, m - 1, d))
     } else {
       onDateChange?.(undefined)
     }
   }
 
-  // Format date as ISO string for the hidden input (YYYY-MM-DD)
-  const dateValue = date ? date.toISOString().split('T')[0] : ''
+  // Format using local date parts — toISOString() would shift the day in non-UTC timezones
+  const dateValue = date ? format(date, 'yyyy-MM-dd') : ''
 
   return (
     <div className="relative">
@@ -103,9 +104,17 @@ export function DatePicker({
             captionLayout="dropdown"
             selected={date}
             onSelect={onDateChange}
-            disabled={(date) => {
-              if (minDate && date < minDate) return true
-              if (maxDate && date > maxDate) return true
+            defaultMonth={date ?? (() => {
+              const today = new Date()
+              if (minDate && today < minDate) return minDate
+              if (maxDate && today > maxDate) return maxDate
+              return today
+            })()}
+            startMonth={minDate}
+            endMonth={maxDate}
+            disabled={(d) => {
+              if (minDate && d < minDate) return true
+              if (maxDate && d > maxDate) return true
               return false
             }}
             initialFocus

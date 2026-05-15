@@ -19,26 +19,23 @@ export const processDateFieldAnalytics = (
 ): FieldAnalyticsBase & DateFieldAnalytics => {
   const validDates = fieldResponses
     .map(r => {
-      // Handle Date objects
-      if (r.value instanceof Date) {
-        return r.value;
-      }
-
-      // Handle Unix timestamps (numbers)
       if (typeof r.value === 'number') {
         return new Date(r.value);
       }
 
-      // Handle string dates and timestamps
       const stringValue = String(r.value);
 
-      // If it's a numeric string, treat as Unix timestamp
-      if (/^\d+$/.test(stringValue)) {
-        const timestamp = parseInt(stringValue, 10);
-        return new Date(timestamp);
+      // YYYY-MM-DD — parse as local midnight to avoid UTC day shift
+      if (/^\d{4}-\d{2}-\d{2}/.test(stringValue)) {
+        const [y, m, d] = stringValue.substring(0, 10).split('-').map(Number);
+        return new Date(y, m - 1, d);
       }
 
-      // Otherwise, try parsing as date string
+      // Legacy: numeric epoch-ms string
+      if (/^\d+$/.test(stringValue)) {
+        return new Date(parseInt(stringValue, 10));
+      }
+
       return new Date(stringValue);
     })
     .filter(date => !isNaN(date.getTime()))
@@ -70,7 +67,8 @@ export const processDateFieldAnalytics = (
   // Find most common date
   const dateCounts = new Map<string, number>();
   validDates.forEach(date => {
-    const dateStr = date.toISOString().split('T')[0];
+    // Use local date parts — toISOString() returns UTC and shifts the day in non-UTC zones
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     dateCounts.set(dateStr, (dateCounts.get(dateStr) || 0) + 1);
   });
 

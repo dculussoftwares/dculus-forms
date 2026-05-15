@@ -368,15 +368,19 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
 
             case FieldType.DATE_FIELD:
               const dateField = field as any;
-              // Convert string date to Date object for DatePicker
+              // Parse YYYY-MM-DD as local midnight to avoid UTC offset shifting the day
+              const parseLocalDate = (s: string) => {
+                const [y, m, d] = s.split('-').map(Number);
+                return new Date(y, m - 1, d);
+              };
               const dateValue = controllerField.value
-                ? new Date(controllerField.value)
+                ? parseLocalDate(controllerField.value)
                 : undefined;
               const minDateValue = dateField.minDate
-                ? new Date(dateField.minDate)
+                ? parseLocalDate(dateField.minDate)
                 : undefined;
               const maxDateValue = dateField.maxDate
-                ? new Date(dateField.maxDate)
+                ? parseLocalDate(dateField.maxDate)
                 : undefined;
 
               return (
@@ -385,9 +389,11 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                     name={field.id}
                     date={dateValue}
                     onDateChange={(date) => {
-                      // Store as ISO date string (YYYY-MM-DD) for form submission
+                      // Store as local YYYY-MM-DD, not UTC (toISOString shifts day in non-UTC zones)
                       controllerField.onChange(
-                        date ? date.toISOString().split('T')[0] : ''
+                        date
+                          ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+                          : ''
                       );
                     }}
                     minDate={minDateValue}

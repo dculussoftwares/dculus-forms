@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { parseCalendarDate, formatCalendarDate } from '@dculus/utils';
 import { Controller, Control } from 'react-hook-form';
 import {
   Input,
@@ -96,15 +97,13 @@ export const DefaultValueInput: React.FC<DefaultValueInputProps> = ({
             <DatePicker
               id="field-defaultValue"
               date={
-                controlField.value ? new Date(controlField.value) : undefined
+                controlField.value ? parseCalendarDate(controlField.value) : undefined
               }
               onDateChange={(date) =>
-                controlField.onChange(
-                  date ? date.toISOString().split('T')[0] : ''
-                )
+                controlField.onChange(date ? formatCalendarDate(date) : '')
               }
-              minDate={minDateValue ? new Date(minDateValue) : undefined}
-              maxDate={maxDateValue ? new Date(maxDateValue) : undefined}
+              minDate={minDateValue ? parseCalendarDate(minDateValue) : undefined}
+              maxDate={maxDateValue ? parseCalendarDate(maxDateValue) : undefined}
               disabled={!isConnected}
               error={!!errors.defaultValue}
               placeholder="Select default date"

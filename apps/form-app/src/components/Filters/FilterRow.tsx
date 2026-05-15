@@ -1,4 +1,5 @@
 import React from 'react';
+import { parseCalendarDate, formatCalendarDate } from '@dculus/utils';
 import { X } from 'lucide-react';
 import {
   Button,
@@ -231,13 +232,13 @@ const renderFilterInput = (
             <DatePicker
               date={
                 filter.dateRange?.from
-                  ? new Date(filter.dateRange.from)
+                  ? parseCalendarDate(filter.dateRange.from)
                   : undefined
               }
               onDateChange={(date) =>
                 handleDateRangeChange(
                   'from',
-                  date ? date.toISOString().split('T')[0] : ''
+                  date ? formatCalendarDate(date) : ''
                 )
               }
               placeholder="From"
@@ -246,12 +247,12 @@ const renderFilterInput = (
             <span className="text-slate-500">and</span>
             <DatePicker
               date={
-                filter.dateRange?.to ? new Date(filter.dateRange.to) : undefined
+                filter.dateRange?.to ? parseCalendarDate(filter.dateRange.to) : undefined
               }
               onDateChange={(date) =>
                 handleDateRangeChange(
                   'to',
-                  date ? date.toISOString().split('T')[0] : ''
+                  date ? formatCalendarDate(date) : ''
                 )
               }
               placeholder="To"
@@ -262,9 +263,9 @@ const renderFilterInput = (
       }
       return (
         <DatePicker
-          date={filter.value ? new Date(filter.value) : undefined}
+          date={filter.value ? parseCalendarDate(filter.value) : undefined}
           onDateChange={(date) =>
-            handleValueChange(date ? date.toISOString().split('T')[0] : '')
+            handleValueChange(date ? formatCalendarDate(date) : '')
           }
           placeholder="Select date"
           className="h-9 min-w-[200px]"

@@ -44,12 +44,19 @@ const formatFieldValue = (
   if (fieldType) {
     switch (fieldType) {
       case FieldType.DATE_FIELD: {
-        const timestamp =
-          typeof value === 'string' ? parseInt(value, 10) : value;
-        const date = new Date(timestamp);
-        stringValue = isNaN(date.getTime())
-          ? 'Invalid date'
-          : date.toLocaleDateString();
+        const str = String(value ?? '');
+        if (!str) { stringValue = ''; break; }
+        // YYYY-MM-DD string — parse as local date to avoid UTC day shift
+        if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+          const [y, m, d] = str.substring(0, 10).split('-').map(Number);
+          const date = new Date(y, m - 1, d);
+          stringValue = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        } else {
+          // Legacy: epoch-ms numeric string
+          const timestamp = parseInt(str, 10);
+          const date = new Date(timestamp);
+          stringValue = isNaN(date.getTime()) ? str : date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
         break;
       }
       case FieldType.FILE_UPLOAD_FIELD: {

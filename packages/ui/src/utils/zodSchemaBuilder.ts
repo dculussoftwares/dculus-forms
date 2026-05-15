@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { parseCalendarDate } from '@dculus/utils';
 import {
   FormField,
   FormPage,
@@ -163,13 +164,13 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
         );
       }
 
-      // Convert string to date for validation
+      // Convert string to date for validation — use local midnight to avoid UTC day shift
       schema = schema.refine(
         (dateStr: string) => {
           if (!dateStr && !isRequired) return true;
           if (!dateStr && isRequired) return false;
 
-          const date = new Date(dateStr);
+          const date = parseCalendarDate(dateStr);
           return !isNaN(date.getTime());
         },
         {
@@ -183,13 +184,13 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
           (dateStr: string) => {
             if (!dateStr) return !isRequired;
 
-            const date = new Date(dateStr);
+            const date = parseCalendarDate(dateStr);
 
-            if (dateField.minDate && date < new Date(dateField.minDate)) {
+            if (dateField.minDate && date < parseCalendarDate(dateField.minDate)) {
               return false;
             }
 
-            if (dateField.maxDate && date > new Date(dateField.maxDate)) {
+            if (dateField.maxDate && date > parseCalendarDate(dateField.maxDate)) {
               return false;
             }
 
