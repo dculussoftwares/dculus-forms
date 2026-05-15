@@ -4,6 +4,8 @@ import { FieldType } from '@dculus/types';
 import { Card, TypographyH3 } from '@dculus/ui';
 import { useFormPermissions } from '../../hooks/useFormPermissions';
 import { useTranslation } from '../../hooks/useTranslation';
+import { useFieldCreation } from '../../hooks/useFieldCreation';
+import { useFormBuilderStore } from '../../store/useFormBuilderStore';
 import {
   Type,
   FileText,
@@ -192,11 +194,13 @@ const FieldTypeDisplay: React.FC<FieldTypeDisplayProps> = ({
 interface DraggableFieldTypeProps {
   fieldType: FieldTypeConfig;
   categories: ReturnType<typeof getCategoriesConfig>;
+  onAdd?: () => void;
 }
 
 const DraggableFieldType: React.FC<DraggableFieldTypeProps> = ({
   fieldType,
   categories,
+  onAdd,
 }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `field-type-${fieldType.type}`,
@@ -231,6 +235,7 @@ const DraggableFieldType: React.FC<DraggableFieldTypeProps> = ({
         data-testid={`field-type-${fieldType.label.replace(/\s+/g, '-').toLowerCase()}`}
         {...listeners}
         {...attributes}
+        onClick={onAdd}
         className={`group cursor-grab active:cursor-grabbing transition-transform duration-200 ${
           isDragging ? 'scale-102' : 'hover:scale-102'
         }`}
@@ -256,6 +261,8 @@ export const FieldTypesPanel: React.FC<FieldTypesPanelProps> = ({
 }) => {
   const permissions = useFormPermissions();
   const { t } = useTranslation('fieldTypesPanel');
+  const { selectedPageId, addField } = useFormBuilderStore();
+  const { createFieldData } = useFieldCreation();
 
   // Hide field types panel for viewers as they can't add fields
   if (!permissions.canAddFields()) {
@@ -307,6 +314,7 @@ export const FieldTypesPanel: React.FC<FieldTypesPanelProps> = ({
                   key={fieldType.type}
                   fieldType={fieldType}
                   categories={CATEGORIES}
+                  onAdd={selectedPageId ? () => addField(selectedPageId, fieldType.type as FieldType, createFieldData(fieldType)) : undefined}
                 />
               ))}
             </div>

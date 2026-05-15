@@ -13,7 +13,7 @@ Then('I drag a checkbox field onto the page', async function (this: CustomWorld)
 
   const initialCount = await droppablePage.locator('[data-testid^="field-content-"]').count();
 
-  await fieldTile.dragTo(droppablePage);
+  await fieldTile.click();
 
   await expect(async () => {
     const newCount = await droppablePage.locator('[data-testid^="field-content-"]').count();

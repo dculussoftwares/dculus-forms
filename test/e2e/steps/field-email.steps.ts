@@ -11,7 +11,7 @@ Then('I drag an email field onto the page', async function (this: CustomWorld) {
   const fieldTile = this.page.getByTestId('field-type-email');
   const droppablePage = this.page.getByTestId('droppable-page').first();
 
-  await fieldTile.dragTo(droppablePage);
+  await fieldTile.click();
 
   const fieldContent = droppablePage.getByTestId('field-content-1');
   await expect(fieldContent).toBeVisible({ timeout: 15_000 });

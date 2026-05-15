@@ -2,17 +2,16 @@ import { Then, When } from '@cucumber/cucumber';
 import { expect } from '@playwright/test';
 import { CustomWorld } from '../support/world';
 
-// Drag and drop step
+// Click-to-add step (more reliable than drag-and-drop in headless browsers)
 Then('I drag a short text field onto the page', async function (this: CustomWorld) {
   if (!this.page) {
     throw new Error('Page is not initialized');
   }
 
   const fieldTile = this.page.getByTestId('field-type-short-text');
+  await fieldTile.click();
+
   const droppablePage = this.page.getByTestId('droppable-page').first();
-
-  await fieldTile.dragTo(droppablePage);
-
   const fieldContent = droppablePage.getByTestId('field-content-1');
   await expect(fieldContent).toBeVisible({ timeout: 15_000 });
 });

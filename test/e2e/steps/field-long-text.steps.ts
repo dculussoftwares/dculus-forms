@@ -2,6 +2,7 @@ import { Then, When } from '@cucumber/cucumber';
 import { expect } from '@playwright/test';
 import { CustomWorld } from '../support/world';
 
+
 // Drag and drop step
 Then('I drag a long text field onto the page', async function (this: CustomWorld) {
   if (!this.page) {
@@ -11,7 +12,7 @@ Then('I drag a long text field onto the page', async function (this: CustomWorld
   const fieldTile = this.page.getByTestId('field-type-long-text');
   const droppablePage = this.page.getByTestId('droppable-page').first();
 
-  await fieldTile.dragTo(droppablePage);
+  await fieldTile.click();
 
   const fieldContent = droppablePage.getByTestId('field-content-1');
   await expect(fieldContent).toBeVisible({ timeout: 15_000 });

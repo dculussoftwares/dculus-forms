@@ -126,7 +126,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
   const isSingleSelectionField = field.type === 'select_field' || field.type === 'radio_field';
 
   return (
-    <div data-testid="field-settings-panel" className="h-full flex flex-col">
+    <div className="h-full flex flex-col">
       <div className="h-full flex flex-col">
         <FieldSettingsHeader field={field} isDirty={isDirty} />
 

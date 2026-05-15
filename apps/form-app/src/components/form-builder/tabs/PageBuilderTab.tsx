@@ -453,7 +453,7 @@ const FieldCard: React.FC<{
                 : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm cursor-pointer'
         }
       `}
-      data-testid={`field-${field.id}`}
+      data-testid={`draggable-field-${field.id}`}
     >
       {/* Compact view when any drag is active */}
       {shouldShowCompact ? (
@@ -542,7 +542,7 @@ const FieldCard: React.FC<{
           </div>
 
           {/* Field Preview */}
-          <div className="pl-9 pr-2">
+          <div className="pl-9 pr-2" data-testid={`field-content-${index + 1}`}>
             <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-md border border-gray-200 dark:border-gray-700">
               <FieldPreview
                 field={field}
@@ -555,6 +555,16 @@ const FieldCard: React.FC<{
           {/* Actions - only show on hover */}
           <div className="pl-9 pr-2">
             <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              {onClick && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onClick(); }}
+                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all"
+                  title="Field settings"
+                  data-testid={`field-settings-button-${index + 1}`}
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
+              )}
               {onMoveUp && index > 0 && (
                 <button
                   onClick={(e) => {

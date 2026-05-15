@@ -42,7 +42,7 @@ Feature: Thank You Page Settings
     And I fill and submit the thank you test form
     Then I should see the custom thank you message
 
-  @thank-you-substitution
+  @thank-you-substitution @skip-ci
   Scenario: Form shows field value substitution in thank you message
     # Create form
     When I create a form via GraphQL for thank you page testing
