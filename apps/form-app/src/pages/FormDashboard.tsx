@@ -209,8 +209,8 @@ const FormDashboard: React.FC = () => {
         { label: form.title, href: `/dashboard/form/${formId}` },
       ]}
     >
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
-        <div className="max-w-7xl mx-auto px-6 py-10 space-y-12">
+      <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950">
+        <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
           {/* Header Section */}
           <FormHeader
             form={form}
@@ -233,11 +233,11 @@ const FormDashboard: React.FC = () => {
 
           {/* Stats Section */}
           <div>
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold text-slate-900 mb-1">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                 {t('overview.heading')}
               </h2>
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
                 {t('overview.description')}
               </p>
             </div>
