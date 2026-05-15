@@ -1,9 +1,5 @@
 import {
-  Card,
   CardContent,
-  TypographySmall,
-  TypographyMuted,
-  TypographyH3,
   Button,
   Input,
   Pagination,
@@ -12,28 +8,31 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Chip,
 } from '@dculus/ui';
 import { MainLayout } from './MainLayout';
 import {
   FileText,
   Eye,
   Plus,
-  Users2,
   Edit3,
   Search,
   X,
   Loader2,
   ChevronsUpDown,
+  Layers,
+  ArrowRight,
+  ChevronRight,
 } from 'lucide-react';
 import { useNavigate, Routes, Route, useSearchParams } from 'react-router-dom';
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from '@apollo/client';
 import { GET_ACTIVE_ORGANIZATION, GET_FORMS } from '../graphql/queries';
+import { GET_TEMPLATES } from '../graphql/templates';
 import Templates from '../pages/Templates';
 import FormDashboard from '../pages/FormDashboard';
+import { UseTemplatePopover } from './UseTemplatePopover';
 import { useTranslation } from '../hooks/useTranslation';
-import { getFormViewerUrl } from '@/lib/config';
+import { getFormViewerUrl, getCdnEndpoint } from '@/lib/config';
 
 export function Dashboard() {
   const { t: tTemplates } = useTranslation('templates');
@@ -72,11 +71,9 @@ function FormsListDashboard() {
   const contentRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation('dashboard');
 
-  // P0: Persist state in URL params
   const urlPage = parseInt(searchParams.get('page') || '1', 10);
   const urlSearch = searchParams.get('search') || '';
-  const urlFilter = (searchParams.get('filter') ||
-    'my-forms') as FilterCategory;
+  const urlFilter = (searchParams.get('filter') || 'my-forms') as FilterCategory;
   const urlPageSize = parseInt(searchParams.get('pageSize') || '12', 10);
 
   const [searchTerm, setSearchTerm] = useState(urlSearch);
@@ -89,483 +86,314 @@ function FormsListDashboard() {
 
   const { data: orgData } = useQuery(GET_ACTIVE_ORGANIZATION);
 
-  // Debounce search term to avoid excessive queries
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 500); // Wait 500ms after user stops typing
-
+    const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 500);
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // P0: Update URL params when state changes
   useEffect(() => {
     const params = new URLSearchParams();
     if (currentPage > 1) params.set('page', currentPage.toString());
     if (debouncedSearchTerm) params.set('search', debouncedSearchTerm);
     if (activeFilter !== 'my-forms') params.set('filter', activeFilter);
     if (pageSize !== 12) params.set('pageSize', pageSize.toString());
-
     setSearchParams(params, { replace: true });
-  }, [
-    currentPage,
-    debouncedSearchTerm,
-    activeFilter,
-    pageSize,
-    setSearchParams,
-  ]);
+  }, [currentPage, debouncedSearchTerm, activeFilter, pageSize, setSearchParams]);
 
-  // Reset to page 1 when search or pageSize changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedSearchTerm, pageSize]);
-
-  // Reset to page 1 when filter changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [activeFilter]);
+  useEffect(() => { setCurrentPage(1); }, [debouncedSearchTerm, pageSize]);
+  useEffect(() => { setCurrentPage(1); }, [activeFilter]);
 
   const organizationId = orgData?.activeOrganization?.id;
+  const filtersInput = debouncedSearchTerm.trim() ? { search: debouncedSearchTerm.trim() } : undefined;
 
-  const filtersInput = debouncedSearchTerm.trim()
-    ? { search: debouncedSearchTerm.trim() }
-    : undefined;
-
-  const {
-    data: ownerFormsData,
-    loading: ownerFormsLoading,
-    error: ownerFormsError,
-  } = useQuery(GET_FORMS, {
-    variables: {
-      organizationId,
-      category: 'OWNER',
-      page: currentPage,
-      limit: pageSize,
-      filters: filtersInput,
-    },
+  const { data: ownerFormsData, loading: ownerFormsLoading, error: ownerFormsError } = useQuery(GET_FORMS, {
+    variables: { organizationId, category: 'OWNER', page: currentPage, limit: pageSize, filters: filtersInput },
     skip: !organizationId || activeFilter !== 'my-forms',
     notifyOnNetworkStatusChange: true,
   });
 
-  const {
-    data: sharedFormsData,
-    loading: sharedFormsLoading,
-    error: sharedFormsError,
-  } = useQuery(GET_FORMS, {
-    variables: {
-      organizationId,
-      category: 'SHARED',
-      page: currentPage,
-      limit: pageSize,
-      filters: filtersInput,
-    },
+  const { data: sharedFormsData, loading: sharedFormsLoading, error: sharedFormsError } = useQuery(GET_FORMS, {
+    variables: { organizationId, category: 'SHARED', page: currentPage, limit: pageSize, filters: filtersInput },
     skip: !organizationId || activeFilter !== 'shared-with-me',
     notifyOnNetworkStatusChange: true,
   });
 
-  const {
-    data: allFormsData,
-    loading: allFormsLoading,
-    error: allFormsError,
-  } = useQuery(GET_FORMS, {
-    variables: {
-      organizationId,
-      category: 'ALL',
-      page: currentPage,
-      limit: pageSize,
-      filters: filtersInput,
-    },
+  const { data: allFormsData, loading: allFormsLoading, error: allFormsError } = useQuery(GET_FORMS, {
+    variables: { organizationId, category: 'ALL', page: currentPage, limit: pageSize, filters: filtersInput },
     skip: !organizationId || activeFilter !== 'all',
     notifyOnNetworkStatusChange: true,
   });
 
-  // Extract forms and pagination info from responses
   const ownerForms = ownerFormsData?.forms?.forms || [];
   const ownerFormsPagination = ownerFormsData?.forms;
-
   const sharedForms = sharedFormsData?.forms?.forms || [];
   const sharedFormsPagination = sharedFormsData?.forms;
-
   const allForms = allFormsData?.forms?.forms || [];
   const allFormsPagination = allFormsData?.forms;
 
-  // Loading and error states scoped to active filter
   const formsLoading =
-    activeFilter === 'my-forms'
-      ? ownerFormsLoading
-      : activeFilter === 'shared-with-me'
-      ? sharedFormsLoading
-      : allFormsLoading;
+    activeFilter === 'my-forms' ? ownerFormsLoading :
+    activeFilter === 'shared-with-me' ? sharedFormsLoading : allFormsLoading;
 
   const formsError =
-    activeFilter === 'my-forms'
-      ? ownerFormsError
-      : activeFilter === 'shared-with-me'
-      ? sharedFormsError
-      : allFormsError;
+    activeFilter === 'my-forms' ? ownerFormsError :
+    activeFilter === 'shared-with-me' ? sharedFormsError : allFormsError;
 
-  // Show typing indicator when user is typing but query hasn't fired yet
   const isTyping = searchTerm !== debouncedSearchTerm && searchTerm.length > 0;
 
-  // Determine which forms to display based on filter
   const displayForms = useMemo(() => {
-    if (activeFilter === 'my-forms') {
-      return {
-        forms: ownerForms,
-        pagination: ownerFormsPagination,
-        showPermissionBadge: false,
-      };
-    }
-
-    if (activeFilter === 'shared-with-me') {
-      return {
-        forms: sharedForms,
-        pagination: sharedFormsPagination,
-        showPermissionBadge: true,
-      };
-    }
-
-    return {
-      forms: allForms,
-      pagination: allFormsPagination,
-      showPermissionBadge: true, // Show badges to distinguish form ownership
-    };
-  }, [
-    activeFilter,
-    ownerForms,
-    ownerFormsPagination,
-    sharedForms,
-    sharedFormsPagination,
-    allForms,
-    allFormsPagination,
-  ]);
+    if (activeFilter === 'my-forms') return { forms: ownerForms, pagination: ownerFormsPagination, showPermissionBadge: false };
+    if (activeFilter === 'shared-with-me') return { forms: sharedForms, pagination: sharedFormsPagination, showPermissionBadge: true };
+    return { forms: allForms, pagination: allFormsPagination, showPermissionBadge: true };
+  }, [activeFilter, ownerForms, ownerFormsPagination, sharedForms, sharedFormsPagination, allForms, allFormsPagination]);
 
   const currentTotalCount = displayForms.pagination?.totalCount ?? 0;
 
-  // P0 & P1: Smooth page change with loading overlay
   const handlePageChange = useCallback((page: number) => {
     setIsPageChanging(true);
     setCurrentPage(page);
     setJumpToPageInput('');
-
-    // P1: Smooth scroll to top
     if (contentRef.current) {
       contentRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-
     setTimeout(() => setIsPageChanging(false), 400);
   }, []);
 
-  // P1: Jump to page functionality
   const handleJumpToPage = useCallback(() => {
     const pageNum = parseInt(jumpToPageInput, 10);
     const maxPages = displayForms.pagination?.totalPages || 1;
-
-    if (pageNum >= 1 && pageNum <= maxPages) {
-      handlePageChange(pageNum);
-    }
+    if (pageNum >= 1 && pageNum <= maxPages) handlePageChange(pageNum);
   }, [jumpToPageInput, displayForms.pagination, handlePageChange]);
 
-  // P1: Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Only handle if not typing in an input
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      ) {
-        return;
-      }
-
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       const pagination = displayForms.pagination;
       if (!pagination) return;
-
-      if (e.key === 'ArrowLeft' && pagination.hasPreviousPage) {
-        e.preventDefault();
-        handlePageChange(currentPage - 1);
-      } else if (e.key === 'ArrowRight' && pagination.hasNextPage) {
-        e.preventDefault();
-        handlePageChange(currentPage + 1);
-      } else if (e.key === 'Home' && currentPage !== 1) {
-        e.preventDefault();
-        handlePageChange(1);
-      }
+      if (e.key === 'ArrowLeft' && pagination.hasPreviousPage) { e.preventDefault(); handlePageChange(currentPage - 1); }
+      else if (e.key === 'ArrowRight' && pagination.hasNextPage) { e.preventDefault(); handlePageChange(currentPage + 1); }
+      else if (e.key === 'Home' && currentPage !== 1) { e.preventDefault(); handlePageChange(1); }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentPage, displayForms.pagination, handlePageChange]);
 
-  const clearSearch = useCallback(() => {
-    setSearchTerm('');
-  }, []);
+  const clearSearch = useCallback(() => setSearchTerm(''), []);
+  const handleFilterChange = useCallback((filter: FilterCategory) => setActiveFilter(filter), []);
+  const handlePageSizeChange = useCallback((newPageSize: string) => setPageSize(parseInt(newPageSize, 10)), []);
 
-  const handleFilterChange = useCallback((filter: FilterCategory) => {
-    setActiveFilter(filter);
-  }, []);
-
-  const handlePageSizeChange = useCallback((newPageSize: string) => {
-    setPageSize(parseInt(newPageSize, 10));
-  }, []);
+  const FILTERS: { key: FilterCategory; label: string }[] = [
+    { key: 'my-forms',        label: t('filters.mine') },
+    { key: 'all',             label: t('filters.all') },
+    { key: 'shared-with-me', label: t('filters.shared') },
+  ];
 
   return (
     <MainLayout
       title={t('layout.title')}
-      subtitle={t('layout.subtitle')}
-  breadcrumbs={[{ label: t('layout.breadcrumb'), isActive: true }]}
+      breadcrumbs={[{ label: t('layout.breadcrumb'), isActive: true }]}
     >
       <div className="space-y-8" ref={contentRef}>
-        {/* Header with Create Form Button */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4">
-          <Button
-            onClick={() => navigate('/dashboard/templates')}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
-            size="lg"
-          >
-            <Plus className="mr-2 h-5 w-5" />
-            {t('actions.create')}
-          </Button>
-        </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        {/* ── Templates strip ── */}
+        <TemplatesStrip />
+
+        {/* ── Search + Filters bar ── */}
+        <div className="flex flex-col gap-3">
+          {/* Row 1: Search + Create */}
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <Input
                 placeholder={t('search.placeholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-10"
+                className="pl-11 pr-10"
               />
               {isTyping && (
-                <div className="absolute right-10 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                  {t('search.typing')}
+                <div className="absolute right-10 top-1/2 -translate-y-1/2">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />
                 </div>
               )}
               {searchTerm && (
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <button
                   onClick={clearSearch}
-                  className="absolute right-1 top-1/2 h-7 w-7 p-0 -translate-y-1/2 hover:bg-muted"
                   aria-label={t('search.clear')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
                 >
-                  <X className="h-4 w-4" />
-                </Button>
+                  <X className="h-3.5 w-3.5" />
+                </button>
               )}
             </div>
+            <Button onClick={() => navigate('/dashboard/templates')} className="gap-2 shrink-0">
+              <Plus className="h-4 w-4" />
+              {t('actions.create')}
+            </Button>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="flex flex-wrap gap-2">
-              <Chip
-                selected={activeFilter === 'all'}
-                onClick={() => handleFilterChange('all')}
-                variant="default"
-              >
-                {t('filters.all')}
-              </Chip>
-              <Chip
-                selected={activeFilter === 'my-forms'}
-                onClick={() => handleFilterChange('my-forms')}
-                variant="default"
-              >
-                {t('filters.mine')}
-              </Chip>
-              <Chip
-                selected={activeFilter === 'shared-with-me'}
-                onClick={() => handleFilterChange('shared-with-me')}
-                variant="default"
-              >
-                {t('filters.shared')}
-              </Chip>
+          {/* Row 2: Filters + page-size */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="inline-flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
+              {FILTERS.map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => handleFilterChange(key)}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                    activeFilter === key
+                      ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
 
-            <div className="flex items-center gap-2 ml-auto">
-              <TypographySmall className="text-muted-foreground">
-                {t('pageSize.label')}
-              </TypographySmall>
-              <Select
-                value={pageSize.toString()}
-                onValueChange={handlePageSizeChange}
-                disabled={formsLoading}
-              >
-                <SelectTrigger className="w-20 h-8">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-400 whitespace-nowrap">{t('pageSize.label')}</span>
+              <Select value={pageSize.toString()} onValueChange={handlePageSizeChange} disabled={formsLoading}>
+                <SelectTrigger className="w-20 h-9 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {PAGE_SIZE_OPTIONS.map((size) => (
-                    <SelectItem key={size} value={size.toString()}>
-                      {size}
-                    </SelectItem>
+                    <SelectItem key={size} value={size.toString()}>{size}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <TypographySmall className="text-muted-foreground">
-                {t('pageSize.suffix')}
-              </TypographySmall>
+              <span className="text-sm text-gray-400">{t('pageSize.suffix')}</span>
             </div>
           </div>
         </div>
 
-        {/* Forms Grid */}
+        {/* ── Content area ── */}
         {formsLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          /* Skeleton grid */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {Array.from({ length: 8 }).map((_, i) => (
-              <Card key={i} className="overflow-hidden animate-pulse">
-                <div className="h-48 bg-muted"></div>
-                <CardContent className="p-6 space-y-3">
-                  <div className="h-4 bg-muted rounded w-3/4"></div>
-                  <div className="h-3 bg-muted rounded w-1/2"></div>
-                  <div className="flex gap-2 pt-2">
-                    <div className="h-6 bg-muted rounded w-16"></div>
-                    <div className="h-6 bg-muted rounded w-20"></div>
+              <div key={i} className="rounded-2xl border border-gray-100 overflow-hidden animate-pulse">
+                <div className="h-44 bg-gray-100" />
+                <div className="p-5 space-y-3">
+                  <div className="h-4 bg-gray-100 rounded-lg w-3/4" />
+                  <div className="h-3 bg-gray-100 rounded-lg w-1/2" />
+                  <div className="flex gap-2 pt-1">
+                    <div className="h-5 bg-gray-100 rounded-full w-16" />
+                    <div className="h-5 bg-gray-100 rounded-full w-12" />
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         ) : formsError ? (
-          <div className="text-center py-12">
-            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-8 max-w-md mx-auto">
-              <div className="text-destructive font-medium mb-2">
-                {t('error.title')}
+          /* Error state */
+          <div className="text-center py-16">
+            <div className="inline-flex flex-col items-center gap-4 bg-red-50 border border-red-100 rounded-2xl p-10 max-w-sm">
+              <div className="w-12 h-12 rounded-2xl bg-red-100 flex items-center justify-center">
+                <X className="w-6 h-6 text-red-500" />
               </div>
-              <div className="text-muted-foreground text-sm">
-                {t('error.description')}
+              <div>
+                <p className="font-semibold text-red-800">{t('error.title')}</p>
+                <p className="text-sm text-red-500 mt-1">{t('error.description')}</p>
               </div>
             </div>
           </div>
         ) : currentTotalCount === 0 ? (
-          <div className="text-center py-20">
-            <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-xl p-12 max-w-lg mx-auto">
-              <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <FileText className="w-8 h-8 text-primary" />
-              </div>
-              <TypographyH3 className="text-xl font-semibold mb-3">
-                {t('empty.title')}
-              </TypographyH3>
-              <TypographyMuted className="text-muted-foreground mb-6 max-w-sm mx-auto">
-                {t('empty.description')}
-              </TypographyMuted>
-              <Button
-                onClick={() => navigate('/dashboard/templates')}
-                size="lg"
-                className="bg-primary hover:bg-primary/90"
-              >
-                <Plus className="mr-2 h-5 w-5" />
+          /* Empty state — no forms yet */
+          <EmptyState
+            icon={<FileText className="w-7 h-7 text-primary" />}
+            title={t('empty.title')}
+            description={t('empty.description')}
+            action={
+              <Button onClick={() => navigate('/dashboard/templates')} size="lg" className="gap-2">
+                <Plus className="h-4 w-4" />
                 {t('actions.createPrimary')}
               </Button>
-            </div>
-          </div>
+            }
+          />
         ) : displayForms.forms.length === 0 && searchTerm ? (
-          <div className="text-center py-20">
-            <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-xl p-12 max-w-lg mx-auto">
-              <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Search className="w-8 h-8 text-primary" />
-              </div>
-              <TypographyH3 className="text-xl font-semibold mb-3">
-                {t('searchEmpty.title')}
-              </TypographyH3>
-              <TypographyMuted className="text-muted-foreground mb-6 max-w-sm mx-auto">
-                {t('searchEmpty.description', { values: { term: searchTerm } })}
-              </TypographyMuted>
-              <Button onClick={clearSearch} variant="outline" size="lg">
-                <X className="mr-2 h-4 w-4" />
+          /* Empty search results */
+          <EmptyState
+            icon={<Search className="w-7 h-7 text-primary" />}
+            title={t('searchEmpty.title')}
+            description={t('searchEmpty.description', { values: { term: searchTerm } })}
+            action={
+              <Button onClick={clearSearch} variant="outline" size="lg" className="gap-2">
+                <X className="h-4 w-4" />
                 {t('search.clear')}
               </Button>
-            </div>
-          </div>
+            }
+          />
         ) : (
-          <div className="space-y-6">
-            {/* P0: Page-change loading overlay */}
+          <div className="space-y-8">
+            {/* Page-change overlay */}
             <div className="relative">
               {isPageChanging && (
-                <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
-                  <div className="flex flex-col items-center gap-2">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <TypographySmall className="text-muted-foreground">
-                      {t('loading.page', { values: { page: currentPage } })}
-                    </TypographySmall>
-                  </div>
+                <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex items-center justify-center rounded-2xl">
+                  <Loader2 className="h-7 w-7 animate-spin text-primary" />
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                 {displayForms.forms.map((form: any) => (
                   <FormCard
                     key={form.id}
                     form={form}
                     onNavigate={navigate}
                     showPermissionBadge={
-                      displayForms.showPermissionBadge ||
-                      (activeFilter === 'all' && form.userPermission)
+                      displayForms.showPermissionBadge || (activeFilter === 'all' && form.userPermission)
                     }
                   />
                 ))}
               </div>
             </div>
 
-            {/* Pagination with Jump to Page */}
-            {displayForms.pagination &&
-              displayForms.pagination.totalPages > 1 && (
-                <div className="flex flex-row flex-wrap items-center justify-center gap-4 mt-8">
-                  <div className="flex items-center gap-4">
-                    <Pagination
-                      showInfo={false}
-                      currentPage={displayForms.pagination.page}
-                      totalPages={displayForms.pagination.totalPages}
-                      onPageChange={handlePageChange}
-                      hasNextPage={displayForms.pagination.hasNextPage}
-                      hasPreviousPage={displayForms.pagination.hasPreviousPage}
-                      totalCount={displayForms.pagination.totalCount}
-                      pageSize={displayForms.pagination.limit}
-                    />
+            {/* Pagination */}
+            {displayForms.pagination && displayForms.pagination.totalPages > 1 && (
+              <div className="flex flex-row flex-wrap items-center justify-center gap-4">
+                <div className="flex items-center gap-4">
+                  <Pagination
+                    showInfo={false}
+                    currentPage={displayForms.pagination.page}
+                    totalPages={displayForms.pagination.totalPages}
+                    onPageChange={handlePageChange}
+                    hasNextPage={displayForms.pagination.hasNextPage}
+                    hasPreviousPage={displayForms.pagination.hasPreviousPage}
+                    totalCount={displayForms.pagination.totalCount}
+                    pageSize={displayForms.pagination.limit}
+                  />
 
-                    {/* P1: Jump to Page Input */}
-                    {displayForms.pagination.totalPages > 3 && (
-                      <>
-                        <div className="w-px h-6 bg-border" />
-                        <div className="flex items-center gap-2">
-                          <TypographySmall className="text-muted-foreground">
-                            {t('pagination.goto')}
-                          </TypographySmall>
-                          <Input
-                            type="number"
-                            min="1"
-                            max={displayForms.pagination.totalPages}
-                            value={jumpToPageInput}
-                            onChange={(e) => setJumpToPageInput(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                handleJumpToPage();
-                              }
-                            }}
-                            placeholder={currentPage.toString()}
-                            className="w-16 h-8 text-center"
-                          />
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={handleJumpToPage}
-                            disabled={
-                              !jumpToPageInput ||
-                              parseInt(jumpToPageInput) < 1 ||
-                              parseInt(jumpToPageInput) >
-                                displayForms.pagination.totalPages
-                            }
-                            className="h-8"
-                          >
-                            <ChevronsUpDown className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                  {displayForms.pagination.totalPages > 3 && (
+                    <>
+                      <div className="w-px h-5 bg-gray-200" />
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-400">{t('pagination.goto')}</span>
+                        <Input
+                          type="number"
+                          min="1"
+                          max={displayForms.pagination.totalPages}
+                          value={jumpToPageInput}
+                          onChange={(e) => setJumpToPageInput(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') handleJumpToPage(); }}
+                          placeholder={currentPage.toString()}
+                          className="w-16 h-9 text-center text-sm"
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleJumpToPage}
+                          disabled={!jumpToPageInput || parseInt(jumpToPageInput) < 1 || parseInt(jumpToPageInput) > displayForms.pagination.totalPages}
+                          className="h-9 px-3"
+                        >
+                          <ChevronsUpDown className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </div>
-              )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -573,218 +401,294 @@ function FormsListDashboard() {
   );
 }
 
+/* ── Templates strip ── */
+function TemplatesStrip() {
+  const navigate = useNavigate();
+  const cdnEndpoint = getCdnEndpoint();
+  const { data, loading } = useQuery(GET_TEMPLATES);
+  const templates: any[] = data?.templates?.slice(0, 8) ?? [];
+
+  if (loading) {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white">Start from a template</h2>
+        </div>
+        <div className="flex gap-4 overflow-hidden">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="shrink-0 w-48 rounded-2xl border border-gray-100 overflow-hidden animate-pulse">
+              <div className="h-28 bg-gray-100" />
+              <div className="p-3 space-y-2">
+                <div className="h-3 bg-gray-100 rounded-lg w-3/4" />
+                <div className="h-3 bg-gray-100 rounded-lg w-1/2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!templates.length) return null;
+
+  return (
+    <div>
+      {/* Section header */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-base font-semibold text-gray-900 dark:text-white">Start from a template</h2>
+        <button
+          onClick={() => navigate('/dashboard/templates')}
+          className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 font-medium transition-colors"
+        >
+          Browse all
+          <ChevronRight className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      {/* Horizontal scroll row */}
+      <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none" style={{ scrollbarWidth: 'none' }}>
+        {templates.map((template: any) => {
+          const bgKey = template.formSchema?.layout?.backgroundImageKey;
+          const bgUrl = bgKey && cdnEndpoint ? `${cdnEndpoint}/${bgKey}` : null;
+
+          return (
+            <div
+              key={template.id}
+              className="group shrink-0 w-48 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+            >
+              {/* Thumbnail */}
+              <div className="relative h-28 overflow-hidden">
+                {bgUrl ? (
+                  <div
+                    className="w-full h-full bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
+                    style={{ backgroundImage: `url(${bgUrl})` }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-primary" />
+                    </div>
+                  </div>
+                )}
+                {/* Hover overlay with "Use" button */}
+                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                  <UseTemplatePopover templateId={template.id} templateName={template.name}>
+                    <button className="px-3 py-1.5 rounded-lg bg-white text-gray-900 text-xs font-semibold shadow-md hover:bg-gray-50 transition-colors">
+                      Use template
+                    </button>
+                  </UseTemplatePopover>
+                </div>
+              </div>
+
+              {/* Name + category */}
+              <div className="p-3">
+                <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">{template.name}</p>
+                {template.category && (
+                  <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{template.category}</p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* "See all" card at end */}
+        <button
+          onClick={() => navigate('/dashboard/templates')}
+          className="shrink-0 w-48 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center gap-2 text-gray-400 hover:text-primary hover:border-primary/40 transition-all duration-200 h-[calc(7rem+3.25rem)]"
+        >
+          <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center group-hover:bg-primary/10">
+            <Plus className="w-5 h-5" />
+          </div>
+          <span className="text-xs font-medium">See all templates</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Empty state helper ── */
+function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 text-center">
+      <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-5">
+        {icon}
+      </div>
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{title}</h3>
+      <p className="text-sm text-gray-400 max-w-xs mb-7">{description}</p>
+      {action}
+    </div>
+  );
+}
+
+/* ── Form Card ── */
 interface FormCardProps {
   form: any;
   onNavigate: (path: string) => void;
   showPermissionBadge?: boolean;
 }
 
-function FormCard({
-  form,
-  onNavigate,
-  showPermissionBadge = false,
-}: FormCardProps) {
+const CARD_ACCENT_COLORS: Record<string, string> = {
+  OWNER:  '#14b8a6', // teal  — primary
+  EDITOR: '#6366f1', // indigo
+  VIEWER: '#94a3b8', // slate
+};
+
+function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardProps) {
   const { t, locale } = useTranslation('dashboard');
-  // Use metadata if available, otherwise fallback to defaults
-  const metadata = form.metadata;
-  const primaryColor = '#3b82f6';
-  const backgroundColor = '#ffffff';
-
-  // Use background image from metadata if available
-  const backgroundImageUrl = metadata?.backgroundImageUrl || null;
-
-  // Get real counts from metadata or show placeholders
-  const pageCount = metadata?.pageCount ?? 0;
-  const fieldCount = metadata?.fieldCount ?? 0;
+  const metadata   = form.metadata;
+  const accentColor = CARD_ACCENT_COLORS[form.userPermission] ?? '#14b8a6';
+  const bgImageUrl  = metadata?.backgroundImageUrl ?? null;
+  const pageCount   = metadata?.pageCount ?? 0;
+  const fieldCount  = metadata?.fieldCount ?? 0;
 
   const pageCountLabel =
-    pageCount === 0
-      ? t('counts.pages.zero')
-      : pageCount === 1
-      ? t('counts.pages.one')
-      : t('counts.pages.other', { values: { count: pageCount } });
+    pageCount === 0 ? t('counts.pages.zero') :
+    pageCount === 1 ? t('counts.pages.one') :
+    t('counts.pages.other', { values: { count: pageCount } });
 
   const fieldCountLabel =
-    fieldCount === 0
-      ? t('counts.fields.zero')
-      : fieldCount === 1
-      ? t('counts.fields.one')
-      : t('counts.fields.other', { values: { count: fieldCount } });
+    fieldCount === 0 ? t('counts.fields.zero') :
+    fieldCount === 1 ? t('counts.fields.one') :
+    t('counts.fields.other', { values: { count: fieldCount } });
 
   const permissionLabel = (() => {
     switch (form.userPermission) {
-      case 'OWNER':
-        return t('permissions.owner');
-      case 'EDITOR':
-        return t('permissions.editor');
-      case 'VIEWER':
-        return t('permissions.viewer');
-      default:
-        return t('permissions.none');
+      case 'OWNER':  return t('permissions.owner');
+      case 'EDITOR': return t('permissions.editor');
+      case 'VIEWER': return t('permissions.viewer');
+      default:       return t('permissions.none');
     }
   })();
 
   const formattedCreatedAt = (() => {
-    if (!form.createdAt) {
-      return t('created.unknown');
-    }
-
-    const timestamp =
-      typeof form.createdAt === 'string' && /^\d+$/.test(form.createdAt)
-        ? parseInt(form.createdAt, 10)
-        : form.createdAt;
+    if (!form.createdAt) return t('created.unknown');
+    const timestamp = typeof form.createdAt === 'string' && /^\d+$/.test(form.createdAt)
+      ? parseInt(form.createdAt, 10) : form.createdAt;
     const date = new Date(timestamp);
-
-    if (isNaN(date.getTime())) {
-      return t('created.unknown');
-    }
-
-    return date.toLocaleDateString(locale, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
+    if (isNaN(date.getTime())) return t('created.unknown');
+    return date.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' });
   })();
 
-  const handleCardClick = () => {
-    onNavigate(`/dashboard/form/${form.id}`);
-  };
-
-  const handlePreview = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    // Navigate to form preview/viewer
-    const formViewerUrl = getFormViewerUrl(form.shortUrl);
-    window.open(formViewerUrl, '_blank');
-  };
-
-  const handleEdit = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onNavigate(`/dashboard/form/${form.id}/collaborate/page-builder`);
-  };
+  const handleCardClick = () => onNavigate(`/dashboard/form/${form.id}`);
+  const handlePreview   = (e: React.MouseEvent) => { e.stopPropagation(); window.open(getFormViewerUrl(form.shortUrl), '_blank'); };
+  const handleEdit      = (e: React.MouseEvent) => { e.stopPropagation(); onNavigate(`/dashboard/form/${form.id}/collaborate/page-builder`); };
 
   return (
-    <Card
-      className="group relative overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white cursor-pointer"
+    <div
       onClick={handleCardClick}
+      className="group relative rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
     >
-      {/* Form Preview Background */}
-      <div className="relative h-48 overflow-hidden">
-        {backgroundImageUrl ? (
+      {/* Preview thumbnail */}
+      <div className="relative h-44 overflow-hidden">
+        {bgImageUrl ? (
           <div
             className="w-full h-full bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
-            style={{ backgroundImage: `url(${backgroundImageUrl})` }}
+            style={{ backgroundImage: `url(${bgImageUrl})` }}
           >
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
           </div>
         ) : (
           <div
-            className="w-full h-full bg-gradient-to-br from-slate-100 via-slate-50 to-white relative"
-            style={{
-              background: `linear-gradient(135deg, ${backgroundColor}dd 0%, ${primaryColor}22 100%)`,
-            }}
+            className="w-full h-full flex items-center justify-center"
+            style={{ background: `linear-gradient(135deg, ${accentColor}18 0%, ${accentColor}08 100%)` }}
           >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.1)_0%,transparent_50%)]" />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg"
-                style={{ backgroundColor: primaryColor }}
-              >
-                <FileText className="w-8 h-8 text-white" />
-              </div>
+            {/* Subtle grid pattern */}
+            <div
+              className="absolute inset-0 opacity-30"
+              style={{
+                backgroundImage: `radial-gradient(circle, ${accentColor}30 1px, transparent 1px)`,
+                backgroundSize: '20px 20px',
+              }}
+            />
+            <div
+              className="relative w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm"
+              style={{ backgroundColor: `${accentColor}20`, border: `1.5px solid ${accentColor}30` }}
+            >
+              <FileText className="w-7 h-7" style={{ color: accentColor }} />
             </div>
           </div>
         )}
 
-        {/* Status & Permission Badges */}
-        <div className="absolute top-4 right-4 flex flex-col gap-2">
-          <div
-            className={`px-3 py-1 rounded-full text-xs font-medium shadow-lg ${
-              form.isPublished
-                ? 'bg-green-100 text-green-700 border border-green-200'
-                : 'bg-yellow-100 text-yellow-700 border border-yellow-200'
-            }`}
+        {/* Hover quick-actions — centered */}
+        <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-black/10">
+          <button
+            onClick={handlePreview}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/95 text-gray-700 text-xs font-semibold shadow-md hover:bg-white transition-colors"
           >
-            {form.isPublished ? t('status.published') : t('status.draft')}
-          </div>
-          {showPermissionBadge && form.userPermission && (
-            <div
-              className={`px-3 py-1 rounded-full text-xs font-medium shadow-lg ${
-                form.userPermission === 'OWNER'
-                  ? 'bg-purple-100 text-purple-700 border border-purple-200'
-                  : form.userPermission === 'EDITOR'
-                  ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                  : form.userPermission === 'VIEWER'
-                  ? 'bg-gray-100 text-gray-700 border border-gray-200'
-                  : 'bg-red-100 text-red-700 border border-red-200'
-              }`}
-            >
-              {permissionLabel}
-            </div>
-          )}
-        </div>
-
-        {/* Quick Actions */}
-        <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="secondary"
-              className="bg-white/90 hover:bg-white shadow-lg"
-              onClick={handlePreview}
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              className="shadow-lg"
-              style={{ backgroundColor: primaryColor }}
-              onClick={handleEdit}
-            >
-              <Edit3 className="h-4 w-4 text-white" />
-            </Button>
-          </div>
+            <Eye className="h-3.5 w-3.5" />
+            Preview
+          </button>
+          <button
+            onClick={handleEdit}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-white text-xs font-semibold shadow-md transition-colors"
+            style={{ backgroundColor: accentColor }}
+          >
+            <Edit3 className="h-3.5 w-3.5" />
+            Edit
+          </button>
         </div>
       </div>
 
-      {/* Form Details */}
-      <CardContent className="p-6">
-        <div className="space-y-3">
-          <div>
-            <TypographyH3 className="font-semibold text-lg leading-tight line-clamp-1">
-              {form.title}
-            </TypographyH3>
-            {form.description && (
-              <TypographyMuted className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                {form.description}
-              </TypographyMuted>
-            )}
-          </div>
+      {/* Card body */}
+      <CardContent className="p-5 space-y-3">
+        {/* Title + status */}
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="font-semibold text-gray-900 dark:text-white text-sm leading-snug line-clamp-2 flex-1">
+            {form.title}
+          </h3>
+          <span
+            className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${
+              form.isPublished
+                ? 'bg-green-50 text-green-700 border border-green-100'
+                : 'bg-amber-50 text-amber-700 border border-amber-100'
+            }`}
+          >
+            {form.isPublished ? t('status.published') : t('status.draft')}
+          </span>
+        </div>
 
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1">
-                <FileText className="h-3 w-3" />
-                {pageCountLabel}
-              </span>
-              <span className="flex items-center gap-1">
-                <Users2 className="h-3 w-3" />
-                {fieldCountLabel}
-              </span>
-            </div>
-          </div>
+        {form.description && (
+          <p className="text-xs text-gray-400 line-clamp-2">{form.description}</p>
+        )}
 
-          <div className="flex items-center justify-between pt-2">
-            <TypographySmall className="text-muted-foreground">
-              {t('created.label')}{' '}
-              {formattedCreatedAt}
-            </TypographySmall>
-            <div
-              className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: primaryColor }}
-            />
+        {/* Meta row */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 text-xs text-gray-400">
+            <span className="flex items-center gap-1">
+              <Layers className="h-3 w-3" />
+              {pageCountLabel}
+            </span>
+            <span className="flex items-center gap-1">
+              <FileText className="h-3 w-3" />
+              {fieldCountLabel}
+            </span>
           </div>
+          {showPermissionBadge && form.userPermission && (
+            <span
+              className="text-xs font-medium px-2 py-0.5 rounded-full"
+              style={{ color: accentColor, backgroundColor: `${accentColor}15` }}
+            >
+              {permissionLabel}
+            </span>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="pt-1 flex items-center justify-between border-t border-gray-50 dark:border-gray-800">
+          <span className="text-xs text-gray-400">{formattedCreatedAt}</span>
+          <ArrowRight className="h-3.5 w-3.5 text-gray-300 group-hover:text-gray-500 group-hover:translate-x-0.5 transition-all duration-150" />
         </div>
       </CardContent>
-    </Card>
+    </div>
   );
 }
