@@ -49,7 +49,7 @@ export const FieldSelectionGrid: React.FC<FieldSelectionGridProps> = ({
 
   // Helper to get response rate color
   const getResponseRateColor = (rate: number) => {
-    if (rate >= 80) return 'text-green-600 bg-green-100';
+    if (rate >= 80) return 'text-primary bg-primary/10';
     if (rate >= 60) return 'text-yellow-600 bg-yellow-100';
     if (rate >= 40) return 'text-orange-600 bg-orange-100';
     return 'text-red-600 bg-red-100';

@@ -59,7 +59,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                 className={cn(
                   'w-full flex items-center justify-between px-3 py-2 h-auto text-sm rounded-lg',
                   isSelected
-                    ? 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-50 hover:text-green-700'
+                    ? 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary/10 hover:text-primary'
                     : 'text-gray-700'
                 )}
               >

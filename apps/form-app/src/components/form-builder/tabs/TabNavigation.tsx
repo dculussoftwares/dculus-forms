@@ -214,7 +214,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                 {isConnected && (
                   <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
                     <div className="flex items-center space-x-1">
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
                       <span>{t('collaboration.live')}</span>
                     </div>
                     {collaboratorCount > 0 && (

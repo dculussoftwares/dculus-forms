@@ -112,9 +112,9 @@ export const CheckoutSuccess = () => {
         {/* Success Icon */}
         <div className="flex justify-center mb-6">
           <div className="relative">
-            <div className="absolute inset-0 bg-green-500 rounded-full animate-ping opacity-25"></div>
-            <div className="relative bg-green-100 dark:bg-green-900/30 rounded-full p-4">
-              <CheckCircle2 className="h-16 w-16 text-green-600 dark:text-green-400" />
+            <div className="absolute inset-0 bg-primary rounded-full animate-ping opacity-25"></div>
+            <div className="relative bg-primary/10 dark:bg-primary/20 rounded-full p-4">
+              <CheckCircle2 className="h-16 w-16 text-primary" />
             </div>
           </div>
         </div>

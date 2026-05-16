@@ -256,8 +256,8 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                   </span>
                 </div>
                 <div className="flex items-center gap-1 mt-1">
-                  <TrendingUp className="h-3 w-3 text-green-500" />
-                  <span className="text-lg font-semibold text-green-600">
+                  <TrendingUp className="h-3 w-3 text-primary" />
+                  <span className="text-lg font-semibold text-primary">
                     {topCountry.percentage.toFixed(1)}%
                   </span>
                   <span className="text-xs text-gray-500">{t('ofTotal')}</span>

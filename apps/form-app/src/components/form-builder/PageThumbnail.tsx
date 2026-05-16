@@ -72,7 +72,7 @@ export const PageThumbnail: React.FC<PageThumbnailProps> = ({
             : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
           }
           ${isDraggingFromDifferentPage 
-            ? 'border-green-400 bg-green-50/80 dark:bg-green-950/50 ring-2 ring-green-200 dark:ring-green-800' 
+            ? 'border-primary/60 bg-primary/5 dark:bg-primary/10 ring-2 ring-primary/20 dark:ring-primary/30'
             : ''
           }
           ${isDraggingFieldTypeToThisPage 
@@ -141,8 +141,8 @@ export const PageThumbnail: React.FC<PageThumbnailProps> = ({
 
         {/* Drop Indicator Overlays */}
         {isDraggingFromDifferentPage && (
-          <div className="absolute inset-0 bg-green-400/10 border-2 border-dashed border-green-400 rounded-lg flex items-center justify-center">
-            <div className="bg-green-500 text-white px-2 py-1 rounded text-xs font-medium shadow-lg flex items-center space-x-1">
+          <div className="absolute inset-0 bg-primary/10 border-2 border-dashed border-primary/60 rounded-lg flex items-center justify-center">
+            <div className="bg-primary text-white px-2 py-1 rounded text-xs font-medium shadow-lg flex items-center space-x-1">
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
               </svg>

@@ -97,7 +97,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
           <div className="flex items-center space-x-2">
             <div
               className={`w-3 h-3 rounded-full ${
-                form.isPublished ? 'bg-green-500' : 'bg-yellow-500'
+                form.isPublished ? 'bg-primary' : 'bg-yellow-500'
               }`}
             />
             <span className="text-sm">
@@ -109,7 +109,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
           <Button
             onClick={onSave}
             disabled={isSaving}
-            className="bg-green-600 hover:bg-green-700 text-white"
+            className=""
           >
             <Save className="mr-2 h-4 w-4" />
             {isSaving ? t('generalSettings.saving') : t('generalSettings.saveChanges')}

@@ -63,8 +63,8 @@ export const LayoutInfoCard: React.FC<LayoutInfoCardProps> = ({
 
       {/* Collaboration Status */}
       {isConnected && (
-        <div className="mt-4 flex items-center justify-center space-x-2 text-sm text-green-600 dark:text-green-400">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+        <div className="mt-4 flex items-center justify-center space-x-2 text-sm text-primary">
+          <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
           <span>{t('infoCard.collaborationActive')}</span>
         </div>
       )}

@@ -25,7 +25,7 @@ const DistributionIndicator: React.FC<{
   const getDistributionColor = (type: string) => {
     switch (type) {
       case 'concentrated': return 'bg-red-100 text-red-800';
-      case 'even': return 'bg-green-100 text-green-800';
+      case 'even': return 'bg-primary/10 text-primary';
       case 'polarized': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -108,7 +108,7 @@ const OptionPerformanceTable: React.FC<{
               <div 
                 key={option.option}
                 className={`flex items-center justify-between p-3 rounded-lg border transition-colors
-                  ${isTopOption ? 'bg-green-50 border-green-200' : 
+                  ${isTopOption ? 'bg-primary/5 border-primary/20' :
                     isLowPerforming ? 'bg-red-50 border-red-200' : 
                     'bg-gray-50 border-gray-200'
                   }`}
@@ -116,7 +116,7 @@ const OptionPerformanceTable: React.FC<{
                 <div className="flex items-center gap-3">
                   <div 
                     className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold
-                      ${isTopOption ? 'bg-green-500 text-white' : 
+                      ${isTopOption ? 'bg-primary text-white' :
                         isLowPerforming ? 'bg-red-500 text-white' : 
                         'bg-gray-500 text-white'
                       }`}
@@ -145,7 +145,7 @@ const OptionPerformanceTable: React.FC<{
                   <div className="w-24 bg-gray-200 rounded-full h-2 mt-1">
                     <div 
                       className={`h-2 rounded-full transition-all duration-500
-                        ${isTopOption ? 'bg-green-500' : 
+                        ${isTopOption ? 'bg-primary' :
                           isLowPerforming ? 'bg-red-500' : 
                           'bg-blue-500'
                         }`}

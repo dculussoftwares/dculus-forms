@@ -91,7 +91,7 @@ const ValidationIndicator: React.FC<{
                 <div
                   className={`text-2xl font-bold ${
                     isHighValidation
-                      ? 'text-green-600'
+                      ? 'text-primary'
                       : isMediumValidation
                         ? 'text-yellow-600'
                         : 'text-red-600'
@@ -108,8 +108,8 @@ const ValidationIndicator: React.FC<{
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-            <CheckCircle className="h-8 w-8 text-green-500" />
+          <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-lg">
+            <CheckCircle className="h-8 w-8 text-primary" />
             <div>
               <div className="text-lg font-bold text-gray-900">
                 {validEmails}
@@ -141,7 +141,7 @@ const ValidationIndicator: React.FC<{
             <span
               className={`font-bold ${
                 isHighValidation
-                  ? 'text-green-600'
+                  ? 'text-primary'
                   : isMediumValidation
                     ? 'text-yellow-600'
                     : 'text-red-600'
@@ -218,8 +218,8 @@ const CorporatePersonalBreakdown: React.FC<{
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                <User className="h-8 w-8 text-green-500" />
+              <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-lg">
+                <User className="h-8 w-8 text-primary" />
                 <div>
                   <div className="text-lg font-bold text-gray-900">
                     {corporateVsPersonal.personal}
@@ -230,7 +230,7 @@ const CorporatePersonalBreakdown: React.FC<{
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                     <div
-                      className="bg-green-500 h-2 rounded-full transition-all duration-500"
+                      className="bg-primary/50 h-2 rounded-full transition-all duration-500"
                       style={{ width: `${personalPercentage}%` }}
                     />
                   </div>
@@ -396,7 +396,7 @@ const PopularProviders: React.FC<{
     const colors = [
       'bg-red-100 border-red-300',
       'bg-blue-100 border-blue-300',
-      'bg-green-100 border-green-300',
+      'bg-primary/10 border-primary/30',
       'bg-yellow-100 border-yellow-300',
       'bg-purple-100 border-purple-300',
     ];
@@ -843,7 +843,7 @@ export const FileUploadFieldAnalytics: React.FC<
         <StatCard
           title="Responses with Files"
           value={data.responsesWithFiles}
-          icon={<FileCheck className="h-5 w-5 text-green-500" />}
+          icon={<FileCheck className="h-5 w-5 text-primary" />}
         />
         <StatCard
           title="Responses without Files"

@@ -54,7 +54,7 @@ const StatCard: React.FC<StatCardProps> = ({
           <div
             className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${
               trend.isPositive
-                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400'
+                ? 'bg-primary/5 text-primary dark:bg-primary/20 dark:text-primary'
                 : 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400'
             }`}
           >
@@ -106,8 +106,8 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
         value={stats.responseRate}
         subtitle={t('stats.responseRate.subtitle')}
         icon={<TrendingUp className="w-5 h-5" />}
-        iconBgColor="bg-emerald-50 dark:bg-emerald-950"
-        iconColor="text-emerald-600 dark:text-emerald-400"
+        iconBgColor="bg-primary/5 dark:bg-primary/10"
+        iconColor="text-primary"
         trend={positiveTrend(8)}
       />
 

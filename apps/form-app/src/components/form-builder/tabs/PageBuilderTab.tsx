@@ -100,7 +100,7 @@ const getCategoryColor = (category: string) => {
     case 'choice':
       return 'bg-purple-500/10 text-purple-600 dark:text-purple-400';
     case 'content':
-      return 'bg-green-500/10 text-green-600 dark:text-green-400';
+      return 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400';
     default:
       return 'bg-gray-500/10 text-gray-600 dark:text-gray-400';
   }

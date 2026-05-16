@@ -84,7 +84,7 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
       <div className="flex items-start justify-between gap-6 p-6">
         {/* Left: Form icon + info */}
         <div className="flex items-start gap-4 flex-1 min-w-0">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center flex-shrink-0 shadow-sm">
             <FileText className="w-6 h-6 text-white" />
           </div>
           <div className="flex-1 min-w-0">
@@ -94,13 +94,13 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
                 variant={form.isPublished ? 'default' : 'secondary'}
                 className={`${
                   form.isPublished
-                    ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200'
+                    ? 'bg-primary/10 text-primary hover:bg-primary/10 border-primary/20'
                     : 'bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200'
                 } px-2.5 py-0.5 text-xs font-medium border`}
               >
                 <span
                   className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                    form.isPublished ? 'bg-emerald-500' : 'bg-amber-500'
+                    form.isPublished ? 'bg-primary' : 'bg-amber-500'
                   }`}
                 />
                 {form.isPublished ? t('header.status.live') : t('header.status.draft')}
@@ -148,7 +148,7 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
               data-testid="publish-form-button"
               onClick={onPublish}
               disabled={updateLoading}
-              className="h-9 px-5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-sm font-semibold shadow-sm transition-all"
+              className="h-9 px-5 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold shadow-sm transition-all"
             >
               <Eye className="mr-1.5 h-3.5 w-3.5" />
               {updateLoading ? t('header.actions.publishing') : t('header.actions.publish')}

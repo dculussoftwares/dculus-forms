@@ -119,7 +119,7 @@ export const UserDetailPage = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   {user.emailVerified ? (
-                    <div className="flex items-center gap-1 px-3 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full text-sm font-medium">
+                    <div className="flex items-center gap-1 px-3 py-1 bg-primary/10 dark:bg-primary/20 text-primary rounded-full text-sm font-medium">
                       <CheckCircle2 className="w-4 h-4" />
                       <span>Email Verified</span>
                     </div>
@@ -167,8 +167,8 @@ export const UserDetailPage = () => {
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900 flex items-center justify-center">
-                  <Calendar className="w-5 h-5 text-green-600 dark:text-green-400" />
+                <div className="w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Created</p>

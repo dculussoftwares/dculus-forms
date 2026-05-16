@@ -241,7 +241,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
                   </span>
                 )}
                 {!isOutsideTimeWindow && settings.timeWindow?.startDate && settings.timeWindow?.endDate && (
-                  <span className="text-green-600 font-medium">
+                  <span className="text-primary font-medium">
                     ✓ {t('timeWindow.active')}
                   </span>
                 )}
@@ -256,7 +256,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
             <h4 className="text-sm font-medium mb-2">{t('maxResponses.currentStatus')}</h4>
             <div className="space-y-1 text-sm">
               {settings.maxResponses?.enabled && (
-                <div className={isMaxResponsesReached ? 'text-red-600' : 'text-green-600'}>
+                <div className={isMaxResponsesReached ? 'text-red-600' : 'text-primary'}>
                   • {t('maxResponses.responses', { 
                       values: { 
                         current: currentResponseCount, 
@@ -267,7 +267,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
                 </div>
               )}
               {settings.timeWindow?.enabled && (
-                <div className={isOutsideTimeWindow ? 'text-red-600' : 'text-green-600'}>
+                <div className={isOutsideTimeWindow ? 'text-red-600' : 'text-primary'}>
                   • {t('timeWindow.title')}: {isOutsideTimeWindow 
                     ? (isBeforeStart ? t('timeWindow.notStarted') : t('timeWindow.ended'))
                     : t('timeWindow.active')}
@@ -287,7 +287,6 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
             onClick={onSave}
             disabled={isSaving}
             data-testid="save-submission-limits-button"
-            className="bg-green-600 hover:bg-green-700 text-white"
           >
             <Save className="mr-2 h-4 w-4" />
             {isSaving ? t('saving') : t('save')}

@@ -200,7 +200,7 @@ const ResponsesAnalytics: React.FC = () => {
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
-                      className="bg-green-600 h-2 rounded-full"
+                      className="bg-primary h-2 rounded-full"
                       style={{ width: '100%' }}
                     ></div>
                   </div>
@@ -239,11 +239,11 @@ const ResponsesAnalytics: React.FC = () => {
                     {t('charts.responseSummary.totalSubmissions')}
                   </div>
                 </div>
-                <div className="p-4 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">
+                <div className="p-4 bg-primary/5 rounded-lg">
+                  <div className="text-2xl font-bold text-primary">
                     100%
                   </div>
-                  <div className="text-sm text-green-800">
+                  <div className="text-sm text-primary/80">
                     {t('charts.responseSummary.completionRate')}
                   </div>
                 </div>

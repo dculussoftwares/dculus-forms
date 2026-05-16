@@ -143,7 +143,7 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
                     </AvatarFallback>
                   </Avatar>
                   {isLatest && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white" />
+                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full border-2 border-white" />
                   )}
                 </div>
 
@@ -163,7 +163,7 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
                         <span className="ml-1">{edit.editType}</span>
                       </Badge>
                       {isLatest && (
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
                           {t('editHistoryTimeline.badges.latest')}
                         </Badge>
                       )}

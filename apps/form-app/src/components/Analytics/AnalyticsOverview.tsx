@@ -96,7 +96,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
         <p className="text-xs text-gray-500">{subtitle}</p>
         {trend && (
           <div className={`flex items-center text-xs ${
-            trend.isPositive ? 'text-green-600' : 'text-red-600'
+            trend.isPositive ? 'text-primary' : 'text-red-600'
           }`}>
             {trend.isPositive ? (
               <TrendingUp className="h-3 w-3 mr-1" />
@@ -137,8 +137,8 @@ export const AnalyticsOverview: React.FC<AnalyticsOverviewProps> = ({
       value: submissionData?.totalSubmissions || 0,
       subtitle: t('overview.metrics.totalSubmissions.subtitle', { values: { rate: submissionConversionRate } }),
       icon: FileCheck,
-      iconColor: 'text-green-600',
-      iconBgColor: 'bg-green-100'
+      iconColor: 'text-primary',
+      iconBgColor: 'bg-primary/10'
     },
     {
       title: t('overview.metrics.viewSessions.title'),

@@ -32,7 +32,7 @@ interface GeographicChartProps {
 
 const COLORS = [
   '#3b82f6', // blue-500
-  '#10b981', // emerald-500
+  '#6050DC', // emerald-500
   '#f59e0b', // amber-500
   '#ef4444', // red-500
   '#8b5cf6', // violet-500
@@ -357,7 +357,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
               {t('title')}
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex items-center text-sm text-green-600">
+              <div className="flex items-center text-sm text-primary">
                 <TrendingUp className="h-3 w-3 mr-1" />
                 {currentData.length} countries
               </div>

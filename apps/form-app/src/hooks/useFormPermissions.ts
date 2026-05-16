@@ -66,7 +66,7 @@ export const useFormPermissions = () => {
       case 'VIEWER':
         return 'text-blue-600 bg-blue-50 border-blue-200';
       case 'EDITOR':
-        return 'text-green-600 bg-green-50 border-green-200';
+        return 'text-primary bg-primary/5 border-primary/20';
       case 'OWNER':
         return 'text-purple-600 bg-purple-50 border-purple-200';
       default:

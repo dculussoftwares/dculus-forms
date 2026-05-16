@@ -175,7 +175,7 @@ export const StatCard: React.FC<StatCardProps> = ({
           {trend && (
             <div
               className={`flex items-center text-sm ${
-                trend.isPositive ? 'text-green-600' : 'text-red-600'
+                trend.isPositive ? 'text-primary' : 'text-red-600'
               }`}
             >
               <span>

@@ -147,7 +147,7 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center justify-between text-base">
               <div className="flex items-center">
-                <Monitor className="h-4 w-4 mr-2 text-green-600" />
+                <Monitor className="h-4 w-4 mr-2 text-primary" />
                 {t('sections.operatingSystems')}
               </div>
               {currentOSData && currentOSData.length > 0 && (
@@ -220,7 +220,7 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
                   <div key={os.name} className="flex items-center justify-between py-1">
                     <div className="flex items-center">
                       <div className={`w-3 h-3 rounded mr-3 ${
-                        dataMode === 'submissions' ? 'bg-orange-500' : 'bg-green-500'
+                        dataMode === 'submissions' ? 'bg-orange-500' : 'bg-primary'
                       }`} />
                       <span className="text-sm text-gray-700">{os.name}</span>
                     </div>

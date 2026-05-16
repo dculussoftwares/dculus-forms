@@ -269,7 +269,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                                     </>
                                 ) : isConnected ? (
                                     <>
-                                        <div className="w-2 h-2 bg-green-400 rounded-full" />
+                                        <div className="w-2 h-2 bg-primary/60 rounded-full" />
                                         <span className="text-sm text-gray-600 dark:text-gray-400">{t('status.live')}</span>
                                         <Users className="w-4 h-4 text-gray-400" />
                                     </>
@@ -302,7 +302,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                             ) : (
                                 <Button 
                                     size="sm" 
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    className="bg-primary hover:bg-primary/90 text-white"
                                     onClick={onPublish}
                                     disabled={updateLoading}
                                     title={t('tooltips.publishFormTooltip')}

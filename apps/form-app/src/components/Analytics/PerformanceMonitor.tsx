@@ -53,10 +53,10 @@ export const PerformanceMonitor: React.FC = () => {
             {/* Cache Hit Ratio */}
             <div className="p-4 border rounded-lg">
               <div className="flex items-center gap-2 mb-2">
-                <Zap className="h-4 w-4 text-green-600" />
+                <Zap className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium text-gray-700">{t('cards.hitRatio.title')}</span>
               </div>
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-2xl font-bold text-primary">
                 {t('cards.hitRatio.value', { values: { value: stats?.hitRatio || 0 } })}
               </div>
               <div className="text-xs text-gray-500 mt-1">

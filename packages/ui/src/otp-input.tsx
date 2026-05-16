@@ -168,7 +168,7 @@ export const OTPInput = ({
             focusedIndex === index && "border-primary ring-2 ring-primary/20",
             hasError && "border-red-500 focus:border-red-500 focus:ring-red-500/20",
             disabled && "opacity-50 cursor-not-allowed",
-            value[index] && "border-green-500 bg-green-50"
+            value[index] && "border-primary bg-primary/5"
           )}
           autoComplete="one-time-code"
           aria-label={`Digit ${index + 1} of ${length}`}

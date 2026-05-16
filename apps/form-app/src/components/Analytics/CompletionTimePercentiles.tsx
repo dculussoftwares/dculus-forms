@@ -119,8 +119,8 @@ export const CompletionTimePercentiles: React.FC<CompletionTimePercentilesProps>
       label: t('p50.label'),
       value: data?.p50 || null,
       description: t('p50.description'),
-      color: 'text-green-700',
-      bgColor: 'bg-green-50'
+      color: 'text-primary',
+      bgColor: 'bg-primary/5'
     },
     {
       label: t('p75.label'),

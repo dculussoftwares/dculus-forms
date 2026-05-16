@@ -140,8 +140,8 @@ export const PublishSuccessAnimation: React.FC<PublishSuccessAnimationProps> = (
         <div className="space-y-6">
           {/* Success Icon */}
           <div className="flex justify-center">
-            <div className="bg-emerald-100 rounded-full p-4">
-              <CheckCircle className="w-12 h-12 text-emerald-600" strokeWidth={2} />
+            <div className="bg-primary/10 rounded-full p-4">
+              <CheckCircle className="w-12 h-12 text-primary" strokeWidth={2} />
             </div>
           </div>
 

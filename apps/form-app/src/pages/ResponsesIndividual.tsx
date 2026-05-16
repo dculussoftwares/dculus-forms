@@ -193,7 +193,7 @@ const ResponsesIndividual: React.FC = () => {
                           </CardDescription>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-primary/10 text-primary">
                             {response.status}
                           </span>
                           <Button variant="outline" size="sm">

@@ -53,7 +53,7 @@ const CorrelationMatrix: React.FC<{
   }
 
   const getCorrelationColor = (correlation: number) => {
-    if (correlation >= 2.0) return 'bg-green-500';
+    if (correlation >= 2.0) return 'bg-primary';
     if (correlation >= 1.5) return 'bg-yellow-500';
     return 'bg-blue-500';
   };
@@ -151,7 +151,7 @@ const PopularCombinations: React.FC<{
   }
 
   const getComboColor = (percentage: number) => {
-    if (percentage >= 20) return 'border-green-300 bg-green-50';
+    if (percentage >= 20) return 'border-primary/30 bg-primary/5';
     if (percentage >= 10) return 'border-yellow-300 bg-yellow-50';
     return 'border-blue-300 bg-blue-50';
   };

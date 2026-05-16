@@ -162,7 +162,7 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
                 className="flex-1 relative"
               >
                 {t('billing.yearly')}
-                <Badge className="ml-2 bg-green-500 text-white text-xs">
+                <Badge className="ml-2 bg-primary text-white text-xs">
                   {t('billing.save')}
                 </Badge>
               </Button>
@@ -274,7 +274,7 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
                     <div className="space-y-3 mb-6">
                       {config.features.map((feature, index) => (
                         <div key={index} className="flex items-start gap-2">
-                          <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                          <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                           <span className="text-sm text-gray-700 dark:text-gray-300">
                             {feature}
                           </span>

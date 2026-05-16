@@ -19,7 +19,7 @@ export default function DashboardPage() {
       name: t('stats.totalUsers'),
       value: data?.adminStats?.userCount?.toString() || '0',
       icon: Users,
-      color: 'text-green-600 bg-green-100',
+      color: 'text-primary bg-primary/10',
     },
     {
       name: t('stats.totalForms'),
@@ -48,7 +48,7 @@ export default function DashboardPage() {
       value: data?.adminStats?.mongoDbSize || '0 B',
       subtitle: `${data?.adminStats?.mongoCollectionCount || 0} ${t('storage.collections')}`,
       icon: Database,
-      color: 'text-emerald-600 bg-emerald-100',
+      color: 'text-violet-600 bg-violet-100',
     },
   ];
 
@@ -137,19 +137,19 @@ export default function DashboardPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">{t('systemHealth.database')}</span>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
                 {t('systemHealth.connected')}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">{t('systemHealth.graphqlApi')}</span>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
                 {t('systemHealth.online')}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">{t('systemHealth.authentication')}</span>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
                 {t('systemHealth.working')}
               </span>
             </div>

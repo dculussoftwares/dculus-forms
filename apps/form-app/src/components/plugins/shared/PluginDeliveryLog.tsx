@@ -47,7 +47,7 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'success':
-        return <CheckCircle2 className="h-5 w-5 text-green-600" />;
+        return <CheckCircle2 className="h-5 w-5 text-primary" />;
       case 'failed':
         return <XCircle className="h-5 w-5 text-red-600" />;
       default:
@@ -59,7 +59,7 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
     switch (status) {
       case 'success':
         return (
-          <Badge variant="default" className="bg-green-100 text-green-800">
+          <Badge variant="default" className="bg-primary/10 text-primary">
             {t('status.success')}
           </Badge>
         );

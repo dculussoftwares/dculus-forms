@@ -70,7 +70,7 @@ export const SubscriptionDashboard = () => {
 
   // Get status badge color
   const getStatusBadgeColor = () => {
-    if (status === 'active') return 'bg-green-100 text-green-800';
+    if (status === 'active') return 'bg-primary/10 text-primary';
     if (status === 'cancelled') return 'bg-red-100 text-red-800';
     return 'bg-yellow-100 text-yellow-800';
   };
@@ -87,7 +87,7 @@ export const SubscriptionDashboard = () => {
     if (!percentage) return 'bg-blue-500';
     if (percentage >= 100) return 'bg-red-500';
     if (percentage >= 80) return 'bg-orange-500';
-    return 'bg-green-500';
+    return 'bg-primary';
   };
 
   // Calculate days remaining in billing period
@@ -195,7 +195,7 @@ export const SubscriptionDashboard = () => {
                 <span className="font-medium text-sm">{t('usage.formViews')}</span>
               </div>
               {usage.views.unlimited ? (
-                <Badge className="bg-green-100 text-green-800 text-xs">{t('unlimited')}</Badge>
+                <Badge className="bg-primary/10 text-primary text-xs">{t('unlimited')}</Badge>
               ) : usage.views.exceeded ? (
                 <Badge className="bg-red-100 text-red-800 text-xs">{t('badges.exceeded')}</Badge>
               ) : (
@@ -222,7 +222,7 @@ export const SubscriptionDashboard = () => {
                 <span className="font-medium text-sm">{t('usage.formSubmissions')}</span>
               </div>
               {usage.submissions.unlimited ? (
-                <Badge className="bg-green-100 text-green-800 text-xs">{t('unlimited')}</Badge>
+                <Badge className="bg-primary/10 text-primary text-xs">{t('unlimited')}</Badge>
               ) : usage.submissions.exceeded ? (
                 <Badge className="bg-red-100 text-red-800 text-xs">{t('badges.exceeded')}</Badge>
               ) : (
@@ -283,7 +283,7 @@ export const SubscriptionDashboard = () => {
               </div>
             )}
             {usage.views.unlimited && (
-              <p className="text-sm text-green-600">{t('usage.unlimitedViews')}</p>
+              <p className="text-sm text-primary">{t('usage.unlimitedViews')}</p>
             )}
           </div>
 
@@ -316,7 +316,7 @@ export const SubscriptionDashboard = () => {
               </div>
             )}
             {usage.submissions.unlimited && (
-              <p className="text-sm text-green-600">{t('usage.unlimitedSubmissions')}</p>
+              <p className="text-sm text-primary">{t('usage.unlimitedSubmissions')}</p>
             )}
           </div>
         </div>

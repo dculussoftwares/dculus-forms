@@ -37,9 +37,9 @@ const ThankYouDisplay: React.FC<ThankYouDisplayProps> = ({
     // Display custom rich text message
     return (
       <div className="text-center p-8 max-w-2xl mx-auto" data-testid="thank-you-display">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
           <svg
-            className="w-8 h-8 text-green-600"
+            className="w-8 h-8 text-primary"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -69,9 +69,9 @@ const ThankYouDisplay: React.FC<ThankYouDisplayProps> = ({
   // Display default success message
   return (
     <div className="text-center p-8 max-w-md mx-auto" data-testid="thank-you-display">
-      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
         <svg
-          className="w-8 h-8 text-green-600"
+          className="w-8 h-8 text-primary"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

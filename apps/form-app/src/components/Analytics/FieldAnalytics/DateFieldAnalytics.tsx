@@ -170,7 +170,7 @@ const SeasonalAnalysis: React.FC<{
   
   const getSeasonIcon = (season: string) => {
     switch (season.toLowerCase()) {
-      case 'spring': return <Flower className="h-6 w-6 text-green-500" />;
+      case 'spring': return <Flower className="h-6 w-6 text-primary" />;
       case 'summer': return <Sun className="h-6 w-6 text-yellow-500" />;
       case 'fall': case 'autumn': return <Leaf className="h-6 w-6 text-orange-500" />;
       case 'winter': return <Snowflake className="h-6 w-6 text-blue-500" />;
@@ -180,7 +180,7 @@ const SeasonalAnalysis: React.FC<{
 
   const getSeasonColor = (season: string) => {
     switch (season.toLowerCase()) {
-      case 'spring': return 'bg-green-100 border-green-300';
+      case 'spring': return 'bg-primary/10 border-primary/30';
       case 'summer': return 'bg-yellow-100 border-yellow-300';
       case 'fall': case 'autumn': return 'bg-orange-100 border-orange-300';
       case 'winter': return 'bg-blue-100 border-blue-300';
@@ -233,7 +233,7 @@ const SeasonalAnalysis: React.FC<{
                   <div 
                     className={`h-2 rounded-full transition-all duration-500 ${
                       isTopSeason ? 'bg-blue-500' : 
-                      season.season.toLowerCase() === 'spring' ? 'bg-green-500' :
+                      season.season.toLowerCase() === 'spring' ? 'bg-primary' :
                       season.season.toLowerCase() === 'summer' ? 'bg-yellow-500' :
                       season.season.toLowerCase() === 'fall' ? 'bg-orange-500' :
                       'bg-blue-400'
@@ -312,8 +312,8 @@ const DateRangeAnalysis: React.FC<{
               <div className="text-sm text-gray-900">{dateRange.earliest}</div>
             </div>
             
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <Sunrise className="h-8 w-8 mx-auto mb-2 text-green-600" />
+            <div className="text-center p-4 bg-primary/5 rounded-lg">
+              <Sunrise className="h-8 w-8 mx-auto mb-2 text-primary" />
               <div className="text-sm font-medium text-gray-600 mb-1">{t('rangeOverview.mostCommon')}</div>
               <div className="text-sm text-gray-900">{dateRange.common}</div>
             </div>
@@ -579,7 +579,7 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
                               {data.fullName}
                             </p>
                             <div className="flex items-center gap-2 text-sm">
-                              <div className="w-3 h-3 rounded-full bg-green-600" />
+                              <div className="w-3 h-3 rounded-full bg-primary" />
                               <span className="text-gray-700">
                                 {t('dayOfWeek.selections')}: {data.value} ({data.percentage.toFixed(1)}%)
                               </span>

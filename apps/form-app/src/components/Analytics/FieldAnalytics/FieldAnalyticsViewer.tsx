@@ -311,7 +311,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-100 text-green-600 rounded-lg">
+                    <div className="p-2 bg-primary/10 text-primary rounded-lg">
                       <TrendingUp className="h-5 w-5" />
                     </div>
                     <div>

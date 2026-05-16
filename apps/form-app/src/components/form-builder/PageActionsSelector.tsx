@@ -80,7 +80,7 @@ export const PageActionsSelector: React.FC<PageActionsSelectorProps> = ({
               <div className="flex gap-2">
                 <button
                   onClick={() => onMoveToPage(page.id)}
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 dark:text-green-400 dark:bg-green-950/50 dark:hover:bg-green-950 rounded-md transition-colors"
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary bg-primary/5 hover:bg-primary/10 dark:text-primary dark:bg-primary/10 dark:hover:bg-primary/20 rounded-md transition-colors"
                 >
                   <ArrowRight className="w-3 h-3" />
                   <span>Move</span>

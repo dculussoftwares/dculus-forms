@@ -269,7 +269,7 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
             <p className="text-xs text-gray-500">{t('stats.totalViews')}</p>
           </div>
           <div className="text-center">
-            <p className="text-xl font-bold text-green-600">{totalSessions}</p>
+            <p className="text-xl font-bold text-primary">{totalSessions}</p>
             <p className="text-xs text-gray-500">{t('stats.viewSessions')}</p>
           </div>
           <div className="text-center">
@@ -297,7 +297,7 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
             <span className="text-sm text-gray-600">{t('legendItems.views')}</span>
           </div>
           <div className="flex items-center">
-            <div className="w-3 h-3 bg-green-500 rounded mr-2"></div>
+            <div className="w-3 h-3 bg-primary rounded mr-2"></div>
             <span className="text-sm text-gray-600">{t('legendItems.viewSessions')}</span>
           </div>
           <div className="flex items-center">

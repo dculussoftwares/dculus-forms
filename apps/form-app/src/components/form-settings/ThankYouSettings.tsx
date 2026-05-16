@@ -138,7 +138,6 @@ const ThankYouSettings: React.FC<ThankYouSettingsProps> = ({
           <Button
             onClick={onSave}
             disabled={isSaving}
-            className="bg-green-600 hover:bg-green-700 text-white"
             data-testid="save-thank-you-settings-button"
           >
             <Save className="mr-2 h-4 w-4" />

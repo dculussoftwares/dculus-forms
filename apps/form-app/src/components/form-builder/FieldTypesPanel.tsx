@@ -118,7 +118,7 @@ const getCategoriesConfig = (t: (key: string) => string) => ({
   },
   content: {
     label: t('categories.content'),
-    color: 'bg-green-50 text-green-700 border-green-200',
+    color: 'bg-indigo-50 text-indigo-700 border-indigo-200',
   },
   advanced: {
     label: t('categories.advanced'),

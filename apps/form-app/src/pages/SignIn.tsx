@@ -190,7 +190,7 @@ export const SignIn = () => {
                 </div>
 
                 {successMessage && (
-                  <TypographySmall className="text-green-600 text-center bg-green-50 p-3 rounded-md border border-green-200">
+                  <TypographySmall className="text-primary text-center bg-primary/5 p-3 rounded-md border border-primary/20">
                     {successMessage}
                   </TypographySmall>
                 )}

@@ -538,7 +538,7 @@ interface FormCardProps {
 }
 
 const CARD_ACCENT_COLORS: Record<string, string> = {
-  OWNER:  '#14b8a6', // teal  — primary
+  OWNER:  '#6050DC', // Majorelle — primary
   EDITOR: '#6366f1', // indigo
   VIEWER: '#94a3b8', // slate
 };
@@ -649,7 +649,7 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
           <span
             className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${
               form.isPublished
-                ? 'bg-green-50 text-green-700 border border-green-100'
+                ? 'bg-primary/10 text-primary border border-primary/20'
                 : 'bg-amber-50 text-amber-700 border border-amber-100'
             }`}
           >
