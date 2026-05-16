@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
-import { Button, Card, Badge, toastSuccess, toastError } from '@dculus/ui';
+import { toastSuccess, toastError } from '@dculus/ui';
 import {
   Check,
   Zap,
@@ -30,21 +30,11 @@ export const Pricing = () => {
 
   const plans = data?.availablePlans || [];
 
-  const planConfig: Record<
-    string,
-    {
-      icon: any;
-      color: string;
-      gradient: string;
-      tagline: string;
-      features: string[];
-      recommended?: boolean;
-    }
-  > = {
+  /* Typeform field-icon palette for plan tiers */
+  const planConfig: Record<string, { icon: any; iconBg: string; iconColor: string; tagline: string; features: string[]; recommended?: boolean }> = {
     free: {
       icon: Zap,
-      color: 'gray',
-      gradient: 'from-gray-500 to-gray-600',
+      iconBg: '#dedcde', iconColor: '#4c414e',
       tagline: t('plans.free.tagline'),
       features: [
         t('plans.free.features.views'),
@@ -57,8 +47,7 @@ export const Pricing = () => {
     },
     starter: {
       icon: TrendingUp,
-      color: 'blue',
-      gradient: 'from-blue-500 to-blue-600',
+      iconBg: '#f4faf8', iconColor: '#177767',
       tagline: t('plans.starter.tagline'),
       features: [
         t('plans.starter.features.views'),
@@ -74,8 +63,7 @@ export const Pricing = () => {
     },
     advanced: {
       icon: Sparkles,
-      color: 'purple',
-      gradient: 'from-purple-500 to-purple-600',
+      iconBg: '#ddd6fa', iconColor: '#5c2e6b',
       tagline: t('plans.advanced.tagline'),
       features: [
         t('plans.advanced.features.views'),
@@ -147,241 +135,189 @@ export const Pricing = () => {
     }
   };
 
+  /* Shared ghost toggle button style */
+  const toggleBtn = (active: boolean) => ({
+    backgroundColor: active ? '#3c323e' : 'rgba(255,255,255,0.8)',
+    color: active ? '#ffffff' : '#655d67',
+    border: active ? '1px solid #3c323e' : '1px solid rgba(81,76,84,0.15)',
+  });
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Hero Section */}
-      <div className="py-12 px-4">
-        <div className="max-w-6xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            {t('hero.title')}
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
-            {t('hero.subtitle')}
-          </p>
+    <div className="min-h-screen" style={{ backgroundColor: '#f7f7f8' }}>
+      {/* ── Hero ── */}
+      <div className="pt-14 pb-10 px-6 text-center">
+        <h1 className="text-4xl font-light mb-3 tracking-tight" style={{ color: '#3c323e' }}>
+          {t('hero.title')}
+        </h1>
+        <p className="text-base mb-10" style={{ color: '#655d67' }}>
+          {t('hero.subtitle')}
+        </p>
 
-          {/* Controls */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            {/* Billing Cycle Toggle */}
-            <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
-              <Button
-                variant={billingCycle === 'monthly' ? 'default' : 'ghost'}
-                onClick={() => setBillingCycle('monthly')}
-                size="sm"
+        {/* Controls — Typeform ghost toggle group */}
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          {/* Billing toggle */}
+          <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid rgba(81,76,84,0.15)' }}>
+            {(['monthly', 'yearly'] as BillingCycle[]).map((cycle) => (
+              <button key={cycle} onClick={() => setBillingCycle(cycle)}
+                className="flex items-center gap-1.5 h-8 px-4 text-xs font-medium transition-all"
+                style={toggleBtn(billingCycle === cycle)}
               >
-                {t('billing.monthly')}
-              </Button>
-              <Button
-                variant={billingCycle === 'yearly' ? 'default' : 'ghost'}
-                onClick={() => setBillingCycle('yearly')}
-                size="sm"
-                className="relative"
-              >
-                {t('billing.yearly')}
-                <Badge className="ml-2 bg-primary text-white text-xs px-2 py-0.5">
-                  {t('billing.savePercent')}
-                </Badge>
-              </Button>
-            </div>
-
-            {/* Currency Toggle */}
-            <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
-              <Button
-                variant={currency === 'USD' ? 'default' : 'ghost'}
-                onClick={() => setCurrency('USD')}
-                size="sm"
-              >
-                {t('billing.usd')}
-              </Button>
-              <Button
-                variant={currency === 'INR' ? 'default' : 'ghost'}
-                onClick={() => setCurrency('INR')}
-                size="sm"
-              >
-                {t('billing.inr')}
-              </Button>
-            </div>
+                {cycle === 'monthly' ? t('billing.monthly') : t('billing.yearly')}
+                {cycle === 'yearly' && billingCycle !== 'yearly' && (
+                  <span className="px-1.5 py-0.5 rounded-full text-[10px]" style={{ backgroundColor: '#f4faf8', color: '#177767' }}>
+                    {t('billing.savePercent')}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
-        </div>
-      </div>
 
-      {/* Plans Section */}
-      <div className="px-4 pb-12">
-        <div className="max-w-6xl mx-auto">
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-500">{t('loading.plans')}</p>
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-3 gap-8">
-              {plans.map((plan: any) => {
-                const config = planConfig[plan.id];
-                if (!config) return null;
-
-                const price = getPriceForPlan(plan.id);
-                const Icon = config.icon;
-                const isRecommended = config.recommended;
-
-                return (
-                  <Card
-                    key={plan.id}
-                    className={`relative p-8 transition-all hover:shadow-xl ${
-                      isRecommended
-                        ? 'ring-2 ring-blue-500 scale-105'
-                        : 'hover:scale-105'
-                    }`}
-                  >
-                    {/* Recommended Badge */}
-                    {isRecommended && (
-                      <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                        <Badge className="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-4 py-1.5">
-                          {t('plans.recommended')}
-                        </Badge>
-                      </div>
-                    )}
-
-                    {/* Plan Icon & Name */}
-                    <div className="flex flex-col items-center mb-6">
-                      <div
-                        className={`h-16 w-16 rounded-2xl bg-gradient-to-br ${config.gradient} flex items-center justify-center mb-4`}
-                      >
-                        <Icon className="h-8 w-8 text-white" />
-                      </div>
-                      <h3 className="text-2xl font-bold">{plan.name}</h3>
-                      <p className="text-sm text-gray-500 mt-1">{config.tagline}</p>
-                    </div>
-
-                    {/* Pricing */}
-                    {plan.id === 'free' ? (
-                      <div className="text-center mb-8">
-                        <div className="text-5xl font-bold">{t('plans.free.price')}</div>
-                        <div className="text-sm text-gray-500 mt-1">
-                          {t('plans.free.forever')}
-                        </div>
-                      </div>
-                    ) : price ? (
-                      <div className="text-center mb-8">
-                        <div className="flex items-baseline justify-center gap-1">
-                          <span className="text-5xl font-bold">
-                            {formatPrice(price.amount, currency)}
-                          </span>
-                          <span className="text-gray-500">
-                            {billingCycle === 'monthly'
-                              ? t('billing.perMonth')
-                              : t('billing.perYear')}
-                          </span>
-                        </div>
-                        {billingCycle === 'yearly' && (
-                          <div className="text-sm text-gray-500 mt-2">
-                            {currency === 'USD' ? '$' : '₹'}
-                            {getMonthlyEquivalent(price.amount / 100, 'year')}
-                            {t('billing.billedAnnually')}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-center mb-8">
-                        <div className="text-lg text-gray-500">
-                          {t('plans.priceNotAvailable')}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Features */}
-                    <div className="space-y-3 mb-8">
-                      {config.features.map((feature, index) => (
-                        <div key={index} className="flex items-start gap-3">
-                          <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                          <span className="text-sm text-gray-700 dark:text-gray-300">
-                            {feature}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* CTA Button */}
-                    <Button
-                      onClick={() => handleGetStarted(plan.id)}
-                      disabled={checkoutLoading}
-                      className={`w-full ${
-                        isRecommended
-                          ? 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600'
-                          : ''
-                      }`}
-                    >
-                      {checkoutLoading
-                        ? t('buttons.processing')
-                        : plan.id === 'free'
-                        ? t('buttons.getStarted')
-                        : t('buttons.upgradeTo', { values: { planName: plan.name } })}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* FAQ Section */}
-      <div className="px-4 pb-16">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-8">
-            {t('faq.title')}
-          </h2>
-          <div className="space-y-4">
-            {[
-              {
-                question: t('faq.items.changePlans.question'),
-                answer: t('faq.items.changePlans.answer'),
-              },
-              {
-                question: t('faq.items.cancelAnytime.question'),
-                answer: t('faq.items.cancelAnytime.answer'),
-              },
-              {
-                question: t('faq.items.paymentMethods.question'),
-                answer: t('faq.items.paymentMethods.answer'),
-              },
-              {
-                question: t('faq.items.freeForever.question'),
-                answer: t('faq.items.freeForever.answer'),
-              },
-            ].map((faq, index) => (
-              <Card key={index} className="p-6">
-                <div className="flex items-start gap-3">
-                  <HelpCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-1" />
-                  <div>
-                    <h3 className="font-semibold mb-2">{faq.question}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {faq.answer}
-                    </p>
-                  </div>
-                </div>
-              </Card>
+          {/* Currency toggle */}
+          <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid rgba(81,76,84,0.15)' }}>
+            {(['USD', 'INR'] as Currency[]).map((curr) => (
+              <button key={curr} onClick={() => setCurrency(curr)}
+                className="h-8 px-4 text-xs font-medium transition-all"
+                style={toggleBtn(currency === curr)}
+              >
+                {curr === 'USD' ? t('billing.usd') : t('billing.inr')}
+              </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* CTA Section */}
-      <div className="px-4 pb-16">
-        <div className="max-w-4xl mx-auto">
-          <Card className="bg-gradient-to-br from-blue-600 to-purple-600 text-white p-12 text-center">
-            <h2 className="text-3xl font-bold mb-4">{t('cta.title')}</h2>
-            <p className="text-xl mb-8 text-white text-opacity-90">
-              {t('cta.subtitle')}
-            </p>
-            <Button
-              onClick={() => (user ? navigate('/dashboard') : navigate('/signup'))}
-              size="lg"
-              className="bg-white text-blue-600 hover:bg-gray-100"
-            >
-              {user ? t('cta.buttons.goToDashboard') : t('cta.buttons.getStartedFree')}
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </Card>
+      {/* ── Plans ── */}
+      <div className="px-6 pb-14 max-w-5xl mx-auto">
+        {loading ? (
+          <div className="text-center py-14">
+            <div className="w-8 h-8 rounded-full border-2 animate-spin mx-auto mb-3" style={{ borderColor: 'rgba(81,76,84,0.15)', borderTopColor: '#3c323e' }} />
+            <p className="text-xs" style={{ color: '#655d67' }}>{t('loading.plans')}</p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-5">
+            {plans.map((plan: any) => {
+              const config = planConfig[plan.id];
+              if (!config) return null;
+              const price = getPriceForPlan(plan.id);
+              const Icon = config.icon;
+              const isRecommended = config.recommended;
+
+              return (
+                <div
+                  key={plan.id}
+                  className="relative rounded-xl bg-white p-7 flex flex-col transition-all duration-200"
+                  style={{
+                    border: isRecommended ? '2px solid #3c323e' : '1px solid rgba(81,76,84,0.10)',
+                    boxShadow: isRecommended ? '0 4px 24px rgba(60,50,62,0.12)' : '0 1px 4px rgba(60,50,62,0.06)',
+                  }}
+                >
+                  {/* Recommended badge — Typeform pill style */}
+                  {isRecommended && (
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                      <span className="px-3 py-1 rounded-full text-xs font-medium text-white" style={{ backgroundColor: '#3c323e' }}>
+                        {t('plans.recommended')}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Icon + name */}
+                  <div className="flex flex-col items-center mb-6 text-center">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3" style={{ backgroundColor: config.iconBg }}>
+                      <Icon className="h-6 w-6" style={{ color: config.iconColor }} />
+                    </div>
+                    <h3 className="text-lg font-semibold" style={{ color: '#3c323e' }}>{plan.name}</h3>
+                    <p className="text-xs mt-0.5" style={{ color: '#655d67' }}>{config.tagline}</p>
+                  </div>
+
+                  {/* Price — Typeform light weight */}
+                  {plan.id === 'free' ? (
+                    <div className="text-center mb-7">
+                      <div className="text-4xl font-light" style={{ color: '#3c323e' }}>{t('plans.free.price')}</div>
+                      <div className="text-xs mt-1" style={{ color: '#655d67' }}>{t('plans.free.forever')}</div>
+                    </div>
+                  ) : price ? (
+                    <div className="text-center mb-7">
+                      <div className="flex items-baseline justify-center gap-1">
+                        <span className="text-4xl font-light" style={{ color: '#3c323e' }}>{formatPrice(price.amount, currency)}</span>
+                        <span className="text-xs" style={{ color: '#655d67' }}>{billingCycle === 'monthly' ? t('billing.perMonth') : t('billing.perYear')}</span>
+                      </div>
+                      {billingCycle === 'yearly' && (
+                        <div className="text-xs mt-1" style={{ color: '#655d67' }}>
+                          {currency === 'USD' ? '$' : '₹'}{getMonthlyEquivalent(price.amount / 100, 'year')}{t('billing.billedAnnually')}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center mb-7 text-sm" style={{ color: '#655d67' }}>{t('plans.priceNotAvailable')}</div>
+                  )}
+
+                  {/* Features — Typeform simple ticks */}
+                  <div className="space-y-2.5 mb-7 flex-1">
+                    {config.features.map((feature, i) => (
+                      <div key={i} className="flex items-start gap-2.5">
+                        <Check className="h-4 w-4 shrink-0 mt-0.5" style={{ color: '#177767' }} />
+                        <span className="text-xs" style={{ color: '#4c414e' }}>{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* CTA button — Typeform dark aubergine */}
+                  <button
+                    onClick={() => handleGetStarted(plan.id)}
+                    disabled={checkoutLoading}
+                    className="w-full h-9 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-60 flex items-center justify-center gap-1.5"
+                    style={{ backgroundColor: '#3c323e' }}
+                    onMouseEnter={e => { if (!checkoutLoading) (e.currentTarget as HTMLElement).style.backgroundColor = '#2e2530'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#3c323e'; }}
+                  >
+                    {checkoutLoading ? t('buttons.processing') : plan.id === 'free' ? t('buttons.getStarted') : t('buttons.upgradeTo', { values: { planName: plan.name } })}
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ── FAQ ── */}
+      <div className="px-6 pb-16 max-w-3xl mx-auto">
+        <h2 className="text-2xl font-light text-center mb-7" style={{ color: '#3c323e' }}>{t('faq.title')}</h2>
+        <div className="space-y-3">
+          {[
+            { question: t('faq.items.changePlans.question'), answer: t('faq.items.changePlans.answer') },
+            { question: t('faq.items.cancelAnytime.question'), answer: t('faq.items.cancelAnytime.answer') },
+            { question: t('faq.items.paymentMethods.question'), answer: t('faq.items.paymentMethods.answer') },
+            { question: t('faq.items.freeForever.question'), answer: t('faq.items.freeForever.answer') },
+          ].map((faq, i) => (
+            <div key={i} className="rounded-xl bg-white p-5" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
+              <div className="flex items-start gap-3">
+                <HelpCircle className="h-4 w-4 shrink-0 mt-0.5" style={{ color: '#655d67' }} />
+                <div>
+                  <h3 className="text-sm font-medium mb-1" style={{ color: '#3c323e' }}>{faq.question}</h3>
+                  <p className="text-xs leading-relaxed" style={{ color: '#655d67' }}>{faq.answer}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── CTA ── */}
+      <div className="px-6 pb-16 max-w-3xl mx-auto">
+        <div className="rounded-xl p-10 text-center text-white" style={{ backgroundColor: '#2a222b' }}>
+          <h2 className="text-2xl font-light mb-3">{t('cta.title')}</h2>
+          <p className="text-sm mb-7" style={{ color: 'rgba(255,255,255,0.70)' }}>{t('cta.subtitle')}</p>
+          <button
+            onClick={() => (user ? navigate('/dashboard') : navigate('/signup'))}
+            className="inline-flex items-center gap-2 h-10 px-7 rounded-lg text-sm font-medium transition-all"
+            style={{ backgroundColor: 'rgba(255,255,255,0.12)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.20)' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.18)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.12)'; }}
+          >
+            {user ? t('cta.buttons.goToDashboard') : t('cta.buttons.getStartedFree')}
+            <ArrowRight className="h-4 w-4" />
+          </button>
         </div>
       </div>
     </div>

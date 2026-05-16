@@ -2,14 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@apollo/client';
 import {
-  Button,
-  Card,
-  CardContent,
   LoadingSpinner,
-  Separator,
-  TypographyH1,
-  TypographyH3,
-  TypographyP,
   toastSuccess,
   toastError,
 } from '@dculus/ui';
@@ -175,20 +168,15 @@ const FormSettings: React.FC = () => {
         title={t('layout.title')}
         breadcrumbs={[
           { label: t('layout.breadcrumbDashboard'), href: '/dashboard' },
-          {
-            label: t('layout.title'),
-            href: `/dashboard/form/${formId}/settings`,
-          },
+          { label: t('layout.title'), href: `/dashboard/form/${formId}/settings` },
         ]}
       >
-        <div className="max-w-4xl mx-auto px-4 py-12">
-          <Card className="p-8 text-center">
-            <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-            <TypographyH3 className="mb-2">{t('errors.formNotFound')}</TypographyH3>
-            <TypographyP className="text-slate-600">
-              {t('errors.formNotFoundMessage')}
-            </TypographyP>
-          </Card>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}>
+            <AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />
+          </div>
+          <h3 className="text-sm font-semibold mb-1" style={{ color: '#3c323e' }}>{t('errors.formNotFound')}</h3>
+          <p className="text-xs" style={{ color: '#655d67' }}>{t('errors.formNotFoundMessage')}</p>
         </div>
       </MainLayout>
     );
@@ -205,42 +193,35 @@ const FormSettings: React.FC = () => {
         { label: t('layout.breadcrumbSettings'), href: `/dashboard/form/${formId}/settings` },
       ]}
     >
-      <div className="px-4 py-8 space-y-8">
-        {/* Header Section */}
-        <div className="flex flex-col space-y-6">
-          {/* Back Navigation */}
-          <Button
-            variant="ghost"
-            size="sm"
+      <div className="space-y-5">
+        {/* ── Typeform-style page header ── */}
+        <div className="flex items-center gap-3 pb-4" style={{ borderBottom: '1px solid rgba(81,76,84,0.10)' }}>
+          <button
             onClick={() => navigate(`/dashboard/form/${formId}`)}
-            className="w-fit -ml-2 text-muted-foreground hover:text-foreground transition-colors"
+            className="h-8 w-8 flex items-center justify-center rounded-lg transition-colors shrink-0"
+            style={{ color: '#655d67' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; (e.currentTarget as HTMLElement).style.color = '#3c323e'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {t('header.backButton')}
-          </Button>
-          
-          {/* Main Header */}
-          <div className="flex items-start gap-5">
-            {/* Icon Container */}
-            <div className="bg-blue-50 p-3 rounded-xl">
-              <Settings className="h-5 w-5 text-blue-600" />
-            </div>
-            
-            {/* Title and Description */}
-            <div className="flex-1 min-w-0">
-              <TypographyH1 className="text-2xl font-semibold tracking-tight mb-1">
-                {t('header.title')}
-              </TypographyH1>
-              <TypographyP className="text-muted-foreground text-sm">
-                {t('header.description', { values: { formTitle: form.title } })}
-              </TypographyP>
-            </div>
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+
+          <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'rgba(81,76,84,0.12)' }} />
+
+          {/* Typeform field-icon style — lavender for settings */}
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: '#ddd6fa' }}>
+            <Settings className="h-4 w-4" style={{ color: '#5c2e6b' }} />
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <h1 className="text-sm font-semibold" style={{ color: '#3c323e' }}>{t('header.title')}</h1>
+            <p className="text-xs mt-0.5" style={{ color: '#655d67' }}>
+              {t('header.description', { values: { formTitle: form.title } })}
+            </p>
           </div>
         </div>
 
-        <Separator />
-
-        {/* Settings Container */}
+        {/* Settings container */}
         <FormSettingsContainer
           form={form}
           settings={settings}
@@ -255,16 +236,12 @@ const FormSettings: React.FC = () => {
           onSaveSubmissionLimits={saveSubmissionLimits}
         />
 
-        {/* Error Display */}
+        {/* Error display */}
         {errors.general && (
-          <Card className="border-red-200 bg-red-50">
-            <CardContent className="pt-6">
-              <div className="flex items-center space-x-2">
-                <AlertCircle className="h-4 w-4 text-red-500" />
-                <p className="text-sm text-red-700">{errors.general}</p>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-xs" style={{ backgroundColor: 'rgba(206,93,85,0.06)', color: '#ce5d55', border: '1px solid rgba(206,93,85,0.16)' }}>
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{errors.general}</span>
+          </div>
         )}
       </div>
     </MainLayout>

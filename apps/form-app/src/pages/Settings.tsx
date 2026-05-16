@@ -10,9 +10,7 @@ const Settings: React.FC = () => {
 
   return (
     <MainLayout title={t('page.title')} subtitle={t('page.subtitle')}>
-      <div className="p-8">
-        <OrganizationSettings initialTab={tab} />
-      </div>
+      <OrganizationSettings initialTab={tab} />
     </MainLayout>
   )
 }

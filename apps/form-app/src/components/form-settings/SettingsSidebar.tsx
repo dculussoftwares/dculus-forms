@@ -1,16 +1,12 @@
-import React, { useState } from 'react';
-import { CheckCircle, ChevronDown, Globe, Mail, Shield } from 'lucide-react';
-import { Button } from '@dculus/ui';
-import { cn } from '@dculus/utils';
+import React from 'react';
+import { CheckCircle, Globe, Mail, Shield } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 
-interface GeneralSetting {
+interface SidebarItem {
   id: string;
   label: string;
   icon: React.ElementType;
 }
-
-// Move these inside the component to access t function
 
 interface SettingsSidebarProps {
   selectedSection: string;
@@ -22,75 +18,56 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
   onSectionChange,
 }) => {
   const { t } = useTranslation('formSettings');
-  const [collapsedSections] = useState<Set<string>>(
-    new Set(['email-notifications'])
-  );
 
-  const generalSettings: GeneralSetting[] = [
-    { id: 'general', label: t('sidebar.settings.general'), icon: Globe },
-    { id: 'thank-you', label: t('sidebar.settings.thankYou'), icon: CheckCircle },
-    { id: 'submission-limits', label: t('sidebar.settings.submissionLimits'), icon: Shield },
+  const sections: { title: string; items: SidebarItem[] }[] = [
+    {
+      title: t('sidebar.sections.general'),
+      items: [
+        { id: 'general', label: t('sidebar.settings.general'), icon: Globe },
+        { id: 'thank-you', label: t('sidebar.settings.thankYou'), icon: CheckCircle },
+        { id: 'submission-limits', label: t('sidebar.settings.submissionLimits'), icon: Shield },
+      ],
+    },
+    {
+      title: t('sidebar.sections.emailNotifications'),
+      items: [
+        { id: 'email-notifications', label: t('sidebar.settings.emailNotifications'), icon: Mail },
+      ],
+    },
   ];
-
-  const emailNotificationSettings = [
-    { id: 'email-notifications', label: t('sidebar.settings.emailNotifications'), icon: Mail },
-  ];
-
-  const SidebarSection = ({
-    settings,
-    title,
-  }: {
-    settings: GeneralSetting[];
-    title: string;
-  }) => (
-    <div className="mb-6">
-      <h3 className="text-sm font-medium text-gray-900 mb-3">{title}</h3>
-      <div className="space-y-1">
-        {settings.map((setting) => {
-          const isSelected = selectedSection === setting.id;
-          const Icon = setting.icon;
-
-          return (
-            <div key={setting.id}>
-              <Button
-                variant="ghost"
-                onClick={() => onSectionChange(setting.id)}
-                data-testid={`settings-section-${setting.id}`}
-                className={cn(
-                  'w-full flex items-center justify-between px-3 py-2 h-auto text-sm rounded-lg',
-                  isSelected
-                    ? 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary/10 hover:text-primary'
-                    : 'text-gray-700'
-                )}
-              >
-                <div className="flex items-center space-x-3">
-                  <Icon className="w-4 h-4" />
-                  <span>{setting.label}</span>
-                </div>
-                {setting.id !== 'general' && (
-                  <ChevronDown
-                    className={cn(
-                      'w-4 h-4 transition-transform',
-                      collapsedSections.has(setting.id) ? '-rotate-90' : ''
-                    )}
-                  />
-                )}
-              </Button>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
 
   return (
-    <>
-      <SidebarSection settings={generalSettings} title={t('sidebar.sections.general')} />
-      <SidebarSection
-        settings={emailNotificationSettings}
-        title={t('sidebar.sections.emailNotifications')}
-      />
-    </>
+    <nav className="space-y-6">
+      {sections.map(({ title, items }) => (
+        <div key={title}>
+          {/* Section label — Typeform "Account" style */}
+          <p className="text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: '#655d67' }}>
+            {title}
+          </p>
+          <div className="space-y-0.5">
+            {items.map(({ id, label }) => {
+              const isActive = selectedSection === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => onSectionChange(id)}
+                  data-testid={`settings-section-${id}`}
+                  className="w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium text-left transition-colors"
+                  style={{
+                    backgroundColor: isActive ? 'rgba(87,84,91,0.06)' : 'transparent',
+                    color: isActive ? '#3c323e' : '#655d67',
+                  }}
+                  onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.04)'; (e.currentTarget as HTMLElement).style.color = '#4c414e'; } }}
+                  onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#655d67'; } }}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </nav>
   );
 };
 
