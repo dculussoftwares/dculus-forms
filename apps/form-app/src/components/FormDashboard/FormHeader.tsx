@@ -5,7 +5,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  Badge,
   DropdownMenuSeparator,
 } from '@dculus/ui';
 import {
@@ -66,60 +65,65 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
         ? parseInt(form.createdAt, 10)
         : form.createdAt;
     const date = new Date(timestamp);
-
-    if (isNaN(date.getTime())) {
-      return t('header.dateUnavailable');
-    }
-
-    return date.toLocaleDateString(locale, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
+    if (isNaN(date.getTime())) return t('header.dateUnavailable');
+    return date.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' });
   }, [form.createdAt, locale, t]);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm dark:bg-slate-900 dark:border-slate-800">
-      {/* Main Content */}
-      <div className="flex items-start justify-between gap-6 p-6">
-        {/* Left: Form icon + info */}
+    <div
+      className="bg-white dark:bg-card rounded-xl overflow-hidden"
+      style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}
+    >
+      {/* Main section */}
+      <div className="flex items-start justify-between gap-6 p-5">
+
+        {/* Left: icon + info */}
         <div className="flex items-start gap-4 flex-1 min-w-0">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center flex-shrink-0 shadow-sm">
-            <FileText className="w-6 h-6 text-white" />
+          {/* Form icon — Typeform salmon field-icon style */}
+          <div
+            className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: '#f8cdd8' }}
+          >
+            <FileText className="w-5 h-5" style={{ color: '#3c323e' }} />
           </div>
+
           <div className="flex-1 min-w-0">
+            {/* Status badge + date row */}
             <div className="flex items-center gap-2.5 mb-2">
-              <Badge
+              <span
+                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium"
                 data-testid="form-status-badge"
-                variant={form.isPublished ? 'default' : 'secondary'}
-                className={`${
-                  form.isPublished
-                    ? 'bg-primary/10 text-primary hover:bg-primary/10 border-primary/20'
-                    : 'bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200'
-                } px-2.5 py-0.5 text-xs font-medium border`}
+                style={form.isPublished
+                  ? { backgroundColor: 'rgba(23,119,103,0.08)', color: '#177767', border: '1px solid rgba(23,119,103,0.16)' }
+                  : { backgroundColor: 'rgba(190,153,58,0.08)', color: '#9c7818', border: '1px solid rgba(190,153,58,0.16)' }
+                }
               >
                 <span
-                  className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                    form.isPublished ? 'bg-primary' : 'bg-amber-500'
-                  }`}
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ backgroundColor: form.isPublished ? '#177767' : '#be993a' }}
                 />
                 {form.isPublished ? t('header.status.live') : t('header.status.draft')}
-              </Badge>
-              <span className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
+              </span>
+
+              <span className="flex items-center gap-1 text-xs" style={{ color: '#655d67' }}>
                 <Calendar className="w-3 h-3" />
                 {formattedCreatedAt}
               </span>
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-tight dark:text-slate-100">
+
+            <h1 className="text-xl font-semibold leading-tight tracking-tight" style={{ color: '#3c323e' }}>
               {form.title}
             </h1>
-            <p className="text-sm text-slate-500 mt-1 dark:text-slate-400">
-              {form.description || t('header.descriptionFallback')}
-            </p>
+
+            {(form.description) && (
+              <p className="text-sm mt-1" style={{ color: '#655d67' }}>
+                {form.description}
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Right: Primary actions + overflow menu */}
+        {/* Right: primary actions + overflow */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {form.isPublished ? (
             <>
@@ -127,7 +131,7 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
                 data-testid="get-form-link-button"
                 variant="outline"
                 onClick={onCollectResponses}
-                className="h-9 px-4 rounded-xl border-2 border-blue-200 hover:border-blue-300 hover:bg-blue-50 text-blue-700 text-sm font-medium transition-all"
+                className="h-8 px-3 text-sm"
               >
                 <Link className="mr-1.5 h-3.5 w-3.5" />
                 {t('header.actions.getLink')}
@@ -137,7 +141,7 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
                 variant="outline"
                 onClick={onUnpublish}
                 disabled={updateLoading}
-                className="h-9 px-4 rounded-xl border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-medium transition-all"
+                className="h-8 px-3 text-sm"
               >
                 <EyeOff className="mr-1.5 h-3.5 w-3.5" />
                 {updateLoading ? t('header.actions.unpublishing') : t('header.actions.unpublish')}
@@ -148,25 +152,22 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
               data-testid="publish-form-button"
               onClick={onPublish}
               disabled={updateLoading}
-              className="h-9 px-5 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold shadow-sm transition-all"
+              className="h-8 px-4 text-sm"
             >
               <Eye className="mr-1.5 h-3.5 w-3.5" />
               {updateLoading ? t('header.actions.publishing') : t('header.actions.publish')}
             </Button>
           )}
 
-          {/* Three-dot overflow menu — sized and bordered for easy interaction */}
+          {/* Overflow menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="h-9 w-9 rounded-xl border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 p-0 flex-shrink-0"
-              >
-                <MoreHorizontal className="h-4 w-4 text-slate-600" />
+              <Button variant="outline" className="h-8 w-8 p-0 flex-shrink-0">
+                <MoreHorizontal className="h-4 w-4" style={{ color: '#655d67' }} />
                 <span className="sr-only">{t('header.actions.more')}</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" className="w-44">
               <DropdownMenuItem onClick={onDuplicate} disabled={duplicateLoading}>
                 <Copy className="mr-2 h-4 w-4" />
                 {duplicateLoading ? t('header.actions.duplicating') : t('header.actions.duplicate')}
@@ -185,36 +186,45 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
         </div>
       </div>
 
-      {/* Footer action strip */}
-      <div className="border-t border-slate-100 bg-slate-50/60 px-6 py-2.5 flex items-center gap-1 dark:border-slate-800 dark:bg-slate-800/40">
-        <Button
-          variant="ghost"
+      {/* Footer action strip — Typeform-style ghost tab bar */}
+      <div
+        className="flex items-center gap-0.5 px-4 py-1.5"
+        style={{ borderTop: '1px solid rgba(81,76,84,0.08)', backgroundColor: 'rgba(81,76,84,0.02)' }}
+      >
+        <button
           onClick={onPreview}
-          className="h-8 px-3 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800"
+          className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors"
+          style={{ color: '#655d67' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#3c323e'; (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#655d67'; (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
         >
-          <Eye className="mr-1.5 h-3.5 w-3.5" />
+          <Eye className="h-3.5 w-3.5" />
           {t('header.actions.preview')}
-        </Button>
+        </button>
 
         {onShare && (
-          <Button
-            variant="ghost"
+          <button
             onClick={onShare}
-            className="h-8 px-3 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800"
+            className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors"
+            style={{ color: '#655d67' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#3c323e'; (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#655d67'; (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
           >
-            <Share2 className="mr-1.5 h-3.5 w-3.5" />
+            <Share2 className="h-3.5 w-3.5" />
             {t('header.actions.share')}
-          </Button>
+          </button>
         )}
 
-        <Button
-          variant="ghost"
+        <button
           onClick={onViewAnalytics}
-          className="h-8 px-3 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800"
+          className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors"
+          style={{ color: '#655d67' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#3c323e'; (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#655d67'; (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
         >
-          <BarChart3 className="mr-1.5 h-3.5 w-3.5" />
+          <BarChart3 className="h-3.5 w-3.5" />
           {t('header.actions.analytics')}
-        </Button>
+        </button>
       </div>
     </div>
   );

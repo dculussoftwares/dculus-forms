@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Card,
   LoadingSpinner,
   AlertDialog,
   AlertDialogContent,
@@ -186,14 +185,15 @@ const FormDashboard: React.FC = () => {
           { label: t('layout.breadcrumbSelf'), href: `/dashboard/form/${formId}` },
         ]}
       >
-        <div className="max-w-4xl mx-auto px-4 py-12">
-          <Card className="p-8 text-center">
-            <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-            <h3 className="mb-2 text-xl font-semibold">{t('error.title')}</h3>
-            <p className="text-slate-600">
-              {t('error.description')}
-            </p>
-          </Card>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
+            style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}
+          >
+            <AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />
+          </div>
+          <h3 className="text-sm font-semibold mb-1" style={{ color: '#3c323e' }}>{t('error.title')}</h3>
+          <p className="text-xs" style={{ color: '#655d67' }}>{t('error.description')}</p>
         </div>
       </MainLayout>
     );
@@ -209,8 +209,8 @@ const FormDashboard: React.FC = () => {
         { label: form.title, href: `/dashboard/form/${formId}` },
       ]}
     >
-      <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950">
-        <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+      <>
+      <div className="space-y-6">
           {/* Header Section */}
           <FormHeader
             form={form}
@@ -233,11 +233,11 @@ const FormDashboard: React.FC = () => {
 
           {/* Stats Section */}
           <div>
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            <div className="mb-3">
+              <h2 className="text-sm font-semibold" style={{ color: '#3c323e' }}>
                 {t('overview.heading')}
               </h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-xs mt-0.5" style={{ color: '#655d67' }}>
                 {t('overview.description')}
               </p>
             </div>
@@ -247,7 +247,7 @@ const FormDashboard: React.FC = () => {
           {/* Quick Actions Section */}
           <QuickActions formId={formId!} />
 
-        </div>
+      </div>
 
         {/* Dialogs */}
         <DeleteDialog
@@ -285,7 +285,7 @@ const FormDashboard: React.FC = () => {
             </AlertDialogHeader>
             {isDuplicating && (
               <div className="space-y-2">
-                <div className="text-sm text-slate-600 dark:text-slate-400">
+                <div className="text-sm" style={{ color: '#655d67' }}>
                   {t('duplicateDialog.progressLabel')}
                 </div>
                 <Progress value={Math.min(duplicateProgress, 100)} />
@@ -330,7 +330,7 @@ const FormDashboard: React.FC = () => {
             onViewForm={handleAnimationViewForm}
           />
         )}
-      </div>
+      </>
     </MainLayout>
   );
 };

@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  FileText,
-  TrendingUp,
-  Clock,
-  Calendar,
-  ArrowUp,
-  ArrowDown,
-} from 'lucide-react';
+import { FileText, TrendingUp, Clock, Calendar, ArrowUp, ArrowDown } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 
 interface DashboardStats {
@@ -26,54 +19,55 @@ interface StatCardProps {
   value: string | number;
   subtitle: string;
   icon: React.ReactNode;
-  iconBgColor: string;
+  iconBg: string;
   iconColor: string;
-  trend?: {
-    value: number;
-    isPositive: boolean;
-    label?: string;
-  };
+  trend?: { value: number; isPositive: boolean; label?: string };
 }
 
-const StatCard: React.FC<StatCardProps> = ({
-  title,
-  value,
-  subtitle,
-  icon,
-  iconBgColor,
-  iconColor,
-  trend,
-}) => {
+const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon, iconBg, iconColor, trend }) => {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-5 hover:shadow-md hover:border-slate-300 transition-all duration-200 dark:bg-slate-900 dark:border-slate-800 dark:hover:border-slate-700">
+    <div
+      className="bg-white dark:bg-card rounded-xl p-5 transition-all duration-200 cursor-default"
+      style={{
+        border: '1px solid rgba(81,76,84,0.10)',
+        boxShadow: '0 1px 4px rgba(60,50,62,0.06)',
+      }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(60,50,62,0.10)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 4px rgba(60,50,62,0.06)'; }}
+    >
       <div className="flex items-center justify-between mb-4">
-        <div className={`${iconBgColor} p-2.5 rounded-xl`}>
-          <div className={iconColor}>{icon}</div>
+        {/* Field-icon style — Typeform exact */}
+        <div
+          className="w-9 h-9 rounded-xl flex items-center justify-center"
+          style={{ backgroundColor: iconBg }}
+        >
+          <span style={{ color: iconColor }}>{icon}</span>
         </div>
+
         {trend && (
           <div
-            className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${
-              trend.isPositive
-                ? 'bg-primary/5 text-primary dark:bg-primary/20 dark:text-primary'
-                : 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400'
-            }`}
+            className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+            style={trend.isPositive
+              ? { backgroundColor: 'rgba(23,119,103,0.08)', color: '#177767' }
+              : { backgroundColor: 'rgba(206,93,85,0.08)', color: '#ce5d55' }
+            }
           >
-            {trend.isPositive ? (
-              <ArrowUp className="w-3 h-3" />
-            ) : (
-              <ArrowDown className="w-3 h-3" />
-            )}
+            {trend.isPositive
+              ? <ArrowUp className="w-3 h-3" />
+              : <ArrowDown className="w-3 h-3" />
+            }
             {trend.label ?? `${Math.abs(trend.value)}%`}
           </div>
         )}
       </div>
-      <p className="text-3xl font-bold text-slate-900 tracking-tight dark:text-slate-100">
+
+      <p className="text-2xl font-semibold tracking-tight" style={{ color: '#3c323e' }}>
         {value}
       </p>
-      <p className="text-sm font-medium text-slate-600 mt-0.5 dark:text-slate-400">
+      <p className="text-sm font-medium mt-0.5" style={{ color: '#4c414e' }}>
         {title}
       </p>
-      <p className="text-xs text-slate-400 mt-0.5 dark:text-slate-500">
+      <p className="text-xs mt-0.5" style={{ color: '#655d67' }}>
         {subtitle}
       </p>
     </div>
@@ -91,42 +85,46 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Total Responses — salmon icon */}
       <StatCard
         title={t('stats.totalResponses.title')}
         value={stats.totalResponses}
         subtitle={t('stats.totalResponses.subtitle', { values: { count: stats.responsesToday } })}
-        icon={<FileText className="w-5 h-5" />}
-        iconBgColor="bg-blue-50 dark:bg-blue-950"
-        iconColor="text-blue-600 dark:text-blue-400"
+        icon={<FileText className="w-4 h-4" />}
+        iconBg="#f8cdd8"
+        iconColor="#3c323e"
         trend={stats.responsesToday > 0 ? positiveTrend(12) : undefined}
       />
 
+      {/* Response Rate — teal icon */}
       <StatCard
         title={t('stats.responseRate.title')}
         value={stats.responseRate}
         subtitle={t('stats.responseRate.subtitle')}
-        icon={<TrendingUp className="w-5 h-5" />}
-        iconBgColor="bg-primary/5 dark:bg-primary/10"
-        iconColor="text-primary"
+        icon={<TrendingUp className="w-4 h-4" />}
+        iconBg="#f4faf8"
+        iconColor="#177767"
         trend={positiveTrend(8)}
       />
 
+      {/* Avg Completion Time — lavender icon */}
       <StatCard
         title={t('stats.averageCompletionTime.title')}
         value={stats.averageCompletionTime}
         subtitle={t('stats.averageCompletionTime.subtitle')}
-        icon={<Clock className="w-5 h-5" />}
-        iconBgColor="bg-purple-50 dark:bg-purple-950"
-        iconColor="text-purple-600 dark:text-purple-400"
+        icon={<Clock className="w-4 h-4" />}
+        iconBg="#ddd6fa"
+        iconColor="#5c2e6b"
       />
 
+      {/* This Week — gray icon */}
       <StatCard
         title={t('stats.thisWeek.title')}
         value={stats.responsesThisWeek}
         subtitle={t('stats.thisWeek.subtitle')}
-        icon={<Calendar className="w-5 h-5" />}
-        iconBgColor="bg-orange-50 dark:bg-orange-950"
-        iconColor="text-orange-600 dark:text-orange-400"
+        icon={<Calendar className="w-4 h-4" />}
+        iconBg="#dedcde"
+        iconColor="#4c414e"
         trend={positiveTrend(15)}
       />
     </div>
