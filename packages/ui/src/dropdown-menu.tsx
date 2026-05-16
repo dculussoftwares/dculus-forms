@@ -26,7 +26,7 @@ const DropdownMenuSubTrigger = React.forwardRef<
   <DropdownMenuPrimitive.SubTrigger
     ref={ref}
     className={cn(
-      "flex cursor-default select-none items-center rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors focus:bg-primary/10 focus:text-primary data-[state=open]:bg-primary/10 data-[state=open]:text-primary",
+      "flex cursor-default select-none items-center rounded-md px-3 py-2 text-sm font-medium text-[#4c414e] outline-none transition-colors focus:bg-[rgba(87,84,91,0.06)] focus:text-[#3c323e] data-[state=open]:bg-[rgba(87,84,91,0.06)] data-[state=open]:text-[#3c323e] dark:text-foreground dark:focus:bg-white/5",
       inset && "pl-8",
       className
     )}
@@ -46,7 +46,7 @@ const DropdownMenuSubContent = React.forwardRef<
   <DropdownMenuPrimitive.SubContent
     ref={ref}
     className={cn(
-      "z-50 min-w-[8rem] overflow-hidden rounded-xl border border-gray-100 bg-white p-1.5 text-gray-900 shadow-lg dark:bg-gray-900 dark:border-gray-800 dark:text-gray-100 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+      "z-50 min-w-[8rem] overflow-hidden rounded-lg border border-[rgba(81,76,84,0.12)] bg-white p-1 text-[#4c414e] shadow-[0_4px_16px_rgba(60,50,62,0.12)] dark:bg-card dark:border-white/10 dark:text-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
       className
     )}
     {...props}
@@ -64,7 +64,7 @@ const DropdownMenuContent = React.forwardRef<
       ref={ref}
       sideOffset={sideOffset}
       className={cn(
-        "z-50 min-w-[8rem] overflow-hidden rounded-xl border border-gray-100 bg-white p-1.5 text-gray-900 shadow-lg dark:bg-gray-900 dark:border-gray-800 dark:text-gray-100 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+        "z-50 min-w-[8rem] overflow-hidden rounded-lg border border-[rgba(81,76,84,0.12)] bg-white p-1 text-[#4c414e] shadow-[0_4px_16px_rgba(60,50,62,0.12)] dark:bg-card dark:border-white/10 dark:text-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
         className
       )}
       {...props}
@@ -82,7 +82,7 @@ const DropdownMenuItem = React.forwardRef<
   <DropdownMenuPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex cursor-default select-none items-center rounded-lg px-3 py-2 text-sm font-medium outline-none transition-colors focus:bg-primary/10 focus:text-primary data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "relative flex cursor-default select-none items-center rounded-md px-3 py-2 text-sm font-medium text-[#4c414e] outline-none transition-colors focus:bg-[rgba(87,84,91,0.06)] focus:text-[#3c323e] data-[disabled]:pointer-events-none data-[disabled]:opacity-50 dark:text-foreground dark:focus:bg-white/5 dark:focus:text-foreground",
       inset && "pl-8",
       className
     )}

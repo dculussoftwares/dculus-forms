@@ -5,28 +5,31 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@dculus/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
+  "inline-flex items-center justify-center gap-1.5 whitespace-nowrap font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
   {
     variants: {
       variant: {
+        /* Primary — exact Typeform #3c323e aubergine dark button */
         default:
-          "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90",
+          "bg-[#3c323e] text-white hover:bg-[#2e2530] dark:bg-[#d4ccd6] dark:text-[#1a141b] dark:hover:bg-[#c4bac6]",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        /* Outline — exact Typeform ghost: rgba(255,255,255,0.8) bg + rgba(81,76,84,0.15) border */
         outline:
-          "border-2 border-gray-200 bg-white text-gray-700 hover:border-primary/50 hover:text-primary dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300",
+          "bg-white/80 text-[#655d67] border border-[rgba(81,76,84,0.15)] hover:bg-[#f7f7f8] hover:text-[#4c414e] dark:bg-white/5 dark:text-[#8a8090] dark:border-white/10 dark:hover:bg-white/10",
         secondary:
-          "bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        /* Ghost — Typeform inactive nav/toolbar: transparent + subtle hover */
         ghost:
-          "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100",
+          "text-[#655d67] hover:bg-[rgba(87,84,91,0.06)] hover:text-[#4c414e] dark:text-[#8a8090] dark:hover:bg-white/5 dark:hover:text-[#c0b8c2]",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-11 rounded-xl px-5 py-2 text-sm",
-        sm: "h-9 rounded-lg px-3 text-sm",
-        lg: "h-12 rounded-xl px-8 text-base",
-        pill: "h-12 rounded-full px-8 text-sm shadow-md hover:shadow-lg",
-        icon: "h-10 w-10 rounded-xl",
+        default: "h-9 rounded-lg px-4 py-1.5 text-sm",
+        sm: "h-8 rounded-lg px-3 text-sm",
+        lg: "h-11 rounded-lg px-6 text-sm",
+        pill: "h-11 rounded-full px-7 text-sm shadow-sm hover:shadow-md",
+        icon: "h-8 w-8 rounded-lg",
       },
     },
     defaultVariants: {

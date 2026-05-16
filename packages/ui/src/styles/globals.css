@@ -4,99 +4,137 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 8%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 8%;
+    /* ─── Typeform exact colors (extracted via Playwright MCP, May 2026) ─── */
+
+    /* Surfaces — backgrounds are clean neutral, NOT purple-tinted */
+    --background: 240 3% 97%;          /* #f7f7f8  page/content area */
+    --foreground: 290 9% 28%;          /* #4c414e  body text (aubergine-tinted) */
+    --card: 0 0% 100%;                 /* #ffffff  white cards, panels, nav */
+    --card-foreground: 290 9% 28%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 8%;
-    --primary: 247 67% 59%;
+    --popover-foreground: 290 9% 28%;
+
+    /* Primary — aubergine dark #3c323e (Typeform "Create form" button exact) */
+    --primary: 290 11% 22%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 247 30% 96%;
-    --secondary-foreground: 247 40% 30%;
-    --muted: 247 15% 96%;
-    --muted-foreground: 247 10% 46%;
-    --accent: 247 30% 96%;
-    --accent-foreground: 247 40% 30%;
-    --destructive: 0 84.2% 60.2%;
+
+    /* Secondary & muted surfaces */
+    --secondary: 240 3% 95%;           /* slightly darker neutral */
+    --secondary-foreground: 290 9% 28%;
+    --muted: 240 3% 95%;
+    --muted-foreground: 288 5% 38%;    /* #655d67  inactive/muted text */
+
+    --accent: 240 3% 93%;
+    --accent-foreground: 290 9% 28%;
+
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 247 15% 90%;
-    --input: 247 15% 90%;
-    --ring: 247 67% 59%;
-    --chart-1: 247 67% 59%;
-    --chart-2: 15 100% 70%;
-    --chart-3: 217 91% 60%;
-    --chart-4: 43 96% 56%;
-    --chart-5: 284 60% 71%;
-    --sidebar: 247 25% 98%;
-    --sidebar-foreground: 247 10% 40%;
-    --sidebar-primary: 247 67% 59%;
+
+    /* Borders — neutral, using rgba in components for exact Typeform feel */
+    --border: 240 2% 87%;              /* #dedcde  neutral border / gray icon bg */
+    --input: 240 2% 87%;
+    --ring: 290 11% 22%;               /* aubergine focus ring */
+
+    /* Charts — Typeform palette */
+    --chart-1: 284 46% 54%;            /* #a25fba  purple */
+    --chart-2: 170 68% 28%;            /* #177767  green CTA */
+    --chart-3: 217 80% 60%;            /* blue */
+    --chart-4: 345 68% 89%;            /* #f8cdd8  salmon (field icons) */
+    --chart-5: 252 78% 91%;            /* #ddd6fa  lavender */
+
+    /* Sidebar — white panel */
+    --sidebar: 0 0% 100%;
+    --sidebar-foreground: 290 9% 28%;
+    --sidebar-primary: 290 11% 22%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 247 25% 95%;
-    --sidebar-accent-foreground: 247 40% 30%;
-    --sidebar-border: 247 15% 91%;
-    --sidebar-ring: 247 67% 59%;
+    --sidebar-accent: 240 3% 95%;
+    --sidebar-accent-foreground: 290 9% 28%;
+    --sidebar-border: 240 2% 91%;
+    --sidebar-ring: 290 11% 22%;
+
     --font-sans: "DM Sans", sans-serif;
     --font-serif: "DM Sans", serif;
     --font-mono: "JetBrains Mono", monospace;
     --radius: 0.5rem;
-    --shadow-2xs: 0px 4px 10px -2px hsl(0 0% 0% / 0.03);
-    --shadow-xs: 0px 4px 10px -2px hsl(0 0% 0% / 0.03);
-    --shadow-sm: 0px 4px 10px -2px hsl(0 0% 0% / 0.05), 0px 1px 2px -3px hsl(0 0% 0% / 0.05);
-    --shadow: 0px 4px 10px -2px hsl(0 0% 0% / 0.05), 0px 1px 2px -3px hsl(0 0% 0% / 0.05);
-    --shadow-md: 0px 4px 10px -2px hsl(0 0% 0% / 0.05), 0px 2px 4px -3px hsl(0 0% 0% / 0.05);
-    --shadow-lg: 0px 4px 10px -2px hsl(0 0% 0% / 0.05), 0px 4px 6px -3px hsl(0 0% 0% / 0.05);
-    --shadow-xl: 0px 4px 10px -2px hsl(0 0% 0% / 0.05), 0px 8px 10px -3px hsl(0 0% 0% / 0.05);
-    --shadow-2xl: 0px 4px 10px -2px hsl(0 0% 0% / 0.13);
+
+    /* Typeform field-icon palette — used as utility CSS vars */
+    --tf-icon-salmon: #f8cdd8;         /* address, location fields */
+    --tf-icon-teal: #f4faf8;           /* time, clock fields */
+    --tf-icon-gray: #dedcde;           /* generic fields */
+    --tf-icon-lavender: #ddd6fa;       /* rating, scale fields */
+    --tf-green: #177767;               /* green CTA exact */
+    --tf-dark: #3c323e;                /* primary dark exact */
+    --tf-text: #4c414e;                /* body text exact */
+    --tf-muted: #655d67;               /* muted text exact */
+    --tf-faint: #f7f7f8;               /* page bg exact */
+
+    --shadow-2xs: 0px 1px 3px 0px rgba(60,50,62,0.04);
+    --shadow-xs: 0px 1px 3px 0px rgba(60,50,62,0.06);
+    --shadow-sm: 0px 1px 3px 0px rgba(60,50,62,0.07), 0px 1px 2px -1px rgba(60,50,62,0.05);
+    --shadow: 0px 2px 6px 0px rgba(60,50,62,0.08), 0px 1px 2px -1px rgba(60,50,62,0.05);
+    --shadow-md: 0px 4px 12px 0px rgba(60,50,62,0.10), 0px 2px 4px -2px rgba(60,50,62,0.06);
+    --shadow-lg: 0px 8px 24px 0px rgba(60,50,62,0.12), 0px 4px 8px -4px rgba(60,50,62,0.08);
+    --shadow-xl: 0px 12px 32px 0px rgba(60,50,62,0.14), 0px 6px 12px -6px rgba(60,50,62,0.10);
+    --shadow-2xl: 0px 20px 48px 0px rgba(60,50,62,0.18);
     --tracking-normal: 0rem;
     --spacing: 0.25rem;
   }
 
   .dark {
-    --background: 240 10% 8%;
-    --foreground: 240 4.8% 95.9%;
-    --card: 243 15% 11%;
-    --card-foreground: 240 4.8% 95.9%;
-    --popover: 243 15% 11%;
-    --popover-foreground: 240 4.8% 95.9%;
-    --primary: 247 70% 68%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 247 20% 18%;
-    --secondary-foreground: 240 4.8% 95.9%;
-    --muted: 247 15% 16%;
-    --muted-foreground: 247 10% 64%;
-    --accent: 247 20% 18%;
-    --accent-foreground: 240 4.8% 95.9%;
-    --destructive: 0 84.2% 60.2%;
+    /* Dark mode — deep aubergine surfaces */
+    --background: 290 14% 9%;          /* deep aubergine-dark */
+    --foreground: 240 4% 92%;
+    --card: 290 12% 12%;
+    --card-foreground: 240 4% 92%;
+    --popover: 290 12% 12%;
+    --popover-foreground: 240 4% 92%;
+    --primary: 290 6% 84%;             /* light aubergine — readable on dark */
+    --primary-foreground: 290 14% 9%;
+    --secondary: 290 10% 17%;
+    --secondary-foreground: 240 4% 92%;
+    --muted: 290 10% 15%;
+    --muted-foreground: 288 5% 56%;
+    --accent: 290 10% 17%;
+    --accent-foreground: 240 4% 92%;
+    --destructive: 0 72% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 247 15% 18%;
-    --input: 247 15% 18%;
-    --ring: 247 70% 68%;
-    --chart-1: 247 70% 68%;
-    --chart-2: 15 100% 70%;
-    --chart-3: 217 91% 60%;
-    --chart-4: 43 96% 56%;
-    --chart-5: 284 60% 71%;
-    --sidebar: 247 25% 9%;
-    --sidebar-foreground: 247 10% 64%;
-    --sidebar-primary: 247 70% 68%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 247 20% 18%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 247 15% 18%;
-    --sidebar-ring: 247 70% 68%;
+    --border: 290 8% 19%;
+    --input: 290 8% 19%;
+    --ring: 290 6% 76%;
+    --chart-1: 284 46% 64%;
+    --chart-2: 170 55% 44%;
+    --chart-3: 217 80% 65%;
+    --chart-4: 345 55% 75%;
+    --chart-5: 252 55% 78%;
+    --sidebar: 290 14% 8%;
+    --sidebar-foreground: 288 5% 58%;
+    --sidebar-primary: 290 6% 84%;
+    --sidebar-primary-foreground: 290 14% 9%;
+    --sidebar-accent: 290 10% 17%;
+    --sidebar-accent-foreground: 240 4% 92%;
+    --sidebar-border: 290 8% 17%;
+    --sidebar-ring: 290 6% 76%;
     --font-sans: "DM Sans", sans-serif;
     --font-serif: "DM Sans", serif;
     --font-mono: "JetBrains Mono", monospace;
     --radius: 0.5rem;
-    --shadow-2xs: 0px 4px 10px -2px hsl(0 0% 0% / 0.05);
-    --shadow-xs: 0px 4px 10px -2px hsl(0 0% 0% / 0.05);
-    --shadow-sm: 0px 4px 10px -2px hsl(0 0% 0% / 0.10), 0px 1px 2px -3px hsl(0 0% 0% / 0.10);
-    --shadow: 0px 4px 10px -2px hsl(0 0% 0% / 0.10), 0px 1px 2px -3px hsl(0 0% 0% / 0.10);
-    --shadow-md: 0px 4px 10px -2px hsl(0 0% 0% / 0.10), 0px 2px 4px -3px hsl(0 0% 0% / 0.10);
-    --shadow-lg: 0px 4px 10px -2px hsl(0 0% 0% / 0.10), 0px 4px 6px -3px hsl(0 0% 0% / 0.10);
-    --shadow-xl: 0px 4px 10px -2px hsl(0 0% 0% / 0.10), 0px 8px 10px -3px hsl(0 0% 0% / 0.10);
-    --shadow-2xl: 0px 4px 10px -2px hsl(0 0% 0% / 0.25);
+    --tf-icon-salmon: rgba(248,205,216,0.20);
+    --tf-icon-teal: rgba(244,250,248,0.15);
+    --tf-icon-gray: rgba(222,220,222,0.18);
+    --tf-icon-lavender: rgba(221,214,250,0.20);
+    --tf-green: #25a088;
+    --tf-dark: #d4ccd6;
+    --tf-text: #c0b8c2;
+    --tf-muted: #8a8090;
+    --tf-faint: #1a141b;
+    --shadow-2xs: 0px 1px 3px 0px rgba(0,0,0,0.18);
+    --shadow-xs: 0px 1px 3px 0px rgba(0,0,0,0.22);
+    --shadow-sm: 0px 1px 3px 0px rgba(0,0,0,0.26), 0px 1px 2px -1px rgba(0,0,0,0.20);
+    --shadow: 0px 2px 6px 0px rgba(0,0,0,0.30), 0px 1px 2px -1px rgba(0,0,0,0.22);
+    --shadow-md: 0px 4px 12px 0px rgba(0,0,0,0.34), 0px 2px 4px -2px rgba(0,0,0,0.26);
+    --shadow-lg: 0px 8px 24px 0px rgba(0,0,0,0.38), 0px 4px 8px -4px rgba(0,0,0,0.30);
+    --shadow-xl: 0px 12px 32px 0px rgba(0,0,0,0.42), 0px 6px 12px -6px rgba(0,0,0,0.34);
+    --shadow-2xl: 0px 20px 48px 0px rgba(0,0,0,0.50);
   }
 }
 

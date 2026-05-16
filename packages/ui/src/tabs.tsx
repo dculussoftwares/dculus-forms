@@ -13,7 +13,7 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/80 p-1 text-muted-foreground shadow-sm",
+      "inline-flex items-center gap-0.5 border-b border-[rgba(81,76,84,0.12)] dark:border-white/10",
       className
     )}
     {...props}
@@ -28,7 +28,13 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm",
+      /* Exact Typeform: inactive = #655d67, active = #4c414e on rgba(87,84,91,0.06) */
+      "relative inline-flex items-center justify-center whitespace-nowrap rounded-lg px-3 h-8 text-sm font-medium text-[#655d67] ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50",
+      "hover:text-[#4c414e] hover:bg-[rgba(87,84,91,0.06)]",
+      "data-[state=active]:text-[#4c414e] data-[state=active]:bg-[rgba(87,84,91,0.06)]",
+      /* Underline bar — Typeform uses a 2px dark bar below the active tab */
+      "data-[state=active]:after:absolute data-[state=active]:after:bottom-[-1px] data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:h-[2px] data-[state=active]:after:rounded-t-full data-[state=active]:after:bg-[#3c323e] data-[state=active]:after:content-['']",
+      "dark:text-[#8a8090] dark:hover:text-[#c0b8c2] dark:hover:bg-white/5 dark:data-[state=active]:text-foreground dark:data-[state=active]:bg-white/5 dark:data-[state=active]:after:bg-foreground",
       className
     )}
     {...props}
