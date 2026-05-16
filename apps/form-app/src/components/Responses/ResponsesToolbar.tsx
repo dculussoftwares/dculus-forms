@@ -1,19 +1,10 @@
-/**
- * Responses Toolbar Component
- *
- * Toolbar for the responses table with search, filters, column visibility, and export.
- * Provides a comprehensive set of controls for managing and exporting form responses.
- */
-
 import React from 'react';
 import { ColumnDef, VisibilityState } from '@tanstack/react-table';
 import {
-  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  Input,
 } from '@dculus/ui';
 import {
   ChevronDown,
@@ -30,30 +21,41 @@ import { FilterChip, FilterState } from '../Filters';
 import { FillableFormField } from '@dculus/types';
 
 interface ResponsesToolbarProps {
-  // Search
   globalFilter: string;
   onGlobalFilterChange: (value: string) => void;
-
-  // Filters
   filters: Record<string, FilterState>;
   fillableFields: FillableFormField[];
   onShowFilterModal: () => void;
   onRemoveFilter: (fieldId: string) => void;
-
-  // Column visibility
   columns: ColumnDef<any>[];
   columnVisibility: VisibilityState;
   onColumnVisibilityChange: (visibility: VisibilityState | ((prev: VisibilityState) => VisibilityState)) => void;
   getColumnLabel: (columnId: string) => string;
-
-  // Export
   isExporting: boolean;
   onExportExcel: () => void;
   onExportCsv: () => void;
-
-  // Translation
   t: (key: string, options?: { values?: Record<string, string | number>; defaultValue?: string }) => string;
 }
+
+/* Reusable Typeform ghost button — exact rgba(255,255,255,0.8) + rgba(81,76,84,0.15) */
+const TfBtn: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { children: React.ReactNode }> = ({
+  children, className = '', style, ...props
+}) => (
+  <button
+    className={`flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+    style={{
+      backgroundColor: 'rgba(255,255,255,0.8)',
+      color: '#655d67',
+      border: '1px solid rgba(81,76,84,0.15)',
+      ...style,
+    }}
+    onMouseEnter={e => { if (!(e.currentTarget as HTMLButtonElement).disabled) { (e.currentTarget as HTMLElement).style.backgroundColor = '#f7f7f8'; (e.currentTarget as HTMLElement).style.color = '#4c414e'; } }}
+    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.8)'; (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
+    {...props}
+  >
+    {children}
+  </button>
+);
 
 export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
   globalFilter,
@@ -75,152 +77,164 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
   const hiddenColumns = columns.filter((col) => col.id && columnVisibility[col.id] === false);
 
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-slate-50/80 border-b border-slate-200/40 w-full overflow-hidden">
-      {/* Left side - Search and filters */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1 min-w-0 overflow-hidden">
-        {/* Enhanced search */}
-        <div className="relative w-full sm:w-80 sm:max-w-[320px] min-w-0">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
+    <div
+      className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 w-full"
+      style={{ borderBottom: '1px solid rgba(81,76,84,0.08)', backgroundColor: '#f7f7f8' }}
+    >
+      {/* Left: search + filter + active chips */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-1 min-w-0 flex-wrap">
+
+        {/* Search — Typeform ghost input */}
+        <div className="relative w-full sm:w-64 sm:max-w-xs min-w-0">
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none"
+            style={{ color: '#655d67' }}
+          />
+          <input
+            type="text"
             placeholder={t('toolbar.search.placeholder')}
             value={globalFilter}
             onChange={(e) => onGlobalFilterChange(e.target.value)}
-            className="pl-9 h-10 w-full"
+            className="w-full h-8 pl-9 pr-8 text-xs rounded-lg transition-colors focus:outline-none"
+            style={{
+              backgroundColor: 'rgba(255,255,255,0.8)',
+              border: '1px solid rgba(81,76,84,0.15)',
+              color: '#4c414e',
+            }}
           />
           {globalFilter && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-transparent"
+            <button
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded transition-colors"
+              style={{ color: '#655d67' }}
               onClick={() => onGlobalFilterChange('')}
             >
-              <X className="h-4 w-4" />
-              <span className="sr-only">{t('toolbar.search.clearLabel')}</span>
-            </Button>
+              <X className="h-3 w-3" />
+            </button>
           )}
         </div>
 
-        {/* Filter toggle */}
-        <Button
-          variant="outline"
-          size="sm"
+        {/* Filter toggle — exact Typeform ghost */}
+        <TfBtn
           onClick={onShowFilterModal}
-          className="flex-shrink-0"
           data-testid="filter-button"
         >
-          <Filter className="h-4 w-4 mr-2" />
+          <Filter className="h-3.5 w-3.5" />
           {t('toolbar.filters.buttonLabel')}
           {activeFilters.length > 0 && (
-            <span className="ml-2 px-2 py-0.5 bg-blue-100/80 text-blue-800 text-xs rounded-full font-medium border border-blue-200/40">
+            /* Typeform exact: #f6fafd bg, #01487f text, blue border */
+            <span
+              className="ml-0.5 px-1.5 py-0.5 text-[10px] font-medium rounded-full"
+              style={{ backgroundColor: '#f6fafd', color: '#01487f', border: '1px solid rgb(189,221,249)' }}
+            >
               {activeFilters.length}
             </span>
           )}
-        </Button>
+        </TfBtn>
 
-        {/* Active filters display */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Search indicator */}
+        {/* Active filter chips */}
+        <div className="flex items-center gap-1.5 flex-wrap">
           {globalFilter && (
-            <div className="flex items-center gap-1 px-2 py-1 bg-blue-50/80 text-blue-700 text-sm rounded-md border border-blue-200/60">
-              <span className="truncate max-w-32">
+            <div
+              className="flex items-center gap-1 px-2 py-1 text-xs rounded-lg"
+              style={{ backgroundColor: '#f6fafd', color: '#01487f', border: '1px solid rgb(189,221,249)' }}
+            >
+              <span className="truncate max-w-28">
                 {t('table.searchIndicator', {
-                  values: {
-                    query: `${globalFilter.slice(0, 15)}${globalFilter.length > 15 ? '...' : ''}`
-                  }
+                  values: { query: `${globalFilter.slice(0, 15)}${globalFilter.length > 15 ? '…' : ''}` }
                 })}
               </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-4 w-4 p-0 hover:bg-transparent text-blue-700 flex-shrink-0"
+              <button
+                className="flex-shrink-0 p-0.5 rounded transition-opacity hover:opacity-70"
                 onClick={() => onGlobalFilterChange('')}
               >
                 <X className="h-3 w-3" />
-              </Button>
+              </button>
             </div>
           )}
 
-          {/* Field filters */}
           {Object.entries(filters)
             .filter(([, f]) => f.active)
             .map(([filterId, filter]) => {
               const field = fillableFields.find((f) => f.id === filter.fieldId);
               return field ? (
-                <FilterChip
-                  key={filterId}
-                  field={field}
-                  filter={filter}
-                  onRemove={() => onRemoveFilter(filterId)}
-                />
+                <FilterChip key={filterId} field={field} filter={filter} onRemove={() => onRemoveFilter(filterId)} />
               ) : null;
             })}
         </div>
       </div>
 
-      {/* Right side - Actions and column visibility */}
-      <div className="flex items-center gap-3 flex-shrink-0 overflow-visible">
+      {/* Right: column visibility + export */}
+      <div className="flex items-center gap-2 shrink-0">
+
         {/* Column visibility */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="flex-shrink-0">
-              <Settings2 className="h-4 w-4 mr-2" />
+            <button
+              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors shrink-0"
+              style={{ backgroundColor: 'rgba(255,255,255,0.8)', color: '#655d67', border: '1px solid rgba(81,76,84,0.15)' }}
+            >
+              <Settings2 className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">{t('toolbar.columns.buttonLabel')}</span>
               {hiddenColumns.length > 0 && (
-                <span className="ml-2 px-2 py-0.5 bg-slate-100/80 text-slate-700 text-xs rounded-full font-medium border border-slate-200/40">
+                <span
+                  className="ml-0.5 px-1.5 py-0.5 text-[10px] font-medium rounded-full"
+                  style={{ backgroundColor: '#f7f7f8', color: '#4c414e', border: '1px solid rgba(81,76,84,0.15)' }}
+                >
                   {t('toolbar.columns.hiddenCount', { values: { count: hiddenColumns.length } })}
                 </span>
               )}
-            </Button>
+            </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-64">
+          <DropdownMenuContent align="end" className="w-60">
             <div className="flex flex-col max-h-80">
-              <div className="flex items-center justify-between p-3 pb-2 border-b flex-shrink-0">
-                <span className="text-sm font-medium">{t('toolbar.columns.toggle')}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 text-xs"
+              <div
+                className="flex items-center justify-between px-3 py-2.5 text-xs font-medium"
+                style={{ borderBottom: '1px solid rgba(81,76,84,0.08)', color: '#3c323e' }}
+              >
+                <span>{t('toolbar.columns.toggle')}</span>
+                <button
+                  className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] transition-colors"
+                  style={{ color: '#655d67' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
                   onClick={() => onColumnVisibilityChange({})}
                 >
-                  <RotateCcw className="h-3 w-3 mr-1" />
+                  <RotateCcw className="h-3 w-3" />
                   {t('toolbar.columns.reset')}
-                </Button>
+                </button>
               </div>
-              <div className="overflow-y-auto flex-1 p-2">
+              <div className="overflow-y-auto flex-1 p-1.5">
                 {columns.length === 0 ? (
-                  <div className="text-center text-slate-500 text-sm py-4">
+                  <div className="text-center text-xs py-4" style={{ color: '#655d67' }}>
                     {t('toolbar.columns.noColumnsAvailable')}
                   </div>
                 ) : (
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {columns.map((column) => {
                       if (!column.id || column.enableHiding === false) return null;
                       const isVisible = columnVisibility[column.id] !== false;
                       const columnLabel = getColumnLabel(column.id);
-
                       return (
-                        <div
+                        <label
                           key={column.id}
-                          className="flex items-center space-x-2 p-2 rounded hover:bg-slate-50"
+                          className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-colors"
+                          style={{ color: '#4c414e' }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
                         >
                           <input
                             type="checkbox"
                             checked={isVisible}
                             onChange={(e) =>
-                              onColumnVisibilityChange((prev) => ({
-                                ...prev,
-                                [column.id!]: e.target.checked,
-                              }))
+                              onColumnVisibilityChange((prev) => ({ ...prev, [column.id!]: e.target.checked }))
                             }
-                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            className="h-4 w-4 rounded-[4px]"
+                            style={{ accentColor: '#3c323e' }}
                           />
-                          <span
-                            className="text-sm flex-1 min-w-0 truncate"
-                            title={columnLabel}
-                          >
+                          <span className="text-xs flex-1 min-w-0 truncate" title={columnLabel}>
                             {columnLabel}
                           </span>
-                        </div>
+                        </label>
                       );
                     })}
                   </div>
@@ -230,28 +244,30 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Export dropdown */}
+        {/* Export */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
+            <button
               disabled={isExporting}
-              className="flex-shrink-0"
+              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: 'rgba(255,255,255,0.8)', color: '#655d67', border: '1px solid rgba(81,76,84,0.15)' }}
             >
               {isExporting ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                  <div
+                    className="w-3.5 h-3.5 rounded-full border-2 animate-spin"
+                    style={{ borderColor: 'rgba(81,76,84,0.15)', borderTopColor: '#3c323e' }}
+                  />
                   {t('toolbar.export.exporting')}
                 </>
               ) : (
                 <>
-                  <Download className="h-4 w-4 mr-2" />
+                  <Download className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">{t('toolbar.export.buttonLabel')}</span>
-                  <ChevronDown className="h-4 w-4 ml-2" />
+                  <ChevronDown className="h-3 w-3 ml-0.5" />
                 </>
               )}
-            </Button>
+            </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
