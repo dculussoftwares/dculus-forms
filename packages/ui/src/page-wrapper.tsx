@@ -1,7 +1,5 @@
 import React from 'react';
 import { SidebarTrigger } from './sidebar';
-import { TypographyH3 } from './typography';
-import { Separator } from './separator';
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -11,45 +9,22 @@ import {
   BreadcrumbSeparator,
 } from './breadcrumb';
 
-/**
- * Breadcrumb item configuration
- * Following Dculus functional programming principles with complete TypeScript safety
- */
 interface BreadcrumbItem {
-  /** Display label for the breadcrumb */
   label: string;
-  /** Optional href for navigation */
   href?: string;
-  /** Whether this breadcrumb item is the active page */
   isActive?: boolean;
 }
 
-/**
- * PageWrapper component props
- * Following Dculus functional programming principles with complete TypeScript safety
- */
 export interface PageWrapperProps {
-  /** Main content to be rendered in the page */
   children: React.ReactNode;
-  /** Page title displayed in header and breadcrumb */
   title: string;
-  /** Optional subtitle displayed below the title */
   subtitle?: string;
-  /** Array of breadcrumb items for navigation */
   breadcrumbs?: BreadcrumbItem[];
-  /** Optional action buttons or components for the header */
   actions?: React.ReactNode;
-  /** Additional CSS classes for the content area */
   className?: string;
-  /** Optional user profile menu component to show on the right side of the header */
   userProfile?: React.ReactNode;
 }
 
-/**
- * Functional PageWrapper component for consistent page layout
- * Provides header with breadcrumbs, title section, and content area
- * Following Dculus design principles: functional programming first, full type safety
- */
 export function PageWrapper({
   children,
   title,
@@ -61,70 +36,83 @@ export function PageWrapper({
 }: PageWrapperProps) {
   return (
     <>
-      {/* Header */}
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background/80 backdrop-blur transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-        <div className="flex flex-1 items-center gap-2 px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-6" />
-          {/* Breadcrumb */}
-          <div className="flex-1">
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbLink href="/">Dculus Forms</BreadcrumbLink>
-                </BreadcrumbItem>
-                {breadcrumbs && breadcrumbs.length > 0
-                  ? breadcrumbs.map((breadcrumb, idx) => (
-                      <React.Fragment key={idx}>
-                        <BreadcrumbSeparator />
-                        <BreadcrumbItem>
-                          {breadcrumb.href ? (
-                            <BreadcrumbLink href={breadcrumb.href} className={breadcrumb.isActive ? 'text-foreground' : ''}>
-                              {breadcrumb.label}
-                            </BreadcrumbLink>
-                          ) : (
-                            <BreadcrumbPage className={breadcrumb.isActive ? 'text-foreground' : ''}>
-                              {breadcrumb.label}
-                            </BreadcrumbPage>
-                          )}
-                        </BreadcrumbItem>
-                      </React.Fragment>
-                    ))
-                  : (
-                      <React.Fragment>
-                        <BreadcrumbSeparator />
-                        <BreadcrumbItem>
-                          <BreadcrumbPage className="text-foreground">{title}</BreadcrumbPage>
-                        </BreadcrumbItem>
-                      </React.Fragment>
-                    )}
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
+      {/* ── Typeform-style top header bar ── */}
+      <header className="flex h-14 shrink-0 items-center justify-between bg-white dark:bg-card border-b border-[rgba(81,76,84,0.12)] dark:border-white/10 px-3 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+
+        {/* Left: sidebar toggle + breadcrumb */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <SidebarTrigger className="h-8 w-8 shrink-0 rounded-lg text-[#655d67] hover:bg-[rgba(87,84,91,0.06)] hover:text-[#3c323e] dark:text-muted-foreground dark:hover:bg-white/5 dark:hover:text-foreground" />
+          <div className="w-px h-5 bg-[rgba(81,76,84,0.12)] dark:bg-white/10 shrink-0" />
+          <Breadcrumb>
+            <BreadcrumbList className="flex-nowrap">
+              <BreadcrumbItem>
+                <BreadcrumbLink
+                  href="/"
+                  className="text-[#655d67] dark:text-muted-foreground text-sm font-medium hover:text-[#3c323e] dark:hover:text-foreground transition-colors"
+                >
+                  Dculus Forms
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              {breadcrumbs && breadcrumbs.length > 0
+                ? breadcrumbs.map((crumb, idx) => (
+                    <React.Fragment key={idx}>
+                      <BreadcrumbSeparator className="text-[rgba(81,76,84,0.35)]" />
+                      <BreadcrumbItem>
+                        {crumb.href ? (
+                          <BreadcrumbLink
+                            href={crumb.href}
+                            className={`text-sm font-medium transition-colors ${
+                              crumb.isActive
+                                ? 'text-[#3c323e] dark:text-foreground'
+                                : 'text-[#655d67] dark:text-muted-foreground hover:text-[#3c323e] dark:hover:text-foreground'
+                            }`}
+                          >
+                            {crumb.label}
+                          </BreadcrumbLink>
+                        ) : (
+                          <BreadcrumbPage
+                            className={`text-sm font-medium ${
+                              crumb.isActive
+                                ? 'text-[#3c323e] dark:text-foreground'
+                                : 'text-[#655d67] dark:text-muted-foreground'
+                            }`}
+                          >
+                            {crumb.label}
+                          </BreadcrumbPage>
+                        )}
+                      </BreadcrumbItem>
+                    </React.Fragment>
+                  ))
+                : (
+                    <React.Fragment>
+                      <BreadcrumbSeparator className="text-[rgba(81,76,84,0.35)]" />
+                      <BreadcrumbItem>
+                        <BreadcrumbPage className="text-sm font-medium text-[#3c323e] dark:text-foreground">
+                          {title}
+                        </BreadcrumbPage>
+                      </BreadcrumbItem>
+                    </React.Fragment>
+                  )}
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+
+        {/* Right: actions + user avatar */}
+        <div className="flex items-center gap-2 shrink-0">
           {actions && (
-            <div className="ml-auto flex items-center gap-2">{actions}</div>
+            <div className="flex items-center gap-2">{actions}</div>
           )}
           {userProfile && (
-            <div className={`flex items-center gap-2 ${actions ? 'ml-2' : 'ml-auto'}`}>
-              {userProfile}
-            </div>
+            <div className="flex items-center">{userProfile}</div>
           )}
         </div>
       </header>
 
-      {/* Main Content */}
-      <div className={`flex flex-1 flex-col gap-4 p-4 pt-4 overflow-y-auto ${className}`}>
-        {/* Page Title Section */}
-        <div className="flex items-center justify-between">
-          <div>
-            <TypographyH3>{title}</TypographyH3>
-            {subtitle && (
-              <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
-            )}
-          </div>
-        </div>
-
-        {/* Page Content */}
+      {/* ── Page content ── */}
+      <div className={`flex flex-1 flex-col gap-4 p-6 overflow-y-auto bg-background dark:bg-background ${className}`}>
+        {subtitle && (
+          <p className="text-sm text-[#655d67] dark:text-muted-foreground -mt-2">{subtitle}</p>
+        )}
         {children}
       </div>
     </>
