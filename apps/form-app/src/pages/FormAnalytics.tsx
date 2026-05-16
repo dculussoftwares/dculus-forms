@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
-import { Button, Card, LoadingSpinner, Tabs, TabsList, TabsTrigger } from '@dculus/ui';
+import { LoadingSpinner } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { useTranslation } from '../hooks/useTranslation';
 import { GET_FORM_BY_ID } from '../graphql/queries';
@@ -21,11 +21,8 @@ const FormAnalytics: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useTranslation('formAnalytics');
-  
-  // Get tab from URL, default to 'overview'
+
   const activeTab = (searchParams.get('tab') as 'overview' | 'fields') || 'overview';
-  
-  // Get selected field from URL for field analytics
   const selectedFieldId = searchParams.get('field') || null;
 
   const { data, loading, error } = useQuery(GET_FORM_BY_ID, {
@@ -34,25 +31,11 @@ const FormAnalytics: React.FC = () => {
   });
 
   const {
-    analyticsData,
-    submissionAnalyticsData,
-    loading: analyticsLoading,
-    error: analyticsError,
-    timeRangePreset,
-    customTimeRange,
-    updateTimeRange,
-    refreshData,
-    conversionRate,
-    submissionConversionRate,
-    topCountry,
-    topSubmissionCountry,
-    hasData,
-    isEmpty,
-    isAuthenticated,
-  } = useFormAnalytics({
-    formId: formId || '',
-    initialTimeRange: '30d',
-  });
+    analyticsData, submissionAnalyticsData, loading: analyticsLoading,
+    error: analyticsError, timeRangePreset, customTimeRange, updateTimeRange,
+    refreshData, conversionRate, submissionConversionRate, topCountry,
+    topSubmissionCountry, hasData, isEmpty, isAuthenticated,
+  } = useFormAnalytics({ formId: formId || '', initialTimeRange: '30d' });
 
   if (loading) {
     return (
@@ -61,7 +44,7 @@ const FormAnalytics: React.FC = () => {
         breadcrumbs={[
           { label: t('layout.breadcrumbDashboard'), href: '/dashboard' },
           { label: t('layout.breadcrumbFormDashboard'), href: `/dashboard/form/${formId}` },
-          { label: t('layout.breadcrumbAnalytics'), href: `/dashboard/form/${formId}/analytics` },
+          { label: t('layout.breadcrumbAnalytics') },
         ]}
       >
         <div className="flex justify-center items-center min-h-96">
@@ -78,17 +61,15 @@ const FormAnalytics: React.FC = () => {
         breadcrumbs={[
           { label: t('layout.breadcrumbDashboard'), href: '/dashboard' },
           { label: t('layout.breadcrumbFormDashboard'), href: `/dashboard/form/${formId}` },
-          { label: t('layout.breadcrumbAnalytics'), href: `/dashboard/form/${formId}/analytics` },
+          { label: t('layout.breadcrumbAnalytics') },
         ]}
       >
-        <div className="max-w-4xl mx-auto px-4 py-12">
-          <Card className="p-8 text-center">
-            <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-            <h3 className="mb-2 text-xl font-semibold">{t('errors.formNotFound')}</h3>
-            <p className="text-slate-600">
-              {t('errors.formNotFoundMessage')}
-            </p>
-          </Card>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}>
+            <AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />
+          </div>
+          <h3 className="text-sm font-semibold mb-1" style={{ color: '#3c323e' }}>{t('errors.formNotFound')}</h3>
+          <p className="text-xs" style={{ color: '#655d67' }}>{t('errors.formNotFoundMessage')}</p>
         </div>
       </MainLayout>
     );
@@ -97,19 +78,13 @@ const FormAnalytics: React.FC = () => {
   const form = data.form;
 
   const setActiveTab = (tab: 'overview' | 'fields') => {
-    const newSearchParams = new URLSearchParams(searchParams);
-    newSearchParams.set('tab', tab);
-    // Clear field selection when switching to overview tab
-    if (tab === 'overview') {
-      newSearchParams.delete('field');
-    }
-    setSearchParams(newSearchParams);
+    const p = new URLSearchParams(searchParams);
+    p.set('tab', tab);
+    if (tab === 'overview') p.delete('field');
+    setSearchParams(p);
   };
 
-  const handleViewForm = () => {
-    const formViewerUrl = getFormViewerUrl(form.shortUrl);
-    window.open(formViewerUrl, '_blank');
-  };
+  const handleViewForm = () => window.open(getFormViewerUrl(form.shortUrl), '_blank');
 
   return (
     <MainLayout
@@ -117,49 +92,63 @@ const FormAnalytics: React.FC = () => {
       breadcrumbs={[
         { label: t('layout.breadcrumbDashboard'), href: '/dashboard' },
         { label: form.title, href: `/dashboard/form/${formId}` },
-        { label: t('layout.breadcrumbAnalytics'), href: `/dashboard/form/${formId}/analytics` },
+        { label: t('layout.breadcrumbAnalytics') },
       ]}
     >
-      {/* Container with consistent styling */}
-      <div className="w-full px-4 py-4 space-y-4 overflow-x-hidden">
-        {/* Header Actions */}
-        <div className="flex items-center justify-end gap-3">
-          {activeTab === 'overview' && (
-            <TimeRangeSelector
-              value={timeRangePreset}
-              customRange={customTimeRange}
-              onChange={updateTimeRange}
-              onRefresh={refreshData}
-              loading={analyticsLoading}
-            />
-          )}
-          <Button variant="outline" size="sm" onClick={handleViewForm}>
-            <ExternalLink className="w-4 h-4 mr-2" />
-            {t('header.viewFormButton')}
-          </Button>
+      <div className="space-y-5">
+
+        {/* ── Top toolbar: tabs + time range + view form ── */}
+        <div className="flex items-center justify-between gap-4">
+          {/* Typeform underline tabs */}
+          <div className="flex items-center" style={{ borderBottom: '1px solid rgba(81,76,84,0.12)' }}>
+            {([
+              { id: 'overview', icon: BarChart3, label: t('tabs.overview') },
+              { id: 'fields', icon: TrendingUp, label: t('tabs.fields') },
+            ] as const).map(({ id, icon: Icon, label }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id)}
+                className="relative flex items-center gap-1.5 h-9 px-3 text-sm font-medium transition-colors"
+                style={{ color: activeTab === id ? '#3c323e' : '#655d67' }}
+                onMouseEnter={e => { if (activeTab !== id) (e.currentTarget as HTMLElement).style.color = '#4c414e'; }}
+                onMouseLeave={e => { if (activeTab !== id) (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+                {activeTab === id && (
+                  <span className="absolute bottom-[-1px] left-0 right-0 h-[2px] rounded-t-full" style={{ backgroundColor: '#3c323e' }} />
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Right actions */}
+          <div className="flex items-center gap-2">
+            {activeTab === 'overview' && (
+              <TimeRangeSelector
+                value={timeRangePreset}
+                customRange={customTimeRange}
+                onChange={updateTimeRange}
+                onRefresh={refreshData}
+                loading={analyticsLoading}
+              />
+            )}
+            <button
+              onClick={handleViewForm}
+              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors"
+              style={{ backgroundColor: 'rgba(255,255,255,0.8)', color: '#655d67', border: '1px solid rgba(81,76,84,0.15)' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#f7f7f8'; (e.currentTarget as HTMLElement).style.color = '#4c414e'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.8)'; (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              {t('header.viewFormButton')}
+            </button>
+          </div>
         </div>
 
-        {/* Tab Navigation */}
-        <Tabs
-          value={activeTab}
-          onValueChange={(value) => setActiveTab(value as 'overview' | 'fields')}
-        >
-          <TabsList className="mb-6 w-fit">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              {t('tabs.overview')}
-            </TabsTrigger>
-            <TabsTrigger value="fields" className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
-              {t('tabs.fields')}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        {/* Tab Content */}
+        {/* ── Tab content ── */}
         {activeTab === 'overview' ? (
           <>
-            {/* Overview Cards */}
             <AnalyticsOverview
               data={analyticsData}
               submissionData={submissionAnalyticsData}
@@ -170,86 +159,86 @@ const FormAnalytics: React.FC = () => {
               loading={analyticsLoading}
             />
 
-            {/* Charts Section */}
             {analyticsError && (
-              <Card className="p-8 border-red-200">
-                <div className="text-center text-red-600">
-                  <AlertCircle className="h-12 w-12 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">
+              <div
+                className="p-5 rounded-xl flex items-start gap-3"
+                style={{ backgroundColor: 'rgba(206,93,85,0.06)', border: '1px solid rgba(206,93,85,0.16)' }}
+              >
+                <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" style={{ color: '#ce5d55' }} />
+                <div>
+                  <h3 className="text-sm font-medium mb-1" style={{ color: '#3c323e' }}>
                     {t('errors.unableToLoadAnalytics')}
                   </h3>
-                  <p className="text-sm">
+                  <p className="text-xs mb-3" style={{ color: '#655d67' }}>
                     {analyticsError.message || t('errors.analyticsLoadError')}
                   </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-4"
+                  <button
                     onClick={refreshData}
+                    className="flex items-center gap-1.5 h-7 px-3 rounded-lg text-xs font-medium"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.8)', color: '#655d67', border: '1px solid rgba(81,76,84,0.15)' }}
                   >
                     {t('errors.tryAgain')}
-                  </Button>
+                  </button>
                 </div>
-              </Card>
+              </div>
             )}
 
             {!isAuthenticated && (
-              <Card className="p-8">
-                <div className="text-center">
-                  <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-yellow-100">
-                    <AlertCircle className="h-8 w-8 text-yellow-600" />
-                  </div>
-                  <h3 className="mt-4 text-lg font-semibold text-gray-900">
-                    {t('states.authenticationRequired')}
-                  </h3>
-                  <p className="mt-2 text-gray-600 max-w-2xl mx-auto">
-                    {t('states.authenticationMessage')}
-                  </p>
+              <div
+                className="p-6 rounded-xl text-center"
+                style={{ backgroundColor: '#f7f7f8', border: '1px solid rgba(81,76,84,0.10)' }}
+              >
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ backgroundColor: '#fbe19d' }}>
+                  <AlertCircle className="h-7 w-7" style={{ color: '#8b6a18' }} />
                 </div>
-              </Card>
+                <h3 className="text-sm font-semibold mb-1" style={{ color: '#3c323e' }}>
+                  {t('states.authenticationRequired')}
+                </h3>
+                <p className="text-xs max-w-md mx-auto" style={{ color: '#655d67' }}>
+                  {t('states.authenticationMessage')}
+                </p>
+              </div>
             )}
 
             {!analyticsError && isAuthenticated && isEmpty && (
-              <Card className="p-8">
-                <div className="text-center">
-                  <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100">
-                    <BarChart3 className="h-8 w-8 text-blue-600" />
-                  </div>
-                  <h3 className="mt-4 text-lg font-semibold text-gray-900">
-                    {t('states.noDataYet')}
-                  </h3>
-                  <p className="mt-2 text-gray-600 max-w-2xl mx-auto">
-                    {t('states.noDataMessage')}
-                  </p>
-                  <div className="mt-6">
-                    <Button onClick={handleViewForm}>
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      {t('states.viewYourForm')}
-                    </Button>
-                  </div>
-
-                  <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-blue-800">
-                      {t('states.privacyNotice')}
-                    </p>
-                  </div>
+              <div
+                className="p-8 rounded-xl text-center"
+                style={{ backgroundColor: '#f7f7f8', border: '1px solid rgba(81,76,84,0.10)' }}
+              >
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ backgroundColor: '#ddd6fa' }}>
+                  <BarChart3 className="h-7 w-7" style={{ color: '#5c2e6b' }} />
                 </div>
-              </Card>
+                <h3 className="text-sm font-semibold mb-1" style={{ color: '#3c323e' }}>
+                  {t('states.noDataYet')}
+                </h3>
+                <p className="text-xs max-w-md mx-auto mb-5" style={{ color: '#655d67' }}>
+                  {t('states.noDataMessage')}
+                </p>
+                <button
+                  onClick={handleViewForm}
+                  className="inline-flex items-center gap-1.5 h-8 px-4 rounded-lg text-xs font-medium text-white"
+                  style={{ backgroundColor: '#3c323e' }}
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  {t('states.viewYourForm')}
+                </button>
+                <div
+                  className="mt-5 p-3 rounded-lg text-xs"
+                  style={{ backgroundColor: '#f4faf8', color: '#177767' }}
+                >
+                  {t('states.privacyNotice')}
+                </div>
+              </div>
             )}
 
             {!analyticsError && isAuthenticated && hasData && (
               <>
-                {/* Views & Submissions Over Time Chart */}
                 <ViewsOverTimeChart
                   data={analyticsData?.viewsOverTime || []}
-                  submissionData={
-                    submissionAnalyticsData?.submissionsOverTime || []
-                  }
+                  submissionData={submissionAnalyticsData?.submissionsOverTime || []}
                   loading={analyticsLoading}
                   timeRange={timeRangePreset}
                 />
-
-                {/* Geographic Distribution */}
                 <GeographicChart
                   data={analyticsData?.topCountries || []}
                   submissionData={submissionAnalyticsData?.topCountries || []}
@@ -258,49 +247,31 @@ const FormAnalytics: React.FC = () => {
                   cityData={analyticsData?.topCities || []}
                   citySubmissionData={submissionAnalyticsData?.topCities || []}
                   totalViews={analyticsData?.totalViews || 0}
-                  totalSubmissions={
-                    submissionAnalyticsData?.totalSubmissions || 0
-                  }
+                  totalSubmissions={submissionAnalyticsData?.totalSubmissions || 0}
                   loading={analyticsLoading}
                 />
-
-                {/* Browser and OS Charts */}
                 <BrowserOSCharts
                   osData={analyticsData?.topOperatingSystems || []}
                   browserData={analyticsData?.topBrowsers || []}
-                  osSubmissionData={
-                    submissionAnalyticsData?.topOperatingSystems || []
-                  }
-                  browserSubmissionData={
-                    submissionAnalyticsData?.topBrowsers || []
-                  }
+                  osSubmissionData={submissionAnalyticsData?.topOperatingSystems || []}
+                  browserSubmissionData={submissionAnalyticsData?.topBrowsers || []}
                   loading={analyticsLoading}
                 />
-
-                {/* Completion Time Statistics */}
                 <CompletionTimePercentiles
-                  data={
-                    submissionAnalyticsData?.completionTimePercentiles || null
-                  }
-                  averageTime={
-                    submissionAnalyticsData?.averageCompletionTime || null
-                  }
+                  data={submissionAnalyticsData?.completionTimePercentiles || null}
+                  averageTime={submissionAnalyticsData?.averageCompletionTime || null}
                   loading={analyticsLoading}
                 />
-
-                {/* Completion Time Distribution */}
                 <CompletionTimeChart
-                  data={
-                    submissionAnalyticsData?.completionTimeDistribution || []
-                  }
+                  data={submissionAnalyticsData?.completionTimeDistribution || []}
                   loading={analyticsLoading}
                 />
               </>
             )}
           </>
         ) : (
-          <FieldAnalyticsViewer 
-            formId={formId || ''} 
+          <FieldAnalyticsViewer
+            formId={formId || ''}
             initialSelectedFieldId={selectedFieldId}
           />
         )}

@@ -1,6 +1,5 @@
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
 import { TrendingUp, Calendar } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 
@@ -32,27 +31,16 @@ const CustomTooltip = ({ active, payload, label, t }: any) => {
     });
     
     return (
-      <div className="bg-white p-3 border rounded-lg shadow-lg">
-        <p className="font-semibold text-gray-900 mb-2">{date}</p>
+      <div className="bg-white p-3 rounded-lg" style={{ border: '1px solid rgba(81,76,84,0.12)', boxShadow: '0 4px 16px rgba(60,50,62,0.12)' }}>
+        <p className="text-xs font-medium mb-2" style={{ color: '#3c323e' }}>{date}</p>
         <div className="space-y-1">
           {payload.map((entry: any) => {
             let color = entry.color;
             let label = entry.dataKey;
-            
-            // Customize labels and colors
-            if (entry.dataKey === 'views') {
-              color = '#3b82f6';
-              label = t('legend.totalViews');
-            } else if (entry.dataKey === 'sessions') {
-              color = '#10b981';
-              label = t('legend.viewSessions');
-            } else if (entry.dataKey === 'submissions') {
-              color = '#f59e0b';
-              label = t('legend.submissions');
-            } else if (entry.dataKey === 'submissionSessions') {
-              color = '#8b5cf6';
-              label = t('legend.subSessions');
-            }
+            if (entry.dataKey === 'views') { color = '#655d67'; label = t('legend.totalViews'); }
+            else if (entry.dataKey === 'sessions') { color = '#177767'; label = t('legend.viewSessions'); }
+            else if (entry.dataKey === 'submissions') { color = '#a25fba'; label = t('legend.submissions'); }
+            else if (entry.dataKey === 'submissionSessions') { color = '#3c323e'; label = t('legend.subSessions'); }
             
             return (
               <p key={entry.dataKey} className="text-sm" style={{ color }}>
@@ -122,41 +110,26 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
   // Check loading state after all hooks are called
   if (loading) {
     return (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center text-base">
-            <TrendingUp className="h-4 w-4 mr-2 text-blue-600" />
-            Views Over Time
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-64 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="rounded-xl p-5 animate-pulse bg-white" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
+        <div className="h-4 rounded w-40 mb-5" style={{ backgroundColor: 'rgba(81,76,84,0.08)' }} />
+        <div className="h-64 rounded-lg" style={{ backgroundColor: 'rgba(81,76,84,0.04)' }} />
+      </div>
     );
   }
 
   if (!mergedData || mergedData.length === 0) {
     return (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center text-base">
-            <TrendingUp className="h-4 w-4 mr-2 text-blue-600" />
-            {t('title')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-64 flex flex-col items-center justify-center text-gray-500">
-            <Calendar className="h-12 w-12 mb-3 text-gray-300" />
-            <p className="text-sm font-medium">No time-series data available</p>
-            <p className="text-xs text-gray-400 mt-1">
-              Data will appear once your form receives more activity
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="rounded-xl p-5 bg-white" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
+        <div className="flex items-center gap-1.5 mb-4">
+          <TrendingUp className="h-4 w-4" style={{ color: '#655d67' }} />
+          <span className="text-sm font-medium" style={{ color: '#3c323e' }}>{t('title')}</span>
+        </div>
+        <div className="h-64 flex flex-col items-center justify-center">
+          <Calendar className="h-10 w-10 mb-3" style={{ color: '#dedcde' }} />
+          <p className="text-sm font-medium" style={{ color: '#4c414e' }}>No time-series data available</p>
+          <p className="text-xs mt-1" style={{ color: '#655d67' }}>Data will appear once your form receives more activity</p>
+        </div>
+      </div>
     );
   }
 
@@ -176,140 +149,75 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
     }
   };
 
+  /* Typeform chart palette */
+  const TF = { views: '#655d67', sessions: '#177767', submissions: '#a25fba', subSessions: '#3c323e' };
+
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center justify-between text-base">
-          <div className="flex items-center">
-            <TrendingUp className="h-4 w-4 mr-2 text-blue-600" />
-            {t('title')}
-          </div>
-          <span className="text-sm text-gray-500">{getTimeRangeLabel()}</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="h-64 mb-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={mergedData}
-              margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-            >
-              <defs>
-                <linearGradient id="viewsGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
-                </linearGradient>
-                <linearGradient id="sessionsGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
-                </linearGradient>
-                <linearGradient id="submissionsGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.1}/>
-                </linearGradient>
-                <linearGradient id="submissionSessionsGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis 
-                dataKey="date" 
-                tickFormatter={formatXAxisDate}
-                tick={{ fontSize: 12 }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis 
-                tick={{ fontSize: 12 }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Tooltip content={<CustomTooltip t={t} />} />
-              <Area
-                type="monotone"
-                dataKey="views"
-                stroke="#3b82f6"
-                fillOpacity={1}
-                fill="url(#viewsGradient)"
-                strokeWidth={2}
-              />
-              <Area
-                type="monotone"
-                dataKey="sessions"
-                stroke="#10b981"
-                fillOpacity={1}
-                fill="url(#sessionsGradient)"
-                strokeWidth={2}
-              />
-              <Area
-                type="monotone"
-                dataKey="submissions"
-                stroke="#f59e0b"
-                fillOpacity={1}
-                fill="url(#submissionsGradient)"
-                strokeWidth={2}
-              />
-              <Area
-                type="monotone"
-                dataKey="submissionSessions"
-                stroke="#8b5cf6"
-                fillOpacity={1}
-                fill="url(#submissionSessionsGradient)"
-                strokeWidth={2}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+    <div className="rounded-xl p-5 bg-white" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-1.5">
+          <TrendingUp className="h-4 w-4" style={{ color: '#655d67' }} />
+          <span className="text-sm font-medium" style={{ color: '#3c323e' }}>{t('title')}</span>
         </div>
+        <span className="text-xs" style={{ color: '#655d67' }}>{getTimeRangeLabel()}</span>
+      </div>
 
-        {/* Summary Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 pt-4 border-t">
-          <div className="text-center">
-            <p className="text-xl font-bold text-blue-600">{totalViews}</p>
-            <p className="text-xs text-gray-500">{t('stats.totalViews')}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-xl font-bold text-primary">{totalSessions}</p>
-            <p className="text-xs text-gray-500">{t('stats.viewSessions')}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-xl font-bold text-orange-600">{totalSubmissions}</p>
-            <p className="text-xs text-gray-500">{t('stats.submissions')}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-xl font-bold text-purple-600">{totalSubmissionSessions}</p>
-            <p className="text-xs text-gray-500">{t('stats.submissionSessions')}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-xl font-bold text-gray-900">{avgViewsPerDay}</p>
-            <p className="text-xs text-gray-500">{t('stats.avgViewsPerDay')}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-xl font-bold text-gray-900">{avgSubmissionsPerDay}</p>
-            <p className="text-xs text-gray-500">{t('stats.avgSubsPerDay')}</p>
-          </div>
-        </div>
+      {/* Chart */}
+      <div className="h-64 mb-4">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={mergedData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <defs>
+              {Object.entries(TF).map(([key, color]) => (
+                <linearGradient key={key} id={`grad-${key}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={color} stopOpacity={0.15}/>
+                  <stop offset="95%" stopColor={color} stopOpacity={0.02}/>
+                </linearGradient>
+              ))}
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(81,76,84,0.06)" />
+            <XAxis dataKey="date" tickFormatter={formatXAxisDate} tick={{ fontSize: 11, fill: '#655d67' }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: '#655d67' }} axisLine={false} tickLine={false} />
+            <Tooltip content={<CustomTooltip t={t} />} />
+            <Area type="monotone" dataKey="views" stroke={TF.views} strokeWidth={2} fill={`url(#grad-views)`} />
+            <Area type="monotone" dataKey="sessions" stroke={TF.sessions} strokeWidth={2} fill={`url(#grad-sessions)`} />
+            <Area type="monotone" dataKey="submissions" stroke={TF.submissions} strokeWidth={2} fill={`url(#grad-submissions)`} />
+            <Area type="monotone" dataKey="submissionSessions" stroke={TF.subSessions} strokeWidth={2} fill={`url(#grad-subSessions)`} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
 
-        {/* Legend */}
-        <div className="flex flex-wrap items-center justify-center gap-4 mt-4 pt-2 border-t">
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-blue-500 rounded mr-2"></div>
-            <span className="text-sm text-gray-600">{t('legendItems.views')}</span>
+      {/* Summary stats */}
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-3 pt-4" style={{ borderTop: '1px solid rgba(81,76,84,0.08)' }}>
+        {[
+          { value: totalViews, label: t('stats.totalViews'), color: TF.views },
+          { value: totalSessions, label: t('stats.viewSessions'), color: TF.sessions },
+          { value: totalSubmissions, label: t('stats.submissions'), color: TF.submissions },
+          { value: totalSubmissionSessions, label: t('stats.submissionSessions'), color: TF.subSessions },
+          { value: avgViewsPerDay, label: t('stats.avgViewsPerDay'), color: '#3c323e' },
+          { value: avgSubmissionsPerDay, label: t('stats.avgSubsPerDay'), color: '#3c323e' },
+        ].map(({ value, label, color }) => (
+          <div key={label} className="text-center">
+            <p className="text-lg font-light" style={{ color }}>{value}</p>
+            <p className="text-[10px] mt-0.5" style={{ color: '#655d67' }}>{label}</p>
           </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-primary rounded mr-2"></div>
-            <span className="text-sm text-gray-600">{t('legendItems.viewSessions')}</span>
+        ))}
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-wrap items-center justify-center gap-3 mt-3 pt-3" style={{ borderTop: '1px solid rgba(81,76,84,0.08)' }}>
+        {[
+          { color: TF.views, label: t('legendItems.views') },
+          { color: TF.sessions, label: t('legendItems.viewSessions') },
+          { color: TF.submissions, label: t('legendItems.submissions') },
+          { color: TF.subSessions, label: t('legendItems.submissionSessions') },
+        ].map(({ color, label }) => (
+          <div key={label} className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: color }} />
+            <span className="text-xs" style={{ color: '#655d67' }}>{label}</span>
           </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-orange-500 rounded mr-2"></div>
-            <span className="text-sm text-gray-600">{t('legendItems.submissions')}</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-purple-500 rounded mr-2"></div>
-            <span className="text-sm text-gray-600">{t('legendItems.submissionSessions')}</span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        ))}
+      </div>
+    </div>
   );
 };

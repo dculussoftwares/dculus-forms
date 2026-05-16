@@ -1,5 +1,4 @@
 import React from 'react';
-import { Card } from '@dculus/ui';
 import { Users, Monitor, Globe, TrendingUp, TrendingDown, FileCheck, Target, Clock } from 'lucide-react';
 import { FormAnalyticsData, FormSubmissionAnalyticsData } from '../../hooks/useFormAnalytics';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -61,53 +60,56 @@ const MetricCard: React.FC<MetricCardProps> = ({
 }) => {
   if (loading) {
     return (
-      <Card className="p-6">
-        <div className="animate-pulse">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="h-4 bg-gray-200 rounded w-20 mb-2"></div>
-              <div className="h-8 bg-gray-200 rounded w-16"></div>
-            </div>
-            <div className={`h-12 w-12 ${iconBgColor} rounded-lg`}></div>
-          </div>
-          <div className="h-3 bg-gray-200 rounded w-24 mt-4"></div>
+      <div
+        className="rounded-xl p-5 animate-pulse"
+        style={{ backgroundColor: 'white', border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="h-3 rounded w-20" style={{ backgroundColor: 'rgba(81,76,84,0.08)' }} />
+          <div className="h-9 w-9 rounded-xl" style={{ backgroundColor: 'rgba(81,76,84,0.06)' }} />
         </div>
-      </Card>
+        <div className="h-7 rounded w-14 mb-2" style={{ backgroundColor: 'rgba(81,76,84,0.08)' }} />
+        <div className="h-3 rounded w-24" style={{ backgroundColor: 'rgba(81,76,84,0.06)' }} />
+      </div>
     );
   }
 
-  const displayValue = typeof value === 'number' 
-    ? value.toLocaleString() 
-    : value || '--';
+  const displayValue = typeof value === 'number' ? value.toLocaleString() : value || '--';
 
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{displayValue}</p>
-        </div>
-        <div className={`h-12 w-12 ${iconBgColor} rounded-lg flex items-center justify-center`}>
-          <Icon className={`h-6 w-6 ${iconColor}`} />
+    <div
+      className="rounded-xl p-5 transition-shadow duration-200 hover:shadow-md"
+      style={{ backgroundColor: 'white', border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}
+    >
+      <div className="flex items-start justify-between mb-3">
+        <p className="text-xs font-medium" style={{ color: '#655d67' }}>{title}</p>
+        {/* Typeform field-icon style — small square with colored bg */}
+        <div
+          className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0"
+          style={{ backgroundColor: iconBgColor }}
+        >
+          <Icon className="h-4 w-4" style={{ color: iconColor }} />
         </div>
       </div>
-      
-      <div className="flex items-center justify-between mt-4">
-        <p className="text-xs text-gray-500">{subtitle}</p>
+
+      {/* Typeform-style stat: light weight, large */}
+      <p className="text-2xl font-light tracking-tight mb-1" style={{ color: '#262627' }}>
+        {displayValue}
+      </p>
+
+      <div className="flex items-center justify-between">
+        <p className="text-[11px]" style={{ color: '#655d67' }}>{subtitle}</p>
         {trend && (
-          <div className={`flex items-center text-xs ${
-            trend.isPositive ? 'text-primary' : 'text-red-600'
-          }`}>
-            {trend.isPositive ? (
-              <TrendingUp className="h-3 w-3 mr-1" />
-            ) : (
-              <TrendingDown className="h-3 w-3 mr-1" />
-            )}
+          <div className="flex items-center gap-0.5 text-[11px] font-medium" style={{ color: trend.isPositive ? '#177767' : '#ce5d55' }}>
+            {trend.isPositive
+              ? <TrendingUp className="h-3 w-3" />
+              : <TrendingDown className="h-3 w-3" />
+            }
             {Math.abs(trend.value)}%
           </div>
         )}
       </div>
-    </Card>
+    </div>
   );
 };
 
@@ -122,80 +124,70 @@ export const AnalyticsOverview: React.FC<AnalyticsOverviewProps> = ({
 }) => {
   const { t } = useTranslation('formAnalytics');
 
+  /* Typeform field-icon palette for metric icons */
   const metrics = [
     {
       title: t('overview.metrics.totalViews.title'),
       value: data?.totalViews || 0,
       subtitle: t('overview.metrics.totalViews.subtitle'),
       icon: Users,
-      iconColor: 'text-blue-600',
-      iconBgColor: 'bg-blue-100',
-      trend: undefined // TODO: Add trend calculation when we have historical data
+      iconColor: '#177767',   /* teal */
+      iconBgColor: '#f4faf8',
     },
     {
       title: t('overview.metrics.totalSubmissions.title'),
       value: submissionData?.totalSubmissions || 0,
       subtitle: t('overview.metrics.totalSubmissions.subtitle', { values: { rate: submissionConversionRate } }),
       icon: FileCheck,
-      iconColor: 'text-primary',
-      iconBgColor: 'bg-primary/10'
+      iconColor: '#3c323e',   /* salmon */
+      iconBgColor: '#f8cdd8',
     },
     {
       title: t('overview.metrics.viewSessions.title'),
       value: data?.uniqueSessions || 0,
       subtitle: t('overview.metrics.viewSessions.subtitle', { values: { rate: conversionRate } }),
       icon: Monitor,
-      iconColor: 'text-purple-600',
-      iconBgColor: 'bg-purple-100'
+      iconColor: '#5c2e6b',   /* lavender */
+      iconBgColor: '#ddd6fa',
     },
     {
       title: t('overview.metrics.submissionSessions.title'),
       value: submissionData?.uniqueSessions || 0,
       subtitle: t('overview.metrics.submissionSessions.subtitle'),
       icon: Target,
-      iconColor: 'text-indigo-600',
-      iconBgColor: 'bg-indigo-100'
+      iconColor: '#4c414e',   /* neutral gray */
+      iconBgColor: '#dedcde',
     },
     {
       title: t('overview.metrics.topViewCountry.title'),
       value: topCountry?.name || t('overview.metrics.topViewCountry.unknown'),
-      subtitle: topCountry 
-        ? t('overview.metrics.topViewCountry.subtitle', { 
-            values: { 
-              count: topCountry.count, 
-              percentage: topCountry.percentage.toFixed(1) 
-            } 
-          })
+      subtitle: topCountry
+        ? t('overview.metrics.topViewCountry.subtitle', { values: { count: topCountry.count, percentage: topCountry.percentage.toFixed(1) } })
         : t('overview.metrics.topViewCountry.noData'),
       icon: Globe,
-      iconColor: 'text-orange-600',
-      iconBgColor: 'bg-orange-100'
+      iconColor: '#8b6a18',   /* yellow */
+      iconBgColor: '#fbe19d',
     },
     {
       title: t('overview.metrics.topSubmissionCountry.title'),
       value: topSubmissionCountry?.name || t('overview.metrics.topSubmissionCountry.unknown'),
-      subtitle: topSubmissionCountry 
-        ? t('overview.metrics.topSubmissionCountry.subtitle', { 
-            values: { 
-              count: topSubmissionCountry.count, 
-              percentage: topSubmissionCountry.percentage.toFixed(1) 
-            } 
-          })
+      subtitle: topSubmissionCountry
+        ? t('overview.metrics.topSubmissionCountry.subtitle', { values: { count: topSubmissionCountry.count, percentage: topSubmissionCountry.percentage.toFixed(1) } })
         : t('overview.metrics.topSubmissionCountry.noData'),
       icon: Globe,
-      iconColor: 'text-red-600',
-      iconBgColor: 'bg-red-100'
+      iconColor: '#2d6236',   /* green */
+      iconBgColor: '#c4e3ba',
     },
     {
       title: t('overview.metrics.avgCompletionTime.title'),
       value: formatCompletionTime(submissionData?.averageCompletionTime || null, t),
-      subtitle: submissionData?.averageCompletionTime 
+      subtitle: submissionData?.averageCompletionTime
         ? t('overview.metrics.avgCompletionTime.subtitle')
         : t('overview.metrics.avgCompletionTime.noData'),
       icon: Clock,
-      iconColor: 'text-cyan-600',
-      iconBgColor: 'bg-cyan-100'
-    }
+      iconColor: '#5c2e6b',   /* lavender */
+      iconBgColor: '#ddd6fa',
+    },
   ];
 
   return (

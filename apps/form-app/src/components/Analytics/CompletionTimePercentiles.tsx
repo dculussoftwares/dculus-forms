@@ -1,5 +1,4 @@
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@dculus/ui';
 import { Clock, TrendingUp } from 'lucide-react';
 import { CompletionTimePercentiles as PercentilesData } from '../../hooks/useFormAnalytics';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -35,24 +34,14 @@ interface PercentileCardProps {
   bgColor: string;
 }
 
-const PercentileCard: React.FC<PercentileCardProps> = ({ 
-  label, 
-  value, 
-  description, 
-  color, 
-  bgColor 
-}) => (
-  <div className={`${bgColor} rounded-lg p-4 border`}>
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm font-medium text-gray-600">{label}</p>
-        <p className={`text-lg font-bold ${color} mt-1`}>
-          {formatCompletionTime(value)}
-        </p>
-      </div>
-      <Clock className={`h-5 w-5 ${color} opacity-60`} />
+const PercentileCard: React.FC<PercentileCardProps> = ({ label, value, description, color, bgColor }) => (
+  <div className="rounded-xl p-4" style={{ backgroundColor: bgColor, border: '1px solid rgba(81,76,84,0.08)' }}>
+    <div className="flex items-center justify-between mb-2">
+      <p className="text-xs font-medium" style={{ color: '#655d67' }}>{label}</p>
+      <Clock className="h-4 w-4 opacity-50" style={{ color }} />
     </div>
-    <p className="text-xs text-gray-500 mt-2">{description}</p>
+    <p className="text-xl font-light" style={{ color }}>{formatCompletionTime(value)}</p>
+    <p className="text-[10px] mt-1.5" style={{ color: '#655d67' }}>{description}</p>
   </div>
 );
 
@@ -65,132 +54,70 @@ export const CompletionTimePercentiles: React.FC<CompletionTimePercentilesProps>
   
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            {t('title')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            {[...Array(5)].map((_, index) => (
-              <div key={index} className="animate-pulse">
-                <div className="bg-gray-100 rounded-lg p-4 border">
-                  <div className="h-4 bg-gray-200 rounded w-16 mb-2"></div>
-                  <div className="h-6 bg-gray-200 rounded w-12 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-20"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="rounded-xl p-5 bg-white" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
+        {/* Loading skeleton */}
+        <div className="flex items-center gap-1.5 mb-4">
+          <div className="h-4 w-4 rounded" style={{ backgroundColor: 'rgba(81,76,84,0.08)' }} />
+          <div className="h-4 rounded w-40" style={{ backgroundColor: 'rgba(81,76,84,0.08)' }} />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="rounded-xl p-4 animate-pulse" style={{ backgroundColor: '#f7f7f8' }}>
+              <div className="h-3 rounded w-16 mb-3" style={{ backgroundColor: 'rgba(81,76,84,0.08)' }} />
+              <div className="h-5 rounded w-12 mb-2" style={{ backgroundColor: 'rgba(81,76,84,0.08)' }} />
+              <div className="h-3 rounded w-20" style={{ backgroundColor: 'rgba(81,76,84,0.06)' }} />
+            </div>
+          ))}
+        </div>
+      </div>
     );
   }
 
   if (!data && !averageTime) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            {t('title')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-gray-500">
-            {t('noData')}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="rounded-xl p-5 bg-white" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
+        <div className="text-center py-8 text-xs" style={{ color: '#655d67' }}>{t('noData')}</div>
+      </div>
     );
   }
 
+  /* Typeform field-icon palette for percentile cards */
   const percentiles = [
-    {
-      label: t('average.label'),
-      value: averageTime,
-      description: t('average.description'),
-      color: 'text-blue-700',
-      bgColor: 'bg-blue-50'
-    },
-    {
-      label: t('p50.label'),
-      value: data?.p50 || null,
-      description: t('p50.description'),
-      color: 'text-primary',
-      bgColor: 'bg-primary/5'
-    },
-    {
-      label: t('p75.label'),
-      value: data?.p75 || null,
-      description: t('p75.description'),
-      color: 'text-yellow-700',
-      bgColor: 'bg-yellow-50'
-    },
-    {
-      label: t('p90.label'),
-      value: data?.p90 || null,
-      description: t('p90.description'),
-      color: 'text-orange-700',
-      bgColor: 'bg-orange-50'
-    },
-    {
-      label: t('p95.label'),
-      value: data?.p95 || null,
-      description: t('p95.description'),
-      color: 'text-red-700',
-      bgColor: 'bg-red-50'
-    }
+    { label: t('average.label'), value: averageTime, description: t('average.description'), color: '#177767', bgColor: '#f4faf8' },
+    { label: t('p50.label'), value: data?.p50 || null, description: t('p50.description'), color: '#655d67', bgColor: '#f7f7f8' },
+    { label: t('p75.label'), value: data?.p75 || null, description: t('p75.description'), color: '#8b6a18', bgColor: '#fbe19d' },
+    { label: t('p90.label'), value: data?.p90 || null, description: t('p90.description'), color: '#5c2e6b', bgColor: '#ddd6fa' },
+    { label: t('p95.label'), value: data?.p95 || null, description: t('p95.description'), color: '#3c323e', bgColor: '#f8cdd8' },
   ];
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5" />
-          {t('title')}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          {percentiles.map((percentile, index) => (
-            <PercentileCard
-              key={index}
-              {...percentile}
-            />
-          ))}
-        </div>
-        
-        {/* Insights */}
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <h4 className="font-medium text-gray-900 mb-2">{t('insights.title')}</h4>
-          <div className="text-sm text-gray-600 space-y-1">
+    <div className="rounded-xl p-5 bg-white" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
+      <div className="flex items-center gap-1.5 mb-4">
+        <TrendingUp className="h-4 w-4" style={{ color: '#655d67' }} />
+        <span className="text-sm font-medium" style={{ color: '#3c323e' }}>{t('title')}</span>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+        {percentiles.map((p, i) => <PercentileCard key={i} {...p} />)}
+      </div>
+
+      {/* Insights */}
+      {(averageTime || data) && (
+        <div className="mt-4 p-4 rounded-xl" style={{ backgroundColor: '#f7f7f8' }}>
+          <h4 className="text-xs font-medium mb-2" style={{ color: '#3c323e' }}>{t('insights.title')}</h4>
+          <div className="text-xs space-y-1" style={{ color: '#655d67' }}>
             {averageTime && data?.p50 && (
-              <p>
-                • {t('insights.medianVsAverage', {
-                  values: {
-                    median: formatCompletionTime(data.p50),
-                    comparison: averageTime > data.p50 ? t('insights.shorter') : t('insights.longer'),
-                    average: formatCompletionTime(averageTime)
-                  }
-                })}
-              </p>
+              <p>• {t('insights.medianVsAverage', { values: { median: formatCompletionTime(data.p50), comparison: averageTime > data.p50 ? t('insights.shorter') : t('insights.longer'), average: formatCompletionTime(averageTime) } })}</p>
             )}
             {data?.p90 && data?.p50 && (
-              <p>
-                • {t('insights.p90Insight', { values: { time: formatCompletionTime(data.p90) } })}
-              </p>
+              <p>• {t('insights.p90Insight', { values: { time: formatCompletionTime(data.p90) } })}</p>
             )}
             {data?.p95 && data?.p90 && (
-              <p>
-                • {t('insights.p95Insight', { values: { time: formatCompletionTime(data.p95) } })}
-              </p>
+              <p>• {t('insights.p95Insight', { values: { time: formatCompletionTime(data.p95) } })}</p>
             )}
           </div>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 };
