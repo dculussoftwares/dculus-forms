@@ -13,6 +13,7 @@
     }
   },
   "scripts": {
+    "dev": "storybook dev -p 6006",
     "build": "tsc",
     "build:cjs": "tsc -p tsconfig.cjs.json",
     "storybook": "storybook dev -p 6006",

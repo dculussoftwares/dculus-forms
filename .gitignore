@@ -163,3 +163,4 @@ test/e2e/.services.pid
 test/e2e/backend.log
 test/e2e/form-app.log
 test/e2e/.auth/
+/.playwright-mcp/

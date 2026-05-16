@@ -1,10 +1,18 @@
-import type { Preview } from '@storybook/react';
+import type { Preview, Decorator } from '@storybook/react';
 import '../src/styles/globals.css';
 import '../src/rich-text-editor/lexical-styles.css';
 
+/* Apply / remove dark class on <html> when the theme toolbar changes */
+const withDarkMode: Decorator = (Story, context) => {
+  const isDark = context.globals.theme === 'dark';
+  document.documentElement.classList.toggle('dark', isDark);
+  return Story();
+};
+
 const preview: Preview = {
+  decorators: [withDarkMode],
   parameters: {
-    layout: 'fullscreen',
+    layout: 'padded',
     controls: {
       matchers: {
         color: /(background|color)$/i,
@@ -12,59 +20,26 @@ const preview: Preview = {
       },
     },
     backgrounds: {
-      default: 'light',
+      default: 'app',
       values: [
-        {
-          name: 'light',
-          value: '#ffffff',
-        },
-        {
-          name: 'dark',
-          value: '#1f2937',
-        },
-        {
-          name: 'gradient',
-          value: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        },
+        { name: 'app',   value: '#f7f7f8' },   // Typeform page bg
+        { name: 'white', value: '#ffffff' },
+        { name: 'dark',  value: '#1a141b' },
       ],
     },
     viewport: {
       viewports: {
-        mobile: {
-          name: 'Mobile',
-          styles: {
-            width: '375px',
-            height: '667px',
-          },
-        },
-        tablet: {
-          name: 'Tablet',
-          styles: {
-            width: '768px',
-            height: '1024px',
-          },
-        },
-        desktop: {
-          name: 'Desktop',
-          styles: {
-            width: '1024px',
-            height: '768px',
-          },
-        },
-        large: {
-          name: 'Large Desktop',
-          styles: {
-            width: '1440px',
-            height: '900px',
-          },
-        },
+        mobile:  { name: 'Mobile',         styles: { width: '375px',  height: '667px'  } },
+        tablet:  { name: 'Tablet',         styles: { width: '768px',  height: '1024px' } },
+        desktop: { name: 'Desktop',        styles: { width: '1024px', height: '768px'  } },
+        large:   { name: 'Large Desktop',  styles: { width: '1440px', height: '900px'  } },
       },
       defaultViewport: 'large',
     },
   },
   globalTypes: {
     theme: {
-      description: 'Global theme for components',
+      description: 'Light / Dark mode',
       defaultValue: 'light',
       toolbar: {
         title: 'Theme',
