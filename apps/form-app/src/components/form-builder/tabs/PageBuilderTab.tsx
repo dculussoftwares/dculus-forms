@@ -197,7 +197,7 @@ const RightSidebar: React.FC<{
   };
 
   const handleAddPage = () => {
-    if (permissions.canAddPages() && isConnected) {
+    if (permissions.canAddPages()) {
       addEmptyPage();
     }
   };
@@ -285,7 +285,6 @@ const RightSidebar: React.FC<{
               {permissions.canAddPages() && (
                 <button
                   onClick={handleAddPage}
-                  disabled={!isConnected}
                   data-testid="add-page-button"
                   className="p-1 hover:bg-[rgba(87,84,91,0.06)] rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ color: '#3c323e' }}
