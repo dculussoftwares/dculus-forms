@@ -47,7 +47,7 @@ interface TabNavigationProps {
   isConnected: boolean;
   collaboratorCount?: number;
   className?: string;
-  position?: 'top' | 'bottom';
+  position?: 'top' | 'bottom' | 'inline';
 }
 
 export const TabNavigation: React.FC<TabNavigationProps> = ({
@@ -94,6 +94,40 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
       clearTimeout(timeoutId);
     };
   }, [position]);
+
+  // ── Inline mode: Typeform-style underline tabs for use inside the header ──
+  if (position === 'inline') {
+    return (
+      <div className={`flex items-stretch h-full ${className}`}>
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              onKeyDown={(e) => handleKeyDown(e, tab.id)}
+              className="relative flex items-center gap-1.5 px-3 text-sm font-medium transition-colors focus:outline-none"
+              style={{ color: isActive ? '#3c323e' : '#655d67' }}
+              onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.color = '#4c414e'; (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.04)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = isActive ? '#3c323e' : '#655d67'; (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
+              aria-selected={isActive}
+              title={tab.description}
+            >
+              <tab.icon className="w-3.5 h-3.5 shrink-0" />
+              <span>{tab.label}</span>
+              {/* Typeform underline indicator */}
+              {isActive && (
+                <span
+                  className="absolute bottom-[-1px] left-0 right-0 h-[2px] rounded-t-full"
+                  style={{ backgroundColor: '#3c323e' }}
+                />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
 
   const positionClasses =
     position === 'bottom'

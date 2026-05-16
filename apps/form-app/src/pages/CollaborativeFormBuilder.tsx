@@ -381,7 +381,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
       >
         <div
           data-testid="collaborative-form-builder"
-          className={`min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 dark:from-gray-900 dark:to-blue-950/30 ${className || ''}`}
+          className={`min-h-screen bg-background dark:bg-background ${className || ''}`}
         >
           <div className="flex flex-col h-screen">
             <FormBuilderHeader
@@ -398,18 +398,18 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
               onPublish={handlePublish}
               onUnpublish={handleUnpublish}
               updateLoading={updateLoading}
+              centerContent={
+                <TabNavigation
+                  activeTab={activeTab}
+                  isConnected={isConnected}
+                  collaboratorCount={0}
+                  position="inline"
+                />
+              }
             />
 
             <div className="flex-1 overflow-hidden relative">
               {renderTabContent()}
-
-              <TabNavigation
-                activeTab={activeTab}
-                isConnected={isConnected}
-                collaboratorCount={0}
-                position="bottom"
-              />
-
               <TabKeyboardShortcuts onTabChange={handleKeyboardTabChange} />
             </div>
           </div>

@@ -94,15 +94,16 @@ const getFieldTypeConfig = (
 };
 
 const getCategoryColor = (category: string) => {
+  /* Typeform field-icon palette (exact extracted colors) */
   switch (category) {
     case 'input':
-      return 'bg-blue-500/10 text-blue-600 dark:text-blue-400';
+      return 'bg-[#f8cdd8] text-[#3c323e]';      /* salmon */
     case 'choice':
-      return 'bg-purple-500/10 text-purple-600 dark:text-purple-400';
+      return 'bg-[#ddd6fa] text-[#5c2e6b]';      /* lavender */
     case 'content':
-      return 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400';
+      return 'bg-[#f4faf8] text-[#177767]';      /* teal */
     default:
-      return 'bg-gray-500/10 text-gray-600 dark:text-gray-400';
+      return 'bg-[#dedcde] text-[#4c414e]';      /* neutral gray */
   }
 };
 
@@ -115,7 +116,7 @@ const getCategoryColor = (category: string) => {
  */
 const LeftSidebar: React.FC = () => {
   return (
-    <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+    <div className="w-72 bg-white dark:bg-card" style={{ borderRight: '1px solid rgba(81,76,84,0.12)' }}>
       <FieldTypesPanel />
     </div>
   );
@@ -230,14 +231,14 @@ const RightSidebar: React.FC<{
 
   return (
     <div
-      className="border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col relative"
-      style={{ width: `${width}px` }}
+      className="bg-white dark:bg-card flex flex-col relative"
+      style={{ borderLeft: '1px solid rgba(81,76,84,0.12)', width: `${width}px` }}
     >
       {/* Resize handle */}
       <div
         className={`
-          absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500/50
-          ${isResizing ? 'bg-blue-500' : ''}
+          absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-[rgba(60,50,62,0.20)]
+          ${isResizing ? 'bg-[rgba(60,50,62,0.40)]' : ''}
         `}
         onMouseDown={handleMouseDown}
       >
@@ -247,49 +248,28 @@ const RightSidebar: React.FC<{
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex border-b border-gray-200 dark:border-gray-700">
-        <button
-          onClick={() => setActiveTab('pages')}
-          className={`
-            flex-1 flex items-center justify-center py-3 text-sm font-medium transition-colors
-            ${
-              activeTab === 'pages'
-                ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-            }
-          `}
-        >
-          <StickyNote className="w-4 h-4 mr-2" />
-          {t('sidebar.pages.title')}
-        </button>
-        <button
-          onClick={() => setActiveTab('properties')}
-          className={`
-            flex-1 flex items-center justify-center py-3 text-sm font-medium transition-colors
-            ${
-              activeTab === 'properties'
-                ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-            }
-          `}
-        >
-          <Settings className="w-4 h-4 mr-2" />
-          {t('tabs.field')}
-        </button>
-        <button
-          onClick={() => setActiveTab('json')}
-          className={`
-            flex-1 flex items-center justify-center py-3 text-sm font-medium transition-colors
-            ${
-              activeTab === 'json'
-                ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-            }
-          `}
-        >
-          <Code className="w-4 h-4 mr-2" />
-          JSON
-        </button>
+      {/* Typeform-style underline tab row */}
+      <div className="flex" style={{ borderBottom: '1px solid rgba(81,76,84,0.12)' }}>
+        {([
+          { id: 'pages' as const, icon: StickyNote, label: t('sidebar.pages.title') },
+          { id: 'properties' as const, icon: Settings, label: t('tabs.field') },
+          { id: 'json' as const, icon: Code, label: 'JSON' },
+        ] as const).map(({ id, icon: Icon, label }) => (
+          <button
+            key={id}
+            onClick={() => setActiveTab(id)}
+            className="relative flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors"
+            style={{ color: activeTab === id ? '#3c323e' : '#655d67' }}
+            onMouseEnter={e => { if (activeTab !== id) (e.currentTarget as HTMLElement).style.color = '#4c414e'; }}
+            onMouseLeave={e => { if (activeTab !== id) (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            {label}
+            {activeTab === id && (
+              <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full" style={{ backgroundColor: '#3c323e' }} />
+            )}
+          </button>
+        ))}
       </div>
 
       <ScrollArea className="flex-1">
@@ -297,7 +277,7 @@ const RightSidebar: React.FC<{
           /* Pages Tab Content */
           <div className="p-4">
             <div className="mb-4 flex items-center justify-between">
-              <div className="text-sm text-gray-500 dark:text-gray-400">
+              <div className="text-sm" style={{ color: '#655d67' }}>
                 {t('sidebar.pages.pageCount', {
                   values: { count: pages.length },
                 })}
@@ -307,7 +287,8 @@ const RightSidebar: React.FC<{
                   onClick={handleAddPage}
                   disabled={!isConnected}
                   data-testid="add-page-button"
-                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors text-blue-600 dark:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-1 hover:bg-[rgba(87,84,91,0.06)] rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ color: '#3c323e' }}
                   title={t('menu.addPage')}
                 >
                   <Plus className="w-5 h-5" />
@@ -337,12 +318,13 @@ const RightSidebar: React.FC<{
             </SortableContext>
 
             {pages.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8" style={{ color: '#655d67' }}>
                 {t('sidebar.pages.noPages')}
                 {permissions.canAddPages() && (
                   <button
                     onClick={handleAddPage}
-                    className="mt-2 text-blue-600 dark:text-blue-400 text-sm font-medium hover:underline"
+                    className="mt-2 text-sm font-medium hover:underline"
+                    style={{ color: '#3c323e' }}
                   >
                     Create your first page
                   </button>
@@ -442,17 +424,29 @@ const FieldCard: React.FC<{
     <div
       onClick={onClick}
       className={`
-        p-4 bg-white dark:bg-gray-800 border rounded-lg transition-all duration-200 group
+        p-4 bg-white dark:bg-card rounded-lg transition-all duration-200 group
         ${
           isDragging
-            ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-950/30 opacity-50 shadow-lg'
+            ? 'opacity-50 shadow-lg'
             : isRecentlyDropped
-              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/50 ring-2 ring-blue-500 animate-pulse shadow-lg'
+              ? 'animate-pulse shadow-lg'
               : isSelected
-                ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/50 ring-2 ring-blue-500/20 shadow-md'
-                : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm cursor-pointer'
+                ? 'shadow-sm'
+                : 'cursor-pointer hover:shadow-sm'
         }
       `}
+      style={{
+        border: isDragging
+          ? '1px solid rgba(81,76,84,0.30)'
+          : isRecentlyDropped
+            ? '1px solid #3c323e'
+            : isSelected
+              ? '1px solid #3c323e'
+              : '1px solid rgba(81,76,84,0.10)',
+        boxShadow: isSelected
+          ? '0 0 0 3px rgba(60,50,62,0.10)'
+          : undefined,
+      }}
       data-testid={`draggable-field-${field.id}`}
     >
       {/* Compact view when any drag is active */}
@@ -462,7 +456,7 @@ const FieldCard: React.FC<{
           {dragHandleProps && (
             <div
               {...dragHandleProps}
-              className="flex-shrink-0 p-1 -ml-2 cursor-grab hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+              className="flex-shrink-0 p-1 -ml-2 cursor-grab rounded transition-colors hover:bg-[rgba(87,84,91,0.06)]"
               title="Drag to reorder"
               onClick={(e) => e.stopPropagation()}
             >
@@ -479,7 +473,7 @@ const FieldCard: React.FC<{
 
           {/* Field info */}
           <div className="flex-1 min-w-0 max-w-[280px]">
-            <div className="text-sm font-medium text-gray-900 dark:text-white truncate flex items-center gap-1">
+            <div className="text-sm font-medium truncate flex items-center gap-1" style={{ color: '#3c323e' }}>
               <span className="truncate">{label}</span>
               {/* Required indicator - red asterisk */}
               {'validation' in field &&
@@ -492,7 +486,7 @@ const FieldCard: React.FC<{
                   </span>
                 )}
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
+            <div className="text-xs" style={{ color: '#655d67' }}>
               {typeConfig.label}
             </div>
           </div>
@@ -505,7 +499,7 @@ const FieldCard: React.FC<{
             {dragHandleProps && (
               <div
                 {...dragHandleProps}
-                className="flex-shrink-0 p-1 -ml-2 cursor-grab hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                className="flex-shrink-0 p-1 -ml-2 cursor-grab rounded transition-colors hover:bg-[rgba(87,84,91,0.06)]"
                 title="Drag to reorder"
                 onClick={(e) => e.stopPropagation()}
               >
@@ -522,7 +516,7 @@ const FieldCard: React.FC<{
 
             {/* Field info */}
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-gray-900 dark:text-white truncate flex items-center gap-1">
+              <div className="text-sm font-medium truncate flex items-center gap-1" style={{ color: '#3c323e' }}>
                 <span className="truncate">{label}</span>
                 {/* Required indicator - red asterisk */}
                 {'validation' in field &&
@@ -543,7 +537,7 @@ const FieldCard: React.FC<{
 
           {/* Field Preview */}
           <div className="pl-9 pr-2" data-testid={`field-content-${index + 1}`}>
-            <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-md border border-gray-200 dark:border-gray-700">
+            <div className="p-3 rounded-md" style={{ backgroundColor: 'rgba(81,76,84,0.03)', border: '1px solid rgba(81,76,84,0.08)' }}>
               <FieldPreview
                 field={field}
                 disabled={true}
@@ -558,7 +552,7 @@ const FieldCard: React.FC<{
               {onClick && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onClick(); }}
-                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all"
+                  className="p-1.5 rounded-md transition-all hover:bg-[rgba(87,84,91,0.06)]" style={{ color: '#655d67' }}
                   title="Field settings"
                   data-testid={`field-settings-button-${index + 1}`}
                 >
@@ -571,7 +565,7 @@ const FieldCard: React.FC<{
                     e.stopPropagation();
                     onMoveUp();
                   }}
-                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all"
+                  className="p-1.5 rounded-md transition-all hover:bg-[rgba(87,84,91,0.06)]" style={{ color: '#655d67' }}
                   title="Move Up"
                 >
                   <ArrowUp className="w-4 h-4" />
@@ -584,7 +578,7 @@ const FieldCard: React.FC<{
                     e.stopPropagation();
                     onMoveDown();
                   }}
-                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all"
+                  className="p-1.5 rounded-md transition-all hover:bg-[rgba(87,84,91,0.06)]" style={{ color: '#655d67' }}
                   title="Move Down"
                 >
                   <ArrowDown className="w-4 h-4" />
@@ -597,7 +591,7 @@ const FieldCard: React.FC<{
                     e.stopPropagation();
                     onDuplicate();
                   }}
-                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all"
+                  className="p-1.5 rounded-md transition-all hover:bg-[rgba(87,84,91,0.06)]" style={{ color: '#655d67' }}
                   title="Duplicate Field"
                 >
                   <Copy className="w-4 h-4" />
@@ -612,7 +606,7 @@ const FieldCard: React.FC<{
                   triggerElement={
                     <button
                       onClick={(e) => e.stopPropagation()}
-                      className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all"
+                      className="p-1.5 rounded-md transition-all hover:bg-[rgba(87,84,91,0.06)]" style={{ color: '#655d67' }}
                       title="Move/Copy to another page"
                     >
                       <ArrowUp className="w-4 h-4 rotate-90" />
