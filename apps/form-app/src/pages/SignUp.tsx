@@ -1,23 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useMutation, useApolloClient } from '@apollo/client';
-import {
-  Button,
-  Input,
-  Label,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  TypographyH2,
-  TypographyP,
-  TypographySmall,
-  OTPInput,
-} from '@dculus/ui';
+import { Input, Label, OTPInput } from '@dculus/ui';
+import { FileText } from 'lucide-react';
 import { slugify } from '@dculus/utils';
 import { authClient, signUp, emailOtp, signIn, organization } from '../lib/auth-client';
-import { ArrowLeft, Mail, Timer } from 'lucide-react';
+import { ArrowLeft, Timer } from 'lucide-react';
 import { INITIALIZE_ORGANIZATION_SUBSCRIPTION } from '../graphql/subscription';
 import { useTranslation } from '../hooks/useTranslation';
 
@@ -331,253 +319,157 @@ export const SignUp = () => {
         : t('descriptions.form')
       : t('descriptions.verify', { values: { email: formData.email } });
 
+  /* helper for inline form fields */
+  const Field = ({ id, label, error, children }: { id: string; label: string; error?: string; children: React.ReactNode }) => (
+    <div>
+      <Label htmlFor={id} className="text-xs font-medium block mb-1.5" style={{ color: '#4c414e' }}>{label}</Label>
+      {children}
+      {error && <p className="text-xs mt-1" style={{ color: '#ce5d55' }}>{error}</p>}
+    </div>
+  );
+
   return (
-    <div className="container relative h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
-      <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-600 to-blue-600" />
-        <div className="relative z-20 flex items-center text-lg font-medium">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="mr-2 h-6 w-6"
-          >
-            <path d="m8 3 4 8 5-5v11H6V6l2-3z" />
-            <path d="M2 3h6" />
-            <path d="M6 3v5" />
-          </svg>
-          {t('hero.productName')}
-        </div>
-        <div className="relative z-20 mt-auto">
-          <div className="mt-6 border-l-2 pl-6 italic">
-            <TypographyP>
-              &ldquo;{t('hero.tagline')}&rdquo;
-            </TypographyP>
-            <footer className="text-sm">{t('hero.attribution')}</footer>
+    <div className="h-screen flex overflow-hidden">
+      {/* ── Left: dark aubergine brand panel ── */}
+      <div className="hidden lg:flex lg:flex-col lg:w-[480px] xl:w-[560px] shrink-0 p-10 justify-between" style={{ backgroundColor: '#2a222b' }}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#3c323e' }}>
+            <FileText className="w-4 h-4 text-white" />
           </div>
+          <span className="text-white font-semibold text-lg">{t('hero.productName')}</span>
         </div>
+        <div className="space-y-4">
+          <h2 className="text-white text-3xl font-light leading-tight">{t('hero.tagline')}</h2>
+          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>{t('hero.attribution')}</p>
+        </div>
+        <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>© {new Date().getFullYear()} Dculus Forms</p>
       </div>
-      <div className="lg:p-8">
-        <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-          <div className="flex flex-col space-y-2 text-center">
-            <TypographyH2>{heading}</TypographyH2>
-            <TypographySmall className="text-muted-foreground">
-              {description}
-            </TypographySmall>
-          </div>
 
-          <Card>
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-xl flex items-center gap-2">
-                {step === 'verify' && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleBackToForm}
-                    className="p-1 h-auto"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                  </Button>
-                )}
-                <Mail className="w-5 h-5" />
-                {step === 'form' ? t('card.title.form') : t('card.title.verify')}
-              </CardTitle>
-              <CardDescription>
-                {step === 'form'
-                  ? t('card.description.form')
-                  : t('card.description.verify')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {step === 'form' ? (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">{t('form.fields.name.label')}</Label>
-                    <Input
-                      id="name"
-                      name="name"
-                      type="text"
-                      placeholder={t('form.fields.name.placeholder')}
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      disabled={isLoading}
-                      className={errors.name ? 'border-red-500' : ''}
-                    />
-                    {errors.name && (
-                      <TypographySmall className="text-red-500">
-                        {errors.name}
-                      </TypographySmall>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email">{t('form.fields.email.label')}</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder={t('form.fields.email.placeholder')}
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      disabled={isLoading || !!pendingInvitationId}
-                      className={errors.email ? 'border-red-500' : ''}
-                    />
-                    {errors.email && (
-                      <TypographySmall className="text-red-500">
-                        {errors.email}
-                      </TypographySmall>
-                    )}
-                    {pendingInvitationId && (
-                      <TypographySmall className="text-muted-foreground">
-                        {t('form.fields.email.invitationNotice')}
-                      </TypographySmall>
-                    )}
-                  </div>
-
-                  {/* Only show organization name field if not joining via invitation */}
-                  {!pendingInvitationId && (
-                    <div className="space-y-2">
-                      <Label htmlFor="organizationName">{t('form.fields.organizationName.label')}</Label>
-                      <Input
-                        id="organizationName"
-                        name="organizationName"
-                        type="text"
-                        placeholder={t('form.fields.organizationName.placeholder')}
-                        value={formData.organizationName}
-                        onChange={handleInputChange}
-                        disabled={isLoading}
-                        className={errors.organizationName ? 'border-red-500' : ''}
-                      />
-                      {errors.organizationName && (
-                        <TypographySmall className="text-red-500">
-                          {errors.organizationName}
-                        </TypographySmall>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <Label htmlFor="password">{t('form.fields.password.label')}</Label>
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      placeholder={t('form.fields.password.placeholder')}
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      disabled={isLoading}
-                      className={errors.password ? 'border-red-500' : ''}
-                    />
-                    {errors.password && (
-                      <TypographySmall className="text-red-500">
-                        {errors.password}
-                      </TypographySmall>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">{t('form.fields.confirmPassword.label')}</Label>
-                    <Input
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type="password"
-                      placeholder={t('form.fields.confirmPassword.placeholder')}
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      disabled={isLoading}
-                      className={errors.confirmPassword ? 'border-red-500' : ''}
-                    />
-                    {errors.confirmPassword && (
-                      <TypographySmall className="text-red-500">
-                        {errors.confirmPassword}
-                      </TypographySmall>
-                    )}
-                  </div>
-
-                  {errors.submit && (
-                    <TypographySmall className="text-red-500 text-center">
-                      {errors.submit}
-                    </TypographySmall>
-                  )}
-
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? t('form.actions.submitting') : t('form.actions.submit')}
-                  </Button>
-                </form>
-              ) : (
-                <form onSubmit={handleVerifyOTP} className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-center block">{t('verify.otpLabel')}</Label>
-                      <OTPInput
-                        value={otp}
-                        onChange={(value) => {
-                          setOtp(value);
-                          if (errors.otp) {
-                            setErrors(prev => ({ ...prev, otp: "" }));
-                          }
-                        }}
-                        disabled={isLoading}
-                        hasError={!!errors.otp}
-                      />
-                      {errors.otp && (
-                        <TypographySmall className="text-red-500 text-center">
-                          {errors.otp}
-                        </TypographySmall>
-                      )}
-                    </div>
-
-                    <div className="text-center">
-                      {countdown > 0 ? (
-                        <TypographySmall className="text-muted-foreground flex items-center justify-center gap-2">
-                          <Timer className="w-4 h-4" />
-                          {t('verify.countdown', { values: { seconds: countdown } })}
-                        </TypographySmall>
-                      ) : (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          onClick={handleResendOTP}
-                          disabled={isLoading}
-                          className="text-sm"
-                        >
-                          {t('verify.resend')}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  {errors.submit && (
-                    <TypographySmall className="text-red-500 text-center">
-                      {errors.submit}
-                    </TypographySmall>
-                  )}
-
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isLoading || otp.length !== 6}
-                  >
-                    {isLoading ? t('verify.actions.submitting') : t('verify.actions.submit')}
-                  </Button>
-                </form>
-              )}
-            </CardContent>
-          </Card>
-
-          <TypographySmall className="text-center">
+      {/* ── Right: clean white panel ── */}
+      <div className="flex-1 flex flex-col overflow-y-auto bg-white">
+        {/* Top nav */}
+        <div className="flex items-center justify-end px-8 py-5" style={{ borderBottom: '1px solid rgba(81,76,84,0.08)' }}>
+          <span className="text-sm" style={{ color: '#655d67' }}>
             {t('links.signInPrompt')}{' '}
-            <Link
-              to="/signin"
-              className="underline underline-offset-4 hover:text-primary"
+            <Link to="/signin" className="font-medium" style={{ color: '#3c323e' }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.textDecoration = 'underline'}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.textDecoration = 'none'}
             >
               {t('links.signIn')}
             </Link>
-          </TypographySmall>
+          </span>
+        </div>
+
+        {/* Form area */}
+        <div className="flex-1 flex items-center justify-center px-8 py-10">
+          <div className="w-full max-w-sm">
+
+            {/* Back button (verify step) */}
+            {step === 'verify' && (
+              <button onClick={handleBackToForm} className="flex items-center gap-1.5 text-xs mb-6 transition-colors" style={{ color: '#655d67' }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#3c323e'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#655d67'}
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Back
+              </button>
+            )}
+
+            <div className="mb-7">
+              <h1 className="text-2xl font-semibold mb-1.5" style={{ color: '#3c323e' }}>{heading}</h1>
+              <p className="text-sm" style={{ color: '#655d67' }}>{description}</p>
+            </div>
+
+            {step === 'form' ? (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <Field id="name" label={t('form.fields.name.label')} error={errors.name}>
+                  <Input id="name" name="name" type="text" placeholder={t('form.fields.name.placeholder')} value={formData.name} onChange={handleInputChange} disabled={isLoading} className={errors.name ? 'border-red-400' : ''} />
+                </Field>
+
+                <Field id="email" label={t('form.fields.email.label')} error={errors.email}>
+                  <Input id="email" name="email" type="email" placeholder={t('form.fields.email.placeholder')} value={formData.email} onChange={handleInputChange} disabled={isLoading || !!pendingInvitationId} className={errors.email ? 'border-red-400' : ''} />
+                  {pendingInvitationId && <p className="text-xs mt-1" style={{ color: '#655d67' }}>{t('form.fields.email.invitationNotice')}</p>}
+                </Field>
+
+                {!pendingInvitationId && (
+                  <Field id="organizationName" label={t('form.fields.organizationName.label')} error={errors.organizationName}>
+                    <Input id="organizationName" name="organizationName" type="text" placeholder={t('form.fields.organizationName.placeholder')} value={formData.organizationName} onChange={handleInputChange} disabled={isLoading} className={errors.organizationName ? 'border-red-400' : ''} />
+                  </Field>
+                )}
+
+                <Field id="password" label={t('form.fields.password.label')} error={errors.password}>
+                  <Input id="password" name="password" type="password" placeholder={t('form.fields.password.placeholder')} value={formData.password} onChange={handleInputChange} disabled={isLoading} className={errors.password ? 'border-red-400' : ''} />
+                </Field>
+
+                <Field id="confirmPassword" label={t('form.fields.confirmPassword.label')} error={errors.confirmPassword}>
+                  <Input id="confirmPassword" name="confirmPassword" type="password" placeholder={t('form.fields.confirmPassword.placeholder')} value={formData.confirmPassword} onChange={handleInputChange} disabled={isLoading} className={errors.confirmPassword ? 'border-red-400' : ''} />
+                </Field>
+
+                {errors.submit && (
+                  <p className="text-xs text-center py-2 px-3 rounded-lg" style={{ backgroundColor: 'rgba(206,93,85,0.06)', color: '#ce5d55', border: '1px solid rgba(206,93,85,0.14)' }}>
+                    {errors.submit}
+                  </p>
+                )}
+
+                <button type="submit" disabled={isLoading}
+                  className="w-full h-10 rounded-lg text-sm font-medium text-white transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+                  style={{ backgroundColor: '#3c323e' }}
+                  onMouseEnter={e => { if (!isLoading) (e.currentTarget as HTMLElement).style.backgroundColor = '#2e2530'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#3c323e'; }}
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      {t('form.actions.submitting')}
+                    </span>
+                  ) : t('form.actions.submit')}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyOTP} className="space-y-5">
+                <div>
+                  <Label className="text-xs font-medium block mb-3 text-center" style={{ color: '#4c414e' }}>
+                    {t('verify.otpLabel')}
+                  </Label>
+                  <OTPInput value={otp} onChange={(value) => { setOtp(value); if (errors.otp) setErrors(prev => ({ ...prev, otp: '' })); }} disabled={isLoading} hasError={!!errors.otp} />
+                  {errors.otp && <p className="text-xs mt-2 text-center" style={{ color: '#ce5d55' }}>{errors.otp}</p>}
+                </div>
+
+                <div className="text-center">
+                  {countdown > 0 ? (
+                    <span className="text-xs flex items-center justify-center gap-1.5" style={{ color: '#655d67' }}>
+                      <Timer className="w-3.5 h-3.5" />
+                      {t('verify.countdown', { values: { seconds: countdown } })}
+                    </span>
+                  ) : (
+                    <button type="button" onClick={handleResendOTP} disabled={isLoading} className="text-xs font-medium transition-colors" style={{ color: '#3c323e' }}>
+                      {t('verify.resend')}
+                    </button>
+                  )}
+                </div>
+
+                {errors.submit && (
+                  <p className="text-xs text-center py-2 px-3 rounded-lg" style={{ backgroundColor: 'rgba(206,93,85,0.06)', color: '#ce5d55', border: '1px solid rgba(206,93,85,0.14)' }}>
+                    {errors.submit}
+                  </p>
+                )}
+
+                <button type="submit" disabled={isLoading || otp.length !== 6}
+                  className="w-full h-10 rounded-lg text-sm font-medium text-white transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={{ backgroundColor: '#3c323e' }}
+                  onMouseEnter={e => { if (!isLoading && otp.length === 6) (e.currentTarget as HTMLElement).style.backgroundColor = '#2e2530'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#3c323e'; }}
+                >
+                  {isLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      {t('verify.actions.submitting')}
+                    </span>
+                  ) : t('verify.actions.submit')}
+                </button>
+              </form>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -1,235 +1,237 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Button, Input, Label, Card, CardContent, CardDescription, CardHeader, CardTitle, TypographyH2, TypographyP, TypographySmall } from "@dculus/ui";
+import { Input, Label } from "@dculus/ui";
 import { signIn, emailOtp } from "../lib/auth-client";
 import { useTranslation } from "../hooks/useTranslation";
+import { FileText, CheckCircle, BarChart3, Users } from "lucide-react";
+
+/* ── Left panel feature list ── */
+const FEATURES = [
+  { icon: FileText, text: "Build beautiful forms in minutes" },
+  { icon: BarChart3, text: "Real-time analytics and insights" },
+  { icon: Users, text: "Team collaboration built in" },
+  { icon: CheckCircle, text: "Responses collected securely" },
+];
 
 export const SignIn = () => {
   const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [successMessage, setSuccessMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState("");
   const navigate = useNavigate();
-  const { t } = useTranslation('signIn');
+  const { t } = useTranslation("signIn");
 
-  // Check for success messages from URL params
   React.useEffect(() => {
-    const message = searchParams.get('message');
-    if (message === 'password-reset-success') {
-      setSuccessMessage(t('messages.passwordResetSuccess'));
+    const message = searchParams.get("message");
+    if (message === "password-reset-success") {
+      setSuccessMessage(t("messages.passwordResetSuccess"));
     }
   }, [searchParams, t]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: "" }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-
-    if (!formData.email.trim()) {
-      newErrors.email = t('form.fields.email.errors.required');
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = t('form.fields.email.errors.invalid');
-    }
-
-    if (!formData.password) {
-      newErrors.password = t('form.fields.password.errors.required');
-    }
-
+    if (!formData.email.trim()) newErrors.email = t("form.fields.email.errors.required");
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = t("form.fields.email.errors.invalid");
+    if (!formData.password) newErrors.password = t("form.fields.password.errors.required");
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
     setIsLoading(true);
-    
     try {
       const response = await signIn.email({
         email: formData.email,
         password: formData.password,
-        callbackURL: "/", // Redirect after successful signin
+        callbackURL: "/",
       });
-
       if (response.error) {
-        // Check if the error is related to email verification
-        const errorMessage = response.error.message?.toLowerCase() || '';
-        if (errorMessage.includes('email') && (errorMessage.includes('verified') || errorMessage.includes('verification'))) {
-          // Send a new verification OTP
-          try {
-            await emailOtp.sendVerificationOtp({
-              email: formData.email,
-              type: 'email-verification',
-            });
-          } catch (otpError) {
-            console.error('Failed to send OTP:', otpError);
-          }
-          
-          // Redirect to email verification page with credentials
-          navigate('/verify-email', {
-            state: {
-              email: formData.email,
-              password: formData.password,
-              fromSignIn: true,
-            },
-          });
+        const msg = response.error.message?.toLowerCase() || "";
+        if (msg.includes("email") && (msg.includes("verified") || msg.includes("verification"))) {
+          try { await emailOtp.sendVerificationOtp({ email: formData.email, type: "email-verification" }); } catch {}
+          navigate("/verify-email", { state: { email: formData.email, password: formData.password, fromSignIn: true } });
         } else {
-          setErrors({ 
-            submit: response.error.message || t('messages.invalidCredentials') 
-          });
+          setErrors({ submit: response.error.message || t("messages.invalidCredentials") });
         }
       } else {
-        // Successful signin, redirect to dashboard
         navigate("/");
       }
-    } catch (error) {
-      console.error("Signin error:", error);
-      setErrors({ 
-        submit: t('messages.unexpectedError') 
-      });
+    } catch {
+      setErrors({ submit: t("messages.unexpectedError") });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="container relative h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
-      <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-600 to-blue-600" />
-        <div className="relative z-20 flex items-center text-lg font-medium">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="mr-2 h-6 w-6"
-          >
-            <path d="m8 3 4 8 5-5v11H6V6l2-3z" />
-            <path d="M2 3h6" />
-            <path d="M6 3v5" />
-          </svg>
-          {t('hero.productName')}
-        </div>
-        <div className="relative z-20 mt-auto">
-          <div className="mt-6 border-l-2 pl-6 italic">
-            <TypographyP>
-              &ldquo;{t('hero.tagline')}&rdquo;
-            </TypographyP>
-            <footer className="text-sm">{t('hero.attribution')}</footer>
+    <div className="h-screen flex overflow-hidden">
+      {/* ── Left: dark aubergine brand panel ── */}
+      <div
+        className="hidden lg:flex lg:flex-col lg:w-[480px] xl:w-[560px] shrink-0 p-10 justify-between"
+        style={{ backgroundColor: '#2a222b' }}
+      >
+        {/* Logo */}
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#3c323e' }}>
+            <FileText className="w-4 h-4 text-white" />
           </div>
+          <span className="text-white font-semibold text-lg">{t("hero.productName")}</span>
         </div>
+
+        {/* Features */}
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-white text-3xl font-light leading-tight mb-3">
+              {t("hero.tagline")}
+            </h2>
+            <p className="text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>
+              {t("hero.attribution")}
+            </p>
+          </div>
+          <ul className="space-y-4">
+            {FEATURES.map(({ icon: Icon, text }) => (
+              <li key={text} className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
+                  <Icon className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.70)' }} />
+                </div>
+                <span className="text-sm" style={{ color: 'rgba(255,255,255,0.70)' }}>{text}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
+          © {new Date().getFullYear()} Dculus Forms
+        </p>
       </div>
-      <div className="lg:p-8">
-        <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-          <div className="flex flex-col space-y-2 text-center">
-            <TypographyH2>{t('meta.heading')}</TypographyH2>
-            <TypographySmall className="text-muted-foreground">
-              {t('meta.subheading')}
-            </TypographySmall>
-          </div>
-          
-          <Card>
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-xl">{t('form.title')}</CardTitle>
-              <CardDescription>
-                {t('form.description')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">{t('form.fields.email.label')}</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder={t('form.fields.email.placeholder')}
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    disabled={isLoading}
-                    className={errors.email ? "border-red-500" : ""}
-                  />
-                  {errors.email && (
-                    <TypographySmall className="text-red-500">{errors.email}</TypographySmall>
-                  )}
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password">{t('form.fields.password.label')}</Label>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder={t('form.fields.password.placeholder')}
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    disabled={isLoading}
-                    className={errors.password ? "border-red-500" : ""}
-                  />
-                  {errors.password && (
-                    <TypographySmall className="text-red-500">{errors.password}</TypographySmall>
-                  )}
-                </div>
+      {/* ── Right: clean white sign-in panel ── */}
+      <div className="flex-1 flex flex-col overflow-y-auto bg-white">
+        {/* Top nav */}
+        <div className="flex items-center justify-end px-8 py-5" style={{ borderBottom: '1px solid rgba(81,76,84,0.08)' }}>
+          <span className="text-sm" style={{ color: '#655d67' }}>
+            {t("links.signUpPrompt")}{" "}
+            <Link to="/signup" className="font-medium transition-colors" style={{ color: '#3c323e' }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.textDecoration = 'underline'}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.textDecoration = 'none'}
+            >
+              {t("links.signUp")}
+            </Link>
+          </span>
+        </div>
 
-                {successMessage && (
-                  <TypographySmall className="text-primary text-center bg-primary/5 p-3 rounded-md border border-primary/20">
-                    {successMessage}
-                  </TypographySmall>
-                )}
+        {/* Form area */}
+        <div className="flex-1 flex items-center justify-center px-8 py-12">
+          <div className="w-full max-w-sm">
+            {/* Heading */}
+            <div className="mb-8">
+              <h1 className="text-2xl font-semibold mb-1.5" style={{ color: '#3c323e' }}>
+                {t("meta.heading")}
+              </h1>
+              <p className="text-sm" style={{ color: '#655d67' }}>
+                {t("meta.subheading")}
+              </p>
+            </div>
 
-                {errors.submit && (
-                  <TypographySmall className="text-red-500 text-center">
-                    {errors.submit}
-                  </TypographySmall>
-                )}
+            {/* Success banner */}
+            {successMessage && (
+              <div className="mb-5 p-3 rounded-xl text-xs text-center" style={{ backgroundColor: '#f4faf8', color: '#177767', border: '1px solid rgba(23,119,103,0.16)' }}>
+                {successMessage}
+              </div>
+            )}
 
-                <Button
-                  type="submit"
-                  className="w-full"
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="email" className="text-xs font-medium block mb-1.5" style={{ color: '#4c414e' }}>
+                  {t("form.fields.email.label")}
+                </Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder={t("form.fields.email.placeholder")}
+                  value={formData.email}
+                  onChange={handleInputChange}
                   disabled={isLoading}
-                >
-                  {isLoading ? t('form.actions.submitting') : t('form.actions.submit')}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+                  className={errors.email ? "border-red-400 focus-visible:border-red-400" : ""}
+                />
+                {errors.email && (
+                  <p className="text-xs mt-1" style={{ color: '#ce5d55' }}>{errors.email}</p>
+                )}
+              </div>
 
-          <TypographySmall className="text-center">
-            <Link
-              to="/forgot-password"
-              className="underline underline-offset-4 hover:text-primary"
-            >
-              {t('links.forgotPassword')}
-            </Link>
-          </TypographySmall>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <Label htmlFor="password" className="text-xs font-medium" style={{ color: '#4c414e' }}>
+                    {t("form.fields.password.label")}
+                  </Label>
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs transition-colors"
+                    style={{ color: '#655d67' }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#3c323e'}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#655d67'}
+                  >
+                    {t("links.forgotPassword")}
+                  </Link>
+                </div>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder={t("form.fields.password.placeholder")}
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  disabled={isLoading}
+                  className={errors.password ? "border-red-400 focus-visible:border-red-400" : ""}
+                />
+                {errors.password && (
+                  <p className="text-xs mt-1" style={{ color: '#ce5d55' }}>{errors.password}</p>
+                )}
+              </div>
 
-          <TypographySmall className="text-center">
-            {t('links.signUpPrompt')}{" "}
-            <Link
-              to="/signup"
-              className="underline underline-offset-4 hover:text-primary"
-            >
-              {t('links.signUp')}
-            </Link>
-          </TypographySmall>
+              {errors.submit && (
+                <p className="text-xs text-center py-2 px-3 rounded-lg" style={{ backgroundColor: 'rgba(206,93,85,0.06)', color: '#ce5d55', border: '1px solid rgba(206,93,85,0.14)' }}>
+                  {errors.submit}
+                </p>
+              )}
+
+              {/* Submit button — Typeform dark aubergine */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-10 rounded-lg text-sm font-medium text-white transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
+                style={{ backgroundColor: '#3c323e' }}
+                onMouseEnter={e => { if (!isLoading) (e.currentTarget as HTMLElement).style.backgroundColor = '#2e2530'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#3c323e'; }}
+              >
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    {t("form.actions.submitting")}
+                  </span>
+                ) : t("form.actions.submit")}
+              </button>
+            </form>
+
+            {/* Sign up link (mobile only) */}
+            <p className="lg:hidden text-xs text-center mt-6" style={{ color: '#655d67' }}>
+              {t("links.signUpPrompt")}{" "}
+              <Link to="/signup" className="font-medium" style={{ color: '#3c323e' }}>
+                {t("links.signUp")}
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { useTranslation } from '../hooks/useTranslation';
-import { Card, LoadingSpinner, Button } from '@dculus/ui';
+import { LoadingSpinner } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { GET_FORM_PLUGINS } from '../graphql/plugins';
@@ -12,54 +12,32 @@ import { PluginCard } from '../components/plugins/shared/PluginCard';
 import { PluginDeliveryLog } from '../components/plugins/shared/PluginDeliveryLog';
 import { PluginType } from '../components/plugins/shared/PluginGallery';
 
-/**
- * Plugins Page - displays and manages plugins for form enhancements.
- */
 const Plugins: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation('plugins');
 
-  // Dialog states
   const [isAddPluginDialogOpen, setIsAddPluginDialogOpen] = useState(false);
-  const [deliveryLogPlugin, setDeliveryLogPlugin] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
+  const [deliveryLogPlugin, setDeliveryLogPlugin] = useState<{ id: string; name: string } | null>(null);
 
   const { data: formData, loading: formLoading, error: formError } = useQuery(GET_FORM_BY_ID, {
     variables: { id: formId },
     skip: !formId,
   });
 
-  const { data: pluginsData, loading: pluginsLoading, refetch: refetchPlugins } = useQuery(
-    GET_FORM_PLUGINS,
-    {
-      variables: { formId },
-      skip: !formId,
-    }
-  );
+  const { data: pluginsData, loading: pluginsLoading, refetch: refetchPlugins } = useQuery(GET_FORM_PLUGINS, {
+    variables: { formId },
+    skip: !formId,
+  });
 
   const handlePluginSelected = (pluginType: PluginType) => {
-    // Close the gallery dialog
     setIsAddPluginDialogOpen(false);
-
-    // Navigate to configuration page
     navigate(`/dashboard/form/${formId}/plugins/configure/${pluginType.id}`);
   };
 
-  const handleEditPlugin = (plugin: any) => {
-    // Navigate to edit page
-    navigate(`/dashboard/form/${formId}/plugins/${plugin.id}/edit`);
-  };
-
-  const handleViewDeliveries = (plugin: any) => {
-    setDeliveryLogPlugin({ id: plugin.id, name: plugin.name });
-  };
-
-  const handleCloseDeliveryLog = () => {
-    setDeliveryLogPlugin(null);
-  };
+  const handleEditPlugin = (plugin: any) => navigate(`/dashboard/form/${formId}/plugins/${plugin.id}/edit`);
+  const handleViewDeliveries = (plugin: any) => setDeliveryLogPlugin({ id: plugin.id, name: plugin.name });
+  const handleCloseDeliveryLog = () => setDeliveryLogPlugin(null);
 
   if (formLoading) {
     return (
@@ -68,12 +46,10 @@ const Plugins: React.FC = () => {
         breadcrumbs={[
           { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
           { label: t('layout.breadcrumbs.formDashboard'), href: `/dashboard/form/${formId}` },
-          { label: t('layout.breadcrumbs.plugins'), href: `/dashboard/form/${formId}/plugins` },
+          { label: t('layout.breadcrumbs.plugins') },
         ]}
       >
-        <div className="flex justify-center items-center min-h-96">
-          <LoadingSpinner />
-        </div>
+        <div className="flex justify-center items-center min-h-96"><LoadingSpinner /></div>
       </MainLayout>
     );
   }
@@ -85,17 +61,15 @@ const Plugins: React.FC = () => {
         breadcrumbs={[
           { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
           { label: t('layout.breadcrumbs.formDashboard'), href: `/dashboard/form/${formId}` },
-          { label: t('layout.breadcrumbs.plugins'), href: `/dashboard/form/${formId}/plugins` },
+          { label: t('layout.breadcrumbs.plugins') },
         ]}
       >
-        <div className="max-w-4xl mx-auto px-4 py-12">
-          <Card className="p-8 text-center">
-            <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-            <h3 className="mb-2 text-xl font-semibold">{t('errors.formNotFound.title')}</h3>
-            <p className="text-slate-600">
-              {t('errors.formNotFound.description')}
-            </p>
-          </Card>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}>
+            <AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />
+          </div>
+          <h3 className="text-sm font-semibold mb-1" style={{ color: '#3c323e' }}>{t('errors.formNotFound.title')}</h3>
+          <p className="text-xs" style={{ color: '#655d67' }}>{t('errors.formNotFound.description')}</p>
         </div>
       </MainLayout>
     );
@@ -110,90 +84,95 @@ const Plugins: React.FC = () => {
       breadcrumbs={[
         { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
         { label: form.title, href: `/dashboard/form/${formId}` },
-        { label: t('layout.breadcrumbs.plugins'), href: `/dashboard/form/${formId}/plugins` },
+        { label: t('layout.breadcrumbs.plugins') },
       ]}
     >
-      {/* Container with consistent styling */}
-      <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="space-y-5">
+        {/* ── Typeform-style page header ── */}
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{t('header.title')}</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-sm font-semibold" style={{ color: '#3c323e' }}>{t('header.title')}</h1>
+            <p className="text-xs mt-0.5" style={{ color: '#655d67' }}>
               {t('header.description', { values: { formTitle: form.title } })}
             </p>
           </div>
 
-          {/* Add Integration Button */}
-          <Button onClick={() => setIsAddPluginDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
+          <button
+            onClick={() => setIsAddPluginDialogOpen(true)}
+            className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-white transition-all duration-150"
+            style={{ backgroundColor: '#3c323e' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#2e2530'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#3c323e'; }}
+          >
+            <Plus className="h-3.5 w-3.5" />
             {t('buttons.addIntegration')}
-          </Button>
+          </button>
         </div>
 
-        {/* Plugins List */}
+        {/* ── Content ── */}
         {pluginsLoading ? (
-          <div className="flex justify-center items-center py-12">
-            <LoadingSpinner />
-          </div>
+          <div className="flex justify-center items-center py-16"><LoadingSpinner /></div>
         ) : plugins.length === 0 ? (
-          /* Empty State */
-          <Card className="p-12">
-            <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-orange-100 mb-4">
-                <Plug className="h-8 w-8 text-orange-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {t('emptyState.title')}
-              </h3>
-              <p className="text-gray-600 max-w-2xl mx-auto mb-6">
-                {t('emptyState.description')}
-              </p>
-              <Button onClick={() => setIsAddPluginDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                {t('buttons.browseIntegrations')}
-              </Button>
+          /* Empty state — Typeform-style */
+          <div
+            className="rounded-xl p-10 text-center bg-white"
+            style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}
+          >
+            <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: '#fbe19d' }}>
+              <Plug className="h-7 w-7" style={{ color: '#8b6a18' }} />
             </div>
-          </Card>
+            <h3 className="text-sm font-semibold mb-1" style={{ color: '#3c323e' }}>
+              {t('emptyState.title')}
+            </h3>
+            <p className="text-xs max-w-sm mx-auto mb-5" style={{ color: '#655d67' }}>
+              {t('emptyState.description')}
+            </p>
+            <button
+              onClick={() => setIsAddPluginDialogOpen(true)}
+              className="inline-flex items-center gap-1.5 h-8 px-4 rounded-lg text-xs font-medium text-white"
+              style={{ backgroundColor: '#3c323e' }}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              {t('buttons.browseIntegrations')}
+            </button>
+          </div>
         ) : (
-          /* Plugin Cards */
+          /* Plugin list — Typeform integration list style */
           <div>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-xs font-medium" style={{ color: '#655d67' }}>
                 {t('activeIntegrations.title', { values: { count: plugins.length } })}
               </h2>
             </div>
-            <div className="space-y-4">
-              {plugins.map((plugin: any) => (
-                <PluginCard
-                  key={plugin.id}
-                  plugin={plugin}
-                  onEdit={() => handleEditPlugin(plugin)}
-                  onViewDeliveries={() => handleViewDeliveries(plugin)}
-                  onDeleted={refetchPlugins}
-                />
+            <div
+              className="rounded-xl bg-white overflow-hidden"
+              style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}
+            >
+              {plugins.map((plugin: any, i: number) => (
+                <div key={plugin.id} style={{ borderTop: i > 0 ? '1px solid rgba(81,76,84,0.08)' : undefined }}>
+                  <PluginCard
+                    plugin={plugin}
+                    onEdit={() => handleEditPlugin(plugin)}
+                    onViewDeliveries={() => handleViewDeliveries(plugin)}
+                    onDeleted={refetchPlugins}
+                  />
+                </div>
               ))}
             </div>
           </div>
         )}
       </div>
 
-      {/* Add Plugin Gallery Dialog */}
       <AddPluginDialog
         open={isAddPluginDialogOpen}
         onOpenChange={setIsAddPluginDialogOpen}
         onPluginSelected={handlePluginSelected}
       />
 
-      {/* Delivery Log Dialog */}
       {deliveryLogPlugin && (
         <PluginDeliveryLog
           open={true}
-          onOpenChange={(open) => {
-            if (!open) {
-              handleCloseDeliveryLog();
-            }
-          }}
+          onOpenChange={(open) => { if (!open) handleCloseDeliveryLog(); }}
           pluginId={deliveryLogPlugin.id}
           pluginName={deliveryLogPlugin.name}
         />

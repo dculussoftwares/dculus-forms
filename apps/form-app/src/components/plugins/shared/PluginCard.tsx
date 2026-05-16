@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { useMutation } from '@apollo/client';
 import {
-  Card,
-  Button,
-  Badge,
   toastSuccess,
   toastError,
   DropdownMenu,
@@ -140,31 +137,17 @@ export const PluginCard: React.FC<PluginCardProps> = ({
     }
   };
 
-  const getPluginIconColor = () => {
+  /* Typeform field-icon palette for plugin types */
+  const getPluginIconStyle = () => {
     switch (plugin.type) {
-      case 'webhook':
-        return 'text-orange-600';
-      case 'email':
-        return 'text-blue-600';
-      case 'slack':
-        return 'text-purple-600';
-      default:
-        return 'text-orange-600';
+      case 'webhook':      return { bg: '#fbe19d', color: '#8b6a18' };   /* yellow */
+      case 'email':        return { bg: '#f8cdd8', color: '#3c323e' };   /* salmon */
+      case 'quiz-grading': return { bg: '#ddd6fa', color: '#5c2e6b' };   /* lavender */
+      case 'slack':        return { bg: '#c4e3ba', color: '#2d6236' };   /* green */
+      default:             return { bg: '#dedcde', color: '#4c414e' };   /* gray */
     }
   };
-
-  const getPluginIconBgColor = () => {
-    switch (plugin.type) {
-      case 'webhook':
-        return 'bg-orange-100';
-      case 'email':
-        return 'bg-blue-100';
-      case 'slack':
-        return 'bg-purple-100';
-      default:
-        return 'bg-orange-100';
-    }
-  };
+  const iconStyle = getPluginIconStyle();
 
   const getPluginTypeLabel = () => {
     switch (plugin.type) {
@@ -180,67 +163,63 @@ export const PluginCard: React.FC<PluginCardProps> = ({
   };
 
   return (
-    <Card className="p-6">
-      <div className="flex items-start justify-between">
-        {/* Left Section - Icon and Info */}
-        <div className="flex items-start gap-4 flex-1">
-          <div className={`p-2 rounded-lg ${getPluginIconBgColor()} ${getPluginIconColor()}`}>
-            {getPluginIcon()}
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold text-gray-900 truncate">
-                {plugin.name}
-              </h3>
-              <Badge variant={plugin.enabled ? 'default' : 'secondary'}>
-                {plugin.enabled ? t('status.enabled') : t('status.disabled')}
-              </Badge>
-            </div>
-
-            <p className="text-sm text-gray-500 mb-3">
-              {getPluginTypeLabel()} • {plugin.events.length} {t('eventsCount', { values: { count: plugin.events.length } })}
-            </p>
-
-            {/* Event Badges */}
-            <div className="flex flex-wrap gap-2 mb-3">
-              {plugin.events.map((event) => (
-                <Badge key={event} variant="outline" className="text-xs">
-                  {event}
-                </Badge>
-              ))}
-            </div>
-
-            {/* Config Summary */}
-            {plugin.type === 'webhook' && plugin.config?.url && (
-              <div className="text-xs text-gray-500 font-mono bg-gray-50 px-2 py-1 rounded truncate max-w-md">
-                {plugin.config.url}
-              </div>
-            )}
-          </div>
+    <>
+      {/* ── Typeform-style horizontal integration row ── */}
+      <div className="flex items-center gap-4 px-5 py-4">
+        {/* Field-icon style icon */}
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: iconStyle.bg }}>
+          <span style={{ color: iconStyle.color }}>{getPluginIcon()}</span>
         </div>
 
-        {/* Right Section - Controls */}
-        <div className="flex items-center gap-3">
-          {/* Actions Menu */}
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="text-sm font-medium truncate" style={{ color: '#3c323e' }}>{plugin.name}</span>
+            <span
+              className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+              style={plugin.enabled
+                ? { backgroundColor: 'rgba(23,119,103,0.08)', color: '#177767', border: '1px solid rgba(23,119,103,0.16)' }
+                : { backgroundColor: '#f7f7f8', color: '#655d67', border: '1px solid rgba(81,76,84,0.12)' }
+              }
+            >
+              {plugin.enabled ? t('status.enabled') : t('status.disabled')}
+            </span>
+          </div>
+          <p className="text-xs" style={{ color: '#655d67' }}>
+            {getPluginTypeLabel()} · {plugin.events.length} {t('eventsCount', { values: { count: plugin.events.length } })}
+          </p>
+          {/* Event badges */}
+          {plugin.events.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {plugin.events.map((event: string) => (
+                <span key={event} className="px-2 py-0.5 rounded-md text-[10px]" style={{ backgroundColor: '#f7f7f8', color: '#655d67', border: '1px solid rgba(81,76,84,0.10)' }}>
+                  {event}
+                </span>
+              ))}
+            </div>
+          )}
+          {/* Webhook URL */}
+          {plugin.type === 'webhook' && plugin.config?.url && (
+            <p className="text-[10px] font-mono mt-1.5 truncate max-w-xs" style={{ color: '#655d67' }}>{plugin.config.url}</p>
+          )}
+        </div>
+
+        {/* Actions menu */}
+        <div className="shrink-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <button
+                className="h-8 w-8 flex items-center justify-center rounded-lg transition-colors"
+                style={{ color: '#655d67' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; (e.currentTarget as HTMLElement).style.color = '#3c323e'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
+              >
                 <MoreVertical className="h-4 w-4" />
-              </Button>
+              </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem
-                onClick={() => handleToggleEnabled(!plugin.enabled)}
-                disabled={isTogglingEnabled}
-              >
-                {isTogglingEnabled ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : plugin.enabled ? (
-                  <PowerOff className="mr-2 h-4 w-4" />
-                ) : (
-                  <Power className="mr-2 h-4 w-4" />
-                )}
+              <DropdownMenuItem onClick={() => handleToggleEnabled(!plugin.enabled)} disabled={isTogglingEnabled}>
+                {isTogglingEnabled ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : plugin.enabled ? <PowerOff className="mr-2 h-4 w-4" /> : <Power className="mr-2 h-4 w-4" />}
                 {plugin.enabled ? t('actions.disable') : t('actions.enable')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleTest} disabled={isTesting}>
@@ -300,6 +279,6 @@ export const PluginCard: React.FC<PluginCardProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Card>
+    </>
   );
 };
