@@ -13,6 +13,7 @@ import {
   toastError,
 } from '@dculus/ui';
 import { Shield, Save, Calendar, Users } from 'lucide-react';
+import { parseLocalDate, formatLocalDate } from '../../utils/dateHelpers';
 import type { SubmissionLimitsSettings as SubmissionLimitsSettingsType } from '@dculus/types';
 import { useTranslation } from '../../hooks/useTranslation';
 
@@ -62,8 +63,8 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
       const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
       onUpdateTimeWindow(
         true, 
-        now.toISOString().split('T')[0], // Start date (today)
-        endDate.toISOString().split('T')[0] // End date (30 days from now)
+        formatLocalDate(now),    // Start date (today)
+        formatLocalDate(endDate) // End date (30 days from now)
       );
     } else {
       onUpdateTimeWindow(false);
@@ -71,31 +72,23 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
   };
 
   const handleStartDateChange = (date: Date | undefined) => {
-    const value = date ? date.toISOString().split('T')[0] : '';
+    const value = date ? formatLocalDate(date) : '';
     const endDate = settings.timeWindow?.endDate;
-    if (endDate && value && new Date(value) > new Date(endDate)) {
+    if (endDate && value && parseLocalDate(value) > parseLocalDate(endDate)) {
       toastError(t('validation.invalidDateRange'), t('validation.endAfterStart'));
       return;
     }
-    onUpdateTimeWindow(
-      true, 
-      value, 
-      settings.timeWindow?.endDate
-    );
+    onUpdateTimeWindow(true, value, settings.timeWindow?.endDate);
   };
 
   const handleEndDateChange = (date: Date | undefined) => {
-    const value = date ? date.toISOString().split('T')[0] : '';
+    const value = date ? formatLocalDate(date) : '';
     const startDate = settings.timeWindow?.startDate;
-    if (startDate && value && new Date(value) < new Date(startDate)) {
+    if (startDate && value && parseLocalDate(value) < parseLocalDate(startDate)) {
       toastError(t('validation.invalidDateRange'), t('validation.endAfterStart'));
       return;
     }
-    onUpdateTimeWindow(
-      true, 
-      settings.timeWindow?.startDate, 
-      value
-    );
+    onUpdateTimeWindow(true, settings.timeWindow?.startDate, value);
   };
 
   // Helper to check if max responses limit is reached
@@ -107,10 +100,10 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
   const now = new Date();
   const isBeforeStart = settings.timeWindow?.enabled && 
     settings.timeWindow?.startDate && 
-    new Date(settings.timeWindow.startDate) > now;
+    parseLocalDate(settings.timeWindow.startDate) > now;
   const isAfterEnd = settings.timeWindow?.enabled && 
     settings.timeWindow?.endDate && 
-    new Date(settings.timeWindow.endDate) < now;
+    parseLocalDate(settings.timeWindow.endDate) < now;
   const isOutsideTimeWindow = isBeforeStart || isAfterEnd;
 
   return (
@@ -216,7 +209,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
                   <DatePicker
                     id="time-window-start-date"
                     name="time-window-start-date"
-                    date={settings.timeWindow?.startDate ? new Date(settings.timeWindow.startDate) : undefined}
+                    date={settings.timeWindow?.startDate ? parseLocalDate(settings.timeWindow.startDate) : undefined}
                     onDateChange={handleStartDateChange}
                     placeholder="Select start date"
                   />
@@ -228,7 +221,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
                   <DatePicker
                     id="time-window-end-date"
                     name="time-window-end-date"
-                    date={settings.timeWindow?.endDate ? new Date(settings.timeWindow.endDate) : undefined}
+                    date={settings.timeWindow?.endDate ? parseLocalDate(settings.timeWindow.endDate) : undefined}
                     onDateChange={handleEndDateChange}
                     placeholder="Select end date"
                   />

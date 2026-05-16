@@ -4,31 +4,26 @@ import { DatePicker, Label } from '@dculus/ui';
 import { ErrorMessage } from './ErrorMessage';
 import { useFieldSettingsConstants } from './useFieldSettingsConstants';
 import { FieldValidationError } from './types';
+import { parseLocalDate, formatLocalDate } from '../../../utils/dateHelpers';
 
 interface FormDatePickerFieldProps {
-  /** Field name for form control */
   name: string;
-  /** Display label for the field */
   label: string;
-  /** Placeholder text */
   placeholder?: string;
-  /** React Hook Form control */
   control: Control<any>;
-  /** Form validation errors */
   error?: FieldValidationError;
-  /** Whether the input is disabled */
   disabled?: boolean;
-  /** Additional CSS classes */
   className?: string;
-  /** Minimum allowed date */
   minDate?: Date;
-  /** Maximum allowed date */
   maxDate?: Date;
 }
 
 /**
- * Reusable form date picker field component with consistent styling and error handling
- * Uses shadcn DatePicker component with Popover + Calendar
+ * Reusable form date picker field with timezone-safe string ↔ Date conversion.
+ *
+ * Stores value as "YYYY-MM-DD" in the form; converts to/from a local Date object
+ * for the picker. Uses parseLocalDate / formatLocalDate instead of new Date(string)
+ * / toISOString() to prevent the off-by-one timezone bug.
  */
 export const FormDatePickerField: React.FC<FormDatePickerFieldProps> = ({
   name,
@@ -50,21 +45,21 @@ export const FormDatePickerField: React.FC<FormDatePickerFieldProps> = ({
       <Label htmlFor={inputId} className={constants.CSS_CLASSES.LABEL_STYLE}>
         {label}
       </Label>
-      
+
       <Controller
         name={name}
         control={control}
         render={({ field }) => {
-          // Convert string date (YYYY-MM-DD) to Date object for the picker
-          const dateValue = field.value ? new Date(field.value) : undefined;
-          
+          // SAFE: parse "YYYY-MM-DD" as local midnight, not UTC midnight
+          const dateValue = field.value ? parseLocalDate(field.value) : undefined;
+
           return (
             <DatePicker
               id={inputId}
               date={dateValue}
               onDateChange={(date) => {
-                // Store as ISO date string (YYYY-MM-DD) for form data
-                field.onChange(date ? date.toISOString().split('T')[0] : '');
+                // SAFE: format using local date parts, not toISOString() which would shift to UTC
+                field.onChange(date ? formatLocalDate(date) : '');
               }}
               placeholder={placeholder}
               disabled={disabled}
@@ -76,7 +71,7 @@ export const FormDatePickerField: React.FC<FormDatePickerFieldProps> = ({
           );
         }}
       />
-      
+
       <ErrorMessage error={error} />
     </div>
   );
