@@ -208,21 +208,13 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                   >
                     <SelectTrigger
                       onBlur={controllerField.onBlur}
-                      className={`h-12 w-full rounded-xl border-2 bg-white dark:bg-gray-800 px-4 text-sm font-medium focus:ring-0 focus:outline-none transition-colors duration-150 ${
-                        hasError
-                          ? 'border-red-200 focus:border-red-400'
-                          : 'border-gray-200 hover:border-primary/50 focus:border-primary'
-                      }`}
+                      className={hasError ? 'border-red-400' : ''}
                     >
                       <SelectValue placeholder={fillableField?.placeholder || 'Select an option...'} />
                     </SelectTrigger>
-                    <SelectContent className="rounded-xl border-2 border-gray-100 shadow-lg">
+                    <SelectContent>
                       {(fillableField as any)?.options?.map((option: string, index: number) => (
-                        <SelectItem
-                          key={index}
-                          value={option}
-                          className="rounded-lg text-sm font-medium py-2.5 cursor-pointer focus:bg-primary/10 focus:text-primary"
-                        >
+                        <SelectItem key={index} value={option}>
                           {option}
                         </SelectItem>
                       ))}
@@ -236,7 +228,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
               return (
                 <div>
                   <div
-                    className="space-y-3"
+                    className="space-y-2"
                     role="radiogroup"
                     aria-label={(fillableField as any)?.label ?? 'Radio group'}
                   >
@@ -251,20 +243,20 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                           aria-checked={isSelected}
                           onClick={() => isInteractive && controllerField.onChange(option)}
                           disabled={!isInteractive}
-                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all duration-150 ${
-                            isSelected
-                              ? 'border-primary bg-primary text-white'
-                              : hasError
-                              ? 'border-red-200 bg-white hover:border-primary/50 text-gray-900 dark:bg-gray-800 dark:text-white'
-                              : 'border-gray-200 bg-white hover:border-primary/50 text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white'
-                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{
+                            border: isSelected ? '2px solid #3c323e' : hasError ? '2px solid rgba(206,93,85,0.40)' : '2px solid rgba(81,76,84,0.15)',
+                            backgroundColor: isSelected ? '#3c323e' : 'rgba(255,255,255,0.8)',
+                            color: isSelected ? '#ffffff' : '#4c414e',
+                          }}
                         >
                           <span
-                            className={`flex-shrink-0 w-7 h-7 rounded-md border text-xs font-bold flex items-center justify-center ${
-                              isSelected
-                                ? 'border-white/40 text-white/90 bg-white/20'
-                                : 'border-gray-300 text-gray-500 dark:border-gray-600 dark:text-gray-400'
-                            }`}
+                            className="flex-shrink-0 w-7 h-7 rounded-md text-xs font-bold flex items-center justify-center"
+                            style={{
+                              border: isSelected ? '1px solid rgba(255,255,255,0.30)' : '1px solid rgba(81,76,84,0.25)',
+                              color: isSelected ? 'rgba(255,255,255,0.85)' : '#655d67',
+                              backgroundColor: isSelected ? 'rgba(255,255,255,0.15)' : 'transparent',
+                            }}
                           >
                             {letter}
                           </span>
@@ -281,7 +273,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
               const currentValues = controllerField.value ?? [];
               return (
                 <div>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {(fillableField as any)?.options?.map((option: string, index: number) => {
                       const isChecked = currentValues.includes(option);
                       const letter = String.fromCharCode(65 + index);
@@ -299,20 +291,20 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                             controllerField.onChange(newValues);
                           }}
                           disabled={!isInteractive}
-                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all duration-150 ${
-                            isChecked
-                              ? 'border-primary bg-primary text-white'
-                              : hasError
-                              ? 'border-red-200 bg-white hover:border-primary/50 text-gray-900 dark:bg-gray-800 dark:text-white'
-                              : 'border-gray-200 bg-white hover:border-primary/50 text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-white'
-                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{
+                            border: isChecked ? '2px solid #3c323e' : hasError ? '2px solid rgba(206,93,85,0.40)' : '2px solid rgba(81,76,84,0.15)',
+                            backgroundColor: isChecked ? '#3c323e' : 'rgba(255,255,255,0.8)',
+                            color: isChecked ? '#ffffff' : '#4c414e',
+                          }}
                         >
                           <span
-                            className={`flex-shrink-0 w-7 h-7 rounded-md border text-xs font-bold flex items-center justify-center ${
-                              isChecked
-                                ? 'border-white/40 text-white/90 bg-white/20'
-                                : 'border-gray-300 text-gray-500 dark:border-gray-600 dark:text-gray-400'
-                            }`}
+                            className="flex-shrink-0 w-7 h-7 rounded-md text-xs font-bold flex items-center justify-center"
+                            style={{
+                              border: isChecked ? '1px solid rgba(255,255,255,0.30)' : '1px solid rgba(81,76,84,0.25)',
+                              color: isChecked ? 'rgba(255,255,255,0.85)' : '#655d67',
+                              backgroundColor: isChecked ? 'rgba(255,255,255,0.15)' : 'transparent',
+                            }}
                           >
                             {isChecked ? '✓' : letter}
                           </span>

@@ -104,12 +104,14 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
     };
 
     const getFieldDefaultValueArray = (): string[] => {
-      // CheckboxField should have defaultValues array
-      if (
-        'defaultValues' in field &&
-        Array.isArray((field as any).defaultValues)
-      ) {
-        return (field as any).defaultValues;
+      const f = field as any;
+      // CheckboxField stores as defaultValues (plural); after an update it may be in defaultValue
+      if ('defaultValues' in f && Array.isArray(f.defaultValues) && f.defaultValues.length > 0) {
+        return f.defaultValues;
+      }
+      // Fallback: after onUpdate the key is 'defaultValue' and may be an array
+      if ('defaultValue' in f && Array.isArray(f.defaultValue)) {
+        return f.defaultValue;
       }
       return [];
     };
@@ -149,7 +151,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
     'hint' in field ? field.hint : null,
     'placeholder' in field ? field.placeholder : null,
     'prefix' in field ? field.prefix : null,
-    'defaultValue' in field ? field.defaultValue : null,
+    'defaultValue' in field ? (field as any).defaultValue : null,
     'defaultValues' in field ? (field as any).defaultValues : null,
     'options' in field ? field.options : null,
     'validation' in field ? field.validation : null,
@@ -242,7 +244,8 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
         return (
           <Select
             disabled={disabled}
-            defaultValue={fieldData.defaultValue || undefined}
+            value={fieldData.defaultValue || undefined}
+            onValueChange={() => {}}
           >
             <SelectTrigger className="text-sm">
               <SelectValue placeholder={placeholder || 'Choose an option'} />
@@ -270,7 +273,8 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
           <div>
             {options.length > 0 ? (
               <RadioGroup
-                defaultValue={fieldData.defaultValue || undefined}
+                value={fieldData.defaultValue || ''}
+                onValueChange={() => {}}
                 disabled={disabled}
                 className="space-y-2"
               >

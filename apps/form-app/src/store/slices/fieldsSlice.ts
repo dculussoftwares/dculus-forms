@@ -50,7 +50,16 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       const isReady = _isYJSReady();
 
       if (!ydoc || !isReady) {
-        toastError('Connection lost', 'Please wait — reconnecting to the collaboration server.');
+        // Retry once after a short delay to handle race with connection setup
+        setTimeout(() => {
+          const { _getYDoc: getDoc, _isYJSReady: checkReady } = get() as any;
+          const retryDoc = getDoc();
+          if (retryDoc && checkReady()) {
+            (get() as any).addField(pageId, fieldType, fieldData);
+          } else {
+            toastError('Not connected', 'Please wait for the collaboration server to connect, then try again.');
+          }
+        }, 1500);
         return;
       }
 
@@ -94,7 +103,16 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       const isReady = _isYJSReady();
 
       if (!ydoc || !isReady) {
-        toastError('Connection lost', 'Please wait — reconnecting to the collaboration server.');
+        // Retry once after a short delay to handle race with connection setup
+        setTimeout(() => {
+          const { _getYDoc: getDoc, _isYJSReady: checkReady } = get() as any;
+          const retryDoc = getDoc();
+          if (retryDoc && checkReady()) {
+            (get() as any).addFieldAtIndex(pageId, fieldType, fieldData, insertIndex);
+          } else {
+            toastError('Not connected', 'Please wait for the collaboration server to connect, then try again.');
+          }
+        }, 1500);
         return;
       }
 
