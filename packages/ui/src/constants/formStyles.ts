@@ -2,19 +2,25 @@ import { LayoutStyles } from '../renderers/SinglePageForm';
 
 export const DEFAULT_LAYOUT_STYLES: LayoutStyles = {
   field: {
-    container: 'mb-10',
-    /* Typeform form viewer: 20px label, normal weight, #3c323e color */
-    label: 'text-xl font-normal text-[#3c323e] dark:text-foreground mb-4',
-    /* Typeform underline-only input: no box, bottom-only border, blue placeholder rgb(155,181,223) */
+    container: 'mb-5',
+
+    /* Label — exactly matches builder FieldPreview: text-gray-900 dark:text-white */
+    label: 'text-sm font-medium text-gray-900 dark:text-white',
+
+    /* Boxed input — matches our updated Input component style */
     input:
-      'w-full bg-transparent border-0 border-b border-[rgba(60,50,62,0.20)] px-0 pb-3 text-lg text-[#3c323e] dark:text-foreground dark:border-white/20 placeholder:text-[rgb(155,181,223)] focus:outline-none focus:ring-0 focus:border-[#3c323e] focus:shadow-[0_1px_0_0_#3c323e] transition-all duration-200',
+      'w-full h-9 rounded-lg bg-white/80 px-3 py-1.5 text-sm text-[#4c414e] placeholder:text-[#655d67] focus:outline-none focus:ring-0 transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white/5 dark:text-foreground dark:placeholder:text-muted-foreground',
+
+    /* Boxed textarea */
     textarea:
-      'w-full bg-transparent border-0 border-b border-[rgba(60,50,62,0.20)] px-0 pb-3 pt-1 text-lg text-[#3c323e] dark:text-foreground dark:border-white/20 placeholder:text-[rgb(155,181,223)] focus:outline-none focus:ring-0 focus:border-[#3c323e] transition-all duration-200 resize-none min-h-[100px]',
+      'w-full rounded-lg bg-white/80 px-3 py-2.5 text-sm text-[#4c414e] placeholder:text-[#655d67] focus:outline-none focus:ring-0 transition-colors duration-150 resize-none min-h-[80px] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white/5 dark:text-foreground dark:placeholder:text-muted-foreground',
+
     select: 'w-full',
   },
-  /* Typeform submit: #3c323e bg, white text, 8px radius */
+
+  /* Submit button — dark aubergine #3c323e */
   submitButton:
-    'inline-flex items-center justify-center gap-2 px-8 py-3 text-sm font-medium text-white bg-[#3c323e] hover:bg-[#2e2530] rounded-lg shadow-sm hover:shadow-md transition-all duration-200 active:scale-[0.98]',
+    'inline-flex items-center justify-center gap-2 px-8 py-2.5 text-sm font-medium text-white bg-[#3c323e] hover:bg-[#2e2530] rounded-lg shadow-sm hover:shadow-md transition-all duration-200 active:scale-[0.98]',
 };
 
 export const FORM_CONSTANTS = {
