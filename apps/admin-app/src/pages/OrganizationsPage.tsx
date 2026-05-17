@@ -1,7 +1,7 @@
 import { useQuery } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
-import { Card, LoadingSpinner } from '@dculus/ui';
-import { Building2, Users, FileText, Calendar } from 'lucide-react';
+import { LoadingSpinner } from '@dculus/ui';
+import { Building2 } from 'lucide-react';
 import { ADMIN_ORGANIZATIONS_QUERY } from '../graphql/organizations';
 import { useTranslation } from '../hooks/useTranslation';
 
@@ -16,189 +16,111 @@ interface AdminOrganization {
   formCount: number;
 }
 
+/* Reusable Typeform-style action link */
+const ActionLink: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ children, ...props }) => (
+  <button
+    {...props}
+    className="text-xs font-medium transition-colors"
+    style={{ color: '#655d67' }}
+    onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#3c323e'}
+    onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#655d67'}
+  >
+    {children}
+  </button>
+);
+
+import React from 'react';
+
 export default function OrganizationsPage() {
   const navigate = useNavigate();
   const { t } = useTranslation('organizations');
   const { data, loading, error, refetch } = useQuery(ADMIN_ORGANIZATIONS_QUERY, {
-    variables: {
-      limit: 50,
-      offset: 0,
-    },
+    variables: { limit: 50, offset: 0 },
   });
 
   const organizations: AdminOrganization[] = data?.adminOrganizations?.organizations || [];
 
   if (error) {
     return (
-      <div className="min-h-64 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-lg font-medium text-gray-900 mb-2">{t('error.unableToLoad')}</h2>
-          <p className="text-sm text-gray-500 mb-4">
-            {error.message || t('error.checkConnection')}
-          </p>
-          <button
-            onClick={() => refetch()}
-            className="text-blue-600 hover:text-blue-800 font-medium"
-          >
-            {t('common.tryAgain', { defaultValue: 'Try again' })}
-          </button>
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-64 text-center">
+        <h2 className="text-sm font-semibold mb-1" style={{ color: '#3c323e' }}>{t('error.unableToLoad')}</h2>
+        <p className="text-xs mb-3" style={{ color: '#655d67' }}>{error.message || t('error.checkConnection')}</p>
+        <ActionLink onClick={() => refetch()}>{t('common.tryAgain', { defaultValue: 'Try again' })}</ActionLink>
       </div>
     );
   }
+
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          {t('subtitle')}
-        </p>
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-lg font-semibold" style={{ color: '#3c323e' }}>{t('title')}</h1>
+        <p className="text-xs mt-0.5" style={{ color: '#655d67' }}>{t('subtitle')}</p>
       </div>
 
-      {/* Loading State */}
-      {loading && (
-        <div className="min-h-64 flex items-center justify-center">
-          <LoadingSpinner />
-        </div>
-      )}
-
-      {/* Organizations Grid */}
-      {!loading && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
-          {organizations.map((org) => (
-          <Card key={org.id} className="p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center">
-                <div className="h-12 w-12 rounded-lg bg-gray-200 flex items-center justify-center">
-                  {org.logo ? (
-                    <img
-                      src={org.logo}
-                      alt={org.name}
-                      className="h-10 w-10 rounded-lg object-cover"
-                    />
-                  ) : (
-                    <Building2 className="h-6 w-6 text-gray-500" />
-                  )}
-                </div>
-                <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900">{org.name}</h3>
-                  <p className="text-sm text-gray-500">/{org.slug}</p>
-                </div>
+      {loading ? (
+        <div className="flex justify-center py-16"><LoadingSpinner /></div>
+      ) : (
+        <div
+          className="rounded-xl bg-white overflow-hidden"
+          style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}
+        >
+          {organizations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: '#f7f7f8' }}>
+                <Building2 className="h-6 w-6" style={{ color: '#dedcde' }} />
               </div>
+              <p className="text-sm font-medium" style={{ color: '#3c323e' }}>No Organizations</p>
+              <p className="text-xs mt-0.5" style={{ color: '#655d67' }}>No organizations have been created yet.</p>
             </div>
-
-            <div className="mt-6 space-y-4">
-              <div className="flex items-center text-sm text-gray-600">
-                <Users className="h-4 w-4 mr-2" />
-                <span>{org.memberCount} {t('members')}</span>
-              </div>
-              <div className="flex items-center text-sm text-gray-600">
-                <FileText className="h-4 w-4 mr-2" />
-                <span>{org.formCount} {t('forms')}</span>
-              </div>
-              <div className="flex items-center text-sm text-gray-600">
-                <Calendar className="h-4 w-4 mr-2" />
-                <span>{t('created')} {new Date(org.createdAt).toLocaleDateString()}</span>
-              </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr style={{ borderBottom: '1px solid rgba(81,76,84,0.08)' }}>
+                    {['Organization', 'Members', 'Forms', 'Created', 'Actions'].map(h => (
+                      <th key={h} className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-wide" style={{ color: '#655d67', backgroundColor: '#f7f7f8' }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="bg-white">
+                  {organizations.map((org, i) => (
+                    <tr
+                      key={org.id}
+                      style={{ borderTop: i > 0 ? '1px solid rgba(81,76,84,0.07)' : undefined }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.025)'}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'}
+                    >
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#f8cdd8' }}>
+                            {org.logo ? (
+                              <img src={org.logo} alt={org.name} className="w-8 h-8 rounded-lg object-cover" />
+                            ) : (
+                              <Building2 className="h-4 w-4" style={{ color: '#3c323e' }} />
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium" style={{ color: '#3c323e' }}>{org.name}</p>
+                            <p className="text-xs" style={{ color: '#655d67' }}>/{org.slug}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5 text-sm" style={{ color: '#4c414e' }}>{org.memberCount}</td>
+                      <td className="px-5 py-3.5 text-sm" style={{ color: '#4c414e' }}>{org.formCount}</td>
+                      <td className="px-5 py-3.5 text-xs" style={{ color: '#655d67' }}>{new Date(org.createdAt).toLocaleDateString()}</td>
+                      <td className="px-5 py-3.5">
+                        <ActionLink onClick={() => navigate(`/organizations/${org.id}`)}>View</ActionLink>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="flex justify-between">
-                <button 
-                  onClick={() => navigate(`/organizations/${org.id}`)}
-                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  {t('viewDetails')}
-                </button>
-              </div>
-            </div>
-          </Card>
-        ))}
-
-          {/* Empty state */}
-          {organizations.length === 0 && (
-            <Card className="p-6 border-dashed border-2 border-gray-300">
-              <div className="text-center py-8">
-                <Building2 className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Organizations</h3>
-                <p className="text-sm text-gray-600">
-                  No organizations have been created yet.
-                </p>
-              </div>
-            </Card>
           )}
         </div>
       )}
-
-      {/* Organizations Table View (Alternative layout) */}
-      <div className="mt-12">
-        <Card className="overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">All Organizations</h3>
-            <p className="text-sm text-gray-600">Detailed view of all organizations</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Organization
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Members
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Forms
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {organizations.map((org) => (
-                  <tr key={org.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-8 w-8 rounded-md bg-gray-200 flex items-center justify-center">
-                          <Building2 className="h-4 w-4 text-gray-500" />
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{org.name}</div>
-                          <div className="text-sm text-gray-500">/{org.slug}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {org.memberCount}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {org.formCount}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(org.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button 
-                        onClick={() => navigate(`/organizations/${org.id}`)}
-                        className="text-blue-600 hover:text-blue-900 mr-4"
-                      >
-                        View
-                      </button>
-                      <button className="text-gray-600 hover:text-gray-900">
-                        Edit
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      </div>
     </div>
   );
 }

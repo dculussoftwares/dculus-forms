@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from '../hooks/useTranslation';
-import { Button, Input, Label } from '@dculus/ui';
-import { Crown, Eye, EyeOff } from 'lucide-react';
+import { Input, Label } from '@dculus/ui';
+import { Eye, EyeOff, Shield } from 'lucide-react';
 
 export default function LoginPage() {
   const { signIn } = useAuth();
@@ -17,99 +17,81 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-
     const result = await signIn(email, password);
-    
-    if (!result.success) {
-      setError(result.error || t('error.loginFailed'));
-    }
-    
+    if (!result.success) setError(result.error || t('error.loginFailed'));
     setIsLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center items-center mb-6">
-          <Crown className="h-12 w-12 text-blue-600 mr-3" />
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
-            <p className="text-sm text-gray-500">Dculus Forms</p>
+    <div className="h-screen flex overflow-hidden">
+      {/* Left dark panel */}
+      <div className="hidden lg:flex lg:flex-col lg:w-[400px] shrink-0 p-10 justify-between" style={{ backgroundColor: '#2a222b' }}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#3c323e' }}>
+            <Shield className="w-4 h-4 text-white" />
           </div>
+          <span className="text-white font-semibold text-lg">Admin</span>
         </div>
-        <h2 className="text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
-          {t('subtitle')}
-        </h2>
+        <div className="space-y-3">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
+            <Shield className="w-6 h-6" style={{ color: 'rgba(255,255,255,0.70)' }} />
+          </div>
+          <h2 className="text-white text-2xl font-light leading-snug">Dculus Forms<br />Administration</h2>
+          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>Restricted access — authorized personnel only</p>
+        </div>
+        <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>© {new Date().getFullYear()} Dculus Forms</p>
       </div>
 
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-[480px]">
-        <div className="bg-white px-6 py-12 shadow rounded-lg sm:px-12">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+      {/* Right white panel */}
+      <div className="flex-1 flex items-center justify-center px-8 bg-white">
+        <div className="w-full max-w-sm">
+          <div className="mb-8">
+            <h1 className="text-2xl font-semibold mb-1.5" style={{ color: '#3c323e' }}>{t('subtitle')}</h1>
+            <p className="text-sm" style={{ color: '#655d67' }}>Admin access only</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="rounded-md bg-red-50 p-4">
-                <div className="text-sm text-red-700">{error}</div>
-              </div>
+              <p className="py-2 px-3 rounded-lg text-xs" style={{ backgroundColor: 'rgba(206,93,85,0.06)', color: '#ce5d55', border: '1px solid rgba(206,93,85,0.14)' }}>
+                {error}
+              </p>
             )}
-
             <div>
-              <Label htmlFor="email">{t('email')}</Label>
-              <div className="mt-2">
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={t('email')}
-                />
-              </div>
+              <Label htmlFor="email" className="text-xs font-medium block mb-1.5" style={{ color: '#4c414e' }}>{t('email')}</Label>
+              <Input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('email')} />
             </div>
-
             <div>
-              <Label htmlFor="password">{t('password')}</Label>
-              <div className="mt-2 relative">
+              <Label htmlFor="password" className="text-xs font-medium block mb-1.5" style={{ color: '#4c414e' }}>{t('password')}</Label>
+              <div className="relative">
                 <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={t('password')}
+                  id="password" name="password" type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password" required value={password}
+                  onChange={(e) => setPassword(e.target.value)} placeholder={t('password')} className="pr-9"
                 />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                <button type="button" className="absolute inset-y-0 right-3 flex items-center" style={{ color: '#655d67' }}
                   onClick={() => setShowPassword(!showPassword)}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#3c323e'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#655d67'}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-400" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-gray-400" />
-                  )}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
-
-            <div>
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-              >
-                {isLoading ? t('signingIn') : t('signIn')}
-              </Button>
-            </div>
+            <button type="submit" disabled={isLoading}
+              className="w-full h-10 rounded-lg text-sm font-medium text-white transition-all mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{ backgroundColor: '#3c323e' }}
+              onMouseEnter={e => { if (!isLoading) (e.currentTarget as HTMLElement).style.backgroundColor = '#2e2530'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#3c323e'; }}
+            >
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  {t('signingIn')}
+                </span>
+              ) : t('signIn')}
+            </button>
           </form>
-        </div>
-
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
-            Admin access only. Contact your system administrator for access.
-          </p>
+          <p className="text-xs text-center mt-6" style={{ color: '#655d67' }}>Contact your system administrator for access.</p>
         </div>
       </div>
     </div>

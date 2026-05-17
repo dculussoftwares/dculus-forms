@@ -4,6 +4,11 @@ import { prisma } from '../lib/prisma.js';
 import { auth } from '../lib/better-auth.js';
 import { logger } from '../lib/logger.js';
 
+async function hashWithBetterAuth(password: string): Promise<string> {
+  const ctx: any = await (auth as any).$context;
+  return ctx.password.hash(password);
+}
+
 async function setupSuperAdmin() {
   const adminEmail = process.env.ADMIN_EMAIL;
   const adminPassword = process.env.ADMIN_PASSWORD;
@@ -24,14 +29,36 @@ async function setupSuperAdmin() {
     });
 
     if (existingUser) {
-      logger.info('👤 Admin user already exists, updating role to superAdmin...');
-      
-      // Update existing user to superAdmin role
+      logger.info('👤 Admin user already exists, updating role and password...');
+
       await prisma.user.update({
         where: { email: adminEmail },
-        data: { role: 'superAdmin' },
+        data: { role: 'superAdmin', emailVerified: true },
       });
-      
+
+      // Re-hash with better-auth's hasher so sign-in always works
+      const hashedPassword = await hashWithBetterAuth(adminPassword);
+      const existingAccount = await prisma.account.findFirst({
+        where: { userId: existingUser.id, providerId: 'credential' },
+        select: { id: true },
+      });
+      if (existingAccount) {
+        await prisma.account.update({
+          where: { id: existingAccount.id },
+          data: { password: hashedPassword },
+        });
+      } else {
+        await prisma.account.create({
+          data: {
+            id: crypto.randomUUID(),
+            accountId: existingUser.id,
+            providerId: 'credential',
+            userId: existingUser.id,
+            password: hashedPassword,
+          },
+        });
+      }
+
       logger.info(`✅ User ${adminEmail} updated to superAdmin role`);
     } else {
       logger.info('👤 Creating new super admin user...');
@@ -62,10 +89,9 @@ async function setupSuperAdmin() {
         } else {
           // If better-auth signup fails, try creating directly in database
           logger.info('Attempting direct database creation...');
-          
-          const bcrypt = await import('bcryptjs');
-          const hashedPassword = await bcrypt.hash(adminPassword, 12);
-          
+
+          const hashedPassword = await hashWithBetterAuth(adminPassword);
+
           const user = await prisma.user.create({
             data: {
               id: crypto.randomUUID(),
