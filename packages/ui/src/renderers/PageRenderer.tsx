@@ -223,7 +223,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
             className="text-xs text-gray-400 dark:text-gray-500 tabular-nums flex-shrink-0"
             data-testid="viewer-page-indicator"
           >
-            {currentPageIndex + 1} / {pages.length}
+            Page {currentPageIndex + 1} of {pages.length}
           </span>
         </div>
       )}
