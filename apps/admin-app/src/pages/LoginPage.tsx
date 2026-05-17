@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from '../hooks/useTranslation';
+import { AlertTriangle } from 'lucide-react';
 import { Input, Label } from '@dculus/ui';
 import { Eye, EyeOff, Shield } from 'lucide-react';
 
 export default function LoginPage() {
-  const { signIn } = useAuth();
+  const { signIn, isAuthenticated, user } = useAuth();
   const { t } = useTranslation('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -51,6 +52,12 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {isAuthenticated && user && (
+              <div className="py-2 px-3 rounded-lg text-xs flex gap-2 items-start" style={{ backgroundColor: 'rgba(234,179,8,0.06)', color: '#92400e', border: '1px solid rgba(234,179,8,0.20)' }}>
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                <span>Signed in as <strong>{user.email}</strong> which lacks admin access. Sign in with an admin account below.</span>
+              </div>
+            )}
             {error && (
               <p className="py-2 px-3 rounded-lg text-xs" style={{ backgroundColor: 'rgba(206,93,85,0.06)', color: '#ce5d55', border: '1px solid rgba(206,93,85,0.14)' }}>
                 {error}

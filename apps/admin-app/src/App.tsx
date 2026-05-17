@@ -23,19 +23,8 @@ function App() {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !isAdmin) {
     return <LoginPage />;
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">{t('accessDenied.title')}</h1>
-          <p className="text-gray-600">{t('accessDenied.message')}</p>
-        </div>
-      </div>
-    );
   }
 
   return (
