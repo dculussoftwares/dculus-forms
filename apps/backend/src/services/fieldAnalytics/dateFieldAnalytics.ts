@@ -25,17 +25,18 @@ export const processDateFieldAnalytics = (
 
       const stringValue = String(r.value);
 
-      // YYYY-MM-DD — parse as local midnight to avoid UTC day shift
-      if (/^\d{4}-\d{2}-\d{2}/.test(stringValue)) {
-        const [y, m, d] = stringValue.substring(0, 10).split('-').map(Number);
-        return new Date(y, m - 1, d);
-      }
-
       // Legacy: numeric epoch-ms string
       if (/^\d+$/.test(stringValue)) {
         return new Date(parseInt(stringValue, 10));
       }
 
+      // YYYY-MM-DD (date-only, no time) — parse as UTC midnight so toISOString() is stable across timezones
+      if (/^\d{4}-\d{2}-\d{2}$/.test(stringValue)) {
+        const [y, m, d] = stringValue.split('-').map(Number);
+        return new Date(Date.UTC(y, m - 1, d));
+      }
+
+      // ISO timestamp or any other date string — preserve the full value
       return new Date(stringValue);
     })
     .filter(date => !isNaN(date.getTime()))
@@ -67,8 +68,7 @@ export const processDateFieldAnalytics = (
   // Find most common date
   const dateCounts = new Map<string, number>();
   validDates.forEach(date => {
-    // Use local date parts — toISOString() returns UTC and shifts the day in non-UTC zones
-    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const dateStr = date.toISOString().substring(0, 10);
     dateCounts.set(dateStr, (dateCounts.get(dateStr) || 0) + 1);
   });
 
@@ -86,7 +86,7 @@ export const processDateFieldAnalytics = (
   const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   validDates.forEach(date => {
-    const weekday = weekdays[date.getDay()];
+    const weekday = weekdays[date.getUTCDay()];
     weekdayCounts.set(weekday, (weekdayCounts.get(weekday) || 0) + 1);
   });
 
@@ -104,7 +104,7 @@ export const processDateFieldAnalytics = (
   ];
 
   validDates.forEach(date => {
-    const month = months[date.getMonth()];
+    const month = months[date.getUTCMonth()];
     monthCounts.set(month, (monthCounts.get(month) || 0) + 1);
   });
 
@@ -117,7 +117,7 @@ export const processDateFieldAnalytics = (
   // Seasonal patterns
   const seasonCounts = new Map<string, number>();
   validDates.forEach(date => {
-    const month = date.getMonth();
+    const month = date.getUTCMonth();
     let season: string;
     if (month >= 2 && month <= 4) season = 'Spring';
     else if (month >= 5 && month <= 7) season = 'Summer';
