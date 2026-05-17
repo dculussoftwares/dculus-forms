@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Alert, AlertDescription } from '@dculus/ui';
-import { Users, Mail, AlertCircle, CheckCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, FileText, Mail, Users } from 'lucide-react';
 import { useAuthContext } from '../contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { parseDate, isDateExpired } from '../utils/dateHelpers';
@@ -9,6 +8,45 @@ import { authClient, organization } from '../lib/auth-client';
 import { useQuery } from '@apollo/client';
 import { GET_INVITATION_PUBLIC } from '../graphql/queries';
 import { useTranslation } from '../hooks/useTranslation';
+
+/* Reusable card wrapper */
+const InviteCard: React.FC<{ children: React.ReactNode; maxW?: string }> = ({
+  children,
+  maxW = 'max-w-md',
+}) => (
+  <div
+    className={`w-full ${maxW} rounded-xl bg-white p-8`}
+    style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 4px 24px rgba(60,50,62,0.10)' }}
+  >
+    {children}
+  </div>
+);
+
+/* Ghost button */
+const GhostBtn: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ children, ...props }) => (
+  <button
+    {...props}
+    className="w-full h-9 rounded-lg text-sm font-medium transition-colors disabled:opacity-60"
+    style={{ backgroundColor: 'rgba(255,255,255,0.8)', color: '#655d67', border: '1px solid rgba(81,76,84,0.15)' }}
+    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#f7f7f8'; }}
+    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.8)'; }}
+  >
+    {children}
+  </button>
+);
+
+/* Primary button */
+const PrimaryBtn: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ children, ...props }) => (
+  <button
+    {...props}
+    className="w-full h-10 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+    style={{ backgroundColor: '#3c323e' }}
+    onMouseEnter={e => { if (!(props.disabled)) (e.currentTarget as HTMLElement).style.backgroundColor = '#2e2530'; }}
+    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#3c323e'; }}
+  >
+    {children}
+  </button>
+);
 
 const InviteAcceptance: React.FC = () => {
   const { invitationId } = useParams<{ invitationId: string }>();
@@ -18,376 +56,226 @@ const InviteAcceptance: React.FC = () => {
   const [acceptLoading, setAcceptLoading] = useState(false);
   const { t } = useTranslation('inviteAcceptance');
 
-  // Fetch invitation details using GraphQL (public endpoint)
-  const { 
-    data: invitationData, 
-    loading: invitationLoading, 
-    error: invitationError 
-  } = useQuery(GET_INVITATION_PUBLIC, {
-    variables: { id: invitationId || '' },
-    skip: !invitationId,
-    errorPolicy: 'all',
-  });
+  const { data: invitationData, loading: invitationLoading, error: invitationError } = useQuery(
+    GET_INVITATION_PUBLIC,
+    { variables: { id: invitationId || '' }, skip: !invitationId, errorPolicy: 'all' }
+  );
 
   const invitation = invitationData?.getInvitationPublic;
   const isExpired = invitation && isDateExpired(invitation.expiresAt);
 
-  // Handle accepting invitation
   const handleAcceptInvitation = async () => {
     if (!invitationId) return;
-    
     setAcceptLoading(true);
     setError(null);
-    
     try {
-      await organization.acceptInvitation({
-        invitationId,
-      });
-      
-      // Redirect to dashboard or organization page
-      navigate('/dashboard', { 
-        replace: true,
-        state: { 
-          message: t('messages.joinSuccess', {
-            values: {
-              organization: invitation?.organization?.name ?? t('fallbacks.organization'),
-            },
-          }),
-        }
-      });
-    } catch (error: any) {
-      console.error('Error accepting invitation:', error);
-      setError(error.message || t('messages.acceptFailed'));
+      await organization.acceptInvitation({ invitationId });
+      navigate('/dashboard', { replace: true, state: { message: t('messages.joinSuccess', { values: { organization: invitation?.organization?.name ?? t('fallbacks.organization') } }) } });
+    } catch (err: any) {
+      setError(err.message || t('messages.acceptFailed'));
     } finally {
       setAcceptLoading(false);
     }
   };
 
-  // Handle sign up redirection
   const handleSignUp = () => {
-    // Store invitation ID in session storage for after signup
-    if (invitationId) {
-      sessionStorage.setItem('pendingInvitationId', invitationId);
-    }
-    navigate('/signup', { 
-      state: { 
-        email: invitation?.email,
-        redirectUrl: `/invite/${invitationId}`
-      } 
-    });
+    if (invitationId) sessionStorage.setItem('pendingInvitationId', invitationId);
+    navigate('/signup', { state: { email: invitation?.email, redirectUrl: `/invite/${invitationId}` } });
   };
 
-  // Handle sign out
   const handleSignOut = async () => {
-    try {
-      await authClient.signOut();
-      // After sign out, redirect to signup with invitation context
-      handleSignUp();
-    } catch (error) {
-      console.error('Error signing out:', error);
-      // Still redirect to signup even if signout fails
-      handleSignUp();
-    }
+    try { await authClient.signOut(); } catch { /* ignore */ }
+    handleSignUp();
   };
 
-  // Loading states
+  const Page: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12" style={{ backgroundColor: '#f7f7f8' }}>
+      {/* Logo */}
+      <div className="flex items-center gap-2 mb-8">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#3c323e' }}>
+          <FileText className="w-4 h-4 text-white" />
+        </div>
+        <span className="text-base font-semibold" style={{ color: '#3c323e' }}>Dculus Forms</span>
+      </div>
+      {children}
+    </div>
+  );
+
+  /* ── Loading ── */
   if (authLoading || invitationLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="w-full max-w-md" aria-busy="true">
-          <CardContent className="flex items-center justify-center p-8">
-            <div
-              className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"
-              aria-label={t('loading.spinnerLabel')}
-            />
-          </CardContent>
-        </Card>
-      </div>
+      <Page>
+        <InviteCard>
+          <div className="flex items-center justify-center py-8">
+            <div className="w-8 h-8 rounded-full border-2 animate-spin" style={{ borderColor: 'rgba(81,76,84,0.15)', borderTopColor: '#3c323e' }} />
+          </div>
+        </InviteCard>
+      </Page>
     );
   }
 
-  // Error states
+  /* ── Invalid invitation ── */
   if (invitationError || (!invitationLoading && !invitation)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-destructive">
-              <AlertCircle className="h-5 w-5" />
-              {t('errors.invalid.title')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {invitationError?.message || t('errors.invalid.description')}
-              </AlertDescription>
-            </Alert>
-            <Button 
-              className="w-full mt-4" 
-              onClick={() => navigate('/signin')}
-            >
-              {t('buttons.goToSignIn')}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <Page>
+        <InviteCard>
+          <div className="text-center mb-5">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}>
+              <AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />
+            </div>
+            <h1 className="text-base font-semibold mb-1" style={{ color: '#3c323e' }}>{t('errors.invalid.title')}</h1>
+            <p className="text-xs" style={{ color: '#655d67' }}>{invitationError?.message || t('errors.invalid.description')}</p>
+          </div>
+          <PrimaryBtn onClick={() => navigate('/signin')}>{t('buttons.goToSignIn')}</PrimaryBtn>
+        </InviteCard>
+      </Page>
     );
   }
 
-  // Expired invitation
+  /* ── Expired invitation ── */
   if (isExpired) {
     const timeAgo = formatDistanceToNow(parseDate(invitation.expiresAt), { addSuffix: true });
-    const inviterName = invitation.inviter?.name ?? t('fallbacks.inviter');
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-destructive">
-              <AlertCircle className="h-5 w-5" />
-              {t('errors.expired.title')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {t('errors.expired.description', {
-                  values: {
-                    timeAgo,
-                    inviter: inviterName,
-                  },
-                })}
-              </AlertDescription>
-            </Alert>
-            <Button 
-              className="w-full mt-4" 
-              onClick={() => navigate('/signin')}
-            >
-              {t('buttons.goToSignIn')}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <Page>
+        <InviteCard>
+          <div className="text-center mb-5">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}>
+              <AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />
+            </div>
+            <h1 className="text-base font-semibold mb-1" style={{ color: '#3c323e' }}>{t('errors.expired.title')}</h1>
+            <p className="text-xs" style={{ color: '#655d67' }}>
+              {t('errors.expired.description', { values: { timeAgo, inviter: invitation.inviter?.name ?? t('fallbacks.inviter') } })}
+            </p>
+          </div>
+          <PrimaryBtn onClick={() => navigate('/signin')}>{t('buttons.goToSignIn')}</PrimaryBtn>
+        </InviteCard>
+      </Page>
     );
   }
 
-  // User not authenticated - show sign up option
+  /* ── Not authenticated ── */
   if (!user) {
-    const organizationName = invitation.organization?.name;
+    const orgName = invitation.organization?.name;
     const inviterName = invitation.inviter?.name;
-    const roleLabel =
-      invitation.role === 'owner'
-        ? t('guestView.details.roleOwner')
-        : t('guestView.details.roleMember');
+    const roleLabel = invitation.role === 'owner' ? t('guestView.details.roleOwner') : t('guestView.details.roleMember');
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="w-full max-w-lg">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-              <Users className="h-8 w-8 text-primary" />
+      <Page>
+        <InviteCard maxW="max-w-lg">
+          <div className="text-center mb-6">
+            <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: '#ddd6fa' }}>
+              <Users className="h-7 w-7" style={{ color: '#5c2e6b' }} />
             </div>
-            <CardTitle>
-              {organizationName
-                ? t('guestView.title', { values: { organization: organizationName } })
-                : t('guestView.titleFallback')}
-            </CardTitle>
-            <CardDescription>
-              {inviterName
-                ? t('guestView.description', { values: { inviter: inviterName } })
-                : t('guestView.descriptionFallback')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="bg-muted/50 rounded-lg p-4">
-              <div className="flex items-center gap-3">
-                <Mail className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <div className="font-medium">{t('guestView.details.title')}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {t('guestView.details.email', { values: { email: invitation.email } })}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {roleLabel}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <h1 className="text-base font-semibold mb-1" style={{ color: '#3c323e' }}>
+              {orgName ? t('guestView.title', { values: { organization: orgName } }) : t('guestView.titleFallback')}
+            </h1>
+            <p className="text-xs" style={{ color: '#655d67' }}>
+              {inviterName ? t('guestView.description', { values: { inviter: inviterName } }) : t('guestView.descriptionFallback')}
+            </p>
+          </div>
 
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            <div className="space-y-3">
-              <Button 
-                className="w-full" 
-                onClick={handleSignUp}
-                size="lg"
-              >
-                {t('buttons.createAccountAndJoin')}
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                onClick={() => navigate('/signin', { 
-                  state: { redirectUrl: `/invite/${invitationId}` } 
-                })}
-              >
-                {t('buttons.alreadyHaveAccount')}
-              </Button>
+          {/* Invitation detail pill */}
+          <div className="flex items-center gap-3 rounded-xl p-4 mb-5" style={{ backgroundColor: '#f7f7f8', border: '1px solid rgba(81,76,84,0.08)' }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#f8cdd8' }}>
+              <Mail className="h-4 w-4" style={{ color: '#3c323e' }} />
             </div>
-
-            <div className="text-xs text-muted-foreground text-center">
-              {t('guestView.footer')}
+            <div>
+              <p className="text-xs font-medium" style={{ color: '#3c323e' }}>{t('guestView.details.title')}</p>
+              <p className="text-[11px] mt-0.5" style={{ color: '#655d67' }}>{invitation.email} · {roleLabel}</p>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+
+          {error && <p className="text-xs mb-3 py-2 px-3 rounded-lg text-center" style={{ backgroundColor: 'rgba(206,93,85,0.06)', color: '#ce5d55', border: '1px solid rgba(206,93,85,0.14)' }}>{error}</p>}
+
+          <div className="space-y-2">
+            <PrimaryBtn onClick={handleSignUp}>{t('buttons.createAccountAndJoin')}</PrimaryBtn>
+            <GhostBtn onClick={() => navigate('/signin', { state: { redirectUrl: `/invite/${invitationId}` } })}>
+              {t('buttons.alreadyHaveAccount')}
+            </GhostBtn>
+          </div>
+          <p className="text-[10px] text-center mt-4" style={{ color: '#655d67' }}>{t('guestView.footer')}</p>
+        </InviteCard>
+      </Page>
     );
   }
 
-  // User authenticated but email doesn't match
+  /* ── Email mismatch ── */
   if (user.email !== invitation.email) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-destructive">
-              <AlertCircle className="h-5 w-5" />
-              {t('errors.mismatch.title')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {t('errors.mismatch.description', {
-                  values: {
-                    invitedEmail: invitation.email,
-                    currentEmail: user.email ?? '',
-                  },
-                })}
-              </AlertDescription>
-            </Alert>
-            <div className="space-y-2 mt-4">
-              <Button 
-                className="w-full" 
-                onClick={handleSignOut}
-              >
-                {t('buttons.signOutAndCreate')}
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                onClick={() => navigate('/dashboard')}
-              >
-                {t('buttons.goToDashboard')}
-              </Button>
+      <Page>
+        <InviteCard>
+          <div className="text-center mb-5">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}>
+              <AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <h1 className="text-base font-semibold mb-1" style={{ color: '#3c323e' }}>{t('errors.mismatch.title')}</h1>
+            <p className="text-xs" style={{ color: '#655d67' }}>
+              {t('errors.mismatch.description', { values: { invitedEmail: invitation.email, currentEmail: user.email ?? '' } })}
+            </p>
+          </div>
+          <div className="space-y-2">
+            <PrimaryBtn onClick={handleSignOut}>{t('buttons.signOutAndCreate')}</PrimaryBtn>
+            <GhostBtn onClick={() => navigate('/dashboard')}>{t('buttons.goToDashboard')}</GhostBtn>
+          </div>
+        </InviteCard>
+      </Page>
     );
   }
 
-  // User authenticated and email matches - show accept invitation option
-  const organizationName = invitation.organization?.name;
+  /* ── Authenticated + matching email ── */
+  const orgName = invitation.organization?.name;
   const inviterName = invitation.inviter?.name;
-  const roleLabel =
-    invitation.role === 'owner'
-      ? t('authenticatedView.summary.roleOwner')
-      : t('authenticatedView.summary.roleMember');
+  const roleLabel = invitation.role === 'owner' ? t('authenticatedView.summary.roleOwner') : t('authenticatedView.summary.roleMember');
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <Card className="w-full max-w-lg">
-        <CardHeader className="text-center">
-          <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-            <CheckCircle className="h-8 w-8 text-primary" />
+    <Page>
+      <InviteCard maxW="max-w-lg">
+        <div className="text-center mb-6">
+          <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: '#f4faf8' }}>
+            <CheckCircle className="h-7 w-7" style={{ color: '#177767' }} />
           </div>
-          <CardTitle>
-            {organizationName
-              ? t('authenticatedView.title', { values: { organization: organizationName } })
-              : t('authenticatedView.titleFallback')}
-          </CardTitle>
-          <CardDescription>
-            {inviterName
-              ? t('authenticatedView.description', { values: { inviter: inviterName } })
-              : t('authenticatedView.descriptionFallback')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="bg-muted/50 rounded-lg p-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  {t('authenticatedView.summary.organization')}
-                </span>
-                <span className="font-medium">
-                  {organizationName ?? t('fallbacks.organization')}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  {t('authenticatedView.summary.role')}
-                </span>
-                <span className="font-medium">{roleLabel}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  {t('authenticatedView.summary.invitedBy')}
-                </span>
-                <span className="font-medium">
-                  {inviterName ?? t('fallbacks.inviterShort')}
-                </span>
-              </div>
+          <h1 className="text-base font-semibold mb-1" style={{ color: '#3c323e' }}>
+            {orgName ? t('authenticatedView.title', { values: { organization: orgName } }) : t('authenticatedView.titleFallback')}
+          </h1>
+          <p className="text-xs" style={{ color: '#655d67' }}>
+            {inviterName ? t('authenticatedView.description', { values: { inviter: inviterName } }) : t('authenticatedView.descriptionFallback')}
+          </p>
+        </div>
+
+        {/* Summary table */}
+        <div className="rounded-xl p-4 mb-5 space-y-2.5" style={{ backgroundColor: '#f7f7f8', border: '1px solid rgba(81,76,84,0.08)' }}>
+          {[
+            [t('authenticatedView.summary.organization'), orgName ?? t('fallbacks.organization')],
+            [t('authenticatedView.summary.role'), roleLabel],
+            [t('authenticatedView.summary.invitedBy'), inviterName ?? t('fallbacks.inviterShort')],
+          ].map(([label, value]) => (
+            <div key={label} className="flex justify-between text-xs">
+              <span style={{ color: '#655d67' }}>{label}</span>
+              <span className="font-medium" style={{ color: '#3c323e' }}>{value}</span>
             </div>
-          </div>
+          ))}
+        </div>
 
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+        {error && <p className="text-xs mb-3 py-2 px-3 rounded-lg text-center" style={{ backgroundColor: 'rgba(206,93,85,0.06)', color: '#ce5d55', border: '1px solid rgba(206,93,85,0.14)' }}>{error}</p>}
 
-          <div className="space-y-3">
-            <Button 
-              className="w-full" 
-              onClick={handleAcceptInvitation}
-              disabled={acceptLoading}
-              size="lg"
-            >
-              {acceptLoading ? (
-                <>
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
-                  {t('buttons.acceptInvitationLoading')}
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  {t('buttons.acceptInvitation')}
-                </>
-              )}
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full" 
-              onClick={() => navigate('/dashboard')}
-            >
-              {t('buttons.maybeLater')}
-            </Button>
-          </div>
+        <div className="space-y-2">
+          <PrimaryBtn onClick={handleAcceptInvitation} disabled={acceptLoading}>
+            {acceptLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                {t('buttons.acceptInvitationLoading')}
+              </span>
+            ) : (
+              <span className="flex items-center justify-center gap-1.5">
+                <CheckCircle className="h-3.5 w-3.5" />
+                {t('buttons.acceptInvitation')}
+              </span>
+            )}
+          </PrimaryBtn>
+          <GhostBtn onClick={() => navigate('/dashboard')}>{t('buttons.maybeLater')}</GhostBtn>
+        </div>
 
-          <div className="text-xs text-muted-foreground text-center">
-            {t('authenticatedView.footer')}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        <p className="text-[10px] text-center mt-4" style={{ color: '#655d67' }}>{t('authenticatedView.footer')}</p>
+      </InviteCard>
+    </Page>
   );
 };
 

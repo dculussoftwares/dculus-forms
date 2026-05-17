@@ -1,22 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useMutation, useApolloClient } from '@apollo/client';
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Label,
-  OTPInput,
-  TypographyH2,
-  TypographyP,
-  TypographySmall,
-} from '@dculus/ui';
+import { OTPInput } from '@dculus/ui';
 import { slugify } from '@dculus/utils';
 import { emailOtp, signIn, authClient, organization } from '../lib/auth-client';
-import { ArrowLeft, Mail, Timer } from 'lucide-react';
+import { ArrowLeft, FileText, Mail, Timer } from 'lucide-react';
 import { useTranslation } from '../hooks/useTranslation';
 import { INITIALIZE_ORGANIZATION_SUBSCRIPTION } from '../graphql/subscription';
 
@@ -42,7 +30,6 @@ export const EmailVerification = () => {
   const apolloClient = useApolloClient();
   const { t } = useTranslation('emailVerification');
 
-  // GraphQL mutation for initializing organization subscription
   const [initializeSubscription] = useMutation(INITIALIZE_ORGANIZATION_SUBSCRIPTION);
 
   const state = location.state as LocationState | null;
@@ -50,162 +37,67 @@ export const EmailVerification = () => {
   const statePassword = state?.password || '';
   const fromSignIn = state?.fromSignIn || false;
 
-  // Try to get pending signup data from sessionStorage
   const pendingSignupData: PendingSignupData | null = (() => {
     const stored = sessionStorage.getItem('pendingSignupData');
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch {
-        return null;
-      }
-    }
+    if (stored) { try { return JSON.parse(stored); } catch { return null; } }
     return null;
   })();
 
-  // Use pending signup data if available, otherwise fall back to state
   const email = pendingSignupData?.email || stateEmail;
   const password = pendingSignupData?.password || statePassword;
   const organizationName = pendingSignupData?.organizationName || '';
-
-  // Check for pending invitation
   const pendingInvitationId = typeof window !== 'undefined' ? sessionStorage.getItem('pendingInvitationId') : null;
 
-  // Redirect to signin if no email provided
-  useEffect(() => {
-    if (!email) {
-      navigate('/signin');
-    }
-  }, [email, navigate]);
+  useEffect(() => { if (!email) navigate('/signin'); }, [email, navigate]);
 
-  // Countdown timer
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (countdown > 0) {
-      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-    }
+    if (countdown > 0) timer = setTimeout(() => setCountdown(countdown - 1), 1000);
     return () => clearTimeout(timer);
   }, [countdown]);
 
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (otp.length !== 6) {
-      setErrors({ otp: t('messages.otpIncomplete') });
-      return;
-    }
-
+    if (otp.length !== 6) { setErrors({ otp: t('messages.otpIncomplete') }); return; }
     setIsLoading(true);
     setErrors({});
-
     try {
-      // Verify the OTP
-      const verifyResponse = await emailOtp.verifyEmail({
-        email,
-        otp: otp.trim(),
-      });
+      const verifyResponse = await emailOtp.verifyEmail({ email, otp: otp.trim() });
+      if (verifyResponse.error) { setErrors({ otp: verifyResponse.error.message || t('messages.otpInvalid') }); return; }
 
-      if (verifyResponse.error) {
-        setErrors({
-          otp: verifyResponse.error.message || t('messages.otpInvalid'),
-        });
-        return;
-      }
-
-      // Sign in the user
       if (password) {
-        const signInResponse = await signIn.email({
-          email,
-          password,
-        });
-
-        if (signInResponse.error) {
-          // Email verified but sign-in failed
-          setErrors({
-            otp: t('messages.signInFailed'),
-          });
-          return;
-        }
+        const signInResponse = await signIn.email({ email, password });
+        if (signInResponse.error) { setErrors({ otp: t('messages.signInFailed') }); return; }
       }
 
-      // Check if there's a pending invitation to accept
       if (pendingInvitationId) {
         try {
-          await organization.acceptInvitation({
-            invitationId: pendingInvitationId,
-          });
-          
-          // Clear the pending invitation and signup data
+          await organization.acceptInvitation({ invitationId: pendingInvitationId });
           sessionStorage.removeItem('pendingInvitationId');
-          sessionStorage.removeItem('pendingSignupData');
-          
-          // Navigate to dashboard
           navigate('/');
           return;
-        } catch (invitationError) {
-          console.error('Error accepting invitation:', invitationError);
-          // Continue with normal organization creation if invitation acceptance fails
+        } catch { /* continue with org creation */ }
+      }
+
+      if (!pendingInvitationId && organizationName) {
+        const orgSlug = slugify(organizationName);
+        const orgResult = await authClient.organization.create({ name: organizationName, slug: orgSlug });
+        if (orgResult?.data?.id) {
+          try {
+            await initializeSubscription({ variables: { organizationId: orgResult.data.id } });
+          } catch { /* non-fatal */ }
+          try {
+            await organization.setActive({ organizationId: orgResult.data.id });
+            await authClient.getSession();
+            await apolloClient.refetchQueries({ include: ['ActiveOrganization'] });
+          } catch { /* non-fatal */ }
         }
       }
 
-      // Create the organization if we have organization name (new signup flow)
-      if (organizationName && !pendingInvitationId) {
-        try {
-          const organizationSlug = slugify(organizationName);
-          const orgResult = await authClient.organization.create({
-            name: organizationName,
-            slug: organizationSlug,
-          });
-
-          // Initialize free subscription for the new organization
-          if (orgResult?.data?.id) {
-            try {
-              console.log('[EmailVerification] Initializing subscription for organization:', orgResult.data.id);
-              const subscriptionResult = await initializeSubscription({
-                variables: { organizationId: orgResult.data.id },
-              });
-
-              if (subscriptionResult.data?.initializeOrganizationSubscription?.success) {
-                console.log('[EmailVerification] ✅ Subscription initialized successfully');
-              } else {
-                console.error('[EmailVerification] ⚠️ Subscription initialization failed:', subscriptionResult.data?.initializeOrganizationSubscription?.message);
-              }
-            } catch (subscriptionError) {
-              // Log error but don't block flow
-              console.error('[EmailVerification] ⚠️ Error initializing subscription:', subscriptionError);
-            }
-
-            // Set active organization and refresh session
-            try {
-              await organization.setActive({
-                organizationId: orgResult.data.id,
-              });
-              await authClient.getSession();
-              
-              // Refetch Apollo queries to ensure activeOrganization is up to date
-              await apolloClient.refetchQueries({
-                include: ['ActiveOrganization'],
-              });
-            } catch (sessionError) {
-              console.error('[EmailVerification] Error setting active organization:', sessionError);
-            }
-          }
-        } catch (orgError) {
-          console.error('[EmailVerification] Error creating organization:', orgError);
-          // Organization might already exist if user had partially completed before
-        }
-      }
-
-      // Clear the pending signup data
       sessionStorage.removeItem('pendingSignupData');
-
-      // Navigate to dashboard
       navigate('/');
-    } catch (error) {
-      console.error('OTP verification error:', error);
-      setErrors({
-        otp: t('messages.unexpectedError'),
-      });
+    } catch {
+      setErrors({ otp: t('messages.unexpectedError') });
     } finally {
       setIsLoading(false);
     }
@@ -213,159 +105,132 @@ export const EmailVerification = () => {
 
   const handleResendOTP = async () => {
     if (countdown > 0) return;
-
     setIsLoading(true);
     setErrors({});
-
     try {
-      const response = await emailOtp.sendVerificationOtp({
-        email,
-        type: 'email-verification',
-      });
-
+      const response = await emailOtp.sendVerificationOtp({ email, type: 'email-verification' });
       if (response.error) {
-        setErrors({
-          submit: response.error.message || t('messages.resendFailed'),
-        });
+        setErrors({ submit: response.error.message || t('messages.resendFailed') });
       } else {
         setCountdown(60);
         setOtp('');
       }
-    } catch (error) {
-      console.error('Resend OTP error:', error);
-      setErrors({
-        submit: t('messages.resendFailed'),
-      });
+    } catch {
+      setErrors({ submit: t('messages.resendFailed') });
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!email) {
-    return null;
-  }
+  if (!email) return null;
 
   return (
-    <div className="container relative h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
-      <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-600 to-blue-600" />
-        <div className="relative z-20 flex items-center text-lg font-medium">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="mr-2 h-6 w-6"
-          >
-            <path d="m8 3 4 8 5-5v11H6V6l2-3z" />
-            <path d="M2 3h6" />
-            <path d="M6 3v5" />
-          </svg>
-          {t('hero.productName')}
-        </div>
-        <div className="relative z-20 mt-auto">
-          <div className="mt-6 border-l-2 pl-6 italic">
-            <TypographyP>
-              &ldquo;{t('hero.tagline')}&rdquo;
-            </TypographyP>
-            <footer className="text-sm">{t('hero.attribution')}</footer>
+    <div className="h-screen flex overflow-hidden">
+      {/* Left dark panel */}
+      <div className="hidden lg:flex lg:flex-col lg:w-[480px] xl:w-[560px] shrink-0 p-10 justify-between" style={{ backgroundColor: '#2a222b' }}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#3c323e' }}>
+            <FileText className="w-4 h-4 text-white" />
           </div>
+          <span className="text-white font-semibold text-lg">{t('hero.productName')}</span>
         </div>
+        <div className="space-y-3">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
+            <Mail className="w-6 h-6" style={{ color: 'rgba(255,255,255,0.70)' }} />
+          </div>
+          <h2 className="text-white text-3xl font-light leading-tight">{t('hero.tagline')}</h2>
+          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>{t('hero.attribution')}</p>
+        </div>
+        <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>© {new Date().getFullYear()} Dculus Forms</p>
       </div>
-      <div className="lg:p-8">
-        <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-          <div className="flex flex-col space-y-2 text-center">
-            <TypographyH2>{t('meta.heading')}</TypographyH2>
-            <TypographySmall className="text-muted-foreground">
-              {t('meta.subheading', { values: { email } })}
-            </TypographySmall>
-          </div>
 
-          <Card>
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Link to="/signin">
-                  <Button variant="ghost" size="sm" className="p-1 h-auto">
-                    <ArrowLeft className="w-4 h-4" />
-                  </Button>
-                </Link>
-                <Mail className="w-5 h-5" />
-                {t('card.title')}
-              </CardTitle>
-              <CardDescription>{t('card.description')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleVerifyOTP} className="space-y-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-center block">{t('form.otpLabel')}</Label>
-                    <OTPInput
-                      value={otp}
-                      onChange={(value) => {
-                        setOtp(value);
-                        if (errors.otp) {
-                          setErrors((prev) => ({ ...prev, otp: '' }));
-                        }
-                      }}
-                      disabled={isLoading}
-                      hasError={!!errors.otp}
-                    />
-                    {errors.otp && (
-                      <TypographySmall className="text-red-500 text-center">
-                        {errors.otp}
-                      </TypographySmall>
-                    )}
-                  </div>
-
-                  <div className="text-center">
-                    {countdown > 0 ? (
-                      <TypographySmall className="text-muted-foreground flex items-center justify-center gap-2">
-                        <Timer className="w-4 h-4" />
-                        {t('form.countdown', { values: { seconds: countdown } })}
-                      </TypographySmall>
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={handleResendOTP}
-                        disabled={isLoading}
-                        className="text-sm"
-                      >
-                        {t('form.resend')}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {errors.submit && (
-                  <TypographySmall className="text-red-500 text-center">
-                    {errors.submit}
-                  </TypographySmall>
-                )}
-
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isLoading || otp.length !== 6}
-                >
-                  {isLoading ? t('form.actions.submitting') : t('form.actions.submit')}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          <TypographySmall className="text-center">
+      {/* Right white panel */}
+      <div className="flex-1 flex flex-col overflow-y-auto bg-white">
+        <div className="flex items-center justify-end px-8 py-5" style={{ borderBottom: '1px solid rgba(81,76,84,0.08)' }}>
+          <span className="text-sm" style={{ color: '#655d67' }}>
             {fromSignIn ? t('links.backToSignIn') : t('links.backToSignUp')}{' '}
-            <Link
-              to={fromSignIn ? '/signin' : '/signup'}
-              className="underline underline-offset-4 hover:text-primary"
-            >
+            <Link to={fromSignIn ? '/signin' : '/signup'} className="font-medium" style={{ color: '#3c323e' }}>
               {fromSignIn ? t('links.signIn') : t('links.signUp')}
             </Link>
-          </TypographySmall>
+          </span>
+        </div>
+
+        <div className="flex-1 flex items-center justify-center px-8 py-12">
+          <div className="w-full max-w-sm">
+            <button
+              onClick={() => navigate(fromSignIn ? '/signin' : '/signup')}
+              className="flex items-center gap-1.5 text-xs mb-6 transition-colors"
+              style={{ color: '#655d67' }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#3c323e'}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#655d67'}
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              {fromSignIn ? t('links.signIn') : t('links.signUp')}
+            </button>
+
+            <div className="mb-7">
+              <h1 className="text-2xl font-semibold mb-1.5" style={{ color: '#3c323e' }}>{t('meta.heading')}</h1>
+              <p className="text-sm" style={{ color: '#655d67' }}>{t('meta.subheading', { values: { email } })}</p>
+            </div>
+
+            <form onSubmit={handleVerifyOTP} className="space-y-5">
+              <div>
+                <label className="text-xs font-medium block mb-3 text-center" style={{ color: '#4c414e' }}>
+                  {t('form.otpLabel')}
+                </label>
+                <OTPInput
+                  value={otp}
+                  onChange={(value) => { setOtp(value); if (errors.otp) setErrors(prev => ({ ...prev, otp: '' })); }}
+                  disabled={isLoading}
+                  hasError={!!errors.otp}
+                />
+                {errors.otp && (
+                  <p className="text-xs mt-2 text-center" style={{ color: '#ce5d55' }}>{errors.otp}</p>
+                )}
+              </div>
+
+              <div className="text-center">
+                {countdown > 0 ? (
+                  <span className="text-xs flex items-center justify-center gap-1.5" style={{ color: '#655d67' }}>
+                    <Timer className="w-3.5 h-3.5" />
+                    {t('form.countdown', { values: { seconds: countdown } })}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResendOTP}
+                    disabled={isLoading}
+                    className="text-xs font-medium transition-colors"
+                    style={{ color: '#3c323e' }}
+                  >
+                    {t('form.resend')}
+                  </button>
+                )}
+              </div>
+
+              {errors.submit && (
+                <p className="text-xs text-center py-2 px-3 rounded-lg" style={{ backgroundColor: 'rgba(206,93,85,0.06)', color: '#ce5d55', border: '1px solid rgba(206,93,85,0.14)' }}>
+                  {errors.submit}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={isLoading || otp.length !== 6}
+                className="w-full h-10 rounded-lg text-sm font-medium text-white transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
+                style={{ backgroundColor: '#3c323e' }}
+                onMouseEnter={e => { if (!isLoading && otp.length === 6) (e.currentTarget as HTMLElement).style.backgroundColor = '#2e2530'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#3c323e'; }}
+              >
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    {t('form.actions.submitting')}
+                  </span>
+                ) : t('form.actions.submit')}
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     </div>

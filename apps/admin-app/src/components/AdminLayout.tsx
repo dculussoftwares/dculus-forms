@@ -2,14 +2,13 @@ import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from '../hooks/useTranslation';
-import { Button } from '@dculus/ui';
 import {
   LayoutDashboard,
   Building2,
   Users,
   FileText,
   LogOut,
-  Crown
+  Shield,
 } from 'lucide-react';
 import { cn } from '@dculus/utils';
 
@@ -17,129 +16,96 @@ interface AdminLayoutProps {
   children: ReactNode;
 }
 
-interface NavItem {
-  name: string;
-  href: string;
-  icon: React.ElementType;
-  current?: boolean;
-}
-
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const { user, signOut, isSuperAdmin } = useAuth();
   const location = useLocation();
   const { t } = useTranslation('layout');
 
-  const navigation: NavItem[] = [
-    {
-      name: t('navigation.dashboard'),
-      href: '/dashboard',
-      icon: LayoutDashboard,
-      current: location.pathname === '/dashboard',
-    },
-    {
-      name: t('navigation.organizations'),
-      href: '/organizations',
-      icon: Building2,
-      current: location.pathname === '/organizations',
-    },
-    {
-      name: t('navigation.users'),
-      href: '/users',
-      icon: Users,
-      current: location.pathname === '/users',
-    },
-    {
-      name: t('navigation.templates'),
-      href: '/templates',
-      icon: FileText,
-      current: location.pathname === '/templates',
-    },
-    // Settings route is not yet implemented — removed to avoid a dead link
+  const navigation = [
+    { name: t('navigation.dashboard'),     href: '/dashboard',     icon: LayoutDashboard },
+    { name: t('navigation.organizations'), href: '/organizations', icon: Building2 },
+    { name: t('navigation.users'),         href: '/users',         icon: Users },
+    { name: t('navigation.templates'),     href: '/templates',     icon: FileText },
   ];
 
-  const handleSignOut = async () => {
-    await signOut();
-  };
+  const initials = (user?.name || user?.email || 'A').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen" style={{ backgroundColor: '#f7f7f8' }}>
       {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg">
-        <div className="flex h-16 shrink-0 items-center px-6 border-b">
-          <div className="flex items-center">
-            <Crown className="h-8 w-8 text-blue-600 mr-3" />
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">{t('sidebar.title')}</h1>
-              <p className="text-xs text-gray-500">{t('sidebar.subtitle')}</p>
-            </div>
+      <div
+        className="fixed inset-y-0 left-0 z-50 w-60 bg-white flex flex-col"
+        style={{ borderRight: '1px solid rgba(81,76,84,0.10)' }}
+      >
+        {/* Logo */}
+        <div className="flex items-center gap-2.5 px-5 h-14 shrink-0" style={{ borderBottom: '1px solid rgba(81,76,84,0.10)' }}>
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#3c323e' }}>
+            <Shield className="h-3.5 w-3.5 text-white" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold truncate" style={{ color: '#3c323e' }}>{t('sidebar.title')}</p>
+            <p className="text-[10px] truncate" style={{ color: '#655d67' }}>{t('sidebar.subtitle')}</p>
           </div>
         </div>
-        
-        <nav className="flex flex-1 flex-col px-4 py-4">
-          <ul role="list" className="flex flex-1 flex-col gap-y-2">
-            {navigation.map((item) => (
-              <li key={item.name}>
-                <Link
-                  to={item.href}
-                  className={cn(
-                    item.current
-                      ? 'bg-blue-50 text-blue-700 border-blue-200'
-                      : 'text-gray-700 hover:text-blue-700 hover:bg-blue-50',
-                    'group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-medium border border-transparent hover:border-blue-200 transition-colors'
-                  )}
-                >
-                  <item.icon
-                    className={cn(
-                      item.current ? 'text-blue-700' : 'text-gray-400 group-hover:text-blue-700',
-                      'h-5 w-5 shrink-0'
-                    )}
-                    aria-hidden="true"
-                  />
-                  {item.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
+
+        {/* Nav */}
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+          {navigation.map((item) => {
+            const isActive = location.pathname === item.href;
+            return (
+              <Link
+                key={item.name}
+                to={item.href}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: isActive ? 'rgba(87,84,91,0.06)' : 'transparent',
+                  color: isActive ? '#3c323e' : '#655d67',
+                }}
+                onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.04)'; (e.currentTarget as HTMLElement).style.color = '#4c414e'; } }}
+                onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#655d67'; } }}
+              >
+                <item.icon className="h-4 w-4 shrink-0" />
+                {item.name}
+              </Link>
+            );
+          })}
         </nav>
 
-        {/* User info and sign out */}
-        <div className="border-t border-gray-200 p-4">
-          <div className="flex items-center mb-3">
-            <div className="flex-shrink-0">
-              <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
-                <span className="text-sm font-medium text-white">
-                  {user?.name?.charAt(0).toUpperCase() || 'A'}
-                </span>
-              </div>
+        {/* User footer */}
+        <div className="shrink-0 px-3 pb-4" style={{ borderTop: '1px solid rgba(81,76,84,0.10)', paddingTop: '12px' }}>
+          <div className="flex items-center gap-2.5 px-2 mb-3">
+            <div className="h-7 w-7 rounded-full flex items-center justify-center shrink-0 text-xs font-semibold text-white" style={{ backgroundColor: '#3c323e' }}>
+              {initials}
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-700">{user?.name}</p>
-              <div className="flex items-center">
-                <p className="text-xs text-gray-500">{user?.email}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium truncate" style={{ color: '#3c323e' }}>{user?.name}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-[10px] truncate" style={{ color: '#655d67' }}>{user?.email}</p>
                 {isSuperAdmin && (
-                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0" style={{ backgroundColor: '#fbe19d', color: '#8b6a18' }}>
                     {t('userMenu.superAdmin')}
                   </span>
                 )}
               </div>
             </div>
           </div>
-          <Button
-            onClick={handleSignOut}
-            variant="outline"
-            size="sm"
-            className="w-full justify-start"
+          <button
+            onClick={signOut}
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+            style={{ color: '#655d67' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; (e.currentTarget as HTMLElement).style.color = '#3c323e'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
           >
-            <LogOut className="h-4 w-4 mr-2" />
+            <LogOut className="h-3.5 w-3.5" />
             {t('userMenu.signOut')}
-          </Button>
+          </button>
         </div>
       </div>
 
       {/* Main content */}
-      <div className="pl-64">
-        <main className="py-8">
-          <div className="px-4 sm:px-6 lg:px-8">
+      <div className="pl-60">
+        <main className="min-h-screen">
+          <div className="px-6 py-6">
             {children}
           </div>
         </main>

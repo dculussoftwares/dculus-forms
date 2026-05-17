@@ -5,17 +5,7 @@ import { format } from 'date-fns';
 import { useTranslation } from '../hooks/useTranslation';
 import { GET_FORM_BY_ID, GET_RESPONSE_BY_ID } from '../graphql/queries';
 import { useResponseEditHistory } from '../hooks/useResponseEditHistory';
-import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Badge,
-  Alert,
-  AlertDescription,
-  LoadingSpinner
-} from '@dculus/ui';
+import { Alert, AlertDescription, LoadingSpinner } from '@dculus/ui';
 import {
   ArrowLeft,
   History,
@@ -115,14 +105,12 @@ export const ResponseEditHistory: React.FC = () => {
           { label: t('layout.breadcrumbs.editHistory'), href: `/dashboard/form/${formId}/responses/${responseId}/history` },
         ]}
       >
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="max-w-md text-center p-8 bg-white rounded-lg shadow-sm border border-slate-200/60">
-            <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-            <h3 className="mb-2 text-xl font-semibold">{t('errors.notFound.title')}</h3>
-            <p className="text-slate-600">
-              {t('errors.notFound.description')}
-            </p>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}>
+            <AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />
           </div>
+          <h3 className="text-sm font-semibold mb-1" style={{ color: '#3c323e' }}>{t('errors.notFound.title')}</h3>
+          <p className="text-xs" style={{ color: '#655d67' }}>{t('errors.notFound.description')}</p>
         </div>
       </MainLayout>
     );
@@ -139,63 +127,60 @@ export const ResponseEditHistory: React.FC = () => {
       ]}
     >
       <div className="flex flex-col h-full w-full overflow-x-hidden">
-        {/* Compact Header */}
-        <div className="flex items-center gap-4 p-3 border-b border-slate-200/40 bg-white flex-shrink-0 w-full overflow-hidden rounded-t-lg">
-          <Button
-            variant="ghost"
-            size="sm"
+        {/* Header */}
+        <div className="flex items-center gap-3 pb-4 flex-shrink-0" style={{ borderBottom: '1px solid rgba(81,76,84,0.10)' }}>
+          <button
             onClick={handleGoToTable}
-            className="hover:bg-slate-100 flex-shrink-0"
+            className="h-8 w-8 flex items-center justify-center rounded-lg transition-colors shrink-0"
+            style={{ color: '#655d67' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; (e.currentTarget as HTMLElement).style.color = '#3c323e'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {t('navigation.backToResponses')}
-          </Button>
-          <div className="h-4 w-px bg-slate-300 flex-shrink-0" />
-          <div className="flex items-center space-x-2 flex-1">
-            <History className="h-5 w-5 text-slate-600" />
-            <h1 className="text-lg font-semibold text-slate-900 truncate">
-              {t('header.title')}
-            </h1>
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'rgba(81,76,84,0.12)' }} />
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: '#ddd6fa' }}>
+            <History className="h-4 w-4" style={{ color: '#5c2e6b' }} />
           </div>
-          <Button onClick={handleGoToEdit} className="flex-shrink-0">
-            <Edit3 className="h-4 w-4 mr-2" />
+          <h1 className="text-sm font-semibold truncate flex-1" style={{ color: '#3c323e' }}>{t('header.title')}</h1>
+          <button
+            onClick={handleGoToEdit}
+            className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-white shrink-0"
+            style={{ backgroundColor: '#3c323e' }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.backgroundColor = '#2e2530'}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.backgroundColor = '#3c323e'}
+          >
+            <Edit3 className="h-3.5 w-3.5" />
             {t('header.editResponse')}
-          </Button>
+          </button>
         </div>
 
         {/* Main content area */}
         <div className="flex-1 flex flex-col min-h-0 w-full overflow-x-hidden space-y-6 p-6">
 
           {/* Response Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">{t('responseInfo.title')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="font-medium text-gray-500">{t('responseInfo.responseId')}</span>
-                  <div className="font-mono text-xs text-gray-700 mt-1">
-                    {responseId}
-                  </div>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-500">{t('responseInfo.submitted')}</span>
-                  <div className="text-gray-700 mt-1">
-                    {safeFormatDate(response.submittedAt, 'MMM dd, yyyy \'at\' h:mm a')}
-                  </div>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-500">{t('responseInfo.totalEdits')}</span>
-                  <div className="text-gray-700 mt-1">
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700">
+          <div className="rounded-xl bg-white p-5" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
+            <h3 className="text-sm font-semibold mb-4" style={{ color: '#3c323e' }}>{t('responseInfo.title')}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { label: t('responseInfo.responseId'), value: <span className="font-mono text-xs">{responseId}</span> },
+                { label: t('responseInfo.submitted'), value: safeFormatDate(response.submittedAt, "MMM dd, yyyy 'at' h:mm a") },
+                {
+                  label: t('responseInfo.totalEdits'),
+                  value: (
+                    <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: '#f6fafd', color: '#01487f', border: '1px solid rgb(189,221,249)' }}>
                       {editHistory.length === 1 ? t('responseInfo.editsCount', { values: { count: editHistory.length } }) : t('responseInfo.editsCountPlural', { values: { count: editHistory.length } })}
-                    </Badge>
-                  </div>
+                    </span>
+                  )
+                },
+              ].map(({ label, value }) => (
+                <div key={label as string}>
+                  <p className="text-xs font-medium mb-1" style={{ color: '#655d67' }}>{label}</p>
+                  <p className="text-sm" style={{ color: '#3c323e' }}>{value}</p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              ))}
+            </div>
+          </div>
 
           {/* Error States */}
           {historyError && (
@@ -210,21 +195,14 @@ export const ResponseEditHistory: React.FC = () => {
           {/* Edit History Timeline */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">
-                {t('timeline.title', { 
-                  values: { 
-                    count: editHistory.length,
-                    editText: editHistory.length === 1 ? t('timeline.editSingular') : t('timeline.editPlural')
-                  }
-                })}
+              <h2 className="text-sm font-semibold" style={{ color: '#3c323e' }}>
+                {t('timeline.title', { values: { count: editHistory.length, editText: editHistory.length === 1 ? t('timeline.editSingular') : t('timeline.editPlural') } })}
               </h2>
 
               {editHistory.length > 0 && (
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <Clock className="h-4 w-4" />
-                  <span>
-                    {t('timeline.lastEdited', { values: { date: safeFormatDate(editHistory[0].editedAt, 'MMM dd, yyyy', 'unknown date') } })}
-                  </span>
+                <div className="flex items-center gap-1.5 text-xs" style={{ color: '#655d67' }}>
+                  <Clock className="h-3.5 w-3.5" />
+                  {t('timeline.lastEdited', { values: { date: safeFormatDate(editHistory[0].editedAt, 'MMM dd, yyyy', 'unknown date') } })}
                 </div>
               )}
             </div>
