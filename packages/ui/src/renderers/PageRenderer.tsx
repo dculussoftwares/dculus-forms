@@ -256,7 +256,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
             </svg>
             <div>
               <h3 className="text-sm font-semibold text-red-800 dark:text-red-400">
-                Please fix the following to continue:
+                Please fix the following errors to continue
               </h3>
               <ul className="mt-1.5 text-sm text-red-700 dark:text-red-300 list-disc list-inside space-y-0.5">
                 {validationErrors.map((error, index) => (
