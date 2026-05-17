@@ -57,7 +57,7 @@ export const SignIn = () => {
       if (response.error) {
         const msg = response.error.message?.toLowerCase() || "";
         if (msg.includes("email") && (msg.includes("verified") || msg.includes("verification"))) {
-          try { await emailOtp.sendVerificationOtp({ email: formData.email, type: "email-verification" }); } catch {}
+          try { await emailOtp.sendVerificationOtp({ email: formData.email, type: "email-verification" }); } catch { /* OTP send failure is non-fatal here */ }
           navigate("/verify-email", { state: { email: formData.email, password: formData.password, fromSignIn: true } });
         } else {
           setErrors({ submit: response.error.message || t("messages.invalidCredentials") });

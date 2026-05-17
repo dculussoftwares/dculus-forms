@@ -13,7 +13,7 @@ import {
   toastError,
 } from '@dculus/ui';
 import { Shield, Save, Calendar, Users } from 'lucide-react';
-import { parseLocalDate, formatLocalDate } from '../../utils/dateHelpers';
+import { parseLocalDate, formatLocalDate } from '@dculus/utils';
 import type { SubmissionLimitsSettings as SubmissionLimitsSettingsType } from '@dculus/types';
 import { useTranslation } from '../../hooks/useTranslation';
 

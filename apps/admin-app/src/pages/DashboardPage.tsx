@@ -1,6 +1,6 @@
 import { useQuery } from '@apollo/client';
-import { LoadingSpinner } from '@dculus/ui';
-import { Building2, Users, FileText, BarChart3, HardDrive, Database } from 'lucide-react';
+import { EmptyState } from '@dculus/ui';
+import { AlertCircle, Building2, Users, FileText, BarChart3, HardDrive, Database } from 'lucide-react';
 import { ADMIN_STATS_QUERY } from '../graphql/organizations';
 import { useTranslation } from '../hooks/useTranslation';
 
@@ -53,11 +53,13 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-64 text-center">
-        <h2 className="text-sm font-semibold mb-1" style={{ color: '#3c323e' }}>{t('error.unableToLoad')}</h2>
-        <p className="text-xs mb-1" style={{ color: '#655d67' }}>{error.message || t('error.checkConnection')}</p>
-        <p className="text-xs" style={{ color: '#655d67', opacity: 0.7 }}>{t('error.backendRunning')}</p>
-      </div>
+      <EmptyState
+        variant="error"
+        className="min-h-64"
+        icon={<AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />}
+        title={t('error.unableToLoad')}
+        description={error.message || t('error.checkConnection')}
+      />
     );
   }
 

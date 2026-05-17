@@ -212,6 +212,8 @@ export { Popover, PopoverTrigger, PopoverContent } from "./popover"
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "./tabs"
 export { PageWrapper } from "./page-wrapper"
 export { LoadingSpinner } from "./loading-spinner"
+export { EmptyState } from "./empty-state"
+export type { EmptyStateProps } from "./empty-state"
 export {
   AlertDialog,
   AlertDialogContent,

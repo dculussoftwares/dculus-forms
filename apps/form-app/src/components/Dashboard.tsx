@@ -8,6 +8,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  EmptyState,
 } from '@dculus/ui';
 import { MainLayout } from './MainLayout';
 import {
@@ -509,27 +510,6 @@ function TemplatesStrip() {
           <span className="text-xs font-medium">See all</span>
         </button>
       </div>
-    </div>
-  );
-}
-
-/* ── Empty state ── */
-function EmptyState({
-  icon, title, description, action,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  action?: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(81,76,84,0.06)' }}>
-        {icon}
-      </div>
-      <h3 className="text-sm font-semibold mb-1" style={{ color: '#3c323e' }}>{title}</h3>
-      <p className="text-xs max-w-xs mb-6" style={{ color: '#655d67' }}>{description}</p>
-      {action}
     </div>
   );
 }

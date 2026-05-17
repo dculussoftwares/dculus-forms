@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { AlertCircle, CheckCircle, FileText, Mail, Users } from 'lucide-react';
 import { useAuthContext } from '../contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
-import { parseDate, isDateExpired } from '../utils/dateHelpers';
+import { parseDate, isDateExpired } from '@dculus/utils';
 import { authClient, organization } from '../lib/auth-client';
 import { useQuery } from '@apollo/client';
 import { GET_INVITATION_PUBLIC } from '../graphql/queries';

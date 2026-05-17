@@ -5,6 +5,7 @@ import {
   LoadingSpinner,
   toastSuccess,
   toastError,
+  EmptyState,
 } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { useTranslation } from '../hooks/useTranslation';
@@ -171,13 +172,12 @@ const FormSettings: React.FC = () => {
           { label: t('layout.title'), href: `/dashboard/form/${formId}/settings` },
         ]}
       >
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}>
-            <AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />
-          </div>
-          <h3 className="text-sm font-semibold mb-1" style={{ color: '#3c323e' }}>{t('errors.formNotFound')}</h3>
-          <p className="text-xs" style={{ color: '#655d67' }}>{t('errors.formNotFoundMessage')}</p>
-        </div>
+        <EmptyState
+          variant="error"
+          icon={<AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />}
+          title={t('errors.formNotFound')}
+          description={t('errors.formNotFoundMessage')}
+        />
       </MainLayout>
     );
   }

@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
-import { useTranslation } from './hooks/useTranslation';
 import AdminLayout from './components/AdminLayout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
@@ -13,7 +12,6 @@ import { LoadingSpinner } from '@dculus/ui';
 
 function App() {
   const { isLoading, isAuthenticated, isAdmin } = useAuth();
-  const { t } = useTranslation('app');
 
   if (isLoading) {
     return (

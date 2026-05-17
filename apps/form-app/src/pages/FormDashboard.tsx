@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   LoadingSpinner,
+  EmptyState,
   AlertDialog,
   AlertDialogContent,
   AlertDialogDescription,
@@ -185,16 +186,12 @@ const FormDashboard: React.FC = () => {
           { label: t('layout.breadcrumbSelf'), href: `/dashboard/form/${formId}` },
         ]}
       >
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-            style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}
-          >
-            <AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />
-          </div>
-          <h3 className="text-sm font-semibold mb-1" style={{ color: '#3c323e' }}>{t('error.title')}</h3>
-          <p className="text-xs" style={{ color: '#655d67' }}>{t('error.description')}</p>
-        </div>
+        <EmptyState
+          variant="error"
+          icon={<AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />}
+          title={t('error.title')}
+          description={t('error.description')}
+        />
       </MainLayout>
     );
   }

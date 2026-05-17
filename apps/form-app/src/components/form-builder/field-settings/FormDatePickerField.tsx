@@ -4,7 +4,7 @@ import { DatePicker, Label } from '@dculus/ui';
 import { ErrorMessage } from './ErrorMessage';
 import { useFieldSettingsConstants } from './useFieldSettingsConstants';
 import { FieldValidationError } from './types';
-import { parseLocalDate, formatLocalDate } from '../../../utils/dateHelpers';
+import { parseLocalDate, formatLocalDate } from '@dculus/utils';
 
 interface FormDatePickerFieldProps {
   name: string;

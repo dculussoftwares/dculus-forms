@@ -28,6 +28,33 @@ export const IMAGE_CONFIG = {
   ALLOWED_EXTENSIONS: ['.jpg', '.jpeg', '.png', '.webp', '.gif'],
 } as const;
 
+// Dculus brand color palette — use these instead of hardcoding hex values
+export const DCULUS_COLORS = {
+  text: {
+    primary:   '#3c323e',
+    secondary: '#655d67',
+  },
+  bg: {
+    page:    '#f7f7f8',
+    subtle:  'rgba(81,76,84,0.06)',
+    hover:   'rgba(87,84,91,0.04)',
+    active:  'rgba(87,84,91,0.06)',
+    border:  'rgba(81,76,84,0.10)',
+  },
+  status: {
+    errorBg:   'rgba(206,93,85,0.08)',
+    errorText: '#ce5d55',
+    warningBg: '#fbe19d',
+    warningText: '#8b6a18',
+  },
+} as const;
+
+// File upload limits
+export const FILE_UPLOAD = {
+  MAX_SIZE_BYTES: 50 * 1024 * 1024, // 50 MB
+  SUBMISSION_TIMEOUT_MS: 30_000,
+} as const;
+
 // Renderer mode enum
 export enum RendererMode {
   PREVIEW = 'PREVIEW',

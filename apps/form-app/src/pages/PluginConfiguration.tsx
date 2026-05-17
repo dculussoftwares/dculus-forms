@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
-import { LoadingSpinner, Button, toastSuccess, toastError } from '@dculus/ui';
+import { LoadingSpinner, Button, toastSuccess, toastError, EmptyState } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { useTranslation } from '../hooks/useTranslation';
 import { GET_FORM_BY_ID } from '../graphql/queries';
@@ -147,13 +147,12 @@ const PluginConfiguration: React.FC = () => {
           { label: t('layout.breadcrumbs.configure'), href: '#' },
         ]}
       >
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}>
-            <AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />
-          </div>
-          <h3 className="text-sm font-semibold mb-1" style={{ color: '#3c323e' }}>{t('errors.formNotFound.title')}</h3>
-          <p className="text-xs" style={{ color: '#655d67' }}>{t('errors.formNotFound.description')}</p>
-        </div>
+        <EmptyState
+          variant="error"
+          icon={<AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />}
+          title={t('errors.formNotFound.title')}
+          description={t('errors.formNotFound.description')}
+        />
       </MainLayout>
     );
   }

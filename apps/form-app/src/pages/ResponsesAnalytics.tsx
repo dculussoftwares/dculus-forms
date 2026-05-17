@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { useTranslation } from '../hooks/useTranslation';
-import { LoadingSpinner } from '@dculus/ui';
+import { LoadingSpinner, EmptyState } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { AlertCircle, ArrowLeft, BarChart3, PieChart } from 'lucide-react';
@@ -37,13 +37,12 @@ const ResponsesAnalytics: React.FC = () => {
   if (formError || !formData?.form) {
     return (
       <MainLayout title={t('layout.title')} breadcrumbs={breadcrumbs}>
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}>
-            <AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />
-          </div>
-          <h3 className="text-sm font-semibold mb-1" style={{ color: '#3c323e' }}>{t('errors.formNotFound.title')}</h3>
-          <p className="text-xs" style={{ color: '#655d67' }}>{t('errors.formNotFound.description')}</p>
-        </div>
+        <EmptyState
+          variant="error"
+          icon={<AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />}
+          title={t('errors.formNotFound.title')}
+          description={t('errors.formNotFound.description')}
+        />
       </MainLayout>
     );
   }

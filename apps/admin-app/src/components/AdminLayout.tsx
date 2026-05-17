@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from '../hooks/useTranslation';
@@ -10,7 +10,6 @@ import {
   LogOut,
   Shield,
 } from 'lucide-react';
-import { cn } from '@dculus/utils';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -20,6 +19,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const { user, signOut, isSuperAdmin } = useAuth();
   const location = useLocation();
   const { t } = useTranslation('layout');
+  const [hoveredNav, setHoveredNav] = useState<string | null>(null);
+  const [signOutHovered, setSignOutHovered] = useState(false);
 
   const navigation = [
     { name: t('navigation.dashboard'),     href: '/dashboard',     icon: LayoutDashboard },
@@ -29,6 +30,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   ];
 
   const initials = (user?.name || user?.email || 'A').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+
+  const getNavStyle = (isActive: boolean, name: string) => ({
+    backgroundColor: isActive
+      ? 'rgba(87,84,91,0.06)'
+      : hoveredNav === name ? 'rgba(87,84,91,0.04)' : 'transparent',
+    color: isActive ? '#3c323e' : hoveredNav === name ? '#4c414e' : '#655d67',
+  });
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#f7f7f8' }}>
@@ -57,12 +65,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 key={item.name}
                 to={item.href}
                 className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-                style={{
-                  backgroundColor: isActive ? 'rgba(87,84,91,0.06)' : 'transparent',
-                  color: isActive ? '#3c323e' : '#655d67',
-                }}
-                onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.04)'; (e.currentTarget as HTMLElement).style.color = '#4c414e'; } }}
-                onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#655d67'; } }}
+                style={getNavStyle(isActive, item.name)}
+                onMouseEnter={() => !isActive && setHoveredNav(item.name)}
+                onMouseLeave={() => setHoveredNav(null)}
               >
                 <item.icon className="h-4 w-4 shrink-0" />
                 {item.name}
@@ -92,9 +97,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <button
             onClick={signOut}
             className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-medium transition-colors"
-            style={{ color: '#655d67' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; (e.currentTarget as HTMLElement).style.color = '#3c323e'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
+            style={{
+              backgroundColor: signOutHovered ? 'rgba(87,84,91,0.06)' : 'transparent',
+              color: signOutHovered ? '#3c323e' : '#655d67',
+            }}
+            onMouseEnter={() => setSignOutHovered(true)}
+            onMouseLeave={() => setSignOutHovered(false)}
           >
             <LogOut className="h-3.5 w-3.5" />
             {t('userMenu.signOut')}

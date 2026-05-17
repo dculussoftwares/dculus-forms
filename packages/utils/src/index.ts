@@ -31,6 +31,10 @@ export const formatDate = (date: Date): string => {
 };
 
 export const parseDate = (dateString: string): Date => {
+  // Handle numeric timestamp strings as well as ISO strings
+  if (!isNaN(Number(dateString))) {
+    return new Date(Number(dateString));
+  }
   return new Date(dateString);
 };
 
@@ -50,6 +54,17 @@ export const parseCalendarDate = (dateStr: string): Date => {
  */
 export const formatCalendarDate = (date: Date): string => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+};
+
+/** Alias for parseCalendarDate — parses "YYYY-MM-DD" as local midnight. */
+export const parseLocalDate = parseCalendarDate;
+
+/** Alias for formatCalendarDate — formats a Date as "YYYY-MM-DD" using local date parts. */
+export const formatLocalDate = formatCalendarDate;
+
+/** Returns true when the given ISO/timestamp date string is in the past. */
+export const isDateExpired = (dateString: string): boolean => {
+  return new Date() > parseDate(dateString);
 };
 
 export function slugify(str: string): string {

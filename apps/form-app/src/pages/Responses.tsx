@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { useTranslation } from '../hooks/useTranslation';
-import { LoadingSpinner } from '@dculus/ui';
+import { LoadingSpinner, EmptyState } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { FilterModal } from '../components/Filters';
 import { QuizResultsDialog } from '../components/plugins/response-table/quiz/QuizResultsDialog';
@@ -119,17 +119,12 @@ const Responses: React.FC = () => {
           { label: t('layout.breadcrumbResponses'), href: `/dashboard/form/${actualFormId}/responses` },
         ]}
       >
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}>
-            <AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />
-          </div>
-          <h3 className="text-sm font-semibold mb-1" style={{ color: '#3c323e' }}>
-            {formData?.form ? t('errors.loadingResponses') : t('errors.formNotFound')}
-          </h3>
-          <p className="text-xs" style={{ color: '#655d67' }}>
-            {formData?.form ? t('errors.loadingResponsesMessage') : t('errors.formNotFoundMessage')}
-          </p>
-        </div>
+        <EmptyState
+          variant="error"
+          icon={<AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />}
+          title={formData?.form ? t('errors.loadingResponses') : t('errors.formNotFound')}
+          description={formData?.form ? t('errors.loadingResponsesMessage') : t('errors.formNotFoundMessage')}
+        />
       </MainLayout>
     );
   }
@@ -187,25 +182,23 @@ const Responses: React.FC = () => {
 
         {/* ── Main content — white table on #f7f7f8 bg ── */}
         {responsesError ? (
-          <div className="flex-1 flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}>
-              <AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />
-            </div>
-            <h3 className="text-sm font-semibold mb-2" style={{ color: '#3c323e' }}>
-              {t('errors.loadingResponses')}
-            </h3>
-            <p className="text-xs mb-5" style={{ color: '#655d67' }}>
-              {t('errors.loadingResponsesMessage')}
-            </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors"
-              style={{ backgroundColor: 'rgba(255,255,255,0.8)', color: '#655d67', border: '1px solid rgba(81,76,84,0.15)' }}
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              {t('table.refreshPage')}
-            </button>
-          </div>
+          <EmptyState
+            variant="error"
+            className="flex-1"
+            icon={<AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />}
+            title={t('errors.loadingResponses')}
+            description={t('errors.loadingResponsesMessage')}
+            action={
+              <button
+                onClick={() => window.location.reload()}
+                className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors"
+                style={{ backgroundColor: 'rgba(255,255,255,0.8)', color: '#655d67', border: '1px solid rgba(81,76,84,0.15)' }}
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                {t('table.refreshPage')}
+              </button>
+            }
+          />
         ) : (
           /* White table container with Typeform exact border/shadow */
           <div

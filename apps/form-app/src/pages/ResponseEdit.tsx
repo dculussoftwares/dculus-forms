@@ -14,7 +14,7 @@ import {
 } from '../graphql/queries';
 import { DELETE_FILE } from '../graphql/templates';
 import { MainLayout } from '../components/MainLayout';
-import { Button, LoadingSpinner, toastSuccess, toastError } from '@dculus/ui';
+import { Button, LoadingSpinner, toastSuccess, toastError, EmptyState } from '@dculus/ui';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 import { getCdnEndpoint, getUploadUrl } from '../lib/config';
 
@@ -262,21 +262,18 @@ const ResponseEdit: React.FC = () => {
           },
         ]}
       >
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}>
-            <AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />
-          </div>
-          <h3 className="text-sm font-semibold mb-1" style={{ color: '#3c323e' }}>
-            {!formData?.form ? t('errors.formNotFound.title') : t('errors.responseNotFound.title')}
-          </h3>
-          <p className="text-xs mb-5" style={{ color: '#655d67' }}>
-            {!formData?.form ? t('errors.formNotFound.description') : t('errors.responseNotFound.description')}
-          </p>
-          <Button onClick={() => navigate(`/dashboard/form/${formId}/responses`)} variant="outline">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {t('navigation.backToResponses')}
-          </Button>
-        </div>
+        <EmptyState
+          variant="error"
+          icon={<AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />}
+          title={!formData?.form ? t('errors.formNotFound.title') : t('errors.responseNotFound.title')}
+          description={!formData?.form ? t('errors.formNotFound.description') : t('errors.responseNotFound.description')}
+          action={
+            <Button onClick={() => navigate(`/dashboard/form/${formId}/responses`)} variant="outline">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              {t('navigation.backToResponses')}
+            </Button>
+          }
+        />
       </MainLayout>
     );
   }
@@ -305,17 +302,18 @@ const ResponseEdit: React.FC = () => {
           },
         ]}
       >
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: '#fbe19d' }}>
-            <AlertCircle className="h-6 w-6" style={{ color: '#8b6a18' }} />
-          </div>
-          <h3 className="text-sm font-semibold mb-1" style={{ color: '#3c323e' }}>{t('errors.formNotReady.title')}</h3>
-          <p className="text-xs mb-5" style={{ color: '#655d67' }}>{t('errors.formNotReady.description')}</p>
-          <Button onClick={() => navigate(`/dashboard/form/${formId}/responses`)} variant="outline">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {t('navigation.backToResponses')}
-          </Button>
-        </div>
+        <EmptyState
+          variant="warning"
+          icon={<AlertCircle className="h-6 w-6" style={{ color: '#8b6a18' }} />}
+          title={t('errors.formNotReady.title')}
+          description={t('errors.formNotReady.description')}
+          action={
+            <Button onClick={() => navigate(`/dashboard/form/${formId}/responses`)} variant="outline">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              {t('navigation.backToResponses')}
+            </Button>
+          }
+        />
       </MainLayout>
     );
   }

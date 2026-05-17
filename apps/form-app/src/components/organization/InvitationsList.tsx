@@ -2,7 +2,7 @@ import React from 'react';
 import { Badge, Button, toastSuccess, toastError } from '@dculus/ui';
 import { Mail, Clock, X, Crown, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { parseDate, isDateExpired } from '../../utils/dateHelpers';
+import { parseDate, isDateExpired } from '@dculus/utils';
 import { organization } from '../../lib/auth-client';
 import { useTranslation } from '../../hooks/useTranslation';
 
