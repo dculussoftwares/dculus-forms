@@ -20,7 +20,7 @@ export const SelectionLimitSettings: React.FC<SelectionLimitSettingsProps> = ({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="field-min-selections" className="text-xs font-medium text-gray-700 dark:text-gray-300">
+        <Label htmlFor="field-min-selections" className="text-xs font-medium text-[#4c414e] dark:text-gray-300">
           Minimum Selections
         </Label>
         <Controller
@@ -47,7 +47,7 @@ export const SelectionLimitSettings: React.FC<SelectionLimitSettingsProps> = ({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="field-max-selections" className="text-xs font-medium text-gray-700 dark:text-gray-300">
+        <Label htmlFor="field-max-selections" className="text-xs font-medium text-[#4c414e] dark:text-gray-300">
           Maximum Selections
         </Label>
         <Controller

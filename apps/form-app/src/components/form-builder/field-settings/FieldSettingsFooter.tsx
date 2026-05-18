@@ -35,7 +35,7 @@ export const FieldSettingsFooter: React.FC<FieldSettingsFooterProps> = ({
       className={`flex-shrink-0 border-t p-4 space-y-4 transition-all duration-200 ${
         isDirty 
           ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800 shadow-lg' 
-          : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+          : 'bg-white dark:bg-gray-900 border-[rgba(81,76,84,0.10)] dark:border-gray-700'
       }`}>
       {/* Form Actions */}
       <div className="flex items-center justify-between">
@@ -46,7 +46,7 @@ export const FieldSettingsFooter: React.FC<FieldSettingsFooterProps> = ({
             size="sm"
             onClick={onReset}
             disabled={!isDirty || !isEditable}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-[#655d67] hover:text-[#4c414e]"
           >
             <RotateCcw className="w-4 h-4 mr-1" />
             {t('reset')}
@@ -114,7 +114,7 @@ export const FieldSettingsFooter: React.FC<FieldSettingsFooterProps> = ({
       <div className={`text-xs pt-2 border-t transition-colors duration-200 ${
         isDirty 
           ? 'text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800' 
-          : 'text-gray-500 dark:text-gray-400 border-gray-100 dark:border-gray-800'
+          : 'text-[#655d67] dark:text-gray-400 border-gray-100 dark:border-gray-800'
       }`}>
         <div className="flex items-center justify-between">
           <span className={isDirty ? 'font-medium' : ''}>

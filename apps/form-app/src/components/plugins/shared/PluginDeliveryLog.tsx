@@ -49,9 +49,9 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
       case 'success':
         return <CheckCircle2 className="h-5 w-5 text-primary" />;
       case 'failed':
-        return <XCircle className="h-5 w-5 text-red-600" />;
+        return <XCircle className="h-5 w-5 text-[#ce5d55]" />;
       default:
-        return <Clock className="h-5 w-5 text-gray-400" />;
+        return <Clock className="h-5 w-5 text-[#655d67]" />;
     }
   };
 
@@ -65,7 +65,7 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
         );
       case 'failed':
         return (
-          <Badge variant="default" className="bg-red-100 text-red-800">
+          <Badge variant="default" className="bg-[rgba(206,93,85,0.08)] text-[#ce5d55]">
             {t('status.failed')}
           </Badge>
         );
@@ -105,17 +105,17 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
 
           {error && (
             <Card className="p-8 text-center">
-              <XCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+              <XCircle className="mx-auto h-12 w-12 text-[#ce5d55] mb-4" />
               <h3 className="mb-2 text-xl font-semibold">{t('error.title')}</h3>
-              <p className="text-slate-600">{error.message}</p>
+              <p className="text-[#4c414e]">{error.message}</p>
             </Card>
           )}
 
           {!loading && !error && data?.pluginDeliveries?.length === 0 && (
             <Card className="p-8 text-center">
-              <Clock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <Clock className="mx-auto h-12 w-12 text-[#655d67] mb-4" />
               <h3 className="mb-2 text-xl font-semibold">{t('empty.title')}</h3>
-              <p className="text-slate-600">
+              <p className="text-[#4c414e]">
                 {t('empty.message')}
               </p>
             </Card>
@@ -135,12 +135,12 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                              <h4 className="font-semibold text-gray-900">
+                              <h4 className="font-semibold text-[#3c323e]">
                                 {delivery.eventType}
                               </h4>
                               {getStatusBadge(delivery.status)}
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <div className="flex items-center gap-2 text-sm text-[#655d67]">
                               <span>{formatTimestamp(delivery.deliveredAt)}</span>
                               <ChevronDown className="h-4 w-4 transition-transform duration-200 data-[state=open]:rotate-180" />
                             </div>
@@ -148,7 +148,7 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
 
                           {/* Error Message (if failed) */}
                           {delivery.status === 'failed' && delivery.errorMessage && (
-                            <div className="mb-2 text-sm text-red-600 bg-red-50 px-3 py-2 rounded">
+                            <div className="mb-2 text-sm text-[#ce5d55] bg-[rgba(206,93,85,0.06)] px-3 py-2 rounded">
                               {delivery.errorMessage}
                             </div>
                           )}
@@ -160,10 +160,10 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
                       <div className="mt-4 space-y-4 pl-9">
                         {/* Payload */}
                         <div>
-                          <h5 className="text-sm font-semibold text-gray-700 mb-2">
+                          <h5 className="text-sm font-semibold text-[#4c414e] mb-2">
                             {t('details.payload')}
                           </h5>
-                          <pre className="text-xs bg-gray-50 p-3 rounded overflow-x-auto border">
+                          <pre className="text-xs bg-[#f7f7f8] p-3 rounded overflow-x-auto border">
                             {JSON.stringify(delivery.payload, null, 2)}
                           </pre>
                         </div>
@@ -171,10 +171,10 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
                         {/* Response */}
                         {delivery.response && (
                           <div>
-                            <h5 className="text-sm font-semibold text-gray-700 mb-2">
+                            <h5 className="text-sm font-semibold text-[#4c414e] mb-2">
                               {t('details.response')}
                             </h5>
-                            <pre className="text-xs bg-gray-50 p-3 rounded overflow-x-auto border">
+                            <pre className="text-xs bg-[#f7f7f8] p-3 rounded overflow-x-auto border">
                               {typeof delivery.response === 'string'
                                 ? delivery.response
                                 : JSON.stringify(delivery.response, null, 2)}
@@ -184,10 +184,10 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
 
                         {/* Delivery ID */}
                         <div>
-                          <h5 className="text-sm font-semibold text-gray-700 mb-1">
+                          <h5 className="text-sm font-semibold text-[#4c414e] mb-1">
                             {t('details.deliveryId')}
                           </h5>
-                          <code className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">
+                          <code className="text-xs text-[#4c414e] bg-[#f7f7f8] px-2 py-1 rounded">
                             {delivery.id}
                           </code>
                         </div>

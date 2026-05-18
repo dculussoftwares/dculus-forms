@@ -203,7 +203,7 @@ const FileUploadFieldSettingsInner: React.FC<
               <Label className={constants.CSS_CLASSES.LABEL_STYLE}>
                 {constants.LABELS.ALLOWED_FILE_TYPES}
               </Label>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-[#655d67] dark:text-gray-400">
                 Leave all unchecked to allow any file type.
               </p>
               <div className="grid grid-cols-2 gap-2">
@@ -217,7 +217,7 @@ const FileUploadFieldSettingsInner: React.FC<
                     />
                     <Label
                       htmlFor={`mime-${value}`}
-                      className="text-xs text-gray-700 dark:text-gray-300 cursor-pointer"
+                      className="text-xs text-[#4c414e] dark:text-gray-300 cursor-pointer"
                     >
                       {label}
                     </Label>
@@ -275,7 +275,7 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
   if (!field) {
     return (
       <div
-        className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400"
+        className="h-full flex items-center justify-center text-[#655d67] dark:text-gray-400"
         data-testid="field-settings-panel"
       >
         <div className="text-center">
@@ -293,7 +293,7 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
     <div data-testid="field-settings-panel" className="h-full flex flex-col">
       <div className="flex-1 overflow-y-auto">{children}</div>
       {deleteHandler && isConnected && (
-        <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+        <div className="border-t border-[rgba(81,76,84,0.10)] dark:border-gray-700 p-4">
           <Button
             onClick={deleteHandler}
             className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center justify-center gap-2"
@@ -399,7 +399,7 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
     default:
       return (
         <div
-          className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400"
+          className="h-full flex items-center justify-center text-[#655d67] dark:text-gray-400"
           data-testid="field-settings-panel"
         >
           <div className="text-center">

@@ -128,7 +128,7 @@ export const CompactFieldCard: React.FC<CompactFieldCardProps> = ({
         // Normal compact state during drag
         return {
           container:
-            'h-[52px] border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 hover:border-gray-400 dark:hover:border-gray-500',
+            'h-[52px] border-2 border-dashed border-[rgba(81,76,84,0.15)] dark:border-gray-600 bg-[#f7f7f8] dark:bg-gray-800/50 hover:border-gray-400 dark:hover:border-gray-500',
           content: '',
         };
     }
@@ -150,7 +150,7 @@ export const CompactFieldCard: React.FC<CompactFieldCardProps> = ({
         className={`flex items-center flex-1 min-w-0 space-x-3 ${styles.content}`}
       >
         {/* Drag Handle (visual only in compact mode) */}
-        <div className="flex-shrink-0 text-gray-400 dark:text-gray-500">
+        <div className="flex-shrink-0 text-[#655d67] dark:text-gray-500">
           <GripVertical className="w-4 h-4" />
         </div>
 
@@ -161,7 +161,7 @@ export const CompactFieldCard: React.FC<CompactFieldCardProps> = ({
           ${
             variant === 'overlay'
               ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+              : 'bg-gray-200 dark:bg-gray-700 text-[#4c414e] dark:text-gray-400'
           }
         `}
         >
@@ -175,7 +175,7 @@ export const CompactFieldCard: React.FC<CompactFieldCardProps> = ({
           ${
             variant === 'overlay'
               ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-              : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+              : 'bg-gray-200 text-[#4c414e] dark:bg-gray-700 dark:text-gray-400'
           }
         `}
         >
@@ -185,7 +185,7 @@ export const CompactFieldCard: React.FC<CompactFieldCardProps> = ({
         {/* Field Label (truncated) */}
         {showLabel && (
           <>
-            <span className="flex-shrink-0 text-gray-400 dark:text-gray-500">
+            <span className="flex-shrink-0 text-[#655d67] dark:text-gray-500">
               •
             </span>
             <span
@@ -193,8 +193,8 @@ export const CompactFieldCard: React.FC<CompactFieldCardProps> = ({
               flex-1 min-w-0 truncate text-sm
               ${
                 variant === 'overlay'
-                  ? 'text-gray-900 dark:text-white font-medium'
-                  : 'text-gray-600 dark:text-gray-400'
+                  ? 'text-[#3c323e] dark:text-white font-medium'
+                  : 'text-[#4c414e] dark:text-gray-400'
               }
             `}
             >

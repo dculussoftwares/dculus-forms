@@ -27,13 +27,7 @@ interface StatCardProps {
 const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon, iconBg, iconColor, trend }) => {
   return (
     <div
-      className="bg-white dark:bg-card rounded-xl p-5 transition-all duration-200 cursor-default"
-      style={{
-        border: '1px solid rgba(81,76,84,0.10)',
-        boxShadow: '0 1px 4px rgba(60,50,62,0.06)',
-      }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(60,50,62,0.10)'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 4px rgba(60,50,62,0.06)'; }}
+      className="bg-white dark:bg-card rounded-xl p-5 transition-all duration-200 cursor-default border border-[rgba(81,76,84,0.10)] shadow-[0_1px_4px_rgba(60,50,62,0.06)] hover:shadow-[0_4px_16px_rgba(60,50,62,0.10)]"
     >
       <div className="flex items-center justify-between mb-4">
         {/* Field-icon style — Typeform exact */}

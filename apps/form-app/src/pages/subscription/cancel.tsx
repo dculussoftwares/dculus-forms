@@ -10,19 +10,19 @@ export const CheckoutCancel = () => {
   const [showUpgrade, setShowUpgrade] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#f7f7f8] dark:bg-gray-900 flex items-center justify-center p-4">
       <Card className="max-w-2xl w-full p-8">
         {/* Cancel Icon */}
         <div className="flex justify-center mb-6">
-          <div className="bg-gray-100 dark:bg-gray-800 rounded-full p-4">
-            <XCircle className="h-16 w-16 text-gray-600 dark:text-gray-400" />
+          <div className="bg-[#f7f7f8] dark:bg-gray-800 rounded-full p-4">
+            <XCircle className="h-16 w-16 text-[#4c414e] dark:text-gray-400" />
           </div>
         </div>
 
         {/* Cancel Message */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-[#4c414e] dark:text-gray-400">
             {t('subtitle')}
           </p>
         </div>
@@ -139,8 +139,8 @@ export const CheckoutCancel = () => {
         </div>
 
         {/* Footer Note */}
-        <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-          <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+        <div className="mt-6 p-4 bg-[#f7f7f8] dark:bg-gray-800 rounded-lg">
+          <p className="text-sm text-[#4c414e] dark:text-gray-400 text-center">
             {t('footer.noCharge')}
             <br />
             {t('footer.flexible')}
@@ -153,7 +153,7 @@ export const CheckoutCancel = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <Card className="max-w-md p-6 m-4">
             <h3 className="text-xl font-bold mb-4">{t('modal.title')}</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-[#4c414e] dark:text-gray-400 mb-4">
               {t('modal.message')}
             </p>
             <div className="flex gap-3">

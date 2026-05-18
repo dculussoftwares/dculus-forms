@@ -24,10 +24,10 @@ const DistributionIndicator: React.FC<{
   
   const getDistributionColor = (type: string) => {
     switch (type) {
-      case 'concentrated': return 'bg-red-100 text-red-800';
+      case 'concentrated': return 'bg-[rgba(206,93,85,0.08)] text-[#ce5d55]';
       case 'even': return 'bg-primary/10 text-primary';
       case 'polarized': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      default: return 'bg-[#f7f7f8] text-[#3c323e]';
     }
   };
 
@@ -85,7 +85,7 @@ const OptionPerformanceTable: React.FC<{
           <CardTitle>{t('optionPerformance.title')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center text-gray-500 py-8">
+          <div className="text-center text-[#655d67] py-8">
             {t('emptyState.title')}
           </div>
         </CardContent>
@@ -109,8 +109,8 @@ const OptionPerformanceTable: React.FC<{
                 key={option.option}
                 className={`flex items-center justify-between p-3 rounded-lg border transition-colors
                   ${isTopOption ? 'bg-primary/5 border-primary/20' :
-                    isLowPerforming ? 'bg-red-50 border-red-200' : 
-                    'bg-gray-50 border-gray-200'
+                    isLowPerforming ? 'bg-[rgba(206,93,85,0.06)] border-[rgba(206,93,85,0.16)]' : 
+                    'bg-[#f7f7f8] border-[rgba(81,76,84,0.10)]'
                   }`}
               >
                 <div className="flex items-center gap-3">
@@ -125,21 +125,21 @@ const OptionPerformanceTable: React.FC<{
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-900">
+                      <span className="font-medium text-[#3c323e]">
                         {option.option}
                       </span>
                       {isTopOption && (
                         <Crown className="h-4 w-4 text-yellow-500" />
                       )}
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-[#655d67]">
                       {t('optionPerformance.responses', { values: { count: option.count } })}
                     </div>
                   </div>
                 </div>
                 
                 <div className="text-right">
-                  <div className="text-lg font-bold text-gray-900">
+                  <div className="text-lg font-bold text-[#3c323e]">
                     {option.percentage.toFixed(1)}%
                   </div>
                   <div className="w-24 bg-gray-200 rounded-full h-2 mt-1">
@@ -159,7 +159,7 @@ const OptionPerformanceTable: React.FC<{
         </div>
         
         {options.length > 5 && (
-          <div className="mt-4 text-center text-sm text-gray-500">
+          <div className="mt-4 text-center text-sm text-[#655d67]">
             {t('optionPerformance.showingAll', { values: { count: options.length } })}
           </div>
         )}
@@ -243,7 +243,7 @@ const SelectionTrend: React.FC<{
             </LineChart>
           </ResponsiveContainer>
         </div>
-        <div className="mt-4 text-sm text-gray-600">
+        <div className="mt-4 text-sm text-[#4c414e]">
           <p>• Shows selection counts over time for the top 5 most popular options</p>
           <p>• Each line represents one option's popularity trend</p>
         </div>
@@ -312,12 +312,12 @@ const QuickInsights: React.FC<{
       <CardContent>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {insights.map((insight, index) => (
-            <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            <div key={index} className="flex items-center gap-3 p-3 bg-[#f7f7f8] rounded-lg">
               <span className="text-2xl">{insight.icon}</span>
               <div>
-                <div className="font-semibold text-gray-900">{insight.title}</div>
+                <div className="font-semibold text-[#3c323e]">{insight.title}</div>
                 <div className="text-lg font-bold text-blue-600">{insight.value}</div>
-                <div className="text-sm text-gray-600">{insight.subtitle}</div>
+                <div className="text-sm text-[#4c414e]">{insight.subtitle}</div>
               </div>
             </div>
           ))}
@@ -376,8 +376,8 @@ export const SelectionFieldAnalytics: React.FC<SelectionFieldAnalyticsProps> = (
             <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
               <CheckCircle className="h-8 w-8 text-blue-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('emptyState.title')}</h3>
-            <p className="text-gray-600 max-w-md mx-auto">{t('emptyState.subtitle', { values: { fieldType } })}</p>
+            <h3 className="text-lg font-semibold text-[#3c323e] mb-2">{t('emptyState.title')}</h3>
+            <p className="text-[#4c414e] max-w-md mx-auto">{t('emptyState.subtitle', { values: { fieldType } })}</p>
           </div>
         </CardContent>
       </Card>
@@ -472,13 +472,13 @@ export const SelectionFieldAnalytics: React.FC<SelectionFieldAnalyticsProps> = (
                       if (active && payload && payload.length) {
                         const data = payload[0].payload;
                         return (
-                          <div className="bg-white p-3 border rounded-lg shadow-lg border-gray-200">
-                            <p className="font-medium text-gray-900 mb-2" title={data.fullName}>
+                          <div className="bg-white p-3 border rounded-lg shadow-lg border-[rgba(81,76,84,0.10)]">
+                            <p className="font-medium text-[#3c323e] mb-2" title={data.fullName}>
                               {data.fullName}
                             </p>
                             <div className="flex items-center gap-2 text-sm">
                               <div className="w-3 h-3 rounded-full bg-blue-600" />
-                              <span className="text-gray-700">
+                              <span className="text-[#4c414e]">
                                 {t('distribution.selectionsCount', { values: { count: data.value, percentage: data.percentage.toFixed(1) } })}
                               </span>
                             </div>
@@ -536,58 +536,58 @@ export const SelectionFieldAnalytics: React.FC<SelectionFieldAnalyticsProps> = (
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">{t('insights.popularChoices')}</h4>
+              <h4 className="font-medium text-[#3c323e]">{t('insights.popularChoices')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('insights.mostPopular')}</span>
+                  <span className="text-[#4c414e]">{t('insights.mostPopular')}</span>
                   <span className="font-medium">{mostPopularOption.percentage.toFixed(1)}%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('insights.leastPopular')}</span>
+                  <span className="text-[#4c414e]">{t('insights.leastPopular')}</span>
                   <span className="font-medium">{leastPopularOption.percentage.toFixed(1)}%</span>
                 </div>
               </div>
             </div>
             
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">{t('insights.distribution')}</h4>
+              <h4 className="font-medium text-[#3c323e]">{t('insights.distribution')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('insights.type')}</span>
+                  <span className="text-[#4c414e]">{t('insights.type')}</span>
                   <span className="font-medium capitalize">
                     {data.responseDistribution === 'balanced' ? t('insights.balanced') : t('insights.skewed')}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('distribution.title')}</span>
+                  <span className="text-[#4c414e]">{t('distribution.title')}</span>
                   <span className="font-medium">{averagePercentage.toFixed(1)}%</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">{t('insights.performance')}</h4>
+              <h4 className="font-medium text-[#3c323e]">{t('insights.performance')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('insights.optionsUsed')}</span>
+                  <span className="text-[#4c414e]">{t('insights.optionsUsed')}</span>
                   <span className="font-medium">{data.options.filter(opt => opt.count > 0).length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('insights.unusedOptions')}</span>
+                  <span className="text-[#4c414e]">{t('insights.unusedOptions')}</span>
                   <span className="font-medium">{data.options.filter(opt => opt.count === 0).length}</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">{t('insights.title')}</h4>
+              <h4 className="font-medium text-[#3c323e]">{t('insights.title')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('topChoices.leastPopular')}</span>
+                  <span className="text-[#4c414e]">{t('topChoices.leastPopular')}</span>
                   <span className="font-medium">{data.options.filter(opt => opt.percentage < 5).length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('insights.competitionLevel')}</span>
+                  <span className="text-[#4c414e]">{t('insights.competitionLevel')}</span>
                   <span className="font-medium">
                     {data.responseDistribution === 'concentrated' ? t('insights.low') : 
                      data.responseDistribution === 'even' ? t('insights.high') : t('insights.medium')}

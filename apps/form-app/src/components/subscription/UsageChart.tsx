@@ -60,25 +60,25 @@ export const UsageChart = ({
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-lg">
+        <div className="bg-white dark:bg-gray-800 border border-[rgba(81,76,84,0.10)] dark:border-gray-700 rounded-lg p-3 shadow-lg">
           <p className="font-medium text-sm mb-2">{payload[0].payload.date}</p>
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-sm">
               <Eye className="h-3 w-3 text-blue-500" />
-              <span className="text-gray-600 dark:text-gray-400">{t('tooltip.views')}</span>
+              <span className="text-[#4c414e] dark:text-gray-400">{t('tooltip.views')}</span>
               <span className="font-medium">{payload[0].value.toLocaleString()}</span>
               {viewsLimit && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-[#655d67]">
                   / {viewsLimit.toLocaleString()}
                 </span>
               )}
             </div>
             <div className="flex items-center gap-2 text-sm">
               <FileText className="h-3 w-3 text-purple-500" />
-              <span className="text-gray-600 dark:text-gray-400">{t('tooltip.submissions')}</span>
+              <span className="text-[#4c414e] dark:text-gray-400">{t('tooltip.submissions')}</span>
               <span className="font-medium">{payload[1].value.toLocaleString()}</span>
               {submissionsLimit && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-[#655d67]">
                   / {submissionsLimit.toLocaleString()}
                 </span>
               )}
@@ -94,7 +94,7 @@ export const UsageChart = ({
     <Card className="p-6">
       <div className="mb-6">
         <h3 className="text-lg font-semibold mb-1">{t('title')}</h3>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-[#655d67]">
           {t('subtitle', { 
             values: { 
               startDate: new Date(Number(currentPeriodStart)).toLocaleDateString(),
@@ -164,7 +164,7 @@ export const UsageChart = ({
         </AreaChart>
       </ResponsiveContainer>
 
-      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+      <div className="mt-4 pt-4 border-t border-[rgba(81,76,84,0.10)] dark:border-gray-700">
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -175,7 +175,7 @@ export const UsageChart = ({
               {viewsUsed.toLocaleString()}
             </p>
             {viewsLimit && (
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-[#655d67]">
                 {t('totals.ofLimit', { values: { limit: viewsLimit.toLocaleString() } })}
               </p>
             )}
@@ -189,7 +189,7 @@ export const UsageChart = ({
               {submissionsUsed.toLocaleString()}
             </p>
             {submissionsLimit && (
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-[#655d67]">
                 {t('totals.ofLimit', { values: { limit: submissionsLimit.toLocaleString() } })}
               </p>
             )}

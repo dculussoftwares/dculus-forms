@@ -281,7 +281,7 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
       <div className="relative bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-[#3c323e]">
             {getModalTitle()}
           </h2>
           <Button
@@ -401,7 +401,7 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         template.isActive 
                           ? 'bg-primary/10 text-primary'
-                          : 'bg-red-100 text-red-800'
+                          : 'bg-[rgba(206,93,85,0.08)] text-[#ce5d55]'
                       }`}>
                         {template.isActive ? 'Active' : 'Inactive'}
                       </span>
@@ -511,7 +511,7 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
               )}
 
             {errors.submit && (
-              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+              <div className="text-sm text-[#ce5d55] bg-[rgba(206,93,85,0.06)] p-3 rounded-md">
                 {errors.submit}
               </div>
             )}

@@ -34,11 +34,11 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   const activeFiltersCount = Object.values(filters).filter(f => f.active).length;
 
   return (
-    <Card className="w-80 h-full overflow-hidden border-r border-slate-200 rounded-none shadow-sm flex flex-col">
-            <CardHeader className="p-4 border-b border-slate-200">
+    <Card className="w-80 h-full overflow-hidden border-r border-[rgba(81,76,84,0.10)] rounded-none shadow-sm flex flex-col">
+            <CardHeader className="p-4 border-b border-[rgba(81,76,84,0.10)]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <CardTitle className="text-lg font-semibold text-slate-900">
+            <CardTitle className="text-lg font-semibold text-[#3c323e]">
               {t('title')}
             </CardTitle>
             {activeFiltersCount > 0 && (
@@ -74,7 +74,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
       <CardContent className="p-0 flex-1 overflow-y-auto">
         <div className="min-h-0">
           {fields.length === 0 ? (
-            <div className="p-4 text-center text-slate-500 text-sm">
+            <div className="p-4 text-center text-[#655d67] text-sm">
               {t('noFilterableFields')}
             </div>
           ) : (

@@ -38,7 +38,7 @@ export const RichTextSettings: React.FC<RichTextSettingsProps> = ({
       <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>Rich Text Content</h4>
 
       <div className="space-y-2">
-        <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+        <Label className="block text-xs font-medium text-[#4c414e] dark:text-gray-300">
           Content
         </Label>
         <Controller
@@ -48,7 +48,7 @@ export const RichTextSettings: React.FC<RichTextSettingsProps> = ({
             const editorValue = contentValue ?? field.value ?? '';
 
             return (
-              <div className="border border-gray-200 rounded-lg">
+              <div className="border border-[rgba(81,76,84,0.10)] rounded-lg">
                 <RichTextEditor
                   key={fieldId}
                   value={editorValue}
@@ -62,13 +62,13 @@ export const RichTextSettings: React.FC<RichTextSettingsProps> = ({
           }}
         />
         {errors.content && (
-          <p className="text-xs text-red-600" role="alert">
+          <p className="text-xs text-[#ce5d55]" role="alert">
             {(errors.content as any)?.message || 'Invalid content'}
           </p>
         )}
       </div>
 
-      <div className="mt-2 text-xs text-gray-500">
+      <div className="mt-2 text-xs text-[#655d67]">
         This content will be displayed as read-only text in the form.
       </div>
     </div>

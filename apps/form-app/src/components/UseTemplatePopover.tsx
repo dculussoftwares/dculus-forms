@@ -136,10 +136,10 @@ export const UseTemplatePopover: React.FC<UseTemplatePopoverProps> = ({
       <PopoverContent className="w-96" align="center">
         <div className="space-y-4">
           <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-slate-900">
+            <h3 className="text-lg font-semibold text-[#3c323e]">
               {t('popover.title')}
             </h3>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-[#4c414e]">
               {t('popover.subtitle', { values: { template: templateName } })}
             </p>
           </div>
@@ -153,11 +153,11 @@ export const UseTemplatePopover: React.FC<UseTemplatePopoverProps> = ({
                 placeholder={t('popover.fields.title.placeholder')}
                 value={formData.title}
                 onChange={(e) => handleInputChange('title', e.target.value)}
-                className={errors.title ? 'border-red-500' : ''}
+                className={errors.title ? 'border-[#ce5d55]' : ''}
                 disabled={loading}
               />
               {errors.title && (
-                <p className="text-sm text-red-500">{errors.title}</p>
+                <p className="text-sm text-[#ce5d55]">{errors.title}</p>
               )}
             </div>
 
@@ -172,7 +172,7 @@ export const UseTemplatePopover: React.FC<UseTemplatePopoverProps> = ({
                 disabled={loading}
               />
               {errors.description && (
-                <p className="text-sm text-red-500">{errors.description}</p>
+                <p className="text-sm text-[#ce5d55]">{errors.description}</p>
               )}
             </div>
 

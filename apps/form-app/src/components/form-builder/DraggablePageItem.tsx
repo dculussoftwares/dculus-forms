@@ -182,7 +182,7 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
               p-3 cursor-pointer transition-all duration-200 border-2 relative
               ${isSelected 
                 ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30 shadow-md' 
-                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm'
+                : 'border-[rgba(81,76,84,0.10)] dark:border-gray-700 hover:border-[rgba(81,76,84,0.15)] dark:hover:border-gray-600 hover:shadow-sm'
               }
               ${isDraggingFromDifferentPage 
                 ? 'border-primary/60 bg-primary/5 dark:bg-primary/10 ring-2 ring-primary/20 dark:ring-primary/30'
@@ -207,13 +207,13 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
                 {...attributes}
                 {...listeners}
                 data-testid={`page-drag-handle-${index + 1}`}
-                className="flex-shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                className="flex-shrink-0 cursor-grab active:cursor-grabbing text-[#655d67] hover:text-[#4c414e] dark:hover:text-gray-300 transition-colors"
                 onClick={(e) => e.stopPropagation()}
               >
                 <GripVertical className="w-4 h-4" />
               </div>
             ) : (
-              <div className="flex-shrink-0 text-gray-300 dark:text-gray-600">
+              <div className="flex-shrink-0 text-[#a09aa2] dark:text-gray-600">
                 <GripVertical className="w-4 h-4" />
               </div>
             )}
@@ -225,7 +225,7 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
                 w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold
                 ${isSelected 
                   ? 'bg-blue-500 text-white' 
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                  : 'bg-gray-200 dark:bg-gray-700 text-[#4c414e] dark:text-gray-400'
                 }
               `}
             >
@@ -263,7 +263,7 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
                     ${permissions.canEditFields() && isConnected ? 'cursor-text hover:text-blue-600 dark:hover:text-blue-400' : ''}
                     ${isSelected
                       ? 'text-blue-900 dark:text-blue-100'
-                      : 'text-gray-900 dark:text-white'
+                      : 'text-[#3c323e] dark:text-white'
                     }
                   `}
                   title={permissions.canEditFields() && isConnected ? t('editTitle') : undefined}
@@ -277,7 +277,7 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
                   text-xs truncate mb-2
                   ${isSelected 
                     ? 'text-blue-700 dark:text-blue-300' 
-                    : 'text-gray-500 dark:text-gray-400'
+                    : 'text-[#655d67] dark:text-gray-400'
                   }
                 `}
               >
@@ -287,7 +287,7 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
               {/* Field Preview Bars (Thumbnail Style) */}
               <div className="space-y-1">
                 {page.fields.length === 0 ? (
-                  <div className="flex items-center justify-center py-1 text-gray-400 dark:text-gray-600">
+                  <div className="flex items-center justify-center py-1 text-[#655d67] dark:text-gray-600">
                     <div className="text-center">
                       <Plus className="w-3 h-3 mx-auto mb-0.5" />
                       <div className="text-xs">{t('empty')}</div>
@@ -314,7 +314,7 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
                     
                     {/* Show "more" indicator if there are additional fields */}
                     {page.fields.length > 3 && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400 text-right pt-0.5">
+                      <div className="text-xs text-[#655d67] dark:text-gray-400 text-right pt-0.5">
                         +{page.fields.length - 3}
                       </div>
                     )}
@@ -335,7 +335,7 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
                       onDuplicate();
                     }}
                     disabled={!isConnected}
-                    className="h-6 w-6 p-0 text-gray-500 hover:text-blue-600"
+                    className="h-6 w-6 p-0 text-[#655d67] hover:text-blue-600"
                   >
                     <Copy className="w-3 h-3" />
                   </Button>
@@ -349,7 +349,7 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
                       setShowDeleteDialog(true);
                     }}
                     disabled={!isConnected}
-                    className="h-6 w-6 p-0 text-gray-500 hover:text-red-600"
+                    className="h-6 w-6 p-0 text-[#655d67] hover:text-[#ce5d55]"
                   >
                     <Trash2 className="w-3 h-3" />
                   </Button>

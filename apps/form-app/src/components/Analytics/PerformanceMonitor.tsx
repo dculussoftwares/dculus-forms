@@ -12,10 +12,10 @@ export const PerformanceMonitor: React.FC = () => {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-red-600">{t('error.title')}</CardTitle>
+          <CardTitle className="text-[#ce5d55]">{t('error.title')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-red-600">
+          <p className="text-sm text-[#ce5d55]">
             {t('error.description')}
           </p>
         </CardContent>
@@ -54,12 +54,12 @@ export const PerformanceMonitor: React.FC = () => {
             <div className="p-4 border rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <Zap className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-gray-700">{t('cards.hitRatio.title')}</span>
+                <span className="text-sm font-medium text-[#4c414e]">{t('cards.hitRatio.title')}</span>
               </div>
               <div className="text-2xl font-bold text-primary">
                 {t('cards.hitRatio.value', { values: { value: stats?.hitRatio || 0 } })}
               </div>
-              <div className="text-xs text-gray-500 mt-1">
+              <div className="text-xs text-[#655d67] mt-1">
                 {t('cards.hitRatio.description')}
               </div>
             </div>
@@ -68,12 +68,12 @@ export const PerformanceMonitor: React.FC = () => {
             <div className="p-4 border rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <Database className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-gray-700">{t('cards.cacheEntries.title')}</span>
+                <span className="text-sm font-medium text-[#4c414e]">{t('cards.cacheEntries.title')}</span>
               </div>
               <div className="text-2xl font-bold text-blue-600">
                 {stats?.totalEntries || 0}
               </div>
-              <div className="text-xs text-gray-500 mt-1">
+              <div className="text-xs text-[#655d67] mt-1">
                 {t('cards.cacheEntries.expired', { values: { count: stats?.expiredEntries || 0 } })}
               </div>
             </div>
@@ -82,12 +82,12 @@ export const PerformanceMonitor: React.FC = () => {
             <div className="p-4 border rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <Activity className="h-4 w-4 text-purple-600" />
-                <span className="text-sm font-medium text-gray-700">{t('cards.memory.title')}</span>
+                <span className="text-sm font-medium text-[#4c414e]">{t('cards.memory.title')}</span>
               </div>
               <div className="text-2xl font-bold text-purple-600">
                 {stats?.memoryUsageFormatted || '0KB'}
               </div>
-              <div className="text-xs text-gray-500 mt-1">
+              <div className="text-xs text-[#655d67] mt-1">
                 {t('cards.memory.description')}
               </div>
             </div>

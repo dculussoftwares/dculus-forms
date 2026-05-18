@@ -176,7 +176,7 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
               <DropdownMenuItem
                 onClick={onDelete}
                 disabled={deleteLoading}
-                className="text-red-600 focus:text-red-700 focus:bg-red-50"
+                className="text-[#ce5d55] focus:text-red-700 focus:bg-[rgba(206,93,85,0.06)]"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 {deleteLoading ? t('header.actions.deleting') : t('header.actions.delete')}

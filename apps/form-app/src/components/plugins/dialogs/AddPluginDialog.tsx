@@ -57,7 +57,7 @@ export const AddPluginDialog: React.FC<AddPluginDialogProps> = ({
         <div className="flex-1 overflow-hidden flex flex-col space-y-6">
           {/* Search Bar */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#655d67]" />
             <Input
               placeholder={t('addPluginDialog.searchPlaceholder')}
               value={searchQuery}
@@ -86,7 +86,7 @@ export const AddPluginDialog: React.FC<AddPluginDialogProps> = ({
               />
             ) : (
               <div className="text-center py-12">
-                <p className="text-gray-500">
+                <p className="text-[#655d67]">
                   {t('addPluginDialog.noResults.message', { values: { searchQuery } })}
                 </p>
               </div>

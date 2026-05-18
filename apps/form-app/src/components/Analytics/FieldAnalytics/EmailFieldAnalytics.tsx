@@ -94,12 +94,12 @@ const ValidationIndicator: React.FC<{
                       ? 'text-primary'
                       : isMediumValidation
                         ? 'text-yellow-600'
-                        : 'text-red-600'
+                        : 'text-[#ce5d55]'
                   }`}
                 >
                   {validationRate.toFixed(1)}%
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-[#655d67]">
                   {t('validationStatus.valid')}
                 </div>
               </div>
@@ -111,31 +111,31 @@ const ValidationIndicator: React.FC<{
           <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-lg">
             <CheckCircle className="h-8 w-8 text-primary" />
             <div>
-              <div className="text-lg font-bold text-gray-900">
+              <div className="text-lg font-bold text-[#3c323e]">
                 {validEmails}
               </div>
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-[#4c414e]">
                 {t('validationStatus.validEmails')}
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
-            <AlertTriangle className="h-8 w-8 text-red-500" />
+          <div className="flex items-center gap-3 p-3 bg-[rgba(206,93,85,0.06)] rounded-lg">
+            <AlertTriangle className="h-8 w-8 text-[#ce5d55]" />
             <div>
-              <div className="text-lg font-bold text-gray-900">
+              <div className="text-lg font-bold text-[#3c323e]">
                 {invalidEmails}
               </div>
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-[#4c414e]">
                 {t('validationStatus.invalidEmails')}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+        <div className="mt-4 p-3 bg-[#f7f7f8] rounded-lg">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">
+            <span className="text-[#4c414e]">
               {t('validationStatus.qualityScore')}
             </span>
             <span
@@ -144,7 +144,7 @@ const ValidationIndicator: React.FC<{
                   ? 'text-primary'
                   : isMediumValidation
                     ? 'text-yellow-600'
-                    : 'text-red-600'
+                    : 'text-[#ce5d55]'
               }`}
             >
               {isHighValidation
@@ -202,10 +202,10 @@ const CorporatePersonalBreakdown: React.FC<{
               <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
                 <Building className="h-8 w-8 text-blue-500" />
                 <div>
-                  <div className="text-lg font-bold text-gray-900">
+                  <div className="text-lg font-bold text-[#3c323e]">
                     {corporateVsPersonal.corporate}
                   </div>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-[#4c414e]">
                     {t('corporatePersonal.corporate')} (
                     {corporatePercentage.toFixed(1)}%)
                   </div>
@@ -221,10 +221,10 @@ const CorporatePersonalBreakdown: React.FC<{
               <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-lg">
                 <User className="h-8 w-8 text-primary" />
                 <div>
-                  <div className="text-lg font-bold text-gray-900">
+                  <div className="text-lg font-bold text-[#3c323e]">
                     {corporateVsPersonal.personal}
                   </div>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-[#4c414e]">
                     {t('corporatePersonal.personal')} (
                     {personalPercentage.toFixed(1)}%)
                   </div>
@@ -238,13 +238,13 @@ const CorporatePersonalBreakdown: React.FC<{
               </div>
 
               {corporateVsPersonal.unknown > 0 && (
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <Globe className="h-8 w-8 text-gray-500" />
+                <div className="flex items-center gap-3 p-3 bg-[#f7f7f8] rounded-lg">
+                  <Globe className="h-8 w-8 text-[#655d67]" />
                   <div>
-                    <div className="text-lg font-bold text-gray-900">
+                    <div className="text-lg font-bold text-[#3c323e]">
                       {corporateVsPersonal.unknown}
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-[#4c414e]">
                       {t('corporatePersonal.unknown')} (
                       {(
                         (corporateVsPersonal.unknown / totalEmails) *
@@ -270,14 +270,14 @@ const CorporatePersonalBreakdown: React.FC<{
           )}
         </div>
 
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+        <div className="mt-6 p-4 bg-[#f7f7f8] rounded-lg">
           <div className="flex items-center gap-2 mb-2">
             <Shield className="h-4 w-4 text-blue-600" />
-            <span className="font-medium text-gray-900">
+            <span className="font-medium text-[#3c323e]">
               {t('emailTypeComparison.insights')}
             </span>
           </div>
-          <div className="text-sm text-gray-700 space-y-1">
+          <div className="text-sm text-[#4c414e] space-y-1">
             <p>• {t('emailTypeComparison.corporateInfo')}</p>
             <p>• {t('emailTypeComparison.personalInfo')}</p>
             <p>• {t('emailTypeComparison.audienceInfo')}</p>
@@ -334,13 +334,13 @@ const TopLevelDomainsChart: React.FC<{
                 if (active && payload && payload.length) {
                   const data = payload[0].payload;
                   return (
-                    <div className="bg-white p-3 border rounded-lg shadow-lg border-gray-200">
-                      <p className="font-medium text-gray-900 mb-2">
+                    <div className="bg-white p-3 border rounded-lg shadow-lg border-[rgba(81,76,84,0.10)]">
+                      <p className="font-medium text-[#3c323e] mb-2">
                         {data.fullName}
                       </p>
                       <div className="flex items-center gap-2 text-sm">
                         <div className="w-3 h-3 rounded-full bg-orange-600" />
-                        <span className="text-gray-700">
+                        <span className="text-[#4c414e]">
                           Emails: {data.value} ({data.percentage.toFixed(1)}%)
                         </span>
                       </div>
@@ -394,7 +394,7 @@ const PopularProviders: React.FC<{
 
   const getProviderColor = (index: number) => {
     const colors = [
-      'bg-red-100 border-red-300',
+      'bg-[rgba(206,93,85,0.08)] border-red-300',
       'bg-blue-100 border-blue-300',
       'bg-primary/10 border-primary/30',
       'bg-yellow-100 border-yellow-300',
@@ -420,10 +420,10 @@ const PopularProviders: React.FC<{
                   {getProviderIcon(provider.provider)}
                 </span>
                 <div>
-                  <div className="font-medium text-gray-900 capitalize">
+                  <div className="font-medium text-[#3c323e] capitalize">
                     {provider.provider}
                   </div>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-[#4c414e]">
                     {provider.count}{' '}
                     {provider.count !== 1 ? t('providers.emails') : 'email'}
                   </div>
@@ -431,7 +431,7 @@ const PopularProviders: React.FC<{
               </div>
 
               <div className="text-right">
-                <div className="text-lg font-bold text-gray-900">
+                <div className="text-lg font-bold text-[#3c323e]">
                   {provider.percentage.toFixed(1)}%
                 </div>
                 <div className="w-20 bg-gray-200 rounded-full h-2 mt-1">
@@ -446,7 +446,7 @@ const PopularProviders: React.FC<{
         </div>
 
         {providers.length > 5 && (
-          <div className="mt-4 text-center text-sm text-gray-500">
+          <div className="mt-4 text-center text-sm text-[#655d67]">
             Showing top {providers.length} email providers
           </div>
         )}
@@ -506,10 +506,10 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
             <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
               <Mail className="h-8 w-8 text-blue-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg font-semibold text-[#3c323e] mb-2">
               {t('emptyState.title')}
             </h3>
-            <p className="text-gray-600 max-w-md mx-auto">
+            <p className="text-[#4c414e] max-w-md mx-auto">
               {t('emptyState.subtitle')}
             </p>
           </div>
@@ -607,13 +607,13 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
                       if (active && payload && payload.length) {
                         const data = payload[0].payload;
                         return (
-                          <div className="bg-white p-3 border rounded-lg shadow-lg border-gray-200">
-                            <p className="font-medium text-gray-900 mb-2">
+                          <div className="bg-white p-3 border rounded-lg shadow-lg border-[rgba(81,76,84,0.10)]">
+                            <p className="font-medium text-[#3c323e] mb-2">
                               {data.fullName}
                             </p>
                             <div className="flex items-center gap-2 text-sm">
                               <div className="w-3 h-3 rounded-full bg-orange-600" />
-                              <span className="text-gray-700">
+                              <span className="text-[#4c414e]">
                                 Emails: {data.value} (
                                 {data.percentage.toFixed(1)}%)
                               </span>
@@ -673,12 +673,12 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">
+              <h4 className="font-medium text-[#3c323e]">
                 {t('summary.validationTitle')}
               </h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">
+                  <span className="text-[#4c414e]">
                     {t('summary.validRate')}
                   </span>
                   <span className="font-medium">
@@ -686,7 +686,7 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">
+                  <span className="text-[#4c414e]">
                     {t('summary.invalidCount')}
                   </span>
                   <span className="font-medium">{data.invalidEmails}</span>
@@ -695,18 +695,18 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">
+              <h4 className="font-medium text-[#3c323e]">
                 {t('summary.domainDiversityTitle')}
               </h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">
+                  <span className="text-[#4c414e]">
                     {t('summary.uniqueDomains')}
                   </span>
                   <span className="font-medium">{data.domains.length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('summary.tldTypes')}</span>
+                  <span className="text-[#4c414e]">{t('summary.tldTypes')}</span>
                   <span className="font-medium">
                     {data.topLevelDomains.length}
                   </span>
@@ -715,12 +715,12 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">
+              <h4 className="font-medium text-[#3c323e]">
                 {t('summary.emailTypesTitle')}
               </h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">
+                  <span className="text-[#4c414e]">
                     {t('summary.corporate')}
                   </span>
                   <span className="font-medium">
@@ -728,7 +728,7 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('summary.personal')}</span>
+                  <span className="text-[#4c414e]">{t('summary.personal')}</span>
                   <span className="font-medium">
                     {data.corporateVsPersonal.personal}
                   </span>
@@ -737,12 +737,12 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">
+              <h4 className="font-medium text-[#3c323e]">
                 {t('summary.dataQualityTitle')}
               </h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">
+                  <span className="text-[#4c414e]">
                     {t('summary.totalEmails')}
                   </span>
                   <span className="font-medium">
@@ -750,7 +750,7 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">
+                  <span className="text-[#4c414e]">
                     {t('summary.completeness')}
                   </span>
                   <span className="font-medium">
@@ -810,10 +810,10 @@ export const FileUploadFieldAnalytics: React.FC<
             <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
               <Upload className="h-8 w-8 text-blue-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg font-semibold text-[#3c323e] mb-2">
               No files uploaded yet
             </h3>
-            <p className="text-gray-600">
+            <p className="text-[#4c414e]">
               File upload analytics will appear here once respondents start
               uploading files.
             </p>
@@ -848,7 +848,7 @@ export const FileUploadFieldAnalytics: React.FC<
         <StatCard
           title="Responses without Files"
           value={data.responsesWithoutFiles}
-          icon={<FileX className="h-5 w-5 text-red-500" />}
+          icon={<FileX className="h-5 w-5 text-[#ce5d55]" />}
         />
       </div>
 
@@ -865,11 +865,11 @@ export const FileUploadFieldAnalytics: React.FC<
                 style={{ width: `${Math.min(100, responseRate)}%` }}
               />
             </div>
-            <span className="text-sm font-medium text-gray-700 min-w-[3rem]">
+            <span className="text-sm font-medium text-[#4c414e] min-w-[3rem]">
               {responseRate.toFixed(1)}%
             </span>
           </div>
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-sm text-[#655d67] mt-2">
             {data.responsesWithFiles} of {totalResponses} responses include
             uploaded files
           </p>
@@ -886,16 +886,16 @@ export const FileUploadFieldAnalytics: React.FC<
             <div className="space-y-2">
               {data.extensionDistribution.slice(0, 10).map((ext) => (
                 <div key={ext.extension} className="flex items-center gap-3">
-                  <span className="text-sm font-mono bg-gray-100 px-2 py-0.5 rounded min-w-[4rem] text-center">
+                  <span className="text-sm font-mono bg-[#f7f7f8] px-2 py-0.5 rounded min-w-[4rem] text-center">
                     .{ext.extension}
                   </span>
-                  <div className="flex-1 bg-gray-100 rounded-full h-3">
+                  <div className="flex-1 bg-[#f7f7f8] rounded-full h-3">
                     <div
                       className="bg-blue-500 h-3 rounded-full"
                       style={{ width: `${Math.max(2, ext.percentage)}%` }}
                     />
                   </div>
-                  <span className="text-sm text-gray-600 min-w-[3rem] text-right">
+                  <span className="text-sm text-[#4c414e] min-w-[3rem] text-right">
                     {ext.count} ({ext.percentage.toFixed(1)}%)
                   </span>
                 </div>

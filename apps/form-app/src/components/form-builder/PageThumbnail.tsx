@@ -69,7 +69,7 @@ export const PageThumbnail: React.FC<PageThumbnailProps> = ({
           p-3 transition-all duration-200 border-2
           ${isSelected 
             ? 'border-blue-500 bg-blue-50/80 dark:bg-blue-950/50' 
-            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+            : 'border-[rgba(81,76,84,0.10)] dark:border-gray-700 hover:border-[rgba(81,76,84,0.15)] dark:hover:border-gray-600'
           }
           ${isDraggingFromDifferentPage 
             ? 'border-primary/60 bg-primary/5 dark:bg-primary/10 ring-2 ring-primary/20 dark:ring-primary/30'
@@ -91,10 +91,10 @@ export const PageThumbnail: React.FC<PageThumbnailProps> = ({
             {index + 1}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-medium text-sm text-gray-900 dark:text-white truncate">
+            <div className="font-medium text-sm text-[#3c323e] dark:text-white truncate">
               {page.title}
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
+            <div className="text-xs text-[#655d67] dark:text-gray-400">
               {getFieldCountText(page.fields.length)}
             </div>
           </div>
@@ -103,7 +103,7 @@ export const PageThumbnail: React.FC<PageThumbnailProps> = ({
         {/* Page Content Preview */}
         <div className="space-y-1.5">
           {page.fields.length === 0 ? (
-            <div className="flex items-center justify-center py-4 text-gray-400 dark:text-gray-600">
+            <div className="flex items-center justify-center py-4 text-[#655d67] dark:text-gray-600">
               <div className="text-center">
                 <Plus className="w-4 h-4 mx-auto mb-1" />
                 <div className="text-xs">{t('emptyState')}</div>
@@ -124,7 +124,7 @@ export const PageThumbnail: React.FC<PageThumbnailProps> = ({
               
               {/* Show "more" indicator if there are additional fields */}
               {page.fields.length > 4 && (
-                <div className="text-xs text-gray-500 dark:text-gray-400 text-center pt-1">
+                <div className="text-xs text-[#655d67] dark:text-gray-400 text-center pt-1">
                   {t('moreFields', { values: { count: page.fields.length - 4 } })}
                 </div>
               )}

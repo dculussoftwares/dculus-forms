@@ -42,7 +42,7 @@ const SimpleWordCloud: React.FC<{
           <CardTitle>{t('wordCloud.title')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-64 text-gray-500">
+          <div className="flex items-center justify-center h-64 text-[#655d67]">
             {t('wordCloud.noData')}
           </div>
         </CardContent>
@@ -89,7 +89,7 @@ const SimpleWordCloud: React.FC<{
             </span>
           ))}
         </div>
-        <div className="mt-4 text-sm text-gray-600 text-center">
+        <div className="mt-4 text-sm text-[#4c414e] text-center">
           Hover over words to see frequency • Showing top {Math.min(30, words.length)} words
         </div>
       </CardContent>
@@ -129,7 +129,7 @@ const RecentResponses: React.FC<{
           <CardTitle>{t('recentResponses.title')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-32 text-gray-500">
+          <div className="flex items-center justify-center h-32 text-[#655d67]">
             {t('recentResponses.noData')}
           </div>
         </CardContent>
@@ -157,17 +157,17 @@ const RecentResponses: React.FC<{
           {responses.map((response, index) => (
             <div 
               key={response.responseId} 
-              className="p-3 bg-gray-50 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors"
+              className="p-3 bg-[#f7f7f8] rounded-lg border border-gray-100 hover:bg-[#f7f7f8] transition-colors"
             >
               <div className="flex justify-between items-start mb-2">
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-[#655d67]">
                   #{index + 1} • {formatDate(response.submittedAt)}
                 </span>
-                <div className="text-xs text-gray-400">
+                <div className="text-xs text-[#655d67]">
                   {response.value.length} chars
                 </div>
               </div>
-              <p className="text-sm text-gray-800 break-words">
+              <p className="text-sm text-[#3c323e] break-words">
                 {response.value.length > 200 
                   ? `${response.value.substring(0, 200)}...` 
                   : response.value
@@ -211,7 +211,7 @@ const CommonPhrases: React.FC<{
           {chartData.map((item, index) => (
             <div 
               key={item.fullPhrase}
-              className="flex items-center justify-between p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              className="flex items-center justify-between p-2 bg-[#f7f7f8] rounded-lg hover:bg-[#f7f7f8] transition-colors"
               title={item.fullPhrase}
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -219,21 +219,21 @@ const CommonPhrases: React.FC<{
                   className="w-4 h-4 rounded-full flex-shrink-0"
                   style={{ backgroundColor: CHART_COLORS.primary[index % CHART_COLORS.primary.length] }}
                 />
-                <span className="text-sm text-gray-800 truncate">
+                <span className="text-sm text-[#3c323e] truncate">
                   "{item.fullPhrase}"
                 </span>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <span className="text-sm font-medium text-gray-900">
+                <span className="text-sm font-medium text-[#3c323e]">
                   {item.value}
                 </span>
-                <span className="text-xs text-gray-500">uses</span>
+                <span className="text-xs text-[#655d67]">uses</span>
               </div>
             </div>
           ))}
         </div>
         {phrases.length > 10 && (
-          <div className="mt-4 text-center text-sm text-gray-500">
+          <div className="mt-4 text-center text-sm text-[#655d67]">
             Showing top 10 of {phrases.length} common phrases
           </div>
         )}
@@ -288,8 +288,8 @@ export const TextFieldAnalytics: React.FC<TextFieldAnalyticsProps> = ({
             <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
               <FileText className="h-8 w-8 text-blue-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('emptyState.title')}</h3>
-            <p className="text-gray-600 max-w-md mx-auto">{t('emptyState.subtitle')}</p>
+            <h3 className="text-lg font-semibold text-[#3c323e] mb-2">{t('emptyState.title')}</h3>
+            <p className="text-[#4c414e] max-w-md mx-auto">{t('emptyState.subtitle')}</p>
           </div>
         </CardContent>
       </Card>
@@ -367,7 +367,7 @@ export const TextFieldAnalytics: React.FC<TextFieldAnalyticsProps> = ({
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-600">{t('summary.responseRate')}</span>
+              <span className="text-[#4c414e]">{t('summary.responseRate')}</span>
               <span className="font-medium">
                 {totalResponses > 0 ? 
                   `${((data.recentResponses.length / totalResponses) * 100).toFixed(1)}%` : 
@@ -376,11 +376,11 @@ export const TextFieldAnalytics: React.FC<TextFieldAnalyticsProps> = ({
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">{t('summary.uniqueWords')}</span>
+              <span className="text-[#4c414e]">{t('summary.uniqueWords')}</span>
               <span className="font-medium">{data.wordCloud.length}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">{t('summary.commonPhrases')}</span>
+              <span className="text-[#4c414e]">{t('summary.commonPhrases')}</span>
               <span className="font-medium">{data.commonPhrases.length}</span>
             </div>
           </div>

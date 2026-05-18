@@ -75,7 +75,7 @@ export function PixabayImageBrowser({ formId, onImageApplied, onUploadSuccess }:
     <div className="space-y-4">
       <form onSubmit={handleSearchSubmit} className="flex gap-2">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#655d67]" />
           <Input
             placeholder={tCommon('searchPlaceholder')}
             value={searchQuery}
@@ -122,8 +122,8 @@ export function PixabayImageBrowser({ formId, onImageApplied, onUploadSuccess }:
                 </div>
               </div>
               <div className="p-2">
-                <p className="text-xs text-gray-600 truncate">{image.tags}</p>
-                <p className="text-xs text-gray-500">{tCommon('by')} {image.user}</p>
+                <p className="text-xs text-[#4c414e] truncate">{image.tags}</p>
+                <p className="text-xs text-[#655d67]">{tCommon('by')} {image.user}</p>
               </div>
             </Card>
           ))}
@@ -145,7 +145,7 @@ export function PixabayImageBrowser({ formId, onImageApplied, onUploadSuccess }:
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium text-sm">{tCommon('selectedImage')}</p>
-              <p className="text-xs text-gray-500">{selectedImage.tags}</p>
+              <p className="text-xs text-[#655d67]">{selectedImage.tags}</p>
             </div>
             <Button 
               onClick={handleApplyImage}

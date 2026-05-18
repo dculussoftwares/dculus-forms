@@ -151,8 +151,8 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
   return (
     <div className="flex items-center gap-3 relative">
       <div className="flex items-center gap-2">
-        <Calendar className="h-4 w-4 text-gray-500" />
-        <span className="text-sm font-medium text-gray-700">{t('label')}</span>
+        <Calendar className="h-4 w-4 text-[#655d67]" />
+        <span className="text-sm font-medium text-[#4c414e]">{t('label')}</span>
       </div>
       
       <div className="relative">
@@ -177,7 +177,7 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
             <Card className="w-96 shadow-lg border">
               <CardContent className="p-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-gray-900">{t('customPicker.title')}</h4>
+                  <h4 className="text-sm font-semibold text-[#3c323e]">{t('customPicker.title')}</h4>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -190,7 +190,7 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                 
                 {/* Quick Presets */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">{t('customPicker.quickPresetsLabel')}</Label>
+                  <Label className="text-sm font-medium text-[#4c414e]">{t('customPicker.quickPresetsLabel')}</Label>
                   <div className="flex flex-wrap gap-2">
                     {[
                       { label: t('presets.last7Days'), days: 7 },
@@ -214,7 +214,7 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">{t('customPicker.startDateLabel')}</Label>
+                    <Label className="text-sm font-medium text-[#4c414e]">{t('customPicker.startDateLabel')}</Label>
                     <DatePicker
                       date={startDate}
                       onDateChange={(date) => handleDateChange('start', date)}
@@ -225,7 +225,7 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">{t('customPicker.endDateLabel')}</Label>
+                    <Label className="text-sm font-medium text-[#4c414e]">{t('customPicker.endDateLabel')}</Label>
                     <DatePicker
                       date={endDate}
                       onDateChange={(date) => handleDateChange('end', date)}
@@ -239,8 +239,8 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 
                 {/* Error Message */}
                 {dateError && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                    <p className="text-sm text-red-600">{dateError}</p>
+                  <div className="p-3 bg-[rgba(206,93,85,0.06)] border border-[rgba(206,93,85,0.16)] rounded-md">
+                    <p className="text-sm text-[#ce5d55]">{dateError}</p>
                   </div>
                 )}
 

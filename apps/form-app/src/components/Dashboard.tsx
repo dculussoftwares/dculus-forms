@@ -455,10 +455,7 @@ function TemplatesStrip() {
           return (
             <div
               key={template.id}
-              className="group shrink-0 w-44 rounded-xl border bg-white dark:bg-card overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-0.5"
-              style={{ borderColor: 'rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(60,50,62,0.12)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 4px rgba(60,50,62,0.06)'; }}
+              className="group shrink-0 w-44 rounded-xl border border-[rgba(81,76,84,0.10)] bg-white dark:bg-card overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-0.5 shadow-[0_1px_4px_rgba(60,50,62,0.06)] hover:shadow-[0_4px_16px_rgba(60,50,62,0.12)]"
             >
               <div className="relative h-24 overflow-hidden">
                 {bgUrl ? (
@@ -559,13 +556,7 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
   return (
     <div
       onClick={handleCardClick}
-      className="group relative rounded-xl bg-white dark:bg-card overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-0.5"
-      style={{
-        border: '1px solid rgba(81,76,84,0.10)',
-        boxShadow: '0 1px 4px rgba(60,50,62,0.06)',
-      }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 20px rgba(60,50,62,0.12)'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 4px rgba(60,50,62,0.06)'; }}
+      className="group relative rounded-xl bg-white dark:bg-card overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-0.5 border border-[rgba(81,76,84,0.10)] shadow-[0_1px_4px_rgba(60,50,62,0.06)] hover:shadow-[0_6px_20px_rgba(60,50,62,0.12)]"
     >
       {/* Thumbnail */}
       <div className="relative h-40 overflow-hidden">
@@ -596,7 +587,7 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
             variant="outline"
             size="sm"
             onClick={handlePreview}
-            className="gap-1.5 text-xs shadow-sm bg-white/92 text-[#3c323e] hover:bg-white"
+            className="gap-1.5 text-xs shadow-sm bg-white text-[#3c323e] hover:bg-white/90 border-transparent"
           >
             <Eye className="h-3.5 w-3.5" />
             Preview

@@ -62,14 +62,14 @@ export const OptionsSettings: React.FC<OptionsSettingsProps> = ({
                   variant="ghost"
                   onClick={() => removeOption(index)}
                   disabled={!isEditable}
-                  className="h-8 w-8 text-gray-500 hover:text-red-600"
+                  className="h-8 w-8 text-[#655d67] hover:text-[#ce5d55]"
                   type="button"
                 >
                   <X className="w-4 h-4" />
                 </Button>
               </div>
               {isEmpty && (
-                <div className="text-xs text-red-600 dark:text-red-400 ml-1">
+                <div className="text-xs text-[#ce5d55] dark:text-red-400 ml-1">
                   {constants.ERROR_MESSAGES.OPTION_EMPTY}
                 </div>
               )}

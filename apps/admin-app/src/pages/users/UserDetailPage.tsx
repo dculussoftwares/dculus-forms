@@ -43,16 +43,16 @@ export const UserDetailPage = () => {
       case 'admin':
         return 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300';
       default:
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+        return 'bg-[#f7f7f8] text-[#4c414e] dark:bg-gray-800 dark:text-gray-300';
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-[#f7f7f8] dark:bg-gray-900 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-600 dark:text-gray-400">Loading user details...</p>
+          <p className="text-[#4c414e] dark:text-gray-400">Loading user details...</p>
         </div>
       </div>
     );
@@ -60,12 +60,12 @@ export const UserDetailPage = () => {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-[#f7f7f8] dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">
+          <h3 className="text-lg font-medium text-[#3c323e] dark:text-gray-100 mb-1">
             Error loading user
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <p className="text-sm text-[#655d67] dark:text-gray-400 mb-4">
             {error?.message || 'User not found'}
           </p>
           <Button onClick={() => navigate('/users')}>Back to Users</Button>
@@ -77,7 +77,7 @@ export const UserDetailPage = () => {
   const user = data.adminUserById;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-[#f7f7f8] dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Back Button */}
         <Button
@@ -110,10 +110,10 @@ export const UserDetailPage = () => {
 
               {/* User Info */}
               <div className="flex-1">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                <h1 className="text-3xl font-bold text-[#3c323e] dark:text-gray-100 mb-2">
                   {user.name}
                 </h1>
-                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-3">
+                <div className="flex items-center gap-2 text-[#4c414e] dark:text-gray-400 mb-3">
                   <Mail className="w-4 h-4" />
                   <span>{user.email}</span>
                 </div>
@@ -124,7 +124,7 @@ export const UserDetailPage = () => {
                       <span>Email Verified</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1 px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full text-sm font-medium">
+                    <div className="flex items-center gap-1 px-3 py-1 bg-[#f7f7f8] dark:bg-gray-800 text-[#4c414e] dark:text-gray-400 rounded-full text-sm font-medium">
                       <XCircle className="w-4 h-4" />
                       <span>Email Not Verified</span>
                     </div>
@@ -138,7 +138,7 @@ export const UserDetailPage = () => {
         {/* Account Information Card */}
         <Card className="mb-6">
           <CardContent className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            <h2 className="text-xl font-semibold text-[#3c323e] dark:text-gray-100 mb-4">
               Account Information
             </h2>
             <div className="space-y-4">
@@ -159,8 +159,8 @@ export const UserDetailPage = () => {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">User ID</p>
-                  <p className="font-mono text-sm text-gray-900 dark:text-gray-100">
+                  <p className="text-sm text-[#4c414e] dark:text-gray-400">User ID</p>
+                  <p className="font-mono text-sm text-[#3c323e] dark:text-gray-100">
                     {user.id}
                   </p>
                 </div>
@@ -171,8 +171,8 @@ export const UserDetailPage = () => {
                   <Calendar className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Created</p>
-                  <p className="text-sm text-gray-900 dark:text-gray-100">
+                  <p className="text-sm text-[#4c414e] dark:text-gray-400">Created</p>
+                  <p className="text-sm text-[#3c323e] dark:text-gray-100">
                     {formatDate(user.createdAt)}
                   </p>
                 </div>
@@ -183,8 +183,8 @@ export const UserDetailPage = () => {
                   <Calendar className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Last Updated</p>
-                  <p className="text-sm text-gray-900 dark:text-gray-100">
+                  <p className="text-sm text-[#4c414e] dark:text-gray-400">Last Updated</p>
+                  <p className="text-sm text-[#3c323e] dark:text-gray-100">
                     {formatDate(user.updatedAt)}
                   </p>
                 </div>
@@ -196,13 +196,13 @@ export const UserDetailPage = () => {
         {/* Organizations Card */}
         <Card>
           <CardContent className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            <h2 className="text-xl font-semibold text-[#3c323e] dark:text-gray-100 mb-4">
               Organizations ({user.organizations.length})
             </h2>
             {user.organizations.length > 0 ? (
               <div className="space-y-3">
                 {user.organizations.map((org) => (
-                  <Card key={org.organizationId} className="border border-gray-200 dark:border-gray-700">
+                  <Card key={org.organizationId} className="border border-[rgba(81,76,84,0.10)] dark:border-gray-700">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 flex-1">
@@ -210,11 +210,11 @@ export const UserDetailPage = () => {
                             <Building2 className="w-6 h-6 text-white" />
                           </div>
                           <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                            <h3 className="font-semibold text-[#3c323e] dark:text-gray-100">
                               {org.organizationName}
                             </h3>
                             {org.organizationSlug && (
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                              <p className="text-sm text-[#4c414e] dark:text-gray-400">
                                 @{org.organizationSlug}
                               </p>
                             )}
@@ -226,7 +226,7 @@ export const UserDetailPage = () => {
                               >
                                 {org.role}
                               </span>
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                              <span className="text-xs text-[#655d67] dark:text-gray-400">
                                 Joined {formatDate(org.createdAt)}
                               </span>
                             </div>
@@ -246,10 +246,10 @@ export const UserDetailPage = () => {
               </div>
             ) : (
               <div className="text-center py-8">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                  <Building2 className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#f7f7f8] dark:bg-gray-800 flex items-center justify-center">
+                  <Building2 className="w-8 h-8 text-[#655d67] dark:text-gray-500" />
                 </div>
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-[#4c414e] dark:text-gray-400">
                   This user is not a member of any organizations
                 </p>
               </div>

@@ -38,9 +38,9 @@ export const FieldChangeCard: React.FC<FieldChangeCardProps> = ({
       case ChangeType.UPDATE:
         return 'bg-blue-100 text-blue-800 border-blue-200';
       case ChangeType.DELETE:
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-[rgba(206,93,85,0.08)] text-[#ce5d55] border-[rgba(206,93,85,0.16)]';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-[#f7f7f8] text-[#3c323e] border-[rgba(81,76,84,0.10)]';
     }
   };
 
@@ -125,13 +125,13 @@ export const FieldChangeCard: React.FC<FieldChangeCardProps> = ({
 
   const getValueDisplayClass = (changeType: ChangeType, isOldValue: boolean) => {
     if (changeType === ChangeType.ADD && isOldValue) {
-      return 'text-gray-400 italic';
+      return 'text-[#655d67] italic';
     }
     if (changeType === ChangeType.DELETE && !isOldValue) {
-      return 'text-gray-400 italic';
+      return 'text-[#655d67] italic';
     }
     if (changeType === ChangeType.UPDATE) {
-      return isOldValue ? 'text-red-600 bg-red-50' : 'text-green-600 bg-green-50';
+      return isOldValue ? 'text-[#ce5d55] bg-[rgba(206,93,85,0.06)]' : 'text-green-600 bg-green-50';
     }
     return '';
   };
@@ -151,7 +151,7 @@ export const FieldChangeCard: React.FC<FieldChangeCardProps> = ({
 
     if (formattedValue === t('fieldChangeCard.empty')) {
       return (
-        <span className={`italic text-gray-400 ${displayClass}`}>
+        <span className={`italic text-[#655d67] ${displayClass}`}>
           {formattedValue}
         </span>
       );
@@ -179,7 +179,7 @@ export const FieldChangeCard: React.FC<FieldChangeCardProps> = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-2">
             {getFieldTypeIcon(fieldChange.fieldType)}
-            <span className="font-medium text-gray-900">
+            <span className="font-medium text-[#3c323e]">
               {fieldChange.fieldLabel}
             </span>
             <Badge
@@ -206,7 +206,7 @@ export const FieldChangeCard: React.FC<FieldChangeCardProps> = ({
             <>
               {/* Before Value */}
               <div>
-                <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                <div className="text-xs font-medium text-[#655d67] uppercase tracking-wide mb-1">
                   {t('fieldChangeCard.labels.before')}
                 </div>
                 {renderValue(
@@ -221,7 +221,7 @@ export const FieldChangeCard: React.FC<FieldChangeCardProps> = ({
 
               {/* After Value */}
               <div>
-                <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                <div className="text-xs font-medium text-[#655d67] uppercase tracking-wide mb-1">
                   {t('fieldChangeCard.labels.after')}
                 </div>
                 {renderValue(
@@ -236,7 +236,7 @@ export const FieldChangeCard: React.FC<FieldChangeCardProps> = ({
 
           {fieldChange.changeType === ChangeType.ADD && (
             <div>
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+              <div className="text-xs font-medium text-[#655d67] uppercase tracking-wide mb-1">
                 {t('fieldChangeCard.labels.addedValue')}
               </div>
               {renderValue(
@@ -250,7 +250,7 @@ export const FieldChangeCard: React.FC<FieldChangeCardProps> = ({
 
           {fieldChange.changeType === ChangeType.DELETE && (
             <div>
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+              <div className="text-xs font-medium text-[#655d67] uppercase tracking-wide mb-1">
                 {t('fieldChangeCard.labels.removedValue')}
               </div>
               {renderValue(
@@ -265,8 +265,8 @@ export const FieldChangeCard: React.FC<FieldChangeCardProps> = ({
 
         {/* Field metadata */}
         <div className="mt-3 pt-2 border-t border-gray-100">
-          <div className="text-xs text-gray-500">
-            {t('fieldChangeCard.labels.fieldId')} <code className="bg-gray-100 px-1 rounded">{fieldChange.fieldId}</code>
+          <div className="text-xs text-[#655d67]">
+            {t('fieldChangeCard.labels.fieldId')} <code className="bg-[#f7f7f8] px-1 rounded">{fieldChange.fieldId}</code>
             <span className="mx-2">•</span>
             {t('fieldChangeCard.labels.type')} <span className="capitalize">{fieldChange.fieldType.replace('_', ' ')}</span>
           </div>

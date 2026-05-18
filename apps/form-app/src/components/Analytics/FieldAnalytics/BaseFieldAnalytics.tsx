@@ -87,7 +87,7 @@ const AnalyticsLoadingSkeleton: React.FC<{ message?: string }> = ({ message }) =
 
       {/* Loading message */}
       {message && (
-        <div className="flex items-center justify-center gap-2 text-gray-500 mt-4">
+        <div className="flex items-center justify-center gap-2 text-[#655d67] mt-4">
           <Loader2 className="h-5 w-5 animate-spin" />
           <span>{message}</span>
         </div>
@@ -105,12 +105,12 @@ const AnalyticsEmptyState: React.FC<{
 }> = ({ message, description }) => {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4">
-      <div className="rounded-full bg-gray-100 p-6 mb-4">
-        <FileText className="h-12 w-12 text-gray-400" />
+      <div className="rounded-full bg-[#f7f7f8] p-6 mb-4">
+        <FileText className="h-12 w-12 text-[#655d67]" />
       </div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">{message}</h3>
+      <h3 className="text-lg font-semibold text-[#3c323e] mb-2">{message}</h3>
       {description && (
-        <p className="text-sm text-gray-500 text-center max-w-md">
+        <p className="text-sm text-[#655d67] text-center max-w-md">
           {description}
         </p>
       )}
@@ -127,11 +127,11 @@ const AnalyticsErrorState: React.FC<{
 }> = ({ message, onRetry }) => {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4">
-      <div className="rounded-full bg-red-100 p-6 mb-4">
-        <FileText className="h-12 w-12 text-red-400" />
+      <div className="rounded-full bg-[rgba(206,93,85,0.08)] p-6 mb-4">
+        <FileText className="h-12 w-12 text-[#ce5d55]" />
       </div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Analytics</h3>
-      <p className="text-sm text-gray-500 text-center max-w-md mb-4">{message}</p>
+      <h3 className="text-lg font-semibold text-[#3c323e] mb-2">Error Loading Analytics</h3>
+      <p className="text-sm text-[#655d67] text-center max-w-md mb-4">{message}</p>
       {onRetry && (
         <Button
           onClick={onRetry}
@@ -206,8 +206,8 @@ export const BaseFieldAnalytics = <T,>({
       {/* Field header with context */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900">{fieldLabel}</h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <h2 className="text-2xl font-semibold text-[#3c323e]">{fieldLabel}</h2>
+          <p className="text-sm text-[#655d67] mt-1">
             {t('header.totalResponses', {
               defaultValue: `${totalResponses} total responses`,
               values: { count: totalResponses }

@@ -24,7 +24,7 @@ export const UserSearchBar = ({
 
   return (
     <div className="relative">
-      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#655d67]" />
       <Input
         type="text"
         placeholder={placeholder}

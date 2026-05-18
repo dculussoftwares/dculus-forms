@@ -120,10 +120,7 @@ export const SignIn = () => {
         <div className="flex items-center justify-end px-8 py-5" style={{ borderBottom: '1px solid rgba(81,76,84,0.08)' }}>
           <span className="text-sm" style={{ color: '#655d67' }}>
             {t("links.signUpPrompt")}{" "}
-            <Link to="/signup" className="font-medium transition-colors" style={{ color: '#3c323e' }}
-              onMouseEnter={e => (e.currentTarget as HTMLElement).style.textDecoration = 'underline'}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.textDecoration = 'none'}
-            >
+            <Link to="/signup" className="font-medium hover:underline transition-colors" style={{ color: '#3c323e' }}>
               {t("links.signUp")}
             </Link>
           </span>
@@ -163,7 +160,7 @@ export const SignIn = () => {
                   value={formData.email}
                   onChange={handleInputChange}
                   disabled={isLoading}
-                  className={errors.email ? "border-red-400 focus-visible:border-red-400" : ""}
+                  className={errors.email ? "border-[#ce5d55] focus-visible:border-[#ce5d55]" : ""}
                 />
                 {errors.email && (
                   <p className="text-xs mt-1" style={{ color: '#ce5d55' }}>{errors.email}</p>
@@ -177,10 +174,8 @@ export const SignIn = () => {
                   </Label>
                   <Link
                     to="/forgot-password"
-                    className="text-xs transition-colors"
+                    className="text-xs transition-colors hover:text-[#3c323e]"
                     style={{ color: '#655d67' }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#3c323e'}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#655d67'}
                   >
                     {t("links.forgotPassword")}
                   </Link>
@@ -193,7 +188,7 @@ export const SignIn = () => {
                   value={formData.password}
                   onChange={handleInputChange}
                   disabled={isLoading}
-                  className={errors.password ? "border-red-400 focus-visible:border-red-400" : ""}
+                  className={errors.password ? "border-[#ce5d55] focus-visible:border-[#ce5d55]" : ""}
                 />
                 {errors.password && (
                   <p className="text-xs mt-1" style={{ color: '#ce5d55' }}>{errors.password}</p>

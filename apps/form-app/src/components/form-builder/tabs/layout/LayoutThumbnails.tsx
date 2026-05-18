@@ -15,9 +15,9 @@ const LAYOUT_TEMPLATES: Array<{
     preview: (
       <div className="flex space-x-0.5 h-6">
         {/* Image chunk */}
-        <div className="flex-1 bg-gradient-to-br from-blue-100 to-blue-200 rounded-l border border-gray-300"></div>
+        <div className="flex-1 bg-gradient-to-br from-blue-100 to-blue-200 rounded-l border border-[rgba(81,76,84,0.15)]"></div>
         {/* White paper chunk with content */}
-        <div className="flex-1 bg-white border border-gray-300 rounded-r p-0.5 flex flex-col justify-between">
+        <div className="flex-1 bg-white border border-[rgba(81,76,84,0.15)] rounded-r p-0.5 flex flex-col justify-between">
           <div className="space-y-0.5">
             <div className="h-0.5 bg-gray-400 rounded w-full" />
             <div className="h-0.5 bg-gray-300 rounded w-3/4" />
@@ -31,11 +31,11 @@ const LAYOUT_TEMPLATES: Array<{
     code: 'L2',
     preview: (
       <div className="grid grid-cols-2 gap-0.5 h-6">
-        <div className="bg-white border border-gray-300 rounded p-0.5 space-y-0.5">
+        <div className="bg-white border border-[rgba(81,76,84,0.15)] rounded p-0.5 space-y-0.5">
           <div className="h-0.5 bg-gray-400 rounded w-full" />
           <div className="h-0.5 bg-gray-300 rounded w-3/4" />
         </div>
-        <div className="bg-white border border-gray-300 rounded p-0.5 space-y-0.5">
+        <div className="bg-white border border-[rgba(81,76,84,0.15)] rounded p-0.5 space-y-0.5">
           <div className="h-0.5 bg-gray-400 rounded w-full" />
           <div className="h-0.5 bg-gray-300 rounded w-2/3" />
         </div>
@@ -46,11 +46,11 @@ const LAYOUT_TEMPLATES: Array<{
     code: 'L3',
     preview: (
       <div className="space-y-0.5 h-6">
-        <div className="bg-white border border-gray-300 rounded px-1 py-0.5 shadow-sm">
+        <div className="bg-white border border-[rgba(81,76,84,0.15)] rounded px-1 py-0.5 shadow-sm">
           <div className="h-0.5 bg-gray-400 rounded w-full mb-0.5" />
           <div className="h-0.5 bg-gray-300 rounded w-3/4" />
         </div>
-        <div className="bg-white border border-gray-300 rounded px-1 py-0.5 shadow-sm">
+        <div className="bg-white border border-[rgba(81,76,84,0.15)] rounded px-1 py-0.5 shadow-sm">
           <div className="h-0.5 bg-gray-400 rounded w-full mb-0.5" />
           <div className="h-0.5 bg-gray-300 rounded w-2/3" />
         </div>
@@ -60,7 +60,7 @@ const LAYOUT_TEMPLATES: Array<{
   {
     code: 'L4',
     preview: (
-      <div className="bg-white border border-gray-200 rounded p-1 h-6 flex flex-col justify-center space-y-1">
+      <div className="bg-white border border-[rgba(81,76,84,0.10)] rounded p-1 h-6 flex flex-col justify-center space-y-1">
         <div className="h-0.5 bg-gray-300 rounded w-full" />
         <div className="h-0.5 bg-gray-200 rounded w-2/3 mx-auto" />
         <div className="h-0.5 bg-gray-200 rounded w-1/2 mx-auto" />
@@ -72,7 +72,7 @@ const LAYOUT_TEMPLATES: Array<{
     preview: (
       <div className="flex space-x-0.5 h-6">
         {/* Content chunk */}
-        <div className="flex-1 bg-white border border-gray-300 rounded-l p-0.5 flex flex-col justify-between">
+        <div className="flex-1 bg-white border border-[rgba(81,76,84,0.15)] rounded-l p-0.5 flex flex-col justify-between">
           <div className="space-y-0.5">
             <div className="h-0.5 bg-gray-400 rounded w-full" />
             <div className="h-0.5 bg-gray-300 rounded w-3/4" />
@@ -80,14 +80,14 @@ const LAYOUT_TEMPLATES: Array<{
           <div className="h-1 bg-slate-600 rounded w-full" />
         </div>
         {/* Image chunk */}
-        <div className="flex-1 bg-gradient-to-br from-gray-200 to-gray-400 rounded-r border border-gray-300"></div>
+        <div className="flex-1 bg-gradient-to-br from-gray-200 to-gray-400 rounded-r border border-[rgba(81,76,84,0.15)]"></div>
       </div>
     )
   },
   {
     code: 'L6',
     preview: (
-      <div className="bg-white border border-gray-300 rounded p-0.5 h-6 space-y-0.5">
+      <div className="bg-white border border-[rgba(81,76,84,0.15)] rounded p-0.5 h-6 space-y-0.5">
         {/* Progress dots */}
         <div className="flex justify-center space-x-0.5">
           <div className="w-1 h-1 bg-purple-500 rounded-full" />
@@ -112,7 +112,7 @@ const LAYOUT_TEMPLATES: Array<{
     preview: (
       <div className="h-6">
         {/* Single full-width content chunk */}
-        <div className="w-full h-full bg-white border border-gray-300 rounded p-0.5 flex flex-col justify-between">
+        <div className="w-full h-full bg-white border border-[rgba(81,76,84,0.15)] rounded p-0.5 flex flex-col justify-between">
           <div className="space-y-0.5">
             <div className="h-0.5 bg-gray-400 rounded w-full" />
             <div className="h-0.5 bg-gray-300 rounded w-4/5" />
@@ -128,7 +128,7 @@ const LAYOUT_TEMPLATES: Array<{
     preview: (
       <div className="relative h-6">
         {/* Full image background */}
-        <div className="w-full h-full bg-gradient-to-br from-blue-200 via-purple-200 to-pink-200 rounded border border-gray-300"></div>
+        <div className="w-full h-full bg-gradient-to-br from-blue-200 via-purple-200 to-pink-200 rounded border border-[rgba(81,76,84,0.15)]"></div>
         {/* Floating CTA button */}
         <div className="absolute bottom-0.5 left-1/2 transform -translate-x-1/2">
           <div className="h-1 bg-slate-700 rounded w-6 shadow-sm" />
@@ -143,11 +143,11 @@ const LAYOUT_TEMPLATES: Array<{
         {/* Header */}
         <div className="h-0.5 bg-gray-400 rounded w-1/3" />
         {/* Form pages */}
-        <div className="bg-white border border-gray-300 rounded p-0.5 shadow-sm">
+        <div className="bg-white border border-[rgba(81,76,84,0.15)] rounded p-0.5 shadow-sm">
           <div className="h-0.5 bg-gray-300 rounded w-full mb-0.5" />
           <div className="h-0.5 bg-gray-200 rounded w-3/4" />
         </div>
-        <div className="bg-white border border-gray-300 rounded p-0.5 shadow-sm">
+        <div className="bg-white border border-[rgba(81,76,84,0.15)] rounded p-0.5 shadow-sm">
           <div className="h-0.5 bg-gray-300 rounded w-full mb-0.5" />
           <div className="h-0.5 bg-gray-200 rounded w-2/3" />
         </div>
@@ -184,7 +184,7 @@ export const LayoutThumbnails: React.FC<LayoutThumbnailsProps> = ({
           >
             {/* Header with name and check */}
             <div className="flex items-center justify-between w-full mb-1.5">
-              <span className="text-xs font-semibold text-gray-900 dark:text-white truncate">
+              <span className="text-xs font-semibold text-[#3c323e] dark:text-white truncate">
                 {t(`layouts.${template.code}.name`)}
               </span>
               {currentLayoutCode === template.code && (
@@ -193,7 +193,7 @@ export const LayoutThumbnails: React.FC<LayoutThumbnailsProps> = ({
             </div>
 
             {/* Preview - Enhanced */}
-            <div className="bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 h-6 flex items-center justify-center p-0.5 mb-1.5 overflow-hidden w-full">
+            <div className="bg-[#f7f7f8] dark:bg-gray-700 rounded border border-[rgba(81,76,84,0.10)] dark:border-gray-600 h-6 flex items-center justify-center p-0.5 mb-1.5 overflow-hidden w-full">
               <div className="w-full h-full flex items-center justify-center">
                 {template.preview}
               </div>
@@ -201,7 +201,7 @@ export const LayoutThumbnails: React.FC<LayoutThumbnailsProps> = ({
 
             {/* Layout Code Badge and Description */}
             <div className="flex items-center justify-between w-full">
-              <span className="text-xs font-mono bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-full text-gray-600 dark:text-gray-400 border">
+              <span className="text-xs font-mono bg-[#f7f7f8] dark:bg-gray-800 px-1.5 py-0.5 rounded-full text-[#4c414e] dark:text-gray-400 border">
                 {template.code}
               </span>
               <div className="w-1 h-1 bg-purple-400 rounded-full opacity-60" />

@@ -243,7 +243,7 @@ const RightSidebar: React.FC<{
         onMouseDown={handleMouseDown}
       >
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-          <GripHorizontal className="w-4 h-4 text-gray-400 rotate-90" />
+          <GripHorizontal className="w-4 h-4 text-[#655d67] rotate-90" />
         </div>
       </div>
 
@@ -341,7 +341,7 @@ const RightSidebar: React.FC<{
                 onDelete={handleDelete}
               />
             ) : (
-              <div className="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-gray-400 p-8 text-center">
+              <div className="flex flex-col items-center justify-center h-64 text-[#655d67] dark:text-gray-400 p-8 text-center">
                 <Settings className="w-12 h-12 mb-4 opacity-20" />
                 <p>{t('emptyState.title')}</p>
               </div>
@@ -458,7 +458,7 @@ const FieldCard: React.FC<{
               title="Drag to reorder"
               onClick={(e) => e.stopPropagation()}
             >
-              <GripVertical className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+              <GripVertical className="w-4 h-4 text-[#655d67] dark:text-gray-500" />
             </div>
           )}
 
@@ -477,7 +477,7 @@ const FieldCard: React.FC<{
               {'validation' in field &&
                 (field as FillableFormField).validation?.required && (
                   <span
-                    className="text-red-500 text-sm flex-shrink-0"
+                    className="text-[#ce5d55] text-sm flex-shrink-0"
                     title="Required field"
                   >
                     *
@@ -501,7 +501,7 @@ const FieldCard: React.FC<{
                 title="Drag to reorder"
                 onClick={(e) => e.stopPropagation()}
               >
-                <GripVertical className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                <GripVertical className="w-4 h-4 text-[#655d67] dark:text-gray-500" />
               </div>
             )}
 
@@ -520,14 +520,14 @@ const FieldCard: React.FC<{
                 {'validation' in field &&
                   (field as FillableFormField).validation?.required && (
                     <span
-                      className="text-red-500 text-sm flex-shrink-0"
+                      className="text-[#ce5d55] text-sm flex-shrink-0"
                       title="Required field"
                     >
                       *
                     </span>
                   )}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="text-xs text-[#655d67] dark:text-gray-400">
                 {typeConfig.label}
               </div>
             </div>
@@ -627,7 +627,7 @@ const FieldCard: React.FC<{
                     e.stopPropagation();
                     onDelete();
                   }}
-                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md h-auto"
+                  className="p-1.5 text-[#655d67] hover:text-[#ce5d55] hover:bg-[rgba(206,93,85,0.06)] dark:hover:bg-red-950/30 rounded-md h-auto"
                   title="Delete field"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -764,7 +764,7 @@ const EmptyFormAreaPlaceholder: React.FC<{ isConnected: boolean }> = ({
   const { t } = useTranslation('pageBuilderTab');
 
   return (
-    <div className="flex items-center justify-center h-full min-h-[200px] text-gray-500 dark:text-gray-400">
+    <div className="flex items-center justify-center h-full min-h-[200px] text-[#655d67] dark:text-gray-400">
       <div className="text-center">
         <p className="text-lg font-medium">{t('formArea.placeholder')}</p>
         <ConnectionStatus isConnected={isConnected} />
@@ -896,7 +896,7 @@ const FormArea: React.FC<{
                 ${
                   isOver
                     ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 ring-2 ring-blue-500/20'
-                    : 'border-gray-300 dark:border-gray-600'
+                    : 'border-[rgba(81,76,84,0.15)] dark:border-gray-600'
                 }
               `}
               data-testid="droppable-page"
@@ -930,7 +930,7 @@ const PageHeader: React.FC<{
   if (!selectedPage) {
     return (
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-400">
+        <h1 className="text-2xl font-bold text-[#655d67]">
           {t('formArea.noPageSelected')}
         </h1>
       </div>
@@ -939,10 +939,10 @@ const PageHeader: React.FC<{
 
   return (
     <div className="mb-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+      <h1 className="text-2xl font-bold text-[#3c323e] dark:text-white">
         {selectedPage.title || t('formArea.untitledPage')}
       </h1>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+      <p className="text-sm text-[#655d67] dark:text-gray-400 mt-1">
         {selectedPage.fields.length}{' '}
         {selectedPage.fields.length === 1 ? 'field' : 'fields'}
       </p>

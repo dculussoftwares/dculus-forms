@@ -188,7 +188,7 @@ const renderFilterInput = (
               onChange={(e) => handleNumberRangeChange('min', e.target.value)}
               className="h-9 w-24"
             />
-            <span className="text-slate-500">and</span>
+            <span className="text-[#655d67]">and</span>
             <Input
               type="number"
               placeholder={t('placeholders.max')}
@@ -245,7 +245,7 @@ const renderFilterInput = (
               placeholder="From"
               className="h-9 w-36"
             />
-            <span className="text-slate-500">and</span>
+            <span className="text-[#655d67]">and</span>
             <DatePicker
               date={
                 filter.dateRange?.to ? parseCalendarDate(filter.dateRange.to) : undefined
@@ -317,7 +317,7 @@ const renderFilterInput = (
             <SelectTrigger className="h-9">
               <SelectValue>
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-500">
+                  <span className="text-[#655d67]">
                     {filter.values?.length
                       ? `${filter.values.length} selected`
                       : 'Select options...'}
@@ -331,7 +331,7 @@ const renderFilterInput = (
                 return (
                   <div
                     key={index}
-                    className="flex items-center space-x-2 p-2 hover:bg-slate-50"
+                    className="flex items-center space-x-2 p-2 hover:bg-[#f7f7f8]"
                   >
                     <Checkbox
                       id={`${field.id}-${index}`}
@@ -420,11 +420,11 @@ export const FilterRow: React.FC<FilterRowProps> = ({
   };
 
   return (
-    <div className="p-4 bg-white border border-slate-200 rounded-lg space-y-3">
+    <div className="p-4 bg-white border border-[rgba(81,76,84,0.10)] rounded-lg space-y-3">
       {/* Header Row: "and" connector + Remove Button */}
       <div className="flex items-center justify-between">
         {!isFirst ? (
-          <div className="text-sm font-medium text-slate-600">
+          <div className="text-sm font-medium text-[#4c414e]">
             {filterLogic === 'AND' ? 'and' : 'or'}
           </div>
         ) : (
@@ -437,7 +437,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
           onClick={onRemove}
           className="h-8 w-8 p-0 hover:bg-slate-100 flex-shrink-0"
         >
-          <X className="h-4 w-4 text-slate-500" />
+          <X className="h-4 w-4 text-[#655d67]" />
         </Button>
       </div>
 
@@ -465,7 +465,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
             {fields.map((field) => (
               <SelectItem key={field.id} value={field.id}>
                 <div className="flex items-center gap-2">
-                  <div className="text-slate-500 flex-shrink-0">
+                  <div className="text-[#655d67] flex-shrink-0">
                     {getFieldIcon(field.type)}
                   </div>
                   <span className="truncate" title={field.label}>

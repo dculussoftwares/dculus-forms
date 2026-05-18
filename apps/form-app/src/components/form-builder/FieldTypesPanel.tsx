@@ -147,7 +147,7 @@ const FieldTypeDisplay: React.FC<FieldTypeDisplayProps> = ({
       ${
         isOverlay
           ? 'border-blue-500 bg-white dark:bg-gray-800 shadow-lg transition-none'
-          : `border-gray-200 hover:border-blue-300 hover:bg-blue-50/50
+          : `border-[rgba(81,76,84,0.10)] hover:border-blue-300 hover:bg-blue-50/50
            dark:border-gray-700 dark:hover:border-blue-600 dark:hover:bg-blue-950/30
            group-hover:shadow-md
            ${isDragging ? 'border-blue-400 bg-blue-50 dark:border-blue-500 dark:bg-blue-950/40 transition-none' : 'transition-all duration-200'}`
@@ -161,7 +161,7 @@ const FieldTypeDisplay: React.FC<FieldTypeDisplayProps> = ({
           ${
             isOverlay
               ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'
-              : `${categories?.[fieldType.category as keyof typeof categories]?.color || 'bg-gray-100'}
+              : `${categories?.[fieldType.category as keyof typeof categories]?.color || 'bg-[#f7f7f8]'}
                ${isDragging ? 'scale-110 transition-none' : 'group-hover:scale-110 transition-transform duration-200'}`
           }
         `}
@@ -172,17 +172,17 @@ const FieldTypeDisplay: React.FC<FieldTypeDisplayProps> = ({
           <div
             className={`text-sm font-medium ${
               isOverlay
-                ? 'text-gray-900 dark:text-white'
+                ? 'text-[#3c323e] dark:text-white'
                 : `group-hover:text-blue-600 dark:group-hover:text-blue-400 ${
                     isDragging
                       ? 'text-blue-600 dark:text-blue-400'
-                      : 'text-gray-900 dark:text-white'
+                      : 'text-[#3c323e] dark:text-white'
                   }`
             }`}
           >
             {fieldType.label}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <div className="text-xs text-[#655d67] dark:text-gray-400 mt-1">
             {fieldType.description}
           </div>
         </div>
@@ -285,11 +285,11 @@ export const FieldTypesPanel: React.FC<FieldTypesPanelProps> = ({
 
   return (
     <div className={`h-full overflow-y-auto ${className}`}>
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-        <TypographyH3 className="text-lg font-semibold text-gray-900 dark:text-white">
+      <div className="p-4 border-b border-[rgba(81,76,84,0.10)] dark:border-gray-700 bg-white dark:bg-gray-900">
+        <TypographyH3 className="text-lg font-semibold text-[#3c323e] dark:text-white">
           {t('header.title')}
         </TypographyH3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <p className="text-sm text-[#655d67] dark:text-gray-400 mt-1">
           {t('header.description')}
         </p>
       </div>

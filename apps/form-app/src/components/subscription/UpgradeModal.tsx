@@ -132,10 +132,10 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-900 rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-[rgba(81,76,84,0.10)] dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
           <div>
             <h2 className="text-2xl font-bold">{t('header.title')}</h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-[#655d67] mt-1">
               {t('header.subtitle')}
             </p>
           </div>
@@ -148,7 +148,7 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
           {/* Controls */}
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             {/* Billing Cycle Toggle */}
-            <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+            <div className="flex items-center gap-2 bg-[#f7f7f8] dark:bg-gray-800 rounded-lg p-1">
               <Button
                 variant={billingCycle === 'monthly' ? 'default' : 'ghost'}
                 onClick={() => setBillingCycle('monthly')}
@@ -169,7 +169,7 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
             </div>
 
             {/* Currency Toggle */}
-            <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+            <div className="flex items-center gap-2 bg-[#f7f7f8] dark:bg-gray-800 rounded-lg p-1">
               <Button
                 variant={currency === 'USD' ? 'default' : 'ghost'}
                 onClick={() => setCurrency('USD')}
@@ -190,7 +190,7 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
           {/* Plans Grid */}
           {loading ? (
             <div className="text-center py-12">
-              <p className="text-gray-500">{t('loading.plans')}</p>
+              <p className="text-[#655d67]">{t('loading.plans')}</p>
             </div>
           ) : (
             <div className="grid md:grid-cols-3 gap-6">
@@ -244,7 +244,7 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
                     {plan.id === 'free' ? (
                       <div className="mb-6">
                         <div className="text-4xl font-bold">{t('plans.free')}</div>
-                        <div className="text-sm text-gray-500">{t('plans.forever')}</div>
+                        <div className="text-sm text-[#655d67]">{t('plans.forever')}</div>
                       </div>
                     ) : price ? (
                       <div className="mb-6">
@@ -252,19 +252,19 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
                           <span className="text-4xl font-bold">
                             {formatPrice(price.amount, currency)}
                           </span>
-                          <span className="text-gray-500">
+                          <span className="text-[#655d67]">
                             {billingCycle === 'monthly' ? t('billing.perMonth') : t('billing.perYear')}
                           </span>
                         </div>
                         {billingCycle === 'yearly' && (
-                          <div className="text-sm text-gray-500 mt-1">
+                          <div className="text-sm text-[#655d67] mt-1">
                             {currency === 'USD' ? '$' : '₹'}{getMonthlyEquivalent(price.amount, 'year')}{t('billing.billedAnnually')}
                           </div>
                         )}
                       </div>
                     ) : (
                       <div className="mb-6">
-                        <div className="text-lg text-gray-500">
+                        <div className="text-lg text-[#655d67]">
                           {t('plans.priceNotAvailable')}
                         </div>
                       </div>
@@ -275,7 +275,7 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
                       {config.features.map((feature, index) => (
                         <div key={index} className="flex items-start gap-2">
                           <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                          <span className="text-sm text-gray-700 dark:text-gray-300">
+                          <span className="text-sm text-[#4c414e] dark:text-gray-300">
                             {feature}
                           </span>
                         </div>
@@ -307,8 +307,8 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
           )}
 
           {/* Footer Note */}
-          <div className="mt-8 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+          <div className="mt-8 p-4 bg-[#f7f7f8] dark:bg-gray-800 rounded-lg">
+            <p className="text-sm text-[#4c414e] dark:text-gray-400 text-center">
               {t('footer.note')}
               <br />
               {t('footer.flexibility')}

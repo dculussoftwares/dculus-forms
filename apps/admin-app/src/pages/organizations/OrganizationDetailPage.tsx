@@ -52,16 +52,16 @@ export const OrganizationDetailPage = () => {
       case 'admin':
         return 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300';
       default:
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+        return 'bg-[#f7f7f8] text-[#4c414e] dark:bg-gray-800 dark:text-gray-300';
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-[#f7f7f8] dark:bg-gray-900 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-[#4c414e] dark:text-gray-400">
             Loading organization details...
           </p>
         </div>
@@ -71,12 +71,12 @@ export const OrganizationDetailPage = () => {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-[#f7f7f8] dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">
+          <h3 className="text-lg font-medium text-[#3c323e] dark:text-gray-100 mb-1">
             Error loading organization
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <p className="text-sm text-[#655d67] dark:text-gray-400 mb-4">
             {error?.message || 'Organization not found'}
           </p>
           <Button onClick={() => navigate('/organizations')}>
@@ -90,7 +90,7 @@ export const OrganizationDetailPage = () => {
   const org = data.adminOrganizationById;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-[#f7f7f8] dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         {/* Back Button */}
         <Button
@@ -123,13 +123,13 @@ export const OrganizationDetailPage = () => {
 
               {/* Org Info */}
               <div className="flex-1">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                <h1 className="text-3xl font-bold text-[#3c323e] dark:text-gray-100 mb-2">
                   {org.name}
                 </h1>
                 {org.slug && (
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">@{org.slug}</p>
+                  <p className="text-[#4c414e] dark:text-gray-400 mb-4">@{org.slug}</p>
                 )}
-                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center gap-2 text-sm text-[#4c414e] dark:text-gray-400">
                   <Calendar className="w-4 h-4" />
                   <span>Created {formatDate(org.createdAt)}</span>
                 </div>
@@ -148,8 +148,8 @@ export const OrganizationDetailPage = () => {
                   <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Members</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  <p className="text-sm text-[#4c414e] dark:text-gray-400">Members</p>
+                  <p className="text-2xl font-bold text-[#3c323e] dark:text-gray-100">
                     {org.members.length}
                   </p>
                 </div>
@@ -165,8 +165,8 @@ export const OrganizationDetailPage = () => {
                   <FileText className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Forms</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  <p className="text-sm text-[#4c414e] dark:text-gray-400">Forms</p>
+                  <p className="text-2xl font-bold text-[#3c323e] dark:text-gray-100">
                     {org.stats.totalForms}
                   </p>
                 </div>
@@ -182,8 +182,8 @@ export const OrganizationDetailPage = () => {
                   <BarChart3 className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Responses</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  <p className="text-sm text-[#4c414e] dark:text-gray-400">Responses</p>
+                  <p className="text-2xl font-bold text-[#3c323e] dark:text-gray-100">
                     {org.stats.totalResponses}
                   </p>
                 </div>
@@ -195,30 +195,30 @@ export const OrganizationDetailPage = () => {
         {/* Organization ID Card */}
         <Card className="mb-6">
           <CardContent className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            <h2 className="text-xl font-semibold text-[#3c323e] dark:text-gray-100 mb-4">
               Organization Information
             </h2>
             <div className="space-y-3">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                <p className="text-sm text-[#4c414e] dark:text-gray-400 mb-1">
                   Organization ID
                 </p>
-                <p className="font-mono text-sm text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 p-2 rounded">
+                <p className="font-mono text-sm text-[#3c323e] dark:text-gray-100 bg-[#f7f7f8] dark:bg-gray-800 p-2 rounded">
                   {org.id}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                <p className="text-sm text-[#4c414e] dark:text-gray-400 mb-1">
                   Created Date
                 </p>
-                <p className="text-sm text-gray-900 dark:text-gray-100">
+                <p className="text-sm text-[#3c323e] dark:text-gray-100">
                   {formatDate(org.createdAt)}
                 </p>
               </div>
               {org.slug && (
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Slug</p>
-                  <p className="text-sm text-gray-900 dark:text-gray-100">{org.slug}</p>
+                  <p className="text-sm text-[#4c414e] dark:text-gray-400 mb-1">Slug</p>
+                  <p className="text-sm text-[#3c323e] dark:text-gray-100">{org.slug}</p>
                 </div>
               )}
             </div>
@@ -228,7 +228,7 @@ export const OrganizationDetailPage = () => {
         {/* Members Card */}
         <Card>
           <CardContent className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            <h2 className="text-xl font-semibold text-[#3c323e] dark:text-gray-100 mb-4">
               Members ({org.members.length})
             </h2>
             {org.members.length > 0 ? (
@@ -236,7 +236,7 @@ export const OrganizationDetailPage = () => {
                 {org.members.map((member) => (
                   <Card
                     key={member.userId}
-                    className="border border-gray-200 dark:border-gray-700"
+                    className="border border-[rgba(81,76,84,0.10)] dark:border-gray-700"
                   >
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
@@ -256,10 +256,10 @@ export const OrganizationDetailPage = () => {
 
                           {/* Member Info */}
                           <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                            <h3 className="font-semibold text-[#3c323e] dark:text-gray-100">
                               {member.userName}
                             </h3>
-                            <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+                            <div className="flex items-center gap-1 text-sm text-[#4c414e] dark:text-gray-400">
                               <Mail className="w-3 h-3" />
                               <span>{member.userEmail}</span>
                             </div>
@@ -271,7 +271,7 @@ export const OrganizationDetailPage = () => {
                               >
                                 {member.role}
                               </span>
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                              <span className="text-xs text-[#655d67] dark:text-gray-400">
                                 Joined {formatDate(member.createdAt)}
                               </span>
                             </div>
@@ -293,10 +293,10 @@ export const OrganizationDetailPage = () => {
               </div>
             ) : (
               <div className="text-center py-8">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                  <Users className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#f7f7f8] dark:bg-gray-800 flex items-center justify-center">
+                  <Users className="w-8 h-8 text-[#655d67] dark:text-gray-500" />
                 </div>
-                <p className="text-gray-600 dark:text-gray-400">No members in this organization</p>
+                <p className="text-[#4c414e] dark:text-gray-400">No members in this organization</p>
               </div>
             )}
           </CardContent>

@@ -81,7 +81,7 @@ export const DateFieldSettings: React.FC<DateFieldSettingsProps> = ({
 
   if (!field) {
     return (
-      <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
+      <div className="h-full flex items-center justify-center text-[#655d67] dark:text-gray-400">
         <div className="text-center">
           <Settings className="w-8 h-8 mx-auto mb-2 opacity-50" />
           <p className="text-sm">{constants.INFO_MESSAGES.SELECT_FIELD_TO_EDIT}</p>

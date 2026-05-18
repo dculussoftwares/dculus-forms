@@ -241,7 +241,7 @@ export const PluginCard: React.FC<PluginCardProps> = ({
               <DropdownMenuItem
                 onClick={handleDeleteClick}
                 disabled={isDeleting}
-                className="text-red-600 focus:text-red-600"
+                className="text-[#ce5d55] focus:text-[#ce5d55]"
               >
                 {isDeleting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

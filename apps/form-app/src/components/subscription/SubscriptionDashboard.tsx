@@ -32,7 +32,7 @@ export const SubscriptionDashboard = () => {
       <div className="flex items-center justify-center p-12">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-500">{t('loadingSubscription')}</p>
+          <p className="text-[#655d67]">{t('loadingSubscription')}</p>
         </div>
       </div>
     );
@@ -44,7 +44,7 @@ export const SubscriptionDashboard = () => {
         <div className="text-center py-8">
           <AlertTriangle className="h-12 w-12 text-orange-500 mx-auto mb-4" />
           <h3 className="text-lg font-semibold mb-2">{t('noSubscription.title')}</h3>
-          <p className="text-gray-500 mb-4">
+          <p className="text-[#655d67] mb-4">
             {t('noSubscription.description')}
           </p>
           <Button onClick={() => setShowUpgradeModal(true)}>
@@ -63,7 +63,7 @@ export const SubscriptionDashboard = () => {
 
   // Get plan badge color
   const getPlanBadgeColor = () => {
-    if (planId === 'free') return 'bg-gray-100 text-gray-800';
+    if (planId === 'free') return 'bg-[#f7f7f8] text-[#3c323e]';
     if (planId === 'starter') return 'bg-blue-100 text-blue-800';
     return 'bg-purple-100 text-purple-800';
   };
@@ -71,7 +71,7 @@ export const SubscriptionDashboard = () => {
   // Get status badge color
   const getStatusBadgeColor = () => {
     if (status === 'active') return 'bg-primary/10 text-primary';
-    if (status === 'cancelled') return 'bg-red-100 text-red-800';
+    if (status === 'cancelled') return 'bg-[rgba(206,93,85,0.08)] text-[#ce5d55]';
     return 'bg-yellow-100 text-yellow-800';
   };
 
@@ -107,10 +107,10 @@ export const SubscriptionDashboard = () => {
     <div className="space-y-6">
       {/* Alert Banners */}
       {showWarning && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+        <div className="p-4 bg-[rgba(206,93,85,0.06)] border border-[rgba(206,93,85,0.16)] rounded-lg flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-[#ce5d55] flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm font-medium text-red-800 mb-1">
+            <p className="text-sm font-medium text-[#ce5d55] mb-1">
               {t('alerts.exceeded.title')}
             </p>
             <p className="text-sm text-red-700 mb-3">
@@ -197,7 +197,7 @@ export const SubscriptionDashboard = () => {
               {usage.views.unlimited ? (
                 <Badge className="bg-primary/10 text-primary text-xs">{t('unlimited')}</Badge>
               ) : usage.views.exceeded ? (
-                <Badge className="bg-red-100 text-red-800 text-xs">{t('badges.exceeded')}</Badge>
+                <Badge className="bg-[rgba(206,93,85,0.08)] text-[#ce5d55] text-xs">{t('badges.exceeded')}</Badge>
               ) : (
                 <span className="text-xs font-medium text-blue-600">
                   {usage.views.percentage?.toFixed(0)}%
@@ -224,7 +224,7 @@ export const SubscriptionDashboard = () => {
               {usage.submissions.unlimited ? (
                 <Badge className="bg-primary/10 text-primary text-xs">{t('unlimited')}</Badge>
               ) : usage.submissions.exceeded ? (
-                <Badge className="bg-red-100 text-red-800 text-xs">{t('badges.exceeded')}</Badge>
+                <Badge className="bg-[rgba(206,93,85,0.08)] text-[#ce5d55] text-xs">{t('badges.exceeded')}</Badge>
               ) : (
                 <span className="text-xs font-medium text-purple-600">
                   {usage.submissions.percentage?.toFixed(0)}%
@@ -242,15 +242,15 @@ export const SubscriptionDashboard = () => {
           </div>
 
           {/* Billing Period Card */}
-          <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+          <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/50 rounded-lg border border-[rgba(81,76,84,0.10)] dark:border-gray-600">
             <div className="flex items-center gap-2 mb-2">
-              <Calendar className="h-5 w-5 text-gray-600" />
+              <Calendar className="h-5 w-5 text-[#4c414e]" />
               <span className="font-medium text-sm">{t('billing.period')}</span>
             </div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            <div className="text-2xl font-bold text-[#3c323e] dark:text-gray-100">
               {t('billing.daysCount', { values: { days: daysRemaining } })}
             </div>
-            <div className="text-sm text-gray-700 dark:text-gray-300">
+            <div className="text-sm text-[#4c414e] dark:text-gray-300">
               {t('billing.remainingInPeriod')}
             </div>
           </div>
@@ -262,7 +262,7 @@ export const SubscriptionDashboard = () => {
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium">{t('usage.formViews')}</span>
-              <span className="text-gray-600">
+              <span className="text-[#4c414e]">
                 {formatUsage(usage.views.used, usage.views.limit, usage.views.unlimited)}
               </span>
             </div>
@@ -274,10 +274,10 @@ export const SubscriptionDashboard = () => {
                     style={{ width: `${Math.min(usage.views.percentage || 0, 100)}%` }}
                   />
                 </div>
-                <div className="flex justify-between text-xs text-gray-500">
+                <div className="flex justify-between text-xs text-[#655d67]">
                   <span>{t('usage.percentageUsed', { values: { percentage: usage.views.percentage?.toFixed(1) } })}</span>
                   {usage.views.exceeded && (
-                    <span className="text-red-600 font-medium">{t('usage.limitExceeded')}</span>
+                    <span className="text-[#ce5d55] font-medium">{t('usage.limitExceeded')}</span>
                   )}
                 </div>
               </div>
@@ -291,7 +291,7 @@ export const SubscriptionDashboard = () => {
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium">{t('usage.formSubmissions')}</span>
-              <span className="text-gray-600">
+              <span className="text-[#4c414e]">
                 {formatUsage(
                   usage.submissions.used,
                   usage.submissions.limit,
@@ -307,10 +307,10 @@ export const SubscriptionDashboard = () => {
                     style={{ width: `${Math.min(usage.submissions.percentage || 0, 100)}%` }}
                   />
                 </div>
-                <div className="flex justify-between text-xs text-gray-500">
+                <div className="flex justify-between text-xs text-[#655d67]">
                   <span>{t('usage.percentageUsed', { values: { percentage: usage.submissions.percentage?.toFixed(1) } })}</span>
                   {usage.submissions.exceeded && (
-                    <span className="text-red-600 font-medium">{t('usage.limitExceeded')}</span>
+                    <span className="text-[#ce5d55] font-medium">{t('usage.limitExceeded')}</span>
                   )}
                 </div>
               </div>
@@ -322,9 +322,9 @@ export const SubscriptionDashboard = () => {
         </div>
 
         {/* Billing Period Details */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="mt-6 pt-6 border-t border-[rgba(81,76,84,0.10)]">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">{t('billing.currentPeriod')}</span>
+            <span className="text-[#4c414e]">{t('billing.currentPeriod')}</span>
             <span className="font-medium">
               {new Date(Number(currentPeriodStart)).toLocaleDateString()} -{' '}
               {new Date(Number(currentPeriodEnd)).toLocaleDateString()}

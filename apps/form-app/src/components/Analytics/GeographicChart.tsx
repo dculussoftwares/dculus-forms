@@ -48,8 +48,8 @@ const CustomTooltip = ({ active, payload, dataMode, t }: any) => {
       dataMode === 'submissions' ? t('submissions') : t('views');
     return (
       <div className="bg-white p-3 border rounded-lg shadow-lg">
-        <p className="font-semibold text-gray-900">{data.name}</p>
-        <p className="text-sm text-gray-600">
+        <p className="font-semibold text-[#3c323e]">{data.name}</p>
+        <p className="text-sm text-[#4c414e]">
           {metricLabel}: {data.count} ({data.percentage.toFixed(1)}%)
         </p>
       </div>
@@ -120,13 +120,13 @@ const GeographicBreakdown: React.FC<GeographicBreakdownProps> = ({
       {sections.map((section) => (
         <Card key={section.key}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold text-gray-900">
+            <CardTitle className="text-sm font-semibold text-[#3c323e]">
               {section.title}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {section.data.length === 0 ? (
-              <p className="text-sm text-gray-500">{t('breakdown.empty')}</p>
+              <p className="text-sm text-[#655d67]">{t('breakdown.empty')}</p>
             ) : (
               <div className="space-y-3">
                 {section.data.slice(0, 5).map((entry, index) => {
@@ -139,18 +139,18 @@ const GeographicBreakdown: React.FC<GeographicBreakdownProps> = ({
                       className="flex items-center justify-between"
                     >
                       <div>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-[#3c323e]">
                           {section.formatName(entry)}
                         </p>
                         {meta && (
-                          <p className="text-xs text-gray-500">{meta}</p>
+                          <p className="text-xs text-[#655d67]">{meta}</p>
                         )}
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-semibold text-gray-900">
+                        <p className="text-sm font-semibold text-[#3c323e]">
                           {entry.count}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-[#655d67]">
                           {entry.percentage.toFixed(1)}% · {metricLabel}
                         </p>
                       </div>
@@ -158,7 +158,7 @@ const GeographicBreakdown: React.FC<GeographicBreakdownProps> = ({
                   );
                 })}
                 {section.data.length > 5 && (
-                  <p className="text-xs text-gray-400 text-center">
+                  <p className="text-xs text-[#655d67] text-center">
                     {t('breakdown.more', {
                       values: { count: section.data.length - 5 },
                     })}
@@ -313,10 +313,10 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-64 flex flex-col items-center justify-center text-gray-500">
-            <Globe className="h-12 w-12 mb-3 text-gray-300" />
+          <div className="h-64 flex flex-col items-center justify-center text-[#655d67]">
+            <Globe className="h-12 w-12 mb-3 text-[#a09aa2]" />
             <p className="text-sm">{t('noData')}</p>
-            <p className="text-xs text-gray-400 mt-1">{emptyMessage}</p>
+            <p className="text-xs text-[#655d67] mt-1">{emptyMessage}</p>
           </div>
         </CardContent>
       </Card>
@@ -434,13 +434,13 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
                     className="w-3 h-3 rounded-full mr-3"
                     style={{ backgroundColor: COLORS[index % COLORS.length] }}
                   />
-                  <span className="text-sm text-gray-700">{country.name}</span>
+                  <span className="text-sm text-[#4c414e]">{country.name}</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className="text-sm font-medium text-[#3c323e]">
                     {country.count}
                   </span>
-                  <span className="text-xs text-gray-500 ml-2">
+                  <span className="text-xs text-[#655d67] ml-2">
                     ({country.percentage.toFixed(1)}%)
                   </span>
                 </div>
@@ -449,7 +449,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
 
             {currentData.length > 5 && (
               <div className="pt-2 border-t">
-                <p className="text-xs text-gray-500 text-center">
+                <p className="text-xs text-[#655d67] text-center">
                   +{currentData.length - 5} more countries
                 </p>
               </div>

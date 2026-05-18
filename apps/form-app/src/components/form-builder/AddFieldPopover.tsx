@@ -128,7 +128,7 @@ export const AddFieldPopover: React.FC<AddFieldPopoverProps> = ({
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className="w-full h-12 border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-all duration-200"
+          className="w-full h-12 border-2 border-dashed border-[rgba(81,76,84,0.15)] dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-all duration-200"
           disabled={!isConnected}
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -143,7 +143,7 @@ export const AddFieldPopover: React.FC<AddFieldPopoverProps> = ({
 
           {Object.entries(groupedFields).map(([category, fields]) => (
             <div key={category} className="mb-4 last:mb-0">
-              <TypographyP className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+              <TypographyP className="text-xs font-medium text-[#655d67] dark:text-gray-400 uppercase tracking-wide mb-2">
                 {categories[category as keyof typeof categories]}
               </TypographyP>
               <div className="grid grid-cols-1 gap-1">
@@ -161,10 +161,10 @@ export const AddFieldPopover: React.FC<AddFieldPopoverProps> = ({
                       <fieldType.icon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      <div className="text-sm font-medium text-[#3c323e] dark:text-white">
                         {fieldType.label}
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                      <div className="text-xs text-[#655d67] dark:text-gray-400 truncate">
                         {fieldType.description}
                       </div>
                     </div>

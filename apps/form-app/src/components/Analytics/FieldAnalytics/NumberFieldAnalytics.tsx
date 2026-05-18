@@ -67,8 +67,8 @@ const PercentilesChart: React.FC<{
             return (
               <div key={item.name} className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-700">{item.name}</span>
-                  <span className="text-sm font-bold text-gray-900">{item.value.toFixed(2)}</span>
+                  <span className="text-sm font-medium text-[#4c414e]">{item.name}</span>
+                  <span className="text-sm font-bold text-[#3c323e]">{item.value.toFixed(2)}</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
@@ -79,7 +79,7 @@ const PercentilesChart: React.FC<{
                     }}
                   />
                 </div>
-                <p className="text-xs text-gray-500">{item.label}</p>
+                <p className="text-xs text-[#655d67]">{item.label}</p>
               </div>
             );
           })}
@@ -137,7 +137,7 @@ const BoxPlot: React.FC<{
       <CardContent>
         <div className="relative h-32 bg-gradient-to-r from-blue-50 via-purple-50 to-blue-50 rounded-lg p-4">
           {/* Scale */}
-          <div className="flex justify-between text-xs text-gray-500 mb-4">
+          <div className="flex justify-between text-xs text-[#655d67] mb-4">
             <span>{data.min.toFixed(1)}</span>
             <span>{t('boxPlot.min')}</span>
             <span>{t('boxPlot.25percent')}</span>
@@ -185,13 +185,13 @@ const BoxPlot: React.FC<{
             {/* Value labels */}
             <div className="absolute bottom-0 w-full">
               <div 
-                className="absolute text-xs text-center text-gray-700"
+                className="absolute text-xs text-center text-[#4c414e]"
                 style={{ left: `${getPosition(data.min)}%`, transform: 'translateX(-50%)' }}
               >
                 {data.min.toFixed(1)}
               </div>
               <div 
-                className="absolute text-xs text-center text-gray-700"
+                className="absolute text-xs text-center text-[#4c414e]"
                 style={{ left: `${getPosition(data.percentiles.p25)}%`, transform: 'translateX(-50%)' }}
               >
                 {data.percentiles.p25.toFixed(1)}
@@ -203,13 +203,13 @@ const BoxPlot: React.FC<{
                 {data.median.toFixed(1)}
               </div>
               <div 
-                className="absolute text-xs text-center text-gray-700"
+                className="absolute text-xs text-center text-[#4c414e]"
                 style={{ left: `${getPosition(data.percentiles.p75)}%`, transform: 'translateX(-50%)' }}
               >
                 {data.percentiles.p75.toFixed(1)}
               </div>
               <div 
-                className="absolute text-xs text-center text-gray-700"
+                className="absolute text-xs text-center text-[#4c414e]"
                 style={{ left: `${getPosition(data.max)}%`, transform: 'translateX(-50%)' }}
               >
                 {data.max.toFixed(1)}
@@ -218,7 +218,7 @@ const BoxPlot: React.FC<{
           </div>
         </div>
         
-        <div className="mt-4 text-sm text-gray-600 space-y-1">
+        <div className="mt-4 text-sm text-[#4c414e] space-y-1">
           <p>• {t('boxPlot.explanation1')}</p>
           <p>• {t('boxPlot.explanation2')}</p>
           <p>• {t('boxPlot.explanation3')}</p>
@@ -326,8 +326,8 @@ export const NumberFieldAnalytics: React.FC<NumberFieldAnalyticsProps> = ({
             <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
               <Calculator className="h-8 w-8 text-blue-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('emptyState.title')}</h3>
-            <p className="text-gray-600 max-w-md mx-auto">{t('emptyState.subtitle')}</p>
+            <h3 className="text-lg font-semibold text-[#3c323e] mb-2">{t('emptyState.title')}</h3>
+            <p className="text-[#4c414e] max-w-md mx-auto">{t('emptyState.subtitle')}</p>
           </div>
         </CardContent>
       </Card>
@@ -427,56 +427,56 @@ export const NumberFieldAnalytics: React.FC<NumberFieldAnalyticsProps> = ({
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">{t('summary.centralTendency')}</h4>
+              <h4 className="font-medium text-[#3c323e]">{t('summary.centralTendency')}</h4>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('summary.mean')}</span>
+                  <span className="text-[#4c414e]">{t('summary.mean')}</span>
                   <span className="font-medium">{formatNumber(data.average)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('summary.median')}</span>
+                  <span className="text-[#4c414e]">{t('summary.median')}</span>
                   <span className="font-medium">{formatNumber(data.median)}</span>
                 </div>
               </div>
             </div>
             
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">{t('summary.spread')}</h4>
+              <h4 className="font-medium text-[#3c323e]">{t('summary.spread')}</h4>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('summary.range')}</span>
+                  <span className="text-[#4c414e]">{t('summary.range')}</span>
                   <span className="font-medium">{formatNumber(data.max - data.min)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('summary.stdDev')}</span>
+                  <span className="text-[#4c414e]">{t('summary.stdDev')}</span>
                   <span className="font-medium">{formatNumber(data.standardDeviation)}</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">{t('summary.quartiles')}</h4>
+              <h4 className="font-medium text-[#3c323e]">{t('summary.quartiles')}</h4>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('summary.q1')}</span>
+                  <span className="text-[#4c414e]">{t('summary.q1')}</span>
                   <span className="font-medium">{formatNumber(data.percentiles.p25)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('summary.q3')}</span>
+                  <span className="text-[#4c414e]">{t('summary.q3')}</span>
                   <span className="font-medium">{formatNumber(data.percentiles.p75)}</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">{t('summary.dataQuality')}</h4>
+              <h4 className="font-medium text-[#3c323e]">{t('summary.dataQuality')}</h4>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('summary.responses')}</span>
+                  <span className="text-[#4c414e]">{t('summary.responses')}</span>
                   <span className="font-medium">{totalResponses}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('summary.skewness')}</span>
+                  <span className="text-[#4c414e]">{t('summary.skewness')}</span>
                   <span className="font-medium">
                     {data.average > data.median ? t('summary.right') :
                      data.average < data.median ? t('summary.left') : t('summary.symmetric')}

@@ -115,10 +115,10 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-80 flex flex-col items-center justify-center text-gray-500">
-            <Globe className="h-12 w-12 mb-3 text-gray-300" />
+          <div className="h-80 flex flex-col items-center justify-center text-[#655d67]">
+            <Globe className="h-12 w-12 mb-3 text-[#a09aa2]" />
             <p className="text-sm">{t('noData')}</p>
-            <p className="text-xs text-gray-400 mt-1">{emptyMessage}</p>
+            <p className="text-xs text-[#655d67] mt-1">{emptyMessage}</p>
           </div>
         </CardContent>
       </Card>
@@ -178,13 +178,13 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
           {/* Map Legend */}
           <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-lg p-3 shadow-md border">
             <div className="flex items-center gap-3">
-              <span className="text-xs font-semibold text-gray-700 capitalize">
+              <span className="text-xs font-semibold text-[#4c414e] capitalize">
                 {metricLabel}:
               </span>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded-sm bg-slate-200 border border-slate-400"></div>
-                  <span className="text-xs text-gray-600 font-medium">
+                  <span className="text-xs text-[#4c414e] font-medium">
                     {t('legend.none')}
                   </span>
                 </div>
@@ -196,7 +196,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                         : 'bg-blue-300 border-blue-500'
                     }`}
                   ></div>
-                  <span className="text-xs text-gray-600 font-medium">
+                  <span className="text-xs text-[#4c414e] font-medium">
                     {t('legend.low')}
                   </span>
                 </div>
@@ -208,7 +208,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                         : 'bg-blue-600 border-blue-700'
                     }`}
                   ></div>
-                  <span className="text-xs text-gray-600 font-medium">
+                  <span className="text-xs text-[#4c414e] font-medium">
                     {t('legend.high')}
                   </span>
                 </div>
@@ -218,7 +218,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
 
           {/* Total Metric Badge */}
           <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm rounded-full px-4 py-2 shadow-md border">
-            <span className="text-sm font-semibold text-gray-700">
+            <span className="text-sm font-semibold text-[#4c414e]">
               {t('totalMetric', {
                 values: {
                   total: mapData.reduce((sum, item) => sum + item.value, 0),
@@ -260,7 +260,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                   <span className="text-lg font-semibold text-primary">
                     {topCountry.percentage.toFixed(1)}%
                   </span>
-                  <span className="text-xs text-gray-500">{t('ofTotal')}</span>
+                  <span className="text-xs text-[#655d67]">{t('ofTotal')}</span>
                 </div>
               </div>
             </div>
@@ -270,11 +270,11 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
         {/* Countries List */}
         <div className="space-y-3">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+            <h4 className="text-base font-semibold text-[#3c323e] flex items-center gap-2">
               <Globe className="h-4 w-4 text-blue-600" />
               {t('countryBreakdown')}
             </h4>
-            <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+            <div className="text-xs text-[#655d67] bg-[#f7f7f8] px-2 py-1 rounded-full">
               {t('totalLabel', { values: { count: currentData.length } })}
             </div>
           </div>
@@ -290,7 +290,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                   className={`flex items-center justify-between p-3 rounded-lg border transition-all duration-200 hover:shadow-sm hover:border-blue-200 ${
                     isTopCountry
                       ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'
-                      : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                      : 'bg-[#f7f7f8] border-[rgba(81,76,84,0.10)] hover:bg-[#f7f7f8]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -312,7 +312,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                     </div>
                     <div>
                       <span
-                        className={`font-medium ${isTopCountry ? 'text-blue-900' : 'text-gray-800'}`}
+                        className={`font-medium ${isTopCountry ? 'text-blue-900' : 'text-[#3c323e]'}`}
                       >
                         {country.name}
                       </span>
@@ -327,11 +327,11 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                   <div className="text-right">
                     <div className="flex items-center gap-2">
                       <span
-                        className={`font-bold ${isTopCountry ? 'text-blue-800 text-lg' : 'text-gray-900'}`}
+                        className={`font-bold ${isTopCountry ? 'text-blue-800 text-lg' : 'text-[#3c323e]'}`}
                       >
                         {country.count}
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-[#655d67]">
                         {metricLabel}
                       </span>
                     </div>
@@ -346,7 +346,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                           style={{ width: `${country.percentage}%` }}
                         />
                       </div>
-                      <span className="text-xs font-medium text-gray-600 min-w-[3rem]">
+                      <span className="text-xs font-medium text-[#4c414e] min-w-[3rem]">
                         {country.percentage.toFixed(1)}%
                       </span>
                     </div>
@@ -357,7 +357,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
           </div>
 
           {currentData.length > 5 && (
-            <div className="pt-4 mt-4 border-t border-gray-200">
+            <div className="pt-4 mt-4 border-t border-[rgba(81,76,84,0.10)]">
               <Button
                 variant="ghost"
                 className="w-full text-sm hover:text-blue-600 flex items-center justify-center gap-1"

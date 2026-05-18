@@ -24,7 +24,7 @@ export const MiniWordCloud: React.FC<{ words: Array<{ word: string; count: numbe
 
   if (!words || words.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-400">
+      <div className="flex items-center justify-center h-full text-[#655d67]">
         <div className="text-center">
           <FileText className="h-12 w-12 mx-auto mb-2" />
           <p className="text-sm">{t('miniCharts.noWordData')}</p>
@@ -68,7 +68,7 @@ export const MiniBarChart: React.FC<{ data: Array<{ name: string; value: number 
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-400">
+      <div className="flex items-center justify-center h-full text-[#655d67]">
         <div className="text-center">
           <BarChart3 className="h-12 w-12 mx-auto mb-2" />
           <p className="text-sm">{t('miniCharts.noChartData')}</p>
@@ -113,7 +113,7 @@ export const MiniPieChart: React.FC<{ data: Array<{ name: string; value: number 
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-400">
+      <div className="flex items-center justify-center h-full text-[#655d67]">
         <div className="text-center">
           <CircleDot className="h-12 w-12 mx-auto mb-2" />
           <p className="text-sm">{t('miniCharts.noSelectionData')}</p>
@@ -158,7 +158,7 @@ export const MiniPieChart: React.FC<{ data: Array<{ name: string; value: number 
                 className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: MINI_CHART_COLORS[index % MINI_CHART_COLORS.length] }}
               />
-              <span className="text-sm text-gray-700 font-medium">
+              <span className="text-sm text-[#4c414e] font-medium">
                 {item.name}: {item.value}
               </span>
             </div>
@@ -262,7 +262,7 @@ export const MiniPreviewChart: React.FC<{ field: FieldAnalyticsData }> = ({ fiel
   const previewData = getRealPreviewData(field);
   if (!previewData) {
     return (
-      <div className="flex items-center justify-center h-16 text-gray-400 text-sm">
+      <div className="flex items-center justify-center h-16 text-[#655d67] text-sm">
         {tCommon('noDataAvailable')}
       </div>
     );

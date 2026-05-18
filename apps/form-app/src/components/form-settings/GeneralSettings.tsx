@@ -48,10 +48,10 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
             id="form-title"
             defaultValue={form.title}
             placeholder={t('generalSettings.formTitlePlaceholder')}
-            className={errors.title ? 'border-red-500' : ''}
+            className={errors.title ? 'border-[#ce5d55]' : ''}
           />
           {errors.title && (
-            <p className="text-xs text-red-500">{errors.title}</p>
+            <p className="text-xs text-[#ce5d55]">{errors.title}</p>
           )}
         </div>
         <div className="space-y-2">
@@ -66,14 +66,14 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
         <div className="space-y-2">
           <Label htmlFor="form-short-url">{t('generalSettings.shortUrl')}</Label>
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-slate-500">
+            <span className="text-sm text-[#655d67]">
               {t('generalSettings.shortUrlPrefix')}
             </span>
             <Input
               id="form-short-url"
               value={form.shortUrl}
               readOnly
-              className="flex-1 bg-slate-50 cursor-default"
+              className="flex-1 bg-[#f7f7f8] cursor-default"
             />
             <Button
               type="button"

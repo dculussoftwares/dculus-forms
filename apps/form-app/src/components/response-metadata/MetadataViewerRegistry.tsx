@@ -34,7 +34,7 @@ export const MetadataViewer: React.FC<MetadataViewerProps> = ({ metadata }) => {
               </CardHeader>
               <CardContent>
                 <ScrollArea className="max-h-60">
-                  <pre className="text-xs bg-gray-100 p-3 rounded">
+                  <pre className="text-xs bg-[#f7f7f8] p-3 rounded">
                     {JSON.stringify(pluginMetadata, null, 2)}
                   </pre>
                 </ScrollArea>

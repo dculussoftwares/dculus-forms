@@ -127,9 +127,9 @@ export const CollectResponsesDialog: React.FC<CollectResponsesDialogProps> = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="py-4">
-          <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border">
+          <div className="flex items-center space-x-2 p-3 bg-[#f7f7f8] rounded-lg border">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-mono text-gray-700 truncate">
+              <p className="text-sm font-mono text-[#4c414e] truncate">
                 {formUrl}
               </p>
             </div>

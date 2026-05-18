@@ -19,7 +19,7 @@ const CustomTooltip = ({ active, payload, label, dataMode, t }: any) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white p-3 border rounded-lg shadow-lg">
-        <p className="font-semibold text-gray-900">{label}</p>
+        <p className="font-semibold text-[#3c323e]">{label}</p>
         <div className="space-y-1">
           {payload.map((entry: any, index: number) => {
             let color = entry.color;
@@ -61,10 +61,10 @@ const EmptyState = ({ icon: Icon, title, subtitle }: {
   title: string, 
   subtitle: string 
 }) => (
-  <div className="h-48 flex flex-col items-center justify-center text-gray-500">
-    <Icon className="h-10 w-10 mb-3 text-gray-300" />
+  <div className="h-48 flex flex-col items-center justify-center text-[#655d67]">
+    <Icon className="h-10 w-10 mb-3 text-[#a09aa2]" />
     <p className="text-sm font-medium">{title}</p>
-    <p className="text-xs text-gray-400 mt-1">{subtitle}</p>
+    <p className="text-xs text-[#655d67] mt-1">{subtitle}</p>
   </div>
 );
 
@@ -137,7 +137,7 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
     <div className="space-y-6">
       {/* Shared Header with Data Mode Toggle */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">{t('title')}</h3>
+        <h3 className="text-lg font-semibold text-[#3c323e]">{t('title')}</h3>
         <DataModeToggle dataMode={dataMode} onDataModeChange={setDataMode} />
       </div>
       
@@ -151,7 +151,7 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
                 {t('sections.operatingSystems')}
               </div>
               {currentOSData && currentOSData.length > 0 && (
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-[#655d67]">
                   {t('sections.osCount', { values: { count: currentOSData.length } })}
                 </span>
               )}
@@ -222,28 +222,28 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
                       <div className={`w-3 h-3 rounded mr-3 ${
                         dataMode === 'submissions' ? 'bg-orange-500' : 'bg-primary'
                       }`} />
-                      <span className="text-sm text-gray-700">{os.name}</span>
+                      <span className="text-sm text-[#4c414e]">{os.name}</span>
                     </div>
                     <div className="text-right">
                       {dataMode === 'combined' ? (
                         <div className="space-y-1">
                           <div>
                             <span className="text-sm font-medium text-blue-600">{os.count}</span>
-                            <span className="text-xs text-gray-500 ml-2">
+                            <span className="text-xs text-[#655d67] ml-2">
                               ({os.percentage.toFixed(1)}%) {t('metrics.views')}
                             </span>
                           </div>
                           <div>
                             <span className="text-sm font-medium text-orange-600">{os.submissionCount || 0}</span>
-                            <span className="text-xs text-gray-500 ml-2">
+                            <span className="text-xs text-[#655d67] ml-2">
                               ({(os.submissionPercentage || 0).toFixed(1)}%) {t('metrics.submissions')}
                             </span>
                           </div>
                         </div>
                       ) : (
                         <>
-                          <span className="text-sm font-medium text-gray-900">{os.count}</span>
-                          <span className="text-xs text-gray-500 ml-2">
+                          <span className="text-sm font-medium text-[#3c323e]">{os.count}</span>
+                          <span className="text-xs text-[#655d67] ml-2">
                             ({os.percentage.toFixed(1)}%)
                           </span>
                         </>
@@ -266,7 +266,7 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
               {t('sections.browsers')}
             </div>
             {currentBrowserData && currentBrowserData.length > 0 && (
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-[#655d67]">
                 {t('sections.browserCount', { values: { count: currentBrowserData.length } })}
               </span>
             )}
@@ -337,28 +337,28 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
                       <div className={`w-3 h-3 rounded mr-3 ${
                         dataMode === 'submissions' ? 'bg-orange-500' : 'bg-blue-500'
                       }`} />
-                      <span className="text-sm text-gray-700">{browser.name}</span>
+                      <span className="text-sm text-[#4c414e]">{browser.name}</span>
                     </div>
                     <div className="text-right">
                       {dataMode === 'combined' ? (
                         <div className="space-y-1">
                           <div>
                             <span className="text-sm font-medium text-blue-600">{browser.count}</span>
-                            <span className="text-xs text-gray-500 ml-2">
+                            <span className="text-xs text-[#655d67] ml-2">
                               ({browser.percentage.toFixed(1)}%) {t('metrics.views')}
                             </span>
                           </div>
                           <div>
                             <span className="text-sm font-medium text-orange-600">{browser.submissionCount || 0}</span>
-                            <span className="text-xs text-gray-500 ml-2">
+                            <span className="text-xs text-[#655d67] ml-2">
                               ({(browser.submissionPercentage || 0).toFixed(1)}%) {t('metrics.submissions')}
                             </span>
                           </div>
                         </div>
                       ) : (
                         <>
-                          <span className="text-sm font-medium text-gray-900">{browser.count}</span>
-                          <span className="text-xs text-gray-500 ml-2">
+                          <span className="text-sm font-medium text-[#3c323e]">{browser.count}</span>
+                          <span className="text-xs text-[#655d67] ml-2">
                             ({browser.percentage.toFixed(1)}%)
                           </span>
                         </>

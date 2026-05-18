@@ -46,7 +46,7 @@ export const FieldItem: React.FC<FieldItemProps> = ({
     };
 
     return (
-        <div className="group relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-md transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600">
+        <div className="group relative bg-white dark:bg-gray-900 border border-[rgba(81,76,84,0.10)] dark:border-gray-700 rounded-xl p-4 hover:shadow-md transition-all duration-200 hover:border-[rgba(81,76,84,0.15)] dark:hover:border-gray-600">
             <div className="flex items-start justify-between">
                 <div className="flex items-start space-x-3 flex-1">
                     {/* Field Type Icon */}
@@ -73,7 +73,7 @@ export const FieldItem: React.FC<FieldItemProps> = ({
                                 className="text-left text-base font-medium hover:text-blue-600 dark:hover:text-blue-400 h-auto p-0 justify-start"
                             >
                                 {getFieldLabel(field)}
-                                {isFieldRequired(field) && <span className="text-red-500 ml-1">*</span>}
+                                {isFieldRequired(field) && <span className="text-[#ce5d55] ml-1">*</span>}
                             </Button>
                         )}
                         
@@ -83,9 +83,9 @@ export const FieldItem: React.FC<FieldItemProps> = ({
                                 <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-md">
                                     {fieldType?.label || field.type}
                                 </span>
-                                <span className="text-xs text-gray-400">#{index + 1}</span>
+                                <span className="text-xs text-[#655d67]">#{index + 1}</span>
                             </div>
-                            <TypographyP className="text-xs text-gray-500 dark:text-gray-400">
+                            <TypographyP className="text-xs text-[#655d67] dark:text-gray-400">
                                 {fieldType?.description || t('fallback.customField')}
                             </TypographyP>
                         </div>
@@ -101,7 +101,7 @@ export const FieldItem: React.FC<FieldItemProps> = ({
                         variant="ghost" 
                         onClick={() => onRemove(pageId, field.id)} 
                         disabled={!isConnected}
-                        className="h-8 w-8 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                        className="h-8 w-8 hover:bg-[rgba(206,93,85,0.06)] hover:text-[#ce5d55] dark:hover:bg-red-900/20"
                     >
                         <Trash2 className="w-3 h-3" />
                     </Button>

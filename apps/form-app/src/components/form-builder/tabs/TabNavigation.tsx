@@ -131,7 +131,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
   const positionClasses =
     position === 'bottom'
       ? 'fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50'
-      : 'border-b border-gray-200 dark:border-gray-700';
+      : 'border-b border-[rgba(81,76,84,0.10)] dark:border-gray-700';
 
   const containerClasses =
     position === 'bottom'
@@ -143,7 +143,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
       <div className={`${containerClasses}`}>
         {position === 'bottom' ? (
           // Floating tab design for bottom position
-          <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 px-2 py-2">
+          <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-[rgba(81,76,84,0.10)]/50 dark:border-gray-700/50 px-2 py-2">
             <div className="flex items-center space-x-1">
               {TABS.map((tab) => {
                 const Icon = tab.icon;
@@ -164,8 +164,8 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                         isActive
                           ? 'bg-primary text-primary-foreground hover:text-primary-foreground shadow-lg scale-110 hover:bg-primary/90'
                           : isHovered
-                            ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 scale-105'
-                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                            ? 'bg-[#f7f7f8] dark:bg-gray-800 text-[#4c414e] dark:text-gray-300 scale-105'
+                            : 'text-[#655d67] dark:text-gray-400 hover:text-[#4c414e] dark:hover:text-gray-300'
                       )}
                       aria-label={t('aria.switchToTab', {
                         values: {
@@ -245,7 +245,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
               {/* Collaboration Status */}
               <div className="flex items-center space-x-3">
                 {isConnected && (
-                  <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center space-x-2 text-sm text-[#4c414e] dark:text-gray-400">
                     <div className="flex items-center space-x-1">
                       <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
                       <span>{t('collaboration.live')}</span>

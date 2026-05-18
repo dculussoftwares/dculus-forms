@@ -46,7 +46,7 @@ export const FieldSettingsHeader: React.FC<FieldSettingsHeaderProps> = ({
   return (
     <div
       data-testid="field-settings-header"
-      className={`flex-shrink-0 border-b border-gray-200 dark:border-gray-700 p-4 transition-colors duration-200 ${
+      className={`flex-shrink-0 border-b border-[rgba(81,76,84,0.10)] dark:border-gray-700 p-4 transition-colors duration-200 ${
         isDirty
           ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800'
           : 'bg-white dark:bg-gray-900'
@@ -54,15 +54,15 @@ export const FieldSettingsHeader: React.FC<FieldSettingsHeaderProps> = ({
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-400">
+          <div className="p-2 bg-[#f7f7f8] dark:bg-gray-800 rounded-lg text-[#4c414e] dark:text-gray-400">
             {FIELD_ICONS[field.type] || <Type className="w-4 h-4" />}
           </div>
           <div>
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+            <h3 className="text-sm font-medium text-[#3c323e] dark:text-white">
               {(fieldTypeLabels as any)[field.type] || 'Field'}{' '}
               {t('header.settings')}
             </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-[#655d67] dark:text-gray-400">
               {t('header.configure')}
             </p>
           </div>

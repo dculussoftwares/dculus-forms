@@ -73,15 +73,15 @@ export const FilterModal: React.FC<FilterModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <div>
-            <h2 className="text-2xl font-semibold text-slate-900">
+            <h2 className="text-2xl font-semibold text-[#3c323e]">
               {t('title')}
             </h2>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-sm text-[#655d67] mt-1">
               {t('subtitle')}
             </p>
             {activeFilterCount > 1 && (
               <div className="mt-3 flex items-center gap-2">
-                <span className="text-xs text-slate-600 font-medium">Match:</span>
+                <span className="text-xs text-[#4c414e] font-medium">Match:</span>
                 <div className="inline-flex rounded-md shadow-sm" role="group">
                   <Button
                     type="button"
@@ -100,7 +100,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                     ANY filter
                   </Button>
                 </div>
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-[#655d67]">
                   ({filterLogic === 'AND' ? 'All conditions must match' : 'Any condition can match'})
                 </span>
               </div>
@@ -135,8 +135,8 @@ export const FilterModal: React.FC<FilterModalProps> = ({
               </div>
             ) : (
               <div className="text-center py-12">
-                <div className="text-slate-500 text-lg mb-4">{t('emptyState.title')}</div>
-                <p className="text-slate-400 text-sm mb-6">
+                <div className="text-[#655d67] text-lg mb-4">{t('emptyState.title')}</div>
+                <p className="text-[#655d67] text-sm mb-6">
                   {t('emptyState.description')}
                 </p>
               </div>
@@ -147,7 +147,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
               <Button
                 variant="outline"
                 onClick={handleAddFilter}
-                className="text-slate-600 hover:text-slate-900 border-dashed border-2 hover:border-solid hover:border-slate-300"
+                className="text-[#4c414e] hover:text-[#3c323e] border-dashed border-2 hover:border-solid hover:border-[rgba(81,76,84,0.15)]"
                 data-testid="add-filter-button"
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -159,13 +159,13 @@ export const FilterModal: React.FC<FilterModalProps> = ({
         </div>
 
         {/* Footer with actions */}
-        <div className="flex items-center justify-between p-6 border-t border-slate-200 bg-white">
+        <div className="flex items-center justify-between p-6 border-t border-[rgba(81,76,84,0.10)] bg-white">
           <div className="flex items-center gap-4">
             {activeFilterCount > 0 && (
               <Button
                 variant="ghost"
                 onClick={onClearAllFilters}
-                className="text-slate-600 hover:text-slate-900"
+                className="text-[#4c414e] hover:text-[#3c323e]"
                 data-testid="clear-all-filters-button"
               >
                 {t('buttons.clearAll')}

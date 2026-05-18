@@ -108,10 +108,7 @@ export const ForgotPassword = () => {
         <div className="flex items-center justify-end px-8 py-5" style={{ borderBottom: '1px solid rgba(81,76,84,0.08)' }}>
           <span className="text-sm" style={{ color: '#655d67' }}>
             {t('links.signInPrompt')}{' '}
-            <Link to="/signin" className="font-medium" style={{ color: '#3c323e' }}
-              onMouseEnter={e => (e.currentTarget as HTMLElement).style.textDecoration = 'underline'}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.textDecoration = 'none'}
-            >
+            <Link to="/signin" className="font-medium hover:underline" style={{ color: '#3c323e' }}>
               {t('links.signIn')}
             </Link>
           </span>

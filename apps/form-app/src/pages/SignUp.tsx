@@ -351,10 +351,7 @@ export const SignUp = () => {
         <div className="flex items-center justify-end px-8 py-5" style={{ borderBottom: '1px solid rgba(81,76,84,0.08)' }}>
           <span className="text-sm" style={{ color: '#655d67' }}>
             {t('links.signInPrompt')}{' '}
-            <Link to="/signin" className="font-medium" style={{ color: '#3c323e' }}
-              onMouseEnter={e => (e.currentTarget as HTMLElement).style.textDecoration = 'underline'}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.textDecoration = 'none'}
-            >
+            <Link to="/signin" className="font-medium hover:underline" style={{ color: '#3c323e' }}>
               {t('links.signIn')}
             </Link>
           </span>
@@ -380,26 +377,26 @@ export const SignUp = () => {
             {step === 'form' ? (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <Field id="name" label={t('form.fields.name.label')} error={errors.name}>
-                  <Input id="name" name="name" type="text" placeholder={t('form.fields.name.placeholder')} value={formData.name} onChange={handleInputChange} disabled={isLoading} className={errors.name ? 'border-red-400' : ''} />
+                  <Input id="name" name="name" type="text" placeholder={t('form.fields.name.placeholder')} value={formData.name} onChange={handleInputChange} disabled={isLoading} className={errors.name ? 'border-[#ce5d55]' : ''} />
                 </Field>
 
                 <Field id="email" label={t('form.fields.email.label')} error={errors.email}>
-                  <Input id="email" name="email" type="email" placeholder={t('form.fields.email.placeholder')} value={formData.email} onChange={handleInputChange} disabled={isLoading || !!pendingInvitationId} className={errors.email ? 'border-red-400' : ''} />
+                  <Input id="email" name="email" type="email" placeholder={t('form.fields.email.placeholder')} value={formData.email} onChange={handleInputChange} disabled={isLoading || !!pendingInvitationId} className={errors.email ? 'border-[#ce5d55]' : ''} />
                   {pendingInvitationId && <p className="text-xs mt-1" style={{ color: '#655d67' }}>{t('form.fields.email.invitationNotice')}</p>}
                 </Field>
 
                 {!pendingInvitationId && (
                   <Field id="organizationName" label={t('form.fields.organizationName.label')} error={errors.organizationName}>
-                    <Input id="organizationName" name="organizationName" type="text" placeholder={t('form.fields.organizationName.placeholder')} value={formData.organizationName} onChange={handleInputChange} disabled={isLoading} className={errors.organizationName ? 'border-red-400' : ''} />
+                    <Input id="organizationName" name="organizationName" type="text" placeholder={t('form.fields.organizationName.placeholder')} value={formData.organizationName} onChange={handleInputChange} disabled={isLoading} className={errors.organizationName ? 'border-[#ce5d55]' : ''} />
                   </Field>
                 )}
 
                 <Field id="password" label={t('form.fields.password.label')} error={errors.password}>
-                  <Input id="password" name="password" type="password" placeholder={t('form.fields.password.placeholder')} value={formData.password} onChange={handleInputChange} disabled={isLoading} className={errors.password ? 'border-red-400' : ''} />
+                  <Input id="password" name="password" type="password" placeholder={t('form.fields.password.placeholder')} value={formData.password} onChange={handleInputChange} disabled={isLoading} className={errors.password ? 'border-[#ce5d55]' : ''} />
                 </Field>
 
                 <Field id="confirmPassword" label={t('form.fields.confirmPassword.label')} error={errors.confirmPassword}>
-                  <Input id="confirmPassword" name="confirmPassword" type="password" placeholder={t('form.fields.confirmPassword.placeholder')} value={formData.confirmPassword} onChange={handleInputChange} disabled={isLoading} className={errors.confirmPassword ? 'border-red-400' : ''} />
+                  <Input id="confirmPassword" name="confirmPassword" type="password" placeholder={t('form.fields.confirmPassword.placeholder')} value={formData.confirmPassword} onChange={handleInputChange} disabled={isLoading} className={errors.confirmPassword ? 'border-[#ce5d55]' : ''} />
                 </Field>
 
                 {errors.submit && (

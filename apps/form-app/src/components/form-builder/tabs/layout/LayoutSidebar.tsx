@@ -70,18 +70,18 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
     }
   };
   return (
-    <div className="w-80 border-l border-gray-200 dark:border-gray-700 flex flex-col h-full">
+    <div className="w-80 border-l border-[rgba(81,76,84,0.10)] dark:border-gray-700 flex flex-col h-full">
       {/* Sidebar Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+      <div className="p-4 border-b border-[rgba(81,76,84,0.10)] dark:border-gray-700 flex-shrink-0">
         <div className="flex items-center space-x-3">
           <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
             <Palette className="w-4 h-4 text-purple-600 dark:text-purple-400" />
           </div>
           <div>
-            <h3 className="font-medium text-gray-900 dark:text-white">
+            <h3 className="font-medium text-[#3c323e] dark:text-white">
               {t('header.title')}
             </h3>
-            <p className="text-xs text-gray-600 dark:text-gray-400">
+            <p className="text-xs text-[#4c414e] dark:text-gray-400">
               {canEditLayout ? t('header.editableDescription') : t('header.viewOnlyDescription')}
             </p>
           </div>
@@ -91,7 +91,7 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto">
         {/* Layout Thumbnails */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="p-4 border-b border-[rgba(81,76,84,0.10)] dark:border-gray-700">
           <LayoutThumbnails 
             currentLayoutCode={currentLayoutCode}
             onLayoutSelect={onLayoutSelect}
@@ -100,9 +100,9 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
         </div>
 
         {/* Custom CTA Button Input */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="p-4 border-b border-[rgba(81,76,84,0.10)] dark:border-gray-700">
           <div className="space-y-2">
-            <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <Label className="block text-sm font-medium text-[#4c414e] dark:text-gray-300">
               {t('customCTA.label')}
             </Label>
             <Input
@@ -112,16 +112,16 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
               placeholder={t('customCTA.placeholder')}
               disabled={!canEditLayout}
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-[#655d67] dark:text-gray-400">
               {t('customCTA.helpText')}
             </p>
           </div>
         </div>
 
         {/* Background Color Controls */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="p-4 border-b border-[rgba(81,76,84,0.10)] dark:border-gray-700">
           <div className="space-y-3">
-            <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <Label className="block text-sm font-medium text-[#4c414e] dark:text-gray-300">
               {t('backgroundColor.label')}
             </Label>
 
@@ -133,7 +133,7 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
                 onCheckedChange={(checked) => canEditLayout && onLayoutUpdate({ isCustomBackgroundColorEnabled: !!checked })}
                 disabled={!canEditLayout}
               />
-              <Label htmlFor="isCustomBackgroundColorEnabled" className="text-sm text-gray-700 dark:text-gray-300 font-normal cursor-pointer">
+              <Label htmlFor="isCustomBackgroundColorEnabled" className="text-sm text-[#4c414e] dark:text-gray-300 font-normal cursor-pointer">
                 {t('backgroundColor.toggleLabel')}
               </Label>
             </div>
@@ -141,7 +141,7 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
             {/* Color picker - only show when toggle is enabled */}
             {layout.isCustomBackgroundColorEnabled && (
               <div className="space-y-2">
-                <Label className="block text-xs text-gray-600 dark:text-gray-400">
+                <Label className="block text-xs text-[#4c414e] dark:text-gray-400">
                   {t('backgroundColor.colorLabel')}
                 </Label>
                 <div className="flex items-center space-x-2">
@@ -164,7 +164,7 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
               </div>
             )}
             
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-[#655d67] dark:text-gray-400">
               {layout.isCustomBackgroundColorEnabled 
                 ? t('backgroundColor.helpTextEnabled')
                 : t('backgroundColor.helpTextDisabled')}
@@ -173,11 +173,11 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
         </div>
 
         {/* Background Image Controls */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="p-4 border-b border-[rgba(81,76,84,0.10)] dark:border-gray-700">
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
-              <Image className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <Image className="w-4 h-4 text-[#4c414e] dark:text-gray-400" />
+              <Label className="block text-sm font-medium text-[#4c414e] dark:text-gray-300">
                 {t('backgroundImages.label')}
               </Label>
             </div>
@@ -222,12 +222,12 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
                       </Button>
                     )}
                     
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-[#655d67] dark:text-gray-400">
                       {t('backgroundImages.customTab.helpText')}
                     </p>
                   </>
                 ) : (
-                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <div className="text-center py-8 text-[#655d67] dark:text-gray-400">
                     <p className="text-sm">{t('backgroundImages.customTab.viewOnlyTitle')}</p>
                     <p className="text-xs mt-1">{t('backgroundImages.customTab.viewOnlyDescription')}</p>
                   </div>
@@ -245,7 +245,7 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
                     <Search className="w-4 h-4 mr-2" />
                     {t('backgroundImages.pixabayTab.browseButton')}
                   </Button>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-[#655d67] dark:text-gray-400">
                     {canEditLayout 
                       ? t('backgroundImages.pixabayTab.helpTextEnabled')
                       : t('backgroundImages.pixabayTab.helpTextDisabled')

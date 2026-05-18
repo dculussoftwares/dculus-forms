@@ -102,7 +102,7 @@ const getCategoryColor = (category: string) => {
     case 'content':
       return 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400';
     default:
-      return 'bg-gray-500/10 text-gray-600 dark:text-gray-400';
+      return 'bg-gray-500/10 text-[#4c414e] dark:text-gray-400';
   }
 };
 
@@ -115,7 +115,7 @@ const getCategoryColor = (category: string) => {
  */
 const LeftSidebar: React.FC = () => {
   return (
-    <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+    <div className="w-80 border-r border-[rgba(81,76,84,0.10)] dark:border-gray-700 bg-white dark:bg-gray-900">
       <FieldTypesPanel />
     </div>
   );
@@ -230,7 +230,7 @@ const RightSidebar: React.FC<{
 
   return (
     <div
-      className="border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col relative"
+      className="border-l border-[rgba(81,76,84,0.10)] dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col relative"
       style={{ width: `${width}px` }}
     >
       {/* Resize handle */}
@@ -242,12 +242,12 @@ const RightSidebar: React.FC<{
         onMouseDown={handleMouseDown}
       >
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-          <GripHorizontal className="w-4 h-4 text-gray-400 rotate-90" />
+          <GripHorizontal className="w-4 h-4 text-[#655d67] rotate-90" />
         </div>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex border-b border-gray-200 dark:border-gray-700">
+      <div className="flex border-b border-[rgba(81,76,84,0.10)] dark:border-gray-700">
         <Button
           variant="ghost"
           onClick={() => setActiveTab('pages')}
@@ -256,7 +256,7 @@ const RightSidebar: React.FC<{
             ${
               activeTab === 'pages'
                 ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                : 'text-[#655d67] hover:text-[#4c414e] dark:text-gray-400 dark:hover:text-gray-200'
             }
           `}
         >
@@ -271,7 +271,7 @@ const RightSidebar: React.FC<{
             ${
               activeTab === 'properties'
                 ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                : 'text-[#655d67] hover:text-[#4c414e] dark:text-gray-400 dark:hover:text-gray-200'
             }
           `}
         >
@@ -286,7 +286,7 @@ const RightSidebar: React.FC<{
             ${
               activeTab === 'json'
                 ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                : 'text-[#655d67] hover:text-[#4c414e] dark:text-gray-400 dark:hover:text-gray-200'
             }
           `}
         >
@@ -300,7 +300,7 @@ const RightSidebar: React.FC<{
           /* Pages Tab Content */
           <div className="p-4">
             <div className="mb-4 flex items-center justify-between">
-              <div className="text-sm text-gray-500 dark:text-gray-400">
+              <div className="text-sm text-[#655d67] dark:text-gray-400">
                 {t('sidebar.pages.pageCount', {
                   values: { count: pages.length },
                 })}
@@ -341,7 +341,7 @@ const RightSidebar: React.FC<{
             </SortableContext>
 
             {pages.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-[#655d67]">
                 {t('sidebar.pages.noPages')}
                 {permissions.canAddPages() && (
                   <Button
@@ -366,7 +366,7 @@ const RightSidebar: React.FC<{
                 onDelete={handleDelete}
               />
             ) : (
-              <div className="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-gray-400 p-8 text-center">
+              <div className="flex flex-col items-center justify-center h-64 text-[#655d67] dark:text-gray-400 p-8 text-center">
                 <Settings className="w-12 h-12 mb-4 opacity-20" />
                 <p>{t('emptyState.title')}</p>
               </div>
@@ -455,7 +455,7 @@ const FieldCard: React.FC<{
               ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/50 ring-2 ring-blue-500 animate-pulse shadow-lg'
               : isSelected
                 ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/50 ring-2 ring-blue-500/20 shadow-md'
-                : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm cursor-pointer'
+                : 'border-[rgba(81,76,84,0.10)] dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm cursor-pointer'
         }
       `}
       data-testid={`field-${field.id}`}
@@ -467,11 +467,11 @@ const FieldCard: React.FC<{
           {dragHandleProps && (
             <div
               {...dragHandleProps}
-              className="flex-shrink-0 p-1 -ml-2 cursor-grab hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+              className="flex-shrink-0 p-1 -ml-2 cursor-grab hover:bg-[#f7f7f8] dark:hover:bg-gray-700 rounded transition-colors"
               title="Drag to reorder"
               onClick={(e) => e.stopPropagation()}
             >
-              <GripVertical className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+              <GripVertical className="w-4 h-4 text-[#655d67] dark:text-gray-500" />
             </div>
           )}
 
@@ -484,20 +484,20 @@ const FieldCard: React.FC<{
 
           {/* Field info */}
           <div className="flex-1 min-w-0 max-w-[280px]">
-            <div className="text-sm font-medium text-gray-900 dark:text-white truncate flex items-center gap-1">
+            <div className="text-sm font-medium text-[#3c323e] dark:text-white truncate flex items-center gap-1">
               <span className="truncate">{label}</span>
               {/* Required indicator - red asterisk */}
               {'validation' in field &&
                 (field as FillableFormField).validation?.required && (
                   <span
-                    className="text-red-500 text-sm flex-shrink-0"
+                    className="text-[#ce5d55] text-sm flex-shrink-0"
                     title="Required field"
                   >
                     *
                   </span>
                 )}
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
+            <div className="text-xs text-[#655d67] dark:text-gray-400">
               {typeConfig.label}
             </div>
           </div>
@@ -510,11 +510,11 @@ const FieldCard: React.FC<{
             {dragHandleProps && (
               <div
                 {...dragHandleProps}
-                className="flex-shrink-0 p-1 -ml-2 cursor-grab hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                className="flex-shrink-0 p-1 -ml-2 cursor-grab hover:bg-[#f7f7f8] dark:hover:bg-gray-700 rounded transition-colors"
                 title="Drag to reorder"
                 onClick={(e) => e.stopPropagation()}
               >
-                <GripVertical className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                <GripVertical className="w-4 h-4 text-[#655d67] dark:text-gray-500" />
               </div>
             )}
 
@@ -527,20 +527,20 @@ const FieldCard: React.FC<{
 
             {/* Field info */}
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-gray-900 dark:text-white truncate flex items-center gap-1">
+              <div className="text-sm font-medium text-[#3c323e] dark:text-white truncate flex items-center gap-1">
                 <span className="truncate">{label}</span>
                 {/* Required indicator - red asterisk */}
                 {'validation' in field &&
                   (field as FillableFormField).validation?.required && (
                     <span
-                      className="text-red-500 text-sm flex-shrink-0"
+                      className="text-[#ce5d55] text-sm flex-shrink-0"
                       title="Required field"
                     >
                       *
                     </span>
                   )}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="text-xs text-[#655d67] dark:text-gray-400">
                 {typeConfig.label}
               </div>
             </div>
@@ -548,7 +548,7 @@ const FieldCard: React.FC<{
 
           {/* Field Preview */}
           <div className="pl-9 pr-2">
-            <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-md border border-gray-200 dark:border-gray-700">
+            <div className="p-3 bg-[#f7f7f8] dark:bg-gray-800/50 rounded-md border border-[rgba(81,76,84,0.10)] dark:border-gray-700">
               <FieldPreview
                 field={field}
                 disabled={true}
@@ -567,7 +567,7 @@ const FieldCard: React.FC<{
                     e.stopPropagation();
                     onMoveUp();
                   }}
-                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md h-auto"
+                  className="p-1.5 text-[#655d67] hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md h-auto"
                   title="Move Up"
                 >
                   <ArrowUp className="w-4 h-4" />
@@ -581,7 +581,7 @@ const FieldCard: React.FC<{
                     e.stopPropagation();
                     onMoveDown();
                   }}
-                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md h-auto"
+                  className="p-1.5 text-[#655d67] hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md h-auto"
                   title="Move Down"
                 >
                   <ArrowDown className="w-4 h-4" />
@@ -595,7 +595,7 @@ const FieldCard: React.FC<{
                     e.stopPropagation();
                     onDuplicate();
                   }}
-                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md h-auto"
+                  className="p-1.5 text-[#655d67] hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md h-auto"
                   title="Duplicate Field"
                 >
                   <Copy className="w-4 h-4" />
@@ -611,7 +611,7 @@ const FieldCard: React.FC<{
                     <Button
                       variant="ghost"
                       onClick={(e) => e.stopPropagation()}
-                      className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md h-auto"
+                      className="p-1.5 text-[#655d67] hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md h-auto"
                       title="Move/Copy to another page"
                     >
                       <ArrowUp className="w-4 h-4 rotate-90" />
@@ -629,7 +629,7 @@ const FieldCard: React.FC<{
                     e.stopPropagation();
                     onDelete();
                   }}
-                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md h-auto"
+                  className="p-1.5 text-[#655d67] hover:text-[#ce5d55] hover:bg-[rgba(206,93,85,0.06)] dark:hover:bg-red-950/30 rounded-md h-auto"
                   title="Delete field"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -766,7 +766,7 @@ const EmptyFormAreaPlaceholder: React.FC<{ isConnected: boolean }> = ({
   const { t } = useTranslation('newPageBuilderTab');
 
   return (
-    <div className="flex items-center justify-center h-full min-h-[200px] text-gray-500 dark:text-gray-400">
+    <div className="flex items-center justify-center h-full min-h-[200px] text-[#655d67] dark:text-gray-400">
       <div className="text-center">
         <p className="text-lg font-medium">{t('formArea.placeholder')}</p>
         <ConnectionStatus isConnected={isConnected} />
@@ -898,7 +898,7 @@ const FormArea: React.FC<{
                 ${
                   isOver
                     ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 ring-2 ring-blue-500/20'
-                    : 'border-gray-300 dark:border-gray-600'
+                    : 'border-[rgba(81,76,84,0.15)] dark:border-gray-600'
                 }
               `}
               data-testid="droppable-page"
@@ -932,7 +932,7 @@ const PageHeader: React.FC<{
   if (!selectedPage) {
     return (
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-400">
+        <h1 className="text-2xl font-bold text-[#655d67]">
           {t('formArea.noPageSelected')}
         </h1>
       </div>
@@ -941,10 +941,10 @@ const PageHeader: React.FC<{
 
   return (
     <div className="mb-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+      <h1 className="text-2xl font-bold text-[#3c323e] dark:text-white">
         {selectedPage.title || t('formArea.untitledPage')}
       </h1>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+      <p className="text-sm text-[#655d67] dark:text-gray-400 mt-1">
         {selectedPage.fields.length}{' '}
         {selectedPage.fields.length === 1 ? 'field' : 'fields'}
       </p>

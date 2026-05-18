@@ -109,9 +109,8 @@ export default function TemplatesPage() {
                 {templates.map((template, i) => (
                   <tr
                     key={template.id}
+                    className="hover:bg-[rgba(87,84,91,0.025)] transition-colors"
                     style={{ borderTop: i > 0 ? '1px solid rgba(81,76,84,0.07)' : undefined }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.025)'}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'}
                   >
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2.5">
