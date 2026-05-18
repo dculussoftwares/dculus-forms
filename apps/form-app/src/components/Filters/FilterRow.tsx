@@ -435,7 +435,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
           variant="ghost"
           size="sm"
           onClick={onRemove}
-          className="h-8 w-8 p-0 hover:bg-slate-100 flex-shrink-0"
+          className="h-8 w-8 p-0 hover:bg-[rgba(81,76,84,0.06)] flex-shrink-0"
         >
           <X className="h-4 w-4 text-[#655d67]" />
         </Button>
@@ -445,13 +445,13 @@ export const FilterRow: React.FC<FilterRowProps> = ({
       <div>
         <Select value={filter.fieldId || ''} onValueChange={handleFieldChange}>
           <SelectTrigger
-            className="h-10 w-full bg-blue-50 border-blue-200 hover:bg-blue-100"
+            className="h-10 w-full bg-[#f4faf8] border-[rgba(23,119,103,0.16)] hover:bg-[rgba(23,119,103,0.06)]"
             data-testid="filter-field-select"
           >
             <SelectValue placeholder={t('placeholders.selectField')}>
               {currentField && (
                 <div className="flex items-center gap-2">
-                  <div className="text-blue-700 flex-shrink-0">
+                  <div className="text-[#177767] flex-shrink-0">
                     {getFieldIcon(currentField.type)}
                   </div>
                   <span className="truncate" title={currentField.label}>

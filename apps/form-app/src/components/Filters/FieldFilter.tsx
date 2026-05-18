@@ -348,7 +348,7 @@ export const FieldFilter: React.FC<FieldFilterProps> = ({
               {field.label}
             </div>
             {filter?.active && (
-              <div className="text-xs text-blue-600 font-medium">{t('filtered')}</div>
+              <div className="text-xs text-[#177767] font-medium">{t('filtered')}</div>
             )}
           </div>
         </div>
@@ -360,7 +360,7 @@ export const FieldFilter: React.FC<FieldFilterProps> = ({
       </Button>
 
       {isExpanded && (
-        <div className="px-3 pb-3 space-y-3 bg-[#f7f7f8] border-t border-slate-100">
+        <div className="px-3 pb-3 space-y-3 bg-[#f7f7f8] border-t border-[rgba(81,76,84,0.08)]">
           <div className="pt-3">
             <Label className="text-xs font-medium text-[#4c414e] mb-2 block">
               Condition

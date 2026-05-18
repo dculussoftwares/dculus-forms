@@ -110,7 +110,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="h-8 w-8 p-0 hover:bg-slate-100"
+            className="h-8 w-8 p-0 hover:bg-[rgba(81,76,84,0.06)]"
           >
             <X className="h-5 w-5" />
           </Button>
@@ -182,7 +182,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
             </Button>
             <Button
               onClick={handleApply}
-              className="bg-slate-900 hover:bg-slate-800 text-white"
+              className=""
               disabled={activeFilterCount === 0}
               data-testid="apply-filters-button"
             >

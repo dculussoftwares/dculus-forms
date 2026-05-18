@@ -42,7 +42,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               {t('title')}
             </CardTitle>
             {activeFiltersCount > 0 && (
-              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+              <span className="px-2 py-1 bg-[#f4faf8] text-[#177767] text-xs font-medium rounded-full border border-[rgba(23,119,103,0.16)]">
                 {activeFiltersCount}
               </span>
             )}
@@ -51,7 +51,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="h-8 w-8 p-0 hover:bg-slate-100"
+            className="h-8 w-8 p-0 hover:bg-[rgba(81,76,84,0.06)]"
           >
             <X className="h-4 w-4" />
             <span className="sr-only">{t('closeFilters')}</span>
@@ -78,7 +78,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               {t('noFilterableFields')}
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-[rgba(81,76,84,0.08)]">
               {fields.map((field) => (
                 <FieldFilter
                   key={field.id}
