@@ -14,6 +14,7 @@ import { Globe, TrendingUp } from 'lucide-react';
 import { CountryStats } from '../../hooks/useFormAnalytics';
 import ISO31661 from 'iso-3166-1';
 import { useTranslation } from '../../hooks/useTranslation';
+import { cn } from '@dculus/utils';
 
 type DataMode = 'views' | 'submissions';
 
@@ -190,11 +191,12 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div
-                    className={`w-3 h-3 rounded-sm border ${
+                    className={cn(
+                      'w-3 h-3 rounded-sm border',
                       dataMode === 'submissions'
                         ? 'bg-orange-300 border-orange-500'
                         : 'bg-blue-300 border-blue-500'
-                    }`}
+                    )}
                   ></div>
                   <span className="text-xs text-foreground font-medium">
                     {t('legend.low')}
@@ -202,11 +204,12 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div
-                    className={`w-3 h-3 rounded-sm border ${
+                    className={cn(
+                      'w-3 h-3 rounded-sm border',
                       dataMode === 'submissions'
                         ? 'bg-orange-600 border-orange-700'
                         : 'bg-blue-600 border-blue-700'
-                    }`}
+                    )}
                   ></div>
                   <span className="text-xs text-foreground font-medium">
                     {t('legend.high')}
@@ -287,11 +290,12 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
               return (
                 <div
                   key={country.code || country.name}
-                  className={`flex items-center justify-between p-3 rounded-lg border transition-all duration-200 hover:shadow-sm hover:border-blue-200 ${
+                  className={cn(
+                    'flex items-center justify-between p-3 rounded-lg border transition-all duration-200 hover:shadow-sm hover:border-blue-200',
                     isTopCountry
                       ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'
                       : 'bg-background border-[var(--tf-border-medium)] hover:bg-background'
-                  }`}
+                  )}
                 >
                   <div className="flex items-center gap-3">
                     <div className="relative">
@@ -312,7 +316,10 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                     </div>
                     <div>
                       <span
-                        className={`font-medium ${isTopCountry ? 'text-blue-900' : 'text-primary'}`}
+                        className={cn(
+                          'font-medium',
+                          isTopCountry ? 'text-blue-900' : 'text-primary'
+                        )}
                       >
                         {country.name}
                       </span>
@@ -327,7 +334,10 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                   <div className="text-right">
                     <div className="flex items-center gap-2">
                       <span
-                        className={`font-bold ${isTopCountry ? 'text-blue-800 text-lg' : 'text-primary'}`}
+                        className={cn(
+                          'font-bold',
+                          isTopCountry ? 'text-blue-800 text-lg' : 'text-primary'
+                        )}
                       >
                         {country.count}
                       </span>
@@ -338,11 +348,10 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                     <div className="flex items-center justify-end gap-1 mt-1">
                       <div className="w-12 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                         <div
-                          className={`h-full rounded-full transition-all duration-500 ${
-                            dataMode === 'submissions'
-                              ? 'bg-orange-500'
-                              : 'bg-blue-500'
-                          }`}
+                          className={cn(
+                            'h-full rounded-full transition-all duration-500',
+                            dataMode === 'submissions' ? 'bg-orange-500' : 'bg-blue-500'
+                          )}
                           style={{ width: `${country.percentage}%` }}
                         />
                       </div>

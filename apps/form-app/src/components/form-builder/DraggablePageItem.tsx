@@ -4,6 +4,7 @@ import { useDndContext, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { FormPage } from '@dculus/types';
 import { Button, Card, Input } from '@dculus/ui';
+import { cn } from '@dculus/utils';
 import { useFormPermissions } from '../../hooks/useFormPermissions';
 import { useTranslation } from '../../hooks/useTranslation';
 import {
@@ -160,43 +161,33 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
     <div
       ref={pageItemRef}
       data-testid={`page-item-${index + 1}`}
-      className={`
-        group transition-all duration-200
-        ${isDragging ? 'opacity-50 scale-105 z-50' : ''}
-      `}
+      className={cn(
+        'group transition-all duration-200',
+        isDragging && 'opacity-50 scale-105 z-50',
+      )}
     >
       <div
         ref={setSortableRef}
         style={style}
-        className={`
-          transition-all duration-200 relative
-          ${isDraggingFromDifferentPage || isDraggingFieldTypeToThisPage ? 'scale-105 z-10' : ''}
-        `}
+        className={cn(
+          'transition-all duration-200 relative',
+          (isDraggingFromDifferentPage || isDraggingFieldTypeToThisPage) && 'scale-105 z-10',
+        )}
       >
         <div
           ref={setDroppableRef}
           className="relative w-full h-full"
         >
           <Card 
-            className={`
-              p-3 cursor-pointer transition-all duration-200 border-2 relative
-              ${isSelected 
-                ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30 shadow-md' 
-                : 'border-[var(--tf-border-medium)] dark:border-gray-700 hover:border-[var(--tf-border-strong)] dark:hover:border-gray-600 hover:shadow-sm'
-              }
-              ${isDraggingFromDifferentPage 
-                ? 'border-primary/60 bg-primary/5 dark:bg-primary/10 ring-2 ring-primary/20 dark:ring-primary/30'
-                : ''
-              }
-              ${isDraggingFieldTypeToThisPage 
-                ? 'border-blue-400 bg-blue-50/80 dark:bg-blue-950/50 ring-2 ring-blue-200 dark:ring-blue-800' 
-                : ''
-              }
-              ${isDropOver && (isDraggingField || isDraggingFieldType)
-                ? 'shadow-lg' 
-                : ''
-              }
-            `}
+            className={cn(
+              'p-3 cursor-pointer transition-all duration-200 border-2 relative',
+              isSelected
+                ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30 shadow-md'
+                : 'border-[var(--tf-border-medium)] dark:border-gray-700 hover:border-[var(--tf-border-strong)] dark:hover:border-gray-600 hover:shadow-sm',
+              isDraggingFromDifferentPage && 'border-primary/60 bg-primary/5 dark:bg-primary/10 ring-2 ring-primary/20 dark:ring-primary/30',
+              isDraggingFieldTypeToThisPage && 'border-blue-400 bg-blue-50/80 dark:bg-blue-950/50 ring-2 ring-blue-200 dark:ring-blue-800',
+              isDropOver && (isDraggingField || isDraggingFieldType) && 'shadow-lg',
+            )}
             onClick={onSelect}
             data-testid={`select-page-${page.title.replace(/\s+/g, '-').toLowerCase()}`}
           >
@@ -221,13 +212,12 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
             {/* Page Number */}
             <div 
               data-testid={`page-number-${index + 1}`}
-              className={`
-                w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold
-                ${isSelected 
-                  ? 'bg-blue-500 text-white' 
-                  : 'bg-gray-200 dark:bg-gray-700 text-foreground dark:text-gray-400'
-                }
-              `}
+              className={cn(
+                'w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold',
+                isSelected
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-foreground dark:text-gray-400',
+              )}
             >
               {index + 1}
             </div>
@@ -257,15 +247,13 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
                 <div
                   data-testid={`page-title-${index + 1}`}
                   onClick={handleTitleClick}
-                  className={`
-                    text-sm font-medium leading-tight
-                    line-clamp-2 overflow-hidden
-                    ${permissions.canEditFields() && isConnected ? 'cursor-text hover:text-blue-600 dark:hover:text-blue-400' : ''}
-                    ${isSelected
+                  className={cn(
+                    'text-sm font-medium leading-tight line-clamp-2 overflow-hidden',
+                    permissions.canEditFields() && isConnected && 'cursor-text hover:text-blue-600 dark:hover:text-blue-400',
+                    isSelected
                       ? 'text-blue-900 dark:text-blue-100'
-                      : 'text-primary dark:text-white'
-                    }
-                  `}
+                      : 'text-primary dark:text-white',
+                  )}
                   title={permissions.canEditFields() && isConnected ? t('editTitle') : undefined}
                 >
                   {editedTitle}
@@ -273,13 +261,12 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
               )}
               <div 
                 data-testid={`page-field-count-${index + 1}`}
-                className={`
-                  text-xs truncate mb-2
-                  ${isSelected 
-                    ? 'text-blue-700 dark:text-blue-300' 
-                    : 'text-muted-foreground dark:text-gray-400'
-                  }
-                `}
+                className={cn(
+                'text-xs truncate mb-2',
+                isSelected
+                  ? 'text-blue-700 dark:text-blue-300'
+                  : 'text-muted-foreground dark:text-gray-400',
+              )}
               >
                 {getFieldCountText(page.fields.length)}
               </div>
@@ -299,13 +286,12 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
                     {page.fields.slice(0, 3).map((field, fieldIndex) => (
                       <div
                         key={`${page.id}-${field.id}-${fieldIndex}`}
-                        className={`
-                          h-1.5 rounded-sm
-                          ${isSelected 
-                            ? 'bg-blue-200 dark:bg-blue-700' 
-                            : 'bg-gray-200 dark:bg-gray-700'
-                          }
-                        `}
+                        className={cn(
+                          'h-1.5 rounded-sm',
+                          isSelected
+                            ? 'bg-blue-200 dark:bg-blue-700'
+                            : 'bg-gray-200 dark:bg-gray-700',
+                        )}
                         style={{ 
                           width: `${Math.max(40, Math.min(90, 60 + (fieldIndex * 10)))}%` 
                         }}

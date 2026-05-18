@@ -6,7 +6,7 @@ import {
   RichTextFormField,
   FieldType,
 } from '@dculus/types';
-import { stripHtmlAndTruncate } from '@dculus/utils';
+import { cn, stripHtmlAndTruncate } from '@dculus/utils';
 import { Card } from '@dculus/ui';
 import {
   Type,
@@ -140,14 +140,14 @@ export const CompactFieldCard: React.FC<CompactFieldCardProps> = ({
     <Card
       data-testid={`compact-field-card-${field.id}`}
       data-variant={variant}
-      className={`
-        ${styles.container}
-        flex items-center px-3 py-2 rounded-lg transition-colors duration-150
-        ${className}
-      `}
+      className={cn(
+        styles.container,
+        'flex items-center px-3 py-2 rounded-lg transition-colors duration-150',
+        className,
+      )}
     >
       <div
-        className={`flex items-center flex-1 min-w-0 space-x-3 ${styles.content}`}
+        className={cn('flex items-center flex-1 min-w-0 space-x-3', styles.content)}
       >
         {/* Drag Handle (visual only in compact mode) */}
         <div className="flex-shrink-0 text-muted-foreground dark:text-gray-500">
@@ -156,28 +156,24 @@ export const CompactFieldCard: React.FC<CompactFieldCardProps> = ({
 
         {/* Field Icon */}
         <div
-          className={`
-          flex-shrink-0 p-1.5 rounded-lg
-          ${
+          className={cn(
+            'flex-shrink-0 p-1.5 rounded-lg',
             variant === 'overlay'
               ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'
-              : 'bg-gray-200 dark:bg-gray-700 text-foreground dark:text-gray-400'
-          }
-        `}
+              : 'bg-gray-200 dark:bg-gray-700 text-foreground dark:text-gray-400',
+          )}
         >
           {getFieldIcon(field.type)}
         </div>
 
         {/* Field Type Badge */}
         <span
-          className={`
-          flex-shrink-0 px-2 py-0.5 text-xs font-medium rounded-full
-          ${
+          className={cn(
+            'flex-shrink-0 px-2 py-0.5 text-xs font-medium rounded-full',
             variant === 'overlay'
               ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-              : 'bg-gray-200 text-foreground dark:bg-gray-700 dark:text-gray-400'
-          }
-        `}
+              : 'bg-gray-200 text-foreground dark:bg-gray-700 dark:text-gray-400',
+          )}
         >
           {fieldTypeLabel}
         </span>
@@ -189,14 +185,12 @@ export const CompactFieldCard: React.FC<CompactFieldCardProps> = ({
               •
             </span>
             <span
-              className={`
-              flex-1 min-w-0 truncate text-sm
-              ${
+              className={cn(
+                'flex-1 min-w-0 truncate text-sm',
                 variant === 'overlay'
                   ? 'text-primary dark:text-white font-medium'
-                  : 'text-foreground dark:text-gray-400'
-              }
-            `}
+                  : 'text-foreground dark:text-gray-400',
+              )}
             >
               {fieldLabel}
             </span>

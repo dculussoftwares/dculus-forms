@@ -7,6 +7,7 @@ import {
   DialogTitle,
   Badge,
 } from '@dculus/ui';
+import { cn } from '@dculus/utils';
 import { CheckCircle2, XCircle, Award, TrendingUp } from 'lucide-react';
 import { useTranslation } from '../../../../hooks/useTranslation';
 
@@ -50,8 +51,8 @@ export const QuizResultsDialog: React.FC<QuizResultsDialogProps> = ({
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${passed ? 'bg-green-100' : 'bg-[var(--tf-error-bg)]'}`}>
-              <Award className={`h-6 w-6 ${passed ? 'text-green-600' : 'text-destructive'}`} />
+            <div className={cn('p-2 rounded-lg', passed ? 'bg-green-100' : 'bg-[var(--tf-error-bg)]')}>
+              <Award className={cn('h-6 w-6', passed ? 'text-green-600' : 'text-destructive')} />
             </div>
             <div>
               <DialogTitle>{t('title')}</DialogTitle>
@@ -103,9 +104,7 @@ export const QuizResultsDialog: React.FC<QuizResultsDialogProps> = ({
             {/* Progress bar */}
             <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
               <div
-                className={`h-full transition-all ${
-                  passed ? 'bg-green-500' : 'bg-red-500'
-                }`}
+                className={cn('h-full transition-all', passed ? 'bg-green-500' : 'bg-red-500')}
                 style={{ width: `${metadata.percentage}%` }}
               />
             </div>
@@ -128,11 +127,12 @@ export const QuizResultsDialog: React.FC<QuizResultsDialogProps> = ({
             {metadata.fieldResults.map((result, idx) => (
               <div
                 key={result.fieldId}
-                className={`rounded-lg border-2 p-4 transition-all ${
+                className={cn(
+                  'rounded-lg border-2 p-4 transition-all',
                   result.isCorrect
                     ? 'border-green-200 bg-green-50/50'
                     : 'border-[var(--tf-error-bg-lg)] bg-[var(--tf-error-bg)]/50'
-                }`}
+                )}
               >
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5">
@@ -161,11 +161,12 @@ export const QuizResultsDialog: React.FC<QuizResultsDialogProps> = ({
 
                     <div className="space-y-2">
                       <div
-                        className={`text-sm p-3 rounded-lg ${
+                        className={cn(
+                          'text-sm p-3 rounded-lg',
                           result.isCorrect
                             ? 'bg-green-100 text-green-800'
                             : 'bg-[var(--tf-error-bg)] text-destructive'
-                        }`}
+                        )}
                       >
                         <span className="font-medium">{t('yourAnswer')} </span>
                         {result.userAnswer}

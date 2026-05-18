@@ -2,6 +2,7 @@ import React from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { FieldType } from '@dculus/types';
 import { Card, TypographyH3 } from '@dculus/ui';
+import { cn } from '@dculus/utils';
 import { useFormPermissions } from '../../hooks/useFormPermissions';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useFieldCreation } from '../../hooks/useFieldCreation';
@@ -142,43 +143,49 @@ const FieldTypeDisplay: React.FC<FieldTypeDisplayProps> = ({
 }) => {
   return (
     <Card
-      className={`
-      p-4 border-2 border-dashed
-      ${
+      className={cn(
+        'p-4 border-2 border-dashed',
         isOverlay
           ? 'border-blue-500 bg-white dark:bg-gray-800 shadow-lg transition-none'
-          : `border-[var(--tf-border-medium)] hover:border-blue-300 hover:bg-blue-50/50
-           dark:border-gray-700 dark:hover:border-blue-600 dark:hover:bg-blue-950/30
-           group-hover:shadow-md
-           ${isDragging ? 'border-blue-400 bg-blue-50 dark:border-blue-500 dark:bg-blue-950/40 transition-none' : 'transition-all duration-200'}`
-      }
-    `}
+          : cn(
+              'border-[var(--tf-border-medium)] hover:border-blue-300 hover:bg-blue-50/50',
+              'dark:border-gray-700 dark:hover:border-blue-600 dark:hover:bg-blue-950/30',
+              'group-hover:shadow-md',
+              isDragging
+                ? 'border-blue-400 bg-blue-50 dark:border-blue-500 dark:bg-blue-950/40 transition-none'
+                : 'transition-all duration-200'
+            )
+      )}
     >
       <div className="flex items-start space-x-3">
         <div
-          className={`
-          p-2 rounded-lg
-          ${
+          className={cn(
+            'p-2 rounded-lg',
             isOverlay
               ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'
-              : `${categories?.[fieldType.category as keyof typeof categories]?.color || 'bg-background'}
-               ${isDragging ? 'scale-110 transition-none' : 'group-hover:scale-110 transition-transform duration-200'}`
-          }
-        `}
+              : cn(
+                  categories?.[fieldType.category as keyof typeof categories]?.color || 'bg-background',
+                  isDragging
+                    ? 'scale-110 transition-none'
+                    : 'group-hover:scale-110 transition-transform duration-200'
+                )
+          )}
         >
           {fieldType.icon}
         </div>
         <div className="flex-1 min-w-0">
           <div
-            className={`text-sm font-medium ${
+            className={cn(
+              'text-sm font-medium',
               isOverlay
                 ? 'text-primary dark:text-white'
-                : `group-hover:text-blue-600 dark:group-hover:text-blue-400 ${
+                : cn(
+                    'group-hover:text-blue-600 dark:group-hover:text-blue-400',
                     isDragging
                       ? 'text-blue-600 dark:text-blue-400'
                       : 'text-primary dark:text-white'
-                  }`
-            }`}
+                  )
+            )}
           >
             {fieldType.label}
           </div>
@@ -236,9 +243,10 @@ const DraggableFieldType: React.FC<DraggableFieldTypeProps> = ({
         {...listeners}
         {...attributes}
         onClick={onAdd}
-        className={`group cursor-grab active:cursor-grabbing transition-transform duration-200 ${
+        className={cn(
+          'group cursor-grab active:cursor-grabbing transition-transform duration-200',
           isDragging ? 'scale-102' : 'hover:scale-102'
-        }`}
+        )}
       >
         <FieldTypeDisplay
           fieldType={fieldType}
@@ -284,7 +292,7 @@ export const FieldTypesPanel: React.FC<FieldTypesPanelProps> = ({
   );
 
   return (
-    <div className={`h-full overflow-y-auto ${className}`}>
+    <div className={cn('h-full overflow-y-auto', className)}>
       <div className="p-4 border-b border-[var(--tf-border-medium)] dark:border-gray-700 bg-white dark:bg-gray-900">
         <TypographyH3 className="text-lg font-semibold text-primary dark:text-white">
           {t('header.title')}
@@ -299,10 +307,10 @@ export const FieldTypesPanel: React.FC<FieldTypesPanelProps> = ({
           <div key={category}>
             <div className="flex items-center space-x-2 mb-3">
               <div
-                className={`
-                px-2 py-1 rounded-full text-xs font-medium border
-                ${CATEGORIES[category as keyof typeof CATEGORIES].color}
-              `}
+                className={cn(
+                  'px-2 py-1 rounded-full text-xs font-medium border',
+                  CATEGORIES[category as keyof typeof CATEGORIES].color
+                )}
               >
                 {CATEGORIES[category as keyof typeof CATEGORIES].label}
               </div>
