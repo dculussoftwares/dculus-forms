@@ -53,9 +53,12 @@ const SimpleWordCloud: React.FC<{
   const maxWeight = Math.max(...words.map(w => w.weight));
   const minWeight = Math.min(...words.map(w => w.weight));
 
-  const getFontSize = (weight: number) => {
+  const getFontSize = (weight: number, word: string) => {
     const normalized = (weight - minWeight) / (maxWeight - minWeight);
-    return Math.max(12, Math.min(48, 12 + normalized * 36));
+    const byWeight = 12 + normalized * 36;
+    // Prevent long words from overflowing: ~480px usable width / (chars * 0.6 avg char ratio)
+    const byLength = Math.floor(480 / Math.max(1, word.length * 0.6));
+    return Math.max(12, Math.min(42, byWeight, byLength));
   };
 
   const getOpacity = (weight: number) => {
@@ -78,7 +81,7 @@ const SimpleWordCloud: React.FC<{
               key={word.word}
               className="inline-block cursor-default transition-all duration-200 hover:scale-110"
               style={{
-                fontSize: `${getFontSize(word.weight)}px`,
+                fontSize: `${getFontSize(word.weight, word.word)}px`,
                 color: CHART_COLORS.primary[index % CHART_COLORS.primary.length],
                 opacity: getOpacity(word.weight),
                 fontWeight: word.weight > 0.7 ? 'bold' : word.weight > 0.4 ? '600' : 'normal',

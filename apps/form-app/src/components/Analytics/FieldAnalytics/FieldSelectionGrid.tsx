@@ -118,7 +118,7 @@ export const FieldSelectionGrid: React.FC<FieldSelectionGridProps> = ({
 
               {/* Chart Preview */}
               <div className="bg-gradient-to-br from-blue-50/50 to-purple-50/50 p-4">
-                <div className="h-48 flex items-center justify-center bg-white rounded-xl shadow-sm">
+                <div className="h-48 flex items-center justify-center bg-white rounded-xl shadow-sm overflow-hidden">
                   <MiniPreviewChart field={field} />
                 </div>
               </div>

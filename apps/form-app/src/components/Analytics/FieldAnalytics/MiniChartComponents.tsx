@@ -36,19 +36,23 @@ export const MiniWordCloud: React.FC<{ words: Array<{ word: string; count: numbe
   const topWords = words.slice(0, 10);
   const maxCount = Math.max(...topWords.map(w => w.count));
 
+  const getWordSize = (word: string, count: number) => {
+    const byFrequency = 16 + (count / maxCount) * 20;
+    // Prevent long words from overflowing: ~220px usable width / (chars * 0.6 avg char ratio)
+    const byLength = Math.floor(220 / Math.max(1, word.length * 0.6));
+    return Math.max(12, Math.min(36, byFrequency, byLength));
+  };
+
   return (
-    <div className="flex flex-wrap gap-3 items-center justify-center h-full p-4">
+    <div className="flex flex-wrap gap-2 items-center justify-center h-full p-4 overflow-hidden">
       {topWords.map((word) => {
-        const size = Math.max(16, Math.min(36, 16 + (word.count / maxCount) * 20));
+        const size = getWordSize(word.word, word.count);
         const opacity = Math.max(0.6, word.count / maxCount);
         return (
           <span
             key={word.word}
-            className="px-2 py-1 text-blue-600 font-semibold hover:scale-110 transition-transform cursor-default"
-            style={{
-              fontSize: `${size}px`,
-              opacity: opacity
-            }}
+            className="px-1 py-0.5 text-blue-600 font-semibold transition-transform cursor-default max-w-full truncate"
+            style={{ fontSize: `${size}px`, opacity }}
             title={t('tooltips.wordAppears', { values: { word: word.word, count: word.count } })}
           >
             {word.word}
