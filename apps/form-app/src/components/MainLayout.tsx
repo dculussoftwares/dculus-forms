@@ -47,7 +47,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   breadcrumbs,
 }) => {
   return (
-    <SidebarProvider defaultOpen={true}>
+    <SidebarProvider defaultOpen={false}>
       <AppSidebar data-testid="app-sidebar" />
       <SidebarInset>
         <PageWrapper
