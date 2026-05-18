@@ -93,7 +93,7 @@ export const SignIn = () => {
             <h2 className="text-white text-3xl font-light leading-tight mb-3">
               {t("hero.tagline")}
             </h2>
-            <p className="text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>
+            <p className="text-sm text-[rgba(255,255,255,0.55)]">
               {t("hero.attribution")}
             </p>
           </div>
@@ -101,15 +101,15 @@ export const SignIn = () => {
             {FEATURES.map(({ icon: Icon, text }) => (
               <li key={text} className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
-                  <Icon className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.70)' }} />
+                  <Icon className="w-4 h-4 text-[rgba(255,255,255,0.70)]" />
                 </div>
-                <span className="text-sm" style={{ color: 'rgba(255,255,255,0.70)' }}>{text}</span>
+                <span className="text-sm text-[rgba(255,255,255,0.70)]">{text}</span>
               </li>
             ))}
           </ul>
         </div>
 
-        <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
+        <p className="text-xs text-[rgba(255,255,255,0.35)]">
           © {new Date().getFullYear()} Dculus Forms
         </p>
       </div>
@@ -118,9 +118,9 @@ export const SignIn = () => {
       <div className="flex-1 flex flex-col overflow-y-auto bg-white">
         {/* Top nav */}
         <div className="flex items-center justify-end px-8 py-5" style={{ borderBottom: '1px solid rgba(81,76,84,0.08)' }}>
-          <span className="text-sm" style={{ color: '#655d67' }}>
+          <span className="text-sm text-[#655d67]">
             {t("links.signUpPrompt")}{" "}
-            <Link to="/signup" className="font-medium hover:underline transition-colors" style={{ color: '#3c323e' }}>
+            <Link to="/signup" className="font-medium hover:underline transition-colors text-[#3c323e]">
               {t("links.signUp")}
             </Link>
           </span>
@@ -131,10 +131,10 @@ export const SignIn = () => {
           <div className="w-full max-w-sm">
             {/* Heading */}
             <div className="mb-8">
-              <h1 className="text-2xl font-semibold mb-1.5" style={{ color: '#3c323e' }}>
+              <h1 className="text-2xl font-semibold mb-1.5 text-[#3c323e]">
                 {t("meta.heading")}
               </h1>
-              <p className="text-sm" style={{ color: '#655d67' }}>
+              <p className="text-sm text-[#655d67]">
                 {t("meta.subheading")}
               </p>
             </div>
@@ -149,7 +149,7 @@ export const SignIn = () => {
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="email" className="text-xs font-medium block mb-1.5" style={{ color: '#4c414e' }}>
+                <Label htmlFor="email" className="text-xs font-medium block mb-1.5 text-[#4c414e]">
                   {t("form.fields.email.label")}
                 </Label>
                 <Input
@@ -163,19 +163,18 @@ export const SignIn = () => {
                   className={errors.email ? "border-[#ce5d55] focus-visible:border-[#ce5d55]" : ""}
                 />
                 {errors.email && (
-                  <p className="text-xs mt-1" style={{ color: '#ce5d55' }}>{errors.email}</p>
+                  <p className="text-xs mt-1 text-[#ce5d55]">{errors.email}</p>
                 )}
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <Label htmlFor="password" className="text-xs font-medium" style={{ color: '#4c414e' }}>
+                  <Label htmlFor="password" className="text-xs font-medium text-[#4c414e]">
                     {t("form.fields.password.label")}
                   </Label>
                   <Link
                     to="/forgot-password"
-                    className="text-xs transition-colors hover:text-[#3c323e]"
-                    style={{ color: '#655d67' }}
+                    className="text-xs transition-colors hover:text-[#3c323e] text-[#655d67]"
                   >
                     {t("links.forgotPassword")}
                   </Link>
@@ -191,7 +190,7 @@ export const SignIn = () => {
                   className={errors.password ? "border-[#ce5d55] focus-visible:border-[#ce5d55]" : ""}
                 />
                 {errors.password && (
-                  <p className="text-xs mt-1" style={{ color: '#ce5d55' }}>{errors.password}</p>
+                  <p className="text-xs mt-1 text-[#ce5d55]">{errors.password}</p>
                 )}
               </div>
 
@@ -213,9 +212,9 @@ export const SignIn = () => {
             </form>
 
             {/* Sign up link (mobile only) */}
-            <p className="lg:hidden text-xs text-center mt-6" style={{ color: '#655d67' }}>
+            <p className="lg:hidden text-xs text-center mt-6 text-[#655d67]">
               {t("links.signUpPrompt")}{" "}
-              <Link to="/signup" className="font-medium" style={{ color: '#3c323e' }}>
+              <Link to="/signup" className="font-medium text-[#3c323e]">
                 {t("links.signUp")}
               </Link>
             </p>

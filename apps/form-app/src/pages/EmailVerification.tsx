@@ -136,20 +136,20 @@ export const EmailVerification = () => {
         </div>
         <div className="space-y-3">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
-            <Mail className="w-6 h-6" style={{ color: 'rgba(255,255,255,0.70)' }} />
+            <Mail className="w-6 h-6 text-[rgba(255,255,255,0.70)]" />
           </div>
           <h2 className="text-white text-3xl font-light leading-tight">{t('hero.tagline')}</h2>
-          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>{t('hero.attribution')}</p>
+          <p className="text-sm text-[rgba(255,255,255,0.55)]">{t('hero.attribution')}</p>
         </div>
-        <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>© {new Date().getFullYear()} Dculus Forms</p>
+        <p className="text-xs text-[rgba(255,255,255,0.35)]">© {new Date().getFullYear()} Dculus Forms</p>
       </div>
 
       {/* Right white panel */}
       <div className="flex-1 flex flex-col overflow-y-auto bg-white">
         <div className="flex items-center justify-end px-8 py-5" style={{ borderBottom: '1px solid rgba(81,76,84,0.08)' }}>
-          <span className="text-sm" style={{ color: '#655d67' }}>
+          <span className="text-sm text-[#655d67]">
             {fromSignIn ? t('links.backToSignIn') : t('links.backToSignUp')}{' '}
-            <Link to={fromSignIn ? '/signin' : '/signup'} className="font-medium" style={{ color: '#3c323e' }}>
+            <Link to={fromSignIn ? '/signin' : '/signup'} className="font-medium text-[#3c323e]">
               {fromSignIn ? t('links.signIn') : t('links.signUp')}
             </Link>
           </span>
@@ -167,13 +167,13 @@ export const EmailVerification = () => {
             </Button>
 
             <div className="mb-7">
-              <h1 className="text-2xl font-semibold mb-1.5" style={{ color: '#3c323e' }}>{t('meta.heading')}</h1>
-              <p className="text-sm" style={{ color: '#655d67' }}>{t('meta.subheading', { values: { email } })}</p>
+              <h1 className="text-2xl font-semibold mb-1.5 text-[#3c323e]">{t('meta.heading')}</h1>
+              <p className="text-sm text-[#655d67]">{t('meta.subheading', { values: { email } })}</p>
             </div>
 
             <form onSubmit={handleVerifyOTP} className="space-y-5">
               <div>
-                <Label className="text-xs font-medium block mb-3 text-center" style={{ color: '#4c414e' }}>
+                <Label className="text-xs font-medium block mb-3 text-center text-[#4c414e]">
                   {t('form.otpLabel')}
                 </Label>
                 <OTPInput
@@ -183,13 +183,13 @@ export const EmailVerification = () => {
                   hasError={!!errors.otp}
                 />
                 {errors.otp && (
-                  <p className="text-xs mt-2 text-center" style={{ color: '#ce5d55' }}>{errors.otp}</p>
+                  <p className="text-xs mt-2 text-center text-[#ce5d55]">{errors.otp}</p>
                 )}
               </div>
 
               <div className="text-center">
                 {countdown > 0 ? (
-                  <span className="text-xs flex items-center justify-center gap-1.5" style={{ color: '#655d67' }}>
+                  <span className="text-xs flex items-center justify-center gap-1.5 text-[#655d67]">
                     <Timer className="w-3.5 h-3.5" />
                     {t('form.countdown', { values: { seconds: countdown } })}
                   </span>
@@ -200,8 +200,7 @@ export const EmailVerification = () => {
                     size="sm"
                     onClick={handleResendOTP}
                     disabled={isLoading}
-                    className="text-xs font-medium h-7 px-2"
-                    style={{ color: '#3c323e' }}
+                    className="text-xs font-medium h-7 px-2 text-[#3c323e]"
                   >
                     {t('form.resend')}
                   </Button>

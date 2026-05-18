@@ -58,8 +58,8 @@ export default function TemplatesPage() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-64 text-center">
-        <h2 className="text-sm font-semibold mb-1" style={{ color: '#3c323e' }}>Unable to load templates</h2>
-        <p className="text-xs mb-3" style={{ color: '#655d67' }}>{error.message}</p>
+        <h2 className="text-sm font-semibold mb-1 text-[#3c323e]">Unable to load templates</h2>
+        <p className="text-xs mb-3 text-[#655d67]">{error.message}</p>
         <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={() => refetch()}>Try again</Button>
       </div>
     );
@@ -70,8 +70,8 @@ export default function TemplatesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold" style={{ color: '#3c323e' }}>{t('pageTitle', { defaultValue: 'Templates' })}</h1>
-          <p className="text-xs mt-0.5" style={{ color: '#655d67' }}>{t('pageSubtitle', { defaultValue: 'Manage form templates' })}</p>
+          <h1 className="text-lg font-semibold text-[#3c323e]">{t('pageTitle', { defaultValue: 'Templates' })}</h1>
+          <p className="text-xs mt-0.5 text-[#655d67]">{t('pageSubtitle', { defaultValue: 'Manage form templates' })}</p>
         </div>
         <Button onClick={handleCreate} size="sm" className="gap-1.5">
           <Plus className="h-3.5 w-3.5" />
@@ -86,10 +86,10 @@ export default function TemplatesPage() {
         ) : templates.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: '#f7f7f8' }}>
-              <FileText className="h-6 w-6" style={{ color: '#dedcde' }} />
+              <FileText className="h-6 w-6 text-[#dedcde]" />
             </div>
-            <p className="text-sm font-medium mb-1" style={{ color: '#3c323e' }}>No templates yet</p>
-            <p className="text-xs mb-5" style={{ color: '#655d67' }}>{t('emptyState.description', { defaultValue: 'Create your first template to get started' })}</p>
+            <p className="text-sm font-medium mb-1 text-[#3c323e]">No templates yet</p>
+            <p className="text-xs mb-5 text-[#655d67]">{t('emptyState.description', { defaultValue: 'Create your first template to get started' })}</p>
             <Button onClick={handleCreate} size="sm" className="gap-1.5">
               <Plus className="h-3.5 w-3.5" />
               {t('createTemplate', { defaultValue: 'Create Template' })}
@@ -115,9 +115,9 @@ export default function TemplatesPage() {
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2.5">
                         <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#f8cdd8' }}>
-                          <FileText className="h-3.5 w-3.5" style={{ color: '#3c323e' }} />
+                          <FileText className="h-3.5 w-3.5 text-[#3c323e]" />
                         </div>
-                        <span className="text-sm font-medium" style={{ color: '#3c323e' }}>{template.name}</span>
+                        <span className="text-sm font-medium text-[#3c323e]">{template.name}</span>
                       </div>
                     </td>
                     <td className="px-5 py-3.5">
@@ -126,7 +126,7 @@ export default function TemplatesPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3.5 max-w-xs">
-                      <p className="text-xs truncate" style={{ color: '#655d67' }}>{template.description || '—'}</p>
+                      <p className="text-xs truncate text-[#655d67]">{template.description || '—'}</p>
                     </td>
                     <td className="px-5 py-3.5">
                       <span
@@ -139,7 +139,7 @@ export default function TemplatesPage() {
                         {template.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 text-xs" style={{ color: '#655d67' }}>
+                    <td className="px-5 py-3.5 text-xs text-[#655d67]">
                       {new Date(template.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-5 py-3.5">

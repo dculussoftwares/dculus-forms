@@ -175,7 +175,7 @@ export const PluginCard: React.FC<PluginCardProps> = ({
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
-            <span className="text-sm font-medium truncate" style={{ color: '#3c323e' }}>{plugin.name}</span>
+            <span className="text-sm font-medium truncate text-[#3c323e]">{plugin.name}</span>
             <span
               className="px-2 py-0.5 rounded-full text-[10px] font-medium"
               style={plugin.enabled
@@ -186,7 +186,7 @@ export const PluginCard: React.FC<PluginCardProps> = ({
               {plugin.enabled ? t('status.enabled') : t('status.disabled')}
             </span>
           </div>
-          <p className="text-xs" style={{ color: '#655d67' }}>
+          <p className="text-xs text-[#655d67]">
             {getPluginTypeLabel()} · {plugin.events.length} {t('eventsCount', { values: { count: plugin.events.length } })}
           </p>
           {/* Event badges */}
@@ -201,7 +201,7 @@ export const PluginCard: React.FC<PluginCardProps> = ({
           )}
           {/* Webhook URL */}
           {plugin.type === 'webhook' && plugin.config?.url && (
-            <p className="text-[10px] font-mono mt-1.5 truncate max-w-xs" style={{ color: '#655d67' }}>{plugin.config.url}</p>
+            <p className="text-[10px] font-mono mt-1.5 truncate max-w-xs text-[#655d67]">{plugin.config.url}</p>
           )}
         </div>
 

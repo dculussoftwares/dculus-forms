@@ -37,11 +37,11 @@ interface PercentileCardProps {
 const PercentileCard: React.FC<PercentileCardProps> = ({ label, value, description, color, bgColor }) => (
   <div className="rounded-xl p-4" style={{ backgroundColor: bgColor, border: '1px solid rgba(81,76,84,0.08)' }}>
     <div className="flex items-center justify-between mb-2">
-      <p className="text-xs font-medium" style={{ color: '#655d67' }}>{label}</p>
+      <p className="text-xs font-medium text-[#655d67]">{label}</p>
       <Clock className="h-4 w-4 opacity-50" style={{ color }} />
     </div>
     <p className="text-xl font-light" style={{ color }}>{formatCompletionTime(value)}</p>
-    <p className="text-[10px] mt-1.5" style={{ color: '#655d67' }}>{description}</p>
+    <p className="text-[10px] mt-1.5 text-[#655d67]">{description}</p>
   </div>
 );
 
@@ -76,7 +76,7 @@ export const CompletionTimePercentiles: React.FC<CompletionTimePercentilesProps>
   if (!data && !averageTime) {
     return (
       <div className="rounded-xl p-5 bg-white" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
-        <div className="text-center py-8 text-xs" style={{ color: '#655d67' }}>{t('noData')}</div>
+        <div className="text-center py-8 text-xs text-[#655d67]">{t('noData')}</div>
       </div>
     );
   }
@@ -93,8 +93,8 @@ export const CompletionTimePercentiles: React.FC<CompletionTimePercentilesProps>
   return (
     <div className="rounded-xl p-5 bg-white" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
       <div className="flex items-center gap-1.5 mb-4">
-        <TrendingUp className="h-4 w-4" style={{ color: '#655d67' }} />
-        <span className="text-sm font-medium" style={{ color: '#3c323e' }}>{t('title')}</span>
+        <TrendingUp className="h-4 w-4 text-[#655d67]" />
+        <span className="text-sm font-medium text-[#3c323e]">{t('title')}</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
@@ -104,8 +104,8 @@ export const CompletionTimePercentiles: React.FC<CompletionTimePercentilesProps>
       {/* Insights */}
       {(averageTime || data) && (
         <div className="mt-4 p-4 rounded-xl" style={{ backgroundColor: '#f7f7f8' }}>
-          <h4 className="text-xs font-medium mb-2" style={{ color: '#3c323e' }}>{t('insights.title')}</h4>
-          <div className="text-xs space-y-1" style={{ color: '#655d67' }}>
+          <h4 className="text-xs font-medium mb-2 text-[#3c323e]">{t('insights.title')}</h4>
+          <div className="text-xs space-y-1 text-[#655d67]">
             {averageTime && data?.p50 && (
               <p>• {t('insights.medianVsAverage', { values: { median: formatCompletionTime(data.p50), comparison: averageTime > data.p50 ? t('insights.shorter') : t('insights.longer'), average: formatCompletionTime(averageTime) } })}</p>
             )}

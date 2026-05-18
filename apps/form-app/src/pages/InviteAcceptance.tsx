@@ -95,7 +95,7 @@ const InviteAcceptance: React.FC = () => {
         <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#3c323e' }}>
           <FileText className="w-4 h-4 text-white" />
         </div>
-        <span className="text-base font-semibold" style={{ color: '#3c323e' }}>Dculus Forms</span>
+        <span className="text-base font-semibold text-[#3c323e]">Dculus Forms</span>
       </div>
       {children}
     </div>
@@ -121,10 +121,10 @@ const InviteAcceptance: React.FC = () => {
         <InviteCard>
           <div className="text-center mb-5">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}>
-              <AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />
+              <AlertCircle className="h-6 w-6 text-[#ce5d55]" />
             </div>
-            <h1 className="text-base font-semibold mb-1" style={{ color: '#3c323e' }}>{t('errors.invalid.title')}</h1>
-            <p className="text-xs" style={{ color: '#655d67' }}>{invitationError?.message || t('errors.invalid.description')}</p>
+            <h1 className="text-base font-semibold mb-1 text-[#3c323e]">{t('errors.invalid.title')}</h1>
+            <p className="text-xs text-[#655d67]">{invitationError?.message || t('errors.invalid.description')}</p>
           </div>
           <PrimaryBtn onClick={() => navigate('/signin')}>{t('buttons.goToSignIn')}</PrimaryBtn>
         </InviteCard>
@@ -140,10 +140,10 @@ const InviteAcceptance: React.FC = () => {
         <InviteCard>
           <div className="text-center mb-5">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}>
-              <AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />
+              <AlertCircle className="h-6 w-6 text-[#ce5d55]" />
             </div>
-            <h1 className="text-base font-semibold mb-1" style={{ color: '#3c323e' }}>{t('errors.expired.title')}</h1>
-            <p className="text-xs" style={{ color: '#655d67' }}>
+            <h1 className="text-base font-semibold mb-1 text-[#3c323e]">{t('errors.expired.title')}</h1>
+            <p className="text-xs text-[#655d67]">
               {t('errors.expired.description', { values: { timeAgo, inviter: invitation.inviter?.name ?? t('fallbacks.inviter') } })}
             </p>
           </div>
@@ -163,12 +163,12 @@ const InviteAcceptance: React.FC = () => {
         <InviteCard maxW="max-w-lg">
           <div className="text-center mb-6">
             <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: '#ddd6fa' }}>
-              <Users className="h-7 w-7" style={{ color: '#5c2e6b' }} />
+              <Users className="h-7 w-7 text-[#5c2e6b]" />
             </div>
-            <h1 className="text-base font-semibold mb-1" style={{ color: '#3c323e' }}>
+            <h1 className="text-base font-semibold mb-1 text-[#3c323e]">
               {orgName ? t('guestView.title', { values: { organization: orgName } }) : t('guestView.titleFallback')}
             </h1>
-            <p className="text-xs" style={{ color: '#655d67' }}>
+            <p className="text-xs text-[#655d67]">
               {inviterName ? t('guestView.description', { values: { inviter: inviterName } }) : t('guestView.descriptionFallback')}
             </p>
           </div>
@@ -176,11 +176,11 @@ const InviteAcceptance: React.FC = () => {
           {/* Invitation detail pill */}
           <div className="flex items-center gap-3 rounded-xl p-4 mb-5" style={{ backgroundColor: '#f7f7f8', border: '1px solid rgba(81,76,84,0.08)' }}>
             <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#f8cdd8' }}>
-              <Mail className="h-4 w-4" style={{ color: '#3c323e' }} />
+              <Mail className="h-4 w-4 text-[#3c323e]" />
             </div>
             <div>
-              <p className="text-xs font-medium" style={{ color: '#3c323e' }}>{t('guestView.details.title')}</p>
-              <p className="text-[11px] mt-0.5" style={{ color: '#655d67' }}>{invitation.email} · {roleLabel}</p>
+              <p className="text-xs font-medium text-[#3c323e]">{t('guestView.details.title')}</p>
+              <p className="text-[11px] mt-0.5 text-[#655d67]">{invitation.email} · {roleLabel}</p>
             </div>
           </div>
 
@@ -192,7 +192,7 @@ const InviteAcceptance: React.FC = () => {
               {t('buttons.alreadyHaveAccount')}
             </GhostBtn>
           </div>
-          <p className="text-[10px] text-center mt-4" style={{ color: '#655d67' }}>{t('guestView.footer')}</p>
+          <p className="text-[10px] text-center mt-4 text-[#655d67]">{t('guestView.footer')}</p>
         </InviteCard>
       </Page>
     );
@@ -205,10 +205,10 @@ const InviteAcceptance: React.FC = () => {
         <InviteCard>
           <div className="text-center mb-5">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}>
-              <AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />
+              <AlertCircle className="h-6 w-6 text-[#ce5d55]" />
             </div>
-            <h1 className="text-base font-semibold mb-1" style={{ color: '#3c323e' }}>{t('errors.mismatch.title')}</h1>
-            <p className="text-xs" style={{ color: '#655d67' }}>
+            <h1 className="text-base font-semibold mb-1 text-[#3c323e]">{t('errors.mismatch.title')}</h1>
+            <p className="text-xs text-[#655d67]">
               {t('errors.mismatch.description', { values: { invitedEmail: invitation.email, currentEmail: user.email ?? '' } })}
             </p>
           </div>
@@ -230,12 +230,12 @@ const InviteAcceptance: React.FC = () => {
       <InviteCard maxW="max-w-lg">
         <div className="text-center mb-6">
           <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: '#f4faf8' }}>
-            <CheckCircle className="h-7 w-7" style={{ color: '#177767' }} />
+            <CheckCircle className="h-7 w-7 text-[#177767]" />
           </div>
-          <h1 className="text-base font-semibold mb-1" style={{ color: '#3c323e' }}>
+          <h1 className="text-base font-semibold mb-1 text-[#3c323e]">
             {orgName ? t('authenticatedView.title', { values: { organization: orgName } }) : t('authenticatedView.titleFallback')}
           </h1>
-          <p className="text-xs" style={{ color: '#655d67' }}>
+          <p className="text-xs text-[#655d67]">
             {inviterName ? t('authenticatedView.description', { values: { inviter: inviterName } }) : t('authenticatedView.descriptionFallback')}
           </p>
         </div>
@@ -248,8 +248,8 @@ const InviteAcceptance: React.FC = () => {
             [t('authenticatedView.summary.invitedBy'), inviterName ?? t('fallbacks.inviterShort')],
           ].map(([label, value]) => (
             <div key={label} className="flex justify-between text-xs">
-              <span style={{ color: '#655d67' }}>{label}</span>
-              <span className="font-medium" style={{ color: '#3c323e' }}>{value}</span>
+              <span className="text-[#655d67]">{label}</span>
+              <span className="font-medium text-[#3c323e]">{value}</span>
             </div>
           ))}
         </div>
@@ -273,7 +273,7 @@ const InviteAcceptance: React.FC = () => {
           <GhostBtn onClick={() => navigate('/dashboard')}>{t('buttons.maybeLater')}</GhostBtn>
         </div>
 
-        <p className="text-[10px] text-center mt-4" style={{ color: '#655d67' }}>{t('authenticatedView.footer')}</p>
+        <p className="text-[10px] text-center mt-4 text-[#655d67]">{t('authenticatedView.footer')}</p>
       </InviteCard>
     </Page>
   );

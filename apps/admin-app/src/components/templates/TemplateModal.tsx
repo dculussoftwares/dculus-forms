@@ -331,7 +331,7 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
                 <div className="space-y-4">
                   {/* Template Name */}
                   <div>
-                    <Label htmlFor="name" className="block text-sm font-medium mb-1" style={{ color: '#4c414e' }}>
+                    <Label htmlFor="name" className="block text-sm font-medium mb-1 text-[#4c414e]">
                       Template Name *
                     </Label>
                     <Input
@@ -344,13 +344,13 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
                       placeholder="Enter template name"
                     />
                     {errors.name && (
-                      <p className="mt-1 text-sm" style={{ color: '#ce5d55' }}>{errors.name}</p>
+                      <p className="mt-1 text-sm text-[#ce5d55]">{errors.name}</p>
                     )}
                   </div>
 
                   {/* Category */}
                   <div>
-                    <Label htmlFor="category" className="block text-sm font-medium mb-1" style={{ color: '#4c414e' }}>
+                    <Label htmlFor="category" className="block text-sm font-medium mb-1 text-[#4c414e]">
                       Category
                     </Label>
                     {isReadOnly ? (
@@ -379,7 +379,7 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
 
                   {/* Description */}
                   <div>
-                    <Label htmlFor="description" className="block text-sm font-medium mb-1" style={{ color: '#4c414e' }}>
+                    <Label htmlFor="description" className="block text-sm font-medium mb-1 text-[#4c414e]">
                       Description
                     </Label>
                     <Textarea
@@ -395,7 +395,7 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
                   {/* Status for view mode */}
                   {isReadOnly && template && (
                     <div>
-                      <Label className="block text-sm font-medium mb-1" style={{ color: '#4c414e' }}>
+                      <Label className="block text-sm font-medium mb-1 text-[#4c414e]">
                         Status
                       </Label>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -415,7 +415,7 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
                 <div className="space-y-4">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <Label htmlFor="formSchema" className="block text-sm font-medium" style={{ color: '#4c414e' }}>
+                      <Label htmlFor="formSchema" className="block text-sm font-medium text-[#4c414e]">
                         Form Schema (JSON) {!isReadOnly && '*'}
                       </Label>
                       {!isReadOnly && (
@@ -451,9 +451,9 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
                       placeholder={isReadOnly ? '' : "Enter form schema JSON..."}
                     />
                     {errors.formSchema && (
-                      <p className="mt-1 text-sm" style={{ color: '#ce5d55' }}>{errors.formSchema}</p>
+                      <p className="mt-1 text-sm text-[#ce5d55]">{errors.formSchema}</p>
                     )}
-                    <p className="mt-1 text-xs" style={{ color: '#655d67' }}>
+                    <p className="mt-1 text-xs text-[#655d67]">
                       {isReadOnly ? 'View the pages and fields structure of this template.' : 'Define the pages and fields structure for your template form.'}
                     </p>
                   </div>
@@ -465,7 +465,7 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
                 <div className="space-y-4">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <Label htmlFor="layout" className="block text-sm font-medium" style={{ color: '#4c414e' }}>
+                      <Label htmlFor="layout" className="block text-sm font-medium text-[#4c414e]">
                         Layout Configuration (JSON) {!isReadOnly && '*'}
                       </Label>
                       {!isReadOnly && (
@@ -501,9 +501,9 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
                       placeholder={isReadOnly ? '' : "Enter layout configuration JSON..."}
                     />
                     {errors.layout && (
-                      <p className="mt-1 text-sm" style={{ color: '#ce5d55' }}>{errors.layout}</p>
+                      <p className="mt-1 text-sm text-[#ce5d55]">{errors.layout}</p>
                     )}
-                    <p className="mt-1 text-xs" style={{ color: '#655d67' }}>
+                    <p className="mt-1 text-xs text-[#655d67]">
                       {isReadOnly ? 'View the theme, spacing, colors, and layout settings of this template.' : 'Configure theme, spacing, colors, and layout settings for your template.'}
                     </p>
                   </div>

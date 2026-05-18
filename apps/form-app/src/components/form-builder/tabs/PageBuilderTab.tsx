@@ -276,7 +276,7 @@ const RightSidebar: React.FC<{
           /* Pages Tab Content */
           <div className="p-4">
             <div className="mb-4 flex items-center justify-between">
-              <div className="text-sm" style={{ color: '#655d67' }}>
+              <div className="text-sm text-[#655d67]">
                 {t('sidebar.pages.pageCount', {
                   values: { count: pages.length },
                 })}
@@ -316,7 +316,7 @@ const RightSidebar: React.FC<{
             </SortableContext>
 
             {pages.length === 0 && (
-              <div className="text-center py-8" style={{ color: '#655d67' }}>
+              <div className="text-center py-8 text-[#655d67]">
                 {t('sidebar.pages.noPages')}
                 {permissions.canAddPages() && (
                   <Button
@@ -471,7 +471,7 @@ const FieldCard: React.FC<{
 
           {/* Field info */}
           <div className="flex-1 min-w-0 max-w-[280px]">
-            <div className="text-sm font-medium truncate flex items-center gap-1" style={{ color: '#3c323e' }}>
+            <div className="text-sm font-medium truncate flex items-center gap-1 text-[#3c323e]">
               <span className="truncate">{label}</span>
               {/* Required indicator - red asterisk */}
               {'validation' in field &&
@@ -484,7 +484,7 @@ const FieldCard: React.FC<{
                   </span>
                 )}
             </div>
-            <div className="text-xs" style={{ color: '#655d67' }}>
+            <div className="text-xs text-[#655d67]">
               {typeConfig.label}
             </div>
           </div>
@@ -514,7 +514,7 @@ const FieldCard: React.FC<{
 
             {/* Field info */}
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium truncate flex items-center gap-1" style={{ color: '#3c323e' }}>
+              <div className="text-sm font-medium truncate flex items-center gap-1 text-[#3c323e]">
                 <span className="truncate">{label}</span>
                 {/* Required indicator - red asterisk */}
                 {'validation' in field &&

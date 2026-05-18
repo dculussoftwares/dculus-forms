@@ -40,7 +40,7 @@ const ResponsesIndividual: React.FC = () => {
       <MainLayout title={t('layout.title')} breadcrumbs={breadcrumbs}>
         <EmptyState
           variant="error"
-          icon={<AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />}
+          icon={<AlertCircle className="h-6 w-6 text-[#ce5d55]" />}
           title={t('errors.formNotFound.title')}
           description={t('errors.formNotFound.description')}
         />
@@ -79,17 +79,17 @@ const ResponsesIndividual: React.FC = () => {
           {/* Header */}
           <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid rgba(81,76,84,0.08)' }}>
             <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#f8cdd8' }}>
-              <UserCheck className="h-4 w-4" style={{ color: '#3c323e' }} />
+              <UserCheck className="h-4 w-4 text-[#3c323e]" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold" style={{ color: '#3c323e' }}>{t('content.individualResponseDetails.title')}</h2>
-              <p className="text-xs" style={{ color: '#655d67' }}>{t('content.individualResponseDetails.description')}</p>
+              <h2 className="text-sm font-semibold text-[#3c323e]">{t('content.individualResponseDetails.title')}</h2>
+              <p className="text-xs text-[#655d67]">{t('content.individualResponseDetails.description')}</p>
             </div>
           </div>
 
           {mockResponses.length === 0 ? (
             <EmptyState
-              icon={<UserCheck className="h-6 w-6" style={{ color: '#dedcde' }} />}
+              icon={<UserCheck className="h-6 w-6 text-[#dedcde]" />}
               title={t('content.emptyState.title')}
               description={t('content.emptyState.description')}
             />
@@ -100,10 +100,10 @@ const ResponsesIndividual: React.FC = () => {
                   {/* Response header */}
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <p className="text-sm font-medium" style={{ color: '#3c323e' }}>
+                      <p className="text-sm font-medium text-[#3c323e]">
                         {t('content.response.responseNumber', { values: { id: response.id } })}
                       </p>
-                      <p className="text-xs mt-0.5" style={{ color: '#655d67' }}>
+                      <p className="text-xs mt-0.5 text-[#655d67]">
                         {t('content.response.submittedOn', { values: { date: formatDate(response.submittedAt) } })}
                       </p>
                     </div>
@@ -127,16 +127,16 @@ const ResponsesIndividual: React.FC = () => {
                   {/* Response fields */}
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                      <p className="text-xs font-medium mb-1" style={{ color: '#655d67' }}>{t('content.fields.name')}</p>
-                      <p className="text-sm" style={{ color: '#3c323e' }}>{response.data.name}</p>
+                      <p className="text-xs font-medium mb-1 text-[#655d67]">{t('content.fields.name')}</p>
+                      <p className="text-sm text-[#3c323e]">{response.data.name}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium mb-1" style={{ color: '#655d67' }}>{t('content.fields.email')}</p>
-                      <p className="text-sm" style={{ color: '#3c323e' }}>{response.data.email}</p>
+                      <p className="text-xs font-medium mb-1 text-[#655d67]">{t('content.fields.email')}</p>
+                      <p className="text-sm text-[#3c323e]">{response.data.email}</p>
                     </div>
                   </div>
                   <div className="mt-3">
-                    <p className="text-xs font-medium mb-1.5" style={{ color: '#655d67' }}>{t('content.fields.message')}</p>
+                    <p className="text-xs font-medium mb-1.5 text-[#655d67]">{t('content.fields.message')}</p>
                     <p className="text-sm p-3 rounded-lg" style={{ backgroundColor: '#f7f7f8', color: '#4c414e' }}>
                       {response.data.message}
                     </p>

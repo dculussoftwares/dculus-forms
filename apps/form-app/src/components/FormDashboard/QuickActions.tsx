@@ -43,15 +43,14 @@ const ActionCard: React.FC<ActionCardProps> = ({
 
       <div className="flex-1 min-w-0 w-full">
         <div className="flex items-center justify-center gap-1">
-          <span className="text-sm font-medium" style={{ color: '#3c323e' }}>
+          <span className="text-sm font-medium text-[#3c323e]">
             {title}
           </span>
           <ArrowRight
-            className="w-3.5 h-3.5 opacity-0 -translate-x-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0"
-            style={{ color: '#655d67' }}
+            className="w-3.5 h-3.5 opacity-0 -translate-x-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0 text-[#655d67]"
           />
         </div>
-        <p className="text-xs mt-0.5 leading-snug" style={{ color: '#655d67' }}>
+        <p className="text-xs mt-0.5 leading-snug text-[#655d67]">
           {description}
         </p>
       </div>
@@ -114,10 +113,10 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId }) => {
   return (
     <div className="space-y-3">
       <div>
-        <h2 className="text-sm font-semibold" style={{ color: '#3c323e' }}>
+        <h2 className="text-sm font-semibold text-[#3c323e]">
           {t('quickActions.heading')}
         </h2>
-        <p className="text-xs mt-0.5" style={{ color: '#655d67' }}>
+        <p className="text-xs mt-0.5 text-[#655d67]">
           {t('quickActions.description')}
         </p>
       </div>

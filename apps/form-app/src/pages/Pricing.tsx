@@ -139,10 +139,10 @@ export const Pricing = () => {
     <div className="min-h-screen" style={{ backgroundColor: '#f7f7f8' }}>
       {/* ── Hero ── */}
       <div className="pt-14 pb-10 px-6 text-center">
-        <h1 className="text-4xl font-light mb-3 tracking-tight" style={{ color: '#3c323e' }}>
+        <h1 className="text-4xl font-light mb-3 tracking-tight text-[#3c323e]">
           {t('hero.title')}
         </h1>
-        <p className="text-base mb-10" style={{ color: '#655d67' }}>
+        <p className="text-base mb-10 text-[#655d67]">
           {t('hero.subtitle')}
         </p>
 
@@ -184,7 +184,7 @@ export const Pricing = () => {
         {loading ? (
           <div className="text-center py-14">
             <div className="w-8 h-8 rounded-full border-2 animate-spin mx-auto mb-3" style={{ borderColor: 'rgba(81,76,84,0.15)', borderTopColor: '#3c323e' }} />
-            <p className="text-xs" style={{ color: '#655d67' }}>{t('loading.plans')}</p>
+            <p className="text-xs text-[#655d67]">{t('loading.plans')}</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-3 gap-5">
@@ -218,38 +218,38 @@ export const Pricing = () => {
                     <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3" style={{ backgroundColor: config.iconBg }}>
                       <Icon className="h-6 w-6" style={{ color: config.iconColor }} />
                     </div>
-                    <h3 className="text-lg font-semibold" style={{ color: '#3c323e' }}>{plan.name}</h3>
-                    <p className="text-xs mt-0.5" style={{ color: '#655d67' }}>{config.tagline}</p>
+                    <h3 className="text-lg font-semibold text-[#3c323e]">{plan.name}</h3>
+                    <p className="text-xs mt-0.5 text-[#655d67]">{config.tagline}</p>
                   </div>
 
                   {/* Price — Typeform light weight */}
                   {plan.id === 'free' ? (
                     <div className="text-center mb-7">
-                      <div className="text-4xl font-light" style={{ color: '#3c323e' }}>{t('plans.free.price')}</div>
-                      <div className="text-xs mt-1" style={{ color: '#655d67' }}>{t('plans.free.forever')}</div>
+                      <div className="text-4xl font-light text-[#3c323e]">{t('plans.free.price')}</div>
+                      <div className="text-xs mt-1 text-[#655d67]">{t('plans.free.forever')}</div>
                     </div>
                   ) : price ? (
                     <div className="text-center mb-7">
                       <div className="flex items-baseline justify-center gap-1">
-                        <span className="text-4xl font-light" style={{ color: '#3c323e' }}>{formatPrice(price.amount, currency)}</span>
-                        <span className="text-xs" style={{ color: '#655d67' }}>{billingCycle === 'monthly' ? t('billing.perMonth') : t('billing.perYear')}</span>
+                        <span className="text-4xl font-light text-[#3c323e]">{formatPrice(price.amount, currency)}</span>
+                        <span className="text-xs text-[#655d67]">{billingCycle === 'monthly' ? t('billing.perMonth') : t('billing.perYear')}</span>
                       </div>
                       {billingCycle === 'yearly' && (
-                        <div className="text-xs mt-1" style={{ color: '#655d67' }}>
+                        <div className="text-xs mt-1 text-[#655d67]">
                           {currency === 'USD' ? '$' : '₹'}{getMonthlyEquivalent(price.amount / 100, 'year')}{t('billing.billedAnnually')}
                         </div>
                       )}
                     </div>
                   ) : (
-                    <div className="text-center mb-7 text-sm" style={{ color: '#655d67' }}>{t('plans.priceNotAvailable')}</div>
+                    <div className="text-center mb-7 text-sm text-[#655d67]">{t('plans.priceNotAvailable')}</div>
                   )}
 
                   {/* Features — Typeform simple ticks */}
                   <div className="space-y-2.5 mb-7 flex-1">
                     {config.features.map((feature, i) => (
                       <div key={i} className="flex items-start gap-2.5">
-                        <Check className="h-4 w-4 shrink-0 mt-0.5" style={{ color: '#177767' }} />
-                        <span className="text-xs" style={{ color: '#4c414e' }}>{feature}</span>
+                        <Check className="h-4 w-4 shrink-0 mt-0.5 text-[#177767]" />
+                        <span className="text-xs text-[#4c414e]">{feature}</span>
                       </div>
                     ))}
                   </div>
@@ -272,7 +272,7 @@ export const Pricing = () => {
 
       {/* ── FAQ ── */}
       <div className="px-6 pb-16 max-w-3xl mx-auto">
-        <h2 className="text-2xl font-light text-center mb-7" style={{ color: '#3c323e' }}>{t('faq.title')}</h2>
+        <h2 className="text-2xl font-light text-center mb-7 text-[#3c323e]">{t('faq.title')}</h2>
         <div className="space-y-3">
           {[
             { question: t('faq.items.changePlans.question'), answer: t('faq.items.changePlans.answer') },
@@ -282,10 +282,10 @@ export const Pricing = () => {
           ].map((faq, i) => (
             <div key={i} className="rounded-xl bg-white p-5" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
               <div className="flex items-start gap-3">
-                <HelpCircle className="h-4 w-4 shrink-0 mt-0.5" style={{ color: '#655d67' }} />
+                <HelpCircle className="h-4 w-4 shrink-0 mt-0.5 text-[#655d67]" />
                 <div>
-                  <h3 className="text-sm font-medium mb-1" style={{ color: '#3c323e' }}>{faq.question}</h3>
-                  <p className="text-xs leading-relaxed" style={{ color: '#655d67' }}>{faq.answer}</p>
+                  <h3 className="text-sm font-medium mb-1 text-[#3c323e]">{faq.question}</h3>
+                  <p className="text-xs leading-relaxed text-[#655d67]">{faq.answer}</p>
                 </div>
               </div>
             </div>
@@ -297,7 +297,7 @@ export const Pricing = () => {
       <div className="px-6 pb-16 max-w-3xl mx-auto">
         <div className="rounded-xl p-10 text-center text-white" style={{ backgroundColor: '#2a222b' }}>
           <h2 className="text-2xl font-light mb-3">{t('cta.title')}</h2>
-          <p className="text-sm mb-7" style={{ color: 'rgba(255,255,255,0.70)' }}>{t('cta.subtitle')}</p>
+          <p className="text-sm mb-7 text-[rgba(255,255,255,0.70)]">{t('cta.subtitle')}</p>
           <Button
             onClick={() => (user ? navigate('/dashboard') : navigate('/signup'))}
             variant="outline"

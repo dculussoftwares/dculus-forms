@@ -121,7 +121,7 @@ const Responses: React.FC = () => {
       >
         <EmptyState
           variant="error"
-          icon={<AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />}
+          icon={<AlertCircle className="h-6 w-6 text-[#ce5d55]" />}
           title={formData?.form ? t('errors.loadingResponses') : t('errors.formNotFound')}
           description={formData?.form ? t('errors.loadingResponsesMessage') : t('errors.formNotFoundMessage')}
         />
@@ -157,7 +157,7 @@ const Responses: React.FC = () => {
 
           <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'rgba(81,76,84,0.12)' }} />
 
-          <h1 className="text-sm font-semibold truncate flex-1 min-w-0" style={{ color: '#3c323e' }}>
+          <h1 className="text-sm font-semibold truncate flex-1 min-w-0 text-[#3c323e]">
             {form.title}
           </h1>
 
@@ -183,7 +183,7 @@ const Responses: React.FC = () => {
           <EmptyState
             variant="error"
             className="flex-1"
-            icon={<AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />}
+            icon={<AlertCircle className="h-6 w-6 text-[#ce5d55]" />}
             title={t('errors.loadingResponses')}
             description={t('errors.loadingResponsesMessage')}
             action={

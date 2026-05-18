@@ -72,8 +72,7 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
         {/* Search — Typeform ghost input */}
         <div className="relative w-full sm:w-64 sm:max-w-xs min-w-0">
           <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none"
-            style={{ color: '#655d67' }}
+            className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none text-[#655d67]"
           />
           <Input
             type="text"
@@ -186,7 +185,7 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
               </div>
               <div className="overflow-y-auto flex-1 p-1.5">
                 {columns.length === 0 ? (
-                  <div className="text-center text-xs py-4" style={{ color: '#655d67' }}>
+                  <div className="text-center text-xs py-4 text-[#655d67]">
                     {t('toolbar.columns.noColumnsAvailable')}
                   </div>
                 ) : (
@@ -199,8 +198,7 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
                         <Label
                           key={column.id}
                           htmlFor={`col-${column.id}`}
-                          className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-colors font-normal hover:bg-[rgba(87,84,91,0.06)]"
-                          style={{ color: '#4c414e' }}
+                          className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-colors font-normal hover:bg-[rgba(87,84,91,0.06)] text-[#4c414e]"
                         >
                           <Checkbox
                             id={`col-${column.id}`}

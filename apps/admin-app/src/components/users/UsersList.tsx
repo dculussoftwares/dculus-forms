@@ -22,7 +22,7 @@ export const UsersList = ({ users }: UsersListProps) => {
   if (users.length === 0) {
     return (
       <EmptyState
-        icon={<Users className="h-6 w-6" style={{ color: '#655d67' }} />}
+        icon={<Users className="h-6 w-6 text-[#655d67]" />}
         title="No users found"
         description="Try adjusting your search criteria"
       />

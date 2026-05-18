@@ -208,7 +208,7 @@ function FormsListDashboard() {
           <div className="flex items-center gap-2 mb-4">
             {/* Search — ghost input matching Typeform */}
             <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 pointer-events-none" style={{ color: '#655d67' }} />
+              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 pointer-events-none text-[#655d67]" />
               <Input
                 type="text"
                 placeholder={t('search.placeholder')}
@@ -218,7 +218,7 @@ function FormsListDashboard() {
               />
               {isTyping && (
                 <div className="absolute right-9 top-1/2 -translate-y-1/2">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: '#655d67' }} />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-[#655d67]" />
                 </div>
               )}
               {searchTerm && (
@@ -269,7 +269,7 @@ function FormsListDashboard() {
             </div>
 
             <div className="flex items-center gap-2 pb-1">
-              <span className="text-xs" style={{ color: '#655d67' }}>{t('pageSize.label')}</span>
+              <span className="text-xs text-[#655d67]">{t('pageSize.label')}</span>
               <Select value={pageSize.toString()} onValueChange={handlePageSizeChange} disabled={formsLoading}>
                 <SelectTrigger className="w-16 h-8 text-xs">
                   <SelectValue />
@@ -300,14 +300,14 @@ function FormsListDashboard() {
         ) : formsError ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}>
-              <X className="w-5 h-5" style={{ color: '#ce5d55' }} />
+              <X className="w-5 h-5 text-[#ce5d55]" />
             </div>
-            <p className="font-medium text-sm" style={{ color: '#3c323e' }}>{t('error.title')}</p>
-            <p className="text-xs mt-1" style={{ color: '#655d67' }}>{t('error.description')}</p>
+            <p className="font-medium text-sm text-[#3c323e]">{t('error.title')}</p>
+            <p className="text-xs mt-1 text-[#655d67]">{t('error.description')}</p>
           </div>
         ) : currentTotalCount === 0 ? (
           <EmptyState
-            icon={<FileText className="w-6 h-6" style={{ color: '#655d67' }} />}
+            icon={<FileText className="w-6 h-6 text-[#655d67]" />}
             title={t('empty.title')}
             description={t('empty.description')}
             action={
@@ -319,7 +319,7 @@ function FormsListDashboard() {
           />
         ) : displayForms.forms.length === 0 && searchTerm ? (
           <EmptyState
-            icon={<Search className="w-6 h-6" style={{ color: '#655d67' }} />}
+            icon={<Search className="w-6 h-6 text-[#655d67]" />}
             title={t('searchEmpty.title')}
             description={t('searchEmpty.description', { values: { term: searchTerm } })}
             action={
@@ -334,7 +334,7 @@ function FormsListDashboard() {
             <div className="relative">
               {isPageChanging && (
                 <div className="absolute inset-0 bg-white/60 dark:bg-card/60 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
-                  <Loader2 className="h-6 w-6 animate-spin" style={{ color: '#3c323e' }} />
+                  <Loader2 className="h-6 w-6 animate-spin text-[#3c323e]" />
                 </div>
               )}
 
@@ -370,7 +370,7 @@ function FormsListDashboard() {
                     <>
                       <div className="w-px h-5 bg-[rgba(81,76,84,0.12)]" />
                       <div className="flex items-center gap-2">
-                        <span className="text-xs" style={{ color: '#655d67' }}>{t('pagination.goto')}</span>
+                        <span className="text-xs text-[#655d67]">{t('pagination.goto')}</span>
                         <Input
                           type="number"
                           min="1"
@@ -414,7 +414,7 @@ function TemplatesStrip() {
     return (
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold" style={{ color: '#3c323e' }}>Start from a template</h2>
+          <h2 className="text-sm font-semibold text-[#3c323e]">Start from a template</h2>
         </div>
         <div className="flex gap-3 overflow-hidden">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -435,7 +435,7 @@ function TemplatesStrip() {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold" style={{ color: '#3c323e' }}>Start from a template</h2>
+        <h2 className="text-sm font-semibold text-[#3c323e]">Start from a template</h2>
         <Button
           variant="ghost"
           size="sm"
@@ -465,7 +465,7 @@ function TemplatesStrip() {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: '#f7f7f8' }}>
-                    <FileText className="w-5 h-5" style={{ color: '#655d67' }} />
+                    <FileText className="w-5 h-5 text-[#655d67]" />
                   </div>
                 )}
                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
@@ -482,9 +482,9 @@ function TemplatesStrip() {
               </div>
 
               <div className="p-3">
-                <p className="text-xs font-medium line-clamp-1" style={{ color: '#3c323e' }}>{template.name}</p>
+                <p className="text-xs font-medium line-clamp-1 text-[#3c323e]">{template.name}</p>
                 {template.category && (
-                  <p className="text-xs mt-0.5 line-clamp-1" style={{ color: '#655d67' }}>{template.category}</p>
+                  <p className="text-xs mt-0.5 line-clamp-1 text-[#655d67]">{template.category}</p>
                 )}
               </div>
             </div>
@@ -576,7 +576,7 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
               className="w-12 h-12 rounded-xl flex items-center justify-center"
               style={{ backgroundColor: 'rgba(81,76,84,0.08)' }}
             >
-              <FileText className="w-6 h-6" style={{ color: '#655d67' }} />
+              <FileText className="w-6 h-6 text-[#655d67]" />
             </div>
           </div>
         )}
@@ -606,7 +606,7 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
       {/* Card body */}
       <CardContent className="p-4 space-y-2.5">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-medium text-sm leading-snug line-clamp-2 flex-1" style={{ color: '#3c323e' }}>
+          <h3 className="font-medium text-sm leading-snug line-clamp-2 flex-1 text-[#3c323e]">
             {form.title}
           </h3>
           <span
@@ -621,11 +621,11 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
         </div>
 
         {form.description && (
-          <p className="text-xs line-clamp-2" style={{ color: '#655d67' }}>{form.description}</p>
+          <p className="text-xs line-clamp-2 text-[#655d67]">{form.description}</p>
         )}
 
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 text-xs" style={{ color: '#655d67' }}>
+          <div className="flex items-center gap-3 text-xs text-[#655d67]">
             <span className="flex items-center gap-1">
               <Layers className="h-3 w-3" />
               {pageCountLabel}
@@ -650,8 +650,8 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
           className="pt-2 flex items-center justify-between"
           style={{ borderTop: '1px solid rgba(81,76,84,0.08)' }}
         >
-          <span className="text-xs" style={{ color: '#655d67' }}>{formattedCreatedAt}</span>
-          <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform duration-150" style={{ color: 'rgba(81,76,84,0.35)' }} />
+          <span className="text-xs text-[#655d67]">{formattedCreatedAt}</span>
+          <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform duration-150 text-[rgba(81,76,84,0.35)]" />
         </div>
       </CardContent>
     </div>

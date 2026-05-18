@@ -82,7 +82,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
       style={{ backgroundColor: 'white', border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}
     >
       <div className="flex items-start justify-between mb-3">
-        <p className="text-xs font-medium" style={{ color: '#655d67' }}>{title}</p>
+        <p className="text-xs font-medium text-[#655d67]">{title}</p>
         {/* Typeform field-icon style — small square with colored bg */}
         <div
           className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0"
@@ -93,12 +93,12 @@ const MetricCard: React.FC<MetricCardProps> = ({
       </div>
 
       {/* Typeform-style stat: light weight, large */}
-      <p className="text-2xl font-light tracking-tight mb-1" style={{ color: '#262627' }}>
+      <p className="text-2xl font-light tracking-tight mb-1 text-[#262627]">
         {displayValue}
       </p>
 
       <div className="flex items-center justify-between">
-        <p className="text-[11px]" style={{ color: '#655d67' }}>{subtitle}</p>
+        <p className="text-[11px] text-[#655d67]">{subtitle}</p>
         {trend && (
           <div className="flex items-center gap-0.5 text-[11px] font-medium" style={{ color: trend.isPositive ? '#177767' : '#ce5d55' }}>
             {trend.isPositive

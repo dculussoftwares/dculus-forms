@@ -188,7 +188,7 @@ const FormDashboard: React.FC = () => {
       >
         <EmptyState
           variant="error"
-          icon={<AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />}
+          icon={<AlertCircle className="h-6 w-6 text-[#ce5d55]" />}
           title={t('error.title')}
           description={t('error.description')}
         />
@@ -231,10 +231,10 @@ const FormDashboard: React.FC = () => {
           {/* Stats Section */}
           <div>
             <div className="mb-3">
-              <h2 className="text-sm font-semibold" style={{ color: '#3c323e' }}>
+              <h2 className="text-sm font-semibold text-[#3c323e]">
                 {t('overview.heading')}
               </h2>
-              <p className="text-xs mt-0.5" style={{ color: '#655d67' }}>
+              <p className="text-xs mt-0.5 text-[#655d67]">
                 {t('overview.description')}
               </p>
             </div>
@@ -282,7 +282,7 @@ const FormDashboard: React.FC = () => {
             </AlertDialogHeader>
             {isDuplicating && (
               <div className="space-y-2">
-                <div className="text-sm" style={{ color: '#655d67' }}>
+                <div className="text-sm text-[#655d67]">
                   {t('duplicateDialog.progressLabel')}
                 </div>
                 <Progress value={Math.min(duplicateProgress, 100)} />

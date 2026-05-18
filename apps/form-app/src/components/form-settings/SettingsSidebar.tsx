@@ -42,7 +42,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
       {sections.map(({ title, items }) => (
         <div key={title}>
           {/* Section label — Typeform "Account" style */}
-          <p className="text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: '#655d67' }}>
+          <p className="text-xs font-semibold uppercase tracking-wide mb-1.5 text-[#655d67]">
             {title}
           </p>
           <div className="space-y-0.5">

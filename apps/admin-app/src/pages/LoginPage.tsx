@@ -35,20 +35,20 @@ export default function LoginPage() {
         </div>
         <div className="space-y-3">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
-            <Shield className="w-6 h-6" style={{ color: 'rgba(255,255,255,0.70)' }} />
+            <Shield className="w-6 h-6 text-[rgba(255,255,255,0.70)]" />
           </div>
           <h2 className="text-white text-2xl font-light leading-snug">Dculus Forms<br />Administration</h2>
-          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>Restricted access — authorized personnel only</p>
+          <p className="text-sm text-[rgba(255,255,255,0.55)]">Restricted access — authorized personnel only</p>
         </div>
-        <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>© {new Date().getFullYear()} Dculus Forms</p>
+        <p className="text-xs text-[rgba(255,255,255,0.35)]">© {new Date().getFullYear()} Dculus Forms</p>
       </div>
 
       {/* Right white panel */}
       <div className="flex-1 flex items-center justify-center px-8 bg-white">
         <div className="w-full max-w-sm">
           <div className="mb-8">
-            <h1 className="text-2xl font-semibold mb-1.5" style={{ color: '#3c323e' }}>{t('subtitle')}</h1>
-            <p className="text-sm" style={{ color: '#655d67' }}>Admin access only</p>
+            <h1 className="text-2xl font-semibold mb-1.5 text-[#3c323e]">{t('subtitle')}</h1>
+            <p className="text-sm text-[#655d67]">Admin access only</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -64,20 +64,19 @@ export default function LoginPage() {
               </p>
             )}
             <div>
-              <Label htmlFor="email" className="text-xs font-medium block mb-1.5" style={{ color: '#4c414e' }}>{t('email')}</Label>
+              <Label htmlFor="email" className="text-xs font-medium block mb-1.5 text-[#4c414e]">{t('email')}</Label>
               <Input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('email')} />
             </div>
             <div>
-              <Label htmlFor="password" className="text-xs font-medium block mb-1.5" style={{ color: '#4c414e' }}>{t('password')}</Label>
+              <Label htmlFor="password" className="text-xs font-medium block mb-1.5 text-[#4c414e]">{t('password')}</Label>
               <div className="relative">
                 <Input
                   id="password" name="password" type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password" required value={password}
                   onChange={(e) => setPassword(e.target.value)} placeholder={t('password')} className="pr-9"
                 />
-                <Button type="button" variant="ghost" size="icon" className="absolute inset-y-0 right-0 h-full w-9 rounded-l-none"
+                <Button type="button" variant="ghost" size="icon" className="absolute inset-y-0 right-0 h-full w-9 rounded-l-none text-[#655d67]"
                   onClick={() => setShowPassword(!showPassword)}
-                  style={{ color: '#655d67' }}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
@@ -92,7 +91,7 @@ export default function LoginPage() {
               ) : t('signIn')}
             </Button>
           </form>
-          <p className="text-xs text-center mt-6" style={{ color: '#655d67' }}>Contact your system administrator for access.</p>
+          <p className="text-xs text-center mt-6 text-[#655d67]">Contact your system administrator for access.</p>
         </div>
       </div>
     </div>

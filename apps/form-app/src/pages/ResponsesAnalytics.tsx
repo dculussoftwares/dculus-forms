@@ -39,7 +39,7 @@ const ResponsesAnalytics: React.FC = () => {
       <MainLayout title={t('layout.title')} breadcrumbs={breadcrumbs}>
         <EmptyState
           variant="error"
-          icon={<AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />}
+          icon={<AlertCircle className="h-6 w-6 text-[#ce5d55]" />}
           title={t('errors.formNotFound.title')}
           description={t('errors.formNotFound.description')}
         />
@@ -59,8 +59,8 @@ const ResponsesAnalytics: React.FC = () => {
           <Icon className="h-4 w-4" style={{ color: iconColor }} />
         </div>
         <div>
-          <h3 className="text-sm font-semibold" style={{ color: '#3c323e' }}>{title}</h3>
-          <p className="text-xs" style={{ color: '#655d67' }}>{description}</p>
+          <h3 className="text-sm font-semibold text-[#3c323e]">{title}</h3>
+          <p className="text-xs text-[#655d67]">{description}</p>
         </div>
       </div>
       {children}
@@ -92,8 +92,8 @@ const ResponsesAnalytics: React.FC = () => {
         <div className="grid gap-4 md:grid-cols-2">
           <ChartCard icon={BarChart3} iconBg="#f4faf8" iconColor="#177767" title={t('charts.responseTrends.title')} description={t('charts.responseTrends.description')}>
             <div className="h-52 flex flex-col items-center justify-center rounded-lg" style={{ backgroundColor: '#f7f7f8' }}>
-              <BarChart3 className="h-10 w-10 mb-2" style={{ color: '#dedcde' }} />
-              <p className="text-sm font-medium" style={{ color: '#655d67' }}>{t('charts.responseTrends.placeholder')}</p>
+              <BarChart3 className="h-10 w-10 mb-2 text-[#dedcde]" />
+              <p className="text-sm font-medium text-[#655d67]">{t('charts.responseTrends.placeholder')}</p>
               <p className="text-xs mt-0.5" style={{ color: '#655d67', opacity: 0.7 }}>{t('charts.responseTrends.comingSoon')}</p>
             </div>
           </ChartCard>
@@ -107,8 +107,8 @@ const ResponsesAnalytics: React.FC = () => {
               ].map(({ label, pct, color }) => (
                 <div key={label}>
                   <div className="flex justify-between mb-1">
-                    <span className="text-xs" style={{ color: '#655d67' }}>{label}</span>
-                    <span className="text-xs font-medium" style={{ color: '#3c323e' }}>{pct}%</span>
+                    <span className="text-xs text-[#655d67]">{label}</span>
+                    <span className="text-xs font-medium text-[#3c323e]">{pct}%</span>
                   </div>
                   <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: '#f7f7f8' }}>
                     <div className="h-1.5 rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
@@ -121,7 +121,7 @@ const ResponsesAnalytics: React.FC = () => {
 
         {/* Summary stats */}
         <div className="rounded-xl bg-white p-5" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
-          <h3 className="text-sm font-semibold mb-4" style={{ color: '#3c323e' }}>{t('charts.responseSummary.title')}</h3>
+          <h3 className="text-sm font-semibold mb-4 text-[#3c323e]">{t('charts.responseSummary.title')}</h3>
           <div className="grid gap-4 md:grid-cols-3">
             {[
               { value: mockResponses.length, label: t('charts.responseSummary.totalSubmissions'), bg: '#f4faf8', color: '#177767' },

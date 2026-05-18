@@ -59,8 +59,8 @@ const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
       default:
         return (
           <div className="rounded-xl p-10 text-center bg-white" style={{ border: '1px solid rgba(81,76,84,0.10)' }}>
-            <h3 className="text-sm font-medium mb-1" style={{ color: '#3c323e' }}>Settings Configuration</h3>
-            <p className="text-xs" style={{ color: '#655d67' }}>This section is coming soon.</p>
+            <h3 className="text-sm font-medium mb-1 text-[#3c323e]">Settings Configuration</h3>
+            <p className="text-xs text-[#655d67]">This section is coming soon.</p>
           </div>
         );
     }

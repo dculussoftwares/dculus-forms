@@ -55,13 +55,13 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon, iconB
         )}
       </div>
 
-      <p className="text-2xl font-semibold tracking-tight" style={{ color: '#3c323e' }}>
+      <p className="text-2xl font-semibold tracking-tight text-[#3c323e]">
         {value}
       </p>
-      <p className="text-sm font-medium mt-0.5" style={{ color: '#4c414e' }}>
+      <p className="text-sm font-medium mt-0.5 text-[#4c414e]">
         {title}
       </p>
-      <p className="text-xs mt-0.5" style={{ color: '#655d67' }}>
+      <p className="text-xs mt-0.5 text-[#655d67]">
         {subtitle}
       </p>
     </div>

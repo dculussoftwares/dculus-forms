@@ -322,9 +322,9 @@ export const SignUp = () => {
   /* helper for inline form fields */
   const Field = ({ id, label, error, children }: { id: string; label: string; error?: string; children: React.ReactNode }) => (
     <div>
-      <Label htmlFor={id} className="text-xs font-medium block mb-1.5" style={{ color: '#4c414e' }}>{label}</Label>
+      <Label htmlFor={id} className="text-xs font-medium block mb-1.5 text-[#4c414e]">{label}</Label>
       {children}
-      {error && <p className="text-xs mt-1" style={{ color: '#ce5d55' }}>{error}</p>}
+      {error && <p className="text-xs mt-1 text-[#ce5d55]">{error}</p>}
     </div>
   );
 
@@ -340,18 +340,18 @@ export const SignUp = () => {
         </div>
         <div className="space-y-4">
           <h2 className="text-white text-3xl font-light leading-tight">{t('hero.tagline')}</h2>
-          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>{t('hero.attribution')}</p>
+          <p className="text-sm text-[rgba(255,255,255,0.55)]">{t('hero.attribution')}</p>
         </div>
-        <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>© {new Date().getFullYear()} Dculus Forms</p>
+        <p className="text-xs text-[rgba(255,255,255,0.35)]">© {new Date().getFullYear()} Dculus Forms</p>
       </div>
 
       {/* ── Right: clean white panel ── */}
       <div className="flex-1 flex flex-col overflow-y-auto bg-white">
         {/* Top nav */}
         <div className="flex items-center justify-end px-8 py-5" style={{ borderBottom: '1px solid rgba(81,76,84,0.08)' }}>
-          <span className="text-sm" style={{ color: '#655d67' }}>
+          <span className="text-sm text-[#655d67]">
             {t('links.signInPrompt')}{' '}
-            <Link to="/signin" className="font-medium hover:underline" style={{ color: '#3c323e' }}>
+            <Link to="/signin" className="font-medium hover:underline text-[#3c323e]">
               {t('links.signIn')}
             </Link>
           </span>
@@ -370,8 +370,8 @@ export const SignUp = () => {
             )}
 
             <div className="mb-7">
-              <h1 className="text-2xl font-semibold mb-1.5" style={{ color: '#3c323e' }}>{heading}</h1>
-              <p className="text-sm" style={{ color: '#655d67' }}>{description}</p>
+              <h1 className="text-2xl font-semibold mb-1.5 text-[#3c323e]">{heading}</h1>
+              <p className="text-sm text-[#655d67]">{description}</p>
             </div>
 
             {step === 'form' ? (
@@ -382,7 +382,7 @@ export const SignUp = () => {
 
                 <Field id="email" label={t('form.fields.email.label')} error={errors.email}>
                   <Input id="email" name="email" type="email" placeholder={t('form.fields.email.placeholder')} value={formData.email} onChange={handleInputChange} disabled={isLoading || !!pendingInvitationId} className={errors.email ? 'border-[#ce5d55]' : ''} />
-                  {pendingInvitationId && <p className="text-xs mt-1" style={{ color: '#655d67' }}>{t('form.fields.email.invitationNotice')}</p>}
+                  {pendingInvitationId && <p className="text-xs mt-1 text-[#655d67]">{t('form.fields.email.invitationNotice')}</p>}
                 </Field>
 
                 {!pendingInvitationId && (
@@ -417,21 +417,21 @@ export const SignUp = () => {
             ) : (
               <form onSubmit={handleVerifyOTP} className="space-y-5">
                 <div>
-                  <Label className="text-xs font-medium block mb-3 text-center" style={{ color: '#4c414e' }}>
+                  <Label className="text-xs font-medium block mb-3 text-center text-[#4c414e]">
                     {t('verify.otpLabel')}
                   </Label>
                   <OTPInput value={otp} onChange={(value) => { setOtp(value); if (errors.otp) setErrors(prev => ({ ...prev, otp: '' })); }} disabled={isLoading} hasError={!!errors.otp} />
-                  {errors.otp && <p className="text-xs mt-2 text-center" style={{ color: '#ce5d55' }}>{errors.otp}</p>}
+                  {errors.otp && <p className="text-xs mt-2 text-center text-[#ce5d55]">{errors.otp}</p>}
                 </div>
 
                 <div className="text-center">
                   {countdown > 0 ? (
-                    <span className="text-xs flex items-center justify-center gap-1.5" style={{ color: '#655d67' }}>
+                    <span className="text-xs flex items-center justify-center gap-1.5 text-[#655d67]">
                       <Timer className="w-3.5 h-3.5" />
                       {t('verify.countdown', { values: { seconds: countdown } })}
                     </span>
                   ) : (
-                    <Button type="button" variant="ghost" size="sm" onClick={handleResendOTP} disabled={isLoading} className="text-xs font-medium h-7 px-2" style={{ color: '#3c323e' }}>
+                    <Button type="button" variant="ghost" size="sm" onClick={handleResendOTP} disabled={isLoading} className="text-xs font-medium h-7 px-2 text-[#3c323e]">
                       {t('verify.resend')}
                     </Button>
                   )}

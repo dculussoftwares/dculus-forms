@@ -26,9 +26,9 @@ const StatCard: React.FC<{ name: string; value: string; subtitle?: string; icon:
       <Icon className={large ? 'h-6 w-6' : 'h-5 w-5'} style={{ color: iconColor }} />
     </div>
     <div className="min-w-0">
-      <p className="text-xs font-medium truncate" style={{ color: '#655d67' }}>{name}</p>
-      <p className={`font-light truncate ${large ? 'text-3xl' : 'text-2xl'}`} style={{ color: '#262627' }}>{value}</p>
-      {subtitle && <p className="text-xs mt-0.5" style={{ color: '#655d67' }}>{subtitle}</p>}
+      <p className="text-xs font-medium truncate text-[#655d67]">{name}</p>
+      <p className={`font-light truncate text-[#262627] ${large ? 'text-3xl' : 'text-2xl'}`}>{value}</p>
+      {subtitle && <p className="text-xs mt-0.5 text-[#655d67]">{subtitle}</p>}
     </div>
   </div>
 );
@@ -56,7 +56,7 @@ export default function DashboardPage() {
       <EmptyState
         variant="error"
         className="min-h-64"
-        icon={<AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />}
+        icon={<AlertCircle className="h-6 w-6 text-[#ce5d55]" />}
         title={t('error.unableToLoad')}
         description={error.message || t('error.checkConnection')}
       />
@@ -66,8 +66,8 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-semibold" style={{ color: '#3c323e' }}>{t('title')}</h1>
-        <p className="text-xs mt-0.5" style={{ color: '#655d67' }}>{t('welcome')}</p>
+        <h1 className="text-lg font-semibold text-[#3c323e]">{t('title')}</h1>
+        <p className="text-xs mt-0.5 text-[#655d67]">{t('welcome')}</p>
       </div>
 
       {/* Main stats */}
@@ -81,7 +81,7 @@ export default function DashboardPage() {
 
       {/* Storage */}
       <div>
-        <h2 className="text-sm font-semibold mb-3" style={{ color: '#3c323e' }}>{t('storage.title')}</h2>
+        <h2 className="text-sm font-semibold mb-3 text-[#3c323e]">{t('storage.title')}</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {storageStats.map((stat) => (
             loading
@@ -95,19 +95,19 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Recent orgs placeholder */}
         <div className="rounded-xl bg-white p-5" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
-          <h3 className="text-sm font-semibold mb-4" style={{ color: '#3c323e' }}>{t('recentActivity.recentOrganizations')}</h3>
+          <h3 className="text-sm font-semibold mb-4 text-[#3c323e]">{t('recentActivity.recentOrganizations')}</h3>
           <div className="flex flex-col items-center justify-center py-6">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ backgroundColor: '#f7f7f8' }}>
-              <Building2 className="h-5 w-5" style={{ color: '#dedcde' }} />
+              <Building2 className="h-5 w-5 text-[#dedcde]" />
             </div>
-            <p className="text-xs font-medium" style={{ color: '#655d67' }}>{t('recentActivity.noOrganizations')}</p>
+            <p className="text-xs font-medium text-[#655d67]">{t('recentActivity.noOrganizations')}</p>
             <p className="text-[11px] mt-0.5" style={{ color: '#655d67', opacity: 0.7 }}>{t('recentActivity.connectBackend')}</p>
           </div>
         </div>
 
         {/* System health */}
         <div className="rounded-xl bg-white p-5" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
-          <h3 className="text-sm font-semibold mb-4" style={{ color: '#3c323e' }}>{t('systemHealth.title')}</h3>
+          <h3 className="text-sm font-semibold mb-4 text-[#3c323e]">{t('systemHealth.title')}</h3>
           <div className="space-y-3">
             {[
               { label: t('systemHealth.database'),       status: t('systemHealth.connected') },
@@ -115,7 +115,7 @@ export default function DashboardPage() {
               { label: t('systemHealth.authentication'), status: t('systemHealth.working') },
             ].map(({ label, status }) => (
               <div key={label} className="flex items-center justify-between">
-                <span className="text-xs" style={{ color: '#655d67' }}>{label}</span>
+                <span className="text-xs text-[#655d67]">{label}</span>
                 <span
                   className="px-2 py-0.5 rounded-full text-[10px] font-medium"
                   style={{ backgroundColor: 'rgba(23,119,103,0.08)', color: '#177767', border: '1px solid rgba(23,119,103,0.16)' }}

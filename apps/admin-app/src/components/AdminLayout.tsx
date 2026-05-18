@@ -51,8 +51,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <Shield className="h-3.5 w-3.5 text-white" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold truncate" style={{ color: '#3c323e' }}>{t('sidebar.title')}</p>
-            <p className="text-[10px] truncate" style={{ color: '#655d67' }}>{t('sidebar.subtitle')}</p>
+            <p className="text-sm font-semibold truncate text-[#3c323e]">{t('sidebar.title')}</p>
+            <p className="text-[10px] truncate text-[#655d67]">{t('sidebar.subtitle')}</p>
           </div>
         </div>
 
@@ -83,9 +83,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium truncate" style={{ color: '#3c323e' }}>{user?.name}</p>
+              <p className="text-xs font-medium truncate text-[#3c323e]">{user?.name}</p>
               <div className="flex items-center gap-1.5">
-                <p className="text-[10px] truncate" style={{ color: '#655d67' }}>{user?.email}</p>
+                <p className="text-[10px] truncate text-[#655d67]">{user?.email}</p>
                 {isSuperAdmin && (
                   <span className="px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0" style={{ backgroundColor: '#fbe19d', color: '#8b6a18' }}>
                     {t('userMenu.superAdmin')}

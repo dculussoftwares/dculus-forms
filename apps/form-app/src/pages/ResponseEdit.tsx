@@ -264,7 +264,7 @@ const ResponseEdit: React.FC = () => {
       >
         <EmptyState
           variant="error"
-          icon={<AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />}
+          icon={<AlertCircle className="h-6 w-6 text-[#ce5d55]" />}
           title={!formData?.form ? t('errors.formNotFound.title') : t('errors.responseNotFound.title')}
           description={!formData?.form ? t('errors.formNotFound.description') : t('errors.responseNotFound.description')}
           action={
@@ -304,7 +304,7 @@ const ResponseEdit: React.FC = () => {
       >
         <EmptyState
           variant="warning"
-          icon={<AlertCircle className="h-6 w-6" style={{ color: '#8b6a18' }} />}
+          icon={<AlertCircle className="h-6 w-6 text-[#8b6a18]" />}
           title={t('errors.formNotReady.title')}
           description={t('errors.formNotReady.description')}
           action={
@@ -356,7 +356,7 @@ const ResponseEdit: React.FC = () => {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'rgba(81,76,84,0.12)' }} />
-        <h1 className="text-sm font-semibold truncate flex-1" style={{ color: '#3c323e' }}>
+        <h1 className="text-sm font-semibold truncate flex-1 text-[#3c323e]">
           {t('header.editingResponse', { values: { responseId: response.id.slice(-6) } })}
         </h1>
       </div>
@@ -381,8 +381,8 @@ const ResponseEdit: React.FC = () => {
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full border-2 animate-spin shrink-0" style={{ borderColor: 'rgba(81,76,84,0.15)', borderTopColor: '#3c323e' }} />
                 <div>
-                  <p className="text-sm font-semibold" style={{ color: '#3c323e' }}>{t('loading.updating')}</p>
-                  <p className="text-xs" style={{ color: '#655d67' }}>{t('loading.pleaseWait')}</p>
+                  <p className="text-sm font-semibold text-[#3c323e]">{t('loading.updating')}</p>
+                  <p className="text-xs text-[#655d67]">{t('loading.pleaseWait')}</p>
                 </div>
               </div>
             </div>

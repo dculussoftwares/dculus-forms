@@ -32,7 +32,7 @@ const CustomTooltip = ({ active, payload, label, t }: any) => {
     
     return (
       <div className="bg-white p-3 rounded-lg" style={{ border: '1px solid rgba(81,76,84,0.12)', boxShadow: '0 4px 16px rgba(60,50,62,0.12)' }}>
-        <p className="text-xs font-medium mb-2" style={{ color: '#3c323e' }}>{date}</p>
+        <p className="text-xs font-medium mb-2 text-[#3c323e]">{date}</p>
         <div className="space-y-1">
           {payload.map((entry: any) => {
             let color = entry.color;
@@ -121,13 +121,13 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
     return (
       <div className="rounded-xl p-5 bg-white" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
         <div className="flex items-center gap-1.5 mb-4">
-          <TrendingUp className="h-4 w-4" style={{ color: '#655d67' }} />
-          <span className="text-sm font-medium" style={{ color: '#3c323e' }}>{t('title')}</span>
+          <TrendingUp className="h-4 w-4 text-[#655d67]" />
+          <span className="text-sm font-medium text-[#3c323e]">{t('title')}</span>
         </div>
         <div className="h-64 flex flex-col items-center justify-center">
-          <Calendar className="h-10 w-10 mb-3" style={{ color: '#dedcde' }} />
-          <p className="text-sm font-medium" style={{ color: '#4c414e' }}>No time-series data available</p>
-          <p className="text-xs mt-1" style={{ color: '#655d67' }}>Data will appear once your form receives more activity</p>
+          <Calendar className="h-10 w-10 mb-3 text-[#dedcde]" />
+          <p className="text-sm font-medium text-[#4c414e]">No time-series data available</p>
+          <p className="text-xs mt-1 text-[#655d67]">Data will appear once your form receives more activity</p>
         </div>
       </div>
     );
@@ -157,10 +157,10 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-1.5">
-          <TrendingUp className="h-4 w-4" style={{ color: '#655d67' }} />
-          <span className="text-sm font-medium" style={{ color: '#3c323e' }}>{t('title')}</span>
+          <TrendingUp className="h-4 w-4 text-[#655d67]" />
+          <span className="text-sm font-medium text-[#3c323e]">{t('title')}</span>
         </div>
-        <span className="text-xs" style={{ color: '#655d67' }}>{getTimeRangeLabel()}</span>
+        <span className="text-xs text-[#655d67]">{getTimeRangeLabel()}</span>
       </div>
 
       {/* Chart */}
@@ -199,7 +199,7 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
         ].map(({ value, label, color }) => (
           <div key={label} className="text-center">
             <p className="text-lg font-light" style={{ color }}>{value}</p>
-            <p className="text-[10px] mt-0.5" style={{ color: '#655d67' }}>{label}</p>
+            <p className="text-[10px] mt-0.5 text-[#655d67]">{label}</p>
           </div>
         ))}
       </div>
@@ -214,7 +214,7 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
         ].map(({ color, label }) => (
           <div key={label} className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: color }} />
-            <span className="text-xs" style={{ color: '#655d67' }}>{label}</span>
+            <span className="text-xs text-[#655d67]">{label}</span>
           </div>
         ))}
       </div>

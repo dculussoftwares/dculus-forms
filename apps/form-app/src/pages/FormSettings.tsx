@@ -175,7 +175,7 @@ const FormSettings: React.FC = () => {
       >
         <EmptyState
           variant="error"
-          icon={<AlertCircle className="h-6 w-6" style={{ color: '#ce5d55' }} />}
+          icon={<AlertCircle className="h-6 w-6 text-[#ce5d55]" />}
           title={t('errors.formNotFound')}
           description={t('errors.formNotFoundMessage')}
         />
@@ -209,12 +209,12 @@ const FormSettings: React.FC = () => {
 
           {/* Typeform field-icon style — lavender for settings */}
           <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: '#ddd6fa' }}>
-            <Settings className="h-4 w-4" style={{ color: '#5c2e6b' }} />
+            <Settings className="h-4 w-4 text-[#5c2e6b]" />
           </div>
 
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-semibold" style={{ color: '#3c323e' }}>{t('header.title')}</h1>
-            <p className="text-xs mt-0.5" style={{ color: '#655d67' }}>
+            <h1 className="text-sm font-semibold text-[#3c323e]">{t('header.title')}</h1>
+            <p className="text-xs mt-0.5 text-[#655d67]">
               {t('header.description', { values: { formTitle: form.title } })}
             </p>
           </div>

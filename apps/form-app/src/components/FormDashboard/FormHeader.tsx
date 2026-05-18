@@ -84,7 +84,7 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
             className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{ backgroundColor: '#f8cdd8' }}
           >
-            <FileText className="w-5 h-5" style={{ color: '#3c323e' }} />
+            <FileText className="w-5 h-5 text-[#3c323e]" />
           </div>
 
           <div className="flex-1 min-w-0">
@@ -105,18 +105,18 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
                 {form.isPublished ? t('header.status.live') : t('header.status.draft')}
               </span>
 
-              <span className="flex items-center gap-1 text-xs" style={{ color: '#655d67' }}>
+              <span className="flex items-center gap-1 text-xs text-[#655d67]">
                 <Calendar className="w-3 h-3" />
                 {formattedCreatedAt}
               </span>
             </div>
 
-            <h1 className="text-xl font-semibold leading-tight tracking-tight" style={{ color: '#3c323e' }}>
+            <h1 className="text-xl font-semibold leading-tight tracking-tight text-[#3c323e]">
               {form.title}
             </h1>
 
             {(form.description) && (
-              <p className="text-sm mt-1" style={{ color: '#655d67' }}>
+              <p className="text-sm mt-1 text-[#655d67]">
                 {form.description}
               </p>
             )}
@@ -163,7 +163,7 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="h-8 w-8 p-0 flex-shrink-0">
-                <MoreHorizontal className="h-4 w-4" style={{ color: '#655d67' }} />
+                <MoreHorizontal className="h-4 w-4 text-[#655d67]" />
                 <span className="sr-only">{t('header.actions.more')}</span>
               </Button>
             </DropdownMenuTrigger>

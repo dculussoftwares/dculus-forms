@@ -42,8 +42,8 @@ export default function OrganizationsPage() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-64 text-center">
-        <h2 className="text-sm font-semibold mb-1" style={{ color: '#3c323e' }}>{t('error.unableToLoad')}</h2>
-        <p className="text-xs mb-3" style={{ color: '#655d67' }}>{error.message || t('error.checkConnection')}</p>
+        <h2 className="text-sm font-semibold mb-1 text-[#3c323e]">{t('error.unableToLoad')}</h2>
+        <p className="text-xs mb-3 text-[#655d67]">{error.message || t('error.checkConnection')}</p>
         <ActionLink onClick={() => refetch()}>{t('common.tryAgain', { defaultValue: 'Try again' })}</ActionLink>
       </div>
     );
@@ -52,8 +52,8 @@ export default function OrganizationsPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-lg font-semibold" style={{ color: '#3c323e' }}>{t('title')}</h1>
-        <p className="text-xs mt-0.5" style={{ color: '#655d67' }}>{t('subtitle')}</p>
+        <h1 className="text-lg font-semibold text-[#3c323e]">{t('title')}</h1>
+        <p className="text-xs mt-0.5 text-[#655d67]">{t('subtitle')}</p>
       </div>
 
       {loading ? (
@@ -66,10 +66,10 @@ export default function OrganizationsPage() {
           {organizations.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16">
               <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: '#f7f7f8' }}>
-                <Building2 className="h-6 w-6" style={{ color: '#dedcde' }} />
+                <Building2 className="h-6 w-6 text-[#dedcde]" />
               </div>
-              <p className="text-sm font-medium" style={{ color: '#3c323e' }}>No Organizations</p>
-              <p className="text-xs mt-0.5" style={{ color: '#655d67' }}>No organizations have been created yet.</p>
+              <p className="text-sm font-medium text-[#3c323e]">No Organizations</p>
+              <p className="text-xs mt-0.5 text-[#655d67]">No organizations have been created yet.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -96,18 +96,18 @@ export default function OrganizationsPage() {
                             {org.logo ? (
                               <img src={org.logo} alt={org.name} className="w-8 h-8 rounded-lg object-cover" />
                             ) : (
-                              <Building2 className="h-4 w-4" style={{ color: '#3c323e' }} />
+                              <Building2 className="h-4 w-4 text-[#3c323e]" />
                             )}
                           </div>
                           <div>
-                            <p className="text-sm font-medium" style={{ color: '#3c323e' }}>{org.name}</p>
-                            <p className="text-xs" style={{ color: '#655d67' }}>/{org.slug}</p>
+                            <p className="text-sm font-medium text-[#3c323e]">{org.name}</p>
+                            <p className="text-xs text-[#655d67]">/{org.slug}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3.5 text-sm" style={{ color: '#4c414e' }}>{org.memberCount}</td>
-                      <td className="px-5 py-3.5 text-sm" style={{ color: '#4c414e' }}>{org.formCount}</td>
-                      <td className="px-5 py-3.5 text-xs" style={{ color: '#655d67' }}>{new Date(org.createdAt).toLocaleDateString()}</td>
+                      <td className="px-5 py-3.5 text-sm text-[#4c414e]">{org.memberCount}</td>
+                      <td className="px-5 py-3.5 text-sm text-[#4c414e]">{org.formCount}</td>
+                      <td className="px-5 py-3.5 text-xs text-[#655d67]">{new Date(org.createdAt).toLocaleDateString()}</td>
                       <td className="px-5 py-3.5">
                         <ActionLink onClick={() => navigate(`/organizations/${org.id}`)}>View</ActionLink>
                       </td>
