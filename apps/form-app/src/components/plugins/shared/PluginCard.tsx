@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation } from '@apollo/client';
 import {
+  Button,
   toastSuccess,
   toastError,
   DropdownMenu,
@@ -208,14 +209,12 @@ export const PluginCard: React.FC<PluginCardProps> = ({
         <div className="shrink-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button
-                className="h-8 w-8 flex items-center justify-center rounded-lg transition-colors"
-                style={{ color: '#655d67' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; (e.currentTarget as HTMLElement).style.color = '#3c323e'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
+              <Button
+                variant="ghost"
+                className="h-8 w-8 flex items-center justify-center rounded-lg p-0"
               >
                 <MoreVertical className="h-4 w-4" />
-              </button>
+              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={() => handleToggleEnabled(!plugin.enabled)} disabled={isTogglingEnabled}>

@@ -190,7 +190,7 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                 
                 {/* Quick Presets */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">{t('customPicker.quickPresetsLabel')}</label>
+                  <Label className="text-sm font-medium text-gray-700">{t('customPicker.quickPresetsLabel')}</Label>
                   <div className="flex flex-wrap gap-2">
                     {[
                       { label: t('presets.last7Days'), days: 7 },

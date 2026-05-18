@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Database, LineChart, Settings, ArrowRight, Plug } from 'lucide-react';
+import { Button } from '@dculus/ui';
 import { useTranslation } from '../../hooks/useTranslation';
 
 interface QuickActionsProps {
@@ -21,17 +22,16 @@ const ActionCard: React.FC<ActionCardProps> = ({
   title, description, icon: Icon, iconBg, iconColor, onClick, testId,
 }) => {
   return (
-    <button
+    <Button
+      variant="ghost"
       type="button"
       onClick={onClick}
       data-testid={testId}
-      className="group flex flex-col items-center gap-3 p-5 rounded-xl bg-white dark:bg-card text-center w-full transition-all duration-200"
+      className="group flex flex-col items-center gap-3 p-5 rounded-xl bg-white dark:bg-card text-center w-full transition-all duration-200 h-auto"
       style={{
         border: '1px solid rgba(81,76,84,0.10)',
         boxShadow: '0 1px 4px rgba(60,50,62,0.06)',
       }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(60,50,62,0.10)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(81,76,84,0.20)'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 4px rgba(60,50,62,0.06)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(81,76,84,0.10)'; }}
     >
       {/* Typeform field-icon style */}
       <div
@@ -55,7 +55,7 @@ const ActionCard: React.FC<ActionCardProps> = ({
           {description}
         </p>
       </div>
-    </button>
+    </Button>
   );
 };
 

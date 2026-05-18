@@ -83,28 +83,22 @@ export const FilterModal: React.FC<FilterModalProps> = ({
               <div className="mt-3 flex items-center gap-2">
                 <span className="text-xs text-slate-600 font-medium">Match:</span>
                 <div className="inline-flex rounded-md shadow-sm" role="group">
-                  <button
+                  <Button
                     type="button"
                     onClick={() => onFilterLogicChange('AND')}
-                    className={`px-3 py-1 text-xs font-medium rounded-l-lg border ${
-                      filterLogic === 'AND'
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
-                    }`}
+                    variant={filterLogic === 'AND' ? 'default' : 'outline'}
+                    className="px-3 py-1 text-xs font-medium rounded-r-none h-auto"
                   >
                     ALL filters
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     onClick={() => onFilterLogicChange('OR')}
-                    className={`px-3 py-1 text-xs font-medium rounded-r-lg border-t border-b border-r ${
-                      filterLogic === 'OR'
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
-                    }`}
+                    variant={filterLogic === 'OR' ? 'default' : 'outline'}
+                    className="px-3 py-1 text-xs font-medium rounded-l-none h-auto"
                   >
                     ANY filter
-                  </button>
+                  </Button>
                 </div>
                 <span className="text-xs text-slate-500">
                   ({filterLogic === 'AND' ? 'All conditions must match' : 'Any condition can match'})

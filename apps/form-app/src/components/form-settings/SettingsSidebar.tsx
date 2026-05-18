@@ -1,5 +1,6 @@
 import React from 'react';
 import { CheckCircle, Globe, Mail, Shield } from 'lucide-react';
+import { Button } from '@dculus/ui';
 import { useTranslation } from '../../hooks/useTranslation';
 
 interface SidebarItem {
@@ -48,20 +49,19 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
             {items.map(({ id, label }) => {
               const isActive = selectedSection === id;
               return (
-                <button
+                <Button
                   key={id}
+                  variant="ghost"
                   onClick={() => onSectionChange(id)}
                   data-testid={`settings-section-${id}`}
-                  className="w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium text-left transition-colors"
+                  className="w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium text-left transition-colors h-auto justify-start"
                   style={{
                     backgroundColor: isActive ? 'rgba(87,84,91,0.06)' : 'transparent',
                     color: isActive ? '#3c323e' : '#655d67',
                   }}
-                  onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.04)'; (e.currentTarget as HTMLElement).style.color = '#4c414e'; } }}
-                  onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#655d67'; } }}
                 >
                   {label}
-                </button>
+                </Button>
               );
             })}
           </div>

@@ -7,6 +7,7 @@ import { NavUser } from './nav-user';
 import { NavLocale } from './nav-locale';
 import { TeamSwitcher } from './team-switcher';
 import {
+  Button,
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -50,15 +51,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent className="pt-3">
         {/* ── "+ New Form" CTA — mirrors Typeform's "+ Create form" ── */}
         <div className="px-2 pb-3 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
-          <button
+          <Button
             onClick={() => navigate('/dashboard/templates')}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-white transition-all duration-150 hover:opacity-90 active:scale-[0.98] group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:p-0"
-            style={{ backgroundColor: '#3c323e' }}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:p-0"
             title={t('navigation.createForm', { defaultValue: 'New form' })}
           >
             <Plus className="h-4 w-4 shrink-0" />
             <span className="group-data-[collapsible=icon]:hidden">{t('navigation.createForm', { defaultValue: 'New form' })}</span>
-          </button>
+          </Button>
         </div>
 
         {/* ── Navigation items ── */}

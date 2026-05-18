@@ -166,16 +166,14 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                 {/* ── Left: back + title + status ── */}
                 <div className="flex items-center gap-2 px-3 min-w-0 w-72 shrink-0">
                     {onNavigateBack && (
-                        <button
+                        <Button
+                            variant="ghost"
                             onClick={onNavigateBack}
-                            className="h-8 w-8 flex items-center justify-center rounded-lg transition-colors shrink-0"
-                            style={{ color: '#655d67' }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; (e.currentTarget as HTMLElement).style.color = '#3c323e'; }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
+                            className="h-8 w-8 flex items-center justify-center rounded-lg transition-colors shrink-0 p-0"
                             title="Back"
                         >
                             <ArrowLeft className="w-4 h-4" />
-                        </button>
+                        </Button>
                     )}
 
                     {/* Title — takes all remaining space */}
@@ -194,10 +192,10 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                                 autoFocus
                             />
                         ) : (
-                            <button
+                            <Button
+                                variant="ghost"
                                 onClick={() => permissions.canEdit && setIsEditingTitle(true)}
-                                className="group flex items-center gap-1.5 text-sm font-medium w-full min-w-0 transition-colors"
-                                style={{ color: '#3c323e' }}
+                                className="group flex items-center gap-1.5 text-sm font-medium w-full min-w-0 transition-colors h-auto p-0"
                                 disabled={!permissions.canEdit}
                                 title={!permissions.canEdit ? t('tooltips.noEditPermission') : 'Click to rename'}
                             >
@@ -205,7 +203,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                                 {permissions.canEdit && (
                                     <Edit3 className="w-3 h-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: '#655d67' }} />
                                 )}
-                            </button>
+                            </Button>
                         )}
                     </div>
 
@@ -266,44 +264,38 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
 
                     {/* View live */}
                     {isPublished && formShortUrl && (
-                        <button
+                        <Button
+                            variant="ghost"
                             onClick={handleViewLiveForm}
-                            className="h-8 w-8 flex items-center justify-center rounded-lg transition-colors"
-                            style={{ color: '#655d67' }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; (e.currentTarget as HTMLElement).style.color = '#3c323e'; }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
+                            className="h-8 w-8 flex items-center justify-center rounded-lg p-0"
                             title={t('tooltips.viewLiveFormTooltip')}
                         >
                             <ExternalLink className="w-4 h-4" />
-                        </button>
+                        </Button>
                     )}
 
                     {/* Share */}
                     {permissions.canShareForm() && (
-                        <button
+                        <Button
+                            variant="ghost"
                             onClick={() => setShowShareModal(true)}
                             disabled={!organizationId || !currentUserId || !formShortUrl}
-                            className="h-8 w-8 flex items-center justify-center rounded-lg transition-colors disabled:opacity-40"
-                            style={{ color: '#655d67' }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; (e.currentTarget as HTMLElement).style.color = '#3c323e'; }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
+                            className="h-8 w-8 flex items-center justify-center rounded-lg p-0 disabled:opacity-40"
                             title={t('buttons.share')}
                         >
                             <Share2 className="w-4 h-4" />
-                        </button>
+                        </Button>
                     )}
 
                     {/* More */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <button
-                                className="h-8 w-8 flex items-center justify-center rounded-lg transition-colors"
-                                style={{ color: '#655d67' }}
-                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; (e.currentTarget as HTMLElement).style.color = '#3c323e'; }}
-                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
+                            <Button
+                                variant="ghost"
+                                className="h-8 w-8 flex items-center justify-center rounded-lg p-0"
                             >
                                 <MoreVertical className="w-4 h-4" />
-                            </button>
+                            </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-44">
                             <DropdownMenuItem onClick={handleDuplicateForm} disabled={!permissions.canEdit}>

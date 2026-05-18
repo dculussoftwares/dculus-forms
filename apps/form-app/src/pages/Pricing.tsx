@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
-import { toastSuccess, toastError } from '@dculus/ui';
+import { Button, toastSuccess, toastError } from '@dculus/ui';
 import {
   Check,
   Zap,
@@ -135,13 +135,6 @@ export const Pricing = () => {
     }
   };
 
-  /* Shared ghost toggle button style */
-  const toggleBtn = (active: boolean) => ({
-    backgroundColor: active ? '#3c323e' : 'rgba(255,255,255,0.8)',
-    color: active ? '#ffffff' : '#655d67',
-    border: active ? '1px solid #3c323e' : '1px solid rgba(81,76,84,0.15)',
-  });
-
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#f7f7f8' }}>
       {/* ── Hero ── */}
@@ -158,9 +151,9 @@ export const Pricing = () => {
           {/* Billing toggle */}
           <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid rgba(81,76,84,0.15)' }}>
             {(['monthly', 'yearly'] as BillingCycle[]).map((cycle) => (
-              <button key={cycle} onClick={() => setBillingCycle(cycle)}
-                className="flex items-center gap-1.5 h-8 px-4 text-xs font-medium transition-all"
-                style={toggleBtn(billingCycle === cycle)}
+              <Button key={cycle} onClick={() => setBillingCycle(cycle)}
+                variant={billingCycle === cycle ? 'default' : 'ghost'}
+                className="flex items-center gap-1.5 h-8 px-4 text-xs font-medium rounded-none"
               >
                 {cycle === 'monthly' ? t('billing.monthly') : t('billing.yearly')}
                 {cycle === 'yearly' && billingCycle !== 'yearly' && (
@@ -168,19 +161,19 @@ export const Pricing = () => {
                     {t('billing.savePercent')}
                   </span>
                 )}
-              </button>
+              </Button>
             ))}
           </div>
 
           {/* Currency toggle */}
           <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid rgba(81,76,84,0.15)' }}>
             {(['USD', 'INR'] as Currency[]).map((curr) => (
-              <button key={curr} onClick={() => setCurrency(curr)}
-                className="h-8 px-4 text-xs font-medium transition-all"
-                style={toggleBtn(currency === curr)}
+              <Button key={curr} onClick={() => setCurrency(curr)}
+                variant={currency === curr ? 'default' : 'ghost'}
+                className="h-8 px-4 text-xs font-medium rounded-none"
               >
                 {curr === 'USD' ? t('billing.usd') : t('billing.inr')}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -262,17 +255,14 @@ export const Pricing = () => {
                   </div>
 
                   {/* CTA button — Typeform dark aubergine */}
-                  <button
+                  <Button
                     onClick={() => handleGetStarted(plan.id)}
                     disabled={checkoutLoading}
-                    className="w-full h-9 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-60 flex items-center justify-center gap-1.5"
-                    style={{ backgroundColor: '#3c323e' }}
-                    onMouseEnter={e => { if (!checkoutLoading) (e.currentTarget as HTMLElement).style.backgroundColor = '#2e2530'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#3c323e'; }}
+                    className="w-full h-9 flex items-center justify-center gap-1.5"
                   >
                     {checkoutLoading ? t('buttons.processing') : plan.id === 'free' ? t('buttons.getStarted') : t('buttons.upgradeTo', { values: { planName: plan.name } })}
                     <ArrowRight className="h-3.5 w-3.5" />
-                  </button>
+                  </Button>
                 </div>
               );
             })}
@@ -308,16 +298,14 @@ export const Pricing = () => {
         <div className="rounded-xl p-10 text-center text-white" style={{ backgroundColor: '#2a222b' }}>
           <h2 className="text-2xl font-light mb-3">{t('cta.title')}</h2>
           <p className="text-sm mb-7" style={{ color: 'rgba(255,255,255,0.70)' }}>{t('cta.subtitle')}</p>
-          <button
+          <Button
             onClick={() => (user ? navigate('/dashboard') : navigate('/signup'))}
-            className="inline-flex items-center gap-2 h-10 px-7 rounded-lg text-sm font-medium transition-all"
-            style={{ backgroundColor: 'rgba(255,255,255,0.12)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.20)' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.18)'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.12)'; }}
+            variant="outline"
+            className="inline-flex items-center gap-2 h-10 px-7"
           >
             {user ? t('cta.buttons.goToDashboard') : t('cta.buttons.getStartedFree')}
             <ArrowRight className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       </div>
     </div>

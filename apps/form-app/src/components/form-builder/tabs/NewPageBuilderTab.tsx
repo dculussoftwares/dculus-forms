@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { ScrollArea, FieldPreview } from '@dculus/ui';
+import { ScrollArea, FieldPreview, Button } from '@dculus/ui';
 import { FormPage, FormField, FillableFormField } from '@dculus/types';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useTranslation } from '../../../hooks';
@@ -248,10 +248,11 @@ const RightSidebar: React.FC<{
 
       {/* Tab Navigation */}
       <div className="flex border-b border-gray-200 dark:border-gray-700">
-        <button
+        <Button
+          variant="ghost"
           onClick={() => setActiveTab('pages')}
           className={`
-            flex-1 flex items-center justify-center py-3 text-sm font-medium transition-colors
+            flex-1 flex items-center justify-center py-3 text-sm font-medium transition-colors h-auto rounded-none
             ${
               activeTab === 'pages'
                 ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
@@ -261,11 +262,12 @@ const RightSidebar: React.FC<{
         >
           <StickyNote className="w-4 h-4 mr-2" />
           {t('sidebar.pages.title')}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
           onClick={() => setActiveTab('properties')}
           className={`
-            flex-1 flex items-center justify-center py-3 text-sm font-medium transition-colors
+            flex-1 flex items-center justify-center py-3 text-sm font-medium transition-colors h-auto rounded-none
             ${
               activeTab === 'properties'
                 ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
@@ -275,11 +277,12 @@ const RightSidebar: React.FC<{
         >
           <Settings className="w-4 h-4 mr-2" />
           {t('tabs.field')}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
           onClick={() => setActiveTab('json')}
           className={`
-            flex-1 flex items-center justify-center py-3 text-sm font-medium transition-colors
+            flex-1 flex items-center justify-center py-3 text-sm font-medium transition-colors h-auto rounded-none
             ${
               activeTab === 'json'
                 ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
@@ -289,7 +292,7 @@ const RightSidebar: React.FC<{
         >
           <Code className="w-4 h-4 mr-2" />
           JSON
-        </button>
+        </Button>
       </div>
 
       <ScrollArea className="flex-1">
@@ -303,16 +306,16 @@ const RightSidebar: React.FC<{
                 })}
               </div>
               {permissions.canAddPages() && (
-                <button
+                <Button
+                  variant="ghost"
                   onClick={handleAddPage}
                   disabled={!isConnected}
-
                   data-testid="add-page-button"
-                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors text-blue-600 dark:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-1 rounded-md text-blue-600 dark:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed h-auto"
                   title={t('menu.addPage')}
                 >
                   <Plus className="w-5 h-5" />
-                </button>
+                </Button>
               )}
             </div>
 
@@ -341,12 +344,13 @@ const RightSidebar: React.FC<{
               <div className="text-center py-8 text-gray-500">
                 {t('sidebar.pages.noPages')}
                 {permissions.canAddPages() && (
-                  <button
+                  <Button
+                    variant="ghost"
                     onClick={handleAddPage}
-                    className="mt-2 text-blue-600 dark:text-blue-400 text-sm font-medium hover:underline"
+                    className="mt-2 text-blue-600 dark:text-blue-400 text-sm font-medium h-auto p-0 underline-offset-2 hover:underline"
                   >
                     Create your first page
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
@@ -557,42 +561,45 @@ const FieldCard: React.FC<{
           <div className="pl-9 pr-2">
             <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
               {onMoveUp && index > 0 && (
-                <button
+                <Button
+                  variant="ghost"
                   onClick={(e) => {
                     e.stopPropagation();
                     onMoveUp();
                   }}
-                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all"
+                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md h-auto"
                   title="Move Up"
                 >
                   <ArrowUp className="w-4 h-4" />
-                </button>
+                </Button>
               )}
 
               {onMoveDown && index < totalFields - 1 && (
-                <button
+                <Button
+                  variant="ghost"
                   onClick={(e) => {
                     e.stopPropagation();
                     onMoveDown();
                   }}
-                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all"
+                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md h-auto"
                   title="Move Down"
                 >
                   <ArrowDown className="w-4 h-4" />
-                </button>
+                </Button>
               )}
 
               {onDuplicate && (
-                <button
+                <Button
+                  variant="ghost"
                   onClick={(e) => {
                     e.stopPropagation();
                     onDuplicate();
                   }}
-                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all"
+                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md h-auto"
                   title="Duplicate Field"
                 >
                   <Copy className="w-4 h-4" />
-                </button>
+                </Button>
               )}
 
               {/* Cross-page actions menu */}
@@ -601,13 +608,14 @@ const FieldCard: React.FC<{
                   pages={pages}
                   currentPageId={pageId}
                   triggerElement={
-                    <button
+                    <Button
+                      variant="ghost"
                       onClick={(e) => e.stopPropagation()}
-                      className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md transition-all"
+                      className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md h-auto"
                       title="Move/Copy to another page"
                     >
                       <ArrowUp className="w-4 h-4 rotate-90" />
-                    </button>
+                    </Button>
                   }
                   onMoveToPage={onMoveToPage}
                   onCopyToPage={onCopyToPage}
@@ -615,16 +623,17 @@ const FieldCard: React.FC<{
               )}
 
               {onDelete && (
-                <button
+                <Button
+                  variant="ghost"
                   onClick={(e) => {
                     e.stopPropagation();
                     onDelete();
                   }}
-                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-all"
+                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md h-auto"
                   title="Delete field"
                 >
                   <Trash2 className="w-4 h-4" />
-                </button>
+                </Button>
               )}
             </div>
           </div>

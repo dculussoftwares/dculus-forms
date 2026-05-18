@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { ScrollArea, FieldPreview } from '@dculus/ui';
+import { ScrollArea, FieldPreview, Button } from '@dculus/ui';
 import { FormPage, FormField, FillableFormField } from '@dculus/types';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useTranslation } from '../../../hooks';
@@ -255,20 +255,19 @@ const RightSidebar: React.FC<{
           { id: 'properties' as const, icon: Settings, label: t('tabs.field') },
           { id: 'json' as const, icon: Code, label: 'JSON' },
         ] as const).map(({ id, icon: Icon, label }) => (
-          <button
+          <Button
             key={id}
+            variant="ghost"
             onClick={() => setActiveTab(id)}
-            className="relative flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors"
+            className="relative flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors h-auto rounded-none"
             style={{ color: activeTab === id ? '#3c323e' : '#655d67' }}
-            onMouseEnter={e => { if (activeTab !== id) (e.currentTarget as HTMLElement).style.color = '#4c414e'; }}
-            onMouseLeave={e => { if (activeTab !== id) (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
           >
             <Icon className="w-3.5 h-3.5" />
             {label}
             {activeTab === id && (
               <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full" style={{ backgroundColor: '#3c323e' }} />
             )}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -283,15 +282,15 @@ const RightSidebar: React.FC<{
                 })}
               </div>
               {permissions.canAddPages() && (
-                <button
+                <Button
+                  variant="ghost"
                   onClick={handleAddPage}
                   data-testid="add-page-button"
-                  className="p-1 hover:bg-[rgba(87,84,91,0.06)] rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ color: '#3c323e' }}
+                  className="p-1 rounded-md disabled:opacity-50 disabled:cursor-not-allowed h-auto"
                   title={t('menu.addPage')}
                 >
                   <Plus className="w-5 h-5" />
-                </button>
+                </Button>
               )}
             </div>
 
@@ -320,13 +319,13 @@ const RightSidebar: React.FC<{
               <div className="text-center py-8" style={{ color: '#655d67' }}>
                 {t('sidebar.pages.noPages')}
                 {permissions.canAddPages() && (
-                  <button
+                  <Button
+                    variant="ghost"
                     onClick={handleAddPage}
-                    className="mt-2 text-sm font-medium hover:underline"
-                    style={{ color: '#3c323e' }}
+                    className="mt-2 text-sm font-medium h-auto p-0 underline-offset-2 hover:underline"
                   >
                     Create your first page
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
@@ -549,52 +548,56 @@ const FieldCard: React.FC<{
           <div className="pl-9 pr-2">
             <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
               {onClick && (
-                <button
+                <Button
+                  variant="ghost"
                   onClick={(e) => { e.stopPropagation(); onClick(); }}
-                  className="p-1.5 rounded-md transition-all hover:bg-[rgba(87,84,91,0.06)]" style={{ color: '#655d67' }}
+                  className="p-1.5 rounded-md h-auto"
                   title="Field settings"
                   data-testid={`field-settings-button-${index + 1}`}
                 >
                   <Settings className="w-4 h-4" />
-                </button>
+                </Button>
               )}
               {onMoveUp && index > 0 && (
-                <button
+                <Button
+                  variant="ghost"
                   onClick={(e) => {
                     e.stopPropagation();
                     onMoveUp();
                   }}
-                  className="p-1.5 rounded-md transition-all hover:bg-[rgba(87,84,91,0.06)]" style={{ color: '#655d67' }}
+                  className="p-1.5 rounded-md h-auto"
                   title="Move Up"
                 >
                   <ArrowUp className="w-4 h-4" />
-                </button>
+                </Button>
               )}
 
               {onMoveDown && index < totalFields - 1 && (
-                <button
+                <Button
+                  variant="ghost"
                   onClick={(e) => {
                     e.stopPropagation();
                     onMoveDown();
                   }}
-                  className="p-1.5 rounded-md transition-all hover:bg-[rgba(87,84,91,0.06)]" style={{ color: '#655d67' }}
+                  className="p-1.5 rounded-md h-auto"
                   title="Move Down"
                 >
                   <ArrowDown className="w-4 h-4" />
-                </button>
+                </Button>
               )}
 
               {onDuplicate && (
-                <button
+                <Button
+                  variant="ghost"
                   onClick={(e) => {
                     e.stopPropagation();
                     onDuplicate();
                   }}
-                  className="p-1.5 rounded-md transition-all hover:bg-[rgba(87,84,91,0.06)]" style={{ color: '#655d67' }}
+                  className="p-1.5 rounded-md h-auto"
                   title="Duplicate Field"
                 >
                   <Copy className="w-4 h-4" />
-                </button>
+                </Button>
               )}
 
               {/* Cross-page actions menu */}
@@ -603,13 +606,14 @@ const FieldCard: React.FC<{
                   pages={pages}
                   currentPageId={pageId}
                   triggerElement={
-                    <button
+                    <Button
+                      variant="ghost"
                       onClick={(e) => e.stopPropagation()}
-                      className="p-1.5 rounded-md transition-all hover:bg-[rgba(87,84,91,0.06)]" style={{ color: '#655d67' }}
+                      className="p-1.5 rounded-md h-auto"
                       title="Move/Copy to another page"
                     >
                       <ArrowUp className="w-4 h-4 rotate-90" />
-                    </button>
+                    </Button>
                   }
                   onMoveToPage={onMoveToPage}
                   onCopyToPage={onCopyToPage}
@@ -617,16 +621,17 @@ const FieldCard: React.FC<{
               )}
 
               {onDelete && (
-                <button
+                <Button
+                  variant="ghost"
                   onClick={(e) => {
                     e.stopPropagation();
                     onDelete();
                   }}
-                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-all"
+                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md h-auto"
                   title="Delete field"
                 >
                   <Trash2 className="w-4 h-4" />
-                </button>
+                </Button>
               )}
             </div>
           </div>

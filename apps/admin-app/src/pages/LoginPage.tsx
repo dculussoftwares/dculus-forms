@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from '../hooks/useTranslation';
 import { AlertTriangle } from 'lucide-react';
-import { Input, Label } from '@dculus/ui';
+import { Button, Input, Label } from '@dculus/ui';
 import { Eye, EyeOff, Shield } from 'lucide-react';
 
 export default function LoginPage() {
@@ -75,28 +75,22 @@ export default function LoginPage() {
                   autoComplete="current-password" required value={password}
                   onChange={(e) => setPassword(e.target.value)} placeholder={t('password')} className="pr-9"
                 />
-                <button type="button" className="absolute inset-y-0 right-3 flex items-center" style={{ color: '#655d67' }}
+                <Button type="button" variant="ghost" size="icon" className="absolute inset-y-0 right-0 h-full w-9 rounded-l-none"
                   onClick={() => setShowPassword(!showPassword)}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#3c323e'}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#655d67'}
+                  style={{ color: '#655d67' }}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+                </Button>
               </div>
             </div>
-            <button type="submit" disabled={isLoading}
-              className="w-full h-10 rounded-lg text-sm font-medium text-white transition-all mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{ backgroundColor: '#3c323e' }}
-              onMouseEnter={e => { if (!isLoading) (e.currentTarget as HTMLElement).style.backgroundColor = '#2e2530'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#3c323e'; }}
-            >
+            <Button type="submit" disabled={isLoading} className="w-full h-10 mt-2">
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                   {t('signingIn')}
                 </span>
               ) : t('signIn')}
-            </button>
+            </Button>
           </form>
           <p className="text-xs text-center mt-6" style={{ color: '#655d67' }}>Contact your system administrator for access.</p>
         </div>

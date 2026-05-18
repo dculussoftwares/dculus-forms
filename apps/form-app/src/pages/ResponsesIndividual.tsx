@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { useTranslation } from '../hooks/useTranslation';
-import { LoadingSpinner, EmptyState } from '@dculus/ui';
+import { Button, LoadingSpinner, EmptyState } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { AlertCircle, ArrowLeft, Eye, UserCheck } from 'lucide-react';
@@ -62,16 +62,14 @@ const ResponsesIndividual: React.FC = () => {
     >
       <div className="space-y-5">
         {/* Back */}
-        <button
+        <Button
+          variant="ghost"
           onClick={() => navigate(`/dashboard/form/${actualFormId}/responses`)}
-          className="flex items-center gap-1.5 text-xs transition-colors"
-          style={{ color: '#655d67' }}
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#3c323e'}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#655d67'}
+          className="flex items-center gap-1.5 text-xs h-auto p-0"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           {t('navigation.backToResponses')}
-        </button>
+        </Button>
 
         {/* Response cards */}
         <div
@@ -116,15 +114,13 @@ const ResponsesIndividual: React.FC = () => {
                       >
                         {response.status}
                       </span>
-                      <button
-                        className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors"
-                        style={{ backgroundColor: 'rgba(255,255,255,0.8)', color: '#655d67', border: '1px solid rgba(81,76,84,0.15)' }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#f7f7f8'; (e.currentTarget as HTMLElement).style.color = '#4c414e'; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.8)'; (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
+                      <Button
+                        variant="outline"
+                        className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium"
                       >
                         <Eye className="h-3.5 w-3.5" />
                         {t('content.response.viewDetails')}
-                      </button>
+                      </Button>
                     </div>
                   </div>
 

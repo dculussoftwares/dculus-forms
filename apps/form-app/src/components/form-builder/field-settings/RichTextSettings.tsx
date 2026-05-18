@@ -1,6 +1,6 @@
 import React from 'react';
 import { Controller, useWatch } from 'react-hook-form';
-import { RichTextEditor } from '@dculus/ui';
+import { Label, RichTextEditor } from '@dculus/ui';
 import { useFieldSettingsConstants } from './useFieldSettingsConstants';
 import { BaseFieldSettingsProps } from './types';
 
@@ -38,9 +38,9 @@ export const RichTextSettings: React.FC<RichTextSettingsProps> = ({
       <h4 className={constants.CSS_CLASSES.SECTION_TITLE}>Rich Text Content</h4>
 
       <div className="space-y-2">
-        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+        <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
           Content
-        </label>
+        </Label>
         <Controller
           name="content"
           control={control}

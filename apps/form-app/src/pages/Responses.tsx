@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { useTranslation } from '../hooks/useTranslation';
-import { LoadingSpinner, EmptyState } from '@dculus/ui';
+import { Button, LoadingSpinner, EmptyState } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { FilterModal } from '../components/Filters';
 import { QuizResultsDialog } from '../components/plugins/response-table/quiz/QuizResultsDialog';
@@ -147,15 +147,13 @@ const Responses: React.FC = () => {
           className="flex items-center gap-3 pb-4 mb-2 flex-shrink-0"
           style={{ borderBottom: '1px solid rgba(81,76,84,0.10)' }}
         >
-          <button
+          <Button
             onClick={() => navigate(`/dashboard/form/${actualFormId}`)}
-            className="h-8 w-8 flex items-center justify-center rounded-lg shrink-0 transition-colors"
-            style={{ color: '#655d67' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; (e.currentTarget as HTMLElement).style.color = '#3c323e'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
+            variant="ghost"
+            className="h-8 w-8 flex items-center justify-center rounded-lg shrink-0 p-0"
           >
             <ArrowLeft className="h-4 w-4" />
-          </button>
+          </Button>
 
           <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'rgba(81,76,84,0.12)' }} />
 
@@ -189,14 +187,14 @@ const Responses: React.FC = () => {
             title={t('errors.loadingResponses')}
             description={t('errors.loadingResponsesMessage')}
             action={
-              <button
+              <Button
                 onClick={() => window.location.reload()}
-                className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors"
-                style={{ backgroundColor: 'rgba(255,255,255,0.8)', color: '#655d67', border: '1px solid rgba(81,76,84,0.15)' }}
+                variant="outline"
+                className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 {t('table.refreshPage')}
-              </button>
+              </Button>
             }
           />
         ) : (

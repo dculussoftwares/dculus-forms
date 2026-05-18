@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import { useTranslation } from '../hooks/useTranslation';
-import { LoadingSpinner } from '@dculus/ui';
+import { Button, LoadingSpinner } from '@dculus/ui';
 import { FileText, Plus, Edit2, Trash2, Eye } from 'lucide-react';
 import { GET_TEMPLATES, DELETE_TEMPLATE } from '../graphql/templates';
 import TemplateModal from '../components/templates/TemplateModal';
@@ -18,15 +18,14 @@ interface Template {
 
 /* Ghost icon button for table actions */
 const IconBtn: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { danger?: boolean }> = ({ children, danger, ...props }) => (
-  <button
-    {...props}
-    className="h-7 w-7 flex items-center justify-center rounded-lg transition-colors"
-    style={{ color: danger ? '#ce5d55' : '#655d67' }}
-    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = danger ? 'rgba(206,93,85,0.08)' : 'rgba(87,84,91,0.06)'; (e.currentTarget as HTMLElement).style.color = danger ? '#ce5d55' : '#3c323e'; }}
-    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = danger ? '#ce5d55' : '#655d67'; }}
+  <Button
+    {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
+    variant="ghost"
+    size="icon"
+    className={`h-7 w-7 ${danger ? 'text-[#ce5d55] hover:bg-[rgba(206,93,85,0.08)] hover:text-[#ce5d55]' : 'text-[#655d67]'}`}
   >
     {children}
-  </button>
+  </Button>
 );
 
 export default function TemplatesPage() {
@@ -61,7 +60,7 @@ export default function TemplatesPage() {
       <div className="flex flex-col items-center justify-center min-h-64 text-center">
         <h2 className="text-sm font-semibold mb-1" style={{ color: '#3c323e' }}>Unable to load templates</h2>
         <p className="text-xs mb-3" style={{ color: '#655d67' }}>{error.message}</p>
-        <button className="text-xs font-medium" style={{ color: '#3c323e' }} onClick={() => refetch()}>Try again</button>
+        <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={() => refetch()}>Try again</Button>
       </div>
     );
   }
@@ -74,16 +73,10 @@ export default function TemplatesPage() {
           <h1 className="text-lg font-semibold" style={{ color: '#3c323e' }}>{t('pageTitle', { defaultValue: 'Templates' })}</h1>
           <p className="text-xs mt-0.5" style={{ color: '#655d67' }}>{t('pageSubtitle', { defaultValue: 'Manage form templates' })}</p>
         </div>
-        <button
-          onClick={handleCreate}
-          className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-white"
-          style={{ backgroundColor: '#3c323e' }}
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.backgroundColor = '#2e2530'}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.backgroundColor = '#3c323e'}
-        >
+        <Button onClick={handleCreate} size="sm" className="gap-1.5">
           <Plus className="h-3.5 w-3.5" />
           {t('createTemplate', { defaultValue: 'Create Template' })}
-        </button>
+        </Button>
       </div>
 
       {/* Table */}
@@ -97,14 +90,10 @@ export default function TemplatesPage() {
             </div>
             <p className="text-sm font-medium mb-1" style={{ color: '#3c323e' }}>No templates yet</p>
             <p className="text-xs mb-5" style={{ color: '#655d67' }}>{t('emptyState.description', { defaultValue: 'Create your first template to get started' })}</p>
-            <button
-              onClick={handleCreate}
-              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-white"
-              style={{ backgroundColor: '#3c323e' }}
-            >
+            <Button onClick={handleCreate} size="sm" className="gap-1.5">
               <Plus className="h-3.5 w-3.5" />
               {t('createTemplate', { defaultValue: 'Create Template' })}
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="overflow-x-auto">

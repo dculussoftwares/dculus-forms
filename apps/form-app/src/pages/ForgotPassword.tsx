@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Input, Label } from "@dculus/ui";
+import { Button, Input, Label } from "@dculus/ui";
 import { forgetPassword, authClient } from "../lib/auth-client";
 import { CheckCircle, FileText, KeyRound } from "lucide-react";
 import { useTranslation } from "../hooks/useTranslation";
@@ -157,13 +157,10 @@ export const ForgotPassword = () => {
                     {errors.submit}
                   </p>
                 )}
-                <button
+                <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-10 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                  style={{ backgroundColor: '#3c323e' }}
-                  onMouseEnter={e => { if (!isLoading) (e.currentTarget as HTMLElement).style.backgroundColor = '#2e2530'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#3c323e'; }}
+                  className="w-full h-10"
                 >
                   {isLoading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -171,7 +168,7 @@ export const ForgotPassword = () => {
                       {t('steps.email.action.loading')}
                     </span>
                   ) : t('steps.email.action.idle')}
-                </button>
+                </Button>
               </form>
             ) : (
               <form onSubmit={handleResetPassword} className="space-y-4">
@@ -210,13 +207,10 @@ export const ForgotPassword = () => {
                     {errors.submit}
                   </p>
                 )}
-                <button
+                <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-10 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                  style={{ backgroundColor: '#3c323e' }}
-                  onMouseEnter={e => { if (!isLoading) (e.currentTarget as HTMLElement).style.backgroundColor = '#2e2530'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#3c323e'; }}
+                  className="w-full h-10"
                 >
                   {isLoading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -224,7 +218,7 @@ export const ForgotPassword = () => {
                       {t('steps.reset.action.loading')}
                     </span>
                   ) : t('steps.reset.action.idle')}
-                </button>
+                </Button>
               </form>
             )}
           </div>

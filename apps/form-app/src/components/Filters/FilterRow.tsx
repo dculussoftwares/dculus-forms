@@ -3,14 +3,15 @@ import { parseCalendarDate, formatCalendarDate } from '@dculus/utils';
 import { X } from 'lucide-react';
 import {
   Button,
+  Checkbox,
+  DatePicker,
+  Input,
+  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Input,
-  Checkbox,
-  DatePicker,
 } from '@dculus/ui';
 import {
   FillableFormField,
@@ -349,13 +350,13 @@ const renderFilterInput = (
                         });
                       }}
                     />
-                    <label
+                    <Label
                       htmlFor={`${field.id}-${index}`}
                       className="text-sm font-medium leading-none cursor-pointer flex-1 min-w-0 truncate"
                       title={option}
                     >
                       {option}
-                    </label>
+                    </Label>
                   </div>
                 );
               })}

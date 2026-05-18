@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { useTranslation } from '../hooks/useTranslation';
 import { GET_FORM_BY_ID, GET_RESPONSE_BY_ID } from '../graphql/queries';
 import { useResponseEditHistory } from '../hooks/useResponseEditHistory';
-import { Alert, AlertDescription, LoadingSpinner, EmptyState } from '@dculus/ui';
+import { Alert, AlertDescription, Button, LoadingSpinner, EmptyState } from '@dculus/ui';
 import {
   ArrowLeft,
   History,
@@ -128,30 +128,25 @@ export const ResponseEditHistory: React.FC = () => {
       <div className="flex flex-col h-full w-full overflow-x-hidden">
         {/* Header */}
         <div className="flex items-center gap-3 pb-4 flex-shrink-0" style={{ borderBottom: '1px solid rgba(81,76,84,0.10)' }}>
-          <button
+          <Button
             onClick={handleGoToTable}
-            className="h-8 w-8 flex items-center justify-center rounded-lg transition-colors shrink-0"
-            style={{ color: '#655d67' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; (e.currentTarget as HTMLElement).style.color = '#3c323e'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
+            variant="ghost"
+            className="h-8 w-8 flex items-center justify-center rounded-lg shrink-0 p-0"
           >
             <ArrowLeft className="h-4 w-4" />
-          </button>
+          </Button>
           <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'rgba(81,76,84,0.12)' }} />
           <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: '#ddd6fa' }}>
             <History className="h-4 w-4" style={{ color: '#5c2e6b' }} />
           </div>
           <h1 className="text-sm font-semibold truncate flex-1" style={{ color: '#3c323e' }}>{t('header.title')}</h1>
-          <button
+          <Button
             onClick={handleGoToEdit}
-            className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-white shrink-0"
-            style={{ backgroundColor: '#3c323e' }}
-            onMouseEnter={e => (e.currentTarget as HTMLElement).style.backgroundColor = '#2e2530'}
-            onMouseLeave={e => (e.currentTarget as HTMLElement).style.backgroundColor = '#3c323e'}
+            className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium shrink-0"
           >
             <Edit3 className="h-3.5 w-3.5" />
             {t('header.editResponse')}
-          </button>
+          </Button>
         </div>
 
         {/* Main content area */}

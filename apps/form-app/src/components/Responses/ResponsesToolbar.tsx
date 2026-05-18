@@ -1,10 +1,14 @@
 import React from 'react';
 import { ColumnDef, VisibilityState } from '@tanstack/react-table';
 import {
+  Button,
+  Checkbox,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  Input,
+  Label,
 } from '@dculus/ui';
 import {
   ChevronDown,
@@ -37,25 +41,6 @@ interface ResponsesToolbarProps {
   t: (key: string, options?: { values?: Record<string, string | number>; defaultValue?: string }) => string;
 }
 
-/* Reusable Typeform ghost button — exact rgba(255,255,255,0.8) + rgba(81,76,84,0.15) */
-const TfBtn: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { children: React.ReactNode }> = ({
-  children, className = '', style, ...props
-}) => (
-  <button
-    className={`flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
-    style={{
-      backgroundColor: 'rgba(255,255,255,0.8)',
-      color: '#655d67',
-      border: '1px solid rgba(81,76,84,0.15)',
-      ...style,
-    }}
-    onMouseEnter={e => { if (!(e.currentTarget as HTMLButtonElement).disabled) { (e.currentTarget as HTMLElement).style.backgroundColor = '#f7f7f8'; (e.currentTarget as HTMLElement).style.color = '#4c414e'; } }}
-    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.8)'; (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
-    {...props}
-  >
-    {children}
-  </button>
-);
 
 export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
   globalFilter,
@@ -90,38 +75,36 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
             className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none"
             style={{ color: '#655d67' }}
           />
-          <input
+          <Input
             type="text"
             placeholder={t('toolbar.search.placeholder')}
             value={globalFilter}
             onChange={(e) => onGlobalFilterChange(e.target.value)}
-            className="w-full h-8 pl-9 pr-8 text-xs rounded-lg transition-colors focus:outline-none"
-            style={{
-              backgroundColor: 'rgba(255,255,255,0.8)',
-              border: '1px solid rgba(81,76,84,0.15)',
-              color: '#4c414e',
-            }}
+            className="h-8 pl-9 pr-8 text-xs"
           />
           {globalFilter && (
-            <button
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded transition-colors"
-              style={{ color: '#655d67' }}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0 h-8 w-8 rounded-l-none"
               onClick={() => onGlobalFilterChange('')}
             >
               <X className="h-3 w-3" />
-            </button>
+            </Button>
           )}
         </div>
 
         {/* Filter toggle — exact Typeform ghost */}
-        <TfBtn
+        <Button
+          variant="outline"
+          size="sm"
           onClick={onShowFilterModal}
           data-testid="filter-button"
+          className="gap-1.5 shrink-0"
         >
           <Filter className="h-3.5 w-3.5" />
           {t('toolbar.filters.buttonLabel')}
           {activeFilters.length > 0 && (
-            /* Typeform exact: #f6fafd bg, #01487f text, blue border */
             <span
               className="ml-0.5 px-1.5 py-0.5 text-[10px] font-medium rounded-full"
               style={{ backgroundColor: '#f6fafd', color: '#01487f', border: '1px solid rgb(189,221,249)' }}
@@ -129,7 +112,7 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
               {activeFilters.length}
             </span>
           )}
-        </TfBtn>
+        </Button>
 
         {/* Active filter chips */}
         <div className="flex items-center gap-1.5 flex-wrap">
@@ -143,12 +126,14 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
                   values: { query: `${globalFilter.slice(0, 15)}${globalFilter.length > 15 ? '…' : ''}` }
                 })}
               </span>
-              <button
-                className="flex-shrink-0 p-0.5 rounded transition-opacity hover:opacity-70"
+              <Button
+                variant="ghost"
+                size="icon"
+                className="flex-shrink-0 h-4 w-4 rounded hover:opacity-70"
                 onClick={() => onGlobalFilterChange('')}
               >
                 <X className="h-3 w-3" />
-              </button>
+              </Button>
             </div>
           )}
 
@@ -169,10 +154,7 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
         {/* Column visibility */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button
-              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors shrink-0"
-              style={{ backgroundColor: 'rgba(255,255,255,0.8)', color: '#655d67', border: '1px solid rgba(81,76,84,0.15)' }}
-            >
+            <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
               <Settings2 className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">{t('toolbar.columns.buttonLabel')}</span>
               {hiddenColumns.length > 0 && (
@@ -183,7 +165,7 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
                   {t('toolbar.columns.hiddenCount', { values: { count: hiddenColumns.length } })}
                 </span>
               )}
-            </button>
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-60">
             <div className="flex flex-col max-h-80">
@@ -192,16 +174,15 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
                 style={{ borderBottom: '1px solid rgba(81,76,84,0.08)', color: '#3c323e' }}
               >
                 <span>{t('toolbar.columns.toggle')}</span>
-                <button
-                  className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] transition-colors"
-                  style={{ color: '#655d67' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center gap-1 h-7 px-2 text-[10px]"
                   onClick={() => onColumnVisibilityChange({})}
                 >
                   <RotateCcw className="h-3 w-3" />
                   {t('toolbar.columns.reset')}
-                </button>
+                </Button>
               </div>
               <div className="overflow-y-auto flex-1 p-1.5">
                 {columns.length === 0 ? (
@@ -215,26 +196,23 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
                       const isVisible = columnVisibility[column.id] !== false;
                       const columnLabel = getColumnLabel(column.id);
                       return (
-                        <label
+                        <Label
                           key={column.id}
-                          className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-colors"
+                          htmlFor={`col-${column.id}`}
+                          className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-colors font-normal hover:bg-[rgba(87,84,91,0.06)]"
                           style={{ color: '#4c414e' }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
                         >
-                          <input
-                            type="checkbox"
+                          <Checkbox
+                            id={`col-${column.id}`}
                             checked={isVisible}
-                            onChange={(e) =>
-                              onColumnVisibilityChange((prev) => ({ ...prev, [column.id!]: e.target.checked }))
+                            onCheckedChange={(checked) =>
+                              onColumnVisibilityChange((prev) => ({ ...prev, [column.id!]: !!checked }))
                             }
-                            className="h-4 w-4 rounded-[4px]"
-                            style={{ accentColor: '#3c323e' }}
                           />
                           <span className="text-xs flex-1 min-w-0 truncate" title={columnLabel}>
                             {columnLabel}
                           </span>
-                        </label>
+                        </Label>
                       );
                     })}
                   </div>
@@ -247,11 +225,7 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
         {/* Export */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button
-              disabled={isExporting}
-              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: 'rgba(255,255,255,0.8)', color: '#655d67', border: '1px solid rgba(81,76,84,0.15)' }}
-            >
+            <Button variant="outline" size="sm" disabled={isExporting} className="gap-1.5 shrink-0">
               {isExporting ? (
                 <>
                   <div
@@ -267,7 +241,7 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
                   <ChevronDown className="h-3 w-3 ml-0.5" />
                 </>
               )}
-            </button>
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>

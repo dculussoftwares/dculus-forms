@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQuery } from '@apollo/client';
-import { Button, LoadingSpinner } from '@dculus/ui';
+import { Button, Input, Label, Textarea, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, LoadingSpinner } from '@dculus/ui';
 import { X, FileText, Layout, Code } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { FormSchema } from '@dculus/types';
@@ -299,19 +299,20 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
           <div className="border-b">
             <nav className="flex space-x-8 px-6">
               {tabs.map((tab) => (
-                <button
+                <Button
                   key={tab.id}
                   type="button"
+                  variant="ghost"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                  className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 rounded-none h-auto ${
                     activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? 'border-[#3c323e] text-[#3c323e]'
+                      : 'border-transparent text-[#655d67] hover:text-[#4c414e] hover:border-[rgba(81,76,84,0.15)]'
                   }`}
                 >
                   <tab.icon className="h-4 w-4" />
                   <span>{tab.label}</span>
-                </button>
+                </Button>
               ))}
             </nav>
           </div>
@@ -330,66 +331,63 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
                 <div className="space-y-4">
                   {/* Template Name */}
                   <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                    <Label htmlFor="name" className="block text-sm font-medium mb-1" style={{ color: '#4c414e' }}>
                       Template Name *
-                    </label>
-                    <input
+                    </Label>
+                    <Input
                       type="text"
                       id="name"
                       value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
                       disabled={isReadOnly}
-                      className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                        isReadOnly ? 'bg-gray-50' : ''
-                      } ${errors.name ? 'border-red-500' : ''}`}
+                      className={errors.name ? 'border-[#ce5d55] focus-visible:border-[#ce5d55]' : ''}
                       placeholder="Enter template name"
                     />
                     {errors.name && (
-                      <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+                      <p className="mt-1 text-sm" style={{ color: '#ce5d55' }}>{errors.name}</p>
                     )}
                   </div>
 
                   {/* Category */}
                   <div>
-                    <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                    <Label htmlFor="category" className="block text-sm font-medium mb-1" style={{ color: '#4c414e' }}>
                       Category
-                    </label>
+                    </Label>
                     {isReadOnly ? (
-                      <input
+                      <Input
                         type="text"
                         value={formData.category || 'Uncategorized'}
                         disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
                       />
                     ) : (
-                      <select
-                        id="category"
+                      <Select
                         value={formData.category}
-                        onChange={(e) => handleInputChange('category', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        onValueChange={(value) => handleInputChange('category', value)}
                       >
-                        <option value="">Select a category</option>
-                        {categories.map((cat: string) => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                      </select>
+                        <SelectTrigger id="category" className="w-full">
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Select a category</SelectItem>
+                          {categories.map((cat: string) => (
+                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     )}
                   </div>
 
                   {/* Description */}
                   <div>
-                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                    <Label htmlFor="description" className="block text-sm font-medium mb-1" style={{ color: '#4c414e' }}>
                       Description
-                    </label>
-                    <textarea
+                    </Label>
+                    <Textarea
                       id="description"
                       value={formData.description}
                       onChange={(e) => handleInputChange('description', e.target.value)}
                       disabled={isReadOnly}
                       rows={3}
-                      className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                        isReadOnly ? 'bg-gray-50' : ''
-                      }`}
                       placeholder="Enter template description"
                     />
                   </div>
@@ -397,9 +395,9 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
                   {/* Status for view mode */}
                   {isReadOnly && template && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <Label className="block text-sm font-medium mb-1" style={{ color: '#4c414e' }}>
                         Status
-                      </label>
+                      </Label>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         template.isActive 
                           ? 'bg-primary/10 text-primary'
@@ -417,43 +415,45 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
                 <div className="space-y-4">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label htmlFor="formSchema" className="block text-sm font-medium text-gray-700">
+                      <Label htmlFor="formSchema" className="block text-sm font-medium" style={{ color: '#4c414e' }}>
                         Form Schema (JSON) {!isReadOnly && '*'}
-                      </label>
+                      </Label>
                       {!isReadOnly && (
                         <div className="flex space-x-2">
-                          <button
+                          <Button
                             type="button"
+                            variant="outline"
+                            size="sm"
                             onClick={() => formatJSON('formSchema')}
-                            className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded"
+                            className="h-7 px-2 text-xs"
                           >
                             Format
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             type="button"
+                            variant="outline"
+                            size="sm"
                             onClick={() => resetToSample('formSchema')}
-                            className="px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded"
+                            className="h-7 px-2 text-xs"
                           >
                             Reset to Sample
-                          </button>
+                          </Button>
                         </div>
                       )}
                     </div>
-                    <textarea
+                    <Textarea
                       id="formSchema"
                       value={formData.formSchema}
                       onChange={(e) => handleInputChange('formSchema', e.target.value)}
                       disabled={isReadOnly}
                       rows={20}
-                      className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm ${
-                        isReadOnly ? 'bg-gray-50' : ''
-                      } ${errors.formSchema ? 'border-red-500' : ''}`}
+                      className={`font-mono text-sm ${errors.formSchema ? 'border-[#ce5d55] focus-visible:border-[#ce5d55]' : ''}`}
                       placeholder={isReadOnly ? '' : "Enter form schema JSON..."}
                     />
                     {errors.formSchema && (
-                      <p className="mt-1 text-sm text-red-600">{errors.formSchema}</p>
+                      <p className="mt-1 text-sm" style={{ color: '#ce5d55' }}>{errors.formSchema}</p>
                     )}
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs" style={{ color: '#655d67' }}>
                       {isReadOnly ? 'View the pages and fields structure of this template.' : 'Define the pages and fields structure for your template form.'}
                     </p>
                   </div>
@@ -465,43 +465,45 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
                 <div className="space-y-4">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label htmlFor="layout" className="block text-sm font-medium text-gray-700">
+                      <Label htmlFor="layout" className="block text-sm font-medium" style={{ color: '#4c414e' }}>
                         Layout Configuration (JSON) {!isReadOnly && '*'}
-                      </label>
+                      </Label>
                       {!isReadOnly && (
                         <div className="flex space-x-2">
-                          <button
+                          <Button
                             type="button"
+                            variant="outline"
+                            size="sm"
                             onClick={() => formatJSON('layout')}
-                            className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded"
+                            className="h-7 px-2 text-xs"
                           >
                             Format
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             type="button"
+                            variant="outline"
+                            size="sm"
                             onClick={() => resetToSample('layout')}
-                            className="px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded"
+                            className="h-7 px-2 text-xs"
                           >
                             Reset to Sample
-                          </button>
+                          </Button>
                         </div>
                       )}
                     </div>
-                    <textarea
+                    <Textarea
                       id="layout"
                       value={formData.layout}
                       onChange={(e) => handleInputChange('layout', e.target.value)}
                       disabled={isReadOnly}
                       rows={15}
-                      className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm ${
-                        isReadOnly ? 'bg-gray-50' : ''
-                      } ${errors.layout ? 'border-red-500' : ''}`}
+                      className={`font-mono text-sm ${errors.layout ? 'border-[#ce5d55] focus-visible:border-[#ce5d55]' : ''}`}
                       placeholder={isReadOnly ? '' : "Enter layout configuration JSON..."}
                     />
                     {errors.layout && (
-                      <p className="mt-1 text-sm text-red-600">{errors.layout}</p>
+                      <p className="mt-1 text-sm" style={{ color: '#ce5d55' }}>{errors.layout}</p>
                     )}
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs" style={{ color: '#655d67' }}>
                       {isReadOnly ? 'View the theme, spacing, colors, and layout settings of this template.' : 'Configure theme, spacing, colors, and layout settings for your template.'}
                     </p>
                   </div>

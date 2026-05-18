@@ -1,6 +1,6 @@
 import { useQuery } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
-import { LoadingSpinner } from '@dculus/ui';
+import { Button, LoadingSpinner } from '@dculus/ui';
 import { Building2 } from 'lucide-react';
 import { ADMIN_ORGANIZATIONS_QUERY } from '../graphql/organizations';
 import { useTranslation } from '../hooks/useTranslation';
@@ -18,15 +18,14 @@ interface AdminOrganization {
 
 /* Reusable Typeform-style action link */
 const ActionLink: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ children, ...props }) => (
-  <button
-    {...props}
-    className="text-xs font-medium transition-colors"
-    style={{ color: '#655d67' }}
-    onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#3c323e'}
-    onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#655d67'}
+  <Button
+    {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
+    variant="ghost"
+    size="sm"
+    className="text-xs h-7 px-2 text-[#655d67] hover:text-[#3c323e]"
   >
     {children}
-  </button>
+  </Button>
 );
 
 import React from 'react';

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Palette, Image, Search } from 'lucide-react';
 import { FormLayout, LayoutCode } from '@dculus/types';
-import { Tabs, TabsList, TabsTrigger, TabsContent, Button, Checkbox } from '@dculus/ui';
+import { Tabs, TabsList, TabsTrigger, TabsContent, Button, Checkbox, Input, Label } from '@dculus/ui';
 import { useQuery } from '@apollo/client';
 import { useTranslation } from '../../../../hooks/useTranslation';
 import { useLocale } from '../../../../hooks/useLocale';
@@ -102,16 +102,15 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
         {/* Custom CTA Button Input */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               {t('customCTA.label')}
-            </label>
-            <input
+            </Label>
+            <Input
               type="text"
               value={layout.customCTAButtonName || ''}
               onChange={(e) => canEditLayout && onLayoutUpdate({ customCTAButtonName: e.target.value })}
               placeholder={t('customCTA.placeholder')}
               disabled={!canEditLayout}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <p className="text-xs text-gray-500 dark:text-gray-400">
               {t('customCTA.helpText')}
@@ -122,10 +121,10 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
         {/* Background Color Controls */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="space-y-3">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               {t('backgroundColor.label')}
-            </label>
-            
+            </Label>
+
             {/* Toggle for custom background color */}
             <div className="flex items-center space-x-2">
               <Checkbox
@@ -134,32 +133,32 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
                 onCheckedChange={(checked) => canEditLayout && onLayoutUpdate({ isCustomBackgroundColorEnabled: !!checked })}
                 disabled={!canEditLayout}
               />
-              <label htmlFor="isCustomBackgroundColorEnabled" className="text-sm text-gray-700 dark:text-gray-300">
+              <Label htmlFor="isCustomBackgroundColorEnabled" className="text-sm text-gray-700 dark:text-gray-300 font-normal cursor-pointer">
                 {t('backgroundColor.toggleLabel')}
-              </label>
+              </Label>
             </div>
-            
+
             {/* Color picker - only show when toggle is enabled */}
             {layout.isCustomBackgroundColorEnabled && (
               <div className="space-y-2">
-                <label className="block text-xs text-gray-600 dark:text-gray-400">
+                <Label className="block text-xs text-gray-600 dark:text-gray-400">
                   {t('backgroundColor.colorLabel')}
-                </label>
+                </Label>
                 <div className="flex items-center space-x-2">
                   <input
                     type="color"
                     value={layout.customBackGroundColor || '#000000'}
                     onChange={(e) => canEditLayout && onLayoutUpdate({ customBackGroundColor: e.target.value })}
                     disabled={!canEditLayout}
-                    className="w-8 h-8 border border-gray-300 dark:border-gray-600 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-8 h-8 border border-[rgba(81,76,84,0.15)] rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   />
-                  <input
+                  <Input
                     type="text"
                     value={layout.customBackGroundColor || '#000000'}
                     onChange={(e) => canEditLayout && onLayoutUpdate({ customBackGroundColor: e.target.value })}
                     placeholder={t('backgroundColor.placeholder')}
                     disabled={!canEditLayout}
-                    className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 h-8 px-2 text-xs"
                   />
                 </div>
               </div>
@@ -178,9 +177,9 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
               <Image className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 {t('backgroundImages.label')}
-              </label>
+              </Label>
             </div>
             
             <Tabs defaultValue="custom" className="w-full">

@@ -283,10 +283,11 @@ const FileDownloadLink: React.FC<{ s3Key: string }> = ({ s3Key }) => {
   };
 
   return (
-    <button
+    <Button
       onClick={handleClick}
       disabled={loading}
-      className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 hover:underline truncate max-w-[180px] disabled:opacity-50 disabled:cursor-wait"
+      variant="ghost"
+      className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 hover:underline truncate max-w-[180px] disabled:opacity-50 disabled:cursor-wait h-auto p-0"
       title={name}
     >
       {loading ? (
@@ -295,7 +296,7 @@ const FileDownloadLink: React.FC<{ s3Key: string }> = ({ s3Key }) => {
         <Download className="h-3 w-3 flex-shrink-0" />
       )}
       <span className="truncate">{name}</span>
-    </button>
+    </Button>
   );
 };
 

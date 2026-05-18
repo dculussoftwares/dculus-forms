@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Input, Label } from "@dculus/ui";
+import { Button, Input, Label } from "@dculus/ui";
 import { signIn, emailOtp } from "../lib/auth-client";
 import { useTranslation } from "../hooks/useTranslation";
 import { FileText, CheckCircle, BarChart3, Users } from "lucide-react";
@@ -207,21 +207,14 @@ export const SignIn = () => {
               )}
 
               {/* Submit button — Typeform dark aubergine */}
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full h-10 rounded-lg text-sm font-medium text-white transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
-                style={{ backgroundColor: '#3c323e' }}
-                onMouseEnter={e => { if (!isLoading) (e.currentTarget as HTMLElement).style.backgroundColor = '#2e2530'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#3c323e'; }}
-              >
+              <Button type="submit" disabled={isLoading} className="w-full h-10">
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
                     <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                     {t("form.actions.submitting")}
                   </span>
                 ) : t("form.actions.submit")}
-              </button>
+              </Button>
             </form>
 
             {/* Sign up link (mobile only) */}

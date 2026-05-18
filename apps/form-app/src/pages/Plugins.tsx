@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { useTranslation } from '../hooks/useTranslation';
-import { LoadingSpinner, EmptyState } from '@dculus/ui';
+import { Button, LoadingSpinner, EmptyState } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { GET_FORM_PLUGINS } from '../graphql/plugins';
@@ -96,16 +96,13 @@ const Plugins: React.FC = () => {
             </p>
           </div>
 
-          <button
+          <Button
             onClick={() => setIsAddPluginDialogOpen(true)}
-            className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-white transition-all duration-150"
-            style={{ backgroundColor: '#3c323e' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#2e2530'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#3c323e'; }}
+            className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium"
           >
             <Plus className="h-3.5 w-3.5" />
             {t('buttons.addIntegration')}
-          </button>
+          </Button>
         </div>
 
         {/* ── Content ── */}
@@ -126,14 +123,13 @@ const Plugins: React.FC = () => {
             <p className="text-xs max-w-sm mx-auto mb-5" style={{ color: '#655d67' }}>
               {t('emptyState.description')}
             </p>
-            <button
+            <Button
               onClick={() => setIsAddPluginDialogOpen(true)}
-              className="inline-flex items-center gap-1.5 h-8 px-4 rounded-lg text-xs font-medium text-white"
-              style={{ backgroundColor: '#3c323e' }}
+              className="inline-flex items-center gap-1.5 h-8 px-4 text-xs font-medium"
             >
               <Plus className="h-3.5 w-3.5" />
               {t('buttons.browseIntegrations')}
-            </button>
+            </Button>
           </div>
         ) : (
           /* Plugin list — Typeform integration list style */

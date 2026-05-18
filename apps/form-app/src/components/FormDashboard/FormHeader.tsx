@@ -191,40 +191,37 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
         className="flex items-center gap-0.5 px-4 py-1.5"
         style={{ borderTop: '1px solid rgba(81,76,84,0.08)', backgroundColor: 'rgba(81,76,84,0.02)' }}
       >
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={onPreview}
-          className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors"
-          style={{ color: '#655d67' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#3c323e'; (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#655d67'; (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
+          className="gap-1.5 text-xs h-8 text-[#655d67]"
         >
           <Eye className="h-3.5 w-3.5" />
           {t('header.actions.preview')}
-        </button>
+        </Button>
 
         {onShare && (
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onShare}
-            className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors"
-            style={{ color: '#655d67' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#3c323e'; (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#655d67'; (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
+            className="gap-1.5 text-xs h-8 text-[#655d67]"
           >
             <Share2 className="h-3.5 w-3.5" />
             {t('header.actions.share')}
-          </button>
+          </Button>
         )}
 
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={onViewAnalytics}
-          className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors"
-          style={{ color: '#655d67' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#3c323e'; (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#655d67'; (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
+          className="gap-1.5 text-xs h-8 text-[#655d67]"
         >
           <BarChart3 className="h-3.5 w-3.5" />
           {t('header.actions.analytics')}
-        </button>
+        </Button>
       </div>
     </div>
   );

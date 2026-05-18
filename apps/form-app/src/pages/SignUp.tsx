@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useMutation, useApolloClient } from '@apollo/client';
-import { Input, Label, OTPInput } from '@dculus/ui';
+import { Button, Input, Label, OTPInput } from '@dculus/ui';
 import { FileText } from 'lucide-react';
 import { slugify } from '@dculus/utils';
 import { authClient, signUp, emailOtp, signIn, organization } from '../lib/auth-client';
@@ -366,13 +366,10 @@ export const SignUp = () => {
 
             {/* Back button (verify step) */}
             {step === 'verify' && (
-              <button onClick={handleBackToForm} className="flex items-center gap-1.5 text-xs mb-6 transition-colors" style={{ color: '#655d67' }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#3c323e'}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#655d67'}
-              >
+              <Button variant="ghost" size="sm" onClick={handleBackToForm} className="flex items-center gap-1.5 text-xs mb-6 h-7 px-2 text-[#655d67] hover:text-[#3c323e]">
                 <ArrowLeft className="w-3.5 h-3.5" />
                 Back
-              </button>
+              </Button>
             )}
 
             <div className="mb-7">
@@ -411,19 +408,14 @@ export const SignUp = () => {
                   </p>
                 )}
 
-                <button type="submit" disabled={isLoading}
-                  className="w-full h-10 rounded-lg text-sm font-medium text-white transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed mt-2"
-                  style={{ backgroundColor: '#3c323e' }}
-                  onMouseEnter={e => { if (!isLoading) (e.currentTarget as HTMLElement).style.backgroundColor = '#2e2530'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#3c323e'; }}
-                >
+                <Button type="submit" disabled={isLoading} className="w-full h-10 mt-2">
                   {isLoading ? (
                     <span className="flex items-center justify-center gap-2">
                       <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                       {t('form.actions.submitting')}
                     </span>
                   ) : t('form.actions.submit')}
-                </button>
+                </Button>
               </form>
             ) : (
               <form onSubmit={handleVerifyOTP} className="space-y-5">
@@ -442,9 +434,9 @@ export const SignUp = () => {
                       {t('verify.countdown', { values: { seconds: countdown } })}
                     </span>
                   ) : (
-                    <button type="button" onClick={handleResendOTP} disabled={isLoading} className="text-xs font-medium transition-colors" style={{ color: '#3c323e' }}>
+                    <Button type="button" variant="ghost" size="sm" onClick={handleResendOTP} disabled={isLoading} className="text-xs font-medium h-7 px-2" style={{ color: '#3c323e' }}>
                       {t('verify.resend')}
-                    </button>
+                    </Button>
                   )}
                 </div>
 
@@ -454,19 +446,14 @@ export const SignUp = () => {
                   </p>
                 )}
 
-                <button type="submit" disabled={isLoading || otp.length !== 6}
-                  className="w-full h-10 rounded-lg text-sm font-medium text-white transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
-                  style={{ backgroundColor: '#3c323e' }}
-                  onMouseEnter={e => { if (!isLoading && otp.length === 6) (e.currentTarget as HTMLElement).style.backgroundColor = '#2e2530'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#3c323e'; }}
-                >
+                <Button type="submit" disabled={isLoading || otp.length !== 6} className="w-full h-10">
                   {isLoading ? (
                     <span className="flex items-center justify-center gap-2">
                       <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                       {t('verify.actions.submitting')}
                     </span>
                   ) : t('verify.actions.submit')}
-                </button>
+                </Button>
               </form>
             )}
           </div>

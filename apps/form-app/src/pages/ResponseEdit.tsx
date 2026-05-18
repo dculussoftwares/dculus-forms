@@ -347,16 +347,14 @@ const ResponseEdit: React.FC = () => {
         className="flex items-center gap-3 pb-4 mb-4 flex-shrink-0"
         style={{ borderBottom: '1px solid rgba(81,76,84,0.10)' }}
       >
-        <button
+        <Button
           onClick={() => navigate(`/dashboard/form/${formId}/responses`)}
           disabled={isSubmitting}
-          className="h-8 w-8 flex items-center justify-center rounded-lg transition-colors shrink-0 disabled:opacity-40"
-          style={{ color: '#655d67' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(87,84,91,0.06)'; (e.currentTarget as HTMLElement).style.color = '#3c323e'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
+          variant="ghost"
+          className="h-8 w-8 flex items-center justify-center rounded-lg shrink-0 p-0 disabled:opacity-40"
         >
           <ArrowLeft className="h-4 w-4" />
-        </button>
+        </Button>
         <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'rgba(81,76,84,0.12)' }} />
         <h1 className="text-sm font-semibold truncate flex-1" style={{ color: '#3c323e' }}>
           {t('header.editingResponse', { values: { responseId: response.id.slice(-6) } })}

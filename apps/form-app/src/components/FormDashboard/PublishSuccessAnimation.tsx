@@ -128,13 +128,14 @@ export const PublishSuccessAnimation: React.FC<PublishSuccessAnimationProps> = (
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
-        <button
+        <Button
+          variant="ghost"
           onClick={handleClose}
-          className="absolute top-4 right-4 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          className="absolute top-4 right-4 p-1 rounded-md h-auto"
           aria-label="Close"
         >
           <X className="h-4 w-4" />
-        </button>
+        </Button>
 
         {/* Content */}
         <div className="space-y-6">

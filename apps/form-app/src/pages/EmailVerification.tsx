@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useMutation, useApolloClient } from '@apollo/client';
-import { OTPInput } from '@dculus/ui';
+import { Button, Label, OTPInput } from '@dculus/ui';
 import { slugify } from '@dculus/utils';
 import { emailOtp, signIn, authClient, organization } from '../lib/auth-client';
 import { ArrowLeft, FileText, Mail, Timer } from 'lucide-react';
@@ -157,16 +157,14 @@ export const EmailVerification = () => {
 
         <div className="flex-1 flex items-center justify-center px-8 py-12">
           <div className="w-full max-w-sm">
-            <button
+            <Button
               onClick={() => navigate(fromSignIn ? '/signin' : '/signup')}
-              className="flex items-center gap-1.5 text-xs mb-6 transition-colors"
-              style={{ color: '#655d67' }}
-              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#3c323e'}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#655d67'}
+              variant="ghost"
+              className="flex items-center gap-1.5 text-xs mb-6 h-auto p-0"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               {fromSignIn ? t('links.signIn') : t('links.signUp')}
-            </button>
+            </Button>
 
             <div className="mb-7">
               <h1 className="text-2xl font-semibold mb-1.5" style={{ color: '#3c323e' }}>{t('meta.heading')}</h1>
@@ -175,9 +173,9 @@ export const EmailVerification = () => {
 
             <form onSubmit={handleVerifyOTP} className="space-y-5">
               <div>
-                <label className="text-xs font-medium block mb-3 text-center" style={{ color: '#4c414e' }}>
+                <Label className="text-xs font-medium block mb-3 text-center" style={{ color: '#4c414e' }}>
                   {t('form.otpLabel')}
-                </label>
+                </Label>
                 <OTPInput
                   value={otp}
                   onChange={(value) => { setOtp(value); if (errors.otp) setErrors(prev => ({ ...prev, otp: '' })); }}
@@ -196,15 +194,17 @@ export const EmailVerification = () => {
                     {t('form.countdown', { values: { seconds: countdown } })}
                   </span>
                 ) : (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={handleResendOTP}
                     disabled={isLoading}
-                    className="text-xs font-medium transition-colors"
+                    className="text-xs font-medium h-7 px-2"
                     style={{ color: '#3c323e' }}
                   >
                     {t('form.resend')}
-                  </button>
+                  </Button>
                 )}
               </div>
 
@@ -214,13 +214,10 @@ export const EmailVerification = () => {
                 </p>
               )}
 
-              <button
+              <Button
                 type="submit"
                 disabled={isLoading || otp.length !== 6}
-                className="w-full h-10 rounded-lg text-sm font-medium text-white transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
-                style={{ backgroundColor: '#3c323e' }}
-                onMouseEnter={e => { if (!isLoading && otp.length === 6) (e.currentTarget as HTMLElement).style.backgroundColor = '#2e2530'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#3c323e'; }}
+                className="w-full h-10"
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -228,7 +225,7 @@ export const EmailVerification = () => {
                     {t('form.actions.submitting')}
                   </span>
                 ) : t('form.actions.submit')}
-              </button>
+              </Button>
             </form>
           </div>
         </div>

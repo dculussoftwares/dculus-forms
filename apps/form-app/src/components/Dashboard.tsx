@@ -209,17 +209,12 @@ function FormsListDashboard() {
             {/* Search — ghost input matching Typeform */}
             <div className="relative flex-1 max-w-xs">
               <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 pointer-events-none" style={{ color: '#655d67' }} />
-              <input
+              <Input
                 type="text"
                 placeholder={t('search.placeholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-9 pl-9 pr-9 text-sm rounded-lg border transition-colors duration-150 focus:outline-none"
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.8)',
-                  borderColor: 'rgba(81,76,84,0.15)',
-                  color: '#4c414e',
-                }}
+                className="h-9 pl-9 pr-9 text-sm"
               />
               {isTyping && (
                 <div className="absolute right-9 top-1/2 -translate-y-1/2">
@@ -227,14 +222,15 @@ function FormsListDashboard() {
                 </div>
               )}
               {searchTerm && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={clearSearch}
                   aria-label={t('search.clear')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-md transition-colors"
-                  style={{ color: '#655d67' }}
+                  className="absolute right-0 top-0 h-9 w-9 rounded-l-none"
                 >
                   <X className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               )}
             </div>
 
@@ -251,8 +247,9 @@ function FormsListDashboard() {
           <div className="flex items-center justify-between border-b border-[rgba(81,76,84,0.12)] dark:border-white/10 -mx-6 px-6">
             <div className="flex items-center gap-0.5">
               {FILTERS.map(({ key, label }) => (
-                <button
+                <Button
                   key={key}
+                  variant="ghost"
                   onClick={() => handleFilterChange(key)}
                   className="relative px-3 h-9 text-sm font-medium rounded-lg transition-all duration-150"
                   style={{
@@ -267,7 +264,7 @@ function FormsListDashboard() {
                       style={{ backgroundColor: '#3c323e' }}
                     />
                   )}
-                </button>
+                </Button>
               ))}
             </div>
 
@@ -439,16 +436,15 @@ function TemplatesStrip() {
     <div>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-semibold" style={{ color: '#3c323e' }}>Start from a template</h2>
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => navigate('/dashboard/templates')}
-          className="flex items-center gap-0.5 text-xs font-medium transition-colors"
-          style={{ color: '#655d67' }}
-          onMouseEnter={e => (e.currentTarget.style.color = '#3c323e')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#655d67')}
+          className="flex items-center gap-0.5 text-xs font-medium h-7 px-2 text-[#655d67] hover:text-[#3c323e]"
         >
           Browse all
           <ChevronRight className="h-3 w-3" />
-        </button>
+        </Button>
       </div>
 
       <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
@@ -477,12 +473,13 @@ function TemplatesStrip() {
                 )}
                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
                   <UseTemplatePopover templateId={template.id} templateName={template.name}>
-                    <button
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold shadow-md transition-colors"
-                      style={{ backgroundColor: 'white', color: '#3c323e' }}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs font-semibold shadow-md bg-white text-[#3c323e] hover:bg-white/90"
                     >
                       Use template
-                    </button>
+                    </Button>
                   </UseTemplatePopover>
                 </div>
               </div>
@@ -497,18 +494,17 @@ function TemplatesStrip() {
           );
         })}
 
-        <button
+        <Button
+          variant="ghost"
           onClick={() => navigate('/dashboard/templates')}
-          className="shrink-0 w-44 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 transition-all duration-200 h-[calc(6rem+3.25rem)]"
-          style={{ borderColor: 'rgba(81,76,84,0.18)', color: '#655d67' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#3c323e'; (e.currentTarget as HTMLElement).style.color = '#3c323e'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(81,76,84,0.18)'; (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
+          className="shrink-0 w-44 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 transition-all duration-200 h-[calc(6rem+3.25rem)] text-[#655d67] hover:text-[#3c323e] hover:border-[#3c323e] hover:bg-transparent"
+          style={{ borderColor: 'rgba(81,76,84,0.18)' }}
         >
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(81,76,84,0.08)' }}>
             <Plus className="w-4 h-4" />
           </div>
           <span className="text-xs font-medium">See all</span>
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -596,22 +592,23 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
 
         {/* Hover quick-actions */}
         <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-black/10">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handlePreview}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-colors"
-            style={{ backgroundColor: 'rgba(255,255,255,0.92)', color: '#3c323e' }}
+            className="gap-1.5 text-xs shadow-sm bg-white/92 text-[#3c323e] hover:bg-white"
           >
             <Eye className="h-3.5 w-3.5" />
             Preview
-          </button>
-          <button
+          </Button>
+          <Button
+            size="sm"
             onClick={handleEdit}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white text-xs font-medium shadow-sm transition-colors"
-            style={{ backgroundColor: '#3c323e' }}
+            className="gap-1.5 text-xs shadow-sm"
           >
             <Edit3 className="h-3.5 w-3.5" />
             Edit
-          </button>
+          </Button>
         </div>
       </div>
 

@@ -2,6 +2,7 @@ import { ReactNode, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from '../hooks/useTranslation';
+import { Button } from '@dculus/ui';
 import {
   LayoutDashboard,
   Building2,
@@ -20,7 +21,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
   const { t } = useTranslation('layout');
   const [hoveredNav, setHoveredNav] = useState<string | null>(null);
-  const [signOutHovered, setSignOutHovered] = useState(false);
 
   const navigation = [
     { name: t('navigation.dashboard'),     href: '/dashboard',     icon: LayoutDashboard },
@@ -94,19 +94,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               </div>
             </div>
           </div>
-          <button
+          <Button
             onClick={signOut}
-            className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-medium transition-colors"
-            style={{
-              backgroundColor: signOutHovered ? 'rgba(87,84,91,0.06)' : 'transparent',
-              color: signOutHovered ? '#3c323e' : '#655d67',
-            }}
-            onMouseEnter={() => setSignOutHovered(true)}
-            onMouseLeave={() => setSignOutHovered(false)}
+            variant="ghost"
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-medium justify-start"
           >
             <LogOut className="h-3.5 w-3.5" />
             {t('userMenu.signOut')}
-          </button>
+          </Button>
         </div>
       </div>
 

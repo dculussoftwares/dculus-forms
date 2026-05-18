@@ -1,6 +1,7 @@
 import React from 'react';
 import { FormPage } from '@dculus/types';
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
@@ -78,20 +79,22 @@ export const PageActionsSelector: React.FC<PageActionsSelectorProps> = ({
 
               {/* Action Buttons */}
               <div className="flex gap-2">
-                <button
+                <Button
+                  variant="ghost"
                   onClick={() => onMoveToPage(page.id)}
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary bg-primary/5 hover:bg-primary/10 dark:text-primary dark:bg-primary/10 dark:hover:bg-primary/20 rounded-md transition-colors"
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary bg-primary/5 hover:bg-primary/10 dark:text-primary dark:bg-primary/10 dark:hover:bg-primary/20 rounded-md h-auto"
                 >
                   <ArrowRight className="w-3 h-3" />
                   <span>Move</span>
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="ghost"
                   onClick={() => onCopyToPage(page.id)}
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 dark:text-purple-400 dark:bg-purple-950/50 dark:hover:bg-purple-950 rounded-md transition-colors"
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 dark:text-purple-400 dark:bg-purple-950/50 dark:hover:bg-purple-950 rounded-md h-auto"
                 >
                   <Copy className="w-3 h-3" />
                   <span>Copy</span>
-                </button>
+                </Button>
               </div>
             </div>
           ))}

@@ -2,22 +2,10 @@ import React from 'react';
 import { useQuery } from '@apollo/client';
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Users as UsersIcon, AlertCircle } from 'lucide-react';
+import { Button } from '@dculus/ui';
 import { ADMIN_USERS_QUERY, AdminUsersQueryData } from '../../graphql/users';
 import { UsersList } from '../../components/users/UsersList';
 import { UserSearchBar } from '../../components/users/UserSearchBar';
-
-const PageBtn: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { children: React.ReactNode }> = ({ children, disabled, ...props }) => (
-  <button
-    {...props}
-    disabled={disabled}
-    className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-    style={{ backgroundColor: 'rgba(255,255,255,0.8)', color: '#655d67', border: '1px solid rgba(81,76,84,0.15)' }}
-    onMouseEnter={e => { if (!disabled) { (e.currentTarget as HTMLElement).style.backgroundColor = '#f7f7f8'; (e.currentTarget as HTMLElement).style.color = '#4c414e'; } }}
-    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.8)'; (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
-  >
-    {children}
-  </button>
-);
 
 export const UsersPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -80,13 +68,13 @@ export const UsersPage = () => {
 
       {data && data.adminUsers.totalPages > 1 && (
         <div className="flex items-center justify-center gap-3">
-          <PageBtn onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>
+          <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1} className="gap-1.5">
             <ChevronLeft className="w-3.5 h-3.5" /> Previous
-          </PageBtn>
+          </Button>
           <span className="text-xs" style={{ color: '#655d67' }}>Page {currentPage} of {data.adminUsers.totalPages}</span>
-          <PageBtn onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === data.adminUsers.totalPages}>
+          <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === data.adminUsers.totalPages} className="gap-1.5">
             Next <ChevronRight className="w-3.5 h-3.5" />
-          </PageBtn>
+          </Button>
         </div>
       )}
     </div>

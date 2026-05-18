@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
-import { LoadingSpinner, EmptyState } from '@dculus/ui';
+import { Button, LoadingSpinner, EmptyState } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { useTranslation } from '../hooks/useTranslation';
 import { GET_FORM_BY_ID } from '../graphql/queries';
@@ -104,20 +104,18 @@ const FormAnalytics: React.FC = () => {
               { id: 'overview', icon: BarChart3, label: t('tabs.overview') },
               { id: 'fields', icon: TrendingUp, label: t('tabs.fields') },
             ] as const).map(({ id, icon: Icon, label }) => (
-              <button
+              <Button
                 key={id}
                 onClick={() => setActiveTab(id)}
-                className="relative flex items-center gap-1.5 h-9 px-3 text-sm font-medium transition-colors"
-                style={{ color: activeTab === id ? '#3c323e' : '#655d67' }}
-                onMouseEnter={e => { if (activeTab !== id) (e.currentTarget as HTMLElement).style.color = '#4c414e'; }}
-                onMouseLeave={e => { if (activeTab !== id) (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
+                variant="ghost"
+                className="relative flex items-center gap-1.5 h-9 px-3 text-sm font-medium rounded-none"
               >
                 <Icon className="h-3.5 w-3.5" />
                 {label}
                 {activeTab === id && (
                   <span className="absolute bottom-[-1px] left-0 right-0 h-[2px] rounded-t-full" style={{ backgroundColor: '#3c323e' }} />
                 )}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -132,16 +130,14 @@ const FormAnalytics: React.FC = () => {
                 loading={analyticsLoading}
               />
             )}
-            <button
+            <Button
               onClick={handleViewForm}
-              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors"
-              style={{ backgroundColor: 'rgba(255,255,255,0.8)', color: '#655d67', border: '1px solid rgba(81,76,84,0.15)' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#f7f7f8'; (e.currentTarget as HTMLElement).style.color = '#4c414e'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.8)'; (e.currentTarget as HTMLElement).style.color = '#655d67'; }}
+              variant="outline"
+              className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               {t('header.viewFormButton')}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -171,13 +167,13 @@ const FormAnalytics: React.FC = () => {
                   <p className="text-xs mb-3" style={{ color: '#655d67' }}>
                     {analyticsError.message || t('errors.analyticsLoadError')}
                   </p>
-                  <button
+                  <Button
                     onClick={refreshData}
-                    className="flex items-center gap-1.5 h-7 px-3 rounded-lg text-xs font-medium"
-                    style={{ backgroundColor: 'rgba(255,255,255,0.8)', color: '#655d67', border: '1px solid rgba(81,76,84,0.15)' }}
+                    variant="outline"
+                    className="flex items-center gap-1.5 h-7 px-3 text-xs font-medium"
                   >
                     {t('errors.tryAgain')}
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -213,14 +209,13 @@ const FormAnalytics: React.FC = () => {
                 <p className="text-xs max-w-md mx-auto mb-5" style={{ color: '#655d67' }}>
                   {t('states.noDataMessage')}
                 </p>
-                <button
+                <Button
                   onClick={handleViewForm}
-                  className="inline-flex items-center gap-1.5 h-8 px-4 rounded-lg text-xs font-medium text-white"
-                  style={{ backgroundColor: '#3c323e' }}
+                  className="inline-flex items-center gap-1.5 h-8 px-4 text-xs font-medium"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   {t('states.viewYourForm')}
-                </button>
+                </Button>
                 <div
                   className="mt-5 p-3 rounded-lg text-xs"
                   style={{ backgroundColor: '#f4faf8', color: '#177767' }}

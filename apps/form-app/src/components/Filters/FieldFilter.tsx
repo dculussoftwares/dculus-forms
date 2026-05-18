@@ -3,14 +3,15 @@ import { parseCalendarDate, formatCalendarDate } from '@dculus/utils';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import {
   Button,
+  Checkbox,
+  DatePicker,
+  Input,
+  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Input,
-  Checkbox,
-  DatePicker,
 } from '@dculus/ui';
 import {
   FillableFormField,
@@ -292,13 +293,13 @@ const renderFilterInput = (
                         });
                       }}
                     />
-                    <label
+                    <Label
                       htmlFor={`${field.id}-${index}`}
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1 min-w-0 truncate"
                       title={option}
                     >
                       {option}
-                    </label>
+                    </Label>
                   </div>
                 );
               })}
@@ -361,9 +362,9 @@ export const FieldFilter: React.FC<FieldFilterProps> = ({
       {isExpanded && (
         <div className="px-3 pb-3 space-y-3 bg-slate-50 border-t border-slate-100">
           <div className="pt-3">
-            <label className="text-xs font-medium text-slate-600 mb-2 block">
+            <Label className="text-xs font-medium text-slate-600 mb-2 block">
               Condition
-            </label>
+            </Label>
             <Select
               value={filter?.operator || ''}
               onValueChange={handleOperatorChange}
@@ -383,9 +384,9 @@ export const FieldFilter: React.FC<FieldFilterProps> = ({
 
           {filter?.operator && (
             <div>
-              <label className="text-xs font-medium text-slate-600 mb-2 block">
+              <Label className="text-xs font-medium text-slate-600 mb-2 block">
                 Value
-              </label>
+              </Label>
               {renderFilterInput(field, filter, onChange, t)}
             </div>
           )}

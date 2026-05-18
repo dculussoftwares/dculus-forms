@@ -2,7 +2,7 @@ import React from 'react';
 import { FormField, FieldType, FileUploadField } from '@dculus/types';
 import { Settings } from 'lucide-react';
 import { Controller } from 'react-hook-form';
-import { Label, Checkbox } from '@dculus/ui';
+import { Button, Label, Checkbox } from '@dculus/ui';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useFormPermissions } from '../../hooks/useFormPermissions';
 import { useFieldEditor } from '../../hooks';
@@ -294,9 +294,9 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
       <div className="flex-1 overflow-y-auto">{children}</div>
       {deleteHandler && isConnected && (
         <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-          <button
+          <Button
             onClick={deleteHandler}
-            className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+            className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center justify-center gap-2"
           >
             <svg
               className="w-4 h-4"
@@ -312,7 +312,7 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
               />
             </svg>
             {t('deleteField.button')}
-          </button>
+          </Button>
         </div>
       )}
     </div>

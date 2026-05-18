@@ -8,6 +8,7 @@ import { authClient, organization } from '../lib/auth-client';
 import { useQuery } from '@apollo/client';
 import { GET_INVITATION_PUBLIC } from '../graphql/queries';
 import { useTranslation } from '../hooks/useTranslation';
+import { Button } from '@dculus/ui';
 
 /* Reusable card wrapper */
 const InviteCard: React.FC<{ children: React.ReactNode; maxW?: string }> = ({
@@ -24,28 +25,27 @@ const InviteCard: React.FC<{ children: React.ReactNode; maxW?: string }> = ({
 
 /* Ghost button */
 const GhostBtn: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ children, ...props }) => (
-  <button
-    {...props}
-    className="w-full h-9 rounded-lg text-sm font-medium transition-colors disabled:opacity-60"
-    style={{ backgroundColor: 'rgba(255,255,255,0.8)', color: '#655d67', border: '1px solid rgba(81,76,84,0.15)' }}
-    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#f7f7f8'; }}
-    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.8)'; }}
+  <Button
+    variant="outline"
+    className="w-full h-9"
+    disabled={props.disabled}
+    onClick={props.onClick}
+    type={props.type as 'button' | 'submit' | 'reset' | undefined}
   >
     {children}
-  </button>
+  </Button>
 );
 
 /* Primary button */
 const PrimaryBtn: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ children, ...props }) => (
-  <button
-    {...props}
-    className="w-full h-10 rounded-lg text-sm font-medium text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-    style={{ backgroundColor: '#3c323e' }}
-    onMouseEnter={e => { if (!(props.disabled)) (e.currentTarget as HTMLElement).style.backgroundColor = '#2e2530'; }}
-    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#3c323e'; }}
+  <Button
+    className="w-full h-10"
+    disabled={props.disabled}
+    onClick={props.onClick}
+    type={props.type as 'button' | 'submit' | 'reset' | undefined}
   >
     {children}
-  </button>
+  </Button>
 );
 
 const InviteAcceptance: React.FC = () => {

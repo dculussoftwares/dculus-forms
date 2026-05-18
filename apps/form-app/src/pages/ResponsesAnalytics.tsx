@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { useTranslation } from '../hooks/useTranslation';
-import { LoadingSpinner, EmptyState } from '@dculus/ui';
+import { Button, LoadingSpinner, EmptyState } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { AlertCircle, ArrowLeft, BarChart3, PieChart } from 'lucide-react';
@@ -79,16 +79,14 @@ const ResponsesAnalytics: React.FC = () => {
     >
       <div className="space-y-5">
         {/* Back button */}
-        <button
+        <Button
+          variant="ghost"
           onClick={() => navigate(`/dashboard/form/${actualFormId}/responses`)}
-          className="flex items-center gap-1.5 text-xs transition-colors"
-          style={{ color: '#655d67' }}
-          onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#3c323e'}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#655d67'}
+          className="flex items-center gap-1.5 text-xs h-auto p-0"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           {t('navigation.backToResponses')}
-        </button>
+        </Button>
 
         {/* Charts grid */}
         <div className="grid gap-4 md:grid-cols-2">

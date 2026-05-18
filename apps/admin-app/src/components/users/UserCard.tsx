@@ -113,12 +113,13 @@ export const UserCard = ({ user, onViewDetails, onViewOrganization }: UserCardPr
                       {org.role}
                     </span>
                   </div>
-                  <button
+                  <Button
+                    variant="ghost"
                     onClick={() => onViewOrganization(org.organizationId)}
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex-shrink-0 ml-2"
+                    className="text-xs text-blue-600 dark:text-blue-400 flex-shrink-0 ml-2 h-auto p-0 underline-offset-2 hover:underline"
                   >
                     View Org →
-                  </button>
+                  </Button>
                 </div>
               ))}
               {user.organizations.length > 3 && (

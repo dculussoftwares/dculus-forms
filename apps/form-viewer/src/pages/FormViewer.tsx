@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
-import { FormRenderer } from '@dculus/ui';
+import { Button, FormRenderer } from '@dculus/ui';
 import { deserializeFormSchema, FieldType } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { GET_FORM_BY_SHORT_URL, SUBMIT_RESPONSE } from '../graphql/queries';
@@ -360,15 +360,15 @@ const FormViewer: React.FC = () => {
             isCustom={thankYouData.isCustom}
           />
           <div className="text-center mt-6">
-            <button
+            <Button
               onClick={() => {
                 setSubmissionState('idle');
                 setThankYouData(null);
               }}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="px-4 py-2"
             >
               Submit Another Response
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -399,11 +399,12 @@ const FormViewer: React.FC = () => {
               <p className="text-sm text-red-800">{submissionMessage}</p>
             </div>
             <div className="ml-auto">
-              <button
+              <Button
                 onClick={() => setSubmissionState('idle')}
-                className="text-red-800 hover:text-red-900"
+                variant="ghost"
+                className="text-red-800 hover:text-red-900 h-auto p-0"
+                aria-label="Dismiss"
               >
-                <span className="sr-only">Dismiss</span>
                 <svg
                   className="h-4 w-4"
                   viewBox="0 0 20 20"
@@ -415,7 +416,7 @@ const FormViewer: React.FC = () => {
                     clipRule="evenodd"
                   />
                 </svg>
-              </button>
+              </Button>
             </div>
           </div>
         </div>
