@@ -74,6 +74,7 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@oxc-parser/binding-darwin-arm64": "0.127.0",
     "@storybook/addon-links": "^10.4.0",
     "@storybook/addon-onboarding": "^10.4.0",
     "@storybook/react": "^10.4.0",
