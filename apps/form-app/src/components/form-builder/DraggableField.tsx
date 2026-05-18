@@ -263,7 +263,7 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
 
                   {/* Field Preview */}
                   <div
-                    className="p-3 bg-[#f7f7f8] dark:bg-gray-800/50 rounded-md border border-[rgba(81,76,84,0.10)] dark:border-gray-700"
+                    className="p-3 bg-[#f7f7f8] dark:bg-gray-800/50 rounded-lg border border-[rgba(81,76,84,0.10)] dark:border-gray-700"
                     data-testid={`field-content-${index + 1}`}
                   >
                     <FieldPreview

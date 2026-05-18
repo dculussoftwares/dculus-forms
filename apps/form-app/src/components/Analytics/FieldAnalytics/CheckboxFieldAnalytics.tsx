@@ -182,7 +182,7 @@ const PopularCombinations: React.FC<{
                     {combo.combination.map((option, optIndex) => (
                       <span 
                         key={optIndex}
-                        className="inline-flex items-center px-2 py-1 bg-white rounded-md text-xs font-medium text-[#4c414e] border"
+                        className="inline-flex items-center px-2 py-1 bg-white rounded-lg text-xs font-medium text-[#4c414e] border"
                       >
                         {option}
                       </span>

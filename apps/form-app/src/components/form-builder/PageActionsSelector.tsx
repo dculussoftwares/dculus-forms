@@ -54,7 +54,7 @@ export const PageActionsSelector: React.FC<PageActionsSelectorProps> = ({
           {availablePages.map((page, index) => (
             <div
               key={page.id}
-              className="px-2 py-2 hover:bg-[#f7f7f8] dark:hover:bg-gray-800 rounded-md transition-colors"
+              className="px-2 py-2 hover:bg-[#f7f7f8] dark:hover:bg-gray-800 rounded-lg transition-colors"
             >
               {/* Page Info */}
               <div className="flex items-center space-x-2 mb-2">
@@ -82,7 +82,7 @@ export const PageActionsSelector: React.FC<PageActionsSelectorProps> = ({
                 <Button
                   variant="ghost"
                   onClick={() => onMoveToPage(page.id)}
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary bg-primary/5 hover:bg-primary/10 dark:text-primary dark:bg-primary/10 dark:hover:bg-primary/20 rounded-md h-auto"
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary bg-primary/5 hover:bg-primary/10 dark:text-primary dark:bg-primary/10 dark:hover:bg-primary/20 rounded-lg h-auto"
                 >
                   <ArrowRight className="w-3 h-3" />
                   <span>Move</span>
@@ -90,7 +90,7 @@ export const PageActionsSelector: React.FC<PageActionsSelectorProps> = ({
                 <Button
                   variant="ghost"
                   onClick={() => onCopyToPage(page.id)}
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 dark:text-purple-400 dark:bg-purple-950/50 dark:hover:bg-purple-950 rounded-md h-auto"
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 dark:text-purple-400 dark:bg-purple-950/50 dark:hover:bg-purple-950 rounded-lg h-auto"
                 >
                   <Copy className="w-3 h-3" />
                   <span>Copy</span>

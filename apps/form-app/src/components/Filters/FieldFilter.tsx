@@ -265,7 +265,7 @@ const renderFilterInput = (
 
       // IN, NOT_IN, CONTAINS_ALL, EQUALS use multi-select (checkboxes)
       return (
-        <div className="border border-[rgba(81,76,84,0.10)] rounded-md max-h-40 overflow-y-auto">
+        <div className="border border-[rgba(81,76,84,0.10)] rounded-lg max-h-40 overflow-y-auto">
           {options.length === 0 ? (
             <div className="p-3 text-center text-[#655d67] text-sm">
               No options available

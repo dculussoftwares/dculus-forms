@@ -157,7 +157,7 @@ export const CompactFieldCard: React.FC<CompactFieldCardProps> = ({
         {/* Field Icon */}
         <div
           className={`
-          flex-shrink-0 p-1.5 rounded-md
+          flex-shrink-0 p-1.5 rounded-lg
           ${
             variant === 'overlay'
               ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'

@@ -243,7 +243,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                       const selectedValues = Array.isArray(controllerField.value) ? controllerField.value : [];
                       
                       return (
-                        <div className="space-y-2 max-h-40 overflow-y-auto border border-input rounded-md p-3 bg-background">
+                        <div className="space-y-2 max-h-40 overflow-y-auto border border-input rounded-lg p-3 bg-background">
                           {options.length === 0 ? (
                             <p className="text-sm text-muted-foreground">
                               Add options first to set default selections
@@ -315,7 +315,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
               
               {/* Show validation error for empty options */}
               {errors.options && (
-                <div className="text-sm text-destructive mt-2 p-3 bg-destructive/10 rounded-md border border-destruct ive/20">
+                <div className="text-sm text-destructive mt-2 p-3 bg-destructive/10 rounded-lg border border-destruct ive/20">
                   <p className="font-medium">⚠️ Options Error:</p>
                   <p>{errors.options.message}</p>
                 </div>

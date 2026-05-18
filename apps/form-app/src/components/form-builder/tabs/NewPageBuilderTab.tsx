@@ -311,7 +311,7 @@ const RightSidebar: React.FC<{
                   onClick={handleAddPage}
                   disabled={!isConnected}
                   data-testid="add-page-button"
-                  className="p-1 rounded-md text-blue-600 dark:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed h-auto"
+                  className="p-1 rounded-lg text-blue-600 dark:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed h-auto"
                   title={t('menu.addPage')}
                 >
                   <Plus className="w-5 h-5" />
@@ -548,7 +548,7 @@ const FieldCard: React.FC<{
 
           {/* Field Preview */}
           <div className="pl-9 pr-2">
-            <div className="p-3 bg-[#f7f7f8] dark:bg-gray-800/50 rounded-md border border-[rgba(81,76,84,0.10)] dark:border-gray-700">
+            <div className="p-3 bg-[#f7f7f8] dark:bg-gray-800/50 rounded-lg border border-[rgba(81,76,84,0.10)] dark:border-gray-700">
               <FieldPreview
                 field={field}
                 disabled={true}
@@ -567,7 +567,7 @@ const FieldCard: React.FC<{
                     e.stopPropagation();
                     onMoveUp();
                   }}
-                  className="p-1.5 text-[#655d67] hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md h-auto"
+                  className="p-1.5 text-[#655d67] hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg h-auto"
                   title="Move Up"
                 >
                   <ArrowUp className="w-4 h-4" />
@@ -581,7 +581,7 @@ const FieldCard: React.FC<{
                     e.stopPropagation();
                     onMoveDown();
                   }}
-                  className="p-1.5 text-[#655d67] hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md h-auto"
+                  className="p-1.5 text-[#655d67] hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg h-auto"
                   title="Move Down"
                 >
                   <ArrowDown className="w-4 h-4" />
@@ -595,7 +595,7 @@ const FieldCard: React.FC<{
                     e.stopPropagation();
                     onDuplicate();
                   }}
-                  className="p-1.5 text-[#655d67] hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md h-auto"
+                  className="p-1.5 text-[#655d67] hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg h-auto"
                   title="Duplicate Field"
                 >
                   <Copy className="w-4 h-4" />
@@ -611,7 +611,7 @@ const FieldCard: React.FC<{
                     <Button
                       variant="ghost"
                       onClick={(e) => e.stopPropagation()}
-                      className="p-1.5 text-[#655d67] hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-md h-auto"
+                      className="p-1.5 text-[#655d67] hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg h-auto"
                       title="Move/Copy to another page"
                     >
                       <ArrowUp className="w-4 h-4 rotate-90" />
@@ -629,7 +629,7 @@ const FieldCard: React.FC<{
                     e.stopPropagation();
                     onDelete();
                   }}
-                  className="p-1.5 text-[#655d67] hover:text-[#ce5d55] hover:bg-[rgba(206,93,85,0.06)] dark:hover:bg-red-950/30 rounded-md h-auto"
+                  className="p-1.5 text-[#655d67] hover:text-[#ce5d55] hover:bg-[rgba(206,93,85,0.06)] dark:hover:bg-red-950/30 rounded-lg h-auto"
                   title="Delete field"
                 >
                   <Trash2 className="w-4 h-4" />

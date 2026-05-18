@@ -511,7 +511,7 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
               )}
 
             {errors.submit && (
-              <div className="text-sm text-[#ce5d55] bg-[rgba(206,93,85,0.06)] p-3 rounded-md">
+              <div className="text-sm text-[#ce5d55] bg-[rgba(206,93,85,0.06)] p-3 rounded-lg">
                 {errors.submit}
               </div>
             )}

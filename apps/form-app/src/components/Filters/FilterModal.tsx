@@ -82,7 +82,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
             {activeFilterCount > 1 && (
               <div className="mt-3 flex items-center gap-2">
                 <span className="text-xs text-[#4c414e] font-medium">Match:</span>
-                <div className="inline-flex rounded-md shadow-sm" role="group">
+                <div className="inline-flex rounded-lg shadow-sm" role="group">
                   <Button
                     type="button"
                     onClick={() => onFilterLogicChange('AND')}

@@ -157,7 +157,7 @@ export function TeamSwitcher() {
                 toastError(t('comingSoon.title'), t('comingSoon.message'));
               }}
             >
-              <div className="flex size-6 items-center justify-center rounded-md border bg-background">
+              <div className="flex size-6 items-center justify-center rounded-lg border bg-background">
                 <Plus className="size-4" />
               </div>
               <div className="font-medium text-muted-foreground">

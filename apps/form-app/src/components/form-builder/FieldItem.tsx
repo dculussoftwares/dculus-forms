@@ -80,7 +80,7 @@ export const FieldItem: React.FC<FieldItemProps> = ({
                         {/* Field Type and Description */}
                         <div className="mt-1 space-y-1">
                             <div className="flex items-center space-x-2">
-                                <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-md">
+                                <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-lg">
                                     {fieldType?.label || field.type}
                                 </span>
                                 <span className="text-xs text-[#655d67]">#{index + 1}</span>

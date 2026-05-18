@@ -109,19 +109,19 @@ const DemoPage: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-2">
-              <div className="h-12 bg-primary rounded-md"></div>
+              <div className="h-12 bg-primary rounded-lg"></div>
               <p className="text-sm font-medium">Primary</p>
             </div>
             <div className="space-y-2">
-              <div className="h-12 bg-secondary rounded-md"></div>
+              <div className="h-12 bg-secondary rounded-lg"></div>
               <p className="text-sm font-medium">Secondary</p>
             </div>
             <div className="space-y-2">
-              <div className="h-12 bg-muted rounded-md"></div>
+              <div className="h-12 bg-muted rounded-lg"></div>
               <p className="text-sm font-medium">Muted</p>
             </div>
             <div className="space-y-2">
-              <div className="h-12 bg-accent rounded-md"></div>
+              <div className="h-12 bg-accent rounded-lg"></div>
               <p className="text-sm font-medium">Accent</p>
             </div>
           </div>

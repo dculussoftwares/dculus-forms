@@ -239,14 +239,14 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 
                 {/* Error Message */}
                 {dateError && (
-                  <div className="p-3 bg-[rgba(206,93,85,0.06)] border border-[rgba(206,93,85,0.16)] rounded-md">
+                  <div className="p-3 bg-[rgba(206,93,85,0.06)] border border-[rgba(206,93,85,0.16)] rounded-lg">
                     <p className="text-sm text-[#ce5d55]">{dateError}</p>
                   </div>
                 )}
 
                 {/* Date Range Info */}
                 {startDate && endDate && !dateError && (
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <p 
                       className="text-sm text-blue-700"
                       dangerouslySetInnerHTML={{ 

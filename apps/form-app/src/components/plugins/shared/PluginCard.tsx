@@ -193,7 +193,7 @@ export const PluginCard: React.FC<PluginCardProps> = ({
           {plugin.events.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-2">
               {plugin.events.map((event: string) => (
-                <span key={event} className="px-2 py-0.5 rounded-md text-[10px]" style={{ backgroundColor: '#f7f7f8', color: '#655d67', border: '1px solid rgba(81,76,84,0.10)' }}>
+                <span key={event} className="px-2 py-0.5 rounded-lg text-[10px]" style={{ backgroundColor: '#f7f7f8', color: '#655d67', border: '1px solid rgba(81,76,84,0.10)' }}>
                   {event}
                 </span>
               ))}

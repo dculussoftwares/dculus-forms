@@ -50,7 +50,7 @@ export const JSONPreview: React.FC<JSONPreviewProps> = ({ pages, layout, isShuff
       </div>
       
       <div className="flex-1 relative w-full min-w-0">
-        <pre className="bg-[#f7f7f8] dark:bg-gray-800 rounded-md p-3 text-xs font-mono overflow-x-auto overflow-y-auto h-full border border-[rgba(81,76,84,0.10)] dark:border-gray-700 whitespace-pre w-full max-w-full">
+        <pre className="bg-[#f7f7f8] dark:bg-gray-800 rounded-lg p-3 text-xs font-mono overflow-x-auto overflow-y-auto h-full border border-[rgba(81,76,84,0.10)] dark:border-gray-700 whitespace-pre w-full max-w-full">
           <code className="text-[#4c414e] dark:text-gray-300 block min-w-max">
             {jsonString}
           </code>

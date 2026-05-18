@@ -380,7 +380,7 @@ const FormViewer: React.FC = () => {
     <div className="h-screen w-full" data-testid="form-viewer-renderer">
       {/* Submission error message */}
       {submissionState === 'error' && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 m-4">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 m-4">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <svg

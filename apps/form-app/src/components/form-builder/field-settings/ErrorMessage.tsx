@@ -11,7 +11,7 @@ const TranslatedErrorMessage: React.FC<{ namespace: string; translationKey: stri
   const errorMessage = t(translationKey);
   
   return (
-    <div className="flex items-center space-x-1 text-[#ce5d55] dark:text-red-400 text-xs mt-1 p-2 bg-[rgba(206,93,85,0.06)] dark:bg-red-900/20 border border-[rgba(206,93,85,0.16)] dark:border-red-800 rounded-md animate-in slide-in-from-top-2 duration-200">
+    <div className="flex items-center space-x-1 text-[#ce5d55] dark:text-red-400 text-xs mt-1 p-2 bg-[rgba(206,93,85,0.06)] dark:bg-red-900/20 border border-[rgba(206,93,85,0.16)] dark:border-red-800 rounded-lg animate-in slide-in-from-top-2 duration-200">
       <AlertCircle className="w-3 h-3 flex-shrink-0" />
       <span className="font-medium">{errorMessage}</span>
     </div>
@@ -40,7 +40,7 @@ export const ErrorMessage: React.FC<ErrorMessageProps> = ({ error }) => {
   
   // Non-translated error message
   return (
-    <div className="flex items-center space-x-1 text-[#ce5d55] dark:text-red-400 text-xs mt-1 p-2 bg-[rgba(206,93,85,0.06)] dark:bg-red-900/20 border border-[rgba(206,93,85,0.16)] dark:border-red-800 rounded-md animate-in slide-in-from-top-2 duration-200">
+    <div className="flex items-center space-x-1 text-[#ce5d55] dark:text-red-400 text-xs mt-1 p-2 bg-[rgba(206,93,85,0.06)] dark:bg-red-900/20 border border-[rgba(206,93,85,0.16)] dark:border-red-800 rounded-lg animate-in slide-in-from-top-2 duration-200">
       <AlertCircle className="w-3 h-3 flex-shrink-0" />
       <span className="font-medium">{rawMessage}</span>
     </div>

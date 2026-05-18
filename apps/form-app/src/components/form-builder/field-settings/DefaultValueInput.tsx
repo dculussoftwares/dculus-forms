@@ -138,7 +138,7 @@ export const DefaultValueInput: React.FC<DefaultValueInputProps> = ({
 
           return (
             <div
-              className={`space-y-2 ${errors.defaultValue ? 'border border-red-300 rounded-md p-2' : ''}`}
+              className={`space-y-2 ${errors.defaultValue ? 'border border-red-300 rounded-lg p-2' : ''}`}
             >
               {options.length === 0 ? (
                 <div className="text-sm text-[#655d67] dark:text-gray-400 italic">

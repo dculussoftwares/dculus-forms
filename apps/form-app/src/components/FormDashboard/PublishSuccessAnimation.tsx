@@ -131,7 +131,7 @@ export const PublishSuccessAnimation: React.FC<PublishSuccessAnimationProps> = (
         <Button
           variant="ghost"
           onClick={handleClose}
-          className="absolute top-4 right-4 p-1 rounded-md h-auto"
+          className="absolute top-4 right-4 p-1 rounded-lg h-auto"
           aria-label="Close"
         >
           <X className="h-4 w-4" />
@@ -161,7 +161,7 @@ export const PublishSuccessAnimation: React.FC<PublishSuccessAnimationProps> = (
             <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2 font-medium">
               {t('publishSuccess.linkLabel')}
             </p>
-            <p className="text-sm text-foreground font-mono break-all bg-background px-3 py-2 rounded-md border">
+            <p className="text-sm text-foreground font-mono break-all bg-background px-3 py-2 rounded-lg border">
               {formUrl}
             </p>
           </div>

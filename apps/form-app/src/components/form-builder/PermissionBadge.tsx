@@ -19,7 +19,7 @@ export const PermissionBadge: React.FC = () => {
   };
 
   return (
-    <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-md text-xs font-medium border ${getPermissionColor()}`}>
+    <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-lg text-xs font-medium border ${getPermissionColor()}`}>
       {getIcon()}
       <span>{getPermissionLabel()}</span>
     </div>

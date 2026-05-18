@@ -161,7 +161,7 @@ export const QuizResultsDialog: React.FC<QuizResultsDialogProps> = ({
 
                     <div className="space-y-2">
                       <div
-                        className={`text-sm p-3 rounded-md ${
+                        className={`text-sm p-3 rounded-lg ${
                           result.isCorrect
                             ? 'bg-green-100 text-green-800'
                             : 'bg-[rgba(206,93,85,0.08)] text-[#ce5d55]'
@@ -171,7 +171,7 @@ export const QuizResultsDialog: React.FC<QuizResultsDialogProps> = ({
                         {result.userAnswer}
                       </div>
                       {!result.isCorrect && (
-                        <div className="text-sm p-3 rounded-md bg-green-100 text-green-800">
+                        <div className="text-sm p-3 rounded-lg bg-green-100 text-green-800">
                           <span className="font-medium">{t('correctAnswer')} </span>
                           {result.correctAnswer}
                         </div>
