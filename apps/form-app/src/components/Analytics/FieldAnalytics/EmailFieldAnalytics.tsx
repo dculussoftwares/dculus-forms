@@ -3,7 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
 import {
   StatCard,
   EnhancedPieChart,
+  MetricItem,
   CHART_COLORS,
+  FieldAnalyticsLoader,
+  FieldAnalyticsEmpty,
 } from './BaseChartComponents';
 import { EmailFieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
 import {
@@ -108,29 +111,19 @@ const ValidationIndicator: React.FC<{
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-lg">
-            <CheckCircle className="h-8 w-8 text-primary" />
-            <div>
-              <div className="text-lg font-bold text-primary">
-                {validEmails}
-              </div>
-              <div className="text-sm text-foreground">
-                {t('validationStatus.validEmails')}
-              </div>
-            </div>
-          </div>
+          <MetricItem
+            icon={<CheckCircle className="h-8 w-8 text-primary" />}
+            value={validEmails}
+            label={t('validationStatus.validEmails')}
+            className="bg-primary/5"
+          />
 
-          <div className="flex items-center gap-3 p-3 bg-[var(--tf-error-bg)] rounded-lg">
-            <AlertTriangle className="h-8 w-8 text-destructive" />
-            <div>
-              <div className="text-lg font-bold text-primary">
-                {invalidEmails}
-              </div>
-              <div className="text-sm text-foreground">
-                {t('validationStatus.invalidEmails')}
-              </div>
-            </div>
-          </div>
+          <MetricItem
+            icon={<AlertTriangle className="h-8 w-8 text-destructive" />}
+            value={invalidEmails}
+            label={t('validationStatus.invalidEmails')}
+            className="bg-[var(--tf-error-bg)]"
+          />
         </div>
 
         <div className="mt-4 p-3 bg-background rounded-lg">
@@ -199,61 +192,31 @@ const CorporatePersonalBreakdown: React.FC<{
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>
             <div className="space-y-4">
-              <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                <Building className="h-8 w-8 text-blue-500" />
-                <div>
-                  <div className="text-lg font-bold text-primary">
-                    {corporateVsPersonal.corporate}
-                  </div>
-                  <div className="text-sm text-foreground">
-                    {t('corporatePersonal.corporate')} (
-                    {corporatePercentage.toFixed(1)}%)
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                    <div
-                      className="bg-blue-500 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${corporatePercentage}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
+              <MetricItem
+                icon={<Building className="h-8 w-8 text-blue-500" />}
+                value={corporateVsPersonal.corporate}
+                label={`${t('corporatePersonal.corporate')} (${corporatePercentage.toFixed(1)}%)`}
+                className="bg-blue-50"
+                progress={corporatePercentage}
+                progressColor="bg-blue-500"
+              />
 
-              <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-lg">
-                <User className="h-8 w-8 text-primary" />
-                <div>
-                  <div className="text-lg font-bold text-primary">
-                    {corporateVsPersonal.personal}
-                  </div>
-                  <div className="text-sm text-foreground">
-                    {t('corporatePersonal.personal')} (
-                    {personalPercentage.toFixed(1)}%)
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                    <div
-                      className="bg-primary/50 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${personalPercentage}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
+              <MetricItem
+                icon={<User className="h-8 w-8 text-primary" />}
+                value={corporateVsPersonal.personal}
+                label={`${t('corporatePersonal.personal')} (${personalPercentage.toFixed(1)}%)`}
+                className="bg-primary/5"
+                progress={personalPercentage}
+                progressColor="bg-primary/50"
+              />
 
               {corporateVsPersonal.unknown > 0 && (
-                <div className="flex items-center gap-3 p-3 bg-background rounded-lg">
-                  <Globe className="h-8 w-8 text-muted-foreground" />
-                  <div>
-                    <div className="text-lg font-bold text-primary">
-                      {corporateVsPersonal.unknown}
-                    </div>
-                    <div className="text-sm text-foreground">
-                      {t('corporatePersonal.unknown')} (
-                      {(
-                        (corporateVsPersonal.unknown / totalEmails) *
-                        100
-                      ).toFixed(1)}
-                      %)
-                    </div>
-                  </div>
-                </div>
+                <MetricItem
+                  icon={<Globe className="h-8 w-8 text-muted-foreground" />}
+                  value={corporateVsPersonal.unknown}
+                  label={`${t('corporatePersonal.unknown')} (${((corporateVsPersonal.unknown / totalEmails) * 100).toFixed(1)}%)`}
+                  className="bg-background"
+                />
               )}
             </div>
           </div>
@@ -462,7 +425,6 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
   loading,
 }) => {
   const { t } = useTranslation('emailFieldAnalytics');
-  const { t: tCommon } = useTranslation('common');
 
   const domainChartData = useMemo(() => {
     if (!data?.domains) return [];
@@ -477,44 +439,15 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
     }));
   }, [data?.domains]);
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <StatCard
-              key={i}
-              title={tCommon('loading')}
-              value="--"
-              loading={true}
-            />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="animate-pulse h-96 bg-gray-200 rounded"></div>
-          <div className="animate-pulse h-96 bg-gray-200 rounded"></div>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <FieldAnalyticsLoader />;
 
   if (!data || (data.validEmails === 0 && data.invalidEmails === 0)) {
     return (
-      <Card className="w-full">
-        <CardContent className="p-8">
-          <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
-              <Mail className="h-8 w-8 text-blue-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-primary mb-2">
-              {t('emptyState.title')}
-            </h3>
-            <p className="text-foreground max-w-md mx-auto">
-              {t('emptyState.subtitle')}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <FieldAnalyticsEmpty
+        icon={<Mail className="h-8 w-8 text-blue-600" />}
+        title={t('emptyState.title')}
+        subtitle={t('emptyState.subtitle')}
+      />
     );
   }
 

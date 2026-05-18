@@ -14,6 +14,7 @@ import {
   YAxis,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, Button } from '@dculus/ui';
+import { cn } from '@dculus/utils';
 import { HelpCircle } from 'lucide-react';
 import { useTranslation } from '../../../hooks/useTranslation';
 
@@ -189,6 +190,72 @@ export const StatCard: React.FC<StatCardProps> = ({
     </Card>
   );
 };
+
+export const FieldAnalyticsLoader: React.FC<{ statCount?: number; chartCount?: number }> = ({
+  statCount = 4, chartCount = 2,
+}) => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {Array.from({ length: statCount }).map((_, i) => (
+        <StatCard key={i} title="…" value="--" loading />
+      ))}
+    </div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {Array.from({ length: chartCount }).map((_, i) => (
+        <div key={i} className="animate-pulse h-96 bg-gray-200 rounded" />
+      ))}
+    </div>
+  </div>
+);
+
+interface FieldAnalyticsEmptyProps {
+  icon: React.ReactNode;
+  title: string;
+  subtitle?: string;
+}
+
+export const FieldAnalyticsEmpty: React.FC<FieldAnalyticsEmptyProps> = ({ icon, title, subtitle }) => (
+  <Card className="w-full">
+    <CardContent className="p-8">
+      <div className="text-center">
+        <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
+          {icon}
+        </div>
+        <h3 className="text-lg font-semibold text-primary mb-2">{title}</h3>
+        {subtitle && <p className="text-foreground max-w-md mx-auto">{subtitle}</p>}
+      </div>
+    </CardContent>
+  </Card>
+);
+
+interface MetricItemProps {
+  icon: React.ReactNode;
+  value: React.ReactNode;
+  label: React.ReactNode;
+  className?: string;
+  progress?: number;
+  progressColor?: string;
+}
+
+export const MetricItem: React.FC<MetricItemProps> = ({
+  icon, value, label, className = '', progress, progressColor = 'bg-primary/50',
+}) => (
+  <div className={cn('flex items-center gap-3 p-3 rounded-lg', className)}>
+    {icon}
+    <div className="flex-1 min-w-0">
+      <div className="text-lg font-bold text-primary">{value}</div>
+      <div className="text-sm text-foreground">{label}</div>
+      {progress !== undefined && (
+        <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+          <div
+            className={cn('h-2 rounded-full transition-all duration-500', progressColor)}
+            style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+          />
+        </div>
+      )}
+    </div>
+  </div>
+);
 
 // Enhanced Pie Chart Component
 interface EnhancedPieChartProps {

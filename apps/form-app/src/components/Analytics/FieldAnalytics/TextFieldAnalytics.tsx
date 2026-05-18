@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
-import { StatCard, Histogram, CHART_COLORS } from './BaseChartComponents';
+import { StatCard, CHART_COLORS, FieldAnalyticsLoader, FieldAnalyticsEmpty } from './BaseChartComponents';
 import { TextFieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
 import { FileText, Hash, Type, MessageSquare } from 'lucide-react';
 import { MetricHelper, METRIC_HELPERS } from './MetricHelper';
@@ -249,8 +249,7 @@ export const TextFieldAnalytics: React.FC<TextFieldAnalyticsProps> = ({
   loading
 }) => {
   const { t } = useTranslation('textFieldAnalytics');
-  const { t: tCommon } = useTranslation('common');
-  
+
   const lengthChartData = useMemo(() => {
     if (!data?.lengthDistribution) return [];
     return data.lengthDistribution.map(item => ({
@@ -259,40 +258,15 @@ export const TextFieldAnalytics: React.FC<TextFieldAnalyticsProps> = ({
     }));
   }, [data?.lengthDistribution]);
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <StatCard 
-              key={i}
-              title={tCommon('loading')} 
-              value="--" 
-              loading={true} 
-            />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <SimpleWordCloud words={[]} loading={true} t={t} />
-          <Histogram data={[]} title={t('responseLength.title')} loading={true} />
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <FieldAnalyticsLoader />;
 
   if (!data) {
     return (
-      <Card className="w-full">
-        <CardContent className="p-8">
-          <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
-              <FileText className="h-8 w-8 text-blue-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-primary mb-2">{t('emptyState.title')}</h3>
-            <p className="text-foreground max-w-md mx-auto">{t('emptyState.subtitle')}</p>
-          </div>
-        </CardContent>
-      </Card>
+      <FieldAnalyticsEmpty
+        icon={<FileText className="h-8 w-8 text-blue-600" />}
+        title={t('emptyState.title')}
+        subtitle={t('emptyState.subtitle')}
+      />
     );
   }
 

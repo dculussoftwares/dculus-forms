@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
-import { StatCard } from './BaseChartComponents';
+import { StatCard, FieldAnalyticsLoader, FieldAnalyticsEmpty } from './BaseChartComponents';
 import { CheckboxFieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
 import { CheckSquare, Link, BarChart3, TrendingUp } from 'lucide-react';
 import { MetricHelper, METRIC_HELPERS } from './MetricHelper';
@@ -407,42 +407,16 @@ export const CheckboxFieldAnalytics: React.FC<CheckboxFieldAnalyticsProps> = ({
   loading
 }) => {
   const { t } = useTranslation('checkboxFieldAnalytics');
-  const { t: tCommon } = useTranslation('common');
-  
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <StatCard 
-              key={i}
-              title={tCommon('loading')} 
-              value="--" 
-              loading={true} 
-            />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="animate-pulse h-96 bg-gray-200 rounded"></div>
-          <div className="animate-pulse h-96 bg-gray-200 rounded"></div>
-        </div>
-      </div>
-    );
-  }
+
+  if (loading) return <FieldAnalyticsLoader />;
 
   if (!data || !data.individualOptions || data.individualOptions.length === 0) {
     return (
-      <Card className="w-full">
-        <CardContent className="p-8">
-          <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
-              <CheckSquare className="h-8 w-8 text-blue-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-primary mb-2">{t('emptyState.title')}</h3>
-            <p className="text-foreground max-w-md mx-auto">{t('emptyState.subtitle')}</p>
-          </div>
-        </CardContent>
-      </Card>
+      <FieldAnalyticsEmpty
+        icon={<CheckSquare className="h-8 w-8 text-blue-600" />}
+        title={t('emptyState.title')}
+        subtitle={t('emptyState.subtitle')}
+      />
     );
   }
 

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@dculus/ui';
-import { StatCard, EnhancedPieChart, CHART_COLORS } from './BaseChartComponents';
+import { StatCard, EnhancedPieChart, CHART_COLORS, FieldAnalyticsLoader, FieldAnalyticsEmpty } from './BaseChartComponents';
 import { SelectionFieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
 import { CheckCircle, BarChart2, Target, Crown } from 'lucide-react';
 import { MetricHelper, METRIC_HELPERS } from './MetricHelper';
@@ -335,8 +335,7 @@ export const SelectionFieldAnalytics: React.FC<SelectionFieldAnalyticsProps> = (
   loading
 }) => {
   const { t } = useTranslation('selectionFieldAnalytics');
-  const { t: tCommon } = useTranslation('common');
-  
+
   const pieChartData = useMemo(() => {
     if (!data?.options) return [];
     return data.options.map(option => ({
@@ -347,40 +346,15 @@ export const SelectionFieldAnalytics: React.FC<SelectionFieldAnalyticsProps> = (
     }));
   }, [data?.options]);
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <StatCard 
-              key={i}
-              title={tCommon('loading')} 
-              value="--" 
-              loading={true} 
-            />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="animate-pulse h-96 bg-gray-200 rounded"></div>
-          <div className="animate-pulse h-96 bg-gray-200 rounded"></div>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <FieldAnalyticsLoader />;
 
   if (!data || !data.options || data.options.length === 0) {
     return (
-      <Card className="w-full">
-        <CardContent className="p-8">
-          <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
-              <CheckCircle className="h-8 w-8 text-blue-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-primary mb-2">{t('emptyState.title')}</h3>
-            <p className="text-foreground max-w-md mx-auto">{t('emptyState.subtitle', { values: { fieldType } })}</p>
-          </div>
-        </CardContent>
-      </Card>
+      <FieldAnalyticsEmpty
+        icon={<CheckCircle className="h-8 w-8 text-blue-600" />}
+        title={t('emptyState.title')}
+        subtitle={t('emptyState.subtitle', { values: { fieldType } })}
+      />
     );
   }
 
