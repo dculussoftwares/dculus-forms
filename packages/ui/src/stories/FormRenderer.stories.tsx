@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { FormRenderer } from '../renderers/FormRenderer';
 import { createSamplePages, createSinglePage, createValidationTestPages, sampleLayouts, layoutCodes, formModes } from './mocks';
 import { RendererMode } from '@dculus/utils';
-import { FormSchema, LayoutCode, PageModeType } from '@dculus/types';
+import { FormSchema, LayoutCode, PageModeType, ThemeType, SpacingType } from '@dculus/types';
 
 const meta: Meta<typeof FormRenderer> = {
   title: 'Renderers/FormRenderer',
@@ -309,7 +309,7 @@ export const DarkTheme: Story = {
       layout: {
         ...sampleLayouts.modern,
         code: 'L2',
-        theme: 'dark',
+        theme: ThemeType.DARK,
         customBackGroundColor: '#1f2937',
         textColor: '#f9fafb',
       },
@@ -333,7 +333,7 @@ export const CompactSpacing: Story = {
       pages: createSamplePages(),
       layout: {
         ...sampleLayouts.classic,
-        spacing: 'compact',
+        spacing: SpacingType.COMPACT,
       },
       isShuffleEnabled: false,
     },
@@ -354,7 +354,7 @@ export const SpaciousLayout: Story = {
       pages: createSamplePages(),
       layout: {
         ...sampleLayouts.split,
-        spacing: 'spacious',
+        spacing: SpacingType.SPACIOUS,
       },
       isShuffleEnabled: false,
     },
@@ -421,14 +421,15 @@ export const MinimalForm: Story = {
     formSchema: {
       pages: [],
       layout: {
-        theme: 'light',
+        theme: ThemeType.LIGHT,
         textColor: '#333333',
-        spacing: 'normal',
+        spacing: SpacingType.NORMAL,
         code: 'L1',
         content: '<h1>No Fields</h1><p>This form has no fields configured yet.</p>',
         customBackGroundColor: '',
         customCTAButtonName: 'Submit',
-        backgroundImageKey: ''
+        backgroundImageKey: '',
+        pageMode: PageModeType.MULTIPAGE,
       },
       isShuffleEnabled: false,
     },

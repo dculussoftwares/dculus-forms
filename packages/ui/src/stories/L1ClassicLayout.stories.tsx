@@ -3,6 +3,7 @@ import React from 'react';
 import { L1ClassicLayout } from '../layouts/L1ClassicLayout';
 import { createSamplePages, createSinglePage, sampleLayouts, formModes } from './mocks';
 import { RendererMode } from '@dculus/utils';
+import { ThemeType, SpacingType } from '@dculus/types';
 
 const meta: Meta<typeof L1ClassicLayout> = {
   title: 'Layouts/L1ClassicLayout',
@@ -162,7 +163,7 @@ export const CompactSpacing: Story = {
   args: {
     layout: {
       ...sampleLayouts.classic,
-      spacing: 'compact',
+      spacing: SpacingType.COMPACT,
     },
   },
   parameters: {
@@ -179,7 +180,7 @@ export const SpaciousLayout: Story = {
   args: {
     layout: {
       ...sampleLayouts.classic,
-      spacing: 'spacious',
+      spacing: SpacingType.SPACIOUS,
     },
   },
   parameters: {
@@ -196,7 +197,7 @@ export const DarkTheme: Story = {
   args: {
     layout: {
       ...sampleLayouts.classic,
-      theme: 'dark',
+      theme: ThemeType.DARK,
       customBackGroundColor: '#1f2937',
       textColor: '#f9fafb',
     },

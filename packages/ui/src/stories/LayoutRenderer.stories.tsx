@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { LayoutRenderer } from '../renderers/LayoutRenderer';
 import { createSamplePages, createSinglePage, sampleLayouts, layoutCodes, formModes } from './mocks';
 import { RendererMode } from '@dculus/utils';
-import { LayoutCode } from '@dculus/types';
+import { LayoutCode, ThemeType, SpacingType } from '@dculus/types';
 
 const meta: Meta<typeof LayoutRenderer> = {
   title: 'Renderers/LayoutRenderer',
@@ -282,7 +282,7 @@ export const DarkTheme: Story = {
     layoutCode: 'L2' as LayoutCode,
     layout: {
       ...sampleLayouts.modern,
-      theme: 'dark',
+      theme: ThemeType.DARK,
       customBackGroundColor: '#1f2937',
       textColor: '#f9fafb',
     },
@@ -303,7 +303,7 @@ export const CompactSpacing: Story = {
     layoutCode: 'L1' as LayoutCode,
     layout: {
       ...sampleLayouts.classic,
-      spacing: 'compact',
+      spacing: SpacingType.COMPACT,
     },
   },
   parameters: {
@@ -321,7 +321,7 @@ export const SpaciousLayout: Story = {
     layoutCode: 'L5' as LayoutCode,
     layout: {
       ...sampleLayouts.split,
-      spacing: 'spacious',
+      spacing: SpacingType.SPACIOUS,
     },
   },
   parameters: {

@@ -14,7 +14,7 @@ permissions:
   packages: write
 
 env:
-  NODE_VERSION: '22'
+  NODE_VERSION: '22.14.0'
   PNPM_VERSION: '8.15.0'
   REGISTRY: docker.io
   IMAGE_NAME: dculus/forms-backend

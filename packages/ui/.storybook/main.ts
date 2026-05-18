@@ -1,21 +1,18 @@
 import type { StorybookConfig } from '@storybook/react-vite';
+import tailwindcss from 'tailwindcss';
+import autoprefixer from 'autoprefixer';
 
 const config: StorybookConfig = {
   stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   addons: [
-    '@storybook/addon-onboarding',
     '@storybook/addon-links',
-    '@storybook/addon-essentials',
-    '@storybook/addon-interactions',
+    '@storybook/addon-onboarding',
   ],
   framework: {
     name: '@storybook/react-vite',
     options: {},
   },
   async viteFinal(config) {
-    const { default: tailwindcss } = await import('tailwindcss');
-    const { default: autoprefixer } = await import('autoprefixer');
-    
     return {
       ...config,
       css: {

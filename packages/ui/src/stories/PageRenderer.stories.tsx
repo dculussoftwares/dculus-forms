@@ -228,14 +228,8 @@ export const CustomLayoutStyles: Story = {
 // Form with controlled values
 export const ControlledForm: Story = {
   args: {
-    formValues: {
-      'field-1': 'John Doe',
-      'field-2': 'john.doe@example.com',
-      'field-3': 30,
-      'field-4': 'This is a sample comment',
-    },
-    onFieldChange: (fieldId: string, value: any) => {
-      console.log('Field changed:', fieldId, value);
+    onFormComplete: (allData: Record<string, Record<string, any>>) => {
+      console.log('Form completed:', allData);
     },
   },
   parameters: {

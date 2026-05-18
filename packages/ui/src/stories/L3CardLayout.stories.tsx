@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { L3CardLayout } from '../layouts/L3CardLayout';
 import { createSamplePages, createSinglePage, sampleLayouts, formModes } from './mocks';
 import { RendererMode } from '@dculus/utils';
+import { SpacingType } from '@dculus/types';
 
 const meta: Meta<typeof L3CardLayout> = {
   title: 'Layouts/L3CardLayout',
@@ -143,7 +144,7 @@ export const CompactSpacing: Story = {
   args: {
     layout: {
       ...sampleLayouts.card,
-      spacing: 'compact',
+      spacing: SpacingType.COMPACT,
     },
   },
   parameters: {

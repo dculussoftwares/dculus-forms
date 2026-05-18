@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { L2ModernLayout } from '../layouts/L2ModernLayout';
 import { createSamplePages, createSinglePage, sampleLayouts, formModes } from './mocks';
 import { RendererMode } from '@dculus/utils';
+import { SpacingType } from '@dculus/types';
 
 const meta: Meta<typeof L2ModernLayout> = {
   title: 'Layouts/L2ModernLayout',
@@ -144,7 +145,7 @@ export const SpaciousLayout: Story = {
   args: {
     layout: {
       ...sampleLayouts.modern,
-      spacing: 'spacious',
+      spacing: SpacingType.SPACIOUS,
     },
   },
   parameters: {
@@ -161,7 +162,7 @@ export const CompactLayout: Story = {
   args: {
     layout: {
       ...sampleLayouts.modern,
-      spacing: 'compact',
+      spacing: SpacingType.COMPACT,
     },
   },
   parameters: {
