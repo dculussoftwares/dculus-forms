@@ -113,7 +113,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
 
   if (!field) {
     return (
-      <div className="h-full flex items-center justify-center text-[#655d67] dark:text-gray-400">
+      <div className="h-full flex items-center justify-center text-muted-foreground dark:text-gray-400">
         <div className="text-center">
           <Settings className="w-8 h-8 mx-auto mb-2 opacity-50" />
           <p className="text-sm">{constants.INFO_MESSAGES.SELECT_FIELD_TO_EDIT}</p>
@@ -223,7 +223,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                     )}
                   />
                   {errors.defaultValue && (
-                    <p className="text-sm text-[#ce5d55] dark:text-red-400">
+                    <p className="text-sm text-destructive dark:text-red-400">
                       {errors.defaultValue.message}
                     </p>
                   )}

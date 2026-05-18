@@ -208,7 +208,7 @@ function FormsListDashboard() {
           <div className="flex items-center gap-2 mb-4">
             {/* Search — ghost input matching Typeform */}
             <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 pointer-events-none text-[#655d67]" />
+              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 pointer-events-none text-muted-foreground" />
               <Input
                 type="text"
                 placeholder={t('search.placeholder')}
@@ -218,7 +218,7 @@ function FormsListDashboard() {
               />
               {isTyping && (
                 <div className="absolute right-9 top-1/2 -translate-y-1/2">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-[#655d67]" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                 </div>
               )}
               {searchTerm && (
@@ -244,7 +244,7 @@ function FormsListDashboard() {
           </div>
 
           {/* Row 2: Typeform-style underline filter tabs + page-size */}
-          <div className="flex items-center justify-between border-b border-[rgba(81,76,84,0.12)] dark:border-white/10 -mx-6 px-6">
+          <div className="flex items-center justify-between border-b border-[var(--tf-border)] dark:border-white/10 -mx-6 px-6">
             <div className="flex items-center gap-0.5">
               {FILTERS.map(({ key, label }) => (
                 <Button
@@ -253,15 +253,15 @@ function FormsListDashboard() {
                   onClick={() => handleFilterChange(key)}
                   className="relative px-3 h-9 text-sm font-medium rounded-lg transition-all duration-150"
                   style={{
-                    color: activeFilter === key ? '#3c323e' : '#655d67',
-                    backgroundColor: activeFilter === key ? 'rgba(87,84,91,0.06)' : 'transparent',
+                    color: activeFilter === key ? 'var(--tf-dark)' : 'var(--tf-muted)',
+                    backgroundColor: activeFilter === key ? 'var(--tf-tab-bg)' : 'transparent',
                   }}
                 >
                   {label}
                   {activeFilter === key && (
                     <span
                       className="absolute bottom-[-1px] left-0 right-0 h-[2px] rounded-t-full"
-                      style={{ backgroundColor: '#3c323e' }}
+                      style={{ backgroundColor: 'var(--tf-dark)' }}
                     />
                   )}
                 </Button>
@@ -269,7 +269,7 @@ function FormsListDashboard() {
             </div>
 
             <div className="flex items-center gap-2 pb-1">
-              <span className="text-xs text-[#655d67]">{t('pageSize.label')}</span>
+              <span className="text-xs text-muted-foreground">{t('pageSize.label')}</span>
               <Select value={pageSize.toString()} onValueChange={handlePageSizeChange} disabled={formsLoading}>
                 <SelectTrigger className="w-16 h-8 text-xs">
                   <SelectValue />
@@ -288,26 +288,26 @@ function FormsListDashboard() {
         {formsLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="rounded-xl border border-[rgba(81,76,84,0.10)] overflow-hidden animate-pulse bg-white dark:bg-card">
-                <div className="h-40 bg-[#f7f7f8] dark:bg-muted" />
+              <div key={i} className="rounded-xl border border-[var(--tf-border-medium)] overflow-hidden animate-pulse bg-white dark:bg-card">
+                <div className="h-40 bg-background dark:bg-muted" />
                 <div className="p-4 space-y-3">
-                  <div className="h-3.5 bg-[#f7f7f8] dark:bg-muted rounded-lg w-3/4" />
-                  <div className="h-3 bg-[#f7f7f8] dark:bg-muted rounded-lg w-1/2" />
+                  <div className="h-3.5 bg-background dark:bg-muted rounded-lg w-3/4" />
+                  <div className="h-3 bg-background dark:bg-muted rounded-lg w-1/2" />
                 </div>
               </div>
             ))}
           </div>
         ) : formsError ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}>
-              <X className="w-5 h-5 text-[#ce5d55]" />
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: 'var(--tf-error-bg)' }}>
+              <X className="w-5 h-5 text-destructive" />
             </div>
-            <p className="font-medium text-sm text-[#3c323e]">{t('error.title')}</p>
-            <p className="text-xs mt-1 text-[#655d67]">{t('error.description')}</p>
+            <p className="font-medium text-sm text-primary">{t('error.title')}</p>
+            <p className="text-xs mt-1 text-muted-foreground">{t('error.description')}</p>
           </div>
         ) : currentTotalCount === 0 ? (
           <EmptyState
-            icon={<FileText className="w-6 h-6 text-[#655d67]" />}
+            icon={<FileText className="w-6 h-6 text-muted-foreground" />}
             title={t('empty.title')}
             description={t('empty.description')}
             action={
@@ -319,7 +319,7 @@ function FormsListDashboard() {
           />
         ) : displayForms.forms.length === 0 && searchTerm ? (
           <EmptyState
-            icon={<Search className="w-6 h-6 text-[#655d67]" />}
+            icon={<Search className="w-6 h-6 text-muted-foreground" />}
             title={t('searchEmpty.title')}
             description={t('searchEmpty.description', { values: { term: searchTerm } })}
             action={
@@ -334,7 +334,7 @@ function FormsListDashboard() {
             <div className="relative">
               {isPageChanging && (
                 <div className="absolute inset-0 bg-white/60 dark:bg-card/60 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
-                  <Loader2 className="h-6 w-6 animate-spin text-[#3c323e]" />
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               )}
 
@@ -368,9 +368,9 @@ function FormsListDashboard() {
 
                   {displayForms.pagination.totalPages > 3 && (
                     <>
-                      <div className="w-px h-5 bg-[rgba(81,76,84,0.12)]" />
+                      <div className="w-px h-5 bg-[var(--tf-border)]" />
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-[#655d67]">{t('pagination.goto')}</span>
+                        <span className="text-xs text-muted-foreground">{t('pagination.goto')}</span>
                         <Input
                           type="number"
                           min="1"
@@ -414,14 +414,14 @@ function TemplatesStrip() {
     return (
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-[#3c323e]">Start from a template</h2>
+          <h2 className="text-sm font-semibold text-primary">Start from a template</h2>
         </div>
         <div className="flex gap-3 overflow-hidden">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="shrink-0 w-44 rounded-xl border border-[rgba(81,76,84,0.10)] bg-white overflow-hidden animate-pulse">
-              <div className="h-24 bg-[#f7f7f8]" />
+            <div key={i} className="shrink-0 w-44 rounded-xl border border-[var(--tf-border-medium)] bg-white overflow-hidden animate-pulse">
+              <div className="h-24 bg-background" />
               <div className="p-3 space-y-2">
-                <div className="h-3 bg-[#f7f7f8] rounded-lg w-3/4" />
+                <div className="h-3 bg-background rounded-lg w-3/4" />
               </div>
             </div>
           ))}
@@ -435,12 +435,12 @@ function TemplatesStrip() {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold text-[#3c323e]">Start from a template</h2>
+        <h2 className="text-sm font-semibold text-primary">Start from a template</h2>
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigate('/dashboard/templates')}
-          className="flex items-center gap-0.5 text-xs font-medium h-7 px-2 text-[#655d67] hover:text-[#3c323e]"
+          className="flex items-center gap-0.5 text-xs font-medium h-7 px-2 text-muted-foreground hover:text-primary"
         >
           Browse all
           <ChevronRight className="h-3 w-3" />
@@ -455,7 +455,7 @@ function TemplatesStrip() {
           return (
             <div
               key={template.id}
-              className="group shrink-0 w-44 rounded-xl border border-[rgba(81,76,84,0.10)] bg-white dark:bg-card overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-0.5 shadow-[0_1px_4px_rgba(60,50,62,0.06)] hover:shadow-[0_4px_16px_rgba(60,50,62,0.12)]"
+              className="group shrink-0 w-44 rounded-xl border border-[var(--tf-border-medium)] bg-white dark:bg-card overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-0.5 shadow-[0_1px_4px_var(--tf-overlay)] hover:shadow-[0_4px_16px_rgba(60,50,62,0.12)]"
             >
               <div className="relative h-24 overflow-hidden">
                 {bgUrl ? (
@@ -464,8 +464,8 @@ function TemplatesStrip() {
                     style={{ backgroundImage: `url(${bgUrl})` }}
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: '#f7f7f8' }}>
-                    <FileText className="w-5 h-5 text-[#655d67]" />
+                  <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: 'var(--tf-faint)' }}>
+                    <FileText className="w-5 h-5 text-muted-foreground" />
                   </div>
                 )}
                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
@@ -473,7 +473,7 @@ function TemplatesStrip() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-xs font-semibold shadow-md bg-white text-[#3c323e] hover:bg-white/90"
+                      className="text-xs font-semibold shadow-md bg-white text-primary hover:bg-white/90"
                     >
                       Use template
                     </Button>
@@ -482,9 +482,9 @@ function TemplatesStrip() {
               </div>
 
               <div className="p-3">
-                <p className="text-xs font-medium line-clamp-1 text-[#3c323e]">{template.name}</p>
+                <p className="text-xs font-medium line-clamp-1 text-primary">{template.name}</p>
                 {template.category && (
-                  <p className="text-xs mt-0.5 line-clamp-1 text-[#655d67]">{template.category}</p>
+                  <p className="text-xs mt-0.5 line-clamp-1 text-muted-foreground">{template.category}</p>
                 )}
               </div>
             </div>
@@ -494,10 +494,10 @@ function TemplatesStrip() {
         <Button
           variant="ghost"
           onClick={() => navigate('/dashboard/templates')}
-          className="shrink-0 w-44 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 transition-all duration-200 h-[calc(6rem+3.25rem)] text-[#655d67] hover:text-[#3c323e] hover:border-[#3c323e] hover:bg-transparent"
+          className="shrink-0 w-44 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 transition-all duration-200 h-[calc(6rem+3.25rem)] text-muted-foreground hover:text-primary hover:border-primary hover:bg-transparent"
           style={{ borderColor: 'rgba(81,76,84,0.18)' }}
         >
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(81,76,84,0.08)' }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--tf-border-light)' }}>
             <Plus className="w-4 h-4" />
           </div>
           <span className="text-xs font-medium">See all</span>
@@ -556,7 +556,7 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
   return (
     <div
       onClick={handleCardClick}
-      className="group relative rounded-xl bg-white dark:bg-card overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-0.5 border border-[rgba(81,76,84,0.10)] shadow-[0_1px_4px_rgba(60,50,62,0.06)] hover:shadow-[0_6px_20px_rgba(60,50,62,0.12)]"
+      className="group relative rounded-xl bg-white dark:bg-card overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-0.5 border border-[var(--tf-border-medium)] shadow-[0_1px_4px_var(--tf-overlay)] hover:shadow-[0_6px_20px_rgba(60,50,62,0.12)]"
     >
       {/* Thumbnail */}
       <div className="relative h-40 overflow-hidden">
@@ -570,13 +570,13 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
         ) : (
           <div
             className="w-full h-full flex items-center justify-center"
-            style={{ backgroundColor: '#f7f7f8' }}
+            style={{ backgroundColor: 'var(--tf-faint)' }}
           >
             <div
               className="w-12 h-12 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: 'rgba(81,76,84,0.08)' }}
+              style={{ backgroundColor: 'var(--tf-border-light)' }}
             >
-              <FileText className="w-6 h-6 text-[#655d67]" />
+              <FileText className="w-6 h-6 text-muted-foreground" />
             </div>
           </div>
         )}
@@ -587,7 +587,7 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
             variant="outline"
             size="sm"
             onClick={handlePreview}
-            className="gap-1.5 text-xs shadow-sm bg-white text-[#3c323e] hover:bg-white/90 border-transparent"
+            className="gap-1.5 text-xs shadow-sm bg-white text-primary hover:bg-white/90 border-transparent"
           >
             <Eye className="h-3.5 w-3.5" />
             Preview
@@ -606,13 +606,13 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
       {/* Card body */}
       <CardContent className="p-4 space-y-2.5">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-medium text-sm leading-snug line-clamp-2 flex-1 text-[#3c323e]">
+          <h3 className="font-medium text-sm leading-snug line-clamp-2 flex-1 text-primary">
             {form.title}
           </h3>
           <span
             className="shrink-0 px-2 py-0.5 rounded-full text-xs font-medium"
             style={form.isPublished
-              ? { backgroundColor: 'rgba(23,119,103,0.08)', color: '#177767', border: '1px solid rgba(23,119,103,0.16)' }
+              ? { backgroundColor: 'var(--tf-green-bg)', color: 'var(--tf-green)', border: '1px solid var(--tf-green-bg-md)' }
               : { backgroundColor: 'rgba(190,153,58,0.08)', color: '#9c7818', border: '1px solid rgba(190,153,58,0.16)' }
             }
           >
@@ -621,11 +621,11 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
         </div>
 
         {form.description && (
-          <p className="text-xs line-clamp-2 text-[#655d67]">{form.description}</p>
+          <p className="text-xs line-clamp-2 text-muted-foreground">{form.description}</p>
         )}
 
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 text-xs text-[#655d67]">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <Layers className="h-3 w-3" />
               {pageCountLabel}
@@ -638,7 +638,7 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
           {showPermissionBadge && form.userPermission && (
             <span
               className="text-xs font-medium px-2 py-0.5 rounded-full"
-              style={{ color: '#655d67', backgroundColor: 'rgba(81,76,84,0.08)' }}
+              style={{ color: 'var(--tf-muted)', backgroundColor: 'var(--tf-border-light)' }}
             >
               {permissionLabel}
             </span>
@@ -648,9 +648,9 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
         {/* Footer */}
         <div
           className="pt-2 flex items-center justify-between"
-          style={{ borderTop: '1px solid rgba(81,76,84,0.08)' }}
+          style={{ borderTop: '1px solid var(--tf-border-light)' }}
         >
-          <span className="text-xs text-[#655d67]">{formattedCreatedAt}</span>
+          <span className="text-xs text-muted-foreground">{formattedCreatedAt}</span>
           <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform duration-150 text-[rgba(81,76,84,0.35)]" />
         </div>
       </CardContent>

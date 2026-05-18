@@ -156,11 +156,11 @@ export const CreateFormPopover: React.FC<CreateFormPopoverProps> = ({ onFormCrea
                 placeholder={t('form.titlePlaceholder')}
                 value={formData.title}
                 onChange={handleInputChange}
-                className={errors.title ? 'border-[#ce5d55]' : ''}
+                className={errors.title ? 'border-destructive' : ''}
                 disabled={isCreating}
               />
               {errors.title && (
-                <TypographySmall className="text-[#ce5d55]">
+                <TypographySmall className="text-destructive">
                   {errors.title}
                 </TypographySmall>
               )}
@@ -180,7 +180,7 @@ export const CreateFormPopover: React.FC<CreateFormPopoverProps> = ({ onFormCrea
             </div>
 
             {errors.submit && (
-              <TypographySmall className="text-[#ce5d55]">
+              <TypographySmall className="text-destructive">
                 {errors.submit}
               </TypographySmall>
             )}

@@ -55,9 +55,9 @@ export const PageCard: React.FC<PageCardProps> = ({
     };
     
     return (
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-[rgba(81,76,84,0.10)] dark:border-gray-700 overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-[var(--tf-border-medium)] dark:border-gray-700 overflow-hidden">
             {/* Page Header */}
-            <div className="px-6 py-4 border-b border-[rgba(81,76,84,0.10)] dark:border-gray-700 bg-[#f7f7f8] dark:bg-gray-800/50">
+            <div className="px-6 py-4 border-b border-[var(--tf-border-medium)] dark:border-gray-700 bg-background dark:bg-gray-800/50">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                         <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-white font-semibold text-sm">
@@ -89,7 +89,7 @@ export const PageCard: React.FC<PageCardProps> = ({
                                     {page.title || t('defaultPageTitle', { values: { number: index + 1 } })}
                                 </Button>
                             )}
-                            <div className="text-sm text-[#655d67] dark:text-gray-400">
+                            <div className="text-sm text-muted-foreground dark:text-gray-400">
                                 {getFieldCountText(page.fields?.length || 0)}
                             </div>
                         </div>
@@ -111,7 +111,7 @@ export const PageCard: React.FC<PageCardProps> = ({
                                 {t('menu.duplicatePage')}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-[#ce5d55] dark:text-red-400">
+                            <DropdownMenuItem className="text-destructive dark:text-red-400">
                                 <Trash2 className="w-4 h-4 mr-2" />
                                 {t('menu.deletePage')}
                             </DropdownMenuItem>
@@ -137,10 +137,10 @@ export const PageCard: React.FC<PageCardProps> = ({
                         ))
                     ) : (
                         <div className="text-center py-8">
-                            <div className="w-16 h-16 bg-[#f7f7f8] dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
-                                <FileText className="w-8 h-8 text-[#655d67]" />
+                            <div className="w-16 h-16 bg-background dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <FileText className="w-8 h-8 text-muted-foreground" />
                             </div>
-                            <TypographyP className="text-[#655d67] dark:text-gray-400 mb-4">
+                            <TypographyP className="text-muted-foreground dark:text-gray-400 mb-4">
                                 {t('emptyState.message')}
                             </TypographyP>
                         </div>

@@ -160,7 +160,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                 className="bg-white dark:bg-card sticky top-0 z-50 flex items-stretch"
                 style={{
                     height: '56px',
-                    borderBottom: '1px solid rgba(81,76,84,0.12)',
+                    borderBottom: '1px solid var(--tf-border)',
                 }}
             >
                 {/* ── Left: back + title + status ── */}
@@ -187,7 +187,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                                     if (e.key === 'Enter') { e.preventDefault(); handleSaveTitle(); }
                                     else if (e.key === 'Escape') { e.preventDefault(); handleCancelEdit(); }
                                 }}
-                                className="h-8 text-sm font-medium border-0 shadow-none p-0 focus:ring-0 focus:border-transparent bg-transparent w-full text-[#3c323e]"
+                                className="h-8 text-sm font-medium border-0 shadow-none p-0 focus:ring-0 focus:border-transparent bg-transparent w-full text-primary"
                                 autoFocus
                             />
                         ) : (
@@ -200,7 +200,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                             >
                                 <span className="truncate min-w-0">{formTitle}</span>
                                 {permissions.canEdit && (
-                                    <Edit3 className="w-3 h-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-[#655d67]" />
+                                    <Edit3 className="w-3 h-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground" />
                                 )}
                             </Button>
                         )}
@@ -211,17 +211,17 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                         {isLoading ? (
                             <>
                                 <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
-                                <span className="text-xs text-[#655d67]">{t('status.connecting')}</span>
+                                <span className="text-xs text-muted-foreground">{t('status.connecting')}</span>
                             </>
                         ) : isConnected ? (
                             <>
-                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#177767' }} />
-                                <span className="text-xs font-medium text-[#177767]">{t('status.live')}</span>
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--tf-green)' }} />
+                                <span className="text-xs font-medium text-[var(--tf-green)]">{t('status.live')}</span>
                             </>
                         ) : (
                             <>
                                 <div className="w-2 h-2 bg-red-400 rounded-full" />
-                                <span className="text-xs text-[#655d67]">{t('status.offline')}</span>
+                                <span className="text-xs text-muted-foreground">{t('status.offline')}</span>
                             </>
                         )}
                         <PermissionBadge />
@@ -327,7 +327,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                     </AlertDialogHeader>
                     {isDuplicating && (
                         <div className="space-y-2">
-                            <div className="text-sm text-[#655d67]">
+                            <div className="text-sm text-muted-foreground">
                                 {t('duplicateDialog.progressLabel')}
                             </div>
                             <Progress value={Math.min(duplicateProgress, 100)} />

@@ -37,7 +37,7 @@ export const UserCard = ({ user, onViewDetails, onViewOrganization }: UserCardPr
       case 'admin':
         return 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300';
       default:
-        return 'bg-[#f7f7f8] text-[#4c414e] dark:bg-gray-800 dark:text-gray-300';
+        return 'bg-background text-foreground dark:bg-gray-800 dark:text-gray-300';
     }
   };
 
@@ -63,10 +63,10 @@ export const UserCard = ({ user, onViewDetails, onViewOrganization }: UserCardPr
 
           {/* User Info */}
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-[#3c323e] dark:text-gray-100 truncate">
+            <h3 className="text-lg font-semibold text-primary dark:text-gray-100 truncate">
               {user.name}
             </h3>
-            <p className="text-sm text-[#4c414e] dark:text-gray-400 truncate">
+            <p className="text-sm text-foreground dark:text-gray-400 truncate">
               {user.email}
             </p>
             <div className="flex items-center gap-2 mt-1">
@@ -76,7 +76,7 @@ export const UserCard = ({ user, onViewDetails, onViewOrganization }: UserCardPr
                   <span>Verified</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-1 text-xs text-[#655d67] dark:text-gray-400">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground dark:text-gray-400">
                   <XCircle className="w-3 h-3" />
                   <span>Not Verified</span>
                 </div>
@@ -86,11 +86,11 @@ export const UserCard = ({ user, onViewDetails, onViewOrganization }: UserCardPr
         </div>
 
         {/* Divider */}
-        <div className="border-t border-[rgba(81,76,84,0.10)] dark:border-gray-700 my-4" />
+        <div className="border-t border-[var(--tf-border-medium)] dark:border-gray-700 my-4" />
 
         {/* Organizations */}
         <div className="space-y-2 mb-4">
-          <h4 className="text-sm font-medium text-[#4c414e] dark:text-gray-300">
+          <h4 className="text-sm font-medium text-foreground dark:text-gray-300">
             Organizations {user.organizations.length > 0 && `(${user.organizations.length})`}
           </h4>
           {user.organizations.length > 0 ? (
@@ -98,11 +98,11 @@ export const UserCard = ({ user, onViewDetails, onViewOrganization }: UserCardPr
               {user.organizations.slice(0, 3).map((org) => (
                 <div
                   key={org.organizationId}
-                  className="flex items-center justify-between text-sm p-2 rounded-lg bg-[#f7f7f8] dark:bg-gray-800 hover:bg-[#f7f7f8] dark:hover:bg-gray-700 transition-colors"
+                  className="flex items-center justify-between text-sm p-2 rounded-lg bg-background dark:bg-gray-800 hover:bg-background dark:hover:bg-gray-700 transition-colors"
                 >
                   <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <Building2 className="w-4 h-4 text-[#655d67] dark:text-gray-400 flex-shrink-0" />
-                    <span className="text-[#3c323e] dark:text-gray-100 truncate font-medium">
+                    <Building2 className="w-4 h-4 text-muted-foreground dark:text-gray-400 flex-shrink-0" />
+                    <span className="text-primary dark:text-gray-100 truncate font-medium">
                       {org.organizationName}
                     </span>
                     <span
@@ -123,20 +123,20 @@ export const UserCard = ({ user, onViewDetails, onViewOrganization }: UserCardPr
                 </div>
               ))}
               {user.organizations.length > 3 && (
-                <p className="text-xs text-[#655d67] dark:text-gray-400 text-center">
+                <p className="text-xs text-muted-foreground dark:text-gray-400 text-center">
                   +{user.organizations.length - 3} more
                 </p>
               )}
             </div>
           ) : (
-            <p className="text-sm text-[#655d67] dark:text-gray-400 italic">
+            <p className="text-sm text-muted-foreground dark:text-gray-400 italic">
               No organizations
             </p>
           )}
         </div>
 
         {/* Metadata */}
-        <div className="text-xs text-[#655d67] dark:text-gray-400 mb-4">
+        <div className="text-xs text-muted-foreground dark:text-gray-400 mb-4">
           Joined: {formatDate(user.createdAt)}
         </div>
 

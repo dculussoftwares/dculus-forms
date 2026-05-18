@@ -149,7 +149,7 @@ const PluginConfiguration: React.FC = () => {
       >
         <EmptyState
           variant="error"
-          icon={<AlertCircle className="h-6 w-6 text-[#ce5d55]" />}
+          icon={<AlertCircle className="h-6 w-6 text-destructive" />}
           title={t('errors.formNotFound.title')}
           description={t('errors.formNotFound.description')}
         />
@@ -200,12 +200,12 @@ const PluginConfiguration: React.FC = () => {
 
       default:
         return (
-          <div className="rounded-xl bg-white p-10 text-center" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
+          <div className="rounded-xl bg-white p-10 text-center" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}>
             <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: '#fbe19d' }}>
               <AlertCircle className="h-6 w-6 text-[#8b6a18]" />
             </div>
-            <h3 className="text-sm font-semibold mb-1 text-[#3c323e]">{t('errors.unknownPluginType.title')}</h3>
-            <p className="text-xs mb-5 text-[#655d67]">{t('errors.unknownPluginType.description', { values: { pluginType: currentPluginType } })}</p>
+            <h3 className="text-sm font-semibold mb-1 text-primary">{t('errors.unknownPluginType.title')}</h3>
+            <p className="text-xs mb-5 text-muted-foreground">{t('errors.unknownPluginType.description', { values: { pluginType: currentPluginType } })}</p>
             <Button onClick={() => navigate(`/dashboard/form/${formId}/plugins`)}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               {t('actions.backToPlugins')}

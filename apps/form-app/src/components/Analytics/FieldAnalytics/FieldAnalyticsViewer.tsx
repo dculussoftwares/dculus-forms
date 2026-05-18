@@ -163,8 +163,8 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[#3c323e]">{t('header.title')}</h1>
-            <p className="text-[#4c414e]">{t('header.loading')}</p>
+            <h1 className="text-2xl font-bold text-primary">{t('header.title')}</h1>
+            <p className="text-foreground">{t('header.loading')}</p>
           </div>
         </div>
 
@@ -194,11 +194,11 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
     return (
       <Card>
         <CardContent className="p-8 text-center">
-          <div className="text-[#ce5d55] mb-4">
+          <div className="text-destructive mb-4">
             <BarChart3 className="h-12 w-12 mx-auto" />
           </div>
-          <h3 className="text-lg font-medium text-[#3c323e] mb-2">{t('error.loadingTitle')}</h3>
-          <p className="text-[#4c414e] mb-4">
+          <h3 className="text-lg font-medium text-primary mb-2">{t('error.loadingTitle')}</h3>
+          <p className="text-foreground mb-4">
             {allFieldsError.message || t('errors.loadingAnalytics')}
           </p>
           <Button onClick={refreshAll} variant="outline">
@@ -220,17 +220,17 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
               onClick={handleBackToGrid}
               variant="ghost"
               size="sm"
-              className="mb-4 text-[#4c414e] hover:text-[#3c323e] p-0 h-auto font-normal"
+              className="mb-4 text-foreground hover:text-primary p-0 h-auto font-normal"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
               {t('navigation.allFields')}
             </Button>
           )}
-          <h1 className="text-2xl font-bold text-[#3c323e]">
+          <h1 className="text-2xl font-bold text-primary">
             {view === 'grid' ? t('titles.fieldAnalytics') : t('titles.fieldInsights')}
           </h1>
           {view === 'grid' && (
-            <p className="text-[#4c414e] mt-1">
+            <p className="text-foreground mt-1">
               {t('description.analyzePerformance', { values: { count: totalResponses } })}
             </p>
           )}
@@ -248,7 +248,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="text-sm text-[#4c414e] px-2">
+            <span className="text-sm text-foreground px-2">
               {t('navigation.fieldOfTotal', {
                 values: {
                   current: getCurrentFieldIndex() + 1,
@@ -301,8 +301,8 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
                       <BarChart3 className="h-5 w-5" />
                     </div>
                     <div>
-                      <div className="text-2xl font-bold text-[#3c323e]">{allFields.length}</div>
-                      <div className="text-sm text-[#4c414e]">{t('overviewStats.analyzableFields')}</div>
+                      <div className="text-2xl font-bold text-primary">{allFields.length}</div>
+                      <div className="text-sm text-foreground">{t('overviewStats.analyzableFields')}</div>
                     </div>
                   </div>
                 </CardContent>
@@ -315,10 +315,10 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
                       <TrendingUp className="h-5 w-5" />
                     </div>
                     <div>
-                      <div className="text-2xl font-bold text-[#3c323e]">
+                      <div className="text-2xl font-bold text-primary">
                         {allFields.filter(f => f.responseRate >= 80).length}
                       </div>
-                      <div className="text-sm text-[#4c414e]">{t('overviewStats.highEngagement')}</div>
+                      <div className="text-sm text-foreground">{t('overviewStats.highEngagement')}</div>
                     </div>
                   </div>
                 </CardContent>
@@ -331,10 +331,10 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
                       <Users className="h-5 w-5" />
                     </div>
                     <div>
-                      <div className="text-2xl font-bold text-[#3c323e]">
+                      <div className="text-2xl font-bold text-primary">
                         {Math.round(allFields.reduce((sum, f) => sum + f.responseRate, 0) / allFields.length) || 0}%
                       </div>
-                      <div className="text-sm text-[#4c414e]">{t('overviewStats.avgResponseRate')}</div>
+                      <div className="text-sm text-foreground">{t('overviewStats.avgResponseRate')}</div>
                     </div>
                   </div>
                 </CardContent>
@@ -347,8 +347,8 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
                       <Eye className="h-5 w-5" />
                     </div>
                     <div>
-                      <div className="text-2xl font-bold text-[#3c323e]">{totalResponses}</div>
-                      <div className="text-sm text-[#4c414e]">{t('overviewStats.formResponses')}</div>
+                      <div className="text-2xl font-bold text-primary">{totalResponses}</div>
+                      <div className="text-sm text-foreground">{t('overviewStats.formResponses')}</div>
                     </div>
                   </div>
                 </CardContent>
@@ -373,7 +373,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
           t={t}
         />
       ) : (
-        <div className="text-center py-8 text-[#655d67]">
+        <div className="text-center py-8 text-muted-foreground">
           {t('loading.fieldAnalytics')}
         </div>
       )}
@@ -382,11 +382,11 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
       {selectedFieldError && (
         <Card>
           <CardContent className="p-8 text-center">
-            <div className="text-[#ce5d55] mb-4">
+            <div className="text-destructive mb-4">
               <BarChart3 className="h-12 w-12 mx-auto" />
             </div>
-            <h3 className="text-lg font-medium text-[#3c323e] mb-2">{t('error.loadingData')}</h3>
-            <p className="text-[#4c414e] mb-4">
+            <h3 className="text-lg font-medium text-primary mb-2">{t('error.loadingData')}</h3>
+            <p className="text-foreground mb-4">
               {selectedFieldError.message || t('errors.loadingFieldAnalytics')}
             </p>
             <Button onClick={refreshAll} variant="outline">

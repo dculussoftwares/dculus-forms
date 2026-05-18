@@ -51,11 +51,11 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
       case EditType.MANUAL:
         return 'bg-blue-100 text-blue-800 border-blue-200';
       case EditType.SYSTEM:
-        return 'bg-[#f7f7f8] text-[#3c323e] border-[rgba(81,76,84,0.10)]';
+        return 'bg-background text-primary border-[var(--tf-border-medium)]';
       case EditType.BULK:
         return 'bg-purple-100 text-purple-800 border-purple-200';
       default:
-        return 'bg-[#f7f7f8] text-[#3c323e] border-[rgba(81,76,84,0.10)]';
+        return 'bg-background text-primary border-[var(--tf-border-medium)]';
     }
   };
 
@@ -106,9 +106,9 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
     return (
       <Card className="text-center py-12">
         <CardContent>
-          <Edit3 className="h-12 w-12 text-[#655d67] mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-[#3c323e] mb-2">{t('editHistoryTimeline.empty.title')}</h3>
-          <p className="text-[#655d67]">
+          <Edit3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-primary mb-2">{t('editHistoryTimeline.empty.title')}</h3>
+          <p className="text-muted-foreground">
             {t('editHistoryTimeline.empty.description')}
           </p>
         </CardContent>
@@ -152,7 +152,7 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
                   {/* Header */}
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
-                      <h4 className="font-medium text-[#3c323e]">
+                      <h4 className="font-medium text-primary">
                         {edit.editedBy.name}
                       </h4>
                       <Badge
@@ -174,7 +174,7 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
                         variant="ghost"
                         size="sm"
                         onClick={() => onViewSnapshot?.(edit.id)}
-                        className="text-[#655d67] hover:text-[#4c414e]"
+                        className="text-muted-foreground hover:text-foreground"
                       >
                         <Eye className="h-4 w-4" />
                         {t('editHistoryTimeline.buttons.view')}
@@ -183,7 +183,7 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
                   </div>
 
                   {/* Timestamp */}
-                  <div className="flex items-center space-x-2 text-sm text-[#655d67] mb-3">
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground mb-3">
                     <Clock className="h-4 w-4" />
                     <span>
                       {edit.editedAt
@@ -202,11 +202,11 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
 
                   {/* Changes Summary */}
                   <div className="mb-3">
-                    <p className="text-[#4c414e]">
+                    <p className="text-foreground">
                       {edit.changesSummary || t('editHistoryTimeline.labels.modifiedFields', { values: { count: edit.totalChanges } })}
                     </p>
                     {edit.editReason && (
-                      <p className="text-sm text-[#4c414e] mt-1">
+                      <p className="text-sm text-foreground mt-1">
                         <span className="font-medium">{t('editHistoryTimeline.labels.reason')}</span> {edit.editReason}
                       </p>
                     )}

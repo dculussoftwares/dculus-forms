@@ -35,8 +35,8 @@ export const FieldAnalyticsPanel: React.FC<FieldAnalyticsPanelProps> = ({
     // Check if field type is supported
     if (!Component || !dataKey) {
       return (
-        <div className="text-center py-8 text-[#655d67]">
-          <BarChart3 className="h-12 w-12 mx-auto mb-4 text-[#655d67]" />
+        <div className="text-center py-8 text-muted-foreground">
+          <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
           <p>{t('detailView.notSupported')}</p>
           <p className="text-sm mt-2">{t('detailView.fieldType')}: {field.fieldType}</p>
         </div>
@@ -49,7 +49,7 @@ export const FieldAnalyticsPanel: React.FC<FieldAnalyticsPanelProps> = ({
     // Check if data is available
     if (!data) {
       return (
-        <div className="text-center py-8 text-[#655d67]">
+        <div className="text-center py-8 text-muted-foreground">
           {t(`noDataMessages.${dataKey}`)}
         </div>
       );
@@ -78,16 +78,16 @@ export const FieldAnalyticsPanel: React.FC<FieldAnalyticsPanelProps> = ({
   return (
     <div className="w-full">
       {/* Field Header */}
-      <div className="mb-6 pb-4 border-b border-[rgba(81,76,84,0.10)]">
+      <div className="mb-6 pb-4 border-b border-[var(--tf-border-medium)]">
         <div className="flex items-center gap-3 mb-2">
           <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
             <Icon className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-[#3c323e]">
+            <h2 className="text-xl font-bold text-primary">
               {field.fieldLabel || `${t('fieldHeader.fieldPrefix')} ${field.fieldId}`}
             </h2>
-            <p className="text-sm text-[#4c414e]">
+            <p className="text-sm text-foreground">
               {getFieldTypeDisplayName(field.fieldType, (key: string) => t(key))} • {t('fieldHeader.responsesCount', { values: { count: field.totalResponses } })} • {t('fieldHeader.responseRateText', { values: { rate: field.responseRate.toFixed(1) } })}
             </p>
           </div>

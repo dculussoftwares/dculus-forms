@@ -25,7 +25,7 @@ function HeaderAvatar() {
     <div
       title={user.name || user.email}
       className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white shrink-0 select-none"
-      style={{ backgroundColor: "#3c323e" }}
+      style={{ backgroundColor: "var(--tf-dark)" }}
     >
       {user.image ? (
         <img

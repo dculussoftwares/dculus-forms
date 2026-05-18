@@ -27,7 +27,7 @@ interface StatCardProps {
 const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon, iconBg, iconColor, trend }) => {
   return (
     <div
-      className="bg-white dark:bg-card rounded-xl p-5 transition-all duration-200 cursor-default border border-[rgba(81,76,84,0.10)] shadow-[0_1px_4px_rgba(60,50,62,0.06)] hover:shadow-[0_4px_16px_rgba(60,50,62,0.10)]"
+      className="bg-white dark:bg-card rounded-xl p-5 transition-all duration-200 cursor-default border border-[var(--tf-border-medium)] shadow-[0_1px_4px_var(--tf-overlay)] hover:shadow-[0_4px_16px_rgba(60,50,62,0.10)]"
     >
       <div className="flex items-center justify-between mb-4">
         {/* Field-icon style — Typeform exact */}
@@ -42,8 +42,8 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon, iconB
           <div
             className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
             style={trend.isPositive
-              ? { backgroundColor: 'rgba(23,119,103,0.08)', color: '#177767' }
-              : { backgroundColor: 'rgba(206,93,85,0.08)', color: '#ce5d55' }
+              ? { backgroundColor: 'var(--tf-green-bg)', color: 'var(--tf-green)' }
+              : { backgroundColor: 'var(--tf-error-bg)', color: 'var(--tf-error)' }
             }
           >
             {trend.isPositive
@@ -55,13 +55,13 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon, iconB
         )}
       </div>
 
-      <p className="text-2xl font-semibold tracking-tight text-[#3c323e]">
+      <p className="text-2xl font-semibold tracking-tight text-primary">
         {value}
       </p>
-      <p className="text-sm font-medium mt-0.5 text-[#4c414e]">
+      <p className="text-sm font-medium mt-0.5 text-foreground">
         {title}
       </p>
-      <p className="text-xs mt-0.5 text-[#655d67]">
+      <p className="text-xs mt-0.5 text-muted-foreground">
         {subtitle}
       </p>
     </div>
@@ -85,8 +85,8 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
         value={stats.totalResponses}
         subtitle={t('stats.totalResponses.subtitle', { values: { count: stats.responsesToday } })}
         icon={<FileText className="w-4 h-4" />}
-        iconBg="#f8cdd8"
-        iconColor="#3c323e"
+        iconBg="var(--tf-icon-salmon)"
+        iconColor="var(--tf-dark)"
         trend={stats.responsesToday > 0 ? positiveTrend(12) : undefined}
       />
 
@@ -96,8 +96,8 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
         value={stats.responseRate}
         subtitle={t('stats.responseRate.subtitle')}
         icon={<TrendingUp className="w-4 h-4" />}
-        iconBg="#f4faf8"
-        iconColor="#177767"
+        iconBg="var(--tf-icon-teal)"
+        iconColor="var(--tf-green)"
         trend={positiveTrend(8)}
       />
 
@@ -107,7 +107,7 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
         value={stats.averageCompletionTime}
         subtitle={t('stats.averageCompletionTime.subtitle')}
         icon={<Clock className="w-4 h-4" />}
-        iconBg="#ddd6fa"
+        iconBg="var(--tf-icon-lavender)"
         iconColor="#5c2e6b"
       />
 
@@ -117,8 +117,8 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
         value={stats.responsesThisWeek}
         subtitle={t('stats.thisWeek.subtitle')}
         icon={<Calendar className="w-4 h-4" />}
-        iconBg="#dedcde"
-        iconColor="#4c414e"
+        iconBg="var(--tf-icon-gray)"
+        iconColor="var(--tf-text)"
         trend={positiveTrend(15)}
       />
     </div>

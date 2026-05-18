@@ -30,7 +30,7 @@ export const BackgroundImageGallery: React.FC<BackgroundImageGalleryProps> = ({
   if (images.length === 0) {
     return (
       <div className="text-center py-6">
-        <p className="text-sm text-[#655d67] dark:text-gray-400">
+        <p className="text-sm text-muted-foreground dark:text-gray-400">
           {t('gallery.noImages')}
         </p>
       </div>
@@ -51,7 +51,7 @@ export const BackgroundImageGallery: React.FC<BackgroundImageGalleryProps> = ({
             <div className={`relative overflow-hidden rounded-lg border-2 transition-all ${
               selectedImageKey === image.key
                 ? 'border-purple-500 shadow-md'
-                : 'border-[rgba(81,76,84,0.10)] dark:border-gray-600 hover:border-purple-300'
+                : 'border-[var(--tf-border-medium)] dark:border-gray-600 hover:border-purple-300'
             }`}>
               <img
                 src={image.url}
@@ -87,7 +87,7 @@ export const BackgroundImageGallery: React.FC<BackgroundImageGalleryProps> = ({
               }`} />
             </div>
             
-            <p className="text-xs text-[#4c414e] dark:text-gray-400 mt-1 truncate">
+            <p className="text-xs text-foreground dark:text-gray-400 mt-1 truncate">
               {image.originalName}
             </p>
           </div>

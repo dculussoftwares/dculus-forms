@@ -94,14 +94,14 @@ const ThankYouSettings: React.FC<ThankYouSettingsProps> = ({
             >
               {t('thankYouSettings.enabled')}
             </Label>
-            <p className="text-sm text-[#4c414e]">
+            <p className="text-sm text-foreground">
               {t('thankYouSettings.enabledDescription')}
             </p>
           </div>
         </div>
 
         {settings.enabled && (
-          <div className="space-y-4 pt-4 border-t border-[rgba(81,76,84,0.10)]">
+          <div className="space-y-4 pt-4 border-t border-[var(--tf-border-medium)]">
             <div className="space-y-2">
               <Label
                 htmlFor="thank-you-message"
@@ -118,7 +118,7 @@ const ThankYouSettings: React.FC<ThankYouSettingsProps> = ({
                   mentionFields={mentionFields}
                 />
               </div>
-              <p className="text-xs text-[#655d67]">
+              <p className="text-xs text-muted-foreground">
                 {t('thankYouSettings.messageHelp')}
                 {mentionFields.length > 0 ? (
                   <>

@@ -66,7 +66,7 @@ const Plugins: React.FC = () => {
       >
         <EmptyState
           variant="error"
-          icon={<AlertCircle className="h-6 w-6 text-[#ce5d55]" />}
+          icon={<AlertCircle className="h-6 w-6 text-destructive" />}
           title={t('errors.formNotFound.title')}
           description={t('errors.formNotFound.description')}
         />
@@ -90,8 +90,8 @@ const Plugins: React.FC = () => {
         {/* ── Typeform-style page header ── */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-sm font-semibold text-[#3c323e]">{t('header.title')}</h1>
-            <p className="text-xs mt-0.5 text-[#655d67]">
+            <h1 className="text-sm font-semibold text-primary">{t('header.title')}</h1>
+            <p className="text-xs mt-0.5 text-muted-foreground">
               {t('header.description', { values: { formTitle: form.title } })}
             </p>
           </div>
@@ -112,15 +112,15 @@ const Plugins: React.FC = () => {
           /* Empty state — Typeform-style */
           <div
             className="rounded-xl p-10 text-center bg-white"
-            style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}
+            style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}
           >
             <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: '#fbe19d' }}>
               <Plug className="h-7 w-7 text-[#8b6a18]" />
             </div>
-            <h3 className="text-sm font-semibold mb-1 text-[#3c323e]">
+            <h3 className="text-sm font-semibold mb-1 text-primary">
               {t('emptyState.title')}
             </h3>
-            <p className="text-xs max-w-sm mx-auto mb-5 text-[#655d67]">
+            <p className="text-xs max-w-sm mx-auto mb-5 text-muted-foreground">
               {t('emptyState.description')}
             </p>
             <Button
@@ -135,16 +135,16 @@ const Plugins: React.FC = () => {
           /* Plugin list — Typeform integration list style */
           <div>
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-xs font-medium text-[#655d67]">
+              <h2 className="text-xs font-medium text-muted-foreground">
                 {t('activeIntegrations.title', { values: { count: plugins.length } })}
               </h2>
             </div>
             <div
               className="rounded-xl bg-white overflow-hidden"
-              style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}
+              style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}
             >
               {plugins.map((plugin: any, i: number) => (
-                <div key={plugin.id} style={{ borderTop: i > 0 ? '1px solid rgba(81,76,84,0.08)' : undefined }}>
+                <div key={plugin.id} style={{ borderTop: i > 0 ? '1px solid var(--tf-border-light)' : undefined }}>
                   <PluginCard
                     plugin={plugin}
                     onEdit={() => handleEditPlugin(plugin)}

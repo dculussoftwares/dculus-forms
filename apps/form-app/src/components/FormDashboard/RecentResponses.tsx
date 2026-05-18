@@ -104,7 +104,7 @@ export const RecentResponses: React.FC<RecentResponsesProps> = ({
           </div>
         ) : (
           <div className="text-center py-8">
-            <FileText className="mx-auto h-12 w-12 text-[#a09aa2]" />
+            <FileText className="mx-auto h-12 w-12 text-[var(--tf-light-muted)]" />
             <TypographyP className="mt-2 text-sm text-muted-foreground">
               {t('recentResponses.noResponses')}
             </TypographyP>

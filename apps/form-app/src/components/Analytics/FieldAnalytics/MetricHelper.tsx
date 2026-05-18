@@ -32,7 +32,7 @@ export const MetricHelper: React.FC<MetricHelperProps> = ({
           onMouseEnter={() => setIsVisible(true)}
           onMouseLeave={() => setIsVisible(false)}
           onClick={() => setIsVisible(!isVisible)}
-          className="text-[#655d67] hover:text-[#4c414e] ml-1 h-auto w-auto p-0"
+          className="text-muted-foreground hover:text-foreground ml-1 h-auto w-auto p-0"
           aria-label={`Help: ${displayTitle}`}
         >
           <HelpCircle className="h-4 w-4" />
@@ -41,7 +41,7 @@ export const MetricHelper: React.FC<MetricHelperProps> = ({
         {isVisible && (
           <div className="absolute z-20 left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-72 p-3 bg-gray-900 text-white text-sm rounded-lg shadow-lg">
             <div className="font-medium mb-1">{displayTitle}</div>
-            <div className="text-[#a09aa2]">{displayDescription}</div>
+            <div className="text-[var(--tf-light-muted)]">{displayDescription}</div>
             <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
           </div>
         )}

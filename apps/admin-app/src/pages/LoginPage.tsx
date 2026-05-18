@@ -26,15 +26,15 @@ export default function LoginPage() {
   return (
     <div className="h-screen flex overflow-hidden">
       {/* Left dark panel */}
-      <div className="hidden lg:flex lg:flex-col lg:w-[400px] shrink-0 p-10 justify-between" style={{ backgroundColor: '#2a222b' }}>
+      <div className="hidden lg:flex lg:flex-col lg:w-[400px] shrink-0 p-10 justify-between" style={{ backgroundColor: 'var(--tf-darkest)' }}>
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#3c323e' }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--tf-dark)' }}>
             <Shield className="w-4 h-4 text-white" />
           </div>
           <span className="text-white font-semibold text-lg">Admin</span>
         </div>
         <div className="space-y-3">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--tf-white-overlay)' }}>
             <Shield className="w-6 h-6 text-[rgba(255,255,255,0.70)]" />
           </div>
           <h2 className="text-white text-2xl font-light leading-snug">Dculus Forms<br />Administration</h2>
@@ -47,8 +47,8 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center px-8 bg-white">
         <div className="w-full max-w-sm">
           <div className="mb-8">
-            <h1 className="text-2xl font-semibold mb-1.5 text-[#3c323e]">{t('subtitle')}</h1>
-            <p className="text-sm text-[#655d67]">Admin access only</p>
+            <h1 className="text-2xl font-semibold mb-1.5 text-primary">{t('subtitle')}</h1>
+            <p className="text-sm text-muted-foreground">Admin access only</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -59,23 +59,23 @@ export default function LoginPage() {
               </div>
             )}
             {error && (
-              <p className="py-2 px-3 rounded-lg text-xs" style={{ backgroundColor: 'rgba(206,93,85,0.06)', color: '#ce5d55', border: '1px solid rgba(206,93,85,0.14)' }}>
+              <p className="py-2 px-3 rounded-lg text-xs" style={{ backgroundColor: 'rgba(206,93,85,0.06)', color: 'var(--tf-error)', border: '1px solid rgba(206,93,85,0.14)' }}>
                 {error}
               </p>
             )}
             <div>
-              <Label htmlFor="email" className="text-xs font-medium block mb-1.5 text-[#4c414e]">{t('email')}</Label>
+              <Label htmlFor="email" className="text-xs font-medium block mb-1.5 text-foreground">{t('email')}</Label>
               <Input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('email')} />
             </div>
             <div>
-              <Label htmlFor="password" className="text-xs font-medium block mb-1.5 text-[#4c414e]">{t('password')}</Label>
+              <Label htmlFor="password" className="text-xs font-medium block mb-1.5 text-foreground">{t('password')}</Label>
               <div className="relative">
                 <Input
                   id="password" name="password" type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password" required value={password}
                   onChange={(e) => setPassword(e.target.value)} placeholder={t('password')} className="pr-9"
                 />
-                <Button type="button" variant="ghost" size="icon" className="absolute inset-y-0 right-0 h-full w-9 rounded-l-none text-[#655d67]"
+                <Button type="button" variant="ghost" size="icon" className="absolute inset-y-0 right-0 h-full w-9 rounded-l-none text-muted-foreground"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -91,7 +91,7 @@ export default function LoginPage() {
               ) : t('signIn')}
             </Button>
           </form>
-          <p className="text-xs text-center mt-6 text-[#655d67]">Contact your system administrator for access.</p>
+          <p className="text-xs text-center mt-6 text-muted-foreground">Contact your system administrator for access.</p>
         </div>
       </div>
     </div>

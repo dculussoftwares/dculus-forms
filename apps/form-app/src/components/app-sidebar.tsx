@@ -44,7 +44,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       {/* ── Org switcher (top) ── */}
-      <SidebarHeader className="border-b border-[rgba(81,76,84,0.10)] dark:border-white/10 pb-3">
+      <SidebarHeader className="border-b border-[var(--tf-border-medium)] dark:border-white/10 pb-3">
         <TeamSwitcher />
       </SidebarHeader>
 
@@ -65,7 +65,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={navMainItems} />
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-[rgba(81,76,84,0.10)] dark:border-white/10">
+      <SidebarFooter className="border-t border-[var(--tf-border-medium)] dark:border-white/10">
         <NavLocale />
         <NavUser />
       </SidebarFooter>

@@ -25,7 +25,7 @@
     --accent: 0.960 0.003 290;
     --accent-foreground: 0.392 0.026 321;
 
-    --destructive: 0.628 0.258 27.3;
+    --destructive: 0.597 0.118 18;        /* #ce5d55  pinkish-red error */
     --destructive-foreground: 1.000 0 0;
 
     --border: 0.897 0.004 308;              /* #dedcde  neutral border        */
@@ -65,6 +65,34 @@
     --shadow-lg:  0px 8px 24px 0px rgba(60,50,62,0.12), 0px 4px 8px -4px rgba(60,50,62,0.08);
     --shadow-xl:  0px 12px 32px 0px rgba(60,50,62,0.14), 0px 6px 12px -6px rgba(60,50,62,0.10);
     --shadow-2xl: 0px 20px 48px 0px rgba(60,50,62,0.18);
+
+    /* ── tf-* design tokens (hex/rgba — used in inline styles) ── */
+    --tf-icon-salmon: #f8cdd8;
+    --tf-icon-teal: #f4faf8;
+    --tf-icon-gray: #dedcde;
+    --tf-icon-lavender: #ddd6fa;
+    --tf-green: #177767;
+    --tf-dark: #3c323e;
+    --tf-text: #4c414e;
+    --tf-muted: #655d67;
+    --tf-faint: #f7f7f8;
+    --tf-error: #ce5d55;
+    --tf-darkest: #2a222b;
+    --tf-light-muted: #a09aa2;
+    --tf-border: rgba(81,76,84,0.12);
+    --tf-border-strong: rgba(81,76,84,0.15);
+    --tf-border-medium: rgba(81,76,84,0.10);
+    --tf-border-light: rgba(81,76,84,0.08);
+    --tf-border-faint: rgba(81,76,84,0.06);
+    --tf-overlay: rgba(60,50,62,0.06);
+    --tf-white-overlay: rgba(255,255,255,0.08);
+    --tf-error-bg: rgba(206,93,85,0.06);
+    --tf-error-bg-md: rgba(206,93,85,0.14);
+    --tf-error-bg-lg: rgba(206,93,85,0.16);
+    --tf-green-bg: rgba(23,119,103,0.08);
+    --tf-green-bg-md: rgba(23,119,103,0.16);
+    --tf-tab-bg: rgba(87,84,91,0.06);
+    --tf-tab-bg-faint: rgba(87,84,91,0.025);
 
     --tracking-normal: 0rem;
     --tracking-tighter: calc(var(--tracking-normal) - 0.05em);

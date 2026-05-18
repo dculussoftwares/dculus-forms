@@ -281,7 +281,7 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
       <div className="relative bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-lg font-semibold text-[#3c323e]">
+          <h2 className="text-lg font-semibold text-primary">
             {getModalTitle()}
           </h2>
           <Button
@@ -306,8 +306,8 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
                   onClick={() => setActiveTab(tab.id)}
                   className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 rounded-none h-auto ${
                     activeTab === tab.id
-                      ? 'border-[#3c323e] text-[#3c323e]'
-                      : 'border-transparent text-[#655d67] hover:text-[#4c414e] hover:border-[rgba(81,76,84,0.15)]'
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-[var(--tf-border-strong)]'
                   }`}
                 >
                   <tab.icon className="h-4 w-4" />
@@ -331,7 +331,7 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
                 <div className="space-y-4">
                   {/* Template Name */}
                   <div>
-                    <Label htmlFor="name" className="block text-sm font-medium mb-1 text-[#4c414e]">
+                    <Label htmlFor="name" className="block text-sm font-medium mb-1 text-foreground">
                       Template Name *
                     </Label>
                     <Input
@@ -340,17 +340,17 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
                       value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
                       disabled={isReadOnly}
-                      className={errors.name ? 'border-[#ce5d55] focus-visible:border-[#ce5d55]' : ''}
+                      className={errors.name ? 'border-destructive focus-visible:border-destructive' : ''}
                       placeholder="Enter template name"
                     />
                     {errors.name && (
-                      <p className="mt-1 text-sm text-[#ce5d55]">{errors.name}</p>
+                      <p className="mt-1 text-sm text-destructive">{errors.name}</p>
                     )}
                   </div>
 
                   {/* Category */}
                   <div>
-                    <Label htmlFor="category" className="block text-sm font-medium mb-1 text-[#4c414e]">
+                    <Label htmlFor="category" className="block text-sm font-medium mb-1 text-foreground">
                       Category
                     </Label>
                     {isReadOnly ? (
@@ -379,7 +379,7 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
 
                   {/* Description */}
                   <div>
-                    <Label htmlFor="description" className="block text-sm font-medium mb-1 text-[#4c414e]">
+                    <Label htmlFor="description" className="block text-sm font-medium mb-1 text-foreground">
                       Description
                     </Label>
                     <Textarea
@@ -395,13 +395,13 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
                   {/* Status for view mode */}
                   {isReadOnly && template && (
                     <div>
-                      <Label className="block text-sm font-medium mb-1 text-[#4c414e]">
+                      <Label className="block text-sm font-medium mb-1 text-foreground">
                         Status
                       </Label>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         template.isActive 
                           ? 'bg-primary/10 text-primary'
-                          : 'bg-[rgba(206,93,85,0.08)] text-[#ce5d55]'
+                          : 'bg-[var(--tf-error-bg)] text-destructive'
                       }`}>
                         {template.isActive ? 'Active' : 'Inactive'}
                       </span>
@@ -415,7 +415,7 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
                 <div className="space-y-4">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <Label htmlFor="formSchema" className="block text-sm font-medium text-[#4c414e]">
+                      <Label htmlFor="formSchema" className="block text-sm font-medium text-foreground">
                         Form Schema (JSON) {!isReadOnly && '*'}
                       </Label>
                       {!isReadOnly && (
@@ -447,13 +447,13 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
                       onChange={(e) => handleInputChange('formSchema', e.target.value)}
                       disabled={isReadOnly}
                       rows={20}
-                      className={`font-mono text-sm ${errors.formSchema ? 'border-[#ce5d55] focus-visible:border-[#ce5d55]' : ''}`}
+                      className={`font-mono text-sm ${errors.formSchema ? 'border-destructive focus-visible:border-destructive' : ''}`}
                       placeholder={isReadOnly ? '' : "Enter form schema JSON..."}
                     />
                     {errors.formSchema && (
-                      <p className="mt-1 text-sm text-[#ce5d55]">{errors.formSchema}</p>
+                      <p className="mt-1 text-sm text-destructive">{errors.formSchema}</p>
                     )}
-                    <p className="mt-1 text-xs text-[#655d67]">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {isReadOnly ? 'View the pages and fields structure of this template.' : 'Define the pages and fields structure for your template form.'}
                     </p>
                   </div>
@@ -465,7 +465,7 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
                 <div className="space-y-4">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <Label htmlFor="layout" className="block text-sm font-medium text-[#4c414e]">
+                      <Label htmlFor="layout" className="block text-sm font-medium text-foreground">
                         Layout Configuration (JSON) {!isReadOnly && '*'}
                       </Label>
                       {!isReadOnly && (
@@ -497,13 +497,13 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
                       onChange={(e) => handleInputChange('layout', e.target.value)}
                       disabled={isReadOnly}
                       rows={15}
-                      className={`font-mono text-sm ${errors.layout ? 'border-[#ce5d55] focus-visible:border-[#ce5d55]' : ''}`}
+                      className={`font-mono text-sm ${errors.layout ? 'border-destructive focus-visible:border-destructive' : ''}`}
                       placeholder={isReadOnly ? '' : "Enter layout configuration JSON..."}
                     />
                     {errors.layout && (
-                      <p className="mt-1 text-sm text-[#ce5d55]">{errors.layout}</p>
+                      <p className="mt-1 text-sm text-destructive">{errors.layout}</p>
                     )}
-                    <p className="mt-1 text-xs text-[#655d67]">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {isReadOnly ? 'View the theme, spacing, colors, and layout settings of this template.' : 'Configure theme, spacing, colors, and layout settings for your template.'}
                     </p>
                   </div>
@@ -511,7 +511,7 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
               )}
 
             {errors.submit && (
-              <div className="text-sm text-[#ce5d55] bg-[rgba(206,93,85,0.06)] p-3 rounded-lg">
+              <div className="text-sm text-destructive bg-[var(--tf-error-bg)] p-3 rounded-lg">
                 {errors.submit}
               </div>
             )}

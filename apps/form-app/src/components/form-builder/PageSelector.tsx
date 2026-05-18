@@ -60,10 +60,10 @@ export const PageSelector: React.FC<PageSelectorProps> = ({
             </div>
             <div className="flex-1">
               <div className="flex items-center space-x-2">
-                <FileText className="w-4 h-4 text-[#655d67]" />
+                <FileText className="w-4 h-4 text-muted-foreground" />
                 <span className="font-medium">{page.title}</span>
               </div>
-              <div className="text-xs text-[#655d67] mt-1">
+              <div className="text-xs text-muted-foreground mt-1">
                 {page.fields.length} {page.fields.length === 1 ? t('fieldCount.singular') : t('fieldCount.plural')}
               </div>
             </div>

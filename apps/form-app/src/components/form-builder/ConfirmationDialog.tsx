@@ -53,10 +53,10 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
 
         {/* Content */}
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-[#3c323e] dark:text-white">
+          <h3 className="text-lg font-semibold text-primary dark:text-white">
             {title}
           </h3>
-          <p className="text-sm text-[#4c414e] dark:text-gray-300">
+          <p className="text-sm text-foreground dark:text-gray-300">
             {message}
           </p>
         </div>

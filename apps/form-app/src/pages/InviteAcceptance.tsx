@@ -17,7 +17,7 @@ const InviteCard: React.FC<{ children: React.ReactNode; maxW?: string }> = ({
 }) => (
   <div
     className={`w-full ${maxW} rounded-xl bg-white p-8`}
-    style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 4px 24px rgba(60,50,62,0.10)' }}
+    style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 4px 24px rgba(60,50,62,0.10)' }}
   >
     {children}
   </div>
@@ -89,13 +89,13 @@ const InviteAcceptance: React.FC = () => {
   };
 
   const Page: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12" style={{ backgroundColor: '#f7f7f8' }}>
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12" style={{ backgroundColor: 'var(--tf-faint)' }}>
       {/* Logo */}
       <div className="flex items-center gap-2 mb-8">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#3c323e' }}>
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--tf-dark)' }}>
           <FileText className="w-4 h-4 text-white" />
         </div>
-        <span className="text-base font-semibold text-[#3c323e]">Dculus Forms</span>
+        <span className="text-base font-semibold text-primary">Dculus Forms</span>
       </div>
       {children}
     </div>
@@ -107,7 +107,7 @@ const InviteAcceptance: React.FC = () => {
       <Page>
         <InviteCard>
           <div className="flex items-center justify-center py-8">
-            <div className="w-8 h-8 rounded-full border-2 animate-spin" style={{ borderColor: 'rgba(81,76,84,0.15)', borderTopColor: '#3c323e' }} />
+            <div className="w-8 h-8 rounded-full border-2 animate-spin" style={{ borderColor: 'var(--tf-border-strong)', borderTopColor: 'var(--tf-dark)' }} />
           </div>
         </InviteCard>
       </Page>
@@ -120,11 +120,11 @@ const InviteAcceptance: React.FC = () => {
       <Page>
         <InviteCard>
           <div className="text-center mb-5">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}>
-              <AlertCircle className="h-6 w-6 text-[#ce5d55]" />
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'var(--tf-error-bg)' }}>
+              <AlertCircle className="h-6 w-6 text-destructive" />
             </div>
-            <h1 className="text-base font-semibold mb-1 text-[#3c323e]">{t('errors.invalid.title')}</h1>
-            <p className="text-xs text-[#655d67]">{invitationError?.message || t('errors.invalid.description')}</p>
+            <h1 className="text-base font-semibold mb-1 text-primary">{t('errors.invalid.title')}</h1>
+            <p className="text-xs text-muted-foreground">{invitationError?.message || t('errors.invalid.description')}</p>
           </div>
           <PrimaryBtn onClick={() => navigate('/signin')}>{t('buttons.goToSignIn')}</PrimaryBtn>
         </InviteCard>
@@ -139,11 +139,11 @@ const InviteAcceptance: React.FC = () => {
       <Page>
         <InviteCard>
           <div className="text-center mb-5">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}>
-              <AlertCircle className="h-6 w-6 text-[#ce5d55]" />
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'var(--tf-error-bg)' }}>
+              <AlertCircle className="h-6 w-6 text-destructive" />
             </div>
-            <h1 className="text-base font-semibold mb-1 text-[#3c323e]">{t('errors.expired.title')}</h1>
-            <p className="text-xs text-[#655d67]">
+            <h1 className="text-base font-semibold mb-1 text-primary">{t('errors.expired.title')}</h1>
+            <p className="text-xs text-muted-foreground">
               {t('errors.expired.description', { values: { timeAgo, inviter: invitation.inviter?.name ?? t('fallbacks.inviter') } })}
             </p>
           </div>
@@ -162,29 +162,29 @@ const InviteAcceptance: React.FC = () => {
       <Page>
         <InviteCard maxW="max-w-lg">
           <div className="text-center mb-6">
-            <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: '#ddd6fa' }}>
+            <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'var(--tf-icon-lavender)' }}>
               <Users className="h-7 w-7 text-[#5c2e6b]" />
             </div>
-            <h1 className="text-base font-semibold mb-1 text-[#3c323e]">
+            <h1 className="text-base font-semibold mb-1 text-primary">
               {orgName ? t('guestView.title', { values: { organization: orgName } }) : t('guestView.titleFallback')}
             </h1>
-            <p className="text-xs text-[#655d67]">
+            <p className="text-xs text-muted-foreground">
               {inviterName ? t('guestView.description', { values: { inviter: inviterName } }) : t('guestView.descriptionFallback')}
             </p>
           </div>
 
           {/* Invitation detail pill */}
-          <div className="flex items-center gap-3 rounded-xl p-4 mb-5" style={{ backgroundColor: '#f7f7f8', border: '1px solid rgba(81,76,84,0.08)' }}>
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#f8cdd8' }}>
-              <Mail className="h-4 w-4 text-[#3c323e]" />
+          <div className="flex items-center gap-3 rounded-xl p-4 mb-5" style={{ backgroundColor: 'var(--tf-faint)', border: '1px solid var(--tf-border-light)' }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--tf-icon-salmon)' }}>
+              <Mail className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <p className="text-xs font-medium text-[#3c323e]">{t('guestView.details.title')}</p>
-              <p className="text-[11px] mt-0.5 text-[#655d67]">{invitation.email} · {roleLabel}</p>
+              <p className="text-xs font-medium text-primary">{t('guestView.details.title')}</p>
+              <p className="text-[11px] mt-0.5 text-muted-foreground">{invitation.email} · {roleLabel}</p>
             </div>
           </div>
 
-          {error && <p className="text-xs mb-3 py-2 px-3 rounded-lg text-center" style={{ backgroundColor: 'rgba(206,93,85,0.06)', color: '#ce5d55', border: '1px solid rgba(206,93,85,0.14)' }}>{error}</p>}
+          {error && <p className="text-xs mb-3 py-2 px-3 rounded-lg text-center" style={{ backgroundColor: 'var(--tf-error-bg)', color: 'var(--tf-error)', border: '1px solid var(--tf-error-bg-md)' }}>{error}</p>}
 
           <div className="space-y-2">
             <PrimaryBtn onClick={handleSignUp}>{t('buttons.createAccountAndJoin')}</PrimaryBtn>
@@ -192,7 +192,7 @@ const InviteAcceptance: React.FC = () => {
               {t('buttons.alreadyHaveAccount')}
             </GhostBtn>
           </div>
-          <p className="text-[10px] text-center mt-4 text-[#655d67]">{t('guestView.footer')}</p>
+          <p className="text-[10px] text-center mt-4 text-muted-foreground">{t('guestView.footer')}</p>
         </InviteCard>
       </Page>
     );
@@ -204,11 +204,11 @@ const InviteAcceptance: React.FC = () => {
       <Page>
         <InviteCard>
           <div className="text-center mb-5">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'rgba(206,93,85,0.08)' }}>
-              <AlertCircle className="h-6 w-6 text-[#ce5d55]" />
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'var(--tf-error-bg)' }}>
+              <AlertCircle className="h-6 w-6 text-destructive" />
             </div>
-            <h1 className="text-base font-semibold mb-1 text-[#3c323e]">{t('errors.mismatch.title')}</h1>
-            <p className="text-xs text-[#655d67]">
+            <h1 className="text-base font-semibold mb-1 text-primary">{t('errors.mismatch.title')}</h1>
+            <p className="text-xs text-muted-foreground">
               {t('errors.mismatch.description', { values: { invitedEmail: invitation.email, currentEmail: user.email ?? '' } })}
             </p>
           </div>
@@ -229,32 +229,32 @@ const InviteAcceptance: React.FC = () => {
     <Page>
       <InviteCard maxW="max-w-lg">
         <div className="text-center mb-6">
-          <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: '#f4faf8' }}>
-            <CheckCircle className="h-7 w-7 text-[#177767]" />
+          <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'var(--tf-icon-teal)' }}>
+            <CheckCircle className="h-7 w-7 text-[var(--tf-green)]" />
           </div>
-          <h1 className="text-base font-semibold mb-1 text-[#3c323e]">
+          <h1 className="text-base font-semibold mb-1 text-primary">
             {orgName ? t('authenticatedView.title', { values: { organization: orgName } }) : t('authenticatedView.titleFallback')}
           </h1>
-          <p className="text-xs text-[#655d67]">
+          <p className="text-xs text-muted-foreground">
             {inviterName ? t('authenticatedView.description', { values: { inviter: inviterName } }) : t('authenticatedView.descriptionFallback')}
           </p>
         </div>
 
         {/* Summary table */}
-        <div className="rounded-xl p-4 mb-5 space-y-2.5" style={{ backgroundColor: '#f7f7f8', border: '1px solid rgba(81,76,84,0.08)' }}>
+        <div className="rounded-xl p-4 mb-5 space-y-2.5" style={{ backgroundColor: 'var(--tf-faint)', border: '1px solid var(--tf-border-light)' }}>
           {[
             [t('authenticatedView.summary.organization'), orgName ?? t('fallbacks.organization')],
             [t('authenticatedView.summary.role'), roleLabel],
             [t('authenticatedView.summary.invitedBy'), inviterName ?? t('fallbacks.inviterShort')],
           ].map(([label, value]) => (
             <div key={label} className="flex justify-between text-xs">
-              <span className="text-[#655d67]">{label}</span>
-              <span className="font-medium text-[#3c323e]">{value}</span>
+              <span className="text-muted-foreground">{label}</span>
+              <span className="font-medium text-primary">{value}</span>
             </div>
           ))}
         </div>
 
-        {error && <p className="text-xs mb-3 py-2 px-3 rounded-lg text-center" style={{ backgroundColor: 'rgba(206,93,85,0.06)', color: '#ce5d55', border: '1px solid rgba(206,93,85,0.14)' }}>{error}</p>}
+        {error && <p className="text-xs mb-3 py-2 px-3 rounded-lg text-center" style={{ backgroundColor: 'var(--tf-error-bg)', color: 'var(--tf-error)', border: '1px solid var(--tf-error-bg-md)' }}>{error}</p>}
 
         <div className="space-y-2">
           <PrimaryBtn onClick={handleAcceptInvitation} disabled={acceptLoading}>
@@ -273,7 +273,7 @@ const InviteAcceptance: React.FC = () => {
           <GhostBtn onClick={() => navigate('/dashboard')}>{t('buttons.maybeLater')}</GhostBtn>
         </div>
 
-        <p className="text-[10px] text-center mt-4 text-[#655d67]">{t('authenticatedView.footer')}</p>
+        <p className="text-[10px] text-center mt-4 text-muted-foreground">{t('authenticatedView.footer')}</p>
       </InviteCard>
     </Page>
   );

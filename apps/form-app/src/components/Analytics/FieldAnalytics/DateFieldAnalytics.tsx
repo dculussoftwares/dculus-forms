@@ -63,9 +63,9 @@ const CalendarHeatmap: React.FC<{
   }, [dateDistribution]);
 
   const getIntensityColor = (count: number, maxCount: number) => {
-    if (maxCount === 0) return 'bg-[#f7f7f8]';
+    if (maxCount === 0) return 'bg-background';
     const intensity = count / maxCount;
-    if (intensity === 0) return 'bg-[#f7f7f8]';
+    if (intensity === 0) return 'bg-background';
     if (intensity <= 0.25) return 'bg-blue-200';
     if (intensity <= 0.5) return 'bg-blue-400';
     if (intensity <= 0.75) return 'bg-blue-600';
@@ -94,7 +94,7 @@ const CalendarHeatmap: React.FC<{
           <CardTitle>{t('calendar.title')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center text-[#655d67] py-8">
+          <div className="text-center text-muted-foreground py-8">
             {t('calendar.noDateData')}
           </div>
         </CardContent>
@@ -111,11 +111,11 @@ const CalendarHeatmap: React.FC<{
         <div className="space-y-6">
           {heatmapData.months.map(month => (
             <div key={month.month} className="space-y-2">
-              <h4 className="font-medium text-[#3c323e]">{month.monthName}</h4>
+              <h4 className="font-medium text-primary">{month.monthName}</h4>
               <div className="grid grid-cols-7 gap-1">
                 {/* Day headers */}
                 {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
-                  <div key={index} className="text-xs text-[#655d67] text-center p-1">
+                  <div key={index} className="text-xs text-muted-foreground text-center p-1">
                     {day}
                   </div>
                 ))}
@@ -143,17 +143,17 @@ const CalendarHeatmap: React.FC<{
         </div>
         
         <div className="mt-6 flex items-center justify-between">
-          <div className="text-sm text-[#4c414e]">
+          <div className="text-sm text-foreground">
             {t('calendar.intensityScale')}
           </div>
           <div className="flex items-center gap-1">
-            <span className="text-xs text-[#655d67]">{t('calendar.less')}</span>
+            <span className="text-xs text-muted-foreground">{t('calendar.less')}</span>
             <div className="flex gap-1">
-              {['bg-[#f7f7f8]', 'bg-blue-200', 'bg-blue-400', 'bg-blue-600', 'bg-blue-800'].map((color, index) => (
+              {['bg-background', 'bg-blue-200', 'bg-blue-400', 'bg-blue-600', 'bg-blue-800'].map((color, index) => (
                 <div key={index} className={`w-3 h-3 ${color} rounded`} />
               ))}
             </div>
-            <span className="text-xs text-[#655d67]">{t('calendar.more')}</span>
+            <span className="text-xs text-muted-foreground">{t('calendar.more')}</span>
           </div>
         </div>
       </CardContent>
@@ -174,7 +174,7 @@ const SeasonalAnalysis: React.FC<{
       case 'summer': return <Sun className="h-6 w-6 text-yellow-500" />;
       case 'fall': case 'autumn': return <Leaf className="h-6 w-6 text-orange-500" />;
       case 'winter': return <Snowflake className="h-6 w-6 text-blue-500" />;
-      default: return <Calendar className="h-6 w-6 text-[#655d67]" />;
+      default: return <Calendar className="h-6 w-6 text-muted-foreground" />;
     }
   };
 
@@ -184,7 +184,7 @@ const SeasonalAnalysis: React.FC<{
       case 'summer': return 'bg-yellow-100 border-yellow-300';
       case 'fall': case 'autumn': return 'bg-orange-100 border-orange-300';
       case 'winter': return 'bg-blue-100 border-blue-300';
-      default: return 'bg-[#f7f7f8] border-[rgba(81,76,84,0.15)]';
+      default: return 'bg-background border-[var(--tf-border-strong)]';
     }
   };
 
@@ -215,7 +215,7 @@ const SeasonalAnalysis: React.FC<{
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     {getSeasonIcon(season.season)}
-                    <span className="font-medium text-[#3c323e]">{season.season}</span>
+                    <span className="font-medium text-primary">{season.season}</span>
                   </div>
                   {isTopSeason && (
                     <div className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
@@ -223,10 +223,10 @@ const SeasonalAnalysis: React.FC<{
                     </div>
                   )}
                 </div>
-                <div className="text-2xl font-bold text-[#3c323e] mb-1">
+                <div className="text-2xl font-bold text-primary mb-1">
                   {season.percentage.toFixed(1)}%
                 </div>
-                <div className="text-sm text-[#4c414e]">
+                <div className="text-sm text-foreground">
                   {season.count} {t('seasonal.selections')}
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
@@ -246,12 +246,12 @@ const SeasonalAnalysis: React.FC<{
           })}
         </div>
         
-        <div className="p-4 bg-[#f7f7f8] rounded-lg">
+        <div className="p-4 bg-background rounded-lg">
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp className="h-4 w-4 text-blue-600" />
-            <span className="font-medium text-[#3c323e]">{t('seasonal.insightsTitle')}</span>
+            <span className="font-medium text-primary">{t('seasonal.insightsTitle')}</span>
           </div>
-          <div className="text-sm text-[#4c414e] space-y-1">
+          <div className="text-sm text-foreground space-y-1">
             <p>• {t('seasonal.mostPopularSeason', { values: { season: topSeason.season, percentage: topSeason.percentage.toFixed(1) } })}</p>
             <p>• {t('seasonal.totalCoverage', { values: { count: totalSeasonalResponses } })}</p>
             {seasonalPatterns.length === 4 && (
@@ -308,33 +308,33 @@ const DateRangeAnalysis: React.FC<{
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <Calendar className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-              <div className="text-sm font-medium text-[#4c414e] mb-1">{t('rangeOverview.earliest')}</div>
-              <div className="text-sm text-[#3c323e]">{dateRange.earliest}</div>
+              <div className="text-sm font-medium text-foreground mb-1">{t('rangeOverview.earliest')}</div>
+              <div className="text-sm text-primary">{dateRange.earliest}</div>
             </div>
             
             <div className="text-center p-4 bg-primary/5 rounded-lg">
               <Sunrise className="h-8 w-8 mx-auto mb-2 text-primary" />
-              <div className="text-sm font-medium text-[#4c414e] mb-1">{t('rangeOverview.mostCommon')}</div>
-              <div className="text-sm text-[#3c323e]">{dateRange.common}</div>
+              <div className="text-sm font-medium text-foreground mb-1">{t('rangeOverview.mostCommon')}</div>
+              <div className="text-sm text-primary">{dateRange.common}</div>
             </div>
             
             <div className="text-center p-4 bg-purple-50 rounded-lg">
               <Clock className="h-8 w-8 mx-auto mb-2 text-purple-600" />
-              <div className="text-sm font-medium text-[#4c414e] mb-1">{t('rangeOverview.latest')}</div>
-              <div className="text-sm text-[#3c323e]">{dateRange.latest}</div>
+              <div className="text-sm font-medium text-foreground mb-1">{t('rangeOverview.latest')}</div>
+              <div className="text-sm text-primary">{dateRange.latest}</div>
             </div>
           </div>
           
-          <div className="p-4 bg-[#f7f7f8] rounded-lg">
+          <div className="p-4 bg-background rounded-lg">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-[#4c414e]">{t('rangeOverview.timeSpan')}:</span>
-              <span className="font-medium text-[#3c323e]">
+              <span className="text-foreground">{t('rangeOverview.timeSpan')}:</span>
+              <span className="font-medium text-primary">
                 {dateRange.daysDifference} {t('rangeOverview.days')}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm mt-2">
-              <span className="text-[#4c414e]">{t('rangeOverview.totalDateResponses')}:</span>
-              <span className="font-medium text-[#3c323e]">{totalResponses}</span>
+              <span className="text-foreground">{t('rangeOverview.totalDateResponses')}:</span>
+              <span className="font-medium text-primary">{totalResponses}</span>
             </div>
           </div>
         </div>
@@ -430,8 +430,8 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
             <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
               <Calendar className="h-8 w-8 text-blue-600" />
             </div>
-            <h3 className="text-lg font-semibold text-[#3c323e] mb-2">{t('emptyState.title')}</h3>
-            <p className="text-[#4c414e] max-w-md mx-auto">{t('emptyState.subtitle')}</p>
+            <h3 className="text-lg font-semibold text-primary mb-2">{t('emptyState.title')}</h3>
+            <p className="text-foreground max-w-md mx-auto">{t('emptyState.subtitle')}</p>
           </div>
         </CardContent>
       </Card>
@@ -519,13 +519,13 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
                       if (active && payload && payload.length) {
                         const data = payload[0].payload;
                         return (
-                          <div className="bg-white p-3 border rounded-lg shadow-lg border-[rgba(81,76,84,0.10)]">
-                            <p className="font-medium text-[#3c323e] mb-2">
+                          <div className="bg-white p-3 border rounded-lg shadow-lg border-[var(--tf-border-medium)]">
+                            <p className="font-medium text-primary mb-2">
                               {data.fullName}
                             </p>
                             <div className="flex items-center gap-2 text-sm">
                               <div className="w-3 h-3 rounded-full bg-blue-600" />
-                              <span className="text-[#4c414e]">
+                              <span className="text-foreground">
                                 {t('dayOfWeek.selections')}: {data.value} ({data.percentage.toFixed(1)}%)
                               </span>
                             </div>
@@ -574,13 +574,13 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
                       if (active && payload && payload.length) {
                         const data = payload[0].payload;
                         return (
-                          <div className="bg-white p-3 border rounded-lg shadow-lg border-[rgba(81,76,84,0.10)]">
-                            <p className="font-medium text-[#3c323e] mb-2">
+                          <div className="bg-white p-3 border rounded-lg shadow-lg border-[var(--tf-border-medium)]">
+                            <p className="font-medium text-primary mb-2">
                               {data.fullName}
                             </p>
                             <div className="flex items-center gap-2 text-sm">
                               <div className="w-3 h-3 rounded-full bg-primary" />
-                              <span className="text-[#4c414e]">
+                              <span className="text-foreground">
                                 {t('dayOfWeek.selections')}: {data.value} ({data.percentage.toFixed(1)}%)
                               </span>
                             </div>
@@ -619,58 +619,58 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
             <div className="space-y-2">
-              <h4 className="font-medium text-[#3c323e]">{t('summary.rangeTitle')}</h4>
+              <h4 className="font-medium text-primary">{t('summary.rangeTitle')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-[#4c414e]">{t('summary.span')}</span>
+                  <span className="text-foreground">{t('summary.span')}</span>
                   <span className="font-medium">{dateRange} {t('rangeOverview.days')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#4c414e]">{t('summary.earliest')}</span>
+                  <span className="text-foreground">{t('summary.earliest')}</span>
                   <span className="font-medium">{new Date(data.earliestDate).toLocaleDateString()}</span>
                 </div>
               </div>
             </div>
             
             <div className="space-y-2">
-              <h4 className="font-medium text-[#3c323e]">{t('summary.patternsTitle')}</h4>
+              <h4 className="font-medium text-primary">{t('summary.patternsTitle')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-[#4c414e]">{t('summary.popularDay')}</span>
+                  <span className="text-foreground">{t('summary.popularDay')}</span>
                   <span className="font-medium">{mostPopularWeekday.weekday}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#4c414e]">{t('summary.popularMonth')}</span>
+                  <span className="text-foreground">{t('summary.popularMonth')}</span>
                   <span className="font-medium">{mostPopularMonth.month}</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-[#3c323e]">{t('summary.distributionTitle')}</h4>
+              <h4 className="font-medium text-primary">{t('summary.distributionTitle')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-[#4c414e]">{t('summary.responses')}</span>
+                  <span className="text-foreground">{t('summary.responses')}</span>
                   <span className="font-medium">{data.dateDistribution.length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#4c414e]">{t('summary.uniqueDates')}</span>
+                  <span className="text-foreground">{t('summary.uniqueDates')}</span>
                   <span className="font-medium">{data.dateDistribution.filter(d => d.count > 0).length}</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-[#3c323e]">{t('summary.dataQualityTitle')}</h4>
+              <h4 className="font-medium text-primary">{t('summary.dataQualityTitle')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-[#4c414e]">{t('summary.completeness')}</span>
+                  <span className="text-foreground">{t('summary.completeness')}</span>
                   <span className="font-medium">
                     {totalResponses > 0 ? ((totalDateResponses / totalResponses) * 100).toFixed(1) : '0'}%
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#4c414e]">{t('summary.temporalSpread')}</span>
+                  <span className="text-foreground">{t('summary.temporalSpread')}</span>
                   <span className="font-medium">
                     {data.seasonalPatterns.length === 4 ? t('summary.allSeasons') : t('summary.partial')}
                   </span>

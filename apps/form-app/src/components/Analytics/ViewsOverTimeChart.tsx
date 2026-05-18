@@ -31,16 +31,16 @@ const CustomTooltip = ({ active, payload, label, t }: any) => {
     });
     
     return (
-      <div className="bg-white p-3 rounded-lg" style={{ border: '1px solid rgba(81,76,84,0.12)', boxShadow: '0 4px 16px rgba(60,50,62,0.12)' }}>
-        <p className="text-xs font-medium mb-2 text-[#3c323e]">{date}</p>
+      <div className="bg-white p-3 rounded-lg" style={{ border: '1px solid var(--tf-border)', boxShadow: '0 4px 16px rgba(60,50,62,0.12)' }}>
+        <p className="text-xs font-medium mb-2 text-primary">{date}</p>
         <div className="space-y-1">
           {payload.map((entry: any) => {
             let color = entry.color;
             let label = entry.dataKey;
-            if (entry.dataKey === 'views') { color = '#655d67'; label = t('legend.totalViews'); }
-            else if (entry.dataKey === 'sessions') { color = '#177767'; label = t('legend.viewSessions'); }
+            if (entry.dataKey === 'views') { color = 'var(--tf-muted)'; label = t('legend.totalViews'); }
+            else if (entry.dataKey === 'sessions') { color = 'var(--tf-green)'; label = t('legend.viewSessions'); }
             else if (entry.dataKey === 'submissions') { color = '#a25fba'; label = t('legend.submissions'); }
-            else if (entry.dataKey === 'submissionSessions') { color = '#3c323e'; label = t('legend.subSessions'); }
+            else if (entry.dataKey === 'submissionSessions') { color = 'var(--tf-dark)'; label = t('legend.subSessions'); }
             
             return (
               <p key={entry.dataKey} className="text-sm" style={{ color }}>
@@ -110,8 +110,8 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
   // Check loading state after all hooks are called
   if (loading) {
     return (
-      <div className="rounded-xl p-5 animate-pulse bg-white" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
-        <div className="h-4 rounded w-40 mb-5" style={{ backgroundColor: 'rgba(81,76,84,0.08)' }} />
+      <div className="rounded-xl p-5 animate-pulse bg-white" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}>
+        <div className="h-4 rounded w-40 mb-5" style={{ backgroundColor: 'var(--tf-border-light)' }} />
         <div className="h-64 rounded-lg" style={{ backgroundColor: 'rgba(81,76,84,0.04)' }} />
       </div>
     );
@@ -119,15 +119,15 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
 
   if (!mergedData || mergedData.length === 0) {
     return (
-      <div className="rounded-xl p-5 bg-white" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
+      <div className="rounded-xl p-5 bg-white" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}>
         <div className="flex items-center gap-1.5 mb-4">
-          <TrendingUp className="h-4 w-4 text-[#655d67]" />
-          <span className="text-sm font-medium text-[#3c323e]">{t('title')}</span>
+          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium text-primary">{t('title')}</span>
         </div>
         <div className="h-64 flex flex-col items-center justify-center">
-          <Calendar className="h-10 w-10 mb-3 text-[#dedcde]" />
-          <p className="text-sm font-medium text-[#4c414e]">No time-series data available</p>
-          <p className="text-xs mt-1 text-[#655d67]">Data will appear once your form receives more activity</p>
+          <Calendar className="h-10 w-10 mb-3 text-[var(--tf-icon-gray)]" />
+          <p className="text-sm font-medium text-foreground">No time-series data available</p>
+          <p className="text-xs mt-1 text-muted-foreground">Data will appear once your form receives more activity</p>
         </div>
       </div>
     );
@@ -150,17 +150,17 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
   };
 
   /* Typeform chart palette */
-  const TF = { views: '#655d67', sessions: '#177767', submissions: '#a25fba', subSessions: '#3c323e' };
+  const TF = { views: 'var(--tf-muted)', sessions: 'var(--tf-green)', submissions: '#a25fba', subSessions: 'var(--tf-dark)' };
 
   return (
-    <div className="rounded-xl p-5 bg-white" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
+    <div className="rounded-xl p-5 bg-white" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-1.5">
-          <TrendingUp className="h-4 w-4 text-[#655d67]" />
-          <span className="text-sm font-medium text-[#3c323e]">{t('title')}</span>
+          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium text-primary">{t('title')}</span>
         </div>
-        <span className="text-xs text-[#655d67]">{getTimeRangeLabel()}</span>
+        <span className="text-xs text-muted-foreground">{getTimeRangeLabel()}</span>
       </div>
 
       {/* Chart */}
@@ -175,9 +175,9 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
                 </linearGradient>
               ))}
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(81,76,84,0.06)" />
-            <XAxis dataKey="date" tickFormatter={formatXAxisDate} tick={{ fontSize: 11, fill: '#655d67' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: '#655d67' }} axisLine={false} tickLine={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--tf-border-faint)" />
+            <XAxis dataKey="date" tickFormatter={formatXAxisDate} tick={{ fontSize: 11, fill: 'var(--tf-muted)' }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: 'var(--tf-muted)' }} axisLine={false} tickLine={false} />
             <Tooltip content={<CustomTooltip t={t} />} />
             <Area type="monotone" dataKey="views" stroke={TF.views} strokeWidth={2} fill={`url(#grad-views)`} />
             <Area type="monotone" dataKey="sessions" stroke={TF.sessions} strokeWidth={2} fill={`url(#grad-sessions)`} />
@@ -188,24 +188,24 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
       </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-3 pt-4" style={{ borderTop: '1px solid rgba(81,76,84,0.08)' }}>
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-3 pt-4" style={{ borderTop: '1px solid var(--tf-border-light)' }}>
         {[
           { value: totalViews, label: t('stats.totalViews'), color: TF.views },
           { value: totalSessions, label: t('stats.viewSessions'), color: TF.sessions },
           { value: totalSubmissions, label: t('stats.submissions'), color: TF.submissions },
           { value: totalSubmissionSessions, label: t('stats.submissionSessions'), color: TF.subSessions },
-          { value: avgViewsPerDay, label: t('stats.avgViewsPerDay'), color: '#3c323e' },
-          { value: avgSubmissionsPerDay, label: t('stats.avgSubsPerDay'), color: '#3c323e' },
+          { value: avgViewsPerDay, label: t('stats.avgViewsPerDay'), color: 'var(--tf-dark)' },
+          { value: avgSubmissionsPerDay, label: t('stats.avgSubsPerDay'), color: 'var(--tf-dark)' },
         ].map(({ value, label, color }) => (
           <div key={label} className="text-center">
             <p className="text-lg font-light" style={{ color }}>{value}</p>
-            <p className="text-[10px] mt-0.5 text-[#655d67]">{label}</p>
+            <p className="text-[10px] mt-0.5 text-muted-foreground">{label}</p>
           </div>
         ))}
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap items-center justify-center gap-3 mt-3 pt-3" style={{ borderTop: '1px solid rgba(81,76,84,0.08)' }}>
+      <div className="flex flex-wrap items-center justify-center gap-3 mt-3 pt-3" style={{ borderTop: '1px solid var(--tf-border-light)' }}>
         {[
           { color: TF.views, label: t('legendItems.views') },
           { color: TF.sessions, label: t('legendItems.viewSessions') },
@@ -214,7 +214,7 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
         ].map(({ color, label }) => (
           <div key={label} className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: color }} />
-            <span className="text-xs text-[#655d67]">{label}</span>
+            <span className="text-xs text-muted-foreground">{label}</span>
           </div>
         ))}
       </div>

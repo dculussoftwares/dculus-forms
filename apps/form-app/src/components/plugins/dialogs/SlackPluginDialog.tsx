@@ -43,13 +43,13 @@ export const SlackPluginDialog: React.FC<SlackPluginDialogProps> = ({
             <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-purple-100 mb-4">
               <Sparkles className="h-8 w-8 text-purple-600" />
             </div>
-            <h3 className="text-xl font-semibold text-[#3c323e] mb-2">
+            <h3 className="text-xl font-semibold text-primary mb-2">
               {t('comingSoon.title')}
             </h3>
-            <p className="text-[#4c414e] max-w-md mx-auto">
+            <p className="text-foreground max-w-md mx-auto">
               {t('comingSoon.message')}
             </p>
-            <ul className="mt-4 text-left max-w-md mx-auto space-y-2 text-sm text-[#4c414e]">
+            <ul className="mt-4 text-left max-w-md mx-auto space-y-2 text-sm text-foreground">
               {[0, 1, 2, 3].map((index) => (
                 <li key={index} className="flex items-start gap-2">
                   <span className="text-purple-600 mt-0.5">•</span>

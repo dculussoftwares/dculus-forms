@@ -191,7 +191,7 @@ export const EmailPluginDialog: React.FC<EmailPluginDialogProps> = ({
           {/* Plugin Name */}
           <div className="space-y-2">
             <Label htmlFor="name">
-              {t('fields.name.label')} <span className="text-[#ce5d55]">{t('required')}</span>
+              {t('fields.name.label')} <span className="text-destructive">{t('required')}</span>
             </Label>
             <Input
               id="name"
@@ -199,14 +199,14 @@ export const EmailPluginDialog: React.FC<EmailPluginDialogProps> = ({
               {...register('name', { required: t('fields.name.required') })}
             />
             {errors.name && (
-              <p className="text-sm text-[#ce5d55]">{errors.name.message}</p>
+              <p className="text-sm text-destructive">{errors.name.message}</p>
             )}
           </div>
 
           {/* Recipient Email */}
           <div className="space-y-2">
             <Label htmlFor="recipientEmail">
-              {t('fields.recipientEmail.label')} <span className="text-[#ce5d55]">{t('required')}</span>
+              {t('fields.recipientEmail.label')} <span className="text-destructive">{t('required')}</span>
             </Label>
             <Input
               id="recipientEmail"
@@ -221,9 +221,9 @@ export const EmailPluginDialog: React.FC<EmailPluginDialogProps> = ({
               })}
             />
             {errors.recipientEmail && (
-              <p className="text-sm text-[#ce5d55]">{errors.recipientEmail.message}</p>
+              <p className="text-sm text-destructive">{errors.recipientEmail.message}</p>
             )}
-            <p className="text-sm text-[#655d67]">
+            <p className="text-sm text-muted-foreground">
               {t('fields.recipientEmail.hint')}
             </p>
           </div>
@@ -231,7 +231,7 @@ export const EmailPluginDialog: React.FC<EmailPluginDialogProps> = ({
           {/* Subject */}
           <div className="space-y-2">
             <Label htmlFor="subject">
-              {t('fields.subject.label')} <span className="text-[#ce5d55]">{t('required')}</span>
+              {t('fields.subject.label')} <span className="text-destructive">{t('required')}</span>
             </Label>
             <Input
               id="subject"
@@ -239,14 +239,14 @@ export const EmailPluginDialog: React.FC<EmailPluginDialogProps> = ({
               {...register('subject', { required: t('fields.subject.required') })}
             />
             {errors.subject && (
-              <p className="text-sm text-[#ce5d55]">{errors.subject.message}</p>
+              <p className="text-sm text-destructive">{errors.subject.message}</p>
             )}
           </div>
 
           {/* Email Message */}
           <div className="space-y-2">
             <Label htmlFor="message">
-              {t('fields.message.label')} <span className="text-[#ce5d55]">{t('required')}</span>
+              {t('fields.message.label')} <span className="text-destructive">{t('required')}</span>
             </Label>
             <RichTextEditor
               value={message}
@@ -255,7 +255,7 @@ export const EmailPluginDialog: React.FC<EmailPluginDialogProps> = ({
               className="w-full min-h-[200px]"
               mentionFields={mentionFields}
             />
-            <p className="text-xs text-[#655d67]">
+            <p className="text-xs text-muted-foreground">
               {t('fields.message.hintStart')}
               {mentionFields.length > 0 
                 ? t('fields.message.hintWithFields', { values: { count: mentionFields.length } })
@@ -267,7 +267,7 @@ export const EmailPluginDialog: React.FC<EmailPluginDialogProps> = ({
           {/* Events */}
           <div className="space-y-2">
             <Label>
-              {t('fields.triggerEvents.label')} <span className="text-[#ce5d55]">{t('required')}</span>
+              {t('fields.triggerEvents.label')} <span className="text-destructive">{t('required')}</span>
             </Label>
             <Card className="p-4 space-y-3">
               <div className="flex items-start space-x-3">
@@ -283,7 +283,7 @@ export const EmailPluginDialog: React.FC<EmailPluginDialogProps> = ({
                   >
                     {t('fields.triggerEvents.formSubmitted.label')}
                   </Label>
-                  <p className="text-sm text-[#655d67]">{t('fields.triggerEvents.formSubmitted.description')}</p>
+                  <p className="text-sm text-muted-foreground">{t('fields.triggerEvents.formSubmitted.description')}</p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
@@ -299,12 +299,12 @@ export const EmailPluginDialog: React.FC<EmailPluginDialogProps> = ({
                   >
                     {t('fields.triggerEvents.testEvent.label')}
                   </Label>
-                  <p className="text-sm text-[#655d67]">{t('fields.triggerEvents.testEvent.description')}</p>
+                  <p className="text-sm text-muted-foreground">{t('fields.triggerEvents.testEvent.description')}</p>
                 </div>
               </div>
             </Card>
             {selectedEvents.length === 0 && (
-              <p className="text-sm text-[#ce5d55]">
+              <p className="text-sm text-destructive">
                 {t('fields.triggerEvents.validation')}
               </p>
             )}

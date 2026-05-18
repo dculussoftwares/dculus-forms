@@ -213,7 +213,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       case PermissionLevel.EDITOR:
         return <Edit className="w-4 h-4 text-blue-500" />;
       case PermissionLevel.VIEWER:
-        return <Eye className="w-4 h-4 text-[#655d67]" />;
+        return <Eye className="w-4 h-4 text-muted-foreground" />;
       default:
         return null;
     }
@@ -249,7 +249,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <Label className="text-sm font-medium">{t('modal.copyLink.label')}</Label>
-                  <p className="text-sm text-[#655d67] mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     {t('modal.copyLink.description')}
                   </p>
                 </div>
@@ -327,7 +327,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 {/* Selected users to be added */}
                 {selectedUsers.size > 0 && (
                   <div className="space-y-2">
-                    <Label className="text-xs text-[#655d67]">{t('modal.addPeople.toBeAdded')}</Label>
+                    <Label className="text-xs text-muted-foreground">{t('modal.addPeople.toBeAdded')}</Label>
                     {Array.from(selectedUsers.entries()).map(([userId, permission]) => {
                       const user = organizationMembers.find((m: User) => m.id === userId);
                       if (!user) return null;
@@ -341,7 +341,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                             </Avatar>
                             <div>
                               <p className="text-sm font-medium">{user.name}</p>
-                              <p className="text-xs text-[#655d67]">{user.email}</p>
+                              <p className="text-xs text-muted-foreground">{user.email}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -376,7 +376,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                   {filteredMembers.map((member: User) => (
                     <div
                       key={member.id}
-                      className="flex items-center justify-between p-2 hover:bg-[#f7f7f8] rounded-lg cursor-pointer"
+                      className="flex items-center justify-between p-2 hover:bg-background rounded-lg cursor-pointer"
                       onClick={() => handleAddUser(member.id, PermissionLevel.VIEWER)}
                     >
                       <div className="flex items-center gap-3">
@@ -386,7 +386,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                         </Avatar>
                         <div>
                           <p className="text-sm font-medium">{member.name}</p>
-                          <p className="text-xs text-[#655d67]">{member.email}</p>
+                          <p className="text-xs text-muted-foreground">{member.email}</p>
                         </div>
                       </div>
                       <Button variant="ghost" size="sm">
@@ -395,7 +395,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     </div>
                   ))}
                   {filteredMembers.length === 0 && searchQuery && (
-                    <p className="text-sm text-[#655d67] text-center py-4">
+                    <p className="text-sm text-muted-foreground text-center py-4">
                       {t('modal.addPeople.noResults', { values: { query: searchQuery } })}
                     </p>
                   )}
@@ -418,7 +418,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                       </Avatar>
                       <div>
                         <p className="text-sm font-medium">{permission.user.name}</p>
-                        <p className="text-xs text-[#655d67]">{permission.user.email}</p>
+                        <p className="text-xs text-muted-foreground">{permission.user.email}</p>
                       </div>
                       {permission.permission === PermissionLevel.OWNER && (
                         <Badge variant="secondary" className="text-xs">

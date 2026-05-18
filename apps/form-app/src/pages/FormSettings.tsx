@@ -175,7 +175,7 @@ const FormSettings: React.FC = () => {
       >
         <EmptyState
           variant="error"
-          icon={<AlertCircle className="h-6 w-6 text-[#ce5d55]" />}
+          icon={<AlertCircle className="h-6 w-6 text-destructive" />}
           title={t('errors.formNotFound')}
           description={t('errors.formNotFoundMessage')}
         />
@@ -196,7 +196,7 @@ const FormSettings: React.FC = () => {
     >
       <div className="space-y-5">
         {/* ── Typeform-style page header ── */}
-        <div className="flex items-center gap-3 pb-4" style={{ borderBottom: '1px solid rgba(81,76,84,0.10)' }}>
+        <div className="flex items-center gap-3 pb-4" style={{ borderBottom: '1px solid var(--tf-border-medium)' }}>
           <Button
             onClick={() => navigate(`/dashboard/form/${formId}`)}
             variant="ghost"
@@ -205,16 +205,16 @@ const FormSettings: React.FC = () => {
             <ArrowLeft className="h-4 w-4" />
           </Button>
 
-          <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'rgba(81,76,84,0.12)' }} />
+          <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'var(--tf-border)' }} />
 
           {/* Typeform field-icon style — lavender for settings */}
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: '#ddd6fa' }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--tf-icon-lavender)' }}>
             <Settings className="h-4 w-4 text-[#5c2e6b]" />
           </div>
 
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-semibold text-[#3c323e]">{t('header.title')}</h1>
-            <p className="text-xs mt-0.5 text-[#655d67]">
+            <h1 className="text-sm font-semibold text-primary">{t('header.title')}</h1>
+            <p className="text-xs mt-0.5 text-muted-foreground">
               {t('header.description', { values: { formTitle: form.title } })}
             </p>
           </div>
@@ -237,7 +237,7 @@ const FormSettings: React.FC = () => {
 
         {/* Error display */}
         {errors.general && (
-          <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-xs" style={{ backgroundColor: 'rgba(206,93,85,0.06)', color: '#ce5d55', border: '1px solid rgba(206,93,85,0.16)' }}>
+          <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-xs" style={{ backgroundColor: 'var(--tf-error-bg)', color: 'var(--tf-error)', border: '1px solid var(--tf-error-bg-lg)' }}>
             <AlertCircle className="h-4 w-4 shrink-0" />
             <span>{errors.general}</span>
           </div>

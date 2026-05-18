@@ -22,7 +22,7 @@ const IconBtn: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { danger
     {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
     variant="ghost"
     size="icon"
-    className={`h-7 w-7 ${danger ? 'text-[#ce5d55] hover:bg-[rgba(206,93,85,0.08)] hover:text-[#ce5d55]' : 'text-[#655d67]'}`}
+    className={`h-7 w-7 ${danger ? 'text-destructive hover:bg-[var(--tf-error-bg)] hover:text-destructive' : 'text-muted-foreground'}`}
   >
     {children}
   </Button>
@@ -58,8 +58,8 @@ export default function TemplatesPage() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-64 text-center">
-        <h2 className="text-sm font-semibold mb-1 text-[#3c323e]">Unable to load templates</h2>
-        <p className="text-xs mb-3 text-[#655d67]">{error.message}</p>
+        <h2 className="text-sm font-semibold mb-1 text-primary">Unable to load templates</h2>
+        <p className="text-xs mb-3 text-muted-foreground">{error.message}</p>
         <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={() => refetch()}>Try again</Button>
       </div>
     );
@@ -70,8 +70,8 @@ export default function TemplatesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-[#3c323e]">{t('pageTitle', { defaultValue: 'Templates' })}</h1>
-          <p className="text-xs mt-0.5 text-[#655d67]">{t('pageSubtitle', { defaultValue: 'Manage form templates' })}</p>
+          <h1 className="text-lg font-semibold text-primary">{t('pageTitle', { defaultValue: 'Templates' })}</h1>
+          <p className="text-xs mt-0.5 text-muted-foreground">{t('pageSubtitle', { defaultValue: 'Manage form templates' })}</p>
         </div>
         <Button onClick={handleCreate} size="sm" className="gap-1.5">
           <Plus className="h-3.5 w-3.5" />
@@ -80,16 +80,16 @@ export default function TemplatesPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl bg-white overflow-hidden" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
+      <div className="rounded-xl bg-white overflow-hidden" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}>
         {loading ? (
           <div className="flex justify-center py-16"><LoadingSpinner /></div>
         ) : templates.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: '#f7f7f8' }}>
-              <FileText className="h-6 w-6 text-[#dedcde]" />
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: 'var(--tf-faint)' }}>
+              <FileText className="h-6 w-6 text-[var(--tf-icon-gray)]" />
             </div>
-            <p className="text-sm font-medium mb-1 text-[#3c323e]">No templates yet</p>
-            <p className="text-xs mb-5 text-[#655d67]">{t('emptyState.description', { defaultValue: 'Create your first template to get started' })}</p>
+            <p className="text-sm font-medium mb-1 text-primary">No templates yet</p>
+            <p className="text-xs mb-5 text-muted-foreground">{t('emptyState.description', { defaultValue: 'Create your first template to get started' })}</p>
             <Button onClick={handleCreate} size="sm" className="gap-1.5">
               <Plus className="h-3.5 w-3.5" />
               {t('createTemplate', { defaultValue: 'Create Template' })}
@@ -99,9 +99,9 @@ export default function TemplatesPage() {
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead>
-                <tr style={{ borderBottom: '1px solid rgba(81,76,84,0.08)' }}>
+                <tr style={{ borderBottom: '1px solid var(--tf-border-light)' }}>
                   {['Name', 'Category', 'Description', 'Status', 'Created', ''].map(h => (
-                    <th key={h} className={`px-5 py-3 text-[10px] font-semibold uppercase tracking-wide ${h ? 'text-left' : 'text-right'}`} style={{ color: '#655d67', backgroundColor: '#f7f7f8' }}>{h}</th>
+                    <th key={h} className={`px-5 py-3 text-[10px] font-semibold uppercase tracking-wide ${h ? 'text-left' : 'text-right'}`} style={{ color: 'var(--tf-muted)', backgroundColor: 'var(--tf-faint)' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -109,37 +109,37 @@ export default function TemplatesPage() {
                 {templates.map((template, i) => (
                   <tr
                     key={template.id}
-                    className="hover:bg-[rgba(87,84,91,0.025)] transition-colors"
+                    className="hover:bg-[var(--tf-tab-bg-faint)] transition-colors"
                     style={{ borderTop: i > 0 ? '1px solid rgba(81,76,84,0.07)' : undefined }}
                   >
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#f8cdd8' }}>
-                          <FileText className="h-3.5 w-3.5 text-[#3c323e]" />
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--tf-icon-salmon)' }}>
+                          <FileText className="h-3.5 w-3.5 text-primary" />
                         </div>
-                        <span className="text-sm font-medium text-[#3c323e]">{template.name}</span>
+                        <span className="text-sm font-medium text-primary">{template.name}</span>
                       </div>
                     </td>
                     <td className="px-5 py-3.5">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ backgroundColor: '#f7f7f8', color: '#655d67', border: '1px solid rgba(81,76,84,0.12)' }}>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ backgroundColor: 'var(--tf-faint)', color: 'var(--tf-muted)', border: '1px solid var(--tf-border)' }}>
                         {template.category || 'Uncategorized'}
                       </span>
                     </td>
                     <td className="px-5 py-3.5 max-w-xs">
-                      <p className="text-xs truncate text-[#655d67]">{template.description || '—'}</p>
+                      <p className="text-xs truncate text-muted-foreground">{template.description || '—'}</p>
                     </td>
                     <td className="px-5 py-3.5">
                       <span
                         className="px-2 py-0.5 rounded-full text-[10px] font-medium"
                         style={template.isActive
-                          ? { backgroundColor: 'rgba(23,119,103,0.08)', color: '#177767', border: '1px solid rgba(23,119,103,0.16)' }
-                          : { backgroundColor: 'rgba(206,93,85,0.08)', color: '#ce5d55', border: '1px solid rgba(206,93,85,0.16)' }
+                          ? { backgroundColor: 'var(--tf-green-bg)', color: 'var(--tf-green)', border: '1px solid var(--tf-green-bg-md)' }
+                          : { backgroundColor: 'var(--tf-error-bg)', color: 'var(--tf-error)', border: '1px solid var(--tf-error-bg-lg)' }
                         }
                       >
                         {template.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 text-xs text-[#655d67]">
+                    <td className="px-5 py-3.5 text-xs text-muted-foreground">
                       {new Date(template.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-5 py-3.5">

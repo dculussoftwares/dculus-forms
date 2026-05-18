@@ -322,18 +322,18 @@ export const SignUp = () => {
   /* helper for inline form fields */
   const Field = ({ id, label, error, children }: { id: string; label: string; error?: string; children: React.ReactNode }) => (
     <div>
-      <Label htmlFor={id} className="text-xs font-medium block mb-1.5 text-[#4c414e]">{label}</Label>
+      <Label htmlFor={id} className="text-xs font-medium block mb-1.5 text-foreground">{label}</Label>
       {children}
-      {error && <p className="text-xs mt-1 text-[#ce5d55]">{error}</p>}
+      {error && <p className="text-xs mt-1 text-destructive">{error}</p>}
     </div>
   );
 
   return (
     <div className="h-screen flex overflow-hidden">
       {/* ── Left: dark aubergine brand panel ── */}
-      <div className="hidden lg:flex lg:flex-col lg:w-[480px] xl:w-[560px] shrink-0 p-10 justify-between" style={{ backgroundColor: '#2a222b' }}>
+      <div className="hidden lg:flex lg:flex-col lg:w-[480px] xl:w-[560px] shrink-0 p-10 justify-between" style={{ backgroundColor: 'var(--tf-darkest)' }}>
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#3c323e' }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--tf-dark)' }}>
             <FileText className="w-4 h-4 text-white" />
           </div>
           <span className="text-white font-semibold text-lg">{t('hero.productName')}</span>
@@ -348,10 +348,10 @@ export const SignUp = () => {
       {/* ── Right: clean white panel ── */}
       <div className="flex-1 flex flex-col overflow-y-auto bg-white">
         {/* Top nav */}
-        <div className="flex items-center justify-end px-8 py-5" style={{ borderBottom: '1px solid rgba(81,76,84,0.08)' }}>
-          <span className="text-sm text-[#655d67]">
+        <div className="flex items-center justify-end px-8 py-5" style={{ borderBottom: '1px solid var(--tf-border-light)' }}>
+          <span className="text-sm text-muted-foreground">
             {t('links.signInPrompt')}{' '}
-            <Link to="/signin" className="font-medium hover:underline text-[#3c323e]">
+            <Link to="/signin" className="font-medium hover:underline text-primary">
               {t('links.signIn')}
             </Link>
           </span>
@@ -363,44 +363,44 @@ export const SignUp = () => {
 
             {/* Back button (verify step) */}
             {step === 'verify' && (
-              <Button variant="ghost" size="sm" onClick={handleBackToForm} className="flex items-center gap-1.5 text-xs mb-6 h-7 px-2 text-[#655d67] hover:text-[#3c323e]">
+              <Button variant="ghost" size="sm" onClick={handleBackToForm} className="flex items-center gap-1.5 text-xs mb-6 h-7 px-2 text-muted-foreground hover:text-primary">
                 <ArrowLeft className="w-3.5 h-3.5" />
                 Back
               </Button>
             )}
 
             <div className="mb-7">
-              <h1 className="text-2xl font-semibold mb-1.5 text-[#3c323e]">{heading}</h1>
-              <p className="text-sm text-[#655d67]">{description}</p>
+              <h1 className="text-2xl font-semibold mb-1.5 text-primary">{heading}</h1>
+              <p className="text-sm text-muted-foreground">{description}</p>
             </div>
 
             {step === 'form' ? (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <Field id="name" label={t('form.fields.name.label')} error={errors.name}>
-                  <Input id="name" name="name" type="text" placeholder={t('form.fields.name.placeholder')} value={formData.name} onChange={handleInputChange} disabled={isLoading} className={errors.name ? 'border-[#ce5d55]' : ''} />
+                  <Input id="name" name="name" type="text" placeholder={t('form.fields.name.placeholder')} value={formData.name} onChange={handleInputChange} disabled={isLoading} className={errors.name ? 'border-destructive' : ''} />
                 </Field>
 
                 <Field id="email" label={t('form.fields.email.label')} error={errors.email}>
-                  <Input id="email" name="email" type="email" placeholder={t('form.fields.email.placeholder')} value={formData.email} onChange={handleInputChange} disabled={isLoading || !!pendingInvitationId} className={errors.email ? 'border-[#ce5d55]' : ''} />
-                  {pendingInvitationId && <p className="text-xs mt-1 text-[#655d67]">{t('form.fields.email.invitationNotice')}</p>}
+                  <Input id="email" name="email" type="email" placeholder={t('form.fields.email.placeholder')} value={formData.email} onChange={handleInputChange} disabled={isLoading || !!pendingInvitationId} className={errors.email ? 'border-destructive' : ''} />
+                  {pendingInvitationId && <p className="text-xs mt-1 text-muted-foreground">{t('form.fields.email.invitationNotice')}</p>}
                 </Field>
 
                 {!pendingInvitationId && (
                   <Field id="organizationName" label={t('form.fields.organizationName.label')} error={errors.organizationName}>
-                    <Input id="organizationName" name="organizationName" type="text" placeholder={t('form.fields.organizationName.placeholder')} value={formData.organizationName} onChange={handleInputChange} disabled={isLoading} className={errors.organizationName ? 'border-[#ce5d55]' : ''} />
+                    <Input id="organizationName" name="organizationName" type="text" placeholder={t('form.fields.organizationName.placeholder')} value={formData.organizationName} onChange={handleInputChange} disabled={isLoading} className={errors.organizationName ? 'border-destructive' : ''} />
                   </Field>
                 )}
 
                 <Field id="password" label={t('form.fields.password.label')} error={errors.password}>
-                  <Input id="password" name="password" type="password" placeholder={t('form.fields.password.placeholder')} value={formData.password} onChange={handleInputChange} disabled={isLoading} className={errors.password ? 'border-[#ce5d55]' : ''} />
+                  <Input id="password" name="password" type="password" placeholder={t('form.fields.password.placeholder')} value={formData.password} onChange={handleInputChange} disabled={isLoading} className={errors.password ? 'border-destructive' : ''} />
                 </Field>
 
                 <Field id="confirmPassword" label={t('form.fields.confirmPassword.label')} error={errors.confirmPassword}>
-                  <Input id="confirmPassword" name="confirmPassword" type="password" placeholder={t('form.fields.confirmPassword.placeholder')} value={formData.confirmPassword} onChange={handleInputChange} disabled={isLoading} className={errors.confirmPassword ? 'border-[#ce5d55]' : ''} />
+                  <Input id="confirmPassword" name="confirmPassword" type="password" placeholder={t('form.fields.confirmPassword.placeholder')} value={formData.confirmPassword} onChange={handleInputChange} disabled={isLoading} className={errors.confirmPassword ? 'border-destructive' : ''} />
                 </Field>
 
                 {errors.submit && (
-                  <p className="text-xs text-center py-2 px-3 rounded-lg" style={{ backgroundColor: 'rgba(206,93,85,0.06)', color: '#ce5d55', border: '1px solid rgba(206,93,85,0.14)' }}>
+                  <p className="text-xs text-center py-2 px-3 rounded-lg" style={{ backgroundColor: 'var(--tf-error-bg)', color: 'var(--tf-error)', border: '1px solid var(--tf-error-bg-md)' }}>
                     {errors.submit}
                   </p>
                 )}
@@ -417,28 +417,28 @@ export const SignUp = () => {
             ) : (
               <form onSubmit={handleVerifyOTP} className="space-y-5">
                 <div>
-                  <Label className="text-xs font-medium block mb-3 text-center text-[#4c414e]">
+                  <Label className="text-xs font-medium block mb-3 text-center text-foreground">
                     {t('verify.otpLabel')}
                   </Label>
                   <OTPInput value={otp} onChange={(value) => { setOtp(value); if (errors.otp) setErrors(prev => ({ ...prev, otp: '' })); }} disabled={isLoading} hasError={!!errors.otp} />
-                  {errors.otp && <p className="text-xs mt-2 text-center text-[#ce5d55]">{errors.otp}</p>}
+                  {errors.otp && <p className="text-xs mt-2 text-center text-destructive">{errors.otp}</p>}
                 </div>
 
                 <div className="text-center">
                   {countdown > 0 ? (
-                    <span className="text-xs flex items-center justify-center gap-1.5 text-[#655d67]">
+                    <span className="text-xs flex items-center justify-center gap-1.5 text-muted-foreground">
                       <Timer className="w-3.5 h-3.5" />
                       {t('verify.countdown', { values: { seconds: countdown } })}
                     </span>
                   ) : (
-                    <Button type="button" variant="ghost" size="sm" onClick={handleResendOTP} disabled={isLoading} className="text-xs font-medium h-7 px-2 text-[#3c323e]">
+                    <Button type="button" variant="ghost" size="sm" onClick={handleResendOTP} disabled={isLoading} className="text-xs font-medium h-7 px-2 text-primary">
                       {t('verify.resend')}
                     </Button>
                   )}
                 </div>
 
                 {errors.submit && (
-                  <p className="text-xs text-center py-2 px-3 rounded-lg" style={{ backgroundColor: 'rgba(206,93,85,0.06)', color: '#ce5d55', border: '1px solid rgba(206,93,85,0.14)' }}>
+                  <p className="text-xs text-center py-2 px-3 rounded-lg" style={{ backgroundColor: 'var(--tf-error-bg)', color: 'var(--tf-error)', border: '1px solid var(--tf-error-bg-md)' }}>
                     {errors.submit}
                   </p>
                 )}

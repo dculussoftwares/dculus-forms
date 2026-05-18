@@ -177,7 +177,7 @@ export const WebhookPluginConfig: React.FC<WebhookPluginConfigProps> = ({
           {/* Plugin Name */}
           <div className="space-y-2">
             <Label htmlFor="name">
-              {t('basicInformation.name.label')} <span className="text-[#ce5d55]">{t('required')}</span>
+              {t('basicInformation.name.label')} <span className="text-destructive">{t('required')}</span>
             </Label>
             <Input
               id="name"
@@ -185,9 +185,9 @@ export const WebhookPluginConfig: React.FC<WebhookPluginConfigProps> = ({
               {...register('name', { required: t('basicInformation.name.required') })}
             />
             {errors.name && (
-              <p className="text-sm text-[#ce5d55]">{errors.name.message}</p>
+              <p className="text-sm text-destructive">{errors.name.message}</p>
             )}
-            <p className="text-xs text-[#655d67]">
+            <p className="text-xs text-muted-foreground">
               {t('basicInformation.name.hint')}
             </p>
           </div>
@@ -195,7 +195,7 @@ export const WebhookPluginConfig: React.FC<WebhookPluginConfigProps> = ({
           {/* Webhook URL */}
           <div className="space-y-2">
             <Label htmlFor="url">
-              {t('basicInformation.url.label')} <span className="text-[#ce5d55]">{t('required')}</span>
+              {t('basicInformation.url.label')} <span className="text-destructive">{t('required')}</span>
             </Label>
             <Input
               id="url"
@@ -210,9 +210,9 @@ export const WebhookPluginConfig: React.FC<WebhookPluginConfigProps> = ({
               })}
             />
             {errors.url && (
-              <p className="text-sm text-[#ce5d55]">{errors.url.message}</p>
+              <p className="text-sm text-destructive">{errors.url.message}</p>
             )}
-            <p className="text-xs text-[#655d67]">
+            <p className="text-xs text-muted-foreground">
               {t('basicInformation.url.hint')}
             </p>
           </div>
@@ -226,7 +226,7 @@ export const WebhookPluginConfig: React.FC<WebhookPluginConfigProps> = ({
               placeholder={t('basicInformation.secret.placeholder')}
               {...register('secret')}
             />
-            <p className="text-xs text-[#655d67]">
+            <p className="text-xs text-muted-foreground">
               {t('basicInformation.secret.hint')}
             </p>
           </div>
@@ -291,7 +291,7 @@ export const WebhookPluginConfig: React.FC<WebhookPluginConfigProps> = ({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex items-start space-x-3 p-3 rounded-lg hover:bg-[#f7f7f8] transition-colors">
+          <div className="flex items-start space-x-3 p-3 rounded-lg hover:bg-background transition-colors">
             <Checkbox
               id="form.submitted"
               checked={selectedEvents.includes('form.submitted')}
@@ -304,10 +304,10 @@ export const WebhookPluginConfig: React.FC<WebhookPluginConfigProps> = ({
               >
                 {t('triggerEvents.formSubmitted.label')}
               </Label>
-              <p className="text-sm text-[#655d67]">{t('triggerEvents.formSubmitted.description')}</p>
+              <p className="text-sm text-muted-foreground">{t('triggerEvents.formSubmitted.description')}</p>
             </div>
           </div>
-          <div className="flex items-start space-x-3 p-3 rounded-lg hover:bg-[#f7f7f8] transition-colors">
+          <div className="flex items-start space-x-3 p-3 rounded-lg hover:bg-background transition-colors">
             <Checkbox
               id="plugin.test"
               checked={selectedEvents.includes('plugin.test')}
@@ -320,11 +320,11 @@ export const WebhookPluginConfig: React.FC<WebhookPluginConfigProps> = ({
               >
                 {t('triggerEvents.testEvent.label')}
               </Label>
-              <p className="text-sm text-[#655d67]">{t('triggerEvents.testEvent.description')}</p>
+              <p className="text-sm text-muted-foreground">{t('triggerEvents.testEvent.description')}</p>
             </div>
           </div>
           {selectedEvents.length === 0 && (
-            <p className="text-sm text-[#ce5d55] mt-2">
+            <p className="text-sm text-destructive mt-2">
               {t('triggerEvents.validation')}
             </p>
           )}

@@ -121,7 +121,7 @@ const Responses: React.FC = () => {
       >
         <EmptyState
           variant="error"
-          icon={<AlertCircle className="h-6 w-6 text-[#ce5d55]" />}
+          icon={<AlertCircle className="h-6 w-6 text-destructive" />}
           title={formData?.form ? t('errors.loadingResponses') : t('errors.formNotFound')}
           description={formData?.form ? t('errors.loadingResponsesMessage') : t('errors.formNotFoundMessage')}
         />
@@ -145,7 +145,7 @@ const Responses: React.FC = () => {
         {/* ── Typeform-style compact page header ── */}
         <div
           className="flex items-center gap-3 pb-4 mb-2 flex-shrink-0"
-          style={{ borderBottom: '1px solid rgba(81,76,84,0.10)' }}
+          style={{ borderBottom: '1px solid var(--tf-border-medium)' }}
         >
           <Button
             onClick={() => navigate(`/dashboard/form/${actualFormId}`)}
@@ -155,9 +155,9 @@ const Responses: React.FC = () => {
             <ArrowLeft className="h-4 w-4" />
           </Button>
 
-          <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'rgba(81,76,84,0.12)' }} />
+          <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'var(--tf-border)' }} />
 
-          <h1 className="text-sm font-semibold truncate flex-1 min-w-0 text-[#3c323e]">
+          <h1 className="text-sm font-semibold truncate flex-1 min-w-0 text-primary">
             {form.title}
           </h1>
 
@@ -165,7 +165,7 @@ const Responses: React.FC = () => {
             {responsesLoading && (
               <div
                 className="w-4 h-4 rounded-full border-2 animate-spin"
-                style={{ borderColor: 'rgba(81,76,84,0.15)', borderTopColor: '#3c323e' }}
+                style={{ borderColor: 'var(--tf-border-strong)', borderTopColor: 'var(--tf-dark)' }}
               />
             )}
             {/* Response count badge — Typeform exact: #f6fafd bg, #01487f text */}
@@ -183,7 +183,7 @@ const Responses: React.FC = () => {
           <EmptyState
             variant="error"
             className="flex-1"
-            icon={<AlertCircle className="h-6 w-6 text-[#ce5d55]" />}
+            icon={<AlertCircle className="h-6 w-6 text-destructive" />}
             title={t('errors.loadingResponses')}
             description={t('errors.loadingResponsesMessage')}
             action={
@@ -201,7 +201,7 @@ const Responses: React.FC = () => {
           /* White table container with Typeform exact border/shadow */
           <div
             className="flex-1 flex flex-col min-h-0 w-full overflow-x-hidden rounded-xl bg-white dark:bg-card"
-            style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}
+            style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}
           >
             {/* Toolbar */}
             <div className="flex-shrink-0">

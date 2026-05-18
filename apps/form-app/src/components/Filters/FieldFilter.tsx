@@ -265,9 +265,9 @@ const renderFilterInput = (
 
       // IN, NOT_IN, CONTAINS_ALL, EQUALS use multi-select (checkboxes)
       return (
-        <div className="border border-[rgba(81,76,84,0.10)] rounded-lg max-h-40 overflow-y-auto">
+        <div className="border border-[var(--tf-border-medium)] rounded-lg max-h-40 overflow-y-auto">
           {options.length === 0 ? (
-            <div className="p-3 text-center text-[#655d67] text-sm">
+            <div className="p-3 text-center text-muted-foreground text-sm">
               No options available
             </div>
           ) : (
@@ -277,7 +277,7 @@ const renderFilterInput = (
                 return (
                   <div
                     key={index}
-                    className="flex items-center space-x-2 p-1 rounded hover:bg-[#f7f7f8]"
+                    className="flex items-center space-x-2 p-1 rounded hover:bg-background"
                   >
                     <Checkbox
                       id={`${field.id}-${index}`}
@@ -338,31 +338,31 @@ export const FieldFilter: React.FC<FieldFilterProps> = ({
     <div>
       <Button
         variant="ghost"
-        className="w-full h-auto p-3 justify-between hover:bg-[#f7f7f8] rounded-none"
+        className="w-full h-auto p-3 justify-between hover:bg-background rounded-none"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-3">
-          <div className="text-[#655d67]">{getFieldIcon(field.type)}</div>
+          <div className="text-muted-foreground">{getFieldIcon(field.type)}</div>
           <div className="text-left">
-            <div className="font-medium text-[#3c323e] text-sm">
+            <div className="font-medium text-primary text-sm">
               {field.label}
             </div>
             {filter?.active && (
-              <div className="text-xs text-[#177767] font-medium">{t('filtered')}</div>
+              <div className="text-xs text-[var(--tf-green)] font-medium">{t('filtered')}</div>
             )}
           </div>
         </div>
         {isExpanded ? (
-          <ChevronUp className="h-4 w-4 text-[#655d67]" />
+          <ChevronUp className="h-4 w-4 text-muted-foreground" />
         ) : (
-          <ChevronDown className="h-4 w-4 text-[#655d67]" />
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
         )}
       </Button>
 
       {isExpanded && (
-        <div className="px-3 pb-3 space-y-3 bg-[#f7f7f8] border-t border-[rgba(81,76,84,0.08)]">
+        <div className="px-3 pb-3 space-y-3 bg-background border-t border-[var(--tf-border-light)]">
           <div className="pt-3">
-            <Label className="text-xs font-medium text-[#4c414e] mb-2 block">
+            <Label className="text-xs font-medium text-foreground mb-2 block">
               Condition
             </Label>
             <Select
@@ -384,7 +384,7 @@ export const FieldFilter: React.FC<FieldFilterProps> = ({
 
           {filter?.operator && (
             <div>
-              <Label className="text-xs font-medium text-[#4c414e] mb-2 block">
+              <Label className="text-xs font-medium text-foreground mb-2 block">
                 Value
               </Label>
               {renderFilterInput(field, filter, onChange, t)}

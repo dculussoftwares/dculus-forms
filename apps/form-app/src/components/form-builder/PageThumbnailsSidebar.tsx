@@ -26,23 +26,23 @@ export const PageThumbnailsSidebar: React.FC<PageThumbnailsSidebarProps> = ({
   
   return (
     <div 
-      className="h-full bg-white dark:bg-gray-900 border-l border-[rgba(81,76,84,0.10)] dark:border-gray-700 flex flex-col"
+      className="h-full bg-white dark:bg-gray-900 border-l border-[var(--tf-border-medium)] dark:border-gray-700 flex flex-col"
       style={{ width: `${width}px` }}
     >
       {/* Header */}
-      <div className="p-4 border-b border-[rgba(81,76,84,0.10)] dark:border-gray-700">
+      <div className="p-4 border-b border-[var(--tf-border-medium)] dark:border-gray-700">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-2">
-            <Layout className="w-4 h-4 text-[#4c414e] dark:text-gray-400" />
-            <h3 className="font-semibold text-sm text-[#3c323e] dark:text-white">
+            <Layout className="w-4 h-4 text-foreground dark:text-gray-400" />
+            <h3 className="font-semibold text-sm text-primary dark:text-white">
               {t('title')}
             </h3>
           </div>
-          <span className="text-xs text-[#655d67] dark:text-gray-400">
+          <span className="text-xs text-muted-foreground dark:text-gray-400">
             {pages.length}
           </span>
         </div>
-        <p className="text-xs text-[#655d67] dark:text-gray-400">
+        <p className="text-xs text-muted-foreground dark:text-gray-400">
           {t('description')}
         </p>
       </div>
@@ -65,13 +65,13 @@ export const PageThumbnailsSidebar: React.FC<PageThumbnailsSidebarProps> = ({
         {/* Empty State */}
         {pages.length === 0 && (
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <div className="w-12 h-12 bg-[#f7f7f8] dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
-              <Layout className="w-6 h-6 text-[#655d67]" />
+            <div className="w-12 h-12 bg-background dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+              <Layout className="w-6 h-6 text-muted-foreground" />
             </div>
-            <h3 className="text-sm font-medium text-[#3c323e] dark:text-white mb-2">
+            <h3 className="text-sm font-medium text-primary dark:text-white mb-2">
               {t('emptyState.title')}
             </h3>
-            <p className="text-xs text-[#655d67] dark:text-gray-400 mb-4">
+            <p className="text-xs text-muted-foreground dark:text-gray-400 mb-4">
               {t('emptyState.description')}
             </p>
           </div>
@@ -79,7 +79,7 @@ export const PageThumbnailsSidebar: React.FC<PageThumbnailsSidebarProps> = ({
       </div>
 
       {/* Add Page Button */}
-      <div className="p-4 border-t border-[rgba(81,76,84,0.10)] dark:border-gray-700">
+      <div className="p-4 border-t border-[var(--tf-border-medium)] dark:border-gray-700">
         <Button
           size="sm"
           onClick={onAddPage}

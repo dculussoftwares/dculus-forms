@@ -35,16 +35,16 @@ export const UsageWarning = ({
 
   // Color scheme based on severity
   const bgColor = isError
-    ? 'bg-[rgba(206,93,85,0.06)] dark:bg-red-900/20'
+    ? 'bg-[var(--tf-error-bg)] dark:bg-red-900/20'
     : 'bg-orange-50 dark:bg-orange-900/20';
   const borderColor = isError
-    ? 'border-[rgba(206,93,85,0.16)] dark:border-red-800'
+    ? 'border-[var(--tf-error-bg-lg)] dark:border-red-800'
     : 'border-orange-200 dark:border-orange-800';
   const textColor = isError
-    ? 'text-[#ce5d55] dark:text-red-200'
+    ? 'text-destructive dark:text-red-200'
     : 'text-orange-800 dark:text-orange-200';
   const iconColor = isError
-    ? 'text-[#ce5d55] dark:text-red-400'
+    ? 'text-destructive dark:text-red-400'
     : 'text-orange-600 dark:text-orange-400';
 
   const resourceType = type === 'views' ? t('resource.views') : t('resource.submissions');

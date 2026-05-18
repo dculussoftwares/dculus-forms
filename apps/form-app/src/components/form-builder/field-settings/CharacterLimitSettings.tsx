@@ -20,7 +20,7 @@ export const CharacterLimitSettings: React.FC<CharacterLimitSettingsProps> = ({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="field-min-length" className="text-xs font-medium text-[#4c414e] dark:text-gray-300">
+        <Label htmlFor="field-min-length" className="text-xs font-medium text-foreground dark:text-gray-300">
           Minimum Length
         </Label>
         <Controller
@@ -47,7 +47,7 @@ export const CharacterLimitSettings: React.FC<CharacterLimitSettingsProps> = ({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="field-max-length" className="text-xs font-medium text-[#4c414e] dark:text-gray-300">
+        <Label htmlFor="field-max-length" className="text-xs font-medium text-foreground dark:text-gray-300">
           Maximum Length
         </Label>
         <Controller

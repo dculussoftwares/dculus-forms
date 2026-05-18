@@ -64,7 +64,7 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
   return (
     <div
       className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 w-full"
-      style={{ borderBottom: '1px solid rgba(81,76,84,0.08)', backgroundColor: '#f7f7f8' }}
+      style={{ borderBottom: '1px solid var(--tf-border-light)', backgroundColor: 'var(--tf-faint)' }}
     >
       {/* Left: search + filter + active chips */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-1 min-w-0 flex-wrap">
@@ -72,7 +72,7 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
         {/* Search — Typeform ghost input */}
         <div className="relative w-full sm:w-64 sm:max-w-xs min-w-0">
           <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none text-[#655d67]"
+            className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none text-muted-foreground"
           />
           <Input
             type="text"
@@ -159,7 +159,7 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
               {hiddenColumns.length > 0 && (
                 <span
                   className="ml-0.5 px-1.5 py-0.5 text-[10px] font-medium rounded-full"
-                  style={{ backgroundColor: '#f7f7f8', color: '#4c414e', border: '1px solid rgba(81,76,84,0.15)' }}
+                  style={{ backgroundColor: 'var(--tf-faint)', color: 'var(--tf-text)', border: '1px solid var(--tf-border-strong)' }}
                 >
                   {t('toolbar.columns.hiddenCount', { values: { count: hiddenColumns.length } })}
                 </span>
@@ -170,7 +170,7 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
             <div className="flex flex-col max-h-80">
               <div
                 className="flex items-center justify-between px-3 py-2.5 text-xs font-medium"
-                style={{ borderBottom: '1px solid rgba(81,76,84,0.08)', color: '#3c323e' }}
+                style={{ borderBottom: '1px solid var(--tf-border-light)', color: 'var(--tf-dark)' }}
               >
                 <span>{t('toolbar.columns.toggle')}</span>
                 <Button
@@ -185,7 +185,7 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
               </div>
               <div className="overflow-y-auto flex-1 p-1.5">
                 {columns.length === 0 ? (
-                  <div className="text-center text-xs py-4 text-[#655d67]">
+                  <div className="text-center text-xs py-4 text-muted-foreground">
                     {t('toolbar.columns.noColumnsAvailable')}
                   </div>
                 ) : (
@@ -198,7 +198,7 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
                         <Label
                           key={column.id}
                           htmlFor={`col-${column.id}`}
-                          className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-colors font-normal hover:bg-[rgba(87,84,91,0.06)] text-[#4c414e]"
+                          className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-colors font-normal hover:bg-[var(--tf-tab-bg)] text-foreground"
                         >
                           <Checkbox
                             id={`col-${column.id}`}
@@ -228,7 +228,7 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
                 <>
                   <div
                     className="w-3.5 h-3.5 rounded-full border-2 animate-spin"
-                    style={{ borderColor: 'rgba(81,76,84,0.15)', borderTopColor: '#3c323e' }}
+                    style={{ borderColor: 'var(--tf-border-strong)', borderTopColor: 'var(--tf-dark)' }}
                   />
                   {t('toolbar.export.exporting')}
                 </>

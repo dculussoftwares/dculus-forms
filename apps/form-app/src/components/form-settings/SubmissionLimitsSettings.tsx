@@ -136,7 +136,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
                 <Users className="mr-1 h-4 w-4" />
                 {t('maxResponses.title')}
               </Label>
-              <p className="text-sm text-[#4c414e]">
+              <p className="text-sm text-foreground">
                 {t('maxResponses.description')}
               </p>
             </div>
@@ -159,7 +159,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
                   className="w-24"
                 />
               </div>
-              <div className="text-sm text-[#655d67]">
+              <div className="text-sm text-muted-foreground">
                 {t('maxResponses.responses', { 
                   values: { 
                     current: currentResponseCount, 
@@ -167,7 +167,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
                   } 
                 })}
                 {isMaxResponsesReached && (
-                  <span className="ml-2 text-[#ce5d55] font-medium">
+                  <span className="ml-2 text-destructive font-medium">
                     ⚠️ {t('maxResponses.reached')}
                   </span>
                 )}
@@ -193,7 +193,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
                 <Calendar className="mr-1 h-4 w-4" />
                 {t('timeWindow.title')}
               </Label>
-              <p className="text-sm text-[#4c414e]">
+              <p className="text-sm text-foreground">
                 {t('timeWindow.description')}
               </p>
             </div>
@@ -227,9 +227,9 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
                   />
                 </div>
               </div>
-              <div className="text-sm text-[#655d67]">
+              <div className="text-sm text-muted-foreground">
                 {isOutsideTimeWindow && (
-                  <span className="text-[#ce5d55] font-medium">
+                  <span className="text-destructive font-medium">
                     ⚠️ {isBeforeStart ? t('timeWindow.notStarted') : t('timeWindow.ended')}
                   </span>
                 )}
@@ -245,11 +245,11 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
 
         {/* Status Summary */}
         {(settings.maxResponses?.enabled || settings.timeWindow?.enabled) && (
-          <div className="mt-6 p-4 bg-[#f7f7f8] rounded-lg">
+          <div className="mt-6 p-4 bg-background rounded-lg">
             <h4 className="text-sm font-medium mb-2">{t('maxResponses.currentStatus')}</h4>
             <div className="space-y-1 text-sm">
               {settings.maxResponses?.enabled && (
-                <div className={isMaxResponsesReached ? 'text-[#ce5d55]' : 'text-primary'}>
+                <div className={isMaxResponsesReached ? 'text-destructive' : 'text-primary'}>
                   • {t('maxResponses.responses', { 
                       values: { 
                         current: currentResponseCount, 
@@ -260,12 +260,12 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
                 </div>
               )}
               {settings.timeWindow?.enabled && (
-                <div className={isOutsideTimeWindow ? 'text-[#ce5d55]' : 'text-primary'}>
+                <div className={isOutsideTimeWindow ? 'text-destructive' : 'text-primary'}>
                   • {t('timeWindow.title')}: {isOutsideTimeWindow 
                     ? (isBeforeStart ? t('timeWindow.notStarted') : t('timeWindow.ended'))
                     : t('timeWindow.active')}
                   {settings.timeWindow?.startDate && settings.timeWindow?.endDate && (
-                    <span className="text-[#655d67] ml-1">
+                    <span className="text-muted-foreground ml-1">
                       ({settings.timeWindow.startDate} to {settings.timeWindow.endDate})
                     </span>
                   )}

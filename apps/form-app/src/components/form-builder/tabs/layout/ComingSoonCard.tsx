@@ -23,11 +23,11 @@ export const ComingSoonCard: React.FC<ComingSoonCardProps> = ({
           <Sparkles className={`w-${isSmall ? '4' : '6'} h-${isSmall ? '4' : '6'} text-purple-600 dark:text-purple-400`} />
         </div>
         
-        <h4 className={`text-${isSmall ? 'sm' : 'lg'} font-semibold text-[#3c323e] dark:text-white mb-${isSmall ? '1' : '2'}`}>
+        <h4 className={`text-${isSmall ? 'sm' : 'lg'} font-semibold text-primary dark:text-white mb-${isSmall ? '1' : '2'}`}>
           {title}
         </h4>
         
-        <p className={`text-${isSmall ? 'xs' : 'sm'} text-[#4c414e] dark:text-gray-400 mb-${isSmall ? '3' : '4'}`}>
+        <p className={`text-${isSmall ? 'xs' : 'sm'} text-foreground dark:text-gray-400 mb-${isSmall ? '3' : '4'}`}>
           {description}
         </p>
 
@@ -35,7 +35,7 @@ export const ComingSoonCard: React.FC<ComingSoonCardProps> = ({
           {Array.isArray(features) && features.map((feature, index) => (
             <div key={index} className="flex items-center space-x-1">
               <div className="w-1 h-1 bg-purple-400 rounded-full" />
-              <span className="text-[#4c414e] dark:text-gray-400">{feature}</span>
+              <span className="text-foreground dark:text-gray-400">{feature}</span>
             </div>
           ))}
         </div>

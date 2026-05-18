@@ -188,7 +188,7 @@ const renderFilterInput = (
               onChange={(e) => handleNumberRangeChange('min', e.target.value)}
               className="h-9 w-24"
             />
-            <span className="text-[#655d67]">and</span>
+            <span className="text-muted-foreground">and</span>
             <Input
               type="number"
               placeholder={t('placeholders.max')}
@@ -245,7 +245,7 @@ const renderFilterInput = (
               placeholder="From"
               className="h-9 w-36"
             />
-            <span className="text-[#655d67]">and</span>
+            <span className="text-muted-foreground">and</span>
             <DatePicker
               date={
                 filter.dateRange?.to ? parseCalendarDate(filter.dateRange.to) : undefined
@@ -317,7 +317,7 @@ const renderFilterInput = (
             <SelectTrigger className="h-9">
               <SelectValue>
                 <div className="flex items-center gap-2">
-                  <span className="text-[#655d67]">
+                  <span className="text-muted-foreground">
                     {filter.values?.length
                       ? `${filter.values.length} selected`
                       : 'Select options...'}
@@ -331,7 +331,7 @@ const renderFilterInput = (
                 return (
                   <div
                     key={index}
-                    className="flex items-center space-x-2 p-2 hover:bg-[#f7f7f8]"
+                    className="flex items-center space-x-2 p-2 hover:bg-background"
                   >
                     <Checkbox
                       id={`${field.id}-${index}`}
@@ -420,11 +420,11 @@ export const FilterRow: React.FC<FilterRowProps> = ({
   };
 
   return (
-    <div className="p-4 bg-white border border-[rgba(81,76,84,0.10)] rounded-lg space-y-3">
+    <div className="p-4 bg-white border border-[var(--tf-border-medium)] rounded-lg space-y-3">
       {/* Header Row: "and" connector + Remove Button */}
       <div className="flex items-center justify-between">
         {!isFirst ? (
-          <div className="text-sm font-medium text-[#4c414e]">
+          <div className="text-sm font-medium text-foreground">
             {filterLogic === 'AND' ? 'and' : 'or'}
           </div>
         ) : (
@@ -435,9 +435,9 @@ export const FilterRow: React.FC<FilterRowProps> = ({
           variant="ghost"
           size="sm"
           onClick={onRemove}
-          className="h-8 w-8 p-0 hover:bg-[rgba(81,76,84,0.06)] flex-shrink-0"
+          className="h-8 w-8 p-0 hover:bg-[var(--tf-border-faint)] flex-shrink-0"
         >
-          <X className="h-4 w-4 text-[#655d67]" />
+          <X className="h-4 w-4 text-muted-foreground" />
         </Button>
       </div>
 
@@ -445,13 +445,13 @@ export const FilterRow: React.FC<FilterRowProps> = ({
       <div>
         <Select value={filter.fieldId || ''} onValueChange={handleFieldChange}>
           <SelectTrigger
-            className="h-10 w-full bg-[#f4faf8] border-[rgba(23,119,103,0.16)] hover:bg-[rgba(23,119,103,0.06)]"
+            className="h-10 w-full bg-[var(--tf-icon-teal)] border-[var(--tf-green-bg-md)] hover:bg-[rgba(23,119,103,0.06)]"
             data-testid="filter-field-select"
           >
             <SelectValue placeholder={t('placeholders.selectField')}>
               {currentField && (
                 <div className="flex items-center gap-2">
-                  <div className="text-[#177767] flex-shrink-0">
+                  <div className="text-[var(--tf-green)] flex-shrink-0">
                     {getFieldIcon(currentField.type)}
                   </div>
                   <span className="truncate" title={currentField.label}>
@@ -465,7 +465,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
             {fields.map((field) => (
               <SelectItem key={field.id} value={field.id}>
                 <div className="flex items-center gap-2">
-                  <div className="text-[#655d67] flex-shrink-0">
+                  <div className="text-muted-foreground flex-shrink-0">
                     {getFieldIcon(field.type)}
                   </div>
                   <span className="truncate" title={field.label}>

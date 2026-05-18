@@ -102,8 +102,8 @@ export const PluginGallery: React.FC<PluginGalleryProps> = ({
 
               {/* Content */}
               <div className="flex-1">
-                <h3 className="font-semibold text-[#3c323e] mb-2">{plugin.name}</h3>
-                <p className="text-sm text-[#4c414e] leading-relaxed">
+                <h3 className="font-semibold text-primary mb-2">{plugin.name}</h3>
+                <p className="text-sm text-foreground leading-relaxed">
                   {plugin.description}
                 </p>
               </div>

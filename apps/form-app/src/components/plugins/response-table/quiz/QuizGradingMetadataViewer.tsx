@@ -50,7 +50,7 @@ export const QuizGradingMetadataViewer: React.FC<QuizGradingMetadataViewerProps>
         {/* Score Summary */}
         <div className="space-y-4">
           <div className="text-center">
-            <div className="text-5xl font-bold text-[#3c323e]">
+            <div className="text-5xl font-bold text-primary">
               {metadata.quizScore} / {metadata.totalMarks}
             </div>
             <div className="text-2xl text-muted-foreground mt-2">
@@ -91,7 +91,7 @@ export const QuizGradingMetadataViewer: React.FC<QuizGradingMetadataViewerProps>
               className={`border rounded-lg p-4 ${
                 result.isCorrect
                   ? 'border-green-200 bg-green-50'
-                  : 'border-[rgba(206,93,85,0.16)] bg-[rgba(206,93,85,0.06)]'
+                  : 'border-[var(--tf-error-bg-lg)] bg-[var(--tf-error-bg)]'
               }`}
             >
               <div className="flex items-start justify-between gap-3">
@@ -100,11 +100,11 @@ export const QuizGradingMetadataViewer: React.FC<QuizGradingMetadataViewerProps>
                     {result.isCorrect ? (
                       <CheckCircle2 className="h-5 w-5 text-green-600" />
                     ) : (
-                      <XCircle className="h-5 w-5 text-[#ce5d55]" />
+                      <XCircle className="h-5 w-5 text-destructive" />
                     )}
                   </div>
                   <div className="flex-1">
-                    <div className="font-medium text-[#3c323e] mb-2">
+                    <div className="font-medium text-primary mb-2">
                       {t('questionLabel', { values: { number: idx + 1, label: result.fieldLabel } })}
                     </div>
                     <div className="space-y-1">

@@ -80,17 +80,17 @@ export const CheckoutSuccess = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f7f7f8] dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-background dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-[#4c414e] dark:text-gray-400">{t('loading.message')}</p>
+          <p className="text-foreground dark:text-gray-400">{t('loading.message')}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f7f8] dark:bg-gray-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background dark:bg-gray-900 flex items-center justify-center p-4">
       {/* Confetti Effect (simple CSS animation) */}
       {showConfetti && (
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -122,7 +122,7 @@ export const CheckoutSuccess = () => {
         {/* Success Message */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
-          <p className="text-[#4c414e] dark:text-gray-400">{t('subtitle')}</p>
+          <p className="text-foreground dark:text-gray-400">{t('subtitle')}</p>
         </div>
 
         {/* Plan Details */}
@@ -154,16 +154,16 @@ export const CheckoutSuccess = () => {
 
             {/* Usage Limits */}
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-[#f7f7f8] dark:bg-gray-800 rounded-lg p-4">
-                <div className="text-sm text-[#4c414e] dark:text-gray-400 mb-1">
+              <div className="bg-background dark:bg-gray-800 rounded-lg p-4">
+                <div className="text-sm text-foreground dark:text-gray-400 mb-1">
                   {t('usage.views')}
                 </div>
                 <div className="text-2xl font-bold">
                   {subscription.viewsLimit ? subscription.viewsLimit.toLocaleString() : t('usage.unlimited')}
                 </div>
               </div>
-              <div className="bg-[#f7f7f8] dark:bg-gray-800 rounded-lg p-4">
-                <div className="text-sm text-[#4c414e] dark:text-gray-400 mb-1">
+              <div className="bg-background dark:bg-gray-800 rounded-lg p-4">
+                <div className="text-sm text-foreground dark:text-gray-400 mb-1">
                   {t('usage.submissions')}
                 </div>
                 <div className="text-2xl font-bold">
@@ -208,8 +208,8 @@ export const CheckoutSuccess = () => {
         </div>
 
         {/* Additional Info */}
-        <div className="mt-6 p-4 bg-[#f7f7f8] dark:bg-gray-800 rounded-lg">
-          <p className="text-sm text-[#4c414e] dark:text-gray-400 text-center">
+        <div className="mt-6 p-4 bg-background dark:bg-gray-800 rounded-lg">
+          <p className="text-sm text-foreground dark:text-gray-400 text-center">
             {t('footer.receiptEmail')}
           </p>
         </div>

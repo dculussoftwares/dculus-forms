@@ -102,12 +102,12 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onUpload
       {/* Modal */}
       <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] m-4 flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-[rgba(81,76,84,0.10)] dark:border-gray-700">
+        <div className="flex items-center justify-between p-6 border-b border-[var(--tf-border-medium)] dark:border-gray-700">
           <div>
-            <h2 className="text-xl font-semibold text-[#3c323e] dark:text-white">
+            <h2 className="text-xl font-semibold text-primary dark:text-white">
               {t('title')}
             </h2>
-            <p className="text-sm text-[#655d67] dark:text-gray-400">
+            <p className="text-sm text-muted-foreground dark:text-gray-400">
               {t('subtitle')}
             </p>
           </div>
@@ -126,7 +126,7 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onUpload
           {/* Search */}
           <form onSubmit={handleSearchSubmit} className="flex gap-2 mb-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#655d67]" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder={t('searchPlaceholder')}
                 value={searchQuery}
@@ -195,8 +195,8 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onUpload
                     </div>
                     
                     <div className="p-3">
-                      <p className="text-xs text-[#4c414e] dark:text-gray-400 truncate font-medium">{image.tags}</p>
-                      <p className="text-xs text-[#655d67] dark:text-gray-500">{t('byAuthor', { values: { author: image.user } })}</p>
+                      <p className="text-xs text-foreground dark:text-gray-400 truncate font-medium">{image.tags}</p>
+                      <p className="text-xs text-muted-foreground dark:text-gray-500">{t('byAuthor', { values: { author: image.user } })}</p>
                     </div>
                   </Card>
                 ))}

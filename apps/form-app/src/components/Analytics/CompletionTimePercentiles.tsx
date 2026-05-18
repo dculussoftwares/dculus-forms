@@ -35,13 +35,13 @@ interface PercentileCardProps {
 }
 
 const PercentileCard: React.FC<PercentileCardProps> = ({ label, value, description, color, bgColor }) => (
-  <div className="rounded-xl p-4" style={{ backgroundColor: bgColor, border: '1px solid rgba(81,76,84,0.08)' }}>
+  <div className="rounded-xl p-4" style={{ backgroundColor: bgColor, border: '1px solid var(--tf-border-light)' }}>
     <div className="flex items-center justify-between mb-2">
-      <p className="text-xs font-medium text-[#655d67]">{label}</p>
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
       <Clock className="h-4 w-4 opacity-50" style={{ color }} />
     </div>
     <p className="text-xl font-light" style={{ color }}>{formatCompletionTime(value)}</p>
-    <p className="text-[10px] mt-1.5 text-[#655d67]">{description}</p>
+    <p className="text-[10px] mt-1.5 text-muted-foreground">{description}</p>
   </div>
 );
 
@@ -54,18 +54,18 @@ export const CompletionTimePercentiles: React.FC<CompletionTimePercentilesProps>
   
   if (loading) {
     return (
-      <div className="rounded-xl p-5 bg-white" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
+      <div className="rounded-xl p-5 bg-white" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}>
         {/* Loading skeleton */}
         <div className="flex items-center gap-1.5 mb-4">
-          <div className="h-4 w-4 rounded" style={{ backgroundColor: 'rgba(81,76,84,0.08)' }} />
-          <div className="h-4 rounded w-40" style={{ backgroundColor: 'rgba(81,76,84,0.08)' }} />
+          <div className="h-4 w-4 rounded" style={{ backgroundColor: 'var(--tf-border-light)' }} />
+          <div className="h-4 rounded w-40" style={{ backgroundColor: 'var(--tf-border-light)' }} />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="rounded-xl p-4 animate-pulse" style={{ backgroundColor: '#f7f7f8' }}>
-              <div className="h-3 rounded w-16 mb-3" style={{ backgroundColor: 'rgba(81,76,84,0.08)' }} />
-              <div className="h-5 rounded w-12 mb-2" style={{ backgroundColor: 'rgba(81,76,84,0.08)' }} />
-              <div className="h-3 rounded w-20" style={{ backgroundColor: 'rgba(81,76,84,0.06)' }} />
+            <div key={i} className="rounded-xl p-4 animate-pulse" style={{ backgroundColor: 'var(--tf-faint)' }}>
+              <div className="h-3 rounded w-16 mb-3" style={{ backgroundColor: 'var(--tf-border-light)' }} />
+              <div className="h-5 rounded w-12 mb-2" style={{ backgroundColor: 'var(--tf-border-light)' }} />
+              <div className="h-3 rounded w-20" style={{ backgroundColor: 'var(--tf-border-faint)' }} />
             </div>
           ))}
         </div>
@@ -75,26 +75,26 @@ export const CompletionTimePercentiles: React.FC<CompletionTimePercentilesProps>
 
   if (!data && !averageTime) {
     return (
-      <div className="rounded-xl p-5 bg-white" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
-        <div className="text-center py-8 text-xs text-[#655d67]">{t('noData')}</div>
+      <div className="rounded-xl p-5 bg-white" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}>
+        <div className="text-center py-8 text-xs text-muted-foreground">{t('noData')}</div>
       </div>
     );
   }
 
   /* Typeform field-icon palette for percentile cards */
   const percentiles = [
-    { label: t('average.label'), value: averageTime, description: t('average.description'), color: '#177767', bgColor: '#f4faf8' },
-    { label: t('p50.label'), value: data?.p50 || null, description: t('p50.description'), color: '#655d67', bgColor: '#f7f7f8' },
+    { label: t('average.label'), value: averageTime, description: t('average.description'), color: 'var(--tf-green)', bgColor: 'var(--tf-icon-teal)' },
+    { label: t('p50.label'), value: data?.p50 || null, description: t('p50.description'), color: 'var(--tf-muted)', bgColor: 'var(--tf-faint)' },
     { label: t('p75.label'), value: data?.p75 || null, description: t('p75.description'), color: '#8b6a18', bgColor: '#fbe19d' },
-    { label: t('p90.label'), value: data?.p90 || null, description: t('p90.description'), color: '#5c2e6b', bgColor: '#ddd6fa' },
-    { label: t('p95.label'), value: data?.p95 || null, description: t('p95.description'), color: '#3c323e', bgColor: '#f8cdd8' },
+    { label: t('p90.label'), value: data?.p90 || null, description: t('p90.description'), color: '#5c2e6b', bgColor: 'var(--tf-icon-lavender)' },
+    { label: t('p95.label'), value: data?.p95 || null, description: t('p95.description'), color: 'var(--tf-dark)', bgColor: 'var(--tf-icon-salmon)' },
   ];
 
   return (
-    <div className="rounded-xl p-5 bg-white" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
+    <div className="rounded-xl p-5 bg-white" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}>
       <div className="flex items-center gap-1.5 mb-4">
-        <TrendingUp className="h-4 w-4 text-[#655d67]" />
-        <span className="text-sm font-medium text-[#3c323e]">{t('title')}</span>
+        <TrendingUp className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm font-medium text-primary">{t('title')}</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
@@ -103,9 +103,9 @@ export const CompletionTimePercentiles: React.FC<CompletionTimePercentilesProps>
 
       {/* Insights */}
       {(averageTime || data) && (
-        <div className="mt-4 p-4 rounded-xl" style={{ backgroundColor: '#f7f7f8' }}>
-          <h4 className="text-xs font-medium mb-2 text-[#3c323e]">{t('insights.title')}</h4>
-          <div className="text-xs space-y-1 text-[#655d67]">
+        <div className="mt-4 p-4 rounded-xl" style={{ backgroundColor: 'var(--tf-faint)' }}>
+          <h4 className="text-xs font-medium mb-2 text-primary">{t('insights.title')}</h4>
+          <div className="text-xs space-y-1 text-muted-foreground">
             {averageTime && data?.p50 && (
               <p>• {t('insights.medianVsAverage', { values: { median: formatCompletionTime(data.p50), comparison: averageTime > data.p50 ? t('insights.shorter') : t('insights.longer'), average: formatCompletionTime(averageTime) } })}</p>
             )}

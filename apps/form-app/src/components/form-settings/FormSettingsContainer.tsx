@@ -58,9 +58,9 @@ const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
         );
       default:
         return (
-          <div className="rounded-xl p-10 text-center bg-white" style={{ border: '1px solid rgba(81,76,84,0.10)' }}>
-            <h3 className="text-sm font-medium mb-1 text-[#3c323e]">Settings Configuration</h3>
-            <p className="text-xs text-[#655d67]">This section is coming soon.</p>
+          <div className="rounded-xl p-10 text-center bg-white" style={{ border: '1px solid var(--tf-border-medium)' }}>
+            <h3 className="text-sm font-medium mb-1 text-primary">Settings Configuration</h3>
+            <p className="text-xs text-muted-foreground">This section is coming soon.</p>
           </div>
         );
     }
@@ -68,9 +68,9 @@ const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
 
   return (
     /* Typeform two-column layout: left nav + right content */
-    <div className="flex min-h-[600px] rounded-xl overflow-hidden bg-white" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
+    <div className="flex min-h-[600px] rounded-xl overflow-hidden bg-white" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}>
       {/* Left sidebar — Typeform settings nav */}
-      <div className="w-56 shrink-0 p-5 overflow-y-auto" style={{ borderRight: '1px solid rgba(81,76,84,0.10)', backgroundColor: '#faf9fb' }}>
+      <div className="w-56 shrink-0 p-5 overflow-y-auto" style={{ borderRight: '1px solid var(--tf-border-medium)', backgroundColor: '#faf9fb' }}>
         <SettingsSidebar selectedSection={selectedSection} onSectionChange={handleSectionChange} />
       </div>
 

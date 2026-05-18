@@ -217,7 +217,7 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
               ? 'border-blue-500 shadow-lg'
               : isSelected
                 ? 'border-blue-400 shadow-md ring-2 ring-blue-200 dark:ring-blue-800 bg-blue-50/50 dark:bg-blue-950/50'
-                : 'border-[rgba(81,76,84,0.10)] dark:border-gray-700 hover:border-[rgba(81,76,84,0.15)] dark:hover:border-gray-600'
+                : 'border-[var(--tf-border-medium)] dark:border-gray-700 hover:border-[var(--tf-border-strong)] dark:hover:border-gray-600'
           }
           group-hover:shadow-md
         `}
@@ -232,18 +232,18 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
                 {...listeners}
                 data-drag-handle
                 data-testid={`field-drag-handle-${index + 1}`}
-                className="flex-shrink-0 p-1 cursor-grab active:cursor-grabbing text-[#655d67] hover:text-[#4c414e] dark:hover:text-gray-300 transition-colors"
+                className="flex-shrink-0 p-1 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground dark:hover:text-gray-300 transition-colors"
               >
                 <GripVertical className="w-4 h-4" />
               </div>
             ) : (
-              <div className="flex-shrink-0 p-1 text-[#a09aa2] dark:text-gray-600">
+              <div className="flex-shrink-0 p-1 text-[var(--tf-light-muted)] dark:text-gray-600">
                 <GripVertical className="w-4 h-4" />
               </div>
             )}
 
             {/* Field Icon */}
-            <div className="flex-shrink-0 p-2 bg-[#f7f7f8] dark:bg-gray-800 rounded-lg text-[#4c414e] dark:text-gray-400">
+            <div className="flex-shrink-0 p-2 bg-background dark:bg-gray-800 rounded-lg text-foreground dark:text-gray-400">
               {FIELD_ICONS[field.type] || <Type className="w-4 h-4" />}
             </div>
 
@@ -263,7 +263,7 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
 
                   {/* Field Preview */}
                   <div
-                    className="p-3 bg-[#f7f7f8] dark:bg-gray-800/50 rounded-lg border border-[rgba(81,76,84,0.10)] dark:border-gray-700"
+                    className="p-3 bg-background dark:bg-gray-800/50 rounded-lg border border-[var(--tf-border-medium)] dark:border-gray-700"
                     data-testid={`field-content-${index + 1}`}
                   >
                     <FieldPreview
@@ -292,7 +292,7 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
                         variant="ghost"
                         onClick={onEdit}
                         disabled={!isConnected}
-                        className="h-8 w-8 text-[#655d67] hover:text-blue-600"
+                        className="h-8 w-8 text-muted-foreground hover:text-blue-600"
                         title={t('tooltips.fieldSettings')}
                         data-testid={`field-settings-button-${index + 1}`}
                       >
@@ -305,7 +305,7 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
                         variant="ghost"
                         onClick={onDuplicate}
                         disabled={!isConnected}
-                        className="h-8 w-8 text-[#655d67] hover:text-blue-600"
+                        className="h-8 w-8 text-muted-foreground hover:text-blue-600"
                         title={t('tooltips.duplicateField')}
                       >
                         <Copy className="w-4 h-4" />
@@ -325,7 +325,7 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
                               size="icon"
                               variant="ghost"
                               disabled={!isConnected}
-                              className="h-8 w-8 text-[#655d67] hover:text-blue-600"
+                              className="h-8 w-8 text-muted-foreground hover:text-blue-600"
                               title={t('tooltips.pageActions')}
                             >
                               <MoreVertical className="w-4 h-4" />
@@ -341,7 +341,7 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
                           variant="ghost"
                           onClick={onMoveUp}
                           disabled={!isConnected || index === 0}
-                          className="h-8 w-8 text-[#655d67] hover:text-blue-600 disabled:opacity-30"
+                          className="h-8 w-8 text-muted-foreground hover:text-blue-600 disabled:opacity-30"
                           title={t('tooltips.moveUp') || 'Move up'}
                         >
                           <ArrowUp className="w-4 h-4" />
@@ -351,7 +351,7 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
                           variant="ghost"
                           onClick={onMoveDown}
                           disabled={!isConnected || index === totalFields - 1}
-                          className="h-8 w-8 text-[#655d67] hover:text-blue-600 disabled:opacity-30"
+                          className="h-8 w-8 text-muted-foreground hover:text-blue-600 disabled:opacity-30"
                           title={t('tooltips.moveDown') || 'Move down'}
                         >
                           <ArrowDown className="w-4 h-4" />
@@ -364,7 +364,7 @@ export const DraggableField: React.FC<DraggableFieldProps> = ({
                         variant="ghost"
                         onClick={onRemove}
                         disabled={!isConnected}
-                        className="h-8 w-8 text-[#655d67] hover:text-[#ce5d55]"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
                         title={t('tooltips.deleteField')}
                       >
                         <Trash2 className="w-4 h-4" />

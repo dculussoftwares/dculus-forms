@@ -6,14 +6,14 @@ import { useTranslation } from '../hooks/useTranslation';
 
 /* Typeform field-icon palette for admin stats */
 const STAT_COLORS = [
-  { iconBg: '#f8cdd8', iconColor: '#3c323e' },  // Organizations — salmon
-  { iconBg: '#f4faf8', iconColor: '#177767' },  // Users — teal
+  { iconBg: 'var(--tf-icon-salmon)', iconColor: 'var(--tf-dark)' },  // Organizations — salmon
+  { iconBg: 'var(--tf-icon-teal)', iconColor: 'var(--tf-green)' },  // Users — teal
   { iconBg: '#fbe19d', iconColor: '#8b6a18' },  // Forms — yellow
-  { iconBg: '#ddd6fa', iconColor: '#5c2e6b' },  // Responses — lavender
+  { iconBg: 'var(--tf-icon-lavender)', iconColor: '#5c2e6b' },  // Responses — lavender
 ];
 
 const STORAGE_COLORS = [
-  { iconBg: '#dedcde', iconColor: '#4c414e' },  // S3 — gray
+  { iconBg: 'var(--tf-icon-gray)', iconColor: 'var(--tf-text)' },  // S3 — gray
   { iconBg: '#c4e3ba', iconColor: '#2d6236' },  // MongoDB — green
 ];
 
@@ -21,14 +21,14 @@ const STORAGE_COLORS = [
 const StatCard: React.FC<{ name: string; value: string; subtitle?: string; icon: React.ElementType; iconBg: string; iconColor: string; large?: boolean }> = ({
   name, value, subtitle, icon: Icon, iconBg, iconColor, large = false,
 }) => (
-  <div className="rounded-xl bg-white p-5 flex items-center gap-4" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
+  <div className="rounded-xl bg-white p-5 flex items-center gap-4" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}>
     <div className={`${large ? 'w-12 h-12' : 'w-10 h-10'} rounded-xl flex items-center justify-center shrink-0`} style={{ backgroundColor: iconBg }}>
       <Icon className={large ? 'h-6 w-6' : 'h-5 w-5'} style={{ color: iconColor }} />
     </div>
     <div className="min-w-0">
-      <p className="text-xs font-medium truncate text-[#655d67]">{name}</p>
-      <p className={`font-light truncate text-[#262627] ${large ? 'text-3xl' : 'text-2xl'}`}>{value}</p>
-      {subtitle && <p className="text-xs mt-0.5 text-[#655d67]">{subtitle}</p>}
+      <p className="text-xs font-medium truncate text-muted-foreground">{name}</p>
+      <p className={`font-light truncate text-primary ${large ? 'text-3xl' : 'text-2xl'}`}>{value}</p>
+      {subtitle && <p className="text-xs mt-0.5 text-muted-foreground">{subtitle}</p>}
     </div>
   </div>
 );
@@ -56,7 +56,7 @@ export default function DashboardPage() {
       <EmptyState
         variant="error"
         className="min-h-64"
-        icon={<AlertCircle className="h-6 w-6 text-[#ce5d55]" />}
+        icon={<AlertCircle className="h-6 w-6 text-destructive" />}
         title={t('error.unableToLoad')}
         description={error.message || t('error.checkConnection')}
       />
@@ -66,26 +66,26 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-semibold text-[#3c323e]">{t('title')}</h1>
-        <p className="text-xs mt-0.5 text-[#655d67]">{t('welcome')}</p>
+        <h1 className="text-lg font-semibold text-primary">{t('title')}</h1>
+        <p className="text-xs mt-0.5 text-muted-foreground">{t('welcome')}</p>
       </div>
 
       {/* Main stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           loading
-            ? <div key={stat.name} className="rounded-xl bg-white p-5 animate-pulse h-20" style={{ border: '1px solid rgba(81,76,84,0.10)' }} />
+            ? <div key={stat.name} className="rounded-xl bg-white p-5 animate-pulse h-20" style={{ border: '1px solid var(--tf-border-medium)' }} />
             : <StatCard key={stat.name} {...stat} />
         ))}
       </div>
 
       {/* Storage */}
       <div>
-        <h2 className="text-sm font-semibold mb-3 text-[#3c323e]">{t('storage.title')}</h2>
+        <h2 className="text-sm font-semibold mb-3 text-primary">{t('storage.title')}</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {storageStats.map((stat) => (
             loading
-              ? <div key={stat.name} className="rounded-xl bg-white p-5 animate-pulse h-24" style={{ border: '1px solid rgba(81,76,84,0.10)' }} />
+              ? <div key={stat.name} className="rounded-xl bg-white p-5 animate-pulse h-24" style={{ border: '1px solid var(--tf-border-medium)' }} />
               : <StatCard key={stat.name} {...stat} large />
           ))}
         </div>
@@ -94,20 +94,20 @@ export default function DashboardPage() {
       {/* Bottom row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Recent orgs placeholder */}
-        <div className="rounded-xl bg-white p-5" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
-          <h3 className="text-sm font-semibold mb-4 text-[#3c323e]">{t('recentActivity.recentOrganizations')}</h3>
+        <div className="rounded-xl bg-white p-5" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}>
+          <h3 className="text-sm font-semibold mb-4 text-primary">{t('recentActivity.recentOrganizations')}</h3>
           <div className="flex flex-col items-center justify-center py-6">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ backgroundColor: '#f7f7f8' }}>
-              <Building2 className="h-5 w-5 text-[#dedcde]" />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ backgroundColor: 'var(--tf-faint)' }}>
+              <Building2 className="h-5 w-5 text-[var(--tf-icon-gray)]" />
             </div>
-            <p className="text-xs font-medium text-[#655d67]">{t('recentActivity.noOrganizations')}</p>
-            <p className="text-[11px] mt-0.5" style={{ color: '#655d67', opacity: 0.7 }}>{t('recentActivity.connectBackend')}</p>
+            <p className="text-xs font-medium text-muted-foreground">{t('recentActivity.noOrganizations')}</p>
+            <p className="text-[11px] mt-0.5" style={{ color: 'var(--tf-muted)', opacity: 0.7 }}>{t('recentActivity.connectBackend')}</p>
           </div>
         </div>
 
         {/* System health */}
-        <div className="rounded-xl bg-white p-5" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
-          <h3 className="text-sm font-semibold mb-4 text-[#3c323e]">{t('systemHealth.title')}</h3>
+        <div className="rounded-xl bg-white p-5" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}>
+          <h3 className="text-sm font-semibold mb-4 text-primary">{t('systemHealth.title')}</h3>
           <div className="space-y-3">
             {[
               { label: t('systemHealth.database'),       status: t('systemHealth.connected') },
@@ -115,10 +115,10 @@ export default function DashboardPage() {
               { label: t('systemHealth.authentication'), status: t('systemHealth.working') },
             ].map(({ label, status }) => (
               <div key={label} className="flex items-center justify-between">
-                <span className="text-xs text-[#655d67]">{label}</span>
+                <span className="text-xs text-muted-foreground">{label}</span>
                 <span
                   className="px-2 py-0.5 rounded-full text-[10px] font-medium"
-                  style={{ backgroundColor: 'rgba(23,119,103,0.08)', color: '#177767', border: '1px solid rgba(23,119,103,0.16)' }}
+                  style={{ backgroundColor: 'var(--tf-green-bg)', color: 'var(--tf-green)', border: '1px solid var(--tf-green-bg-md)' }}
                 >
                   {status}
                 </span>

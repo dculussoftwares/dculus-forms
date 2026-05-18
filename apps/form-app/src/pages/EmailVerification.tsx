@@ -127,15 +127,15 @@ export const EmailVerification = () => {
   return (
     <div className="h-screen flex overflow-hidden">
       {/* Left dark panel */}
-      <div className="hidden lg:flex lg:flex-col lg:w-[480px] xl:w-[560px] shrink-0 p-10 justify-between" style={{ backgroundColor: '#2a222b' }}>
+      <div className="hidden lg:flex lg:flex-col lg:w-[480px] xl:w-[560px] shrink-0 p-10 justify-between" style={{ backgroundColor: 'var(--tf-darkest)' }}>
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#3c323e' }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--tf-dark)' }}>
             <FileText className="w-4 h-4 text-white" />
           </div>
           <span className="text-white font-semibold text-lg">{t('hero.productName')}</span>
         </div>
         <div className="space-y-3">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--tf-white-overlay)' }}>
             <Mail className="w-6 h-6 text-[rgba(255,255,255,0.70)]" />
           </div>
           <h2 className="text-white text-3xl font-light leading-tight">{t('hero.tagline')}</h2>
@@ -146,10 +146,10 @@ export const EmailVerification = () => {
 
       {/* Right white panel */}
       <div className="flex-1 flex flex-col overflow-y-auto bg-white">
-        <div className="flex items-center justify-end px-8 py-5" style={{ borderBottom: '1px solid rgba(81,76,84,0.08)' }}>
-          <span className="text-sm text-[#655d67]">
+        <div className="flex items-center justify-end px-8 py-5" style={{ borderBottom: '1px solid var(--tf-border-light)' }}>
+          <span className="text-sm text-muted-foreground">
             {fromSignIn ? t('links.backToSignIn') : t('links.backToSignUp')}{' '}
-            <Link to={fromSignIn ? '/signin' : '/signup'} className="font-medium text-[#3c323e]">
+            <Link to={fromSignIn ? '/signin' : '/signup'} className="font-medium text-primary">
               {fromSignIn ? t('links.signIn') : t('links.signUp')}
             </Link>
           </span>
@@ -167,13 +167,13 @@ export const EmailVerification = () => {
             </Button>
 
             <div className="mb-7">
-              <h1 className="text-2xl font-semibold mb-1.5 text-[#3c323e]">{t('meta.heading')}</h1>
-              <p className="text-sm text-[#655d67]">{t('meta.subheading', { values: { email } })}</p>
+              <h1 className="text-2xl font-semibold mb-1.5 text-primary">{t('meta.heading')}</h1>
+              <p className="text-sm text-muted-foreground">{t('meta.subheading', { values: { email } })}</p>
             </div>
 
             <form onSubmit={handleVerifyOTP} className="space-y-5">
               <div>
-                <Label className="text-xs font-medium block mb-3 text-center text-[#4c414e]">
+                <Label className="text-xs font-medium block mb-3 text-center text-foreground">
                   {t('form.otpLabel')}
                 </Label>
                 <OTPInput
@@ -183,13 +183,13 @@ export const EmailVerification = () => {
                   hasError={!!errors.otp}
                 />
                 {errors.otp && (
-                  <p className="text-xs mt-2 text-center text-[#ce5d55]">{errors.otp}</p>
+                  <p className="text-xs mt-2 text-center text-destructive">{errors.otp}</p>
                 )}
               </div>
 
               <div className="text-center">
                 {countdown > 0 ? (
-                  <span className="text-xs flex items-center justify-center gap-1.5 text-[#655d67]">
+                  <span className="text-xs flex items-center justify-center gap-1.5 text-muted-foreground">
                     <Timer className="w-3.5 h-3.5" />
                     {t('form.countdown', { values: { seconds: countdown } })}
                   </span>
@@ -200,7 +200,7 @@ export const EmailVerification = () => {
                     size="sm"
                     onClick={handleResendOTP}
                     disabled={isLoading}
-                    className="text-xs font-medium h-7 px-2 text-[#3c323e]"
+                    className="text-xs font-medium h-7 px-2 text-primary"
                   >
                     {t('form.resend')}
                   </Button>
@@ -208,7 +208,7 @@ export const EmailVerification = () => {
               </div>
 
               {errors.submit && (
-                <p className="text-xs text-center py-2 px-3 rounded-lg" style={{ backgroundColor: 'rgba(206,93,85,0.06)', color: '#ce5d55', border: '1px solid rgba(206,93,85,0.14)' }}>
+                <p className="text-xs text-center py-2 px-3 rounded-lg" style={{ backgroundColor: 'var(--tf-error-bg)', color: 'var(--tf-error)', border: '1px solid var(--tf-error-bg-md)' }}>
                   {errors.submit}
                 </p>
               )}

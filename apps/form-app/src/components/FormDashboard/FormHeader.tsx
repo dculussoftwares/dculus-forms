@@ -72,7 +72,7 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
   return (
     <div
       className="bg-white dark:bg-card rounded-xl overflow-hidden"
-      style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}
+      style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}
     >
       {/* Main section */}
       <div className="flex items-start justify-between gap-6 p-5">
@@ -82,9 +82,9 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
           {/* Form icon — Typeform salmon field-icon style */}
           <div
             className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: '#f8cdd8' }}
+            style={{ backgroundColor: 'var(--tf-icon-salmon)' }}
           >
-            <FileText className="w-5 h-5 text-[#3c323e]" />
+            <FileText className="w-5 h-5 text-primary" />
           </div>
 
           <div className="flex-1 min-w-0">
@@ -94,29 +94,29 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
                 className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium"
                 data-testid="form-status-badge"
                 style={form.isPublished
-                  ? { backgroundColor: 'rgba(23,119,103,0.08)', color: '#177767', border: '1px solid rgba(23,119,103,0.16)' }
+                  ? { backgroundColor: 'var(--tf-green-bg)', color: 'var(--tf-green)', border: '1px solid var(--tf-green-bg-md)' }
                   : { backgroundColor: 'rgba(190,153,58,0.08)', color: '#9c7818', border: '1px solid rgba(190,153,58,0.16)' }
                 }
               >
                 <span
                   className="w-1.5 h-1.5 rounded-full"
-                  style={{ backgroundColor: form.isPublished ? '#177767' : '#be993a' }}
+                  style={{ backgroundColor: form.isPublished ? 'var(--tf-green)' : '#be993a' }}
                 />
                 {form.isPublished ? t('header.status.live') : t('header.status.draft')}
               </span>
 
-              <span className="flex items-center gap-1 text-xs text-[#655d67]">
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Calendar className="w-3 h-3" />
                 {formattedCreatedAt}
               </span>
             </div>
 
-            <h1 className="text-xl font-semibold leading-tight tracking-tight text-[#3c323e]">
+            <h1 className="text-xl font-semibold leading-tight tracking-tight text-primary">
               {form.title}
             </h1>
 
             {(form.description) && (
-              <p className="text-sm mt-1 text-[#655d67]">
+              <p className="text-sm mt-1 text-muted-foreground">
                 {form.description}
               </p>
             )}
@@ -163,7 +163,7 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="h-8 w-8 p-0 flex-shrink-0">
-                <MoreHorizontal className="h-4 w-4 text-[#655d67]" />
+                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
                 <span className="sr-only">{t('header.actions.more')}</span>
               </Button>
             </DropdownMenuTrigger>
@@ -176,7 +176,7 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
               <DropdownMenuItem
                 onClick={onDelete}
                 disabled={deleteLoading}
-                className="text-[#ce5d55] focus:text-red-700 focus:bg-[rgba(206,93,85,0.06)]"
+                className="text-destructive focus:text-red-700 focus:bg-[var(--tf-error-bg)]"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 {deleteLoading ? t('header.actions.deleting') : t('header.actions.delete')}
@@ -189,13 +189,13 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
       {/* Footer action strip — Typeform-style ghost tab bar */}
       <div
         className="flex items-center gap-0.5 px-4 py-1.5"
-        style={{ borderTop: '1px solid rgba(81,76,84,0.08)', backgroundColor: 'rgba(81,76,84,0.02)' }}
+        style={{ borderTop: '1px solid var(--tf-border-light)', backgroundColor: 'rgba(81,76,84,0.02)' }}
       >
         <Button
           variant="ghost"
           size="sm"
           onClick={onPreview}
-          className="gap-1.5 text-xs h-8 text-[#655d67]"
+          className="gap-1.5 text-xs h-8 text-muted-foreground"
         >
           <Eye className="h-3.5 w-3.5" />
           {t('header.actions.preview')}
@@ -206,7 +206,7 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
             variant="ghost"
             size="sm"
             onClick={onShare}
-            className="gap-1.5 text-xs h-8 text-[#655d67]"
+            className="gap-1.5 text-xs h-8 text-muted-foreground"
           >
             <Share2 className="h-3.5 w-3.5" />
             {t('header.actions.share')}
@@ -217,7 +217,7 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
           variant="ghost"
           size="sm"
           onClick={onViewAnalytics}
-          className="gap-1.5 text-xs h-8 text-[#655d67]"
+          className="gap-1.5 text-xs h-8 text-muted-foreground"
         >
           <BarChart3 className="h-3.5 w-3.5" />
           {t('header.actions.analytics')}

@@ -40,7 +40,7 @@ const ResponsesIndividual: React.FC = () => {
       <MainLayout title={t('layout.title')} breadcrumbs={breadcrumbs}>
         <EmptyState
           variant="error"
-          icon={<AlertCircle className="h-6 w-6 text-[#ce5d55]" />}
+          icon={<AlertCircle className="h-6 w-6 text-destructive" />}
           title={t('errors.formNotFound.title')}
           description={t('errors.formNotFound.description')}
         />
@@ -74,43 +74,43 @@ const ResponsesIndividual: React.FC = () => {
         {/* Response cards */}
         <div
           className="rounded-xl bg-white overflow-hidden"
-          style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}
+          style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}
         >
           {/* Header */}
-          <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid rgba(81,76,84,0.08)' }}>
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#f8cdd8' }}>
-              <UserCheck className="h-4 w-4 text-[#3c323e]" />
+          <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid var(--tf-border-light)' }}>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--tf-icon-salmon)' }}>
+              <UserCheck className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-[#3c323e]">{t('content.individualResponseDetails.title')}</h2>
-              <p className="text-xs text-[#655d67]">{t('content.individualResponseDetails.description')}</p>
+              <h2 className="text-sm font-semibold text-primary">{t('content.individualResponseDetails.title')}</h2>
+              <p className="text-xs text-muted-foreground">{t('content.individualResponseDetails.description')}</p>
             </div>
           </div>
 
           {mockResponses.length === 0 ? (
             <EmptyState
-              icon={<UserCheck className="h-6 w-6 text-[#dedcde]" />}
+              icon={<UserCheck className="h-6 w-6 text-[var(--tf-icon-gray)]" />}
               title={t('content.emptyState.title')}
               description={t('content.emptyState.description')}
             />
           ) : (
-            <div className="divide-y" style={{ borderColor: 'rgba(81,76,84,0.08)' }}>
+            <div className="divide-y" style={{ borderColor: 'var(--tf-border-light)' }}>
               {mockResponses.map((response) => (
                 <div key={response.id} className="p-5">
                   {/* Response header */}
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <p className="text-sm font-medium text-[#3c323e]">
+                      <p className="text-sm font-medium text-primary">
                         {t('content.response.responseNumber', { values: { id: response.id } })}
                       </p>
-                      <p className="text-xs mt-0.5 text-[#655d67]">
+                      <p className="text-xs mt-0.5 text-muted-foreground">
                         {t('content.response.submittedOn', { values: { date: formatDate(response.submittedAt) } })}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <span
                         className="px-2.5 py-0.5 rounded-full text-xs font-medium"
-                        style={{ backgroundColor: 'rgba(23,119,103,0.08)', color: '#177767', border: '1px solid rgba(23,119,103,0.16)' }}
+                        style={{ backgroundColor: 'var(--tf-green-bg)', color: 'var(--tf-green)', border: '1px solid var(--tf-green-bg-md)' }}
                       >
                         {response.status}
                       </span>
@@ -127,17 +127,17 @@ const ResponsesIndividual: React.FC = () => {
                   {/* Response fields */}
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                      <p className="text-xs font-medium mb-1 text-[#655d67]">{t('content.fields.name')}</p>
-                      <p className="text-sm text-[#3c323e]">{response.data.name}</p>
+                      <p className="text-xs font-medium mb-1 text-muted-foreground">{t('content.fields.name')}</p>
+                      <p className="text-sm text-primary">{response.data.name}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium mb-1 text-[#655d67]">{t('content.fields.email')}</p>
-                      <p className="text-sm text-[#3c323e]">{response.data.email}</p>
+                      <p className="text-xs font-medium mb-1 text-muted-foreground">{t('content.fields.email')}</p>
+                      <p className="text-sm text-primary">{response.data.email}</p>
                     </div>
                   </div>
                   <div className="mt-3">
-                    <p className="text-xs font-medium mb-1.5 text-[#655d67]">{t('content.fields.message')}</p>
-                    <p className="text-sm p-3 rounded-lg" style={{ backgroundColor: '#f7f7f8', color: '#4c414e' }}>
+                    <p className="text-xs font-medium mb-1.5 text-muted-foreground">{t('content.fields.message')}</p>
+                    <p className="text-sm p-3 rounded-lg" style={{ backgroundColor: 'var(--tf-faint)', color: 'var(--tf-text)' }}>
                       {response.data.message}
                     </p>
                   </div>

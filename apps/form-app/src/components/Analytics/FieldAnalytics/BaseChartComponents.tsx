@@ -67,7 +67,7 @@ const HelpTooltip: React.FC<HelpTooltipProps> = ({ title, description }) => {
         size="icon"
         onMouseEnter={() => setIsVisible(true)}
         onMouseLeave={() => setIsVisible(false)}
-        className="text-[#655d67] hover:text-[#4c414e] h-auto w-auto p-0"
+        className="text-muted-foreground hover:text-foreground h-auto w-auto p-0"
         aria-label={`Help: ${title}`}
       >
         <HelpCircle className="h-4 w-4" />
@@ -76,7 +76,7 @@ const HelpTooltip: React.FC<HelpTooltipProps> = ({ title, description }) => {
       {isVisible && (
         <div className="absolute z-10 left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-64 p-3 bg-gray-900 text-white text-sm rounded-lg shadow-lg">
           <div className="font-medium mb-1">{title}</div>
-          <div className="text-[#a09aa2]">{description}</div>
+          <div className="text-[var(--tf-light-muted)]">{description}</div>
           <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
         </div>
       )}
@@ -88,15 +88,15 @@ const HelpTooltip: React.FC<HelpTooltipProps> = ({ title, description }) => {
 const CustomTooltip = ({ active, payload, label, formatter }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white p-3 border rounded-lg shadow-lg border-[rgba(81,76,84,0.10)]">
-        <p className="font-medium text-[#3c323e] mb-2">{label}</p>
+      <div className="bg-white p-3 border rounded-lg shadow-lg border-[var(--tf-border-medium)]">
+        <p className="font-medium text-primary mb-2">{label}</p>
         {payload.map((entry: any, index: number) => (
           <div key={index} className="flex items-center gap-2 text-sm">
             <div
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: entry.color }}
             />
-            <span className="text-[#4c414e]">
+            <span className="text-foreground">
               {entry.name}:{' '}
               {(() => {
                 try {
@@ -165,17 +165,17 @@ export const StatCard: React.FC<StatCardProps> = ({
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-[#4c414e]">{title}</p>
+            <p className="text-sm font-medium text-foreground">{title}</p>
             {helpText && <HelpTooltip title={title} description={helpText} />}
           </div>
-          {icon && <div className="text-[#655d67]">{icon}</div>}
+          {icon && <div className="text-muted-foreground">{icon}</div>}
         </div>
         <div className="flex items-baseline justify-between">
-          <p className="text-2xl font-bold text-[#3c323e]">{displayValue}</p>
+          <p className="text-2xl font-bold text-primary">{displayValue}</p>
           {trend && (
             <div
               className={`flex items-center text-sm ${
-                trend.isPositive ? 'text-primary' : 'text-[#ce5d55]'
+                trend.isPositive ? 'text-primary' : 'text-destructive'
               }`}
             >
               <span>
@@ -184,7 +184,7 @@ export const StatCard: React.FC<StatCardProps> = ({
             </div>
           )}
         </div>
-        {subtitle && <p className="text-sm text-[#655d67] mt-1">{subtitle}</p>}
+        {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
       </CardContent>
     </Card>
   );
@@ -237,7 +237,7 @@ export const EnhancedPieChart: React.FC<EnhancedPieChartProps> = ({
           <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-64 text-[#655d67]">
+          <div className="flex items-center justify-center h-64 text-muted-foreground">
             {finalEmptyMessage}
           </div>
         </CardContent>
@@ -340,7 +340,7 @@ export const EnhancedBarChart: React.FC<EnhancedBarChartProps> = ({
           <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-64 text-[#655d67]">
+          <div className="flex items-center justify-center h-64 text-muted-foreground">
             {finalEmptyMessage}
           </div>
         </CardContent>
@@ -474,7 +474,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
           <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-64 text-[#655d67]">
+          <div className="flex items-center justify-center h-64 text-muted-foreground">
             {finalEmptyMessage}
           </div>
         </CardContent>
@@ -570,7 +570,7 @@ export const Histogram: React.FC<HistogramProps> = ({
           <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-64 text-[#655d67]">
+          <div className="flex items-center justify-center h-64 text-muted-foreground">
             {finalEmptyMessage}
           </div>
         </CardContent>
@@ -658,7 +658,7 @@ export const MultiBarChart: React.FC<MultiBarChartProps> = ({
           <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-64 text-[#655d67]">
+          <div className="flex items-center justify-center h-64 text-muted-foreground">
             {finalEmptyMessage}
           </div>
         </CardContent>

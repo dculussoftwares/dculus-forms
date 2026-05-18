@@ -46,10 +46,10 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
           <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-xl flex items-center justify-center mx-auto mb-4">
             <Loader2 className="w-6 h-6 text-blue-600 dark:text-blue-400 animate-spin" />
           </div>
-          <TypographyH1 className="text-2xl font-semibold text-[#3c323e] dark:text-white mb-2">
+          <TypographyH1 className="text-2xl font-semibold text-primary dark:text-white mb-2">
             {displayTitle}
           </TypographyH1>
-          <TypographyP className="text-[#4c414e] dark:text-gray-400">
+          <TypographyP className="text-foreground dark:text-gray-400">
             {displayDescription}
           </TypographyP>
         </div>
@@ -59,9 +59,9 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
           {[...Array(2)].map((_, i) => (
             <div
               key={i}
-              className="bg-white dark:bg-gray-900 rounded-xl border border-[rgba(81,76,84,0.10)] dark:border-gray-700 overflow-hidden"
+              className="bg-white dark:bg-gray-900 rounded-xl border border-[var(--tf-border-medium)] dark:border-gray-700 overflow-hidden"
             >
-              <div className="px-6 py-4 border-b border-[rgba(81,76,84,0.10)] dark:border-gray-700 bg-[#f7f7f8] dark:bg-gray-800/50">
+              <div className="px-6 py-4 border-b border-[var(--tf-border-medium)] dark:border-gray-700 bg-background dark:bg-gray-800/50">
                 <div className="animate-pulse flex items-center space-x-3">
                   <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
                   <div className="space-y-1 flex-1">
@@ -88,10 +88,10 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
     return (
       <div className="text-center py-8">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-[#3c323e] dark:text-white mb-2">
+        <h2 className="text-xl font-semibold text-primary dark:text-white mb-2">
           {displayTitle}
         </h2>
-        <p className="text-[#4c414e] dark:text-gray-400">{displayDescription}</p>
+        <p className="text-foreground dark:text-gray-400">{displayDescription}</p>
       </div>
     );
   }
@@ -101,10 +101,10 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 dark:from-gray-900 dark:to-blue-950/30 flex items-center justify-center">
       <div className="text-center">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
-        <h1 className="text-xl font-semibold text-[#3c323e] dark:text-white mb-2">
+        <h1 className="text-xl font-semibold text-primary dark:text-white mb-2">
           {displayTitle}
         </h1>
-        <p className="text-[#4c414e] dark:text-gray-400">{displayDescription}</p>
+        <p className="text-foreground dark:text-gray-400">{displayDescription}</p>
       </div>
     </div>
   );

@@ -264,7 +264,7 @@ const ResponseEdit: React.FC = () => {
       >
         <EmptyState
           variant="error"
-          icon={<AlertCircle className="h-6 w-6 text-[#ce5d55]" />}
+          icon={<AlertCircle className="h-6 w-6 text-destructive" />}
           title={!formData?.form ? t('errors.formNotFound.title') : t('errors.responseNotFound.title')}
           description={!formData?.form ? t('errors.formNotFound.description') : t('errors.responseNotFound.description')}
           action={
@@ -345,7 +345,7 @@ const ResponseEdit: React.FC = () => {
       {/* Header */}
       <div
         className="flex items-center gap-3 pb-4 mb-4 flex-shrink-0"
-        style={{ borderBottom: '1px solid rgba(81,76,84,0.10)' }}
+        style={{ borderBottom: '1px solid var(--tf-border-medium)' }}
       >
         <Button
           onClick={() => navigate(`/dashboard/form/${formId}/responses`)}
@@ -355,8 +355,8 @@ const ResponseEdit: React.FC = () => {
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'rgba(81,76,84,0.12)' }} />
-        <h1 className="text-sm font-semibold truncate flex-1 text-[#3c323e]">
+        <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'var(--tf-border)' }} />
+        <h1 className="text-sm font-semibold truncate flex-1 text-primary">
           {t('header.editingResponse', { values: { responseId: response.id.slice(-6) } })}
         </h1>
       </div>
@@ -379,10 +379,10 @@ const ResponseEdit: React.FC = () => {
           <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(42,34,43,0.5)' }}>
             <div className="rounded-xl p-6 max-w-sm mx-4" style={{ backgroundColor: 'white', boxShadow: '0 20px 48px rgba(60,50,62,0.20)' }}>
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full border-2 animate-spin shrink-0" style={{ borderColor: 'rgba(81,76,84,0.15)', borderTopColor: '#3c323e' }} />
+                <div className="w-8 h-8 rounded-full border-2 animate-spin shrink-0" style={{ borderColor: 'var(--tf-border-strong)', borderTopColor: 'var(--tf-dark)' }} />
                 <div>
-                  <p className="text-sm font-semibold text-[#3c323e]">{t('loading.updating')}</p>
-                  <p className="text-xs text-[#655d67]">{t('loading.pleaseWait')}</p>
+                  <p className="text-sm font-semibold text-primary">{t('loading.updating')}</p>
+                  <p className="text-xs text-muted-foreground">{t('loading.pleaseWait')}</p>
                 </div>
               </div>
             </div>

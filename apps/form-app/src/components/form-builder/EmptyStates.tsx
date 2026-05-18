@@ -13,10 +13,10 @@ export const MissingFormId: React.FC = () => {
         <FileText className="w-8 h-8 text-blue-600 dark:text-blue-400" />
       </div>
       <div className="space-y-2">
-        <TypographyH1 className="text-2xl font-semibold text-[#3c323e] dark:text-white">
+        <TypographyH1 className="text-2xl font-semibold text-primary dark:text-white">
           {t('missingFormId.title')}
         </TypographyH1>
-        <TypographyP className="text-[#4c414e] dark:text-gray-400">
+        <TypographyP className="text-foreground dark:text-gray-400">
           {t('missingFormId.message')}
         </TypographyP>
       </div>
@@ -41,10 +41,10 @@ export const EmptyFormState: React.FC<EmptyFormStateProps> = ({
     <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
       <Plus className="w-10 h-10 text-white" />
     </div>
-    <TypographyH1 className="text-3xl font-semibold text-[#3c323e] dark:text-white mb-3">
+    <TypographyH1 className="text-3xl font-semibold text-primary dark:text-white mb-3">
       {t('emptyForm.title')}
     </TypographyH1>
-    <TypographyP className="text-lg text-[#4c414e] dark:text-gray-400 mb-8 max-w-md mx-auto">
+    <TypographyP className="text-lg text-foreground dark:text-gray-400 mb-8 max-w-md mx-auto">
       {t('emptyForm.message')}
     </TypographyP>
     <Button

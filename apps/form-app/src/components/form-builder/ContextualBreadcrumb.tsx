@@ -50,7 +50,7 @@ export const ContextualBreadcrumb: React.FC<ContextualBreadcrumbProps> = ({
   }
 
   return (
-    <div className="flex items-center justify-between px-6 py-3 border-b border-[rgba(81,76,84,0.10)] dark:border-gray-700 bg-white dark:bg-gray-900">
+    <div className="flex items-center justify-between px-6 py-3 border-b border-[var(--tf-border-medium)] dark:border-gray-700 bg-white dark:bg-gray-900">
       {/* Breadcrumb */}
       <div className="flex items-center space-x-2 flex-1 min-w-0">
         {breadcrumbs.map((item, index) => {
@@ -68,8 +68,8 @@ export const ContextualBreadcrumb: React.FC<ContextualBreadcrumbProps> = ({
                   ${item.isActive
                     ? 'text-blue-600 dark:text-blue-400 font-medium'
                     : item.onClick
-                    ? 'text-[#4c414e] dark:text-gray-400 hover:text-[#3c323e] dark:hover:text-gray-200'
-                    : 'text-[#4c414e] dark:text-gray-400'
+                    ? 'text-foreground dark:text-gray-400 hover:text-primary dark:hover:text-gray-200'
+                    : 'text-foreground dark:text-gray-400'
                   }
                 `}
               >
@@ -77,7 +77,7 @@ export const ContextualBreadcrumb: React.FC<ContextualBreadcrumbProps> = ({
                 <span className="truncate max-w-32">{item.label}</span>
               </Button>
               {!isLast && (
-                <ChevronRight className="w-4 h-4 text-[#655d67] flex-shrink-0" />
+                <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               )}
             </React.Fragment>
           );
@@ -87,7 +87,7 @@ export const ContextualBreadcrumb: React.FC<ContextualBreadcrumbProps> = ({
       {/* Actions */}
       <div className="flex items-center space-x-2">
         {/* Mode Switch */}
-        <div className="flex items-center bg-[#f7f7f8] dark:bg-gray-800 rounded-lg p-1">
+        <div className="flex items-center bg-background dark:bg-gray-800 rounded-lg p-1">
           <Button
             onClick={() => onModeChange('content')}
             variant={currentMode === 'content' ? 'default' : 'ghost'}

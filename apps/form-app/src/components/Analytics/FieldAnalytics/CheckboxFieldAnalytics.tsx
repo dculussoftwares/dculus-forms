@@ -44,7 +44,7 @@ const CorrelationMatrix: React.FC<{
           <CardTitle>{t('correlations.title')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center text-[#655d67] py-8">
+          <div className="text-center text-muted-foreground py-8">
             {t('correlations.noSignificantCorrelations')}
           </div>
         </CardContent>
@@ -72,25 +72,25 @@ const CorrelationMatrix: React.FC<{
       <CardContent>
         <div className="space-y-4">
           {correlations.slice(0, 10).map((corr, index) => (
-            <div key={index} className="flex items-center justify-between p-3 bg-[#f7f7f8] rounded-lg">
+            <div key={index} className="flex items-center justify-between p-3 bg-background rounded-lg">
               <div className="flex items-center gap-3">
                 <div 
                   className={`w-3 h-3 rounded-full ${getCorrelationColor(corr.correlation)}`}
                 />
                 <div>
-                  <div className="font-medium text-[#3c323e]">
+                  <div className="font-medium text-primary">
                     "{corr.option1}" ↔ "{corr.option2}"
                   </div>
-                  <div className="text-sm text-[#4c414e]">
+                  <div className="text-sm text-foreground">
                     {getCorrelationDescription(corr.correlation)} {t('correlations.correlation')}
                   </div>
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-bold text-[#3c323e]">
+                <div className="font-bold text-primary">
                   {corr.correlation.toFixed(1)}x
                 </div>
-                <div className="text-xs text-[#655d67]">
+                <div className="text-xs text-muted-foreground">
                   {t('correlations.moreLikelyTogether')}
                 </div>
               </div>
@@ -142,7 +142,7 @@ const PopularCombinations: React.FC<{
           <CardTitle>{t('combinations.title')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center text-[#655d67] py-8">
+          <div className="text-center text-muted-foreground py-8">
             {t('combinations.noCombinationData')}
           </div>
         </CardContent>
@@ -174,7 +174,7 @@ const PopularCombinations: React.FC<{
                     <span className="flex items-center justify-center w-6 h-6 bg-white rounded-full text-sm font-bold">
                       {index + 1}
                     </span>
-                    <span className="text-sm text-[#4c414e]">
+                    <span className="text-sm text-foreground">
                       {combo.combination.length} {combo.combination.length !== 1 ? t('combinations.options') : t('combinations.option')}
                     </span>
                   </div>
@@ -182,7 +182,7 @@ const PopularCombinations: React.FC<{
                     {combo.combination.map((option, optIndex) => (
                       <span 
                         key={optIndex}
-                        className="inline-flex items-center px-2 py-1 bg-white rounded-lg text-xs font-medium text-[#4c414e] border"
+                        className="inline-flex items-center px-2 py-1 bg-white rounded-lg text-xs font-medium text-foreground border"
                       >
                         {option}
                       </span>
@@ -190,10 +190,10 @@ const PopularCombinations: React.FC<{
                   </div>
                 </div>
                 <div className="text-right ml-4 flex-shrink-0">
-                  <div className="text-lg font-bold text-[#3c323e]">
+                  <div className="text-lg font-bold text-primary">
                     {combo.percentage.toFixed(1)}%
                   </div>
-                  <div className="text-sm text-[#4c414e]">
+                  <div className="text-sm text-foreground">
                     {combo.count} {t('combinations.times')}
                   </div>
                 </div>
@@ -203,7 +203,7 @@ const PopularCombinations: React.FC<{
         </div>
         
         {combinations.length > 10 && (
-          <div className="mt-4 text-center text-sm text-[#655d67]">
+          <div className="mt-4 text-center text-sm text-muted-foreground">
             {t('combinations.showingTopOf', { values: { total: combinations.length } })}
           </div>
         )}
@@ -264,11 +264,11 @@ const SelectionDistribution: React.FC<{
                     const data = payload[0].payload;
                     const isAverage = Math.abs(data.selectionCount - averageSelections) < 0.5;
                     return (
-                      <div className="bg-white p-3 border rounded-lg shadow-lg border-[rgba(81,76,84,0.10)]">
-                        <p className="font-medium text-[#3c323e] mb-2">{label}</p>
+                      <div className="bg-white p-3 border rounded-lg shadow-lg border-[var(--tf-border-medium)]">
+                        <p className="font-medium text-primary mb-2">{label}</p>
                         <div className="flex items-center gap-2 text-sm">
                           <div className="w-3 h-3 rounded-full bg-blue-600" />
-                          <span className="text-[#4c414e]">
+                          <span className="text-foreground">
                             {t('selectionCount.responses')}: {data.value} ({data.percentage.toFixed(1)}%)
                           </span>
                           {isAverage && (
@@ -322,9 +322,9 @@ const SelectionDistribution: React.FC<{
                 const isAverage = Math.abs(item.selectionCount - averageSelections) < 0.5;
                 return (
                   <div key={index} className="flex items-center justify-between">
-                    <span className="text-sm text-[#4c414e]">{item.name}:</span>
+                    <span className="text-sm text-foreground">{item.name}:</span>
                     <div className="flex items-center gap-2">
-                      <span className={`font-medium ${isAverage ? 'text-blue-600' : 'text-[#3c323e]'}`}>
+                      <span className={`font-medium ${isAverage ? 'text-blue-600' : 'text-primary'}`}>
                         {item.percentage.toFixed(1)}%
                       </span>
                       {isAverage && (
@@ -366,13 +366,13 @@ const IndividualOptionAnalysis: React.FC<{
           {options.map((option, index) => (
             <div 
               key={index}
-              className="flex items-center justify-between p-3 bg-[#f7f7f8] rounded-lg hover:bg-[#f7f7f8] transition-colors"
+              className="flex items-center justify-between p-3 bg-background rounded-lg hover:bg-background transition-colors"
             >
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-[#3c323e] truncate" title={option.option}>
+                <div className="font-medium text-primary truncate" title={option.option}>
                   {option.option}
                 </div>
-                <div className="text-sm text-[#4c414e]">
+                <div className="text-sm text-foreground">
                   {option.percentage.toFixed(1)}% of responses
                 </div>
               </div>
@@ -384,10 +384,10 @@ const IndividualOptionAnalysis: React.FC<{
                   />
                 </div>
                 <div className="text-right min-w-0">
-                  <div className="text-lg font-bold text-[#3c323e]">
+                  <div className="text-lg font-bold text-primary">
                     {option.count}
                   </div>
-                  <div className="text-xs text-[#655d67]">
+                  <div className="text-xs text-muted-foreground">
                     {t('combinations.times')}
                   </div>
                 </div>
@@ -438,8 +438,8 @@ export const CheckboxFieldAnalytics: React.FC<CheckboxFieldAnalyticsProps> = ({
             <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
               <CheckSquare className="h-8 w-8 text-blue-600" />
             </div>
-            <h3 className="text-lg font-semibold text-[#3c323e] mb-2">{t('emptyState.title')}</h3>
-            <p className="text-[#4c414e] max-w-md mx-auto">{t('emptyState.subtitle')}</p>
+            <h3 className="text-lg font-semibold text-primary mb-2">{t('emptyState.title')}</h3>
+            <p className="text-foreground max-w-md mx-auto">{t('emptyState.subtitle')}</p>
           </div>
         </CardContent>
       </Card>
@@ -522,28 +522,28 @@ export const CheckboxFieldAnalytics: React.FC<CheckboxFieldAnalyticsProps> = ({
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
             <div className="space-y-2">
-              <h4 className="font-medium text-[#3c323e]">{t('summary.selectionBehavior')}</h4>
+              <h4 className="font-medium text-primary">{t('summary.selectionBehavior')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-[#4c414e]">{t('summary.responseRate')}</span>
+                  <span className="text-foreground">{t('summary.responseRate')}</span>
                   <span className="font-medium">{responseRate.toFixed(1)}%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#4c414e]">{t('summary.avgSelections')}</span>
+                  <span className="text-foreground">{t('summary.avgSelections')}</span>
                   <span className="font-medium">{data.averageSelections.toFixed(1)}</span>
                 </div>
               </div>
             </div>
             
             <div className="space-y-2">
-              <h4 className="font-medium text-[#3c323e]">{t('summary.optionPerformance')}</h4>
+              <h4 className="font-medium text-primary">{t('summary.optionPerformance')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-[#4c414e]">{t('summary.availableOptions')}</span>
+                  <span className="text-foreground">{t('summary.availableOptions')}</span>
                   <span className="font-medium">{data.individualOptions.length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#4c414e]">{t('summary.usedOptions')}</span>
+                  <span className="text-foreground">{t('summary.usedOptions')}</span>
                   <span className="font-medium">
                     {data.individualOptions.filter(opt => opt.count > 0).length}
                   </span>
@@ -552,14 +552,14 @@ export const CheckboxFieldAnalytics: React.FC<CheckboxFieldAnalyticsProps> = ({
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-[#3c323e]">{t('summary.combinationPatterns')}</h4>
+              <h4 className="font-medium text-primary">{t('summary.combinationPatterns')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-[#4c414e]">{t('summary.uniqueCombos')}</span>
+                  <span className="text-foreground">{t('summary.uniqueCombos')}</span>
                   <span className="font-medium">{uniqueCombinations}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#4c414e]">{t('summary.strongCorrelations')}</span>
+                  <span className="text-foreground">{t('summary.strongCorrelations')}</span>
                   <span className="font-medium">
                     {data.correlations.filter(corr => corr.correlation >= 2.0).length}
                   </span>
@@ -568,14 +568,14 @@ export const CheckboxFieldAnalytics: React.FC<CheckboxFieldAnalyticsProps> = ({
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium text-[#3c323e]">{t('summary.dataQuality')}</h4>
+              <h4 className="font-medium text-primary">{t('summary.dataQuality')}</h4>
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-[#4c414e]">{t('summary.totalResponses')}</span>
+                  <span className="text-foreground">{t('summary.totalResponses')}</span>
                   <span className="font-medium">{totalResponses}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#4c414e]">{t('summary.selectionVariety')}</span>
+                  <span className="text-foreground">{t('summary.selectionVariety')}</span>
                   <span className="font-medium">
                     {data.selectionDistribution.length > 3 ? t('summary.varietyHigh') : 
                      data.selectionDistribution.length > 1 ? t('summary.varietyMedium') : t('summary.varietyLow')}

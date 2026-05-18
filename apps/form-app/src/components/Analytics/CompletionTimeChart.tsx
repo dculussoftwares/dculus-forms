@@ -22,9 +22,9 @@ const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-white p-3 border border-[rgba(81,76,84,0.10)] rounded-lg shadow-lg">
-        <p className="font-medium text-[#3c323e]">{data.label}</p>
-        <p className="text-sm text-[#4c414e]">
+      <div className="bg-white p-3 border border-[var(--tf-border-medium)] rounded-lg shadow-lg">
+        <p className="font-medium text-primary">{data.label}</p>
+        <p className="text-sm text-foreground">
           <span className="font-medium">{data.count}</span> submissions ({data.percentage.toFixed(1)}%)
         </p>
       </div>
@@ -37,9 +37,9 @@ const CustomPieTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-white p-3 border border-[rgba(81,76,84,0.10)] rounded-lg shadow-lg">
-        <p className="font-medium text-[#3c323e]">{data.label}</p>
-        <p className="text-sm text-[#4c414e]">
+      <div className="bg-white p-3 border border-[var(--tf-border-medium)] rounded-lg shadow-lg">
+        <p className="font-medium text-primary">{data.label}</p>
+        <p className="text-sm text-foreground">
           <span className="font-medium">{data.count}</span> submissions ({data.percentage.toFixed(1)}%)
         </p>
       </div>
@@ -63,7 +63,7 @@ export const CompletionTimeChart: React.FC<CompletionTimeChartProps> = ({
           </CardHeader>
           <CardContent>
             <div className="h-64 flex items-center justify-center">
-              <div className="animate-pulse text-[#655d67]">{t('loading')}</div>
+              <div className="animate-pulse text-muted-foreground">{t('loading')}</div>
             </div>
           </CardContent>
         </Card>
@@ -74,7 +74,7 @@ export const CompletionTimeChart: React.FC<CompletionTimeChartProps> = ({
           </CardHeader>
           <CardContent>
             <div className="h-64 flex items-center justify-center">
-              <div className="animate-pulse text-[#655d67]">{t('loading')}</div>
+              <div className="animate-pulse text-muted-foreground">{t('loading')}</div>
             </div>
           </CardContent>
         </Card>
@@ -90,7 +90,7 @@ export const CompletionTimeChart: React.FC<CompletionTimeChartProps> = ({
             <CardTitle>{t('distributionTitle')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64 flex items-center justify-center text-[#655d67]">
+            <div className="h-64 flex items-center justify-center text-muted-foreground">
               {t('noData')}
             </div>
           </CardContent>
@@ -101,7 +101,7 @@ export const CompletionTimeChart: React.FC<CompletionTimeChartProps> = ({
             <CardTitle>{t('breakdownTitle')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64 flex items-center justify-center text-[#655d67]">
+            <div className="h-64 flex items-center justify-center text-muted-foreground">
               {t('noData')}
             </div>
           </CardContent>
@@ -184,7 +184,7 @@ export const CompletionTimeChart: React.FC<CompletionTimeChartProps> = ({
                   className="w-3 h-3 rounded mr-2"
                   style={{ backgroundColor: COLORS[index % COLORS.length] }}
                 ></div>
-                <span className="text-[#4c414e]">
+                <span className="text-foreground">
                   {item.label}: {item.count} submissions ({item.percentage.toFixed(1)}%)
                 </span>
               </div>

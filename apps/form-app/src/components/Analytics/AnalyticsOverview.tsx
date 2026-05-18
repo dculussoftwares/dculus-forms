@@ -62,14 +62,14 @@ const MetricCard: React.FC<MetricCardProps> = ({
     return (
       <div
         className="rounded-xl p-5 animate-pulse"
-        style={{ backgroundColor: 'white', border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}
+        style={{ backgroundColor: 'white', border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}
       >
         <div className="flex items-center justify-between mb-4">
-          <div className="h-3 rounded w-20" style={{ backgroundColor: 'rgba(81,76,84,0.08)' }} />
-          <div className="h-9 w-9 rounded-xl" style={{ backgroundColor: 'rgba(81,76,84,0.06)' }} />
+          <div className="h-3 rounded w-20" style={{ backgroundColor: 'var(--tf-border-light)' }} />
+          <div className="h-9 w-9 rounded-xl" style={{ backgroundColor: 'var(--tf-border-faint)' }} />
         </div>
-        <div className="h-7 rounded w-14 mb-2" style={{ backgroundColor: 'rgba(81,76,84,0.08)' }} />
-        <div className="h-3 rounded w-24" style={{ backgroundColor: 'rgba(81,76,84,0.06)' }} />
+        <div className="h-7 rounded w-14 mb-2" style={{ backgroundColor: 'var(--tf-border-light)' }} />
+        <div className="h-3 rounded w-24" style={{ backgroundColor: 'var(--tf-border-faint)' }} />
       </div>
     );
   }
@@ -79,10 +79,10 @@ const MetricCard: React.FC<MetricCardProps> = ({
   return (
     <div
       className="rounded-xl p-5 transition-shadow duration-200 hover:shadow-md"
-      style={{ backgroundColor: 'white', border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}
+      style={{ backgroundColor: 'white', border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}
     >
       <div className="flex items-start justify-between mb-3">
-        <p className="text-xs font-medium text-[#655d67]">{title}</p>
+        <p className="text-xs font-medium text-muted-foreground">{title}</p>
         {/* Typeform field-icon style — small square with colored bg */}
         <div
           className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0"
@@ -93,14 +93,14 @@ const MetricCard: React.FC<MetricCardProps> = ({
       </div>
 
       {/* Typeform-style stat: light weight, large */}
-      <p className="text-2xl font-light tracking-tight mb-1 text-[#262627]">
+      <p className="text-2xl font-light tracking-tight mb-1 text-primary">
         {displayValue}
       </p>
 
       <div className="flex items-center justify-between">
-        <p className="text-[11px] text-[#655d67]">{subtitle}</p>
+        <p className="text-[11px] text-muted-foreground">{subtitle}</p>
         {trend && (
-          <div className="flex items-center gap-0.5 text-[11px] font-medium" style={{ color: trend.isPositive ? '#177767' : '#ce5d55' }}>
+          <div className="flex items-center gap-0.5 text-[11px] font-medium" style={{ color: trend.isPositive ? 'var(--tf-green)' : 'var(--tf-error)' }}>
             {trend.isPositive
               ? <TrendingUp className="h-3 w-3" />
               : <TrendingDown className="h-3 w-3" />
@@ -131,16 +131,16 @@ export const AnalyticsOverview: React.FC<AnalyticsOverviewProps> = ({
       value: data?.totalViews || 0,
       subtitle: t('overview.metrics.totalViews.subtitle'),
       icon: Users,
-      iconColor: '#177767',   /* teal */
-      iconBgColor: '#f4faf8',
+      iconColor: 'var(--tf-green)',   /* teal */
+      iconBgColor: 'var(--tf-icon-teal)',
     },
     {
       title: t('overview.metrics.totalSubmissions.title'),
       value: submissionData?.totalSubmissions || 0,
       subtitle: t('overview.metrics.totalSubmissions.subtitle', { values: { rate: submissionConversionRate } }),
       icon: FileCheck,
-      iconColor: '#3c323e',   /* salmon */
-      iconBgColor: '#f8cdd8',
+      iconColor: 'var(--tf-dark)',   /* salmon */
+      iconBgColor: 'var(--tf-icon-salmon)',
     },
     {
       title: t('overview.metrics.viewSessions.title'),
@@ -148,15 +148,15 @@ export const AnalyticsOverview: React.FC<AnalyticsOverviewProps> = ({
       subtitle: t('overview.metrics.viewSessions.subtitle', { values: { rate: conversionRate } }),
       icon: Monitor,
       iconColor: '#5c2e6b',   /* lavender */
-      iconBgColor: '#ddd6fa',
+      iconBgColor: 'var(--tf-icon-lavender)',
     },
     {
       title: t('overview.metrics.submissionSessions.title'),
       value: submissionData?.uniqueSessions || 0,
       subtitle: t('overview.metrics.submissionSessions.subtitle'),
       icon: Target,
-      iconColor: '#4c414e',   /* neutral gray */
-      iconBgColor: '#dedcde',
+      iconColor: 'var(--tf-text)',   /* neutral gray */
+      iconBgColor: 'var(--tf-icon-gray)',
     },
     {
       title: t('overview.metrics.topViewCountry.title'),
@@ -186,7 +186,7 @@ export const AnalyticsOverview: React.FC<AnalyticsOverviewProps> = ({
         : t('overview.metrics.avgCompletionTime.noData'),
       icon: Clock,
       iconColor: '#5c2e6b',   /* lavender */
-      iconBgColor: '#ddd6fa',
+      iconBgColor: 'var(--tf-icon-lavender)',
     },
   ];
 

@@ -108,7 +108,7 @@ const createBaseColumns = (
         return (
           <div className="flex items-center space-x-2">
             <Hash className="h-4 w-4 text-muted-foreground" />
-            <span className="inline-flex items-center px-2 py-1 text-xs font-mono font-medium bg-slate-100/80 text-slate-800 border border-[rgba(81,76,84,0.10)]/60 rounded-lg">
+            <span className="inline-flex items-center px-2 py-1 text-xs font-mono font-medium bg-slate-100/80 text-slate-800 border border-[var(--tf-border-medium)]/60 rounded-lg">
               {id?.slice(-6) || 'N/A'}
             </span>
           </div>
@@ -424,7 +424,7 @@ const ResponsesActionsCell: React.FC<{
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 hover:bg-[#f7f7f8]"
+            className="h-8 w-8 p-0 hover:bg-background"
             onClick={(e) => e.stopPropagation()}
           >
             <MoreHorizontal className="h-4 w-4" />

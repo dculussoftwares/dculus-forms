@@ -77,11 +77,11 @@ export const SignIn = () => {
       {/* ── Left: dark aubergine brand panel ── */}
       <div
         className="hidden lg:flex lg:flex-col lg:w-[480px] xl:w-[560px] shrink-0 p-10 justify-between"
-        style={{ backgroundColor: '#2a222b' }}
+        style={{ backgroundColor: 'var(--tf-darkest)' }}
       >
         {/* Logo */}
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#3c323e' }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--tf-dark)' }}>
             <FileText className="w-4 h-4 text-white" />
           </div>
           <span className="text-white font-semibold text-lg">{t("hero.productName")}</span>
@@ -100,7 +100,7 @@ export const SignIn = () => {
           <ul className="space-y-4">
             {FEATURES.map(({ icon: Icon, text }) => (
               <li key={text} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--tf-white-overlay)' }}>
                   <Icon className="w-4 h-4 text-[rgba(255,255,255,0.70)]" />
                 </div>
                 <span className="text-sm text-[rgba(255,255,255,0.70)]">{text}</span>
@@ -117,10 +117,10 @@ export const SignIn = () => {
       {/* ── Right: clean white sign-in panel ── */}
       <div className="flex-1 flex flex-col overflow-y-auto bg-white">
         {/* Top nav */}
-        <div className="flex items-center justify-end px-8 py-5" style={{ borderBottom: '1px solid rgba(81,76,84,0.08)' }}>
-          <span className="text-sm text-[#655d67]">
+        <div className="flex items-center justify-end px-8 py-5" style={{ borderBottom: '1px solid var(--tf-border-light)' }}>
+          <span className="text-sm text-muted-foreground">
             {t("links.signUpPrompt")}{" "}
-            <Link to="/signup" className="font-medium hover:underline transition-colors text-[#3c323e]">
+            <Link to="/signup" className="font-medium hover:underline transition-colors text-primary">
               {t("links.signUp")}
             </Link>
           </span>
@@ -131,17 +131,17 @@ export const SignIn = () => {
           <div className="w-full max-w-sm">
             {/* Heading */}
             <div className="mb-8">
-              <h1 className="text-2xl font-semibold mb-1.5 text-[#3c323e]">
+              <h1 className="text-2xl font-semibold mb-1.5 text-primary">
                 {t("meta.heading")}
               </h1>
-              <p className="text-sm text-[#655d67]">
+              <p className="text-sm text-muted-foreground">
                 {t("meta.subheading")}
               </p>
             </div>
 
             {/* Success banner */}
             {successMessage && (
-              <div className="mb-5 p-3 rounded-xl text-xs text-center" style={{ backgroundColor: '#f4faf8', color: '#177767', border: '1px solid rgba(23,119,103,0.16)' }}>
+              <div className="mb-5 p-3 rounded-xl text-xs text-center" style={{ backgroundColor: 'var(--tf-icon-teal)', color: 'var(--tf-green)', border: '1px solid var(--tf-green-bg-md)' }}>
                 {successMessage}
               </div>
             )}
@@ -149,7 +149,7 @@ export const SignIn = () => {
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="email" className="text-xs font-medium block mb-1.5 text-[#4c414e]">
+                <Label htmlFor="email" className="text-xs font-medium block mb-1.5 text-foreground">
                   {t("form.fields.email.label")}
                 </Label>
                 <Input
@@ -160,21 +160,21 @@ export const SignIn = () => {
                   value={formData.email}
                   onChange={handleInputChange}
                   disabled={isLoading}
-                  className={errors.email ? "border-[#ce5d55] focus-visible:border-[#ce5d55]" : ""}
+                  className={errors.email ? "border-destructive focus-visible:border-destructive" : ""}
                 />
                 {errors.email && (
-                  <p className="text-xs mt-1 text-[#ce5d55]">{errors.email}</p>
+                  <p className="text-xs mt-1 text-destructive">{errors.email}</p>
                 )}
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <Label htmlFor="password" className="text-xs font-medium text-[#4c414e]">
+                  <Label htmlFor="password" className="text-xs font-medium text-foreground">
                     {t("form.fields.password.label")}
                   </Label>
                   <Link
                     to="/forgot-password"
-                    className="text-xs transition-colors hover:text-[#3c323e] text-[#655d67]"
+                    className="text-xs transition-colors hover:text-primary text-muted-foreground"
                   >
                     {t("links.forgotPassword")}
                   </Link>
@@ -187,15 +187,15 @@ export const SignIn = () => {
                   value={formData.password}
                   onChange={handleInputChange}
                   disabled={isLoading}
-                  className={errors.password ? "border-[#ce5d55] focus-visible:border-[#ce5d55]" : ""}
+                  className={errors.password ? "border-destructive focus-visible:border-destructive" : ""}
                 />
                 {errors.password && (
-                  <p className="text-xs mt-1 text-[#ce5d55]">{errors.password}</p>
+                  <p className="text-xs mt-1 text-destructive">{errors.password}</p>
                 )}
               </div>
 
               {errors.submit && (
-                <p className="text-xs text-center py-2 px-3 rounded-lg" style={{ backgroundColor: 'rgba(206,93,85,0.06)', color: '#ce5d55', border: '1px solid rgba(206,93,85,0.14)' }}>
+                <p className="text-xs text-center py-2 px-3 rounded-lg" style={{ backgroundColor: 'var(--tf-error-bg)', color: 'var(--tf-error)', border: '1px solid var(--tf-error-bg-md)' }}>
                   {errors.submit}
                 </p>
               )}
@@ -212,9 +212,9 @@ export const SignIn = () => {
             </form>
 
             {/* Sign up link (mobile only) */}
-            <p className="lg:hidden text-xs text-center mt-6 text-[#655d67]">
+            <p className="lg:hidden text-xs text-center mt-6 text-muted-foreground">
               {t("links.signUpPrompt")}{" "}
-              <Link to="/signup" className="font-medium text-[#3c323e]">
+              <Link to="/signup" className="font-medium text-primary">
                 {t("links.signUp")}
               </Link>
             </p>

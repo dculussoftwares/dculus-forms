@@ -197,7 +197,7 @@ export const WebhookPluginDialog: React.FC<WebhookPluginDialogProps> = ({
           {/* Plugin Name */}
           <div className="space-y-2">
             <Label htmlFor="name">
-              {t('fields.name.label')} <span className="text-[#ce5d55]">{t('required')}</span>
+              {t('fields.name.label')} <span className="text-destructive">{t('required')}</span>
             </Label>
             <Input
               id="name"
@@ -205,14 +205,14 @@ export const WebhookPluginDialog: React.FC<WebhookPluginDialogProps> = ({
               {...register('name', { required: t('fields.name.required') })}
             />
             {errors.name && (
-              <p className="text-sm text-[#ce5d55]">{errors.name.message}</p>
+              <p className="text-sm text-destructive">{errors.name.message}</p>
             )}
           </div>
 
           {/* Webhook URL */}
           <div className="space-y-2">
             <Label htmlFor="url">
-              {t('fields.url.label')} <span className="text-[#ce5d55]">{t('required')}</span>
+              {t('fields.url.label')} <span className="text-destructive">{t('required')}</span>
             </Label>
             <Input
               id="url"
@@ -227,9 +227,9 @@ export const WebhookPluginDialog: React.FC<WebhookPluginDialogProps> = ({
               })}
             />
             {errors.url && (
-              <p className="text-sm text-[#ce5d55]">{errors.url.message}</p>
+              <p className="text-sm text-destructive">{errors.url.message}</p>
             )}
-            <p className="text-sm text-[#655d67]">
+            <p className="text-sm text-muted-foreground">
               {t('fields.url.hint')}
             </p>
           </div>
@@ -243,7 +243,7 @@ export const WebhookPluginDialog: React.FC<WebhookPluginDialogProps> = ({
               placeholder={t('fields.secret.placeholder')}
               {...register('secret')}
             />
-            <p className="text-sm text-[#655d67]">
+            <p className="text-sm text-muted-foreground">
               {t('fields.secret.hint')}
             </p>
           </div>
@@ -290,7 +290,7 @@ export const WebhookPluginDialog: React.FC<WebhookPluginDialogProps> = ({
                 {t('fields.customHeaders.addButton')}
               </Button>
             </Card>
-            <p className="text-sm text-[#655d67]">
+            <p className="text-sm text-muted-foreground">
               {t('fields.customHeaders.hint')}
             </p>
           </div>
@@ -298,7 +298,7 @@ export const WebhookPluginDialog: React.FC<WebhookPluginDialogProps> = ({
           {/* Events */}
           <div className="space-y-2">
             <Label>
-              {t('fields.events.label')} <span className="text-[#ce5d55]">{t('required')}</span>
+              {t('fields.events.label')} <span className="text-destructive">{t('required')}</span>
             </Label>
             <Card className="p-4 space-y-3">
               <div className="flex items-start space-x-3">
@@ -314,7 +314,7 @@ export const WebhookPluginDialog: React.FC<WebhookPluginDialogProps> = ({
                   >
                     {t('fields.events.formSubmitted.label')}
                   </Label>
-                  <p className="text-sm text-[#655d67]">
+                  <p className="text-sm text-muted-foreground">
                     {t('fields.events.formSubmitted.description')}
                   </p>
                 </div>
@@ -333,14 +333,14 @@ export const WebhookPluginDialog: React.FC<WebhookPluginDialogProps> = ({
                   >
                     {t('fields.events.pluginTest.label')}
                   </Label>
-                  <p className="text-sm text-[#655d67]">
+                  <p className="text-sm text-muted-foreground">
                     {t('fields.events.pluginTest.description')}
                   </p>
                 </div>
               </div>
             </Card>
             {selectedEvents.length === 0 && (
-              <p className="text-sm text-[#ce5d55]">
+              <p className="text-sm text-destructive">
                 {t('validation.noEvents')}
               </p>
             )}

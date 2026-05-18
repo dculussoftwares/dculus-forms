@@ -66,7 +66,7 @@ const FormAnalytics: React.FC = () => {
       >
         <EmptyState
           variant="error"
-          icon={<AlertCircle className="h-6 w-6 text-[#ce5d55]" />}
+          icon={<AlertCircle className="h-6 w-6 text-destructive" />}
           title={t('errors.formNotFound')}
           description={t('errors.formNotFoundMessage')}
         />
@@ -99,7 +99,7 @@ const FormAnalytics: React.FC = () => {
         {/* ── Top toolbar: tabs + time range + view form ── */}
         <div className="flex items-center justify-between gap-4">
           {/* Typeform underline tabs */}
-          <div className="flex items-center" style={{ borderBottom: '1px solid rgba(81,76,84,0.12)' }}>
+          <div className="flex items-center" style={{ borderBottom: '1px solid var(--tf-border)' }}>
             {([
               { id: 'overview', icon: BarChart3, label: t('tabs.overview') },
               { id: 'fields', icon: TrendingUp, label: t('tabs.fields') },
@@ -113,7 +113,7 @@ const FormAnalytics: React.FC = () => {
                 <Icon className="h-3.5 w-3.5" />
                 {label}
                 {activeTab === id && (
-                  <span className="absolute bottom-[-1px] left-0 right-0 h-[2px] rounded-t-full" style={{ backgroundColor: '#3c323e' }} />
+                  <span className="absolute bottom-[-1px] left-0 right-0 h-[2px] rounded-t-full" style={{ backgroundColor: 'var(--tf-dark)' }} />
                 )}
               </Button>
             ))}
@@ -157,14 +157,14 @@ const FormAnalytics: React.FC = () => {
             {analyticsError && (
               <div
                 className="p-5 rounded-xl flex items-start gap-3"
-                style={{ backgroundColor: 'rgba(206,93,85,0.06)', border: '1px solid rgba(206,93,85,0.16)' }}
+                style={{ backgroundColor: 'var(--tf-error-bg)', border: '1px solid var(--tf-error-bg-lg)' }}
               >
-                <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-[#ce5d55]" />
+                <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-destructive" />
                 <div>
-                  <h3 className="text-sm font-medium mb-1 text-[#3c323e]">
+                  <h3 className="text-sm font-medium mb-1 text-primary">
                     {t('errors.unableToLoadAnalytics')}
                   </h3>
-                  <p className="text-xs mb-3 text-[#655d67]">
+                  <p className="text-xs mb-3 text-muted-foreground">
                     {analyticsError.message || t('errors.analyticsLoadError')}
                   </p>
                   <Button
@@ -181,15 +181,15 @@ const FormAnalytics: React.FC = () => {
             {!isAuthenticated && (
               <div
                 className="p-6 rounded-xl text-center"
-                style={{ backgroundColor: '#f7f7f8', border: '1px solid rgba(81,76,84,0.10)' }}
+                style={{ backgroundColor: 'var(--tf-faint)', border: '1px solid var(--tf-border-medium)' }}
               >
                 <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ backgroundColor: '#fbe19d' }}>
                   <AlertCircle className="h-7 w-7 text-[#8b6a18]" />
                 </div>
-                <h3 className="text-sm font-semibold mb-1 text-[#3c323e]">
+                <h3 className="text-sm font-semibold mb-1 text-primary">
                   {t('states.authenticationRequired')}
                 </h3>
-                <p className="text-xs max-w-md mx-auto text-[#655d67]">
+                <p className="text-xs max-w-md mx-auto text-muted-foreground">
                   {t('states.authenticationMessage')}
                 </p>
               </div>
@@ -198,15 +198,15 @@ const FormAnalytics: React.FC = () => {
             {!analyticsError && isAuthenticated && isEmpty && (
               <div
                 className="p-8 rounded-xl text-center"
-                style={{ backgroundColor: '#f7f7f8', border: '1px solid rgba(81,76,84,0.10)' }}
+                style={{ backgroundColor: 'var(--tf-faint)', border: '1px solid var(--tf-border-medium)' }}
               >
-                <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ backgroundColor: '#ddd6fa' }}>
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ backgroundColor: 'var(--tf-icon-lavender)' }}>
                   <BarChart3 className="h-7 w-7 text-[#5c2e6b]" />
                 </div>
-                <h3 className="text-sm font-semibold mb-1 text-[#3c323e]">
+                <h3 className="text-sm font-semibold mb-1 text-primary">
                   {t('states.noDataYet')}
                 </h3>
-                <p className="text-xs max-w-md mx-auto mb-5 text-[#655d67]">
+                <p className="text-xs max-w-md mx-auto mb-5 text-muted-foreground">
                   {t('states.noDataMessage')}
                 </p>
                 <Button
@@ -218,7 +218,7 @@ const FormAnalytics: React.FC = () => {
                 </Button>
                 <div
                   className="mt-5 p-3 rounded-lg text-xs"
-                  style={{ backgroundColor: '#f4faf8', color: '#177767' }}
+                  style={{ backgroundColor: 'var(--tf-icon-teal)', color: 'var(--tf-green)' }}
                 >
                   {t('states.privacyNotice')}
                 </div>

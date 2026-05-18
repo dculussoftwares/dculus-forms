@@ -34,15 +34,15 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   const activeFiltersCount = Object.values(filters).filter(f => f.active).length;
 
   return (
-    <Card className="w-80 h-full overflow-hidden border-r border-[rgba(81,76,84,0.10)] rounded-none shadow-sm flex flex-col">
-            <CardHeader className="p-4 border-b border-[rgba(81,76,84,0.10)]">
+    <Card className="w-80 h-full overflow-hidden border-r border-[var(--tf-border-medium)] rounded-none shadow-sm flex flex-col">
+            <CardHeader className="p-4 border-b border-[var(--tf-border-medium)]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <CardTitle className="text-lg font-semibold text-[#3c323e]">
+            <CardTitle className="text-lg font-semibold text-primary">
               {t('title')}
             </CardTitle>
             {activeFiltersCount > 0 && (
-              <span className="px-2 py-1 bg-[#f4faf8] text-[#177767] text-xs font-medium rounded-full border border-[rgba(23,119,103,0.16)]">
+              <span className="px-2 py-1 bg-[var(--tf-icon-teal)] text-[var(--tf-green)] text-xs font-medium rounded-full border border-[var(--tf-green-bg-md)]">
                 {activeFiltersCount}
               </span>
             )}
@@ -51,7 +51,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="h-8 w-8 p-0 hover:bg-[rgba(81,76,84,0.06)]"
+            className="h-8 w-8 p-0 hover:bg-[var(--tf-border-faint)]"
           >
             <X className="h-4 w-4" />
             <span className="sr-only">{t('closeFilters')}</span>
@@ -74,11 +74,11 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
       <CardContent className="p-0 flex-1 overflow-y-auto">
         <div className="min-h-0">
           {fields.length === 0 ? (
-            <div className="p-4 text-center text-[#655d67] text-sm">
+            <div className="p-4 text-center text-muted-foreground text-sm">
               {t('noFilterableFields')}
             </div>
           ) : (
-            <div className="divide-y divide-[rgba(81,76,84,0.08)]">
+            <div className="divide-y divide-[var(--tf-border-light)]">
               {fields.map((field) => (
                 <FieldFilter
                   key={field.id}

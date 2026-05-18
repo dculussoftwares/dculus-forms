@@ -86,15 +86,15 @@ export const ForgotPassword = () => {
   return (
     <div className="h-screen flex overflow-hidden">
       {/* Left dark panel */}
-      <div className="hidden lg:flex lg:flex-col lg:w-[480px] xl:w-[560px] shrink-0 p-10 justify-between" style={{ backgroundColor: '#2a222b' }}>
+      <div className="hidden lg:flex lg:flex-col lg:w-[480px] xl:w-[560px] shrink-0 p-10 justify-between" style={{ backgroundColor: 'var(--tf-darkest)' }}>
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#3c323e' }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--tf-dark)' }}>
             <FileText className="w-4 h-4 text-white" />
           </div>
           <span className="text-white font-semibold text-lg">{t('hero.productName')}</span>
         </div>
         <div className="space-y-3">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--tf-white-overlay)' }}>
             <LeftIcon className="w-6 h-6 text-[rgba(255,255,255,0.70)]" />
           </div>
           <h2 className="text-white text-3xl font-light leading-tight">{t('hero.tagline')}</h2>
@@ -105,10 +105,10 @@ export const ForgotPassword = () => {
 
       {/* Right white panel */}
       <div className="flex-1 flex flex-col overflow-y-auto bg-white">
-        <div className="flex items-center justify-end px-8 py-5" style={{ borderBottom: '1px solid rgba(81,76,84,0.08)' }}>
-          <span className="text-sm text-[#655d67]">
+        <div className="flex items-center justify-end px-8 py-5" style={{ borderBottom: '1px solid var(--tf-border-light)' }}>
+          <span className="text-sm text-muted-foreground">
             {t('links.signInPrompt')}{' '}
-            <Link to="/signin" className="font-medium hover:underline text-[#3c323e]">
+            <Link to="/signin" className="font-medium hover:underline text-primary">
               {t('links.signIn')}
             </Link>
           </span>
@@ -117,25 +117,25 @@ export const ForgotPassword = () => {
         <div className="flex-1 flex items-center justify-center px-8 py-12">
           <div className="w-full max-w-sm">
             <div className="mb-8">
-              <h1 className="text-2xl font-semibold mb-1.5 text-[#3c323e]">
+              <h1 className="text-2xl font-semibold mb-1.5 text-primary">
                 {step === 'reset' ? t('steps.reset.title') : t('steps.email.title')}
               </h1>
-              <p className="text-sm text-[#655d67]">
+              <p className="text-sm text-muted-foreground">
                 {step === 'reset' ? t('steps.reset.subtitle') : t('steps.email.subtitle')}
               </p>
             </div>
 
             {/* Email sent success state */}
             {sent && step === 'email' ? (
-              <div className="p-5 rounded-xl text-center" style={{ backgroundColor: '#f4faf8', border: '1px solid rgba(23,119,103,0.16)' }}>
-                <CheckCircle className="w-8 h-8 mx-auto mb-3 text-[#177767]" />
-                <p className="text-sm font-medium mb-1 text-[#3c323e]">{t('messages.resetEmailSentTitle')}</p>
-                <p className="text-xs text-[#655d67]">{t('messages.resetEmailSent', { values: { email } })}</p>
+              <div className="p-5 rounded-xl text-center" style={{ backgroundColor: 'var(--tf-icon-teal)', border: '1px solid var(--tf-green-bg-md)' }}>
+                <CheckCircle className="w-8 h-8 mx-auto mb-3 text-[var(--tf-green)]" />
+                <p className="text-sm font-medium mb-1 text-primary">{t('messages.resetEmailSentTitle')}</p>
+                <p className="text-xs text-muted-foreground">{t('messages.resetEmailSent', { values: { email } })}</p>
               </div>
             ) : step === 'email' ? (
               <form onSubmit={handleSendResetEmail} className="space-y-4">
                 <div>
-                  <Label htmlFor="email" className="text-xs font-medium block mb-1.5 text-[#4c414e]">
+                  <Label htmlFor="email" className="text-xs font-medium block mb-1.5 text-foreground">
                     {t('form.email.label')}
                   </Label>
                   <Input
@@ -145,12 +145,12 @@ export const ForgotPassword = () => {
                     value={email}
                     onChange={(e) => { setEmail(e.target.value); if (errors.email) setErrors(prev => ({ ...prev, email: '' })); }}
                     disabled={isLoading}
-                    className={errors.email ? 'border-[#ce5d55] focus-visible:border-[#ce5d55]' : ''}
+                    className={errors.email ? 'border-destructive focus-visible:border-destructive' : ''}
                   />
-                  {errors.email && <p className="text-xs mt-1 text-[#ce5d55]">{errors.email}</p>}
+                  {errors.email && <p className="text-xs mt-1 text-destructive">{errors.email}</p>}
                 </div>
                 {errors.submit && (
-                  <p className="text-xs py-2 px-3 rounded-lg" style={{ backgroundColor: 'rgba(206,93,85,0.06)', color: '#ce5d55', border: '1px solid rgba(206,93,85,0.14)' }}>
+                  <p className="text-xs py-2 px-3 rounded-lg" style={{ backgroundColor: 'var(--tf-error-bg)', color: 'var(--tf-error)', border: '1px solid var(--tf-error-bg-md)' }}>
                     {errors.submit}
                   </p>
                 )}
@@ -170,7 +170,7 @@ export const ForgotPassword = () => {
             ) : (
               <form onSubmit={handleResetPassword} className="space-y-4">
                 <div>
-                  <Label htmlFor="newPassword" className="text-xs font-medium block mb-1.5 text-[#4c414e]">
+                  <Label htmlFor="newPassword" className="text-xs font-medium block mb-1.5 text-foreground">
                     {t('form.newPassword.label')}
                   </Label>
                   <Input
@@ -180,12 +180,12 @@ export const ForgotPassword = () => {
                     value={newPassword}
                     onChange={(e) => { setNewPassword(e.target.value); if (errors.password) setErrors(prev => ({ ...prev, password: '' })); }}
                     disabled={isLoading}
-                    className={errors.password ? 'border-[#ce5d55] focus-visible:border-[#ce5d55]' : ''}
+                    className={errors.password ? 'border-destructive focus-visible:border-destructive' : ''}
                   />
-                  {errors.password && <p className="text-xs mt-1 text-[#ce5d55]">{errors.password}</p>}
+                  {errors.password && <p className="text-xs mt-1 text-destructive">{errors.password}</p>}
                 </div>
                 <div>
-                  <Label htmlFor="confirmPassword" className="text-xs font-medium block mb-1.5 text-[#4c414e]">
+                  <Label htmlFor="confirmPassword" className="text-xs font-medium block mb-1.5 text-foreground">
                     {t('form.confirmPassword.label')}
                   </Label>
                   <Input
@@ -195,12 +195,12 @@ export const ForgotPassword = () => {
                     value={confirmPassword}
                     onChange={(e) => { setConfirmPassword(e.target.value); if (errors.confirmPassword) setErrors(prev => ({ ...prev, confirmPassword: '' })); }}
                     disabled={isLoading}
-                    className={errors.confirmPassword ? 'border-[#ce5d55] focus-visible:border-[#ce5d55]' : ''}
+                    className={errors.confirmPassword ? 'border-destructive focus-visible:border-destructive' : ''}
                   />
-                  {errors.confirmPassword && <p className="text-xs mt-1 text-[#ce5d55]">{errors.confirmPassword}</p>}
+                  {errors.confirmPassword && <p className="text-xs mt-1 text-destructive">{errors.confirmPassword}</p>}
                 </div>
                 {errors.submit && (
-                  <p className="text-xs py-2 px-3 rounded-lg" style={{ backgroundColor: 'rgba(206,93,85,0.06)', color: '#ce5d55', border: '1px solid rgba(206,93,85,0.14)' }}>
+                  <p className="text-xs py-2 px-3 rounded-lg" style={{ backgroundColor: 'var(--tf-error-bg)', color: 'var(--tf-error)', border: '1px solid var(--tf-error-bg-md)' }}>
                     {errors.submit}
                   </p>
                 )}

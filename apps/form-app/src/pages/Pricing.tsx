@@ -34,7 +34,7 @@ export const Pricing = () => {
   const planConfig: Record<string, { icon: any; iconBg: string; iconColor: string; tagline: string; features: string[]; recommended?: boolean }> = {
     free: {
       icon: Zap,
-      iconBg: '#dedcde', iconColor: '#4c414e',
+      iconBg: 'var(--tf-icon-gray)', iconColor: 'var(--tf-text)',
       tagline: t('plans.free.tagline'),
       features: [
         t('plans.free.features.views'),
@@ -47,7 +47,7 @@ export const Pricing = () => {
     },
     starter: {
       icon: TrendingUp,
-      iconBg: '#f4faf8', iconColor: '#177767',
+      iconBg: 'var(--tf-icon-teal)', iconColor: 'var(--tf-green)',
       tagline: t('plans.starter.tagline'),
       features: [
         t('plans.starter.features.views'),
@@ -63,7 +63,7 @@ export const Pricing = () => {
     },
     advanced: {
       icon: Sparkles,
-      iconBg: '#ddd6fa', iconColor: '#5c2e6b',
+      iconBg: 'var(--tf-icon-lavender)', iconColor: '#5c2e6b',
       tagline: t('plans.advanced.tagline'),
       features: [
         t('plans.advanced.features.views'),
@@ -136,20 +136,20 @@ export const Pricing = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#f7f7f8' }}>
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--tf-faint)' }}>
       {/* ── Hero ── */}
       <div className="pt-14 pb-10 px-6 text-center">
-        <h1 className="text-4xl font-light mb-3 tracking-tight text-[#3c323e]">
+        <h1 className="text-4xl font-light mb-3 tracking-tight text-primary">
           {t('hero.title')}
         </h1>
-        <p className="text-base mb-10 text-[#655d67]">
+        <p className="text-base mb-10 text-muted-foreground">
           {t('hero.subtitle')}
         </p>
 
         {/* Controls — Typeform ghost toggle group */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           {/* Billing toggle */}
-          <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid rgba(81,76,84,0.15)' }}>
+          <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid var(--tf-border-strong)' }}>
             {(['monthly', 'yearly'] as BillingCycle[]).map((cycle) => (
               <Button key={cycle} onClick={() => setBillingCycle(cycle)}
                 variant={billingCycle === cycle ? 'default' : 'ghost'}
@@ -157,7 +157,7 @@ export const Pricing = () => {
               >
                 {cycle === 'monthly' ? t('billing.monthly') : t('billing.yearly')}
                 {cycle === 'yearly' && billingCycle !== 'yearly' && (
-                  <span className="px-1.5 py-0.5 rounded-full text-[10px]" style={{ backgroundColor: '#f4faf8', color: '#177767' }}>
+                  <span className="px-1.5 py-0.5 rounded-full text-[10px]" style={{ backgroundColor: 'var(--tf-icon-teal)', color: 'var(--tf-green)' }}>
                     {t('billing.savePercent')}
                   </span>
                 )}
@@ -166,7 +166,7 @@ export const Pricing = () => {
           </div>
 
           {/* Currency toggle */}
-          <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid rgba(81,76,84,0.15)' }}>
+          <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid var(--tf-border-strong)' }}>
             {(['USD', 'INR'] as Currency[]).map((curr) => (
               <Button key={curr} onClick={() => setCurrency(curr)}
                 variant={currency === curr ? 'default' : 'ghost'}
@@ -183,8 +183,8 @@ export const Pricing = () => {
       <div className="px-6 pb-14 max-w-5xl mx-auto">
         {loading ? (
           <div className="text-center py-14">
-            <div className="w-8 h-8 rounded-full border-2 animate-spin mx-auto mb-3" style={{ borderColor: 'rgba(81,76,84,0.15)', borderTopColor: '#3c323e' }} />
-            <p className="text-xs text-[#655d67]">{t('loading.plans')}</p>
+            <div className="w-8 h-8 rounded-full border-2 animate-spin mx-auto mb-3" style={{ borderColor: 'var(--tf-border-strong)', borderTopColor: 'var(--tf-dark)' }} />
+            <p className="text-xs text-muted-foreground">{t('loading.plans')}</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-3 gap-5">
@@ -200,14 +200,14 @@ export const Pricing = () => {
                   key={plan.id}
                   className="relative rounded-xl bg-white p-7 flex flex-col transition-all duration-200"
                   style={{
-                    border: isRecommended ? '2px solid #3c323e' : '1px solid rgba(81,76,84,0.10)',
-                    boxShadow: isRecommended ? '0 4px 24px rgba(60,50,62,0.12)' : '0 1px 4px rgba(60,50,62,0.06)',
+                    border: isRecommended ? '2px solid #3c323e' : '1px solid var(--tf-border-medium)',
+                    boxShadow: isRecommended ? '0 4px 24px rgba(60,50,62,0.12)' : '0 1px 4px var(--tf-overlay)',
                   }}
                 >
                   {/* Recommended badge — Typeform pill style */}
                   {isRecommended && (
                     <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                      <span className="px-3 py-1 rounded-full text-xs font-medium text-white" style={{ backgroundColor: '#3c323e' }}>
+                      <span className="px-3 py-1 rounded-full text-xs font-medium text-white" style={{ backgroundColor: 'var(--tf-dark)' }}>
                         {t('plans.recommended')}
                       </span>
                     </div>
@@ -218,38 +218,38 @@ export const Pricing = () => {
                     <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3" style={{ backgroundColor: config.iconBg }}>
                       <Icon className="h-6 w-6" style={{ color: config.iconColor }} />
                     </div>
-                    <h3 className="text-lg font-semibold text-[#3c323e]">{plan.name}</h3>
-                    <p className="text-xs mt-0.5 text-[#655d67]">{config.tagline}</p>
+                    <h3 className="text-lg font-semibold text-primary">{plan.name}</h3>
+                    <p className="text-xs mt-0.5 text-muted-foreground">{config.tagline}</p>
                   </div>
 
                   {/* Price — Typeform light weight */}
                   {plan.id === 'free' ? (
                     <div className="text-center mb-7">
-                      <div className="text-4xl font-light text-[#3c323e]">{t('plans.free.price')}</div>
-                      <div className="text-xs mt-1 text-[#655d67]">{t('plans.free.forever')}</div>
+                      <div className="text-4xl font-light text-primary">{t('plans.free.price')}</div>
+                      <div className="text-xs mt-1 text-muted-foreground">{t('plans.free.forever')}</div>
                     </div>
                   ) : price ? (
                     <div className="text-center mb-7">
                       <div className="flex items-baseline justify-center gap-1">
-                        <span className="text-4xl font-light text-[#3c323e]">{formatPrice(price.amount, currency)}</span>
-                        <span className="text-xs text-[#655d67]">{billingCycle === 'monthly' ? t('billing.perMonth') : t('billing.perYear')}</span>
+                        <span className="text-4xl font-light text-primary">{formatPrice(price.amount, currency)}</span>
+                        <span className="text-xs text-muted-foreground">{billingCycle === 'monthly' ? t('billing.perMonth') : t('billing.perYear')}</span>
                       </div>
                       {billingCycle === 'yearly' && (
-                        <div className="text-xs mt-1 text-[#655d67]">
+                        <div className="text-xs mt-1 text-muted-foreground">
                           {currency === 'USD' ? '$' : '₹'}{getMonthlyEquivalent(price.amount / 100, 'year')}{t('billing.billedAnnually')}
                         </div>
                       )}
                     </div>
                   ) : (
-                    <div className="text-center mb-7 text-sm text-[#655d67]">{t('plans.priceNotAvailable')}</div>
+                    <div className="text-center mb-7 text-sm text-muted-foreground">{t('plans.priceNotAvailable')}</div>
                   )}
 
                   {/* Features — Typeform simple ticks */}
                   <div className="space-y-2.5 mb-7 flex-1">
                     {config.features.map((feature, i) => (
                       <div key={i} className="flex items-start gap-2.5">
-                        <Check className="h-4 w-4 shrink-0 mt-0.5 text-[#177767]" />
-                        <span className="text-xs text-[#4c414e]">{feature}</span>
+                        <Check className="h-4 w-4 shrink-0 mt-0.5 text-[var(--tf-green)]" />
+                        <span className="text-xs text-foreground">{feature}</span>
                       </div>
                     ))}
                   </div>
@@ -272,7 +272,7 @@ export const Pricing = () => {
 
       {/* ── FAQ ── */}
       <div className="px-6 pb-16 max-w-3xl mx-auto">
-        <h2 className="text-2xl font-light text-center mb-7 text-[#3c323e]">{t('faq.title')}</h2>
+        <h2 className="text-2xl font-light text-center mb-7 text-primary">{t('faq.title')}</h2>
         <div className="space-y-3">
           {[
             { question: t('faq.items.changePlans.question'), answer: t('faq.items.changePlans.answer') },
@@ -280,12 +280,12 @@ export const Pricing = () => {
             { question: t('faq.items.paymentMethods.question'), answer: t('faq.items.paymentMethods.answer') },
             { question: t('faq.items.freeForever.question'), answer: t('faq.items.freeForever.answer') },
           ].map((faq, i) => (
-            <div key={i} className="rounded-xl bg-white p-5" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
+            <div key={i} className="rounded-xl bg-white p-5" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}>
               <div className="flex items-start gap-3">
-                <HelpCircle className="h-4 w-4 shrink-0 mt-0.5 text-[#655d67]" />
+                <HelpCircle className="h-4 w-4 shrink-0 mt-0.5 text-muted-foreground" />
                 <div>
-                  <h3 className="text-sm font-medium mb-1 text-[#3c323e]">{faq.question}</h3>
-                  <p className="text-xs leading-relaxed text-[#655d67]">{faq.answer}</p>
+                  <h3 className="text-sm font-medium mb-1 text-primary">{faq.question}</h3>
+                  <p className="text-xs leading-relaxed text-muted-foreground">{faq.answer}</p>
                 </div>
               </div>
             </div>
@@ -295,7 +295,7 @@ export const Pricing = () => {
 
       {/* ── CTA ── */}
       <div className="px-6 pb-16 max-w-3xl mx-auto">
-        <div className="rounded-xl p-10 text-center text-white" style={{ backgroundColor: '#2a222b' }}>
+        <div className="rounded-xl p-10 text-center text-white" style={{ backgroundColor: 'var(--tf-darkest)' }}>
           <h2 className="text-2xl font-light mb-3">{t('cta.title')}</h2>
           <p className="text-sm mb-7 text-[rgba(255,255,255,0.70)]">{t('cta.subtitle')}</p>
           <Button

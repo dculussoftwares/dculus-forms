@@ -142,10 +142,10 @@ export const PluginCard: React.FC<PluginCardProps> = ({
   const getPluginIconStyle = () => {
     switch (plugin.type) {
       case 'webhook':      return { bg: '#fbe19d', color: '#8b6a18' };   /* yellow */
-      case 'email':        return { bg: '#f8cdd8', color: '#3c323e' };   /* salmon */
-      case 'quiz-grading': return { bg: '#ddd6fa', color: '#5c2e6b' };   /* lavender */
+      case 'email':        return { bg: 'var(--tf-icon-salmon)', color: 'var(--tf-dark)' };   /* salmon */
+      case 'quiz-grading': return { bg: 'var(--tf-icon-lavender)', color: '#5c2e6b' };   /* lavender */
       case 'slack':        return { bg: '#c4e3ba', color: '#2d6236' };   /* green */
-      default:             return { bg: '#dedcde', color: '#4c414e' };   /* gray */
+      default:             return { bg: 'var(--tf-icon-gray)', color: 'var(--tf-text)' };   /* gray */
     }
   };
   const iconStyle = getPluginIconStyle();
@@ -175,25 +175,25 @@ export const PluginCard: React.FC<PluginCardProps> = ({
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
-            <span className="text-sm font-medium truncate text-[#3c323e]">{plugin.name}</span>
+            <span className="text-sm font-medium truncate text-primary">{plugin.name}</span>
             <span
               className="px-2 py-0.5 rounded-full text-[10px] font-medium"
               style={plugin.enabled
-                ? { backgroundColor: 'rgba(23,119,103,0.08)', color: '#177767', border: '1px solid rgba(23,119,103,0.16)' }
-                : { backgroundColor: '#f7f7f8', color: '#655d67', border: '1px solid rgba(81,76,84,0.12)' }
+                ? { backgroundColor: 'var(--tf-green-bg)', color: 'var(--tf-green)', border: '1px solid var(--tf-green-bg-md)' }
+                : { backgroundColor: 'var(--tf-faint)', color: 'var(--tf-muted)', border: '1px solid var(--tf-border)' }
               }
             >
               {plugin.enabled ? t('status.enabled') : t('status.disabled')}
             </span>
           </div>
-          <p className="text-xs text-[#655d67]">
+          <p className="text-xs text-muted-foreground">
             {getPluginTypeLabel()} · {plugin.events.length} {t('eventsCount', { values: { count: plugin.events.length } })}
           </p>
           {/* Event badges */}
           {plugin.events.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-2">
               {plugin.events.map((event: string) => (
-                <span key={event} className="px-2 py-0.5 rounded-lg text-[10px]" style={{ backgroundColor: '#f7f7f8', color: '#655d67', border: '1px solid rgba(81,76,84,0.10)' }}>
+                <span key={event} className="px-2 py-0.5 rounded-lg text-[10px]" style={{ backgroundColor: 'var(--tf-faint)', color: 'var(--tf-muted)', border: '1px solid var(--tf-border-medium)' }}>
                   {event}
                 </span>
               ))}
@@ -201,7 +201,7 @@ export const PluginCard: React.FC<PluginCardProps> = ({
           )}
           {/* Webhook URL */}
           {plugin.type === 'webhook' && plugin.config?.url && (
-            <p className="text-[10px] font-mono mt-1.5 truncate max-w-xs text-[#655d67]">{plugin.config.url}</p>
+            <p className="text-[10px] font-mono mt-1.5 truncate max-w-xs text-muted-foreground">{plugin.config.url}</p>
           )}
         </div>
 
@@ -241,7 +241,7 @@ export const PluginCard: React.FC<PluginCardProps> = ({
               <DropdownMenuItem
                 onClick={handleDeleteClick}
                 disabled={isDeleting}
-                className="text-[#ce5d55] focus:text-[#ce5d55]"
+                className="text-destructive focus:text-destructive"
               >
                 {isDeleting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

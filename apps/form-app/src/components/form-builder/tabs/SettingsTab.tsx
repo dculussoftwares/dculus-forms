@@ -10,15 +10,15 @@ export const SettingsTab: React.FC = () => {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center space-x-3 p-6 border-b border-[rgba(81,76,84,0.10)] dark:border-gray-700">
-        <div className="p-2 bg-[#f7f7f8] dark:bg-gray-800 rounded-lg">
-          <Settings className="w-5 h-5 text-[#4c414e] dark:text-gray-400" />
+      <div className="flex items-center space-x-3 p-6 border-b border-[var(--tf-border-medium)] dark:border-gray-700">
+        <div className="p-2 bg-background dark:bg-gray-800 rounded-lg">
+          <Settings className="w-5 h-5 text-foreground dark:text-gray-400" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-[#3c323e] dark:text-white">
+          <h2 className="text-lg font-semibold text-primary dark:text-white">
             {t('header.title')}
           </h2>
-          <p className="text-sm text-[#4c414e] dark:text-gray-400">
+          <p className="text-sm text-foreground dark:text-gray-400">
             {t('header.description')}
           </p>
         </div>
@@ -28,42 +28,42 @@ export const SettingsTab: React.FC = () => {
       <div className="flex-1 p-6">
         <div className="max-w-2xl mx-auto">
           {/* Coming Soon Card */}
-          <div className="bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900/50 dark:to-blue-900/20 rounded-xl p-8 border border-[rgba(81,76,84,0.10)] dark:border-gray-700">
+          <div className="bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900/50 dark:to-blue-900/20 rounded-xl p-8 border border-[var(--tf-border-medium)] dark:border-gray-700">
             <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-[#f7f7f8] dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
-                <Cog className="w-8 h-8 text-[#4c414e] dark:text-gray-400" />
+              <div className="mx-auto w-16 h-16 bg-background dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                <Cog className="w-8 h-8 text-foreground dark:text-gray-400" />
               </div>
               
-              <h3 className="text-xl font-semibold text-[#3c323e] dark:text-white mb-2">
+              <h3 className="text-xl font-semibold text-primary dark:text-white mb-2">
                 {t('comingSoon.title')}
               </h3>
               
-              <p className="text-[#4c414e] dark:text-gray-400 mb-6">
+              <p className="text-foreground dark:text-gray-400 mb-6">
                 {t('comingSoon.description')}
               </p>
 
               {/* Current Settings Info */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-[rgba(81,76,84,0.10)] dark:border-gray-700">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-[var(--tf-border-medium)] dark:border-gray-700">
                 <div className="flex items-center space-x-2 mb-3">
                   <Info className="w-4 h-4 text-blue-500" />
-                  <span className="text-sm font-medium text-[#3c323e] dark:text-white">
+                  <span className="text-sm font-medium text-primary dark:text-white">
                     {t('currentState.title')}
                   </span>
                 </div>
                 <div className="space-y-2 text-sm text-left">
                   <div className="flex justify-between">
-                    <span className="text-[#4c414e] dark:text-gray-400">{t('currentState.totalPages')}:</span>
-                    <span className="text-[#3c323e] dark:text-white">{pages.length}</span>
+                    <span className="text-foreground dark:text-gray-400">{t('currentState.totalPages')}:</span>
+                    <span className="text-primary dark:text-white">{pages.length}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#4c414e] dark:text-gray-400">{t('currentState.shuffleEnabled')}:</span>
-                    <span className="text-[#3c323e] dark:text-white">
+                    <span className="text-foreground dark:text-gray-400">{t('currentState.shuffleEnabled')}:</span>
+                    <span className="text-primary dark:text-white">
                       {isShuffleEnabled ? t('currentState.yes') : t('currentState.no')}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#4c414e] dark:text-gray-400">{t('currentState.totalFields')}:</span>
-                    <span className="text-[#3c323e] dark:text-white">
+                    <span className="text-foreground dark:text-gray-400">{t('currentState.totalFields')}:</span>
+                    <span className="text-primary dark:text-white">
                       {pages.reduce((total: number, page: any) => total + page.fields.length, 0)}
                     </span>
                   </div>
@@ -82,7 +82,7 @@ export const SettingsTab: React.FC = () => {
 
           {/* Feature Preview */}
           <div className="mt-8">
-            <h4 className="text-sm font-medium text-[#3c323e] dark:text-white mb-4">
+            <h4 className="text-sm font-medium text-primary dark:text-white mb-4">
               {t('upcomingFeatures.title')}
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -96,7 +96,7 @@ export const SettingsTab: React.FC = () => {
               ].map((feature, index) => (
                 <div key={index} className="flex items-center space-x-2">
                   <div className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
-                  <span className="text-sm text-[#4c414e] dark:text-gray-400">{feature}</span>
+                  <span className="text-sm text-foreground dark:text-gray-400">{feature}</span>
                 </div>
               ))}
             </div>

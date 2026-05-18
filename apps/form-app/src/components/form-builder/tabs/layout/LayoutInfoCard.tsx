@@ -18,20 +18,20 @@ export const LayoutInfoCard: React.FC<LayoutInfoCardProps> = ({
 }) => {
   const { t } = useTranslation('layoutOptions');
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-[rgba(81,76,84,0.10)] dark:border-gray-700">
+    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-[var(--tf-border-medium)] dark:border-gray-700">
       <div className="flex items-center space-x-2 mb-4">
         <Info className="w-5 h-5 text-blue-500" />
-        <span className="text-lg font-medium text-[#3c323e] dark:text-white">
+        <span className="text-lg font-medium text-primary dark:text-white">
           {t('infoCard.title')}
         </span>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-3">
-          <div className="flex justify-between items-center py-2 px-3 bg-[#f7f7f8] dark:bg-gray-700 rounded">
-            <span className="text-sm font-medium text-[#4c414e] dark:text-gray-400">{t('labels.layout')}</span>
+          <div className="flex justify-between items-center py-2 px-3 bg-background dark:bg-gray-700 rounded">
+            <span className="text-sm font-medium text-foreground dark:text-gray-400">{t('labels.layout')}</span>
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-[#3c323e] dark:text-white">
+              <span className="text-sm text-primary dark:text-white">
                 {getLayoutName(currentLayoutCode)}
               </span>
               <span className="text-xs font-mono bg-purple-100 dark:bg-purple-900/30 px-2 py-1 rounded text-purple-600 dark:text-purple-400">
@@ -40,21 +40,21 @@ export const LayoutInfoCard: React.FC<LayoutInfoCardProps> = ({
             </div>
           </div>
           
-          <div className="flex justify-between items-center py-2 px-3 bg-[#f7f7f8] dark:bg-gray-700 rounded">
-            <span className="text-sm font-medium text-[#4c414e] dark:text-gray-400">{t('labels.theme')}</span>
-            <span className="text-sm text-[#3c323e] dark:text-white capitalize">{layout?.theme || 'light'}</span>
+          <div className="flex justify-between items-center py-2 px-3 bg-background dark:bg-gray-700 rounded">
+            <span className="text-sm font-medium text-foreground dark:text-gray-400">{t('labels.theme')}</span>
+            <span className="text-sm text-primary dark:text-white capitalize">{layout?.theme || 'light'}</span>
           </div>
           
-          <div className="flex justify-between items-center py-2 px-3 bg-[#f7f7f8] dark:bg-gray-700 rounded">
-            <span className="text-sm font-medium text-[#4c414e] dark:text-gray-400">{t('labels.spacing')}</span>
-            <span className="text-sm text-[#3c323e] dark:text-white capitalize">{layout?.spacing || 'normal'}</span>
+          <div className="flex justify-between items-center py-2 px-3 bg-background dark:bg-gray-700 rounded">
+            <span className="text-sm font-medium text-foreground dark:text-gray-400">{t('labels.spacing')}</span>
+            <span className="text-sm text-primary dark:text-white capitalize">{layout?.spacing || 'normal'}</span>
           </div>
         </div>
         
         <div className="flex items-center justify-center">
-          <div className="bg-[#f7f7f8] dark:bg-gray-700 rounded-lg p-4 w-full">
-            <p className="text-xs text-[#4c414e] dark:text-gray-400 mb-2 text-center">{t('infoCard.preview')}</p>
-            <div className="text-xs text-[#4c414e] dark:text-gray-400 text-center">
+          <div className="bg-background dark:bg-gray-700 rounded-lg p-4 w-full">
+            <p className="text-xs text-foreground dark:text-gray-400 mb-2 text-center">{t('infoCard.preview')}</p>
+            <div className="text-xs text-foreground dark:text-gray-400 text-center">
               {getLayoutName(currentLayoutCode)} {t('infoCard.layoutSuffix')}
             </div>
           </div>

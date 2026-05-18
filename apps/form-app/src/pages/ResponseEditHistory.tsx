@@ -107,7 +107,7 @@ export const ResponseEditHistory: React.FC = () => {
       >
         <EmptyState
           variant="error"
-          icon={<AlertCircle className="h-6 w-6 text-[#ce5d55]" />}
+          icon={<AlertCircle className="h-6 w-6 text-destructive" />}
           title={t('errors.notFound.title')}
           description={t('errors.notFound.description')}
         />
@@ -127,7 +127,7 @@ export const ResponseEditHistory: React.FC = () => {
     >
       <div className="flex flex-col h-full w-full overflow-x-hidden">
         {/* Header */}
-        <div className="flex items-center gap-3 pb-4 flex-shrink-0" style={{ borderBottom: '1px solid rgba(81,76,84,0.10)' }}>
+        <div className="flex items-center gap-3 pb-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--tf-border-medium)' }}>
           <Button
             onClick={handleGoToTable}
             variant="ghost"
@@ -135,11 +135,11 @@ export const ResponseEditHistory: React.FC = () => {
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'rgba(81,76,84,0.12)' }} />
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: '#ddd6fa' }}>
+          <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'var(--tf-border)' }} />
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--tf-icon-lavender)' }}>
             <History className="h-4 w-4 text-[#5c2e6b]" />
           </div>
-          <h1 className="text-sm font-semibold truncate flex-1 text-[#3c323e]">{t('header.title')}</h1>
+          <h1 className="text-sm font-semibold truncate flex-1 text-primary">{t('header.title')}</h1>
           <Button
             onClick={handleGoToEdit}
             className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium shrink-0"
@@ -153,8 +153,8 @@ export const ResponseEditHistory: React.FC = () => {
         <div className="flex-1 flex flex-col min-h-0 w-full overflow-x-hidden space-y-6 p-6">
 
           {/* Response Info */}
-          <div className="rounded-xl bg-white p-5" style={{ border: '1px solid rgba(81,76,84,0.10)', boxShadow: '0 1px 4px rgba(60,50,62,0.06)' }}>
-            <h3 className="text-sm font-semibold mb-4 text-[#3c323e]">{t('responseInfo.title')}</h3>
+          <div className="rounded-xl bg-white p-5" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}>
+            <h3 className="text-sm font-semibold mb-4 text-primary">{t('responseInfo.title')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
                 { label: t('responseInfo.responseId'), value: <span className="font-mono text-xs">{responseId}</span> },
@@ -169,8 +169,8 @@ export const ResponseEditHistory: React.FC = () => {
                 },
               ].map(({ label, value }) => (
                 <div key={label as string}>
-                  <p className="text-xs font-medium mb-1 text-[#655d67]">{label}</p>
-                  <p className="text-sm text-[#3c323e]">{value}</p>
+                  <p className="text-xs font-medium mb-1 text-muted-foreground">{label}</p>
+                  <p className="text-sm text-primary">{value}</p>
                 </div>
               ))}
             </div>
@@ -189,12 +189,12 @@ export const ResponseEditHistory: React.FC = () => {
           {/* Edit History Timeline */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-[#3c323e]">
+              <h2 className="text-sm font-semibold text-primary">
                 {t('timeline.title', { values: { count: editHistory.length, editText: editHistory.length === 1 ? t('timeline.editSingular') : t('timeline.editPlural') } })}
               </h2>
 
               {editHistory.length > 0 && (
-                <div className="flex items-center gap-1.5 text-xs text-[#655d67]">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Clock className="h-3.5 w-3.5" />
                   {t('timeline.lastEdited', { values: { date: safeFormatDate(editHistory[0].editedAt, 'MMM dd, yyyy', 'unknown date') } })}
                 </div>

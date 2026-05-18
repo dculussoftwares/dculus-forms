@@ -141,7 +141,7 @@ export const DefaultValueInput: React.FC<DefaultValueInputProps> = ({
               className={`space-y-2 ${errors.defaultValue ? 'border border-red-300 rounded-lg p-2' : ''}`}
             >
               {options.length === 0 ? (
-                <div className="text-sm text-[#655d67] dark:text-gray-400 italic">
+                <div className="text-sm text-muted-foreground dark:text-gray-400 italic">
                   {constants.INFO_MESSAGES.NO_OPTIONS_AVAILABLE}
                 </div>
               ) : (
@@ -163,14 +163,14 @@ export const DefaultValueInput: React.FC<DefaultValueInputProps> = ({
                         />
                         <Label
                           htmlFor={`default-option-${index}`}
-                          className="text-sm font-normal text-[#4c414e] dark:text-gray-300 cursor-pointer"
+                          className="text-sm font-normal text-foreground dark:text-gray-300 cursor-pointer"
                         >
                           {option}
                         </Label>
                       </div>
                     ))}
                   {selectedValues.length > 0 && (
-                    <div className="text-xs text-[#655d67] dark:text-gray-400 mt-2">
+                    <div className="text-xs text-muted-foreground dark:text-gray-400 mt-2">
                       {selectedValues.length} option
                       {selectedValues.length === 1 ? '' : 's'} selected as
                       default
@@ -197,7 +197,7 @@ export const DefaultValueInput: React.FC<DefaultValueInputProps> = ({
               disabled={!isConnected}
             >
               <SelectTrigger
-                className={`text-sm ${errors.defaultValue ? 'border-[#ce5d55] focus:border-[#ce5d55] focus:ring-red-500' : ''}`}
+                className={`text-sm ${errors.defaultValue ? 'border-destructive focus:border-destructive focus:ring-red-500' : ''}`}
               >
                 <SelectValue
                   placeholder={constants.PLACEHOLDERS.SELECT_DEFAULT_OPTION}
@@ -231,7 +231,7 @@ export const DefaultValueInput: React.FC<DefaultValueInputProps> = ({
             id="field-default"
             placeholder={constants.PLACEHOLDERS.DEFAULT_VALUE}
             disabled={!isConnected}
-            className={`text-sm ${errors.defaultValue ? 'border-[#ce5d55] focus:border-[#ce5d55] focus:ring-red-500' : ''}`}
+            className={`text-sm ${errors.defaultValue ? 'border-destructive focus:border-destructive focus:ring-red-500' : ''}`}
             value={controlField.value || ''}
           />
         );

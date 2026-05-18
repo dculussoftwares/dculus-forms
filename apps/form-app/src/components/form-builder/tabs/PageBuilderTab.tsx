@@ -97,13 +97,13 @@ const getCategoryColor = (category: string) => {
   /* Typeform field-icon palette (exact extracted colors) */
   switch (category) {
     case 'input':
-      return 'bg-[#f8cdd8] text-[#3c323e]';      /* salmon */
+      return 'bg-[var(--tf-icon-salmon)] text-primary';      /* salmon */
     case 'choice':
-      return 'bg-[#ddd6fa] text-[#5c2e6b]';      /* lavender */
+      return 'bg-[var(--tf-icon-lavender)] text-[#5c2e6b]';      /* lavender */
     case 'content':
-      return 'bg-[#f4faf8] text-[#177767]';      /* teal */
+      return 'bg-[var(--tf-icon-teal)] text-[var(--tf-green)]';      /* teal */
     default:
-      return 'bg-[#dedcde] text-[#4c414e]';      /* neutral gray */
+      return 'bg-[var(--tf-icon-gray)] text-foreground';      /* neutral gray */
   }
 };
 
@@ -116,7 +116,7 @@ const getCategoryColor = (category: string) => {
  */
 const LeftSidebar: React.FC = () => {
   return (
-    <div className="w-72 bg-white dark:bg-card" style={{ borderRight: '1px solid rgba(81,76,84,0.12)' }}>
+    <div className="w-72 bg-white dark:bg-card" style={{ borderRight: '1px solid var(--tf-border)' }}>
       <FieldTypesPanel />
     </div>
   );
@@ -232,7 +232,7 @@ const RightSidebar: React.FC<{
   return (
     <div
       className="bg-white dark:bg-card flex flex-col relative"
-      style={{ borderLeft: '1px solid rgba(81,76,84,0.12)', width: `${width}px` }}
+      style={{ borderLeft: '1px solid var(--tf-border)', width: `${width}px` }}
     >
       {/* Resize handle */}
       <div
@@ -243,13 +243,13 @@ const RightSidebar: React.FC<{
         onMouseDown={handleMouseDown}
       >
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-          <GripHorizontal className="w-4 h-4 text-[#655d67] rotate-90" />
+          <GripHorizontal className="w-4 h-4 text-muted-foreground rotate-90" />
         </div>
       </div>
 
       {/* Tab Navigation */}
       {/* Typeform-style underline tab row */}
-      <div className="flex" style={{ borderBottom: '1px solid rgba(81,76,84,0.12)' }}>
+      <div className="flex" style={{ borderBottom: '1px solid var(--tf-border)' }}>
         {([
           { id: 'pages' as const, icon: StickyNote, label: t('sidebar.pages.title') },
           { id: 'properties' as const, icon: Settings, label: t('tabs.field') },
@@ -260,12 +260,12 @@ const RightSidebar: React.FC<{
             variant="ghost"
             onClick={() => setActiveTab(id)}
             className="relative flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors h-auto rounded-none"
-            style={{ color: activeTab === id ? '#3c323e' : '#655d67' }}
+            style={{ color: activeTab === id ? 'var(--tf-dark)' : 'var(--tf-muted)' }}
           >
             <Icon className="w-3.5 h-3.5" />
             {label}
             {activeTab === id && (
-              <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full" style={{ backgroundColor: '#3c323e' }} />
+              <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full" style={{ backgroundColor: 'var(--tf-dark)' }} />
             )}
           </Button>
         ))}
@@ -276,7 +276,7 @@ const RightSidebar: React.FC<{
           /* Pages Tab Content */
           <div className="p-4">
             <div className="mb-4 flex items-center justify-between">
-              <div className="text-sm text-[#655d67]">
+              <div className="text-sm text-muted-foreground">
                 {t('sidebar.pages.pageCount', {
                   values: { count: pages.length },
                 })}
@@ -316,7 +316,7 @@ const RightSidebar: React.FC<{
             </SortableContext>
 
             {pages.length === 0 && (
-              <div className="text-center py-8 text-[#655d67]">
+              <div className="text-center py-8 text-muted-foreground">
                 {t('sidebar.pages.noPages')}
                 {permissions.canAddPages() && (
                   <Button
@@ -341,7 +341,7 @@ const RightSidebar: React.FC<{
                 onDelete={handleDelete}
               />
             ) : (
-              <div className="flex flex-col items-center justify-center h-64 text-[#655d67] dark:text-gray-400 p-8 text-center">
+              <div className="flex flex-col items-center justify-center h-64 text-muted-foreground dark:text-gray-400 p-8 text-center">
                 <Settings className="w-12 h-12 mb-4 opacity-20" />
                 <p>{t('emptyState.title')}</p>
               </div>
@@ -440,7 +440,7 @@ const FieldCard: React.FC<{
             ? '1px solid #3c323e'
             : isSelected
               ? '1px solid #3c323e'
-              : '1px solid rgba(81,76,84,0.10)',
+              : '1px solid var(--tf-border-medium)',
         boxShadow: isSelected
           ? '0 0 0 3px rgba(60,50,62,0.10)'
           : undefined,
@@ -454,11 +454,11 @@ const FieldCard: React.FC<{
           {dragHandleProps && (
             <div
               {...dragHandleProps}
-              className="flex-shrink-0 p-1 -ml-2 cursor-grab rounded transition-colors hover:bg-[rgba(87,84,91,0.06)]"
+              className="flex-shrink-0 p-1 -ml-2 cursor-grab rounded transition-colors hover:bg-[var(--tf-tab-bg)]"
               title="Drag to reorder"
               onClick={(e) => e.stopPropagation()}
             >
-              <GripVertical className="w-4 h-4 text-[#655d67] dark:text-gray-500" />
+              <GripVertical className="w-4 h-4 text-muted-foreground dark:text-gray-500" />
             </div>
           )}
 
@@ -471,20 +471,20 @@ const FieldCard: React.FC<{
 
           {/* Field info */}
           <div className="flex-1 min-w-0 max-w-[280px]">
-            <div className="text-sm font-medium truncate flex items-center gap-1 text-[#3c323e]">
+            <div className="text-sm font-medium truncate flex items-center gap-1 text-primary">
               <span className="truncate">{label}</span>
               {/* Required indicator - red asterisk */}
               {'validation' in field &&
                 (field as FillableFormField).validation?.required && (
                   <span
-                    className="text-[#ce5d55] text-sm flex-shrink-0"
+                    className="text-destructive text-sm flex-shrink-0"
                     title="Required field"
                   >
                     *
                   </span>
                 )}
             </div>
-            <div className="text-xs text-[#655d67]">
+            <div className="text-xs text-muted-foreground">
               {typeConfig.label}
             </div>
           </div>
@@ -497,11 +497,11 @@ const FieldCard: React.FC<{
             {dragHandleProps && (
               <div
                 {...dragHandleProps}
-                className="flex-shrink-0 p-1 -ml-2 cursor-grab rounded transition-colors hover:bg-[rgba(87,84,91,0.06)]"
+                className="flex-shrink-0 p-1 -ml-2 cursor-grab rounded transition-colors hover:bg-[var(--tf-tab-bg)]"
                 title="Drag to reorder"
                 onClick={(e) => e.stopPropagation()}
               >
-                <GripVertical className="w-4 h-4 text-[#655d67] dark:text-gray-500" />
+                <GripVertical className="w-4 h-4 text-muted-foreground dark:text-gray-500" />
               </div>
             )}
 
@@ -514,20 +514,20 @@ const FieldCard: React.FC<{
 
             {/* Field info */}
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium truncate flex items-center gap-1 text-[#3c323e]">
+              <div className="text-sm font-medium truncate flex items-center gap-1 text-primary">
                 <span className="truncate">{label}</span>
                 {/* Required indicator - red asterisk */}
                 {'validation' in field &&
                   (field as FillableFormField).validation?.required && (
                     <span
-                      className="text-[#ce5d55] text-sm flex-shrink-0"
+                      className="text-destructive text-sm flex-shrink-0"
                       title="Required field"
                     >
                       *
                     </span>
                   )}
               </div>
-              <div className="text-xs text-[#655d67] dark:text-gray-400">
+              <div className="text-xs text-muted-foreground dark:text-gray-400">
                 {typeConfig.label}
               </div>
             </div>
@@ -535,7 +535,7 @@ const FieldCard: React.FC<{
 
           {/* Field Preview */}
           <div className="pl-9 pr-2" data-testid={`field-content-${index + 1}`}>
-            <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(81,76,84,0.03)', border: '1px solid rgba(81,76,84,0.08)' }}>
+            <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(81,76,84,0.03)', border: '1px solid var(--tf-border-light)' }}>
               <FieldPreview
                 field={field}
                 disabled={true}
@@ -627,7 +627,7 @@ const FieldCard: React.FC<{
                     e.stopPropagation();
                     onDelete();
                   }}
-                  className="p-1.5 text-[#655d67] hover:text-[#ce5d55] hover:bg-[rgba(206,93,85,0.06)] dark:hover:bg-red-950/30 rounded-lg h-auto"
+                  className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-[var(--tf-error-bg)] dark:hover:bg-red-950/30 rounded-lg h-auto"
                   title="Delete field"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -764,7 +764,7 @@ const EmptyFormAreaPlaceholder: React.FC<{ isConnected: boolean }> = ({
   const { t } = useTranslation('pageBuilderTab');
 
   return (
-    <div className="flex items-center justify-center h-full min-h-[200px] text-[#655d67] dark:text-gray-400">
+    <div className="flex items-center justify-center h-full min-h-[200px] text-muted-foreground dark:text-gray-400">
       <div className="text-center">
         <p className="text-lg font-medium">{t('formArea.placeholder')}</p>
         <ConnectionStatus isConnected={isConnected} />
@@ -896,7 +896,7 @@ const FormArea: React.FC<{
                 ${
                   isOver
                     ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 ring-2 ring-blue-500/20'
-                    : 'border-[rgba(81,76,84,0.15)] dark:border-gray-600'
+                    : 'border-[var(--tf-border-strong)] dark:border-gray-600'
                 }
               `}
               data-testid="droppable-page"
@@ -930,7 +930,7 @@ const PageHeader: React.FC<{
   if (!selectedPage) {
     return (
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#655d67]">
+        <h1 className="text-2xl font-bold text-muted-foreground">
           {t('formArea.noPageSelected')}
         </h1>
       </div>
@@ -939,10 +939,10 @@ const PageHeader: React.FC<{
 
   return (
     <div className="mb-6">
-      <h1 className="text-2xl font-bold text-[#3c323e] dark:text-white">
+      <h1 className="text-2xl font-bold text-primary dark:text-white">
         {selectedPage.title || t('formArea.untitledPage')}
       </h1>
-      <p className="text-sm text-[#655d67] dark:text-gray-400 mt-1">
+      <p className="text-sm text-muted-foreground dark:text-gray-400 mt-1">
         {selectedPage.fields.length}{' '}
         {selectedPage.fields.length === 1 ? 'field' : 'fields'}
       </p>

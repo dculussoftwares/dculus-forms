@@ -37,9 +37,9 @@ export const FieldSelectionGrid: React.FC<FieldSelectionGridProps> = ({
     return (
       <Card>
         <CardContent className="p-8 text-center">
-          <BarChart3 className="h-12 w-12 mx-auto mb-4 text-[#655d67]" />
-          <h3 className="text-lg font-medium text-[#3c323e] mb-2">{t('fieldList.noFieldsTitle')}</h3>
-          <p className="text-[#4c414e]">
+          <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-medium text-primary mb-2">{t('fieldList.noFieldsTitle')}</h3>
+          <p className="text-foreground">
             {t('fieldList.noFieldsDescription')}
           </p>
         </CardContent>
@@ -52,7 +52,7 @@ export const FieldSelectionGrid: React.FC<FieldSelectionGridProps> = ({
     if (rate >= 80) return 'text-primary bg-primary/10';
     if (rate >= 60) return 'text-yellow-600 bg-yellow-100';
     if (rate >= 40) return 'text-orange-600 bg-orange-100';
-    return 'text-[#ce5d55] bg-[rgba(206,93,85,0.08)]';
+    return 'text-destructive bg-[var(--tf-error-bg)]';
   };
 
   return (
@@ -74,7 +74,7 @@ export const FieldSelectionGrid: React.FC<FieldSelectionGridProps> = ({
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 flex-1 min-w-0">
                     <div className={`p-2.5 rounded-lg flex-shrink-0 ${
-                      isSelected ? 'bg-blue-100 text-blue-600' : 'bg-[#f7f7f8] text-[#4c414e]'
+                      isSelected ? 'bg-blue-100 text-blue-600' : 'bg-background text-foreground'
                     }`}>
                       {React.createElement(getAnalyticsIcon(field.fieldType as any), { className: 'h-5 w-5' })}
                     </div>
@@ -82,7 +82,7 @@ export const FieldSelectionGrid: React.FC<FieldSelectionGridProps> = ({
                       <TooltipProvider delayDuration={300}>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <div className="font-semibold text-[#3c323e] text-base truncate cursor-help">
+                            <div className="font-semibold text-primary text-base truncate cursor-help">
                               {field.fieldLabel || `${t('fieldHeader.fieldPrefix')} ${field.fieldId}`}
                             </div>
                           </TooltipTrigger>
@@ -91,7 +91,7 @@ export const FieldSelectionGrid: React.FC<FieldSelectionGridProps> = ({
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                      <div className="text-xs text-[#655d67] mt-0.5">
+                      <div className="text-xs text-muted-foreground mt-0.5">
                         {getFieldTypeDisplayName(field.fieldType, (key: string) => t(key))}
                       </div>
                     </div>
@@ -126,19 +126,19 @@ export const FieldSelectionGrid: React.FC<FieldSelectionGridProps> = ({
               {/* Stats Footer */}
               <div className="p-4 bg-white">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="flex items-center gap-2 p-2.5 bg-[#f7f7f8] rounded-lg">
-                    <Users className="h-4 w-4 text-[#655d67] flex-shrink-0" />
+                  <div className="flex items-center gap-2 p-2.5 bg-background rounded-lg">
+                    <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs text-[#4c414e]">{t('fieldList.responses')}</div>
-                      <div className="font-bold text-sm text-[#3c323e]">{field.totalResponses}</div>
+                      <div className="text-xs text-foreground">{t('fieldList.responses')}</div>
+                      <div className="font-bold text-sm text-primary">{field.totalResponses}</div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 p-2.5 bg-[#f7f7f8] rounded-lg">
-                    <Eye className="h-4 w-4 text-[#655d67] flex-shrink-0" />
+                  <div className="flex items-center gap-2 p-2.5 bg-background rounded-lg">
+                    <Eye className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs text-[#4c414e]">{t('fieldList.lastUpdated')}</div>
-                      <div className="font-medium text-xs text-[#3c323e] truncate">
+                      <div className="text-xs text-foreground">{t('fieldList.lastUpdated')}</div>
+                      <div className="font-medium text-xs text-primary truncate">
                         {new Date(field.lastUpdated).toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric'
