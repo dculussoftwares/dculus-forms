@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { DateField } from '@dculus/types';
+import { DateField, type DateFieldFormData } from "@dculus/types";
+import { type FieldErrors } from "react-hook-form";
 import { Settings } from 'lucide-react';
 import { Controller } from 'react-hook-form';
 import { Label, Checkbox } from '@dculus/ui';
@@ -52,10 +53,8 @@ export const DateFieldSettings: React.FC<DateFieldSettingsProps> = ({
     onCancel: () => console.log('Date field edit cancelled'),
   });
 
-  // Cast errors to any to handle union type properties
-  const errors = formErrors as any;
-
   const { control, formState: { isDirty } } = form;
+  const errors = formErrors as FieldErrors<DateFieldFormData>;
 
   // Track field changes (auto-save disabled)
   const fieldIdRef = useRef<string | null>(null);
@@ -100,8 +99,8 @@ export const DateFieldSettings: React.FC<DateFieldSettingsProps> = ({
           isDirty ? 'bg-gradient-to-b from-orange-25 to-transparent dark:from-orange-950/10' : ''
         }`}>
           {/* Validation Error Summary */}
-          {!isValid && Object.keys(errors).length > 0 && (
-            <ValidationSummary errors={errors} />
+          {!isValid && Object.keys(formErrors).length > 0 && (
+            <ValidationSummary errors={formErrors} />
           )}
 
           {/* Basic Settings */}
@@ -224,7 +223,7 @@ export const DateFieldSettings: React.FC<DateFieldSettingsProps> = ({
         isConnected={isConnected}
         isReadOnly={isReadOnly}
         isSaving={isSaving}
-        errors={errors}
+        errors={formErrors}
         onReset={handleReset}
         onCancel={handleCancel}
         onSave={handleSave}

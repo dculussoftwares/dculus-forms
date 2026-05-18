@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useCallback } from 'react';
-import { SelectField, RadioField, CheckboxField } from '@dculus/types';
+import { SelectField, RadioField, CheckboxField, type CheckboxFieldFormData } from '@dculus/types';
+import { type FieldErrors } from 'react-hook-form';
 import { Settings } from 'lucide-react';
 import { Controller } from 'react-hook-form';
 import { 
@@ -60,10 +61,8 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
     onCancel: () => console.log('Selection field edit cancelled'),
   });
 
-  // Cast errors to any to handle union type properties
-  const errors = formErrors as any;
-
   const { control, watch, setValue, getValues, formState: { isDirty } } = form;
+  const errors = formErrors as FieldErrors<CheckboxFieldFormData>;
   const options = watch('options') || [];
 
   // Option management functions
@@ -136,8 +135,8 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
             isDirty ? 'bg-gradient-to-b from-orange-25 to-transparent dark:from-orange-950/10' : ''
           }`}>
             {/* Validation Error Summary */}
-            {!isValid && Object.keys(errors).length > 0 && (
-              <ValidationSummary errors={errors} />
+            {!isValid && Object.keys(formErrors).length > 0 && (
+              <ValidationSummary errors={formErrors} />
             )}
 
             {/* Basic Settings */}
@@ -304,7 +303,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
             <div className={constants.CSS_CLASSES.SECTION_SPACING}>
               <OptionsSettings
                 control={control}
-                errors={errors}
+                errors={formErrors}
                 isConnected={isConnected}
                 isReadOnly={isReadOnly}
                 options={options}
@@ -338,7 +337,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                     type="number"
                     min="0"
                     control={control}
-                    error={(errors.validation as any)?.minSelections}
+                    error={errors.validation?.minSelections}
                     disabled={!isEditable}
                     transform={{
                       output: (value: string) => value === '' ? undefined : parseInt(value)
@@ -353,7 +352,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                     type="number"
                     min="1"
                     control={control}
-                    error={(errors.validation as any)?.maxSelections}
+                    error={errors.validation?.maxSelections}
                     disabled={!isEditable}
                     transform={{
                       output: (value: string) => value === '' ? undefined : parseInt(value)
@@ -403,7 +402,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
           isConnected={isConnected}
           isReadOnly={isReadOnly}
           isSaving={isSaving}
-          errors={errors}
+          errors={formErrors}
           onReset={handleReset}
           onCancel={handleCancel}
           onSave={handleSave}

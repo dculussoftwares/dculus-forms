@@ -1,4 +1,17 @@
-import { FormField, FieldType } from '@dculus/types';
+import {
+  FormField,
+  FieldType,
+  FillableFormField,
+  SelectField,
+  RadioField,
+  CheckboxField,
+  NumberField,
+  DateField,
+  FileUploadField,
+  RichTextFormField,
+  TextFieldValidation,
+  CheckboxFieldValidation,
+} from '@dculus/types';
 import {
   BaseFieldData,
   OptionFieldData,
@@ -19,14 +32,14 @@ import {
  * Extract base field data that all fields share
  */
 export function extractBaseFieldData(field: FormField): BaseFieldData {
-  const fieldWithProps = field as any;
+  const fillableField = field as FillableFormField;
   return {
-    label: fieldWithProps.label || '',
-    hint: fieldWithProps.hint || '',
-    placeholder: fieldWithProps.placeholder || '',
+    label: fillableField.label || '',
+    hint: fillableField.hint || '',
+    placeholder: fillableField.placeholder || '',
     defaultValue: getFieldDefaultValue(field),
-    prefix: fieldWithProps.prefix || '',
-    required: fieldWithProps.validation?.required || false,
+    prefix: fillableField.prefix || '',
+    required: fillableField.validation?.required || false,
   };
 }
 
@@ -34,22 +47,22 @@ export function extractBaseFieldData(field: FormField): BaseFieldData {
  * Extract default value with proper type handling
  */
 function getFieldDefaultValue(field: FormField): string | string[] {
-  const fieldWithDefaults = field as any;
+  const fillableField = field as FillableFormField;
 
   // Handle checkbox fields with array default values
   if (field.type === FieldType.CHECKBOX_FIELD) {
-    return fieldWithDefaults.defaultValues || [];
+    return (fillableField as CheckboxField).defaultValues || [];
   }
 
   // Handle regular default values
-  return fieldWithDefaults.defaultValue || '';
+  return fillableField.defaultValue || '';
 }
 
 /**
  * Extract validation data for text fields
  */
 export function extractValidationData(field: FormField): ValidationFieldData {
-  const validation = (field as any).validation || {};
+  const validation = ((field as FillableFormField).validation as TextFieldValidation) || {};
 
   return {
     validation: {
@@ -66,7 +79,7 @@ export function extractValidationData(field: FormField): ValidationFieldData {
 export function extractCheckboxValidationData(
   field: FormField
 ): CheckboxValidationFieldData {
-  const validation = (field as any).validation || {};
+  const validation = ((field as FillableFormField).validation as CheckboxFieldValidation) || {};
 
   return {
     validation: {
@@ -81,7 +94,7 @@ export function extractCheckboxValidationData(
  * Extract options data for option-based fields
  */
 export function extractOptionData(field: FormField): OptionFieldData {
-  const fieldWithOptions = field as any;
+  const fieldWithOptions = field as SelectField | RadioField | CheckboxField;
   return {
     options: fieldWithOptions.options || [],
   };
@@ -91,7 +104,7 @@ export function extractOptionData(field: FormField): OptionFieldData {
  * Extract number range data for number fields
  */
 export function extractNumberRangeData(field: FormField): NumberRangeFieldData {
-  const fieldWithRange = field as any;
+  const fieldWithRange = field as NumberField;
   return {
     min: fieldWithRange.min || undefined,
     max: fieldWithRange.max || undefined,
@@ -102,7 +115,7 @@ export function extractNumberRangeData(field: FormField): NumberRangeFieldData {
  * Extract date range data for date fields
  */
 export function extractDateRangeData(field: FormField): DateRangeFieldData {
-  const fieldWithDateRange = field as any;
+  const fieldWithDateRange = field as DateField;
   return {
     minDate: fieldWithDateRange.minDate || '',
     maxDate: fieldWithDateRange.maxDate || '',
@@ -113,7 +126,7 @@ export function extractDateRangeData(field: FormField): DateRangeFieldData {
  * Extract rich text content data for rich text fields
  */
 export function extractRichTextData(field: FormField): RichTextFieldData {
-  const richTextField = field as any;
+  const richTextField = field as RichTextFormField;
   const extractedContent = richTextField.content || '';
   return {
     content: extractedContent,
@@ -275,7 +288,7 @@ export function fieldHasCheckboxValidation(
  * Extract file upload specific data
  */
 export function extractFileUploadData(field: FormField): FileUploadFieldData {
-  const f = field as any;
+  const f = field as FileUploadField;
   return {
     allowedMimeTypes: f.allowedMimeTypes || [],
     maxFileSizeMb: f.maxFileSizeMb,

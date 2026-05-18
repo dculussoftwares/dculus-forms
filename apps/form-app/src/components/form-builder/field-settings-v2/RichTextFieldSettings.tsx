@@ -88,9 +88,6 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
     onCancel: () => console.log('Rich text field edit cancelled'),
   });
 
-  // Cast errors to any to handle union type properties
-  const errors = formErrors as any;
-
   const {
     control,
     formState: { isDirty },
@@ -139,14 +136,14 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
           }`}
         >
           {/* Validation Error Summary */}
-          {!isValid && Object.keys(errors).length > 0 && (
-            <ValidationSummary errors={errors} />
+          {!isValid && Object.keys(formErrors).length > 0 && (
+            <ValidationSummary errors={formErrors} />
           )}
 
           {/* Rich Text Content Settings */}
           <RichTextSettings
             control={control}
-            errors={errors}
+            errors={formErrors}
             isConnected={isConnected}
             isReadOnly={isReadOnly}
             fieldId={field.id}
@@ -163,7 +160,7 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
         isConnected={isConnected}
         isReadOnly={isReadOnly}
         isSaving={isSaving}
-        errors={errors}
+        errors={formErrors}
         onReset={handleReset}
         onCancel={handleCancel}
         onSave={handleSave}

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { NumberField } from '@dculus/types';
+import { NumberField, type NumberFieldFormData } from "@dculus/types";
+import { type FieldErrors } from "react-hook-form";
 import { Settings } from 'lucide-react';
 import { Controller } from 'react-hook-form';
 import { Label, Checkbox } from '@dculus/ui';
@@ -51,10 +52,8 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
     onCancel: () => console.log('Number field edit cancelled'),
   });
 
-  // Cast errors to any to handle union type properties
-  const errors = formErrors as any;
-
   const { control, formState: { isDirty } } = form;
+  const errors = formErrors as FieldErrors<NumberFieldFormData>;
 
   // Track field changes (auto-save disabled)
   const fieldIdRef = useRef<string | null>(null);
@@ -99,8 +98,8 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
           isDirty ? 'bg-gradient-to-b from-orange-25 to-transparent dark:from-orange-950/10' : ''
         }`}>
           {/* Validation Error Summary */}
-          {!isValid && Object.keys(errors).length > 0 && (
-            <ValidationSummary errors={errors} />
+          {!isValid && Object.keys(formErrors).length > 0 && (
+            <ValidationSummary errors={formErrors} />
           )}
 
           {/* Basic Settings */}
@@ -245,7 +244,7 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
         isConnected={isConnected}
         isReadOnly={isReadOnly}
         isSaving={isSaving}
-        errors={errors}
+        errors={formErrors}
         onReset={handleReset}
         onCancel={handleCancel}
         onSave={handleSave}

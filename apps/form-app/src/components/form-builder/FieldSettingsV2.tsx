@@ -1,5 +1,18 @@
 import React from 'react';
-import { FormField, FieldType, FileUploadField } from '@dculus/types';
+import {
+  FormField,
+  FieldType,
+  FileUploadField,
+  TextInputField,
+  TextAreaField,
+  EmailField,
+  NumberField,
+  SelectField,
+  RadioField,
+  CheckboxField,
+  DateField,
+  RichTextFormField,
+} from '@dculus/types';
 import { Settings } from 'lucide-react';
 import { Controller } from 'react-hook-form';
 import { Button, Label, Checkbox } from '@dculus/ui';
@@ -326,7 +339,7 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
       return (
         <FieldSettingsWrapper>
           <TextFieldSettings
-            field={field as any}
+            field={field as TextInputField | TextAreaField | EmailField}
             isConnected={isConnected}
             isReadOnly={isReadOnly}
             onUpdate={updateHandler}
@@ -338,7 +351,7 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
       return (
         <FieldSettingsWrapper>
           <NumberFieldSettings
-            field={field as any}
+            field={field as NumberField}
             isConnected={isConnected}
             isReadOnly={isReadOnly}
             onUpdate={updateHandler}
@@ -352,7 +365,7 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
       return (
         <FieldSettingsWrapper>
           <SelectionFieldSettings
-            field={field as any}
+            field={field as SelectField | RadioField | CheckboxField}
             isConnected={isConnected}
             isReadOnly={isReadOnly}
             onUpdate={updateHandler}
@@ -364,7 +377,7 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
       return (
         <FieldSettingsWrapper>
           <DateFieldSettings
-            field={field as any}
+            field={field as DateField}
             isConnected={isConnected}
             isReadOnly={isReadOnly}
             onUpdate={updateHandler}
@@ -376,7 +389,7 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
       return (
         <FieldSettingsWrapper>
           <RichTextFieldSettings
-            field={field as any}
+            field={field as RichTextFormField}
             isConnected={isConnected}
             isReadOnly={isReadOnly}
             onUpdate={updateHandler}

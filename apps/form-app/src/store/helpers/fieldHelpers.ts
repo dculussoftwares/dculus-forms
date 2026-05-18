@@ -60,7 +60,7 @@ export const isFillableFormField = (
 ): field is FillableFormField => {
   return (
     field instanceof FillableFormField ||
-    (field as any).label !== undefined ||
+    (field as FillableFormField).label !== undefined ||
     field.type !== FieldType.FORM_FIELD
   );
 };
@@ -227,7 +227,7 @@ export const createFormField = (
     }
     case FieldType.RICH_TEXT_FIELD: {
       const content =
-        (fieldData as any).content ||
+        (fieldData as RichTextFormField).content ||
         '<p>Enter your rich text content here...</p>';
       console.log('🏗️ createFormField - Creating Rich Text Field:', {
         fieldId,
@@ -246,9 +246,9 @@ export const createFormField = (
         prefix,
         hint,
         validation,
-        (fieldData as any).allowedMimeTypes,
-        (fieldData as any).maxFileSizeMb,
-        (fieldData as any).maxFiles
+        (fieldData as FileUploadField).allowedMimeTypes,
+        (fieldData as FileUploadField).maxFileSizeMb,
+        (fieldData as FileUploadField).maxFiles
       );
     }
     default:
@@ -335,13 +335,13 @@ export const serializeFieldToYMap = (field: FormField): Y.Map<any> => {
 
     // Handle rich text fields
     if (field.type === FieldType.RICH_TEXT_FIELD) {
-      fieldMap.set('content', (field as any).content || '');
+      fieldMap.set('content', (field as RichTextFormField).content || '');
     }
 
     return fieldMap;
   }
 
-  const fillableField = field as any;
+  const fillableField = field as FillableFormField;
   const fieldData: FieldData = {
     id: field.id,
     type: field.type,
@@ -351,14 +351,14 @@ export const serializeFieldToYMap = (field: FormField): Y.Map<any> => {
     hint: fillableField.hint || '',
     required: fillableField.validation?.required || false,
     placeholder: fillableField.placeholder || '',
-    options: fillableField.options,
-    min: fillableField.validation?.minLength || fillableField.min,
-    max: fillableField.validation?.maxLength || fillableField.max,
-    minDate: fillableField.minDate,
-    maxDate: fillableField.maxDate,
-    allowedMimeTypes: fillableField.allowedMimeTypes,
-    maxFileSizeMb: fillableField.maxFileSizeMb,
-    maxFiles: fillableField.maxFiles,
+    options: (fillableField as SelectField | RadioField | CheckboxField).options,
+    min: (fillableField.validation as TextFieldValidation)?.minLength || (fillableField as NumberField).min,
+    max: (fillableField.validation as TextFieldValidation)?.maxLength || (fillableField as NumberField).max,
+    minDate: (fillableField as DateField).minDate,
+    maxDate: (fillableField as DateField).maxDate,
+    allowedMimeTypes: (fillableField as FileUploadField).allowedMimeTypes,
+    maxFileSizeMb: (fillableField as FileUploadField).maxFileSizeMb,
+    maxFiles: (fillableField as FileUploadField).maxFiles,
   };
 
   return createYJSFieldMap(fieldData);

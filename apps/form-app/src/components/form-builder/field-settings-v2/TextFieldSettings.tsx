@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { TextInputField, TextAreaField, EmailField } from '@dculus/types';
+import { TextInputField, TextAreaField, EmailField, type TextInputFieldFormData } from '@dculus/types';
+import { type FieldErrors } from 'react-hook-form';
 import { Settings } from 'lucide-react';
 import { Controller } from 'react-hook-form';
 import { Label, Checkbox } from '@dculus/ui';
@@ -47,9 +48,8 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
     onCancel: () => console.log('Text field edit cancelled'),
   });
 
-  const errors = formErrors as any;
-
   const { control, formState: { isDirty } } = form;
+  const errors = formErrors as FieldErrors<TextInputFieldFormData>;
 
   // Track field changes (auto-save disabled)
   const fieldIdRef = useRef<string | null>(null);
@@ -94,8 +94,8 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
           isDirty ? 'bg-gradient-to-b from-orange-25 to-transparent dark:from-orange-950/10' : ''
         }`}>
           {/* Validation Error Summary */}
-          {!isValid && Object.keys(errors).length > 0 && (
-            <ValidationSummary errors={errors} />
+          {!isValid && Object.keys(formErrors).length > 0 && (
+            <ValidationSummary errors={formErrors} />
           )}
 
           {/* Basic Settings */}
@@ -197,7 +197,7 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
                   type="number"
                   min="0"
                   control={control}
-                  error={(errors.validation as any)?.minLength}
+                  error={errors.validation?.minLength}
                   disabled={!isEditable}
                   transform={{
                     output: (value: string) => value === '' ? undefined : parseInt(value)
@@ -211,7 +211,7 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
                   type="number"
                   min="1"
                   control={control}
-                  error={(errors.validation as any)?.maxLength}
+                  error={errors.validation?.maxLength}
                   disabled={!isEditable}
                   transform={{
                     output: (value: string) => value === '' ? undefined : parseInt(value)
@@ -232,7 +232,7 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
         isConnected={isConnected}
         isReadOnly={isReadOnly}
         isSaving={isSaving}
-        errors={errors}
+        errors={formErrors}
         onReset={handleReset}
         onCancel={handleCancel}
         onSave={handleSave}
