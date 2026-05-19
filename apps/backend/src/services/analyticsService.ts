@@ -408,21 +408,18 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
     // Parallel execution of database queries for better performance
     const [
       totalViews,
-      uniqueSessionsData,
+      uniqueSessions,
       countryStats,
       regionStats,
       cityStats,
       osStats,
       browserStats,
-      dailyViews,
+      rawDailyViews,
     ] = await Promise.all([
       formViewAnalyticsRepository.count({ where: whereClause }),
-      
-      formViewAnalyticsRepository.groupBy({
-        by: ['sessionId'],
-        where: whereClause
-      }),
-      
+
+      formViewAnalyticsRepository.countDistinctSessions(formId, timeRange),
+
       formViewAnalyticsRepository.groupBy({
         by: ['countryCode'],
         where: { ...whereClause, countryCode: { not: null } },
@@ -463,17 +460,7 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
         take: 10
       }),
       
-      // Time-series data: Get all records for daily aggregation
-      formViewAnalyticsRepository.findMany({
-        where: whereClause,
-        select: {
-          viewedAt: true,
-          sessionId: true
-        },
-        orderBy: {
-          viewedAt: 'asc'
-        }
-      })
+      formViewAnalyticsRepository.getDailyViewStats(formId, timeRange),
     ]);
 
     // Transform data using functional programming principles
@@ -516,50 +503,25 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
       percentage: totalViews > 0 ? (stat._count.browser / totalViews) * 100 : 0
     }));
     
-    // Process time-series data: Group by date
-    const timeSeriesMap = new Map<string, { views: number; sessions: Set<string> }>();
-    
-    dailyViews.forEach((record: any) => {
-      const dateKey = record.viewedAt.toISOString().split('T')[0]; // YYYY-MM-DD
-      
-      if (!timeSeriesMap.has(dateKey)) {
-        timeSeriesMap.set(dateKey, { views: 0, sessions: new Set() });
-      }
-      
-      const dayData = timeSeriesMap.get(dateKey)!;
-      dayData.views += 1;
-      dayData.sessions.add(record.sessionId);
-    });
-    
-    // Convert to array format expected by frontend
-    const viewsOverTime = Array.from(timeSeriesMap.entries())
-      .map(([date, data]) => ({
-        date,
-        views: data.views,
-        sessions: data.sessions.size
-      }))
-      .sort((a, b) => a.date.localeCompare(b.date));
-    
     // Fill in missing dates with zero values if timeRange is specified
-    let filledViewsOverTime = viewsOverTime;
-    if (timeRange && viewsOverTime.length > 0) {
+    let viewsOverTime = rawDailyViews;
+    if (timeRange && rawDailyViews.length > 0) {
       const dateRange = generateDateRange(timeRange.start, timeRange.end);
-      
-      filledViewsOverTime = dateRange.map(date => {
-        const existingData = viewsOverTime.find(v => v.date === date);
+      viewsOverTime = dateRange.map(date => {
+        const existingData = rawDailyViews.find(v => v.date === date);
         return existingData || { date, views: 0, sessions: 0 };
       });
     }
-    
+
     return {
       totalViews,
-      uniqueSessions: uniqueSessionsData.length,
+      uniqueSessions,
       topCountries,
       topRegions,
       topCities,
       topOperatingSystems,
       topBrowsers,
-      viewsOverTime: filledViewsOverTime
+      viewsOverTime
     };
   } catch (error) {
     logger.error('Error getting form analytics:', error);
@@ -587,22 +549,19 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
     // Parallel execution of database queries for better performance
     const [
       totalSubmissions,
-      uniqueSessionsData,
+      uniqueSessions,
       countryStats,
       regionStats,
       cityStats,
       osStats,
       browserStats,
-      dailySubmissions,
+      rawDailySubmissions,
       completionTimeData
     ] = await Promise.all([
       formSubmissionAnalyticsRepository.count({ where: whereClause }),
-      
-      formSubmissionAnalyticsRepository.groupBy({
-        by: ['sessionId'],
-        where: whereClause
-      }),
-      
+
+      formSubmissionAnalyticsRepository.countDistinctSessions(formId, timeRange),
+
       formSubmissionAnalyticsRepository.groupBy({
         by: ['countryCode'],
         where: { ...whereClause, countryCode: { not: null } },
@@ -643,18 +602,8 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
         take: 10
       }),
       
-      // Time-series data: Get all records for daily aggregation
-      formSubmissionAnalyticsRepository.findMany({
-        where: whereClause,
-        select: {
-          submittedAt: true,
-          sessionId: true
-        },
-        orderBy: {
-          submittedAt: 'asc'
-        }
-      }),
-      
+      formSubmissionAnalyticsRepository.getDailySubmissionStats(formId, timeRange),
+
       // Completion time data: Get all completion times for statistical analysis
       formSubmissionAnalyticsRepository.findMany({
         where: { 
@@ -707,37 +656,12 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
       percentage: totalSubmissions > 0 ? (stat._count.browser / totalSubmissions) * 100 : 0
     }));
     
-    // Process time-series data: Group by date
-    const timeSeriesMap = new Map<string, { submissions: number; sessions: Set<string> }>();
-    
-    dailySubmissions.forEach((record: any) => {
-      const dateKey = record.submittedAt.toISOString().split('T')[0]; // YYYY-MM-DD
-      
-      if (!timeSeriesMap.has(dateKey)) {
-        timeSeriesMap.set(dateKey, { submissions: 0, sessions: new Set() });
-      }
-      
-      const dayData = timeSeriesMap.get(dateKey)!;
-      dayData.submissions += 1;
-      dayData.sessions.add(record.sessionId);
-    });
-    
-    // Convert to array format expected by frontend
-    const submissionsOverTime = Array.from(timeSeriesMap.entries())
-      .map(([date, data]) => ({
-        date,
-        submissions: data.submissions,
-        sessions: data.sessions.size
-      }))
-      .sort((a, b) => a.date.localeCompare(b.date));
-    
     // Fill in missing dates with zero values if timeRange is specified
-    let filledSubmissionsOverTime = submissionsOverTime;
-    if (timeRange && submissionsOverTime.length > 0) {
+    let submissionsOverTime = rawDailySubmissions;
+    if (timeRange && rawDailySubmissions.length > 0) {
       const dateRange = generateDateRange(timeRange.start, timeRange.end);
-      
-      filledSubmissionsOverTime = dateRange.map(date => {
-        const existingData = submissionsOverTime.find(v => v.date === date);
+      submissionsOverTime = dateRange.map(date => {
+        const existingData = rawDailySubmissions.find(s => s.date === date);
         return existingData || { date, submissions: 0, sessions: 0 };
       });
     }
@@ -756,7 +680,7 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
     
     return {
       totalSubmissions,
-      uniqueSessions: uniqueSessionsData.length,
+      uniqueSessions,
       averageCompletionTime,
       completionTimePercentiles,
       topCountries,
@@ -764,7 +688,7 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
       topCities,
       topOperatingSystems,
       topBrowsers,
-      submissionsOverTime: filledSubmissionsOverTime,
+      submissionsOverTime,
       completionTimeDistribution
     };
   } catch (error) {

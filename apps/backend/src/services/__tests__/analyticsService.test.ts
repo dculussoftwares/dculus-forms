@@ -291,14 +291,21 @@ describe('Analytics Service', () => {
         throw new Error('Country name lookup error');
       });
 
-      vi.mocked(formViewAnalyticsRepository.groupBy).mockResolvedValue([
-        { countryCode: 'USA', _count: { countryCode: 10 } },
-      ] as any);
       vi.mocked(formViewAnalyticsRepository.count).mockResolvedValue(10);
+      vi.mocked(formViewAnalyticsRepository.countDistinctSessions).mockResolvedValue(1);
+      vi.mocked(formViewAnalyticsRepository.getDailyViewStats).mockResolvedValue([]);
+      vi.mocked(formViewAnalyticsRepository.groupBy)
+        .mockResolvedValueOnce([{ countryCode: 'USA', _count: { countryCode: 10 } }] as any)
+        .mockResolvedValueOnce([] as any)
+        .mockResolvedValueOnce([] as any)
+        .mockResolvedValueOnce([] as any)
+        .mockResolvedValueOnce([] as any);
 
-      // Verify the error is logged
-      await expect(analyticsService.getFormAnalytics('form-123')).rejects.toThrow('Failed to fetch analytics data');
+      // getCountryNameFromCode catches errors internally — analytics still returns successfully
+      const result = await analyticsService.getFormAnalytics('form-123');
+      expect(result.totalViews).toBe(10);
 
+      // The country name error is logged internally by getCountryNameFromCode
       expect(logger.error).toHaveBeenCalledWith(
         'Error getting country name from code:',
         expect.any(Error)
@@ -462,17 +469,18 @@ describe('Analytics Service', () => {
       ];
 
       vi.mocked(formViewAnalyticsRepository.count).mockResolvedValue(2);
+      vi.mocked(formViewAnalyticsRepository.countDistinctSessions).mockResolvedValue(2);
+      vi.mocked(formViewAnalyticsRepository.getDailyViewStats).mockResolvedValue([
+        { date: '2024-01-01', views: 1, sessions: 1 },
+        { date: '2024-01-02', views: 1, sessions: 1 },
+      ]);
 
-      // Mock multiple groupBy calls with different results
       vi.mocked(formViewAnalyticsRepository.groupBy)
-        .mockResolvedValueOnce([{ sessionId: 'session-1' }, { sessionId: 'session-2' }] as any)
         .mockResolvedValueOnce([{ countryCode: 'USA', _count: { countryCode: 1 } }] as any)
         .mockResolvedValueOnce([{ region: 'California', regionCode: 'CA', countryAlpha2: 'US', _count: { region: 1 } }] as any)
         .mockResolvedValueOnce([{ city: 'San Francisco', region: 'California', countryAlpha2: 'US', _count: { city: 1 } }] as any)
         .mockResolvedValueOnce([{ operatingSystem: 'Windows', _count: { operatingSystem: 1 } }] as any)
         .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
-
-      vi.mocked(formViewAnalyticsRepository.findMany).mockResolvedValue(mockAnalyticsData as any);
 
       const result = await analyticsService.getFormAnalytics('form-123');
 
@@ -485,27 +493,17 @@ describe('Analytics Service', () => {
 
     it('should handle time range filtering', async () => {
       vi.mocked(formViewAnalyticsRepository.count).mockResolvedValue(5);
+      vi.mocked(formViewAnalyticsRepository.countDistinctSessions).mockResolvedValue(1);
+      vi.mocked(formViewAnalyticsRepository.getDailyViewStats).mockResolvedValue([
+        { date: '2024-01-01', views: 1, sessions: 1 },
+      ]);
 
-      // Mock multiple groupBy calls for time range test
       vi.mocked(formViewAnalyticsRepository.groupBy)
-        .mockResolvedValueOnce([{ sessionId: 'session-1' }] as any)
         .mockResolvedValueOnce([{ countryCode: 'USA', _count: { countryCode: 1 } }] as any)
         .mockResolvedValueOnce([{ region: 'California', regionCode: 'CA', countryAlpha2: 'US', _count: { region: 1 } }] as any)
         .mockResolvedValueOnce([{ city: 'San Francisco', region: 'California', countryAlpha2: 'US', _count: { city: 1 } }] as any)
         .mockResolvedValueOnce([{ operatingSystem: 'Windows', _count: { operatingSystem: 1 } }] as any)
         .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
-
-      vi.mocked(formViewAnalyticsRepository.findMany).mockResolvedValue([
-        {
-          id: '1',
-          formId: 'form-123',
-          sessionId: 'session-1',
-          countryCode: 'USA',
-          operatingSystem: 'Windows',
-          browser: 'Chrome',
-          viewedAt: new Date('2024-01-01'),
-        },
-      ] as any);
 
       const timeRange = {
         start: new Date('2024-01-01'),
@@ -532,27 +530,21 @@ describe('Analytics Service', () => {
   describe('getFormSubmissionAnalytics', () => {
     it('should return submission analytics for a form', async () => {
       vi.mocked(formSubmissionAnalyticsRepository.count).mockResolvedValue(10);
+      vi.mocked(formSubmissionAnalyticsRepository.countDistinctSessions).mockResolvedValue(2);
+      vi.mocked(formSubmissionAnalyticsRepository.getDailySubmissionStats).mockResolvedValue([
+        { date: '2024-01-01', submissions: 1, sessions: 1 },
+      ]);
 
-      // Mock multiple groupBy calls
       vi.mocked(formSubmissionAnalyticsRepository.groupBy)
-        .mockResolvedValueOnce([{ sessionId: 'session-1' }, { sessionId: 'session-2' }] as any)
         .mockResolvedValueOnce([{ countryCode: 'USA', _count: { countryCode: 1 } }] as any)
         .mockResolvedValueOnce([{ region: 'California', regionCode: 'CA', countryAlpha2: 'US', _count: { region: 1 } }] as any)
         .mockResolvedValueOnce([{ city: 'San Francisco', region: 'California', countryAlpha2: 'US', _count: { city: 1 } }] as any)
         .mockResolvedValueOnce([{ operatingSystem: 'Windows', _count: { operatingSystem: 1 } }] as any)
         .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
 
-      // Mock findMany calls (2 calls: dailySubmissions and completionTimeData)
-      vi.mocked(formSubmissionAnalyticsRepository.findMany)
-        .mockResolvedValueOnce([
-          {
-            submittedAt: new Date('2024-01-01'),
-            sessionId: 'session-1',
-          },
-        ] as any)
-        .mockResolvedValueOnce([
-          { completionTimeSeconds: 120 },
-        ] as any);
+      vi.mocked(formSubmissionAnalyticsRepository.findMany).mockResolvedValue([
+        { completionTimeSeconds: 120 },
+      ] as any);
 
       const result = await analyticsService.getFormSubmissionAnalytics('form-123');
 
@@ -563,29 +555,23 @@ describe('Analytics Service', () => {
 
     it('should calculate completion time statistics', async () => {
       vi.mocked(formSubmissionAnalyticsRepository.count).mockResolvedValue(5);
+      vi.mocked(formSubmissionAnalyticsRepository.countDistinctSessions).mockResolvedValue(1);
+      vi.mocked(formSubmissionAnalyticsRepository.getDailySubmissionStats).mockResolvedValue([
+        { date: '2024-01-01', submissions: 1, sessions: 1 },
+      ]);
 
-      // Mock multiple groupBy calls
       vi.mocked(formSubmissionAnalyticsRepository.groupBy)
-        .mockResolvedValueOnce([{ sessionId: 'session-1' }] as any)
         .mockResolvedValueOnce([{ countryCode: 'USA', _count: { countryCode: 1 } }] as any)
         .mockResolvedValueOnce([] as any)
         .mockResolvedValueOnce([] as any)
         .mockResolvedValueOnce([{ operatingSystem: 'Windows', _count: { operatingSystem: 1 } }] as any)
         .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
 
-      // Mock findMany calls (2 calls: dailySubmissions and completionTimeData)
-      vi.mocked(formSubmissionAnalyticsRepository.findMany)
-        .mockResolvedValueOnce([
-          {
-            submittedAt: new Date('2024-01-01'),
-            sessionId: 'session-1',
-          },
-        ] as any)
-        .mockResolvedValueOnce([
-          { completionTimeSeconds: 60 },
-          { completionTimeSeconds: 120 },
-          { completionTimeSeconds: 180 },
-        ] as any);
+      vi.mocked(formSubmissionAnalyticsRepository.findMany).mockResolvedValue([
+        { completionTimeSeconds: 60 },
+        { completionTimeSeconds: 120 },
+        { completionTimeSeconds: 180 },
+      ] as any);
 
       const result = await analyticsService.getFormSubmissionAnalytics('form-123');
 
@@ -605,23 +591,22 @@ describe('Analytics Service', () => {
 
     it('should fill missing dates when timeRange is provided', async () => {
       vi.mocked(formSubmissionAnalyticsRepository.count).mockResolvedValue(3);
+      vi.mocked(formSubmissionAnalyticsRepository.countDistinctSessions).mockResolvedValue(1);
+      vi.mocked(formSubmissionAnalyticsRepository.getDailySubmissionStats).mockResolvedValue([
+        { date: '2024-01-01', submissions: 1, sessions: 1 },
+        { date: '2024-01-03', submissions: 1, sessions: 1 },
+      ]);
 
-      // Mock multiple groupBy calls
       vi.mocked(formSubmissionAnalyticsRepository.groupBy)
-        .mockResolvedValueOnce([{ sessionId: 'session-1' }] as any)
         .mockResolvedValueOnce([{ countryCode: 'USA', _count: { countryCode: 1 } }] as any)
         .mockResolvedValueOnce([] as any)
         .mockResolvedValueOnce([] as any)
         .mockResolvedValueOnce([{ operatingSystem: 'Windows', _count: { operatingSystem: 1 } }] as any)
         .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
 
-      // Mock findMany calls - return submissions only for Jan 1 and Jan 3 (missing Jan 2)
-      vi.mocked(formSubmissionAnalyticsRepository.findMany)
-        .mockResolvedValueOnce([
-          { submittedAt: new Date('2024-01-01'), sessionId: 'session-1' },
-          { submittedAt: new Date('2024-01-03'), sessionId: 'session-1' },
-        ] as any)
-        .mockResolvedValueOnce([{ completionTimeSeconds: 60 }] as any);
+      vi.mocked(formSubmissionAnalyticsRepository.findMany).mockResolvedValue([
+        { completionTimeSeconds: 60 },
+      ] as any);
 
       const result = await analyticsService.getFormSubmissionAnalytics('form-123', {
         start: new Date('2024-01-01'),
@@ -639,23 +624,22 @@ describe('Analytics Service', () => {
 
     it('should not fill dates when timeRange is not provided', async () => {
       vi.mocked(formSubmissionAnalyticsRepository.count).mockResolvedValue(2);
+      vi.mocked(formSubmissionAnalyticsRepository.countDistinctSessions).mockResolvedValue(1);
+      vi.mocked(formSubmissionAnalyticsRepository.getDailySubmissionStats).mockResolvedValue([
+        { date: '2024-01-01', submissions: 1, sessions: 1 },
+        { date: '2024-01-03', submissions: 1, sessions: 1 },
+      ]);
 
-      // Mock multiple groupBy calls
       vi.mocked(formSubmissionAnalyticsRepository.groupBy)
-        .mockResolvedValueOnce([{ sessionId: 'session-1' }] as any)
         .mockResolvedValueOnce([{ countryCode: 'USA', _count: { countryCode: 1 } }] as any)
         .mockResolvedValueOnce([] as any)
         .mockResolvedValueOnce([] as any)
         .mockResolvedValueOnce([{ operatingSystem: 'Windows', _count: { operatingSystem: 1 } }] as any)
         .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
 
-      // Mock findMany calls - return submissions only for Jan 1 and Jan 3
-      vi.mocked(formSubmissionAnalyticsRepository.findMany)
-        .mockResolvedValueOnce([
-          { submittedAt: new Date('2024-01-01'), sessionId: 'session-1' },
-          { submittedAt: new Date('2024-01-03'), sessionId: 'session-1' },
-        ] as any)
-        .mockResolvedValueOnce([{ completionTimeSeconds: 60 }] as any);
+      vi.mocked(formSubmissionAnalyticsRepository.findMany).mockResolvedValue([
+        { completionTimeSeconds: 60 },
+      ] as any);
 
       const result = await analyticsService.getFormSubmissionAnalytics('form-123');
 
@@ -667,20 +651,17 @@ describe('Analytics Service', () => {
 
     it('should handle empty submissions when timeRange is provided', async () => {
       vi.mocked(formSubmissionAnalyticsRepository.count).mockResolvedValue(0);
+      vi.mocked(formSubmissionAnalyticsRepository.countDistinctSessions).mockResolvedValue(0);
+      vi.mocked(formSubmissionAnalyticsRepository.getDailySubmissionStats).mockResolvedValue([]);
 
-      // Mock multiple groupBy calls
       vi.mocked(formSubmissionAnalyticsRepository.groupBy)
         .mockResolvedValueOnce([] as any)
         .mockResolvedValueOnce([] as any)
         .mockResolvedValueOnce([] as any)
         .mockResolvedValueOnce([] as any)
-        .mockResolvedValueOnce([] as any)
         .mockResolvedValueOnce([] as any);
 
-      // Mock findMany calls - return empty arrays
-      vi.mocked(formSubmissionAnalyticsRepository.findMany)
-        .mockResolvedValueOnce([] as any)
-        .mockResolvedValueOnce([] as any);
+      vi.mocked(formSubmissionAnalyticsRepository.findMany).mockResolvedValue([] as any);
 
       const result = await analyticsService.getFormSubmissionAnalytics('form-123', {
         start: new Date('2024-01-01'),

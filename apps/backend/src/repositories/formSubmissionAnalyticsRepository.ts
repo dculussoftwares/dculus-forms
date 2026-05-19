@@ -30,12 +30,75 @@ export const createFormSubmissionAnalyticsRepository = (
       data,
     });
 
+  type DailySubmissionRow = { date: string; submissions: bigint; sessions: bigint };
+
+  const countDistinctSessions = async (
+    formId: string,
+    timeRange?: { start: Date; end: Date }
+  ): Promise<number> => {
+    if (timeRange) {
+      const result = await prisma.$queryRaw<[{ count: bigint }]>`
+        SELECT COUNT(DISTINCT "sessionId") as count
+        FROM "form_submission_analytics"
+        WHERE "formId" = ${formId}
+          AND "submittedAt" >= ${timeRange.start}
+          AND "submittedAt" <= ${timeRange.end}
+      `;
+      return Number(result[0].count);
+    }
+    const result = await prisma.$queryRaw<[{ count: bigint }]>`
+      SELECT COUNT(DISTINCT "sessionId") as count
+      FROM "form_submission_analytics"
+      WHERE "formId" = ${formId}
+    `;
+    return Number(result[0].count);
+  };
+
+  const getDailySubmissionStats = async (
+    formId: string,
+    timeRange?: { start: Date; end: Date }
+  ): Promise<Array<{ date: string; submissions: number; sessions: number }>> => {
+    let rows: DailySubmissionRow[];
+    if (timeRange) {
+      rows = await prisma.$queryRaw<DailySubmissionRow[]>`
+        SELECT
+          TO_CHAR("submittedAt", 'YYYY-MM-DD') AS date,
+          COUNT(*) AS submissions,
+          COUNT(DISTINCT "sessionId") AS sessions
+        FROM "form_submission_analytics"
+        WHERE "formId" = ${formId}
+          AND "submittedAt" >= ${timeRange.start}
+          AND "submittedAt" <= ${timeRange.end}
+        GROUP BY TO_CHAR("submittedAt", 'YYYY-MM-DD')
+        ORDER BY date ASC
+      `;
+    } else {
+      rows = await prisma.$queryRaw<DailySubmissionRow[]>`
+        SELECT
+          TO_CHAR("submittedAt", 'YYYY-MM-DD') AS date,
+          COUNT(*) AS submissions,
+          COUNT(DISTINCT "sessionId") AS sessions
+        FROM "form_submission_analytics"
+        WHERE "formId" = ${formId}
+        GROUP BY TO_CHAR("submittedAt", 'YYYY-MM-DD')
+        ORDER BY date ASC
+      `;
+    }
+    return rows.map(row => ({
+      date: row.date,
+      submissions: Number(row.submissions),
+      sessions: Number(row.sessions),
+    }));
+  };
+
   return {
     create,
     count,
     groupBy,
     findMany,
     createSubmissionEvent,
+    countDistinctSessions,
+    getDailySubmissionStats,
   };
 };
 
