@@ -33,6 +33,8 @@
     "admin-app:preview": "pnpm --filter admin-app preview",
     "db:generate": "pnpm --filter backend db:generate",
     "db:push": "pnpm --filter backend db:push",
+    "db:migrate:dev": "pnpm --filter backend db:migrate:dev",
+    "db:migrate:deploy": "pnpm --filter backend db:migrate:deploy",
     "db:studio": "pnpm --filter backend db:studio",
     "db:seed": "pnpm --filter backend db:seed",
     "db:migrate-layout": "pnpm --filter backend db:migrate-layout",

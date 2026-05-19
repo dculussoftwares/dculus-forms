@@ -17,6 +17,8 @@
     "lint": "eslint src --ext .ts",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:seed": "tsx src/scripts/seed.ts",
     "db:migrate-layout": "tsx src/scripts/migrate-form-layout.ts",

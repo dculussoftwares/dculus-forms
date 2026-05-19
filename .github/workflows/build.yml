@@ -289,7 +289,7 @@ jobs:
           echo "DIRECT_URL=postgresql://dculus:dculus_dev_password@127.0.0.1:5543/dculus_forms?sslmode=disable&gssencmode=disable" >> $GITHUB_ENV
           echo "MANAGE_INTEGRATION_DOCKER=false" >> $GITHUB_ENV
 
-      - name: Apply Prisma schema to integration database
+      - name: Apply Prisma migrations to integration database
         env:
           DATABASE_URL: ${{ env.DATABASE_URL }}
           DIRECT_URL: ${{ env.DIRECT_URL }}
@@ -300,7 +300,7 @@ jobs:
           PUBLIC_S3_BUCKET_NAME: test-public-bucket
           PRIVATE_S3_BUCKET_NAME: test-private-bucket
           PUBLIC_S3_CDN_URL: http://localhost:9000
-        run: pnpm --filter backend db:push
+        run: pnpm --filter backend db:migrate:deploy
 
       - name: Run integration tests
         id: run_integration_tests
@@ -544,10 +544,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Generate Prisma client & apply schema
+      - name: Generate Prisma client & run migrations
         run: |
           pnpm db:generate
-          pnpm --filter backend db:push
+          pnpm db:migrate:deploy
 
       - name: Seed templates (no S3 uploads)
         run: |

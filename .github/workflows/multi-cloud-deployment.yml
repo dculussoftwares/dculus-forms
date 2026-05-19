@@ -463,6 +463,40 @@ jobs:
   # PHASE 4: CORE INFRASTRUCTURE (Storage + Backend)
   # ============================================================
 
+  run-migrations:
+    name: 4.0. Run Database Migrations
+    runs-on: ubuntu-latest
+    needs: [ determine-environment, terraform-neon-deploy ]
+    if: |
+      always() && !cancelled() && !failure() &&
+      needs.determine-environment.outputs.should_deploy == 'true'
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.14.0"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
+
+      - name: Run migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: pnpm db:migrate:deploy
+
   terraform-infrastructure-deploy:
     name: 4.1. Deploy Core Infrastructure (R2 Storage + Azure Container Apps)
     runs-on: ubuntu-latest
@@ -472,6 +506,7 @@ jobs:
         setup-azure-backend,
         check-docker-image,
         terraform-neon-deploy,
+        run-migrations,
       ]
     if: |
       always() && !cancelled() && !failure() &&
