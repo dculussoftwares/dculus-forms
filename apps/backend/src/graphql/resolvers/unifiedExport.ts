@@ -55,23 +55,22 @@ export const unifiedExportResolvers = {
           throw new GraphQLError('No responses found for this form');
         }
 
+        // Apply filters before the size check so that a form with > 50k total
+        // responses can still be exported when filters narrow the result set.
+        if (filters && filters.length > 0) {
+          responses = applyResponseFilters(responses, filters, filterLogic);
+          logger.info(`Found ${responses.length} responses after applying ${filters.length} filters with ${filterLogic} logic`);
+
+          if (responses.length === 0) {
+            throw new GraphQLError('No responses match the applied filters');
+          }
+        }
+
         if (responses.length > MAX_EXPORT_RESPONSES) {
           throw new GraphQLError(
             `Export contains ${responses.length.toLocaleString()} responses which exceeds the ` +
             `${MAX_EXPORT_RESPONSES.toLocaleString()} limit. Apply filters to narrow the dataset before exporting.`
           );
-        }
-
-        logger.info(`Found ${responses.length} responses before filtering`);
-
-        // Apply filters if provided
-        if (filters && filters.length > 0) {
-          responses = applyResponseFilters(responses, filters, filterLogic);
-          logger.info(`Found ${responses.length} responses after applying ${filters.length} filters with ${filterLogic} logic`);
-          
-          if (responses.length === 0) {
-            throw new GraphQLError('No responses match the applied filters');
-          }
         }
 
         logger.info(`Generating ${exportFormat.toUpperCase()} file with ${responses.length} responses...`);

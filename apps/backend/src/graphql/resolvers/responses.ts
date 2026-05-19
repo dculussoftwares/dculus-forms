@@ -6,6 +6,7 @@ import {
   submitResponse,
   updateResponse,
 } from '../../services/responseService.js';
+import { responseRepository } from '../../repositories/responseRepository.js';
 import { getFormById } from '../../services/formService.js';
 import {
   BetterAuthContext,
@@ -108,7 +109,7 @@ export const responsesResolvers = {
         throw createGraphQLError('Access denied: You need VIEWER access to view responses for this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
-      return await getResponsesByFormId(
+      const result = await getResponsesByFormId(
         formId,
         page,
         limit,
@@ -117,6 +118,22 @@ export const responsesResolvers = {
         filters,
         filterLogic
       );
+
+      // Pre-fetch edit histories for every response on this page in a single
+      // batch query, then cache them on each parent object so the 5 FormResponse
+      // field resolvers (hasBeenEdited, totalEdits, etc.) all share the result
+      // without firing N individual queries.
+      if (result.data.length > 0) {
+        const { ResponseEditTrackingService } = await import('../../services/responseEditTrackingService.js');
+        const historiesMap = await ResponseEditTrackingService.getEditHistoriesBatch(
+          result.data.map((r: any) => r.id)
+        );
+        for (const response of result.data as any[]) {
+          response._editHistoryPromise = Promise.resolve(historiesMap.get(response.id) ?? []);
+        }
+      }
+
+      return result;
     },
   },
   Mutation: {
@@ -144,13 +161,9 @@ export const responsesResolvers = {
 
         // Check maximum responses limit
         if (limits.maxResponses?.enabled) {
-          // Count current responses
-          const currentResponseCount = await getAllResponses(
-            form.organizationId
-          ).then(
-            (responses) =>
-              responses.filter((r) => r.formId === input.formId).length
-          );
+          const currentResponseCount = await responseRepository.count({
+            where: { formId: input.formId },
+          });
 
           if (currentResponseCount >= limits.maxResponses.limit) {
             throw createGraphQLError('Form has reached its maximum response limit', GRAPHQL_ERROR_CODES.MAX_RESPONSES_REACHED);

@@ -173,6 +173,7 @@ model Response {
   editHistory                ResponseEditHistory[]
 
   @@index([formId])
+  @@index([formId, submittedAt])
   @@index([data(ops: JsonbOps)], type: Gin)
   @@index([metadata(ops: JsonbOps)], type: Gin)
   @@map("response")
