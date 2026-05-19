@@ -589,8 +589,7 @@ export const createResponsesColumns = ({
 
   const deserializedSchema: FormSchema = deserializeFormSchema(formSchema);
 
-  // Base columns
-  const baseColumns = createBaseColumns(locale, t);
+  const [idColumn, ...metaColumns] = createBaseColumns(locale, t);
 
   // Field columns
   const fieldColumns = createFieldColumns(deserializedSchema, t);
@@ -609,5 +608,6 @@ export const createResponsesColumns = ({
   // Actions column
   const actionsColumn = createActionsColumn(formId, t);
 
-  return [...baseColumns, ...fieldColumns, ...pluginColumns, actionsColumn];
+  // Response ID first, field/plugin columns in middle, Submitted At + Edit Status at end
+  return [idColumn, ...fieldColumns, ...pluginColumns, ...metaColumns, actionsColumn];
 };
