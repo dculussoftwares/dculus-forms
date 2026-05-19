@@ -19,6 +19,9 @@ build/
 set-github-secrets.sh
 *secrets*.sh
 
+# Claude Code agent working memory (auto-regenerated, gets stale)
+.claude/agent-memory/
+
 # Logs
 logs
 *.log
