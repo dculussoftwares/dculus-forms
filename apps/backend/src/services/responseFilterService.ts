@@ -46,6 +46,20 @@ const parseFilterNumber = (value?: string): number | null => {
   return isNaN(parsed) ? null : parsed;
 };
 
+// Parses a field or filter date value as local time.
+// Date-only strings (YYYY-MM-DD) are anchored to local midnight so that
+// users outside UTC don't get off-by-one day errors (the ES spec would
+// otherwise parse them as UTC midnight, shifting the date for negative
+// offsets like UTC-5).
+const parseDate = (value: unknown): Date => {
+  const asNum = Number(value);
+  if (!isNaN(asNum) && asNum > 0) return new Date(asNum);
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return new Date(value + 'T00:00:00');
+  }
+  return new Date(String(value));
+};
+
 export function applyResponseFilters(
   responses: any[],
   filters?: ResponseFilter[],
@@ -158,12 +172,9 @@ export function applyResponseFilters(
 
         case 'DATE_EQUALS': {
           try {
-            const fieldDate = new Date(Number(fieldValue) || fieldValue);
-            const compareDate = new Date(filter.value || '');
-            // Check for invalid dates
-            if (isNaN(fieldDate.getTime()) || isNaN(compareDate.getTime())) {
-              return false;
-            }
+            const fieldDate = parseDate(fieldValue);
+            const compareDate = parseDate(filter.value || '');
+            if (isNaN(fieldDate.getTime()) || isNaN(compareDate.getTime())) return false;
             return fieldDate.toDateString() === compareDate.toDateString();
           } catch {
             return false;
@@ -172,12 +183,9 @@ export function applyResponseFilters(
 
         case 'DATE_BEFORE': {
           try {
-            const fieldDate = new Date(Number(fieldValue) || fieldValue);
-            const compareDate = new Date(filter.value || '');
-            // Check for invalid dates
-            if (isNaN(fieldDate.getTime()) || isNaN(compareDate.getTime())) {
-              return false;
-            }
+            const fieldDate = parseDate(fieldValue);
+            const compareDate = parseDate(filter.value || '');
+            if (isNaN(fieldDate.getTime()) || isNaN(compareDate.getTime())) return false;
             return fieldDate < compareDate;
           } catch {
             return false;
@@ -186,12 +194,9 @@ export function applyResponseFilters(
 
         case 'DATE_AFTER': {
           try {
-            const fieldDate = new Date(Number(fieldValue) || fieldValue);
-            const compareDate = new Date(filter.value || '');
-            // Check for invalid dates
-            if (isNaN(fieldDate.getTime()) || isNaN(compareDate.getTime())) {
-              return false;
-            }
+            const fieldDate = parseDate(fieldValue);
+            const compareDate = parseDate(filter.value || '');
+            if (isNaN(fieldDate.getTime()) || isNaN(compareDate.getTime())) return false;
             return fieldDate > compareDate;
           } catch {
             return false;
@@ -201,22 +206,17 @@ export function applyResponseFilters(
         case 'DATE_BETWEEN': {
           if (!filter.dateRange) return false;
           try {
-            const fieldDate = new Date(Number(fieldValue) || fieldValue);
-            // Check for invalid field date
-            if (isNaN(fieldDate.getTime())) {
-              return false;
-            }
+            const fieldDate = parseDate(fieldValue);
+            if (isNaN(fieldDate.getTime())) return false;
 
-            const fromDate = filter.dateRange.from ? new Date(filter.dateRange.from) : null;
-            const toDate = filter.dateRange.to ? new Date(filter.dateRange.to) : null;
+            const fromDate = filter.dateRange.from ? parseDate(filter.dateRange.from) : null;
+            const toDate = filter.dateRange.to ? parseDate(filter.dateRange.to) : null;
 
-            // Check for invalid range dates
             if ((fromDate && isNaN(fromDate.getTime())) || (toDate && isNaN(toDate.getTime()))) {
               return false;
             }
 
-            return (!fromDate || fieldDate >= fromDate) &&
-              (!toDate || fieldDate <= toDate);
+            return (!fromDate || fieldDate >= fromDate) && (!toDate || fieldDate <= toDate);
           } catch {
             return false;
           }
@@ -224,10 +224,8 @@ export function applyResponseFilters(
 
         case 'DATE_TODAY': {
           try {
-            const fieldDate = new Date(Number(fieldValue) || fieldValue);
-            if (isNaN(fieldDate.getTime())) {
-              return false;
-            }
+            const fieldDate = parseDate(fieldValue);
+            if (isNaN(fieldDate.getTime())) return false;
             const today = new Date();
             return fieldDate.toDateString() === today.toDateString();
           } catch {
@@ -237,15 +235,10 @@ export function applyResponseFilters(
 
         case 'DATE_LAST_N_DAYS': {
           try {
-            const fieldDate = new Date(Number(fieldValue) || fieldValue);
-            if (isNaN(fieldDate.getTime())) {
-              return false;
-            }
-            // filter.value contains the number of days
+            const fieldDate = parseDate(fieldValue);
+            if (isNaN(fieldDate.getTime())) return false;
             const days = parseInt(filter.value || '7', 10);
-            if (isNaN(days) || days < 0) {
-              return false;
-            }
+            if (isNaN(days) || days < 0) return false;
             const now = new Date();
             const startDate = new Date(now);
             startDate.setDate(startDate.getDate() - days);
