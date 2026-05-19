@@ -109,33 +109,41 @@ export function ServerDataTable<TData, TValue>({
   return (
     <div className={cn("flex flex-col h-full", className)}>
       {/* Table Container - Only this part scrolls horizontally */}
-      <div className="bg-white border border-slate-200/60 rounded-lg shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="bg-white flex-1 min-h-0 flex flex-col overflow-hidden" style={{ borderRadius: 'inherit' }}>
         {/* Table wrapper with horizontal scroll ONLY for table content */}
         <div className="flex-1 min-h-0 relative overflow-hidden">
-          <div 
-            className="overflow-auto absolute inset-0" 
+          <div
+            className="overflow-auto absolute inset-0"
             style={{ maxHeight }}
           >
-            <table 
-              className="relative" 
-              style={{ 
+            <table
+              className="relative"
+              style={{
                 width: table.getCenterTotalSize(),
                 minWidth: '100%'
               }}
             >
-            {/* Enhanced Header */}
-            <thead className="sticky top-0 z-20 bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50 backdrop-blur-sm rounded-t-lg">
+            <thead className="sticky top-0 z-20 bg-white">
               {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id} className="border-b border-slate-200/50">
+                <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
                     return (
                       <th
                         key={header.id}
-                        className="h-14 px-6 text-left align-middle font-semibold text-slate-700 [&:has([role=checkbox])]:pr-0 whitespace-nowrap bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50 border-b border-slate-200/40 first:pl-8 last:pr-8 relative first:rounded-tl-lg last:rounded-tr-lg"
-                        style={{ width: header.getSize() }}
+                        className="text-left align-middle bg-white whitespace-nowrap relative"
+                        style={{
+                          width: header.getSize(),
+                          height: '56px',
+                          padding: '0px 2px 0px 1px',
+                          fontSize: '14px',
+                          fontWeight: 700,
+                          color: '#3c323e',
+                          boxShadow: 'rgba(86, 82, 90, 0.08) 0px -1px 0px 0px inset',
+                          borderRight: '1px solid rgba(86, 82, 90, 0.08)',
+                        }}
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
+                        <div className="flex items-center justify-between h-full">
+                          <div style={{ padding: '0 12px', display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
                             {header.isPlaceholder
                               ? null
                               : flexRender(
@@ -143,25 +151,18 @@ export function ServerDataTable<TData, TValue>({
                                   header.getContext()
                                 )}
                           </div>
-                          {/* Enhanced Resize handle */}
                           {header.column.getCanResize() && (
                             <div className="absolute right-0 top-0 h-full w-2 flex items-center justify-center group/resize">
                               <div
                                 onMouseDown={header.getResizeHandler()}
                                 onTouchStart={header.getResizeHandler()}
-                                className="w-1 h-8 bg-slate-300 hover:bg-blue-500 cursor-col-resize select-none touch-none opacity-0 group-hover/resize:opacity-100 transition-all duration-200 rounded-full"
+                                className="w-px h-5 bg-[rgba(86,82,90,0.2)] hover:bg-[rgba(86,82,90,0.5)] cursor-col-resize select-none touch-none opacity-0 group-hover/resize:opacity-100 transition-all duration-150"
                                 style={{
                                   transform: header.column.getIsResizing()
                                     ? `translateX(${table.getState().columnSizingInfo.deltaOffset}px)`
                                     : '',
                                 }}
                               />
-                              {/* Resize icon indicator */}
-                              <div className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/resize:opacity-70 transition-opacity duration-200 pointer-events-none">
-                                <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
-                                </svg>
-                              </div>
                             </div>
                           )}
                         </div>
@@ -172,8 +173,7 @@ export function ServerDataTable<TData, TValue>({
               ))}
             </thead>
             
-            {/* Enhanced Body */}
-            <tbody className="bg-white relative divide-y divide-slate-100/60">
+            <tbody className="bg-white relative">
               {/* Loading overlay for when data exists but is refreshing */}
               {loading && table.getRowModel().rows?.length > 0 && (
                 <tr>
@@ -194,28 +194,30 @@ export function ServerDataTable<TData, TValue>({
               )}
               
               {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row, index) => (
+                table.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
                     className={cn(
-                      "group transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-indigo-50/30 data-[state=selected]:bg-blue-50 hover:shadow-sm",
+                      "group bg-white transition-colors hover:bg-[#f7f7f8] data-[state=selected]:bg-blue-50",
                       onRowClick && "cursor-pointer",
-                      loading && "opacity-40",
-                      index % 2 === 0 ? "bg-white" : "bg-slate-50/30"
+                      loading && "opacity-40"
                     )}
                     onClick={() => !loading && onRowClick?.(row.original)}
                   >
-                    {row.getVisibleCells().map((cell, cellIndex) => (
+                    {row.getVisibleCells().map((cell) => (
                       <td
                         key={cell.id}
-                        className={cn(
-                          "px-6 py-4 align-middle text-sm transition-all duration-200 group-hover:text-slate-900",
-                          "[&:has([role=checkbox])]:pr-0",
-                          cellIndex === 0 ? "pl-8" : "",
-                          cellIndex === row.getVisibleCells().length - 1 ? "pr-8" : ""
-                        )}
-                        style={{ width: cell.column.getSize() }}
+                        className="align-middle [&:has([role=checkbox])]:pr-0"
+                        style={{
+                          width: cell.column.getSize(),
+                          height: '56px',
+                          padding: '8px 10px',
+                          fontSize: '14px',
+                          color: '#4c414e',
+                          borderBottom: '1px solid rgba(86, 82, 90, 0.08)',
+                          borderRight: '1px solid rgba(86, 82, 90, 0.08)',
+                        }}
                       >
                         <div className="break-words">
                           {flexRender(
@@ -272,7 +274,7 @@ export function ServerDataTable<TData, TValue>({
       </div>
       
       {/* Compact Pagination */}
-      <div className="flex items-center justify-between px-4 py-2 bg-slate-50 border-t border-slate-200/50 flex-shrink-0 rounded-b-lg">
+      <div className="flex items-center justify-between px-4 py-2 bg-white flex-shrink-0" style={{ borderTop: '1px solid rgba(86, 82, 90, 0.08)' }}>
         {/* Rows per page */}
         <div className="flex items-center space-x-2">
           <span className="text-xs text-slate-600">Rows:</span>

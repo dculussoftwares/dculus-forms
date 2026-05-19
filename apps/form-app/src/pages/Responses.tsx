@@ -198,11 +198,7 @@ const Responses: React.FC = () => {
             }
           />
         ) : (
-          /* White table container with Typeform exact border/shadow */
-          <div
-            className="flex-1 flex flex-col min-h-0 w-full overflow-x-hidden rounded-xl bg-white dark:bg-card"
-            style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}
-          >
+          <div className="flex-1 flex flex-col min-h-0 w-full overflow-x-hidden bg-white dark:bg-card">
             {/* Toolbar */}
             <div className="flex-shrink-0">
               <ResponsesToolbar

@@ -9,22 +9,26 @@
 
 import React, { useState } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
-import type { Row } from '@tanstack/react-table';
+import type { Column, Row } from '@tanstack/react-table';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { gql, useApolloClient } from '@apollo/client';
 import {
   Badge,
   Button,
-  DataTableColumnHeader,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@dculus/ui';
 import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  AtSign,
   Calendar,
   CheckSquare,
+  Clock,
   Download,
   Edit,
   Eye,
@@ -66,9 +70,84 @@ interface CreateResponsesColumnsOptions {
   ) => string;
 }
 
-/**
- * Helper function to get field type icon
- */
+const fieldIconStyle = (fieldType: FieldType): { bg: string; color: string } => {
+  switch (fieldType) {
+    case FieldType.DATE_FIELD:
+      return { bg: '#f4faf8', color: '#0f7a63' };
+    case FieldType.SELECT_FIELD:
+    case FieldType.RADIO_FIELD:
+    case FieldType.CHECKBOX_FIELD:
+      return { bg: '#ddd6fa', color: '#6d4fc6' };
+    case FieldType.FILE_UPLOAD_FIELD:
+      return { bg: '#f8cdd8', color: '#c4436d' };
+    case FieldType.EMAIL_FIELD:
+      return { bg: '#dbeafe', color: '#1d4ed8' };
+    case FieldType.NUMBER_FIELD:
+      return { bg: '#fef3c7', color: '#b45309' };
+    default:
+      return { bg: '#dedcde', color: '#655d67' };
+  }
+};
+
+const CHIP_STYLE: React.CSSProperties = { width: '24px', height: '24px', borderRadius: '6px', flexShrink: 0, overflow: 'hidden' };
+
+const fieldIconNode = (fieldType: FieldType) => {
+  switch (fieldType) {
+    case FieldType.CHECKBOX_FIELD:    return <CheckSquare className="h-4 w-4" />;
+    case FieldType.DATE_FIELD:        return <Calendar className="h-4 w-4" />;
+    case FieldType.SELECT_FIELD:
+    case FieldType.RADIO_FIELD:       return <List className="h-4 w-4" />;
+    case FieldType.FILE_UPLOAD_FIELD: return <Upload className="h-4 w-4" />;
+    case FieldType.EMAIL_FIELD:       return <AtSign className="h-4 w-4" />;
+    case FieldType.NUMBER_FIELD:      return <Hash className="h-4 w-4" />;
+    default:                          return <Type className="h-4 w-4" />;
+  }
+};
+
+const FieldIconChip: React.FC<{ fieldType: FieldType }> = ({ fieldType }) => {
+  const { bg, color } = fieldIconStyle(fieldType);
+  return (
+    <span
+      className="inline-flex items-center justify-center"
+      style={{ ...CHIP_STYLE, backgroundColor: bg, color }}
+    >
+      {fieldIconNode(fieldType)}
+    </span>
+  );
+};
+
+const BaseIconChip: React.FC<{ bg: string; color: string; children: React.ReactNode }> = ({ bg, color, children }) => (
+  <span
+    className="inline-flex items-center justify-center"
+    style={{ ...CHIP_STYLE, backgroundColor: bg, color }}
+  >
+    {children}
+  </span>
+);
+
+const TFColumnHeader: React.FC<{
+  column: Column<FormResponse, unknown>;
+  icon: React.ReactNode;
+  title: string;
+}> = ({ column, icon, title }) => (
+  <button
+    className="flex items-center gap-2 group/th text-left w-full"
+    onClick={() => column.getCanSort() && column.toggleSorting(column.getIsSorted() === 'asc')}
+  >
+    {icon}
+    <span className="text-[13px] font-normal text-[#3c323e] truncate">{title}</span>
+    {column.getCanSort() && (
+      column.getIsSorted() === 'desc' ? (
+        <ArrowDown className="h-3 w-3 text-[#4c414e] flex-shrink-0 ml-0.5" />
+      ) : column.getIsSorted() === 'asc' ? (
+        <ArrowUp className="h-3 w-3 text-[#4c414e] flex-shrink-0 ml-0.5" />
+      ) : (
+        <ArrowUpDown className="h-3 w-3 text-[#655d67] flex-shrink-0 ml-0.5 opacity-0 group-hover/th:opacity-50 transition-opacity" />
+      )
+    )}
+  </button>
+);
+
 const getFieldIcon = (fieldType: FieldType) => {
   switch (fieldType) {
     case FieldType.TEXT_INPUT_FIELD:
@@ -98,8 +177,9 @@ const createBaseColumns = (
     {
       accessorKey: 'id',
       header: ({ column }) => (
-        <DataTableColumnHeader
+        <TFColumnHeader
           column={column}
+          icon={<BaseIconChip bg="#dedcde" color="#655d67"><Hash className="h-4 w-4" /></BaseIconChip>}
           title={t('table.columns.responseId')}
         />
       ),
@@ -121,8 +201,9 @@ const createBaseColumns = (
     {
       accessorKey: 'submittedAt',
       header: ({ column }) => (
-        <DataTableColumnHeader
+        <TFColumnHeader
           column={column}
+          icon={<BaseIconChip bg="#f4faf8" color="#0f7a63"><Clock className="h-4 w-4" /></BaseIconChip>}
           title={t('table.columns.submittedAt')}
         />
       ),
@@ -167,8 +248,9 @@ const createBaseColumns = (
     {
       accessorKey: 'hasBeenEdited',
       header: ({ column }) => (
-        <DataTableColumnHeader
+        <TFColumnHeader
           column={column}
+          icon={<BaseIconChip bg="#fff7ed" color="#b45309"><History className="h-4 w-4" /></BaseIconChip>}
           title={t('table.columns.editStatus')}
         />
       ),
@@ -326,12 +408,11 @@ const createFieldColumns = (
           accessorKey: `data.${field.id}`,
           id: `field-${field.id}`,
           header: ({ column }) => (
-            <div className="flex items-center space-x-2">
-              <div className="text-muted-foreground">
-                {getFieldIcon(field.type)}
-              </div>
-              <DataTableColumnHeader column={column} title={field.label} />
-            </div>
+            <TFColumnHeader
+              column={column}
+              icon={<FieldIconChip fieldType={field.type} />}
+              title={field.label}
+            />
           ),
           cell: ({ row }) => {
             const value = row.original.data[field.id];
