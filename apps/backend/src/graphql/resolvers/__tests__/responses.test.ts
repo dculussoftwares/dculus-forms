@@ -10,10 +10,16 @@ import * as pluginEvents from '../../../plugins/events.js';
 import * as usageService from '../../../subscriptions/usageService.js';
 import * as subscriptionEvents from '../../../subscriptions/events.js';
 import * as editTrackingService from '../../../services/responseEditTrackingService.js';
+import * as responseRepositoryModule from '../../../repositories/responseRepository.js';
 
 // Mock all dependencies
 vi.mock('../../../services/responseService.js');
 vi.mock('../../../services/formService.js');
+vi.mock('../../../repositories/responseRepository.js', () => ({
+  responseRepository: {
+    count: vi.fn(),
+  },
+}));
 vi.mock('../../../middleware/better-auth-middleware.js');
 vi.mock('../formSharing.js');
 vi.mock('../../../services/analyticsService.js');
@@ -463,9 +469,7 @@ describe('Responses Resolvers', () => {
         },
       };
       vi.mocked(formService.getFormById).mockResolvedValue(formWithLimits as any);
-      vi.mocked(responseService.getAllResponses).mockResolvedValue(
-        Array(10).fill(mockResponse) as any
-      );
+      vi.mocked(responseRepositoryModule.responseRepository.count).mockResolvedValue(10);
 
       await expect(
         responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext)
@@ -482,9 +486,7 @@ describe('Responses Resolvers', () => {
         },
       };
       vi.mocked(formService.getFormById).mockResolvedValue(formWithLimits as any);
-      vi.mocked(responseService.getAllResponses).mockResolvedValue(
-        Array(5).fill(mockResponse) as any
-      );
+      vi.mocked(responseRepositoryModule.responseRepository.count).mockResolvedValue(5);
 
       const result = await responsesResolvers.Mutation.submitResponse(
         {},

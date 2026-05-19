@@ -444,14 +444,14 @@ describe('Response Filter Service', () => {
       expect(result).toHaveLength(0);
     });
 
-    it('should return true for unknown operators', () => {
+    it('should reject all responses for unknown operators', () => {
       const filters: ResponseFilter[] = [
         { fieldId: 'field-name', operator: 'UNKNOWN_OPERATOR' as any },
       ];
 
       const result = applyResponseFilters(mockResponses, filters);
 
-      expect(result).toHaveLength(3);
+      expect(result).toHaveLength(0);
     });
 
     it('should handle null field values', () => {
