@@ -25,14 +25,14 @@ model User {
   updatedAt     DateTime @updatedAt
 
   // Relations
-  accounts    Account[]
-  sessions    Session[]
-  members     Member[]
-  invitations Invitation[] @relation("InvitedBy")
-  forms       Form[]
-  formPermissions FormPermission[]
-  grantedPermissions FormPermission[] @relation("GrantedPermissions")
-  responseEdits ResponseEditHistory[]
+  accounts           Account[]
+  sessions           Session[]
+  members            Member[]
+  invitations        Invitation[]          @relation("InvitedBy")
+  forms              Form[]
+  formPermissions    FormPermission[]
+  grantedPermissions FormPermission[]      @relation("GrantedPermissions")
+  responseEdits      ResponseEditHistory[]
 
   @@map("user")
 }
@@ -128,33 +128,32 @@ model Invitation {
   @@map("invitation")
 }
 
-
 // Application Models
 
 model Form {
-  id               String   @id @default(cuid())
-  title            String
-  description      String?
-  shortUrl         String   @unique
-  formSchema       Json
-  settings         Json?
-  isPublished      Boolean  @default(false)
-  organizationId   String
-  createdById      String
-  sharingScope     String   @default("PRIVATE") // PRIVATE, SPECIFIC_MEMBERS, ALL_ORG_MEMBERS
-  defaultPermission String  @default("VIEWER")  // Default permission for ALL_ORG_MEMBERS scope
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                String   @id @default(cuid())
+  title             String
+  description       String?
+  shortUrl          String   @unique
+  formSchema        Json
+  settings          Json?
+  isPublished       Boolean  @default(false)
+  organizationId    String
+  createdById       String
+  sharingScope      String   @default("PRIVATE") // PRIVATE, SPECIFIC_MEMBERS, ALL_ORG_MEMBERS
+  defaultPermission String   @default("VIEWER") // Default permission for ALL_ORG_MEMBERS scope
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   // Relations
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy    User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
-  responses              Response[]
-  files                  FormFile[]
-  analytics              FormViewAnalytics[]
-  submissionAnalytics    FormSubmissionAnalytics[]
-  permissions            FormPermission[]
-  plugins                FormPlugin[]
+  organization        Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy           User                      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  responses           Response[]
+  files               FormFile[]
+  analytics           FormViewAnalytics[]
+  submissionAnalytics FormSubmissionAnalytics[]
+  permissions         FormPermission[]
+  plugins             FormPlugin[]
 
   @@index([organizationId])
   @@map("form")
@@ -164,30 +163,28 @@ model Response {
   id          String   @id @default(cuid())
   formId      String
   data        Json
-  metadata    Json?    // Generic plugin metadata storage
+  metadata    Json? // Generic plugin metadata storage
   submittedAt DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  form                       Form                        @relation(fields: [formId], references: [id], onDelete: Cascade)
-  formSubmissionAnalytics    FormSubmissionAnalytics?
-  editHistory                ResponseEditHistory[]
+  form                    Form                     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  formSubmissionAnalytics FormSubmissionAnalytics?
+  editHistory             ResponseEditHistory[]
 
   @@index([formId])
   @@index([formId, submittedAt])
-  @@index([data(ops: JsonbOps)], type: Gin)
-  @@index([metadata(ops: JsonbOps)], type: Gin)
   @@map("response")
 }
 
 model FormTemplate {
-  id         String   @id @default(cuid())
-  name       String
+  id          String   @id @default(cuid())
+  name        String
   description String?
-  category   String?
-  formSchema Json
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  category    String?
+  formSchema  Json
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("form_template")
 }
@@ -248,30 +245,28 @@ model FormFile {
 
 // Form View Analytics Model
 model FormViewAnalytics {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   formId          String
-  sessionId       String   // Anonymous UUID session identifier
+  sessionId       String // Anonymous UUID session identifier
   userAgent       String
-  operatingSystem String?  // Parsed OS (Windows, macOS, Linux, etc.)
-  browser         String?  // Parsed browser (Chrome, Firefox, Safari, etc.)
-  browserVersion  String?  // Browser version
-  countryCode     String?  // ISO 3166-1 alpha-3 (e.g., "USA", "CAN", "GBR")
-  countryAlpha2   String?  // ISO 3166-1 alpha-2 (e.g., "US", "IN")
-  regionCode      String?  // State/province code
-  region          String?  // Full region/state name from edge headers
-  city            String?  // City if available
-  longitude       Float?   // Longitude from edge headers
-  latitude        Float?   // Latitude from edge headers
-  timezone        String?  // IANA timezone (e.g., "America/New_York")
-  language        String?  // Browser locale (e.g., "en-US", "fr-CA")
-  viewedAt        DateTime @default(now())
+  operatingSystem String? // Parsed OS (Windows, macOS, Linux, etc.)
+  browser         String? // Parsed browser (Chrome, Firefox, Safari, etc.)
+  browserVersion  String? // Browser version
+  countryCode     String? // ISO 3166-1 alpha-3 (e.g., "USA", "CAN", "GBR")
+  countryAlpha2   String? // ISO 3166-1 alpha-2 (e.g., "US", "IN")
+  regionCode      String? // State/province code
+  region          String? // Full region/state name from edge headers
+  city            String? // City if available
+  longitude       Float? // Longitude from edge headers
+  latitude        Float? // Latitude from edge headers
+  timezone        String? // IANA timezone (e.g., "America/New_York")
+  language        String? // Browser locale (e.g., "en-US", "fr-CA")
+  viewedAt        DateTime  @default(now())
   startedAt       DateTime? // When user first interacted with form (for completion time calculation)
 
   form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
 
-  @@index([formId])
-  @@index([viewedAt])
-  @@index([sessionId])
+  @@index([formId, viewedAt])
   @@map("form_view_analytics")
 }
 
@@ -279,40 +274,37 @@ model FormSubmissionAnalytics {
   id                    String   @id @default(cuid())
   formId                String
   responseId            String   @unique // Reference to the Response record (one-to-one)
-  sessionId             String   // Anonymous UUID session identifier (same as view analytics)
+  sessionId             String // Anonymous UUID session identifier (same as view analytics)
   userAgent             String
-  operatingSystem       String?  // Parsed OS (Windows, macOS, Linux, etc.)
-  browser               String?  // Parsed browser (Chrome, Firefox, Safari, etc.)
-  browserVersion        String?  // Browser version
-  countryCode           String?  // ISO 3166-1 alpha-3 (e.g., "USA", "CAN", "GBR")
-  countryAlpha2         String?  // ISO 3166-1 alpha-2 (e.g., "US", "IN")
-  regionCode            String?  // State/province code
-  region                String?  // Full region/state name from edge headers
-  city                  String?  // City if available
-  longitude             Float?   // Longitude from edge headers
-  latitude              Float?   // Latitude from edge headers
-  timezone              String?  // IANA timezone (e.g., "America/New_York")
-  language              String?  // Browser locale (e.g., "en-US", "fr-CA")
+  operatingSystem       String? // Parsed OS (Windows, macOS, Linux, etc.)
+  browser               String? // Parsed browser (Chrome, Firefox, Safari, etc.)
+  browserVersion        String? // Browser version
+  countryCode           String? // ISO 3166-1 alpha-3 (e.g., "USA", "CAN", "GBR")
+  countryAlpha2         String? // ISO 3166-1 alpha-2 (e.g., "US", "IN")
+  regionCode            String? // State/province code
+  region                String? // Full region/state name from edge headers
+  city                  String? // City if available
+  longitude             Float? // Longitude from edge headers
+  latitude              Float? // Latitude from edge headers
+  timezone              String? // IANA timezone (e.g., "America/New_York")
+  language              String? // Browser locale (e.g., "en-US", "fr-CA")
   submittedAt           DateTime @default(now())
-  completionTimeSeconds Int?     // Time taken to complete form in seconds
+  completionTimeSeconds Int? // Time taken to complete form in seconds
 
   form     Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
   response Response @relation(fields: [responseId], references: [id], onDelete: Cascade)
 
-  @@index([formId])
-  @@index([submittedAt])
-  @@index([sessionId])
-  @@index([completionTimeSeconds])
+  @@index([formId, submittedAt])
   @@map("form_submission_analytics")
 }
 
 // Form Permission Model for sharing and access control
 model FormPermission {
   id          String   @id @default(cuid())
-  formId      String   // Reference to Form
-  userId      String   // Reference to User (organization member)
-  permission  String   // OWNER, EDITOR, VIEWER, NO_ACCESS
-  grantedById String?  // Who granted this permission (nullable so user deletion is not blocked)
+  formId      String // Reference to Form
+  userId      String // Reference to User (organization member)
+  permission  String // OWNER, EDITOR, VIEWER, NO_ACCESS
+  grantedById String? // Who granted this permission (nullable so user deletion is not blocked)
   grantedAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -329,21 +321,21 @@ model FormPermission {
 // Response Edit Tracking Models
 
 model ResponseEditHistory {
-  id               String   @id @default(cuid())
-  responseId       String   // Reference to Response
-  editedById       String?  // User who made the edit (nullable so user deletion is not blocked)
-  editedAt         DateTime @default(now())
-  editType         String   @default("MANUAL") // MANUAL, SYSTEM, BULK
-  editReason       String?  // Optional reason for the edit
-  ipAddress        String?  // IP address of the editor
-  userAgent        String?  // User agent of the editor
-  totalChanges     Int      @default(0) // Number of fields changed
-  changesSummary   String?  // Human-readable summary of changes
+  id             String   @id @default(cuid())
+  responseId     String // Reference to Response
+  editedById     String? // User who made the edit (nullable so user deletion is not blocked)
+  editedAt       DateTime @default(now())
+  editType       String   @default("MANUAL") // MANUAL, SYSTEM, BULK
+  editReason     String? // Optional reason for the edit
+  ipAddress      String? // IP address of the editor
+  userAgent      String? // User agent of the editor
+  totalChanges   Int      @default(0) // Number of fields changed
+  changesSummary String? // Human-readable summary of changes
 
   // Relations
-  response         Response                @relation(fields: [responseId], references: [id], onDelete: Cascade)
-  editedBy         User?                   @relation(fields: [editedById], references: [id], onDelete: SetNull)
-  fieldChanges     ResponseFieldChange[]
+  response     Response              @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  editedBy     User?                 @relation(fields: [editedById], references: [id], onDelete: SetNull)
+  fieldChanges ResponseFieldChange[]
 
   @@index([responseId])
   @@index([editedById])
@@ -352,22 +344,21 @@ model ResponseEditHistory {
 }
 
 model ResponseFieldChange {
-  id                    String   @id @default(cuid())
-  editHistoryId         String   // Reference to ResponseEditHistory
-  fieldId               String   // Form field ID that was changed
-  fieldLabel            String   // Human-readable field label at time of edit
-  fieldType             String   // Field type (text, email, select, etc.)
-  previousValue         Json?    // Previous field value (null for new fields)
-  newValue              Json?    // New field value (null for deleted fields)
-  changeType            String   // ADD, UPDATE, DELETE
-  valueChangeSize       Int?     // Size of change (characters added/removed for text)
+  id              String @id @default(cuid())
+  editHistoryId   String // Reference to ResponseEditHistory
+  fieldId         String // Form field ID that was changed
+  fieldLabel      String // Human-readable field label at time of edit
+  fieldType       String // Field type (text, email, select, etc.)
+  previousValue   Json? // Previous field value (null for new fields)
+  newValue        Json? // New field value (null for deleted fields)
+  changeType      String // ADD, UPDATE, DELETE
+  valueChangeSize Int? // Size of change (characters added/removed for text)
 
   // Relations
-  editHistory          ResponseEditHistory @relation(fields: [editHistoryId], references: [id], onDelete: Cascade)
+  editHistory ResponseEditHistory @relation(fields: [editHistoryId], references: [id], onDelete: Cascade)
 
   @@index([editHistoryId])
   @@index([fieldId])
-  @@index([changeType])
   @@map("response_field_change")
 }
 
@@ -375,11 +366,11 @@ model ResponseFieldChange {
 
 model FormPlugin {
   id        String   @id @default(cuid())
-  formId    String   // Reference to Form
-  type      String   // Plugin type: "webhook", "email", "slack", etc.
-  name      String   // User-friendly name
+  formId    String // Reference to Form
+  type      String // Plugin type: "webhook", "email", "slack", etc.
+  name      String // User-friendly name
   enabled   Boolean  @default(true)
-  config    Json     // Plugin-specific configuration (flexible JSON)
+  config    Json // Plugin-specific configuration (flexible JSON)
   events    String[] // Events that trigger this plugin: ["form.submitted", "plugin.test"]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -396,12 +387,12 @@ model FormPlugin {
 
 model PluginDelivery {
   id           String   @id @default(cuid())
-  pluginId     String   // Reference to FormPlugin
-  eventType    String   // "form.submitted", "plugin.test", etc.
-  status       String   // "success", "failed"
-  payload      Json     // Event data sent to plugin
-  response     Json?    // Response from plugin (if applicable)
-  errorMessage String?  // Error details if failed
+  pluginId     String // Reference to FormPlugin
+  eventType    String // "form.submitted", "plugin.test", etc.
+  status       String // "success", "failed"
+  payload      Json // Event data sent to plugin
+  response     Json? // Response from plugin (if applicable)
+  errorMessage String? // Error details if failed
   deliveredAt  DateTime @default(now())
 
   // Relations
@@ -417,28 +408,28 @@ model PluginDelivery {
 // Subscription Management Models
 
 model Subscription {
-  id                      String   @id @default(cuid())
-  organizationId          String   @unique
-  chargebeeCustomerId     String   // Chargebee customer ID
-  chargebeeSubscriptionId String?  // Chargebee subscription ID (null for free plan)
+  id                      String  @id @default(cuid())
+  organizationId          String  @unique
+  chargebeeCustomerId     String // Chargebee customer ID
+  chargebeeSubscriptionId String? // Chargebee subscription ID (null for free plan)
 
   // Plan information
-  planId                  String   // 'free', 'starter', 'advanced'
-  status                  String   // 'active', 'cancelled', 'expired', 'past_due'
+  planId String // 'free', 'starter', 'advanced'
+  status String // 'active', 'cancelled', 'expired', 'past_due'
 
   // Usage tracking (local cache for performance)
-  viewsUsed               Int      @default(0)
-  submissionsUsed         Int      @default(0)
-  viewsLimit              Int?     // null = unlimited
-  submissionsLimit        Int?     // null = unlimited
+  viewsUsed        Int  @default(0)
+  submissionsUsed  Int  @default(0)
+  viewsLimit       Int? // null = unlimited
+  submissionsLimit Int? // null = unlimited
 
   // Billing period (resets usage counters)
-  currentPeriodStart      DateTime
-  currentPeriodEnd        DateTime
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
 
   // Metadata
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
