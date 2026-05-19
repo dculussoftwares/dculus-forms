@@ -1,4 +1,5 @@
-import { GraphQLError } from '#graphql-errors';
+import { GraphQLError, createGraphQLError } from '#graphql-errors';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
 import { getFormById } from '../../services/formService.js';
 import { getAllResponsesByFormId } from '../../services/responseService.js';
@@ -37,13 +38,13 @@ export const unifiedExportResolvers = {
           PermissionLevel.VIEWER
         );
         if (!accessCheck.hasAccess) {
-          throw new GraphQLError('Access denied: You do not have permission to export data from this form');
+          throw createGraphQLError('Access denied: You do not have permission to export data from this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
         }
 
         // Get form details
         const form = await getFormById(formId);
         if (!form) {
-          throw new GraphQLError('Form not found');
+          throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
         }
 
         const MAX_EXPORT_RESPONSES = 50_000;
@@ -52,7 +53,7 @@ export const unifiedExportResolvers = {
         let responses = await getAllResponsesByFormId(formId);
 
         if (responses.length === 0) {
-          throw new GraphQLError('No responses found for this form');
+          throw createGraphQLError('No responses found for this form', GRAPHQL_ERROR_CODES.NOT_FOUND);
         }
 
         // Apply filters before the size check so that a form with > 50k total
@@ -62,14 +63,15 @@ export const unifiedExportResolvers = {
           logger.info(`Found ${responses.length} responses after applying ${filters.length} filters with ${filterLogic} logic`);
 
           if (responses.length === 0) {
-            throw new GraphQLError('No responses match the applied filters');
+            throw createGraphQLError('No responses match the applied filters', GRAPHQL_ERROR_CODES.NOT_FOUND);
           }
         }
 
         if (responses.length > MAX_EXPORT_RESPONSES) {
-          throw new GraphQLError(
+          throw createGraphQLError(
             `Export contains ${responses.length.toLocaleString()} responses which exceeds the ` +
-            `${MAX_EXPORT_RESPONSES.toLocaleString()} limit. Apply filters to narrow the dataset before exporting.`
+            `${MAX_EXPORT_RESPONSES.toLocaleString()} limit. Apply filters to narrow the dataset before exporting.`,
+            GRAPHQL_ERROR_CODES.BAD_USER_INPUT
           );
         }
 
@@ -122,8 +124,9 @@ export const unifiedExportResolvers = {
           throw error;
         }
         
-        throw new GraphQLError(
-          `Failed to generate ${format} report: ${error instanceof Error ? error.message : 'Unknown error'}`
+        throw createGraphQLError(
+          `Failed to generate ${format} report: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR
         );
       }
     }

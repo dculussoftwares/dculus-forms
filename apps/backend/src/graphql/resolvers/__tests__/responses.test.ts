@@ -220,7 +220,7 @@ describe('Responses Resolvers', () => {
     });
 
     it('should apply filters when provided', async () => {
-      const filters = [{ field: 'field1', operator: 'equals', value: 'value1' }];
+      const filters = [{ fieldId: 'field1', operator: 'equals', value: 'value1' }];
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
       vi.mocked(responseService.getResponsesByFormId).mockResolvedValue(mockPaginatedResult as any);

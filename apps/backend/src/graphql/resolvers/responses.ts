@@ -7,6 +7,7 @@ import {
   updateResponse,
 } from '../../services/responseService.js';
 import { responseRepository } from '../../repositories/responseRepository.js';
+import { ResponseFilter } from '../../services/responseFilterService.js';
 import { getFormById } from '../../services/formService.js';
 import {
   BetterAuthContext,
@@ -89,7 +90,7 @@ export const responsesResolvers = {
         limit?: number;
         sortBy?: string;
         sortOrder?: string;
-        filters?: any[];
+        filters?: ResponseFilter[];
         filterLogic?: 'AND' | 'OR';
       },
       context: { auth: BetterAuthContext; req?: any }
