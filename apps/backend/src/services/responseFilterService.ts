@@ -80,17 +80,33 @@ export function applyResponseFilters(
             const filterValuesLower = filter.values.map(v => String(v).toLowerCase()).sort();
             return fieldValuesLower.every((val, idx) => val === filterValuesLower[idx]);
           }
+          // No value to compare against — skip (matches DB path behaviour)
+          if (filter.value === undefined && (!filter.values || filter.values.length === 0)) return false;
           // String equality
           return String(fieldValue).toLowerCase() === String(filter.value || '').toLowerCase();
 
         case 'NOT_EQUALS':
+          // Absent field values do not equal anything — treat as "not equal"
+          if (isValueEmpty(fieldValue)) return true;
           return String(fieldValue).toLowerCase() !== String(filter.value || '').toLowerCase();
 
         case 'CONTAINS':
-          return fieldValue && String(fieldValue).toLowerCase().includes(String(filter.value || '').toLowerCase());
+          // Empty search value never matches (mirrors DB path which skips the filter)
+          if (!filter.value) return false;
+          // Array fields: exact element match (mirrors DB path LOWER(elem) = $n)
+          if (Array.isArray(fieldValue)) {
+            return fieldValue.some(v => String(v).toLowerCase() === filter.value!.toLowerCase());
+          }
+          return !!fieldValue && String(fieldValue).toLowerCase().includes(filter.value.toLowerCase());
 
         case 'NOT_CONTAINS':
-          return !fieldValue || !String(fieldValue).toLowerCase().includes(String(filter.value || '').toLowerCase());
+          // Empty search value — nothing is "contained", so everything passes
+          if (!filter.value) return true;
+          // Array fields: exact element match (mirrors DB path)
+          if (Array.isArray(fieldValue)) {
+            return !fieldValue.some(v => String(v).toLowerCase() === filter.value!.toLowerCase());
+          }
+          return !fieldValue || !String(fieldValue).toLowerCase().includes(filter.value.toLowerCase());
 
         case 'STARTS_WITH':
           return fieldValue && String(fieldValue).toLowerCase().startsWith(String(filter.value || '').toLowerCase());
@@ -128,9 +144,11 @@ export function applyResponseFilters(
 
         case 'BETWEEN': {
           if (!filter.numberRange) return false;
-          const numValue3 = toNumber(fieldValue);
           const min = filter.numberRange.min;
           const max = filter.numberRange.max;
+          // No bounds provided — nothing to filter (mirrors DB path which skips empty conditions)
+          if (min === undefined && max === undefined) return false;
+          const numValue3 = toNumber(fieldValue);
           if (numValue3 === null) return false;
           return (
             (min === undefined || numValue3 >= min) &&
