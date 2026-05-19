@@ -103,6 +103,11 @@ export const responsesResolvers = {
 
       await requireOrganizationMembership(context.auth, form.organizationId);
 
+      const accessCheck = await checkFormAccess(context.auth.user!.id, formId, PermissionLevel.VIEWER);
+      if (!accessCheck.hasAccess) {
+        throw createGraphQLError('Access denied: You need VIEWER access to view responses for this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
+      }
+
       return await getResponsesByFormId(
         formId,
         page,
@@ -322,6 +327,11 @@ export const responsesResolvers = {
       }
 
       await requireOrganizationMembership(context.auth, form.organizationId);
+
+      const accessCheck = await checkFormAccess(context.auth.user!.id, existingResponse.formId, PermissionLevel.EDITOR);
+      if (!accessCheck.hasAccess) {
+        throw createGraphQLError('Access denied: You need EDITOR access to update responses for this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
+      }
 
       // 3. Prepare edit tracking context
       const editContext = {

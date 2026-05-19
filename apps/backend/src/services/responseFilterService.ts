@@ -276,7 +276,7 @@ export function applyResponseFilters(
         }
 
         default:
-          return true;
+          return false;
       }
     });
   });
