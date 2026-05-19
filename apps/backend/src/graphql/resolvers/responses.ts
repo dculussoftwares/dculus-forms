@@ -109,7 +109,7 @@ export const responsesResolvers = {
         throw createGraphQLError('Access denied: You need VIEWER access to view responses for this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
-      const result = await getResponsesByFormId(
+      return await getResponsesByFormId(
         formId,
         page,
         limit,
@@ -118,22 +118,6 @@ export const responsesResolvers = {
         filters,
         filterLogic
       );
-
-      // Pre-fetch edit histories for every response on this page in a single
-      // batch query, then cache them on each parent object so the 5 FormResponse
-      // field resolvers (hasBeenEdited, totalEdits, etc.) all share the result
-      // without firing N individual queries.
-      if (result.data.length > 0) {
-        const { ResponseEditTrackingService } = await import('../../services/responseEditTrackingService.js');
-        const historiesMap = await ResponseEditTrackingService.getEditHistoriesBatch(
-          result.data.map((r: any) => r.id)
-        );
-        for (const response of result.data as any[]) {
-          response._editHistoryPromise = Promise.resolve(historiesMap.get(response.id) ?? []);
-        }
-      }
-
-      return result;
     },
   },
   Mutation: {

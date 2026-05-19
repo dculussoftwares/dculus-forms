@@ -366,39 +366,6 @@ export class ResponseEditTrackingService {
   }
 
   /**
-   * Fetches edit histories for multiple responses in a single query and
-   * returns a Map keyed by responseId. Use this instead of calling
-   * getEditHistory() per-response when rendering a paginated list.
-   */
-  static async getEditHistoriesBatch(responseIds: string[]) {
-    type EditHistory = Awaited<ReturnType<typeof ResponseEditTrackingService.getEditHistory>>;
-    const map = new Map<string, EditHistory>();
-    if (responseIds.length === 0) return map;
-
-    const histories = await responseRepository.findEditHistory({
-      where: { responseId: { in: responseIds } },
-      include: {
-        editedBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-        fieldChanges: {
-          orderBy: { fieldId: 'asc' },
-        },
-      },
-      orderBy: { editedAt: 'desc' },
-    });
-
-    for (const id of responseIds) map.set(id, []);
-    for (const h of histories) map.get(h.responseId)?.push(h);
-    return map;
-  }
-
-  /**
    * Gets response with form schema for change detection
    */
   static async getResponseWithFormSchema(responseId: string) {
