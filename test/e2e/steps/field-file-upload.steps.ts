@@ -76,8 +76,9 @@ When('I test required validation for file upload in viewer', async function (thi
   // Submit without attaching any file — required error must appear
   await this.viewerPage.getByTestId('viewer-submit-button').click();
   await this.viewerPage.waitForTimeout(500);
+  // Use the specific Zod error text, not /required/i which also matches the field label "Required File"
   await expect(
-    this.viewerPage.locator('text=/required/i').first()
+    this.viewerPage.locator('text=/Please upload at least one file/i').first()
   ).toBeVisible({ timeout: 5_000 });
 });
 
@@ -98,9 +99,10 @@ When('I attach a file to the file upload field in viewer', async function (this:
 
 Then('the file upload error should be cleared', async function (this: CustomWorld) {
   if (!this.viewerPage) throw new Error('Viewer page is not initialized');
-  // After attaching a file the required error should no longer be visible
+  // After attaching a file the Zod required error should no longer be visible
+  // Use the specific error text — /required/i also matches the field label "Required File"
   await expect(
-    this.viewerPage.locator('text=/required/i').first()
+    this.viewerPage.locator('text=/Please upload at least one file/i').first()
   ).not.toBeVisible({ timeout: 5_000 });
 });
 
@@ -161,7 +163,7 @@ Then('I fix all validation errors for file upload', async function (this: Custom
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Create a form with a single file-upload field restricted to maxFiles: 1
+ * Create a form with a file-upload field with maxFiles: 2 (renders multiple=true on the input)
  */
 When('I create a form via GraphQL with file upload maxFiles constraint', async function (this: CustomWorld) {
   await createFormViaGraphQL(this, fileUploadMaxFilesSchema(), 'E2E File Upload MaxFiles Test');
@@ -182,32 +184,30 @@ When('I create a form via GraphQL with file upload size constraint', async funct
 });
 
 /**
- * Attach 2 files to a field whose drop zone id is "file-upload-input-field-maxfiles".
- * The onFiles() filter slices to maxFiles: 1, so only the first file is kept.
+ * Attach 3 files to a field with maxFiles: 2.
+ * The input renders with multiple=true (maxFiles > 1), so Playwright can pass multiple files.
+ * The onFiles() filter slices to maxFiles: 2, so only the first 2 files are kept.
  */
-When('I attach 2 files to the single-file upload field', async function (this: CustomWorld) {
+When('I attach 3 files to the multi-file upload field', async function (this: CustomWorld) {
   if (!this.viewerPage) throw new Error('Viewer page is not initialized');
   const fileInput = this.viewerPage.locator('[data-testid="file-upload-input-field-maxfiles"]');
   await expect(fileInput).toBeAttached({ timeout: 10_000 });
   await fileInput.setInputFiles([
     { name: 'first-file.txt', mimeType: 'text/plain', buffer: Buffer.from('first') },
     { name: 'second-file.txt', mimeType: 'text/plain', buffer: Buffer.from('second') },
+    { name: 'third-file.txt', mimeType: 'text/plain', buffer: Buffer.from('third') },
   ]);
   await this.viewerPage.waitForTimeout(500);
 });
 
 /**
- * After attaching 2 files to a maxFiles:1 field, exactly 1 file chip should be visible.
- * File chips are rendered as divs containing the file name inside a
- * data-testid="file-upload-drop-zone-*" sibling area — we count text nodes by
- * looking for the chip container (span.truncate) which the FileChip component renders.
+ * After attaching 3 files to a maxFiles:2 field, exactly 2 file chips should be visible.
+ * FileChip renders a <span class="truncate"> — we count those within the viewer page.
  */
-Then('only 1 file should be listed in the upload field', async function (this: CustomWorld) {
+Then('only 2 files should be listed in the upload field', async function (this: CustomWorld) {
   if (!this.viewerPage) throw new Error('Viewer page is not initialized');
-  // FileChip renders a <span class="truncate"> with the file name.
-  // We scope the search to the field's container (nearest ancestor above the drop zone).
   const chips = this.viewerPage.locator('span.truncate');
-  await expect(chips).toHaveCount(1, { timeout: 5_000 });
+  await expect(chips).toHaveCount(2, { timeout: 5_000 });
 });
 
 /**
@@ -304,6 +304,8 @@ function fileUploadSchema() {
 
 /**
  * Schema for maxFiles constraint test.
+ * maxFiles: 2 → input renders with multiple=true → Playwright can setInputFiles with an array.
+ * Attach 3 files; the onFiles() slice caps at 2.
  * field id "field-maxfiles" → data-testid="file-upload-input-field-maxfiles"
  *                           → data-testid="file-upload-drop-zone-field-maxfiles"
  */
@@ -328,10 +330,10 @@ function fileUploadMaxFilesSchema() {
           {
             id: 'field-maxfiles',
             type: 'file_upload_field',
-            label: 'Single File Only',
-            hint: 'You may only upload 1 file.',
+            label: 'Two Files Max',
+            hint: 'You may upload up to 2 files.',
             maxFileSizeMb: 10,
-            maxFiles: 1,
+            maxFiles: 2,
             allowedMimeTypes: [],
             validation: { required: false },
           },

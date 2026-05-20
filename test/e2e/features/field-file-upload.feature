@@ -43,15 +43,15 @@ Feature: File Upload Field
     And I save the file upload field settings
 
   @field-file-upload @file-upload-maxfiles
-  Scenario: maxFiles constraint silently caps the number of accepted files
+  Scenario: maxFiles constraint caps accepted files at the configured limit
     When I create a form via GraphQL with file upload maxFiles constraint
     Then I should be on the new form dashboard
     When I publish the form
     And I get the form short URL
     And I navigate to the form viewer with the short URL
     Then I should see the form in the viewer
-    When I attach 2 files to the single-file upload field
-    Then only 1 file should be listed in the upload field
+    When I attach 3 files to the multi-file upload field
+    Then only 2 files should be listed in the upload field
     And the upload drop zone should be hidden
 
   @field-file-upload @file-upload-mime
