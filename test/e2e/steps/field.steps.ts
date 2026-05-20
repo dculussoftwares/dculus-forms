@@ -820,6 +820,27 @@ When('I fill all radio field settings with test data', async function (this: Cus
   await this.page.waitForTimeout(500);
 });
 
+When('I create a form via GraphQL with radio field validations', async function (this: CustomWorld) {
+  await createFormViaGraphQL(this, radioSchema(), 'E2E Radio Validation Test');
+});
+
+When('I test required validation for radio in viewer', async function (this: CustomWorld) {
+  if (!this.viewerPage) throw new Error('Viewer page is not initialized');
+  // Attempt to submit without selecting any radio option — expect a required error
+  await this.viewerPage.getByTestId('viewer-submit-button').click();
+  await this.viewerPage.waitForTimeout(500);
+  await expect(this.viewerPage.locator('text=/required/i').first()).toBeVisible({ timeout: 5_000 });
+});
+
+When('I fill radio field with valid data in viewer', async function (this: CustomWorld) {
+  if (!this.viewerPage) throw new Error('Viewer page is not initialized');
+  // Select the first radio option via its accessible role
+  const firstOption = this.viewerPage.locator('[role="radio"]').first();
+  await expect(firstOption).toBeVisible({ timeout: 10_000 });
+  await firstOption.click({ force: true });
+  await this.viewerPage.waitForTimeout(500);
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // DROPDOWN — builder & viewer
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1076,5 +1097,11 @@ function dropdownSchema() {
 function checkboxSchema() {
   return { layout: baseLayout('Checkbox Test'), pages: [{ id: 'page-1', title: 'Page', fields: [
     { id: 'field-checkbox', type: 'checkbox_field', label: 'Required Checkbox', defaultValues: [], prefix: '', hint: 'Required', placeholder: '', validation: { required: true, type: 'checkbox_field_validation', minSelections: 1 }, options: ['Option 1', 'Option 2', 'Option 3'] },
+  ]}]};
+}
+
+function radioSchema() {
+  return { layout: baseLayout('Radio Test'), pages: [{ id: 'page-1', title: 'Page', fields: [
+    { id: 'field-required', type: 'radio_field', label: 'Required Radio', defaultValue: '', prefix: '', hint: 'Required', validation: { required: true, type: 'fillable_form_field' }, options: ['Option A', 'Option B', 'Option C'] },
   ]}]};
 }

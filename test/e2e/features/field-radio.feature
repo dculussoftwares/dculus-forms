@@ -26,6 +26,18 @@ Feature: Radio Field
     And I verify save button is enabled
     Then I save the radio field settings
 
+  @radio-viewer
+  Scenario: Validate radio field required validation in form viewer
+    When I create a form via GraphQL with radio field validations
+    Then I should be on the new form dashboard
+    When I publish the form
+    And I get the form short URL
+    And I navigate to the form viewer with the short URL
+    Then I should see the form in the viewer
+    When I test required validation for radio in viewer
+    And I fill radio field with valid data in viewer
+    Then I should be able to submit the form in viewer
+
   @persistence
   Scenario: Verify radio field settings persistence in collaborative builder
     When I create a form from the first template

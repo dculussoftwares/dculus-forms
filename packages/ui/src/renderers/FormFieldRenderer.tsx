@@ -410,6 +410,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                   {/* Drop zone */}
                   {isInteractive && total < maxFiles && (
                     <div
+                      data-testid={`file-upload-drop-zone-${field.id}`}
                       className="border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all duration-150"
                       style={{
                         borderColor: hasError ? '#ce5d55' : 'rgba(81,76,84,0.18)',
@@ -427,7 +428,16 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                         Up to {maxFiles} file{maxFiles > 1 ? 's' : ''} · max {maxMb} MB each
                         {mimes.length > 0 && ` · ${mimes.join(', ')}`}
                       </p>
-                      <input id={`ff-${field.id}`} type="file" multiple={maxFiles > 1} accept={mimes.length ? mimes.join(',') : undefined} className="hidden" disabled={!isInteractive} onChange={e => onFiles(e.target.files)} />
+                      <input
+                        id={`ff-${field.id}`}
+                        data-testid={`file-upload-input-${field.id}`}
+                        type="file"
+                        multiple={maxFiles > 1}
+                        accept={mimes.length ? mimes.join(',') : undefined}
+                        className="hidden"
+                        disabled={!isInteractive}
+                        onChange={e => onFiles(e.target.files)}
+                      />
                     </div>
                   )}
 
