@@ -15,7 +15,6 @@ import { auth, DEV_ORIGINS } from './lib/better-auth.js';
 import { typeDefs } from './graphql/schema.js';
 import { resolvers } from './graphql/resolvers.js';
 import { healthRouter } from './routes/health.js';
-import { debugRouter } from './routes/debug.js';
 import { uploadRouter } from './routes/upload.js';
 import { chargebeeWebhookRouter } from './routes/chargebee-webhooks.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -146,7 +145,6 @@ app.use(edgeGeolocationMiddleware);
 
 // Routes
 app.use('/health', healthRouter);
-app.use('/api/debug', debugRouter);
 app.use('/', uploadRouter);
 app.use('/api', chargebeeWebhookRouter);
 

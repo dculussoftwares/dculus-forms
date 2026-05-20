@@ -163,10 +163,11 @@ export const createHocuspocusServer = () => {
 
         const formId = documentName;
 
-        // Extract token — priority: protocol token → Authorization header → URL param (least secure)
+        // Extract token — priority: protocol token → Authorization header
+        // URL query param is intentionally NOT supported: tokens in query strings
+        // appear in server access logs and proxy logs, leaking credentials.
         let authToken = token;
 
-        // Try Authorization header before URL params (header does not appear in server logs)
         if (!authToken && requestHeaders) {
           try {
             const authHeader =
@@ -181,17 +182,6 @@ export const createHocuspocusServer = () => {
             }
           } catch (error) {
             logger.info('🔍 [onAuthenticate] Could not extract token from headers:', error);
-          }
-        }
-
-        // URL query param fallback — token appears in server access logs; migrate clients to use header
-        if (!authToken && requestParameters && requestParameters.get) {
-          const tokenParam = requestParameters.get('token');
-          if (tokenParam) {
-            authToken = tokenParam;
-            logger.warn(
-              '🔍 [onAuthenticate] Token received via URL query param — appears in server logs. Migrate client to send Authorization header instead.'
-            );
           }
         }
 

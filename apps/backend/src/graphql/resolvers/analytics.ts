@@ -1,10 +1,11 @@
 import { createGraphQLError, GraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { analyticsService } from '../../services/analyticsService.js';
-import { requireOrganizationMembership, type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
+import { requireAuth, type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 import { prisma } from '../../lib/prisma.js';
 import { emitFormViewed } from '../../subscriptions/events.js';
 import { logger } from '../../lib/logger.js';
+import { checkFormAccess, PermissionLevel } from './formSharing.js';
 
 // UUID v4 / cuid pattern — rejects obviously bogus session IDs
 const SESSION_ID_RE = /^[a-zA-Z0-9_-]{8,128}$/;
@@ -209,12 +210,12 @@ export const analyticsResolvers = {
   Query: {
     formAnalytics: async (_: any, { formId, timeRange }: { formId: string; timeRange?: TimeRangeInput }, context: { auth: BetterAuthContext }) => {
       try {
-        const form = await prisma.form.findUnique({
-          where: { id: formId },
-          select: { id: true, organizationId: true },
-        });
-        if (!form) throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
-        await requireOrganizationMembership(context.auth, form.organizationId);
+        // 🔒 SECURITY: require auth + form-level access (respects NO_ACCESS and sharing scopes)
+        requireAuth(context.auth);
+        const accessCheck = await checkFormAccess(context.auth.user!.id, formId, PermissionLevel.VIEWER);
+        if (!accessCheck.hasAccess) {
+          throw createGraphQLError('Access denied: You do not have permission to view analytics for this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
+        }
 
         const parsedTimeRange = timeRange ? validateTimeRange(timeRange) : undefined;
 
@@ -235,12 +236,12 @@ export const analyticsResolvers = {
 
     formSubmissionAnalytics: async (_: any, { formId, timeRange }: { formId: string; timeRange?: TimeRangeInput }, context: { auth: BetterAuthContext }) => {
       try {
-        const form = await prisma.form.findUnique({
-          where: { id: formId },
-          select: { id: true, organizationId: true },
-        });
-        if (!form) throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
-        await requireOrganizationMembership(context.auth, form.organizationId);
+        // 🔒 SECURITY: require auth + form-level access (respects NO_ACCESS and sharing scopes)
+        requireAuth(context.auth);
+        const accessCheck = await checkFormAccess(context.auth.user!.id, formId, PermissionLevel.VIEWER);
+        if (!accessCheck.hasAccess) {
+          throw createGraphQLError('Access denied: You do not have permission to view analytics for this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
+        }
 
         const parsedTimeRange = timeRange ? validateTimeRange(timeRange) : undefined;
 

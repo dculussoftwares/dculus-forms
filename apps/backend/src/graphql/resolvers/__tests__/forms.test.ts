@@ -805,7 +805,7 @@ describe('Forms Resolvers', () => {
   });
 
   describe('Mutation: duplicateForm', () => {
-    it('should duplicate form with editor permissions', async () => {
+    it('should duplicate form with viewer permissions (VIEWER is sufficient — duplicate is a fresh PRIVATE draft)', async () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,

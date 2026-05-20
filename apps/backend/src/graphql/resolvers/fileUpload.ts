@@ -224,21 +224,40 @@ export const fileUploadResolvers = {
           include: { form: true },
         });
 
+        const userId = context.auth.user!.id;
+
         if (formFile) {
-          // File is associated with a form - check form access
-          const accessCheck = await checkFormAccess(
-            context.auth.user!.id,
-            formFile.formId,
-            PermissionLevel.EDITOR
-          );
+          // File is associated with a form — requires EDITOR access
+          const accessCheck = await checkFormAccess(userId, formFile.formId, PermissionLevel.EDITOR);
           if (!accessCheck.hasAccess) {
-            throw new GraphQLError(
-              'Access denied: You need EDITOR access to delete files from this form'
+            throw createGraphQLError(
+              'Access denied: You need EDITOR access to delete files from this form',
+              GRAPHQL_ERROR_CODES.NO_ACCESS
             );
           }
+        } else {
+          // 🔒 SECURITY: Verify ownership for non-FormFile uploads.
+          // User.image and Organization.logo store the S3 key directly — use them for lookup.
+          const ownerUser = await prisma.user.findFirst({ where: { image: args.key }, select: { id: true } });
+          if (ownerUser) {
+            if (ownerUser.id !== userId) {
+              throw createGraphQLError('Access denied: You can only delete your own avatar', GRAPHQL_ERROR_CODES.NO_ACCESS);
+            }
+          } else {
+            const ownerOrg = await prisma.organization.findFirst({
+              where: { logo: args.key },
+              include: { members: { where: { userId }, select: { role: true } } },
+            });
+            if (ownerOrg) {
+              if (ownerOrg.members.length === 0) {
+                throw createGraphQLError('Access denied: You are not a member of this organization', GRAPHQL_ERROR_CODES.NO_ACCESS);
+              }
+            } else {
+              // Key belongs to a FormTemplate or an untracked file — require admin role
+              requireAdminRole(context);
+            }
+          }
         }
-        // If file is not in FormFile table (UserAvatar, OrganizationLogo, FormTemplate),
-        // basic authentication is sufficient as these are user-owned or admin-only
 
         const success = await deleteFile(args.key);
         return success;

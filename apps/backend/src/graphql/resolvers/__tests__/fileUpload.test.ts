@@ -16,6 +16,12 @@ vi.mock('../../../lib/prisma.js', () => ({
       create: vi.fn(),
       findUnique: vi.fn(),
     },
+    user: {
+      findFirst: vi.fn(),
+    },
+    organization: {
+      findFirst: vi.fn(),
+    },
   },
 }));
 vi.mock('../../../lib/logger.js', () => ({
@@ -490,9 +496,11 @@ describe('File Upload Resolvers', () => {
       ).rejects.toThrow('Access denied: You need EDITOR access to delete files from this form');
     });
 
-    it('should delete file when not associated with form (UserAvatar, etc.)', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockAdminContext.auth);
+    it('should delete UserAvatar when caller owns it', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formFile.findUnique).mockResolvedValue(null);
+      // User owns this avatar key
+      vi.mocked(prisma.user.findFirst as any).mockResolvedValue({ id: 'user-123' });
       vi.mocked(fileUploadService.deleteFile).mockResolvedValue(true);
 
       const result = await fileUploadResolvers.Mutation.deleteFile(
@@ -503,6 +511,50 @@ describe('File Upload Resolvers', () => {
 
       expect(result).toBe(true);
       expect(fileUploadService.deleteFile).toHaveBeenCalledWith('uploads/avatar-key');
+    });
+
+    it('should throw error when deleting another user\'s avatar', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(prisma.formFile.findUnique).mockResolvedValue(null);
+      // Key belongs to a different user
+      vi.mocked(prisma.user.findFirst as any).mockResolvedValue({ id: 'other-user-999' });
+
+      await expect(
+        fileUploadResolvers.Mutation.deleteFile({}, { key: 'uploads/avatar-key' }, mockContext)
+      ).rejects.toThrow('Access denied: You can only delete your own avatar');
+    });
+
+    it('should delete OrganizationLogo when caller is an org member', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(prisma.formFile.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.user.findFirst as any).mockResolvedValue(null);
+      vi.mocked(prisma.organization.findFirst as any).mockResolvedValue({
+        id: 'org-123',
+        members: [{ role: 'member' }],
+      });
+      vi.mocked(fileUploadService.deleteFile).mockResolvedValue(true);
+
+      const result = await fileUploadResolvers.Mutation.deleteFile(
+        {},
+        { key: 'uploads/logo-key' },
+        mockContext
+      );
+
+      expect(result).toBe(true);
+    });
+
+    it('should throw error when deleting org logo without membership', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(prisma.formFile.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.user.findFirst as any).mockResolvedValue(null);
+      vi.mocked(prisma.organization.findFirst as any).mockResolvedValue({
+        id: 'org-123',
+        members: [], // not a member
+      });
+
+      await expect(
+        fileUploadResolvers.Mutation.deleteFile({}, { key: 'uploads/logo-key' }, mockContext)
+      ).rejects.toThrow('Access denied: You are not a member of this organization');
     });
 
     it('should require authentication', async () => {
@@ -522,6 +574,8 @@ describe('File Upload Resolvers', () => {
     it('should handle delete service errors', async () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockAdminContext.auth);
       vi.mocked(prisma.formFile.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.user.findFirst as any).mockResolvedValue(null);
+      vi.mocked(prisma.organization.findFirst as any).mockResolvedValue(null);
       vi.mocked(fileUploadService.deleteFile).mockRejectedValue(
         new Error('S3 deletion failed')
       );
@@ -530,7 +584,7 @@ describe('File Upload Resolvers', () => {
         fileUploadResolvers.Mutation.deleteFile(
           {},
           { key: 'uploads/test-key' },
-          mockContext
+          mockAdminContext
         )
       ).rejects.toThrow('Failed to delete file: S3 deletion failed');
     });
@@ -565,12 +619,14 @@ describe('File Upload Resolvers', () => {
     it('should return false when delete fails', async () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockAdminContext.auth);
       vi.mocked(prisma.formFile.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.user.findFirst as any).mockResolvedValue(null);
+      vi.mocked(prisma.organization.findFirst as any).mockResolvedValue(null);
       vi.mocked(fileUploadService.deleteFile).mockResolvedValue(false);
 
       const result = await fileUploadResolvers.Mutation.deleteFile(
         {},
         { key: 'uploads/non-existent' },
-        mockContext
+        mockAdminContext
       );
 
       expect(result).toBe(false);

@@ -390,8 +390,9 @@ export const formsResolvers = {
     duplicateForm: async (_: any, { id }: { id: string }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);
 
-      // Duplicating requires edit access to the source form
-      const accessCheck = await checkFormAccess(context.auth.user!.id, id, PermissionLevel.EDITOR);
+      // Duplicating only reads the source form schema — VIEWER access is sufficient.
+      // The duplicate is always a fresh PRIVATE draft owned by the caller; no permissions are inherited.
+      const accessCheck = await checkFormAccess(context.auth.user!.id, id, PermissionLevel.VIEWER);
       if (!accessCheck.hasAccess) {
         throw createGraphQLError('Access denied: You do not have permission to duplicate this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }

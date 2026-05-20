@@ -186,22 +186,24 @@ describe('Hocuspocus Service', () => {
       });
     });
 
-    it('should extract token from URL parameters', async () => {
+    it('should NOT extract token from URL parameters (security: tokens in query strings appear in server logs)', async () => {
       const requestParameters = new URLSearchParams();
       requestParameters.set('token', 'url-token-123');
 
       const server = createHocuspocusServer();
-      await server.configuration.onAuthenticate!({
-        documentName: 'form-123',
-        token: undefined,
-        requestHeaders: new Headers(),
-        requestParameters,
-      } as any);
 
-      expect(auth.api.getSession).toHaveBeenCalled();
-      expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining('Token received via URL query param')
-      );
+      // URL param tokens are intentionally ignored — getSession is never called,
+      // and the connection is rejected with an auth error.
+      await expect(
+        server.configuration.onAuthenticate!({
+          documentName: 'form-123',
+          token: undefined,
+          requestHeaders: new Headers(),
+          requestParameters,
+        } as any)
+      ).rejects.toThrow();
+
+      expect(auth.api.getSession).not.toHaveBeenCalled();
     });
 
     it('should extract token from Authorization header', async () => {
