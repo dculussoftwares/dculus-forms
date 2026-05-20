@@ -84,12 +84,18 @@ When('I test required validation for file upload in viewer', async function (thi
 
 When('I attach a file to the file upload field in viewer', async function (this: CustomWorld) {
   if (!this.viewerPage) throw new Error('Viewer page is not initialized');
-  // Locate the hidden file input injected by FormFieldRenderer for the required field
-  const fileInput = this.viewerPage.locator('[data-testid="file-upload-input-field-required"]');
-  await expect(fileInput).toBeAttached({ timeout: 10_000 });
-  // Use setInputFiles to attach a small in-memory text file — no S3 call is made here;
-  // the file merely enters the react-hook-form state so validation clears.
-  await fileInput.setInputFiles({
+  // Click the drop zone, which programmatically clicks the hidden <input type="file">.
+  // Playwright intercepts the resulting OS file-chooser dialog via waitForEvent('filechooser').
+  // This path fires the real React synthetic onChange — unlike setInputFiles on a display:none
+  // input, which sets the native files property but does not reliably trigger React 18's
+  // synthetic event delegation, leaving RHF state (and Zod errors) unchanged.
+  const dropZone = this.viewerPage.getByTestId('file-upload-drop-zone-field-required');
+  await expect(dropZone).toBeVisible({ timeout: 10_000 });
+  const [fileChooser] = await Promise.all([
+    this.viewerPage.waitForEvent('filechooser'),
+    dropZone.click(),
+  ]);
+  await fileChooser.setFiles({
     name: 'test-document.txt',
     mimeType: 'text/plain',
     buffer: Buffer.from('E2E test file content'),
@@ -190,9 +196,13 @@ When('I create a form via GraphQL with file upload size constraint', async funct
  */
 When('I attach 3 files to the multi-file upload field', async function (this: CustomWorld) {
   if (!this.viewerPage) throw new Error('Viewer page is not initialized');
-  const fileInput = this.viewerPage.locator('[data-testid="file-upload-input-field-maxfiles"]');
-  await expect(fileInput).toBeAttached({ timeout: 10_000 });
-  await fileInput.setInputFiles([
+  const dropZone = this.viewerPage.getByTestId('file-upload-drop-zone-field-maxfiles');
+  await expect(dropZone).toBeVisible({ timeout: 10_000 });
+  const [fileChooser] = await Promise.all([
+    this.viewerPage.waitForEvent('filechooser'),
+    dropZone.click(),
+  ]);
+  await fileChooser.setFiles([
     { name: 'first-file.txt', mimeType: 'text/plain', buffer: Buffer.from('first') },
     { name: 'second-file.txt', mimeType: 'text/plain', buffer: Buffer.from('second') },
     { name: 'third-file.txt', mimeType: 'text/plain', buffer: Buffer.from('third') },
@@ -226,9 +236,15 @@ Then('the upload drop zone should be hidden', async function (this: CustomWorld)
  */
 When('I attach a txt file to the PDF-only upload field', async function (this: CustomWorld) {
   if (!this.viewerPage) throw new Error('Viewer page is not initialized');
-  const fileInput = this.viewerPage.locator('[data-testid="file-upload-input-field-pdf"]');
-  await expect(fileInput).toBeAttached({ timeout: 10_000 });
-  await fileInput.setInputFiles({
+  const dropZone = this.viewerPage.getByTestId('file-upload-drop-zone-field-pdf');
+  await expect(dropZone).toBeVisible({ timeout: 10_000 });
+  const [fileChooser] = await Promise.all([
+    this.viewerPage.waitForEvent('filechooser'),
+    dropZone.click(),
+  ]);
+  // Playwright ignores accept attribute — setFiles passes the txt file through.
+  // onFiles() MIME filter then drops it (allowedMimeTypes = ['application/pdf']).
+  await fileChooser.setFiles({
     name: 'document.txt',
     mimeType: 'text/plain',
     buffer: Buffer.from('This is a plain text file.'),
@@ -242,11 +258,15 @@ When('I attach a txt file to the PDF-only upload field', async function (this: C
  */
 When('I attach an oversized file to the size-limited upload field', async function (this: CustomWorld) {
   if (!this.viewerPage) throw new Error('Viewer page is not initialized');
-  const fileInput = this.viewerPage.locator('[data-testid="file-upload-input-field-size"]');
-  await expect(fileInput).toBeAttached({ timeout: 10_000 });
-  // 2 KB content — exceeds the 0.001 MB (~1 KB) limit
+  const dropZone = this.viewerPage.getByTestId('file-upload-drop-zone-field-size');
+  await expect(dropZone).toBeVisible({ timeout: 10_000 });
+  const [fileChooser] = await Promise.all([
+    this.viewerPage.waitForEvent('filechooser'),
+    dropZone.click(),
+  ]);
+  // 2 KB content — exceeds the 0.001 MB (~1 KB) limit; onFiles() size filter drops it.
   const oversizedContent = Buffer.alloc(2048, 'x');
-  await fileInput.setInputFiles({
+  await fileChooser.setFiles({
     name: 'big-file.txt',
     mimeType: 'text/plain',
     buffer: oversizedContent,
