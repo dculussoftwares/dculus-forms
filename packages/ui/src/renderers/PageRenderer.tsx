@@ -33,8 +33,6 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
   enableStrictValidation = true,
   showValidationSummary = true,
 }) => {
-  console.log('Rendering PageRenderer with mode:', mode);
-
   const store = useFormResponseStore();
   const { getFormattedResponses } = useFormResponseUtils();
   const { onFormSubmit, onResponseUpdate, formId, responseId, mode: contextMode } = useFormResponseContext();
@@ -80,7 +78,6 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
   }, [currentPage?.id, handleValidationChange]);
 
   const handlePageSubmit = useCallback((pageId: string, data: Record<string, any>) => {
-    console.log('Page submitted:', pageId, data);
     if (onPageSubmit) onPageSubmit(pageId, data);
   }, [onPageSubmit]);
 
@@ -95,8 +92,6 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
     } else if (onFormComplete) {
       onFormComplete(allData);
     }
-
-    console.log('Form completed with all data:', allData);
   };
 
   const goToNextPage = useCallback(async () => {
