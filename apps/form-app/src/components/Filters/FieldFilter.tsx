@@ -92,10 +92,7 @@ const getOperatorOptions = (
       ];
 
     case FieldType.FILE_UPLOAD_FIELD:
-      return [
-        { value: 'HAS_FILES', label: t('operators.hasFiles') },
-        ...baseOptions,
-      ];
+      return baseOptions;
 
     default:
       return baseOptions;
