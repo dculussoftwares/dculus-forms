@@ -84,23 +84,25 @@ When('I test required validation for file upload in viewer', async function (thi
 
 When('I attach a file to the file upload field in viewer', async function (this: CustomWorld) {
   if (!this.viewerPage) throw new Error('Viewer page is not initialized');
-  // Click the drop zone, which programmatically clicks the hidden <input type="file">.
-  // Playwright intercepts the resulting OS file-chooser dialog via waitForEvent('filechooser').
-  // This path fires the real React synthetic onChange — unlike setInputFiles on a display:none
-  // input, which sets the native files property but does not reliably trigger React 18's
-  // synthetic event delegation, leaving RHF state (and Zod errors) unchanged.
-  const dropZone = this.viewerPage.getByTestId('file-upload-drop-zone-field-required');
-  await expect(dropZone).toBeVisible({ timeout: 10_000 });
-  const [fileChooser] = await Promise.all([
-    this.viewerPage.waitForEvent('filechooser'),
-    dropZone.click(),
-  ]);
-  await fileChooser.setFiles({
-    name: 'test-document.txt',
-    mimeType: 'text/plain',
-    buffer: Buffer.from('E2E test file content'),
+  // Both locator.setInputFiles() and fileChooser.setFiles() dispatch the change event via CDP
+  // from outside the browser. On a display:none input in headless Chromium, the CDP-level
+  // change event does NOT reach React 18's root-delegated synthetic event listener, so
+  // cf.onChange is never called and RHF state (and Zod errors) stays unchanged.
+  //
+  // The fix: page.evaluate() runs inside the browser context. We construct a File object
+  // there, inject it via DataTransfer, then dispatch a native bubbling change event.
+  // React 18's delegated listener at the root container DOES receive native bubbling events,
+  // fires the synthetic onChange, and cf.onChange([File]) clears the Zod required error.
+  await this.viewerPage.evaluate(() => {
+    const input = document.querySelector('[data-testid="file-upload-input-field-required"]') as HTMLInputElement;
+    if (!input) throw new Error('file-upload-input-field-required not found in DOM');
+    const file = new File(['E2E test file content'], 'test-document.txt', { type: 'text/plain' });
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    Object.defineProperty(input, 'files', { value: dt.files, configurable: true });
+    input.dispatchEvent(new Event('change', { bubbles: true, cancelable: false }));
   });
-  await this.viewerPage.waitForTimeout(500);
+  await this.viewerPage.waitForTimeout(800);
 });
 
 Then('the file upload error should be cleared', async function (this: CustomWorld) {
@@ -196,18 +198,17 @@ When('I create a form via GraphQL with file upload size constraint', async funct
  */
 When('I attach 3 files to the multi-file upload field', async function (this: CustomWorld) {
   if (!this.viewerPage) throw new Error('Viewer page is not initialized');
-  const dropZone = this.viewerPage.getByTestId('file-upload-drop-zone-field-maxfiles');
-  await expect(dropZone).toBeVisible({ timeout: 10_000 });
-  const [fileChooser] = await Promise.all([
-    this.viewerPage.waitForEvent('filechooser'),
-    dropZone.click(),
-  ]);
-  await fileChooser.setFiles([
-    { name: 'first-file.txt', mimeType: 'text/plain', buffer: Buffer.from('first') },
-    { name: 'second-file.txt', mimeType: 'text/plain', buffer: Buffer.from('second') },
-    { name: 'third-file.txt', mimeType: 'text/plain', buffer: Buffer.from('third') },
-  ]);
-  await this.viewerPage.waitForTimeout(500);
+  await this.viewerPage.evaluate(() => {
+    const input = document.querySelector('[data-testid="file-upload-input-field-maxfiles"]') as HTMLInputElement;
+    if (!input) throw new Error('file-upload-input-field-maxfiles not found');
+    const dt = new DataTransfer();
+    dt.items.add(new File(['first'], 'first-file.txt', { type: 'text/plain' }));
+    dt.items.add(new File(['second'], 'second-file.txt', { type: 'text/plain' }));
+    dt.items.add(new File(['third'], 'third-file.txt', { type: 'text/plain' }));
+    Object.defineProperty(input, 'files', { value: dt.files, configurable: true });
+    input.dispatchEvent(new Event('change', { bubbles: true, cancelable: false }));
+  });
+  await this.viewerPage.waitForTimeout(800);
 });
 
 /**
@@ -236,20 +237,16 @@ Then('the upload drop zone should be hidden', async function (this: CustomWorld)
  */
 When('I attach a txt file to the PDF-only upload field', async function (this: CustomWorld) {
   if (!this.viewerPage) throw new Error('Viewer page is not initialized');
-  const dropZone = this.viewerPage.getByTestId('file-upload-drop-zone-field-pdf');
-  await expect(dropZone).toBeVisible({ timeout: 10_000 });
-  const [fileChooser] = await Promise.all([
-    this.viewerPage.waitForEvent('filechooser'),
-    dropZone.click(),
-  ]);
-  // Playwright ignores accept attribute — setFiles passes the txt file through.
-  // onFiles() MIME filter then drops it (allowedMimeTypes = ['application/pdf']).
-  await fileChooser.setFiles({
-    name: 'document.txt',
-    mimeType: 'text/plain',
-    buffer: Buffer.from('This is a plain text file.'),
+  // onFiles() MIME filter drops it (allowedMimeTypes = ['application/pdf']) — no chip appears.
+  await this.viewerPage.evaluate(() => {
+    const input = document.querySelector('[data-testid="file-upload-input-field-pdf"]') as HTMLInputElement;
+    if (!input) throw new Error('file-upload-input-field-pdf not found');
+    const dt = new DataTransfer();
+    dt.items.add(new File(['plain text content'], 'document.txt', { type: 'text/plain' }));
+    Object.defineProperty(input, 'files', { value: dt.files, configurable: true });
+    input.dispatchEvent(new Event('change', { bubbles: true, cancelable: false }));
   });
-  await this.viewerPage.waitForTimeout(500);
+  await this.viewerPage.waitForTimeout(800);
 });
 
 /**
@@ -258,20 +255,16 @@ When('I attach a txt file to the PDF-only upload field', async function (this: C
  */
 When('I attach an oversized file to the size-limited upload field', async function (this: CustomWorld) {
   if (!this.viewerPage) throw new Error('Viewer page is not initialized');
-  const dropZone = this.viewerPage.getByTestId('file-upload-drop-zone-field-size');
-  await expect(dropZone).toBeVisible({ timeout: 10_000 });
-  const [fileChooser] = await Promise.all([
-    this.viewerPage.waitForEvent('filechooser'),
-    dropZone.click(),
-  ]);
   // 2 KB content — exceeds the 0.001 MB (~1 KB) limit; onFiles() size filter drops it.
-  const oversizedContent = Buffer.alloc(2048, 'x');
-  await fileChooser.setFiles({
-    name: 'big-file.txt',
-    mimeType: 'text/plain',
-    buffer: oversizedContent,
+  await this.viewerPage.evaluate(() => {
+    const input = document.querySelector('[data-testid="file-upload-input-field-size"]') as HTMLInputElement;
+    if (!input) throw new Error('file-upload-input-field-size not found');
+    const dt = new DataTransfer();
+    dt.items.add(new File(['x'.repeat(2048)], 'big-file.txt', { type: 'text/plain' }));
+    Object.defineProperty(input, 'files', { value: dt.files, configurable: true });
+    input.dispatchEvent(new Event('change', { bubbles: true, cancelable: false }));
   });
-  await this.viewerPage.waitForTimeout(500);
+  await this.viewerPage.waitForTimeout(800);
 });
 
 /**
