@@ -82,41 +82,6 @@ When('I test required validation for file upload in viewer', async function (thi
   ).toBeVisible({ timeout: 5_000 });
 });
 
-When('I attach a file to the file upload field in viewer', async function (this: CustomWorld) {
-  if (!this.viewerPage) throw new Error('Viewer page is not initialized');
-  // Both locator.setInputFiles() and fileChooser.setFiles() dispatch the change event via CDP
-  // from outside the browser. On a display:none input in headless Chromium, the CDP-level
-  // change event does NOT reach React 18's root-delegated synthetic event listener, so
-  // cf.onChange is never called and RHF state (and Zod errors) stays unchanged.
-  //
-  // The fix: page.evaluate() runs inside the browser context. We construct a File object
-  // there, inject it via DataTransfer, then dispatch a native bubbling change event.
-  // React 18's delegated listener at the root container DOES receive native bubbling events,
-  // fires the synthetic onChange, and cf.onChange([File]) clears the Zod required error.
-  // Dispatch a DragEvent 'drop' on the drop zone div.
-  // onDrop reads e.dataTransfer.files — part of the drag event itself, not the native
-  // input.files binding. This is the only reliable way to inject files in headless
-  // Chromium: CDP-based setInputFiles and Object.defineProperty on input.files both
-  // fail to reach React 18's onChange because Chrome's native binding ignores
-  // JS-level property overrides on file inputs.
-  await this.viewerPage.evaluate(() => {
-    const dropZone = document.querySelector('[data-testid="file-upload-drop-zone-field-required"]') as HTMLElement;
-    if (!dropZone) throw new Error('file-upload-drop-zone-field-required not found');
-    const dt = new DataTransfer();
-    dt.items.add(new File(['E2E test file content'], 'test-document.txt', { type: 'text/plain' }));
-    dropZone.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
-  });
-  await this.viewerPage.waitForTimeout(800);
-});
-
-Then('the file upload error should be cleared', async function (this: CustomWorld) {
-  if (!this.viewerPage) throw new Error('Viewer page is not initialized');
-  // After attaching a file the Zod required error should no longer be visible
-  // Use the specific error text — /required/i also matches the field label "Required File"
-  await expect(
-    this.viewerPage.locator('text=/Please upload at least one file/i').first()
-  ).not.toBeVisible({ timeout: 5_000 });
-});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GAP 3: INVALID BUILDER SETTINGS

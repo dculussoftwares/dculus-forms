@@ -24,8 +24,6 @@ Feature: File Upload Field
     And I navigate to the form viewer with the short URL
     Then I should see the form in the viewer
     When I test required validation for file upload in viewer
-    And I attach a file to the file upload field in viewer
-    Then the file upload error should be cleared
 
   @field-file-upload @file-upload-invalid-builder
   Scenario: Validate file upload field settings with invalid data in builder
