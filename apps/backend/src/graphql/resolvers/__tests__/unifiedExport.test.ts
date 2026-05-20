@@ -178,11 +178,11 @@ describe('Unified Export Resolvers', () => {
     });
 
     describe('Authorization', () => {
-      it('should verify user has viewer access to form', async () => {
+      it('should verify user has editor access to form', async () => {
         vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
-          permission: 'VIEWER' as any,
+          permission: 'EDITOR' as any,
           form: mockForm as any,
         });
         vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
@@ -208,7 +208,7 @@ describe('Unified Export Resolvers', () => {
         expect(formSharingResolvers.checkFormAccess).toHaveBeenCalledWith(
           'user-123',
           'form-123',
-          formSharingResolvers.PermissionLevel.VIEWER
+          formSharingResolvers.PermissionLevel.EDITOR
         );
       });
 
@@ -234,7 +234,7 @@ describe('Unified Export Resolvers', () => {
             { formId: 'form-123', format: 'EXCEL' },
             mockContext
           )
-        ).rejects.toThrow('Access denied: You do not have permission to export data from this form');
+        ).rejects.toThrow('Access denied: You need EDITOR access to export data from this form');
       });
 
       it('should deny access for users from different organization', async () => {
@@ -251,7 +251,7 @@ describe('Unified Export Resolvers', () => {
             { formId: 'other-org-form', format: 'EXCEL' },
             mockContext
           )
-        ).rejects.toThrow('Access denied: You do not have permission to export data from this form');
+        ).rejects.toThrow('Access denied: You need EDITOR access to export data from this form');
       });
     });
 

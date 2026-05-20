@@ -17,6 +17,13 @@ vi.mock('../../lib/logger.js', () => ({
     warn: vi.fn(),
   },
 }));
+vi.mock('../../lib/env.js', () => ({
+  chargebeeConfig: { webhookPassword: 'test-webhook-password' },
+  appConfig: { port: 4000, corsOrigins: [], isTestEnv: true, nodeEnv: 'test' },
+  s3Config: {},
+  authConfig: {},
+  emailConfig: {},
+}));
 
 describe('Chargebee Webhook Routes', () => {
   let app: Express;
@@ -37,6 +44,9 @@ describe('Chargebee Webhook Routes', () => {
     content: subscription ? { subscription } : undefined,
   });
 
+  // Valid Basic Auth header for the mocked test password
+  const VALID_AUTH = `Basic ${Buffer.from(':test-webhook-password').toString('base64')}`;
+
   describe('POST /webhooks/chargebee', () => {
     it('should handle subscription_created event', async () => {
       const subscription = {
@@ -49,6 +59,7 @@ describe('Chargebee Webhook Routes', () => {
 
       const response = await request(app)
         .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
         .send(createWebhookEvent('subscription_created', subscription));
 
       expect(response.status).toBe(200);
@@ -72,6 +83,7 @@ describe('Chargebee Webhook Routes', () => {
 
       const response = await request(app)
         .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
         .send(createWebhookEvent('subscription_started', subscription));
 
       expect(response.status).toBe(200);
@@ -90,6 +102,7 @@ describe('Chargebee Webhook Routes', () => {
 
       const response = await request(app)
         .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
         .send(createWebhookEvent('subscription_changed', subscription));
 
       expect(response.status).toBe(200);
@@ -108,6 +121,7 @@ describe('Chargebee Webhook Routes', () => {
 
       const response = await request(app)
         .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
         .send(createWebhookEvent('subscription_activated', subscription));
 
       expect(response.status).toBe(200);
@@ -126,6 +140,7 @@ describe('Chargebee Webhook Routes', () => {
 
       const response = await request(app)
         .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
         .send(createWebhookEvent('subscription_renewed', subscription));
 
       expect(response.status).toBe(200);
@@ -145,6 +160,7 @@ describe('Chargebee Webhook Routes', () => {
 
       const response = await request(app)
         .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
         .send(createWebhookEvent('subscription_cancelled', subscription));
 
       expect(response.status).toBe(200);
@@ -162,6 +178,7 @@ describe('Chargebee Webhook Routes', () => {
 
       const response = await request(app)
         .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
         .send(createWebhookEvent('subscription_cancelled_scheduled', subscription));
 
       expect(response.status).toBe(200);
@@ -179,6 +196,7 @@ describe('Chargebee Webhook Routes', () => {
 
       const response = await request(app)
         .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
         .send(createWebhookEvent('subscription_paused', subscription));
 
       expect(response.status).toBe(200);
@@ -196,6 +214,7 @@ describe('Chargebee Webhook Routes', () => {
 
       const response = await request(app)
         .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
         .send(createWebhookEvent('subscription_reactivated', subscription));
 
       expect(response.status).toBe(200);
@@ -205,6 +224,7 @@ describe('Chargebee Webhook Routes', () => {
     it('should handle payment_succeeded event without calling sync', async () => {
       const response = await request(app)
         .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
         .send(createWebhookEvent('payment_succeeded'));
 
       expect(response.status).toBe(200);
@@ -218,6 +238,7 @@ describe('Chargebee Webhook Routes', () => {
     it('should handle payment_failed event without calling sync', async () => {
       const response = await request(app)
         .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
         .send(createWebhookEvent('payment_failed'));
 
       expect(response.status).toBe(200);
@@ -231,6 +252,7 @@ describe('Chargebee Webhook Routes', () => {
     it('should handle unhandled event types', async () => {
       const response = await request(app)
         .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
         .send(createWebhookEvent('unknown_event_type'));
 
       expect(response.status).toBe(200);
@@ -245,6 +267,7 @@ describe('Chargebee Webhook Routes', () => {
     it('should not call sync if subscription content is missing', async () => {
       const response = await request(app)
         .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
         .send({ event_type: 'subscription_created' });
 
       expect(response.status).toBe(200);
@@ -265,6 +288,7 @@ describe('Chargebee Webhook Routes', () => {
 
       const response = await request(app)
         .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
         .send(createWebhookEvent('subscription_created', subscription));
 
       expect(response.status).toBe(200);
@@ -292,6 +316,7 @@ describe('Chargebee Webhook Routes', () => {
 
       const response = await request(app)
         .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
         .send(createWebhookEvent('subscription_renewed', subscription));
 
       expect(response.status).toBe(200);
@@ -313,6 +338,7 @@ describe('Chargebee Webhook Routes', () => {
 
       const response = await request(app)
         .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
         .send(createWebhookEvent('subscription_created', subscription));
 
       expect(response.status).toBe(200);
@@ -332,6 +358,7 @@ describe('Chargebee Webhook Routes', () => {
         const subscription = { id: `sub_${eventType}`, status: 'active' };
         const response = await request(app)
           .post('/webhooks/chargebee')
+          .set('Authorization', VALID_AUTH)
           .send(createWebhookEvent(eventType, subscription));
 
         expect(response.status).toBe(200);
@@ -343,6 +370,7 @@ describe('Chargebee Webhook Routes', () => {
     it('should handle malformed webhook payload gracefully', async () => {
       const response = await request(app)
         .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
         .send({ invalid: 'payload' });
 
       expect(response.status).toBe(200);
@@ -350,7 +378,7 @@ describe('Chargebee Webhook Routes', () => {
     });
 
     it('should handle empty webhook payload', async () => {
-      const response = await request(app).post('/webhooks/chargebee').send({});
+      const response = await request(app).post('/webhooks/chargebee').set('Authorization', VALID_AUTH).send({});
 
       expect(response.status).toBe(200);
       expect(response.body.received).toBe(true);
@@ -367,6 +395,7 @@ describe('Chargebee Webhook Routes', () => {
         vi.clearAllMocks();
         await request(app)
           .post('/webhooks/chargebee')
+          .set('Authorization', VALID_AUTH)
           .send(createWebhookEvent(eventType));
 
         expect(logger.info).toHaveBeenCalledWith(

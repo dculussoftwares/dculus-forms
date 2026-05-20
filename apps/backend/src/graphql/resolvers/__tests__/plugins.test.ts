@@ -374,7 +374,7 @@ describe('Plugins Resolvers', () => {
   });
 
   describe('Mutation: createFormPlugin', () => {
-    it('should create webhook plugin with editor access', async () => {
+    it('should create webhook plugin with owner access', async () => {
       const input = {
         formId: 'form-123',
         type: 'webhook',
@@ -390,7 +390,7 @@ describe('Plugins Resolvers', () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
-        permission: 'EDITOR' as any,
+        permission: 'OWNER' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.formPlugin.create).mockResolvedValue(mockWebhookPlugin as any);
@@ -405,7 +405,7 @@ describe('Plugins Resolvers', () => {
       expect(formSharingResolvers.checkFormAccess).toHaveBeenCalledWith(
         'user-123',
         'form-123',
-        formSharingResolvers.PermissionLevel.EDITOR
+        formSharingResolvers.PermissionLevel.OWNER
       );
       expect(prisma.formPlugin.create).toHaveBeenCalledWith({
         data: {
@@ -510,7 +510,7 @@ describe('Plugins Resolvers', () => {
       );
     });
 
-    it('should throw error when user lacks editor access', async () => {
+    it('should throw error when user lacks owner access', async () => {
       const input = {
         formId: 'form-123',
         type: 'webhook',
@@ -528,7 +528,7 @@ describe('Plugins Resolvers', () => {
 
       await expect(
         pluginsResolvers.Mutation.createFormPlugin({}, { input }, mockContext)
-      ).rejects.toThrow('Access denied: You need EDITOR access to create plugins for this form');
+      ).rejects.toThrow('Access denied: You need OWNER access to create plugins for this form');
     });
 
     it('should throw error for invalid event types', async () => {
@@ -576,7 +576,7 @@ describe('Plugins Resolvers', () => {
   });
 
   describe('Mutation: updateFormPlugin', () => {
-    it('should update plugin with editor access', async () => {
+    it('should update plugin with owner access', async () => {
       const input = {
         name: 'Updated Webhook',
         config: { url: 'https://example.com/updated' },
@@ -587,7 +587,7 @@ describe('Plugins Resolvers', () => {
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
-        permission: 'EDITOR' as any,
+        permission: 'OWNER' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.formPlugin.update).mockResolvedValue({
@@ -608,7 +608,7 @@ describe('Plugins Resolvers', () => {
       expect(formSharingResolvers.checkFormAccess).toHaveBeenCalledWith(
         'user-123',
         'form-123',
-        formSharingResolvers.PermissionLevel.EDITOR
+        formSharingResolvers.PermissionLevel.OWNER
       );
       expect(prisma.formPlugin.update).toHaveBeenCalledWith({
         where: { id: 'plugin-123' },
@@ -663,7 +663,7 @@ describe('Plugins Resolvers', () => {
       ).rejects.toThrow('Plugin not found');
     });
 
-    it('should throw error when user lacks editor access', async () => {
+    it('should throw error when user lacks owner access', async () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
@@ -678,7 +678,7 @@ describe('Plugins Resolvers', () => {
           { id: 'plugin-123', input: { enabled: false } },
           mockContext
         )
-      ).rejects.toThrow('Access denied: You need EDITOR access to update this plugin');
+      ).rejects.toThrow('Access denied: You need OWNER access to update this plugin');
     });
 
     it('should validate events when updating', async () => {
@@ -727,12 +727,12 @@ describe('Plugins Resolvers', () => {
   });
 
   describe('Mutation: deleteFormPlugin', () => {
-    it('should delete plugin with editor access', async () => {
+    it('should delete plugin with owner access', async () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
-        permission: 'EDITOR' as any,
+        permission: 'OWNER' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.formPlugin.delete).mockResolvedValue(mockWebhookPlugin as any);
@@ -750,7 +750,7 @@ describe('Plugins Resolvers', () => {
       expect(formSharingResolvers.checkFormAccess).toHaveBeenCalledWith(
         'user-123',
         'form-123',
-        formSharingResolvers.PermissionLevel.EDITOR
+        formSharingResolvers.PermissionLevel.OWNER
       );
       expect(prisma.formPlugin.delete).toHaveBeenCalledWith({
         where: { id: 'plugin-123' },
@@ -770,7 +770,7 @@ describe('Plugins Resolvers', () => {
       ).rejects.toThrow('Plugin not found');
     });
 
-    it('should throw error when user lacks editor access', async () => {
+    it('should throw error when user lacks owner access', async () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
@@ -781,7 +781,7 @@ describe('Plugins Resolvers', () => {
 
       await expect(
         pluginsResolvers.Mutation.deleteFormPlugin({}, { id: 'plugin-123' }, mockContext)
-      ).rejects.toThrow('Access denied: You need EDITOR access to delete this plugin');
+      ).rejects.toThrow('Access denied: You need OWNER access to delete this plugin');
     });
   });
 
@@ -794,7 +794,7 @@ describe('Plugins Resolvers', () => {
       } as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
-        permission: 'EDITOR' as any,
+        permission: 'OWNER' as any,
         form: mockForm as any,
       });
       vi.mocked(pluginEvents.emitPluginTest).mockReturnValue(undefined);
@@ -813,7 +813,7 @@ describe('Plugins Resolvers', () => {
       expect(formSharingResolvers.checkFormAccess).toHaveBeenCalledWith(
         'user-123',
         'form-123',
-        formSharingResolvers.PermissionLevel.EDITOR
+        formSharingResolvers.PermissionLevel.OWNER
       );
       expect(pluginEvents.emitPluginTest).toHaveBeenCalledWith(
         'form-123',
@@ -839,7 +839,7 @@ describe('Plugins Resolvers', () => {
       ).rejects.toThrow('Plugin not found');
     });
 
-    it('should throw error when user lacks editor access', async () => {
+    it('should throw error when user lacks owner access', async () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue({
         ...mockWebhookPlugin,
@@ -853,7 +853,7 @@ describe('Plugins Resolvers', () => {
 
       await expect(
         pluginsResolvers.Mutation.testFormPlugin({}, { id: 'plugin-123' }, mockContext)
-      ).rejects.toThrow('Access denied: You need EDITOR access to test this plugin');
+      ).rejects.toThrow('Access denied: You need OWNER access to test this plugin');
     });
 
     it('should test email plugin', async () => {

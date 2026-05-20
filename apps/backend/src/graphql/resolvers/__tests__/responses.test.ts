@@ -20,6 +20,13 @@ vi.mock('../../../repositories/responseRepository.js', () => ({
     count: vi.fn(),
   },
 }));
+vi.mock('../../../lib/prisma.js', () => ({
+  prisma: {
+    form: {
+      findMany: vi.fn(),
+    },
+  },
+}));
 vi.mock('../../../middleware/better-auth-middleware.js');
 vi.mock('../formSharing.js');
 vi.mock('../../../services/analyticsService.js');
@@ -111,8 +118,10 @@ describe('Responses Resolvers', () => {
   });
 
   describe('Query: responses', () => {
-    it('should return all responses for organization', async () => {
+    it('should return responses for accessible forms only', async () => {
+      const { prisma } = await import('../../../lib/prisma.js');
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+      vi.mocked(prisma.form.findMany as any).mockResolvedValue([{ id: 'form-123' }]);
       vi.mocked(responseService.getAllResponses).mockResolvedValue([mockResponse] as any);
 
       const result = await responsesResolvers.Query.responses(
@@ -126,7 +135,26 @@ describe('Responses Resolvers', () => {
         'org-123'
       );
       expect(responseService.getAllResponses).toHaveBeenCalledWith('org-123');
+      // mockResponse.formId === 'form-123' which is in the accessible list
       expect(result).toEqual([mockResponse]);
+    });
+
+    it('should exclude responses from forms the user cannot access', async () => {
+      const { prisma } = await import('../../../lib/prisma.js');
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+      // User has access to form-123 but NOT form-456
+      vi.mocked(prisma.form.findMany as any).mockResolvedValue([{ id: 'form-123' }]);
+      const hiddenResponse = { ...mockResponse, id: 'response-456', formId: 'form-456' };
+      vi.mocked(responseService.getAllResponses).mockResolvedValue([mockResponse, hiddenResponse] as any);
+
+      const result = await responsesResolvers.Query.responses(
+        {},
+        { organizationId: 'org-123' },
+        mockContext
+      );
+
+      expect(result).toEqual([mockResponse]);
+      expect(result).not.toContainEqual(hiddenResponse);
     });
 
     it('should throw error when user is not organization member', async () => {

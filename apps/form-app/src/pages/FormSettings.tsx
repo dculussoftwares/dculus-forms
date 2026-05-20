@@ -185,6 +185,26 @@ const FormSettings: React.FC = () => {
 
   const form = formData.form;
 
+  if (form.userPermission === 'VIEWER' || form.userPermission === 'NO_ACCESS') {
+    return (
+      <MainLayout
+        title={t('layout.title')}
+        breadcrumbs={[
+          { label: t('layout.breadcrumbDashboard'), href: '/dashboard' },
+          { label: form.title, href: `/dashboard/form/${formId}` },
+          { label: t('layout.breadcrumbSettings'), href: `/dashboard/form/${formId}/settings` },
+        ]}
+      >
+        <EmptyState
+          variant="error"
+          icon={<AlertCircle className="h-6 w-6 text-destructive" />}
+          title={t('errors.accessDenied')}
+          description={t('errors.accessDeniedMessage')}
+        />
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout
       title={t('layout.titleWithForm', { values: { formTitle: form.title } })}

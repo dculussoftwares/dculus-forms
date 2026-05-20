@@ -282,8 +282,8 @@ export const formSharingResolvers = {
       requireAuth(context.auth);
       const userId = context.auth.user!.id;
 
-      // Check if user has permission to share the form (must be owner or editor)
-      const accessCheck = await checkFormAccess(userId, input.formId, PermissionLevel.EDITOR);
+      // Check if user has permission to share the form (must be owner)
+      const accessCheck = await checkFormAccess(userId, input.formId, PermissionLevel.OWNER);
       if (!accessCheck.hasAccess) {
         throw createGraphQLError('Access denied: Insufficient permissions to share this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
@@ -384,8 +384,8 @@ export const formSharingResolvers = {
       requireAuth(context.auth);
       const grantedById = context.auth.user!.id;
 
-      // Check if user has permission to manage permissions
-      const accessCheck = await checkFormAccess(grantedById, input.formId, PermissionLevel.EDITOR);
+      // Check if user has permission to manage permissions (must be owner)
+      const accessCheck = await checkFormAccess(grantedById, input.formId, PermissionLevel.OWNER);
       if (!accessCheck.hasAccess) {
         throw createGraphQLError('Access denied: Insufficient permissions', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
@@ -464,8 +464,8 @@ export const formSharingResolvers = {
       requireAuth(context.auth);
       const grantedById = context.auth.user!.id;
 
-      // Check if user has permission to manage permissions
-      const accessCheck = await checkFormAccess(grantedById, formId, PermissionLevel.EDITOR);
+      // Check if user has permission to manage permissions (must be owner)
+      const accessCheck = await checkFormAccess(grantedById, formId, PermissionLevel.OWNER);
       if (!accessCheck.hasAccess) {
         throw createGraphQLError('Access denied: Insufficient permissions', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }

@@ -1,4 +1,5 @@
-import { GraphQLError } from '#graphql-errors';
+import { createGraphQLError } from '#graphql-errors';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { prisma } from '../../lib/prisma.js';
 import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
@@ -29,9 +30,7 @@ export const pluginsResolvers = {
         PermissionLevel.VIEWER
       );
       if (!accessCheck.hasAccess) {
-        throw new GraphQLError(
-          'Access denied: You do not have permission to view plugins for this form'
-        );
+        throw createGraphQLError('Access denied: You do not have permission to view plugins for this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
       // Fetch all plugins for this form
@@ -60,7 +59,7 @@ export const pluginsResolvers = {
       });
 
       if (!plugin) {
-        throw new GraphQLError('Plugin not found');
+        throw createGraphQLError('Plugin not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
       }
 
       // Check if user has access to the form this plugin belongs to
@@ -70,9 +69,7 @@ export const pluginsResolvers = {
         PermissionLevel.VIEWER
       );
       if (!accessCheck.hasAccess) {
-        throw new GraphQLError(
-          'Access denied: You do not have permission to view this plugin'
-        );
+        throw createGraphQLError('Access denied: You do not have permission to view this plugin', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
       return plugin;
@@ -94,7 +91,7 @@ export const pluginsResolvers = {
       });
 
       if (!plugin) {
-        throw new GraphQLError('Plugin not found');
+        throw createGraphQLError('Plugin not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
       }
 
       // Check if user has access to the form
@@ -104,9 +101,7 @@ export const pluginsResolvers = {
         PermissionLevel.VIEWER
       );
       if (!accessCheck.hasAccess) {
-        throw new GraphQLError(
-          'Access denied: You do not have permission to view plugin deliveries'
-        );
+        throw createGraphQLError('Access denied: You do not have permission to view plugin deliveries', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
       // Fetch delivery history
@@ -142,16 +137,14 @@ export const pluginsResolvers = {
     ) => {
       requireAuth(context.auth);
 
-      // Check if user has EDITOR access to this form
+      // Check if user has OWNER access to this form (plugins send data to external systems)
       const accessCheck = await checkFormAccess(
         context.auth.user!.id,
         input.formId,
-        PermissionLevel.EDITOR
+        PermissionLevel.OWNER
       );
       if (!accessCheck.hasAccess) {
-        throw new GraphQLError(
-          'Access denied: You need EDITOR access to create plugins for this form'
-        );
+        throw createGraphQLError('Access denied: You need OWNER access to create plugins for this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
       // Validate events (only allow supported events)
@@ -160,9 +153,7 @@ export const pluginsResolvers = {
         (event) => !supportedEvents.includes(event)
       );
       if (invalidEvents.length > 0) {
-        throw new GraphQLError(
-          `Invalid event types: ${invalidEvents.join(', ')}. Supported events: ${supportedEvents.join(', ')}`
-        );
+        throw createGraphQLError(`Invalid event types: ${invalidEvents.join(', ')}. Supported events: ${supportedEvents.join(', ')}`, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
       }
 
       // Create plugin
@@ -208,19 +199,17 @@ export const pluginsResolvers = {
       });
 
       if (!plugin) {
-        throw new GraphQLError('Plugin not found');
+        throw createGraphQLError('Plugin not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
       }
 
-      // Check if user has EDITOR access to this form
+      // Check if user has OWNER access to this form (plugins send data to external systems)
       const accessCheck = await checkFormAccess(
         context.auth.user!.id,
         plugin.formId,
-        PermissionLevel.EDITOR
+        PermissionLevel.OWNER
       );
       if (!accessCheck.hasAccess) {
-        throw new GraphQLError(
-          'Access denied: You need EDITOR access to update this plugin'
-        );
+        throw createGraphQLError('Access denied: You need OWNER access to update this plugin', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
       // Validate events if provided
@@ -230,9 +219,7 @@ export const pluginsResolvers = {
           (event) => !supportedEvents.includes(event)
         );
         if (invalidEvents.length > 0) {
-          throw new GraphQLError(
-            `Invalid event types: ${invalidEvents.join(', ')}. Supported events: ${supportedEvents.join(', ')}`
-          );
+          throw createGraphQLError(`Invalid event types: ${invalidEvents.join(', ')}. Supported events: ${supportedEvents.join(', ')}`, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
         }
       }
 
@@ -264,19 +251,17 @@ export const pluginsResolvers = {
       });
 
       if (!plugin) {
-        throw new GraphQLError('Plugin not found');
+        throw createGraphQLError('Plugin not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
       }
 
-      // Check if user has EDITOR access to this form
+      // Check if user has OWNER access to this form (plugins send data to external systems)
       const accessCheck = await checkFormAccess(
         context.auth.user!.id,
         plugin.formId,
-        PermissionLevel.EDITOR
+        PermissionLevel.OWNER
       );
       if (!accessCheck.hasAccess) {
-        throw new GraphQLError(
-          'Access denied: You need EDITOR access to delete this plugin'
-        );
+        throw createGraphQLError('Access denied: You need OWNER access to delete this plugin', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
       // Delete plugin (deliveries will cascade delete)
@@ -304,19 +289,17 @@ export const pluginsResolvers = {
       });
 
       if (!plugin) {
-        throw new GraphQLError('Plugin not found');
+        throw createGraphQLError('Plugin not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
       }
 
-      // Check if user has EDITOR access to this form
+      // Check if user has OWNER access to this form (plugins send data to external systems)
       const accessCheck = await checkFormAccess(
         context.auth.user!.id,
         plugin.formId,
-        PermissionLevel.EDITOR
+        PermissionLevel.OWNER
       );
       if (!accessCheck.hasAccess) {
-        throw new GraphQLError(
-          'Access denied: You need EDITOR access to test this plugin'
-        );
+        throw createGraphQLError('Access denied: You need OWNER access to test this plugin', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
       // Emit test event

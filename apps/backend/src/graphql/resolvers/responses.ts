@@ -6,6 +6,7 @@ import {
   submitResponse,
   updateResponse,
 } from '../../services/responseService.js';
+import { prisma } from '../../lib/prisma.js';
 import { responseRepository } from '../../repositories/responseRepository.js';
 import { ResponseFilter } from '../../services/responseFilterService.js';
 import { getFormById } from '../../services/formService.js';
@@ -56,7 +57,25 @@ export const responsesResolvers = {
       // 🔒 SECURITY: Verify user is a member of the target organization
       await requireOrganizationMembership(context.auth, organizationId);
 
-      return await getAllResponses(organizationId);
+      const userId = context.auth.user!.id;
+
+      // 🔒 SECURITY: Scope to forms the user can actually access (VIEWER or above).
+      // Org membership alone is not sufficient — a NO_ACCESS permission must be respected.
+      const accessibleForms = await prisma.form.findMany({
+        where: {
+          organizationId,
+          OR: [
+            { createdById: userId },
+            { permissions: { some: { userId, permission: { not: PermissionLevel.NO_ACCESS } } } },
+            { sharingScope: 'ALL_ORG_MEMBERS', defaultPermission: { not: PermissionLevel.NO_ACCESS } },
+          ],
+        },
+        select: { id: true },
+      });
+
+      const accessibleFormIds = accessibleForms.map((f) => f.id);
+      const allResponses = await getAllResponses(organizationId);
+      return allResponses.filter((r) => accessibleFormIds.includes(r.formId));
     },
     response: async (
       _: any,
@@ -403,6 +422,12 @@ export const extendedResponsesResolvers = {
       }
 
       await requireOrganizationMembership(context.auth, form.organizationId);
+
+      // 🔒 SECURITY: Verify form-level access — org membership alone is not sufficient
+      const accessCheck = await checkFormAccess(context.auth.user!.id, existingResponse.formId, PermissionLevel.VIEWER);
+      if (!accessCheck.hasAccess) {
+        throw createGraphQLError('Access denied: You do not have permission to view this response', GRAPHQL_ERROR_CODES.NO_ACCESS);
+      }
 
       // Get edit history
       const editHistory =

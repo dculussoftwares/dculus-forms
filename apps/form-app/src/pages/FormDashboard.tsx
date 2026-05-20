@@ -211,9 +211,9 @@ const FormDashboard: React.FC = () => {
           {/* Header Section */}
           <FormHeader
             form={form}
-            onPublish={handlePublish}
-            onUnpublish={() => setShowUnpublishDialog(true)}
-            onDelete={() => setShowDeleteDialog(true)}
+            onPublish={form.userPermission === 'OWNER' || form.userPermission === 'EDITOR' ? handlePublish : undefined}
+            onUnpublish={form.userPermission === 'OWNER' || form.userPermission === 'EDITOR' ? () => setShowUnpublishDialog(true) : undefined}
+            onDelete={form.userPermission === 'OWNER' ? () => setShowDeleteDialog(true) : undefined}
             onCollectResponses={handleCollectResponses}
             onPreview={() => {
               window.open(formViewerUrl, '_blank');
@@ -221,7 +221,7 @@ const FormDashboard: React.FC = () => {
             onViewAnalytics={() => {
               navigate(`/dashboard/form/${formId}/analytics`);
             }}
-            onShare={handleShare}
+            onShare={form.userPermission === 'OWNER' ? handleShare : undefined}
             onDuplicate={handleDuplicate}
             updateLoading={updateLoading}
             deleteLoading={deleteLoading}

@@ -139,7 +139,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       }
       const form = await prisma.form.findUnique({
         where: { id: formId },
-        select: { id: true, isPublished: true, organizationId: true },
+        select: { id: true, isPublished: true, organizationId: true, createdById: true },
       });
       if (!form) {
         return res
@@ -149,20 +149,24 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
       let isAuthorisedEditor = false;
       if (callerUser) {
-        const permission = await prisma.formPermission.findUnique({
-          where: { formId_userId: { formId: form.id, userId: callerUser.id } },
-          select: { permission: true },
-        });
-        if (permission?.permission === 'EDITOR' || permission?.permission === 'OWNER') {
+        if (form.createdById === callerUser.id) {
           isAuthorisedEditor = true;
-        }
-        if (!isAuthorisedEditor) {
-          const membership = await prisma.member.findFirst({
-            where: { organizationId: form.organizationId, userId: callerUser.id },
-            select: { role: true },
+        } else {
+          const permission = await prisma.formPermission.findUnique({
+            where: { formId_userId: { formId: form.id, userId: callerUser.id } },
+            select: { permission: true },
           });
-          if (membership?.role === 'owner') {
+          if (permission?.permission === 'EDITOR' || permission?.permission === 'OWNER') {
             isAuthorisedEditor = true;
+          }
+          if (!isAuthorisedEditor) {
+            const membership = await prisma.member.findFirst({
+              where: { organizationId: form.organizationId, userId: callerUser.id },
+              select: { role: true },
+            });
+            if (membership?.role === 'owner') {
+              isAuthorisedEditor = true;
+            }
           }
         }
       }

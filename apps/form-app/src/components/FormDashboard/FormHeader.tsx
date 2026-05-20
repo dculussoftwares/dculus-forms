@@ -30,9 +30,9 @@ interface FormHeaderProps {
     createdAt: string;
     shortUrl: string;
   };
-  onPublish: () => void;
-  onUnpublish: () => void;
-  onDelete: () => void;
+  onPublish?: () => void;
+  onUnpublish?: () => void;
+  onDelete?: () => void;
   onCollectResponses: () => void;
   onPreview: () => void;
   onViewAnalytics: () => void;
@@ -136,27 +136,31 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
                 <Link className="mr-1.5 h-3.5 w-3.5" />
                 {t('header.actions.getLink')}
               </Button>
-              <Button
-                data-testid="unpublish-form-button"
-                variant="outline"
-                onClick={onUnpublish}
-                disabled={updateLoading}
-                className="h-8 px-3 text-sm"
-              >
-                <EyeOff className="mr-1.5 h-3.5 w-3.5" />
-                {updateLoading ? t('header.actions.unpublishing') : t('header.actions.unpublish')}
-              </Button>
+              {onUnpublish && (
+                <Button
+                  data-testid="unpublish-form-button"
+                  variant="outline"
+                  onClick={onUnpublish}
+                  disabled={updateLoading}
+                  className="h-8 px-3 text-sm"
+                >
+                  <EyeOff className="mr-1.5 h-3.5 w-3.5" />
+                  {updateLoading ? t('header.actions.unpublishing') : t('header.actions.unpublish')}
+                </Button>
+              )}
             </>
           ) : (
-            <Button
-              data-testid="publish-form-button"
-              onClick={onPublish}
-              disabled={updateLoading}
-              className="h-8 px-4 text-sm"
-            >
-              <Eye className="mr-1.5 h-3.5 w-3.5" />
-              {updateLoading ? t('header.actions.publishing') : t('header.actions.publish')}
-            </Button>
+            onPublish && (
+              <Button
+                data-testid="publish-form-button"
+                onClick={onPublish}
+                disabled={updateLoading}
+                className="h-8 px-4 text-sm"
+              >
+                <Eye className="mr-1.5 h-3.5 w-3.5" />
+                {updateLoading ? t('header.actions.publishing') : t('header.actions.publish')}
+              </Button>
+            )
           )}
 
           {/* Overflow menu */}
@@ -172,15 +176,19 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
                 <Copy className="mr-2 h-4 w-4" />
                 {duplicateLoading ? t('header.actions.duplicating') : t('header.actions.duplicate')}
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={onDelete}
-                disabled={deleteLoading}
-                className="text-destructive focus:text-red-700 focus:bg-[var(--tf-error-bg)]"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                {deleteLoading ? t('header.actions.deleting') : t('header.actions.delete')}
-              </DropdownMenuItem>
+              {onDelete && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={onDelete}
+                    disabled={deleteLoading}
+                    className="text-destructive focus:text-red-700 focus:bg-[var(--tf-error-bg)]"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {deleteLoading ? t('header.actions.deleting') : t('header.actions.delete')}
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

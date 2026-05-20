@@ -10,42 +10,7 @@ import { requireAuth, type BetterAuthContext } from '../../middleware/better-aut
 import { prisma } from '../../lib/prisma.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 import { logger } from '../../lib/logger.js';
-
-/**
- * Check if user has access to the form (optimized query)
- */
-const checkFormAccess = async (
-  formId: string,
-  userId: string,
-  includeSchema: boolean = false
-) => {
-  const selectClause = includeSchema
-    ? { id: true, formSchema: true, organization: true }
-    : { id: true, organization: true };
-
-  const form = await prisma.form.findFirst({
-    where: {
-      id: formId,
-      organization: {
-        members: {
-          some: {
-            userId: userId,
-          },
-        },
-      },
-    },
-    select: selectClause,
-  });
-
-  if (!form) {
-    throw createGraphQLError(
-      'Form not found or access denied',
-      GRAPHQL_ERROR_CODES.FORBIDDEN
-    );
-  }
-
-  return form;
-};
+import { checkFormAccess, PermissionLevel } from './formSharing.js';
 
 /**
  * Get field info from form schema
@@ -208,8 +173,12 @@ export const fieldAnalyticsResolvers = {
     ) => {
       requireAuth(context.auth);
 
-      // Check form access (don't need schema from DB since we'll get it from Hocuspocus)
-      const form = await checkFormAccess(formId, context.auth.user!.id, false);
+      // Check form access — uses comprehensive permission check (respects NO_ACCESS, sharing scopes)
+      const accessResult = await checkFormAccess(context.auth.user!.id, formId, PermissionLevel.VIEWER);
+      if (!accessResult.hasAccess) {
+        throw createGraphQLError('Form not found or access denied', GRAPHQL_ERROR_CODES.FORBIDDEN);
+      }
+      const form = accessResult.form;
 
       logger.info(
         '🔍 Getting form schema from Hocuspocus collaborative document...'
@@ -233,12 +202,12 @@ export const fieldAnalyticsResolvers = {
         );
 
         // Fallback to database schema if collaborative document doesn't exist
-        const fallbackForm = await checkFormAccess(
-          formId,
-          context.auth.user!.id,
-          true
-        );
-        const fallbackSchema = fallbackForm.formSchema as any; // Type assertion for Prisma JSON field
+        // Access already verified above — only fetching schema here
+        const fallbackForm = await prisma.form.findUnique({
+          where: { id: formId },
+          select: { formSchema: true },
+        });
+        const fallbackSchema = fallbackForm?.formSchema as any;
 
         logger.info('📋 Fallback DB schema structure:', {
           hasFormSchema: !!fallbackSchema,
@@ -330,8 +299,11 @@ export const fieldAnalyticsResolvers = {
     ) => {
       requireAuth(context.auth);
 
-      // Check form access (no need for schema here)
-      await checkFormAccess(formId, context.auth.user!.id, false);
+      // Check form access — uses comprehensive permission check (respects NO_ACCESS, sharing scopes)
+      const accessResult = await checkFormAccess(context.auth.user!.id, formId, PermissionLevel.VIEWER);
+      if (!accessResult.hasAccess) {
+        throw createGraphQLError('Form not found or access denied', GRAPHQL_ERROR_CODES.FORBIDDEN);
+      }
 
       try {
         const analytics = await getAllFieldsAnalytics(formId);

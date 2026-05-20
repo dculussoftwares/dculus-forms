@@ -26,7 +26,7 @@ export const FormPermissionProvider: React.FC<FormPermissionProviderProps> = ({
   // Calculate permission capabilities based on user permission level
   const canEdit = userPermission === 'OWNER' || userPermission === 'EDITOR';
   const canView = userPermission !== 'NO_ACCESS';
-  const canManageSharing = userPermission === 'OWNER' || userPermission === 'EDITOR';
+  const canManageSharing = userPermission === 'OWNER';
   const canDelete = userPermission === 'OWNER';
   const canSave = canEdit;
   const isReadOnly = userPermission === 'VIEWER';

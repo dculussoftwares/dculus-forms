@@ -4,15 +4,18 @@ import { GraphQLError } from '#graphql-errors';
 import { FieldType } from '@dculus/types';
 import * as fieldAnalyticsService from '../../../services/fieldAnalytics/index.js';
 import * as hocuspocusService from '../../../services/hocuspocus.js';
+import * as formSharingModule from '../formSharing.js';
 import { prisma } from '../../../lib/prisma.js';
 
 // Mock all dependencies
 vi.mock('../../../services/fieldAnalytics/index.js');
 vi.mock('../../../services/hocuspocus.js');
+vi.mock('../formSharing.js');
 vi.mock('../../../lib/prisma.js', () => ({
   prisma: {
     form: {
       findFirst: vi.fn(),
+      findUnique: vi.fn(),
     },
   },
 }));
@@ -189,7 +192,7 @@ describe('Field Analytics Resolvers', () => {
     };
 
     it('should return analytics for text field with Hocuspocus schema', async () => {
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(mockHocuspocusSchema);
       vi.mocked(fieldAnalyticsService.getFieldAnalytics).mockResolvedValue(mockTextAnalytics);
 
@@ -198,20 +201,6 @@ describe('Field Analytics Resolvers', () => {
         { formId: 'form-123', fieldId: 'field-text-1' },
         mockContext
       );
-
-      expect(prisma.form.findFirst).toHaveBeenCalledWith({
-        where: {
-          id: 'form-123',
-          organization: {
-            members: {
-              some: {
-                userId: 'user-123',
-              },
-            },
-          },
-        },
-        select: { id: true, organization: true },
-      });
 
       expect(hocuspocusService.getFormSchemaFromHocuspocus).toHaveBeenCalledWith('form-123');
 
@@ -236,7 +225,7 @@ describe('Field Analytics Resolvers', () => {
     // refactoring to test directly. The Hocuspocus schema path is the primary path.
 
     it('should return analytics for number field', async () => {
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(mockFormWithSchema.formSchema);
       vi.mocked(fieldAnalyticsService.getFieldAnalytics).mockResolvedValue(mockNumberAnalytics);
 
@@ -274,7 +263,7 @@ describe('Field Analytics Resolvers', () => {
         responseDistribution: 'concentrated',
       };
 
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(mockHocuspocusSchema);
       vi.mocked(fieldAnalyticsService.getFieldAnalytics).mockResolvedValue(mockSelectAnalytics);
 
@@ -329,7 +318,7 @@ describe('Field Analytics Resolvers', () => {
         ],
       };
 
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(mockSchemaWithCheckbox);
       vi.mocked(fieldAnalyticsService.getFieldAnalytics).mockResolvedValue(mockCheckboxAnalytics);
 
@@ -385,7 +374,7 @@ describe('Field Analytics Resolvers', () => {
         ],
       };
 
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(mockSchemaWithDate);
       vi.mocked(fieldAnalyticsService.getFieldAnalytics).mockResolvedValue(mockDateAnalytics);
 
@@ -430,7 +419,7 @@ describe('Field Analytics Resolvers', () => {
         ],
       };
 
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(mockSchemaWithRadio);
       vi.mocked(fieldAnalyticsService.getFieldAnalytics).mockResolvedValue(mockRadioAnalytics);
 
@@ -484,7 +473,7 @@ describe('Field Analytics Resolvers', () => {
         ],
       };
 
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(mockSchemaWithTextArea);
       vi.mocked(fieldAnalyticsService.getFieldAnalytics).mockResolvedValue(mockTextAreaAnalytics);
 
@@ -520,7 +509,7 @@ describe('Field Analytics Resolvers', () => {
     });
 
     it('should throw error when form not found', async () => {
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(null);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: false, permission: 'NO_ACCESS' as any, form: null as any });
 
       await expect(
         fieldAnalyticsResolvers.Query.fieldAnalytics(
@@ -540,7 +529,7 @@ describe('Field Analytics Resolvers', () => {
     });
 
     it('should throw error when user is not a member of organization', async () => {
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(null); // Prisma query filters by membership
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: false, permission: 'NO_ACCESS' as any, form: null as any }); // Prisma query filters by membership
 
       await expect(
         fieldAnalyticsResolvers.Query.fieldAnalytics(
@@ -570,8 +559,9 @@ describe('Field Analytics Resolvers', () => {
         formSchema: null,
       };
 
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockFormWithoutSchema as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(null);
+      vi.mocked(prisma.form.findUnique as any).mockResolvedValue({ formSchema: null });
 
       await expect(
         fieldAnalyticsResolvers.Query.fieldAnalytics(
@@ -591,8 +581,9 @@ describe('Field Analytics Resolvers', () => {
         },
       };
 
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockFormWithSchemaData as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(null);
+      vi.mocked(prisma.form.findUnique as any).mockResolvedValue({ formSchema: mockFormWithSchema.formSchema });
 
       await expect(
         fieldAnalyticsResolvers.Query.fieldAnalytics(
@@ -607,7 +598,7 @@ describe('Field Analytics Resolvers', () => {
     // Field not found errors are tested below which cover similar error paths
 
     it('should throw error when field not found in schema', async () => {
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(mockHocuspocusSchema);
 
       await expect(
@@ -639,7 +630,7 @@ describe('Field Analytics Resolvers', () => {
         ],
       };
 
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(schemaWithUnsupportedField);
 
       await expect(
@@ -660,7 +651,7 @@ describe('Field Analytics Resolvers', () => {
     });
 
     it('should throw error when analytics service fails', async () => {
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(mockHocuspocusSchema);
       vi.mocked(fieldAnalyticsService.getFieldAnalytics).mockRejectedValue(
         new Error('Database connection error')
@@ -695,7 +686,7 @@ describe('Field Analytics Resolvers', () => {
         ],
       };
 
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(schemaWithoutLabel);
       vi.mocked(fieldAnalyticsService.getFieldAnalytics).mockResolvedValue(mockTextAnalytics);
 
@@ -737,7 +728,7 @@ describe('Field Analytics Resolvers', () => {
         ],
       };
 
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(multiPageSchema);
       vi.mocked(fieldAnalyticsService.getFieldAnalytics).mockResolvedValue(mockEmailAnalytics);
 
@@ -798,7 +789,7 @@ describe('Field Analytics Resolvers', () => {
     };
 
     it('should return analytics for all fields in a form', async () => {
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(fieldAnalyticsService.getAllFieldsAnalytics).mockResolvedValue(mockAllFieldsAnalytics as any);
 
       const result = await fieldAnalyticsResolvers.Query.allFieldsAnalytics(
@@ -806,20 +797,6 @@ describe('Field Analytics Resolvers', () => {
         { formId: 'form-123' },
         mockContext
       );
-
-      expect(prisma.form.findFirst).toHaveBeenCalledWith({
-        where: {
-          id: 'form-123',
-          organization: {
-            members: {
-              some: {
-                userId: 'user-123',
-              },
-            },
-          },
-        },
-        select: { id: true, organization: true },
-      });
 
       expect(fieldAnalyticsService.getAllFieldsAnalytics).toHaveBeenCalledWith('form-123');
 
@@ -853,7 +830,7 @@ describe('Field Analytics Resolvers', () => {
     });
 
     it('should throw error when form not found', async () => {
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(null);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: false, permission: 'NO_ACCESS' as any, form: null as any });
 
       await expect(
         fieldAnalyticsResolvers.Query.allFieldsAnalytics(
@@ -873,7 +850,7 @@ describe('Field Analytics Resolvers', () => {
     });
 
     it('should throw error when user is not a member of organization', async () => {
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(null);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: false, permission: 'NO_ACCESS' as any, form: null as any });
 
       await expect(
         fieldAnalyticsResolvers.Query.allFieldsAnalytics(
@@ -893,7 +870,7 @@ describe('Field Analytics Resolvers', () => {
     });
 
     it('should throw error when analytics service fails', async () => {
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(fieldAnalyticsService.getAllFieldsAnalytics).mockRejectedValue(
         new Error('Database error')
       );
@@ -922,7 +899,7 @@ describe('Field Analytics Resolvers', () => {
         fields: [],
       };
 
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(fieldAnalyticsService.getAllFieldsAnalytics).mockResolvedValue(emptyAnalytics as any);
 
       const result = await fieldAnalyticsResolvers.Query.allFieldsAnalytics(
@@ -1014,7 +991,7 @@ describe('Field Analytics Resolvers', () => {
         ],
       };
 
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(fieldAnalyticsService.getAllFieldsAnalytics).mockResolvedValue(comprehensiveAnalytics as any);
 
       const result = await fieldAnalyticsResolvers.Query.allFieldsAnalytics(
@@ -1032,7 +1009,7 @@ describe('Field Analytics Resolvers', () => {
     });
 
     it('should preserve GraphQL errors from service', async () => {
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(fieldAnalyticsService.getAllFieldsAnalytics).mockRejectedValue(
         new GraphQLError('Custom GraphQL Error')
       );
@@ -1060,7 +1037,7 @@ describe('Field Analytics Resolvers', () => {
         pages: [],
       };
 
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(emptyPagesSchema);
 
       await expect(
@@ -1079,7 +1056,7 @@ describe('Field Analytics Resolvers', () => {
         ],
       };
 
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(pagesWithoutFields);
 
       await expect(
@@ -1096,7 +1073,7 @@ describe('Field Analytics Resolvers', () => {
         pages: null,
       };
 
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(schemaWithNullPages as any);
 
       await expect(
@@ -1109,7 +1086,7 @@ describe('Field Analytics Resolvers', () => {
     });
 
     it('should handle concurrent access checks correctly', async () => {
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(mockHocuspocusSchema);
       vi.mocked(fieldAnalyticsService.getFieldAnalytics).mockResolvedValue({
         fieldId: 'field-text-1',

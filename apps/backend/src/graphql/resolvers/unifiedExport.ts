@@ -31,14 +31,14 @@ export const unifiedExportResolvers = {
         const exportFormat: ExportFormat = format.toLowerCase() as ExportFormat;
         logger.info(`Starting unified ${exportFormat.toUpperCase()} export for form: ${formId}`);
 
-        // 🔒 SECURITY: Verify user has access to this form before exporting data
+        // 🔒 SECURITY: Verify user has EDITOR access to export data (VIEWER cannot bulk-export PII)
         const accessCheck = await checkFormAccess(
           context.auth.user!.id,
           formId,
-          PermissionLevel.VIEWER
+          PermissionLevel.EDITOR
         );
         if (!accessCheck.hasAccess) {
-          throw createGraphQLError('Access denied: You do not have permission to export data from this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
+          throw createGraphQLError('Access denied: You need EDITOR access to export data from this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
         }
 
         // Get form details

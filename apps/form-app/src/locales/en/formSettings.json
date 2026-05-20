@@ -14,6 +14,8 @@
   "errors": {
     "formNotFound": "Form Not Found",
     "formNotFoundMessage": "The form you're looking for doesn't exist or you don't have permission to view it.",
+    "accessDenied": "Access Denied",
+    "accessDeniedMessage": "You need at least Editor access to view or change form settings.",
     "formTitleRequired": "Form title is required",
     "validationError": "Validation Error",
     "general": "An error occurred while processing your request."
