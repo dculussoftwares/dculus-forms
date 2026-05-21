@@ -50,10 +50,11 @@ export const createResponseRepository = (context?: RepositoryContext) => {
   /**
    * Lightweight helper for grabbing all responses for a form in reverse
    * chronological order (handy for exports and metrics).
+   * Only returns non-deleted responses (deletedAt IS NULL).
    */
   const listByForm = async (formId: string) =>
     prisma.response.findMany({
-      where: { formId },
+      where: { formId, deletedAt: null },
       orderBy: { submittedAt: 'desc' },
     });
 

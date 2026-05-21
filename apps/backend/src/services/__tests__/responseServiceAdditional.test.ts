@@ -270,18 +270,19 @@ describe('Response Service - Additional Coverage', () => {
 
   describe('deleteResponse', () => {
     it('should successfully delete response', async () => {
-      vi.mocked(responseRepository.delete).mockResolvedValue(undefined as any);
+      vi.mocked(responseRepository.update).mockResolvedValue(undefined as any);
 
       const result = await deleteResponse('response-123');
 
       expect(result).toBe(true);
-      expect(responseRepository.delete).toHaveBeenCalledWith({
-        where: { id: 'response-123' }
+      expect(responseRepository.update).toHaveBeenCalledWith({
+        where: { id: 'response-123' },
+        data: expect.objectContaining({ deletedAt: expect.any(Date) }),
       });
     });
 
     it('should return false when delete fails', async () => {
-      vi.mocked(responseRepository.delete).mockRejectedValue(new Error('Delete failed'));
+      vi.mocked(responseRepository.update).mockRejectedValue(new Error('Delete failed'));
 
       const result = await deleteResponse('response-123');
 

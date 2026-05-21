@@ -360,6 +360,7 @@ describe('Response Service', () => {
           metadata: {},
           submittedAt: new Date('2024-01-01'),
           updatedAt: new Date('2024-01-01'),
+          deletedAt: null,
           form: {
             id: 'form-123',
             formSchema: {},
@@ -414,17 +415,20 @@ describe('Response Service', () => {
 
   describe('deleteResponse', () => {
     it('should delete response', async () => {
-      vi.mocked(responseRepository.delete).mockResolvedValue(undefined as any);
+      vi.mocked(responseRepository.update).mockResolvedValue(undefined as any);
 
       const result = await deleteResponse('response-123');
 
-      expect(responseRepository.delete).toHaveBeenCalledWith({ where: { id: 'response-123' } });
+      expect(responseRepository.update).toHaveBeenCalledWith({
+        where: { id: 'response-123' },
+        data: expect.objectContaining({ deletedAt: expect.any(Date) }),
+      });
       expect(result).toBe(true);
     });
 
     it('should return false on error', async () => {
       const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
-      vi.mocked(responseRepository.delete).mockRejectedValue(new Error('Database error'));
+      vi.mocked(responseRepository.update).mockRejectedValue(new Error('Database error'));
 
       const result = await deleteResponse('response-123');
 

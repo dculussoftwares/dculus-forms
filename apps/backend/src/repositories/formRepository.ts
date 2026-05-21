@@ -47,28 +47,33 @@ export const createFormRepository = (context?: RepositoryContext) => {
   /**
    * Fetch latest forms for an organisation (or across all organisations)
    * with author and organisation eagerly loaded.
+   * Only returns non-deleted forms (deletedAt IS NULL).
    */
   const listByOrganization = async (organizationId?: string) =>
     prisma.form.findMany({
-      ...(organizationId ? { where: { organizationId } } : {}),
+      where: {
+        deletedAt: null,
+        ...(organizationId ? { organizationId } : {}),
+      },
       orderBy: { createdAt: 'desc' },
       include: defaultFormInclude,
     });
 
   /**
    * Convenience lookup that always includes organisation + author metadata.
+   * Returns null for soft-deleted forms.
    */
   const findById = async (id: string): Promise<FormWithRelations | null> =>
-    prisma.form.findUnique({
-      where: { id },
+    prisma.form.findFirst({
+      where: { id, deletedAt: null },
       include: defaultFormInclude,
     });
 
   const findByShortUrl = async (
     shortUrl: string
   ): Promise<FormWithRelations | null> =>
-    prisma.form.findUnique({
-      where: { shortUrl },
+    prisma.form.findFirst({
+      where: { shortUrl, deletedAt: null },
       include: defaultFormInclude,
     });
 
@@ -98,8 +103,9 @@ export const createFormRepository = (context?: RepositoryContext) => {
     });
 
   const deleteForm = async (id: string) =>
-    prisma.form.delete({
+    prisma.form.update({
       where: { id },
+      data: { deletedAt: new Date() },
     });
 
   /**

@@ -99,7 +99,7 @@ async function fillAndSaveLabel(world: CustomWorld, label: string) {
   await world.page.waitForSelector('#field-label', { timeout: 10_000 });
   await world.page.fill('#field-label', label);
   await world.page.getByRole('button', { name: /save/i }).click();
-  await world.page.waitForTimeout(1000);
+  await expect(world.page.getByTestId('field-content-1')).toBeVisible({ timeout: 10_000 });
 }
 
 When('I fill and save the short text field with label {string}', async function (this: CustomWorld, label: string) { await fillAndSaveLabel(this, label); });
@@ -177,11 +177,9 @@ When('I test required validation for short text in viewer', async function (this
   const field = this.viewerPage.locator('input[name="field-required"]');
   await expect(field).toBeVisible({ timeout: 10_000 });
   await this.viewerPage.getByTestId('viewer-submit-button').click();
-  await this.viewerPage.waitForTimeout(500);
   await expect(this.viewerPage.locator('text=/required/i').first()).toBeVisible({ timeout: 5_000 });
   await field.fill('Valid text');
   await field.blur();
-  await this.viewerPage.waitForTimeout(500);
 });
 
 When('I test min length validation for short text in viewer', async function (this: CustomWorld) {
@@ -190,11 +188,9 @@ When('I test min length validation for short text in viewer', async function (th
   await expect(field).toBeVisible({ timeout: 10_000 });
   await field.fill('abc');
   await field.blur();
-  await this.viewerPage.waitForTimeout(1000);
   await expect(this.viewerPage.locator('text=/5.*character|at least 5|minimum.*5/i').first()).toBeVisible({ timeout: 5_000 });
   await field.fill('Valid');
   await field.blur();
-  await this.viewerPage.waitForTimeout(500);
 });
 
 When('I test max length validation for short text in viewer', async function (this: CustomWorld) {
@@ -203,11 +199,9 @@ When('I test max length validation for short text in viewer', async function (th
   await expect(field).toBeVisible({ timeout: 10_000 });
   await field.fill('This is too long');
   await field.blur();
-  await this.viewerPage.waitForTimeout(1000);
   await expect(this.viewerPage.locator('text=/10.*character|at most 10|maximum.*10/i').first()).toBeVisible({ timeout: 5_000 });
   await field.fill('Valid');
   await field.blur();
-  await this.viewerPage.waitForTimeout(500);
 });
 
 When('I fill short text field with valid data in viewer', async function (this: CustomWorld) {
@@ -216,7 +210,6 @@ When('I fill short text field with valid data in viewer', async function (this: 
   await this.viewerPage.locator('input[name="field-minlength"]').fill('Valid length');
   await this.viewerPage.locator('input[name="field-maxlength"]').fill('Short');
   await this.viewerPage.locator('input[name="field-range"]').fill('Between');
-  await this.viewerPage.waitForTimeout(500);
 });
 
 Then('I should be able to submit the form in viewer', async function (this: CustomWorld) {
@@ -225,7 +218,7 @@ Then('I should be able to submit the form in viewer', async function (this: Cust
   await expect(submitButton).toBeVisible({ timeout: 10_000 });
   await expect(submitButton).toBeEnabled({ timeout: 5_000 });
   await submitButton.click();
-  await this.viewerPage.waitForTimeout(2000);
+  await this.viewerPage.waitForLoadState('networkidle');
 });
 
 When('I fill all short text field settings with test data', async function (this: CustomWorld) {
@@ -242,7 +235,6 @@ When('I fill all short text field settings with test data', async function (this
   await this.page.fill('#field-validation\\.maxLength', '100');
   const req = this.page.locator('#field-required');
   if (!await req.isChecked()) await req.click();
-  await this.page.waitForTimeout(500);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -297,7 +289,6 @@ Then('I fix all validation errors for long text', async function (this: CustomWo
   await this.page.fill('#field-validation\\.minLength', '5');
   await this.page.fill('#field-validation\\.maxLength', '500');
   await this.page.locator('#field-label').click();
-  await this.page.waitForTimeout(500);
 });
 
 Then('I verify save button is enabled', async function (this: CustomWorld) {
@@ -309,8 +300,7 @@ Then('I verify save button is enabled', async function (this: CustomWorld) {
 Then('I save the long text field settings', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
   await this.page.getByRole('button', { name: /save/i }).click();
-  await this.page.waitForTimeout(1000);
-  await expect(this.page.getByTestId('field-content-1')).toBeVisible({ timeout: 5_000 });
+  await expect(this.page.getByTestId('field-content-1')).toBeVisible({ timeout: 10_000 });
 });
 
 When('I create a form via GraphQL with long text field validations', async function (this: CustomWorld) {
@@ -322,11 +312,9 @@ When('I test required validation for long text in viewer', async function (this:
   const field = this.viewerPage.locator('textarea[name="field-required"]');
   await expect(field).toBeVisible({ timeout: 10_000 });
   await this.viewerPage.getByTestId('viewer-submit-button').click();
-  await this.viewerPage.waitForTimeout(500);
   await expect(this.viewerPage.locator('text=/required/i').first()).toBeVisible({ timeout: 5_000 });
   await field.fill('Valid text here');
   await field.blur();
-  await this.viewerPage.waitForTimeout(500);
 });
 
 When('I test min length validation for long text in viewer', async function (this: CustomWorld) {
@@ -335,11 +323,9 @@ When('I test min length validation for long text in viewer', async function (thi
   await expect(field).toBeVisible({ timeout: 10_000 });
   await field.fill('Hi');
   await field.blur();
-  await this.viewerPage.waitForTimeout(1000);
   await expect(this.viewerPage.locator('text=/5.*char|at least 5|minimum.*5/i').first()).toBeVisible({ timeout: 5_000 });
   await field.fill('Valid text');
   await field.blur();
-  await this.viewerPage.waitForTimeout(500);
 });
 
 When('I test max length validation for long text in viewer', async function (this: CustomWorld) {
@@ -348,11 +334,9 @@ When('I test max length validation for long text in viewer', async function (thi
   await expect(field).toBeVisible({ timeout: 10_000 });
   await field.fill('A'.repeat(15));
   await field.blur();
-  await this.viewerPage.waitForTimeout(1000);
   await expect(this.viewerPage.locator('text=/10.*char|at most 10|maximum.*10/i').first()).toBeVisible({ timeout: 5_000 });
   await field.fill('Short');
   await field.blur();
-  await this.viewerPage.waitForTimeout(500);
 });
 
 When('I fill long text field with valid data in viewer', async function (this: CustomWorld) {
@@ -361,7 +345,6 @@ When('I fill long text field with valid data in viewer', async function (this: C
   await this.viewerPage.locator('textarea[name="field-minlength"]').fill('Valid length answer');
   await this.viewerPage.locator('textarea[name="field-maxlength"]').fill('Short');
   await this.viewerPage.locator('textarea[name="field-range"]').fill('Medium length');
-  await this.viewerPage.waitForTimeout(500);
 });
 
 When('I fill all long text field settings with test data', async function (this: CustomWorld) {
@@ -377,7 +360,6 @@ When('I fill all long text field settings with test data', async function (this:
   await this.page.fill('#field-validation\\.maxLength', '500');
   const req = this.page.locator('#field-required');
   if (!await req.isChecked()) await req.click();
-  await this.page.waitForTimeout(500);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -430,14 +412,13 @@ Then('I fix all validation errors for email', async function (this: CustomWorld)
   await this.page.fill('#field-placeholder', 'you@example.com');
   await this.page.fill('#field-defaultValue', 'test@example.com');
   await this.page.locator('#field-label').click();
-  await this.page.waitForTimeout(1000);
+  await this.page.waitForLoadState('domcontentloaded');
 });
 
 Then('I save the email field settings', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
   await this.page.getByRole('button', { name: /save/i }).click();
-  await this.page.waitForTimeout(1000);
-  await expect(this.page.getByTestId('field-content-1')).toBeVisible({ timeout: 5_000 });
+  await expect(this.page.getByTestId('field-content-1')).toBeVisible({ timeout: 10_000 });
 });
 
 When('I create a form via GraphQL with email field validations', async function (this: CustomWorld) {
@@ -449,11 +430,9 @@ When('I test required validation for email in viewer', async function (this: Cus
   const field = this.viewerPage.locator('input[name="field-required"]');
   await expect(field).toBeVisible({ timeout: 10_000 });
   await this.viewerPage.getByTestId('viewer-submit-button').click();
-  await this.viewerPage.waitForTimeout(500);
   await expect(this.viewerPage.locator('text=/required/i').first()).toBeVisible({ timeout: 5_000 });
   await field.fill('test@example.com');
   await field.blur();
-  await this.viewerPage.waitForTimeout(500);
 });
 
 When('I test email format validation in viewer', async function (this: CustomWorld) {
@@ -462,18 +441,15 @@ When('I test email format validation in viewer', async function (this: CustomWor
   await expect(field).toBeVisible({ timeout: 10_000 });
   await field.fill('invalid-email');
   await field.blur();
-  await this.viewerPage.waitForTimeout(1000);
   await expect(this.viewerPage.locator('text=/valid email|email.*valid|invalid.*email/i').first()).toBeVisible({ timeout: 5_000 });
   await field.fill('valid@example.com');
   await field.blur();
-  await this.viewerPage.waitForTimeout(500);
 });
 
 When('I fill email field with valid data in viewer', async function (this: CustomWorld) {
   if (!this.viewerPage) throw new Error('Viewer page is not initialized');
   await this.viewerPage.locator('input[name="field-required"]').fill('user@example.com');
   await this.viewerPage.locator('input[name="field-format"]').fill('test@domain.com');
-  await this.viewerPage.waitForTimeout(500);
 });
 
 When('I fill all email field settings with test data', async function (this: CustomWorld) {
@@ -488,7 +464,6 @@ When('I fill all email field settings with test data', async function (this: Cus
   await this.page.fill('#field-defaultValue', this.expectedFieldSettings.defaultValue);
   const req = this.page.locator('#field-required');
   if (!await req.isChecked()) await req.click();
-  await this.page.waitForTimeout(500);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -546,14 +521,13 @@ Then('I fix all validation errors for number', async function (this: CustomWorld
   await this.page.fill('#field-max', '100');
   await this.page.fill('#field-defaultValue', '50');
   await this.page.locator('#field-label').click();
-  await this.page.waitForTimeout(1000);
+  await this.page.waitForLoadState('domcontentloaded');
 });
 
 Then('I save the number field settings', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
   await this.page.getByRole('button', { name: /save/i }).click();
-  await this.page.waitForTimeout(1000);
-  await expect(this.page.getByTestId('field-content-1')).toBeVisible({ timeout: 5_000 });
+  await expect(this.page.getByTestId('field-content-1')).toBeVisible({ timeout: 10_000 });
 });
 
 When('I create a form via GraphQL with number field validations', async function (this: CustomWorld) {
@@ -565,11 +539,9 @@ When('I test required validation for number in viewer', async function (this: Cu
   const field = this.viewerPage.locator('input[name="field-required"]');
   await expect(field).toBeVisible({ timeout: 10_000 });
   await this.viewerPage.getByTestId('viewer-submit-button').click();
-  await this.viewerPage.waitForTimeout(500);
   await expect(this.viewerPage.locator('text=/required/i').first()).toBeVisible({ timeout: 5_000 });
   await field.fill('42');
   await field.blur();
-  await this.viewerPage.waitForTimeout(500);
 });
 
 When('I test min value validation in viewer', async function (this: CustomWorld) {
@@ -578,11 +550,9 @@ When('I test min value validation in viewer', async function (this: CustomWorld)
   await expect(field).toBeVisible({ timeout: 10_000 });
   await field.fill('5');
   await field.blur();
-  await this.viewerPage.waitForTimeout(1000);
   await expect(this.viewerPage.locator('text=/10|minimum.*10|at least 10|greater.*10/i').first()).toBeVisible({ timeout: 5_000 });
   await field.fill('15');
   await field.blur();
-  await this.viewerPage.waitForTimeout(500);
 });
 
 When('I test max value validation in viewer', async function (this: CustomWorld) {
@@ -591,11 +561,9 @@ When('I test max value validation in viewer', async function (this: CustomWorld)
   await expect(field).toBeVisible({ timeout: 10_000 });
   await field.fill('150');
   await field.blur();
-  await this.viewerPage.waitForTimeout(1000);
   await expect(this.viewerPage.locator('text=/100|maximum.*100|at most 100|less.*100/i').first()).toBeVisible({ timeout: 5_000 });
   await field.fill('75');
   await field.blur();
-  await this.viewerPage.waitForTimeout(500);
 });
 
 When('I fill number field with valid data in viewer', async function (this: CustomWorld) {
@@ -604,7 +572,6 @@ When('I fill number field with valid data in viewer', async function (this: Cust
   await this.viewerPage.locator('input[name="field-min"]').fill('20');
   await this.viewerPage.locator('input[name="field-max"]').fill('50');
   await this.viewerPage.locator('input[name="field-range"]').fill('25');
-  await this.viewerPage.waitForTimeout(500);
 });
 
 When('I fill all number field settings with test data', async function (this: CustomWorld) {
@@ -621,7 +588,6 @@ When('I fill all number field settings with test data', async function (this: Cu
   await this.page.fill('#field-max', '100');
   const req = this.page.locator('#field-required');
   if (!await req.isChecked()) await req.click();
-  await this.page.waitForTimeout(500);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -680,14 +646,12 @@ Then('I fix all validation errors for date', async function (this: CustomWorld) 
   await this.page.fill('#field-maxDate', '2024-12-31');
   await this.page.fill('#field-defaultValue', '2024-06-15');
   await this.page.locator('#field-label').click();
-  await this.page.waitForTimeout(500);
 });
 
 Then('I save the date field settings', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
   await this.page.getByRole('button', { name: /save/i }).click();
-  await this.page.waitForTimeout(1000);
-  await expect(this.page.getByTestId('field-content-1')).toBeVisible({ timeout: 5_000 });
+  await expect(this.page.getByTestId('field-content-1')).toBeVisible({ timeout: 10_000 });
 });
 
 When('I create a form via GraphQL with date field validations', async function (this: CustomWorld) {
@@ -699,11 +663,9 @@ When('I test required validation for date in viewer', async function (this: Cust
   const field = this.viewerPage.locator('input[name="field-required"]');
   await expect(field).toBeVisible({ timeout: 10_000 });
   await this.viewerPage.getByTestId('viewer-submit-button').click();
-  await this.viewerPage.waitForTimeout(500);
   await expect(this.viewerPage.locator('text=/required/i').first()).toBeVisible({ timeout: 5_000 });
   await field.fill('2024-06-15');
   await field.blur();
-  await this.viewerPage.waitForTimeout(500);
 });
 
 When('I test min date validation in viewer', async function (this: CustomWorld) {
@@ -712,11 +674,9 @@ When('I test min date validation in viewer', async function (this: CustomWorld) 
   await expect(field).toBeVisible({ timeout: 10_000 });
   await field.fill('2023-01-01');
   await field.blur();
-  await this.viewerPage.waitForTimeout(1000);
   await expect(this.viewerPage.locator('text=/minimum.*date|date.*minimum|2024|before/i').first()).toBeVisible({ timeout: 5_000 });
   await field.fill('2024-06-15');
   await field.blur();
-  await this.viewerPage.waitForTimeout(500);
 });
 
 When('I test max date validation in viewer', async function (this: CustomWorld) {
@@ -725,11 +685,9 @@ When('I test max date validation in viewer', async function (this: CustomWorld) 
   await expect(field).toBeVisible({ timeout: 10_000 });
   await field.fill('2025-12-31');
   await field.blur();
-  await this.viewerPage.waitForTimeout(1000);
   await expect(this.viewerPage.locator('text=/maximum.*date|date.*maximum|2024|after/i').first()).toBeVisible({ timeout: 5_000 });
   await field.fill('2024-06-15');
   await field.blur();
-  await this.viewerPage.waitForTimeout(500);
 });
 
 When('I fill date field with valid data in viewer', async function (this: CustomWorld) {
@@ -737,7 +695,6 @@ When('I fill date field with valid data in viewer', async function (this: Custom
   await this.viewerPage.locator('input[name="field-required"]').fill('2024-06-15');
   await this.viewerPage.locator('input[name="field-min-date"]').fill('2024-06-15');
   await this.viewerPage.locator('input[name="field-max-date"]').fill('2024-06-15');
-  await this.viewerPage.waitForTimeout(500);
 });
 
 When('I fill all date field settings with test data', async function (this: CustomWorld) {
@@ -753,7 +710,6 @@ When('I fill all date field settings with test data', async function (this: Cust
   await this.page.fill('#field-defaultValue', this.expectedFieldSettings.defaultValue);
   const req = this.page.locator('#field-required');
   if (!await req.isChecked()) await req.click();
-  await this.page.waitForTimeout(500);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -799,13 +755,12 @@ Then('I fix all validation errors for radio', async function (this: CustomWorld)
   await this.page.fill('#field-label', `Radio Field ${Date.now()}`);
   await this.page.fill('#field-hint', 'Valid hint');
   await this.page.locator('#field-label').click();
-  await this.page.waitForTimeout(500);
 });
 
 Then('I save the radio field settings', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
   await this.page.getByRole('button', { name: /save/i }).click();
-  await this.page.waitForTimeout(1000);
+  await this.page.waitForLoadState('networkidle');
 });
 
 When('I fill all radio field settings with test data', async function (this: CustomWorld) {
@@ -817,7 +772,6 @@ When('I fill all radio field settings with test data', async function (this: Cus
   await this.page.fill('#field-hint', this.expectedFieldSettings.hint);
   const req = this.page.locator('#field-required');
   if (!await req.isChecked()) await req.click();
-  await this.page.waitForTimeout(500);
 });
 
 When('I create a form via GraphQL with radio field validations', async function (this: CustomWorld) {
@@ -828,7 +782,6 @@ When('I test required validation for radio in viewer', async function (this: Cus
   if (!this.viewerPage) throw new Error('Viewer page is not initialized');
   // Attempt to submit without selecting any radio option — expect a required error
   await this.viewerPage.getByTestId('viewer-submit-button').click();
-  await this.viewerPage.waitForTimeout(500);
   await expect(this.viewerPage.locator('text=/required/i').first()).toBeVisible({ timeout: 5_000 });
 });
 
@@ -838,7 +791,6 @@ When('I fill radio field with valid data in viewer', async function (this: Custo
   const firstOption = this.viewerPage.locator('[role="radio"]').first();
   await expect(firstOption).toBeVisible({ timeout: 10_000 });
   await firstOption.click({ force: true });
-  await this.viewerPage.waitForTimeout(500);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -879,13 +831,12 @@ Then('I fix all validation errors for dropdown', async function (this: CustomWor
   await this.page.fill('#field-label', `Dropdown Field ${Date.now()}`);
   await this.page.fill('#field-hint', 'Valid hint');
   await this.page.locator('#field-label').click();
-  await this.page.waitForTimeout(500);
 });
 
 Then('I save the dropdown field settings', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
   await this.page.getByRole('button', { name: /save/i }).click();
-  await this.page.waitForTimeout(1000);
+  await this.page.waitForLoadState('networkidle');
 });
 
 When('I create a form via GraphQL with dropdown field validations', async function (this: CustomWorld) {
@@ -895,7 +846,6 @@ When('I create a form via GraphQL with dropdown field validations', async functi
 When('I test required validation for dropdown in viewer', async function (this: CustomWorld) {
   if (!this.viewerPage) throw new Error('Viewer page is not initialized');
   await this.viewerPage.getByTestId('viewer-submit-button').click();
-  await this.viewerPage.waitForTimeout(500);
   await expect(this.viewerPage.locator('text=/required/i').first()).toBeVisible({ timeout: 5_000 });
 });
 
@@ -909,7 +859,6 @@ When('I test dropdown option selection in viewer', async function (this: CustomW
     await combobox.click();
     await this.viewerPage.getByRole('option').first().click();
   }
-  await this.viewerPage.waitForTimeout(500);
 });
 
 When('I fill dropdown field with valid data in viewer', async function (this: CustomWorld) {
@@ -922,7 +871,6 @@ When('I fill dropdown field with valid data in viewer', async function (this: Cu
     await combobox.click();
     await this.viewerPage.getByRole('option').first().click();
   }
-  await this.viewerPage.waitForTimeout(500);
 });
 
 When('I fill all dropdown field settings with test data', async function (this: CustomWorld) {
@@ -934,7 +882,6 @@ When('I fill all dropdown field settings with test data', async function (this: 
   await this.page.fill('#field-hint', this.expectedFieldSettings.hint);
   const req = this.page.locator('#field-required');
   if (!await req.isChecked()) await req.click();
-  await this.page.waitForTimeout(500);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -954,7 +901,6 @@ Then('I test selection limits validation for checkbox', async function (this: Cu
   await this.page.fill('input[name="validation.minSelections"]', '5');
   await this.page.fill('input[name="validation.maxSelections"]', '2');
   await this.page.locator('#field-label').click();
-  await this.page.waitForTimeout(500);
   await expect(this.page.locator('text=/Minimum.*maximum|Min.*less.*max/i').first()).toBeVisible({ timeout: 5_000 });
 });
 
@@ -987,7 +933,6 @@ Then('I fix all validation errors for checkbox', async function (this: CustomWor
   await this.page.fill('input[name="validation.minSelections"]', '');
   await this.page.fill('input[name="validation.maxSelections"]', '');
   await this.page.locator('#field-label').click();
-  await this.page.waitForTimeout(500);
 });
 
 Then('I fix selection limits for checkbox', async function (this: CustomWorld) {
@@ -995,13 +940,12 @@ Then('I fix selection limits for checkbox', async function (this: CustomWorld) {
   await this.page.fill('input[name="validation.minSelections"]', '1');
   await this.page.fill('input[name="validation.maxSelections"]', '3');
   await this.page.locator('#field-label').click();
-  await this.page.waitForTimeout(500);
 });
 
 Then('I save the checkbox field settings', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
   await this.page.getByRole('button', { name: /save/i }).click();
-  await this.page.waitForTimeout(1000);
+  await this.page.waitForLoadState('networkidle');
 });
 
 When('I create a form via GraphQL with checkbox field validations', async function (this: CustomWorld) {
@@ -1011,7 +955,6 @@ When('I create a form via GraphQL with checkbox field validations', async functi
 When('I test checkbox required and select options in viewer', async function (this: CustomWorld) {
   if (!this.viewerPage) throw new Error('Viewer page is not initialized');
   await this.viewerPage.getByTestId('viewer-submit-button').click();
-  await this.viewerPage.waitForTimeout(1000);
   await expect(this.viewerPage.locator('text=/required|select.*option/i').first()).toBeVisible({ timeout: 10_000 });
   // Select at least one checkbox option (shadcn Checkbox renders as role="checkbox")
   const checkboxes = this.viewerPage.locator('[role="checkbox"]');
@@ -1019,7 +962,6 @@ When('I test checkbox required and select options in viewer', async function (th
   if (count > 0) {
     await checkboxes.first().click({ force: true }).catch(() => {});
   }
-  await this.viewerPage.waitForTimeout(500);
 });
 
 When('I fill all checkbox field settings with test data', async function (this: CustomWorld) {
@@ -1031,7 +973,6 @@ When('I fill all checkbox field settings with test data', async function (this: 
   await this.page.fill('#field-hint', this.expectedFieldSettings.hint);
   const req = this.page.locator('#field-required');
   if (!await req.isChecked()) await req.click();
-  await this.page.waitForTimeout(500);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

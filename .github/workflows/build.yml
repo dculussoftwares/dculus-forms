@@ -161,6 +161,10 @@ jobs:
       - name: Run type checking
         run: pnpm type-check
 
+      - name: Security audit
+        run: pnpm audit --audit-level=high
+        continue-on-error: true  # Don't block on audit warnings initially — review and fix separately
+
   build-backend:
     name: Build Backend
     runs-on: ubuntu-latest

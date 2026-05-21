@@ -336,7 +336,7 @@ export const deleteForm = async (id: string, userId?: string): Promise<boolean> 
       logger.info(`✅ Permission validated for user ${userId} to delete form ${id}: OWNER`);
     }
 
-    await formRepository.deleteForm(id);
+    await formRepository.deleteForm(id); // Soft delete: sets deletedAt timestamp
     return true;
   } catch (error) {
     logger.error('Error deleting form:', error);

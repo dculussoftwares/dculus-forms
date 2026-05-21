@@ -385,12 +385,13 @@ export const updateResponse = async (
 
 export const deleteResponse = async (id: string): Promise<boolean> => {
   try {
-    await responseRepository.delete({
+    await responseRepository.update({
       where: { id },
+      data: { deletedAt: new Date() },
     });
     return true;
   } catch (error) {
     logger.error('Error deleting response:', error);
     return false;
   }
-}; 
+};

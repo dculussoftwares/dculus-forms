@@ -140,10 +140,11 @@ model Form {
   isPublished       Boolean  @default(false)
   organizationId    String
   createdById       String
-  sharingScope      String   @default("PRIVATE") // PRIVATE, SPECIFIC_MEMBERS, ALL_ORG_MEMBERS
-  defaultPermission String   @default("VIEWER") // Default permission for ALL_ORG_MEMBERS scope
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  sharingScope      String    @default("PRIVATE") // PRIVATE, SPECIFIC_MEMBERS, ALL_ORG_MEMBERS
+  defaultPermission String    @default("VIEWER") // Default permission for ALL_ORG_MEMBERS scope
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
 
   // Relations
   organization        Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -157,16 +158,18 @@ model Form {
 
   @@index([organizationId])
   @@index([organizationId, createdById])
+  @@index([deletedAt])
   @@map("form")
 }
 
 model Response {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   formId      String
   data        Json
   metadata    Json? // Generic plugin metadata storage
-  submittedAt DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  submittedAt DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
 
   form                    Form                     @relation(fields: [formId], references: [id], onDelete: Cascade)
   formSubmissionAnalytics FormSubmissionAnalytics?
@@ -174,6 +177,7 @@ model Response {
 
   @@index([formId])
   @@index([formId, submittedAt])
+  @@index([deletedAt])
   @@map("response")
 }
 
