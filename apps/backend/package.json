@@ -40,6 +40,7 @@
     "@dculus/utils": "workspace:*",
     "@hocuspocus/extension-database": "^3.2.3",
     "@hocuspocus/server": "^3.2.3",
+    "@maxmind/geoip2-node": "6.1.0",
     "@prisma/client": "6.13.0",
     "@sentry/node": "10.25.0",
     "@sentry/profiling-node": "10.25.0",

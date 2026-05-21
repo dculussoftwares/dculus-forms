@@ -20,6 +20,7 @@ import { formRepository, createFormRepository } from '../repositories/index.js';
 import { withPrisma } from '../repositories/baseRepository.js';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
+import { audit } from '../lib/audit.js';
 
 export interface Form extends Omit<IForm, 'formSchema'> {
   formSchema: any; // JsonValue from Prisma
@@ -339,6 +340,7 @@ export const deleteForm = async (id: string, userId?: string): Promise<boolean> 
     }
 
     await formRepository.deleteForm(id); // Soft delete: sets deletedAt timestamp
+    await audit('form.deleted', 'Form', id, userId);
     return true;
   } catch (error) {
     logger.error('Error deleting form:', error);

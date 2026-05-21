@@ -2,6 +2,8 @@ import { UAParser } from 'ua-parser-js';
 import countries from 'i18n-iso-countries';
 import * as ct from 'countries-and-timezones';
 import { createRequire } from 'module';
+import { existsSync } from 'fs';
+import { Reader } from '@maxmind/geoip2-node';
 import { logger } from '../lib/logger.js';
 import { prisma } from '../lib/prisma.js';
 import {
@@ -88,13 +90,39 @@ const parseUserAgent = (userAgent: string): UserAgentInfo => {
   }
 };
 
+// MaxMind GeoIP2 reader — lazily initialised on first call
+let geoReader: Awaited<ReturnType<typeof Reader.open>> | null = null;
+let geoReaderInitAttempted = false;
+
+const initGeoReader = async (): Promise<void> => {
+  if (geoReaderInitAttempted) return;
+  geoReaderInitAttempted = true;
+
+  const dbPath = process.env.MAXMIND_DB_PATH;
+  if (!dbPath || !existsSync(dbPath)) return;
+
+  try {
+    geoReader = await Reader.open(dbPath);
+    logger.info('MaxMind GeoIP2 database loaded:', dbPath);
+  } catch (err) {
+    logger.warn('MaxMind GeoIP2 init failed (geolocation will be empty):', err);
+  }
+};
+
 export const analyticsInternals = {
-  getGeolocationFromIP: async (_ip: string): Promise<GeolocationResult> => {
+  getGeolocationFromIP: async (ip: string): Promise<GeolocationResult> => {
+    if (!geoReaderInitAttempted) await initGeoReader();
+
+    if (!geoReader || !ip || ip === '::1' || ip === '127.0.0.1') return {};
+
     try {
-      // TODO: Implement MaxMind GeoIP2 when database is available
-      return {};
-    } catch (error) {
-      logger.error('Error getting geolocation from IP:', error);
+      const city = await geoReader.city(ip);
+      return {
+        countryCode: city.country?.isoCode ?? undefined,
+        regionCode: city.subdivisions?.[0]?.isoCode ?? undefined,
+        city: city.city?.names?.en ?? undefined,
+      };
+    } catch {
       return {};
     }
   }
@@ -512,7 +540,12 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
 
 // Initialize service (log startup)
 const initializeService = () => {
-  logger.info('GeoIP service initialized (fallback mode)');
+  const dbPath = process.env.MAXMIND_DB_PATH;
+  if (dbPath && existsSync(dbPath)) {
+    logger.info('GeoIP service: MaxMind database path configured, will load on first request');
+  } else {
+    logger.info('GeoIP service initialized (fallback mode — set MAXMIND_DB_PATH to enable IP geolocation)');
+  }
 };
 
 /**
