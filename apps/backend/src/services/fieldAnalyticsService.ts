@@ -850,24 +850,20 @@ export const processEmailFieldAnalytics = (
 };
 
 /**
- * Main function to get field analytics for any field type
+ * Private helper: compute analytics for a single field from a pre-fetched response set.
+ * Used by getAllFieldsAnalytics to avoid re-querying the DB for every field (N+1 fix).
  */
-export const getFieldAnalytics = async (
-  formId: string,
+const getFieldAnalyticsFromResponses = (
+  responses: Array<{ responseId: string; data: Record<string, any>; submittedAt: Date }>,
   fieldId: string,
   fieldType: FieldType,
   fieldLabel: string
-): Promise<FieldAnalytics> => {
-  // Get all form responses
-  const responses = await getFormResponses(formId);
+): FieldAnalytics => {
   const totalFormResponses = responses.length;
-
-  // Extract field values
   const fieldResponses = extractFieldValues(responses, fieldId);
 
   let result: FieldAnalytics;
 
-  // Process based on field type
   switch (fieldType) {
     case FieldType.TEXT_INPUT_FIELD:
     case FieldType.TEXT_AREA_FIELD:
@@ -906,6 +902,23 @@ export const getFieldAnalytics = async (
   }
 
   return result;
+};
+
+/**
+ * Main function to get field analytics for any field type.
+ * Fetches form responses from the DB once and delegates to getFieldAnalyticsFromResponses.
+ * Use getAllFieldsAnalytics when computing analytics for many fields — it fetches responses
+ * a single time for the entire form, avoiding the N+1 query problem.
+ */
+export const getFieldAnalytics = async (
+  formId: string,
+  fieldId: string,
+  fieldType: FieldType,
+  fieldLabel: string
+): Promise<FieldAnalytics> => {
+  // Get all form responses (single DB fetch)
+  const responses = await getFormResponses(formId);
+  return getFieldAnalyticsFromResponses(responses, fieldId, fieldType, fieldLabel);
 };
 
 /**
@@ -972,19 +985,14 @@ export const getAllFieldsAnalytics = async (formId: string): Promise<{
     });
   }
 
-  // Process fields in batches to avoid overwhelming the system
-  const batchSize = 5;
-  const fieldAnalytics: FieldAnalytics[] = [];
-
-  for (let i = 0; i < allFields.length; i += batchSize) {
-    const batch = allFields.slice(i, i + batchSize);
-    const batchResults = await Promise.all(
-      batch.map(field =>
-        getFieldAnalytics(formId, field.id, field.type, field.label)
-      )
-    );
-    fieldAnalytics.push(...batchResults);
-  }
+  // P1-12: Process all fields using the already-fetched responses.
+  // Previously each getFieldAnalytics call re-fetched responses from the DB
+  // (N+1: 20 fields × 10k responses = 20 full table scans). Now we pass the
+  // pre-loaded response set to getFieldAnalyticsFromResponses, reducing it to
+  // a single DB round-trip regardless of field count.
+  const fieldAnalytics: FieldAnalytics[] = allFields.map(field =>
+    getFieldAnalyticsFromResponses(responses, field.id, field.type, field.label)
+  );
 
   return {
     formId,

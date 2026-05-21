@@ -156,6 +156,7 @@ model Form {
   plugins             FormPlugin[]
 
   @@index([organizationId])
+  @@index([organizationId, createdById])
   @@map("form")
 }
 
@@ -267,6 +268,7 @@ model FormViewAnalytics {
   form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
 
   @@index([formId, viewedAt])
+  @@index([formId, sessionId])
   @@map("form_view_analytics")
 }
 
@@ -295,6 +297,7 @@ model FormSubmissionAnalytics {
   response Response @relation(fields: [responseId], references: [id], onDelete: Cascade)
 
   @@index([formId, submittedAt])
+  @@index([formId, sessionId])
   @@map("form_submission_analytics")
 }
 

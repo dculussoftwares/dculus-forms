@@ -195,8 +195,11 @@ const generateCsvContent = (data: UnifiedExportData): string => {
     headers.push(escapeCsvFieldName(fieldInfo[fieldId]));
   });
 
-  // Start CSV content with header row
-  let csvContent = headers.join(',') + '\n';
+  // P1-11: Accumulate rows in an array and join once at the end.
+  // The previous pattern used string concatenation inside a loop which
+  // caused O(n²) memory allocation behaviour at large response counts
+  // because every `csvContent += ...` copies the entire accumulated string.
+  const rows: string[] = [headers.join(',')];
 
   // Add data rows
   responses.forEach((response) => {
@@ -258,7 +261,7 @@ const generateCsvContent = (data: UnifiedExportData): string => {
       row.push(formatFieldValue(value, fieldType, 'csv'));
     });
 
-    csvContent += row.join(',') + '\n';
+    rows.push(row.join(','));
   });
 
   // Calculate plugin column count for logging
@@ -270,7 +273,7 @@ const generateCsvContent = (data: UnifiedExportData): string => {
   logger.info(
     `Unified Export - Generated CSV with ${responses.length} rows and ${headers.length} columns (${pluginColumnCount} plugin columns)`
   );
-  return csvContent;
+  return rows.join('\n');
 };
 
 // Generate Excel content using exceljs

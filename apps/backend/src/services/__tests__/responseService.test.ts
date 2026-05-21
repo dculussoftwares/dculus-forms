@@ -56,7 +56,7 @@ describe('Response Service', () => {
   });
 
   describe('getAllResponses', () => {
-    it('should return all responses for an organization', async () => {
+    it('should return all responses for an organization (capped at 10k)', async () => {
       const mockResponses = [mockResponse, { ...mockResponse, id: 'response-456' }];
       vi.mocked(responseRepository.findMany).mockResolvedValue(mockResponses as any);
 
@@ -65,13 +65,14 @@ describe('Response Service', () => {
       expect(responseRepository.findMany).toHaveBeenCalledWith({
         where: { form: { organizationId: 'org-123' } },
         orderBy: { submittedAt: 'desc' },
+        take: 10_000,
         include: { form: true },
       });
       expect(result).toHaveLength(2);
       expect(result[0].id).toBe('response-123');
     });
 
-    it('should return all responses when no organizationId provided', async () => {
+    it('should return all responses when no organizationId provided (capped at 10k)', async () => {
       vi.mocked(responseRepository.findMany).mockResolvedValue([mockResponse] as any);
 
       const result = await getAllResponses();
@@ -79,6 +80,7 @@ describe('Response Service', () => {
       expect(responseRepository.findMany).toHaveBeenCalledWith({
         where: {},
         orderBy: { submittedAt: 'desc' },
+        take: 10_000,
         include: { form: true },
       });
       expect(result).toHaveLength(1);
