@@ -10,7 +10,17 @@ import { prisma } from '../lib/prisma.js';
 import type { Prisma } from '@prisma/client';
 
 
+/**
+ * Fetch recent responses across an organization (or all orgs when omitted).
+ *
+ * P1-13: Hard-capped at 10,000 rows to prevent full-table scans at high volume.
+ * The cap is intentional — this endpoint is used for org-wide response listing
+ * in the UI, which is inherently paginated. For full exports use
+ * getAllResponsesByFormId; for paginated access use getResponsesByFormId.
+ */
 export const getAllResponses = async (organizationId?: string): Promise<FormResponse[]> => {
+  const HARD_CAP = 10_000;
+
   const responses = await responseRepository.findMany({
     where: organizationId ? {
       form: {
@@ -18,6 +28,7 @@ export const getAllResponses = async (organizationId?: string): Promise<FormResp
       }
     } : {},
     orderBy: { submittedAt: 'desc' },
+    take: HARD_CAP,
     include: {
       form: true,
     },
@@ -244,6 +255,16 @@ export async function getResponsesByFormId(
   };
 }
 
+/**
+ * Fetch every response for a specific form.
+ * Used by the export pipeline (unifiedExportService) and field analytics.
+ *
+ * P1-11 / P1-13: The export resolver enforces a 50,000-row cap before calling
+ * this function. The function itself imposes no additional DB-level limit so
+ * that the resolver's post-filter check (applied after optional filter
+ * narrowing) can still work correctly. If you add a new call site, make sure
+ * to guard against loading unbounded data into memory.
+ */
 export const getAllResponsesByFormId = async (formId: string): Promise<FormResponse[]> => {
   try {
     logger.info(`Fetching ALL responses for form: ${formId}`);
