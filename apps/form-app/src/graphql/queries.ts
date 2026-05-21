@@ -159,20 +159,6 @@ export const GET_FORM_RESPONSES = gql`
   }
 `;
 
-export const GET_ALL_FORM_RESPONSES = gql`
-  query GetAllFormResponses($formId: ID!) {
-    responsesByForm(formId: $formId, page: 1, limit: 10000, sortBy: "submittedAt", sortOrder: "desc") {
-      data {
-        id
-        formId
-        data
-        submittedAt
-      }
-      total
-    }
-  }
-`;
-
 export const GENERATE_FORM_RESPONSE_REPORT = gql`
   mutation GenerateFormResponseReport($formId: ID!, $format: ExportFormat!, $filters: [ResponseFilterInput!], $filterLogic: FilterLogic) {
     generateFormResponseReport(formId: $formId, format: $format, filters: $filters, filterLogic: $filterLogic) {

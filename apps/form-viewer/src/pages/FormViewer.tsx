@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
-import { Button, FormRenderer } from '@dculus/ui';
+import { Button, FormRenderer, useFormResponseStore } from '@dculus/ui';
 import { deserializeFormSchema, FieldType } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { GET_FORM_BY_SHORT_URL, SUBMIT_RESPONSE } from '../graphql/queries';
@@ -350,6 +350,12 @@ const FormViewer: React.FC = () => {
     console.warn('No CDN endpoint found. Images may not load properly.');
   }
 
+  const handleSubmitAnother = () => {
+    useFormResponseStore.getState().clearAllResponses();
+    setSubmissionState('idle');
+    setThankYouData(null);
+  };
+
   // Show success message after submission
   if (submissionState === 'success' && thankYouData) {
     return (
@@ -361,10 +367,7 @@ const FormViewer: React.FC = () => {
           />
           <div className="text-center mt-6">
             <Button
-              onClick={() => {
-                setSubmissionState('idle');
-                setThankYouData(null);
-              }}
+              onClick={handleSubmitAnother}
               className="px-4 py-2"
             >
               Submit Another Response
