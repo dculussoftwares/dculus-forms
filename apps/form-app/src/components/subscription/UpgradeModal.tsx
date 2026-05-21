@@ -106,6 +106,19 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
     return (amount / 12).toFixed(2);
   };
 
+  const safeRedirect = (url: string) => {
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'https:' || !parsed.hostname.endsWith('chargebee.com')) {
+        toastError(t('messages.checkoutError.title'), 'Invalid redirect URL');
+        return;
+      }
+      window.location.href = url;
+    } catch {
+      toastError(t('messages.checkoutError.title'), 'Malformed redirect URL');
+    }
+  };
+
   const handleUpgrade = async (planId: string) => {
     const price = getPriceForPlan(planId);
     if (!price) {
@@ -119,9 +132,8 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
       });
 
       if (data?.createCheckoutSession?.url) {
-        // Redirect to Chargebee checkout
-        window.location.href = data.createCheckoutSession.url;
         toastSuccess(t('messages.checkoutSuccess.title'), t('messages.checkoutSuccess.message'));
+        safeRedirect(data.createCheckoutSession.url);
       }
     } catch (error: any) {
       toastError(t('messages.checkoutError.title'), error.message);

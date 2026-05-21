@@ -5,6 +5,7 @@ import { GET_FORM_BY_ID } from '../graphql/queries';
 import { DELETE_FORM, UPDATE_FORM } from '../graphql/mutations';
 import { useAppConfig } from '@/hooks';
 import { getFormViewerUrl } from '@/lib/config';
+import { toastError } from '@dculus/ui';
 
 interface DashboardStats {
   totalResponses: number;
@@ -90,10 +91,12 @@ export const useFormDashboard = (formId: string | undefined) => {
       });
     },
     onCompleted: () => {
+      setShowDeleteDialog(false);
       navigate('/dashboard');
     },
     onError: (error) => {
-      console.error('Error deleting form:', error);
+      toastError('Failed to delete form', error.message);
+      // Keep dialog open so the user can retry or cancel
     },
   });
 
@@ -151,8 +154,8 @@ export const useFormDashboard = (formId: string | undefined) => {
 
   const handleDelete = () => {
     if (!formId) return;
+    // Do NOT close the dialog here — onCompleted/onError handle it
     deleteForm({ variables: { id: formId } });
-    setShowDeleteDialog(false);
   };
 
   const handlePublish = () => {

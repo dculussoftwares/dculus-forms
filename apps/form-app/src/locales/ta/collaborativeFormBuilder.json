@@ -10,5 +10,9 @@
     "loadingFormDataDescription": "உங்கள் படிவ பில்டர் இடைமுகத்தை அமைத்தல்.",
     "connectingCollaboration": "கூட்டுப்பணியுடன் இணைகிறது...",
     "connectingCollaborationDescription": "நிகழ்நேர ஒத்துழைப்பு இணைப்பை நிறுவுதல்."
+  },
+  "collaboration": {
+    "syncLostBanner": "நிகழ்நேர ஒத்திசைவு தொலைந்தது. மீண்டும் இணைக்க பக்கத்தை மீண்டும் ஏற்றவும்.",
+    "syncLostReload": "மீண்டும் ஏற்று"
   }
 }

@@ -58,7 +58,8 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
     set({ isConnected });
 
     if (isConnected) {
-      // Successful (re)connection — reset backoff counter
+      // Successful (re)connection — reset backoff counter and failure flag
+      set({ isCollaborationFailed: false });
       reconnectAttempts = 0;
       if (reconnectTimer) {
         clearTimeout(reconnectTimer);
@@ -69,7 +70,13 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
 
     // Disconnected — attempt to reconnect unless we've exceeded the limit
     const { formId } = get() as any;
-    if (!formId || reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) return;
+    if (!formId) return;
+
+    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+      // All attempts exhausted — notify the user
+      set({ isCollaborationFailed: true });
+      return;
+    }
 
     const delay = BASE_RECONNECT_DELAY_MS * 2 ** reconnectAttempts;
     reconnectAttempts += 1;
@@ -100,6 +107,7 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
     // Initial state
     isConnected: false,
     isLoading: true,
+    isCollaborationFailed: false,
     formId: null,
     ydoc: null,
     provider: null,
@@ -111,7 +119,6 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
      * Creates a new CollaborationManager instance and connects to the YJS document.
      */
     initializeCollaboration: async (formId: string) => {
-      console.log('🔧 Initializing collaboration for form:', formId);
 
       if (!collaborationManager) {
         collaborationManager = new CollaborationManager(
@@ -161,6 +168,7 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
         set({
           isConnected: false,
           isLoading: false,
+          isCollaborationFailed: false,
           formId: null,
           ydoc: null,
           provider: null,

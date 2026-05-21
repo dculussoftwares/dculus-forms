@@ -10,5 +10,9 @@
     "loadingFormDataDescription": "Setting up your form builder interface.",
     "connectingCollaboration": "Connecting to collaboration...",
     "connectingCollaborationDescription": "Establishing real-time collaboration connection."
+  },
+  "collaboration": {
+    "syncLostBanner": "Real-time sync lost. Please reload to reconnect.",
+    "syncLostReload": "Reload"
   }
 }

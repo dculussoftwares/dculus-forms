@@ -481,7 +481,7 @@ export const useFieldAnalytics = (formId: string, fieldId: string) => {
     variables: { formId, fieldId },
     skip: !formId || !fieldId,
     errorPolicy: 'all',
-    fetchPolicy: 'cache-first', // Enable Apollo Client caching
+    fetchPolicy: 'cache-and-network', // Always fetch fresh data; cache serves stale data immediately
   });
 
   // Performance monitoring
@@ -524,7 +524,7 @@ export const useAllFieldsAnalytics = (formId: string) => {
     variables: { formId },
     skip: !formId,
     errorPolicy: 'all',
-    fetchPolicy: 'cache-first', // Enable Apollo Client caching
+    fetchPolicy: 'cache-and-network', // Always fetch fresh data; cache serves stale data immediately
   });
 
   // Performance monitoring

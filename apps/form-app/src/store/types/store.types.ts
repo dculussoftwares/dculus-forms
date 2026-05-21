@@ -18,6 +18,7 @@ export interface CollaborationSlice {
   // Connection state
   isConnected: boolean;
   isLoading: boolean;
+  isCollaborationFailed: boolean;
   formId: string | null;
 
   // YJS internals

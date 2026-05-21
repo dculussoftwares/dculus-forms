@@ -20,6 +20,7 @@ import { resolvers } from './graphql/resolvers.js';
 import { healthRouter } from './routes/health.js';
 import { uploadRouter } from './routes/upload.js';
 import { chargebeeWebhookRouter } from './routes/chargebee-webhooks.js';
+import { pixabayRouter } from './routes/pixabay.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { edgeGeolocationMiddleware } from './middleware/edge-geolocation.js';
 import { createBetterAuthContext } from './middleware/better-auth-middleware.js';
@@ -187,6 +188,7 @@ app.use(edgeGeolocationMiddleware);
 app.use('/health', healthRouter);
 app.use('/', uploadLimiter, uploadRouter);
 app.use('/api', chargebeeWebhookRouter);
+app.use('/api', pixabayRouter);
 
 // Add favicon route to prevent 404 errors
 app.get('/favicon.ico', (req, res) => {

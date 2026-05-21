@@ -15,11 +15,24 @@ export const SubscriptionDashboard = () => {
 
   const subscription = data?.activeOrganization?.subscription;
 
+  const safeOpen = (url: string) => {
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'https:' || !parsed.hostname.endsWith('chargebee.com')) {
+        toastError(t('toast.failedToOpenPortal'), 'Invalid redirect URL');
+        return;
+      }
+      window.open(url, '_blank');
+    } catch {
+      toastError(t('toast.failedToOpenPortal'), 'Malformed redirect URL');
+    }
+  };
+
   const handleManageSubscription = async () => {
     try {
       const { data } = await createPortalSession();
       if (data?.createPortalSession?.url) {
-        window.open(data.createPortalSession.url, '_blank');
+        safeOpen(data.createPortalSession.url);
         toastSuccess(t('toast.openingPortal'), t('toast.manageInNewTab'));
       }
     } catch (error: any) {
