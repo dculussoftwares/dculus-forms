@@ -1,5 +1,6 @@
 import { Hocuspocus } from '@hocuspocus/server';
 import { Database } from '@hocuspocus/extension-database';
+import * as Y from 'yjs';
 import {
   extractFormStatsFromYDoc,
   updateFormMetadata,
@@ -105,16 +106,41 @@ export const createHocuspocusServer = () => {
             return null;
           }
         },
-        store: async ({ documentName, state }) => {
+        store: async ({ documentName, state, document: ydoc }) => {
           try {
-            logger.info(
-              `[Hocuspocus] Storing document ${documentName} with state length: ${state.length}`
-            );
+            // P4-03: Compact the Y.js document before persisting.
+            // Y.encodeStateAsUpdate captures the full current state in a single
+            // compact update, discarding the accumulated delta chain. This prevents
+            // unbounded growth of the stored binary blob over time.
+            let stateToStore: Uint8Array;
+            if (ydoc) {
+              try {
+                stateToStore = Y.encodeStateAsUpdate(ydoc);
+                logger.info(
+                  `[Hocuspocus] Storing document ${documentName}: original=${state.length}B compacted=${stateToStore.length}B`
+                );
+              } catch (compactError) {
+                // Fall back to raw state if compaction fails for any reason
+                logger.warn(
+                  `[Hocuspocus] Compaction failed for ${documentName}, falling back to raw state:`,
+                  compactError
+                );
+                stateToStore = state;
+                logger.info(
+                  `[Hocuspocus] Storing document ${documentName} with state length: ${state.length}`
+                );
+              }
+            } else {
+              // No ydoc available (e.g. in tests) — store raw state
+              stateToStore = state;
+              logger.info(
+                `[Hocuspocus] Storing document ${documentName} with state length: ${state.length}`
+              );
+            }
 
-            // Try to find existing document first
             await collaborativeDocumentRepository.saveDocumentState(
               documentName,
-              Buffer.from(state),
+              Buffer.from(stateToStore),
               (name) => `collab-${name}`
             );
 
@@ -333,8 +359,7 @@ export const getFormSchemaFromHocuspocus = async (
       return null;
     }
 
-    // Import YJS and reconstruct the document
-    const Y = await import('yjs');
+    // Reconstruct the document from stored state
     const doc = new Y.Doc();
 
     // Apply the stored state to the document
@@ -544,7 +569,6 @@ export const initializeHocuspocusDocument = async (
     );
 
     // Create temporary YJS document with form schema
-    const Y = await import('yjs');
     const tempDoc = new Y.Doc();
     const formSchemaMap = tempDoc.getMap('formSchema');
 

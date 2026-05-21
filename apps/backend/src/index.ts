@@ -50,19 +50,21 @@ app.use(
           'https://embeddable-sandbox.cdn.apollographql.com',
           'https://sandbox.embed.apollographql.com',
         ],
+        // P4-09: unsafe-inline removed from script directives in production.
+        // Apollo Studio (which requires it) is disabled in production anyway.
+        // Style directives intentionally retain unsafe-inline — removing it
+        // requires a nonce-based approach which is out of scope here.
         'script-src': [
           "'self'",
-          "'unsafe-inline'",
+          ...(appConfig.isProduction ? [] : ["'unsafe-inline'", 'https://studio.apollographql.com']),
           'https://apollo-server-landing-page.cdn.apollographql.com',
-          'https://studio.apollographql.com',
           'https://embeddable-sandbox.cdn.apollographql.com',
           'https://sandbox.embed.apollographql.com',
         ],
         'script-src-elem': [
           "'self'",
-          "'unsafe-inline'",
+          ...(appConfig.isProduction ? [] : ["'unsafe-inline'", 'https://studio.apollographql.com']),
           'https://apollo-server-landing-page.cdn.apollographql.com',
-          'https://studio.apollographql.com',
           'https://embeddable-sandbox.cdn.apollographql.com',
           'https://sandbox.embed.apollographql.com',
         ],
