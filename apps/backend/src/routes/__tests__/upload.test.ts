@@ -6,6 +6,7 @@ import { uploadFile } from '../../services/fileUploadService.js';
 import { prisma } from '../../lib/prisma.js';
 import { logger } from '../../lib/logger.js';
 import { auth } from '../../lib/better-auth.js';
+import * as formSharing from '../../graphql/resolvers/formSharing.js';
 
 // Mock dependencies
 vi.mock('../../services/fileUploadService.js');
@@ -42,6 +43,15 @@ vi.mock('../../lib/logger.js', () => ({
     warn: vi.fn(),
   },
 }));
+vi.mock('../../graphql/resolvers/formSharing.js', () => ({
+  checkFormAccess: vi.fn(),
+  PermissionLevel: {
+    OWNER: 'OWNER',
+    EDITOR: 'EDITOR',
+    VIEWER: 'VIEWER',
+    NO_ACCESS: 'NO_ACCESS',
+  },
+}));
 
 const mockUser = { id: 'user-123', email: 'test@example.com', role: 'user' };
 const mockForm = { id: 'form-123', createdById: 'user-123', organizationId: 'org-123' };
@@ -60,6 +70,8 @@ describe('Upload Routes', () => {
     vi.mocked(prisma.form.findUnique).mockResolvedValue(mockForm as any);
     vi.mocked(prisma.formPermission.findUnique).mockResolvedValue(null);
     vi.mocked(prisma.member.findFirst).mockResolvedValue({ role: 'owner' } as any);
+    // Default: checkFormAccess grants editor access for FormBackground uploads
+    vi.mocked(formSharing.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'EDITOR', form: mockForm } as any);
   });
 
   afterEach(() => {

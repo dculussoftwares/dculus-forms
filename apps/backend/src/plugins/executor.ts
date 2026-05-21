@@ -3,6 +3,7 @@ import { getPluginHandler } from './registry.js';
 import { createPluginContext } from './context.js';
 import type { PluginEvent, PluginConfig } from './types.js';
 import { generateId } from '@dculus/utils';
+import * as Sentry from '@sentry/node';
 
 /**
  * Execute a single plugin
@@ -73,6 +74,7 @@ export const executePlugin = async (
 
     return { success: true };
   } catch (error: any) {
+    Sentry.captureException(error);
     context.logger.error(`Plugin execution failed: ${pluginId}`, error);
 
     // Record failed delivery
@@ -156,6 +158,7 @@ export const executePluginsForForm = async (
 
     return { total: plugins.length, succeeded, failed };
   } catch (error: any) {
+    Sentry.captureException(error);
     context.logger.error('Error executing plugins for form', error);
     throw error;
   }

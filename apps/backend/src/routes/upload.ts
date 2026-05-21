@@ -12,6 +12,7 @@ import { randomUUID } from 'crypto';
 import { logger } from '../lib/logger.js';
 import { auth } from '../lib/better-auth.js';
 import { fromNodeHeaders } from 'better-auth/node';
+import { checkFormAccess, PermissionLevel } from '../graphql/resolvers/formSharing.js';
 
 // Allowed upload type values — prevents arbitrary path injection via type param
 const ALLOWED_UPLOAD_TYPES = new Set([
@@ -84,31 +85,9 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       if (!callerUser) {
         return res.status(401).json({ error: 'Authentication required', code: 'UNAUTHENTICATED' });
       }
-      const bgForm = await prisma.form.findUnique({
-        where: { id: formId },
-        select: { id: true, createdById: true, organizationId: true },
-      });
-      if (!bgForm) {
-        return res.status(404).json({ error: 'Form not found', code: 'NOT_FOUND' });
-      }
-      const isOwner = bgForm.createdById === callerUser.id;
-      if (!isOwner) {
-        const explicitPermission = await prisma.formPermission.findUnique({
-          where: { formId_userId: { formId: bgForm.id, userId: callerUser.id } },
-          select: { permission: true },
-        });
-        const hasEditorPermission =
-          explicitPermission?.permission === 'EDITOR' ||
-          explicitPermission?.permission === 'OWNER';
-        const orgMembership = !hasEditorPermission
-          ? await prisma.member.findFirst({
-              where: { organizationId: bgForm.organizationId, userId: callerUser.id },
-              select: { role: true },
-            })
-          : null;
-        if (!hasEditorPermission && orgMembership?.role !== 'owner') {
-          return res.status(403).json({ error: 'EDITOR access required', code: 'FORBIDDEN' });
-        }
+      const accessCheck = await checkFormAccess(callerUser.id, formId, PermissionLevel.EDITOR);
+      if (!accessCheck.hasAccess) {
+        return res.status(403).json({ error: 'EDITOR access required for form background uploads', code: 'FORBIDDEN' });
       }
     } else if (type === 'UserAvatar') {
       if (!callerUser) {

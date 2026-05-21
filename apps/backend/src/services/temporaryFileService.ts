@@ -3,6 +3,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 import { s3Config } from '../lib/env.js';
 import { logger } from '../lib/logger.js';
+import * as Sentry from '@sentry/node';
 
 // Initialize S3 client for Cloudflare R2
 const s3Client = new S3Client({
@@ -145,6 +146,7 @@ export async function cleanupExpiredFiles(): Promise<{ deleted: number; errors: 
 
     logger.info(`Temp-file cleanup complete: ${deleted} deleted, ${errors} errors`);
   } catch (error) {
+    Sentry.captureException(error);
     logger.error('Error during temp-file cleanup:', error);
   }
 

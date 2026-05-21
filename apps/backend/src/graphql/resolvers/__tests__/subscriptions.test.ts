@@ -124,19 +124,22 @@ describe('Subscription Resolvers', () => {
       ];
 
       vi.mocked(chargebeeService.getAvailablePlans).mockResolvedValue(mockPlans);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth as any);
 
-      const result = await subscriptionResolvers.Query.availablePlans();
+      const result = await subscriptionResolvers.Query.availablePlans({}, {}, mockContext);
 
       expect(result).toEqual(mockPlans);
       expect(chargebeeService.getAvailablePlans).toHaveBeenCalledTimes(1);
+      expect(betterAuthMiddleware.requireAuth).toHaveBeenCalledWith(mockContext.auth);
     });
 
     it('should handle errors from Chargebee service', async () => {
       vi.mocked(chargebeeService.getAvailablePlans).mockRejectedValue(
         new Error('Chargebee API error')
       );
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth as any);
 
-      await expect(subscriptionResolvers.Query.availablePlans()).rejects.toThrow(
+      await expect(subscriptionResolvers.Query.availablePlans({}, {}, mockContext)).rejects.toThrow(
         'Chargebee API error'
       );
     });
