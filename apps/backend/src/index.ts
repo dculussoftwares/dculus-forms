@@ -135,9 +135,11 @@ const uploadLimiter = rateLimit({
   message: { error: 'Too many upload requests, please try again later' },
 });
 
+// 2000/min allows a full E2E suite (70+ scenarios × ~10 mutations each = ~700 requests
+// in a burst) without hitting the limiter, while still blocking obvious DoS floods.
 const graphqlLimiter = rateLimit({
   windowMs: 60_000,
-  max: isTestEnv ? 10_000 : 300,
+  max: isTestEnv ? 10_000 : 2000,
   standardHeaders: true,
   legacyHeaders: false,
   skip: () => isTestEnv,
