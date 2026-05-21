@@ -17,7 +17,9 @@
     "endDatePlaceholder": "முடிவுத் தேதியைத் தேர்ந்தெடுக்கவும்",
     "selectedRange": "தேர்ந்தெடுக்கப்பட்ட வரம்பு: <strong>{{days}} நாட்கள்</strong>",
     "applyButton": "வரம்பைப் பயன்படுத்துங்கள்",
-    "cancelButton": "ரத்து செய்"
+    "cancelButton": "ரத்து செய்",
+    "selectedRangePrefix": "தேர்ந்தெடுக்கப்பட்ட வரம்பு:",
+    "selectedRangeDays": "நாட்கள்"
   },
   "validation": {
     "selectBothDates": "தொடக்க மற்றும் இறுதி தேதிகள் இரண்டையும் தேர்ந்தெடுக்கவும்",

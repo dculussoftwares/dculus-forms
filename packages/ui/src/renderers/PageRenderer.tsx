@@ -40,6 +40,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
   const [pageValidationStates, setPageValidationStates] = useState<Record<string, boolean>>({});
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [pageAttemptCounts, setPageAttemptCounts] = useState<Record<string, number>>({});
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const currentPageFormRef = useRef<{
     submit: () => void;
@@ -95,8 +96,9 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
   };
 
   const goToNextPage = useCallback(async () => {
-    if (!currentPage) return;
+    if (!currentPage || isNavigating) return;
 
+    setIsNavigating(true);
     try {
       setValidationErrors([]);
 
@@ -136,8 +138,10 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
     } catch (error) {
       console.error('Navigation error:', error);
       setValidationErrors(['An error occurred during validation']);
+    } finally {
+      setIsNavigating(false);
     }
-  }, [currentPage, currentPageIndex, pages.length, enableStrictValidation, onValidationError, handleFormComplete, pageAttemptCounts]);
+  }, [currentPage, currentPageIndex, pages.length, isNavigating, enableStrictValidation, onValidationError, handleFormComplete, pageAttemptCounts]);
 
   const goToPrevPage = useCallback(async () => {
     if (!currentPage || currentPageIndex <= 0) return;
@@ -303,7 +307,8 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
                   <button
                     data-testid="viewer-submit-button"
                     onClick={goToNextPage}
-                    className="flex items-center gap-2.5 px-8 py-3.5 text-sm font-semibold text-white bg-primary hover:bg-primary/90 rounded-full shadow-md hover:shadow-lg transition-all duration-200 active:scale-[0.98]"
+                    disabled={isNavigating}
+                    className="flex items-center gap-2.5 px-8 py-3.5 text-sm font-semibold text-white bg-primary hover:bg-primary/90 rounded-full shadow-md hover:shadow-lg transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {contextMode === RendererMode.EDIT ? 'Update Response' : 'Submit'}
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -314,7 +319,8 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
                   <button
                     data-testid="viewer-next-button"
                     onClick={goToNextPage}
-                    className="flex items-center gap-2.5 px-8 py-3.5 text-sm font-semibold text-white bg-primary hover:bg-primary/90 rounded-full shadow-md hover:shadow-lg transition-all duration-200 active:scale-[0.98]"
+                    disabled={isNavigating}
+                    className="flex items-center gap-2.5 px-8 py-3.5 text-sm font-semibold text-white bg-primary hover:bg-primary/90 rounded-full shadow-md hover:shadow-lg transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     OK
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

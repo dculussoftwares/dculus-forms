@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { RichTextFormField } from '@dculus/types';
 import { Settings } from 'lucide-react';
 import { useFieldEditor } from '../../../hooks';
@@ -17,41 +18,6 @@ interface RichTextFieldSettingsProps {
   onUpdate?: (updates: Record<string, any>) => void;
   onFieldSwitch?: () => void;
 }
-
-// Helper function to sanitize HTML content using DOMParser for safe parsing
-const sanitizeHtmlContent = (content: string): string => {
-  if (!content) return '';
-
-  // Use DOMParser for safe HTML parsing instead of regex
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(content, 'text/html');
-
-  // Remove all script elements
-  const scripts = doc.querySelectorAll('script');
-  scripts.forEach((script) => script.remove());
-
-  // Remove all elements with dangerous event handlers
-  const allElements = doc.querySelectorAll('*');
-  allElements.forEach((element) => {
-    // Get all attributes
-    const attributeNames = element.getAttributeNames();
-    attributeNames.forEach((attrName) => {
-      const lowerAttr = attrName.toLowerCase();
-      // Remove event handlers (on*)
-      if (lowerAttr.startsWith('on')) {
-        element.removeAttribute(attrName);
-      }
-      // Remove javascript: URIs from href/src
-      const attrValue = element.getAttribute(attrName);
-      if (attrValue && /^\s*javascript:/i.test(attrValue)) {
-        element.removeAttribute(attrName);
-      }
-    });
-  });
-
-  // Return sanitized HTML from body
-  return doc.body.innerHTML.trim();
-};
 
 /**
  * Specialized settings component for rich text fields
@@ -79,7 +45,7 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
     onSave: async (updates) => {
       // Sanitize content before saving
       if (updates.content) {
-        updates.content = sanitizeHtmlContent(updates.content);
+        updates.content = DOMPurify.sanitize(updates.content);
       }
       if (onUpdate) {
         await onUpdate(updates);

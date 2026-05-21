@@ -4,6 +4,12 @@ import { getApiBaseUrl } from './config';
 
 const baseUrl = getApiBaseUrl();
 
+// Keep the bearer token in module memory instead of localStorage to reduce XSS exposure.
+// The token only needs to survive the current page session; Hocuspocus reconnects on reload.
+let _bearerToken = '';
+
+export const getBearerToken = () => _bearerToken;
+
 export const authClient = createAuthClient({
   plugins: [organizationClient(), emailOTPClient()],
   baseURL: baseUrl, // Your backend URL
@@ -12,12 +18,9 @@ export const authClient = createAuthClient({
       // console.log('Authentication successful', ctx);
       console.log("ctx.data.session?.activeOrganizationId", ctx.data.session?.activeOrganizationId);
       const authToken = ctx.response.headers.get('set-auth-token'); // get the token from the response headers
-      // Store the token securely (e.g., in localStorage)
+      // Store the token in module memory (not localStorage) to reduce XSS exposure
       if (authToken) {
-        localStorage.setItem('bearer_token', authToken);
-        // if (ctx.data?.session?.activeOrganizationId) {
-
-        // }
+        _bearerToken = authToken;
       }
       localStorage.setItem(
         'organization_id',
@@ -27,20 +30,20 @@ export const authClient = createAuthClient({
     onError: (ctx) => {
       // Clear token on authentication errors
       if (ctx.response?.status === 401) {
-        localStorage.removeItem('bearer_token');
+        _bearerToken = '';
       }
     },
     auth: {
       type: 'Bearer',
-      token: () => localStorage.getItem('bearer_token') || '', // get the token from localStorage
+      token: () => _bearerToken,
     },
   },
 });
 
 // Create a custom signOut function that clears the token
 const customSignOut = async (options?: any) => {
-  // Clear the token from localStorage
-  localStorage.removeItem('bearer_token');
+  // Clear the token from module memory
+  _bearerToken = '';
 
   // Call the original signOut function
   return authClient.signOut(options);

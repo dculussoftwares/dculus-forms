@@ -3,6 +3,7 @@ import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 import { getGraphQLUrl } from '../lib/config';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql';
+import { getBearerToken } from '../lib/auth-client';
 
 const graphqlUrl = getGraphQLUrl();
 
@@ -11,7 +12,7 @@ const httpLink = createHttpLink({
 });
 
 const authLink = setContext((_, { headers }) => {
-  const token = localStorage.getItem('bearer_token');
+  const token = getBearerToken();
 
   // If we have a token, include it in the authorization header
   if (token) {

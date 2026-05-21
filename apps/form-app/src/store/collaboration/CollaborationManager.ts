@@ -1,5 +1,6 @@
 import { HocuspocusProvider } from '@hocuspocus/provider';
 import { getWebSocketUrl } from '../../lib/config';
+import { getBearerToken } from '../../lib/auth-client';
 import {
   deserializeFormField,
   FieldType,
@@ -218,7 +219,7 @@ export class CollaborationManager {
       this.ydoc = new Y.Doc();
       const wsUrl = getWebSocketUrl();
 
-      const authToken = localStorage.getItem('bearer_token');
+      const authToken = getBearerToken();
       console.log('🔐 Initializing Hocuspocus with auth token:', !!authToken);
 
       this.provider = new HocuspocusProvider({
