@@ -45,8 +45,8 @@ export const getAllResponses = async (organizationId?: string): Promise<FormResp
 
 export const getResponseById = async (id: string): Promise<FormResponse | null> => {
   try {
-    const response = await responseRepository.findUnique({
-      where: { id },
+    const response = await responseRepository.findFirst({
+      where: { id, deletedAt: null } as any,
       include: {
         form: true,
       },

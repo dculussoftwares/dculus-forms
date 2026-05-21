@@ -17,6 +17,10 @@ export const createResponseRepository = (context?: RepositoryContext) => {
     args: Prisma.SelectSubset<T, Prisma.ResponseFindUniqueArgs>
   ) => prisma.response.findUnique(args);
 
+  const findFirst = <T extends Prisma.ResponseFindFirstArgs>(
+    args?: Prisma.SelectSubset<T, Prisma.ResponseFindFirstArgs>
+  ) => prisma.response.findFirst(args);
+
   const count = <T extends Prisma.ResponseCountArgs>(
     args?: Prisma.SelectSubset<T, Prisma.ResponseCountArgs>
   ) => prisma.response.count(args);
@@ -61,6 +65,7 @@ export const createResponseRepository = (context?: RepositoryContext) => {
   return {
     findMany,
     findUnique,
+    findFirst,
     count,
     create,
     update,
