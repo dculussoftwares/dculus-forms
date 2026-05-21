@@ -175,6 +175,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
               </span>
             )}
             <Input
+              id={inputId}
               type="text"
               placeholder={placeholder}
               defaultValue={defaultValue}
@@ -193,6 +194,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
               </span>
             )}
             <Textarea
+              id={inputId}
               placeholder={placeholder}
               defaultValue={defaultValue}
               disabled={disabled}
@@ -210,6 +212,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
               </span>
             )}
             <Input
+              id={inputId}
               type="email"
               placeholder={placeholder || 'Enter your email'}
               defaultValue={defaultValue}
@@ -229,6 +232,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
               </span>
             )}
             <Input
+              id={inputId}
               type="number"
               placeholder={placeholder || 'Enter a number'}
               defaultValue={defaultValue}
@@ -337,6 +341,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
         const dateField = field as any;
         return (
           <Input
+            id={inputId}
             type="date"
             defaultValue={defaultValue}
             min={dateField.minDate}
@@ -388,11 +393,14 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
     }
   };
 
+  // Stable input id used for Label htmlFor association (P2-18)
+  const inputId = `fp-${field.id}`;
+
   return (
     <div className="space-y-2">
       {/* Field Label */}
       <div className="flex items-center space-x-1">
-        <Label className="text-sm font-medium text-gray-900 dark:text-white">
+        <Label htmlFor={inputId} className="text-sm font-medium text-gray-900 dark:text-white">
           {fieldData.label}
           {fieldData.required && <span className="text-red-500 ml-1">*</span>}
         </Label>

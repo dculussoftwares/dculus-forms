@@ -87,6 +87,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     initializeCollaboration,
     disconnectCollaboration,
     setSelectedPage,
+    resetBuilder,
 
     addField,
     addFieldAtIndex,
@@ -208,6 +209,13 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   useEffect(() => {
     autoSelectFirstPage();
   }, [autoSelectFirstPage]);
+
+  // P2-16: Reset layout and selection state when unmounting the builder
+  useEffect(() => {
+    return () => {
+      resetBuilder();
+    };
+  }, [resetBuilder]);
 
   const renderDragOverlay = useMemo(() => {
     if (!activeId || !draggedItem) return null;
