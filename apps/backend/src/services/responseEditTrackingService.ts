@@ -9,6 +9,7 @@ import { generateId } from '@dculus/utils';
 import { responseRepository } from '../repositories/index.js';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
+import type { Prisma } from '@prisma/client';
 
 export interface FieldChange {
   fieldId: string;
@@ -287,14 +288,20 @@ export class ResponseEditTrackingService {
   }
 
   /**
-   * Records edit history with field-level changes
+   * Records edit history with field-level changes.
+   *
+   * P2-02: Accepts an optional Prisma transaction context (`tx`). When `tx` is
+   * provided the writes are executed inside the caller's transaction so the
+   * response update and the audit record always succeed or fail together. When
+   * called without `tx` the method opens its own internal transaction.
    */
   static async recordEdit(
     responseId: string,
     oldData: Record<string, any>,
     newData: Record<string, any>,
     formSchema: FormSchema,
-    editContext: EditContext
+    editContext: EditContext,
+    tx?: Prisma.TransactionClient
   ): Promise<void> {
     const changes = this.detectChanges(oldData, newData, formSchema);
 
@@ -306,9 +313,8 @@ export class ResponseEditTrackingService {
     const editHistoryId = generateId();
     const changesSummary = this.createChangesSummary(changes);
 
-    // Wrap both writes in a transaction so a partial failure leaves no orphan records
-    await prisma.$transaction(async (tx) => {
-      await tx.responseEditHistory.create({
+    const writeHistory = async (client: Prisma.TransactionClient) => {
+      await client.responseEditHistory.create({
         data: {
           id: editHistoryId,
           responseId,
@@ -324,7 +330,7 @@ export class ResponseEditTrackingService {
 
       await Promise.all(
         changes.map((change) =>
-          tx.responseFieldChange.create({
+          client.responseFieldChange.create({
             data: {
               id: generateId(),
               editHistoryId,
@@ -339,7 +345,17 @@ export class ResponseEditTrackingService {
           })
         )
       );
-    });
+    };
+
+    if (tx) {
+      // Use the caller's transaction — no nested $transaction needed
+      await writeHistory(tx);
+    } else {
+      // Wrap both writes in a transaction so a partial failure leaves no orphan records
+      await prisma.$transaction(async (innerTx) => {
+        await writeHistory(innerTx);
+      });
+    }
   }
 
   /**

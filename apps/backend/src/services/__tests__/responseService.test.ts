@@ -18,6 +18,13 @@ import { prisma } from '../../lib/prisma.js';
 // Mock dependencies
 vi.mock('../../repositories/index.js');
 vi.mock('../responseFilterService.js');
+// Minimal mock Prisma transaction client used by updateResponse (P2-02)
+const mockTxClient = {
+  response: {
+    update: vi.fn(),
+  },
+};
+
 vi.mock('../../lib/prisma.js', () => ({
   prisma: {
     response: {
@@ -25,6 +32,8 @@ vi.mock('../../lib/prisma.js', () => ({
       findMany: vi.fn(),
     },
     $queryRawUnsafe: vi.fn(),
+    // P2-02: updateResponse uses prisma.$transaction when edit context is provided
+    $transaction: vi.fn((callback: (tx: any) => Promise<any>) => callback(mockTxClient)),
   },
 }));
 vi.mock('../responseEditTrackingService.js', () => ({
@@ -367,7 +376,10 @@ describe('Response Service', () => {
         },
         formSchema,
       });
-      vi.mocked(responseRepository.update).mockResolvedValue(updatedResponse as any);
+
+      // P2-02: updateResponse uses prisma.$transaction; the tx.response.update call
+      // returns the updated response to the outer function
+      mockTxClient.response.update.mockResolvedValue(updatedResponse as any);
 
       const editContext = {
         userId: 'user-1',
@@ -379,6 +391,8 @@ describe('Response Service', () => {
       const result = await updateResponse('response-123', updatedData, editContext);
 
       expect(ResponseEditTrackingService.getResponseWithFormSchema).toHaveBeenCalledWith('response-123');
+      // P2-02: recordEdit receives the transaction client as the 6th argument so
+      // both the response update and the audit record are committed atomically.
       expect(ResponseEditTrackingService.recordEdit).toHaveBeenCalledWith(
         'response-123',
         { field1: 'old-value' },
@@ -390,7 +404,8 @@ describe('Response Service', () => {
           userAgent: 'vitest',
           editType: 'MANUAL',
           editReason: 'Fix typo',
-        })
+        }),
+        expect.anything() // tx client passed for atomic commit
       );
       expect(result.data.field1).toBe('new-value');
     });

@@ -29,6 +29,15 @@ export interface AdminOrganizationByIdArgs {
   id: string;
 }
 
+// P2-06: In-memory cache for S3 storage stats (expensive operation — paginates all objects)
+let statsCache: { data: { storageUsed: string; fileCount: number }; timestamp: number } | null = null;
+const STATS_CACHE_TTL = 60 * 60 * 1000; // 60 minutes
+
+/** Exposed for testing purposes only — clears the S3 stats cache. */
+export function _clearStatsCacheForTests() {
+  statsCache = null;
+}
+
 // Initialize S3 client for storage stats
 const s3Client = new S3Client({
   region: 'auto',
@@ -62,7 +71,14 @@ function formatBytes(bytes: number): string {
 }
 
 // Helper function to get S3 storage statistics
+// P2-06: Results are cached for STATS_CACHE_TTL to avoid expensive paginated S3 list calls on every request
 async function getS3StorageStats(): Promise<{ storageUsed: string; fileCount: number }> {
+  const now = Date.now();
+  if (statsCache && now - statsCache.timestamp < STATS_CACHE_TTL) {
+    logger.info('Returning cached S3 storage stats');
+    return statsCache.data;
+  }
+
   try {
     let totalSize = 0;
     let totalFiles = 0;
@@ -76,7 +92,7 @@ async function getS3StorageStats(): Promise<{ storageUsed: string; fileCount: nu
       });
 
       const response = await s3Client.send(command);
-      
+
       if (response.Contents) {
         totalFiles += response.Contents.length;
         totalSize += response.Contents.reduce((acc, obj) => acc + (obj.Size || 0), 0);
@@ -86,10 +102,13 @@ async function getS3StorageStats(): Promise<{ storageUsed: string; fileCount: nu
       continuationToken = response.NextContinuationToken;
     }
 
-    return {
+    const result = {
       storageUsed: formatBytes(totalSize),
       fileCount: totalFiles,
     };
+
+    statsCache = { data: result, timestamp: now };
+    return result;
   } catch (error) {
     logger.error('Error fetching S3 storage stats:', error);
     return {
@@ -399,6 +418,10 @@ export const adminResolvers = {
       requireAdminRole(context);
 
       try {
+        // P2-06: Use a selective `select` on forms to omit the potentially large
+        // `formSchema` JSON blob. Loading `forms: true` would eagerly fetch the
+        // full schema for every form in the organisation — this is wasteful for
+        // the admin overview which only needs basic metadata.
         const organization = await prisma.organization.findUnique({
           where: { id: args.id },
           include: {
@@ -414,7 +437,16 @@ export const adminResolvers = {
                 },
               },
             },
-            forms: true,
+            forms: {
+              select: {
+                id: true,
+                title: true,
+                isPublished: true,
+                createdAt: true,
+                updatedAt: true,
+                sharingScope: true,
+              },
+            },
           },
         });
 

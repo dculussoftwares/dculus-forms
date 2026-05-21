@@ -123,12 +123,42 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
   ],
 
   // CORS configuration for development
+  // P2-10: Explicit cookie security flags — httpOnly prevents XSS access,
+  // secure ensures cookies are only sent over HTTPS in production, and
+  // sameSite=lax guards against CSRF while allowing top-level navigations.
   advanced: {
     crossSubDomainCookies: {
       enabled: false,
     },
+    cookies: {
+      session_token: {
+        attributes: {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax' as const,
+        },
+      },
+    },
   },
   databaseHooks: {
+    user: {
+      delete: {
+        // P2-09: GDPR compliance — null out PII in edit history when a user is
+        // deleted so personal data (IP address, user agent) is no longer retained
+        // in the audit trail after account removal.
+        after: async (user) => {
+          try {
+            await prisma.responseEditHistory.updateMany({
+              where: { editedById: user.id },
+              data: { ipAddress: null, userAgent: null },
+            });
+            logger.info(`Nulled out PII in edit history for deleted user: ${user.id}`);
+          } catch (error) {
+            logger.error(`Failed to null PII in edit history for user ${user.id}:`, error);
+          }
+        },
+      },
+    },
     session: {
       create: {
         before: async (session) => {

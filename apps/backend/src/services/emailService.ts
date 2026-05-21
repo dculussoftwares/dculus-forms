@@ -40,11 +40,17 @@ export interface SendInvitationEmailOptions {
 }
 
 // Create transporter instance
+// P2-11: Enforce TLS for outbound email.
+//   port 465 → implicit TLS (secure: true, requireTLS not needed)
+//   other ports (587, 25) → STARTTLS upgrade required (requireTLS: true prevents
+//   silent downgrade to plaintext when the server advertises STARTTLS).
 const createTransporter = () => {
+  const port = emailConfig.port;
   return nodemailer.createTransport({
     host: emailConfig.host,
-    port: emailConfig.port,
-    secure: false, // true for 465, false for other ports
+    port,
+    secure: port === 465,
+    requireTLS: port !== 465,
     auth: {
       user: emailConfig.user,
       pass: emailConfig.password,
