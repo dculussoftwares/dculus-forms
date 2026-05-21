@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { admin, bearer, emailOTP, organization } from 'better-auth/plugins';
+import { adminAc } from 'better-auth/plugins/admin/access';
 import { prisma } from './prisma.js';
 import { authConfig } from './env.js';
 import { logger } from '../lib/logger.js';
@@ -102,6 +103,10 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
     admin({
       defaultRole: 'user',
       adminRoles: ['admin', 'superAdmin'],
+      roles: {
+        admin: adminAc,
+        superAdmin: adminAc, // superAdmin inherits full admin permissions
+      },
     }),
     emailOTP({
       otpLength: 6,

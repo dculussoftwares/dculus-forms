@@ -1,22 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useMutation, useApolloClient } from '@apollo/client';
+
 import { Button, Label, OTPInput } from '@dculus/ui';
-import { slugify } from '@dculus/utils';
-import { emailOtp, signIn, authClient, organization } from '../lib/auth-client';
+import { emailOtp } from '../lib/auth-client';
 import { ArrowLeft, FileText, Mail, Timer } from 'lucide-react';
 import { useTranslation } from '../hooks/useTranslation';
-import { INITIALIZE_ORGANIZATION_SUBSCRIPTION } from '../graphql/subscription';
 
 interface LocationState {
   email?: string;
-  password?: string;
   fromSignIn?: boolean;
 }
 
 interface PendingSignupData {
   email: string;
-  password: string;
   organizationName: string;
 }
 
@@ -27,14 +23,10 @@ export const EmailVerification = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const location = useLocation();
-  const apolloClient = useApolloClient();
   const { t } = useTranslation('emailVerification');
-
-  const [initializeSubscription] = useMutation(INITIALIZE_ORGANIZATION_SUBSCRIPTION);
 
   const state = location.state as LocationState | null;
   const stateEmail = state?.email || '';
-  const statePassword = state?.password || '';
   const fromSignIn = state?.fromSignIn || false;
 
   const pendingSignupData: PendingSignupData | null = (() => {
@@ -44,9 +36,6 @@ export const EmailVerification = () => {
   })();
 
   const email = pendingSignupData?.email || stateEmail;
-  const password = pendingSignupData?.password || statePassword;
-  const organizationName = pendingSignupData?.organizationName || '';
-  const pendingInvitationId = typeof window !== 'undefined' ? sessionStorage.getItem('pendingInvitationId') : null;
 
   useEffect(() => { if (!email) navigate('/signin'); }, [email, navigate]);
 
@@ -65,37 +54,9 @@ export const EmailVerification = () => {
       const verifyResponse = await emailOtp.verifyEmail({ email, otp: otp.trim() });
       if (verifyResponse.error) { setErrors({ otp: verifyResponse.error.message || t('messages.otpInvalid') }); return; }
 
-      if (password) {
-        const signInResponse = await signIn.email({ email, password });
-        if (signInResponse.error) { setErrors({ otp: t('messages.signInFailed') }); return; }
-      }
-
-      if (pendingInvitationId) {
-        try {
-          await organization.acceptInvitation({ invitationId: pendingInvitationId });
-          sessionStorage.removeItem('pendingInvitationId');
-          navigate('/');
-          return;
-        } catch { /* continue with org creation */ }
-      }
-
-      if (!pendingInvitationId && organizationName) {
-        const orgSlug = slugify(organizationName);
-        const orgResult = await authClient.organization.create({ name: organizationName, slug: orgSlug });
-        if (orgResult?.data?.id) {
-          try {
-            await initializeSubscription({ variables: { organizationId: orgResult.data.id } });
-          } catch { /* non-fatal */ }
-          try {
-            await organization.setActive({ organizationId: orgResult.data.id });
-            await authClient.getSession();
-            await apolloClient.refetchQueries({ include: ['ActiveOrganization'] });
-          } catch { /* non-fatal */ }
-        }
-      }
-
+      // Email verified — credentials are never stored here, so redirect to sign in
       sessionStorage.removeItem('pendingSignupData');
-      navigate('/');
+      navigate('/signin?message=email-verified');
     } catch {
       setErrors({ otp: t('messages.unexpectedError') });
     } finally {

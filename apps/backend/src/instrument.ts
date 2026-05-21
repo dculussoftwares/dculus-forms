@@ -13,7 +13,7 @@ if (sentryDsn) {
   Sentry.init({
     dsn: sentryDsn,
     environment: appConfig.nodeEnv,
-    sendDefaultPii: true,
+    sendDefaultPii: false,
     // Capture fewer transactions in production to limit noise
     tracesSampleRate,
     profileSessionSampleRate: profilingSampleRate,

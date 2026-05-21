@@ -26,6 +26,8 @@ export const SignIn = () => {
     const message = searchParams.get("message");
     if (message === "password-reset-success") {
       setSuccessMessage(t("messages.passwordResetSuccess"));
+    } else if (message === "email-verified") {
+      setSuccessMessage(t("messages.emailVerified"));
     }
   }, [searchParams, t]);
 
@@ -58,7 +60,7 @@ export const SignIn = () => {
         const msg = response.error.message?.toLowerCase() || "";
         if (msg.includes("email") && (msg.includes("verified") || msg.includes("verification"))) {
           try { await emailOtp.sendVerificationOtp({ email: formData.email, type: "email-verification" }); } catch { /* OTP send failure is non-fatal here */ }
-          navigate("/verify-email", { state: { email: formData.email, password: formData.password, fromSignIn: true } });
+          navigate("/verify-email", { state: { email: formData.email, fromSignIn: true } });
         } else {
           setErrors({ submit: response.error.message || t("messages.invalidCredentials") });
         }

@@ -524,13 +524,13 @@ describe('File Upload Resolvers', () => {
       ).rejects.toThrow('Access denied: You can only delete your own avatar');
     });
 
-    it('should delete OrganizationLogo when caller is an org member', async () => {
+    it('should delete OrganizationLogo when caller is an org owner', async () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(prisma.formFile.findUnique).mockResolvedValue(null);
       vi.mocked(prisma.user.findFirst as any).mockResolvedValue(null);
       vi.mocked(prisma.organization.findFirst as any).mockResolvedValue({
         id: 'org-123',
-        members: [{ role: 'member' }],
+        members: [{ role: 'owner' }],
       });
       vi.mocked(fileUploadService.deleteFile).mockResolvedValue(true);
 
@@ -541,6 +541,20 @@ describe('File Upload Resolvers', () => {
       );
 
       expect(result).toBe(true);
+    });
+
+    it('should throw error when deleting org logo as a non-owner member', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(prisma.formFile.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.user.findFirst as any).mockResolvedValue(null);
+      vi.mocked(prisma.organization.findFirst as any).mockResolvedValue({
+        id: 'org-123',
+        members: [{ role: 'member' }], // member but not owner
+      });
+
+      await expect(
+        fileUploadResolvers.Mutation.deleteFile({}, { key: 'uploads/logo-key' }, mockContext)
+      ).rejects.toThrow('Only org owners can delete the organization logo');
     });
 
     it('should throw error when deleting org logo without membership', async () => {

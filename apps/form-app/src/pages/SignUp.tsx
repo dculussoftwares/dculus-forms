@@ -129,10 +129,9 @@ export const SignUp = () => {
         return;
       }
 
-      // Store signup data in sessionStorage for recovery if user exits OTP page
+      // Store only non-sensitive signup data for recovery if user exits OTP page
       sessionStorage.setItem('pendingSignupData', JSON.stringify({
         email: formData.email,
-        password: formData.password,
         organizationName: formData.organizationName,
       }));
 

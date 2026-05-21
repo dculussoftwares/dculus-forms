@@ -2,7 +2,7 @@
 # This Dockerfile should be built from the repository root
 # docker build -f apps/backend/Dockerfile .
 
-FROM --platform=$BUILDPLATFORM node:20-alpine
+FROM --platform=$BUILDPLATFORM node:22-alpine
 
 # Install pnpm globally
 RUN npm install -g pnpm
@@ -54,7 +54,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 # Create startup script that runs migrations, seed, and starts the app
 RUN echo '#!/bin/sh' > /app/apps/backend/start.sh && \
     echo 'echo "🔄 Running database migrations..."' >> /app/apps/backend/start.sh && \
-    echo 'npx prisma db push --accept-data-loss || { echo "❌ Migration failed"; exit 1; }' >> /app/apps/backend/start.sh && \
+    echo 'npx prisma migrate deploy || { echo "❌ Migration failed"; exit 1; }' >> /app/apps/backend/start.sh && \
     echo 'echo "✅ Database migrations completed"' >> /app/apps/backend/start.sh && \
     echo 'echo "🔍 Checking if database needs seeding..."' >> /app/apps/backend/start.sh && \
     echo 'if [ "$RUN_SEED" = "true" ]; then' >> /app/apps/backend/start.sh && \

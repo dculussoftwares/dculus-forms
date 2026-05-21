@@ -48,7 +48,7 @@ export function generateTestUser(prefix: string = 'testuser'): TestUser {
 
   return {
     email: email,
-    password: process.env.CI_TEST_PASSWORD || 'TestPassword123!',
+    password: process.env.CI_TEST_PASSWORD || (() => { throw new Error('CI_TEST_PASSWORD env var is required'); })(),
     name: `Test User ${uniqueId}`,
   };
 }
@@ -156,8 +156,8 @@ export const TEST_CONFIG = {
   // Default test environment configuration
   BASE_URL: process.env.TEST_BASE_URL || 'http://localhost:4000',
 
-  // Common test passwords
-  DEFAULT_PASSWORD: 'TestPassword123!',
+  // Test passwords — DEFAULT_PASSWORD must come from CI_TEST_PASSWORD env var
+  DEFAULT_PASSWORD: process.env.CI_TEST_PASSWORD || (() => { throw new Error('CI_TEST_PASSWORD env var is required'); })(),
   WEAK_PASSWORD: 'weak',
   STRONG_PASSWORD: 'StrongP@ssw0rd123!',
 
