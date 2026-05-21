@@ -5,6 +5,7 @@ import { chargebeeWebhookRouter } from '../chargebee-webhooks.js';
 import {
   syncSubscriptionFromWebhook,
   handleSubscriptionRenewal,
+  handlePaymentFailed,
 } from '../../services/chargebeeService.js';
 import { logger } from '../../lib/logger.js';
 
@@ -235,7 +236,9 @@ describe('Chargebee Webhook Routes', () => {
       expect(syncSubscriptionFromWebhook).not.toHaveBeenCalled();
     });
 
-    it('should handle payment_failed event without calling sync', async () => {
+    it('should handle payment_failed event by calling handlePaymentFailed', async () => {
+      vi.mocked(handlePaymentFailed).mockResolvedValueOnce(undefined);
+
       const response = await request(app)
         .post('/webhooks/chargebee')
         .set('Authorization', VALID_AUTH)
@@ -243,9 +246,7 @@ describe('Chargebee Webhook Routes', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ received: true });
-      expect(logger.info).toHaveBeenCalledWith(
-        '[Chargebee Webhook] Payment failed for subscription'
-      );
+      expect(handlePaymentFailed).toHaveBeenCalledTimes(1);
       expect(syncSubscriptionFromWebhook).not.toHaveBeenCalled();
     });
 

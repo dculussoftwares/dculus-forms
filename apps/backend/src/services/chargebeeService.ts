@@ -2,6 +2,8 @@ import Chargebee from 'chargebee';
 import { resetUsageCounters } from '../subscriptions/usageService.js';
 import { subscriptionRepository } from '../repositories/index.js';
 import { logger } from '../lib/logger.js';
+import { prisma } from '../lib/prisma.js';
+import { sendEmail } from './emailService.js';
 
 /**
  * Chargebee Service
@@ -292,6 +294,57 @@ export const handleSubscriptionRenewal = async (
     logger.info('[Chargebee Service] Reset usage counters for organization:', organizationId);
   } catch (error: any) {
     logger.error('[Chargebee Service] Error handling subscription renewal:', error);
+    throw error;
+  }
+};
+
+/**
+ * Handle a payment_failed Chargebee webhook event.
+ * Marks the subscription as past_due and emails the org owner.
+ */
+export const handlePaymentFailed = async (event: any): Promise<void> => {
+  const subscription = event.content?.subscription;
+  if (!subscription) return;
+
+  const customerId = String(subscription.customer_id ?? '');
+  const organizationId = customerId.replace('org_', '');
+  if (!organizationId) return;
+
+  try {
+    await prisma.subscription.update({
+      where: { organizationId },
+      data: { status: 'past_due' },
+    });
+
+    const org = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      include: {
+        members: {
+          where: { role: 'owner' },
+          include: { user: { select: { email: true, name: true } } },
+          take: 1,
+        },
+      },
+    });
+
+    const owner = org?.members[0]?.user;
+    if (owner?.email) {
+      const portalUrl = process.env.BETTER_AUTH_URL?.replace(':4000', ':3000') || 'https://app.dculus.com';
+      await sendEmail({
+        to: owner.email,
+        subject: 'Action required: payment failed for your Dculus Forms subscription',
+        html: `<p>Hi ${owner.name || 'there'},</p>
+<p>We were unable to process the latest payment for your <strong>${org?.name}</strong> subscription on Dculus Forms.</p>
+<p>Please update your payment details as soon as possible to avoid service interruption. Your subscription will be cancelled after the dunning period if payment is not recovered.</p>
+<p><a href="${portalUrl}/pricing">Update payment details →</a></p>
+<p>If you believe this is an error, please contact support.</p>`,
+        text: `Hi ${owner.name || 'there'},\n\nWe were unable to process payment for your ${org?.name} subscription on Dculus Forms. Please update your payment details at ${portalUrl}/pricing to avoid service interruption.\n\nIf you believe this is an error, please contact support.`,
+      });
+    }
+
+    logger.warn('[Chargebee Service] Payment failed — subscription marked past_due for org:', organizationId);
+  } catch (error: any) {
+    logger.error('[Chargebee Service] Error handling payment failure:', error);
     throw error;
   }
 };

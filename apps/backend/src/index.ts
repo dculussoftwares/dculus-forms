@@ -6,10 +6,13 @@ import { createServer } from 'http';
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@apollo/server/express4';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
+import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/disabled';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
+import rateLimit from 'express-rate-limit';
+import depthLimit from 'graphql-depth-limit';
 import { toNodeHandler } from 'better-auth/node';
 import { auth, DEV_ORIGINS } from './lib/better-auth.js';
 import { typeDefs } from './graphql/schema.js';
@@ -110,13 +113,45 @@ app.use(
     },
   })
 );
+// Rate limiters — disabled in test environments so integration/E2E suites are not throttled
+const isTestEnv = appConfig.nodeEnv === 'test';
+
+const authLimiter = rateLimit({
+  windowMs: 60_000,
+  max: isTestEnv ? 10_000 : 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => isTestEnv,
+  message: { error: 'Too many auth requests, please try again later' },
+});
+
+const uploadLimiter = rateLimit({
+  windowMs: 60_000,
+  max: isTestEnv ? 10_000 : 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => isTestEnv,
+  message: { error: 'Too many upload requests, please try again later' },
+});
+
+const graphqlLimiter = rateLimit({
+  windowMs: 60_000,
+  max: isTestEnv ? 10_000 : 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => isTestEnv,
+  message: { error: 'Too many requests, please try again later' },
+});
+
 const envCorsOrigins = process.env.CORS_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) ?? [];
+const apolloStudioOrigins = appConfig.isProduction
+  ? []
+  : ['https://studio.apollographql.com', 'https://sandbox.embed.apollographql.com'];
 const allOrigins = [
   ...new Set([
     ...envCorsOrigins,
     ...(appConfig.isProduction ? [] : DEV_ORIGINS),
-    'https://studio.apollographql.com',
-    'https://sandbox.embed.apollographql.com',
+    ...apolloStudioOrigins,
   ]),
 ];
 
@@ -133,8 +168,8 @@ app.use(
 app.use(compression());
 app.use(morgan('combined'));
 
-// Mount Better Auth handler AFTER CORS middleware
-app.all('/api/auth/*', toNodeHandler(auth));
+// Mount Better Auth handler AFTER CORS middleware — with rate limiting on auth routes
+app.all('/api/auth/*', authLimiter, toNodeHandler(auth));
 
 // Apply express.json() AFTER Better Auth handler
 app.use(express.json({ limit: '10mb' }));
@@ -145,7 +180,7 @@ app.use(edgeGeolocationMiddleware);
 
 // Routes
 app.use('/health', healthRouter);
-app.use('/', uploadRouter);
+app.use('/', uploadLimiter, uploadRouter);
 app.use('/api', chargebeeWebhookRouter);
 
 // Add favicon route to prevent 404 errors
@@ -153,11 +188,7 @@ app.get('/favicon.ico', (req, res) => {
   res.status(204).end();
 });
 
-if (sentryEnabled) {
-  app.get('/debug-sentry', (_req, _res) => {
-    throw new Error('Intentional Sentry debug error');
-  });
-}
+// /debug-sentry intentionally removed — use Sentry CLI or a local test to verify Sentry connectivity
 
 // Sentry Apollo Plugin for GraphQL transaction tracking
 const sentryApolloPlugin = {
@@ -177,23 +208,23 @@ const server = new ApolloServer({
   typeDefs,
   resolvers,
   introspection: !appConfig.isProduction,
+  validationRules: [depthLimit(8)],
   plugins: [
     ...(sentryEnabled ? [sentryApolloPlugin] : []),
-    // Use the modern Apollo Studio Sandbox (embedded) for development
-    ApolloServerPluginLandingPageLocalDefault({
-      footer: false,
-      includeCookies: true,
-      embed: {
-        endpointIsEditable: false,
-        runTelemetry: false,
-        initialState: {
-          pollForSchemaUpdates: true,
-          sharedHeaders: {
-            'content-type': 'application/json',
+    ...(appConfig.isProduction
+      ? [ApolloServerPluginLandingPageDisabled()]
+      : [ApolloServerPluginLandingPageLocalDefault({
+          footer: false,
+          includeCookies: true,
+          embed: {
+            endpointIsEditable: false,
+            runTelemetry: false,
+            initialState: {
+              pollForSchemaUpdates: true,
+              sharedHeaders: { 'content-type': 'application/json' },
+            },
           },
-        },
-      },
-    }),
+        })]),
   ],
   formatError: (formattedError, error) => {
     const code = deriveGraphQLErrorCode(formattedError);
@@ -233,6 +264,7 @@ async function startServer() {
   const { default: graphqlUploadExpress } = await import(
     'graphql-upload/graphqlUploadExpress.mjs'
   );
+  app.use('/graphql', graphqlLimiter);
   app.use(
     '/graphql',
     graphqlUploadExpress({ maxFileSize: 5000000, maxFiles: 10 })
@@ -288,3 +320,23 @@ startServer().catch((error) => {
   logger.error('Failed to start server:', error);
   process.exit(1);
 });
+
+const shutdown = async (signal: string) => {
+  logger.info(`${signal} received — shutting down gracefully`);
+  httpServer.close(async () => {
+    try {
+      await server.stop();
+      await prisma.$disconnect();
+      logger.info('Graceful shutdown complete');
+      process.exit(0);
+    } catch (err) {
+      logger.error('Error during shutdown:', err);
+      process.exit(1);
+    }
+  });
+  // Force exit after 15s if graceful shutdown stalls
+  setTimeout(() => { logger.error('Forced shutdown after timeout'); process.exit(1); }, 15_000).unref();
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

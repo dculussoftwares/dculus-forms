@@ -252,6 +252,9 @@ export const fileUploadResolvers = {
               if (ownerOrg.members.length === 0) {
                 throw createGraphQLError('Access denied: You are not a member of this organization', GRAPHQL_ERROR_CODES.NO_ACCESS);
               }
+              if (ownerOrg.members[0]?.role !== 'owner') {
+                throw createGraphQLError('Access denied: Only org owners can delete the organization logo', GRAPHQL_ERROR_CODES.NO_ACCESS);
+              }
             } else {
               // Key belongs to a FormTemplate or an untracked file — require admin role
               requireAdminRole(context);

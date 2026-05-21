@@ -550,15 +550,6 @@ describe('Field Analytics Resolvers', () => {
 
 
     it('should throw error when fallback schema is null', async () => {
-      const mockFormWithoutSchema = {
-        ...mockForm,
-        organization: {
-          id: 'org-123',
-          members: [{ userId: 'user-123' }],
-        },
-        formSchema: null,
-      };
-
       vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(null);
       vi.mocked(prisma.form.findUnique as any).mockResolvedValue({ formSchema: null });
@@ -573,14 +564,6 @@ describe('Field Analytics Resolvers', () => {
     });
 
     it('should throw error when field not found in fallback schema', async () => {
-      const mockFormWithSchemaData = {
-        ...mockFormWithSchema,
-        organization: {
-          id: 'org-123',
-          members: [{ userId: 'user-123' }],
-        },
-      };
-
       vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(null);
       vi.mocked(prisma.form.findUnique as any).mockResolvedValue({ formSchema: mockFormWithSchema.formSchema });

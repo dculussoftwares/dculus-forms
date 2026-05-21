@@ -124,9 +124,13 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       }
       const membership = await prisma.member.findFirst({
         where: { organizationId: orgId, userId: callerUser.id },
+        select: { role: true },
       });
       if (!membership) {
         return res.status(403).json({ error: 'Organization membership required', code: 'FORBIDDEN' });
+      }
+      if (membership.role !== 'owner') {
+        return res.status(403).json({ error: 'Only org owners can update the organization logo', code: 'FORBIDDEN' });
       }
     } else if (type === 'FormResponse') {
       // Public submissions require isPublished === true.

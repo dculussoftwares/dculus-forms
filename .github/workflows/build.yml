@@ -153,13 +153,13 @@ jobs:
           pnpm --filter @dculus/types build
           pnpm --filter @dculus/utils build
           pnpm --filter @dculus/ui build
-          pnpm --filter backend build || echo "backend build failed but continuing"
+          pnpm --filter backend build
 
-      - name: Run linting (allow failures for demo)
-        run: pnpm lint || echo "Linting has issues but continuing pipeline"
+      - name: Run linting
+        run: pnpm lint
 
-      - name: Run type checking (allow failures for demo)
-        run: pnpm type-check || echo "Type checking has issues but continuing pipeline"
+      - name: Run type checking
+        run: pnpm type-check
 
   build-backend:
     name: Build Backend
@@ -193,8 +193,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint backend
-        run: pnpm --filter backend lint || echo "Lint issues found but continuing build"
-        continue-on-error: true
+        run: pnpm --filter backend lint
 
       - name: Type check backend
         run: pnpm --filter backend type-check
@@ -374,8 +373,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint form-app
-        run: pnpm --filter form-app lint || echo "Lint issues found but continuing build"
-        continue-on-error: true
+        run: pnpm --filter form-app lint
 
       - name: Type check form-app
         run: pnpm --filter form-app type-check
@@ -421,8 +419,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint form-viewer
-        run: pnpm --filter form-viewer lint || echo "Lint issues found but continuing build"
-        continue-on-error: true
+        run: pnpm --filter form-viewer lint
 
       - name: Type check form-viewer
         run: pnpm --filter form-viewer type-check
@@ -462,8 +459,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint admin-app
-        run: pnpm --filter admin-app lint || echo "Lint issues found but continuing build"
-        continue-on-error: true
+        run: pnpm --filter admin-app lint
 
       - name: Type check admin-app
         run: pnpm --filter admin-app type-check
@@ -478,7 +474,6 @@ jobs:
     name: E2E Tests (Local Runner)
     runs-on: ubuntu-latest
     needs: [build-backend, build-form-app, build-form-viewer]
-    continue-on-error: true
 
     services:
       postgres:

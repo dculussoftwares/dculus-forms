@@ -6,6 +6,7 @@
   },
   "messages": {
     "passwordResetSuccess": "Password reset successful! Please sign in with your new password.",
+    "emailVerified": "Email verified successfully! Please sign in to continue.",
     "unexpectedError": "An unexpected error occurred. Please try again.",
     "invalidCredentials": "Invalid credentials",
     "emailNotVerified": "Please verify your email before signing in. Check your inbox for the verification code."

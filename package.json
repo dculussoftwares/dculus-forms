@@ -49,11 +49,11 @@
     "test:integration": "TS_NODE_PROJECT=test/integration/tsconfig.json cucumber-js 'test/integration/features/*.feature' --config test/integration/cucumber.js",
     "test:integration:by-tags": "./test-integration-by-tags.sh",
     "test:integration:dry-run": "./test-integration-by-tags.sh --dry-run",
-    "test:integration:production": "cross-env TEST_BASE_URL=https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io CI_TEST_PASSWORD=TestPassword123! TS_NODE_PROJECT=test/integration/tsconfig.json cucumber-js 'test/integration/features/*.feature' --config test/integration/cucumber.production.js",
+    "test:integration:production": "cross-env TEST_BASE_URL=https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io TS_NODE_PROJECT=test/integration/tsconfig.json cucumber-js 'test/integration/features/*.feature' --config test/integration/cucumber.production.js",
     "test:integration:health": "TS_NODE_PROJECT=test/integration/tsconfig.json cucumber-js 'test/integration/features/health.feature' --require-module ts-node/register --require test/integration/support/world.ts --require test/integration/support/hooks.ts --require test/integration/step-definitions/common.steps.ts --require 'test/integration/step-definitions/*.steps.ts'",
     "test:integration:auth": "TS_NODE_PROJECT=test/integration/tsconfig.json cucumber-js 'test/integration/features/auth*.feature' --require-module ts-node/register --require test/integration/support/world.ts --require test/integration/support/hooks.ts --require test/integration/step-definitions/common.steps.ts --require 'test/integration/step-definitions/*.steps.ts'",
-    "test:integration:auth:production": "cross-env TEST_BASE_URL=https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io CI_TEST_PASSWORD=TestPassword123! TS_NODE_PROJECT=test/integration/tsconfig.json cucumber-js 'test/integration/features/auth*.feature' --require-module ts-node/register --require test/integration/support/world.ts --require test/integration/support/hooks.ts --require test/integration/step-definitions/common.steps.ts --require 'test/integration/step-definitions/*.steps.ts'",
-    "test:integration:health:production": "cross-env TEST_BASE_URL=https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io CI_TEST_PASSWORD=TestPassword123! TS_NODE_PROJECT=test/integration/tsconfig.json cucumber-js 'test/integration/features/health.feature' --require-module ts-node/register --require test/integration/support/world.ts --require test/integration/support/hooks.ts --require test/integration/step-definitions/common.steps.ts --require 'test/integration/step-definitions/*.steps.ts'",
+    "test:integration:auth:production": "cross-env TEST_BASE_URL=https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io TS_NODE_PROJECT=test/integration/tsconfig.json cucumber-js 'test/integration/features/auth*.feature' --require-module ts-node/register --require test/integration/support/world.ts --require test/integration/support/hooks.ts --require test/integration/step-definitions/common.steps.ts --require 'test/integration/step-definitions/*.steps.ts'",
+    "test:integration:health:production": "cross-env TEST_BASE_URL=https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io TS_NODE_PROJECT=test/integration/tsconfig.json cucumber-js 'test/integration/features/health.feature' --require-module ts-node/register --require test/integration/support/world.ts --require test/integration/support/hooks.ts --require test/integration/step-definitions/common.steps.ts --require 'test/integration/step-definitions/*.steps.ts'",
     "test:integration:coverage": "rm -rf coverage/* && NODE_V8_COVERAGE=coverage/tmp TS_NODE_PROJECT=test/integration/tsconfig.json cucumber-js 'test/integration/features/*.feature' --config test/integration/cucumber.coverage.js && c8 report --config .c8rc.json",
     "test:integration:coverage:health": "rm -rf coverage/* && NODE_V8_COVERAGE=coverage/tmp TS_NODE_PROJECT=test/integration/tsconfig.json cucumber-js 'test/integration/features/health.feature' --config test/integration/cucumber.coverage.js && c8 report --config .c8rc.json",
     "test:e2e": "E2E_EMAIL=${E2E_EMAIL:-cloude2etest@mailinator.com} E2E_PASSWORD=${E2E_PASSWORD:-cloude2etest@mailinator.com} E2E_FORM_APP_URL=${E2E_FORM_APP_URL:-http://localhost:3000} E2E_HEADLESS=${E2E_HEADLESS:-true} E2E_FORM_VIEWER_URL=${E2E_FORM_VIEWER_URL:-http://localhost:5173} E2E_BACKEND_URL=${E2E_BACKEND_URL:-http://localhost:4000} TS_NODE_PROJECT=test/e2e/tsconfig.json cucumber-js --config test/e2e/cucumber.js --tags 'not @mass-responses and not @persistence and not @skip-ci'",
@@ -107,7 +107,8 @@
       "@types/react-dom": "^18.3.0",
       "react": "^18.3.0",
       "react-dom": "^18.3.0",
-      "@smithy/types": "4.3.2"
+      "@smithy/types": "4.3.2",
+      "fast-xml-parser": ">=5.3.5"
     }
   },
   "dependencies": {

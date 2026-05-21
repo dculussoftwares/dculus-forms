@@ -5,6 +5,7 @@ import { chargebeeConfig } from '../lib/env.js';
 import {
   syncSubscriptionFromWebhook,
   handleSubscriptionRenewal,
+  handlePaymentFailed,
 } from '../services/chargebeeService.js';
 
 const router: Router = express.Router();
@@ -103,8 +104,8 @@ router.post('/webhooks/chargebee', async (req, res) => {
         break;
 
       case 'payment_failed':
-        logger.info('[Chargebee Webhook] Payment failed for subscription');
-        // TODO: Send notification to organization owner
+        logger.warn('[Chargebee Webhook] Payment failed for subscription');
+        await handlePaymentFailed(event);
         break;
 
       default:

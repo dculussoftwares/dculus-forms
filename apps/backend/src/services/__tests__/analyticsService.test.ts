@@ -447,27 +447,6 @@ describe('Analytics Service', () => {
 
   describe('getFormAnalytics', () => {
     it('should return analytics data for a form', async () => {
-      const mockAnalyticsData = [
-        {
-          id: '1',
-          formId: 'form-123',
-          sessionId: 'session-1',
-          countryCode: 'USA',
-          operatingSystem: 'Windows',
-          browser: 'Chrome',
-          viewedAt: new Date('2024-01-01'),
-        },
-        {
-          id: '2',
-          formId: 'form-123',
-          sessionId: 'session-2',
-          countryCode: 'CAN',
-          operatingSystem: 'macOS',
-          browser: 'Safari',
-          viewedAt: new Date('2024-01-02'),
-        },
-      ];
-
       vi.mocked(formViewAnalyticsRepository.count).mockResolvedValue(2);
       vi.mocked(formViewAnalyticsRepository.countDistinctSessions).mockResolvedValue(2);
       vi.mocked(formViewAnalyticsRepository.getDailyViewStats).mockResolvedValue([
