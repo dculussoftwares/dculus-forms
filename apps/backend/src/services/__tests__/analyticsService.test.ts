@@ -4,10 +4,18 @@ import {
   formViewAnalyticsRepository,
   formSubmissionAnalyticsRepository,
 } from '../../repositories/index.js';
+import { prisma } from '../../lib/prisma.js';
 import { logger } from '../../lib/logger.js';
 
 // Mock repositories
 vi.mock('../../repositories/index.js');
+
+// P2-05: analyticsService now calls prisma.$queryRaw for SQL percentile calculation
+vi.mock('../../lib/prisma.js', () => ({
+  prisma: {
+    $queryRaw: vi.fn(),
+  },
+}));
 
 // Mock external dependencies
 vi.mock('ua-parser-js', () => ({
@@ -521,6 +529,11 @@ describe('Analytics Service', () => {
         .mockResolvedValueOnce([{ operatingSystem: 'Windows', _count: { operatingSystem: 1 } }] as any)
         .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
 
+      // P2-05: mock the SQL percentile query result
+      vi.mocked(prisma.$queryRaw).mockResolvedValue([
+        { p50: 120, p75: 120, p90: 120, p95: 120, avg: 120, total: BigInt(1) },
+      ] as any);
+
       vi.mocked(formSubmissionAnalyticsRepository.findMany).mockResolvedValue([
         { completionTimeSeconds: 120 },
       ] as any);
@@ -545,6 +558,11 @@ describe('Analytics Service', () => {
         .mockResolvedValueOnce([] as any)
         .mockResolvedValueOnce([{ operatingSystem: 'Windows', _count: { operatingSystem: 1 } }] as any)
         .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
+
+      // P2-05: mock the SQL percentile query — avg of [60, 120, 180] = 120
+      vi.mocked(prisma.$queryRaw).mockResolvedValue([
+        { p50: 120, p75: 150, p90: 162, p95: 171, avg: 120, total: BigInt(3) },
+      ] as any);
 
       vi.mocked(formSubmissionAnalyticsRepository.findMany).mockResolvedValue([
         { completionTimeSeconds: 60 },

@@ -13,6 +13,7 @@ import { createPagesSlice } from './slices/pagesSlice';
 import { createFieldsSlice } from './slices/fieldsSlice';
 import { createLayoutSlice } from './slices/layoutSlice';
 import { createSelectionSlice } from './slices/selectionSlice';
+import { DEFAULT_LAYOUT } from './helpers/defaultLayout';
 
 /**
  * Combined Form Builder Store
@@ -36,6 +37,19 @@ export const useFormBuilderStore = create<FormBuilderState>()(
       ...createFieldsSlice(set, get),
       ...createLayoutSlice(set, get),
       ...createSelectionSlice(set, get),
+
+      /**
+       * P2-16: Reset layout and selection state when leaving the form builder.
+       * Called from CollaborativeFormBuilder's cleanup useEffect.
+       */
+      resetBuilder: () => {
+        set({
+          layout: DEFAULT_LAYOUT,
+          isShuffleEnabled: false,
+          selectedPageId: null,
+          selectedFieldId: null,
+        });
+      },
     })),
     {
       name: 'form-builder-store',

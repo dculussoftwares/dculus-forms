@@ -52,10 +52,12 @@ describe('Email Service', () => {
         text: 'Test Text',
       });
 
+      // P2-11: port 587 → STARTTLS (secure: false, requireTLS: true)
       expect(nodemailer.createTransport).toHaveBeenCalledWith({
         host: 'smtp.example.com',
         port: 587,
         secure: false,
+        requireTLS: true,
         auth: {
           user: 'test@example.com',
           pass: 'password123',

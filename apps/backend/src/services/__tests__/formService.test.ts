@@ -9,7 +9,7 @@ import {
   regenerateShortUrl,
   duplicateForm,
 } from '../formService.js';
-import { formRepository } from '../../repositories/index.js';
+import { formRepository, createFormRepository } from '../../repositories/index.js';
 import { logger } from '../../lib/logger.js';
 
 import { initializeHocuspocusDocument, getFormSchemaFromHocuspocus } from '../hocuspocus.js';
@@ -33,6 +33,21 @@ vi.mock('@dculus/utils', async () => {
     generateId: vi.fn(),
   };
 });
+
+// P2-03: prisma.$transaction mock — executes the callback with the same mocked
+// formRepository so unit-test assertions on createForm/createOwnerPermission
+// still work while the transaction boundary is respected in production.
+vi.mock('../../lib/prisma.js', () => ({
+  prisma: {
+    $transaction: vi.fn((callback: (tx: any) => Promise<any>) => {
+      // The tx object passed here is intentionally unused inside the callback;
+      // createFormRepository(withPrisma(tx)) returns its own mock because
+      // repositories/index.js is mocked below and the mock auto-delegates to
+      // the module-level formRepository mock.
+      return callback({});
+    }),
+  },
+}));
 
 describe('Form Service', () => {
   const mockForm = {
@@ -80,6 +95,10 @@ describe('Form Service', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // P2-03: createFormRepository is called inside prisma.$transaction to create
+    // a transaction-scoped repo. Return the same mocked formRepository so all
+    // existing test assertions on createForm / createOwnerPermission still apply.
+    vi.mocked(createFormRepository).mockReturnValue(formRepository as any);
   });
 
   afterEach(() => {
@@ -406,26 +425,24 @@ describe('Form Service', () => {
       loggerWarn.mockRestore();
     });
 
-    it('should log error if OWNER permission creation fails', async () => {
-      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
+    it('should throw if OWNER permission creation fails (P2-03 atomicity)', async () => {
+      // P2-03: form creation and owner-permission grant are now atomic inside a
+      // prisma.$transaction. If createOwnerPermission throws, the entire
+      // transaction is rolled back and createForm propagates the error to the
+      // caller rather than silently swallowing it. This prevents orphan forms
+      // that have no owner permission row.
       vi.mocked(formRepository.createOwnerPermission).mockRejectedValue(
         new Error('Permission error')
       );
 
-      await createForm({
+      await expect(createForm({
         id: 'form-123',
         title: 'New Form',
         shortUrl: '',
         isPublished: false,
         organizationId: 'org-123',
         createdById: 'user-123',
-      });
-
-      expect(loggerError).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to create OWNER permission'),
-        expect.any(Error)
-      );
-      loggerError.mockRestore();
+      })).rejects.toThrow('Permission error');
     });
   });
 

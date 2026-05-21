@@ -207,6 +207,19 @@ export const responsesResolvers = {
         }
       }
 
+      // P2-04: Validate response payload size to prevent unbounded writes
+      if (input.data && typeof input.data === 'object') {
+        const keys = Object.keys(input.data as object);
+        if (keys.length > 500) {
+          throw createGraphQLError('Response data cannot contain more than 500 fields', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+        }
+        for (const [key, value] of Object.entries(input.data as object)) {
+          if (typeof value === 'string' && value.length > 10_000) {
+            throw createGraphQLError(`Field "${key}" exceeds the 10,000 character limit`, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+          }
+        }
+      }
+
       // If all limits pass, save the response
       const responseData = {
         id: generateId(),

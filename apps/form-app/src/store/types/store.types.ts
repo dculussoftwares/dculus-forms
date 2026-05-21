@@ -127,6 +127,16 @@ export interface SelectionSlice {
 }
 
 /**
+ * Reset Slice
+ *
+ * Provides a cross-slice reset action for cleaning up transient builder state
+ * when the user navigates away from the form builder.
+ */
+export interface ResetSlice {
+  resetBuilder: () => void;
+}
+
+/**
  * Combined Store State
  *
  * All slices combined into a single store
@@ -135,7 +145,8 @@ export type FormBuilderState = CollaborationSlice &
   PagesSlice &
   FieldsSlice &
   LayoutSlice &
-  SelectionSlice;
+  SelectionSlice &
+  ResetSlice;
 
 /**
  * Slice Creator Function Type

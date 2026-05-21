@@ -16,7 +16,9 @@ import { checkFormAccess, PermissionLevel } from '../graphql/resolvers/formShari
 import { randomUUID } from 'crypto';
 import { getFormSchemaFromHocuspocus } from './hocuspocus.js';
 import { copyFileForForm } from './fileUploadService.js';
-import { formRepository } from '../repositories/index.js';
+import { formRepository, createFormRepository } from '../repositories/index.js';
+import { withPrisma } from '../repositories/baseRepository.js';
+import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 
 export interface Form extends Omit<IForm, 'formSchema'> {
@@ -117,37 +119,37 @@ export const createForm = async (
   // Generate unique short URL
   const shortUrl = await generateUniqueShortUrl();
 
-  // Create form without formSchema field in database
-  const newForm = await formRepository.createForm({
-    id: formData.id,
-    title: formData.title,
-    description: formData.description,
-    shortUrl,
-    formSchema: {}, // Store empty object as placeholder
-    isPublished: formData.isPublished || false,
-    organizationId: formData.organizationId,
-    createdById: formData.createdById,
-    settings: normalizedSettings,
-  });
+  // P2-03: Wrap form creation and owner permission in a single transaction so a
+  // failure in createOwnerPermission never leaves an orphan form without an owner,
+  // and a form record is never created without a corresponding OWNER permission row.
+  const result = await prisma.$transaction(async (tx) => {
+    // Create a transaction-scoped repository so both writes share the same
+    // Prisma transaction client and are committed (or rolled back) atomically.
+    const txRepo = createFormRepository(withPrisma(tx as any));
 
-  const result = {
-    ...newForm,
-    description: newForm.description || undefined,
-  };
+    const newForm = await txRepo.createForm({
+      id: formData.id,
+      title: formData.title,
+      description: formData.description,
+      shortUrl,
+      formSchema: {}, // Store empty object as placeholder
+      isPublished: formData.isPublished || false,
+      organizationId: formData.organizationId,
+      createdById: formData.createdById,
+      settings: normalizedSettings,
+    });
 
-  // Create OWNER permission for the form creator
-  try {
-    await formRepository.createOwnerPermission({
+    await txRepo.createOwnerPermission({
       id: randomUUID(),
-      formId: result.id,
+      formId: newForm.id,
       userId: formData.createdById,
       permission: 'OWNER',
       grantedById: formData.createdById, // Self-granted
     });
-    logger.info(`✅ Created OWNER permission for form creator: ${result.id}`);
-  } catch (error) {
-    logger.error(`❌ Failed to create OWNER permission for form ${result.id}:`, error);
-  }
+
+    logger.info(`✅ Created OWNER permission for form creator: ${newForm.id}`);
+    return { ...newForm, description: newForm.description || undefined };
+  });
 
   // Initialize Hocuspocus document for collaborative editing
   const schemaToInitialize = templateFormSchema || defaultFormSchema;

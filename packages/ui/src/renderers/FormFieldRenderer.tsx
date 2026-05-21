@@ -407,16 +407,16 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                     <FileChip key={i} name={file.name} onRemove={isInteractive ? () => cf.onChange([...existing, ...pending.filter((_, j) => j !== i)]) : undefined} />
                   ))}
 
-                  {/* Drop zone */}
+                  {/* Drop zone — wrapped in <label> for keyboard/screen-reader access (P2-19) */}
                   {isInteractive && total < maxFiles && (
-                    <div
+                    <label
+                      htmlFor={`ff-${field.id}`}
                       data-testid={`file-upload-drop-zone-${field.id}`}
-                      className="border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all duration-150"
+                      className="border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all duration-150 block"
                       style={{
                         borderColor: hasError ? '#ce5d55' : 'rgba(81,76,84,0.18)',
                         backgroundColor: hasError ? 'rgba(206,93,85,0.03)' : '#f7f7f8',
                       }}
-                      onClick={() => (document.getElementById(`ff-${field.id}`) as HTMLInputElement)?.click()}
                       onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
                       onDrop={e => { e.preventDefault(); e.stopPropagation(); onFiles(e.dataTransfer.files); }}
                     >
@@ -438,7 +438,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                         disabled={!isInteractive}
                         onChange={e => onFiles(e.target.files)}
                       />
-                    </div>
+                    </label>
                   )}
 
                   {/* Disabled placeholder */}

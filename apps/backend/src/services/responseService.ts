@@ -334,26 +334,34 @@ export const updateResponse = async (
       const { response: currentResponse, formSchema } = await ResponseEditTrackingService.getResponseWithFormSchema(responseId);
       const oldData = currentResponse.data as Prisma.JsonObject;
 
-      // Update the response
-      const updatedResponse = await responseRepository.update({
-        where: { id: responseId },
-        data: { data: data as Prisma.InputJsonValue },
-      });
+      // P2-02: Wrap the response update and edit history recording in a single
+      // transaction so a failure in recordEdit never leaves an untracked edit,
+      // and a failure in the response update never creates an orphaned audit record.
+      const updatedResponse = await prisma.$transaction(async (tx) => {
+        // 1. Update the response row inside the transaction
+        const updated = await tx.response.update({
+          where: { id: responseId },
+          data: { data: data as Prisma.InputJsonValue },
+        });
 
-      // Record the edit with field-level changes
-      await ResponseEditTrackingService.recordEdit(
-        responseId,
-        oldData,
-        data,
-        formSchema,
-        {
-          userId: editContext.userId,
-          ipAddress: editContext.ipAddress,
-          userAgent: editContext.userAgent,
-          editType: 'MANUAL',
-          editReason: editContext.editReason
-        }
-      );
+        // 2. Record the edit history inside the same transaction
+        await ResponseEditTrackingService.recordEdit(
+          responseId,
+          oldData,
+          data,
+          formSchema,
+          {
+            userId: editContext.userId,
+            ipAddress: editContext.ipAddress,
+            userAgent: editContext.userAgent,
+            editType: 'MANUAL',
+            editReason: editContext.editReason
+          },
+          tx
+        );
+
+        return updated;
+      });
 
       return {
         id: updatedResponse.id,
