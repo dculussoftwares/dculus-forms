@@ -32,7 +32,10 @@ export function NavUser() {
 
   const handleLogout = async () => {
     try {
-      await apolloClient.resetStore();
+      // Use clearStore (not resetStore) — clearStore discards the cache without
+      // re-fetching active queries. resetStore would re-fetch while signed out,
+      // causing UNAUTHENTICATED errors that redirect back to /signin mid-navigation.
+      await apolloClient.clearStore();
       await signOut();
       toastSuccess(t('signOut.success.title'), t('signOut.success.message'));
       window.location.href = '/signin';
