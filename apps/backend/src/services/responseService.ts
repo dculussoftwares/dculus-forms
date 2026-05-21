@@ -225,11 +225,11 @@ export async function getResponsesByFormId(
   } else {
     // No filters and regular sorting - use database query for better performance
     total = await responseRepository.count({
-      where: { formId },
+      where: { formId, deletedAt: null },
     });
 
     responses = await responseRepository.findMany({
-      where: { formId },
+      where: { formId, deletedAt: null },
       orderBy: { [validSortBy]: validSortOrder },
       skip,
       take: validLimit,
