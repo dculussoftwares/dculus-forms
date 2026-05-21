@@ -5,6 +5,7 @@ const prismaMock = vi.hoisted(() => ({
   form: {
     findMany: vi.fn().mockResolvedValue([]),
     findUnique: vi.fn().mockResolvedValue(null),
+    findFirst: vi.fn().mockResolvedValue(null),
     create: vi.fn().mockResolvedValue({}),
     update: vi.fn().mockResolvedValue({}),
     delete: vi.fn().mockResolvedValue({}),
@@ -27,6 +28,7 @@ describe('formRepository', () => {
     vi.clearAllMocks();
     prismaMock.form.findMany.mockResolvedValue([]);
     prismaMock.form.findUnique.mockResolvedValue(null);
+    prismaMock.form.findFirst.mockResolvedValue(null);
     prismaMock.form.create.mockResolvedValue({});
     prismaMock.form.update.mockResolvedValue({});
     prismaMock.form.delete.mockResolvedValue({});
@@ -56,7 +58,7 @@ describe('formRepository', () => {
   it('should expose domain helpers with default includes', async () => {
     const repo = createFormRepository();
     prismaMock.form.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([] as any);
-    prismaMock.form.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(null as any);
+    prismaMock.form.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(null as any);
 
     await repo.listByOrganization('org-1');
     await repo.listByOrganization();
@@ -70,14 +72,15 @@ describe('formRepository', () => {
 
     expect(prismaMock.form.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { organizationId: 'org-1' },
+        where: expect.objectContaining({ organizationId: 'org-1' }),
         include: expect.any(Object),
         orderBy: { createdAt: 'desc' },
       })
     );
-    expect(prismaMock.form.findUnique).toHaveBeenCalledWith(
+    // findById and findByShortUrl now use findFirst with deletedAt: null filter
+    expect(prismaMock.form.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'form-1' },
+        where: expect.objectContaining({ id: 'form-1', deletedAt: null }),
         include: expect.any(Object),
       })
     );

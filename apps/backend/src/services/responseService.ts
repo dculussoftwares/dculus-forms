@@ -45,8 +45,8 @@ export const getAllResponses = async (organizationId?: string): Promise<FormResp
 
 export const getResponseById = async (id: string): Promise<FormResponse | null> => {
   try {
-    const response = await responseRepository.findUnique({
-      where: { id },
+    const response = await responseRepository.findFirst({
+      where: { id, deletedAt: null } as any,
       include: {
         form: true,
       },
@@ -225,11 +225,11 @@ export async function getResponsesByFormId(
   } else {
     // No filters and regular sorting - use database query for better performance
     total = await responseRepository.count({
-      where: { formId },
+      where: { formId, deletedAt: null },
     });
 
     responses = await responseRepository.findMany({
-      where: { formId },
+      where: { formId, deletedAt: null },
       orderBy: { [validSortBy]: validSortOrder },
       skip,
       take: validLimit,
@@ -393,12 +393,13 @@ export const updateResponse = async (
 
 export const deleteResponse = async (id: string): Promise<boolean> => {
   try {
-    await responseRepository.delete({
+    await responseRepository.update({
       where: { id },
+      data: { deletedAt: new Date() },
     });
     return true;
   } catch (error) {
     logger.error('Error deleting response:', error);
     return false;
   }
-}; 
+};

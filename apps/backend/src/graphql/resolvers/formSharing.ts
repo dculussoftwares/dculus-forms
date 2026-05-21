@@ -24,8 +24,8 @@ type Scope = typeof SharingScope[keyof typeof SharingScope];
 
 // Helper function to check if user has permission to access form
 export const checkFormAccess = async (userId: string, formId: string, requiredPermission: Permission = PermissionLevel.VIEWER) => {
-  const form = await prisma.form.findUnique({
-    where: { id: formId },
+  const form = await prisma.form.findFirst({
+    where: { id: formId, deletedAt: null },
     include: {
       createdBy: true,
       permissions: {

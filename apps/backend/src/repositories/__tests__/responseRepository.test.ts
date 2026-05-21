@@ -203,7 +203,7 @@ describe('Response Repository', () => {
 
       expect(result).toEqual(mockResponses);
       expect(mockPrisma.response.findMany).toHaveBeenCalledWith({
-        where: { formId: 'form-123' },
+        where: { formId: 'form-123', deletedAt: null },
         orderBy: { submittedAt: 'desc' },
       });
     });

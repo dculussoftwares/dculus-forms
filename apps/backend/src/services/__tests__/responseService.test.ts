@@ -116,12 +116,12 @@ describe('Response Service', () => {
 
   describe('getResponseById', () => {
     it('should return response by id', async () => {
-      vi.mocked(responseRepository.findUnique).mockResolvedValue(mockResponse as any);
+      vi.mocked(responseRepository.findFirst).mockResolvedValue(mockResponse as any);
 
       const result = await getResponseById('response-123');
 
-      expect(responseRepository.findUnique).toHaveBeenCalledWith({
-        where: { id: 'response-123' },
+      expect(responseRepository.findFirst).toHaveBeenCalledWith({
+        where: { id: 'response-123', deletedAt: null },
         include: { form: true },
       });
       expect(result?.id).toBe('response-123');
@@ -129,7 +129,7 @@ describe('Response Service', () => {
     });
 
     it('should return null when response not found', async () => {
-      vi.mocked(responseRepository.findUnique).mockResolvedValue(null);
+      vi.mocked(responseRepository.findFirst).mockResolvedValue(null);
 
       const result = await getResponseById('nonexistent');
 
@@ -138,7 +138,7 @@ describe('Response Service', () => {
 
     it('should handle errors and return null', async () => {
       const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
-      vi.mocked(responseRepository.findUnique).mockRejectedValue(new Error('Database error'));
+      vi.mocked(responseRepository.findFirst).mockRejectedValue(new Error('Database error'));
 
       const result = await getResponseById('response-123');
 
@@ -369,6 +369,7 @@ describe('Response Service', () => {
           metadata: {},
           submittedAt: new Date('2024-01-01'),
           updatedAt: new Date('2024-01-01'),
+          deletedAt: null,
           form: {
             id: 'form-123',
             formSchema: {},
@@ -429,17 +430,20 @@ describe('Response Service', () => {
 
   describe('deleteResponse', () => {
     it('should delete response', async () => {
-      vi.mocked(responseRepository.delete).mockResolvedValue(undefined as any);
+      vi.mocked(responseRepository.update).mockResolvedValue(undefined as any);
 
       const result = await deleteResponse('response-123');
 
-      expect(responseRepository.delete).toHaveBeenCalledWith({ where: { id: 'response-123' } });
+      expect(responseRepository.update).toHaveBeenCalledWith({
+        where: { id: 'response-123' },
+        data: expect.objectContaining({ deletedAt: expect.any(Date) }),
+      });
       expect(result).toBe(true);
     });
 
     it('should return false on error', async () => {
       const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
-      vi.mocked(responseRepository.delete).mockRejectedValue(new Error('Database error'));
+      vi.mocked(responseRepository.update).mockRejectedValue(new Error('Database error'));
 
       const result = await deleteResponse('response-123');
 

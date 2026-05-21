@@ -3,12 +3,12 @@ import countries from 'i18n-iso-countries';
 import * as ct from 'countries-and-timezones';
 import { createRequire } from 'module';
 import { logger } from '../lib/logger.js';
+import { prisma } from '../lib/prisma.js';
 import {
   formViewAnalyticsRepository,
   formSubmissionAnalyticsRepository,
 } from '../repositories/index.js';
 import { EdgeVisitorLocation } from '../middleware/edge-geolocation.js';
-import { prisma } from '../lib/prisma.js';
 
 // Create require for CommonJS modules in ES module context
 const require = createRequire(import.meta.url);
@@ -513,6 +513,26 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
 // Initialize service (log startup)
 const initializeService = () => {
   logger.info('GeoIP service initialized (fallback mode)');
+};
+
+/**
+ * Delete FormViewAnalytics and FormSubmissionAnalytics records older than
+ * `daysToRetain` days. Intended to be called on a daily schedule.
+ *
+ * P2-08: Analytics cleanup job — default retention is 365 days.
+ */
+export const cleanupOldAnalytics = async (daysToRetain = 365): Promise<void> => {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - daysToRetain);
+
+  const [viewsDeleted, submissionsDeleted] = await Promise.all([
+    prisma.formViewAnalytics.deleteMany({ where: { viewedAt: { lt: cutoff } } }),
+    prisma.formSubmissionAnalytics.deleteMany({ where: { submittedAt: { lt: cutoff } } }),
+  ]);
+
+  logger.info(
+    `Analytics cleanup: deleted ${viewsDeleted.count} views, ${submissionsDeleted.count} submissions older than ${daysToRetain} days`
+  );
 };
 
 // Database query functions for submission analytics
