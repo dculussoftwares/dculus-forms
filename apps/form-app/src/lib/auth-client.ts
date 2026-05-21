@@ -7,6 +7,13 @@ const baseUrl = getApiBaseUrl();
 // Store the bearer token in sessionStorage — cleared on tab close, not shared across tabs.
 // More secure than localStorage while surviving intra-tab page navigations.
 const TOKEN_KEY = 'bearer_token';
+
+// Clear any stale bearer token when arriving at the sign-in page so that Apollo
+// does not send an expired token loaded from a saved E2E storage state.
+if (typeof window !== 'undefined' && window.location.pathname.startsWith('/signin')) {
+  sessionStorage.removeItem(TOKEN_KEY);
+}
+
 export const getBearerToken = () => sessionStorage.getItem(TOKEN_KEY) ?? '';
 
 export const authClient = createAuthClient({

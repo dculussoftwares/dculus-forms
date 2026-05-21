@@ -46,8 +46,12 @@ const errorLink = onError(({ graphQLErrors }) => {
       code === GRAPHQL_ERROR_CODES.UNAUTHENTICATED ||
       code === GRAPHQL_ERROR_CODES.AUTHENTICATION_REQUIRED
     ) {
-      // Session expired — redirect to sign-in so user doesn't silently lose access
-      window.location.href = '/signin';
+      // Session expired — redirect to sign-in so user doesn't silently lose access.
+      // Guard: don't redirect if already on /signin (prevents loops when a stale
+      // sessionStorage token fires queries during the sign-in page load).
+      if (!window.location.pathname.startsWith('/signin')) {
+        window.location.href = '/signin';
+      }
       return;
     }
   }
