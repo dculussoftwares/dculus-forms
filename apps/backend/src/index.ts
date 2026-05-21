@@ -117,32 +117,27 @@ app.use(
 // Rate limiters — disabled in test environments so integration/E2E suites are not throttled
 const isTestEnv = appConfig.nodeEnv === 'test';
 
-// Auth: 60/min — blocks credential-stuffing (needs 1000s/min to be effective)
-// while allowing E2E suites (52 scenarios × ~3 auth calls + retries ≈ 200 total).
 const authLimiter = rateLimit({
   windowMs: 60_000,
-  max: isTestEnv ? 10_000 : 60,
+  max: isTestEnv ? 10_000 : 5000,
   standardHeaders: true,
   legacyHeaders: false,
   skip: () => isTestEnv,
   message: { error: 'Too many auth requests, please try again later' },
 });
 
-// Upload: 60/min — reasonable for legitimate use; S3/R2 handles its own throttling.
 const uploadLimiter = rateLimit({
   windowMs: 60_000,
-  max: isTestEnv ? 10_000 : 60,
+  max: isTestEnv ? 10_000 : 5000,
   standardHeaders: true,
   legacyHeaders: false,
   skip: () => isTestEnv,
   message: { error: 'Too many upload requests, please try again later' },
 });
 
-// 2000/min allows a full E2E suite (70+ scenarios × ~10 mutations each = ~700 requests
-// in a burst) without hitting the limiter, while still blocking obvious DoS floods.
 const graphqlLimiter = rateLimit({
   windowMs: 60_000,
-  max: isTestEnv ? 10_000 : 2000,
+  max: isTestEnv ? 10_000 : 5000,
   standardHeaders: true,
   legacyHeaders: false,
   skip: () => isTestEnv,
