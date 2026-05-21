@@ -4,23 +4,20 @@ import { getApiBaseUrl } from './config';
 
 const baseUrl = getApiBaseUrl();
 
-// Keep the bearer token in module memory instead of localStorage to reduce XSS exposure.
-// The token only needs to survive the current page session; Hocuspocus reconnects on reload.
-let _bearerToken = '';
-
-export const getBearerToken = () => _bearerToken;
+// Store the bearer token in sessionStorage — cleared on tab close, not shared across tabs.
+// More secure than localStorage while surviving intra-tab page navigations.
+const TOKEN_KEY = 'bearer_token';
+export const getBearerToken = () => sessionStorage.getItem(TOKEN_KEY) ?? '';
 
 export const authClient = createAuthClient({
   plugins: [organizationClient(), emailOTPClient()],
   baseURL: baseUrl, // Your backend URL
   fetchOptions: {
     onSuccess: (ctx) => {
-      // console.log('Authentication successful', ctx);
       console.log("ctx.data.session?.activeOrganizationId", ctx.data.session?.activeOrganizationId);
-      const authToken = ctx.response.headers.get('set-auth-token'); // get the token from the response headers
-      // Store the token in module memory (not localStorage) to reduce XSS exposure
+      const authToken = ctx.response.headers.get('set-auth-token');
       if (authToken) {
-        _bearerToken = authToken;
+        sessionStorage.setItem(TOKEN_KEY, authToken);
       }
       localStorage.setItem(
         'organization_id',
@@ -28,24 +25,20 @@ export const authClient = createAuthClient({
       );
     },
     onError: (ctx) => {
-      // Clear token on authentication errors
       if (ctx.response?.status === 401) {
-        _bearerToken = '';
+        sessionStorage.removeItem(TOKEN_KEY);
       }
     },
     auth: {
       type: 'Bearer',
-      token: () => _bearerToken,
+      token: () => getBearerToken(),
     },
   },
 });
 
 // Create a custom signOut function that clears the token
 const customSignOut = async (options?: any) => {
-  // Clear the token from module memory
-  _bearerToken = '';
-
-  // Call the original signOut function
+  sessionStorage.removeItem(TOKEN_KEY);
   return authClient.signOut(options);
 };
 
