@@ -227,7 +227,7 @@ export const formSharingResolvers = {
         where: whereCondition
       });
 
-      // Get paginated forms
+      // Get paginated forms — include _count.responses for N+1-free responseCount resolution (P3-02)
       const forms = await prisma.form.findMany({
         where: whereCondition,
         include: {
@@ -238,6 +238,9 @@ export const formSharingResolvers = {
               user: true,
               grantedBy: true
             }
+          },
+          _count: {
+            select: { responses: true }
           }
         },
         orderBy: { updatedAt: 'desc' },

@@ -21,7 +21,8 @@ export async function createBetterAuthContext(req: Request): Promise<BetterAuthC
       headers: fromNodeHeaders(req.headers),
     });
 
-    logger.info('Auth context - User:', sessionData?.user?.email || 'none', 'Role:', (sessionData?.user as any)?.role || 'none');
+    // P3-08: Log user ID instead of email to avoid PII in log output
+    logger.info('Auth context - User:', sessionData?.user?.id || 'none', 'Role:', (sessionData?.user as any)?.role || 'none');
 
     return {
       user: sessionData?.user || null,

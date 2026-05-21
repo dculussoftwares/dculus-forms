@@ -14,7 +14,8 @@ vi.mock('../../lib/prisma.js', () => {
       create: vi.fn().mockResolvedValue({}),
     },
     responseFieldChange: {
-      create: vi.fn().mockResolvedValue({}),
+      // P3-03: service now uses createMany instead of individual create calls
+      createMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
   };
   return {
@@ -430,7 +431,7 @@ describe('ResponseEditTrackingService', () => {
       const txCallback = vi.mocked(mockPrisma.$transaction).mock.calls[0][0];
       const mockTx = {
         responseEditHistory: { create: vi.fn().mockResolvedValue({}) },
-        responseFieldChange: { create: vi.fn().mockResolvedValue({}) },
+        responseFieldChange: { createMany: vi.fn().mockResolvedValue({ count: 1 }) },
       };
       await txCallback(mockTx);
 
@@ -446,7 +447,13 @@ describe('ResponseEditTrackingService', () => {
         }),
       });
 
-      expect(mockTx.responseFieldChange.create).toHaveBeenCalledTimes(1);
+      // P3-03: createMany is called once with all changes in a single batch
+      expect(mockTx.responseFieldChange.createMany).toHaveBeenCalledTimes(1);
+      expect(mockTx.responseFieldChange.createMany).toHaveBeenCalledWith({
+        data: expect.arrayContaining([
+          expect.objectContaining({ fieldId: 'field-1', changeType: 'UPDATE' }),
+        ]),
+      });
     });
 
     it('should skip recording when no changes detected', async () => {
@@ -485,11 +492,18 @@ describe('ResponseEditTrackingService', () => {
       const txCallback = vi.mocked(mockPrisma.$transaction).mock.calls[0][0];
       const mockTx = {
         responseEditHistory: { create: vi.fn().mockResolvedValue({}) },
-        responseFieldChange: { create: vi.fn().mockResolvedValue({}) },
+        responseFieldChange: { createMany: vi.fn().mockResolvedValue({ count: 2 }) },
       };
       await txCallback(mockTx);
 
-      expect(mockTx.responseFieldChange.create).toHaveBeenCalledTimes(2);
+      // P3-03: createMany is called once with all 2 changes in a single batch
+      expect(mockTx.responseFieldChange.createMany).toHaveBeenCalledTimes(1);
+      expect(mockTx.responseFieldChange.createMany).toHaveBeenCalledWith({
+        data: expect.arrayContaining([
+          expect.objectContaining({ fieldId: 'field-1' }),
+          expect.objectContaining({ fieldId: 'field-2' }),
+        ]),
+      });
     });
 
     it('should use default edit type when not provided', async () => {
@@ -511,7 +525,7 @@ describe('ResponseEditTrackingService', () => {
       const txCallback = vi.mocked(mockPrisma.$transaction).mock.calls[0][0];
       const mockTx = {
         responseEditHistory: { create: vi.fn().mockResolvedValue({}) },
-        responseFieldChange: { create: vi.fn().mockResolvedValue({}) },
+        responseFieldChange: { createMany: vi.fn().mockResolvedValue({ count: 1 }) },
       };
       await txCallback(mockTx);
 

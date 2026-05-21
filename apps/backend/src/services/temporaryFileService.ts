@@ -60,9 +60,6 @@ export async function uploadTemporaryFile(
       expiresIn: 5 * 60 * 60, // 5 hours in seconds
     });
 
-    // Schedule cleanup (in a real implementation, you'd use a proper job queue)
-    scheduleFileCleanup(fileKey, 5 * 60 * 60 * 1000); // 5 hours
-
     return {
       downloadUrl,
       expiresAt,
@@ -94,19 +91,20 @@ export async function deleteTemporaryFile(fileKey: string): Promise<boolean> {
 }
 
 /**
- * Schedule cleanup for a single file after a delay.
- * Known limitation: timer is process-local and lost on server restart.
- * `cleanupExpiredFiles` runs on startup to handle files from previous processes.
+ * P3-06: Start a persistent periodic cleanup that runs every 30 minutes.
+ * Also runs immediately on startup to clear files left by a previous process.
+ * Uses .unref() so the interval does not prevent graceful process exit.
+ * Call this once from index.ts instead of scheduling per-upload timeouts.
  */
-function scheduleFileCleanup(fileKey: string, delayMs: number): void {
-  setTimeout(async () => {
-    try {
-      await deleteTemporaryFile(fileKey);
-    } catch (error) {
-      logger.error(`Failed to cleanup temporary file ${fileKey}:`, error);
-    }
-  }, delayMs);
-}
+export const startPeriodicCleanup = (): void => {
+  // Run immediately on startup to clear any files from the previous process
+  cleanupExpiredFiles().catch(err => logger.warn('Startup temp-file cleanup failed:', err));
+
+  // Then run every 30 minutes
+  setInterval(() => {
+    cleanupExpiredFiles().catch(err => logger.warn('Periodic temp-file cleanup failed:', err));
+  }, 30 * 60 * 1000).unref();
+};
 
 /**
  * Delete all temp-exports objects whose embedded timestamp is older than 5 hours.

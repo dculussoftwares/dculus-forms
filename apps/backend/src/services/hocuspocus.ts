@@ -90,16 +90,10 @@ export const createHocuspocusServer = () => {
               return new Uint8Array(document.state);
             }
 
+            // P3-10: Removed listDocumentNames() debug log — enumerating all document
+            // names on every not-found fetch is unnecessary and leaks document IDs.
             logger.info(
               `❌ [Hocuspocus] Document not found for: ${documentName}`
-            );
-
-            // List all documents for debugging
-            const allDocs =
-              await collaborativeDocumentRepository.listDocumentNames();
-            logger.info(
-              `📋 [Hocuspocus] Available documents:`,
-              allDocs.map((d: { documentName: string }) => d.documentName)
             );
 
             return null;

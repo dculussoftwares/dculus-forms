@@ -43,7 +43,9 @@ export const createFormViewAnalyticsRepository = (
       data,
     });
 
-  type DailyViewRow = { date: string; views: bigint; sessions: bigint };
+  // P3-04: Use Date instead of string for the raw date column so DATE_TRUNC output
+  // can be mapped without a second parse (timestamps come back as Date objects from pg).
+  type DailyViewRow = { date: Date; views: bigint; sessions: bigint };
 
   const countDistinctSessions = async (
     formId: string,
@@ -75,30 +77,31 @@ export const createFormViewAnalyticsRepository = (
     if (timeRange) {
       rows = await prisma.$queryRaw<DailyViewRow[]>`
         SELECT
-          TO_CHAR("viewedAt", 'YYYY-MM-DD') AS date,
+          DATE_TRUNC('day', "viewedAt") AS date,
           COUNT(*) AS views,
           COUNT(DISTINCT "sessionId") AS sessions
         FROM "form_view_analytics"
         WHERE "formId" = ${formId}
           AND "viewedAt" >= ${timeRange.start}
           AND "viewedAt" <= ${timeRange.end}
-        GROUP BY TO_CHAR("viewedAt", 'YYYY-MM-DD')
+        GROUP BY DATE_TRUNC('day', "viewedAt")
         ORDER BY date ASC
       `;
     } else {
       rows = await prisma.$queryRaw<DailyViewRow[]>`
         SELECT
-          TO_CHAR("viewedAt", 'YYYY-MM-DD') AS date,
+          DATE_TRUNC('day', "viewedAt") AS date,
           COUNT(*) AS views,
           COUNT(DISTINCT "sessionId") AS sessions
         FROM "form_view_analytics"
         WHERE "formId" = ${formId}
-        GROUP BY TO_CHAR("viewedAt", 'YYYY-MM-DD')
+        GROUP BY DATE_TRUNC('day', "viewedAt")
         ORDER BY date ASC
       `;
     }
     return rows.map(row => ({
-      date: row.date,
+      // Convert the DATE_TRUNC timestamp to a YYYY-MM-DD string in application code
+      date: new Date(row.date).toISOString().split('T')[0],
       views: Number(row.views),
       sessions: Number(row.sessions),
     }));

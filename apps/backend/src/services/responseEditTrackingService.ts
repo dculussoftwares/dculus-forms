@@ -328,23 +328,21 @@ export class ResponseEditTrackingService {
         },
       });
 
-      await Promise.all(
-        changes.map((change) =>
-          client.responseFieldChange.create({
-            data: {
-              id: generateId(),
-              editHistoryId,
-              fieldId: change.fieldId,
-              fieldLabel: change.fieldLabel,
-              fieldType: change.fieldType,
-              previousValue: change.previousValue,
-              newValue: change.newValue,
-              changeType: change.changeType,
-              valueChangeSize: change.valueChangeSize,
-            },
-          })
-        )
-      );
+      // P3-03: Replace per-row create() calls with a single createMany() to reduce
+      // round-trips inside the transaction.
+      await client.responseFieldChange.createMany({
+        data: changes.map((change) => ({
+          id: generateId(),
+          editHistoryId,
+          fieldId: change.fieldId,
+          fieldLabel: change.fieldLabel,
+          fieldType: change.fieldType,
+          previousValue: change.previousValue ?? null,
+          newValue: change.newValue ?? null,
+          changeType: change.changeType,
+          valueChangeSize: change.valueChangeSize ?? null,
+        })),
+      });
     };
 
     if (tx) {
