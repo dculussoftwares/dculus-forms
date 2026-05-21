@@ -124,11 +124,10 @@ export const formsResolvers = {
       return null;
     },
     responseCount: async (parent: any) => {
-      // Count total responses for this form
-      const count = await prisma.response.count({
-        where: { formId: parent.id }
-      });
-      return count;
+      // P3-02: Return pre-fetched _count when available (avoids N+1 on list queries).
+      // Fall back to a direct COUNT query for single-form queries where _count is absent.
+      if (parent._count?.responses !== undefined) return parent._count.responses;
+      return prisma.response.count({ where: { formId: parent.id, deletedAt: null } });
     },
     dashboardStats: async (parent: any) => {
       const formId = parent.id;

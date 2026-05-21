@@ -28,7 +28,7 @@ import { createHocuspocusServer } from './services/hocuspocus.js';
 import { appConfig } from './lib/env.js';
 import { initializePluginSystem } from './plugins/index.js';
 import { initializeSubscriptionSystem } from './subscriptions/index.js';
-import { cleanupExpiredFiles } from './services/temporaryFileService.js';
+import { startPeriodicCleanup } from './services/temporaryFileService.js';
 import { cleanupOldAnalytics } from './services/analyticsService.js';
 import { logger } from './lib/logger.js';
 import { deriveGraphQLErrorCode } from './lib/graphqlErrors.js';
@@ -167,7 +167,11 @@ app.use(
 );
 
 app.use(compression());
-app.use(morgan('combined'));
+// P3-07: Custom Morgan format — logs path without query strings (which may contain tokens)
+// and omits client IP to reduce PII in logs. 'combined' format exposed both.
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms', {
+  stream: { write: (msg: string) => logger.info(msg.trim()) }
+}));
 
 // Mount Better Auth handler AFTER CORS middleware — with rate limiting on auth routes
 app.all('/api/auth/*', authLimiter, toNodeHandler(auth));
@@ -313,7 +317,8 @@ async function startServer() {
     logger.info(`🚀 Server running on http://localhost:${PORT}`);
     logger.info(`📊 GraphQL endpoint: http://localhost:${PORT}/graphql`);
     logger.info(`🤝 Hocuspocus WebSocket server integrated on port ${PORT}`);
-    cleanupExpiredFiles().catch(err => logger.warn('Startup temp-file cleanup failed:', err));
+    // P3-06: Start periodic 30-min cleanup (also runs immediately on startup)
+    startPeriodicCleanup();
 
     // Run analytics cleanup daily (every 24h)
     setInterval(() => {

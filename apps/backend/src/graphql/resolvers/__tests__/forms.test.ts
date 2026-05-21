@@ -306,13 +306,23 @@ describe('Forms Resolvers', () => {
   });
 
   describe('Form: responseCount', () => {
-    it('should return total response count', async () => {
+    it('should return _count.responses directly when pre-fetched (no DB call)', async () => {
+      const result = await formsResolvers.Form.responseCount({
+        id: 'form-123',
+        _count: { responses: 7 },
+      });
+
+      expect(prisma.response.count).not.toHaveBeenCalled();
+      expect(result).toBe(7);
+    });
+
+    it('should fall back to COUNT query with deletedAt filter when _count absent', async () => {
       vi.mocked(prisma.response.count).mockResolvedValue(42);
 
       const result = await formsResolvers.Form.responseCount({ id: 'form-123' });
 
       expect(prisma.response.count).toHaveBeenCalledWith({
-        where: { formId: 'form-123' },
+        where: { formId: 'form-123', deletedAt: null },
       });
       expect(result).toBe(42);
     });

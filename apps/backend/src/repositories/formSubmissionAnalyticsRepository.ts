@@ -30,7 +30,9 @@ export const createFormSubmissionAnalyticsRepository = (
       data,
     });
 
-  type DailySubmissionRow = { date: string; submissions: bigint; sessions: bigint };
+  // P3-04: Use Date instead of string for the raw date column so DATE_TRUNC output
+  // can be mapped without a second parse (timestamps come back as Date objects from pg).
+  type DailySubmissionRow = { date: Date; submissions: bigint; sessions: bigint };
 
   const countDistinctSessions = async (
     formId: string,
@@ -62,30 +64,31 @@ export const createFormSubmissionAnalyticsRepository = (
     if (timeRange) {
       rows = await prisma.$queryRaw<DailySubmissionRow[]>`
         SELECT
-          TO_CHAR("submittedAt", 'YYYY-MM-DD') AS date,
+          DATE_TRUNC('day', "submittedAt") AS date,
           COUNT(*) AS submissions,
           COUNT(DISTINCT "sessionId") AS sessions
         FROM "form_submission_analytics"
         WHERE "formId" = ${formId}
           AND "submittedAt" >= ${timeRange.start}
           AND "submittedAt" <= ${timeRange.end}
-        GROUP BY TO_CHAR("submittedAt", 'YYYY-MM-DD')
+        GROUP BY DATE_TRUNC('day', "submittedAt")
         ORDER BY date ASC
       `;
     } else {
       rows = await prisma.$queryRaw<DailySubmissionRow[]>`
         SELECT
-          TO_CHAR("submittedAt", 'YYYY-MM-DD') AS date,
+          DATE_TRUNC('day', "submittedAt") AS date,
           COUNT(*) AS submissions,
           COUNT(DISTINCT "sessionId") AS sessions
         FROM "form_submission_analytics"
         WHERE "formId" = ${formId}
-        GROUP BY TO_CHAR("submittedAt", 'YYYY-MM-DD')
+        GROUP BY DATE_TRUNC('day', "submittedAt")
         ORDER BY date ASC
       `;
     }
     return rows.map(row => ({
-      date: row.date,
+      // Convert the DATE_TRUNC timestamp to a YYYY-MM-DD string in application code
+      date: new Date(row.date).toISOString().split('T')[0],
       submissions: Number(row.submissions),
       sessions: Number(row.sessions),
     }));

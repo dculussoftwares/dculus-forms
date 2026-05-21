@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import crypto, { createHash } from 'crypto';
 import express, { Router } from 'express';
 import { logger } from '../lib/logger.js';
 import { chargebeeConfig } from '../lib/env.js';
@@ -32,12 +32,12 @@ router.post('/webhooks/chargebee', async (req, res) => {
     const decoded = Buffer.from(base64, 'base64').toString('utf8');
     const incomingPassword = decoded.includes(':') ? decoded.slice(decoded.indexOf(':') + 1) : decoded;
 
+    // P3-09: Hash both sides to a fixed length before comparing so that differing
+    // buffer lengths don't throw and reveal the correct password length via timing.
+    const hash = (s: string) => createHash('sha256').update(s).digest();
     let valid = false;
     try {
-      valid = crypto.timingSafeEqual(
-        Buffer.from(incomingPassword),
-        Buffer.from(chargebeeConfig.webhookPassword)
-      );
+      valid = crypto.timingSafeEqual(hash(incomingPassword), hash(chargebeeConfig.webhookPassword));
     } catch {
       valid = false;
     }

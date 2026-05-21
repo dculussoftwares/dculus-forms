@@ -3,6 +3,7 @@ import {
   uploadTemporaryFile,
   deleteTemporaryFile,
   cleanupExpiredFiles,
+  startPeriodicCleanup,
 } from '../temporaryFileService.js';
 import { PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -152,20 +153,19 @@ describe('Temporary File Service', () => {
       expect(putCommand.input.Bucket).toBe('test-private-bucket');
     });
 
-    it('should schedule cleanup after 5 hours', async () => {
+    it('should not schedule a per-upload cleanup timer (P3-06: periodic cleanup replaces per-upload timers)', async () => {
       mockSend.mockResolvedValue({});
       vi.mocked(getSignedUrl).mockResolvedValue('https://signed-url.example.com/file.xlsx');
 
       const buffer = Buffer.from('test data');
       await uploadTemporaryFile(buffer, 'report.xlsx');
 
-      // Fast-forward time by 5 hours
+      // Fast-forward 5 hours — no individual timer should fire a DeleteObjectCommand
       vi.advanceTimersByTime(5 * 60 * 60 * 1000);
-
-      // The cleanup should have been scheduled and executed
       await vi.runAllTimersAsync();
 
-      expect(mockSend).toHaveBeenCalledWith(expect.any(DeleteObjectCommand));
+      // Only PutObjectCommand and GetObjectCommand should have been called, no DeleteObjectCommand
+      expect(mockSend).not.toHaveBeenCalledWith(expect.any(DeleteObjectCommand));
     });
 
     it('should handle upload errors', async () => {
@@ -245,51 +245,42 @@ describe('Temporary File Service', () => {
     });
   });
 
-  describe('scheduled cleanup', () => {
-    it('should cleanup file after scheduled delay', async () => {
-      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
-      mockSend.mockResolvedValue({});
-      vi.mocked(getSignedUrl).mockResolvedValue('https://signed-url.example.com/file.xlsx');
+  describe('startPeriodicCleanup (P3-06)', () => {
+    it('should run cleanup immediately on startup', async () => {
+      const loggerInfo = vi.spyOn(logger, 'info').mockImplementation(() => {});
+      // ListObjectsV2Command returns empty list
+      mockSend.mockResolvedValue({ Contents: [], IsTruncated: false });
 
-      const buffer = Buffer.from('test data');
-      const result = await uploadTemporaryFile(buffer, 'report.xlsx');
+      startPeriodicCleanup();
 
-      // Clear previous calls
-      mockSend.mockClear();
+      // Advance just enough time to let the immediate cleanup promise resolve
+      // without triggering the 30-minute interval
+      await vi.advanceTimersByTimeAsync(100);
 
-      // Fast-forward to trigger cleanup
-      vi.advanceTimersByTime(5 * 60 * 60 * 1000);
-      await vi.runAllTimersAsync();
-
-      expect(mockSend).toHaveBeenCalledWith(expect.any(DeleteObjectCommand));
-      const deleteCommand = mockSend.mock.calls[0][0];
-      expect(deleteCommand.input.Key).toBe(result.fileKey);
-
-      loggerError.mockRestore();
+      expect(loggerInfo).toHaveBeenCalledWith(
+        'Temp-file cleanup complete: 0 deleted, 0 errors'
+      );
+      loggerInfo.mockRestore();
     });
 
-    it('should handle cleanup errors gracefully', async () => {
-      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
-      mockSend.mockResolvedValue({});
-      vi.mocked(getSignedUrl).mockResolvedValue('https://signed-url.example.com/file.xlsx');
+    it('should run cleanup again after 30 minutes', async () => {
+      const loggerInfo = vi.spyOn(logger, 'info').mockImplementation(() => {});
+      mockSend.mockResolvedValue({ Contents: [], IsTruncated: false });
 
-      const buffer = Buffer.from('test data');
-      await uploadTemporaryFile(buffer, 'report.xlsx');
+      startPeriodicCleanup();
 
-      // Make delete fail
-      mockSend.mockRejectedValue(new Error('Delete failed'));
+      // Flush the startup cleanup (small advance to avoid triggering 30-min interval)
+      await vi.advanceTimersByTimeAsync(100);
 
-      // Fast-forward to trigger cleanup
-      vi.advanceTimersByTime(5 * 60 * 60 * 1000);
-      await vi.runAllTimersAsync();
+      // Advance 30 minutes to trigger interval
+      await vi.advanceTimersByTimeAsync(30 * 60 * 1000);
 
-      // The scheduleFileCleanup function calls deleteTemporaryFile which logs "Error deleting temporary file"
-      expect(loggerError).toHaveBeenCalledWith(
-        expect.stringContaining('Error deleting temporary file'),
-        expect.any(Error)
+      // cleanup complete logged at least twice (startup + interval)
+      const calls = vi.mocked(loggerInfo).mock.calls.filter(
+        (call) => call[0] === 'Temp-file cleanup complete: 0 deleted, 0 errors'
       );
-
-      loggerError.mockRestore();
+      expect(calls.length).toBeGreaterThanOrEqual(2);
+      loggerInfo.mockRestore();
     });
   });
 
