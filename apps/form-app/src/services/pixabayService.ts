@@ -1,5 +1,5 @@
 import { uploadFileHTTP } from './fileUploadService';
-import { getPixabayApiKey } from '../lib/config';
+import { getApiBaseUrl } from '../lib/config';
 
 interface PixabayImage {
   id: number;
@@ -19,32 +19,23 @@ interface PixabayResponse {
   hits: PixabayImage[];
 }
 
-const PIXABAY_API_KEY = getPixabayApiKey();
-
-const PIXABAY_BASE_URL = 'https://pixabay.com/api/';
-
 export async function searchPixabayImages(
   query: string = 'background',
   page: number = 1,
   perPage: number = 20
 ): Promise<PixabayResponse> {
   const params = new URLSearchParams({
-    key: PIXABAY_API_KEY,
     q: query,
-    image_type: 'photo',
-    orientation: 'all',
-    category: 'backgrounds',
-    min_width: '1920',
-    min_height: '1080',
-    safesearch: 'true',
     page: page.toString(),
     per_page: perPage.toString(),
   });
 
-  const response = await fetch(`${PIXABAY_BASE_URL}?${params}`);
+  const response = await fetch(`${getApiBaseUrl()}/api/pixabay?${params}`, {
+    credentials: 'include',
+  });
 
   if (!response.ok) {
-    throw new Error(`Pixabay API error: ${response.status}`);
+    throw new Error(`Image search error: ${response.status}`);
   }
 
   return response.json();

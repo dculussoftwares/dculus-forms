@@ -39,6 +39,7 @@ interface AlertDialogActionProps {
   children: React.ReactNode;
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
   className?: string;
+  disabled?: boolean;
 }
 
 interface AlertDialogCancelProps {
@@ -84,9 +85,9 @@ export function AlertDialogFooter({ children }: AlertDialogFooterProps) {
   return <div className="flex justify-end space-x-2 mt-6">{children}</div>;
 }
 
-export function AlertDialogAction({ onClick, children, variant = "default", className = "" }: AlertDialogActionProps) {
+export function AlertDialogAction({ onClick, children, variant = "default", className = "", disabled = false }: AlertDialogActionProps) {
   return (
-    <Button onClick={onClick} variant={variant} className={className}>
+    <Button onClick={onClick} variant={variant} className={className} disabled={disabled}>
       {children}
     </Button>
   );

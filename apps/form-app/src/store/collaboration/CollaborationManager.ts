@@ -91,14 +91,7 @@ export const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
   };
 
   if (fieldType === FieldType.RICH_TEXT_FIELD) {
-    const extractedContent = fieldMap.get('content') || '';
-    console.log('📥 extractFieldData - Rich Text from YJS:', {
-      fieldId: result.id,
-      hasContent: !!fieldMap.get('content'),
-      contentLength: extractedContent.length,
-      content: `${extractedContent.substring(0, 100)}...`,
-    });
-    result.content = extractedContent;
+    result.content = fieldMap.get('content') || '';
   }
 
   if (fieldType === FieldType.FILE_UPLOAD_FIELD) {
@@ -220,7 +213,6 @@ export class CollaborationManager {
       const wsUrl = getWebSocketUrl();
 
       const authToken = getBearerToken();
-      console.log('🔐 Initializing Hocuspocus with auth token:', !!authToken);
 
       this.provider = new HocuspocusProvider({
         url: wsUrl,
@@ -274,18 +266,15 @@ export class CollaborationManager {
     if (!this.provider) return;
 
     const onConnect = () => {
-      console.log('🔗 Collaboration connected');
       this.connectionCallback(true);
       this.scheduleUpdateFromYJS();
     };
 
     const onDisconnect = () => {
-      console.log('🔗 Collaboration disconnected');
       this.connectionCallback(false);
     };
 
     const onSynced = () => {
-      console.log('🔄 Document synced');
       this.scheduleUpdateFromYJS();
       this.loadingCallback(false);
     };
@@ -307,7 +296,6 @@ export class CollaborationManager {
     const formSchemaMap = this.ydoc.getMap('formSchema');
 
     const formSchemaObserver = (event: Y.YMapEvent<any>) => {
-      console.log('📡 FormSchema changed:', event.keysChanged);
       this.scheduleUpdateFromYJS();
 
       if (event.keysChanged.has('pages')) {
@@ -370,7 +358,6 @@ export class CollaborationManager {
       if (!fieldsArray) return;
 
       const fieldsObserver = () => {
-        console.log('📡 Fields array changed');
         this.scheduleUpdateFromYJS();
         this.setupIndividualFieldObservers(fieldsArray);
       };
@@ -401,7 +388,6 @@ export class CollaborationManager {
 
       // Observer for field properties
       const fieldObserver = () => {
-        console.log(`📡 Field ${fieldId} properties changed`);
         this.scheduleUpdateFromYJS();
       };
       fieldMap.observe(fieldObserver);
@@ -411,7 +397,6 @@ export class CollaborationManager {
       const validationMap = fieldMap.get('validation');
       if (validationMap && validationMap instanceof Y.Map) {
         const validationObserver = () => {
-          console.log(`📡 Field ${fieldId} validation changed`);
           this.scheduleUpdateFromYJS();
         };
         validationMap.observe(validationObserver);

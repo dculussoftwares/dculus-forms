@@ -1,7 +1,8 @@
-import React, { useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
 import { useAuthContext } from '../contexts/AuthContext';
+import { AlertTriangle, X } from 'lucide-react';
 import {
   FormPermissionProvider,
   PermissionLevel,
@@ -59,6 +60,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   const navigate = useNavigate();
   const { t } = useTranslation('collaborativeFormBuilder');
   const { user } = useAuthContext();
+  const [isBannerDismissed, setIsBannerDismissed] = useState(false);
 
   const activeTab: BuilderTab = useMemo(() => {
     return tab && VALID_TABS.includes(tab as BuilderTab)
@@ -81,6 +83,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   const {
     isConnected,
     isLoading,
+    isCollaborationFailed,
     pages,
     selectedPageId,
 
@@ -415,6 +418,27 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
                 />
               }
             />
+
+            {/* P3-17: Collaboration failure banner — shown after MAX_RECONNECT_ATTEMPTS are exhausted */}
+            {isCollaborationFailed && !isBannerDismissed && (
+              <div className="flex items-center gap-3 px-4 py-2 bg-orange-50 border-b border-orange-200 text-orange-800 text-sm">
+                <AlertTriangle className="h-4 w-4 flex-shrink-0 text-orange-600" />
+                <span className="flex-1">{t('collaboration.syncLostBanner')}</span>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="font-medium underline hover:no-underline"
+                >
+                  {t('collaboration.syncLostReload')}
+                </button>
+                <button
+                  onClick={() => setIsBannerDismissed(true)}
+                  className="ml-2 text-orange-600 hover:text-orange-800"
+                  aria-label="Dismiss"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
 
             <div className="flex-1 overflow-hidden relative">
               {renderTabContent()}
