@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { useTranslation } from '../hooks/useTranslation';
 import { GET_FORM_BY_ID, GET_RESPONSE_BY_ID } from '../graphql/queries';
 import { useResponseEditHistory } from '../hooks/useResponseEditHistory';
-import { Alert, AlertDescription, Button, LoadingSpinner, EmptyState } from '@dculus/ui';
+import { Alert, AlertDescription, Button, LoadingSpinner, EmptyState, toastError } from '@dculus/ui';
 import {
   ArrowLeft,
   History,
@@ -59,9 +59,8 @@ export const ResponseEditHistory: React.FC = () => {
   const response = responseData?.response;
   const isLoading = formLoading || responseLoading || isLoadingHistory;
 
-  const handleViewSnapshot = (editId: string) => {
-    // Could open a modal or navigate to a detailed view in the future
-    console.log('View snapshot for edit:', editId);
+  const handleViewSnapshot = (_editId: string) => {
+    toastError('Not available', 'Snapshot view is coming soon');
   };
 
   const handleGoToEdit = () => {

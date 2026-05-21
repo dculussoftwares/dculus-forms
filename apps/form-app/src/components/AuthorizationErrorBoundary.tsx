@@ -84,7 +84,7 @@ export const AuthorizationErrorBoundary: React.FC<AuthorizationErrorBoundaryProp
         </Alert>
 
         {/* Show detailed error message in development or for debugging */}
-        {process.env.NODE_ENV === 'development' && (
+        {import.meta.env.DEV && (
           <details className="text-sm text-muted-foreground">
             <summary className="cursor-pointer hover:text-foreground">
               {t('labels.technicalError')}
