@@ -8,6 +8,7 @@ import {
   formSubmissionAnalyticsRepository,
 } from '../repositories/index.js';
 import { EdgeVisitorLocation } from '../middleware/edge-geolocation.js';
+import { prisma } from '../lib/prisma.js';
 
 // Create require for CommonJS modules in ES module context
 const require = createRequire(import.meta.url);
@@ -344,26 +345,6 @@ const generateDateRange = (start: Date, end: Date): string[] => {
   return dates;
 };
 
-// Helper function to calculate completion time percentiles
-const calculatePercentiles = (values: number[]) => {
-  if (values.length === 0) return { p50: null, p75: null, p90: null, p95: null };
-  
-  const sorted = values.sort((a, b) => a - b);
-  const len = sorted.length;
-  
-  const getPercentile = (p: number) => {
-    const index = Math.ceil((p / 100) * len) - 1;
-    return sorted[Math.max(0, Math.min(index, len - 1))];
-  };
-  
-  return {
-    p50: getPercentile(50),
-    p75: getPercentile(75),
-    p90: getPercentile(90),
-    p95: getPercentile(95)
-  };
-};
-
 // Helper function to create completion time distribution ranges
 const createCompletionTimeDistribution = (completionTimes: number[]) => {
   const ranges = [
@@ -556,7 +537,8 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
       osStats,
       browserStats,
       rawDailySubmissions,
-      completionTimeData
+      completionTimePercentilesRaw,
+      completionTimeDistributionData,
     ] = await Promise.all([
       formSubmissionAnalyticsRepository.count({ where: whereClause }),
 
@@ -604,15 +586,34 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
       
       formSubmissionAnalyticsRepository.getDailySubmissionStats(formId, timeRange),
 
-      // Completion time data: Get all completion times for statistical analysis
+      // P2-05: Completion time percentiles computed in SQL to avoid loading all rows
+      // into JS memory. PERCENTILE_CONT is a PostgreSQL ordered-set aggregate.
+      prisma.$queryRaw<Array<{
+        p50: number | null; p75: number | null; p90: number | null; p95: number | null;
+        avg: number | null; total: bigint;
+      }>>`
+        SELECT
+          PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY "completionTimeSeconds") AS p50,
+          PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY "completionTimeSeconds") AS p75,
+          PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY "completionTimeSeconds") AS p90,
+          PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY "completionTimeSeconds") AS p95,
+          AVG("completionTimeSeconds") AS avg,
+          COUNT(*) AS total
+        FROM form_submission_analytics
+        WHERE "formId" = ${formId} AND "completionTimeSeconds" IS NOT NULL
+      `,
+
+      // Distribution still needs individual values — cap at 10,000 rows to avoid
+      // loading unbounded data into memory for large forms.
       formSubmissionAnalyticsRepository.findMany({
-        where: { 
-          ...whereClause, 
-          completionTimeSeconds: { not: null } 
+        where: {
+          ...whereClause,
+          completionTimeSeconds: { not: null }
         },
         select: {
           completionTimeSeconds: true
-        }
+        },
+        take: 10_000,
       })
     ]);
 
@@ -666,16 +667,22 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
       });
     }
     
-    // Process completion time data
-    const completionTimes = completionTimeData
+    // P2-05: Use SQL-computed percentiles — no JS-side sort over all rows needed
+    const sqlPercentiles = completionTimePercentilesRaw[0] ?? null;
+    const averageCompletionTime = sqlPercentiles?.avg != null ? Number(sqlPercentiles.avg) : null;
+    const completionTimePercentiles = sqlPercentiles
+      ? {
+          p50: sqlPercentiles.p50 != null ? Number(sqlPercentiles.p50) : null,
+          p75: sqlPercentiles.p75 != null ? Number(sqlPercentiles.p75) : null,
+          p90: sqlPercentiles.p90 != null ? Number(sqlPercentiles.p90) : null,
+          p95: sqlPercentiles.p95 != null ? Number(sqlPercentiles.p95) : null,
+        }
+      : { p50: null, p75: null, p90: null, p95: null };
+
+    // Distribution still computed in JS (capped at 10,000 rows above)
+    const completionTimes = completionTimeDistributionData
       .map((record: any) => record.completionTimeSeconds)
       .filter((time: number) => time != null && time > 0);
-    
-    const averageCompletionTime = completionTimes.length > 0 
-      ? completionTimes.reduce((sum: number, time: number) => sum + time, 0) / completionTimes.length 
-      : null;
-    
-    const completionTimePercentiles = calculatePercentiles(completionTimes);
     const completionTimeDistribution = createCompletionTimeDistribution(completionTimes);
     
     return {

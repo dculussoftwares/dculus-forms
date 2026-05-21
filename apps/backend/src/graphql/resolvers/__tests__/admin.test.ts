@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { adminResolvers } from '../admin.js';
+import { adminResolvers, _clearStatsCacheForTests } from '../admin.js';
 import { GraphQLError } from '#graphql-errors';
 import { prisma } from '../../../lib/prisma.js';
 
@@ -121,6 +121,9 @@ describe('Admin Resolvers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockS3Send.mockReset();
+    // P2-06: clear the S3 stats in-memory cache between tests so each test
+    // controls its own S3 mock behaviour without interference.
+    _clearStatsCacheForTests();
   });
 
   afterEach(() => {
@@ -710,6 +713,7 @@ describe('Admin Resolvers', () => {
         mockAdminContext
       );
 
+      // P2-06: forms now use a selective `select` to omit the large formSchema blob
       expect(prisma.organization.findUnique).toHaveBeenCalledWith({
         where: { id: 'org-123' },
         include: {
@@ -725,7 +729,16 @@ describe('Admin Resolvers', () => {
               },
             },
           },
-          forms: true,
+          forms: {
+            select: {
+              id: true,
+              title: true,
+              isPublished: true,
+              createdAt: true,
+              updatedAt: true,
+              sharingScope: true,
+            },
+          },
         },
       });
 
