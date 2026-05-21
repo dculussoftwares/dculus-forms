@@ -247,11 +247,23 @@ export const EmailPluginConfig: React.FC<EmailPluginConfigProps> = ({
               className="w-full"
               mentionFields={mentionFields}
             />
-            <p className="text-xs text-muted-foreground" dangerouslySetInnerHTML={{ 
-              __html: mentionFields.length > 0 
-                ? t('emailMessage.hintWithFields', { values: { count: mentionFields.length } })
-                : t('emailMessage.hintWithoutFields')
-            }} />
+            <p className="text-xs text-muted-foreground">
+              {mentionFields.length > 0 ? (
+                <>
+                  {t('emailMessage.hintWithFields_prefix')}{' '}
+                  <strong>{t('emailMessage.bold')}</strong>,{' '}
+                  <em>{t('emailMessage.italic')}</em>,{' '}
+                  {t('emailMessage.hintWithFields_suffix', { values: { count: mentionFields.length } })}
+                </>
+              ) : (
+                <>
+                  {t('emailMessage.hintWithoutFields_prefix')}{' '}
+                  <strong>{t('emailMessage.bold')}</strong>,{' '}
+                  <em>{t('emailMessage.italic')}</em>,{' '}
+                  {t('emailMessage.hintWithoutFields_suffix')}
+                </>
+              )}
+            </p>
           </div>
         </CardContent>
       </Card>

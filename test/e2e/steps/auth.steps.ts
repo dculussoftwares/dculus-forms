@@ -39,7 +39,7 @@ Then('I should see the dashboard', async function (this: CustomWorld) {
   await expect(sidebar).toBeVisible({ timeout: 30_000 });
 
   const bearerToken = await this.page.evaluate(() =>
-    localStorage.getItem('bearer_token')
+    sessionStorage.getItem('bearer_token')
   );
   expect(bearerToken).toBeTruthy();
 

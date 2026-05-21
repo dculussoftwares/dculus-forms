@@ -4,20 +4,27 @@ import { getApiBaseUrl } from './config';
 
 const baseUrl = getApiBaseUrl();
 
+// Store the bearer token in sessionStorage — cleared on tab close, not shared across tabs.
+// More secure than localStorage while surviving intra-tab page navigations.
+const TOKEN_KEY = 'bearer_token';
+
+// Clear any stale bearer token when arriving at the sign-in page so that Apollo
+// does not send an expired token loaded from a saved E2E storage state.
+if (typeof window !== 'undefined' && window.location.pathname.startsWith('/signin')) {
+  sessionStorage.removeItem(TOKEN_KEY);
+}
+
+export const getBearerToken = () => sessionStorage.getItem(TOKEN_KEY) ?? '';
+
 export const authClient = createAuthClient({
   plugins: [organizationClient(), emailOTPClient()],
   baseURL: baseUrl, // Your backend URL
   fetchOptions: {
     onSuccess: (ctx) => {
-      // console.log('Authentication successful', ctx);
       console.log("ctx.data.session?.activeOrganizationId", ctx.data.session?.activeOrganizationId);
-      const authToken = ctx.response.headers.get('set-auth-token'); // get the token from the response headers
-      // Store the token securely (e.g., in localStorage)
+      const authToken = ctx.response.headers.get('set-auth-token');
       if (authToken) {
-        localStorage.setItem('bearer_token', authToken);
-        // if (ctx.data?.session?.activeOrganizationId) {
-
-        // }
+        sessionStorage.setItem(TOKEN_KEY, authToken);
       }
       localStorage.setItem(
         'organization_id',
@@ -25,24 +32,20 @@ export const authClient = createAuthClient({
       );
     },
     onError: (ctx) => {
-      // Clear token on authentication errors
       if (ctx.response?.status === 401) {
-        localStorage.removeItem('bearer_token');
+        sessionStorage.removeItem(TOKEN_KEY);
       }
     },
     auth: {
       type: 'Bearer',
-      token: () => localStorage.getItem('bearer_token') || '', // get the token from localStorage
+      token: () => getBearerToken(),
     },
   },
 });
 
 // Create a custom signOut function that clears the token
 const customSignOut = async (options?: any) => {
-  // Clear the token from localStorage
-  localStorage.removeItem('bearer_token');
-
-  // Call the original signOut function
+  sessionStorage.removeItem(TOKEN_KEY);
   return authClient.signOut(options);
 };
 

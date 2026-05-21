@@ -247,16 +247,13 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                 {/* Date Range Info */}
                 {startDate && endDate && !dateError && (
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p 
-                      className="text-sm text-blue-700"
-                      dangerouslySetInnerHTML={{ 
-                        __html: t('customPicker.selectedRange', { 
-                          values: { 
-                            days: Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1 
-                          } 
-                        }) 
-                      }}
-                    />
+                    <p className="text-sm text-blue-700">
+                      {t('customPicker.selectedRangePrefix')}{' '}
+                      <strong>
+                        {Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1}
+                        {' '}{t('customPicker.selectedRangeDays')}
+                      </strong>
+                    </p>
                   </div>
                 )}
                 

@@ -17,7 +17,9 @@
     "endDatePlaceholder": "Select end date",
     "selectedRange": "Selected range: <strong>{{days}} days</strong>",
     "applyButton": "Apply Range",
-    "cancelButton": "Cancel"
+    "cancelButton": "Cancel",
+    "selectedRangePrefix": "Selected range:",
+    "selectedRangeDays": "days"
   },
   "validation": {
     "selectBothDates": "Please select both start and end dates",

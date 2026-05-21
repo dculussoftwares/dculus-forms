@@ -19,6 +19,7 @@ import {
   toastSuccess,
   toastError,
 } from '@dculus/ui';
+import { useApolloClient } from '@apollo/client';
 import { useAuth } from '../contexts/AuthContext';
 import { signOut } from '../lib/auth-client';
 import { useTranslation } from '../hooks/useTranslation';
@@ -27,9 +28,14 @@ export function NavUser() {
   const { isMobile } = useSidebar();
   const { user } = useAuth();
   const { t } = useTranslation('navUser');
+  const apolloClient = useApolloClient();
 
   const handleLogout = async () => {
     try {
+      // Use clearStore (not resetStore) — clearStore discards the cache without
+      // re-fetching active queries. resetStore would re-fetch while signed out,
+      // causing UNAUTHENTICATED errors that redirect back to /signin mid-navigation.
+      await apolloClient.clearStore();
       await signOut();
       toastSuccess(t('signOut.success.title'), t('signOut.success.message'));
       window.location.href = '/signin';

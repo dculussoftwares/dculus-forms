@@ -31,7 +31,13 @@
     "label": "Message Content",
     "placeholder": "Enter your email message here...",
     "hintWithFields": "Use rich formatting including <strong>bold</strong>, <em>italic</em>, headings, lists, quotes, and links. Type <strong>@</strong> to mention form fields ({{count}} available) and reference user responses.",
-    "hintWithoutFields": "Use rich formatting including <strong>bold</strong>, <em>italic</em>, headings, lists, quotes, and links. Add some fields to your form to enable @ mentions for personalizing messages."
+    "hintWithoutFields": "Use rich formatting including <strong>bold</strong>, <em>italic</em>, headings, lists, quotes, and links. Add some fields to your form to enable @ mentions for personalizing messages.",
+    "bold": "bold",
+    "italic": "italic",
+    "hintWithFields_prefix": "Use rich formatting including",
+    "hintWithFields_suffix": "headings, lists, quotes, and links. Type @ to mention form fields ({{count}} available) and reference user responses.",
+    "hintWithoutFields_prefix": "Use rich formatting including",
+    "hintWithoutFields_suffix": "headings, lists, quotes, and links. Add some fields to your form to enable @ mentions for personalizing messages."
   },
   "triggerEvents": {
     "title": "Trigger Events",

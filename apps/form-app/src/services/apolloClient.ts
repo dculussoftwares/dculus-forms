@@ -3,6 +3,7 @@ import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 import { getGraphQLUrl } from '../lib/config';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql';
+import { getBearerToken } from '../lib/auth-client';
 
 const graphqlUrl = getGraphQLUrl();
 
@@ -11,7 +12,7 @@ const httpLink = createHttpLink({
 });
 
 const authLink = setContext((_, { headers }) => {
-  const token = localStorage.getItem('bearer_token');
+  const token = getBearerToken();
 
   // If we have a token, include it in the authorization header
   if (token) {
@@ -45,8 +46,12 @@ const errorLink = onError(({ graphQLErrors }) => {
       code === GRAPHQL_ERROR_CODES.UNAUTHENTICATED ||
       code === GRAPHQL_ERROR_CODES.AUTHENTICATION_REQUIRED
     ) {
-      // Session expired — redirect to sign-in so user doesn't silently lose access
-      window.location.href = '/signin';
+      // Session expired — redirect to sign-in so user doesn't silently lose access.
+      // Guard: don't redirect if already on /signin (prevents loops when a stale
+      // sessionStorage token fires queries during the sign-in page load).
+      if (!window.location.pathname.startsWith('/signin')) {
+        window.location.href = '/signin';
+      }
       return;
     }
   }

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { ChevronsUpDown, Plus, Building2 } from 'lucide-react';
-import { useMutation, useQuery } from '@apollo/client';
+import { useMutation, useQuery, useApolloClient } from '@apollo/client';
 import { gql } from '@apollo/client';
 import {
   DropdownMenu,
@@ -49,6 +49,7 @@ export function TeamSwitcher() {
   const { isMobile } = useSidebar();
   const { activeOrganization } = useAuth();
   const { t } = useTranslation('teamSwitcher');
+  const apolloClient = useApolloClient();
   const [isLoading, setIsLoading] = useState(false);
 
   // Query user's organizations
@@ -58,8 +59,8 @@ export function TeamSwitcher() {
 
   // Mutation to set active organization
   const [setActiveOrganization] = useMutation(SET_ACTIVE_ORGANIZATION, {
-    refetchQueries: ['ActiveOrganization'],
-    onCompleted: () => {
+    onCompleted: async () => {
+      await apolloClient.resetStore();
       setIsLoading(false);
       toastSuccess(t('switchSuccess.title'), t('switchSuccess.message'));
     },
