@@ -9,7 +9,6 @@ import {
   formSubmissionAnalyticsRepository,
 } from '../repositories/index.js';
 import { EdgeVisitorLocation } from '../middleware/edge-geolocation.js';
-import { prisma } from '../lib/prisma.js';
 
 // Create require for CommonJS modules in ES module context
 const require = createRequire(import.meta.url);
