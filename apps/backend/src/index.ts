@@ -113,28 +113,33 @@ app.use(
     },
   })
 );
-// Rate limiters
+// Rate limiters — disabled in test environments so integration/E2E suites are not throttled
+const isTestEnv = appConfig.nodeEnv === 'test';
+
 const authLimiter = rateLimit({
   windowMs: 60_000,
-  max: 10,
+  max: isTestEnv ? 10_000 : 10,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => isTestEnv,
   message: { error: 'Too many auth requests, please try again later' },
 });
 
 const uploadLimiter = rateLimit({
   windowMs: 60_000,
-  max: 20,
+  max: isTestEnv ? 10_000 : 20,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => isTestEnv,
   message: { error: 'Too many upload requests, please try again later' },
 });
 
 const graphqlLimiter = rateLimit({
   windowMs: 60_000,
-  max: 300,
+  max: isTestEnv ? 10_000 : 300,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => isTestEnv,
   message: { error: 'Too many requests, please try again later' },
 });
 
