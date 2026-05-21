@@ -141,6 +141,8 @@ export const analyticsResolvers = {
 
     trackFormSubmission: async (_: any, { input }: { input: TrackFormSubmissionInput }, context: any) => {
       try {
+        validatePublicAnalyticsInput(input.sessionId, input.userAgent);
+
         // Get client IP from request
         const clientIP = context.req?.ip ||
           context.req?.connection?.remoteAddress ||

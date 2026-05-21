@@ -22,7 +22,8 @@ export const subscriptionResolvers = {
      * Get available subscription plans with pricing
      * Fetches from Chargebee dynamically
      */
-    availablePlans: async () => {
+    availablePlans: async (_: any, __: any, context: { auth: BetterAuthContext }) => {
+      requireAuth(context.auth);
       return await getAvailablePlans();
     },
   },

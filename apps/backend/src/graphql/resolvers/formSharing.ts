@@ -102,8 +102,8 @@ export const formSharingResolvers = {
     formPermissions: async (_: any, { formId }: { formId: string }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);
 
-      // Check if user has access to manage permissions (must be owner or editor)
-      const accessCheck = await checkFormAccess(context.auth.user!.id, formId, PermissionLevel.EDITOR);
+      // Check if user has access to manage permissions (must be owner)
+      const accessCheck = await checkFormAccess(context.auth.user!.id, formId, PermissionLevel.OWNER);
       if (!accessCheck.hasAccess) {
         throw createGraphQLError('Access denied: Insufficient permissions', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }

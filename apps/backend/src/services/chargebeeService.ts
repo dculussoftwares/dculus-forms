@@ -4,6 +4,7 @@ import { subscriptionRepository } from '../repositories/index.js';
 import { logger } from '../lib/logger.js';
 import { prisma } from '../lib/prisma.js';
 import { sendEmail } from './emailService.js';
+import * as Sentry from '@sentry/node';
 
 /**
  * Chargebee Service
@@ -344,6 +345,7 @@ export const handlePaymentFailed = async (event: any): Promise<void> => {
 
     logger.warn('[Chargebee Service] Payment failed — subscription marked past_due for org:', organizationId);
   } catch (error: any) {
+    Sentry.captureException(error);
     logger.error('[Chargebee Service] Error handling payment failure:', error);
     throw error;
   }
