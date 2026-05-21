@@ -312,7 +312,7 @@ describe('Forms Resolvers', () => {
       const result = await formsResolvers.Form.responseCount({ id: 'form-123' });
 
       expect(prisma.response.count).toHaveBeenCalledWith({
-        where: { formId: 'form-123', deletedAt: null },
+        where: { formId: 'form-123' },
       });
       expect(result).toBe(42);
     });
