@@ -16,7 +16,7 @@
     "@dculus/types": "workspace:*",
     "@dculus/ui": "workspace:*",
     "@dculus/utils": "workspace:*",
-    "graphql": "^16.8.1",
+    "graphql": "^16.14.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^6.28.0"
