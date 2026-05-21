@@ -19,6 +19,18 @@ export default defineConfig({
       },
     ],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // P2-20: Split heavy third-party libraries into named chunks to improve
+        // caching and reduce initial bundle size.
+        manualChunks: {
+          'vendor-yjs': ['yjs'],
+          'vendor-recharts': ['recharts'],
+        },
+      },
+    },
+  },
   server: {
     port: 3000,
     proxy: {
@@ -32,4 +44,4 @@ export default defineConfig({
       },
     },
   },
-}); 
+});

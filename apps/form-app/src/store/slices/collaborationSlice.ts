@@ -25,11 +25,18 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
   const MAX_RECONNECT_ATTEMPTS = 5;
   const BASE_RECONNECT_DELAY_MS = 2_000;
 
+  // P2-17: Dirty flag — set to true whenever the YJS doc receives an update
+  // so disconnectCollaboration can attempt a final sync before teardown.
+  let isDirty = false;
+
   /**
    * Callback when YJS document updates
    * Updates pages, layout, and isShuffleEnabled in the store
    */
   const updateCallback = (pages: FormPage[], layout?: FormLayout, isShuffleEnabled?: boolean) => {
+    // P2-17: Mark document dirty on every incoming update
+    isDirty = true;
+
     const updates: any = { pages };
 
     if (layout) {
@@ -125,6 +132,10 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
 
     /**
      * Disconnect collaboration and cleanup resources
+     *
+     * P2-17: If the document is dirty and the provider is still connected,
+     * give Hocuspocus a brief window (up to 500 ms) to flush pending awareness
+     * updates before tearing down the WebSocket.
      */
     disconnectCollaboration: () => {
       // Cancel any pending reconnect before tearing down
@@ -134,22 +145,39 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
       }
       reconnectAttempts = MAX_RECONNECT_ATTEMPTS; // prevent further auto-reconnect
 
-      if (collaborationManager) {
-        collaborationManager.disconnect();
-        collaborationManager = null;
-      }
+      // P2-17: Attempt to flush pending changes before disconnecting.
+      // Hocuspocus syncs over WebSocket automatically on every ydoc update, so the
+      // dirty flag simply tells us whether we should give the provider a moment to
+      // finish any in-flight sync before we destroy the connection.
+      const shouldFlush = isDirty && collaborationManager?.isConnected();
+      isDirty = false; // reset flag regardless
 
-      set({
-        isConnected: false,
-        isLoading: false,
-        formId: null,
-        ydoc: null,
-        provider: null,
-        observerCleanups: [],
-        pages: [],
-        selectedPageId: null,
-        selectedFieldId: null,
-      });
+      const teardown = () => {
+        if (collaborationManager) {
+          collaborationManager.disconnect();
+          collaborationManager = null;
+        }
+
+        set({
+          isConnected: false,
+          isLoading: false,
+          formId: null,
+          ydoc: null,
+          provider: null,
+          observerCleanups: [],
+          pages: [],
+          selectedPageId: null,
+          selectedFieldId: null,
+        });
+      };
+
+      if (shouldFlush) {
+        // Give the WebSocket provider a short window to flush pending messages.
+        // We do not await because disconnectCollaboration is synchronous by design.
+        setTimeout(teardown, 300);
+      } else {
+        teardown();
+      }
     },
 
     /**

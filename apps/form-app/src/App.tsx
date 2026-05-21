@@ -1,32 +1,46 @@
 
+import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { LocaleProvider } from './contexts/LocaleContext';
-import { Toaster } from '@dculus/ui';
+import { Toaster, LoadingSpinner } from '@dculus/ui';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { PageErrorBoundary } from './components/PageErrorBoundary';
 import { Dashboard } from './components/Dashboard';
-import FormsList from './pages/FormsList';
-import Responses from './pages/Responses';
-import ResponseEdit from './pages/ResponseEdit';
-import { ResponseEditHistory } from './pages/ResponseEditHistory';
-import ResponsesAnalytics from './pages/ResponsesAnalytics';
-import ResponsesIndividual from './pages/ResponsesIndividual';
+// Auth pages — kept as static imports (small, needed immediately on page load)
 import { SignUp } from './pages/SignUp';
 import { SignIn } from './pages/SignIn';
 import { EmailVerification } from './pages/EmailVerification';
 import { ForgotPassword } from './pages/ForgotPassword';
-import Settings from './pages/Settings';
 import InviteAcceptance from './pages/InviteAcceptance';
-import FormDashboard from './pages/FormDashboard';
-import FormAnalytics from './pages/FormAnalytics';
-import FormSettings from './pages/FormSettings';
-import CollaborativeFormBuilder from './pages/CollaborativeFormBuilder';
-import Plugins from './pages/Plugins';
-import PluginConfiguration from './pages/PluginConfiguration';
 import { Pricing } from './pages/Pricing';
 import { CheckoutSuccess } from './pages/subscription/success';
 import { CheckoutCancel } from './pages/subscription/cancel';
+
+// Heavy pages — lazy-loaded to reduce initial bundle size (P2-20)
+const CollaborativeFormBuilder = lazy(() =>
+  import('./pages/CollaborativeFormBuilder')
+);
+const FormAnalytics = lazy(() => import('./pages/FormAnalytics'));
+const FormSettings = lazy(() => import('./pages/FormSettings'));
+const Plugins = lazy(() => import('./pages/Plugins'));
+const PluginConfiguration = lazy(() => import('./pages/PluginConfiguration'));
+const ResponsesAnalytics = lazy(() => import('./pages/ResponsesAnalytics'));
+const ResponsesIndividual = lazy(() => import('./pages/ResponsesIndividual'));
+const ResponseEdit = lazy(() => import('./pages/ResponseEdit'));
+const FormsList = lazy(() => import('./pages/FormsList'));
+const FormDashboard = lazy(() => import('./pages/FormDashboard'));
+const Responses = lazy(() => import('./pages/Responses'));
+const Settings = lazy(() => import('./pages/Settings'));
+const ResponseEditHistory = lazy(() =>
+  import('./pages/ResponseEditHistory').then(m => ({ default: m.ResponseEditHistory }))
+);
+
+const RouteSpinner = () => (
+  <div className="flex items-center justify-center h-screen">
+    <LoadingSpinner size="lg" />
+  </div>
+);
 
 
 function App() {
@@ -35,7 +49,7 @@ function App() {
       <AuthProvider>
         <div className="min-h-screen bg-background">
           <Routes>
-          {/* Public routes */}
+          {/* Public routes — static imports, needed immediately */}
           <Route path="/signin" element={<SignIn />} />
           <Route path="/verify-email" element={<EmailVerification />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -44,8 +58,8 @@ function App() {
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/subscription/success" element={<CheckoutSuccess />} />
           <Route path="/subscription/cancel" element={<CheckoutCancel />} />
-          
-          {/* Protected routes — each wrapped in PageErrorBoundary to prevent full-page blank screens */}
+
+          {/* Protected routes — lazy-loaded heavy pages wrapped in Suspense (P2-20) */}
           <Route path="/" element={
             <ProtectedRoute><PageErrorBoundary><Dashboard /></PageErrorBoundary></ProtectedRoute>
           } />
@@ -53,52 +67,52 @@ function App() {
             <ProtectedRoute><PageErrorBoundary><Dashboard /></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId" element={
-            <ProtectedRoute><PageErrorBoundary><FormDashboard /></PageErrorBoundary></ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><FormDashboard /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/collaborate/:tab?" element={
-            <ProtectedRoute><PageErrorBoundary><CollaborativeFormBuilder /></PageErrorBoundary></ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><CollaborativeFormBuilder /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/analytics" element={
-            <ProtectedRoute><PageErrorBoundary><FormAnalytics /></PageErrorBoundary></ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><FormAnalytics /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/settings" element={
-            <ProtectedRoute><PageErrorBoundary><FormSettings /></PageErrorBoundary></ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><FormSettings /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/plugins" element={
-            <ProtectedRoute><PageErrorBoundary><Plugins /></PageErrorBoundary></ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><Plugins /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/plugins/configure/:pluginType" element={
-            <ProtectedRoute><PageErrorBoundary><PluginConfiguration /></PageErrorBoundary></ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><PluginConfiguration /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/plugins/:pluginId/edit" element={
-            <ProtectedRoute><PageErrorBoundary><PluginConfiguration /></PageErrorBoundary></ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><PluginConfiguration /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/settings/:tab?" element={
-            <ProtectedRoute><PageErrorBoundary><Settings /></PageErrorBoundary></ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><Settings /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/forms" element={
-            <ProtectedRoute><PageErrorBoundary><FormsList /></PageErrorBoundary></ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><FormsList /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/responses" element={
-            <ProtectedRoute><PageErrorBoundary><Responses /></PageErrorBoundary></ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><Responses /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/responses/:responseId/edit" element={
-            <ProtectedRoute><PageErrorBoundary><ResponseEdit /></PageErrorBoundary></ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><ResponseEdit /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/responses/:responseId/history" element={
-            <ProtectedRoute><PageErrorBoundary><ResponseEditHistory /></PageErrorBoundary></ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><ResponseEditHistory /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/responses/analytics" element={
-            <ProtectedRoute><PageErrorBoundary><ResponsesAnalytics /></PageErrorBoundary></ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><ResponsesAnalytics /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/responses/individual" element={
-            <ProtectedRoute><PageErrorBoundary><ResponsesIndividual /></PageErrorBoundary></ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><ResponsesIndividual /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/forms/:id/responses" element={
-            <ProtectedRoute><PageErrorBoundary><Responses /></PageErrorBoundary></ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><Responses /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/responses" element={
-            <ProtectedRoute><PageErrorBoundary><Responses /></PageErrorBoundary></ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><Responses /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           {/* Templates is now nested under Dashboard */}
           </Routes>
