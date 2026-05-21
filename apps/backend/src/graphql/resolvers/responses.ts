@@ -29,6 +29,7 @@ import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { logger } from '../../lib/logger.js';
+import { audit } from '../../lib/audit.js';
 
 interface ResponseParent {
   id: string;
@@ -401,7 +402,9 @@ export const responsesResolvers = {
         throw createGraphQLError('Access denied: You need OWNER access to delete responses for this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
-      return await deleteResponse(id);
+      const result = await deleteResponse(id);
+      await audit('response.deleted', 'Response', id, context.auth.user?.id);
+      return result;
     },
   },
 };

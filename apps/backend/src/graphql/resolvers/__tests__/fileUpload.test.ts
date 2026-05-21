@@ -425,6 +425,87 @@ describe('File Upload Resolvers', () => {
     });
   });
 
+  describe('Query: getResponseFileDownloadUrl', () => {
+    it('should return a presigned URL for authenticated user with VIEWER access', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: true,
+        permission: 'VIEWER' as any,
+        form: { id: 'form-abc' } as any,
+      });
+      vi.mocked(fileUploadService.generatePresignedDownloadUrl).mockResolvedValue(
+        'https://private.example.com/presigned-url'
+      );
+
+      const result = await fileUploadResolvers.Query.getResponseFileDownloadUrl(
+        {},
+        { key: 'files/form-response/form-abc/response-file.pdf' },
+        mockContext
+      );
+
+      expect(result).toBe('https://private.example.com/presigned-url');
+      expect(betterAuthMiddleware.requireAuth).toHaveBeenCalledWith(mockContext.auth);
+      expect(formSharingResolvers.checkFormAccess).toHaveBeenCalledWith(
+        'user-123',
+        'form-abc',
+        formSharingResolvers.PermissionLevel.VIEWER
+      );
+      expect(fileUploadService.generatePresignedDownloadUrl).toHaveBeenCalledWith(
+        'files/form-response/form-abc/response-file.pdf'
+      );
+    });
+
+    it('should throw AUTHENTICATION_REQUIRED when user is not authenticated', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockImplementation(() => {
+        throw new GraphQLError('Authentication required');
+      });
+
+      await expect(
+        fileUploadResolvers.Query.getResponseFileDownloadUrl(
+          {},
+          { key: 'files/form-response/form-abc/response-file.pdf' },
+          mockContext
+        )
+      ).rejects.toThrow(GraphQLError);
+
+      expect(betterAuthMiddleware.requireAuth).toHaveBeenCalledWith(mockContext.auth);
+    });
+
+    it('should throw FORBIDDEN when user has NO_ACCESS to the form', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: false,
+        permission: 'NO_ACCESS' as any,
+        form: { id: 'form-abc' } as any,
+      });
+
+      await expect(
+        fileUploadResolvers.Query.getResponseFileDownloadUrl(
+          {},
+          { key: 'files/form-response/form-abc/response-file.pdf' },
+          mockContext
+        )
+      ).rejects.toThrow('Access denied: You do not have permission to download files from this form');
+
+      expect(fileUploadService.generatePresignedDownloadUrl).not.toHaveBeenCalled();
+    });
+
+    it('should throw BAD_USER_INPUT when the key does not match the expected pattern', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+
+      await expect(
+        fileUploadResolvers.Query.getResponseFileDownloadUrl(
+          {},
+          { key: 'uploads/some-other-bucket/evil-file.pdf' },
+          mockContext
+        )
+      ).rejects.toThrow('Only form response files can be accessed via this endpoint');
+
+      expect(formSharingResolvers.checkFormAccess).not.toHaveBeenCalled();
+      expect(fileUploadService.generatePresignedDownloadUrl).not.toHaveBeenCalled();
+    });
+  });
+
   describe('Mutation: deleteFile', () => {
     it('should delete file when user has editor access to associated form', async () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockAdminContext.auth);

@@ -3,6 +3,7 @@ import { BetterAuthContext, requireAuth, requireOrganizationMembership } from '.
 import { randomUUID } from 'crypto';
 import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
+import { audit } from '../../lib/audit.js';
 
 // Permission levels mapping
 export const PermissionLevel = {
@@ -227,7 +228,7 @@ export const formSharingResolvers = {
         where: whereCondition
       });
 
-      // Get paginated forms
+      // Get paginated forms — include _count.responses for N+1-free responseCount resolution (P3-02)
       const forms = await prisma.form.findMany({
         where: whereCondition,
         include: {
@@ -238,6 +239,9 @@ export const formSharingResolvers = {
               user: true,
               grantedBy: true
             }
+          },
+          _count: {
+            select: { responses: true }
           }
         },
         orderBy: { updatedAt: 'desc' },
@@ -369,6 +373,12 @@ export const formSharingResolvers = {
         }
       });
 
+      await audit('permission.granted', 'FormPermission', input.formId, userId, {
+        sharingScope: input.sharingScope,
+        defaultPermission: input.defaultPermission,
+        userPermissions: input.userPermissions,
+      });
+
       return {
         sharingScope: updatedForm.sharingScope,
         defaultPermission: updatedForm.defaultPermission,
@@ -416,6 +426,11 @@ export const formSharingResolvers = {
           }
         });
 
+        await audit('permission.granted', 'FormPermission', input.formId, grantedById, {
+          targetUserId: input.userId,
+          permission: PermissionLevel.NO_ACCESS,
+        });
+
         return {
           id: '',
           formId: input.formId,
@@ -453,6 +468,11 @@ export const formSharingResolvers = {
         }
       });
 
+      await audit('permission.granted', 'FormPermission', input.formId, grantedById, {
+        targetUserId: input.userId,
+        permission: input.permission,
+      });
+
       return permission;
     },
 
@@ -481,6 +501,13 @@ export const formSharingResolvers = {
           userId
         }
       });
+
+      if (result.count > 0) {
+        await audit('permission.granted', 'FormPermission', formId, grantedById, {
+          targetUserId: userId,
+          permission: PermissionLevel.NO_ACCESS,
+        });
+      }
 
       return result.count > 0;
     }
