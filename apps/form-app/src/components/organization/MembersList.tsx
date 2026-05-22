@@ -1,5 +1,5 @@
 import React from 'react';
-import { Badge, Avatar, AvatarFallback, AvatarImage } from '@dculus/ui';
+import { Badge, UserAvatar } from '@dculus/ui';
 import { Crown, User } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 
@@ -88,15 +88,12 @@ export const MembersList: React.FC<MembersListProps> = ({ organization }) => {
             className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
           >
             <div className="flex items-center space-x-3">
-              <Avatar>
-                <AvatarImage
-                  src={member.user.image || "https://github.com/shadcn.png"}
-                  alt={member.user.name}
-                />
-                <AvatarFallback className="bg-primary text-primary-foreground">
-                  {member.user.email.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar
+                name={member.user.name}
+                email={member.user.email}
+                image={member.user.image}
+                size="lg"
+              />
               <div>
                 <div className="font-medium">{member.user.name}</div>
                 <div className="text-sm text-muted-foreground">{member.user.email}</div>

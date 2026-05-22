@@ -3,6 +3,10 @@
     "title": "Settings",
     "subtitle": "Manage your organization and preferences"
   },
+  "tabs": {
+    "account": "Account",
+    "organization": "Organization"
+  },
   "organization": {
     "heading": "Organization Settings",
     "errorDescription": "Error accessing organization",

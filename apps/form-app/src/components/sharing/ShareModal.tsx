@@ -16,9 +16,7 @@ import {
   Badge,
   Card,
   CardContent,
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
+  UserAvatar,
   Separator,
   toastSuccess,
   toastError
@@ -335,10 +333,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                       return (
                         <div key={userId} className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
                           <div className="flex items-center gap-3">
-                            <Avatar className="w-8 h-8">
-                              <AvatarImage src={user.image} />
-                              <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
-                            </Avatar>
+                            <UserAvatar name={user.name} email={user.email} image={user.image} size="md" />
                             <div>
                               <p className="text-sm font-medium">{user.name}</p>
                               <p className="text-xs text-muted-foreground">{user.email}</p>
@@ -380,10 +375,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                       onClick={() => handleAddUser(member.id, PermissionLevel.VIEWER)}
                     >
                       <div className="flex items-center gap-3">
-                        <Avatar className="w-8 h-8">
-                          <AvatarImage src={member.image} />
-                          <AvatarFallback>{member.name.charAt(0).toUpperCase()}</AvatarFallback>
-                        </Avatar>
+                        <UserAvatar name={member.name} email={member.email} image={member.image} size="md" />
                         <div>
                           <p className="text-sm font-medium">{member.name}</p>
                           <p className="text-xs text-muted-foreground">{member.email}</p>
@@ -412,10 +404,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 {currentPermissions.map((permission: FormPermission) => (
                   <div key={permission.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
-                      <Avatar className="w-8 h-8">
-                        <AvatarImage src={permission.user.image} />
-                        <AvatarFallback>{permission.user.name.charAt(0).toUpperCase()}</AvatarFallback>
-                      </Avatar>
+                      <UserAvatar name={permission.user.name} email={permission.user.email} image={permission.user.image} size="md" />
                       <div>
                         <p className="text-sm font-medium">{permission.user.name}</p>
                         <p className="text-xs text-muted-foreground">{permission.user.email}</p>

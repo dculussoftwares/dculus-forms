@@ -49,7 +49,7 @@ const customSignOut = async (options?: any) => {
   return authClient.signOut(options);
 };
 
-export const { signIn, signUp, useSession, getSession, emailOtp, organization } = authClient;
+export const { signIn, signUp, useSession, getSession, emailOtp, organization, updateUser } = authClient;
 
 // For better-auth 1.4.x, forgetPassword is now requestPasswordReset
 export const forgetPassword = authClient.forgetPassword;
