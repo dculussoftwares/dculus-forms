@@ -109,3 +109,7 @@
     letter-spacing: var(--tracking-normal);
   }
 }
+
+svg.lucide {
+  stroke-width: 1.5;
+}
