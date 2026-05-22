@@ -221,6 +221,8 @@ import enPricing from './en/pricing.json';
 import taPricing from './ta/pricing.json';
 import enEmailVerification from './en/emailVerification.json';
 import taEmailVerification from './ta/emailVerification.json';
+import enAccountSettings from './en/accountSettings.json';
+import taAccountSettings from './ta/accountSettings.json';
 
 const enTranslations = {
   common: enCommon,
@@ -335,6 +337,7 @@ const enTranslations = {
   checkoutCancel: enCheckoutCancel,
   pricing: enPricing,
   emailVerification: enEmailVerification,
+  accountSettings: enAccountSettings,
 } as const;
 
 const taTranslations = {
@@ -450,6 +453,7 @@ const taTranslations = {
   checkoutCancel: taCheckoutCancel,
   pricing: taPricing,
   emailVerification: taEmailVerification,
+  accountSettings: taAccountSettings,
 } as const;
 
 export const translations = {

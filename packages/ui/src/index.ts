@@ -126,6 +126,8 @@ export {
   SelectScrollDownButton,
 } from "./select"
 export { Avatar, AvatarImage, AvatarFallback } from "./avatar"
+export { UserAvatar } from "./user-avatar"
+export type { UserAvatarProps } from "./user-avatar"
 export {
   Breadcrumb,
   BreadcrumbList,

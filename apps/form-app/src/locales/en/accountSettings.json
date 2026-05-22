@@ -1,0 +1,36 @@
+{
+  "page": {
+    "heading": "Account Settings",
+    "description": "Manage your profile information"
+  },
+  "avatar": {
+    "heading": "Profile Picture",
+    "description": "Upload a photo (JPG, PNG, WebP or GIF · max 5 MB)",
+    "changeButton": "Change picture",
+    "uploading": "Uploading…",
+    "toast": {
+      "successTitle": "Avatar updated",
+      "successMessage": "Your profile picture has been updated.",
+      "errorTitle": "Upload failed",
+      "errorMessage": "Failed to update your profile picture. Please try again.",
+      "fileTooLargeTitle": "File too large",
+      "fileTooLargeMessage": "Please choose an image under 5 MB."
+    }
+  },
+  "name": {
+    "label": "Display Name",
+    "placeholder": "Your full name",
+    "saveButton": "Save",
+    "saving": "Saving…",
+    "toast": {
+      "successTitle": "Name updated",
+      "successMessage": "Your display name has been saved.",
+      "errorTitle": "Save failed",
+      "errorMessage": "Failed to update your name. Please try again."
+    }
+  },
+  "email": {
+    "label": "Email Address",
+    "hint": "Your email address cannot be changed here."
+  }
+}

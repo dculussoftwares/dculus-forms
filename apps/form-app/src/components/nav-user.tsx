@@ -1,11 +1,9 @@
 import {
   ChevronsUpDown,
   LogOut,
+  UserCircle,
 } from 'lucide-react';
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -15,11 +13,13 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  UserAvatar,
   useSidebar,
   toastSuccess,
   toastError,
 } from '@dculus/ui';
 import { useApolloClient } from '@apollo/client';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { signOut } from '../lib/auth-client';
 import { useTranslation } from '../hooks/useTranslation';
@@ -29,12 +29,10 @@ export function NavUser() {
   const { user } = useAuth();
   const { t } = useTranslation('navUser');
   const apolloClient = useApolloClient();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
-      // Use clearStore (not resetStore) — clearStore discards the cache without
-      // re-fetching active queries. resetStore would re-fetch while signed out,
-      // causing UNAUTHENTICATED errors that redirect back to /signin mid-navigation.
       await apolloClient.clearStore();
       await signOut();
       toastSuccess(t('signOut.success.title'), t('signOut.success.message'));
@@ -45,22 +43,8 @@ export function NavUser() {
     }
   };
 
-  // Get user initials for avatar fallback
-  const getUserInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  // Use authenticated user data or fallback to default
-  const userData = {
-    name: user?.name || t('userInfo.guestUser'),
-    email: user?.email || t('userInfo.guestEmail'),
-    avatar: user?.image || 'https://github.com/shadcn.png',
-  };
+  const name = user?.name || t('userInfo.guestUser');
+  const email = user?.email || t('userInfo.guestEmail');
 
   return (
     <SidebarMenu>
@@ -71,15 +55,16 @@ export function NavUser() {
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={userData.avatar} alt={userData.name} />
-                <AvatarFallback className="rounded-lg">
-                  {getUserInitials(userData.name)}
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar
+                name={user?.name}
+                email={user?.email}
+                image={user?.image}
+                size="md"
+                shape="square"
+              />
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">{userData.name}</span>
-                <span className="truncate text-xs">{userData.email}</span>
+                <span className="truncate font-semibold">{name}</span>
+                <span className="truncate text-xs">{email}</span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -92,21 +77,27 @@ export function NavUser() {
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={userData.avatar} alt={userData.name} />
-                  <AvatarFallback className="rounded-lg">
-                    {getUserInitials(userData.name)}
-                  </AvatarFallback>
-                </Avatar>
+                <UserAvatar
+                  name={user?.name}
+                  email={user?.email}
+                  image={user?.image}
+                  size="md"
+                  shape="square"
+                />
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{userData.name}</span>
-                  <span className="truncate text-xs">{userData.email}</span>
+                  <span className="truncate font-semibold">{name}</span>
+                  <span className="truncate text-xs">{email}</span>
                 </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate('/settings/account')}>
+              <UserCircle strokeWidth={1.5} />
+              {t('menu.account')}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
-              <LogOut />
+              <LogOut strokeWidth={1.5} />
               {t('menu.logout')}
             </DropdownMenuItem>
           </DropdownMenuContent>

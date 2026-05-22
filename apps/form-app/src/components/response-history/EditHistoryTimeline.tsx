@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
-import { ResponseEditHistory, EditType, User } from '@dculus/types';
+import { ResponseEditHistory, EditType } from '@dculus/types';
 import {
   Card,
   CardContent,
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
+  UserAvatar,
   Badge,
   Separator,
   Button
@@ -72,14 +70,6 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
     }
   };
 
-  const getUserInitials = (user: User) => {
-    return user.name
-      .split(' ')
-      .map((name: string) => name[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
 
   if (isLoading) {
     return (
@@ -133,15 +123,12 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
               <div className="flex items-start space-x-4">
                 {/* User Avatar */}
                 <div className="relative">
-                  <Avatar className="w-10 h-10">
-                    <AvatarImage
-                      src={edit.editedBy.image}
-                      alt={edit.editedBy.name}
-                    />
-                    <AvatarFallback className="bg-blue-100 text-blue-700">
-                      {getUserInitials(edit.editedBy)}
-                    </AvatarFallback>
-                  </Avatar>
+                  <UserAvatar
+                    name={edit.editedBy.name}
+                    email={edit.editedBy.email}
+                    image={edit.editedBy.image}
+                    size="lg"
+                  />
                   {isLatest && (
                     <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full border-2 border-white" />
                   )}

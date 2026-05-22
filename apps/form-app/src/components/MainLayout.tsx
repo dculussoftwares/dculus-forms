@@ -1,6 +1,6 @@
 import React from "react"
 import { AppSidebar } from "../components/app-sidebar"
-import { PageWrapper, SidebarProvider, SidebarInset } from "@dculus/ui"
+import { PageWrapper, SidebarProvider, SidebarInset, UserAvatar } from "@dculus/ui"
 import { useAuth } from "../contexts/AuthContext"
 
 interface MainLayoutProps {
@@ -14,29 +14,14 @@ function HeaderAvatar() {
   const { user } = useAuth()
   if (!user) return null
 
-  const initials = (user.name || user.email || "U")
-    .split(" ")
-    .map((n: string) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2)
-
   return (
-    <div
-      title={user.name || user.email}
-      className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white shrink-0 select-none"
-      style={{ backgroundColor: "var(--tf-dark)" }}
-    >
-      {user.image ? (
-        <img
-          src={user.image}
-          alt={user.name || ""}
-          className="h-8 w-8 rounded-full object-cover"
-        />
-      ) : (
-        initials
-      )}
-    </div>
+    <UserAvatar
+      name={user.name}
+      email={user.email}
+      image={user.image}
+      size="md"
+      shape="square"
+    />
   )
 }
 
