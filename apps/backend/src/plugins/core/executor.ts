@@ -91,24 +91,27 @@ export const executePluginsForForm = async (
       eventType: event.type,
     });
 
-    const results = await Promise.allSettled(
-      plugins.map((plugin) => executePlugin(plugin.id, event))
-    );
-
+    // Run plugins sequentially to prevent race conditions when multiple plugins
+    // of the same type (e.g. two quiz grading instances) read-modify-write the
+    // same response.metadata field concurrently.
     let succeeded = 0;
     let failed = 0;
 
-    results.forEach((result, index) => {
-      if (result.status === 'fulfilled' && result.value.success) {
+    for (const plugin of plugins) {
+      const result = await executePlugin(plugin.id, event).catch((err) => ({
+        success: false as const,
+        error: err?.message || 'Unknown error',
+      }));
+      if (result.success) {
         succeeded++;
       } else {
         failed++;
-        context.logger.error(`Plugin ${plugins[index].name} failed`, {
-          pluginId: plugins[index].id,
-          error: result.status === 'fulfilled' ? result.value.error : result.reason,
+        context.logger.error(`Plugin ${plugin.name} failed`, {
+          pluginId: plugin.id,
+          error: result.error,
         });
       }
-    });
+    }
 
     context.logger.info(`Plugin execution completed for form ${formId}`, {
       total: plugins.length,

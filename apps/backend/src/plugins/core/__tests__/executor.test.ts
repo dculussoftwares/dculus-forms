@@ -385,7 +385,7 @@ describe('executor', () => {
       );
     });
 
-    it('executes plugins in parallel using Promise.allSettled', async () => {
+    it('executes plugins sequentially to prevent metadata race conditions', async () => {
       const mockPlugins = [
         { id: 'plugin-1', name: 'Plugin 1', type: 'webhook', enabled: true, events: ['form.submitted'], config: {} },
         { id: 'plugin-2', name: 'Plugin 2', type: 'email', enabled: true, events: ['form.submitted'], config: {} },
@@ -393,12 +393,10 @@ describe('executor', () => {
 
       const callOrder: number[] = [];
       const mockHandler1: PluginHandler = vi.fn().mockImplementation(async () => {
-        await new Promise(resolve => setTimeout(resolve, 50));
         callOrder.push(1);
         return { success: true };
       });
       const mockHandler2: PluginHandler = vi.fn().mockImplementation(async () => {
-        await new Promise(resolve => setTimeout(resolve, 10));
         callOrder.push(2);
         return { success: true };
       });
@@ -415,8 +413,8 @@ describe('executor', () => {
 
       const result = await executePluginsForForm('form-123', mockEvent);
 
-      // Plugin 2 should finish before plugin 1 due to parallel execution
-      expect(callOrder).toEqual([2, 1]);
+      // Sequential: plugin 1 always finishes before plugin 2 starts
+      expect(callOrder).toEqual([1, 2]);
       expect(result).toEqual({ total: 2, succeeded: 2, failed: 0 });
     });
 
@@ -475,7 +473,7 @@ describe('executor', () => {
       expect(result).toEqual({ total: 1, succeeded: 0, failed: 1 });
     });
 
-    it('handles rejected promises in allSettled', async () => {
+    it('handles plugin errors gracefully (sequential)', async () => {
       const mockPlugins = [
         { id: 'plugin-1', name: 'Plugin 1', type: 'webhook', enabled: true, events: ['form.submitted'], config: {} },
       ];
