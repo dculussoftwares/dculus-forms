@@ -24,6 +24,7 @@ const PluginConfiguration: React.FC = () => {
   const { data: formData, loading: formLoading, error: formError } = useQuery(GET_FORM_BY_ID, {
     variables: { id: formId },
     skip: !formId,
+    fetchPolicy: 'cache-and-network',
   });
 
   const { data: pluginData, loading: pluginLoading } = useQuery(GET_FORM_PLUGIN, {

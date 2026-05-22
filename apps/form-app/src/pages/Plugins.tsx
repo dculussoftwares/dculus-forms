@@ -28,6 +28,7 @@ const Plugins: React.FC = () => {
   const { data: pluginsData, loading: pluginsLoading, refetch: refetchPlugins } = useQuery(GET_FORM_PLUGINS, {
     variables: { formId },
     skip: !formId,
+    fetchPolicy: 'cache-and-network',
   });
 
   const handleEditPlugin = (plugin: any) =>
