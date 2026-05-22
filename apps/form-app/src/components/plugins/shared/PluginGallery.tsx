@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Badge } from '@dculus/ui';
+import { Badge, Button } from '@dculus/ui';
 import { Webhook, Mail, MessageSquare, GraduationCap, LucideIcon } from 'lucide-react';
 
 export interface PluginType {
@@ -20,8 +20,8 @@ export const AVAILABLE_PLUGIN_TYPES: PluginType[] = [
     name: 'Webhook',
     description: 'Send HTTP POST requests to external URLs when events occur. Perfect for custom integrations and automation.',
     icon: Webhook,
-    iconColor: 'text-orange-600',
-    iconBgColor: 'bg-orange-100',
+    iconColor: '#8b6a18',
+    iconBgColor: '#fbe19d',
     category: 'Integration',
     available: true,
   },
@@ -30,8 +30,8 @@ export const AVAILABLE_PLUGIN_TYPES: PluginType[] = [
     name: 'Email Notification',
     description: 'Send custom email notifications with rich text and @ mentions when form events occur.',
     icon: Mail,
-    iconColor: 'text-blue-600',
-    iconBgColor: 'bg-blue-100',
+    iconColor: '#3c323e',
+    iconBgColor: '#f8cdd8',
     category: 'Notification',
     available: true,
   },
@@ -40,8 +40,8 @@ export const AVAILABLE_PLUGIN_TYPES: PluginType[] = [
     name: 'Quiz Auto-Grading',
     description: 'Automatically grade quiz responses with correct answers and scoring',
     icon: GraduationCap,
-    iconColor: 'text-primary',
-    iconBgColor: 'bg-primary/10',
+    iconColor: '#5c2e6b',
+    iconBgColor: '#ddd6fa',
     category: 'Workflow',
     available: true,
   },
@@ -50,8 +50,8 @@ export const AVAILABLE_PLUGIN_TYPES: PluginType[] = [
     name: 'Slack',
     description: 'Post messages to Slack channels when form submissions or other events occur.',
     icon: MessageSquare,
-    iconColor: 'text-purple-600',
-    iconBgColor: 'bg-purple-100',
+    iconColor: '#2d6236',
+    iconBgColor: '#c4e3ba',
     category: 'Notification',
     available: false,
     comingSoon: true,
@@ -72,50 +72,71 @@ export const PluginGallery: React.FC<PluginGalleryProps> = ({
     : AVAILABLE_PLUGIN_TYPES;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {filteredPlugins.map((plugin) => {
+    <div
+      className="rounded-xl bg-white overflow-hidden"
+      style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}
+    >
+      {filteredPlugins.map((plugin, i) => {
         const Icon = plugin.icon;
         const isDisabled = !plugin.available;
 
         return (
-          <Card
+          <div
             key={plugin.id}
-            className={`p-6 transition-all ${
+            className={`flex items-center gap-4 px-5 py-4 transition-colors ${
               isDisabled
                 ? 'opacity-60 cursor-not-allowed'
-                : 'hover:border-orange-300 hover:shadow-md cursor-pointer'
+                : 'hover:bg-[rgba(87,84,91,0.03)] cursor-pointer'
             }`}
+            style={{ borderTop: i > 0 ? '1px solid var(--tf-border-light)' : undefined }}
             onClick={() => !isDisabled && onSelectPlugin(plugin)}
           >
-            <div className="flex flex-col h-full">
-              {/* Icon and Badge */}
-              <div className="flex items-start justify-between mb-4">
-                <div className={`p-3 rounded-lg ${plugin.iconBgColor}`}>
-                  <Icon className={`h-6 w-6 ${plugin.iconColor}`} />
-                </div>
+            {/* Icon */}
+            <div
+              className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+              style={{ backgroundColor: plugin.iconBgColor }}
+            >
+              <Icon className="h-5 w-5" style={{ color: plugin.iconColor }} />
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-sm font-semibold text-[#3c323e]">{plugin.name}</span>
+                <span
+                  className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                  style={{
+                    backgroundColor: 'var(--tf-faint)',
+                    color: 'var(--tf-muted)',
+                    border: '1px solid var(--tf-border-medium)',
+                  }}
+                >
+                  {plugin.category}
+                </span>
                 {plugin.comingSoon && (
                   <Badge variant="secondary" className="text-xs">
                     Coming Soon
                   </Badge>
                 )}
               </div>
-
-              {/* Content */}
-              <div className="flex-1">
-                <h3 className="font-semibold text-primary mb-2">{plugin.name}</h3>
-                <p className="text-sm text-foreground leading-relaxed">
-                  {plugin.description}
-                </p>
-              </div>
-
-              {/* Category Badge */}
-              <div className="mt-4 pt-4 border-t">
-                <Badge variant="outline" className="text-xs">
-                  {plugin.category}
-                </Badge>
-              </div>
+              <p className="text-xs text-[#655d67] leading-relaxed">
+                {plugin.description}
+              </p>
             </div>
-          </Card>
+
+            {/* Action */}
+            {!isDisabled && (
+              <div className="shrink-0">
+                <Button
+                  size="sm"
+                  className="h-8 px-4 text-xs font-medium"
+                  onClick={(e) => { e.stopPropagation(); onSelectPlugin(plugin); }}
+                >
+                  Connect
+                </Button>
+              </div>
+            )}
+          </div>
         );
       })}
     </div>

@@ -1,14 +1,34 @@
 {
+  "status": {
+    "enabled": "இயக்கப்பட்டது",
+    "disabled": "முடக்கப்பட்டது"
+  },
+  "eventsCount": "{{count}} நிகழ்வு(கள்)",
   "actions": {
     "viewDeliveries": "விநியோகங்களைக் காண்க",
     "edit": "திருத்தவும்",
     "test": "சோதனை",
-    "delete": "நீக்கு"
+    "delete": "நீக்கு",
+    "enable": "இயக்கவும்",
+    "disable": "முடக்கவும்"
   },
   "types": {
     "email": "மின்னஞ்சல்",
     "webhook": "வெப்ஹூக்",
-    "slack": "மந்தமான"
+    "slack": "மந்தமான",
+    "quiz-grading": "வினாடி வினா மதிப்பீடு"
+  },
+  "toasts": {
+    "enabledTitle": "ஒருங்கிணைப்பு இயக்கப்பட்டது",
+    "enabledMessage": "\"{{name}}\" இயக்கப்பட்டது",
+    "disabledTitle": "ஒருங்கிணைப்பு முடக்கப்பட்டது",
+    "disabledMessage": "\"{{name}}\" முடக்கப்பட்டது",
+    "updateErrorTitle": "புதுப்பிப்பு தோல்வியடைந்தது",
+    "testTriggeredTitle": "சோதனை தொடங்கப்பட்டது",
+    "testFailedTitle": "சோதனை தோல்வியடைந்தது",
+    "deletedTitle": "ஒருங்கிணைப்பு நீக்கப்பட்டது",
+    "deletedMessage": "\"{{name}}\" வெற்றிகரமாக நீக்கப்பட்டது",
+    "deleteErrorTitle": "நீக்குவதில் தோல்வி"
   },
   "testDialog": {
     "title": "சோதனை செருகுநிரல்",

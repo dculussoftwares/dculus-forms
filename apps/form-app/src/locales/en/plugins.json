@@ -14,6 +14,26 @@
       "description": "The form you're looking for doesn't exist or you don't have permission to view its plugins."
     }
   },
+  "sidebar": {
+    "title": "Connect {{formTitle}} to your favorite apps",
+    "subtitle": "Create automated, efficient workflows that work for you.",
+    "searchPlaceholder": "Search integrations",
+    "categoriesHeading": "Categories"
+  },
+  "categories": {
+    "all": "All"
+  },
+  "activeSection": {
+    "heading": "Active ({{count}})"
+  },
+  "catalogSection": {
+    "heading": "Add integrations",
+    "connectButton": "Connect",
+    "addAnotherButton": "Add another",
+    "activeCount": "{{count}} active",
+    "comingSoonLabel": "Coming Soon",
+    "noResults": "No integrations found for \"{{searchQuery}}\""
+  },
   "header": {
     "title": "Integrations",
     "description": "Connect {{formTitle}} with external services and automate workflows"

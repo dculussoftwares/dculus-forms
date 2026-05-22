@@ -22,6 +22,7 @@ import {
   Webhook,
   Mail,
   MessageSquare,
+  GraduationCap,
   MoreVertical,
   Edit,
   Trash2,
@@ -133,6 +134,8 @@ export const PluginCard: React.FC<PluginCardProps> = ({
         return <Mail className="h-5 w-5" />;
       case 'slack':
         return <MessageSquare className="h-5 w-5" />;
+      case 'quiz-grading':
+        return <GraduationCap className="h-5 w-5" />;
       default:
         return <Webhook className="h-5 w-5" />;
     }
@@ -158,6 +161,8 @@ export const PluginCard: React.FC<PluginCardProps> = ({
         return t('types.email');
       case 'slack':
         return t('types.slack');
+      case 'quiz-grading':
+        return t('types.quiz-grading');
       default:
         return plugin.type;
     }
@@ -187,7 +192,7 @@ export const PluginCard: React.FC<PluginCardProps> = ({
             </span>
           </div>
           <p className="text-xs text-muted-foreground">
-            {getPluginTypeLabel()} · {plugin.events.length} {t('eventsCount', { values: { count: plugin.events.length } })}
+            {getPluginTypeLabel()} · {t('eventsCount', { values: { count: plugin.events.length } })}
           </p>
           {/* Event badges */}
           {plugin.events.length > 0 && (

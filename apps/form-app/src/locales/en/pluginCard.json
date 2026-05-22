@@ -1,14 +1,34 @@
 {
+  "status": {
+    "enabled": "Enabled",
+    "disabled": "Disabled"
+  },
+  "eventsCount": "{{count}} event(s)",
   "actions": {
     "viewDeliveries": "View Deliveries",
     "edit": "Edit",
     "test": "Test",
-    "delete": "Delete"
+    "delete": "Delete",
+    "enable": "Enable",
+    "disable": "Disable"
   },
   "types": {
     "email": "Email",
     "webhook": "Webhook",
-    "slack": "Slack"
+    "slack": "Slack",
+    "quiz-grading": "Quiz Grading"
+  },
+  "toasts": {
+    "enabledTitle": "Integration enabled",
+    "enabledMessage": "\"{{name}}\" has been enabled",
+    "disabledTitle": "Integration disabled",
+    "disabledMessage": "\"{{name}}\" has been disabled",
+    "updateErrorTitle": "Update failed",
+    "testTriggeredTitle": "Test triggered",
+    "testFailedTitle": "Test failed",
+    "deletedTitle": "Integration deleted",
+    "deletedMessage": "\"{{name}}\" has been deleted successfully",
+    "deleteErrorTitle": "Delete failed"
   },
   "testDialog": {
     "title": "Test Plugin",
