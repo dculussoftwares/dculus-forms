@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { emailHandler } from '../handler.js';
-import type { PluginEvent, PluginContext } from '../../types.js';
+import type { PluginEvent, PluginContext } from '../../core/types.js';
 import type { ValidatedEmailConfig } from '../types.js';
 
 // Mock dependencies

@@ -9,7 +9,7 @@ import { GET_FORM_PLUGINS } from '../graphql/plugins';
 import { AlertCircle, Search, X } from 'lucide-react';
 import { PluginCard } from '../components/plugins/shared/PluginCard';
 import { PluginDeliveryLog } from '../components/plugins/shared/PluginDeliveryLog';
-import { AVAILABLE_PLUGIN_TYPES } from '../components/plugins/shared/PluginGallery';
+import { AVAILABLE_PLUGIN_TYPES, PLUGIN_ICON_MAP } from '../components/plugins/shared/PluginGallery';
 
 const Plugins: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
@@ -258,7 +258,7 @@ const Plugins: React.FC = () => {
                     }}
                   >
                     {filteredCatalog.map((pluginType, i) => {
-                      const Icon = pluginType.icon;
+                      const Icon = PLUGIN_ICON_MAP[pluginType.icon];
                       const activeCount = activeByType[pluginType.id]?.length || 0;
 
                       return (

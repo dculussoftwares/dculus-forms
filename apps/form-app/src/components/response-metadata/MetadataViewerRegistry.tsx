@@ -1,13 +1,8 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, ScrollArea } from '@dculus/ui';
-import { QuizGradingMetadataViewer } from '../plugins/response-table/quiz/QuizGradingMetadataViewer';
+import { getMetadataViewer } from '../../plugins/core/registry';
 import { useTranslation } from '../../hooks/useTranslation';
-
-// Registry mapping plugin types to viewer components
-const METADATA_VIEWERS: Record<string, React.ComponentType<any>> = {
-  'quiz-grading': QuizGradingMetadataViewer,
-  // Add other plugin metadata viewers here as they are implemented
-};
+import '../../plugins/index';
 
 interface MetadataViewerProps {
   metadata: Record<string, any>;
@@ -15,18 +10,15 @@ interface MetadataViewerProps {
 
 export const MetadataViewer: React.FC<MetadataViewerProps> = ({ metadata }) => {
   const { t } = useTranslation('metadataViewer');
-  
-  if (!metadata || Object.keys(metadata).length === 0) {
-    return null;
-  }
+
+  if (!metadata || Object.keys(metadata).length === 0) return null;
 
   return (
     <div className="space-y-4">
       {Object.entries(metadata).map(([pluginType, pluginMetadata]) => {
-        const ViewerComponent = METADATA_VIEWERS[pluginType];
+        const ViewerComponent = getMetadataViewer(pluginType);
 
         if (!ViewerComponent) {
-          // Fallback for unknown plugin types
           return (
             <Card key={pluginType}>
               <CardHeader>

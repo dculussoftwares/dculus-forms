@@ -7,7 +7,7 @@ import {
   Input,
 } from '@dculus/ui';
 import { Search, X } from 'lucide-react';
-import { AVAILABLE_PLUGIN_TYPES, PluginType } from '../shared/PluginGallery';
+import { AVAILABLE_PLUGIN_TYPES, PLUGIN_ICON_MAP, PluginType } from '../shared/PluginGallery';
 import { useTranslation } from '../../../hooks/useTranslation';
 
 interface AddPluginDialogProps {
@@ -121,7 +121,7 @@ export const AddPluginDialog: React.FC<AddPluginDialogProps> = ({
               </div>
             ) : (
               filteredPlugins.map((plugin, i) => {
-                const Icon = plugin.icon;
+                const Icon = PLUGIN_ICON_MAP[plugin.icon];
                 const isDisabled = !plugin.available;
 
                 return (

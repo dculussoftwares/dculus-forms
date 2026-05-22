@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@apollo/client": "^3.13.8",
+    "@dculus/plugins": "workspace:*",
     "@dculus/types": "workspace:*",
     "@dculus/ui": "workspace:*",
     "@dculus/utils": "workspace:*",

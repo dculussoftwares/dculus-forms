@@ -3,13 +3,13 @@ import { pluginsResolvers } from '../plugins.js';
 import { GraphQLError } from '#graphql-errors';
 import * as betterAuthMiddleware from '../../../middleware/better-auth-middleware.js';
 import * as formSharingResolvers from '../formSharing.js';
-import * as pluginEvents from '../../../plugins/events.js';
+import * as pluginEvents from '../../../plugins/core/events.js';
 import { prisma } from '../../../lib/prisma.js';
 
 // Mock all dependencies
 vi.mock('../../../middleware/better-auth-middleware.js');
 vi.mock('../formSharing.js');
-vi.mock('../../../plugins/events.js');
+vi.mock('../../../plugins/core/events.js');
 vi.mock('../../../lib/prisma.js', () => ({
   prisma: {
     formPlugin: {

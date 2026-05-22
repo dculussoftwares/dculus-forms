@@ -22,7 +22,7 @@ import {
 } from '@dculus/utils';
 import { deserializeFormSchema } from '@dculus/types';
 import { analyticsService } from '../../services/analyticsService.js';
-import { emitFormSubmitted } from '../../plugins/events.js';
+import { emitFormSubmitted } from '../../plugins/core/events.js';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
 import { emitFormSubmitted as emitSubscriptionFormSubmitted } from '../../subscriptions/events.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';

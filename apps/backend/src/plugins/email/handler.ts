@@ -1,4 +1,4 @@
-import type { PluginHandler } from '../types.js';
+import type { PluginHandler } from '../core/types.js';
 import type { ValidatedEmailConfig, EmailDeliveryResult } from './types.js';
 import { deserializeFormSchema } from '@dculus/types';
 import { substituteMentions, createFieldLabelsMap } from '@dculus/utils';

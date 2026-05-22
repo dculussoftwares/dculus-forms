@@ -3,7 +3,7 @@ import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { prisma } from '../../lib/prisma.js';
 import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
-import { emitPluginTest } from '../../plugins/events.js';
+import { emitPluginTest } from '../../plugins/core/events.js';
 import { generateId } from '@dculus/utils';
 
 /**

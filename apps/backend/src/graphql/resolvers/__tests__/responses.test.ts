@@ -6,7 +6,7 @@ import * as formService from '../../../services/formService.js';
 import * as betterAuthMiddleware from '../../../middleware/better-auth-middleware.js';
 import * as formSharingResolvers from '../formSharing.js';
 import * as analyticsService from '../../../services/analyticsService.js';
-import * as pluginEvents from '../../../plugins/events.js';
+import * as pluginEvents from '../../../plugins/core/events.js';
 import * as usageService from '../../../subscriptions/usageService.js';
 import * as subscriptionEvents from '../../../subscriptions/events.js';
 import * as editTrackingService from '../../../services/responseEditTrackingService.js';
@@ -30,7 +30,7 @@ vi.mock('../../../lib/prisma.js', () => ({
 vi.mock('../../../middleware/better-auth-middleware.js');
 vi.mock('../formSharing.js');
 vi.mock('../../../services/analyticsService.js');
-vi.mock('../../../plugins/events.js');
+vi.mock('../../../plugins/core/events.js');
 vi.mock('../../../subscriptions/usageService.js');
 vi.mock('../../../subscriptions/events.js');
 vi.mock('../../../lib/logger.js', () => ({

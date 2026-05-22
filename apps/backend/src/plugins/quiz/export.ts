@@ -5,7 +5,7 @@
  */
 
 import { QuizGradingMetadata } from '@dculus/types';
-import { PluginExportColumn, registerPluginExport } from '../exportRegistry.js';
+import { PluginExportColumn, registerPluginExport } from '../core/exportRegistry.js';
 import { logger } from '../../lib/logger.js';
 
 /**

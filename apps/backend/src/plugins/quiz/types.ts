@@ -1,4 +1,4 @@
-import type { PluginConfig } from '../types.js';
+import type { PluginConfig } from '../core/types.js';
 
 // Quiz field configuration (per field)
 export interface QuizFieldConfig {

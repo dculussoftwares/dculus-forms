@@ -1,4 +1,4 @@
-import type { PluginHandler } from '../types.js';
+import type { PluginHandler } from '../core/types.js';
 import type {
   QuizGradingPluginConfig,
   QuizFieldConfig,

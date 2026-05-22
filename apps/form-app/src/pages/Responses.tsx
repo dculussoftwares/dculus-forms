@@ -5,7 +5,7 @@ import { useTranslation } from '../hooks/useTranslation';
 import { Button, LoadingSpinner, EmptyState } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { FilterModal } from '../components/Filters';
-import { QuizResultsDialog } from '../components/plugins/response-table/quiz/QuizResultsDialog';
+import { QuizResultsDialog } from '../plugins/quiz/ResultsDialog';
 import { ResponsesToolbar } from '../components/Responses/ResponsesToolbar';
 import { ResponsesTable } from '../components/Responses/ResponsesTable';
 import { useResponsesState } from '../hooks/useResponsesState';

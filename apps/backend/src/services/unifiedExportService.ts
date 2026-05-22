@@ -3,10 +3,9 @@ import { FormResponse, FormSchema, FieldType } from '@dculus/types';
 import {
   getPluginTypesWithData,
   getPluginExport,
-} from '../plugins/exportRegistry.js';
+} from '../plugins/core/exportRegistry.js';
 
-// Import plugin export registrations
-import '../plugins/quiz/export.js';
+import '../plugins/quiz/index.js';
 import { logger } from '../lib/logger.js';
 
 export type ExportFormat = 'excel' | 'csv';

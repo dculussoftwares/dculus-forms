@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { quizGradingHandler } from '../handler.js';
-import type { PluginEvent, PluginContext } from '../../types.js';
+import type { PluginEvent, PluginContext } from '../../core/types.js';
 import type { QuizGradingPluginConfig } from '../types.js';
 import { QUIZ_GRADING_METADATA_KEY } from '../types.js';
 

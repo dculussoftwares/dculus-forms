@@ -49,7 +49,8 @@ import {
   FormSchema,
 } from '@dculus/types';
 import { formatFieldValue as formatFieldValueUtil } from '@dculus/utils';
-import { getPluginColumns } from '../components/plugins/response-table';
+import { getPluginColumns } from '../plugins/core/registry';
+import '../plugins/index';
 
 interface CreateResponsesColumnsOptions {
   formSchema: any; // serialized form schema
