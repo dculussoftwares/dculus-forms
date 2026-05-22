@@ -69,8 +69,8 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId }) => {
       icon: Users,
       iconBg: 'var(--tf-icon-salmon)',    // salmon — Typeform address/location icon color
       iconColor: 'var(--tf-dark)',
-      path: `/dashboard/form/${formId}/collaborate`,
-      testId: 'quick-action-collaborate',
+      path: `/dashboard/form/${formId}/builder`,
+      testId: 'quick-action-builder',
     },
     {
       title: t('quickActions.items.responses.title'),
@@ -96,8 +96,8 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId }) => {
       icon: Plug,
       iconBg: 'var(--tf-icon-gray)',    // neutral gray — Typeform generic icon color
       iconColor: 'var(--tf-text)',
-      path: `/dashboard/form/${formId}/plugins`,
-      testId: 'quick-action-plugins',
+      path: `/dashboard/form/${formId}/integrations`,
+      testId: 'quick-action-integrations',
     },
     {
       title: t('quickActions.items.settings.title'),

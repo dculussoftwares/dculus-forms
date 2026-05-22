@@ -1,11 +1,11 @@
 {
   "layout": {
-    "title": "செருகுநிரல்கள்",
-    "dynamicTitle": "{{formTitle}} - செருகுநிரல்கள்",
+    "title": "ஒருங்கிணைப்புகள்",
+    "dynamicTitle": "{{formTitle}} - ஒருங்கிணைப்புகள்",
     "breadcrumbs": {
       "dashboard": "டாஷ்போர்டு",
       "formDashboard": "படிவம் டாஷ்போர்டு",
-      "plugins": "செருகுநிரல்கள்"
+      "plugins": "ஒருங்கிணைப்புகள்"
     }
   },
   "errors": {

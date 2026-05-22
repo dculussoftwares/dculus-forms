@@ -551,7 +551,7 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
 
   const handleCardClick = () => onNavigate(`/dashboard/form/${form.id}`);
   const handlePreview   = (e: React.MouseEvent) => { e.stopPropagation(); window.open(getFormViewerUrl(form.shortUrl), '_blank'); };
-  const handleEdit      = (e: React.MouseEvent) => { e.stopPropagation(); onNavigate(`/dashboard/form/${form.id}/collaborate/page-builder`); };
+  const handleEdit      = (e: React.MouseEvent) => { e.stopPropagation(); onNavigate(`/dashboard/form/${form.id}/builder/page-builder`); };
 
   return (
     <div

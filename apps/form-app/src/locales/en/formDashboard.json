@@ -58,8 +58,8 @@
     "description": "Manage your form with powerful tools",
     "items": {
       "collaborate": {
-        "title": "Collaborate",
-        "description": "Real-time collaborative editing"
+        "title": "Builder",
+        "description": "Visual form builder with real-time collaboration"
       },
       "responses": {
         "title": "Responses",
@@ -70,8 +70,8 @@
         "description": "Detailed insights and reports"
       },
       "plugins": {
-        "title": "Plugins",
-        "description": "Enhance with powerful integrations"
+        "title": "Integrations",
+        "description": "Connect with external services and automate workflows"
       },
       "settings": {
         "title": "Settings",

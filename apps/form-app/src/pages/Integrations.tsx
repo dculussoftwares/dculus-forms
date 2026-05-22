@@ -11,10 +11,10 @@ import { PluginCard } from '../components/plugins/shared/PluginCard';
 import { PluginDeliveryLog } from '../components/plugins/shared/PluginDeliveryLog';
 import { AVAILABLE_PLUGIN_TYPES, PLUGIN_ICON_MAP } from '../components/plugins/shared/PluginGallery';
 
-const Plugins: React.FC = () => {
+const Integrations: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
   const navigate = useNavigate();
-  const { t } = useTranslation('plugins');
+  const { t } = useTranslation('integrations');
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -32,12 +32,12 @@ const Plugins: React.FC = () => {
   });
 
   const handleEditPlugin = (plugin: any) =>
-    navigate(`/dashboard/form/${formId}/plugins/${plugin.id}/edit`);
+    navigate(`/dashboard/form/${formId}/integrations/${plugin.id}/edit`);
   const handleViewDeliveries = (plugin: any) =>
     setDeliveryLogPlugin({ id: plugin.id, name: plugin.name });
   const handleCloseDeliveryLog = () => setDeliveryLogPlugin(null);
   const handleConnect = (pluginTypeId: string) =>
-    navigate(`/dashboard/form/${formId}/plugins/configure/${pluginTypeId}`);
+    navigate(`/dashboard/form/${formId}/integrations/configure/${pluginTypeId}`);
 
   // Build category list
   const allCategoryIds = Array.from(new Set(AVAILABLE_PLUGIN_TYPES.map((p) => p.category)));
@@ -357,4 +357,4 @@ const Plugins: React.FC = () => {
   );
 };
 
-export default Plugins;
+export default Integrations;

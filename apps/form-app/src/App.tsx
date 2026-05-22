@@ -23,7 +23,7 @@ const CollaborativeFormBuilder = lazy(() =>
 );
 const FormAnalytics = lazy(() => import('./pages/FormAnalytics'));
 const FormSettings = lazy(() => import('./pages/FormSettings'));
-const Plugins = lazy(() => import('./pages/Plugins'));
+const Integrations = lazy(() => import('./pages/Integrations'));
 const PluginConfiguration = lazy(() => import('./pages/PluginConfiguration'));
 const ResponsesAnalytics = lazy(() => import('./pages/ResponsesAnalytics'));
 const ResponsesIndividual = lazy(() => import('./pages/ResponsesIndividual'));
@@ -69,7 +69,7 @@ function App() {
           <Route path="/dashboard/form/:formId" element={
             <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><FormDashboard /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
-          <Route path="/dashboard/form/:formId/collaborate/:tab?" element={
+          <Route path="/dashboard/form/:formId/builder/:tab?" element={
             <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><CollaborativeFormBuilder /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/analytics" element={
@@ -78,13 +78,13 @@ function App() {
           <Route path="/dashboard/form/:formId/settings" element={
             <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><FormSettings /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
-          <Route path="/dashboard/form/:formId/plugins" element={
-            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><Plugins /></Suspense></PageErrorBoundary></ProtectedRoute>
+          <Route path="/dashboard/form/:formId/integrations" element={
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><Integrations /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
-          <Route path="/dashboard/form/:formId/plugins/configure/:pluginType" element={
+          <Route path="/dashboard/form/:formId/integrations/configure/:pluginType" element={
             <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><PluginConfiguration /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
-          <Route path="/dashboard/form/:formId/plugins/:pluginId/edit" element={
+          <Route path="/dashboard/form/:formId/integrations/:pluginId/edit" element={
             <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><PluginConfiguration /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/settings/:tab?" element={

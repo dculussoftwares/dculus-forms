@@ -49,7 +49,7 @@ const PluginConfiguration: React.FC = () => {
         t('toasts.pluginCreated.title'),
         t('toasts.pluginCreated.description', { values: { name: data.name } })
       );
-      navigate(`/dashboard/form/${formId}/plugins`);
+      navigate(`/dashboard/form/${formId}/integrations`);
     } catch (error: any) {
       toastError(t('toasts.pluginCreated.error'), error.message || t('toasts.pluginCreated.errorDescription'));
     } finally {
@@ -69,7 +69,7 @@ const PluginConfiguration: React.FC = () => {
         t('toasts.pluginUpdated.title'),
         t('toasts.pluginUpdated.description', { values: { name: data.name } })
       );
-      navigate(`/dashboard/form/${formId}/plugins`);
+      navigate(`/dashboard/form/${formId}/integrations`);
     } catch (error: any) {
       toastError(t('toasts.pluginUpdated.error'), error.message || t('toasts.pluginUpdated.errorDescription'));
     } finally {
@@ -78,7 +78,7 @@ const PluginConfiguration: React.FC = () => {
   };
 
   const handleSave = mode === 'edit' ? handleUpdate : handleCreate;
-  const backToPlugins = () => navigate(`/dashboard/form/${formId}/plugins`);
+  const backToPlugins = () => navigate(`/dashboard/form/${formId}/integrations`);
 
   if (formLoading || (pluginId && pluginLoading)) {
     return (
@@ -86,7 +86,7 @@ const PluginConfiguration: React.FC = () => {
         title={t('layout.title')}
         breadcrumbs={[
           { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
-          { label: t('layout.breadcrumbs.plugins'), href: `/dashboard/form/${formId}/plugins` },
+          { label: t('layout.breadcrumbs.plugins'), href: `/dashboard/form/${formId}/integrations` },
           { label: t('layout.breadcrumbs.configure'), href: '#' },
         ]}
       >
@@ -103,7 +103,7 @@ const PluginConfiguration: React.FC = () => {
         title={t('layout.title')}
         breadcrumbs={[
           { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
-          { label: t('layout.breadcrumbs.plugins'), href: `/dashboard/form/${formId}/plugins` },
+          { label: t('layout.breadcrumbs.plugins'), href: `/dashboard/form/${formId}/integrations` },
           { label: t('layout.breadcrumbs.configure'), href: '#' },
         ]}
       >
@@ -172,7 +172,7 @@ const PluginConfiguration: React.FC = () => {
       breadcrumbs={[
         { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
         { label: form.title, href: `/dashboard/form/${formId}` },
-        { label: t('layout.breadcrumbs.plugins'), href: `/dashboard/form/${formId}/plugins` },
+        { label: t('layout.breadcrumbs.plugins'), href: `/dashboard/form/${formId}/integrations` },
         { label: mode === 'edit' ? t('layout.breadcrumbs.edit') : t('layout.breadcrumbs.configure'), href: '#' },
       ]}
     >

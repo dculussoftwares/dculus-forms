@@ -1,11 +1,11 @@
 {
   "layout": {
-    "title": "Plugins",
-    "dynamicTitle": "{{formTitle}} - Plugins",
+    "title": "Integrations",
+    "dynamicTitle": "{{formTitle}} - Integrations",
     "breadcrumbs": {
       "dashboard": "Dashboard",
       "formDashboard": "Form Dashboard",
-      "plugins": "Plugins"
+      "plugins": "Integrations"
     }
   },
   "errors": {

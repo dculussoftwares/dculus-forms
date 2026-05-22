@@ -119,7 +119,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
 
   const redirectToDefaultTab = useCallback(() => {
     if (formId && !tab) {
-      navigate(`/dashboard/form/${formId}/collaborate/${DEFAULT_TAB}`, {
+      navigate(`/dashboard/form/${formId}/builder/${DEFAULT_TAB}`, {
         replace: true,
       });
     }
@@ -128,7 +128,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   const handleKeyboardTabChange = useCallback(
     (newTab: BuilderTab) => {
       if (formId) {
-        navigate(`/dashboard/form/${formId}/collaborate/${newTab}`);
+        navigate(`/dashboard/form/${formId}/builder/${newTab}`);
       }
     },
     [formId, navigate]

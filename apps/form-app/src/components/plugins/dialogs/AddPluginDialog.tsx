@@ -21,7 +21,7 @@ export const AddPluginDialog: React.FC<AddPluginDialogProps> = ({
   onOpenChange,
   onPluginSelected,
 }) => {
-  const { t } = useTranslation('plugins');
+  const { t } = useTranslation('integrations');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 

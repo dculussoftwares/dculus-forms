@@ -66,7 +66,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
 
   const handleTabChange = (tabId: BuilderTab) => {
     if (formId) {
-      navigate(`/dashboard/form/${formId}/collaborate/${tabId}`);
+      navigate(`/dashboard/form/${formId}/builder/${tabId}`);
     }
   };
 

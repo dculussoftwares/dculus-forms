@@ -4,7 +4,7 @@
     "dynamicTitle": "{{mode}} {{pluginType}}",
     "breadcrumbs": {
       "dashboard": "டாஷ்போர்டு",
-      "plugins": "செருகுநிரல்கள்",
+      "plugins": "ஒருங்கிணைப்புகள்",
       "configure": "கட்டமைக்கவும்",
       "edit": "திருத்தவும்"
     },
@@ -35,6 +35,6 @@
     }
   },
   "actions": {
-    "backToPlugins": "செருகுநிரல்களுக்குத் திரும்பு"
+    "backToPlugins": "ஒருங்கிணைப்புகளுக்குத் திரும்பு"
   }
 }

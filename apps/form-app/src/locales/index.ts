@@ -38,8 +38,8 @@ import enResponseEditHistory from './en/responseEditHistory.json';
 import taResponseEditHistory from './ta/responseEditHistory.json';
 import enResponseEdit from './en/responseEdit.json';
 import taResponseEdit from './ta/responseEdit.json';
-import enPlugins from './en/plugins.json';
-import taPlugins from './ta/plugins.json';
+import enIntegrations from './en/integrations.json';
+import taIntegrations from './ta/integrations.json';
 import enTabNavigation from './en/tabNavigation.json';
 import taTabNavigation from './ta/tabNavigation.json';
 import enLayoutSidebar from './en/layoutSidebar.json';
@@ -243,7 +243,7 @@ const enTranslations = {
   responsesIndividual: enResponsesIndividual,
   responseEditHistory: enResponseEditHistory,
   responseEdit: enResponseEdit,
-  plugins: enPlugins,
+  integrations: enIntegrations,
   tabNavigation: enTabNavigation,
   layoutSidebar: enLayoutSidebar,
   fieldTypesPanel: enFieldTypesPanel,
@@ -358,7 +358,7 @@ const taTranslations = {
   responsesIndividual: taResponsesIndividual,
   responseEditHistory: taResponseEditHistory,
   responseEdit: taResponseEdit,
-  plugins: taPlugins,
+  integrations: taIntegrations,
   tabNavigation: taTabNavigation,
   layoutSidebar: taLayoutSidebar,
   fieldTypesPanel: taFieldTypesPanel,
