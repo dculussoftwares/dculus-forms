@@ -15,11 +15,29 @@ export const quizExportColumns: PluginExportColumn = {
   pluginType: 'quiz-grading',
 
   /**
-   * Get quiz export column headers
+   * Get quiz export column headers (static defaults)
    */
   getColumns(): string[] {
     return [
       'Quiz Score',
+      'Quiz Percentage',
+      'Quiz Status',
+      'Quiz Pass Threshold',
+    ];
+  },
+
+  /**
+   * Get quiz export column headers using the stored plugin config.
+   * Honours the user-configured `columnName` for the primary score column.
+   */
+  getColumnsWithConfig(pluginConfig: Record<string, any>): string[] {
+    const primaryColumnName =
+      typeof pluginConfig?.columnName === 'string' && pluginConfig.columnName.trim()
+        ? pluginConfig.columnName.trim()
+        : 'Quiz Score';
+
+    return [
+      primaryColumnName,
       'Quiz Percentage',
       'Quiz Status',
       'Quiz Pass Threshold',

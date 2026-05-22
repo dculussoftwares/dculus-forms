@@ -4,14 +4,15 @@ import type { ResponseCellProps } from '../core/registry';
 
 export const QuizResponseCell: React.FC<ResponseCellProps> = ({
   metadata,
+  metadataKey,
   responseId,
   onViewDetails,
 }) => {
-  if (!metadata?.['quiz-grading']) {
+  if (!metadata?.[metadataKey]) {
     return <span className="text-muted-foreground">-</span>;
   }
 
-  const quiz = metadata['quiz-grading'];
+  const quiz = metadata[metadataKey];
   const passThreshold = quiz.passThreshold ?? 60;
   const passed = quiz.percentage >= passThreshold;
 

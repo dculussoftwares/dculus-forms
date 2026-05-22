@@ -30,7 +30,7 @@ export const executePlugin = async (
     });
 
     const startTime = Date.now();
-    const result = await handler({ config: plugin.config as PluginConfig }, event, context);
+    const result = await handler({ id: pluginId, config: plugin.config as PluginConfig }, event, context);
     const duration = Date.now() - startTime;
 
     context.logger.info(`Plugin executed successfully: ${plugin.name}`, {

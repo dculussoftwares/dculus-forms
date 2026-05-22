@@ -4,7 +4,7 @@ import type {
   QuizFieldConfig,
   QuizGradingResult,
 } from './types.js';
-import { QUIZ_GRADING_METADATA_KEY } from './types.js';
+import { quizMetadataKey } from './types.js';
 
 /**
  * Grade quiz response based on configuration
@@ -87,11 +87,11 @@ export const quizGradingHandler: PluginHandler = async (plugin, event, context) 
       config.passThreshold
     );
 
-    // 5. Update response metadata with quiz results
+    // 5. Update response metadata with quiz results, keyed by plugin instance ID
     const existingMetadata = (response.metadata as any) || {};
     const updatedMetadata = {
       ...existingMetadata,
-      [QUIZ_GRADING_METADATA_KEY]: quizMetadata,
+      [quizMetadataKey(plugin.id)]: quizMetadata,
     };
 
     await context.prisma.response.update({

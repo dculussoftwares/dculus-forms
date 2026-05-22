@@ -98,14 +98,14 @@ export const QuizResultsDialog: React.FC<QuizResultsDialogProps> = ({
               />
             </div>
             <div className="text-xs text-muted-foreground text-center mt-2">
-              Pass threshold: {passThreshold}%
+              {t('passThreshold', { values: { threshold: passThreshold } })}
             </div>
           </div>
 
           <div className="space-y-3">
             <h3 className="font-semibold text-primary flex items-center gap-2">
-              <span className="text-sm uppercase tracking-wide text-foreground">Answer Breakdown</span>
-              <span className="text-xs text-muted-foreground">({totalQuestions} questions)</span>
+              <span className="text-sm uppercase tracking-wide text-foreground">{t('answerBreakdown')}</span>
+              <span className="text-xs text-muted-foreground">({t('questionCount', { values: { count: totalQuestions } })})</span>
             </h3>
 
             {metadata.fieldResults.map((result, idx) => (
@@ -130,7 +130,7 @@ export const QuizResultsDialog: React.FC<QuizResultsDialogProps> = ({
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                            Question {idx + 1}
+                            {t('questionLabel', { values: { number: idx + 1 } })}
                           </span>
                         </div>
                         <div className="font-medium text-primary">{result.fieldLabel}</div>

@@ -70,6 +70,7 @@ export const QuizConfigForm: React.FC<ConfigFormProps> = ({
     defaultValues: {
       name: initialData?.name || '',
       passThreshold: initialData?.config?.passThreshold || 60,
+      columnName: initialData?.config?.columnName || '',
     },
   });
 
@@ -120,6 +121,7 @@ export const QuizConfigForm: React.FC<ConfigFormProps> = ({
           marks: qf.marks,
         })),
         passThreshold: data.passThreshold,
+        columnName: data.columnName?.trim() || undefined,
       },
       events: ['form.submitted'],
     });
@@ -170,6 +172,16 @@ export const QuizConfigForm: React.FC<ConfigFormProps> = ({
               />
               {errors.passThreshold && <p className="text-sm text-destructive">{t('basicSettings.passThresholdError')}</p>}
               <p className="text-sm text-muted-foreground">{t('basicSettings.passThresholdHelp')}</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="columnName">{t('basicSettings.columnName')}</Label>
+              <Input
+                id="columnName"
+                type="text"
+                placeholder={t('basicSettings.columnNamePlaceholder')}
+                {...register('columnName')}
+              />
+              <p className="text-sm text-muted-foreground">{t('basicSettings.columnNameHelp')}</p>
             </div>
           </CardContent>
         </Card>
@@ -251,10 +263,14 @@ export const QuizConfigForm: React.FC<ConfigFormProps> = ({
 
         <div className="flex justify-end gap-3">
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSaving}>
-            Cancel
+            {t('actions.cancel')}
           </Button>
           <Button type="submit" disabled={isSaving || selectionFields.length === 0}>
-            {isSaving ? 'Saving...' : mode === 'create' ? 'Create Plugin' : 'Update Plugin'}
+            {isSaving
+              ? t('actions.saving')
+              : mode === 'create'
+              ? t('actions.create')
+              : t('actions.update')}
           </Button>
         </div>
       </form>

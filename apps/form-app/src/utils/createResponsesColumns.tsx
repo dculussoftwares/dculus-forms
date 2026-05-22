@@ -49,7 +49,7 @@ import {
   FormSchema,
 } from '@dculus/types';
 import { formatFieldValue as formatFieldValueUtil } from '@dculus/utils';
-import { getPluginColumns } from '../plugins/core/registry';
+import { getPluginColumns, PluginInstance } from '../plugins/core/registry';
 import '../plugins/index';
 
 interface CreateResponsesColumnsOptions {
@@ -595,14 +595,19 @@ export const createResponsesColumns = ({
   // Field columns
   const fieldColumns = createFieldColumns(deserializedSchema, t);
 
-  // Plugin columns
-  const enabledPluginTypes =
+  // Plugin columns — pass full plugin instances so column titles can be
+  // derived from each plugin's stored config (e.g. quiz columnName setting)
+  const enabledPluginInstances: PluginInstance[] =
     pluginsData?.formPlugins
       ?.filter((plugin: any) => plugin.enabled)
-      ?.map((plugin: any) => plugin.type) || [];
+      ?.map((plugin: any) => ({
+        type: plugin.type,
+        id: plugin.id,
+        config: plugin.config ?? {},
+      })) || [];
 
   const pluginColumns = getPluginColumns<FormResponse>(
-    enabledPluginTypes,
+    enabledPluginInstances,
     onPluginClick
   );
 

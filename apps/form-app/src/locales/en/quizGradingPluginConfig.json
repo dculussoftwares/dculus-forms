@@ -9,7 +9,10 @@
     "pluginNameRequired": "Plugin name is required",
     "passThreshold": "Pass Threshold (%) *",
     "passThresholdError": "Pass threshold must be between 0 and 100",
-    "passThresholdHelp": "Minimum percentage required to pass the quiz"
+    "passThresholdHelp": "Minimum percentage required to pass the quiz",
+    "columnName": "Export Column Name",
+    "columnNamePlaceholder": "e.g., Quiz Score",
+    "columnNameHelp": "Column header used for the score in Excel/CSV exports and in the responses table"
   },
   "quizQuestions": {
     "title": "Quiz Questions",
@@ -29,5 +32,11 @@
   },
   "emptyState": {
     "noSelectionFields": "No selection fields (Dropdown or Radio) found in this form. Please add selection fields to create a quiz."
+  },
+  "actions": {
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "create": "Create Plugin",
+    "update": "Update Plugin"
   }
 }

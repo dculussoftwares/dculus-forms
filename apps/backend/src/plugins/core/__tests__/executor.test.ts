@@ -85,7 +85,7 @@ describe('executor', () => {
       });
       expect(getPluginHandler).toHaveBeenCalledWith('webhook');
       expect(mockHandler).toHaveBeenCalledWith(
-        { config: mockPlugin.config },
+        { id: 'plugin-1', config: mockPlugin.config },
         mockEvent,
         mockContext
       );

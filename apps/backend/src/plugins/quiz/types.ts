@@ -13,10 +13,12 @@ export interface QuizGradingPluginConfig extends PluginConfig {
   type: 'quiz-grading';
   quizFields: QuizFieldConfig[];  // Array of quiz field configurations
   passThreshold: number;          // Pass percentage (default: 60)
+  columnName?: string;            // Custom column header in Excel/CSV exports (default: "Quiz Score")
 }
 
 export const QUIZ_GRADING_PLUGIN_TYPE = 'quiz-grading' as const;
 export const QUIZ_GRADING_METADATA_KEY = 'quiz-grading' as const;
+export const quizMetadataKey = (pluginId: string) => `quiz-grading:${pluginId}`;
 
 export type ValidatedQuizGradingConfig = QuizGradingPluginConfig;
 

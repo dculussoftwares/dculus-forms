@@ -3,6 +3,7 @@ import { FormResponse, FormSchema, FieldType } from '@dculus/types';
 import {
   getPluginTypesWithData,
   getPluginExport,
+  pluginTypeFromMetadataKey,
 } from '../plugins/core/exportRegistry.js';
 
 import '../plugins/quiz/index.js';
@@ -15,6 +16,13 @@ export interface UnifiedExportData {
   responses: FormResponse[];
   formSchema: FormSchema;
   format: ExportFormat;
+  /**
+   * Optional map of plugin type → plugin config JSON.  When supplied, the
+   * export service passes each plugin's stored config to
+   * `getColumnsWithConfig()` so plugins can honour user-configured column
+   * names (e.g. the quiz plugin's `columnName` setting).
+   */
+  pluginConfigs?: Record<string, Record<string, any>>;
 }
 
 export interface ExportResult {
@@ -168,7 +176,7 @@ const extractFieldInfo = (
 
 // Generate CSV content
 const generateCsvContent = (data: UnifiedExportData): string => {
-  const { responses, formSchema } = data;
+  const { responses, formSchema, pluginConfigs = {} } = data;
   const { fieldInfo, orderedFieldIds } = extractFieldInfo(
     formSchema,
     responses
@@ -180,11 +188,17 @@ const generateCsvContent = (data: UnifiedExportData): string => {
   // Build CSV header
   const headers = ['Response ID', 'Submitted At'];
 
-  // Add plugin columns
-  activePluginTypes.forEach((pluginType) => {
+  // Add plugin columns — use getColumnsWithConfig when available and config is present
+  // activePluginTypes is now a list of metadata keys (e.g. 'quiz-grading:pluginId')
+  activePluginTypes.forEach((metadataKey) => {
+    const pluginType = pluginTypeFromMetadataKey(metadataKey);
     const pluginExport = getPluginExport(pluginType);
     if (pluginExport) {
-      const pluginColumns = pluginExport.getColumns();
+      const config = pluginConfigs[metadataKey];
+      const pluginColumns =
+        config && pluginExport.getColumnsWithConfig
+          ? pluginExport.getColumnsWithConfig(config)
+          : pluginExport.getColumns();
       pluginColumns.forEach((col) => headers.push(escapeCsvFieldName(col)));
     }
   });
@@ -226,10 +240,11 @@ const generateCsvContent = (data: UnifiedExportData): string => {
     );
 
     // Add plugin data
-    activePluginTypes.forEach((pluginType) => {
+    activePluginTypes.forEach((metadataKey) => {
+      const pluginType = pluginTypeFromMetadataKey(metadataKey);
       const pluginExport = getPluginExport(pluginType);
       if (pluginExport) {
-        const pluginMetadata = response.metadata?.[pluginType];
+        const pluginMetadata = response.metadata?.[metadataKey];
         const values = pluginExport.getValues(pluginMetadata);
         values.forEach((value) => {
           row.push(
@@ -264,9 +279,15 @@ const generateCsvContent = (data: UnifiedExportData): string => {
   });
 
   // Calculate plugin column count for logging
-  const pluginColumnCount = activePluginTypes.reduce((count, pluginType) => {
-    const pluginExport = getPluginExport(pluginType);
-    return count + (pluginExport ? pluginExport.getColumns().length : 0);
+  const pluginColumnCount = activePluginTypes.reduce((count, metadataKey) => {
+    const pluginExport = getPluginExport(pluginTypeFromMetadataKey(metadataKey));
+    if (!pluginExport) return count;
+    const config = pluginConfigs[metadataKey];
+    const cols =
+      config && pluginExport.getColumnsWithConfig
+        ? pluginExport.getColumnsWithConfig(config)
+        : pluginExport.getColumns();
+    return count + cols.length;
   }, 0);
 
   logger.info(
@@ -279,7 +300,7 @@ const generateCsvContent = (data: UnifiedExportData): string => {
 const generateExcelContent = async (
   data: UnifiedExportData
 ): Promise<Buffer> => {
-  const { responses, formSchema } = data;
+  const { responses, formSchema, pluginConfigs = {} } = data;
   const { fieldInfo, orderedFieldIds } = extractFieldInfo(
     formSchema,
     responses
@@ -295,11 +316,17 @@ const generateExcelContent = async (
   // Build headers
   const headers = ['Response ID', 'Submitted At'];
 
-  // Add plugin columns to headers
-  activePluginTypes.forEach((pluginType) => {
+  // Add plugin columns to headers — use getColumnsWithConfig when available and config is present
+  activePluginTypes.forEach((metadataKey) => {
+    const pluginType = pluginTypeFromMetadataKey(metadataKey);
     const pluginExport = getPluginExport(pluginType);
     if (pluginExport) {
-      headers.push(...pluginExport.getColumns());
+      const config = pluginConfigs[metadataKey];
+      const cols =
+        config && pluginExport.getColumnsWithConfig
+          ? pluginExport.getColumnsWithConfig(config)
+          : pluginExport.getColumns();
+      headers.push(...cols);
     }
   });
 
@@ -343,10 +370,11 @@ const generateExcelContent = async (
     );
 
     // Add plugin data
-    activePluginTypes.forEach((pluginType) => {
+    activePluginTypes.forEach((metadataKey) => {
+      const pluginType = pluginTypeFromMetadataKey(metadataKey);
       const pluginExport = getPluginExport(pluginType);
       if (pluginExport) {
-        const pluginMetadata = response.metadata?.[pluginType];
+        const pluginMetadata = response.metadata?.[metadataKey];
         const values = pluginExport.getValues(pluginMetadata);
         values.forEach((value) => {
           rowData.push(
@@ -389,9 +417,15 @@ const generateExcelContent = async (
   });
 
   // Calculate total columns (basic + plugin + form fields)
-  const pluginColumnCount = activePluginTypes.reduce((count, pluginType) => {
-    const pluginExport = getPluginExport(pluginType);
-    return count + (pluginExport ? pluginExport.getColumns().length : 0);
+  const pluginColumnCount = activePluginTypes.reduce((count, metadataKey) => {
+    const pluginExport = getPluginExport(pluginTypeFromMetadataKey(metadataKey));
+    if (!pluginExport) return count;
+    const config = pluginConfigs[metadataKey];
+    const cols =
+      config && pluginExport.getColumnsWithConfig
+        ? pluginExport.getColumnsWithConfig(config)
+        : pluginExport.getColumns();
+    return count + cols.length;
   }, 0);
   const totalColumns = 2 + pluginColumnCount + orderedFieldIds.length; // 2 for Response ID + Submitted At
 

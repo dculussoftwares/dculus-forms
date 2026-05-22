@@ -2,7 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { quizGradingHandler } from '../handler.js';
 import type { PluginEvent, PluginContext } from '../../core/types.js';
 import type { QuizGradingPluginConfig } from '../types.js';
-import { QUIZ_GRADING_METADATA_KEY } from '../types.js';
+import { quizMetadataKey } from '../types.js';
+
+const TEST_PLUGIN_ID = 'plugin-test-id';
+const TEST_METADATA_KEY = quizMetadataKey(TEST_PLUGIN_ID);
 
 describe('Quiz Grading Handler', () => {
   let mockContext: PluginContext;
@@ -90,7 +93,7 @@ describe('Quiz Grading Handler', () => {
       mockPrisma.response.update.mockResolvedValue({
         ...mockResponse,
         metadata: {
-          [QUIZ_GRADING_METADATA_KEY]: {
+          [TEST_METADATA_KEY]: {
             quizScore: 20,
             totalMarks: 20,
             percentage: 100,
@@ -98,7 +101,7 @@ describe('Quiz Grading Handler', () => {
         },
       });
 
-      const result = await quizGradingHandler({ config }, mockEvent, mockContext);
+      const result = await quizGradingHandler({ id: TEST_PLUGIN_ID, config }, mockEvent, mockContext);
 
       expect(result.success).toBe(true);
       expect(result.quizScore).toBe(20);
@@ -111,7 +114,7 @@ describe('Quiz Grading Handler', () => {
         where: { id: 'response-123' },
         data: {
           metadata: {
-            [QUIZ_GRADING_METADATA_KEY]: expect.objectContaining({
+            [TEST_METADATA_KEY]: expect.objectContaining({
               quizScore: 20,
               totalMarks: 20,
               percentage: 100,
@@ -172,7 +175,7 @@ describe('Quiz Grading Handler', () => {
       vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
       mockPrisma.response.update.mockResolvedValue(mockResponse);
 
-      const result = await quizGradingHandler({ config }, mockEvent, mockContext);
+      const result = await quizGradingHandler({ id: TEST_PLUGIN_ID, config }, mockEvent, mockContext);
 
       expect(result.success).toBe(true);
       expect(result.quizScore).toBe(10); // 2 out of 3 correct
@@ -213,7 +216,7 @@ describe('Quiz Grading Handler', () => {
       vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
       mockPrisma.response.update.mockResolvedValue(mockResponse);
 
-      const result = await quizGradingHandler({ config }, mockEvent, mockContext);
+      const result = await quizGradingHandler({ id: TEST_PLUGIN_ID, config }, mockEvent, mockContext);
 
       expect(result.success).toBe(true);
       expect(result.quizScore).toBe(0);
@@ -254,7 +257,7 @@ describe('Quiz Grading Handler', () => {
       vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
       mockPrisma.response.update.mockResolvedValue(mockResponse);
 
-      const result = await quizGradingHandler({ config }, mockEvent, mockContext);
+      const result = await quizGradingHandler({ id: TEST_PLUGIN_ID, config }, mockEvent, mockContext);
 
       expect(result.success).toBe(true);
       expect(result.quizScore).toBe(10); // Only q1 correct
@@ -264,7 +267,7 @@ describe('Quiz Grading Handler', () => {
 
       // Verify metadata includes field results
       const metadata = mockPrisma.response.update.mock.calls[0][0].data.metadata;
-      expect(metadata[QUIZ_GRADING_METADATA_KEY].fieldResults).toEqual([
+      expect(metadata[TEST_METADATA_KEY].fieldResults).toEqual([
         {
           fieldId: 'q1',
           fieldLabel: 'Question 1',
@@ -325,7 +328,7 @@ describe('Quiz Grading Handler', () => {
       vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
       mockPrisma.response.update.mockResolvedValue(mockResponse);
 
-      const result = await quizGradingHandler({ config }, mockEvent, mockContext);
+      const result = await quizGradingHandler({ id: TEST_PLUGIN_ID, config }, mockEvent, mockContext);
 
       expect(result.success).toBe(true);
       expect(result.quizScore).toBe(8); // 2.5 + 5.5
@@ -360,7 +363,7 @@ describe('Quiz Grading Handler', () => {
       vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
       mockPrisma.response.update.mockResolvedValue(mockResponse);
 
-      await quizGradingHandler({ config }, mockEvent, mockContext);
+      await quizGradingHandler({ id: TEST_PLUGIN_ID, config }, mockEvent, mockContext);
 
       expect(mockPrisma.response.update).toHaveBeenCalledWith({
         where: { id: 'response-123' },
@@ -368,7 +371,7 @@ describe('Quiz Grading Handler', () => {
           metadata: {
             email: { deliveryStatus: 'sent' },
             webhook: { statusCode: 200 },
-            [QUIZ_GRADING_METADATA_KEY]: expect.objectContaining({
+            [TEST_METADATA_KEY]: expect.objectContaining({
               quizScore: 10,
               totalMarks: 10,
             }),
@@ -400,12 +403,12 @@ describe('Quiz Grading Handler', () => {
       vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
       mockPrisma.response.update.mockResolvedValue(mockResponse);
 
-      await quizGradingHandler({ config }, mockEvent, mockContext);
+      await quizGradingHandler({ id: TEST_PLUGIN_ID, config }, mockEvent, mockContext);
 
       const metadata = mockPrisma.response.update.mock.calls[0][0].data.metadata;
-      expect(metadata[QUIZ_GRADING_METADATA_KEY].gradedAt).toBeDefined();
-      expect(metadata[QUIZ_GRADING_METADATA_KEY].gradedBy).toBe('plugin');
-      expect(typeof metadata[QUIZ_GRADING_METADATA_KEY].gradedAt).toBe('string');
+      expect(metadata[TEST_METADATA_KEY].gradedAt).toBeDefined();
+      expect(metadata[TEST_METADATA_KEY].gradedBy).toBe('plugin');
+      expect(typeof metadata[TEST_METADATA_KEY].gradedAt).toBe('string');
     });
   });
 
@@ -442,7 +445,7 @@ describe('Quiz Grading Handler', () => {
       vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
       mockPrisma.response.update.mockResolvedValue(mockResponse);
 
-      const result = await quizGradingHandler({ config }, mockEvent, mockContext);
+      const result = await quizGradingHandler({ id: TEST_PLUGIN_ID, config }, mockEvent, mockContext);
 
       expect(result.percentage).toBe(60);
       expect(result.passed).toBe(true); // Exactly at threshold
@@ -480,7 +483,7 @@ describe('Quiz Grading Handler', () => {
       vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
       mockPrisma.response.update.mockResolvedValue(mockResponse);
 
-      const result = await quizGradingHandler({ config }, mockEvent, mockContext);
+      const result = await quizGradingHandler({ id: TEST_PLUGIN_ID, config }, mockEvent, mockContext);
 
       expect(result.percentage).toBe(50);
       expect(result.passed).toBe(false); // Below 80% threshold
@@ -509,7 +512,7 @@ describe('Quiz Grading Handler', () => {
       vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
       mockPrisma.response.update.mockResolvedValue(mockResponse);
 
-      const result = await quizGradingHandler({ config }, mockEvent, mockContext);
+      const result = await quizGradingHandler({ id: TEST_PLUGIN_ID, config }, mockEvent, mockContext);
 
       expect(result.percentage).toBe(100);
       expect(result.passed).toBe(true);
@@ -551,7 +554,7 @@ describe('Quiz Grading Handler', () => {
       vi.mocked(mockContext.getResponseById).mockResolvedValue(null);
 
       await expect(
-        quizGradingHandler({ config }, mockEvent, mockContext)
+        quizGradingHandler({ id: TEST_PLUGIN_ID, config }, mockEvent, mockContext)
       ).rejects.toThrow('Quiz grading failed: Response not found: response-123');
 
       expect(mockLogger.error).toHaveBeenCalledWith(
@@ -587,7 +590,7 @@ describe('Quiz Grading Handler', () => {
       mockPrisma.response.update.mockRejectedValue(new Error('Database connection lost'));
 
       await expect(
-        quizGradingHandler({ config }, mockEvent, mockContext)
+        quizGradingHandler({ id: TEST_PLUGIN_ID, config }, mockEvent, mockContext)
       ).rejects.toThrow('Quiz grading failed: Database connection lost');
 
       expect(mockLogger.error).toHaveBeenCalledWith(
@@ -632,10 +635,10 @@ describe('Quiz Grading Handler', () => {
       vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
       mockPrisma.response.update.mockResolvedValue(mockResponse);
 
-      await quizGradingHandler({ config }, mockEvent, mockContext);
+      await quizGradingHandler({ id: TEST_PLUGIN_ID, config }, mockEvent, mockContext);
 
       const metadata = mockPrisma.response.update.mock.calls[0][0].data.metadata;
-      const fieldResults = metadata[QUIZ_GRADING_METADATA_KEY].fieldResults;
+      const fieldResults = metadata[TEST_METADATA_KEY].fieldResults;
 
       expect(fieldResults).toHaveLength(2);
       expect(fieldResults[0]).toEqual({
@@ -681,10 +684,10 @@ describe('Quiz Grading Handler', () => {
       vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
       mockPrisma.response.update.mockResolvedValue(mockResponse);
 
-      await quizGradingHandler({ config }, mockEvent, mockContext);
+      await quizGradingHandler({ id: TEST_PLUGIN_ID, config }, mockEvent, mockContext);
 
       const metadata = mockPrisma.response.update.mock.calls[0][0].data.metadata;
-      const fieldResults = metadata[QUIZ_GRADING_METADATA_KEY].fieldResults;
+      const fieldResults = metadata[TEST_METADATA_KEY].fieldResults;
 
       expect(fieldResults[0].userAnswer).toBe('(No answer)');
       expect(fieldResults[0].isCorrect).toBe(false);
@@ -712,10 +715,10 @@ describe('Quiz Grading Handler', () => {
       vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
       mockPrisma.response.update.mockResolvedValue(mockResponse);
 
-      await quizGradingHandler({ config }, mockEvent, mockContext);
+      await quizGradingHandler({ id: TEST_PLUGIN_ID, config }, mockEvent, mockContext);
 
       const metadata = mockPrisma.response.update.mock.calls[0][0].data.metadata;
-      const fieldResults = metadata[QUIZ_GRADING_METADATA_KEY].fieldResults;
+      const fieldResults = metadata[TEST_METADATA_KEY].fieldResults;
 
       expect(fieldResults[0].fieldLabel).toBe('Unknown Field');
     });
@@ -741,7 +744,7 @@ describe('Quiz Grading Handler', () => {
       vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
       mockPrisma.response.update.mockResolvedValue(mockResponse);
 
-      await quizGradingHandler({ config }, mockEvent, mockContext);
+      await quizGradingHandler({ id: TEST_PLUGIN_ID, config }, mockEvent, mockContext);
 
       expect(mockLogger.info).toHaveBeenCalledWith(
         'Quiz grading plugin triggered',
@@ -771,7 +774,7 @@ describe('Quiz Grading Handler', () => {
       vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
       mockPrisma.response.update.mockResolvedValue(mockResponse);
 
-      await quizGradingHandler({ config }, mockEvent, mockContext);
+      await quizGradingHandler({ id: TEST_PLUGIN_ID, config }, mockEvent, mockContext);
 
       expect(mockLogger.info).toHaveBeenCalledWith(
         'Quiz graded successfully',

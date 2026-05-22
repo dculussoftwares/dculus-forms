@@ -16,7 +16,7 @@ export interface PluginEvent {
 }
 
 export type PluginHandler = (
-  plugin: { config: PluginConfig },
+  plugin: { id: string; config: PluginConfig },
   event: PluginEvent,
   context: PluginContext
 ) => Promise<any>;

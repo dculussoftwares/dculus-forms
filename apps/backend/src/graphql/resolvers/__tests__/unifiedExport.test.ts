@@ -26,6 +26,15 @@ vi.mock('../../../lib/logger.js', () => ({
     warn: vi.fn(),
   },
 }));
+
+// Mock prisma so the plugin-configs lookup in the resolver does not hit the DB
+vi.mock('../../../lib/prisma.js', () => ({
+  prisma: {
+    formPlugin: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+  },
+}));
 vi.mock('@dculus/types', async () => {
   const actual = await vi.importActual<typeof import('@dculus/types')>('@dculus/types');
   return {
@@ -807,6 +816,7 @@ describe('Unified Export Resolvers', () => {
           responses: mockResponses,
           formSchema: mockForm.formSchema,
           format: 'excel',
+          pluginConfigs: {},
         });
         expect(result.format).toBe('EXCEL');
       });
@@ -919,6 +929,7 @@ describe('Unified Export Resolvers', () => {
           responses: mockResponses,
           formSchema: mockForm.formSchema,
           format: 'csv',
+          pluginConfigs: {},
         });
         expect(result.format).toBe('CSV');
       });

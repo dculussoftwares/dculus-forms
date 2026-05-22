@@ -8,6 +8,10 @@
   "correct": "சரி",
   "yourAnswer": "உங்கள் பதில்:",
   "correctAnswer": "சரியான பதில்:",
+  "passThreshold": "தேர்ச்சி வரம்பு: {{threshold}}%",
+  "answerBreakdown": "பதில் விளக்கம்",
+  "questionLabel": "கேள்வி {{number}}",
+  "questionCount": "{{count}} கேள்விகள்",
   "status": {
     "passed": "தேர்ச்சி பெற்றது",
     "failed": "தோல்வியடைந்தது"

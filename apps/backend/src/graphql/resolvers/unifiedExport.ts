@@ -10,6 +10,7 @@ import { deserializeFormSchema } from '@dculus/types';
 import { ResponseFilter, applyResponseFilters } from '../../services/responseFilterService.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import { logger } from '../../lib/logger.js';
+import { prisma } from '../../lib/prisma.js';
 
 
 export const unifiedExportResolvers = {
@@ -91,12 +92,28 @@ export const unifiedExportResolvers = {
           logger.info('Unified Export - Deserialized database form schema pages:', formSchema.pages.length);
         }
 
+        // Build a pluginType → config map so the export service can honour
+        // per-plugin settings (e.g. the quiz plugin's configurable columnName).
+        // Key by 'type:id' so multiple instances of the same plugin type each
+        // get their own config entry, matching the metadata key written by the handler.
+        const formPlugins = await prisma.formPlugin.findMany({
+          where: { formId, enabled: true },
+          select: { id: true, type: true, config: true },
+        });
+        const pluginConfigs: Record<string, Record<string, any>> = {};
+        for (const fp of formPlugins) {
+          if (fp.config && typeof fp.config === 'object') {
+            pluginConfigs[`${fp.type}:${fp.id}`] = fp.config as Record<string, any>;
+          }
+        }
+
         // Generate export file using unified service
         const exportResult = await generateExportFile({
           formTitle: form.title,
           responses,
           formSchema,
-          format: exportFormat
+          format: exportFormat,
+          pluginConfigs,
         });
 
         logger.info(`${exportFormat.toUpperCase()} file generated, size: ${exportResult.buffer.length} bytes`);

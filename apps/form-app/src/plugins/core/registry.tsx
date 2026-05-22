@@ -15,6 +15,8 @@ export interface ConfigFormProps {
 
 export interface ResponseCellProps {
   metadata: Record<string, any>;
+  /** The key under which this plugin's data is stored in metadata (e.g. 'quiz-grading:pluginId') */
+  metadataKey: string;
   responseId: string;
   onViewDetails?: (metadata: any, responseId: string) => void;
 }
@@ -31,8 +33,16 @@ export interface FrontendPlugin {
   ConfigForm: React.ComponentType<ConfigFormProps>;
   /** Optional: response table column cell */
   ResponseCell?: React.ComponentType<ResponseCellProps>;
-  /** Optional: column header title (required when ResponseCell is provided) */
+  /**
+   * Optional: static column header title (required when ResponseCell is provided
+   * and no getColumnTitle is supplied).
+   */
   columnTitle?: string;
+  /**
+   * Optional: derive the column header title from the stored plugin config JSON.
+   * Takes precedence over `columnTitle` when supplied.
+   */
+  getColumnTitle?: (pluginConfig: Record<string, any>) => string;
   /** Optional: column width in pixels */
   columnSize?: number;
   /** Optional: metadata viewer for individual response view */
@@ -57,28 +67,54 @@ export const getAllFrontendPlugins = (): FrontendPlugin[] =>
 
 // ─── Derived: response table columns ─────────────────────────────────────────
 
+export interface PluginInstance {
+  type: string;
+  /** The plugin instance ID — used to build the per-instance metadata key */
+  id?: string;
+  /** The raw config JSON stored for this plugin instance */
+  config?: Record<string, any>;
+}
+
 export function getPluginColumns<TData = any>(
-  enabledPluginTypes: string[],
+  enabledPlugins: string[] | PluginInstance[],
   onViewDetails?: (pluginType: string, metadata: any, responseId: string) => void
 ): ColumnDef<TData>[] {
-  return enabledPluginTypes.flatMap((type) => {
-    const plugin = pluginRegistry.get(type);
-    if (!plugin?.ResponseCell || !plugin.columnTitle) return [];
+  // Normalise: accept either a string array (legacy) or PluginInstance array
+  const instances: PluginInstance[] = (enabledPlugins as any[]).map((item) =>
+    typeof item === 'string' ? { type: item } : item
+  );
 
-    const { ResponseCell, columnTitle, columnSize } = plugin;
+  return instances.flatMap(({ type, id, config = {} }) => {
+    const plugin = pluginRegistry.get(type);
+    if (!plugin?.ResponseCell) return [];
+
+    // Resolve column title: prefer getColumnTitle(config) over static columnTitle
+    const resolvedTitle =
+      plugin.getColumnTitle
+        ? plugin.getColumnTitle(config)
+        : plugin.columnTitle;
+
+    if (!resolvedTitle) return [];
+
+    // Build the metadata key: 'type:id' when id is available, bare 'type' for legacy data
+    const metadataKey = id ? `${type}:${id}` : type;
+
+    const { ResponseCell, columnSize } = plugin;
 
     return [
       {
         accessorKey: 'metadata',
+        id: `plugin-${metadataKey}`,
         header: ({ column }: any) => (
-          <DataTableColumnHeader column={column} title={columnTitle} />
+          <DataTableColumnHeader column={column} title={resolvedTitle} />
         ),
         cell: ({ row }: any) =>
           React.createElement(ResponseCell, {
             metadata: (row.original as any).metadata,
+            metadataKey,
             responseId: (row.original as any).id,
             onViewDetails: onViewDetails
-              ? (meta: any, id: string) => onViewDetails(type, meta, id)
+              ? (meta: any, rid: string) => onViewDetails(type, meta, rid)
               : undefined,
           }),
         enableSorting: false,

@@ -8,6 +8,10 @@
   "correct": "Correct",
   "yourAnswer": "Your answer:",
   "correctAnswer": "Correct answer:",
+  "passThreshold": "Pass threshold: {{threshold}}%",
+  "answerBreakdown": "Answer Breakdown",
+  "questionLabel": "Question {{number}}",
+  "questionCount": "{{count}} questions",
   "status": {
     "passed": "PASSED",
     "failed": "FAILED"

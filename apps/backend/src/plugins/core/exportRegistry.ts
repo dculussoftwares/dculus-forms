@@ -3,6 +3,12 @@ import { logger } from '../../lib/logger.js';
 export interface PluginExportColumn {
   pluginType: string;
   getColumns(): string[];
+  /**
+   * Optional: return column headers using the stored plugin config (e.g. to
+   * honour a user-configured `columnName`).  Falls back to `getColumns()` when
+   * not implemented.
+   */
+  getColumnsWithConfig?(pluginConfig: Record<string, any>): string[];
   getValues(metadata: any): (string | number | null)[];
 }
 
@@ -37,16 +43,30 @@ export function hasPluginExport(pluginType: string): boolean {
   return PLUGIN_EXPORT_REGISTRY.has(pluginType);
 }
 
+/**
+ * Extract the plugin type from a metadata key.
+ * Handles both legacy bare keys ('quiz-grading') and instance-scoped keys ('quiz-grading:pluginId').
+ */
+export function pluginTypeFromMetadataKey(key: string): string {
+  const colonIdx = key.indexOf(':');
+  return colonIdx >= 0 ? key.slice(0, colonIdx) : key;
+}
+
+/**
+ * Returns every metadata key (across all responses) that belongs to a registered
+ * plugin export.  Keys may be bare plugin types ('quiz-grading') for legacy data
+ * or instance-scoped ('quiz-grading:pluginId') for current data.
+ */
 export function getPluginTypesWithData(
   responses: { metadata?: Record<string, any> }[]
 ): string[] {
-  const pluginTypes = new Set<string>();
+  const keys = new Set<string>();
   for (const response of responses) {
     if (response.metadata) {
-      for (const pluginType of Object.keys(response.metadata)) {
-        if (hasPluginExport(pluginType)) pluginTypes.add(pluginType);
+      for (const key of Object.keys(response.metadata)) {
+        if (hasPluginExport(pluginTypeFromMetadataKey(key))) keys.add(key);
       }
     }
   }
-  return Array.from(pluginTypes).sort();
+  return Array.from(keys).sort();
 }
