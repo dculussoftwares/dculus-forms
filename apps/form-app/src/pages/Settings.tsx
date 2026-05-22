@@ -28,13 +28,13 @@ const Settings: React.FC = () => {
   return (
     <MainLayout title={t('page.title')} subtitle={t('page.subtitle')}>
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="w-full max-w-xs">
-          <TabsTrigger value="account" className="flex items-center gap-2">
-            <User className="h-4 w-4" strokeWidth={1.5} />
+        <TabsList>
+          <TabsTrigger value="account" className="flex items-center gap-1.5">
+            <User className="h-3.5 w-3.5" strokeWidth={1.5} />
             {t('tabs.account')}
           </TabsTrigger>
-          <TabsTrigger value="organization" className="flex items-center gap-2">
-            <Building2 className="h-4 w-4" strokeWidth={1.5} />
+          <TabsTrigger value="organization" className="flex items-center gap-1.5">
+            <Building2 className="h-3.5 w-3.5" strokeWidth={1.5} />
             {t('tabs.organization')}
           </TabsTrigger>
         </TabsList>

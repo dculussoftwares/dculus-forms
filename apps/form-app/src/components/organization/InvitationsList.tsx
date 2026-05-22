@@ -1,5 +1,5 @@
 import React from 'react';
-import { Badge, Button, toastSuccess, toastError } from '@dculus/ui';
+import { Button, toastSuccess, toastError } from '@dculus/ui';
 import { Mail, Clock, X, Crown, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { parseDate, isDateExpired } from '@dculus/utils';
@@ -93,44 +93,40 @@ export const InvitationsList: React.FC<InvitationsListProps> = ({
     }
   };
 
-  const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case 'owner':
-        return 'default' as const;
-      case 'member':
-        return 'secondary' as const;
-      default:
-        return 'outline' as const;
-    }
+  const getRoleBadgeClass = (role: string) => {
+    return role === 'owner'
+      ? 'bg-[#ddd6fa] text-[#5c2e6b] border border-[#c6b8fe]'
+      : 'bg-[#f7f7f8] text-[#655d67] border border-[#dedcde]';
   };
 
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">{t('invitations.title')}</h3>
-        <Badge variant="outline">
+        <h3 className="text-sm font-medium text-[#3c323e]">{t('invitations.title')}</h3>
+        <span className="inline-flex items-center text-xs font-medium bg-[#f6fafd] text-[#01487f] px-2.5 py-1 rounded-full">
           {invitationArray.length === 1
             ? t('invitations.count.one')
             : t('invitations.count.other', { values: { count: invitationArray.length } })}
-        </Badge>
+        </span>
       </div>
-      
-      <div className="space-y-3">
-        {invitationArray.map((invitation) => (
+
+      <div>
+        {invitationArray.map((invitation, index) => (
           <div
             key={invitation.id}
-            className={`flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors ${
+            className={`flex items-center justify-between px-3 py-3.5 rounded-lg hover:bg-[rgba(87,84,91,0.06)] transition-colors ${
               isDateExpired(invitation.expiresAt) ? 'opacity-60' : ''
+            } ${
+              index < invitationArray.length - 1 ? 'border-b border-[rgba(81,76,84,0.08)]' : ''
             }`}
           >
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-muted rounded-full">
-                <Mail className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#ddd6fa] shrink-0">
+                <Mail className="h-4 w-4 text-[#5c2e6b]" />
               </div>
               <div>
-                <div className="font-medium">{invitation.email}</div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="text-sm font-medium text-[#3c323e]">{invitation.email}</div>
+                <div className="flex items-center gap-2 text-xs text-[#655d67]">
                   <span>
                     {t('invitations.invitedBy', {
                       values: {
@@ -138,11 +134,11 @@ export const InvitationsList: React.FC<InvitationsListProps> = ({
                       },
                     })}
                   </span>
-                  <span>•</span>
+                  <span>·</span>
                   <div className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
                     {isDateExpired(invitation.expiresAt) ? (
-                      <span className="text-destructive">{t('invitations.expired')}</span>
+                      <span className="text-[#ce5d55] font-medium">{t('invitations.expired')}</span>
                     ) : (
                       <span>
                         {t('invitations.expires', {
@@ -156,23 +152,22 @@ export const InvitationsList: React.FC<InvitationsListProps> = ({
                 </div>
               </div>
             </div>
-            
-            <div className="flex items-center space-x-2">
-              <Badge variant={getRoleBadgeVariant(invitation.role)} className="flex items-center gap-1">
+
+            <div className="flex items-center gap-2">
+              <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${getRoleBadgeClass(invitation.role)}`}>
                 {getRoleIcon(invitation.role)}
                 {getRoleLabel(invitation.role)}
-              </Badge>
-              
+              </span>
+
               {!isDateExpired(invitation.expiresAt) && (
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={() => handleCancelInvitation(invitation.id)}
                   disabled={cancelLoading}
-                  className="flex items-center gap-1"
+                  className="h-7 w-7 p-0 text-[#655d67] hover:text-[#ce5d55] hover:bg-[rgba(206,93,85,0.08)]"
                 >
-                  <X className="h-3 w-3" />
-                  {t('invitations.cancel')}
+                  <X className="h-3.5 w-3.5" />
                 </Button>
               )}
             </div>

@@ -136,11 +136,11 @@ export const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ init
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader className="border-b pb-6">
+        <CardHeader className="border-b border-[rgba(81,76,84,0.12)] pb-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                <SettingsIcon className="h-6 w-6 text-primary" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#ddd6fa]">
+                <SettingsIcon className="h-6 w-6 text-[#5c2e6b]" />
               </div>
               <div className="space-y-1">
                 <CardTitle className="text-xl font-semibold tracking-tight">
@@ -159,20 +159,20 @@ export const OrganizationSettings: React.FC<OrganizationSettingsProps> = ({ init
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-6 w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="team" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
+            <TabsList className="w-full justify-start">
+              <TabsTrigger value="team" className="flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5" />
                 {teamTabLabel}
               </TabsTrigger>
-              <TabsTrigger value="subscription" className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4" />
+              <TabsTrigger value="subscription" className="flex items-center gap-1.5">
+                <CreditCard className="h-3.5 w-3.5" />
                 {t('organization.tabs.subscription')}
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="team" className="mt-6 space-y-8">
               <MembersList organization={activeOrganization as any} />
-              <div className="border-t pt-8">
+              <div className="border-t border-[rgba(81,76,84,0.08)] pt-8">
                 <InvitationsList
                   invitations={pendingInvitations}
                   onInvitationAction={fetchInvitations}

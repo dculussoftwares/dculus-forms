@@ -1,16 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Input,
-  UserAvatar,
-  toastSuccess,
-  toastError,
-} from '@dculus/ui';
+import { Button, Card, Input, UserAvatar, toastSuccess, toastError } from '@dculus/ui';
 import { Camera } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { updateUser } from '../../lib/auth-client';
@@ -73,34 +62,33 @@ export const AccountSettings: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-xl">
-      {/* Avatar card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">{t('avatar.heading')}</CardTitle>
-          <CardDescription>{t('avatar.description')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-6">
-            <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
+    <div className="max-w-xl">
+      <Card className="overflow-hidden">
+        {/* Profile picture row */}
+        <div className="p-6">
+          <div className="flex items-center gap-5">
+            <div className="relative group cursor-pointer shrink-0" onClick={handleAvatarClick}>
               <UserAvatar
                 name={user?.name}
                 email={user?.email}
                 image={user?.image}
                 size="xl"
               />
-              <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <Camera className="h-5 w-5 text-white" strokeWidth={1.5} />
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-[#3c323e] truncate">{user?.name || '—'}</div>
+              <div className="text-xs text-[#655d67] mt-0.5 truncate">{user?.email}</div>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={handleAvatarClick}
                 disabled={isUploadingAvatar}
+                className="mt-2 h-7 px-2 text-xs text-[#655d67] hover:text-[#3c323e] hover:bg-[rgba(87,84,91,0.06)] -ml-2"
               >
-                <Camera className="h-4 w-4 mr-2" strokeWidth={1.5} />
+                <Camera className="h-3.5 w-3.5 mr-1.5" strokeWidth={1.5} />
                 {isUploadingAvatar ? t('avatar.uploading') : t('avatar.changeButton')}
               </Button>
               <input
@@ -112,15 +100,13 @@ export const AccountSettings: React.FC = () => {
               />
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Name card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">{t('name.label')}</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <div className="border-t border-[rgba(81,76,84,0.08)]" />
+
+        {/* Display name row */}
+        <div className="p-6 space-y-3">
+          <div className="text-sm font-medium text-[#3c323e]">{t('name.label')}</div>
           <div className="flex gap-3">
             <Input
               value={displayName}
@@ -129,22 +115,29 @@ export const AccountSettings: React.FC = () => {
               className="max-w-xs"
               onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
             />
-            <Button onClick={handleSaveName} disabled={isSavingName || !displayName.trim() || displayName.trim() === user?.name}>
+            <Button
+              onClick={handleSaveName}
+              disabled={isSavingName || !displayName.trim() || displayName.trim() === user?.name}
+            >
               {isSavingName ? t('name.saving') : t('name.saveButton')}
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Email card (read-only) */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">{t('email.label')}</CardTitle>
-          <CardDescription>{t('email.hint')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Input value={user?.email ?? ''} readOnly className="max-w-xs bg-muted cursor-not-allowed" />
-        </CardContent>
+        <div className="border-t border-[rgba(81,76,84,0.08)]" />
+
+        {/* Email row (read-only) */}
+        <div className="p-6 space-y-3">
+          <div>
+            <div className="text-sm font-medium text-[#3c323e]">{t('email.label')}</div>
+            <div className="text-xs text-[#655d67] mt-0.5">{t('email.hint')}</div>
+          </div>
+          <Input
+            value={user?.email ?? ''}
+            readOnly
+            className="max-w-xs bg-[rgba(87,84,91,0.04)] text-[#655d67] cursor-not-allowed"
+          />
+        </div>
       </Card>
     </div>
   );

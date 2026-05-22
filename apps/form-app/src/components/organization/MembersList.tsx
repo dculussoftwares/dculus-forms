@@ -1,5 +1,5 @@
 import React from 'react';
-import { Badge, UserAvatar } from '@dculus/ui';
+import { UserAvatar } from '@dculus/ui';
 import { Crown, User } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 
@@ -59,35 +59,32 @@ export const MembersList: React.FC<MembersListProps> = ({ organization }) => {
     }
   };
 
-  const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case 'owner':
-        return 'default' as const;
-      case 'member':
-        return 'secondary' as const;
-      default:
-        return 'outline' as const;
-    }
+  const getRoleBadgeClass = (role: string) => {
+    return role === 'owner'
+      ? 'bg-[#ddd6fa] text-[#5c2e6b] border border-[#c6b8fe]'
+      : 'bg-[#f7f7f8] text-[#655d67] border border-[#dedcde]';
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">{t('members.title')}</h3>
-        <Badge variant="outline">
+        <h3 className="text-sm font-medium text-[#3c323e]">{t('members.title')}</h3>
+        <span className="inline-flex items-center text-xs font-medium bg-[#f6fafd] text-[#01487f] px-2.5 py-1 rounded-full">
           {members.length === 1
             ? t('members.count.one')
             : t('members.count.other', { values: { count: members.length } })}
-        </Badge>
+        </span>
       </div>
-      
-      <div className="space-y-3">
-        {members.map((member) => (
+
+      <div>
+        {members.map((member, index) => (
           <div
             key={member.id}
-            className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+            className={`flex items-center justify-between px-3 py-3.5 rounded-lg hover:bg-[rgba(87,84,91,0.06)] transition-colors ${
+              index < members.length - 1 ? 'border-b border-[rgba(81,76,84,0.08)]' : ''
+            }`}
           >
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center gap-3">
               <UserAvatar
                 name={member.user.name}
                 email={member.user.email}
@@ -95,17 +92,15 @@ export const MembersList: React.FC<MembersListProps> = ({ organization }) => {
                 size="lg"
               />
               <div>
-                <div className="font-medium">{member.user.name}</div>
-                <div className="text-sm text-muted-foreground">{member.user.email}</div>
+                <div className="text-sm font-medium text-[#3c323e]">{member.user.name}</div>
+                <div className="text-xs text-[#655d67]">{member.user.email}</div>
               </div>
             </div>
-            
-            <div className="flex items-center space-x-2">
-              <Badge variant={getRoleBadgeVariant(member.role)} className="flex items-center gap-1">
-                {getRoleIcon(member.role)}
-                {getRoleLabel(member.role)}
-              </Badge>
-            </div>
+
+            <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${getRoleBadgeClass(member.role)}`}>
+              {getRoleIcon(member.role)}
+              {getRoleLabel(member.role)}
+            </span>
           </div>
         ))}
       </div>
