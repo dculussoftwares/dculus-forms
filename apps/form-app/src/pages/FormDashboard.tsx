@@ -18,6 +18,7 @@ import { MainLayout } from '../components/MainLayout';
 import { FormHeader } from '../components/FormDashboard/FormHeader';
 import { StatsGrid } from '../components/FormDashboard/StatsGrid';
 import { QuickActions } from '../components/FormDashboard/QuickActions';
+import { BuilderNudgeBanner } from '../components/FormDashboard/BuilderNudgeBanner';
 import { DeleteDialog, UnpublishDialog, CollectResponsesDialog } from '../components/FormDashboard/Dialogs';
 import { ShareModal } from '../components/sharing/ShareModal';
 import { PublishSuccessAnimation } from '../components/FormDashboard/PublishSuccessAnimation';
@@ -211,6 +212,11 @@ const FormDashboard: React.FC = () => {
           {/* Header Section */}
           <FormHeader
             form={form}
+            onEditForm={
+              (form.userPermission === 'OWNER' || form.userPermission === 'EDITOR') && !form.isPublished
+                ? () => navigate(`/dashboard/form/${formId}/builder`)
+                : undefined
+            }
             onPublish={form.userPermission === 'OWNER' || form.userPermission === 'EDITOR' ? handlePublish : undefined}
             onUnpublish={form.userPermission === 'OWNER' || form.userPermission === 'EDITOR' ? () => setShowUnpublishDialog(true) : undefined}
             onDelete={form.userPermission === 'OWNER' ? () => setShowDeleteDialog(true) : undefined}
@@ -228,6 +234,13 @@ const FormDashboard: React.FC = () => {
             duplicateLoading={isDuplicating}
           />
 
+          {/* Builder nudge banner — shown when form has no fields yet */}
+          {dashboardStats.totalFields === 0 && !form.isPublished && (
+            <BuilderNudgeBanner
+              onOpenBuilder={() => navigate(`/dashboard/form/${formId}/builder`)}
+            />
+          )}
+
           {/* Stats Section */}
           <div>
             <div className="mb-3">
@@ -242,7 +255,7 @@ const FormDashboard: React.FC = () => {
           </div>
 
           {/* Quick Actions Section */}
-          <QuickActions formId={formId!} />
+          <QuickActions formId={formId!} isFormEmpty={dashboardStats.totalFields === 0} />
 
       </div>
 

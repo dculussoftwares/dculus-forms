@@ -18,6 +18,7 @@ import {
   Calendar,
   Copy,
   FileText,
+  PencilLine,
 } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 
@@ -30,6 +31,7 @@ interface FormHeaderProps {
     createdAt: string;
     shortUrl: string;
   };
+  onEditForm?: () => void;
   onPublish?: () => void;
   onUnpublish?: () => void;
   onDelete?: () => void;
@@ -45,6 +47,7 @@ interface FormHeaderProps {
 
 export const FormHeader: React.FC<FormHeaderProps> = ({
   form,
+  onEditForm,
   onPublish,
   onUnpublish,
   onDelete,
@@ -150,17 +153,30 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
               )}
             </>
           ) : (
-            onPublish && (
-              <Button
-                data-testid="publish-form-button"
-                onClick={onPublish}
-                disabled={updateLoading}
-                className="h-8 px-4 text-sm"
-              >
-                <Eye className="mr-1.5 h-3.5 w-3.5" />
-                {updateLoading ? t('header.actions.publishing') : t('header.actions.publish')}
-              </Button>
-            )
+            <>
+              {onEditForm && (
+                <Button
+                  data-testid="edit-form-button"
+                  variant="outline"
+                  onClick={onEditForm}
+                  className="h-8 px-3 text-sm"
+                >
+                  <PencilLine className="mr-1.5 h-3.5 w-3.5" />
+                  {t('header.actions.editForm')}
+                </Button>
+              )}
+              {onPublish && (
+                <Button
+                  data-testid="publish-form-button"
+                  onClick={onPublish}
+                  disabled={updateLoading}
+                  className="h-8 px-4 text-sm"
+                >
+                  <Eye className="mr-1.5 h-3.5 w-3.5" />
+                  {updateLoading ? t('header.actions.publishing') : t('header.actions.publish')}
+                </Button>
+              )}
+            </>
           )}
 
           {/* Overflow menu */}

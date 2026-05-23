@@ -28,6 +28,7 @@
       "share": "Share",
       "preview": "Preview",
       "analytics": "Analytics",
+      "editForm": "Edit Form",
       "more": "More actions",
       "duplicate": "Duplicate Form",
       "duplicating": "Duplicating...",
@@ -53,25 +54,31 @@
       "subtitle": "Responses this week"
     }
   },
+  "builderNudge": {
+    "title": "Your form is empty — start building!",
+    "description": "Open the Form Builder to add your first question and start collecting responses.",
+    "action": "Open Form Builder"
+  },
   "quickActions": {
     "heading": "Quick Actions",
     "description": "Manage your form with powerful tools",
+    "startHereBadge": "Start here",
     "items": {
       "collaborate": {
-        "title": "Builder",
-        "description": "Visual form builder with real-time collaboration"
+        "title": "Form Builder",
+        "description": "Add and arrange your form questions"
       },
       "responses": {
         "title": "Responses",
-        "description": "View and manage all submissions"
+        "description": "View and manage submissions"
       },
       "analytics": {
         "title": "Analytics",
-        "description": "Detailed insights and reports"
+        "description": "Insights, charts, and reports"
       },
       "plugins": {
         "title": "Integrations",
-        "description": "Connect with external services and automate workflows"
+        "description": "Connect with external services"
       },
       "settings": {
         "title": "Settings",

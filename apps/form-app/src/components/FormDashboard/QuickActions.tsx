@@ -1,11 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Database, LineChart, Settings, ArrowRight, Plug } from 'lucide-react';
+import { PencilLine, Database, LineChart, Settings, ArrowRight, Plug, Sparkles } from 'lucide-react';
 import { Button } from '@dculus/ui';
 import { useTranslation } from '../../hooks/useTranslation';
 
 interface QuickActionsProps {
   formId: string;
+  isFormEmpty?: boolean;
 }
 
 interface ActionCardProps {
@@ -16,10 +17,12 @@ interface ActionCardProps {
   iconColor: string;
   onClick: () => void;
   testId?: string;
+  highlight?: boolean;
+  badge?: string;
 }
 
 const ActionCard: React.FC<ActionCardProps> = ({
-  title, description, icon: Icon, iconBg, iconColor, onClick, testId,
+  title, description, icon: Icon, iconBg, iconColor, onClick, testId, highlight, badge,
 }) => {
   return (
     <Button
@@ -27,13 +30,26 @@ const ActionCard: React.FC<ActionCardProps> = ({
       type="button"
       onClick={onClick}
       data-testid={testId}
-      className="group flex flex-col items-center gap-3 p-5 rounded-xl bg-white dark:bg-card text-center w-full transition-all duration-200 h-auto"
+      className="group flex flex-col items-center gap-3 p-5 rounded-xl bg-white dark:bg-card text-center w-full transition-all duration-200 h-auto relative"
       style={{
-        border: '1px solid var(--tf-border-medium)',
-        boxShadow: '0 1px 4px var(--tf-overlay)',
+        border: highlight
+          ? '1.5px solid rgba(59,130,246,0.35)'
+          : '1px solid var(--tf-border-medium)',
+        boxShadow: highlight
+          ? '0 1px 8px rgba(59,130,246,0.10)'
+          : '0 1px 4px var(--tf-overlay)',
       }}
     >
-      {/* Typeform field-icon style */}
+      {badge && (
+        <span
+          className="absolute top-2.5 right-2.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold leading-none"
+          style={{ backgroundColor: 'rgba(59,130,246,0.12)', color: 'rgb(37,99,235)' }}
+        >
+          <Sparkles className="w-2.5 h-2.5" />
+          {badge}
+        </span>
+      )}
+
       <div
         className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-105"
         style={{ backgroundColor: iconBg }}
@@ -43,14 +59,14 @@ const ActionCard: React.FC<ActionCardProps> = ({
 
       <div className="flex-1 min-w-0 w-full">
         <div className="flex items-center justify-center gap-1">
-          <span className="text-sm font-medium text-primary">
+          <span className={`text-sm font-medium ${highlight ? 'text-blue-600 dark:text-blue-400' : 'text-primary'}`}>
             {title}
           </span>
           <ArrowRight
             className="w-3.5 h-3.5 opacity-0 -translate-x-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0 text-muted-foreground"
           />
         </div>
-        <p className="text-xs mt-0.5 leading-snug text-muted-foreground">
+        <p className="text-xs mt-0.5 leading-snug text-muted-foreground line-clamp-2">
           {description}
         </p>
       </div>
@@ -58,7 +74,7 @@ const ActionCard: React.FC<ActionCardProps> = ({
   );
 };
 
-export const QuickActions: React.FC<QuickActionsProps> = ({ formId }) => {
+export const QuickActions: React.FC<QuickActionsProps> = ({ formId, isFormEmpty }) => {
   const navigate = useNavigate();
   const { t } = useTranslation('formDashboard');
 
@@ -66,11 +82,13 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId }) => {
     {
       title: t('quickActions.items.collaborate.title'),
       description: t('quickActions.items.collaborate.description'),
-      icon: Users,
-      iconBg: 'var(--tf-icon-salmon)',    // salmon — Typeform address/location icon color
-      iconColor: 'var(--tf-dark)',
+      icon: PencilLine,
+      iconBg: 'rgba(59,130,246,0.12)',
+      iconColor: 'rgb(37,99,235)',
       path: `/dashboard/form/${formId}/builder`,
       testId: 'quick-action-builder',
+      highlight: true,
+      badge: isFormEmpty ? t('quickActions.startHereBadge') : undefined,
     },
     {
       title: t('quickActions.items.responses.title'),
@@ -132,6 +150,8 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId }) => {
             iconColor={action.iconColor}
             onClick={() => navigate(action.path)}
             testId={action.testId}
+            highlight={'highlight' in action ? action.highlight : undefined}
+            badge={'badge' in action ? action.badge : undefined}
           />
         ))}
       </div>
