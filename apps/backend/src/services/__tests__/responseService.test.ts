@@ -42,6 +42,9 @@ vi.mock('../responseEditTrackingService.js', () => ({
     recordEdit: vi.fn(),
   },
 }));
+vi.mock('../tagService.js', () => ({
+  batchLoadTagsForResponses: vi.fn().mockResolvedValue({}),
+}));
 
 describe('Response Service', () => {
   const mockResponse = {

@@ -12,6 +12,14 @@ import * as subscriptionEvents from '../../../subscriptions/events.js';
 import * as editTrackingService from '../../../services/responseEditTrackingService.js';
 import * as responseRepositoryModule from '../../../repositories/responseRepository.js';
 
+// Shared tx client for $transaction tests
+const mockTxClient = {
+  response: {
+    count: vi.fn(),
+    create: vi.fn(),
+  },
+};
+
 // Mock all dependencies
 vi.mock('../../../services/responseService.js');
 vi.mock('../../../services/formService.js');
@@ -25,6 +33,9 @@ vi.mock('../../../lib/prisma.js', () => ({
     form: {
       findMany: vi.fn(),
     },
+    $transaction: vi.fn((callback: (tx: typeof mockTxClient) => Promise<any>) =>
+      callback(mockTxClient)
+    ),
   },
 }));
 vi.mock('../../../middleware/better-auth-middleware.js');
@@ -497,7 +508,7 @@ describe('Responses Resolvers', () => {
         },
       };
       vi.mocked(formService.getFormById).mockResolvedValue(formWithLimits as any);
-      vi.mocked(responseRepositoryModule.responseRepository.count).mockResolvedValue(10);
+      mockTxClient.response.count.mockResolvedValue(10);
 
       await expect(
         responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext)
@@ -514,7 +525,13 @@ describe('Responses Resolvers', () => {
         },
       };
       vi.mocked(formService.getFormById).mockResolvedValue(formWithLimits as any);
-      vi.mocked(responseRepositoryModule.responseRepository.count).mockResolvedValue(5);
+      mockTxClient.response.count.mockResolvedValue(5);
+      mockTxClient.response.create.mockResolvedValue({
+        id: 'generated-response-id',
+        formId: 'form-123',
+        data: {},
+        submittedAt: new Date(),
+      });
 
       const result = await responsesResolvers.Mutation.submitResponse(
         {},

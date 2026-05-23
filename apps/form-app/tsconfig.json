@@ -23,7 +23,8 @@
       "@dculus/type": ["../../packages/types/src/index"],
       "@dculus/types": ["../../packages/types/src/index"],
       "@dculus/types/*": ["../../packages/types/src/*"],
-      "@dculus/types/graphql": ["../../packages/types/src/graphql"]
+      "@dculus/types/graphql": ["../../packages/types/src/graphql"],
+      "@dculus/plugins": ["../../packages/plugins/src/index"]
     }
   },
   "include": ["src"],

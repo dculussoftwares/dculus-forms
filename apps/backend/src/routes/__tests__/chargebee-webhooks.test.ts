@@ -231,7 +231,8 @@ describe('Chargebee Webhook Routes', () => {
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ received: true });
       expect(logger.info).toHaveBeenCalledWith(
-        '[Chargebee Webhook] Payment succeeded for subscription'
+        '[Chargebee Webhook] Received event:',
+        'payment_succeeded'
       );
       expect(syncSubscriptionFromWebhook).not.toHaveBeenCalled();
     });

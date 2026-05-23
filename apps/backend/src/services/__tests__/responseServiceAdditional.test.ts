@@ -24,6 +24,9 @@ vi.mock('../responseFilterService.js', () => ({
   applyResponseFilters: vi.fn((responses) => responses),
   ResponseFilter: {}
 }));
+vi.mock('../tagService.js', () => ({
+  batchLoadTagsForResponses: vi.fn().mockResolvedValue({}),
+}));
 
 describe('Response Service - Additional Coverage', () => {
   beforeEach(() => {
