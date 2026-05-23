@@ -70,10 +70,8 @@ When('I open the collaborative builder', async function (this: CustomWorld) {
     throw new Error('Page is not initialized');
   }
 
-  const collaborateCard = this.page.getByRole('button', {
-    name: /collaborate/i,
-  });
-  await collaborateCard.click();
+  const editFormButton = this.page.getByTestId('edit-form-button');
+  await editFormButton.click();
 
   const builderRoot = this.page.getByTestId('collaborative-form-builder');
   await expect(builderRoot).toBeVisible({ timeout: 45_000 });
