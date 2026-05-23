@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Palette, FileText, Settings, Eye, Users } from 'lucide-react';
+import { Palette, FileText, Eye, Users } from 'lucide-react';
 import { Button } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import { useTranslation } from '../../../hooks/useTranslation';
 
-export type BuilderTab = 'layout' | 'page-builder' | 'settings' | 'preview';
+export type BuilderTab = 'layout' | 'page-builder' | 'preview';
 
 interface TabConfig {
   id: BuilderTab;
@@ -33,12 +33,6 @@ const getTabsConfig = (t: (key: string) => string): TabConfig[] => [
     label: t('tabs.preview.label'),
     icon: Eye,
     description: t('tabs.preview.description'),
-  },
-  {
-    id: 'settings',
-    label: t('tabs.settings.label'),
-    icon: Settings,
-    description: t('tabs.settings.description'),
   },
 ];
 
@@ -301,10 +295,6 @@ export const TabKeyboardShortcuts: React.FC<{
           case '3':
             event.preventDefault();
             onTabChange('preview');
-            break;
-          case '4':
-            event.preventDefault();
-            onTabChange('settings');
             break;
         }
       }

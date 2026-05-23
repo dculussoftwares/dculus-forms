@@ -31,7 +31,6 @@ import {
   TabKeyboardShortcuts,
   LayoutTab,
   PageBuilderTab,
-  SettingsTab,
   PreviewTab,
   type BuilderTab,
 } from '../components/form-builder/tabs';
@@ -48,7 +47,6 @@ interface CollaborativeFormBuilderProps {
 const VALID_TABS: readonly BuilderTab[] = [
   'layout',
   'page-builder',
-  'settings',
   'preview',
 ] as const;
 const DEFAULT_TAB: BuilderTab = 'page-builder';
@@ -273,8 +271,6 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
         return <LayoutTab onLayoutChange={updateLayout} />;
       case 'page-builder':
         return <PageBuilderTab />;
-      case 'settings':
-        return <SettingsTab />;
       case 'preview':
         return <PreviewTab formId={formId || ''} />;
       default:
