@@ -176,21 +176,21 @@ export const RightSidebar: React.FC<{
         {activeTab === 'pages' ? (
           /* Pages Tab Content */
           <div className="p-4">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#655d67]">
                 {t('sidebar.pages.pageCount', {
                   values: { count: pages.length },
                 })}
-              </div>
+              </span>
               {permissions.canAddPages() && (
                 <Button
                   variant="ghost"
                   onClick={handleAddPage}
                   data-testid="add-page-button"
-                  className="p-1 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed h-auto"
+                  className="h-7 w-7 p-0 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   title={t('menu.addPage')}
                 >
-                  <Plus className="w-5 h-5" />
+                  <Plus className="w-4 h-4" />
                 </Button>
               )}
             </div>
@@ -217,13 +217,13 @@ export const RightSidebar: React.FC<{
             </SortableContext>
 
             {pages.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                {t('sidebar.pages.noPages')}
+              <div className="text-center py-8">
+                <p className="text-sm text-[#655d67]">{t('sidebar.pages.noPages')}</p>
                 {permissions.canAddPages() && (
                   <Button
                     variant="ghost"
                     onClick={handleAddPage}
-                    className="mt-2 text-sm font-medium h-auto p-0 underline-offset-2 hover:underline"
+                    className="mt-2 text-xs font-medium h-auto p-0 text-[#3c323e] underline-offset-2 hover:underline"
                   >
                     Create your first page
                   </Button>
@@ -242,9 +242,12 @@ export const RightSidebar: React.FC<{
                 onDelete={handleDelete}
               />
             ) : (
-              <div className="flex flex-col items-center justify-center h-64 text-muted-foreground dark:text-gray-400 p-8 text-center">
-                <Settings className="w-12 h-12 mb-4 opacity-20" />
-                <p>{t('emptyState.title')}</p>
+              <div className="flex flex-col items-center justify-center h-64 p-8 text-center">
+                <div className="w-10 h-10 rounded-xl bg-[var(--tf-icon-gray)] flex items-center justify-center mb-3">
+                  <Settings className="w-4.5 h-4.5 text-[#655d67]" />
+                </div>
+                <p className="text-sm font-medium text-[#4c414e] dark:text-gray-300">{t('emptyState.title')}</p>
+                <p className="text-xs text-[#655d67] dark:text-gray-500 mt-1">Click a field to edit its settings</p>
               </div>
             )}
           </div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { FieldType } from '@dculus/types';
-import { Card, TypographyH3 } from '@dculus/ui';
+import { Card } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import { useFormPermissions } from '../../hooks/useFormPermissions';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -111,19 +111,19 @@ const getFieldTypesConfig = (t: (key: string) => string): FieldTypeConfig[] => [
 const getCategoriesConfig = (t: (key: string) => string) => ({
   input: {
     label: t('categories.input'),
-    color: 'bg-blue-50 text-blue-700 border-blue-200',
+    color: 'bg-[#f8cdd8] text-[#3c323e] border-[rgba(248,205,216,0.6)]',
   },
   choice: {
     label: t('categories.choice'),
-    color: 'bg-purple-50 text-purple-700 border-purple-200',
+    color: 'bg-[#ddd6fa] text-[#5c2e6b] border-[rgba(221,214,250,0.6)]',
   },
   content: {
     label: t('categories.content'),
-    color: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    color: 'bg-[#f4faf8] text-[#177767] border-[rgba(244,250,248,0.8)]',
   },
   advanced: {
     label: t('categories.advanced'),
-    color: 'bg-orange-50 text-orange-700 border-orange-200',
+    color: 'bg-[#fbe19d] text-[#8b6a18] border-[rgba(251,225,157,0.6)]',
   },
 });
 
@@ -144,30 +144,30 @@ const FieldTypeDisplay: React.FC<FieldTypeDisplayProps> = ({
   return (
     <Card
       className={cn(
-        'p-4 border-2 border-dashed',
+        'p-3',
         isOverlay
-          ? 'border-blue-500 bg-white dark:bg-gray-800 shadow-lg transition-none'
+          ? 'border-[rgba(81,76,84,0.20)] bg-white shadow-md transition-none'
           : cn(
-              'border-[var(--tf-border-medium)] hover:border-blue-300 hover:bg-blue-50/50',
-              'dark:border-gray-700 dark:hover:border-blue-600 dark:hover:bg-blue-950/30',
-              'group-hover:shadow-md',
+              'border-[var(--tf-border-medium)] bg-white dark:bg-card',
+              'hover:border-[rgba(81,76,84,0.22)] hover:bg-[var(--tf-faint)] hover:shadow-sm',
+              'dark:hover:border-white/[0.15]',
               isDragging
-                ? 'border-blue-400 bg-blue-50 dark:border-blue-500 dark:bg-blue-950/40 transition-none'
-                : 'transition-all duration-200'
+                ? 'border-[rgba(81,76,84,0.28)] bg-[var(--tf-faint)] shadow-sm transition-none'
+                : 'transition-all duration-150'
             )
       )}
     >
-      <div className="flex items-start space-x-3">
+      <div className="flex items-start space-x-2.5">
         <div
           className={cn(
-            'p-2 rounded-lg',
+            'p-1.5 rounded-lg flex-shrink-0',
             isOverlay
-              ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'
+              ? 'bg-[var(--tf-icon-lavender)] text-[#5c2e6b]'
               : cn(
-                  categories?.[fieldType.category as keyof typeof categories]?.color || 'bg-background',
+                  categories?.[fieldType.category as keyof typeof categories]?.color || 'bg-[var(--tf-icon-gray)] text-foreground',
                   isDragging
-                    ? 'scale-110 transition-none'
-                    : 'group-hover:scale-110 transition-transform duration-200'
+                    ? 'transition-none'
+                    : 'transition-colors duration-150'
                 )
           )}
         >
@@ -178,18 +178,17 @@ const FieldTypeDisplay: React.FC<FieldTypeDisplayProps> = ({
             className={cn(
               'text-sm font-medium',
               isOverlay
-                ? 'text-primary dark:text-white'
+                ? 'text-[#3c323e] dark:text-white'
                 : cn(
-                    'group-hover:text-blue-600 dark:group-hover:text-blue-400',
                     isDragging
-                      ? 'text-blue-600 dark:text-blue-400'
-                      : 'text-primary dark:text-white'
+                      ? 'text-[#3c323e] dark:text-white'
+                      : 'text-[#4c414e] dark:text-white'
                   )
             )}
           >
             {fieldType.label}
           </div>
-          <div className="text-xs text-muted-foreground dark:text-gray-400 mt-1">
+          <div className="text-xs text-[#655d67] dark:text-gray-400 mt-0.5 leading-tight">
             {fieldType.description}
           </div>
         </div>
@@ -244,8 +243,8 @@ const DraggableFieldType: React.FC<DraggableFieldTypeProps> = ({
         {...attributes}
         onClick={onAdd}
         className={cn(
-          'group cursor-grab active:cursor-grabbing transition-transform duration-200',
-          isDragging ? 'scale-102' : 'hover:scale-102'
+          'group cursor-grab active:cursor-grabbing',
+          isDragging ? 'opacity-50' : ''
         )}
       >
         <FieldTypeDisplay
@@ -292,42 +291,44 @@ export const FieldTypesPanel: React.FC<FieldTypesPanelProps> = ({
   );
 
   return (
-    <div className={cn('h-full overflow-y-auto', className)}>
-      <div className="p-4 border-b border-[var(--tf-border-medium)] dark:border-gray-700 bg-white dark:bg-gray-900">
-        <TypographyH3 className="text-lg font-semibold text-primary dark:text-white">
+    <div className={cn('h-full flex flex-col overflow-hidden', className)}>
+      {/* Header */}
+      <div className="px-4 py-3.5" style={{ borderBottom: '1px solid var(--tf-border)' }}>
+        <p className="text-xs font-semibold uppercase tracking-wider text-[#655d67]">
           {t('header.title')}
-        </TypographyH3>
-        <p className="text-sm text-muted-foreground dark:text-gray-400 mt-1">
-          {t('header.description')}
         </p>
       </div>
 
-      <div className="p-4 space-y-6">
-        {Object.entries(groupedFields).map(([category, fields]) => (
-          <div key={category}>
-            <div className="flex items-center space-x-2 mb-3">
-              <div
-                className={cn(
-                  'px-2 py-1 rounded-full text-xs font-medium border',
-                  CATEGORIES[category as keyof typeof CATEGORIES].color
-                )}
-              >
-                {CATEGORIES[category as keyof typeof CATEGORIES].label}
+      {/* Field type list */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-3 space-y-5">
+          {Object.entries(groupedFields).map(([category, fields]) => (
+            <div key={category}>
+              {/* Category label */}
+              <div className="flex items-center gap-1.5 mb-2 px-1">
+                <span
+                  className={cn(
+                    'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border tracking-wide uppercase',
+                    CATEGORIES[category as keyof typeof CATEGORIES].color
+                  )}
+                >
+                  {CATEGORIES[category as keyof typeof CATEGORIES].label}
+                </span>
+              </div>
+
+              <div className="space-y-1.5">
+                {fields.map((fieldType) => (
+                  <DraggableFieldType
+                    key={fieldType.type}
+                    fieldType={fieldType}
+                    categories={CATEGORIES}
+                    onAdd={selectedPageId ? () => addField(selectedPageId, fieldType.type as FieldType, createFieldData(fieldType)) : undefined}
+                  />
+                ))}
               </div>
             </div>
-
-            <div className="space-y-2">
-              {fields.map((fieldType) => (
-                <DraggableFieldType
-                  key={fieldType.type}
-                  fieldType={fieldType}
-                  categories={CATEGORIES}
-                  onAdd={selectedPageId ? () => addField(selectedPageId, fieldType.type as FieldType, createFieldData(fieldType)) : undefined}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -146,28 +146,30 @@ export const FieldCard: React.FC<{
     <div
       onClick={onClick}
       className={`
-        p-4 bg-white dark:bg-card rounded-lg transition-all duration-200 group
+        px-4 py-3.5 bg-white dark:bg-card rounded-xl transition-all duration-150 group
         ${
           isDragging
-            ? 'opacity-50 shadow-lg'
+            ? 'opacity-40'
             : isRecentlyDropped
-              ? 'animate-pulse shadow-lg'
+              ? 'shadow-md'
               : isSelected
-                ? 'shadow-sm'
+                ? ''
                 : 'cursor-pointer hover:shadow-sm'
         }
       `}
       style={{
         border: isDragging
-          ? '1px solid rgba(81,76,84,0.30)'
+          ? '1px solid rgba(81,76,84,0.25)'
           : isRecentlyDropped
-            ? '1px solid #3c323e'
+            ? '1px solid rgba(60,50,62,0.30)'
             : isSelected
-              ? '1px solid #3c323e'
-              : '1px solid var(--tf-border-medium)',
+              ? '1.5px solid #3c323e'
+              : '1px solid rgba(81,76,84,0.10)',
         boxShadow: isSelected
-          ? '0 0 0 3px rgba(60,50,62,0.10)'
-          : undefined,
+          ? '0 0 0 3px rgba(60,50,62,0.08), 0 1px 4px rgba(60,50,62,0.06)'
+          : isRecentlyDropped
+            ? '0 4px 12px rgba(60,50,62,0.10)'
+            : '0 1px 3px rgba(60,50,62,0.05)',
       }}
       data-testid={`draggable-field-${field.id}`}
     >
@@ -178,7 +180,7 @@ export const FieldCard: React.FC<{
           {dragHandleProps && (
             <div
               {...dragHandleProps}
-              className="flex-shrink-0 p-1 -ml-2 cursor-grab rounded transition-colors hover:bg-[var(--tf-tab-bg)]"
+              className="flex-shrink-0 p-1 -ml-1 cursor-grab rounded-md transition-colors hover:bg-[var(--tf-tab-bg)]"
               title="Drag to reorder"
               onClick={(e) => e.stopPropagation()}
             >
@@ -188,27 +190,23 @@ export const FieldCard: React.FC<{
 
           {/* Field type icon badge */}
           <div
-            className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${categoryColor}`}
+            className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center ${categoryColor}`}
           >
-            <Icon className="w-4 h-4" />
+            <Icon className="w-3.5 h-3.5" />
           </div>
 
           {/* Field info */}
           <div className="flex-1 min-w-0 max-w-[280px]">
-            <div className="text-sm font-medium truncate flex items-center gap-1 text-primary">
+            <div className="text-sm font-medium truncate flex items-center gap-1 text-[#4c414e] dark:text-white">
               <span className="truncate">{label}</span>
-              {/* Required indicator - red asterisk */}
               {'validation' in field &&
                 (field as FillableFormField).validation?.required && (
-                  <span
-                    className="text-destructive text-sm flex-shrink-0"
-                    title="Required field"
-                  >
+                  <span className="text-[#ce5d55] text-sm flex-shrink-0" title="Required field">
                     *
                   </span>
                 )}
             </div>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-[#655d67] dark:text-gray-400">
               {typeConfig.label}
             </div>
           </div>
@@ -231,35 +229,31 @@ export const FieldCard: React.FC<{
 
             {/* Field type icon badge */}
             <div
-              className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${categoryColor}`}
+              className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center ${categoryColor}`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-3.5 h-3.5" />
             </div>
 
             {/* Field info */}
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium truncate flex items-center gap-1 text-primary">
+              <div className="text-sm font-medium truncate flex items-center gap-1 text-[#4c414e] dark:text-white">
                 <span className="truncate">{label}</span>
-                {/* Required indicator - red asterisk */}
                 {'validation' in field &&
                   (field as FillableFormField).validation?.required && (
-                    <span
-                      className="text-destructive text-sm flex-shrink-0"
-                      title="Required field"
-                    >
+                    <span className="text-[#ce5d55] text-sm flex-shrink-0" title="Required field">
                       *
                     </span>
                   )}
               </div>
-              <div className="text-xs text-muted-foreground dark:text-gray-400">
+              <div className="text-xs text-[#655d67] dark:text-gray-400">
                 {typeConfig.label}
               </div>
             </div>
           </div>
 
           {/* Field Preview */}
-          <div className="pl-9 pr-2" data-testid={`field-content-${index + 1}`}>
-            <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(81,76,84,0.03)', border: '1px solid var(--tf-border-light)' }}>
+          <div className="pl-9 pr-1" data-testid={`field-content-${index + 1}`}>
+            <div className="px-3 py-2.5 rounded-lg" style={{ backgroundColor: 'var(--tf-faint)', border: '1px solid var(--tf-border-faint)' }}>
               <FieldPreview
                 field={field}
                 disabled={true}
@@ -269,8 +263,8 @@ export const FieldCard: React.FC<{
           </div>
 
           {/* Actions - only show on hover */}
-          <div className="pl-9 pr-2">
-            <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="pl-9 pr-1">
+            <div className="flex items-center space-x-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
               {onClick && (
                 <Button
                   variant="ghost"

@@ -36,16 +36,20 @@ export const ConnectionStatus: React.FC<{ isConnected: boolean }> = ({
  * EmptyFormAreaPlaceholder - Shows when no fields exist
  */
 export const EmptyFormAreaPlaceholder: React.FC<{ isConnected: boolean }> = ({
-  isConnected,
+  isConnected: _isConnected,
 }) => {
   const { t } = useTranslation('pageBuilderTab');
 
   return (
-    <div className="flex items-center justify-center h-full min-h-[200px] text-muted-foreground dark:text-gray-400">
-      <div className="text-center">
-        <p className="text-lg font-medium">{t('formArea.placeholder')}</p>
-        <ConnectionStatus isConnected={isConnected} />
-        <p className="text-sm mt-2">{t('dragHint')}</p>
+    <div className="flex items-center justify-center h-full min-h-[240px] text-[#655d67] dark:text-gray-400">
+      <div className="text-center select-none">
+        <div className="w-10 h-10 rounded-xl bg-[var(--tf-icon-lavender)] flex items-center justify-center mx-auto mb-3">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5c2e6b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+        </div>
+        <p className="text-sm font-medium text-[#4c414e]">{t('formArea.placeholder')}</p>
+        <p className="text-xs mt-1 text-[#655d67]">{t('dragHint')}</p>
       </div>
     </div>
   );
@@ -77,24 +81,24 @@ export const DropIndicator: React.FC<{
     <div
       ref={setNodeRef}
       className={`
-        transition-all duration-200 rounded-lg my-1
-        ${isOver ? 'h-16 py-2' : 'h-3 hover:h-6 py-0'}
+        transition-all duration-150 rounded-lg my-0.5
+        ${isOver ? 'h-14 py-1.5' : 'h-2.5 hover:h-5 py-0'}
       `}
     >
       <div
         className={`
           w-full h-full rounded-lg border-2 border-dashed flex items-center justify-center
-          transition-all duration-200
+          transition-all duration-150
           ${
             isOver
-              ? 'border-blue-500 bg-blue-100 dark:bg-blue-950/50'
+              ? 'border-[rgba(60,50,62,0.28)] bg-[var(--tf-tab-bg)]'
               : 'border-transparent'
           }
         `}
       >
         {isOver && (
-          <span className="text-xs text-blue-600 dark:text-blue-400 font-medium animate-pulse">
-            Drop here to insert
+          <span className="text-xs text-[#3c323e] font-medium">
+            Drop to insert here
           </span>
         )}
       </div>
@@ -157,8 +161,8 @@ export const PageHeader: React.FC<{
 
   if (!selectedPage) {
     return (
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-muted-foreground">
+      <div className="mb-5">
+        <h1 className="text-xl font-semibold text-[#655d67]">
           {t('formArea.noPageSelected')}
         </h1>
       </div>
@@ -166,14 +170,14 @@ export const PageHeader: React.FC<{
   }
 
   return (
-    <div className="mb-6">
-      <h1 className="text-2xl font-bold text-primary dark:text-white">
+    <div className="mb-4 flex items-baseline gap-3">
+      <h1 className="text-xl font-semibold text-[#3c323e] dark:text-white">
         {selectedPage.title || t('formArea.untitledPage')}
       </h1>
-      <p className="text-sm text-muted-foreground dark:text-gray-400 mt-1">
+      <span className="text-xs text-[#655d67] dark:text-gray-400">
         {selectedPage.fields.length}{' '}
         {selectedPage.fields.length === 1 ? 'field' : 'fields'}
-      </p>
+      </span>
     </div>
   );
 };
@@ -204,10 +208,10 @@ export const FormArea: React.FC<{
   });
 
   return (
-    <div className="flex-1 flex flex-col bg-gradient-to-br from-gray-50 to-blue-50/30 dark:from-gray-800 dark:to-blue-950/30">
+    <div className="flex-1 flex flex-col bg-[var(--tf-faint)] dark:bg-background">
       <ScrollArea className="flex-1">
         <div className="p-6">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-3xl mx-auto">
             {/* Page Header */}
             <PageHeader selectedPage={selectedPage} />
 
@@ -215,14 +219,18 @@ export const FormArea: React.FC<{
             <div
               ref={setNodeRef}
               className={`
-                min-h-[400px] p-4 bg-white dark:bg-gray-900 rounded-xl border-2 border-dashed
-                transition-all duration-200
-                ${
-                  isOver
-                    ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 ring-2 ring-blue-500/20'
-                    : 'border-[var(--tf-border-strong)] dark:border-gray-600'
-                }
+                min-h-[400px] p-4 bg-white dark:bg-card rounded-xl
+                transition-all duration-150
+                ${isOver ? 'ring-2 ring-[rgba(60,50,62,0.12)]' : ''}
               `}
+              style={{
+                border: isOver
+                  ? '2px dashed rgba(60,50,62,0.25)'
+                  : '1px solid rgba(81,76,84,0.10)',
+                boxShadow: isOver
+                  ? undefined
+                  : '0 1px 4px rgba(60,50,62,0.06)',
+              }}
               data-testid="droppable-page"
             >
               {selectedPage && selectedPage.fields.length > 0 ? (
