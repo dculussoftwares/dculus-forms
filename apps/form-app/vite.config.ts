@@ -17,6 +17,10 @@ export default defineConfig({
         find: '@dculus/types',
         replacement: path.resolve(__dirname, '../../packages/types/src/index.ts'),
       },
+      {
+        find: '@dculus/plugins',
+        replacement: path.resolve(__dirname, '../../packages/plugins/src/index.ts'),
+      },
     ],
   },
   build: {
