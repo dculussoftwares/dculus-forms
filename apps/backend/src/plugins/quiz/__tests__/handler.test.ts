@@ -533,7 +533,7 @@ describe('Quiz Grading Handler', () => {
       };
 
       await expect(
-        quizGradingHandler({ config }, eventWithoutResponseId, mockContext)
+        quizGradingHandler({ id: 'test-plugin', config }, eventWithoutResponseId, mockContext)
       ).rejects.toThrow('Quiz grading failed: No response ID in event data');
 
       expect(mockLogger.error).toHaveBeenCalledWith(

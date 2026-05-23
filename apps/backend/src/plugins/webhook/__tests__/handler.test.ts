@@ -70,7 +70,7 @@ describe('Webhook Handler', () => {
       });
 
       const result = await webhookHandler(
-        { config },
+        { id: 'test-plugin', config },
         mockEvent,
         mockContext
       );
@@ -132,7 +132,7 @@ describe('Webhook Handler', () => {
         text: async () => 'Success',
       });
 
-      await webhookHandler({ config }, mockEvent, mockContext);
+      await webhookHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
 
       expect(mockFetch).toHaveBeenCalledWith(
         'https://example.com/webhook',
@@ -163,7 +163,7 @@ describe('Webhook Handler', () => {
       });
 
       const result = await webhookHandler(
-        { config },
+        { id: 'test-plugin', config },
         mockEvent,
         mockContext
       );
@@ -187,7 +187,7 @@ describe('Webhook Handler', () => {
       });
 
       const result = await webhookHandler(
-        { config },
+        { id: 'test-plugin', config },
         mockEvent,
         mockContext
       );
@@ -210,7 +210,7 @@ describe('Webhook Handler', () => {
       });
 
       const result = await webhookHandler(
-        { config },
+        { id: 'test-plugin', config },
         mockEvent,
         mockContext
       );
@@ -232,7 +232,7 @@ describe('Webhook Handler', () => {
         text: async () => 'OK',
       });
 
-      await webhookHandler({ config }, mockEvent, mockContext);
+      await webhookHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
 
       const payload = JSON.parse(mockFetch.mock.calls[0][1].body);
       expect(payload.responseId).toBe('response-123');
@@ -256,7 +256,7 @@ describe('Webhook Handler', () => {
         text: async () => 'OK',
       });
 
-      await webhookHandler({ config }, eventWithoutResponseId, mockContext);
+      await webhookHandler({ id: 'test-plugin', config }, eventWithoutResponseId, mockContext);
 
       const payload = JSON.parse(mockFetch.mock.calls[0][1].body);
       expect(payload.responseId).toBeUndefined();
@@ -278,7 +278,7 @@ describe('Webhook Handler', () => {
       });
 
       const result = await webhookHandler(
-        { config },
+        { id: 'test-plugin', config },
         mockEvent,
         mockContext
       );
@@ -312,7 +312,7 @@ describe('Webhook Handler', () => {
       });
 
       const result = await webhookHandler(
-        { config },
+        { id: 'test-plugin', config },
         mockEvent,
         mockContext
       );
@@ -331,7 +331,7 @@ describe('Webhook Handler', () => {
       mockFetch.mockRejectedValue(new Error('Network error: ECONNREFUSED'));
 
       const result = await webhookHandler(
-        { config },
+        { id: 'test-plugin', config },
         mockEvent,
         mockContext
       );
@@ -357,7 +357,7 @@ describe('Webhook Handler', () => {
       mockFetch.mockRejectedValue(new Error('Request timeout'));
 
       const result = await webhookHandler(
-        { config },
+        { id: 'test-plugin', config },
         mockEvent,
         mockContext
       );
@@ -382,7 +382,7 @@ describe('Webhook Handler', () => {
       });
 
       const result = await webhookHandler(
-        { config },
+        { id: 'test-plugin', config },
         mockEvent,
         mockContext
       );
@@ -415,7 +415,7 @@ describe('Webhook Handler', () => {
       );
 
       const result = await webhookHandler(
-        { config },
+        { id: 'test-plugin', config },
         mockEvent,
         mockContext
       );
@@ -452,7 +452,7 @@ describe('Webhook Handler', () => {
       );
 
       const result = await webhookHandler(
-        { config },
+        { id: 'test-plugin', config },
         mockEvent,
         mockContext
       );
@@ -481,7 +481,7 @@ describe('Webhook Handler', () => {
         text: async () => 'OK',
       });
 
-      await webhookHandler({ config }, mockEvent, mockContext);
+      await webhookHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
 
       expect(mockFetch).toHaveBeenCalledWith(
         'https://example.com/webhook',
@@ -512,7 +512,7 @@ describe('Webhook Handler', () => {
         text: async () => 'OK',
       });
 
-      await webhookHandler({ config }, mockEvent, mockContext);
+      await webhookHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
 
       const headers = mockFetch.mock.calls[0][1].headers;
       expect(headers['User-Agent']).toBe('Custom-Agent/2.0');
@@ -532,7 +532,7 @@ describe('Webhook Handler', () => {
         text: async () => 'OK',
       });
 
-      await webhookHandler({ config }, mockEvent, mockContext);
+      await webhookHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
 
       expect(mockFetch).toHaveBeenCalledWith(
         'https://example.com/webhook',
@@ -569,7 +569,7 @@ describe('Webhook Handler', () => {
       });
 
       const result = await webhookHandler(
-        { config },
+        { id: 'test-plugin', config },
         testEvent,
         mockContext
       );
@@ -593,7 +593,7 @@ describe('Webhook Handler', () => {
         text: async () => 'OK',
       });
 
-      await webhookHandler({ config }, mockEvent, mockContext);
+      await webhookHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
 
       const payload = JSON.parse(mockFetch.mock.calls[0][1].body);
       expect(payload.event).toBe('form.submitted');
@@ -616,11 +616,11 @@ describe('Webhook Handler', () => {
       });
 
       // Call twice with same config and event
-      await webhookHandler({ config }, mockEvent, mockContext);
+      await webhookHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
       const signature1 = mockFetch.mock.calls[0][1].headers['X-Webhook-Signature'];
 
       mockFetch.mockClear();
-      await webhookHandler({ config }, mockEvent, mockContext);
+      await webhookHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
       const signature2 = mockFetch.mock.calls[0][1].headers['X-Webhook-Signature'];
 
       expect(signature1).toBe(signature2);
@@ -646,11 +646,11 @@ describe('Webhook Handler', () => {
         text: async () => 'OK',
       });
 
-      await webhookHandler({ config: config1 }, mockEvent, mockContext);
+      await webhookHandler({ id: 'test-plugin', config: config1 }, mockEvent, mockContext);
       const signature1 = mockFetch.mock.calls[0][1].headers['X-Webhook-Signature'];
 
       mockFetch.mockClear();
-      await webhookHandler({ config: config2 }, mockEvent, mockContext);
+      await webhookHandler({ id: 'test-plugin', config: config2 }, mockEvent, mockContext);
       const signature2 = mockFetch.mock.calls[0][1].headers['X-Webhook-Signature'];
 
       expect(signature1).not.toBe(signature2);

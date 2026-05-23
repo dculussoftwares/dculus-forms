@@ -414,8 +414,8 @@ describe('registry', () => {
       };
       const mockContext = {} as any;
 
-      const result1 = await retrievedWebhook!({ config: { type: 'webhook' } }, mockEvent, mockContext);
-      const result2 = await retrievedEmail!({ config: { type: 'email' } }, mockEvent, mockContext);
+      const result1 = await retrievedWebhook!({ id: 'test-webhook', config: { type: 'webhook' } }, mockEvent, mockContext);
+      const result2 = await retrievedEmail!({ id: 'test-email', config: { type: 'email' } }, mockEvent, mockContext);
 
       expect(result1).toEqual(webhookResult);
       expect(result2).toEqual(emailResult);

@@ -9,7 +9,6 @@ import {
 } from '../../services/responseService.js';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
-import { responseRepository } from '../../repositories/responseRepository.js';
 import { ResponseFilter } from '../../services/responseFilterService.js';
 import { getFormById } from '../../services/formService.js';
 import {

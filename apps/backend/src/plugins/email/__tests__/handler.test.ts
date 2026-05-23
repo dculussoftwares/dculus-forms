@@ -86,7 +86,7 @@ describe('Email Handler', () => {
       vi.mocked(substituteMentions).mockReturnValue('<p>You have a new form submission!</p>');
       vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
 
-      const result = await emailHandler({ config }, mockEvent, mockContext);
+      const result = await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
 
       expect(mockContext.sendEmail).toHaveBeenCalledWith({
         to: 'admin@example.com',
@@ -154,7 +154,7 @@ describe('Email Handler', () => {
       );
       vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
 
-      const result = await emailHandler({ config }, mockEvent, mockContext);
+      const result = await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
 
       expect(substituteMentions).toHaveBeenCalledWith(
         '<p>Name: @name</p><p>Email: @email</p>',
@@ -197,7 +197,7 @@ describe('Email Handler', () => {
       vi.mocked(substituteMentions).mockReturnValue(config.message);
       vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
 
-      await emailHandler({ config }, mockEvent, mockContext);
+      await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
 
       expect(mockContext.sendEmail).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -229,7 +229,7 @@ describe('Email Handler', () => {
       vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
       vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
 
-      await emailHandler({ config }, testEvent, mockContext);
+      await emailHandler({ id: 'test-plugin', config }, testEvent, mockContext);
 
       expect(mockContext.sendEmail).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -271,7 +271,7 @@ describe('Email Handler', () => {
       vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
       vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
 
-      await emailHandler({ config }, testEvent, mockContext);
+      await emailHandler({ id: 'test-plugin', config }, testEvent, mockContext);
 
       expect(substituteMentions).not.toHaveBeenCalled();
       expect(mockContext.sendEmail).toHaveBeenCalledWith(
@@ -294,7 +294,7 @@ describe('Email Handler', () => {
       vi.mocked(mockContext.getFormById).mockResolvedValue(null);
 
       await expect(
-        emailHandler({ config }, mockEvent, mockContext)
+        emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext)
       ).rejects.toThrow('Email sending failed: Form not found: form-123');
 
       expect(mockLogger.error).toHaveBeenCalledWith(
@@ -327,7 +327,7 @@ describe('Email Handler', () => {
       );
 
       await expect(
-        emailHandler({ config }, mockEvent, mockContext)
+        emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext)
       ).rejects.toThrow('Email sending failed: SMTP connection failed');
 
       expect(mockLogger.error).toHaveBeenCalledWith(
@@ -353,7 +353,7 @@ describe('Email Handler', () => {
       vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
 
       // Should not substitute mentions when response is null
-      await emailHandler({ config }, mockEvent, mockContext);
+      await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
 
       expect(substituteMentions).not.toHaveBeenCalled();
     });
@@ -374,7 +374,7 @@ describe('Email Handler', () => {
       vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
 
       // Should not substitute mentions when data is null
-      await emailHandler({ config }, mockEvent, mockContext);
+      await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
 
       expect(substituteMentions).not.toHaveBeenCalled();
     });
@@ -418,7 +418,7 @@ describe('Email Handler', () => {
       vi.mocked(substituteMentions).mockReturnValue('<p>Value 1 Value 2</p>');
       vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
 
-      await emailHandler({ config }, mockEvent, mockContext);
+      await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
 
       expect(deserializeFormSchema).toHaveBeenCalledWith(mockForm.formSchema);
       expect(createFieldLabelsMap).toHaveBeenCalledWith(mockForm.formSchema);
@@ -447,7 +447,7 @@ describe('Email Handler', () => {
       vi.mocked(substituteMentions).mockReturnValue('<p>No mentions here</p>');
       vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
 
-      await emailHandler({ config }, mockEvent, mockContext);
+      await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
 
       expect(createFieldLabelsMap).toHaveBeenCalledWith({ pages: [] });
       expect(substituteMentions).toHaveBeenCalledWith(
@@ -477,7 +477,7 @@ describe('Email Handler', () => {
       vi.mocked(substituteMentions).mockReturnValue('');
       vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
 
-      const result = await emailHandler({ config }, mockEvent, mockContext);
+      const result = await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
 
       expect(result.success).toBe(true);
       expect(mockContext.sendEmail).toHaveBeenCalledWith(
@@ -506,7 +506,7 @@ describe('Email Handler', () => {
       vi.mocked(substituteMentions).mockReturnValue(longMessage);
       vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
 
-      const result = await emailHandler({ config }, mockEvent, mockContext);
+      const result = await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
 
       expect(result.success).toBe(true);
     });
@@ -529,7 +529,7 @@ describe('Email Handler', () => {
       vi.mocked(substituteMentions).mockReturnValue(config.message);
       vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
 
-      const result = await emailHandler({ config }, mockEvent, mockContext);
+      const result = await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
 
       expect(result.success).toBe(true);
       expect(result.subject).toBe('Special <chars> & "quotes"');
@@ -566,7 +566,7 @@ describe('Email Handler', () => {
       );
       vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
 
-      await emailHandler({ config }, mockEvent, mockContext);
+      await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
 
       expect(substituteMentions).toHaveBeenCalledWith(
         '<p>@name submitted @email with score @score</p>',

@@ -191,7 +191,6 @@ const Responses: React.FC = () => {
       onDeleteResponse: handleDeleteResponse,
       t,
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [formData, pluginsData, formTags, locale, actualFormId, t]
   );
 

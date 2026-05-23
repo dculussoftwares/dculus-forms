@@ -1,7 +1,6 @@
 import { FormResponse } from '@dculus/types';
 import { ResponseFilter, applyResponseFilters } from './responseFilterService.js';
 import {
-  buildPostgreSQLFilter,
   buildRawSQLCondition,
   canFilterAtDatabase
 } from './responseQueryBuilder.js';
