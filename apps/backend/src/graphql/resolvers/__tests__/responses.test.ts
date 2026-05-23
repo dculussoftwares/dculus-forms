@@ -10,7 +10,6 @@ import * as pluginEvents from '../../../plugins/core/events.js';
 import * as usageService from '../../../subscriptions/usageService.js';
 import * as subscriptionEvents from '../../../subscriptions/events.js';
 import * as editTrackingService from '../../../services/responseEditTrackingService.js';
-import * as responseRepositoryModule from '../../../repositories/responseRepository.js';
 
 // Shared tx client for $transaction tests
 const mockTxClient = {
