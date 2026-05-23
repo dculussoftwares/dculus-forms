@@ -25,6 +25,7 @@ import {
   RotateCcw,
   Search,
   Settings2,
+  Tag,
   X,
 } from 'lucide-react';
 import { FilterState } from '../Filters';
@@ -100,6 +101,10 @@ interface ResponsesToolbarProps {
   onSubmittedAtRangeChange: (range: { from?: Date; to?: Date } | null) => void;
   rowDensity: 'compact' | 'default' | 'comfortable';
   onRowDensityChange: (density: 'compact' | 'default' | 'comfortable') => void;
+  formTags: { id: string; name: string; color: string }[];
+  selectedTagIds: string[];
+  onToggleTagFilter: (tagId: string) => void;
+  onClearTagFilters: () => void;
   getColumnLabel: (columnId: string) => string;
   isExporting: boolean;
   onExportExcel: () => void;
@@ -121,6 +126,10 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
   onSubmittedAtRangeChange,
   rowDensity,
   onRowDensityChange,
+  formTags,
+  selectedTagIds,
+  onToggleTagFilter,
+  onClearTagFilters,
   getColumnLabel,
   isExporting,
   onExportExcel,
@@ -186,6 +195,68 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
             className="h-8 text-xs"
           />
         </div>
+
+        {/* Tag filter chips + picker */}
+        {formTags.length > 0 && (
+          <div className="flex items-center gap-1 flex-wrap shrink-0">
+            {selectedTagIds.map((tagId) => {
+              const tag = formTags.find((t) => t.id === tagId);
+              if (!tag) return null;
+              return (
+                <span
+                  key={tagId}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-white"
+                  style={{ backgroundColor: tag.color }}
+                >
+                  {tag.name}
+                  <button
+                    onClick={() => onToggleTagFilter(tagId)}
+                    className="opacity-70 hover:opacity-100"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                </span>
+              );
+            })}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 px-2 gap-1 text-xs shrink-0">
+                  <Tag className="h-3 w-3" />
+                  {t('toolbar.tags.filter')}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-44">
+                {formTags.map((tag) => (
+                  <DropdownMenuItem
+                    key={tag.id}
+                    onClick={() => onToggleTagFilter(tag.id)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <span
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: tag.color }}
+                    />
+                    <span className="flex-1 text-xs">{tag.name}</span>
+                    {selectedTagIds.includes(tag.id) && (
+                      <span className="text-[10px] text-primary font-semibold">✓</span>
+                    )}
+                  </DropdownMenuItem>
+                ))}
+                {selectedTagIds.length > 0 && (
+                  <>
+                    <div className="border-t mx-1 my-1" />
+                    <DropdownMenuItem
+                      onClick={onClearTagFilters}
+                      className="text-xs text-muted-foreground cursor-pointer"
+                    >
+                      {t('toolbar.tags.clearFilter')}
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
 
         {/* Filter button */}
         <Button

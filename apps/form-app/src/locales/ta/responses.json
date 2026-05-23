@@ -15,6 +15,10 @@
       "placeholder": "பதில்களைத் தேடு...",
       "clearLabel": "தெளிவான தேடல்"
     },
+    "tags": {
+      "filter": "+ குறிச்சொல்",
+      "clearFilter": "குறிச்சொல் வடிப்பான்களை அழிக்கவும்"
+    },
     "filters": {
       "buttonLabel": "வடிப்பான்கள்",
       "activeFilters": "{{count}} செயலில் உள்ள வடிப்பான்கள்",
@@ -55,7 +59,14 @@
       "responseId": "பதில் ஐடி",
       "submittedAt": "சமர்ப்பிக்கப்பட்டது",
       "editStatus": "நிலையை திருத்தவும்",
+      "tags": "குறிச்சொற்கள்",
       "actions": "செயல்கள்"
+    },
+    "tags": {
+      "addTag": "குறிச்சொல் சேர்க்கவும்",
+      "searchOrCreate": "தேடு அல்லது உருவாக்கு…",
+      "noTags": "குறிச்சொற்கள் இல்லை",
+      "createTag": "\"{{name}}\" உருவாக்கவும்"
     },
     "editStatus": {
       "original": "அசல்",

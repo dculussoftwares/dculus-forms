@@ -11,7 +11,7 @@ import { ResponsesTable } from '../components/Responses/ResponsesTable';
 import { ResponseDetailPanel } from '../components/Responses/ResponseDetailPanel';
 import { useResponsesState } from '../hooks/useResponsesState';
 import { createResponsesColumns } from '../utils/createResponsesColumns';
-import { GET_FORM_BY_ID, GET_FORM_RESPONSES } from '../graphql/queries';
+import { GET_FORM_BY_ID, GET_FORM_RESPONSES, GET_FORM_TAGS } from '../graphql/queries';
 import { GET_FORM_PLUGINS } from '../graphql/plugins';
 import { DELETE_RESPONSE } from '../graphql/mutations';
 import { deserializeFormSchema, FillableFormField, FormSchema } from '@dculus/types';
@@ -146,6 +146,12 @@ const Responses: React.FC = () => {
     skip: !actualFormId,
   });
 
+  const { data: tagsData } = useQuery(GET_FORM_TAGS, {
+    variables: { formId: actualFormId },
+    skip: !actualFormId,
+  });
+  const formTags = tagsData?.formTags ?? [];
+
   const { data: responsesData, loading: responsesLoading, error: responsesError } = useQuery(GET_FORM_RESPONSES, {
     variables: {
       formId: actualFormId,
@@ -178,6 +184,7 @@ const Responses: React.FC = () => {
       formId: actualFormId!,
       pluginsData,
       locale,
+      formTags,
       onPluginClick: (pluginType, metadata, responseId) => {
         responsesState.setPluginDialogState({ pluginType, metadata, responseId });
       },
@@ -185,7 +192,7 @@ const Responses: React.FC = () => {
       t,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [formData, pluginsData, locale, actualFormId, t]
+    [formData, pluginsData, formTags, locale, actualFormId, t]
   );
 
   // Apply stored column order: fixed cols keep their positions; hideable cols are reordered
@@ -364,6 +371,10 @@ const Responses: React.FC = () => {
                 onSubmittedAtRangeChange={responsesState.setSubmittedAtRange}
                 rowDensity={responsesState.rowDensity}
                 onRowDensityChange={responsesState.setRowDensity}
+                formTags={formTags}
+                selectedTagIds={responsesState.selectedTagIds}
+                onToggleTagFilter={responsesState.toggleTagFilter}
+                onClearTagFilters={responsesState.clearTagFilters}
                 getColumnLabel={getColumnLabel}
                 isExporting={responsesState.isExporting}
                 onExportExcel={responsesState.exportToExcel}

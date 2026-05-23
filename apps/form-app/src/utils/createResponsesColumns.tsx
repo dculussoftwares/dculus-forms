@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
   Badge,
   Button,
+  Checkbox,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -45,6 +46,7 @@ import {
   List,
   Loader2,
   MoreHorizontal,
+  Tag,
   Type,
   Upload,
   X,
@@ -58,13 +60,21 @@ import {
 } from '@dculus/types';
 import { formatFieldValue as formatFieldValueUtil } from '@dculus/utils';
 import { getPluginColumns, PluginInstance } from '../plugins/core/registry';
+import { TagsCell } from '../components/Responses/TagsCell';
 import '../plugins/index';
+
+interface ResponseTagItem {
+  id: string;
+  name: string;
+  color: string;
+}
 
 interface CreateResponsesColumnsOptions {
   formSchema: any; // serialized form schema
   formId: string;
   pluginsData: any;
   locale: string;
+  formTags?: ResponseTagItem[];
   onPluginClick: (
     pluginType: string,
     metadata: any,
@@ -635,6 +645,7 @@ export const createResponsesColumns = ({
   formId,
   pluginsData,
   locale,
+  formTags = [],
   onPluginClick,
   onDeleteResponse,
   t,
@@ -644,6 +655,58 @@ export const createResponsesColumns = ({
   const deserializedSchema: FormSchema = deserializeFormSchema(formSchema);
 
   const [idColumn, ...metaColumns] = createBaseColumns(locale, t);
+
+  const selectColumn: ColumnDef<FormResponse> = {
+    id: 'select',
+    header: ({ table }) => (
+      <div className="flex items-center justify-center px-1" onClick={(e) => e.stopPropagation()}>
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(v) => table.toggleAllPageRowsSelected(!!v)}
+          aria-label="Select all"
+        />
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div className="flex items-center justify-center px-1" onClick={(e) => e.stopPropagation()}>
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(v) => row.toggleSelected(!!v)}
+          aria-label="Select row"
+        />
+      </div>
+    ),
+    enableSorting: false,
+    enableHiding: false,
+    size: 44,
+  };
+
+  const tagsColumn: ColumnDef<FormResponse> = {
+    id: 'tags',
+    accessorFn: (row) => (row as any).tags,
+    header: ({ column }) => (
+      <TFColumnHeader
+        column={column}
+        icon={
+          <BaseIconChip bg="#f0fdf4" color="#16a34a">
+            <Tag className="h-4 w-4" />
+          </BaseIconChip>
+        }
+        title={t('table.columns.tags')}
+      />
+    ),
+    cell: ({ row }) => (
+      <TagsCell
+        response={row.original as any}
+        formId={formId}
+        formTags={formTags}
+        t={t}
+      />
+    ),
+    enableSorting: false,
+    enableHiding: true,
+    size: 220,
+  };
 
   // Field columns
   const fieldColumns = createFieldColumns(deserializedSchema, t);
@@ -667,6 +730,6 @@ export const createResponsesColumns = ({
   // Actions column
   const actionsColumn = createActionsColumn(formId, onDeleteResponse, t);
 
-  // Response ID first, field/plugin columns in middle, Submitted At + Edit Status at end
-  return [idColumn, ...fieldColumns, ...pluginColumns, ...metaColumns, actionsColumn];
+  // Checkbox first, then Response ID, tags, field/plugin columns, Submitted At + Edit Status, actions
+  return [selectColumn, idColumn, tagsColumn, ...fieldColumns, ...pluginColumns, ...metaColumns, actionsColumn];
 };

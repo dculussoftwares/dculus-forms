@@ -5,6 +5,7 @@ import {
   buildRawSQLCondition,
   canFilterAtDatabase
 } from './responseQueryBuilder.js';
+import { batchLoadTagsForResponses } from './tagService.js';
 import { responseRepository } from '../repositories/index.js';
 import { logger } from '../lib/logger.js';
 import { prisma } from '../lib/prisma.js';
@@ -115,8 +116,9 @@ export async function getResponsesByFormId(
     try {
       // Separate __submittedAt (scope/toolbar filter) from user field filters so the
       // date range always acts as an AND gate regardless of the user's filterLogic.
-      const scopeFilters  = (filters ?? []).filter(f => f.fieldId === '__submittedAt');
-      const userFiltersDb = (filters ?? []).filter(f => f.fieldId !== '__submittedAt');
+      const SCOPE_FIELD_IDS = new Set(['__submittedAt', '__tags']);
+      const scopeFilters  = (filters ?? []).filter(f => SCOPE_FIELD_IDS.has(f.fieldId));
+      const userFiltersDb = (filters ?? []).filter(f => !SCOPE_FIELD_IDS.has(f.fieldId));
 
       const params: any[] = [formId]; // $1 = formId
       let paramIndex = 2;
@@ -259,13 +261,18 @@ export async function getResponsesByFormId(
     });
   }
 
-  const data = responses.map((response) => ({
+  const baseData = responses.map((response) => ({
     id: response.id,
     formId: response.formId,
     data: (response.data as Prisma.JsonObject) || {},
     metadata: response.metadata as FormResponse['metadata'],
     submittedAt: response.submittedAt,
+    tags: [] as { id: string; formId: string; name: string; color: string; createdAt: Date }[],
   }));
+
+  // Batch-load tags to avoid N+1 queries
+  const tagMap = await batchLoadTagsForResponses(baseData.map((r) => r.id));
+  const data = baseData.map((r) => ({ ...r, tags: tagMap[r.id] ?? [] }));
 
   const totalPages = Math.ceil(total / validLimit);
 

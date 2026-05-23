@@ -79,7 +79,7 @@ export function buildPostgreSQLFilter(
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function buildSubmittedAtCondition(filter: ResponseFilter, startIndex: number): { sql: string; values: any[] } {
-  const col = 'r."submitted_at"';
+  const col = '"submittedAt"';
   switch (filter.operator) {
     case 'DATE_EQUALS':
       if (!filter.value) return { sql: '', values: [] };
@@ -123,6 +123,20 @@ export function buildRawSQLCondition(
   if (filter.fieldId === '__submittedAt') {
     return buildSubmittedAtCondition(filter, startIndex);
   }
+
+  if (filter.fieldId === '__tags') {
+    if (!filter.values || filter.values.length === 0) return { sql: '', values: [] };
+    const placeholders = filter.values.map((_, i) => `$${startIndex + i}`).join(', ');
+    return {
+      sql: `EXISTS (
+        SELECT 1 FROM "response_tag_assignment" rta
+        WHERE rta."responseId" = id
+        AND rta."tagId" = ANY(ARRAY[${placeholders}]::text[])
+      )`,
+      values: filter.values,
+    };
+  }
+
   const safeFieldId = ensureSafeFieldId(filter.fieldId);
   const jsonAccessor = `data->'${safeFieldId}'`;
   const textAccessor = `data->>'${safeFieldId}'`;

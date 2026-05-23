@@ -95,6 +95,11 @@ export interface UseResponsesStateReturn {
   rowDensity: 'compact' | 'default' | 'comfortable';
   setRowDensity: (density: 'compact' | 'default' | 'comfortable') => void;
 
+  // Tag filter
+  selectedTagIds: string[];
+  toggleTagFilter: (tagId: string) => void;
+  clearTagFilters: () => void;
+
   // Response detail panel
   detailPanelResponse: FormResponse | null;
   openDetailPanel: (response: FormResponse) => void;
@@ -189,6 +194,16 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
       return next;
     });
   };
+
+  // Tag filter
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const toggleTagFilter = (tagId: string) => {
+    setSelectedTagIds((prev) =>
+      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+    );
+    setCurrentPage(1);
+  };
+  const clearTagFilters = () => { setSelectedTagIds([]); setCurrentPage(1); };
 
   // Response detail panel
   const [detailPanelResponse, setDetailPanelResponse] = useState<FormResponse | null>(null);
@@ -291,8 +306,19 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
       });
     }
 
+    if (selectedTagIds.length > 0) {
+      mapped.push({
+        fieldId: '__tags',
+        operator: 'IN',
+        value: undefined,
+        values: selectedTagIds,
+        dateRange: undefined,
+        numberRange: undefined,
+      });
+    }
+
     return mapped.length > 0 ? mapped : null;
-  }, [filters, submittedAtRange]);
+  }, [filters, submittedAtRange, selectedTagIds]);
 
   // Convert frontend filters to GraphQL export format
   const convertFiltersForExport = () => {
@@ -436,6 +462,11 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
     // Submission date range
     submittedAtRange,
     setSubmittedAtRange,
+
+    // Tag filter
+    selectedTagIds,
+    toggleTagFilter,
+    clearTagFilters,
 
     // Row density
     rowDensity,

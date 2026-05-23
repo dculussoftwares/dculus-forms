@@ -163,6 +163,7 @@ model Form {
   submissionAnalytics FormSubmissionAnalytics[]
   permissions         FormPermission[]
   plugins             FormPlugin[]
+  tags                ResponseTag[]
 
   @@index([organizationId])
   @@index([organizationId, createdById])
@@ -182,11 +183,40 @@ model Response {
   form                    Form                     @relation(fields: [formId], references: [id], onDelete: Cascade)
   formSubmissionAnalytics FormSubmissionAnalytics?
   editHistory             ResponseEditHistory[]
+  tagAssignments          ResponseTagAssignment[]
 
   @@index([formId])
   @@index([formId, submittedAt])
   @@index([deletedAt])
   @@map("response")
+}
+
+model ResponseTag {
+  id        String   @id @default(cuid())
+  formId    String
+  name      String
+  color     String   @default("#6366f1")
+  createdAt DateTime @default(now())
+
+  form      Form                    @relation(fields: [formId], references: [id], onDelete: Cascade)
+  responses ResponseTagAssignment[]
+
+  @@unique([formId, name])
+  @@index([formId])
+  @@map("response_tag")
+}
+
+model ResponseTagAssignment {
+  responseId String
+  tagId      String
+  assignedAt DateTime @default(now())
+
+  response Response    @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  tag      ResponseTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([responseId, tagId])
+  @@index([tagId])
+  @@map("response_tag_assignment")
 }
 
 model FormTemplate {

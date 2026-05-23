@@ -69,9 +69,10 @@ export function applyResponseFilters(
     return responses;
   }
 
-  // __submittedAt (scope/toolbar) filters always AND regardless of filterLogic
-  const scopeFilters = filters.filter(f => f.fieldId === '__submittedAt');
-  const userFilters  = filters.filter(f => f.fieldId !== '__submittedAt');
+  // Scope/toolbar filters (__submittedAt, __tags) always AND regardless of filterLogic
+  const SCOPE_FIELD_IDS = new Set(['__submittedAt', '__tags']);
+  const scopeFilters = filters.filter(f => SCOPE_FIELD_IDS.has(f.fieldId));
+  const userFilters  = filters.filter(f => !SCOPE_FIELD_IDS.has(f.fieldId));
 
   return responses.filter(response => {
     // 1. Scope filters must ALL pass (always AND — date range is always a hard gate)
@@ -118,6 +119,13 @@ function applyFilterToResponse(filter: ResponseFilter, response: any): boolean {
           default:
             return false;
         }
+      }
+
+      // Tag filter: check response.tags array
+      if (filter.fieldId === '__tags') {
+        if (!filter.values || filter.values.length === 0) return false;
+        const responseTags: { id: string }[] = response.tags ?? [];
+        return filter.values.some(tagId => responseTags.some(t => t.id === tagId));
       }
 
       // Get field value from response data (handles both 'data' and 'responseData' properties)

@@ -150,3 +150,31 @@ export const DELETE_RESPONSES = gql`
     deleteResponses(formId: $formId, ids: $ids)
   }
 `;
+
+export const CREATE_TAG = gql`
+  mutation CreateTag($formId: ID!, $name: String!, $color: String) {
+    createTag(formId: $formId, name: $name, color: $color) {
+      id
+      name
+      color
+    }
+  }
+`;
+
+export const DELETE_TAG = gql`
+  mutation DeleteTag($id: ID!, $formId: ID!) {
+    deleteTag(id: $id, formId: $formId)
+  }
+`;
+
+export const ADD_TAG_TO_RESPONSE = gql`
+  mutation AddTagToResponse($responseId: ID!, $tagId: ID!) {
+    addTagToResponse(responseId: $responseId, tagId: $tagId)
+  }
+`;
+
+export const REMOVE_TAG_FROM_RESPONSE = gql`
+  mutation RemoveTagFromResponse($responseId: ID!, $tagId: ID!) {
+    removeTagFromResponse(responseId: $responseId, tagId: $tagId)
+  }
+`;

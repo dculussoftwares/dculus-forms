@@ -15,6 +15,10 @@
       "placeholder": "Search responses...",
       "clearLabel": "Clear search"
     },
+    "tags": {
+      "filter": "+ Tag",
+      "clearFilter": "Clear tag filters"
+    },
     "filters": {
       "buttonLabel": "Filters",
       "activeFilters": "{{count}} active filters",
@@ -55,7 +59,14 @@
       "responseId": "Response ID",
       "submittedAt": "Submitted At",
       "editStatus": "Edit Status",
+      "tags": "Tags",
       "actions": "Actions"
+    },
+    "tags": {
+      "addTag": "Add tag",
+      "searchOrCreate": "Search or create…",
+      "noTags": "No tags yet",
+      "createTag": "Create \"{{name}}\""
     },
     "editStatus": {
       "original": "Original",

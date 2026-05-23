@@ -150,11 +150,26 @@ export const GET_FORM_RESPONSES = gql`
           name
           email
         }
+        tags {
+          id
+          name
+          color
+        }
       }
       total
       page
       limit
       totalPages
+    }
+  }
+`;
+
+export const GET_FORM_TAGS = gql`
+  query GetFormTags($formId: ID!) {
+    formTags(formId: $formId) {
+      id
+      name
+      color
     }
   }
 `;

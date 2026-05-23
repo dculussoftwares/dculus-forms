@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApolloClient } from '@apollo/client';
+import { useApolloClient, useQuery } from '@apollo/client';
 import { gql } from '@apollo/client';
 import {
   Button,
@@ -12,6 +12,8 @@ import {
 import { FillableFormField, FormResponse, FieldType } from '@dculus/types';
 import { formatFieldValue } from '@dculus/utils';
 import { Download, Edit2, Trash2 } from 'lucide-react';
+import { TagsCell } from './TagsCell';
+import { GET_FORM_TAGS } from '../../graphql/queries';
 
 const GET_RESPONSE_FILE_DOWNLOAD_URL = gql`
   query GetResponseFileDownloadUrl($key: String!) {
@@ -102,6 +104,12 @@ export const ResponseDetailPanel: React.FC<ResponseDetailPanelProps> = ({
 }) => {
   const navigate = useNavigate();
 
+  const { data: tagsData } = useQuery(GET_FORM_TAGS, {
+    variables: { formId },
+    skip: !open || !formId,
+  });
+  const formTags = tagsData?.formTags ?? [];
+
   if (!response) return null;
 
   const submittedDate = new Date(response.submittedAt);
@@ -137,6 +145,19 @@ export const ResponseDetailPanel: React.FC<ResponseDetailPanelProps> = ({
             </p>
           )}
         </SheetHeader>
+
+        {/* Tags section */}
+        <div className="px-5 py-3 border-b">
+          <p className="text-xs font-medium text-muted-foreground mb-2">{t('table.columns.tags')}</p>
+          <div className="group">
+            <TagsCell
+              response={response as any}
+              formId={formId}
+              formTags={formTags}
+              t={t}
+            />
+          </div>
+        </div>
 
         {/* Field values */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">

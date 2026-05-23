@@ -191,6 +191,14 @@ export const typeDefs = gql`
     permissions: [FormPermission!]!
   }
 
+  type ResponseTag {
+    id: ID!
+    formId: ID!
+    name: String!
+    color: String!
+    createdAt: String!
+  }
+
   type FormResponse {
     id: ID!
     formId: ID!
@@ -204,6 +212,7 @@ export const typeDefs = gql`
     lastEditedAt: String
     lastEditedBy: User
     editHistory: [ResponseEditHistory!]!
+    tags: [ResponseTag!]!
   }
 
   # Response Edit Tracking Types
@@ -987,6 +996,9 @@ export const typeDefs = gql`
     # Response Edit Tracking Queries
     responseEditHistory(responseId: ID!): [ResponseEditHistory!]!
 
+    # Response Tag Queries
+    formTags(formId: ID!): [ResponseTag!]!
+
     # Form Sharing Queries
     formPermissions(formId: ID!): [FormPermission!]!
     forms(
@@ -1096,6 +1108,12 @@ export const typeDefs = gql`
     updateResponse(input: UpdateResponseInput!): FormResponse!
     deleteResponse(id: ID!): Boolean!
     deleteResponses(formId: ID!, ids: [ID!]!): Boolean!
+
+    # Response Tag Mutations
+    createTag(formId: ID!, name: String!, color: String): ResponseTag!
+    deleteTag(id: ID!, formId: ID!): Boolean!
+    addTagToResponse(responseId: ID!, tagId: ID!): Boolean!
+    removeTagFromResponse(responseId: ID!, tagId: ID!): Boolean!
 
     # Form Sharing Mutations
     shareForm(input: ShareFormInput!): FormSharingSettings!
