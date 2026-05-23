@@ -25,13 +25,29 @@
       "hiddenCount": "{{count}} hidden",
       "toggle": "Toggle columns",
       "reset": "Reset",
-      "noColumnsAvailable": "No columns available"
+      "noColumnsAvailable": "No columns available",
+      "dragToReorder": "Drag to reorder column"
     },
     "export": {
       "buttonLabel": "Export",
       "exporting": "Exporting...",
       "excel": "Export as Excel",
       "csv": "Export as CSV"
+    },
+    "dateRange": {
+      "placeholder": "All time"
+    },
+    "density": {
+      "compact": "Compact",
+      "default": "Default",
+      "comfortable": "Comfortable"
+    },
+    "bulkActions": {
+      "selected": "{{count}} selected",
+      "delete": "Delete",
+      "deleting": "Deleting...",
+      "deleteSuccess": "Responses deleted successfully",
+      "deleteError": "Failed to delete responses"
     }
   },
   "table": {
@@ -63,6 +79,9 @@
     },
     "fieldResponses": {
       "noResponse": "No response"
+    },
+    "empty": {
+      "noFields": "No fields found"
     },
     "emptyState": {
       "title": "No responses yet",

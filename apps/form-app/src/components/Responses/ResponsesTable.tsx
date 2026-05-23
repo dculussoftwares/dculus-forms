@@ -9,7 +9,7 @@
  */
 
 import React from 'react';
-import { ColumnDef, VisibilityState } from '@tanstack/react-table';
+import { ColumnDef, ColumnSizingState, OnChangeFn, RowSelectionState, VisibilityState } from '@tanstack/react-table';
 import { ServerDataTable } from '@dculus/ui';
 import { FormResponse } from '@dculus/types';
 
@@ -31,6 +31,17 @@ interface ResponsesTableProps {
   globalFilter: string;
   columnVisibility: VisibilityState;
 
+  // Row selection (bulk actions)
+  rowSelection?: RowSelectionState;
+  onRowSelectionChange?: OnChangeFn<RowSelectionState>;
+
+  // Row density
+  density?: 'compact' | 'default' | 'comfortable';
+
+  // Column sizing (persistence)
+  columnSizing?: ColumnSizingState;
+  onColumnSizingChange?: OnChangeFn<ColumnSizingState>;
+
   // Handlers
   onRowClick?: (row: FormResponse) => void;
 
@@ -50,6 +61,11 @@ export const ResponsesTable: React.FC<ResponsesTableProps> = ({
   onPageSizeChange,
   globalFilter,
   columnVisibility,
+  rowSelection,
+  onRowSelectionChange,
+  density,
+  columnSizing,
+  onColumnSizingChange,
   onRowClick,
   t,
 }) => {
@@ -99,6 +115,12 @@ export const ResponsesTable: React.FC<ResponsesTableProps> = ({
         loading={loading}
         maxHeight="100%"
         className="border-0 h-full"
+        rowSelection={rowSelection}
+        onRowSelectionChange={onRowSelectionChange}
+        getRowId={(row) => (row as FormResponse).id}
+        density={density}
+        columnSizing={columnSizing}
+        onColumnSizingChange={onColumnSizingChange}
       />
     </div>
   );

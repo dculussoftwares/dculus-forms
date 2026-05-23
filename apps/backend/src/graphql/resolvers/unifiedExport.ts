@@ -16,13 +16,14 @@ import { prisma } from '../../lib/prisma.js';
 export const unifiedExportResolvers = {
   Mutation: {
     generateFormResponseReport: async (
-      _: any, 
-      { formId, format, filters = [], filterLogic = 'AND' }: { 
-        formId: string; 
-        format: 'EXCEL' | 'CSV'; 
+      _: any,
+      { formId, format, filters = [], filterLogic = 'AND', ids }: {
+        formId: string;
+        format: 'EXCEL' | 'CSV';
         filters?: ResponseFilter[];
         filterLogic?: 'AND' | 'OR';
-      }, 
+        ids?: string[];
+      },
       context: { auth: BetterAuthContext }
     ) => {
       try {
@@ -55,6 +56,13 @@ export const unifiedExportResolvers = {
 
         if (responses.length === 0) {
           throw createGraphQLError('No responses found for this form', GRAPHQL_ERROR_CODES.NOT_FOUND);
+        }
+
+        // If specific IDs are provided (bulk export of selected rows), restrict to those
+        if (ids && ids.length > 0) {
+          const idSet = new Set(ids);
+          responses = responses.filter((r) => idSet.has(r.id));
+          logger.info(`Filtered to ${responses.length} selected responses`);
         }
 
         // Apply filters before the size check so that a form with > 50k total

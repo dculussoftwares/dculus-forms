@@ -144,3 +144,9 @@ export const DELETE_RESPONSE = gql`
     deleteResponse(id: $id)
   }
 `;
+
+export const DELETE_RESPONSES = gql`
+  mutation DeleteResponses($formId: ID!, $ids: [ID!]!) {
+    deleteResponses(formId: $formId, ids: $ids)
+  }
+`;

@@ -8,13 +8,85 @@ import { FilterModal } from '../components/Filters';
 import { QuizResultsDialog } from '../plugins/quiz/ResultsDialog';
 import { ResponsesToolbar } from '../components/Responses/ResponsesToolbar';
 import { ResponsesTable } from '../components/Responses/ResponsesTable';
+import { ResponseDetailPanel } from '../components/Responses/ResponseDetailPanel';
 import { useResponsesState } from '../hooks/useResponsesState';
 import { createResponsesColumns } from '../utils/createResponsesColumns';
 import { GET_FORM_BY_ID, GET_FORM_RESPONSES } from '../graphql/queries';
 import { GET_FORM_PLUGINS } from '../graphql/plugins';
 import { DELETE_RESPONSE } from '../graphql/mutations';
 import { deserializeFormSchema, FillableFormField, FormSchema } from '@dculus/types';
-import { AlertCircle, ArrowLeft, RotateCcw } from 'lucide-react';
+import { AlertCircle, ArrowLeft, FileSpreadsheet, FileText, RotateCcw, Trash2, X } from 'lucide-react';
+
+interface BulkActionBarProps {
+  selectedCount: number;
+  onDelete: () => void;
+  onExportExcel: () => void;
+  onExportCsv: () => void;
+  onClear: () => void;
+  isDeleting: boolean;
+  isExporting: boolean;
+  t: (key: string, options?: { values?: Record<string, string | number> }) => string;
+}
+
+const BulkActionBar: React.FC<BulkActionBarProps> = ({
+  selectedCount,
+  onDelete,
+  onExportExcel,
+  onExportCsv,
+  onClear,
+  isDeleting,
+  isExporting,
+  t,
+}) => (
+  <div
+    className="flex items-center gap-3 px-4 py-2 text-sm font-medium"
+    style={{ background: '#f0f7ff', borderBottom: '1px solid rgb(189,221,249)' }}
+  >
+    <span className="text-xs font-semibold" style={{ color: '#01487f' }}>
+      {t('toolbar.bulkActions.selected', { values: { count: selectedCount } })}
+    </span>
+    <div className="flex items-center gap-1.5">
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-7 px-2.5 text-xs gap-1.5 border-red-200 text-red-600 hover:bg-red-50"
+        onClick={onDelete}
+        disabled={isDeleting}
+      >
+        <Trash2 className="h-3 w-3" />
+        {isDeleting ? t('toolbar.bulkActions.deleting') : t('toolbar.bulkActions.delete')}
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-7 px-2.5 text-xs gap-1.5"
+        onClick={onExportExcel}
+        disabled={isExporting}
+      >
+        <FileSpreadsheet className="h-3 w-3" />
+        {t('toolbar.export.excel')}
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-7 px-2.5 text-xs gap-1.5"
+        onClick={onExportCsv}
+        disabled={isExporting}
+      >
+        <FileText className="h-3 w-3" />
+        {t('toolbar.export.csv')}
+      </Button>
+    </div>
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-6 w-6 ml-auto"
+      onClick={onClear}
+    >
+      <X className="h-3.5 w-3.5" />
+    </Button>
+  </div>
+);
 
 const Responses: React.FC = () => {
   const { formId, id } = useParams<{ formId?: string; id?: string }>();
@@ -23,6 +95,16 @@ const Responses: React.FC = () => {
 
   const actualFormId = formId || id;
   const responsesState = useResponsesState({ formId: actualFormId });
+
+  const handleBulkDelete = async () => {
+    if (!actualFormId) return;
+    try {
+      await responsesState.handleBulkDelete(actualFormId);
+      toastSuccess(t('toolbar.bulkActions.deleteSuccess'));
+    } catch {
+      toastError(t('toolbar.bulkActions.deleteError'));
+    }
+  };
 
   const [deleteResponseMutation] = useMutation(DELETE_RESPONSE, {
     refetchQueries: [
@@ -105,6 +187,23 @@ const Responses: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [formData, pluginsData, locale, actualFormId, t]
   );
+
+  // Apply stored column order: fixed cols keep their positions; hideable cols are reordered
+  const orderedColumns = useMemo(() => {
+    const order = responsesState.columnOrder;
+    if (!order.length) return columns;
+
+    const fixedStart = columns.filter((c) => c.enableHiding === false && c.id !== 'actions');
+    const fixedEnd = columns.filter((c) => c.id === 'actions');
+    const hideable = columns.filter((c) => c.enableHiding !== false);
+
+    const orderedHideable = [
+      ...order.map((id) => hideable.find((c) => c.id === id)).filter((c): c is typeof hideable[0] => !!c),
+      ...hideable.filter((c) => !order.includes(c.id!)),
+    ];
+
+    return [...fixedStart, ...orderedHideable, ...fixedEnd];
+  }, [columns, responsesState.columnOrder]);
 
   const loading = formLoading;
   const error = formError || responsesError;
@@ -232,6 +331,22 @@ const Responses: React.FC = () => {
           />
         ) : (
           <div className="flex-1 flex flex-col min-h-0 w-full overflow-x-hidden bg-white dark:bg-card">
+            {/* Bulk action bar — shown when rows are selected */}
+            {responsesState.selectedResponseIds.length > 0 && (
+              <div className="flex-shrink-0">
+                <BulkActionBar
+                  selectedCount={responsesState.selectedResponseIds.length}
+                  onDelete={handleBulkDelete}
+                  onExportExcel={() => responsesState.handleBulkExport('EXCEL')}
+                  onExportCsv={() => responsesState.handleBulkExport('CSV')}
+                  onClear={responsesState.clearRowSelection}
+                  isDeleting={responsesState.isBulkDeleting}
+                  isExporting={responsesState.isExporting}
+                  t={t}
+                />
+              </div>
+            )}
+
             {/* Toolbar */}
             <div className="flex-shrink-0">
               <ResponsesToolbar
@@ -241,9 +356,14 @@ const Responses: React.FC = () => {
                 fillableFields={fillableFields}
                 onShowFilterModal={() => responsesState.setShowFilterModal(true)}
                 onRemoveFilter={responsesState.handleRemoveFilter}
-                columns={columns}
+                columns={orderedColumns}
                 columnVisibility={responsesState.columnVisibility}
                 onColumnVisibilityChange={responsesState.setColumnVisibility}
+                onColumnOrderChange={responsesState.setColumnOrder}
+                submittedAtRange={responsesState.submittedAtRange}
+                onSubmittedAtRangeChange={responsesState.setSubmittedAtRange}
+                rowDensity={responsesState.rowDensity}
+                onRowDensityChange={responsesState.setRowDensity}
                 getColumnLabel={getColumnLabel}
                 isExporting={responsesState.isExporting}
                 onExportExcel={responsesState.exportToExcel}
@@ -254,8 +374,13 @@ const Responses: React.FC = () => {
 
             {/* Table */}
             <ResponsesTable
-              columns={columns}
+              columns={orderedColumns}
               responses={responses}
+              rowSelection={responsesState.rowSelection}
+              onRowSelectionChange={responsesState.setRowSelection}
+              density={responsesState.rowDensity}
+              columnSizing={responsesState.columnSizing}
+              onColumnSizingChange={responsesState.onColumnSizingChange}
               loading={responsesLoading}
               currentPage={responsesState.currentPage}
               pageSize={responsesState.pageSize}
@@ -265,6 +390,7 @@ const Responses: React.FC = () => {
               onPageSizeChange={responsesState.handlePageSizeChange}
               globalFilter={responsesState.globalFilter}
               columnVisibility={responsesState.columnVisibility}
+              onRowClick={responsesState.openDetailPanel}
               t={t}
             />
           </div>
@@ -283,6 +409,20 @@ const Responses: React.FC = () => {
         onRemoveFilter={responsesState.handleRemoveFilter}
         onClearAllFilters={responsesState.handleClearAllFilters}
         onApplyFilters={responsesState.handleApplyFilters}
+      />
+
+      {/* Response detail slide panel */}
+      <ResponseDetailPanel
+        response={responsesState.detailPanelResponse}
+        fillableFields={fillableFields}
+        formId={actualFormId!}
+        open={!!responsesState.detailPanelResponse}
+        onClose={responsesState.closeDetailPanel}
+        onDelete={(id) => {
+          handleDeleteResponse(id);
+          responsesState.closeDetailPanel();
+        }}
+        t={t}
       />
 
       {responsesState.pluginDialogState.pluginType === 'quiz-grading' &&

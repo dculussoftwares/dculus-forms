@@ -3,16 +3,44 @@
  *
  * Manages all state for the Responses page including:
  * - Pagination, sorting, and filtering
- * - Column visibility
+ * - Column visibility + order (persisted to localStorage)
  * - Plugin dialogs
  * - Export functionality
  */
 
 import { useState, useMemo } from 'react';
 import { useMutation } from '@apollo/client';
-import { VisibilityState } from '@tanstack/react-table';
+import { ColumnSizingState, OnChangeFn, RowSelectionState, VisibilityState } from '@tanstack/react-table';
+import { FormResponse } from '@dculus/types';
 import { FilterState } from '../components/Filters';
 import { GENERATE_FORM_RESPONSE_REPORT } from '../graphql/queries';
+import { DELETE_RESPONSES } from '../graphql/mutations';
+
+const getStorageKey = (formId: string) => `dculus-responses-col-${formId}`;
+
+function loadPersistedColState(formId: string | undefined): { order: string[]; visibility: VisibilityState } {
+  if (!formId) return { order: [], visibility: {} };
+  try {
+    const raw = localStorage.getItem(getStorageKey(formId));
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        order: Array.isArray(parsed.order) ? parsed.order : [],
+        visibility: parsed.visibility && typeof parsed.visibility === 'object' ? parsed.visibility : {},
+      };
+    }
+  } catch { /* ignore */ }
+  return { order: [], visibility: {} };
+}
+
+function persistColState(formId: string | undefined, update: Partial<{ order: string[]; visibility: VisibilityState; density: string; sizing: ColumnSizingState }>) {
+  if (!formId) return;
+  try {
+    const raw = localStorage.getItem(getStorageKey(formId));
+    const existing = raw ? JSON.parse(raw) : {};
+    localStorage.setItem(getStorageKey(formId), JSON.stringify({ ...existing, ...update }));
+  } catch { /* ignore */ }
+}
 
 export interface UseResponsesStateProps {
   formId: string | undefined;
@@ -44,9 +72,37 @@ export interface UseResponsesStateReturn {
   handleRemoveFilter: (fieldId: string) => void;
   handleApplyFilters: () => void;
 
-  // Column visibility
+  // Column visibility + order
   columnVisibility: VisibilityState;
   setColumnVisibility: React.Dispatch<React.SetStateAction<VisibilityState>>;
+  columnOrder: string[];
+  setColumnOrder: (order: string[]) => void;
+
+  // Bulk row selection
+  rowSelection: RowSelectionState;
+  setRowSelection: React.Dispatch<React.SetStateAction<RowSelectionState>>;
+  selectedResponseIds: string[];
+  clearRowSelection: () => void;
+  handleBulkDelete: (formId: string) => Promise<void>;
+  handleBulkExport: (format: 'EXCEL' | 'CSV') => Promise<void>;
+  isBulkDeleting: boolean;
+
+  // Submission date range filter
+  submittedAtRange: { from?: Date; to?: Date } | null;
+  setSubmittedAtRange: (range: { from?: Date; to?: Date } | null) => void;
+
+  // Row density
+  rowDensity: 'compact' | 'default' | 'comfortable';
+  setRowDensity: (density: 'compact' | 'default' | 'comfortable') => void;
+
+  // Response detail panel
+  detailPanelResponse: FormResponse | null;
+  openDetailPanel: (response: FormResponse) => void;
+  closeDetailPanel: () => void;
+
+  // Column sizing
+  columnSizing: ColumnSizingState;
+  onColumnSizingChange: OnChangeFn<ColumnSizingState>;
 
   // Plugin dialogs
   pluginDialogState: {
@@ -75,7 +131,26 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
 
   // Enhanced UI state
   const [globalFilter, setGlobalFilter] = useState('');
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+
+  const [columnVisibility, setColumnVisibilityRaw] = useState<VisibilityState>(
+    () => loadPersistedColState(formId).visibility
+  );
+  const setColumnVisibility: React.Dispatch<React.SetStateAction<VisibilityState>> = (update) => {
+    setColumnVisibilityRaw((prev) => {
+      const next = typeof update === 'function' ? update(prev) : update;
+      persistColState(formId, { visibility: next });
+      return next;
+    });
+  };
+
+  const [columnOrder, setColumnOrderRaw] = useState<string[]>(
+    () => loadPersistedColState(formId).order
+  );
+  const setColumnOrder = (order: string[]) => {
+    setColumnOrderRaw(order);
+    persistColState(formId, { order });
+  };
+
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filters, setFilters] = useState<Record<string, FilterState>>({});
   const [filterLogic, setFilterLogic] = useState<'AND' | 'OR'>('AND');
@@ -91,9 +166,61 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
     responseId: null,
   });
 
-  // Mutation for generating reports
+  // Submission date range filter
+  const [submittedAtRangeState, setSubmittedAtRangeRaw] = useState<{ from?: Date; to?: Date } | null>(null);
+  const submittedAtRange = submittedAtRangeState;
+  const setSubmittedAtRange = (range: { from?: Date; to?: Date } | null) => {
+    setSubmittedAtRangeRaw(range);
+    setCurrentPage(1);
+  };
+
+  // Column sizing (persisted to localStorage)
+  const [columnSizing, setColumnSizingRaw] = useState<ColumnSizingState>(() => {
+    try {
+      const raw = formId ? localStorage.getItem(getStorageKey(formId)) : null;
+      const parsed = raw ? JSON.parse(raw) : {};
+      return parsed.sizing && typeof parsed.sizing === 'object' ? parsed.sizing : {};
+    } catch { return {}; }
+  });
+  const onColumnSizingChange: OnChangeFn<ColumnSizingState> = (updater) => {
+    setColumnSizingRaw((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      persistColState(formId, { sizing: next });
+      return next;
+    });
+  };
+
+  // Response detail panel
+  const [detailPanelResponse, setDetailPanelResponse] = useState<FormResponse | null>(null);
+  const openDetailPanel = (response: FormResponse) => setDetailPanelResponse(response);
+  const closeDetailPanel = () => setDetailPanelResponse(null);
+
+  // Row density (persisted)
+  const [rowDensity, setRowDensityRaw] = useState<'compact' | 'default' | 'comfortable'>(() => {
+    try {
+      const raw = formId ? localStorage.getItem(getStorageKey(formId)) : null;
+      const parsed = raw ? JSON.parse(raw) : {};
+      return (['compact', 'default', 'comfortable'].includes(parsed.density) ? parsed.density : 'default') as 'compact' | 'default' | 'comfortable';
+    } catch { return 'default'; }
+  });
+  const setRowDensity = (d: 'compact' | 'default' | 'comfortable') => {
+    setRowDensityRaw(d);
+    persistColState(formId, { density: d });
+  };
+
+  // Bulk row selection state
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const selectedResponseIds = useMemo(
+    () => Object.entries(rowSelection).filter(([, v]) => v).map(([id]) => id),
+    [rowSelection]
+  );
+  const clearRowSelection = () => setRowSelection({});
+
+  // Mutations
   const [generateReport, { loading: exportLoading }] = useMutation(GENERATE_FORM_RESPONSE_REPORT);
+  const [bulkDeleteMutation, { loading: bulkDeleteLoading }] = useMutation(DELETE_RESPONSES);
   const isExporting = exportLoading;
+  const isBulkDeleting = bulkDeleteLoading;
 
   // Pagination handlers
   const handlePageChange = (page: number) => {
@@ -136,23 +263,36 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
     setCurrentPage(1);
   };
 
-  // Convert filters to GraphQL format
+  // Convert filters to GraphQL format (includes synthetic __submittedAt filter when date range is set)
   const graphqlFilters = useMemo(() => {
     const activeFilters = Object.values(filters).filter((f) => f.active);
-    return activeFilters.length > 0
-      ? activeFilters.map((filter) => ({
-        fieldId: filter.fieldId,
-        operator: filter.operator,
-        // Use default value of '7' for DATE_LAST_N_DAYS if value is empty
-        value: filter.operator === 'DATE_LAST_N_DAYS' && (!filter.value || filter.value.trim() === '')
-          ? '7'
-          : filter.value,
-        values: filter.values,
-        dateRange: filter.dateRange,
-        numberRange: filter.numberRange,
-      }))
-      : null;
-  }, [filters]);
+    const mapped = activeFilters.map((filter) => ({
+      fieldId: filter.fieldId,
+      operator: filter.operator,
+      value: filter.operator === 'DATE_LAST_N_DAYS' && (!filter.value || filter.value.trim() === '')
+        ? '7'
+        : filter.value,
+      values: filter.values,
+      dateRange: filter.dateRange,
+      numberRange: filter.numberRange,
+    }));
+
+    if (submittedAtRange && (submittedAtRange.from || submittedAtRange.to)) {
+      mapped.push({
+        fieldId: '__submittedAt',
+        operator: 'DATE_BETWEEN',
+        value: undefined,
+        values: undefined,
+        dateRange: {
+          from: submittedAtRange.from?.toISOString(),
+          to: submittedAtRange.to?.toISOString(),
+        },
+        numberRange: undefined,
+      });
+    }
+
+    return mapped.length > 0 ? mapped : null;
+  }, [filters, submittedAtRange]);
 
   // Convert frontend filters to GraphQL export format
   const convertFiltersForExport = () => {
@@ -225,6 +365,33 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
   const exportToExcel = () => handleExport('EXCEL');
   const exportToCsv = () => handleExport('CSV');
 
+  // Bulk delete
+  const handleBulkDelete = async (fId: string) => {
+    if (!selectedResponseIds.length) return;
+    try {
+      await bulkDeleteMutation({ variables: { formId: fId, ids: selectedResponseIds } });
+      clearRowSelection();
+      setCurrentPage(1);
+    } catch {
+      // error toast handled by caller
+    }
+  };
+
+  // Bulk export (selected rows only)
+  const handleBulkExport = async (format: 'EXCEL' | 'CSV') => {
+    if (!formId || !selectedResponseIds.length) return;
+    try {
+      const { data } = await generateReport({
+        variables: { formId, format, ids: selectedResponseIds },
+      });
+      if (data?.generateFormResponseReport?.downloadUrl) {
+        handleDownload(data.generateFormResponseReport.downloadUrl, data.generateFormResponseReport.filename);
+      }
+    } catch {
+      // error toast handled by caller
+    }
+  };
+
   return {
     // Pagination
     currentPage,
@@ -251,9 +418,37 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
     handleRemoveFilter,
     handleApplyFilters,
 
-    // Column visibility
+    // Column visibility + order
     columnVisibility,
     setColumnVisibility,
+    columnOrder,
+    setColumnOrder,
+
+    // Bulk row selection
+    rowSelection,
+    setRowSelection,
+    selectedResponseIds,
+    clearRowSelection,
+    handleBulkDelete,
+    handleBulkExport,
+    isBulkDeleting,
+
+    // Submission date range
+    submittedAtRange,
+    setSubmittedAtRange,
+
+    // Row density
+    rowDensity,
+    setRowDensity,
+
+    // Response detail panel
+    detailPanelResponse,
+    openDetailPanel,
+    closeDetailPanel,
+
+    // Column sizing
+    columnSizing,
+    onColumnSizingChange,
 
     // Plugin dialogs
     pluginDialogState,

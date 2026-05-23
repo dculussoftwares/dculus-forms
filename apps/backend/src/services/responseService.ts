@@ -2,6 +2,7 @@ import { FormResponse } from '@dculus/types';
 import { ResponseFilter, applyResponseFilters } from './responseFilterService.js';
 import {
   buildPostgreSQLFilter,
+  buildRawSQLCondition,
   canFilterAtDatabase
 } from './responseQueryBuilder.js';
 import { responseRepository } from '../repositories/index.js';
@@ -112,14 +113,36 @@ export async function getResponsesByFormId(
     logger.info(`Using database-level filtering for ${filters?.length || 0} filters`);
 
     try {
-      // Build PostgreSQL filter using raw SQL
-      const { conditions, params } = buildPostgreSQLFilter(formId, filters, filterLogic);
+      // Separate __submittedAt (scope/toolbar filter) from user field filters so the
+      // date range always acts as an AND gate regardless of the user's filterLogic.
+      const scopeFilters  = (filters ?? []).filter(f => f.fieldId === '__submittedAt');
+      const userFiltersDb = (filters ?? []).filter(f => f.fieldId !== '__submittedAt');
 
-      // Build WHERE clause with dynamic logic (AND/OR)
+      const params: any[] = [formId]; // $1 = formId
+      let paramIndex = 2;
+
+      // Build scope conditions (always AND)
+      const scopeConditions: string[] = [];
+      for (const f of scopeFilters) {
+        const { sql, values } = buildRawSQLCondition(f, paramIndex);
+        if (sql) { scopeConditions.push(sql); params.push(...values); paramIndex += values.length; }
+      }
+
+      // Build user field conditions (respect filterLogic)
+      const fieldConditions: string[] = [];
+      for (const f of userFiltersDb) {
+        const { sql, values } = buildRawSQLCondition(f, paramIndex);
+        if (sql) { fieldConditions.push(sql); params.push(...values); paramIndex += values.length; }
+      }
+
       const logicOperator = filterLogic === 'OR' ? ' OR ' : ' AND ';
-      const whereClause = conditions.length > 0
-        ? `WHERE "formId" = $1 AND (${conditions.join(logicOperator)})`
-        : `WHERE "formId" = $1`;
+      let whereClause = `WHERE "formId" = $1`;
+      if (fieldConditions.length > 0) {
+        whereClause += ` AND (${fieldConditions.join(logicOperator)})`;
+      }
+      if (scopeConditions.length > 0) {
+        whereClause += ` AND (${scopeConditions.join(' AND ')})`;
+      }
 
 
       // Count total matching documents
@@ -400,6 +423,19 @@ export const deleteResponse = async (id: string): Promise<boolean> => {
     return true;
   } catch (error) {
     logger.error('Error deleting response:', error);
+    return false;
+  }
+};
+
+export const deleteResponses = async (formId: string, ids: string[]): Promise<boolean> => {
+  try {
+    await prisma.response.updateMany({
+      where: { id: { in: ids }, formId, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+    return true;
+  } catch (error) {
+    logger.error('Error bulk-deleting responses:', error);
     return false;
   }
 };

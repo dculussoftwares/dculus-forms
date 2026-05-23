@@ -1,5 +1,6 @@
 import {
   deleteResponse,
+  deleteResponses,
   getAllResponses,
   getResponseById,
   getResponsesByFormId,
@@ -444,6 +445,28 @@ export const responsesResolvers = {
 
       const result = await deleteResponse(id);
       await audit('response.deleted', 'Response', id, context.auth.user?.id);
+      return result;
+    },
+
+    deleteResponses: async (
+      _: any,
+      { formId, ids }: { formId: string; ids: string[] },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+
+      // 🔒 SECURITY: Require OWNER access to bulk-delete responses
+      const accessCheck = await checkFormAccess(
+        context.auth.user!.id,
+        formId,
+        PermissionLevel.OWNER
+      );
+      if (!accessCheck.hasAccess) {
+        throw createGraphQLError('Access denied: You need OWNER access to delete responses for this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
+      }
+
+      const result = await deleteResponses(formId, ids);
+      await audit('response.bulk_deleted', 'Form', formId, context.auth.user?.id);
       return result;
     },
   },

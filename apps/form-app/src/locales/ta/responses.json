@@ -25,13 +25,29 @@
       "hiddenCount": "{{count}} மறைக்கப்பட்டுள்ளது",
       "toggle": "நெடுவரிசைகளை நிலைமாற்று",
       "reset": "மீட்டமை",
-      "noColumnsAvailable": "நெடுவரிசைகள் இல்லை"
+      "noColumnsAvailable": "நெடுவரிசைகள் இல்லை",
+      "dragToReorder": "நெடுவரிசையை மறுவரிசைப்படுத்த இழுக்கவும்"
     },
     "export": {
       "buttonLabel": "ஏற்றுமதி",
       "exporting": "ஏற்றுமதி செய்கிறது...",
       "excel": "Excel ஆக ஏற்றுமதி செய்யவும்",
       "csv": "CSV ஆக ஏற்றுமதி செய்யவும்"
+    },
+    "dateRange": {
+      "placeholder": "எல்லா நேரமும்"
+    },
+    "density": {
+      "compact": "சிறிய",
+      "default": "இயல்பு",
+      "comfortable": "வசதியான"
+    },
+    "bulkActions": {
+      "selected": "{{count}} தேர்ந்தெடுக்கப்பட்டது",
+      "delete": "நீக்கு",
+      "deleting": "நீக்குகிறது...",
+      "deleteSuccess": "பதில்கள் வெற்றிகரமாக நீக்கப்பட்டன",
+      "deleteError": "பதில்களை நீக்க முடியவில்லை"
     }
   },
   "table": {
@@ -63,6 +79,9 @@
     },
     "fieldResponses": {
       "noResponse": "பதில் இல்லை"
+    },
+    "empty": {
+      "noFields": "புலங்கள் எதுவும் இல்லை"
     },
     "emptyState": {
       "title": "இன்னும் பதில்கள் இல்லை",

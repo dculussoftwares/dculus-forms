@@ -77,15 +77,52 @@ export function buildPostgreSQLFilter(
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildSubmittedAtCondition(filter: ResponseFilter, startIndex: number): { sql: string; values: any[] } {
+  const col = 'r."submitted_at"';
+  switch (filter.operator) {
+    case 'DATE_EQUALS':
+      if (!filter.value) return { sql: '', values: [] };
+      return { sql: `DATE(${col}) = DATE($${startIndex}::timestamptz)`, values: [filter.value] };
+    case 'DATE_BEFORE':
+      if (!filter.value) return { sql: '', values: [] };
+      return { sql: `${col} < $${startIndex}::timestamptz`, values: [filter.value] };
+    case 'DATE_AFTER':
+      if (!filter.value) return { sql: '', values: [] };
+      return { sql: `${col} > $${startIndex}::timestamptz`, values: [filter.value] };
+    case 'DATE_BETWEEN': {
+      if (!filter.dateRange) return { sql: '', values: [] };
+      const parts: string[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const vals: any[] = [];
+      let idx = startIndex;
+      if (filter.dateRange.from) { parts.push(`${col} >= $${idx}::timestamptz`); vals.push(filter.dateRange.from); idx++; }
+      if (filter.dateRange.to)   { parts.push(`${col} <= $${idx}::timestamptz`); vals.push(filter.dateRange.to); }
+      return parts.length ? { sql: `(${parts.join(' AND ')})`, values: vals } : { sql: '', values: [] };
+    }
+    case 'DATE_TODAY':
+      return { sql: `DATE(${col}) = CURRENT_DATE`, values: [] };
+    case 'DATE_LAST_N_DAYS': {
+      const n = Math.max(1, parseInt(filter.value || '7', 10) || 7);
+      return { sql: `${col} >= NOW() - ($${startIndex} || ' days')::interval`, values: [String(n)] };
+    }
+    default:
+      return { sql: '', values: [] };
+  }
+}
+
 /**
  * Builds raw SQL condition for a single filter
  * Returns SQL string with PostgreSQL placeholders ($1, $2, etc.) and parameter values
  */
-function buildRawSQLCondition(
+export function buildRawSQLCondition(
   filter: ResponseFilter,
   startIndex: number
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): { sql: string; values: any[] } {
+  if (filter.fieldId === '__submittedAt') {
+    return buildSubmittedAtCondition(filter, startIndex);
+  }
   const safeFieldId = ensureSafeFieldId(filter.fieldId);
   const jsonAccessor = `data->'${safeFieldId}'`;
   const textAccessor = `data->>'${safeFieldId}'`;

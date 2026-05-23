@@ -1095,6 +1095,7 @@ export const typeDefs = gql`
     submitResponse(input: SubmitResponseInput!): FormResponse!
     updateResponse(input: UpdateResponseInput!): FormResponse!
     deleteResponse(id: ID!): Boolean!
+    deleteResponses(formId: ID!, ids: [ID!]!): Boolean!
 
     # Form Sharing Mutations
     shareForm(input: ShareFormInput!): FormSharingSettings!
@@ -1121,6 +1122,7 @@ export const typeDefs = gql`
       format: ExportFormat!
       filters: [ResponseFilterInput!]
       filterLogic: FilterLogic = AND
+      ids: [ID!]
     ): ExportResult!
 
     # Analytics Mutations

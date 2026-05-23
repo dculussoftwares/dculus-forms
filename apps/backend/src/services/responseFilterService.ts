@@ -69,10 +69,57 @@ export function applyResponseFilters(
     return responses;
   }
 
+  // __submittedAt (scope/toolbar) filters always AND regardless of filterLogic
+  const scopeFilters = filters.filter(f => f.fieldId === '__submittedAt');
+  const userFilters  = filters.filter(f => f.fieldId !== '__submittedAt');
+
   return responses.filter(response => {
-    // Apply AND or OR logic depending on parameter
+    // 1. Scope filters must ALL pass (always AND — date range is always a hard gate)
+    if (scopeFilters.length > 0 && !scopeFilters.every(f => applyFilterToResponse(f, response))) {
+      return false;
+    }
+    // 2. User field filters respect filterLogic (AND / OR)
+    if (userFilters.length === 0) return true;
     const filterMethod = filterLogic === 'OR' ? 'some' : 'every';
-    return filters[filterMethod](filter => {
+    return userFilters[filterMethod](f => applyFilterToResponse(f, response));
+  });
+}
+
+function applyFilterToResponse(filter: ResponseFilter, response: any): boolean {
+      // Special case: filter on the submittedAt timestamp rather than a form field
+      if (filter.fieldId === '__submittedAt') {
+        const ts = parseDate(response.submittedAt ?? response.createdAt);
+        switch (filter.operator) {
+          case 'DATE_EQUALS': {
+            if (!filter.value) return false;
+            const fd = parseDate(filter.value);
+            return ts.toDateString() === fd.toDateString();
+          }
+          case 'DATE_BEFORE':
+            return filter.value ? ts < parseDate(filter.value) : false;
+          case 'DATE_AFTER':
+            return filter.value ? ts > parseDate(filter.value) : false;
+          case 'DATE_BETWEEN': {
+            const { from, to } = filter.dateRange || {};
+            if (!from && !to) return false;
+            if (from && ts < parseDate(from)) return false;
+            if (to   && ts > parseDate(to))   return false;
+            return true;
+          }
+          case 'DATE_TODAY': {
+            const today = new Date();
+            return ts.toDateString() === today.toDateString();
+          }
+          case 'DATE_LAST_N_DAYS': {
+            const n = Math.max(1, parseInt(filter.value || '7', 10) || 7);
+            const cutoff = new Date(Date.now() - n * 86_400_000);
+            return ts >= cutoff;
+          }
+          default:
+            return false;
+        }
+      }
+
       // Get field value from response data (handles both 'data' and 'responseData' properties)
       const fieldValue =
         response.responseData?.[filter.fieldId] ??
@@ -289,6 +336,4 @@ export function applyResponseFilters(
         default:
           return false;
       }
-    });
-  });
 }

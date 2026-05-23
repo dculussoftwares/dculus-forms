@@ -4,6 +4,9 @@ import * as React from "react"
 import {
   ColumnDef,
   ColumnFiltersState,
+  ColumnSizingState,
+  OnChangeFn,
+  RowSelectionState,
   SortingState,
   VisibilityState,
   flexRender,
@@ -37,6 +40,15 @@ interface ServerDataTableProps<TData, TValue> {
   sortOrder?: 'asc' | 'desc'
   onSortingChange?: (column: string) => void
   loading?: boolean
+  // Controlled row selection (optional — falls back to internal state)
+  rowSelection?: RowSelectionState
+  onRowSelectionChange?: OnChangeFn<RowSelectionState>
+  getRowId?: (row: TData) => string
+  // Row density
+  density?: 'compact' | 'default' | 'comfortable'
+  // Controlled column sizing (optional — falls back to internal state for persistence)
+  columnSizing?: ColumnSizingState
+  onColumnSizingChange?: OnChangeFn<ColumnSizingState>
 }
 
 export function ServerDataTable<TData, TValue>({
@@ -56,12 +68,28 @@ export function ServerDataTable<TData, TValue>({
   sortOrder,
   onSortingChange,
   loading = false,
+  rowSelection: controlledRowSelection,
+  onRowSelectionChange,
+  getRowId,
+  density = 'default',
+  columnSizing: controlledColumnSizing,
+  onColumnSizingChange,
 }: ServerDataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = React.useState({})
+  const [internalRowSelection, setInternalRowSelection] = React.useState<RowSelectionState>({})
   const [globalFilter, setGlobalFilter] = React.useState("")
   const [columnResizeMode, setColumnResizeMode] = React.useState<ColumnResizeMode>('onChange')
+
+  const rowSelection = controlledRowSelection ?? internalRowSelection
+  const setRowSelection = onRowSelectionChange ?? setInternalRowSelection
+
+  const rowHeightMap: Record<string, number> = { compact: 40, default: 56, comfortable: 76 }
+  const rowHeight = rowHeightMap[density]
+
+  const [internalColumnSizing, setInternalColumnSizing] = React.useState<ColumnSizingState>({})
+  const columnSizing = controlledColumnSizing ?? internalColumnSizing
+  const setColumnSizing = onColumnSizingChange ?? setInternalColumnSizing
   
   // Convert server sorting to TanStack format for display
   const sorting = React.useMemo((): SortingState => {
@@ -78,10 +106,12 @@ export function ServerDataTable<TData, TValue>({
     data,
     columns,
     pageCount,
+    ...(getRowId ? { getRowId } : {}),
     state: {
       sorting,
       columnFilters,
       columnVisibility,
+      columnSizing,
       rowSelection,
       globalFilter,
       pagination: {
@@ -95,6 +125,7 @@ export function ServerDataTable<TData, TValue>({
     onRowSelectionChange: setRowSelection,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
+    onColumnSizingChange: setColumnSizing,
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -133,7 +164,7 @@ export function ServerDataTable<TData, TValue>({
                         className="text-left align-middle bg-white whitespace-nowrap relative"
                         style={{
                           width: header.getSize(),
-                          height: '56px',
+                          height: `${rowHeight}px`,
                           padding: '0px 2px 0px 1px',
                           fontSize: '14px',
                           fontWeight: 700,
@@ -211,8 +242,8 @@ export function ServerDataTable<TData, TValue>({
                         className="align-middle [&:has([role=checkbox])]:pr-0"
                         style={{
                           width: cell.column.getSize(),
-                          height: '56px',
-                          padding: '8px 10px',
+                          height: `${rowHeight}px`,
+                          padding: density === 'compact' ? '4px 10px' : density === 'comfortable' ? '12px 10px' : '8px 10px',
                           fontSize: '14px',
                           color: '#4c414e',
                           borderBottom: '1px solid rgba(86, 82, 90, 0.08)',
