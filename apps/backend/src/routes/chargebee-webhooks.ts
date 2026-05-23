@@ -100,7 +100,10 @@ router.post('/webhooks/chargebee', async (req, res) => {
         break;
 
       case 'payment_succeeded':
-        logger.info('[Chargebee Webhook] Payment succeeded for subscription');
+        // Sync subscription to clear any past_due status set by a prior payment_failed event
+        if (event.content?.subscription) {
+          await syncSubscriptionFromWebhook(event.content.subscription);
+        }
         break;
 
       case 'payment_failed':

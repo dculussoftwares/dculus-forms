@@ -17,24 +17,36 @@ const chargebee = new Chargebee({
   apiKey: process.env.CHARGEBEE_API_KEY!,
 });
 
+// Fallback limits used when Chargebee entitlements are unavailable.
+// Keep in sync with Chargebee entitlement config — the live values take precedence
+// once getAvailablePlans() has populated the cache.
+const PLAN_LIMITS_FALLBACK: Record<string, { views: number | null; submissions: number | null }> = {
+  free: { views: 10000, submissions: 1000 },
+  starter: { views: null, submissions: 10000 },
+  advanced: { views: null, submissions: 100000 },
+};
+
 /**
- * Plan configuration mapping
- * Maps plan IDs to their limits
+ * Returns plan limits sourced from Chargebee entitlements (via the plans cache).
+ * Falls back to PLAN_LIMITS_FALLBACK when the cache is cold or the API is down.
  */
-const PLAN_LIMITS = {
-  free: {
-    views: 10000,
-    submissions: 1000,
-  },
-  starter: {
-    views: null, // unlimited
-    submissions: 10000,
-  },
-  advanced: {
-    views: null, // unlimited
-    submissions: 100000,
-  },
-} as const;
+const getPlanLimits = async (
+  planId: string
+): Promise<{ views: number | null; submissions: number | null }> => {
+  try {
+    const plans = await getAvailablePlans();
+    const plan = plans.find((p: any) => p.id === planId);
+    if (plan?.features) {
+      return {
+        views: plan.features.views ?? null,
+        submissions: plan.features.submissions ?? null,
+      };
+    }
+  } catch {
+    // fall through to fallback
+  }
+  return PLAN_LIMITS_FALLBACK[planId] ?? { views: null, submissions: null };
+};
 
 /**
  * Create a Chargebee customer for an organization
@@ -74,6 +86,8 @@ export const createFreeSubscription = async (
     const periodEnd = new Date();
     periodEnd.setMonth(periodEnd.getMonth() + 1); // Free plan is monthly
 
+    const freeLimits = await getPlanLimits('free');
+
     await subscriptionRepository.createSubscription({
       id: `sub_${organizationId}`,
       organizationId,
@@ -83,8 +97,8 @@ export const createFreeSubscription = async (
       status: 'active',
       viewsUsed: 0,
       submissionsUsed: 0,
-      viewsLimit: PLAN_LIMITS.free.views,
-      submissionsLimit: PLAN_LIMITS.free.submissions,
+      viewsLimit: freeLimits.views,
+      submissionsLimit: freeLimits.submissions,
       currentPeriodStart: now,
       currentPeriodEnd: periodEnd,
     });
@@ -228,8 +242,8 @@ export const syncSubscriptionFromWebhook = async (
       }
     }
 
-    // Get plan limits
-    const limits = PLAN_LIMITS[planId as keyof typeof PLAN_LIMITS];
+    // Get plan limits from Chargebee entitlements (falls back to hardcoded values)
+    const limits = await getPlanLimits(planId);
 
     // Map Chargebee status to our status
     let status = 'active';
