@@ -53,7 +53,13 @@
       "edit": "திருத்தவும்",
       "editHistory": "வரலாற்றைத் திருத்தவும்",
       "delete": "நீக்கு",
-      "moreActions": "மேலும் செயல்கள்"
+      "moreActions": "மேலும் செயல்கள்",
+      "deleteConfirmTitle": "பதிலை நீக்கவும்",
+      "deleteConfirmDescription": "இந்தப் பதிலை நீக்க விரும்புகிறீர்களா? இந்தச் செயலை மீட்டெடுக்க முடியாது.",
+      "deleteConfirmCancel": "ரத்து செய்",
+      "deleteConfirmConfirm": "நீக்கு",
+      "deleteSuccess": "பதில் வெற்றிகரமாக நீக்கப்பட்டது",
+      "deleteError": "பதிலை நீக்குவதில் தோல்வி"
     },
     "fieldResponses": {
       "noResponse": "பதில் இல்லை"

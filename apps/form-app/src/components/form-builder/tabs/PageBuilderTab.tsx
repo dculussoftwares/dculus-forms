@@ -221,16 +221,10 @@ export const PageBuilderTab: React.FC = () => {
           }
 
           if (sourceIndex !== targetIndex) {
-            console.log(
-              `Reordering field from ${sourceIndex} to ${targetIndex}`
-            );
             reorderFields(sourcePageId, sourceIndex, targetIndex);
           }
         } else {
           // Cross-page move
-          console.log(
-            `Moving field ${droppedFieldId} from page ${sourcePageId} to page ${targetPageId} at index ${targetIndex}`
-          );
           moveFieldBetweenPages(
             sourcePageId,
             targetPageId,
@@ -265,9 +259,6 @@ export const PageBuilderTab: React.FC = () => {
 
         if (targetPageId && fieldTypeConfig) {
           const previousFieldIds = getPageFieldIdSet(targetPageId);
-          console.log(
-            `Inserting field ${fieldTypeConfig.type} at index ${insertIndex} in page ${targetPageId}`
-          );
           const fieldData = createFieldData(fieldTypeConfig);
           addFieldAtIndex(
             targetPageId,
@@ -293,9 +284,6 @@ export const PageBuilderTab: React.FC = () => {
 
         if (targetPageId && fieldTypeConfig) {
           const previousFieldIds = getPageFieldIdSet(targetPageId);
-          console.log(
-            `Adding field ${fieldTypeConfig.type} to end of page ${targetPageId}`
-          );
           const fieldData = createFieldData(fieldTypeConfig);
           addField(targetPageId, fieldTypeConfig.type, fieldData);
 

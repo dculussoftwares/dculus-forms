@@ -221,14 +221,11 @@ export const SignUp = () => {
         // Initialize free subscription for the new organization
         if (orgResult?.data?.id) {
           try {
-            console.log('[SignUp] Initializing subscription for organization:', orgResult.data.id);
             const subscriptionResult = await initializeSubscription({
               variables: { organizationId: orgResult.data.id },
             });
 
-            if (subscriptionResult.data?.initializeOrganizationSubscription?.success) {
-              console.log('[SignUp] ✅ Subscription initialized successfully');
-            } else {
+            if (!subscriptionResult.data?.initializeOrganizationSubscription?.success) {
               console.error('[SignUp] ⚠️ Subscription initialization failed:', subscriptionResult.data?.initializeOrganizationSubscription?.message);
             }
           } catch (subscriptionError) {

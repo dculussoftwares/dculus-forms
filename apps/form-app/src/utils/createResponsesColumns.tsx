@@ -14,6 +14,14 @@ import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { gql, useApolloClient } from '@apollo/client';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Badge,
   Button,
   DropdownMenu,
@@ -62,6 +70,7 @@ interface CreateResponsesColumnsOptions {
     metadata: any,
     responseId: string
   ) => void;
+  onDeleteResponse: (responseId: string) => void;
   t: (
     key: string,
     options?: {
@@ -483,75 +492,110 @@ const createFieldColumns = (
 const ResponsesActionsCell: React.FC<{
   row: Row<FormResponse>;
   formId: string;
+  onDeleteResponse: (responseId: string) => void;
   t: CreateResponsesColumnsOptions['t'];
-}> = ({ row, formId, t }) => {
+}> = ({ row, formId, onDeleteResponse, t }) => {
   const navigate = useNavigate();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   return (
-    <div className="flex items-center justify-center gap-1">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
-        onClick={(e) => {
-          e.stopPropagation();
-          console.log('View response:', row.original.id);
-        }}
-      >
-        <Eye className="h-4 w-4" />
-        <span className="sr-only">{t('table.actions.viewResponse')}</span>
-      </Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 hover:bg-background"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <MoreHorizontal className="h-4 w-4" />
-            <span className="sr-only">{t('table.actions.moreActions')}</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem
-            onClick={() =>
-              navigate(
-                `/dashboard/form/${formId}/responses/${row.original.id}/edit`
-              )
-            }
-          >
-            <Edit className="mr-2 h-4 w-4" />
-            Edit Response
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() =>
-              navigate(
-                `/dashboard/form/${formId}/responses/${row.original.id}/history`
-              )
-            }
-            disabled={!row.original.hasBeenEdited}
-          >
-            <History className="mr-2 h-4 w-4" />
-            {t('table.actions.editHistory')}
-            {(row.original.totalEdits || 0) > 0 && (
-              <Badge
-                variant="outline"
-                className="ml-2 bg-orange-50 text-orange-700 border-orange-200 text-xs"
-              >
-                {row.original.totalEdits}
-              </Badge>
-            )}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => console.log('Delete response:', row.original.id)}
-          >
-            <X className="mr-2 h-4 w-4" />
-            {t('table.actions.delete')}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+    <>
+      <div className="flex items-center justify-center gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/dashboard/form/${formId}/responses/${row.original.id}/edit`);
+          }}
+        >
+          <Eye className="h-4 w-4" />
+          <span className="sr-only">{t('table.actions.viewResponse')}</span>
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 hover:bg-background"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal className="h-4 w-4" />
+              <span className="sr-only">{t('table.actions.moreActions')}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() =>
+                navigate(
+                  `/dashboard/form/${formId}/responses/${row.original.id}/edit`
+                )
+              }
+            >
+              <Edit className="mr-2 h-4 w-4" />
+              {t('table.actions.edit')}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() =>
+                navigate(
+                  `/dashboard/form/${formId}/responses/${row.original.id}/history`
+                )
+              }
+              disabled={!row.original.hasBeenEdited}
+            >
+              <History className="mr-2 h-4 w-4" />
+              {t('table.actions.editHistory')}
+              {(row.original.totalEdits || 0) > 0 && (
+                <Badge
+                  variant="outline"
+                  className="ml-2 bg-orange-50 text-orange-700 border-orange-200 text-xs"
+                >
+                  {row.original.totalEdits}
+                </Badge>
+              )}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDeleteDialog(true);
+              }}
+              className="text-destructive focus:text-destructive"
+            >
+              <X className="mr-2 h-4 w-4" />
+              {t('table.actions.delete')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t('table.actions.deleteConfirmTitle')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('table.actions.deleteConfirmDescription')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowDeleteDialog(false)}>
+              {t('table.actions.deleteConfirmCancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowDeleteDialog(false);
+                onDeleteResponse(row.original.id);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t('table.actions.deleteConfirmConfirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 
@@ -561,6 +605,7 @@ const ResponsesActionsCell: React.FC<{
  */
 const createActionsColumn = (
   formId: string,
+  onDeleteResponse: (responseId: string) => void,
   t: CreateResponsesColumnsOptions['t']
 ): ColumnDef<FormResponse> => {
   return {
@@ -568,7 +613,14 @@ const createActionsColumn = (
     header: () => (
       <div className="text-center">{t('table.columns.actions')}</div>
     ),
-    cell: ({ row }) => <ResponsesActionsCell row={row} formId={formId} t={t} />,
+    cell: ({ row }) => (
+      <ResponsesActionsCell
+        row={row}
+        formId={formId}
+        onDeleteResponse={onDeleteResponse}
+        t={t}
+      />
+    ),
     enableSorting: false,
     enableHiding: false,
     size: 80,
@@ -584,6 +636,7 @@ export const createResponsesColumns = ({
   pluginsData,
   locale,
   onPluginClick,
+  onDeleteResponse,
   t,
 }: CreateResponsesColumnsOptions): ColumnDef<FormResponse>[] => {
   if (!formSchema) return [];
@@ -612,7 +665,7 @@ export const createResponsesColumns = ({
   );
 
   // Actions column
-  const actionsColumn = createActionsColumn(formId, t);
+  const actionsColumn = createActionsColumn(formId, onDeleteResponse, t);
 
   // Response ID first, field/plugin columns in middle, Submitted At + Edit Status at end
   return [idColumn, ...fieldColumns, ...pluginColumns, ...metaColumns, actionsColumn];

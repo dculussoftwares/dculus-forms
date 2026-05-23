@@ -8,9 +8,15 @@
       "latest": "சமீபத்திய"
     },
     "buttons": {
-      "view": "காண்க",
+      "view": "ஸ்னாப்ஷாட் காண்க",
+      "hideSnapshot": "ஸ்னாப்ஷாட் மறை",
       "show": "காட்டு",
       "hide": "மறை"
+    },
+    "snapshot": {
+      "title": "புல மாற்றங்கள்",
+      "before": "முன்பு",
+      "after": "பிறகு"
     },
     "labels": {
       "reason": "காரணம்:",

@@ -4,10 +4,8 @@ import { FormLayout, LayoutCode } from '@dculus/types';
 import { Tabs, TabsList, TabsTrigger, TabsContent, Button, Checkbox, Input, Label } from '@dculus/ui';
 import { useQuery } from '@apollo/client';
 import { useTranslation } from '../../../../hooks/useTranslation';
-import { useLocale } from '../../../../hooks/useLocale';
 import { LayoutThumbnails } from './LayoutThumbnails';
 import { LayoutOptions } from './LayoutOptions';
-import { ComingSoonCard } from './ComingSoonCard';
 import { CollaborationStatus } from './CollaborationStatus';
 import { BackgroundImageUpload } from './BackgroundImageUpload';
 import { BackgroundImageGallery } from './BackgroundImageGallery';
@@ -36,17 +34,7 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
   const [selectedImageKey, setSelectedImageKey] = useState<string | null>(layout.backgroundImageKey || null);
   const [isPixabayModalOpen, setIsPixabayModalOpen] = useState(false);
   const { t } = useTranslation('layoutSidebar');
-  const { messages } = useLocale();
 
-  // Features shown in coming soon card
-  const featuresArray =
-    messages.layoutSidebar?.comingSoon?.features || [
-      'Color themes',
-      'Typography', 
-      'Custom CSS',
-      'Animations',
-    ];
-  
   // Fetch form background images
   const { data: formFilesData, refetch: refetchFormFiles } = useQuery(GET_FORM_FILES, {
     variables: {
@@ -275,13 +263,6 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
             <LayoutOptions 
               layout={layout}
               currentLayoutCode={currentLayoutCode}
-            />
-
-            <ComingSoonCard
-              title={t('comingSoon.title')}
-              description={t('comingSoon.description')}
-              features={featuresArray}
-              size="small"
             />
 
             <CollaborationStatus isConnected={isConnected} />

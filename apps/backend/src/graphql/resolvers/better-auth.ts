@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import {
   BetterAuthContext,
   requireAuth,
@@ -137,6 +138,12 @@ export const betterAuthResolvers = {
         logger.info(`[Organization] ✅ Created free subscription for "${organization.name}"`);
       } catch (error: any) {
         logger.error('[Organization] ⚠️  Failed to create subscription:', error.message);
+        // Capture in Sentry so the failure is visible in production monitoring.
+        // The org owner silently gets free unlimited access until an admin fixes
+        // the missing Subscription row — this alert ensures it does not go unnoticed.
+        Sentry.captureException(error, {
+          extra: { organizationId: organization.id, userId: context.auth.user!.id },
+        });
         // Don't throw - organization is already created
         // User can still use the system, admin can manually fix subscription later
         // This prevents organization creation from failing due to Chargebee issues

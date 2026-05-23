@@ -6,6 +6,7 @@ import {
   submitResponse,
   updateResponse,
 } from '../../services/responseService.js';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import { responseRepository } from '../../repositories/responseRepository.js';
 import { ResponseFilter } from '../../services/responseFilterService.js';
@@ -160,19 +161,72 @@ export const responsesResolvers = {
         throw createGraphQLError('Form submission limit exceeded for this organization subscription plan', GRAPHQL_ERROR_CODES.SUBMISSION_LIMIT_EXCEEDED);
       }
 
+      // P2-04: Validate response payload size to prevent unbounded writes
+      if (input.data && typeof input.data === 'object') {
+        const keys = Object.keys(input.data as object);
+        if (keys.length > 500) {
+          throw createGraphQLError('Response data cannot contain more than 500 fields', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+        }
+        for (const [key, value] of Object.entries(input.data as object)) {
+          if (typeof value === 'string' && value.length > 10_000) {
+            throw createGraphQLError(`Field "${key}" exceeds the 10,000 character limit`, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+          }
+        }
+      }
+
+      // Pre-assign the response ID so it can be used inside the serializable
+      // transaction (maxResponses path) and also in the normal path below.
+      const responseId = generateId();
+      const responseData = {
+        id: responseId,
+        formId: input.formId,
+        data: input.data,
+        submittedAt: new Date(),
+      };
+
+      // Track whether the response row has already been created inside a
+      // serializable transaction (maxResponses atomic check-then-insert path).
+      let response: import('@dculus/types').FormResponse | null = null;
+
       // Check submission limits if they exist
       if (form.settings?.submissionLimits) {
         const limits = form.settings.submissionLimits;
 
-        // Check maximum responses limit
+        // Check maximum responses limit — atomic check-then-insert via a
+        // Serializable transaction so two concurrent requests cannot both pass
+        // the count check and both insert, exceeding the limit by one.
         if (limits.maxResponses?.enabled) {
-          const currentResponseCount = await responseRepository.count({
-            where: { formId: input.formId },
-          });
+          const maxAllowed = limits.maxResponses.limit;
 
-          if (currentResponseCount >= limits.maxResponses.limit) {
-            throw createGraphQLError('Form has reached its maximum response limit', GRAPHQL_ERROR_CODES.MAX_RESPONSES_REACHED);
-          }
+          const inserted = await prisma.$transaction(
+            async (tx) => {
+              const currentCount = await tx.response.count({
+                where: { formId: input.formId },
+              });
+
+              if (currentCount >= maxAllowed) {
+                throw createGraphQLError('Form has reached its maximum response limit', GRAPHQL_ERROR_CODES.MAX_RESPONSES_REACHED);
+              }
+
+              // Insert atomically within the same transaction
+              return tx.response.create({
+                data: {
+                  id: responseId,
+                  formId: input.formId,
+                  data: (input.data || {}) as Prisma.InputJsonValue,
+                },
+              });
+            },
+            { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+          );
+
+          response = {
+            id: inserted.id,
+            formId: inserted.formId,
+            data: (inserted.data as Prisma.JsonObject) || {},
+            metadata: inserted.metadata as import('@dculus/types').FormResponse['metadata'],
+            submittedAt: inserted.submittedAt,
+          };
         }
 
         // Check time window limits
@@ -208,27 +262,13 @@ export const responsesResolvers = {
         }
       }
 
-      // P2-04: Validate response payload size to prevent unbounded writes
-      if (input.data && typeof input.data === 'object') {
-        const keys = Object.keys(input.data as object);
-        if (keys.length > 500) {
-          throw createGraphQLError('Response data cannot contain more than 500 fields', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
-        }
-        for (const [key, value] of Object.entries(input.data as object)) {
-          if (typeof value === 'string' && value.length > 10_000) {
-            throw createGraphQLError(`Field "${key}" exceeds the 10,000 character limit`, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
-          }
-        }
+      // If the response was not already inserted by the atomic maxResponses
+      // transaction above, persist it now via the normal path.
+      if (!response) {
+        response = await submitResponse(responseData);
       }
-
-      // If all limits pass, save the response
-      const responseData = {
-        id: generateId(),
-        formId: input.formId,
-        data: input.data,
-        submittedAt: new Date(),
-      };
-      const response = await submitResponse(responseData);
+      // At this point response is guaranteed non-null — both branches above set it.
+      const savedResponse = response!;
 
       // Track submission analytics if analytics data is provided
       if (input.sessionId && input.userAgent) {
@@ -246,7 +286,7 @@ export const responsesResolvers = {
           await analyticsService.trackFormSubmission(
             {
               formId: input.formId,
-              responseId: response.id,
+              responseId: savedResponse.id,
               sessionId: input.sessionId,
               userAgent: input.userAgent,
               timezone: input.timezone,
@@ -257,7 +297,7 @@ export const responsesResolvers = {
           );
 
           logger.info(
-            `Submission analytics tracked for form ${input.formId}, response ${response.id}`
+            `Submission analytics tracked for form ${input.formId}, response ${savedResponse.id}`
           );
         } catch (error) {
           // Log error but don't fail the response submission
@@ -308,8 +348,8 @@ export const responsesResolvers = {
       // Emit plugin event for form submission
       try {
         emitFormSubmitted(input.formId, form.organizationId, {
-          responseId: response.id,
-          submittedAt: response.submittedAt.toISOString(),
+          responseId: savedResponse.id,
+          submittedAt: savedResponse.submittedAt.toISOString(),
           ...input.data,
         });
       } catch (error) {
@@ -319,13 +359,13 @@ export const responsesResolvers = {
 
       // Emit subscription event for usage tracking
       try {
-        emitSubscriptionFormSubmitted(form.organizationId, input.formId, response.id);
+        emitSubscriptionFormSubmitted(form.organizationId, input.formId, savedResponse.id);
       } catch (error) {
         logger.error('Error emitting subscription event:', error);
       }
 
       return {
-        ...response,
+        ...savedResponse,
         thankYouMessage,
         showCustomThankYou,
       };

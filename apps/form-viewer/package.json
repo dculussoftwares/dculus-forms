@@ -12,10 +12,11 @@
   },
   "dependencies": {
     "@apollo/client": "^3.13.8",
-    "dompurify": "^3.2.6",
     "@dculus/types": "workspace:*",
     "@dculus/ui": "workspace:*",
     "@dculus/utils": "workspace:*",
+    "@sentry/react": "10.53.1",
+    "dompurify": "^3.2.6",
     "graphql": "^16.8.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

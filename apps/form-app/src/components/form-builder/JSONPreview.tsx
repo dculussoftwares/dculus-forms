@@ -12,14 +12,6 @@ interface JSONPreviewProps {
 export const JSONPreview: React.FC<JSONPreviewProps> = ({ pages, layout, isShuffleEnabled }) => {
   const { t } = useTranslation('jsonPreview');
   
-  console.log('🔍 JSONPreview received props:', {
-    pages: pages?.length || 0,
-    layout: !!layout,
-    isShuffleEnabled,
-    layoutTheme: layout?.theme,
-    layoutContent: layout?.content?.substring(0, 50) + '...'
-  });
-  
   const formSchema: FormSchema = {
     pages,
     layout,

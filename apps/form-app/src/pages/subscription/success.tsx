@@ -1,15 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { Button, Card } from '@dculus/ui';
-import { CheckCircle2, Sparkles, TrendingUp, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Sparkles, TrendingUp, ArrowRight, Info } from 'lucide-react';
 import { GET_SUBSCRIPTION } from '../../graphql/subscription';
 import { useTranslation } from '../../hooks/useTranslation';
+
+const POLLING_TIMEOUT_MS = 60000;
 
 export const CheckoutSuccess = () => {
   const { t } = useTranslation('checkoutSuccess');
   const navigate = useNavigate();
   const [showConfetti, setShowConfetti] = useState(true);
+  const [timedOut, setTimedOut] = useState(false);
+  const startTimeRef = useRef(Date.now());
 
   // Fetch subscription to get updated details
   const { data, loading, stopPolling } = useQuery(GET_SUBSCRIPTION, {
@@ -25,10 +29,16 @@ export const CheckoutSuccess = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Stop polling as soon as the plan upgrade is confirmed or the component unmounts
+  // Stop polling as soon as the plan upgrade is confirmed or the component unmounts.
+  // Also stop after 60 seconds and show a calm timeout message.
   useEffect(() => {
     if (subscription && subscription.planId !== 'free') {
       stopPolling();
+      return;
+    }
+    if (Date.now() - startTimeRef.current > POLLING_TIMEOUT_MS) {
+      stopPolling();
+      setTimedOut(true);
     }
     return () => stopPolling();
   }, [subscription, stopPolling]);
@@ -77,6 +87,40 @@ export const CheckoutSuccess = () => {
 
   const planInfo = subscription ? getPlanInfo(subscription.planId) : null;
   const Icon = planInfo?.icon || TrendingUp;
+
+  if (timedOut) {
+    return (
+      <div className="min-h-screen bg-background dark:bg-gray-900 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full p-8">
+          <div className="flex justify-center mb-6">
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-full">
+              <Info className="h-10 w-10 text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
+          <p className="text-center text-foreground dark:text-gray-300 mb-6">
+            {t('timeout.message')}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              onClick={() => navigate('/settings/subscription')}
+              className="flex-1"
+              variant="default"
+            >
+              {t('timeout.goToSettings')}
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+            <Button
+              onClick={() => navigate('/dashboard')}
+              variant="outline"
+              className="flex-1"
+            >
+              {t('buttons.goToDashboard')}
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

@@ -193,12 +193,18 @@ export const checkUsageExceeded = async (
     };
   }
 
+  // A past_due subscription means the last payment failed. Block new submissions
+  // to enforce the billing requirement — this mirrors the behaviour when the
+  // numeric submission limit is exceeded.
+  const isPastDue = subscription.status === 'past_due';
+
   return {
     viewsExceeded:
       subscription.viewsLimit !== null && subscription.viewsUsed >= subscription.viewsLimit,
     submissionsExceeded:
-      subscription.submissionsLimit !== null &&
-      subscription.submissionsUsed >= subscription.submissionsLimit,
+      isPastDue ||
+      (subscription.submissionsLimit !== null &&
+        subscription.submissionsUsed >= subscription.submissionsLimit),
   };
 };
 

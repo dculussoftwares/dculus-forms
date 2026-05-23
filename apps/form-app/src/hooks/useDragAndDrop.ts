@@ -246,7 +246,6 @@ export const useDragAndDrop = ({
           const newIndex = page.fields.findIndex(f => f.id === overField.id);
           
           if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-            console.log(`Field reorder: moving field from index ${oldIndex} to ${newIndex} in page ${activePageId}`);
             onReorderFields(activePageId, oldIndex, newIndex);
           }
         }
@@ -255,7 +254,6 @@ export const useDragAndDrop = ({
         const targetPage = pages.find(p => p.id === overPageId);
         if (targetPage) {
           const insertIndex = targetPage.fields.findIndex(f => f.id === overField.id);
-          console.log(`Cross-page field move: moving field ${activeField.id} from page ${activePageId} to page ${overPageId} at index ${insertIndex}`);
           onMoveFieldBetweenPages(activePageId, overPageId, activeField.id, insertIndex);
         }
       }
@@ -278,7 +276,6 @@ export const useDragAndDrop = ({
             const newIndex = page.fields.length - 1;
             
             if (oldIndex !== -1 && oldIndex !== newIndex) {
-              console.log(`Field move to end: moving field from index ${oldIndex} to ${newIndex} in page ${activePageId}`);
               onReorderFields(activePageId, oldIndex, newIndex);
             }
           }
@@ -287,8 +284,6 @@ export const useDragAndDrop = ({
         // Move to end of different page (works for both regular page and thumbnail drops)
         const targetPage = pages.find(p => p.id === overPageId);
         if (targetPage) {
-          const dropType = over.id.toString().includes('page-thumbnail-') ? 'thumbnail' : 'page';
-          console.log(`Cross-page field move via ${dropType}: moving field ${activeField.id} from page ${activePageId} to end of page ${overPageId}`);
           onMoveFieldBetweenPages(activePageId, overPageId, activeField.id);
         }
       }
@@ -305,7 +300,6 @@ export const useDragAndDrop = ({
         const newIndex = pages.findIndex(p => p.id === overPage.id);
         
         if (oldIndex !== -1 && newIndex !== -1) {
-          console.log(`Page reorder: moving page from index ${oldIndex} to ${newIndex}`);
           onReorderPages(oldIndex, newIndex);
         }
       }

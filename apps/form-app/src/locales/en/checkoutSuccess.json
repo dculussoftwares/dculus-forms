@@ -43,5 +43,9 @@
   },
   "footer": {
     "receiptEmail": "A receipt has been sent to your email address. You can manage your subscription anytime from the dashboard."
+  },
+  "timeout": {
+    "message": "Your upgrade may take a moment to process. You can check your plan status in Settings.",
+    "goToSettings": "Go to Settings"
   }
 }

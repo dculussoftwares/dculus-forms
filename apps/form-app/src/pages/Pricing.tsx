@@ -94,8 +94,7 @@ export const Pricing = () => {
 
   const formatPrice = (amount: number, curr: string) => {
     const symbol = curr === 'USD' ? '$' : '₹';
-    const displayAmount = curr === 'USD' ? amount / 100 : amount / 100;
-    return `${symbol}${displayAmount.toFixed(2)}`;
+    return `${symbol}${amount.toFixed(2)}`;
   };
 
   const getMonthlyEquivalent = (amount: number, period: string) => {
@@ -236,7 +235,7 @@ export const Pricing = () => {
                       </div>
                       {billingCycle === 'yearly' && (
                         <div className="text-xs mt-1 text-muted-foreground">
-                          {currency === 'USD' ? '$' : '₹'}{getMonthlyEquivalent(price.amount / 100, 'year')}{t('billing.billedAnnually')}
+                          {currency === 'USD' ? '$' : '₹'}{getMonthlyEquivalent(price.amount, 'year')}{t('billing.billedAnnually')}
                         </div>
                       )}
                     </div>

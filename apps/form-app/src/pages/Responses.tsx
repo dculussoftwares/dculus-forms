@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
 import { useTranslation } from '../hooks/useTranslation';
-import { Button, LoadingSpinner, EmptyState } from '@dculus/ui';
+import { Button, LoadingSpinner, EmptyState, toastSuccess, toastError } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { FilterModal } from '../components/Filters';
 import { QuizResultsDialog } from '../plugins/quiz/ResultsDialog';
@@ -12,6 +12,7 @@ import { useResponsesState } from '../hooks/useResponsesState';
 import { createResponsesColumns } from '../utils/createResponsesColumns';
 import { GET_FORM_BY_ID, GET_FORM_RESPONSES } from '../graphql/queries';
 import { GET_FORM_PLUGINS } from '../graphql/plugins';
+import { DELETE_RESPONSE } from '../graphql/mutations';
 import { deserializeFormSchema, FillableFormField, FormSchema } from '@dculus/types';
 import { AlertCircle, ArrowLeft, RotateCcw } from 'lucide-react';
 
@@ -22,6 +23,36 @@ const Responses: React.FC = () => {
 
   const actualFormId = formId || id;
   const responsesState = useResponsesState({ formId: actualFormId });
+
+  const [deleteResponseMutation] = useMutation(DELETE_RESPONSE, {
+    refetchQueries: [
+      {
+        query: GET_FORM_RESPONSES,
+        variables: {
+          formId: actualFormId,
+          page: responsesState.currentPage,
+          limit: responsesState.pageSize,
+          sortBy: responsesState.sortBy,
+          sortOrder: responsesState.sortOrder,
+          filters: responsesState.graphqlFilters,
+          filterLogic:
+            responsesState.graphqlFilters &&
+            responsesState.graphqlFilters.length > 1
+              ? responsesState.filterLogic
+              : undefined,
+        },
+      },
+    ],
+  });
+
+  const handleDeleteResponse = async (responseId: string) => {
+    try {
+      await deleteResponseMutation({ variables: { id: responseId } });
+      toastSuccess(t('table.actions.deleteSuccess'));
+    } catch {
+      toastError(t('table.actions.deleteError'));
+    }
+  };
 
   const { data: formData, loading: formLoading, error: formError } = useQuery(GET_FORM_BY_ID, {
     variables: { id: actualFormId },
@@ -68,8 +99,10 @@ const Responses: React.FC = () => {
       onPluginClick: (pluginType, metadata, responseId) => {
         responsesState.setPluginDialogState({ pluginType, metadata, responseId });
       },
+      onDeleteResponse: handleDeleteResponse,
       t,
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [formData, pluginsData, locale, actualFormId, t]
   );
 

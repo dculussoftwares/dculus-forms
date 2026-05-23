@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from '@apollo/client';
 import { GET_SUBSCRIPTION, CREATE_PORTAL_SESSION } from '../../graphql/subscription';
-import { Card, Button, Badge, toastSuccess, toastError } from '@dculus/ui';
+import { Card, Button, Badge, Alert, AlertTitle, AlertDescription, toastSuccess, toastError } from '@dculus/ui';
 import { CreditCard, TrendingUp, Eye, FileText, Calendar, AlertTriangle, Info, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
 import { UpgradeModal } from './UpgradeModal';
@@ -85,6 +85,7 @@ export const SubscriptionDashboard = () => {
   const getStatusBadgeColor = () => {
     if (status === 'active') return 'bg-primary/10 text-primary';
     if (status === 'cancelled') return 'bg-[var(--tf-error-bg)] text-destructive';
+    if (status === 'past_due') return 'bg-red-100 text-red-800';
     return 'bg-yellow-100 text-yellow-800';
   };
 
@@ -118,6 +119,28 @@ export const SubscriptionDashboard = () => {
 
   return (
     <div className="space-y-6">
+      {/* Past Due Payment Banner */}
+      {status === 'past_due' && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>{t('alerts.pastDue.title')}</AlertTitle>
+          <AlertDescription className="flex items-center justify-between gap-4 flex-wrap">
+            <span>{t('alerts.pastDue.description')}</span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleManageSubscription}
+              disabled={portalLoading}
+              className="border-red-300 text-red-700 hover:bg-red-100 shrink-0"
+            >
+              <CreditCard className="h-3 w-3 mr-2" />
+              {t('alerts.pastDue.manageBilling')}
+              <ExternalLink className="h-3 w-3 ml-2" />
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Alert Banners */}
       {showWarning && (
         <div className="p-4 bg-[var(--tf-error-bg)] border border-[var(--tf-error-bg-lg)] rounded-lg flex items-start gap-3">

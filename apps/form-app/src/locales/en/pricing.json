@@ -37,8 +37,8 @@
         "collaboration": "Advanced collaboration",
         "analytics": "Advanced analytics",
         "support": "Email support",
-        "customDomain": "Custom domain",
-        "apiAccess": "API access"
+        "customDomain": "Custom Domain (Coming Soon)",
+        "apiAccess": "API Access (Coming Soon)"
       }
     },
     "advanced": {
@@ -50,9 +50,9 @@
         "collaboration": "Advanced collaboration",
         "analytics": "Advanced analytics & exports",
         "support": "24/7 priority support",
-        "customDomain": "Custom domain",
-        "apiAccess": "Full API access",
-        "whiteLabel": "White-label options",
+        "customDomain": "Custom Domain (Coming Soon)",
+        "apiAccess": "API Access (Coming Soon)",
+        "whiteLabel": "White-label (Coming Soon)",
         "sla": "99.9% uptime SLA"
       }
     },

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronsUpDown, Plus, Building2 } from 'lucide-react';
 import { useMutation, useQuery, useApolloClient } from '@apollo/client';
 import { gql } from '@apollo/client';
@@ -50,6 +51,7 @@ export function TeamSwitcher() {
   const { activeOrganization } = useAuth();
   const { t } = useTranslation('teamSwitcher');
   const apolloClient = useApolloClient();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
   // Query user's organizations
@@ -154,8 +156,7 @@ export function TeamSwitcher() {
             <DropdownMenuItem
               className="gap-2 p-2"
               onClick={() => {
-                // TODO: Navigate to create organization page
-                toastError(t('comingSoon.title'), t('comingSoon.message'));
+                navigate('/settings/team');
               }}
             >
               <div className="flex size-6 items-center justify-center rounded-lg border bg-background">

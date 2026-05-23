@@ -15,24 +15,24 @@ import {
   Clock,
   ChevronDown,
   ChevronRight,
-  Eye
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { FieldChangeCard } from './FieldChangeCard';
 import { useTranslation } from '../../hooks/useTranslation';
 
 interface EditHistoryTimelineProps {
   editHistory: ResponseEditHistory[];
-  onViewSnapshot?: (editId: string) => void;
   isLoading?: boolean;
 }
 
 export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
   editHistory,
-  onViewSnapshot,
   isLoading = false
 }) => {
   const { t } = useTranslation('responseHistory');
   const [expandedEdits, setExpandedEdits] = useState<Set<string>>(new Set());
+  const [snapshotEdits, setSnapshotEdits] = useState<Set<string>>(new Set());
 
   const toggleExpanded = (editId: string) => {
     const newExpanded = new Set(expandedEdits);
@@ -42,6 +42,16 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
       newExpanded.add(editId);
     }
     setExpandedEdits(newExpanded);
+  };
+
+  const toggleSnapshot = (editId: string) => {
+    const newSnapshot = new Set(snapshotEdits);
+    if (newSnapshot.has(editId)) {
+      newSnapshot.delete(editId);
+    } else {
+      newSnapshot.add(editId);
+    }
+    setSnapshotEdits(newSnapshot);
   };
 
   const getEditTypeColor = (editType: EditType) => {
@@ -110,6 +120,7 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
     <div className="space-y-4">
       {editHistory.map((edit, index) => {
         const isExpanded = expandedEdits.has(edit.id);
+        const isSnapshotOpen = snapshotEdits.has(edit.id);
         const isLatest = index === 0;
 
         return (
@@ -157,15 +168,23 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
                     </div>
 
                     <div className="flex items-center space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onViewSnapshot?.(edit.id)}
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        <Eye className="h-4 w-4" />
-                        {t('editHistoryTimeline.buttons.view')}
-                      </Button>
+                      {edit.fieldChanges && edit.fieldChanges.length > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleSnapshot(edit.id)}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          {isSnapshotOpen ? (
+                            <EyeOff className="h-4 w-4 mr-1" />
+                          ) : (
+                            <Eye className="h-4 w-4 mr-1" />
+                          )}
+                          {isSnapshotOpen
+                            ? t('editHistoryTimeline.buttons.hideSnapshot')
+                            : t('editHistoryTimeline.buttons.view')}
+                        </Button>
+                      )}
                     </div>
                   </div>
 
@@ -227,6 +246,43 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
                           ))}
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {/* Snapshot diff panel */}
+                  {isSnapshotOpen && edit.fieldChanges && edit.fieldChanges.length > 0 && (
+                    <div className="mt-4 rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        {t('editHistoryTimeline.snapshot.title')}
+                      </p>
+                      {edit.fieldChanges.map((fc: any) => (
+                        <div key={fc.id} className="grid grid-cols-[auto_1fr_1fr] items-start gap-3 text-sm">
+                          <Badge
+                            variant="outline"
+                            className={
+                              fc.changeType === 'ADD'
+                                ? 'bg-green-50 text-green-700 border-green-200 shrink-0'
+                                : fc.changeType === 'DELETE'
+                                ? 'bg-red-50 text-red-700 border-red-200 shrink-0'
+                                : 'bg-yellow-50 text-yellow-700 border-yellow-200 shrink-0'
+                            }
+                          >
+                            {fc.changeType}
+                          </Badge>
+                          <div className="min-w-0">
+                            <p className="text-xs text-muted-foreground mb-0.5">{t('editHistoryTimeline.snapshot.before')}</p>
+                            <p className="font-mono text-xs bg-background rounded px-2 py-1 break-all">
+                              {fc.previousValue ?? <span className="italic text-muted-foreground">—</span>}
+                            </p>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs text-muted-foreground mb-0.5">{t('editHistoryTimeline.snapshot.after')}</p>
+                            <p className="font-mono text-xs bg-background rounded px-2 py-1 break-all">
+                              {fc.newValue ?? <span className="italic text-muted-foreground">—</span>}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

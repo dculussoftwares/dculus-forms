@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, Globe, Mail, Shield } from 'lucide-react';
+import { CheckCircle, Globe, Shield } from 'lucide-react';
 import { Button } from '@dculus/ui';
 import { useTranslation } from '../../hooks/useTranslation';
 
@@ -27,12 +27,6 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         { id: 'general', label: t('sidebar.settings.general'), icon: Globe },
         { id: 'thank-you', label: t('sidebar.settings.thankYou'), icon: CheckCircle },
         { id: 'submission-limits', label: t('sidebar.settings.submissionLimits'), icon: Shield },
-      ],
-    },
-    {
-      title: t('sidebar.sections.emailNotifications'),
-      items: [
-        { id: 'email-notifications', label: t('sidebar.settings.emailNotifications'), icon: Mail },
       ],
     },
   ];

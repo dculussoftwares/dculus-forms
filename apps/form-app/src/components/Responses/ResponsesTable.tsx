@@ -88,8 +88,6 @@ export const ResponsesTable: React.FC<ResponsesTableProps> = ({
         onRowClick={(row) => {
           if (onRowClick) {
             onRowClick(row as FormResponse);
-          } else {
-            console.log('Row clicked:', row.id);
           }
         }}
         pageCount={totalPages}

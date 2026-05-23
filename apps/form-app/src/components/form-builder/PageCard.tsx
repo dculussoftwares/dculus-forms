@@ -21,6 +21,7 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { FieldItem } from './FieldItem';
 import { AddFieldPopover } from './AddFieldPopover';
 import { FieldTypeConfig } from './types';
+import { useFormBuilderStore } from '../../store/useFormBuilderStore';
 
 interface PageCardProps {
     page: FormPage;
@@ -42,15 +43,16 @@ export const PageCard: React.FC<PageCardProps> = ({
     const { t } = useTranslation('pageCard');
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [pageTitle, setPageTitle] = useState(page.title || t('defaultPageTitle', { values: { number: index + 1 } }));
+    const updatePageTitle = useFormBuilderStore((state) => state.updatePageTitle);
 
     // Helper function for field count with proper pluralization
     const getFieldCountText = (count: number) => {
         const fieldLabel = count === 1 ? t('fieldCount.singular') : t('fieldCount.plural');
         return `${count} ${fieldLabel}`;
     };
-    
+
     const handleTitleSave = () => {
-        // TODO: Implement page title update
+        updatePageTitle(page.id, pageTitle);
         setIsEditingTitle(false);
     };
     

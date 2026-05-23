@@ -21,7 +21,6 @@ export const authClient = createAuthClient({
   baseURL: baseUrl, // Your backend URL
   fetchOptions: {
     onSuccess: (ctx) => {
-      console.log("ctx.data.session?.activeOrganizationId", ctx.data.session?.activeOrganizationId);
       const authToken = ctx.response.headers.get('set-auth-token');
       if (authToken) {
         sessionStorage.setItem(TOKEN_KEY, authToken);

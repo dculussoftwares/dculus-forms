@@ -12,6 +12,11 @@
     "failedToOpenPortal": "Failed to open portal"
   },
   "alerts": {
+    "pastDue": {
+      "title": "Payment Failed",
+      "description": "Payment failed — please update your payment method to avoid service interruption.",
+      "manageBilling": "Manage Billing"
+    },
     "exceeded": {
       "title": "Usage Limit Exceeded",
       "description": "You've exceeded your plan limits. Upgrade now to restore access to your forms.",

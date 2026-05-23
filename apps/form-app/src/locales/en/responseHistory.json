@@ -8,9 +8,15 @@
       "latest": "Latest"
     },
     "buttons": {
-      "view": "View",
+      "view": "View snapshot",
+      "hideSnapshot": "Hide snapshot",
       "show": "Show",
       "hide": "Hide"
+    },
+    "snapshot": {
+      "title": "Field Changes",
+      "before": "Before",
+      "after": "After"
     },
     "labels": {
       "reason": "Reason:",

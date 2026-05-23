@@ -138,3 +138,9 @@ export const DUPLICATE_FORM = gql`
     }
   }
 `;
+
+export const DELETE_RESPONSE = gql`
+  mutation DeleteResponse($id: ID!) {
+    deleteResponse(id: $id)
+  }
+`;

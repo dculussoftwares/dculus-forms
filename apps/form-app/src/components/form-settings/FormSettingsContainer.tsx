@@ -57,11 +57,12 @@ const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
           />
         );
       default:
+        // Unknown section — fall back to general settings rather than a placeholder
         return (
-          <div className="rounded-xl p-10 text-center bg-white" style={{ border: '1px solid var(--tf-border-medium)' }}>
-            <h3 className="text-sm font-medium mb-1 text-primary">Settings Configuration</h3>
-            <p className="text-xs text-muted-foreground">This section is coming soon.</p>
-          </div>
+          <GeneralSettings
+            form={form} errors={errors} isSaving={isSaving}
+            onSave={onSaveGeneralSettings} onRegenerateShortUrl={onRegenerateShortUrl}
+          />
         );
     }
   };

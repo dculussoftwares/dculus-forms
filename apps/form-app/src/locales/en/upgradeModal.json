@@ -35,8 +35,8 @@
         "collaboration": "Real-time collaboration",
         "analytics": "Advanced analytics",
         "support": "Email support",
-        "customDomain": "Custom domain",
-        "apiAccess": "API access"
+        "customDomain": "Custom Domain (Coming Soon)",
+        "apiAccess": "API Access (Coming Soon)"
       },
       "advanced": {
         "formViews": "Unlimited form views",
@@ -45,9 +45,9 @@
         "collaboration": "Real-time collaboration",
         "analytics": "Advanced analytics + Export",
         "support": "Priority support",
-        "customDomain": "Custom domain",
-        "apiAccess": "API access",
-        "whiteLabel": "White-label options"
+        "customDomain": "Custom Domain (Coming Soon)",
+        "apiAccess": "API Access (Coming Soon)",
+        "whiteLabel": "White-label (Coming Soon)"
       }
     }
   },
