@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useMutation } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
@@ -9,7 +10,7 @@ import {
   Input,
   Label,
   Textarea,
-  LoadingSpinner,
+  Progress,
   toastError,
 } from '@dculus/ui';
 import { CREATE_FORM } from '../graphql/mutations';
@@ -41,9 +42,31 @@ export const UseTemplatePopover: React.FC<UseTemplatePopoverProps> = ({
   });
   const [errors, setErrors] = useState<Partial<FormData>>({});
   
+  const [progress, setProgress] = useState(0);
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const navigate = useNavigate();
   const { organizationId } = useAppConfig();
   const [createForm, { loading }] = useMutation(CREATE_FORM);
+
+  useEffect(() => {
+    if (loading) {
+      setProgress(0);
+      progressIntervalRef.current = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 85) {
+            clearInterval(progressIntervalRef.current!);
+            return 85;
+          }
+          return prev + 5;
+        });
+      }, 120);
+    } else {
+      clearInterval(progressIntervalRef.current!);
+      setProgress(0);
+    }
+    return () => clearInterval(progressIntervalRef.current!);
+  }, [loading]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -134,74 +157,77 @@ export const UseTemplatePopover: React.FC<UseTemplatePopoverProps> = ({
         {children}
       </PopoverTrigger>
       <PopoverContent className="w-96" align="center">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-primary">
-              {t('popover.title')}
-            </h3>
-            <p className="text-sm text-foreground">
-              {t('popover.subtitle', { values: { template: templateName } })}
-            </p>
+        {loading ? (
+          <div className="py-6 flex flex-col items-center gap-5 text-center">
+            <Progress value={progress} className="w-full" />
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10">
+                <Loader2 className="h-5 w-5 text-primary animate-spin" />
+              </div>
+              <p className="font-medium text-sm text-primary">{t('popover.actions.submitting')}</p>
+              <p className="text-xs text-muted-foreground">{templateName}</p>
+            </div>
           </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
+        ) : (
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="form-title">{t('popover.fields.title.label')}</Label>
-              <Input
-                id="form-title"
-                type="text"
-                placeholder={t('popover.fields.title.placeholder')}
-                value={formData.title}
-                onChange={(e) => handleInputChange('title', e.target.value)}
-                className={errors.title ? 'border-destructive' : ''}
-                disabled={loading}
-              />
-              {errors.title && (
-                <p className="text-sm text-destructive">{errors.title}</p>
-              )}
+              <h3 className="text-lg font-semibold text-primary">
+                {t('popover.title')}
+              </h3>
+              <p className="text-sm text-foreground">
+                {t('popover.subtitle', { values: { template: templateName } })}
+              </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="form-description">{t('popover.fields.description.label')}</Label>
-              <Textarea
-                id="form-description"
-                placeholder={t('popover.fields.description.placeholder')}
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                rows={3}
-                disabled={loading}
-              />
-              {errors.description && (
-                <p className="text-sm text-destructive">{errors.description}</p>
-              )}
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsOpen(false)}
-                disabled={loading}
-              >
-                {t('popover.actions.cancel')}
-              </Button>
-              <Button
-                type="submit"
-                disabled={loading || !organizationId}
-                className="min-w-[100px]"
-              >
-                {loading ? (
-                  <div className="flex items-center gap-2">
-                    <LoadingSpinner />
-                    <span>{t('popover.actions.submitting')}</span>
-                  </div>
-                ) : (
-                  t('popover.actions.submit')
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="form-title">{t('popover.fields.title.label')}</Label>
+                <Input
+                  id="form-title"
+                  type="text"
+                  placeholder={t('popover.fields.title.placeholder')}
+                  value={formData.title}
+                  onChange={(e) => handleInputChange('title', e.target.value)}
+                  className={errors.title ? 'border-destructive' : ''}
+                />
+                {errors.title && (
+                  <p className="text-sm text-destructive">{errors.title}</p>
                 )}
-              </Button>
-            </div>
-          </form>
-        </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="form-description">{t('popover.fields.description.label')}</Label>
+                <Textarea
+                  id="form-description"
+                  placeholder={t('popover.fields.description.placeholder')}
+                  value={formData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  rows={3}
+                />
+                {errors.description && (
+                  <p className="text-sm text-destructive">{errors.description}</p>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsOpen(false)}
+                >
+                  {t('popover.actions.cancel')}
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={!organizationId}
+                  className="min-w-[100px]"
+                >
+                  {t('popover.actions.submit')}
+                </Button>
+              </div>
+            </form>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
