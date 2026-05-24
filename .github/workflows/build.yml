@@ -6,19 +6,7 @@ on:
     tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '.github/ISSUE_TEMPLATE/**'
-      - '.github/instructions/**'
-      - '.github/agents/**'
-      - '.github/prompts/**'
   workflow_dispatch:
-
-# Cancel in-progress runs on the same branch/PR when a new commit is pushed
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   id-token: write
@@ -30,7 +18,7 @@ env:
   PNPM_VERSION: '8.15.0'
   REGISTRY: docker.io
   IMAGE_NAME: dculus/forms-backend
-  # Backend URL for production builds
+  # Backend URL for production builds 
   BACKEND_URL: https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io
   # Viewer URL used for linking out of the builder
   FORM_VIEWER_URL: https://dculus-forms-viewer-app.pages.dev
@@ -48,16 +36,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Fetch full history for comprehensive scanning
 
       - name: Run TruffleHog secret scan
         run: |
+          # Create exclude file for TruffleHog
           cat > /tmp/trufflehog-exclude.txt << EOF
           docker-compose.yml
           .github/workflows/ci.yml
           .env.example
           EOF
-
+          
           docker run --rm -v "${{ github.workspace }}:/tmp" -w /tmp \
             -v /tmp/trufflehog-exclude.txt:/exclude.txt \
             ghcr.io/trufflesecurity/trufflehog:latest \
@@ -67,7 +56,9 @@ jobs:
 
       - name: Security scan results
         if: always()
-        run: echo "✅ TruffleHog security scan completed"
+        run: |
+          echo "✅ TruffleHog security scan completed"
+          echo "Note: MongoDB connection strings are excluded as they are development credentials"
 
 
   build-shared-packages:
@@ -90,7 +81,8 @@ jobs:
 
       - name: Get pnpm store directory
         shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
       - name: Setup pnpm cache
         uses: actions/cache@v4
@@ -112,21 +104,17 @@ jobs:
           pnpm --filter @dculus/utils build
           pnpm --filter @dculus/ui build
 
-      # Upload built package dists as an artifact — guaranteed availability
-      # within this workflow run (no cache misses), tiny overhead vs cache
-      - name: Upload shared packages artifact
-        uses: actions/upload-artifact@v4
+      - name: Cache built packages
+        uses: actions/cache@v4
         with:
-          name: shared-packages-dist-${{ github.run_id }}
           path: |
             packages/types/dist
             packages/utils/dist
             packages/ui/dist
-          retention-days: 1
-
+            node_modules/.pnpm
+          key: built-packages-${{ github.sha }}
 
   lint-and-type-check:
-    name: Lint & Type Check
     runs-on: ubuntu-latest
     needs: build-shared-packages
     steps:
@@ -145,7 +133,8 @@ jobs:
 
       - name: Get pnpm store directory
         shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
       - name: Setup pnpm cache
         uses: actions/cache@v4
@@ -158,14 +147,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Restore pre-built package dists — avoids rebuilding types/utils/ui
-      - name: Download shared packages artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: shared-packages-dist-${{ github.run_id }}
-
-      - name: Generate Prisma client
-        run: pnpm db:generate
+      - name: Build core packages for pipeline
+        run: |
+          pnpm db:generate
+          pnpm --filter @dculus/types build
+          pnpm --filter @dculus/utils build
+          pnpm --filter @dculus/ui build
+          pnpm --filter backend build
 
       - name: Run linting
         run: pnpm lint
@@ -175,8 +163,7 @@ jobs:
 
       - name: Security audit
         run: pnpm audit --audit-level=high
-        continue-on-error: true
-
+        continue-on-error: true  # Don't block on audit warnings initially — review and fix separately
 
   build-backend:
     name: Build Backend
@@ -196,25 +183,18 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - name: Get pnpm store directory
-        shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
+      - name: Restore built packages cache
         uses: actions/cache@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          path: |
+            packages/types/dist
+            packages/utils/dist
+            packages/ui/dist
+            node_modules/.pnpm
+          key: built-packages-${{ github.sha }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Download shared packages artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: shared-packages-dist-${{ github.run_id }}
 
       - name: Lint backend
         run: pnpm --filter backend lint
@@ -222,9 +202,23 @@ jobs:
       - name: Type check backend
         run: pnpm --filter backend type-check
 
-      # Run tests once with coverage — vitest --coverage runs all tests and
-      # collects coverage in a single pass; running plain `test` first wastes time
-      - name: Run unit tests with coverage
+      - name: Run unit tests
+        env:
+          NODE_ENV: test
+          # Phase 2 security fix removed the fallback from requireEnv('BETTER_AUTH_SECRET').
+          # Unit tests don't hit a real auth server, so a deterministic test value is fine here.
+          # Production deployments must set this from Azure Key Vault / GitHub Secrets.
+          BETTER_AUTH_SECRET: test-only-secret-for-unit-tests-not-used-in-production
+          # Stub out S3 env vars so env.ts module loads cleanly in the test environment
+          PUBLIC_S3_ENDPOINT: http://localhost:9000
+          PUBLIC_S3_ACCESS_KEY: test-access-key
+          PUBLIC_S3_SECRET_KEY: test-secret-key
+          PUBLIC_S3_BUCKET_NAME: test-public-bucket
+          PRIVATE_S3_BUCKET_NAME: test-private-bucket
+          PUBLIC_S3_CDN_URL: http://localhost:9000
+        run: pnpm --filter backend test
+
+      - name: Check test coverage threshold
         env:
           NODE_ENV: test
           BETTER_AUTH_SECRET: test-only-secret-for-unit-tests-not-used-in-production
@@ -235,19 +229,10 @@ jobs:
           PRIVATE_S3_BUCKET_NAME: test-private-bucket
           PUBLIC_S3_CDN_URL: http://localhost:9000
         run: pnpm --filter backend test:coverage
-        continue-on-error: true  # Coverage thresholds not yet enforced; remove once stable
+        continue-on-error: true  # Report but don't block yet — set threshold violation as blocking once stable
 
       - name: Build backend
         run: pnpm --filter backend build
-
-      # Upload compiled backend so e2e-local can skip the backend rebuild step
-      - name: Upload backend dist artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-dist-${{ github.run_id }}
-          path: apps/backend/dist
-          retention-days: 1
-
 
   integration-tests:
     name: Integration Tests
@@ -267,25 +252,18 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - name: Get pnpm store directory
-        shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
+      - name: Restore built packages cache
         uses: actions/cache@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          path: |
+            packages/types/dist
+            packages/utils/dist
+            packages/ui/dist
+            node_modules/.pnpm
+          key: built-packages-${{ github.sha }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Download shared packages artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: shared-packages-dist-${{ github.run_id }}
 
       - name: Pre-pull integration PostgreSQL image
         run: docker compose -f test/integration/docker-compose.postgres.yml pull postgres
@@ -347,6 +325,8 @@ jobs:
           DATABASE_URL: ${{ env.DATABASE_URL }}
           DIRECT_URL: ${{ env.DIRECT_URL }}
           MANAGE_INTEGRATION_DOCKER: ${{ env.MANAGE_INTEGRATION_DOCKER }}
+          # Phase 2 fix removed the BETTER_AUTH_SECRET fallback — integration tests
+          # spin up the real backend server which requires this at startup.
           BETTER_AUTH_SECRET: test-only-secret-for-integration-tests-not-used-in-production
           BETTER_AUTH_URL: http://localhost:4000
           PUBLIC_S3_ENDPOINT: http://localhost:9000
@@ -378,7 +358,6 @@ jobs:
           echo "- Backend Server: ✅" >> $GITHUB_STEP_SUMMARY
           echo "- Prisma Schema: ✅" >> $GITHUB_STEP_SUMMARY
 
-
   build-form-app:
     name: Build Form App
     runs-on: ubuntu-latest
@@ -397,25 +376,18 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - name: Get pnpm store directory
-        shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
+      - name: Restore built packages cache
         uses: actions/cache@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          path: |
+            packages/types/dist
+            packages/utils/dist
+            packages/ui/dist
+            node_modules/.pnpm
+          key: built-packages-${{ github.sha }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Download shared packages artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: shared-packages-dist-${{ github.run_id }}
 
       - name: Lint form-app
         run: pnpm --filter form-app lint
@@ -431,7 +403,6 @@ jobs:
           VITE_GRAPHQL_URL: ${{ env.BACKEND_URL }}/graphql
           VITE_FORM_VIEWER_URL: ${{ env.FORM_VIEWER_URL }}
         run: pnpm --filter form-app build
-
 
   build-form-viewer:
     name: Build Form Viewer
@@ -451,25 +422,18 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - name: Get pnpm store directory
-        shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
+      - name: Restore built packages cache
         uses: actions/cache@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          path: |
+            packages/types/dist
+            packages/utils/dist
+            packages/ui/dist
+            node_modules/.pnpm
+          key: built-packages-${{ github.sha }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Download shared packages artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: shared-packages-dist-${{ github.run_id }}
 
       - name: Lint form-viewer
         run: pnpm --filter form-viewer lint
@@ -479,7 +443,6 @@ jobs:
 
       - name: Build form-viewer
         run: pnpm --filter form-viewer build
-
 
   build-admin-app:
     name: Build Admin App
@@ -499,25 +462,18 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - name: Get pnpm store directory
-        shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
+      - name: Restore built packages cache
         uses: actions/cache@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          path: |
+            packages/types/dist
+            packages/utils/dist
+            packages/ui/dist
+            node_modules/.pnpm
+          key: built-packages-${{ github.sha }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Download shared packages artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: shared-packages-dist-${{ github.run_id }}
 
       - name: Lint admin-app
         run: pnpm --filter admin-app lint
@@ -530,7 +486,6 @@ jobs:
           VITE_API_URL: ${{ env.BACKEND_URL }}
           VITE_GRAPHQL_URL: ${{ env.BACKEND_URL }}/graphql
         run: pnpm --filter admin-app build
-
 
   e2e-local:
     name: E2E Tests (Local Runner)
@@ -559,12 +514,14 @@ jobs:
       BETTER_AUTH_SECRET: e2e-test-secret-at-least-32-chars-long-ok
       BETTER_AUTH_URL: http://localhost:4000
       NODE_ENV: test
+      # Stub S3 — no real uploads in local E2E
       PUBLIC_S3_ENDPOINT: http://localhost:9000
       PUBLIC_S3_ACCESS_KEY: test-key
       PUBLIC_S3_SECRET_KEY: test-secret
       PUBLIC_S3_BUCKET_NAME: test-public
       PRIVATE_S3_BUCKET_NAME: test-private
       PUBLIC_S3_CDN_URL: http://localhost:9000
+      # E2E credentials
       E2E_EMAIL: e2e@dculus-ci.test
       E2E_PASSWORD: E2eCiTest123!
       E2E_FORM_APP_URL: http://localhost:3000
@@ -586,32 +543,18 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - name: Get pnpm store directory
-        shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
+      - name: Restore built packages cache
         uses: actions/cache@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          path: |
+            packages/types/dist
+            packages/utils/dist
+            packages/ui/dist
+            node_modules/.pnpm
+          key: built-packages-${{ github.sha }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Download shared packages artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: shared-packages-dist-${{ github.run_id }}
-
-      # Reuse the backend binary built by build-backend — avoids a full tsc compile here
-      - name: Download backend dist artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-dist-${{ github.run_id }}
-          path: apps/backend/dist
 
       - name: Generate Prisma client & run migrations
         run: |
@@ -649,9 +592,9 @@ jobs:
           E2E_PASSWORD=${{ env.E2E_PASSWORD }} \
           npx tsx src/scripts/create-e2e-user.ts
 
-      # Backend dist was downloaded above — skip the tsc compile and start directly
       - name: Start backend
         run: |
+          pnpm --filter backend build
           node apps/backend/dist/apps/backend/src/index.js &
           echo "BACKEND_PID=$!" >> $GITHUB_ENV
         env:
@@ -709,7 +652,6 @@ jobs:
           path: test-results/screenshots/
           if-no-files-found: ignore
 
-
   create-release-artifacts:
     name: Create Release Artifacts
     runs-on: ubuntu-latest
@@ -729,37 +671,34 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - name: Get pnpm store directory
-        shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
+      - name: Restore built packages cache
         uses: actions/cache@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          path: |
+            packages/types/dist
+            packages/utils/dist
+            packages/ui/dist
+            node_modules/.pnpm
+          key: built-packages-${{ github.sha }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Download shared packages artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: shared-packages-dist-${{ github.run_id }}
-
       - name: Build form-app for release
         run: |
           echo "Building form-app without hardcoded secrets..."
+          echo "Users will configure environment variables in their hosting provider"
           pnpm --filter form-app build
 
       - name: Build form-viewer for release
-        run: pnpm --filter form-viewer build
+        run: |
+          echo "Building form-viewer..."
+          pnpm --filter form-viewer build
 
       - name: Build admin-app for release
         run: |
           echo "Building admin-app without hardcoded secrets..."
+          echo "Users will configure environment variables in their hosting provider"
           pnpm --filter admin-app build
 
       - name: Extract version from tag
@@ -770,20 +709,29 @@ jobs:
           echo "Building release artifacts for version: $VERSION"
 
       - name: Build backend for release
-        run: pnpm --filter backend build
+        run: |
+          echo "Building backend..."
+          pnpm --filter backend build
 
       - name: Create backend release directory
         run: |
+          echo "Preparing backend release package..."
           mkdir -p backend-release
+
+          # Copy built files
           cp -r apps/backend/dist backend-release/
           cp -r apps/backend/prisma backend-release/
           cp apps/backend/package.json backend-release/
           cp apps/backend/.env.example backend-release/
           cp apps/backend/README-DEPLOYMENT.md backend-release/
+
+          # Copy node_modules (production only)
           cd apps/backend
           pnpm install --prod --frozen-lockfile
           cd ../..
           cp -r apps/backend/node_modules backend-release/
+
+          echo "Backend release package prepared"
           du -sh backend-release/
 
       - name: Create backend ZIP archive
@@ -792,6 +740,7 @@ jobs:
           zip -r ../backend-build-v${{ steps.version.outputs.version }}.zip .
           cd ..
           ls -lh backend-build-v${{ steps.version.outputs.version }}.zip
+          echo "Backend ZIP size: $(du -h backend-build-v${{ steps.version.outputs.version }}.zip | cut -f1)"
 
       - name: Create form-app ZIP archive
         run: |
@@ -853,7 +802,8 @@ jobs:
           echo "- ✅ form-app-build-v${{ steps.version.outputs.version }}.zip" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ form-viewer-build-v${{ steps.version.outputs.version }}.zip" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ admin-app-build-v${{ steps.version.outputs.version }}.zip" >> $GITHUB_STEP_SUMMARY
-
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "These artifacts will be attached to the GitHub Release." >> $GITHUB_STEP_SUMMARY
 
   create-github-release:
     name: Create GitHub Release
@@ -896,7 +846,10 @@ jobs:
           name: backend-build-v${{ steps.version.outputs.version }}
 
       - name: Verify downloaded artifacts
-        run: ls -lh *.zip
+        run: |
+          echo "Verifying downloaded artifacts..."
+          ls -lh *.zip
+          echo "All artifacts downloaded successfully!"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -933,6 +886,7 @@ jobs:
             >
             > These build artifacts are **generic builds without hardcoded secrets or API keys**.
             > You MUST configure environment variables in your hosting provider before deployment.
+            > Never commit secrets to version control or include them in public releases.
 
             ### 📋 Deployment Instructions
 
@@ -940,10 +894,22 @@ jobs:
 
             **Option 1: Docker (Recommended)**
             ```bash
+            # Pull using version tag with v prefix
             docker pull dculus/forms-backend:v${{ steps.version.outputs.version }}
+            
+            # Or pull latest
+            docker pull dculus/forms-backend:latest
+            
+            # Run with environment file
             docker run -d -p 4000:4000 --env-file .env dculus/forms-backend:v${{ steps.version.outputs.version }}
             ```
 
+            **Available Docker Tags for this Release:**
+            - `dculus/forms-backend:v${{ steps.version.outputs.version }}` (e.g., v1.2.3)
+            - `dculus/forms-backend:v{{ steps.version.outputs.major }}.{{ steps.version.outputs.minor }}` (e.g., v1.2)
+            - `dculus/forms-backend:v{{ steps.version.outputs.major }}` (e.g., v1)
+            - `dculus/forms-backend:latest` (always points to the most recent stable release)
+            
             **Option 2: Node.js Direct**
             ```bash
             unzip backend-build-v${{ steps.version.outputs.version }}.zip
@@ -953,12 +919,49 @@ jobs:
             node dist/apps/backend/src/index.js
             ```
 
+            See included `README-DEPLOYMENT.md` for detailed backend deployment instructions including PM2, systemd, and production best practices.
+
             **Frontend Deployment:**
 
             1. Download the desired application ZIP file from the assets below
             2. Extract: `unzip <app-name>.zip`
-            3. **Configure environment variables** in your hosting provider
-            4. Deploy the `dist/` folder to your host (Cloudflare Pages, Netlify, Vercel, S3, nginx)
+            3. **Configure environment variables** in your hosting provider (see below)
+            4. Deploy the `dist/` folder:
+               - **Cloudflare Pages**: `wrangler pages deploy dist/`
+               - **Netlify**: `netlify deploy --prod --dir=dist`
+               - **Vercel**: `vercel --prod dist/`
+               - **AWS S3**: `aws s3 sync dist/ s3://bucket --acl public-read`
+               - **nginx**: Copy `dist/` to web root
+
+            ### 🔧 Environment Variables Configuration
+
+            **⚠️ REQUIRED:** Configure these in your hosting provider or .env file:
+
+            **Backend** (see `.env.example`):
+            - `DATABASE_URL` - MongoDB connection string
+            - `BETTER_AUTH_SECRET` - Min 32 character secret
+            - `BETTER_AUTH_URL` - Public API URL
+            - `CORS_ORIGINS` - Allowed frontend URLs
+            - `S3_*` - S3 storage configuration
+            - Full list in `README-DEPLOYMENT.md`
+
+            **Form App:**
+            - `VITE_API_URL` - Backend API URL
+            - `VITE_GRAPHQL_URL` - GraphQL endpoint
+            - `VITE_FORM_VIEWER_URL` - Base URL for the public form viewer
+            - `VITE_CDN_ENDPOINT` - CDN endpoint
+            - `VITE_PIXABAY_API_KEY` - Pixabay key
+
+            **Admin App:**
+            - `VITE_API_URL` - Backend API URL
+            - `VITE_GRAPHQL_URL` - GraphQL endpoint
+
+            **Form Viewer:**
+            - No build-time env vars needed
+
+            ### 📚 Documentation
+
+            For detailed deployment guides and documentation, visit the repository README.
 
       - name: Release Summary
         run: |
@@ -966,13 +969,21 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Release**: ${{ steps.version.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
           echo "**URL**: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
-
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Attached Artifacts:" >> $GITHUB_STEP_SUMMARY
+          echo "- backend-build-v${{ steps.version.outputs.version }}.zip (Backend API)" >> $GITHUB_STEP_SUMMARY
+          echo "- form-app-build-v${{ steps.version.outputs.version }}.zip (Form Builder)" >> $GITHUB_STEP_SUMMARY
+          echo "- form-viewer-build-v${{ steps.version.outputs.version }}.zip (Form Viewer)" >> $GITHUB_STEP_SUMMARY
+          echo "- admin-app-build-v${{ steps.version.outputs.version }}.zip (Admin Dashboard)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🚀 Deployment Options:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend**: Docker image or Node.js ZIP artifact" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend**: Deploy to Cloudflare, Netlify, Vercel, AWS, Azure, or nginx" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Visit the release page to download artifacts and follow deployment instructions." >> $GITHUB_STEP_SUMMARY
 
   build-and-push:
-    # Depends on build-backend (which already ran lint+typecheck+tests) and
-    # integration-tests. Previously waited for lint-and-type-check, but
-    # build-backend already covers backend quality gates.
-    needs: [build-backend, integration-tests]
+    needs: [lint-and-type-check, integration-tests]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main'
     permissions:
@@ -1003,17 +1014,22 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
+            # Semantic versioning for tags (e.g., v1.2.3 -> v1.2.3, v1.2, v1)
             type=semver,pattern=v{{version}}
             type=semver,pattern=v{{major}}.{{minor}}
             type=semver,pattern=v{{major}}
+            # Branch-based tags (e.g., main, develop)
             type=ref,event=branch
             type=ref,event=pr
+            # Full SHA tag for automation reliability (e.g., sha-<full_sha>)
             type=sha,format=long
+            # Latest tag for default branch
             type=raw,value=latest,enable={{is_default_branch}}
+            # Custom tag from workflow_dispatch
             type=raw,value=${{ github.event.inputs.tag }},enable=${{ github.event_name == 'workflow_dispatch' }}
           labels: |
             org.opencontainers.image.title=Dculus Forms Backend
-            org.opencontainers.image.description=Express.js + GraphQL backend for Dculus Forms with collaborative editing
+            org.opencontainers.image.description=Express.js + GraphQL backend for Dculus Forms with MongoDB and collaborative editing
             org.opencontainers.image.vendor=Dculus Industries
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.version=${{ github.ref_name }}
@@ -1022,9 +1038,25 @@ jobs:
         run: |
           echo "## 🏷️ Docker Image Tags" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The following tags will be applied to the Docker image:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+            echo "📌 **Version Release Detected**: v$VERSION" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Docker Pull Commands**:" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+            echo "# Pull specific version" >> $GITHUB_STEP_SUMMARY
+            echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "# Or pull latest" >> $GITHUB_STEP_SUMMARY
+            echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -1040,6 +1072,7 @@ jobs:
           build-args: |
             BUILDKIT_INLINE_CACHE=1
 
+
       - name: Summary
         if: github.event_name != 'pull_request'
         run: |
@@ -1047,7 +1080,16 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Image**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest\`" >> $GITHUB_STEP_SUMMARY
           echo "**Platforms**: linux/amd64, linux/arm64" >> $GITHUB_STEP_SUMMARY
-
+          echo "**Size**: $(docker images ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest --format 'table {{.Size}}' | tail -1)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Quick Deploy Commands:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
+          echo "docker run -d -p 4000:4000 --name dculus-backend \\" >> $GITHUB_STEP_SUMMARY
+          echo "  -e DATABASE_URL='your-db-url' \\" >> $GITHUB_STEP_SUMMARY
+          echo "  -e BETTER_AUTH_SECRET='your-auth-secret' \\" >> $GITHUB_STEP_SUMMARY
+          echo "  ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
   build-summary:
     name: Build Summary
@@ -1067,14 +1109,14 @@ jobs:
           echo "| Backend Build | ${{ needs.build-backend.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Integration Tests | ${{ needs.integration-tests.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| E2E Tests (Local) | ${{ needs.e2e-local.result == 'success' && '✅' || needs.e2e-local.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Docker Build & Push | ${{ needs.build-and-push.result == 'success' && '✅' || needs.build-and-push.result == 'skipped' && '⏭️ Skipped (main/tags only)' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Build & Push | ${{ needs.build-and-push.result == 'success' && '✅' || needs.build-and-push.result == 'skipped' && '⏭️ Skipped (tags only)' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-
+          
           if [[ "${{ needs.build-and-push.result }}" == "success" ]]; then
             echo "### 🐳 Docker Image Built" >> $GITHUB_STEP_SUMMARY
             echo "✅ Backend Docker image built and pushed to Docker Hub" >> $GITHUB_STEP_SUMMARY
             echo "📦 Ready for deployment via multi-cloud-deployment.yml workflow" >> $GITHUB_STEP_SUMMARY
           elif [[ "${{ needs.build-and-push.result }}" == "skipped" ]]; then
             echo "### ℹ️ Docker Build Skipped" >> $GITHUB_STEP_SUMMARY
-            echo "Docker images are only built on version tags or main branch" >> $GITHUB_STEP_SUMMARY
+            echo "Docker images are only built on version tags (e.g., v1.2.3) or main branch" >> $GITHUB_STEP_SUMMARY
           fi
