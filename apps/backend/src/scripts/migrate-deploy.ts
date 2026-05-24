@@ -49,6 +49,21 @@ async function main() {
       }
     } else {
       console.log('Migration history found. Applying any pending migrations...');
+
+      // Detect migrations that started but never finished (P3009 failure state).
+      // Resolve each as rolled-back so migrate deploy can re-apply them with the
+      // current (idempotent) SQL file content.
+      const failedMigrations = await prisma.$queryRaw<Array<{ migration_name: string }>>`
+        SELECT migration_name FROM _prisma_migrations
+        WHERE started_at IS NOT NULL
+          AND finished_at IS NULL
+          AND rolled_back_at IS NULL
+      `;
+
+      for (const { migration_name } of failedMigrations) {
+        console.log(`Found failed migration: ${migration_name}. Resolving as rolled-back so it can be re-applied...`);
+        execSync(`npx prisma migrate resolve --rolled-back ${migration_name}`, { stdio: 'inherit' });
+      }
     }
   } finally {
     await prisma.$disconnect();
