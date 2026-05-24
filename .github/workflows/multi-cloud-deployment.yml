@@ -338,7 +338,8 @@ jobs:
   check-docker-image:
     name: 2.1. Validate Docker Image Availability
     runs-on: ubuntu-latest
-    needs: [ determine-environment, setup-azure-backend ]
+    # Only needs determine-environment — Docker Hub check is independent of Azure Terraform backend
+    needs: [ determine-environment ]
     if: needs.determine-environment.outputs.deploy_azure == 'true'
     outputs:
       image_exists: ${{ steps.check-image.outputs.exists }}
@@ -481,9 +482,21 @@ jobs:
           node-version: "22.14.0"
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: "8.15.0"
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -930,25 +943,33 @@ jobs:
           node-version: "22.14.0"
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: "8.15.0"
+
+      - name: Get pnpm store directory
+        shell: bash
+        working-directory: ./source
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('source/**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
         working-directory: ./source
-        run: |
-          echo "📦 Installing dependencies..."
-          pnpm install --frozen-lockfile
-          echo "✅ Dependencies installed"
+        run: pnpm install --frozen-lockfile
 
       - name: Build shared packages
         working-directory: ./source
         run: |
-          echo "🔨 Building shared packages..."
           pnpm --filter @dculus/types build
           pnpm --filter @dculus/utils build
           pnpm --filter @dculus/ui build
-          echo "✅ Shared packages built"
 
       - name: Build form-app with environment-specific variables
         working-directory: ./source
@@ -1022,13 +1043,10 @@ jobs:
           CUSTOM_DOMAIN="${{ needs.terraform-cloudflare-pages.outputs.custom_domain }}"
           echo "🔍 Checking deployment at: $CUSTOM_DOMAIN"
 
-          # Wait for DNS propagation and deployment
-          echo "⏳ Waiting 60 seconds for DNS propagation..."
-          sleep 60
-
-          # Retry health check up to 5 times
-          MAX_RETRIES=5
+          # Retry with backoff — DNS + CDN propagation is usually done within 2 retries
+          MAX_RETRIES=8
           RETRY_COUNT=0
+          DELAY=15
 
           while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
             HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -L "$CUSTOM_DOMAIN" || echo "000")
@@ -1039,12 +1057,9 @@ jobs:
               exit 0
             else
               RETRY_COUNT=$((RETRY_COUNT + 1))
-              echo "⚠️ Health check attempt $RETRY_COUNT/$MAX_RETRIES failed (HTTP $HTTP_CODE)"
-
-              if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-                echo "⏳ Waiting 30 seconds before retry..."
-                sleep 30
-              fi
+              echo "⚠️ Health check attempt $RETRY_COUNT/$MAX_RETRIES (HTTP $HTTP_CODE) — retrying in ${DELAY}s..."
+              sleep $DELAY
+              DELAY=$((DELAY + 15))  # back off gradually: 15s, 30s, 45s...
             fi
           done
 
@@ -1192,25 +1207,33 @@ jobs:
           node-version: "22.14.0"
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: "8.15.0"
+
+      - name: Get pnpm store directory
+        shell: bash
+        working-directory: ./source
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('source/**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
         working-directory: ./source
-        run: |
-          echo "📦 Installing dependencies..."
-          pnpm install --frozen-lockfile
-          echo "✅ Dependencies installed"
+        run: pnpm install --frozen-lockfile
 
       - name: Build shared packages
         working-directory: ./source
         run: |
-          echo "🔨 Building shared packages..."
           pnpm --filter @dculus/types build
           pnpm --filter @dculus/utils build
           pnpm --filter @dculus/ui build
-          echo "✅ Shared packages built"
 
       - name: Build admin-app with environment-specific variables
         working-directory: ./source
@@ -1451,25 +1474,33 @@ jobs:
           node-version: "22.14.0"
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: "8.15.0"
+
+      - name: Get pnpm store directory
+        shell: bash
+        working-directory: ./source
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('source/**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
         working-directory: ./source
-        run: |
-          echo "📦 Installing dependencies..."
-          pnpm install --frozen-lockfile
-          echo "✅ Dependencies installed"
+        run: pnpm install --frozen-lockfile
 
       - name: Build shared packages
         working-directory: ./source
         run: |
-          echo "🔨 Building shared packages..."
           pnpm --filter @dculus/types build
           pnpm --filter @dculus/utils build
           pnpm --filter @dculus/ui build
-          echo "✅ Shared packages built"
 
       - name: Build form-viewer with environment-specific variables
         working-directory: ./source
@@ -1631,9 +1662,22 @@ jobs:
           node-version: "22.14.0"
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: "8.15.0"
+
+      - name: Get pnpm store directory
+        shell: bash
+        working-directory: ./source
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('source/**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
         working-directory: ./source
