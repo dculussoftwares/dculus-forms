@@ -66,7 +66,7 @@ export const InvitationsList: React.FC<InvitationsListProps> = ({
         t('invitations.toasts.resent.description', { values: { email: invitation.email } })
       );
       onInvitationAction();
-    } catch (error: any) {
+    } catch {
       toastError(t('invitations.toasts.resendError.title'), t('invitations.toasts.resendError.description'));
     } finally {
       setLoadingId(null);

@@ -57,7 +57,7 @@ export const MagicLinkCallback = () => {
         sessionStorage.removeItem('redirectAfterAuth');
         window.location.replace(redirect);
       });
-  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   if (error) {
     return (
