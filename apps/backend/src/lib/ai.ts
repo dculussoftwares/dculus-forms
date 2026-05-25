@@ -8,7 +8,9 @@ const provider: ProviderName = (process.env.AI_PROVIDER as ProviderName) ?? 'azu
 
 function buildAzureModel(deployment: string): LanguageModel {
   const azure = createAzure({
-    resourceName: process.env.AZURE_OPENAI_RESOURCE_NAME!,
+    // Use the full endpoint URL — Azure appends a unique suffix to resource names
+    // so we can't reconstruct it from the name alone.
+    baseURL: `${process.env.AZURE_OPENAI_ENDPOINT}openai`,
     apiKey: process.env.AZURE_OPENAI_API_KEY!,
   });
   return azure(deployment) as LanguageModel;

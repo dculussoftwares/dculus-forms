@@ -237,8 +237,8 @@ resource "azurerm_container_app" "backend" {
       }
 
       env {
-        name  = "AZURE_OPENAI_RESOURCE_NAME"
-        value = azurerm_cognitive_account.ai.name
+        name  = "AZURE_OPENAI_ENDPOINT"
+        value = azurerm_cognitive_account.ai.endpoint
       }
 
       env {
