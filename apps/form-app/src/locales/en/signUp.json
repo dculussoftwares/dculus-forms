@@ -88,7 +88,8 @@
     "signInFailed": "Verification successful, but sign-in failed. Please sign in manually.",
     "resendFailed": "Failed to resend verification code. Please try again.",
     "resendGenericFailed": "Failed to resend verification code",
-    "joinSuccess": "Welcome! You have successfully joined the organization."
+    "joinSuccess": "Welcome! You have successfully joined the organization.",
+    "passwordCompromised": "This password has appeared in a known data breach. Please choose a different password."
   },
   "links": {
     "signInPrompt": "Already have an account?",

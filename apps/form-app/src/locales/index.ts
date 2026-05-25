@@ -221,6 +221,8 @@ import enEmailVerification from './en/emailVerification.json';
 import taEmailVerification from './ta/emailVerification.json';
 import enAccountSettings from './en/accountSettings.json';
 import taAccountSettings from './ta/accountSettings.json';
+import enMagicLinkCallback from './en/magicLinkCallback.json';
+import taMagicLinkCallback from './ta/magicLinkCallback.json';
 
 const enTranslations = {
   common: enCommon,
@@ -335,6 +337,7 @@ const enTranslations = {
   pricing: enPricing,
   emailVerification: enEmailVerification,
   accountSettings: enAccountSettings,
+  magicLinkCallback: enMagicLinkCallback,
 } as const;
 
 const taTranslations = {
@@ -450,6 +453,7 @@ const taTranslations = {
   pricing: taPricing,
   emailVerification: taEmailVerification,
   accountSettings: taAccountSettings,
+  magicLinkCallback: taMagicLinkCallback,
 } as const;
 
 export const translations = {

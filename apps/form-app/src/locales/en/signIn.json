@@ -44,5 +44,18 @@
     "forgotPassword": "Forgot your password?",
     "signUpPrompt": "Don't have an account?",
     "signUp": "Sign up"
+  },
+  "authMode": {
+    "password": "Password",
+    "magicLink": "Magic Link"
+  },
+  "magicLink": {
+    "description": "Enter your email and we'll send you a one-click sign-in link. No password needed.",
+    "sendButton": "Send Magic Link",
+    "sending": "Sending...",
+    "sentTitle": "Check your inbox!",
+    "sentDescription": "We sent a sign-in link to {{email}}. It expires in 5 minutes.",
+    "tryDifferentEmail": "Try a different email",
+    "noAccountError": "No account found for this email. Please sign up first."
   }
 }

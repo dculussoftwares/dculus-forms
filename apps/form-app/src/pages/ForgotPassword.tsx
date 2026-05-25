@@ -69,7 +69,12 @@ export const ForgotPassword = () => {
     try {
       const response = await authClient.resetPassword({ newPassword, token });
       if (response.error) {
-        setErrors({ submit: response.error.message || t('messages.resetFailed') });
+        const errorCode = (response.error as any)?.code;
+        if (errorCode === 'PASSWORD_COMPROMISED') {
+          setErrors({ password: t('messages.passwordCompromised') });
+        } else {
+          setErrors({ submit: response.error.message || t('messages.resetFailed') });
+        }
       } else {
         navigate('/signin?message=password-reset-success');
       }

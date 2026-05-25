@@ -1,12 +1,13 @@
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
-import { admin, bearer, emailOTP, organization } from 'better-auth/plugins';
+import { admin, bearer, emailOTP, haveIBeenPwned, magicLink, organization } from 'better-auth/plugins';
 import { adminAc } from 'better-auth/plugins/admin/access';
 import { prisma } from './prisma.js';
 import { authConfig } from './env.js';
 import { logger } from '../lib/logger.js';
 import {
   sendInvitationEmail,
+  sendMagicLinkEmail,
   sendOTPEmail,
   sendResetPasswordEmail,
 } from '../services/emailService.js';
@@ -118,6 +119,24 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
           otp,
           type,
         });
+      },
+    }),
+    ...(process.env.NODE_ENV !== 'test' ? [haveIBeenPwned({
+      customPasswordCompromisedMessage:
+        'This password has appeared in a data breach. Please choose a different password to keep your account secure.',
+    })] : []),
+    magicLink({
+      expiresIn: 5 * 60, // 5 minutes
+      disableSignUp: true, // New users must go through /signup to create an org + billing
+      async sendMagicLink({ email, token }) {
+        // Point the email link at the frontend callback page with the token.
+        // The frontend will call magicLink.verify() as a JSON fetch (no redirect),
+        // which lets the bearer plugin return set-auth-token in the response body
+        // so sessionStorage can store it — the redirect-based backend flow loses
+        // the header before the frontend ever sees it.
+        const formAppUrl = process.env.FORM_APP_URL || 'http://localhost:3000';
+        const magicLinkUrl = `${formAppUrl}/magic-link/verify?token=${token}`;
+        await sendMagicLinkEmail({ to: email, url: magicLinkUrl });
       },
     }),
   ],

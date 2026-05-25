@@ -12,6 +12,7 @@ import { SignUp } from './pages/SignUp';
 import { SignIn } from './pages/SignIn';
 import { EmailVerification } from './pages/EmailVerification';
 import { ForgotPassword } from './pages/ForgotPassword';
+import { MagicLinkCallback } from './pages/MagicLinkCallback';
 import InviteAcceptance from './pages/InviteAcceptance';
 import { Pricing } from './pages/Pricing';
 import { CheckoutSuccess } from './pages/subscription/success';
@@ -54,6 +55,7 @@ function App() {
           <Route path="/verify-email" element={<EmailVerification />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/magic-link/verify" element={<MagicLinkCallback />} />
           <Route path="/invite/:invitationId" element={<InviteAcceptance />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/subscription/success" element={<CheckoutSuccess />} />

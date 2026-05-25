@@ -1,0 +1,16 @@
+{
+  "loading": {
+    "title": "Signing you in...",
+    "subtitle": "Please wait while we verify your magic link."
+  },
+  "error": {
+    "title": "Link expired or invalid",
+    "noAccountTitle": "No account found",
+    "action": "Back to sign in",
+    "signUpAction": "Create an account"
+  },
+  "messages": {
+    "invalidOrExpired": "This magic link has expired or is invalid. Please request a new one.",
+    "noAccount": "No account exists for this email address. Please create an account first to use magic link sign-in."
+  }
+}

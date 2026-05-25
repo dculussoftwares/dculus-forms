@@ -47,9 +47,11 @@ const errorLink = onError(({ graphQLErrors }) => {
       code === GRAPHQL_ERROR_CODES.AUTHENTICATION_REQUIRED
     ) {
       // Session expired — redirect to sign-in so user doesn't silently lose access.
-      // Guard: don't redirect if already on /signin (prevents loops when a stale
-      // sessionStorage token fires queries during the sign-in page load).
-      if (!window.location.pathname.startsWith('/signin')) {
+      // Guard: skip public auth pages to prevent redirect loops or clobbering
+      // callback pages (magic-link/verify, verify-email, etc.) that don't need a session.
+      const PUBLIC_AUTH_PATHS = ['/signin', '/signup', '/forgot-password', '/verify-email', '/magic-link/', '/invite/'];
+      const onPublicPage = PUBLIC_AUTH_PATHS.some(p => window.location.pathname.startsWith(p));
+      if (!onPublicPage) {
         window.location.href = '/signin';
       }
       return;

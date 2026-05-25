@@ -9,6 +9,14 @@ import { ArrowLeft, Timer } from 'lucide-react';
 import { INITIALIZE_ORGANIZATION_SUBSCRIPTION } from '../graphql/subscription';
 import { useTranslation } from '../hooks/useTranslation';
 
+const Field = ({ id, label, error, children }: { id: string; label: string; error?: string; children: React.ReactNode }) => (
+  <div>
+    <Label htmlFor={id} className="text-xs font-medium block mb-1.5 text-foreground">{label}</Label>
+    {children}
+    {error && <p className="text-xs mt-1 text-destructive">{error}</p>}
+  </div>
+);
+
 export const SignUp = () => {
   const [step, setStep] = useState<'form' | 'verify'>('form');
   const [isLoading, setIsLoading] = useState(false);
@@ -110,9 +118,12 @@ export const SignUp = () => {
       });
 
       if (signUpResponse.error) {
-        setErrors({
-          submit: signUpResponse.error.message || t('messages.submitFailed'),
-        });
+        const errorCode = (signUpResponse.error as any)?.code;
+        if (errorCode === 'PASSWORD_COMPROMISED') {
+          setErrors({ password: t('messages.passwordCompromised') });
+        } else {
+          setErrors({ submit: signUpResponse.error.message || t('messages.submitFailed') });
+        }
         return;
       }
 
@@ -315,14 +326,7 @@ export const SignUp = () => {
         : t('descriptions.form')
       : t('descriptions.verify', { values: { email: formData.email } });
 
-  /* helper for inline form fields */
-  const Field = ({ id, label, error, children }: { id: string; label: string; error?: string; children: React.ReactNode }) => (
-    <div>
-      <Label htmlFor={id} className="text-xs font-medium block mb-1.5 text-foreground">{label}</Label>
-      {children}
-      {error && <p className="text-xs mt-1 text-destructive">{error}</p>}
-    </div>
-  );
+
 
   return (
     <div className="h-screen flex overflow-hidden">

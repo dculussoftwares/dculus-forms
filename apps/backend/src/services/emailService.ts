@@ -4,6 +4,7 @@ import { generateFormPublishedHtml } from '../templates/formPublishedEmail.js';
 import { generateOTPEmailHtml, generateOTPEmailText, type OTPEmailData } from '../templates/otpEmail.js';
 import { generateResetPasswordEmailHtml, generateResetPasswordEmailText, type ResetPasswordEmailData } from '../templates/resetPasswordEmail.js';
 import { generateInvitationEmailHtml, generateInvitationEmailText, type InvitationEmailData } from '../templates/invitationEmail.js';
+import { generateMagicLinkEmailHtml, generateMagicLinkEmailText } from '../templates/magicLinkEmail.js';
 import { logger } from '../lib/logger.js';
 
 export interface EmailOptions {
@@ -37,6 +38,11 @@ export interface SendInvitationEmailOptions {
   invitationId: string;
   organizationName: string;
   inviterName: string;
+}
+
+export interface SendMagicLinkEmailOptions {
+  to: string;
+  url: string;
 }
 
 // Create transporter instance
@@ -175,4 +181,21 @@ export async function sendInvitationEmail(options: SendInvitationEmailOptions): 
   });
 
   logger.info(`Invitation email sent successfully to: ${to} for organization: ${organizationName}`);
+}
+
+export async function sendMagicLinkEmail(options: SendMagicLinkEmailOptions): Promise<void> {
+  const { to, url } = options;
+  const expiresInMinutes = 5;
+
+  const html = generateMagicLinkEmailHtml({ url, expiresInMinutes });
+  const text = generateMagicLinkEmailText({ url, expiresInMinutes });
+
+  await sendEmail({
+    to,
+    subject: '🔗 Your sign-in link for Dculus Forms',
+    html,
+    text,
+  });
+
+  logger.info(`Magic link email sent successfully to: ${to}`);
 }

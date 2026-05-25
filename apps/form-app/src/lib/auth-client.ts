@@ -1,5 +1,5 @@
 import { createAuthClient } from 'better-auth/react';
-import { organizationClient, emailOTPClient } from 'better-auth/client/plugins';
+import { emailOTPClient, magicLinkClient, organizationClient } from 'better-auth/client/plugins';
 import { getApiBaseUrl } from './config';
 
 const baseUrl = getApiBaseUrl();
@@ -17,7 +17,7 @@ if (typeof window !== 'undefined' && window.location.pathname.startsWith('/signi
 export const getBearerToken = () => sessionStorage.getItem(TOKEN_KEY) ?? '';
 
 export const authClient = createAuthClient({
-  plugins: [organizationClient(), emailOTPClient()],
+  plugins: [organizationClient(), emailOTPClient(), magicLinkClient()],
   baseURL: baseUrl, // Your backend URL
   fetchOptions: {
     onSuccess: (ctx) => {
@@ -48,7 +48,7 @@ const customSignOut = async (options?: any) => {
   return authClient.signOut(options);
 };
 
-export const { signIn, signUp, useSession, getSession, emailOtp, organization, updateUser } = authClient;
+export const { signIn, signUp, useSession, getSession, emailOtp, magicLink, organization, updateUser } = authClient;
 
 // For better-auth 1.4.x, forgetPassword is now requestPasswordReset
 export const forgetPassword = authClient.forgetPassword;

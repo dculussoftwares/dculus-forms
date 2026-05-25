@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { useSession } from '../lib/auth-client';
 import { gql } from '@apollo/client';
@@ -69,10 +70,14 @@ const ACTIVE_ORGANIZATION = gql`
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const PUBLIC_AUTH_PATHS = ['/signin', '/signup', '/forgot-password', '/verify-email', '/magic-link/', '/invite/'];
+
 export const AuthProvider = ({
   children
 }: { children: ReactNode }): React.ReactElement => {
   const { t } = useTranslation('authContext');
+  const location = useLocation();
+  const isPublicAuthPage = PUBLIC_AUTH_PATHS.some(p => location.pathname.startsWith(p));
   const { data: session, isPending } = useSession();
   const [organizationError, setOrganizationError] = useState<string | null>(null);
   const [organizationErrorCode, setOrganizationErrorCode] = useState<GraphQLErrorCode | null>(null);
@@ -93,16 +98,18 @@ export const AuthProvider = ({
       setOrganizationError(errorMessage);
       setOrganizationErrorCode(errorCode ?? null);
 
-      if (errorCode === GRAPHQL_ERROR_CODES.NO_ACCESS) {
-        toastError(
-          t('errors.accessDenied.title'),
-          t('errors.accessDenied.message')
-        );
-      } else if (errorCode === GRAPHQL_ERROR_CODES.AUTHENTICATION_REQUIRED) {
-        toastError(
-          t('errors.authRequired.title'),
-          t('errors.authRequired.message')
-        );
+      if (!isPublicAuthPage) {
+        if (errorCode === GRAPHQL_ERROR_CODES.NO_ACCESS) {
+          toastError(
+            t('errors.accessDenied.title'),
+            t('errors.accessDenied.message')
+          );
+        } else if (errorCode === GRAPHQL_ERROR_CODES.AUTHENTICATION_REQUIRED) {
+          toastError(
+            t('errors.authRequired.title'),
+            t('errors.authRequired.message')
+          );
+        }
       }
     } else {
       setOrganizationError(null);
