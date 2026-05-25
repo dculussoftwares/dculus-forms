@@ -29,6 +29,7 @@ interface Organization {
   members?: Array<{
     id: string;
     role: string;
+    createdAt: string;
     user: AuthUser;
   }>;
 }
@@ -40,6 +41,7 @@ interface AuthContextType {
   activeOrganization: Organization | null;
   organizationError: string | null;
   organizationErrorCode: GraphQLErrorCode | null;
+  refetchOrganization: () => void;
 }
 
 const ACTIVE_ORGANIZATION = gql`
@@ -52,10 +54,12 @@ const ACTIVE_ORGANIZATION = gql`
       members {
         id
         role
+        createdAt
         user {
           id
           name
           email
+          image
         }
       }
     }
@@ -73,7 +77,7 @@ export const AuthProvider = ({
   const [organizationError, setOrganizationError] = useState<string | null>(null);
   const [organizationErrorCode, setOrganizationErrorCode] = useState<GraphQLErrorCode | null>(null);
 
-  const { data: orgData, error: orgError } = useQuery(ACTIVE_ORGANIZATION, {
+  const { data: orgData, error: orgError, refetch: refetchOrg } = useQuery(ACTIVE_ORGANIZATION, {
     skip: !session?.user,
     errorPolicy: 'all',
   });
@@ -114,6 +118,7 @@ export const AuthProvider = ({
     activeOrganization: orgData?.activeOrganization || null,
     organizationError,
     organizationErrorCode,
+    refetchOrganization: refetchOrg,
   };
 
   return (

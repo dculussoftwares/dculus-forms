@@ -44,14 +44,49 @@
     "title": "Organization Members",
     "emptyTitle": "No members found",
     "emptyDescription": "This organization doesn't have any members yet.",
+    "you": "You",
+    "joinedAgo": "Joined {{time}}",
     "count": {
       "one": "1 member",
       "other": "{{count}} members"
     },
     "roles": {
       "owner": "Owner",
+      "admin": "Admin",
       "member": "Member",
       "default": "{{role}}"
+    },
+    "actions": {
+      "changeRole": "Change Role",
+      "remove": "Remove",
+      "promoteToAdmin": "Make Admin",
+      "promoteToOwner": "Make Owner",
+      "demoteToMember": "Make Member",
+      "demoteToAdmin": "Make Admin"
+    },
+    "removeDialog": {
+      "title": "Remove member",
+      "description": "Are you sure you want to remove {{name}} from the organization? They will lose access to all forms immediately.",
+      "confirm": "Remove",
+      "cancel": "Cancel"
+    },
+    "toasts": {
+      "roleUpdated": {
+        "title": "Role updated",
+        "description": "{{name}}'s role has been changed to {{role}}."
+      },
+      "roleUpdateError": {
+        "title": "Error updating role",
+        "description": "Failed to update member role."
+      },
+      "memberRemoved": {
+        "title": "Member removed",
+        "description": "{{name}} has been removed from the organization."
+      },
+      "removeError": {
+        "title": "Error removing member",
+        "description": "Failed to remove member."
+      }
     }
   },
   "invitations": {
@@ -66,7 +101,18 @@
     "unknownInviter": "Unknown",
     "expired": "Expired",
     "expires": "Expires {{time}}",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "resend": "Resend",
+    "toasts": {
+      "resent": {
+        "title": "Invitation resent",
+        "description": "A new invitation has been sent to {{email}}."
+      },
+      "resendError": {
+        "title": "Error resending invitation",
+        "description": "Failed to resend invitation."
+      }
+    }
   },
   "inviteDialog": {
     "title": "Invite Team Member",
@@ -79,9 +125,13 @@
         "label": "Member",
         "description": "Can view and create forms within the organization"
       },
+      "admin": {
+        "label": "Admin",
+        "description": "Can manage forms and members, but cannot delete the organization"
+      },
       "owner": {
         "label": "Owner",
-        "description": "Full access including member management"
+        "description": "Full access including member management and organization deletion"
       }
     },
     "actions": {
@@ -129,6 +179,45 @@
       "belongsToOtherOrg": {
         "title": "Cannot invite user",
         "description": "This user already belongs to another organization. Users can only be members of one organization at a time."
+      }
+    }
+  },
+  "orgEdit": {
+    "namePlaceholder": "Organization name",
+    "save": "Save",
+    "cancel": "Cancel",
+    "toasts": {
+      "updated": {
+        "title": "Organization updated",
+        "description": "Organization name has been updated successfully."
+      },
+      "updateError": {
+        "title": "Error updating organization",
+        "description": "Failed to update organization name."
+      }
+    }
+  },
+  "dangerZone": {
+    "title": "Danger Zone",
+    "leaveOrg": {
+      "label": "Leave organization",
+      "description": "You will lose access to all forms and data in this organization.",
+      "button": "Leave Organization",
+      "dialog": {
+        "title": "Leave organization",
+        "description": "Are you sure you want to leave {{name}}? You will immediately lose access to all forms and data. You can only rejoin if an owner sends you a new invitation.",
+        "confirm": "Leave",
+        "cancel": "Cancel"
+      },
+      "toasts": {
+        "left": {
+          "title": "Left organization",
+          "description": "You have left the organization."
+        },
+        "error": {
+          "title": "Error leaving organization",
+          "description": "Failed to leave the organization."
+        }
       }
     }
   }

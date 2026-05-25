@@ -45,6 +45,7 @@ interface AlertDialogActionProps {
 interface AlertDialogCancelProps {
   onClick?: () => void;
   children: React.ReactNode;
+  disabled?: boolean;
 }
 
 export function AlertDialog({ open, onOpenChange, children }: AlertDialogProps) {
@@ -93,9 +94,9 @@ export function AlertDialogAction({ onClick, children, variant = "default", clas
   );
 }
 
-export function AlertDialogCancel({ onClick, children }: AlertDialogCancelProps) {
+export function AlertDialogCancel({ onClick, children, disabled }: AlertDialogCancelProps) {
   return (
-    <Button onClick={onClick} variant="outline">
+    <Button onClick={onClick} variant="outline" disabled={disabled}>
       {children}
     </Button>
   );

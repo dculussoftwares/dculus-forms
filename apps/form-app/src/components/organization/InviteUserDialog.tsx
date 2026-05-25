@@ -234,6 +234,14 @@ export const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
                     </span>
                   </div>
                 </SelectItem>
+                <SelectItem value="admin">
+                  <div className="flex flex-col">
+                    <span>{t('inviteDialog.roles.admin.label')}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {t('inviteDialog.roles.admin.description')}
+                    </span>
+                  </div>
+                </SelectItem>
                 <SelectItem value="owner">
                   <div className="flex flex-col">
                     <span>{t('inviteDialog.roles.owner.label')}</span>
