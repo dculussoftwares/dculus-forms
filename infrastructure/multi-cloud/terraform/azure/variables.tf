@@ -1,3 +1,9 @@
+variable "subscription_id" {
+  description = "Azure Subscription ID (required by azurerm v4)"
+  type        = string
+  sensitive   = true
+}
+
 variable "project_name" {
   description = "Name of the project (used as prefix for resources)"
   type        = string

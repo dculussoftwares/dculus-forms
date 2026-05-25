@@ -3,7 +3,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~>3.0"
+      version = "~>4.0"
     }
   }
 
@@ -12,7 +12,13 @@ terraform {
 }
 
 provider "azurerm" {
-  features {}
+  subscription_id = var.subscription_id
+  features {
+    key_vault {
+      purge_soft_delete_on_destroy    = false
+      recover_soft_deleted_key_vaults = true
+    }
+  }
 }
 
 # Locals for resource naming with environment suffix
@@ -249,7 +255,7 @@ resource "azurerm_container_app" "backend" {
     # HTTP scaling rule based on concurrent requests
     http_scale_rule {
       name                = "http-scale"
-      concurrent_requests = 10
+      concurrent_requests = "10"
     }
   }
 
