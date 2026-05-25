@@ -8,6 +8,8 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  defaultDropAnimationSideEffects,
+  type DropAnimation,
   type DragStartEvent,
   type DragEndEvent,
 } from '@dnd-kit/core';
@@ -76,6 +78,7 @@ export const PageBuilderTab: React.FC = () => {
     reorderPages,
     moveFieldBetweenPages,
     pages,
+    setSelectedField,
   } = useFormBuilderStore();
 
   const { createFieldData } = useFieldCreation();
@@ -109,6 +112,7 @@ export const PageBuilderTab: React.FC = () => {
 
       if (fieldToHighlight) {
         setRecentlyDroppedFieldId(fieldToHighlight.id);
+        setSelectedField(fieldToHighlight.id);
         setTimeout(() => setRecentlyDroppedFieldId(null), 2000);
       }
     }, 80);
@@ -118,31 +122,44 @@ export const PageBuilderTab: React.FC = () => {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5, // 5px movement to start drag
+        distance: 5,
       },
     })
   );
 
-  // Auto-scroll to recently dropped field for better UX
+  // Smooth spring drop animation
+  const dropAnimation: DropAnimation = {
+    sideEffects: defaultDropAnimationSideEffects({
+      styles: {
+        active: { opacity: '0.4' },
+      },
+    }),
+    duration: 200,
+    easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+  };
+
+  // True while a drag is in flight (including the post-drop expansion delay)
+  const isAnyDragActive = !!(activeField || activeFieldType) || isDelayingExpansion;
+
+  // Auto-scroll to recently dropped field after expansion completes.
+  // Fires at 750ms: 400ms (expansion delay) + 300ms (CSS transition) + 50ms buffer.
+  // Scrolling earlier means fields above the target are still growing and will push
+  // it out of view before the animation settles.
   useEffect(() => {
-    if (recentlyDroppedFieldId) {
-      // Delay scroll until after expansion completes (400ms expansion + 100ms buffer)
-      const scrollTimeout = setTimeout(() => {
-        const fieldElement = document.querySelector(
-          `[data-testid="field-${recentlyDroppedFieldId}"]`
-        );
+    if (!recentlyDroppedFieldId) return;
 
-        if (fieldElement) {
-          fieldElement.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-            inline: 'nearest',
-          });
-        }
-      }, 500); // Scroll after expansion completes
+    const scrollTimeout = setTimeout(() => {
+      const fieldElement = document.querySelector(
+        `[data-testid="draggable-field-${recentlyDroppedFieldId}"]`
+      );
+      fieldElement?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'nearest',
+      });
+    }, 750);
 
-      return () => clearTimeout(scrollTimeout);
-    }
+    return () => clearTimeout(scrollTimeout);
   }, [recentlyDroppedFieldId]);
 
   // Handle drag start - store the active dragged item
@@ -234,10 +251,11 @@ export const PageBuilderTab: React.FC = () => {
         }
       }
 
-      // Set highlight and clear state after delay
+      // Highlight, select, and scroll to the dropped field
       if (droppedFieldId) {
         setRecentlyDroppedFieldId(droppedFieldId);
-        setTimeout(() => setRecentlyDroppedFieldId(null), 2000); // Keep highlight for 2s
+        setSelectedField(droppedFieldId);
+        setTimeout(() => setRecentlyDroppedFieldId(null), 2000);
       }
 
       setTimeout(() => {
@@ -321,6 +339,7 @@ export const PageBuilderTab: React.FC = () => {
         <FormArea
           recentlyDroppedFieldId={recentlyDroppedFieldId}
           isDelayingExpansion={isDelayingExpansion}
+          isAnyDragActive={isAnyDragActive}
         />
 
         {/* Right: Field Settings with Resizable Width */}
@@ -328,7 +347,7 @@ export const PageBuilderTab: React.FC = () => {
       </div>
 
       {/* Drag Overlay - follows cursor during drag */}
-      <DragOverlay dropAnimation={null}>
+      <DragOverlay dropAnimation={dropAnimation}>
         {activeFieldType && (
           <div className="w-72">
             <FieldTypeDisplay fieldType={activeFieldType} isOverlay />

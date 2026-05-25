@@ -173,188 +173,139 @@ export const FieldCard: React.FC<{
       }}
       data-testid={`draggable-field-${field.id}`}
     >
-      {/* Compact view when any drag is active */}
-      {shouldShowCompact ? (
-        <div className="flex items-center gap-3 w-full">
-          {/* Drag handle */}
-          {dragHandleProps && (
-            <div
-              {...dragHandleProps}
-              className="flex-shrink-0 p-1 -ml-1 cursor-grab rounded-md transition-colors hover:bg-[var(--tf-tab-bg)]"
-              title="Drag to reorder"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <GripVertical className="w-4 h-4 text-muted-foreground dark:text-gray-500" />
-            </div>
-          )}
-
-          {/* Field type icon badge */}
+      {/* Header row — always visible in both compact and expanded states */}
+      <div className="flex items-center gap-3 w-full">
+        {dragHandleProps && (
           <div
-            className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center ${categoryColor}`}
+            {...dragHandleProps}
+            className="flex-shrink-0 p-1 -ml-1 cursor-grab rounded-md transition-colors hover:bg-[var(--tf-tab-bg)]"
+            title="Drag to reorder"
+            onClick={(e) => e.stopPropagation()}
           >
-            <Icon className="w-3.5 h-3.5" />
+            <GripVertical className="w-4 h-4 text-muted-foreground dark:text-gray-500" />
           </div>
+        )}
 
-          {/* Field info */}
-          <div className="flex-1 min-w-0 max-w-[280px]">
-            <div className="text-sm font-medium truncate flex items-center gap-1 text-[#4c414e] dark:text-white">
-              <span className="truncate">{label}</span>
-              {'validation' in field &&
-                (field as FillableFormField).validation?.required && (
-                  <span className="text-[#ce5d55] text-sm flex-shrink-0" title="Required field">
-                    *
-                  </span>
-                )}
-            </div>
-            <div className="text-xs text-[#655d67] dark:text-gray-400">
-              {typeConfig.label}
-            </div>
+        <div
+          className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center ${categoryColor}`}
+        >
+          <Icon className="w-3.5 h-3.5" />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium truncate flex items-center gap-1 text-[#4c414e] dark:text-white">
+            <span className="truncate">{label}</span>
+            {'validation' in field &&
+              (field as FillableFormField).validation?.required && (
+                <span className="text-[#ce5d55] text-sm flex-shrink-0" title="Required field">
+                  *
+                </span>
+              )}
+          </div>
+          <div className="text-xs text-[#655d67] dark:text-gray-400">
+            {typeConfig.label}
           </div>
         </div>
-      ) : (
-        /* Full preview when not dragging */
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            {/* Drag handle */}
-            {dragHandleProps && (
-              <div
-                {...dragHandleProps}
-                className="flex-shrink-0 p-1 -ml-2 cursor-grab rounded transition-colors hover:bg-[var(--tf-tab-bg)]"
-                title="Drag to reorder"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <GripVertical className="w-4 h-4 text-muted-foreground dark:text-gray-500" />
-              </div>
-            )}
+      </div>
 
-            {/* Field type icon badge */}
-            <div
-              className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center ${categoryColor}`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-            </div>
-
-            {/* Field info */}
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium truncate flex items-center gap-1 text-[#4c414e] dark:text-white">
-                <span className="truncate">{label}</span>
-                {'validation' in field &&
-                  (field as FillableFormField).validation?.required && (
-                    <span className="text-[#ce5d55] text-sm flex-shrink-0" title="Required field">
-                      *
-                    </span>
-                  )}
-              </div>
-              <div className="text-xs text-[#655d67] dark:text-gray-400">
-                {typeConfig.label}
-              </div>
-            </div>
-          </div>
-
-          {/* Field Preview */}
-          <div className="pl-9 pr-1" data-testid={`field-content-${index + 1}`}>
-            <div className="px-3 py-2.5 rounded-lg" style={{ backgroundColor: 'var(--tf-faint)', border: '1px solid var(--tf-border-faint)' }}>
-              <FieldPreview
-                field={field}
-                disabled={true}
-                showValidation={false}
-              />
-            </div>
-          </div>
-
-          {/* Actions - only show on hover */}
-          <div className="pl-9 pr-1">
-            <div className="flex items-center space-x-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
-              {onClick && (
-                <Button
-                  variant="ghost"
-                  onClick={(e) => { e.stopPropagation(); onClick(); }}
-                  className="p-1.5 rounded-lg h-auto"
-                  title="Field settings"
-                  data-testid={`field-settings-button-${index + 1}`}
-                >
-                  <Settings className="w-4 h-4" />
-                </Button>
-              )}
-              {onMoveUp && index > 0 && (
-                <Button
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onMoveUp();
-                  }}
-                  className="p-1.5 rounded-lg h-auto"
-                  title="Move Up"
-                >
-                  <ArrowUp className="w-4 h-4" />
-                </Button>
-              )}
-
-              {onMoveDown && index < totalFields - 1 && (
-                <Button
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onMoveDown();
-                  }}
-                  className="p-1.5 rounded-lg h-auto"
-                  title="Move Down"
-                >
-                  <ArrowDown className="w-4 h-4" />
-                </Button>
-              )}
-
-              {onDuplicate && (
-                <Button
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDuplicate();
-                  }}
-                  className="p-1.5 rounded-lg h-auto"
-                  title="Duplicate Field"
-                >
-                  <Copy className="w-4 h-4" />
-                </Button>
-              )}
-
-              {/* Cross-page actions menu */}
-              {pages.length > 1 && onMoveToPage && onCopyToPage && (
-                <PageActionsSelector
-                  pages={pages}
-                  currentPageId={pageId}
-                  triggerElement={
-                    <Button
-                      variant="ghost"
-                      onClick={(e) => e.stopPropagation()}
-                      className="p-1.5 rounded-lg h-auto"
-                      title="Move/Copy to another page"
-                    >
-                      <ArrowUp className="w-4 h-4 rotate-90" />
-                    </Button>
-                  }
-                  onMoveToPage={onMoveToPage}
-                  onCopyToPage={onCopyToPage}
+      {/* Animated expansion panel — collapses to zero height during drag */}
+      <div
+        className="grid"
+        style={{
+          gridTemplateRows: shouldShowCompact ? '0fr' : '1fr',
+          transition: 'grid-template-rows 300ms ease-out',
+        }}
+      >
+        <div className="overflow-hidden">
+          <div className="pt-3 space-y-2.5">
+            {/* Field Preview */}
+            <div className="pl-9 pr-1" data-testid={`field-content-${index + 1}`}>
+              <div className="px-3 py-2.5 rounded-lg" style={{ backgroundColor: 'var(--tf-faint)', border: '1px solid var(--tf-border-faint)' }}>
+                <FieldPreview
+                  field={field}
+                  disabled={true}
+                  showValidation={false}
                 />
-              )}
+              </div>
+            </div>
 
-              {onDelete && (
-                <Button
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete();
-                  }}
-                  className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-[var(--tf-error-bg)] dark:hover:bg-red-950/30 rounded-lg h-auto"
-                  title="Delete field"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              )}
+            {/* Actions — fade in on hover */}
+            <div className="pl-9 pr-1">
+              <div className="flex items-center space-x-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
+                {onClick && (
+                  <Button
+                    variant="ghost"
+                    onClick={(e) => { e.stopPropagation(); onClick(); }}
+                    className="p-1.5 rounded-lg h-auto"
+                    title="Field settings"
+                    data-testid={`field-settings-button-${index + 1}`}
+                  >
+                    <Settings className="w-4 h-4" />
+                  </Button>
+                )}
+                {onMoveUp && index > 0 && (
+                  <Button
+                    variant="ghost"
+                    onClick={(e) => { e.stopPropagation(); onMoveUp(); }}
+                    className="p-1.5 rounded-lg h-auto"
+                    title="Move Up"
+                  >
+                    <ArrowUp className="w-4 h-4" />
+                  </Button>
+                )}
+                {onMoveDown && index < totalFields - 1 && (
+                  <Button
+                    variant="ghost"
+                    onClick={(e) => { e.stopPropagation(); onMoveDown(); }}
+                    className="p-1.5 rounded-lg h-auto"
+                    title="Move Down"
+                  >
+                    <ArrowDown className="w-4 h-4" />
+                  </Button>
+                )}
+                {onDuplicate && (
+                  <Button
+                    variant="ghost"
+                    onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
+                    className="p-1.5 rounded-lg h-auto"
+                    title="Duplicate Field"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                )}
+                {pages.length > 1 && onMoveToPage && onCopyToPage && (
+                  <PageActionsSelector
+                    pages={pages}
+                    currentPageId={pageId}
+                    triggerElement={
+                      <Button
+                        variant="ghost"
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-1.5 rounded-lg h-auto"
+                        title="Move/Copy to another page"
+                      >
+                        <ArrowUp className="w-4 h-4 rotate-90" />
+                      </Button>
+                    }
+                    onMoveToPage={onMoveToPage}
+                    onCopyToPage={onCopyToPage}
+                  />
+                )}
+                {onDelete && (
+                  <Button
+                    variant="ghost"
+                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                    className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-[var(--tf-error-bg)] dark:hover:bg-red-950/30 rounded-lg h-auto"
+                    title="Delete field"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

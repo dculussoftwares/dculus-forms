@@ -32,7 +32,7 @@ export const DropIndicator: React.FC<DropIndicatorProps> = ({
         className={`
         relative bg-blue-500 rounded-full shadow-lg ring-4 ring-blue-100 dark:ring-blue-900/50
         ${compact ? 'p-0.5' : 'p-1'}
-        animate-pulse
+        motion-safe:animate-pulse
       `}
       >
         <Plus className={`text-white ${compact ? 'w-3 h-3' : 'w-4 h-4'}`} />

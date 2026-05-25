@@ -60,12 +60,15 @@ export const EmptyFormAreaPlaceholder: React.FC<{ isConnected: boolean }> = ({
 // =============================================================================
 
 /**
- * DropIndicator - A drop zone between fields for inserting new fields
+ * DropIndicator - A drop zone between fields for inserting new fields.
+ * Stays at a minimal height at rest, expands to a visible target while a
+ * drag is in flight, and grows further when the cursor is directly over it.
  */
 export const DropIndicator: React.FC<{
   index: number;
   pageId: string;
-}> = ({ index, pageId }) => {
+  isAnyDragActive?: boolean;
+}> = ({ index, pageId, isAnyDragActive = false }) => {
   const permissions = useFormPermissions();
   const { setNodeRef, isOver } = useDroppable({
     id: `drop-indicator-${pageId}-${index}`,
@@ -77,13 +80,16 @@ export const DropIndicator: React.FC<{
     disabled: !permissions.canEditFields(),
   });
 
+  const height = isOver
+    ? 'h-14 py-1.5'
+    : isAnyDragActive
+      ? 'h-8 py-1'
+      : 'h-2 py-0';
+
   return (
     <div
       ref={setNodeRef}
-      className={`
-        transition-all duration-150 rounded-lg my-0.5
-        ${isOver ? 'h-14 py-1.5' : 'h-2.5 hover:h-5 py-0'}
-      `}
+      className={`transition-all duration-150 rounded-lg my-0.5 ${height}`}
     >
       <div
         className={`
@@ -92,13 +98,15 @@ export const DropIndicator: React.FC<{
           ${
             isOver
               ? 'border-[rgba(60,50,62,0.28)] bg-[var(--tf-tab-bg)]'
-              : 'border-transparent'
+              : isAnyDragActive
+                ? 'border-[rgba(60,50,62,0.12)]'
+                : 'border-transparent'
           }
         `}
       >
         {isOver && (
-          <span className="text-xs text-[#3c323e] font-medium">
-            Drop to insert here
+          <span className="text-xs text-[#3c323e] font-medium select-none">
+            Drop here
           </span>
         )}
       </div>
@@ -118,16 +126,17 @@ export const FieldListWithDropZones: React.FC<{
   pageId: string;
   recentlyDroppedFieldId?: string | null;
   isDelayingExpansion?: boolean;
+  isAnyDragActive?: boolean;
 }> = ({
   fields,
   pageId,
   recentlyDroppedFieldId,
   isDelayingExpansion = false,
+  isAnyDragActive = false,
 }) => {
   return (
     <div>
-      {/* Drop zone at the beginning */}
-      <DropIndicator index={0} pageId={pageId} />
+      <DropIndicator index={0} pageId={pageId} isAnyDragActive={isAnyDragActive} />
 
       {fields.map((field, index) => (
         <div key={field.id}>
@@ -139,8 +148,7 @@ export const FieldListWithDropZones: React.FC<{
             isRecentlyDropped={field.id === recentlyDroppedFieldId}
             isDelayingExpansion={isDelayingExpansion}
           />
-          {/* Drop zone after each field */}
-          <DropIndicator index={index + 1} pageId={pageId} />
+          <DropIndicator index={index + 1} pageId={pageId} isAnyDragActive={isAnyDragActive} />
         </div>
       ))}
     </div>
@@ -192,7 +200,8 @@ export const PageHeader: React.FC<{
 export const FormArea: React.FC<{
   recentlyDroppedFieldId?: string | null;
   isDelayingExpansion?: boolean;
-}> = ({ recentlyDroppedFieldId, isDelayingExpansion = false }) => {
+  isAnyDragActive?: boolean;
+}> = ({ recentlyDroppedFieldId, isDelayingExpansion = false, isAnyDragActive = false }) => {
   const permissions = useFormPermissions();
   const { isConnected, pages, selectedPageId } = useFormBuilderStore();
   const selectedPage = pages.find((p) => p.id === selectedPageId);
@@ -239,6 +248,7 @@ export const FormArea: React.FC<{
                   pageId={selectedPage.id}
                   recentlyDroppedFieldId={recentlyDroppedFieldId}
                   isDelayingExpansion={isDelayingExpansion}
+                  isAnyDragActive={isAnyDragActive}
                 />
               ) : (
                 <EmptyFormAreaPlaceholder isConnected={isConnected} />
