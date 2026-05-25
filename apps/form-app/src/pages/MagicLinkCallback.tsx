@@ -36,7 +36,9 @@ export const MagicLinkCallback = () => {
           setError({ message: t('messages.invalidOrExpired') });
           return;
         }
-        window.location.replace('/');
+        const redirect = sessionStorage.getItem('redirectAfterAuth') ?? '/';
+        sessionStorage.removeItem('redirectAfterAuth');
+        window.location.replace(redirect);
       });
       return;
     }
@@ -51,7 +53,9 @@ export const MagicLinkCallback = () => {
           setError({ message: verifyError.message || t('messages.invalidOrExpired') });
           return;
         }
-        window.location.replace('/');
+        const redirect = sessionStorage.getItem('redirectAfterAuth') ?? '/';
+        sessionStorage.removeItem('redirectAfterAuth');
+        window.location.replace(redirect);
       });
   }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 

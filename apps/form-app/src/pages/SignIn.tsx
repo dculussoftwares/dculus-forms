@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { Button, Input, Label } from "@dculus/ui";
 import { signIn, emailOtp } from "../lib/auth-client";
 import { useTranslation } from "../hooks/useTranslation";
@@ -18,6 +18,7 @@ type MagicLinkError = { message: string; isNoAccount?: boolean };
 
 export const SignIn = () => {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const [authMode, setAuthMode] = useState<AuthMode>('password');
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -72,7 +73,8 @@ export const SignIn = () => {
           setErrors({ submit: response.error.message || t("messages.invalidCredentials") });
         }
       } else {
-        navigate("/");
+        const from = (location.state as { from?: { pathname?: string } })?.from?.pathname ?? '/';
+        navigate(from, { replace: true });
       }
     } catch {
       setErrors({ submit: t("messages.unexpectedError") });
@@ -88,6 +90,8 @@ export const SignIn = () => {
     setMagicLinkError(null);
     setIsLoading(true);
     try {
+      const from = (location.state as { from?: { pathname?: string } })?.from?.pathname ?? '/';
+      if (from !== '/') sessionStorage.setItem('redirectAfterAuth', from);
       const callbackURL = `${window.location.origin}/magic-link/verify`;
       const response = await signIn.magicLink({ email: magicLinkEmail, callbackURL });
       if (response.error) {
