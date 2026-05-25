@@ -1048,6 +1048,9 @@ export const typeDefs = gql`
 
     # Subscription Queries
     availablePlans: [AvailablePlan!]!
+
+    # AI Queries
+    aiTokenUsage(organizationId: ID!): AITokenUsage!
   }
 
   # Subscription Mutation Response Types
@@ -1157,6 +1160,35 @@ export const typeDefs = gql`
     updateFormPlugin(id: ID!, input: UpdateFormPluginInput!): FormPlugin!
     deleteFormPlugin(id: ID!): PluginMutationResponse!
     testFormPlugin(id: ID!): PluginMutationResponse!
+
+    # AI Mutations
+    generateFormWithAI(prompt: String!, organizationId: ID!): AIGeneratedForm!
+  }
+
+  # AI Types
+  type AIFieldOption {
+    value: String!
+    label: String!
+  }
+
+  type AIGeneratedField {
+    type: String!
+    label: String!
+    placeholder: String
+    required: Boolean!
+    options: [AIFieldOption!]
+  }
+
+  type AIGeneratedForm {
+    suggestedTitle: String!
+    fields: [AIGeneratedField!]!
+    tokensUsed: Int!
+  }
+
+  type AITokenUsage {
+    used: Int!
+    limit: Int!
+    resetAt: String!
   }
 
   scalar Upload

@@ -1,0 +1,15 @@
+{
+  "placeholder": "Describe the form you want to create...",
+  "send": "Generate",
+  "generating": "Generating form...",
+  "error": {
+    "title": "Generation failed",
+    "description": "Failed to generate form. Please try again.",
+    "limitReached": "AI token limit reached. Upgrade your plan to continue."
+  },
+  "success": {
+    "title": "Form generated",
+    "description": "{{count}} fields added to your form."
+  },
+  "hint": "Try: \"Customer feedback form with rating and comments\" or \"Job application with work history\""
+}

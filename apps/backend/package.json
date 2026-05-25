@@ -33,6 +33,8 @@
     "test:coverage:watch": "vitest watch --coverage"
   },
   "dependencies": {
+    "@ai-sdk/azure": "3.0.66",
+    "@ai-sdk/openai": "3.0.65",
     "@apollo/server": "^4.9.5",
     "@aws-sdk/client-s3": "3.859.0",
     "@aws-sdk/s3-request-presigner": "3.872.0",
@@ -49,6 +51,7 @@
     "@types/jsonwebtoken": "9.0.10",
     "@types/multer": "2.0.0",
     "@types/ws": "8.18.1",
+    "ai": "6.0.191",
     "bcryptjs": "3.0.2",
     "better-auth": "1.4.17",
     "chargebee": "3.14.0",

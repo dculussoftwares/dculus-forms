@@ -178,3 +178,22 @@ export const REMOVE_TAG_FROM_RESPONSE = gql`
     removeTagFromResponse(responseId: $responseId, tagId: $tagId)
   }
 `;
+
+export const GENERATE_FORM_WITH_AI = gql`
+  mutation GenerateFormWithAI($prompt: String!, $organizationId: ID!) {
+    generateFormWithAI(prompt: $prompt, organizationId: $organizationId) {
+      suggestedTitle
+      tokensUsed
+      fields {
+        type
+        label
+        placeholder
+        required
+        options {
+          value
+          label
+        }
+      }
+    }
+  }
+`;

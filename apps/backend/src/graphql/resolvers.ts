@@ -13,6 +13,7 @@ import { formSharingResolvers } from './resolvers/formSharing.js';
 import { pluginsResolvers } from './resolvers/plugins.js';
 import { subscriptionResolvers } from './resolvers/subscriptions.js';
 import { tagResolvers } from './resolvers/tags.js';
+import { aiResolvers } from './resolvers/ai.js';
 import { GraphQLJSON } from 'graphql-type-json';
 
 export const resolvers = {
@@ -24,6 +25,7 @@ export const resolvers = {
     ...subscriptionResolvers.Organization,
   },
   Query: {
+    ...aiResolvers.Query,
     ...betterAuthResolvers.Query,
     ...formsResolvers.Query,
     ...extendedResponsesResolvers.Query,
@@ -40,6 +42,7 @@ export const resolvers = {
     ...tagResolvers.Query,
   },
   Mutation: {
+    ...aiResolvers.Mutation,
     ...betterAuthResolvers.Mutation,
     ...formsResolvers.Mutation,
     ...extendedResponsesResolvers.Mutation,

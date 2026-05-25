@@ -252,3 +252,45 @@ variable "tags" {
     ManagedBy   = "Terraform"
   }
 }
+
+# ── Azure AI Foundry ──────────────────────────────────────────────────────────
+
+variable "ai_location" {
+  description = "Azure region for AI Foundry. East US has broadest gpt-4o GlobalStandard availability."
+  type        = string
+  default     = "eastus"
+}
+
+variable "ai_provider" {
+  description = "AI provider to use: azure or openai"
+  type        = string
+  default     = "azure"
+  validation {
+    condition     = contains(["azure", "openai"], var.ai_provider)
+    error_message = "ai_provider must be 'azure' or 'openai'."
+  }
+}
+
+variable "azure_openai_primary_deployment" {
+  description = "Azure OpenAI deployment name for the primary model (gpt-4o)"
+  type        = string
+  default     = "gpt-4o"
+}
+
+variable "azure_openai_fast_deployment" {
+  description = "Azure OpenAI deployment name for the fast model (gpt-4o-mini)"
+  type        = string
+  default     = "gpt-4o-mini"
+}
+
+variable "ai_primary_tpm" {
+  description = "Tokens per minute capacity for the primary model (in thousands)"
+  type        = number
+  default     = 10
+}
+
+variable "ai_fast_tpm" {
+  description = "Tokens per minute capacity for the fast model (in thousands)"
+  type        = number
+  default     = 30
+}

@@ -223,6 +223,8 @@ import enAccountSettings from './en/accountSettings.json';
 import taAccountSettings from './ta/accountSettings.json';
 import enMagicLinkCallback from './en/magicLinkCallback.json';
 import taMagicLinkCallback from './ta/magicLinkCallback.json';
+import enAIFormBar from './en/aiFormBar.json';
+import taAIFormBar from './ta/aiFormBar.json';
 
 const enTranslations = {
   common: enCommon,
@@ -338,6 +340,7 @@ const enTranslations = {
   emailVerification: enEmailVerification,
   accountSettings: enAccountSettings,
   magicLinkCallback: enMagicLinkCallback,
+  aiFormBar: enAIFormBar,
 } as const;
 
 const taTranslations = {
@@ -454,6 +457,7 @@ const taTranslations = {
   emailVerification: taEmailVerification,
   accountSettings: taAccountSettings,
   magicLinkCallback: taMagicLinkCallback,
+  aiFormBar: taAIFormBar,
 } as const;
 
 export const translations = {
