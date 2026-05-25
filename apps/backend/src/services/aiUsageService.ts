@@ -14,7 +14,7 @@ export async function checkAITokenBudget(organizationId: string): Promise<{
   used: number;
   limit: number;
 }> {
-  const { start, end } = currentPeriod();
+  const { start } = currentPeriod();
 
   const [usage, subscription] = await Promise.all([
     prisma.aIUsage.findFirst({
