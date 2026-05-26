@@ -39,7 +39,6 @@ import { useCollisionDetection } from '../hooks/useCollisionDetection';
 import { useFieldCreation } from '../hooks/useFieldCreation';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { UPDATE_FORM } from '../graphql/mutations';
-import AIFormBar from '../components/form-builder/AIFormBar';
 
 interface CollaborativeFormBuilderProps {
   className?: string;
@@ -442,12 +441,6 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
               <TabKeyboardShortcuts onTabChange={handleKeyboardTabChange} />
             </div>
           </div>
-
-          {activeTab === 'page-builder' && canEdit && formData?.form?.organization?.id && (
-            <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-full max-w-xl px-4">
-              <AIFormBar organizationId={formData.form.organization.id} />
-            </div>
-          )}
 
           {activeTab === 'page-builder' && (
             <DragOverlay>{renderDragOverlay}</DragOverlay>

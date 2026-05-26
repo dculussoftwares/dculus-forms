@@ -225,6 +225,8 @@ import enMagicLinkCallback from './en/magicLinkCallback.json';
 import taMagicLinkCallback from './ta/magicLinkCallback.json';
 import enAIFormBar from './en/aiFormBar.json';
 import taAIFormBar from './ta/aiFormBar.json';
+import enCreateFormWizard from './en/createFormWizard.json';
+import taCreateFormWizard from './ta/createFormWizard.json';
 
 const enTranslations = {
   common: enCommon,
@@ -341,6 +343,7 @@ const enTranslations = {
   accountSettings: enAccountSettings,
   magicLinkCallback: enMagicLinkCallback,
   aiFormBar: enAIFormBar,
+  createFormWizard: enCreateFormWizard,
 } as const;
 
 const taTranslations = {
@@ -458,6 +461,7 @@ const taTranslations = {
   accountSettings: taAccountSettings,
   magicLinkCallback: taMagicLinkCallback,
   aiFormBar: taAIFormBar,
+  createFormWizard: taCreateFormWizard,
 } as const;
 
 export const translations = {

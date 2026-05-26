@@ -1162,10 +1162,20 @@ export const typeDefs = gql`
     testFormPlugin(id: ID!): PluginMutationResponse!
 
     # AI Mutations
-    generateFormWithAI(prompt: String!, organizationId: ID!): AIGeneratedForm!
+    generateFormWithAI(
+      prompt: String!
+      organizationId: ID!
+      mode: AIFormMode = standard
+    ): AIGeneratedForm!
   }
 
   # AI Types
+  enum AIFormMode {
+    quick
+    standard
+    professional
+  }
+
   type AIFieldOption {
     value: String!
     label: String!

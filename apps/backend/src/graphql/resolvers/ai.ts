@@ -1,7 +1,7 @@
 import { requireAuth, requireOrganizationMembership, type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
-import { generateFormWithAI } from '../../services/aiService.js';
+import { generateFormWithAI, type AIFormMode } from '../../services/aiService.js';
 import { checkAITokenBudget, recordAITokenUsage, getAITokenUsage } from '../../services/aiUsageService.js';
 import { logger } from '../../lib/logger.js';
 
@@ -21,7 +21,7 @@ export const aiResolvers = {
   Mutation: {
     generateFormWithAI: async (
       _: any,
-      { prompt, organizationId }: { prompt: string; organizationId: string },
+      { prompt, organizationId, mode = 'standard' }: { prompt: string; organizationId: string; mode?: AIFormMode },
       context: { auth: BetterAuthContext }
     ) => {
       requireAuth(context.auth);
@@ -43,7 +43,7 @@ export const aiResolvers = {
       }
 
       try {
-        const result = await generateFormWithAI(prompt.trim());
+        const result = await generateFormWithAI(prompt.trim(), mode);
         await recordAITokenUsage(organizationId, result.tokensUsed);
         return result;
       } catch (error) {

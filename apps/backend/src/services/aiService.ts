@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { getPrimaryModel } from '../lib/ai.js';
 import { logger } from '../lib/logger.js';
 
+export type AIFormMode = 'quick' | 'standard' | 'professional';
+
 const AIFieldOptionSchema = z.object({
   value: z.string(),
   label: z.string(),
@@ -43,24 +45,42 @@ const AIFormSchema = z.object({
 export type AIGeneratedField = z.infer<typeof AIFieldSchema>;
 export type AIGeneratedForm = z.infer<typeof AIFormSchema> & { tokensUsed: number };
 
-export async function generateFormWithAI(prompt: string): Promise<AIGeneratedForm> {
-  logger.info({ prompt }, 'Generating form with AI');
+const MODE_SYSTEM_PROMPTS: Record<AIFormMode, string> = {
+  quick: `You are a form builder assistant. Create MINIMAL forms with at most 5 fields.
+Focus only on the most essential information — nothing extra.
+Use simple field types (text, email, number, textarea).
+Keep labels short and direct. Set placeholder to null unless it genuinely helps.
+Set options to null for non-choice fields.`,
+
+  standard: `You are a form builder assistant. Create well-balanced forms with 6–10 fields.
+Include appropriate field types (text, email, number, date, select, radio, checkbox, textarea, file).
+Mix field types naturally — use radio or select for categorical choices, textarea for long answers.
+Keep labels concise and user-friendly. Set placeholder to null if not needed.
+Set options to null for non-choice fields.`,
+
+  professional: `You are a form builder assistant. Create comprehensive, professional forms with 10–20 fields.
+Use a rich variety of field types. Include detailed labels and helpful placeholder text where appropriate.
+Group related fields logically. Use radio/select for categorical choices, checkboxes for multi-select,
+textarea for open-ended answers, and specialized types (date, file, number) where natural.
+Set options to null for non-choice fields. Set placeholder to null only if truly unnecessary.`,
+};
+
+export async function generateFormWithAI(
+  prompt: string,
+  mode: AIFormMode = 'standard'
+): Promise<AIGeneratedForm> {
+  logger.info({ prompt, mode }, 'Generating form with AI');
 
   const { object, usage } = await generateObject({
     model: getPrimaryModel(),
     schema: AIFormSchema,
-    system: `You are a form builder assistant. When given a description, produce a well-structured form with appropriate field types.
-Use "text" for short free-text answers, "textarea" for long answers, "email" for email addresses,
-"number" for numeric values, "date" for dates, "select" or "radio" for single-choice from a list,
-"checkbox" for multiple selections, and "file" for file uploads.
-Always include a mix of field types that best suits the use case described.
-Keep labels concise and user-friendly. Set placeholder to null if not needed. Set options to null for non-choice fields.`,
+    system: MODE_SYSTEM_PROMPTS[mode],
     prompt: `Create a form for: ${prompt}`,
   });
 
   const tokensUsed = usage?.totalTokens ?? 0;
 
-  logger.info({ tokensUsed, fieldCount: object.fields.length }, 'AI form generation complete');
+  logger.info({ tokensUsed, fieldCount: object.fields.length, mode }, 'AI form generation complete');
 
   return { ...object, tokensUsed };
 }

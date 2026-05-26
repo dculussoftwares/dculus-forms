@@ -1,0 +1,61 @@
+{
+  "back": "Back",
+  "choice": {
+    "heading": "How do you want to start?",
+    "subheading": "Build something great",
+    "ai": {
+      "badge": "Recommended",
+      "title": "Create with AI",
+      "description": "Describe what you need — AI generates the perfect form in seconds"
+    },
+    "template": {
+      "title": "Start from Template",
+      "description": "Browse 50+ ready-made forms for any use case"
+    }
+  },
+  "ai": {
+    "heading": "Create with AI",
+    "promptLabel": "What kind of form do you need?",
+    "promptPlaceholder": "e.g. \"Customer feedback form with star rating and NPS score\"",
+    "complexity": "Complexity",
+    "pages": "Pages",
+    "modes": {
+      "quick": "Quick",
+      "quickSub": "Up to 5 fields",
+      "standard": "Standard",
+      "standardSub": "6 – 10 fields",
+      "professional": "Professional",
+      "professionalSub": "10 – 20 fields"
+    },
+    "pageTypes": {
+      "single": "Single page",
+      "multi": "Multi-page"
+    },
+    "generate": "Generate Form",
+    "generating": "Generating…",
+    "errors": {
+      "promptRequired": "Please describe the form you want to create",
+      "failed": "Failed to generate form",
+      "failedDesc": "Something went wrong. Please try again."
+    }
+  },
+  "template": {
+    "heading": "Choose a Template",
+    "search": "Search templates…",
+    "categories": {
+      "all": "All"
+    },
+    "noTemplates": "No templates found",
+    "noTemplatesDesc": "Try a different category or create with AI instead",
+    "select": "Use Template",
+    "confirmTitle": "Form title",
+    "confirmTitlePlaceholder": "Enter a title for your form",
+    "confirmCreate": "Create from Template",
+    "creating": "Creating…",
+    "errors": {
+      "titleRequired": "Form title is required",
+      "failed": "Failed to create form",
+      "failedDesc": "Something went wrong. Please try again."
+    }
+  }
+}

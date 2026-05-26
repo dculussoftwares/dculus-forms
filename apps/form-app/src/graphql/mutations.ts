@@ -180,8 +180,8 @@ export const REMOVE_TAG_FROM_RESPONSE = gql`
 `;
 
 export const GENERATE_FORM_WITH_AI = gql`
-  mutation GenerateFormWithAI($prompt: String!, $organizationId: ID!) {
-    generateFormWithAI(prompt: $prompt, organizationId: $organizationId) {
+  mutation GenerateFormWithAI($prompt: String!, $organizationId: ID!, $mode: AIFormMode) {
+    generateFormWithAI(prompt: $prompt, organizationId: $organizationId, mode: $mode) {
       suggestedTitle
       tokensUsed
       fields {

@@ -40,7 +40,7 @@ const FormsList: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <TypographyH1>{t('header.title')}</TypographyH1>
-        <Button onClick={() => navigate('/forms/new')}>
+        <Button onClick={() => navigate('/forms/create')}>
           {t('header.create')}
         </Button>
       </div>
@@ -90,7 +90,7 @@ const FormsList: React.FC = () => {
         <Card className="text-center py-12">
           <CardContent>
             <TypographyH2 className="mb-4">{t('empty.title')}</TypographyH2>
-            <Button onClick={() => navigate('/forms/new')}>
+            <Button onClick={() => navigate('/forms/create')}>
               {t('empty.action')}
             </Button>
           </CardContent>
