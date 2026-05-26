@@ -47,7 +47,7 @@ export const aiResolvers = {
         await recordAITokenUsage(organizationId, result.tokensUsed);
         return result;
       } catch (error) {
-        logger.error({ error, organizationId }, 'AI form generation failed');
+        logger.error({ err: error, organizationId }, 'AI form generation failed');
         throw createGraphQLError(
           'AI form generation failed. Please try again.',
           GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR

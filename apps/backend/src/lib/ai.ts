@@ -8,12 +8,14 @@ const provider: ProviderName = (process.env.AI_PROVIDER as ProviderName) ?? 'azu
 
 function buildAzureModel(deployment: string): LanguageModel {
   const azure = createAzure({
-    // Use the full endpoint URL — Azure appends a unique suffix to resource names
-    // so we can't reconstruct it from the name alone.
     baseURL: `${process.env.AZURE_OPENAI_ENDPOINT}openai`,
     apiKey: process.env.AZURE_OPENAI_API_KEY!,
+    // Azure uses deployment-based URLs and Chat Completions API, not the
+    // new OpenAI Responses API (which Azure doesn't support yet).
+    apiVersion: '2024-08-01-preview',
+    useDeploymentBasedUrls: true,
   });
-  return azure(deployment) as LanguageModel;
+  return azure.chat(deployment);
 }
 
 function buildOpenAIModel(model: string): LanguageModel {

@@ -21,12 +21,14 @@ const AIFieldSchema = z.object({
     'file',
   ]),
   label: z.string().describe('The question or field label shown to users'),
-  placeholder: z.string().optional().describe('Helper text inside the input'),
-  required: z.boolean().default(false),
+  // Azure OpenAI structured output requires all properties in the required array;
+  // use nullable instead of optional so every key is always present.
+  placeholder: z.string().nullable().describe('Helper text inside the input, or null'),
+  required: z.boolean(),
   options: z
     .array(AIFieldOptionSchema)
-    .optional()
-    .describe('Required for select, radio, checkbox types'),
+    .nullable()
+    .describe('Option list for select/radio/checkbox types, or null for others'),
 });
 
 const AIFormSchema = z.object({
@@ -52,11 +54,11 @@ Use "text" for short free-text answers, "textarea" for long answers, "email" for
 "number" for numeric values, "date" for dates, "select" or "radio" for single-choice from a list,
 "checkbox" for multiple selections, and "file" for file uploads.
 Always include a mix of field types that best suits the use case described.
-Keep labels concise and user-friendly. Add placeholder text where it helps clarify expected input.`,
+Keep labels concise and user-friendly. Set placeholder to null if not needed. Set options to null for non-choice fields.`,
     prompt: `Create a form for: ${prompt}`,
   });
 
-  const tokensUsed = (usage?.totalTokens ?? 0);
+  const tokensUsed = usage?.totalTokens ?? 0;
 
   logger.info({ tokensUsed, fieldCount: object.fields.length }, 'AI form generation complete');
 
