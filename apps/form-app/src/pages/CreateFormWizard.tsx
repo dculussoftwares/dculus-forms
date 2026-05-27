@@ -189,7 +189,7 @@ const CreateFormWizard: React.FC = () => {
   });
 
   const [generateForm] = useMutation(GENERATE_FORM_WITH_AI);
-  const [createForm] = useMutation(CREATE_FORM, { refetchQueries: ['GetForms'] });
+  const [createForm] = useMutation(CREATE_FORM);
 
   // ── Derived ──────────────────────────────────────────────────────────────
   const templates: any[] = templatesData?.templates ?? [];

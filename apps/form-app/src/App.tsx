@@ -62,7 +62,7 @@ function App() {
           <Route path="/subscription/cancel" element={<CheckoutCancel />} />
 
           {/* Protected routes — lazy-loaded heavy pages wrapped in Suspense (P2-20) */}
-          <Route path="/" element={
+          <Route path="/*" element={
             <ProtectedRoute><PageErrorBoundary><Dashboard /></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/*" element={
