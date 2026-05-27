@@ -1,6 +1,6 @@
 // apps/form-app/src/components/form-builder/AIEditDrawer.tsx
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Sparkles, Send, Loader2, Plus, Trash2, ChevronDown, X, Undo2 } from 'lucide-react';
+import { Sparkles, Send, Plus, Trash2, ChevronDown, X, Undo2 } from 'lucide-react';
 import { cn } from '@dculus/utils';
 import {
   Button,
@@ -259,7 +259,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({ formId, organizationId, isO
                 'disabled:cursor-not-allowed disabled:opacity-40'
               )}
             >
-              {isStreaming ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+              <Send className="h-3.5 w-3.5" />
             </button>
           )}
         </div>
