@@ -111,7 +111,6 @@ export const CreateFormPopover: React.FC<CreateFormPopoverProps> = ({ onFormCrea
               },
               isShuffleEnabled: false
             },
-            isPublished: false,
             organizationId: organizationId,
           },
         },

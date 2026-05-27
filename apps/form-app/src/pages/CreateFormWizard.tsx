@@ -230,7 +230,6 @@ const CreateFormWizard: React.FC = () => {
           input: {
             title: suggestedTitle,
             formSchema,
-            isPublished: false,
             organizationId,
           },
         },
