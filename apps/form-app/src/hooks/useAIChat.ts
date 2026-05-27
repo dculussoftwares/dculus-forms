@@ -123,6 +123,7 @@ export function useAIChat({
   const selectConversation = useCallback((id: string) => {
     setIsStreaming(false);
     setStreamingMessage(null);
+    setStatusText('');
     setActiveConversationId(id);
   }, []);
 
