@@ -804,6 +804,7 @@ const CreateFormWizard: React.FC = () => {
                     <button
                       key={template.id}
                       type="button"
+                      data-testid="template-card"
                       onClick={() => handleSelectTemplate(template)}
                       className={cn(
                         'group relative text-left rounded-xl overflow-hidden border-2 transition-all',

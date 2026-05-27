@@ -19,30 +19,29 @@ When('I create a form from the first template', async function (this: CustomWorl
   // Ensure we're on the dashboard
   await this.page.goto('/dashboard');
 
-  // Navigate to templates via dashboard CTA
+  // Navigate to the create wizard via dashboard CTA
   const createButton = this.page.getByRole('button', { name: /create form/i });
   await createButton.click();
 
-  // Wait for templates to load and pick the first card
+  // The wizard shows a choice screen — pick "Start from Template"
+  const templateChoice = this.page.getByRole('button', { name: /start from template/i });
+  await templateChoice.waitFor({ timeout: 10_000 });
+  await templateChoice.click();
+
+  // Wait for templates to load and click the first card to select it
   const firstTemplateCard = this.page.getByTestId('template-card').first();
   await firstTemplateCard.waitFor({ timeout: 30_000 });
   await firstTemplateCard.scrollIntoViewIfNeeded();
-  await firstTemplateCard.hover();
+  await firstTemplateCard.click();
 
-  const useTemplateButton = firstTemplateCard.getByRole('button', {
-    name: /use template/i,
-  });
-  await useTemplateButton.click();
-
-  // Fill popover form
-  await this.page.waitForSelector('#form-title', { timeout: 10_000 });
+  // A confirm bar appears at the bottom with a title input
+  const titleInput = this.page.getByPlaceholder(/enter a title for your form/i);
+  await titleInput.waitFor({ timeout: 10_000 });
   const formTitle = `E2E Template Test ${Date.now()}`;
   this.newFormTitle = formTitle;
+  await titleInput.fill(formTitle);
 
-  await this.page.fill('#form-title', formTitle);
-  await this.page.fill('#form-description', 'Automated test form');
-
-  const submitButton = this.page.getByRole('button', { name: /create form/i });
+  const submitButton = this.page.getByRole('button', { name: /create from template/i });
   await submitButton.click();
 });
 
