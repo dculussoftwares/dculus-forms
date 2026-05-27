@@ -302,13 +302,16 @@ export const getAllResponsesByFormId = async (formId: string): Promise<FormRespo
 
     logger.info(`Found ${responses.length} total responses for form: ${formId}`);
 
-    return responses.map((response) => ({
+    const baseData = responses.map((response) => ({
       id: response.id,
       formId: response.formId,
       data: (response.data as Prisma.JsonObject) || {},
       metadata: response.metadata as FormResponse['metadata'],
       submittedAt: response.submittedAt,
     }));
+
+    const tagMap = await batchLoadTagsForResponses(baseData.map((r) => r.id));
+    return baseData.map((r) => ({ ...r, tags: tagMap[r.id] ?? [] }));
   } catch (error) {
     logger.error('Error fetching all responses by form ID:', error);
     throw new Error(`Failed to fetch responses: ${error instanceof Error ? error.message : 'Unknown error'}`);

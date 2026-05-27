@@ -186,7 +186,7 @@ const generateCsvContent = (data: UnifiedExportData): string => {
   const activePluginTypes = getPluginTypesWithData(responses);
 
   // Build CSV header
-  const headers = ['Response ID', 'Submitted At'];
+  const headers = ['Response ID', 'Submitted At', 'Tags'];
 
   // Add plugin columns — use getColumnsWithConfig when available and config is present
   // activePluginTypes is now a list of metadata keys (e.g. 'quiz-grading:pluginId')
@@ -238,6 +238,7 @@ const generateCsvContent = (data: UnifiedExportData): string => {
         })
       )
     );
+    row.push(escapeCsvFieldName((response.tags ?? []).map((t) => t.name).join(', ')));
 
     // Add plugin data
     activePluginTypes.forEach((metadataKey) => {
@@ -314,7 +315,7 @@ const generateExcelContent = async (
   const worksheet = workbook.addWorksheet('Responses');
 
   // Build headers
-  const headers = ['Response ID', 'Submitted At'];
+  const headers = ['Response ID', 'Submitted At', 'Tags'];
 
   // Add plugin columns to headers — use getColumnsWithConfig when available and config is present
   activePluginTypes.forEach((metadataKey) => {
@@ -368,6 +369,7 @@ const generateExcelContent = async (
         hour12: false,
       })
     );
+    rowData.push((response.tags ?? []).map((t) => t.name).join(', '));
 
     // Add plugin data
     activePluginTypes.forEach((metadataKey) => {
@@ -427,7 +429,7 @@ const generateExcelContent = async (
         : pluginExport.getColumns();
     return count + cols.length;
   }, 0);
-  const totalColumns = 2 + pluginColumnCount + orderedFieldIds.length; // 2 for Response ID + Submitted At
+  const totalColumns = 3 + pluginColumnCount + orderedFieldIds.length; // 3 for Response ID + Submitted At + Tags
 
   logger.info(
     `Unified Export - Generated Excel with ${responses.length} rows and ${totalColumns} columns (${pluginColumnCount} plugin columns)`

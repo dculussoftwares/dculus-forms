@@ -794,12 +794,21 @@ export interface QuizGradingMetadata {
 }
 
 // Response types
+export interface ResponseTag {
+  id: string;
+  formId: string;
+  name: string;
+  color: string;
+  createdAt: Date;
+}
+
 export interface FormResponse {
   id: string;
   formId: string;
   data: Record<string, any>;
   metadata?: PluginMetadata;
   submittedAt: Date;
+  tags?: ResponseTag[];
   hasBeenEdited?: boolean;
   lastEditedAt?: string;
   lastEditedBy?: User;
