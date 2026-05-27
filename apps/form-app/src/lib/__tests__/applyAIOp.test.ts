@@ -24,6 +24,8 @@ function makeStore(overrides = {}) {
     removeField: jest.fn(),
     reorderFields: jest.fn(),
     updateLayout: jest.fn(),
+    updatePageTitle: jest.fn(),
+    reorderPages: jest.fn(),
     ...overrides,
   };
 }
@@ -102,5 +104,34 @@ describe('applyAIOp — UPDATE_LAYOUT', () => {
     applyAIOp({ type: 'UPDATE_LAYOUT', customCTAButtonName: 'Submit' }, store as any);
     const callArg = (store.updateLayout as jest.Mock).mock.calls[0][0];
     expect(callArg).toEqual({ customCTAButtonName: 'Submit' });
+  });
+});
+
+describe('applyAIOp — RENAME_PAGE', () => {
+  it('calls updatePageTitle with correct args', () => {
+    const store = makeStore();
+    applyAIOp({ type: 'RENAME_PAGE', pageId: 'page-1', newTitle: 'Basic Info' }, store as any);
+    expect(store.updatePageTitle).toHaveBeenCalledWith('page-1', 'Basic Info');
+  });
+
+  it('does nothing when pageId not found', () => {
+    const store = makeStore();
+    applyAIOp({ type: 'RENAME_PAGE', pageId: 'unknown', newTitle: 'X' }, store as any);
+    expect(store.updatePageTitle).not.toHaveBeenCalled();
+  });
+});
+
+describe('applyAIOp — REORDER_PAGES', () => {
+  it('calls reorderPages to move page to target index', () => {
+    const store = makeStore();
+    // Desired: page-2 first, then page-1
+    applyAIOp({ type: 'REORDER_PAGES', pageIds: ['page-2', 'page-1'] }, store as any);
+    expect(store.reorderPages).toHaveBeenCalledWith(1, 0);
+  });
+
+  it('does nothing when order is already correct', () => {
+    const store = makeStore();
+    applyAIOp({ type: 'REORDER_PAGES', pageIds: ['page-1', 'page-2'] }, store as any);
+    expect(store.reorderPages).not.toHaveBeenCalled();
   });
 });

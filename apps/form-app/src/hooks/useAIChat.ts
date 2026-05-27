@@ -32,6 +32,8 @@ export function buildOpLabel(op: Record<string, unknown>): string {
     case 'REMOVE_FIELD': return 'Removed field';
     case 'REORDER_FIELDS': return 'Reordered fields';
     case 'UPDATE_LAYOUT': return 'Updated layout';
+    case 'RENAME_PAGE': return `Renamed page "${(op.newTitle as string) ?? 'page'}"`;
+    case 'REORDER_PAGES': return 'Reordered pages';
     default: return 'Changed form';
   }
 }

@@ -26,7 +26,8 @@ export function applyAIOp(
   op: any,
   store: Pick<
     FormBuilderState,
-    'pages' | 'addField' | 'addFieldAtIndex' | 'updateField' | 'removeField' | 'reorderFields' | 'updateLayout'
+    'pages' | 'addField' | 'addFieldAtIndex' | 'updateField' | 'removeField' |
+    'reorderFields' | 'updateLayout' | 'updatePageTitle' | 'reorderPages'
   >
 ): void {
   if (!op?.type) return;
@@ -98,6 +99,27 @@ export function applyAIOp(
       if (op.content !== undefined) updates.content = op.content;
       if (op.customCTAButtonName !== undefined) updates.customCTAButtonName = op.customCTAButtonName;
       store.updateLayout(updates);
+      break;
+    }
+
+    case 'RENAME_PAGE': {
+      const pageExists = (store.pages as any[]).some((p: any) => p.id === op.pageId);
+      if (!pageExists) return;
+      store.updatePageTitle(op.pageId, op.newTitle);
+      break;
+    }
+
+    case 'REORDER_PAGES': {
+      const desired: string[] = op.pageIds ?? [];
+      const current: string[] = (store.pages as any[]).map((p: any) => p.id);
+      for (let i = 0; i < desired.length; i++) {
+        const fromIdx = current.indexOf(desired[i]);
+        if (fromIdx !== -1 && fromIdx !== i) {
+          store.reorderPages(fromIdx, i);
+          const [moved] = current.splice(fromIdx, 1);
+          current.splice(i, 0, moved);
+        }
+      }
       break;
     }
   }
