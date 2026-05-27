@@ -1,11 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import { useTranslation } from '../../../../hooks/useTranslation';
 import { Input, Button, Card, toastError, toastSuccess } from '@dculus/ui';
-import { Search, Download, Eye, Heart, Loader2, X } from 'lucide-react';
-import { searchPixabayImages, downloadPixabayImage, type PixabayImage } from '../../../../services/pixabayService';
+import { Search, Loader2, X } from 'lucide-react';
+import { searchPexelsImages, downloadPexelsImage, type PexelsPhoto } from '../../../../services/pexelsService';
 import { UploadError } from '../../../../services/fileUploadService';
 
-interface PixabayModalProps {
+interface PexelsModalProps {
   isOpen: boolean;
   onClose: () => void;
   formId: string;
@@ -13,31 +13,31 @@ interface PixabayModalProps {
   onUploadSuccess: () => void;
 }
 
-export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onUploadSuccess }: PixabayModalProps) {
-  const { t } = useTranslation('pixabayImageBrowser');
+export function PexelsModal({ isOpen, onClose, formId, onImageApplied, onUploadSuccess }: PexelsModalProps) {
+  const { t } = useTranslation('pexelsImageBrowser');
   const [searchQuery, setSearchQuery] = useState('');
-  const [images, setImages] = useState<PixabayImage[]>([]);
+  const [images, setImages] = useState<PexelsPhoto[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<PixabayImage | null>(null);
+  const [selectedImage, setSelectedImage] = useState<PexelsPhoto | null>(null);
   const [uploading, setUploading] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
 
   const handleSearch = useCallback(async (query: string, pageNum: number = 1) => {
     if (!query.trim()) return;
-    
+
     setLoading(true);
     try {
-      const response = await searchPixabayImages(query, pageNum, 20);
+      const response = await searchPexelsImages(query, pageNum, 15);
       if (pageNum === 1) {
-        setImages(response.hits);
+        setImages(response.photos);
       } else {
-        setImages(prev => [...prev, ...response.hits]);
+        setImages(prev => [...prev, ...response.photos]);
       }
-      setHasMore(response.hits.length === 20);
+      setHasMore(response.photos.length === 15);
       setPage(pageNum);
     } catch {
-      toastError('Search failed', 'Failed to search Pixabay images. Please try again.');
+      toastError('Search failed', 'Failed to search Pexels images. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -52,11 +52,11 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onUpload
     handleSearch(searchQuery, page + 1);
   };
 
-  const handleApplyImage = async (image: PixabayImage) => {
-    setSelectedImage(image);
+  const handleApplyImage = async (photo: PexelsPhoto) => {
+    setSelectedImage(photo);
     setUploading(true);
     try {
-      const uploadResult = await downloadPixabayImage(image.fullHDURL ?? image.largeImageURL, formId);
+      const uploadResult = await downloadPexelsImage(photo.src.large2x, formId);
       toastSuccess('Image applied successfully');
       onImageApplied(uploadResult.key);
       onUploadSuccess();
@@ -93,13 +93,8 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onUpload
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/50" 
-        onClick={handleClose}
-      />
-      
-      {/* Modal */}
+      <div className="absolute inset-0 bg-black/50" onClick={handleClose} />
+
       <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] m-4 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-[var(--tf-border-medium)] dark:border-gray-700">
@@ -111,19 +106,13 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onUpload
               {t('subtitle')}
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleClose}
-            className="p-2"
-          >
+          <Button variant="outline" size="sm" onClick={handleClose} className="p-2">
             <X className="h-4 w-4" />
           </Button>
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-hidden flex flex-col p-6">
-          {/* Search */}
           <form onSubmit={handleSearchSubmit} className="flex gap-2 mb-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -139,49 +128,31 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onUpload
             </Button>
           </form>
 
-          {/* Images Grid */}
           <div className="flex-1 overflow-y-auto">
             {images.length > 0 && (
               <div className="grid grid-cols-3 gap-4 mb-4">
-                {images.map((image) => (
+                {images.map((photo) => (
                   <Card
-                    key={image.id}
+                    key={photo.id}
                     className={`group transition-all hover:shadow-lg relative overflow-hidden ${
-                      uploading && selectedImage?.id === image.id ? 'ring-2 ring-blue-500' : ''
+                      uploading && selectedImage?.id === photo.id ? 'ring-2 ring-blue-500' : ''
                     }`}
                   >
                     <div className="aspect-video relative overflow-hidden rounded-lg">
                       <img
-                        src={image.webformatURL}
-                        alt={image.tags}
+                        src={photo.src.medium}
+                        alt={photo.alt}
                         className="w-full h-full object-cover"
                       />
-                      
-                      {/* Overlay with stats - always visible on hover */}
+
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="absolute top-2 right-2 text-white text-xs space-y-1">
-                          <div className="flex items-center gap-1 bg-black/50 rounded px-1">
-                            <Eye className="h-3 w-3" />
-                            <span>{image.views.toLocaleString()}</span>
-                          </div>
-                          <div className="flex items-center gap-1 bg-black/50 rounded px-1">
-                            <Download className="h-3 w-3" />
-                            <span>{image.downloads.toLocaleString()}</span>
-                          </div>
-                          <div className="flex items-center gap-1 bg-black/50 rounded px-1">
-                            <Heart className="h-3 w-3" />
-                            <span>{image.likes.toLocaleString()}</span>
-                          </div>
-                        </div>
-                        
-                        {/* Apply button in center */}
                         <div className="absolute inset-0 flex items-center justify-center">
                           <Button
-                            onClick={() => handleApplyImage(image)}
+                            onClick={() => handleApplyImage(photo)}
                             disabled={uploading}
                             className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
                           >
-                            {uploading && selectedImage?.id === image.id ? (
+                            {uploading && selectedImage?.id === photo.id ? (
                               <>
                                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
                                 {t('applyingButton')}
@@ -193,10 +164,10 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onUpload
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="p-3">
-                      <p className="text-xs text-foreground dark:text-gray-400 truncate font-medium">{image.tags}</p>
-                      <p className="text-xs text-muted-foreground dark:text-gray-500">{t('byAuthor', { values: { author: image.user } })}</p>
+                      <p className="text-xs text-foreground dark:text-gray-400 truncate font-medium">{photo.alt}</p>
+                      <p className="text-xs text-muted-foreground dark:text-gray-500">{t('byAuthor', { values: { author: photo.photographer } })}</p>
                     </div>
                   </Card>
                 ))}
@@ -205,10 +176,7 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onUpload
 
             {hasMore && !loading && (
               <div className="text-center">
-                <Button 
-                  variant="outline" 
-                  onClick={handleLoadMore}
-                >
+                <Button variant="outline" onClick={handleLoadMore}>
                   {t('loadMoreButton')}
                 </Button>
               </div>

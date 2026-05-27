@@ -21,13 +21,19 @@
     "label": "பின்னணி படங்கள்",
     "tabs": {
       "custom": "தனிப்பயன் படங்கள்",
-      "pixabay": "பட உலாவி"
+      "pexels": "Pexels",
+      "pixabay": "Pixabay"
     },
     "customTab": {
       "applyButton": "பின்னணி படத்தைப் பயன்படுத்தவும்",
       "helpText": "உங்கள் சொந்த பின்னணி படங்களை பதிவேற்றி நிர்வகிக்கவும்",
       "viewOnlyTitle": "பார்க்க மட்டும் பயன்முறை",
       "viewOnlyDescription": "பின்னணிப் படப் பதிவேற்றம் முடக்கப்பட்டது"
+    },
+    "pexelsTab": {
+      "browseButton": "Pexels இலிருந்து படங்களை உலாவவும்",
+      "helpTextEnabled": "Pexels இலிருந்து உயர்தர படங்களைத் தேடித் தேர்ந்தெடுக்கவும்",
+      "helpTextDisabled": "பார்க்க மட்டும் பயன்முறை - பட உலாவல் முடக்கப்பட்டுள்ளது"
     },
     "pixabayTab": {
       "browseButton": "Pixabay இலிருந்து படங்களை உலாவவும்",

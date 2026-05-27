@@ -1,0 +1,10 @@
+{
+  "searchPlaceholder": "Search for background images...",
+  "title": "Browse Background Images",
+  "subtitle": "Search and select images from Pexels",
+  "searchButton": "Search",
+  "applyingButton": "Applying...",
+  "applyBackgroundButton": "Apply Background",
+  "byAuthor": "by {{author}}",
+  "loadMoreButton": "Load More"
+}

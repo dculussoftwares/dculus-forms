@@ -10,6 +10,7 @@ import { CollaborationStatus } from './CollaborationStatus';
 import { BackgroundImageUpload } from './BackgroundImageUpload';
 import { BackgroundImageGallery } from './BackgroundImageGallery';
 import { PixabayModal } from './PixabayModal';
+import { PexelsModal } from './PexelsModal';
 import { GET_FORM_FILES } from '../../../../graphql/templates';
 
 interface LayoutSidebarProps {
@@ -33,6 +34,7 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
 }) => {
   const [selectedImageKey, setSelectedImageKey] = useState<string | null>(layout.backgroundImageKey || null);
   const [isPixabayModalOpen, setIsPixabayModalOpen] = useState(false);
+  const [isPexelsModalOpen, setIsPexelsModalOpen] = useState(false);
   const { t } = useTranslation('layoutSidebar');
 
   // Fetch form background images
@@ -171,9 +173,12 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
             </div>
             
             <Tabs defaultValue="custom" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="custom" className="text-xs">
                   {t('backgroundImages.tabs.custom')}
+                </TabsTrigger>
+                <TabsTrigger value="pexels" className="text-xs">
+                  {t('backgroundImages.tabs.pexels')}
                 </TabsTrigger>
                 <TabsTrigger value="pixabay" className="text-xs">
                   {t('backgroundImages.tabs.pixabay')}
@@ -222,6 +227,26 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
                 )}
               </TabsContent>
               
+              <TabsContent value="pexels" className="mt-3">
+                <div className="space-y-3">
+                  <Button
+                    onClick={() => canEditLayout && setIsPexelsModalOpen(true)}
+                    className="w-full"
+                    variant="outline"
+                    disabled={!canEditLayout}
+                  >
+                    <Search className="w-4 h-4 mr-2" />
+                    {t('backgroundImages.pexelsTab.browseButton')}
+                  </Button>
+                  <p className="text-xs text-muted-foreground dark:text-gray-400">
+                    {canEditLayout
+                      ? t('backgroundImages.pexelsTab.helpTextEnabled')
+                      : t('backgroundImages.pexelsTab.helpTextDisabled')
+                    }
+                  </p>
+                </div>
+              </TabsContent>
+
               <TabsContent value="pixabay" className="mt-3">
                 <div className="space-y-3">
                   <Button
@@ -234,7 +259,7 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
                     {t('backgroundImages.pixabayTab.browseButton')}
                   </Button>
                   <p className="text-xs text-muted-foreground dark:text-gray-400">
-                    {canEditLayout 
+                    {canEditLayout
                       ? t('backgroundImages.pixabayTab.helpTextEnabled')
                       : t('backgroundImages.pixabayTab.helpTextDisabled')
                     }
@@ -270,7 +295,14 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
         </div>
       </div>
 
-      {/* Pixabay Modal */}
+      <PexelsModal
+        isOpen={isPexelsModalOpen}
+        onClose={() => setIsPexelsModalOpen(false)}
+        formId={formId}
+        onImageApplied={(imageKey) => onLayoutUpdate({ backgroundImageKey: imageKey })}
+        onUploadSuccess={handleImageUploadSuccess}
+      />
+
       <PixabayModal
         isOpen={isPixabayModalOpen}
         onClose={() => setIsPixabayModalOpen(false)}

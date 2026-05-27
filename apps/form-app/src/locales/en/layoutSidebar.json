@@ -21,13 +21,19 @@
     "label": "Background Images",
     "tabs": {
       "custom": "Custom Images",
-      "pixabay": "Image Browser"
+      "pexels": "Pexels",
+      "pixabay": "Pixabay"
     },
     "customTab": {
       "applyButton": "Apply Background Image",
       "helpText": "Upload and manage your own background images",
       "viewOnlyTitle": "View-only mode",
       "viewOnlyDescription": "Background image upload disabled"
+    },
+    "pexelsTab": {
+      "browseButton": "Browse Images from Pexels",
+      "helpTextEnabled": "Search and select from high-quality Pexels photos",
+      "helpTextDisabled": "View-only mode - image browsing disabled"
     },
     "pixabayTab": {
       "browseButton": "Browse Images from Pixabay",

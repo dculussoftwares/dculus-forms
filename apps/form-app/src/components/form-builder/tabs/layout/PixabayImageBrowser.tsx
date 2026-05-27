@@ -55,7 +55,7 @@ export function PixabayImageBrowser({ formId, onImageApplied, onUploadSuccess }:
     
     setUploading(true);
     try {
-      const uploadResult = await downloadPixabayImage(selectedImage.largeImageURL, formId);
+      const uploadResult = await downloadPixabayImage(selectedImage.fullHDURL ?? selectedImage.largeImageURL, formId);
       toastSuccess('Image applied successfully');
       onImageApplied(uploadResult.key);
       onUploadSuccess();

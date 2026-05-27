@@ -209,6 +209,8 @@ import enFilterPanel from './en/filterPanel.json';
 import taFilterPanel from './ta/filterPanel.json';
 import enPixabayImageBrowser from './en/pixabayImageBrowser.json';
 import taPixabayImageBrowser from './ta/pixabayImageBrowser.json';
+import enPexelsImageBrowser from './en/pexelsImageBrowser.json';
+import taPexelsImageBrowser from './ta/pexelsImageBrowser.json';
 import enUsageWarning from './en/usageWarning.json';
 import taUsageWarning from './ta/usageWarning.json';
 import enCheckoutSuccess from './en/checkoutSuccess.json';
@@ -335,6 +337,7 @@ const enTranslations = {
   filterModal: enFilterModal,
   filterPanel: enFilterPanel,
   pixabayImageBrowser: enPixabayImageBrowser,
+  pexelsImageBrowser: enPexelsImageBrowser,
   usageWarning: enUsageWarning,
   checkoutSuccess: enCheckoutSuccess,
   checkoutCancel: enCheckoutCancel,
@@ -453,6 +456,7 @@ const taTranslations = {
   filterModal: taFilterModal,
   filterPanel: taFilterPanel,
   pixabayImageBrowser: taPixabayImageBrowser,
+  pexelsImageBrowser: taPexelsImageBrowser,
   usageWarning: taUsageWarning,
   checkoutSuccess: taCheckoutSuccess,
   checkoutCancel: taCheckoutCancel,
