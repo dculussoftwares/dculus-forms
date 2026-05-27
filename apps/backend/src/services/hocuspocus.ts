@@ -730,7 +730,7 @@ export const initializeHocuspocusDocument = async (
     );
     layoutMap.set(
       'customCTAButtonName',
-      layout.customCTAButtonName || 'Submit'
+      layout.customCTAButtonName || 'Get Started'
     );
     layoutMap.set('backgroundImageKey', layout.backgroundImageKey || '');
     layoutMap.set('pageMode', layout.pageMode || 'multipage');

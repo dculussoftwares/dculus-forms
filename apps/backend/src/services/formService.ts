@@ -109,7 +109,7 @@ export const createForm = async (
       code: 'L1' as LayoutCode,
       content: '',
       customBackGroundColor: '#ffffff',
-      customCTAButtonName: 'Submit',
+      customCTAButtonName: 'Get Started',
       backgroundImageKey: '',
       pageMode: PageModeType.MULTIPAGE,
       isCustomBackgroundColorEnabled: false

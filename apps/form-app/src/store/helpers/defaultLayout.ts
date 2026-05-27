@@ -11,7 +11,7 @@ export const DEFAULT_LAYOUT: FormLayout = {
   code: 'L1' as LayoutCode,
   content: '',
   customBackGroundColor: '#ffffff',
-  customCTAButtonName: 'Submit',
+  customCTAButtonName: 'Get Started',
   backgroundImageKey: '',
   pageMode: PageModeType.MULTIPAGE,
   isCustomBackgroundColorEnabled: false,
