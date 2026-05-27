@@ -82,7 +82,8 @@ describe('applyAIOp — REORDER_FIELDS', () => {
     const store = makeStore();
     // Desired: f-2 first, then f-1
     applyAIOp({ type: 'REORDER_FIELDS', pageId: 'page-1', fieldIds: ['f-2', 'f-1'] }, store as any);
-    expect(store.reorderFields).toHaveBeenCalled();
+    // f-2 is at index 1 and needs to move to index 0
+    expect(store.reorderFields).toHaveBeenCalledWith('page-1', 1, 0);
   });
 });
 

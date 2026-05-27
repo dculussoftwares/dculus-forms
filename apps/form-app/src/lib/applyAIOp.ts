@@ -1,4 +1,5 @@
 import { FieldType } from '@dculus/types';
+import type { FormBuilderState } from '../store/types/store.types';
 
 const AI_TYPE_MAP: Record<string, FieldType> = {
   text: FieldType.TEXT_INPUT_FIELD,
@@ -21,7 +22,13 @@ function findPageForField(pages: any[], fieldId: string): string | null {
   return null;
 }
 
-export function applyAIOp(op: any, store: any): void {
+export function applyAIOp(
+  op: any,
+  store: Pick<
+    FormBuilderState,
+    'pages' | 'addField' | 'addFieldAtIndex' | 'updateField' | 'removeField' | 'reorderFields' | 'updateLayout'
+  >
+): void {
   if (!op?.type) return;
 
   switch (op.type) {
@@ -85,6 +92,8 @@ export function applyAIOp(op: any, store: any): void {
     }
 
     case 'UPDATE_LAYOUT': {
+      // Whitelist only the fields the AI updateLayout tool exposes.
+      // If the tool schema grows, add the new fields here too.
       const updates: Record<string, unknown> = {};
       if (op.content !== undefined) updates.content = op.content;
       if (op.customCTAButtonName !== undefined) updates.customCTAButtonName = op.customCTAButtonName;
