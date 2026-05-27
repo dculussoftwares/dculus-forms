@@ -58,6 +58,7 @@ aiChatRouter.post('/chat', async (req, res) => {
   }
 
   try {
+    // 1. Check token budget
     const budget = await checkAITokenBudget(organizationId);
     if (!budget.allowed) {
       write({ type: 'error', error: `AI token limit reached (${budget.used.toLocaleString()} / ${budget.limit.toLocaleString()} used). Upgrade your plan to continue.` });
@@ -65,14 +66,23 @@ aiChatRouter.post('/chat', async (req, res) => {
       return;
     }
 
+    // 2. Verify conversation ownership BEFORE writing to DB
+    const conv = await getConversation(conversationId, auth.user!.id);
+    if (!conv) {
+      write({ type: 'error', error: 'Conversation not found' });
+      res.end();
+      return;
+    }
+
+    // 3. Now safe to save user message
     await saveUserMessage(conversationId, content);
 
-    // Auto-title on first message (fire-and-forget)
-    const conv = await getConversation(conversationId, auth.user!.id);
-    if (conv && conv.messageCount <= 1) {
+    // 4. Auto-title on first message (fire-and-forget)
+    if (conv.messageCount <= 1) {
       autoGenerateTitle(conversationId, content);
     }
 
+    // 5. Build stream
     const stream = await buildChatStream(conversationId, auth.user!.id, currentPageId);
 
     const operations: FormOperation[] = [];
@@ -102,6 +112,14 @@ aiChatRouter.post('/chat', async (req, res) => {
         write({ type: 'done', messageId: saved.id });
         res.end();
       }
+    }
+
+    // Guard: finish may not have fired (model abort/timeout)
+    if (!res.writableEnded) {
+      const saved = await saveAssistantMessage(conversationId, fullText, operations, 0);
+      await recordAITokenUsage(organizationId, 0);
+      write({ type: 'done', messageId: saved.id });
+      res.end();
     }
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
