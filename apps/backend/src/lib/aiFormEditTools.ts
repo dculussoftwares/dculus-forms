@@ -132,7 +132,7 @@ export function createFormEditTools(formId: string) {
     }),
 
     updateField: tool({
-      description: 'Update one or more properties of an existing field. Only include properties you want to change.',
+      description: 'Update one or more properties of an existing field. Only include properties you want to change. For text/textarea fields use updates.validation.minLength/maxLength. For number fields use updates.min/updates.max. For date fields use updates.minDate/updates.maxDate. For checkbox fields use updates.validation.minSelections/maxSelections.',
       inputSchema: z.object({
         fieldId: z.string().describe('The field ID from listFields'),
         updates: z.object({
@@ -141,6 +141,20 @@ export function createFormEditTools(formId: string) {
           placeholder: z.string().optional(),
           hint: z.string().optional(),
           options: z.array(z.string()).optional(),
+          // Validation rules — stored in the Y.js validation Y.Map
+          validation: z.object({
+            required: z.boolean().optional(),
+            minLength: z.number().nullable().optional(),     // text / textarea
+            maxLength: z.number().nullable().optional(),     // text / textarea
+            minSelections: z.number().nullable().optional(), // checkbox
+            maxSelections: z.number().nullable().optional(), // checkbox
+          }).optional().describe('For text/textarea use minLength/maxLength. For checkbox use minSelections/maxSelections.'),
+          // Number field — field-level properties (not in validation Y.Map)
+          min: z.number().nullable().optional(),
+          max: z.number().nullable().optional(),
+          // Date field — field-level properties (ISO date string e.g. "2024-01-31")
+          minDate: z.string().nullable().optional(),
+          maxDate: z.string().nullable().optional(),
         }),
       }),
       execute: async (args) => ({ type: 'UPDATE_FIELD' as const, ...args }),
@@ -176,7 +190,7 @@ export function createFormEditTools(formId: string) {
 
 export type FormOperation =
   | { type: 'ADD_FIELD'; pageId: string; insertAfterFieldId: string | null; fieldType: string; label: string; required: boolean; placeholder: string | null; options: string[] | null }
-  | { type: 'UPDATE_FIELD'; fieldId: string; updates: { label?: string; required?: boolean; placeholder?: string; hint?: string; options?: string[] } }
+  | { type: 'UPDATE_FIELD'; fieldId: string; updates: { label?: string; required?: boolean; placeholder?: string; hint?: string; options?: string[]; validation?: { required?: boolean; minLength?: number | null; maxLength?: number | null; minSelections?: number | null; maxSelections?: number | null }; min?: number | null; max?: number | null; minDate?: string | null; maxDate?: string | null } }
   | { type: 'REMOVE_FIELD'; fieldId: string }
   | { type: 'REORDER_FIELDS'; pageId: string; fieldIds: string[] }
   | { type: 'UPDATE_LAYOUT'; content?: string; customCTAButtonName?: string };

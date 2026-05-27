@@ -132,6 +132,54 @@ describe('updateField', () => {
       updates: { label: 'Full Name', required: true },
     });
   });
+
+  it('returns UPDATE_FIELD op with validation object', async () => {
+    const tools = createFormEditTools('form-1');
+    const result = await tools.updateField.execute!(
+      {
+        fieldId: 'f-1',
+        updates: { validation: { minLength: 2, maxLength: 50 } },
+      },
+      { messages: [], toolCallId: 'test' }
+    );
+    expect(result).toEqual({
+      type: 'UPDATE_FIELD',
+      fieldId: 'f-1',
+      updates: { validation: { minLength: 2, maxLength: 50 } },
+    });
+  });
+
+  it('returns UPDATE_FIELD op with min/max for number field', async () => {
+    const tools = createFormEditTools('form-1');
+    const result = await tools.updateField.execute!(
+      {
+        fieldId: 'f-1',
+        updates: { min: 0, max: 100 },
+      },
+      { messages: [], toolCallId: 'test' }
+    );
+    expect(result).toEqual({
+      type: 'UPDATE_FIELD',
+      fieldId: 'f-1',
+      updates: { min: 0, max: 100 },
+    });
+  });
+
+  it('returns UPDATE_FIELD op with minDate/maxDate for date field', async () => {
+    const tools = createFormEditTools('form-1');
+    const result = await tools.updateField.execute!(
+      {
+        fieldId: 'f-1',
+        updates: { minDate: '2024-01-01', maxDate: '2025-12-31' },
+      },
+      { messages: [], toolCallId: 'test' }
+    );
+    expect(result).toEqual({
+      type: 'UPDATE_FIELD',
+      fieldId: 'f-1',
+      updates: { minDate: '2024-01-01', maxDate: '2025-12-31' },
+    });
+  });
 });
 
 describe('removeField', () => {
