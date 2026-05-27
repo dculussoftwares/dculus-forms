@@ -7,7 +7,7 @@ vi.mock('../../../services/aiChatService.js', () => ({
   deleteConversation: vi.fn().mockResolvedValue(true),
   renameConversation: vi.fn().mockResolvedValue({ id: 'conv_1', title: 'Renamed' }),
   saveUserMessage: vi.fn().mockResolvedValue({ id: 'msg_1', role: 'user', content: 'Hi', createdAt: new Date().toISOString(), conversationId: 'conv_1' }),
-  buildStreamForConversation: vi.fn(),
+  buildChatStream: vi.fn(),
   saveAssistantMessage: vi.fn().mockResolvedValue({ id: 'msg_2', role: 'assistant', content: 'Done' }),
   autoGenerateTitle: vi.fn(),
 }));

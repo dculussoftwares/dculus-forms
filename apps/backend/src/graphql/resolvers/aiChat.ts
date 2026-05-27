@@ -102,8 +102,7 @@ export const aiChatResolvers = {
         {
           conversationId,
           organizationId,
-          currentFormState,
-        }: { conversationId: string; organizationId: string; currentFormState: object },
+        }: { conversationId: string; organizationId: string },
         context: { auth: BetterAuthContext }
       ) {
         requireAuth(context.auth);
