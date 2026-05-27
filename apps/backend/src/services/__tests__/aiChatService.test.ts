@@ -27,6 +27,7 @@ vi.mock('../../lib/aiFormEditTools.js', () => ({
 
 vi.mock('ai', () => ({
   generateText: vi.fn().mockResolvedValue({ text: 'Short title' }),
+  stepCountIs: vi.fn((n: number) => ({ type: 'stepCount', count: n })),
   streamText: vi.fn().mockReturnValue({
     fullStream: (async function* () {
       yield { type: 'text-delta', textDelta: 'Hello ' };
@@ -88,7 +89,7 @@ describe('buildStreamForConversation', () => {
       id: 'conv_1', title: 'Test', userId: 'user_1',
     });
     (prisma.aIChatMessage.findMany as any).mockResolvedValue([]);
-    const result = await buildStreamForConversation('conv_1', 'user_1', {}, 'Make all required');
+    const result = await buildStreamForConversation('conv_1', 'user_1', {});
     expect(result).toHaveProperty('fullStream');
     expect(typeof result.fullStream[Symbol.asyncIterator]).toBe('function');
   });

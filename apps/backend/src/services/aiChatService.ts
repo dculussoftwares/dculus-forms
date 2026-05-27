@@ -1,4 +1,4 @@
-import { generateText, streamText } from 'ai';
+import { generateText, streamText, stepCountIs } from 'ai';
 import { prisma } from '../lib/prisma.js';
 import { getPrimaryModel, getFastModel } from '../lib/ai.js';
 import { formEditTools } from '../lib/aiFormEditTools.js';
@@ -54,7 +54,8 @@ export async function deleteConversation(id: string, userId: string) {
 export async function renameConversation(id: string, userId: string, title: string) {
   const conv = await prisma.aIChatConversation.findFirst({ where: { id, userId } });
   if (!conv) return null;
-  return prisma.aIChatConversation.update({ where: { id }, data: { title } });
+  const safeTitle = title.trim().slice(0, 100) || 'Untitled conversation';
+  return prisma.aIChatConversation.update({ where: { id }, data: { title: safeTitle } });
 }
 
 export async function saveUserMessage(conversationId: string, content: string) {
@@ -78,11 +79,14 @@ export async function buildStreamForConversation(
   conversationId: string,
   userId: string,
   currentFormState: object,
-  latestUserMessage: string
 ) {
   const conv = await prisma.aIChatConversation.findFirst({ where: { id: conversationId, userId } });
   if (!conv) throw new Error('Conversation not found');
 
+  // IMPORTANT: The resolver must call saveUserMessage() BEFORE calling this function
+  // so that the user message is included in the history fetch below.
+  // Do NOT pass latestUserMessage separately if it is already in the DB history.
+  // The history already includes all messages including the just-saved user message.
   const history = await prisma.aIChatMessage.findMany({
     where: { conversationId },
     orderBy: { createdAt: 'asc' },
@@ -112,21 +116,21 @@ Make only the changes the user requests. Confirm what you did in your final text
 
 ${formStateText}`;
 
-  const messages = [
-    ...history.map((m) => ({
-      role: m.role as 'user' | 'assistant',
-      content: m.content,
-    })),
-    { role: 'user' as const, content: latestUserMessage },
-  ];
+  const messages = history.map((m) => ({
+    role: m.role as 'user' | 'assistant',
+    content: m.content,
+  }));
 
-  return streamText({
+  // Cast through unknown to avoid TS4058: streamText return type uses internal 'Output' type alias.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const stream = streamText({
     model: getPrimaryModel(),
     system: systemPrompt,
     messages,
     tools: formEditTools,
-    maxSteps: 5,
-  });
+    stopWhen: stepCountIs(5),
+  }) as unknown as { fullStream: AsyncIterable<any>; text: Promise<string>; usage: Promise<{ totalTokens: number }> };
+  return stream;
 }
 
 // Fire-and-forget: generates a short title from the first user message
