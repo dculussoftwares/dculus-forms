@@ -27,14 +27,15 @@ model User {
   updatedAt     DateTime @updatedAt
 
   // Relations
-  accounts           Account[]
-  sessions           Session[]
-  members            Member[]
-  invitations        Invitation[]          @relation("InvitedBy")
-  forms              Form[]
-  formPermissions    FormPermission[]
-  grantedPermissions FormPermission[]      @relation("GrantedPermissions")
-  responseEdits      ResponseEditHistory[]
+  accounts            Account[]
+  sessions            Session[]
+  members             Member[]
+  invitations         Invitation[]          @relation("InvitedBy")
+  forms               Form[]
+  formPermissions     FormPermission[]
+  grantedPermissions  FormPermission[]      @relation("GrantedPermissions")
+  responseEdits       ResponseEditHistory[]
+  aiChatConversations AIChatConversation[]
 
   @@map("user")
 }
@@ -86,11 +87,12 @@ model Organization {
   updatedAt DateTime @updatedAt
 
   // Relations
-  members      Member[]
-  invitations  Invitation[]
-  forms        Form[]
-  subscription Subscription?
-  aiUsages     AIUsage[]
+  members             Member[]
+  invitations         Invitation[]
+  forms               Form[]
+  subscription        Subscription?
+  aiUsages            AIUsage[]
+  aiChatConversations AIChatConversation[]
 
   metadata String?
 
@@ -156,15 +158,16 @@ model Form {
   deletedAt         DateTime?
 
   // Relations
-  organization        Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy           User                      @relation(fields: [createdById], references: [id], onDelete: Cascade)
-  responses           Response[]
-  files               FormFile[]
-  analytics           FormViewAnalytics[]
-  submissionAnalytics FormSubmissionAnalytics[]
-  permissions         FormPermission[]
-  plugins             FormPlugin[]
-  tags                ResponseTag[]
+  organization         Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy            User                      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  responses            Response[]
+  files                FormFile[]
+  analytics            FormViewAnalytics[]
+  submissionAnalytics  FormSubmissionAnalytics[]
+  permissions          FormPermission[]
+  plugins              FormPlugin[]
+  tags                 ResponseTag[]
+  aiChatConversations  AIChatConversation[]
 
   @@index([organizationId])
   @@index([organizationId, createdById])
@@ -522,4 +525,37 @@ model AIUsage {
 
   @@index([organizationId, periodStart])
   @@map("ai_usage")
+}
+
+model AIChatConversation {
+  id             String   @id @default(cuid())
+  formId         String
+  organizationId String
+  userId         String
+  title          String   @default("New conversation")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  form         Form         @relation(fields: [formId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages     AIChatMessage[]
+
+  @@index([formId, userId])
+  @@map("ai_chat_conversation")
+}
+
+model AIChatMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  role           String
+  content        String   @db.Text
+  operations     Json?
+  tokensUsed     Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  conversation AIChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("ai_chat_message")
 }
