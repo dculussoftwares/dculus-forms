@@ -194,6 +194,10 @@ export const GENERATE_FORM_WITH_AI = gql`
           label
         }
       }
+      layout {
+        content
+        customCTAButtonName
+      }
     }
   }
 `;

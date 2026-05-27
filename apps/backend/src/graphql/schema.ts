@@ -1189,10 +1189,16 @@ export const typeDefs = gql`
     options: [AIFieldOption!]
   }
 
+  type AIGeneratedLayout {
+    content: String!
+    customCTAButtonName: String!
+  }
+
   type AIGeneratedForm {
     suggestedTitle: String!
     fields: [AIGeneratedField!]!
     tokensUsed: Int!
+    layout: AIGeneratedLayout
   }
 
   type AITokenUsage {

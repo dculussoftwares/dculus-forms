@@ -102,11 +102,18 @@ function buildFieldJson(f: AIField) {
   return base;
 }
 
-function buildFormSchema(fields: AIField[], pageMode: PageMode, layoutCode: LayoutCode = 'L1') {
+function buildFormSchema(
+  fields: AIField[],
+  pageMode: PageMode,
+  layoutCode: LayoutCode = 'L1',
+  layoutOverrides?: { content?: string; customCTAButtonName?: string }
+) {
   const layout = {
     theme: 'LIGHT', primaryColor: '#3b82f6',
     backgroundColor: '#ffffff', textColor: '#000000', spacing: 'NORMAL',
     code: layoutCode,
+    ...(layoutOverrides?.content ? { content: layoutOverrides.content } : {}),
+    ...(layoutOverrides?.customCTAButtonName ? { customCTAButtonName: layoutOverrides.customCTAButtonName } : {}),
   };
   const fieldJsons = fields.map(buildFieldJson);
 
@@ -209,6 +216,7 @@ const CreateFormWizard: React.FC = () => {
   // AI-generated results — held until the appearance step creates the form
   const [aiGeneratedFields, setAiGeneratedFields] = useState<AIField[]>([]);
   const [aiSuggestedTitle, setAiSuggestedTitle] = useState('');
+  const [aiGeneratedLayout, setAiGeneratedLayout] = useState<{ content: string; customCTAButtonName: string } | null>(null);
 
   // Appearance step
   const [selectedLayoutCode, setSelectedLayoutCode] = useState<LayoutCode>('L1');
@@ -291,9 +299,10 @@ const CreateFormWizard: React.FC = () => {
         variables: { prompt: prompt.trim(), organizationId, mode: aiMode },
       });
 
-      const { suggestedTitle, fields } = genData.generateFormWithAI;
+      const { suggestedTitle, fields, layout: generatedLayout } = genData.generateFormWithAI;
       setAiGeneratedFields(fields);
       setAiSuggestedTitle(suggestedTitle);
+      if (generatedLayout) setAiGeneratedLayout(generatedLayout);
       setSelectedImage(null);
       setIsGenerating(false);
       setStep('appearance');
@@ -308,7 +317,7 @@ const CreateFormWizard: React.FC = () => {
     setIsCreatingForm(true);
 
     try {
-      const formSchema = buildFormSchema(aiGeneratedFields, pageMode, selectedLayoutCode);
+      const formSchema = buildFormSchema(aiGeneratedFields, pageMode, selectedLayoutCode, aiGeneratedLayout ?? undefined);
 
       const { data: formData } = await createForm({
         variables: {
@@ -343,7 +352,7 @@ const CreateFormWizard: React.FC = () => {
       const { messageKey } = getErrorDetails(err);
       toastError(t('appearance.errors.failed'), tErr(messageKey) || t('appearance.errors.failedDesc'));
     }
-  }, [aiGeneratedFields, aiSuggestedTitle, pageMode, selectedLayoutCode, selectedImage, organizationId, createForm, navigate, t, tErr]);
+  }, [aiGeneratedFields, aiSuggestedTitle, aiGeneratedLayout, pageMode, selectedLayoutCode, selectedImage, organizationId, createForm, navigate, t, tErr]);
 
   const handleCreateFromTemplate = useCallback(async () => {
     if (!templateTitle.trim()) {

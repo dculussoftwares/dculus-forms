@@ -83,7 +83,7 @@ const AIFormBar: React.FC<AIFormBarProps> = ({ organizationId, className }) => {
   const [prompt, setPrompt] = useState('');
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const { pages, selectedPageId, addField } = useFormBuilderStore();
+  const { pages, selectedPageId, addField, updateLayout } = useFormBuilderStore();
 
   const targetPageId =
     selectedPageId ?? pages[0]?.id ?? null;
@@ -103,6 +103,13 @@ const AIFormBar: React.FC<AIFormBarProps> = ({ organizationId, className }) => {
         const fieldType = AI_TYPE_MAP[field.type] ?? FieldType.TEXT_INPUT_FIELD;
         addField(targetPageId, fieldType, buildFieldData(field));
       });
+
+      if (generated.layout) {
+        updateLayout({
+          content: generated.layout.content,
+          customCTAButtonName: generated.layout.customCTAButtonName,
+        });
+      }
 
       toastSuccess(
         t('success.title'),
