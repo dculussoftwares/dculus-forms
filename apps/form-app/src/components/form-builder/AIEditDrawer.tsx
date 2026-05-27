@@ -1,5 +1,6 @@
+// apps/form-app/src/components/form-builder/AIEditDrawer.tsx
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Sparkles, Send, Loader2, Plus, Trash2, ChevronDown, X } from 'lucide-react';
+import { Sparkles, Send, Loader2, Plus, Trash2, ChevronDown, X, Undo2 } from 'lucide-react';
 import { cn } from '@dculus/utils';
 import {
   Button,
@@ -10,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@dculus/ui';
 import { useTranslation } from '../../hooks/useTranslation';
-import { useAIChat, type AIChatMessage } from '../../hooks/useAIChat';
+import { useAIChat, type AIChatMessage, buildOpLabel } from '../../hooks/useAIChat';
 
 interface AIEditDrawerProps {
   formId: string;
@@ -38,21 +39,12 @@ function OperationChip({ label }: { label: string }) {
   );
 }
 
-function buildOpLabel(op: Record<string, unknown>): string {
-  switch (op?.type) {
-    case 'ADD_FIELD': return `Added "${(op.label as string) ?? 'field'}"`;
-    case 'UPDATE_FIELD': return 'Updated field';
-    case 'REMOVE_FIELD': return 'Removed field';
-    case 'REORDER_FIELDS': return 'Reordered fields';
-    case 'UPDATE_LAYOUT': return 'Updated layout';
-    default: return 'Changed form';
-  }
-}
-
 function AssistantBubble({ message }: { message: AIChatMessage }) {
   const displayText = message.isStreaming ? message.streamingText : message.content;
   const ops = message.isStreaming ? message.streamingOps : undefined;
-  const savedOps = !message.isStreaming && message.operations ? (message.operations as Record<string, unknown>[]) : null;
+  const savedOps = !message.isStreaming && message.operations
+    ? (message.operations as Record<string, unknown>[])
+    : null;
 
   return (
     <div className="flex justify-start">
@@ -71,16 +63,12 @@ function AssistantBubble({ message }: { message: AIChatMessage }) {
           )}
           {ops && ops.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
-              {ops.map((op, i) => (
-                <OperationChip key={i} label={op.label} />
-              ))}
+              {ops.map((op, i) => <OperationChip key={i} label={op.label} />)}
             </div>
           )}
           {savedOps && savedOps.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
-              {savedOps.map((op, i) => (
-                <OperationChip key={i} label={buildOpLabel(op)} />
-              ))}
+              {savedOps.map((op, i) => <OperationChip key={i} label={buildOpLabel(op)} />)}
             </div>
           )}
         </div>
@@ -98,11 +86,7 @@ function TypingIndicator() {
         </div>
         <div className="flex gap-1 rounded-2xl rounded-tl-sm bg-muted px-3 py-2.5">
           {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/50"
-              style={{ animationDelay: `${i * 150}ms` }}
-            />
+            <span key={i} className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/50" style={{ animationDelay: `${i * 150}ms` }} />
           ))}
         </div>
       </div>
@@ -121,6 +105,9 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({ formId, organizationId, isO
     activeConversation,
     messages,
     isStreaming,
+    canUndo,
+    undo,
+    cancel,
     createConversation,
     selectConversation,
     deleteConversation,
@@ -138,7 +125,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({ formId, organizationId, isO
     } else if (!activeConversationId && conversations.length > 0) {
       selectConversation(conversations[0].id);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, conversations.length]);
 
   const handleSend = useCallback(() => {
@@ -167,12 +154,21 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({ formId, organizationId, isO
         <Sparkles className="h-4 w-4 text-primary" />
         <span className="flex-1 text-sm font-semibold">{t('title')}</span>
 
+        {canUndo && (
+          <button
+            onClick={undo}
+            title="Undo AI changes"
+            className="flex h-7 items-center gap-1 rounded-md px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          >
+            <Undo2 className="h-3.5 w-3.5" />
+            Undo
+          </button>
+        )}
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-7 max-w-[140px] gap-1 px-2 text-xs">
-              <span className="truncate">
-                {activeConversation?.title ?? t('newChat')}
-              </span>
+              <span className="truncate">{activeConversation?.title ?? t('newChat')}</span>
               <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
             </Button>
           </DropdownMenuTrigger>
@@ -191,10 +187,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({ formId, organizationId, isO
                 <span className="flex-1 truncate">{conv.title}</span>
                 <button
                   className="ml-2 rounded p-0.5 opacity-0 group-hover:opacity-100 hover:text-destructive"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteConversation(conv.id);
-                  }}
+                  onClick={(e) => { e.stopPropagation(); deleteConversation(conv.id); }}
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
@@ -215,16 +208,12 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({ formId, organizationId, isO
       {/* Messages */}
       <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3">
         {messages.length === 0 && !isStreaming && (
-          <p className="px-4 pt-8 text-center text-xs text-muted-foreground">
-            {t('emptyState')}
-          </p>
+          <p className="px-4 pt-8 text-center text-xs text-muted-foreground">{t('emptyState')}</p>
         )}
         {messages.map((msg) =>
-          msg.role === 'user' ? (
-            <UserBubble key={msg.id} message={msg} />
-          ) : (
-            <AssistantBubble key={msg.id} message={msg} />
-          )
+          msg.role === 'user'
+            ? <UserBubble key={msg.id} message={msg} />
+            : <AssistantBubble key={msg.id} message={msg} />
         )}
         {isStreaming && !messages.some((m) => m.isStreaming) && <TypingIndicator />}
         <div ref={messagesEndRef} />
@@ -232,12 +221,10 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({ formId, organizationId, isO
 
       {/* Input */}
       <div className="border-t border-border p-3">
-        <div
-          className={cn(
-            'flex items-end gap-2 rounded-xl border border-border bg-background px-3 py-2 shadow-sm',
-            'transition-all duration-150 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20'
-          )}
-        >
+        <div className={cn(
+          'flex items-end gap-2 rounded-xl border border-border bg-background px-3 py-2 shadow-sm',
+          'transition-all duration-150 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20'
+        )}>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -252,23 +239,29 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({ formId, organizationId, isO
             )}
             style={{ minHeight: '24px' }}
           />
-          <button
-            onClick={handleSend}
-            disabled={!input.trim() || isStreaming || !activeConversationId}
-            aria-label={t('send')}
-            className={cn(
-              'mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg',
-              'bg-primary text-primary-foreground',
-              'transition-colors hover:bg-primary/90',
-              'disabled:cursor-not-allowed disabled:opacity-40'
-            )}
-          >
-            {isStreaming ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Send className="h-3.5 w-3.5" />
-            )}
-          </button>
+          {isStreaming ? (
+            <button
+              onClick={cancel}
+              aria-label="Cancel"
+              className="mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive transition-colors hover:bg-destructive/20"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          ) : (
+            <button
+              onClick={handleSend}
+              disabled={!input.trim() || !activeConversationId}
+              aria-label={t('send')}
+              className={cn(
+                'mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg',
+                'bg-primary text-primary-foreground',
+                'transition-colors hover:bg-primary/90',
+                'disabled:cursor-not-allowed disabled:opacity-40'
+              )}
+            >
+              {isStreaming ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+            </button>
+          )}
         </div>
       </div>
     </div>
