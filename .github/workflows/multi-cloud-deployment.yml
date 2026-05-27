@@ -544,6 +544,7 @@ jobs:
           TF_VAR_chargebee_api_key: ${{ secrets.CHARGEBEE_API_KEY }}
           TF_VAR_sentry_dsn: ${{ secrets.SENTRY_DSN }}
           TF_VAR_pexels_api_key: ${{ secrets.PEXELS_API_KEY }}
+          TF_VAR_pixabay_api_key: ${{ secrets.PIXABAY_API_KEY }}
           TF_VAR_run_seed: true
         run: |
           # Copy shared Terraform files

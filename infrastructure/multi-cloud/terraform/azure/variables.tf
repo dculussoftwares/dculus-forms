@@ -244,6 +244,13 @@ variable "pexels_api_key" {
   default     = ""
 }
 
+variable "pixabay_api_key" {
+  description = "Pixabay API key for background image search (server-side proxy)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "run_seed" {
   description = "Whether to run database seeding on container startup"
   type        = bool

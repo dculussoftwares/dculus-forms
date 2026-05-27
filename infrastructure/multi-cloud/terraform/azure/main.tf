@@ -261,6 +261,11 @@ resource "azurerm_container_app" "backend" {
         value = var.pexels_api_key
       }
 
+      env {
+        name  = "PIXABAY_API_KEY"
+        value = var.pixabay_api_key
+      }
+
       liveness_probe {
         transport               = "HTTP"
         port                    = var.container_port
