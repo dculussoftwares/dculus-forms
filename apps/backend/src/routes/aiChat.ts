@@ -96,8 +96,9 @@ aiChatRouter.post('/chat', async (req, res) => {
       }
 
       if (part.type === 'tool-result') {
-        const op = (part as any).output as FormOperation | undefined;
-        if (op) {
+        const MUTATION_OP_TYPES = new Set(['ADD_FIELD', 'UPDATE_FIELD', 'REMOVE_FIELD', 'REORDER_FIELDS', 'UPDATE_LAYOUT']);
+        const op = (part as any).output as (FormOperation & { type?: string }) | undefined;
+        if (op && op.type && MUTATION_OP_TYPES.has(op.type)) {
           operations.push(op);
           write({ type: 'operation', op });
         }

@@ -157,11 +157,11 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({ formId, organizationId, isO
         {canUndo && (
           <button
             onClick={undo}
-            title="Undo AI changes"
+            title={t('undoTitle')}
             className="flex h-7 items-center gap-1 rounded-md px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
           >
             <Undo2 className="h-3.5 w-3.5" />
-            Undo
+            {t('undo')}
           </button>
         )}
 
@@ -198,7 +198,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({ formId, organizationId, isO
 
         <button
           onClick={onClose}
-          aria-label="Close AI assistant"
+          aria-label={t('closeAriaLabel')}
           className="ml-1 flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
         >
           <X className="h-4 w-4" />
@@ -242,7 +242,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({ formId, organizationId, isO
           {isStreaming ? (
             <button
               onClick={cancel}
-              aria-label="Cancel"
+              aria-label={t('cancel')}
               className="mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive transition-colors hover:bg-destructive/20"
             >
               <X className="h-3.5 w-3.5" />
