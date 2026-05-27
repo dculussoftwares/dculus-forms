@@ -12,7 +12,7 @@ import {
   renameConversation,
   saveUserMessage,
   saveAssistantMessage,
-  buildStreamForConversation,
+  buildChatStream,
   autoGenerateTitle,
 } from '../../services/aiChatService.js';
 import { createGraphQLError } from '#graphql-errors';
@@ -124,10 +124,9 @@ export const aiChatResolvers = {
         let fullText = '';
 
         try {
-          const result = await buildStreamForConversation(
+          const result = await buildChatStream(
             conversationId,
             context.auth.user!.id,
-            currentFormState
           );
 
           for await (const part of result.fullStream) {

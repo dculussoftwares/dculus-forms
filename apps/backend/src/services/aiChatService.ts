@@ -1,7 +1,7 @@
 import { generateText, streamText, stepCountIs } from 'ai';
 import { prisma } from '../lib/prisma.js';
 import { getPrimaryModel, getFastModel } from '../lib/ai.js';
-import { formEditTools } from '../lib/aiFormEditTools.js';
+import { createFormEditTools } from '../lib/aiFormEditTools.js';
 import { logger } from '../lib/logger.js';
 
 export async function createConversation(
@@ -75,61 +75,43 @@ export async function saveAssistantMessage(
   });
 }
 
-export async function buildStreamForConversation(
+export async function buildChatStream(
   conversationId: string,
   userId: string,
-  currentFormState: object,
+  currentPageId?: string,
 ) {
-  const conv = await prisma.aIChatConversation.findFirst({ where: { id: conversationId, userId } });
+  const conv = await prisma.aIChatConversation.findFirst({
+    where: { id: conversationId, userId },
+  });
   if (!conv) throw new Error('Conversation not found');
 
-  // IMPORTANT: The resolver must call saveUserMessage() BEFORE calling this function
-  // so that the user message is included in the history fetch below.
-  // Do NOT pass latestUserMessage separately if it is already in the DB history.
-  // The history already includes all messages including the just-saved user message.
   const history = await prisma.aIChatMessage.findMany({
     where: { conversationId },
     orderBy: { createdAt: 'asc' },
   });
 
-  // Build a compact form state description for the system prompt
-  let formStateText = 'Form state unavailable.';
-  try {
-    const schema = currentFormState as any;
-    const pages = schema?.pages ?? [];
-    const fieldLines = pages.flatMap((p: any) =>
-      (p.fields ?? []).map(
-        (f: any) => `  - [${f.id}] type=${f.type} label="${f.label}" required=${f.required} pageId=${p.id}`
-      )
-    );
-    formStateText = fieldLines.length
-      ? `Current form fields:\n${fieldLines.join('\n')}`
-      : 'The form currently has no fields.';
-  } catch {
-    /* ignore serialization errors */
-  }
-
-  const systemPrompt = `You are an AI assistant that helps users edit and improve their form.
-You can add, update, remove, and reorder fields using the provided tools.
-Always call inspectForm first if you need to reference specific field IDs.
-Make only the changes the user requests. Confirm what you did in your final text response.
-
-${formStateText}`;
+  const systemPrompt = `You are an AI assistant that helps users edit their form.
+Use listFields to understand the current form structure before making changes.
+Use getField to read a field's full details before updating it.
+The user is currently editing page: ${currentPageId ?? 'the first page'}.
+Make only the changes the user requests. Confirm what you did in your final text response.`;
 
   const messages = history.map((m) => ({
     role: m.role as 'user' | 'assistant',
     content: m.content,
   }));
 
-  // Cast through unknown to avoid TS4058: streamText return type uses internal 'Output' type alias.
+  const tools = createFormEditTools(conv.formId);
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const stream = streamText({
     model: getPrimaryModel(),
     system: systemPrompt,
     messages,
-    tools: formEditTools,
-    stopWhen: stepCountIs(5),
+    tools,
+    stopWhen: stepCountIs(8),
   }) as unknown as { fullStream: AsyncIterable<any>; text: Promise<string>; usage: Promise<{ totalTokens: number }> };
+
   return stream;
 }
 

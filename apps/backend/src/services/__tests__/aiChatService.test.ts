@@ -22,7 +22,7 @@ vi.mock('../../lib/ai.js', () => ({
 }));
 
 vi.mock('../../lib/aiFormEditTools.js', () => ({
-  formEditTools: {},
+  createFormEditTools: vi.fn(() => ({})),
 }));
 
 vi.mock('ai', () => ({
@@ -45,7 +45,7 @@ import {
   deleteConversation,
   renameConversation,
   saveUserMessage,
-  buildStreamForConversation,
+  buildChatStream,
 } from '../aiChatService.js';
 
 describe('createConversation', () => {
@@ -83,14 +83,28 @@ describe('saveUserMessage', () => {
   });
 });
 
-describe('buildStreamForConversation', () => {
+describe('buildChatStream', () => {
   it('returns an object with fullStream AsyncIterable', async () => {
     (prisma.aIChatConversation.findFirst as any).mockResolvedValue({
-      id: 'conv_1', title: 'Test', userId: 'user_1',
+      id: 'conv_1', title: 'Test', userId: 'user_1', formId: 'form_1',
     });
     (prisma.aIChatMessage.findMany as any).mockResolvedValue([]);
-    const result = await buildStreamForConversation('conv_1', 'user_1', {});
+    const result = await buildChatStream('conv_1', 'user_1');
     expect(result).toHaveProperty('fullStream');
     expect(typeof result.fullStream[Symbol.asyncIterator]).toBe('function');
+  });
+
+  it('accepts an optional currentPageId', async () => {
+    (prisma.aIChatConversation.findFirst as any).mockResolvedValue({
+      id: 'conv_1', title: 'Test', userId: 'user_1', formId: 'form_1',
+    });
+    (prisma.aIChatMessage.findMany as any).mockResolvedValue([]);
+    const result = await buildChatStream('conv_1', 'user_1', 'page_2');
+    expect(result).toHaveProperty('fullStream');
+  });
+
+  it('throws if conversation not found', async () => {
+    (prisma.aIChatConversation.findFirst as any).mockResolvedValue(null);
+    await expect(buildChatStream('missing', 'user_1')).rejects.toThrow('Conversation not found');
   });
 });
