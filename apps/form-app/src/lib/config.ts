@@ -18,6 +18,19 @@ export function getGraphQLUrl(): string {
 }
 
 /**
+ * Get the GraphQL WebSocket endpoint URL
+ */
+export function getGraphQLWsUrl(): string {
+  const url = import.meta.env.VITE_GRAPHQL_WS_URL;
+  if (!url) {
+    // Derive WS URL from the HTTP GraphQL URL as fallback
+    const httpUrl = getGraphQLUrl();
+    return httpUrl.replace(/^http/, 'ws');
+  }
+  return url;
+}
+
+/**
  * Get the WebSocket collaboration URL
  */
 export function getWebSocketUrl(): string {
