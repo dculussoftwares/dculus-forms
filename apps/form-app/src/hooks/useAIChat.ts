@@ -47,6 +47,7 @@ export function useAIChat({
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState<AIChatMessage | null>(null);
+  const [statusText, setStatusText] = useState('');
 
   const { canUndo, beginBatch, clearBatch, undo } = useYjsUndoManager();
 
@@ -84,13 +85,16 @@ export function useAIChat({
             : null
         );
       },
+      onStatus: (text) => setStatusText(text),
       onDone: (_messageId) => {
+        setStatusText('');
         setIsStreaming(false);
         setStreamingMessage(null);
         refetchActiveConversation();
         refetchConversations();
       },
       onError: (error) => {
+        setStatusText('');
         setIsStreaming(false);
         setStreamingMessage(null);
         const isLimit = error.includes('token limit');
@@ -101,6 +105,7 @@ export function useAIChat({
 
   const cancel = useCallback(() => {
     cancelStream();
+    setStatusText('');
     setIsStreaming(false);
     setStreamingMessage(null);
   }, [cancelStream]);
@@ -177,6 +182,7 @@ export function useAIChat({
     activeConversation,
     messages,
     isStreaming,
+    statusText,
     canUndo,
     undo,
     cancel,

@@ -90,7 +90,21 @@ function AssistantBubble({ message }: { message: AIChatMessage }) {
   );
 }
 
-function TypingIndicator() {
+function StatusIndicator({ text }: { text: string }) {
+  if (text) {
+    return (
+      <div className="flex justify-start">
+        <div className="flex items-center gap-2">
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
+            <Sparkles className="h-3 w-3 animate-pulse text-primary" />
+          </div>
+          <div className="rounded-2xl rounded-tl-sm bg-muted px-3 py-2 text-xs italic text-muted-foreground">
+            {text}
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="flex justify-start">
       <div className="flex items-center gap-2">
@@ -118,6 +132,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({ formId, organizationId, isO
     activeConversation,
     messages,
     isStreaming,
+    statusText,
     canUndo,
     undo,
     cancel,
@@ -228,7 +243,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({ formId, organizationId, isO
             ? <UserBubble key={msg.id} message={msg} />
             : <AssistantBubble key={msg.id} message={msg} />
         )}
-        {isStreaming && !messages.some((m) => m.isStreaming) && <TypingIndicator />}
+        {isStreaming && !messages.some((m) => m.isStreaming) && <StatusIndicator text={statusText} />}
         <div ref={messagesEndRef} />
       </div>
 

@@ -7,6 +7,7 @@ export interface AIStreamCallbacks {
   onOperation: (op: unknown) => void;
   onDone: (messageId: string) => void;
   onError: (error: string) => void;
+  onStatus: (text: string) => void;
 }
 
 export function useAIStream(organizationId: string, callbacks: AIStreamCallbacks) {
@@ -53,11 +54,12 @@ export function useAIStream(organizationId: string, callbacks: AIStreamCallbacks
           for (const line of lines) {
             if (!line.trim()) continue;
             try {
-              const chunk = JSON.parse(line) as { type: string; delta?: string; op?: unknown; messageId?: string; error?: string };
+              const chunk = JSON.parse(line) as { type: string; delta?: string; op?: unknown; messageId?: string; error?: string; text?: string };
               if (chunk.type === 'text') callbacksRef.current.onTextDelta(chunk.delta ?? '');
               if (chunk.type === 'operation' && chunk.op !== undefined) callbacksRef.current.onOperation(chunk.op);
               if (chunk.type === 'done') callbacksRef.current.onDone(chunk.messageId ?? '');
               if (chunk.type === 'error') callbacksRef.current.onError(chunk.error ?? 'Unknown error');
+              if (chunk.type === 'status') callbacksRef.current.onStatus(chunk.text ?? '');
             } catch {
               // malformed line — skip
             }
