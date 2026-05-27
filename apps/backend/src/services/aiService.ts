@@ -1,4 +1,4 @@
-import { generateObject } from 'ai';
+import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { getPrimaryModel } from '../lib/ai.js';
 import { logger } from '../lib/logger.js';
@@ -94,16 +94,16 @@ export async function generateFormWithAI(
 ): Promise<AIGeneratedForm> {
   logger.info({ prompt, mode }, 'Generating form with AI');
 
-  const { object, usage } = await generateObject({
+  const { output, usage } = await generateText({
     model: getPrimaryModel(),
-    schema: AIFormSchema,
+    output: Output.object({ schema: AIFormSchema }),
     system: MODE_SYSTEM_PROMPTS[mode],
     prompt: `Create a form for: ${prompt}`,
   });
 
   const tokensUsed = usage?.totalTokens ?? 0;
 
-  logger.info({ tokensUsed, fieldCount: object.fields.length, mode }, 'AI form generation complete');
+  logger.info({ tokensUsed, fieldCount: output.fields.length, mode }, 'AI form generation complete');
 
-  return { ...object, tokensUsed };
+  return { ...output, tokensUsed };
 }
