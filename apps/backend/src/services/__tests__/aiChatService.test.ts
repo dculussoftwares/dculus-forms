@@ -48,6 +48,10 @@ import {
   buildChatStream,
 } from '../aiChatService.js';
 
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
 describe('createConversation', () => {
   it('calls prisma.aIChatConversation.create with correct fields', async () => {
     (prisma.aIChatConversation.create as any).mockResolvedValue({ id: 'conv_1', title: 'New conversation' });

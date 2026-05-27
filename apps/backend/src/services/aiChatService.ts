@@ -109,7 +109,7 @@ Make only the changes the user requests. Confirm what you did in your final text
     system: systemPrompt,
     messages,
     tools,
-    stopWhen: stepCountIs(8),
+    stopWhen: stepCountIs(8), // allows listFields + getField + up to 6 mutation calls per turn
   }) as unknown as { fullStream: AsyncIterable<any>; text: Promise<string>; usage: Promise<{ totalTokens: number }> };
 
   return stream;

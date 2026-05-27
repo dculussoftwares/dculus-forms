@@ -1180,7 +1180,7 @@ export const typeDefs = gql`
     aiChatStream(
       conversationId: ID!
       organizationId: ID!
-      currentFormState: JSON!
+      currentFormState: JSON
     ): AIChatChunk!
   }
 
