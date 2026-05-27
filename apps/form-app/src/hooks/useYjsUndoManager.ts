@@ -3,7 +3,7 @@ import * as Y from 'yjs';
 import { useFormBuilderStore } from '../store/useFormBuilderStore';
 
 export function useYjsUndoManager() {
-  const ydoc = useFormBuilderStore((state) => (state as any).ydoc as Y.Doc | null);
+  const ydoc = useFormBuilderStore((state) => state.ydoc);
   const undoManagerRef = useRef<Y.UndoManager | null>(null);
   const [canUndo, setCanUndo] = useState(false);
 
