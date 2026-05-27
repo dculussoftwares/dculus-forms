@@ -185,6 +185,23 @@ export function createFormEditTools(formId: string) {
       }),
       execute: async (args) => ({ type: 'UPDATE_LAYOUT' as const, ...args }),
     }),
+
+    renamePage: tool({
+      description: 'Rename a page. Get the pageId from listFields.',
+      inputSchema: z.object({
+        pageId: z.string().describe('The page ID from listFields'),
+        newTitle: z.string().max(50).describe('New title for the page'),
+      }),
+      execute: async (args) => ({ type: 'RENAME_PAGE' as const, ...args }),
+    }),
+
+    reorderPages: tool({
+      description: 'Reorder pages. Provide ALL page IDs in the desired new order.',
+      inputSchema: z.object({
+        pageIds: z.array(z.string()).describe('All page IDs in the desired order'),
+      }),
+      execute: async (args) => ({ type: 'REORDER_PAGES' as const, ...args }),
+    }),
   };
 }
 
@@ -193,4 +210,6 @@ export type FormOperation =
   | { type: 'UPDATE_FIELD'; fieldId: string; updates: { label?: string; required?: boolean; placeholder?: string; hint?: string; options?: string[]; validation?: { required?: boolean; minLength?: number | null; maxLength?: number | null; minSelections?: number | null; maxSelections?: number | null }; min?: number | null; max?: number | null; minDate?: string | null; maxDate?: string | null } }
   | { type: 'REMOVE_FIELD'; fieldId: string }
   | { type: 'REORDER_FIELDS'; pageId: string; fieldIds: string[] }
-  | { type: 'UPDATE_LAYOUT'; content?: string; customCTAButtonName?: string };
+  | { type: 'UPDATE_LAYOUT'; content?: string; customCTAButtonName?: string }
+  | { type: 'RENAME_PAGE'; pageId: string; newTitle: string }
+  | { type: 'REORDER_PAGES'; pageIds: string[] };

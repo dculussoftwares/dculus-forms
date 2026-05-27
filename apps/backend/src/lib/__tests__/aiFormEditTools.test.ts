@@ -36,11 +36,12 @@ beforeEach(() => {
 });
 
 describe('createFormEditTools', () => {
-  it('returns all 7 tools', () => {
+  it('returns all 9 tools', () => {
     const tools = createFormEditTools('form-1');
     expect(Object.keys(tools)).toEqual([
       'listFields', 'getField', 'addField', 'updateField',
       'removeField', 'reorderFields', 'updateLayout',
+      'renamePage', 'reorderPages',
     ]);
   });
 });
@@ -217,5 +218,27 @@ describe('updateLayout', () => {
       content: '<h1>Hello</h1>',
       customCTAButtonName: 'Submit',
     });
+  });
+});
+
+describe('renamePage', () => {
+  it('returns RENAME_PAGE op', async () => {
+    const tools = createFormEditTools('form-1');
+    const result = await tools.renamePage.execute!(
+      { pageId: 'page-1', newTitle: 'Contact Details' },
+      { messages: [], toolCallId: 'test' }
+    );
+    expect(result).toEqual({ type: 'RENAME_PAGE', pageId: 'page-1', newTitle: 'Contact Details' });
+  });
+});
+
+describe('reorderPages', () => {
+  it('returns REORDER_PAGES op with page IDs in desired order', async () => {
+    const tools = createFormEditTools('form-1');
+    const result = await tools.reorderPages.execute!(
+      { pageIds: ['page-2', 'page-1'] },
+      { messages: [], toolCallId: 'test' }
+    );
+    expect(result).toEqual({ type: 'REORDER_PAGES', pageIds: ['page-2', 'page-1'] });
   });
 });
