@@ -39,6 +39,22 @@
       "failedDesc": "Something went wrong. Please try again."
     }
   },
+  "appearance": {
+    "heading": "Customize your form",
+    "subheading": "Pick a layout and optional background image — you can always change these later",
+    "layoutLabel": "Layout",
+    "imageLabel": "Background Image",
+    "optional": "Optional",
+    "noImages": "No images found for this topic",
+    "imageSelected": "Image selected",
+    "noImageSelected": "No image selected — you can add one later in the Layout tab",
+    "create": "Create Form",
+    "creating": "Creating…",
+    "errors": {
+      "failed": "Failed to create form",
+      "failedDesc": "Something went wrong. Please try again."
+    }
+  },
   "template": {
     "heading": "Choose a Template",
     "search": "Search templates…",

@@ -84,6 +84,7 @@ These secrets enable Chargebee billing integration:
 |------------|-------------|---------------|
 | `CHARGEBEE_SITE` | Chargebee site name | `dculus-global` |
 | `CHARGEBEE_API_KEY` | Chargebee API key | `your-chargebee-api-key` |
+| `PEXELS_API_KEY` | Pexels API key for background image search (backend proxy) | `your-pexels-api-key` |
 
 **Getting Chargebee Credentials:**
 1. Log in to your Chargebee account

@@ -256,6 +256,11 @@ resource "azurerm_container_app" "backend" {
         value = var.azure_openai_fast_deployment
       }
 
+      env {
+        name  = "PEXELS_API_KEY"
+        value = var.pexels_api_key
+      }
+
       liveness_probe {
         transport               = "HTTP"
         port                    = var.container_port

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery } from '@apollo/client';
 import {
@@ -10,6 +10,7 @@ import {
   Badge,
 } from '@dculus/ui';
 import { cn } from '@dculus/utils';
+import type { LayoutCode } from '@dculus/types';
 import {
   Sparkles,
   LayoutTemplate,
@@ -22,6 +23,9 @@ import {
   CheckCircle2,
   Search,
   Loader2,
+  Palette,
+  Image as ImageIcon,
+  Layout as LayoutIcon,
 } from 'lucide-react';
 import { GENERATE_FORM_WITH_AI, CREATE_FORM } from '../graphql/mutations';
 import { GET_TEMPLATES } from '../graphql/templates';
@@ -29,10 +33,15 @@ import { useAppConfig } from '@/hooks';
 import { useTranslation } from '../hooks/useTranslation';
 import { getErrorDetails } from '../utils/graphqlErrors';
 import { getCdnEndpoint } from '../lib/config';
+import { LayoutThumbnails } from '../components/form-builder/tabs/layout/LayoutThumbnails';
+import { searchPexelsImages, downloadPexelsImage } from '../services/pexelsService';
+import type { PexelsPhoto } from '../services/pexelsService';
+import { searchPixabayImages, downloadPixabayImage } from '../services/pixabayService';
+import type { PixabayImage } from '../services/pixabayService';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type Step = 'choice' | 'ai' | 'template';
+type Step = 'choice' | 'ai' | 'appearance' | 'template';
 type AIMode = 'quick' | 'standard' | 'professional';
 type PageMode = 'single' | 'multi';
 
@@ -44,7 +53,14 @@ interface AIField {
   options: Array<{ value: string; label: string }> | null;
 }
 
-// ─── Field schema builder ─────────────────────────────────────────────────────
+interface SelectedImage {
+  source: 'pexels' | 'pixabay';
+  downloadUrl: string;
+  previewUrl: string;
+  credit: string;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const AI_TYPE_MAP: Record<string, string> = {
   text: 'text_input_field',
@@ -86,10 +102,11 @@ function buildFieldJson(f: AIField) {
   return base;
 }
 
-function buildFormSchema(fields: AIField[], pageMode: PageMode) {
+function buildFormSchema(fields: AIField[], pageMode: PageMode, layoutCode: LayoutCode = 'L1') {
   const layout = {
     theme: 'LIGHT', primaryColor: '#3b82f6',
     backgroundColor: '#ffffff', textColor: '#000000', spacing: 'NORMAL',
+    code: layoutCode,
   };
   const fieldJsons = fields.map(buildFieldJson);
 
@@ -111,6 +128,20 @@ function buildFormSchema(fields: AIField[], pageMode: PageMode) {
     });
   }
   return { pages, layout, isShuffleEnabled: false };
+}
+
+function extractSearchKeyword(title: string): string {
+  const stopWords = new Set([
+    'form', 'survey', 'questionnaire', 'application', 'registration',
+    'request', 'feedback', 'the', 'a', 'an', 'of', 'for', 'with',
+    'and', 'or', 'my', 'your', 'our', 'new', 'create', 'submit',
+  ]);
+  const words = title
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, '')
+    .split(/\s+/)
+    .filter(w => !stopWords.has(w) && w.length > 2);
+  return words.slice(0, 2).join(' ') || 'professional office';
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -175,6 +206,22 @@ const CreateFormWizard: React.FC = () => {
   const [promptError, setPromptError] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // AI-generated results — held until the appearance step creates the form
+  const [aiGeneratedFields, setAiGeneratedFields] = useState<AIField[]>([]);
+  const [aiSuggestedTitle, setAiSuggestedTitle] = useState('');
+
+  // Appearance step
+  const [selectedLayoutCode, setSelectedLayoutCode] = useState<LayoutCode>('L1');
+  const [selectedImage, setSelectedImage] = useState<SelectedImage | null>(null);
+  const [imageTab, setImageTab] = useState<'pexels' | 'pixabay'>('pexels');
+  const [pexelsImages, setPexelsImages] = useState<PexelsPhoto[]>([]);
+  const [pixabayImages, setPixabayImages] = useState<PixabayImage[]>([]);
+  const [pexelsLoading, setPexelsLoading] = useState(false);
+  const [pixabayLoading, setPixabayLoading] = useState(false);
+  const [isCreatingForm, setIsCreatingForm] = useState(false);
+  // Prevent duplicate image fetches across re-renders
+  const imageFetchedForTitle = useRef('');
+
   // Template step
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [templateTitle, setTemplateTitle] = useState('');
@@ -202,6 +249,27 @@ const CreateFormWizard: React.FC = () => {
     return matchesCategory && matchesSearch;
   });
 
+  // ── Image search for appearance step ─────────────────────────────────────
+  useEffect(() => {
+    if (step !== 'appearance' || !aiSuggestedTitle) return;
+    if (imageFetchedForTitle.current === aiSuggestedTitle) return;
+    imageFetchedForTitle.current = aiSuggestedTitle;
+
+    const keyword = extractSearchKeyword(aiSuggestedTitle);
+
+    setPexelsLoading(true);
+    searchPexelsImages(keyword, 1, 9)
+      .then(res => setPexelsImages(res.photos ?? []))
+      .catch(() => setPexelsImages([]))
+      .finally(() => setPexelsLoading(false));
+
+    setPixabayLoading(true);
+    searchPixabayImages(keyword, 1, 9)
+      .then(res => setPixabayImages(res.hits ?? []))
+      .catch(() => setPixabayImages([]))
+      .finally(() => setPixabayLoading(false));
+  }, [step, aiSuggestedTitle]);
+
   // ── Handlers ─────────────────────────────────────────────────────────────
 
   const handleSelectTemplate = useCallback((template: any) => {
@@ -224,25 +292,58 @@ const CreateFormWizard: React.FC = () => {
       });
 
       const { suggestedTitle, fields } = genData.generateFormWithAI;
-      const formSchema = buildFormSchema(fields, pageMode);
+      setAiGeneratedFields(fields);
+      setAiSuggestedTitle(suggestedTitle);
+      setSelectedImage(null);
+      setIsGenerating(false);
+      setStep('appearance');
+    } catch (err: any) {
+      setIsGenerating(false);
+      const { messageKey } = getErrorDetails(err);
+      toastError(t('ai.errors.failed'), tErr(messageKey) || t('ai.errors.failedDesc'));
+    }
+  }, [prompt, aiMode, organizationId, generateForm, t, tErr]);
+
+  const handleCreateFormWithAppearance = useCallback(async () => {
+    setIsCreatingForm(true);
+
+    try {
+      const formSchema = buildFormSchema(aiGeneratedFields, pageMode, selectedLayoutCode);
 
       const { data: formData } = await createForm({
         variables: {
           input: {
-            title: suggestedTitle,
+            title: aiSuggestedTitle,
             formSchema,
             organizationId,
           },
         },
       });
 
-      navigate(`/dashboard/form/${formData.createForm.id}/builder/page-builder`);
+      const formId = formData.createForm.id;
+      let pendingBgKey: string | undefined;
+
+      if (selectedImage) {
+        try {
+          const download = selectedImage.source === 'pexels'
+            ? downloadPexelsImage(selectedImage.downloadUrl, formId)
+            : downloadPixabayImage(selectedImage.downloadUrl, formId);
+          const result = await download;
+          pendingBgKey = result.key;
+        } catch {
+          // Image download failed — not fatal; user can add it later
+        }
+      }
+
+      navigate(`/dashboard/form/${formId}/builder/page-builder`, {
+        state: pendingBgKey ? { pendingBackgroundKey: pendingBgKey } : undefined,
+      });
     } catch (err: any) {
-      setIsGenerating(false);
+      setIsCreatingForm(false);
       const { messageKey } = getErrorDetails(err);
-      toastError(t('ai.errors.failed'), tErr(messageKey) || t('ai.errors.failedDesc'));
+      toastError(t('appearance.errors.failed'), tErr(messageKey) || t('appearance.errors.failedDesc'));
     }
-  }, [prompt, aiMode, pageMode, organizationId, generateForm, createForm, navigate, t, tErr]);
+  }, [aiGeneratedFields, aiSuggestedTitle, pageMode, selectedLayoutCode, selectedImage, organizationId, createForm, navigate, t, tErr]);
 
   const handleCreateFromTemplate = useCallback(async () => {
     if (!templateTitle.trim()) {
@@ -270,6 +371,34 @@ const CreateFormWizard: React.FC = () => {
     }
   }, [templateTitle, selectedTemplate, organizationId, createForm, navigate, t, tErr]);
 
+  const handleBack = useCallback(() => {
+    if (step === 'choice') {
+      navigate('/forms');
+    } else if (step === 'appearance') {
+      setStep('ai');
+    } else {
+      setStep('choice');
+    }
+  }, [step, navigate]);
+
+  // ── Image selection toggle ────────────────────────────────────────────────
+
+  const handleSelectPexels = useCallback((photo: PexelsPhoto) => {
+    setSelectedImage(prev =>
+      prev?.source === 'pexels' && prev.downloadUrl === photo.src.large
+        ? null
+        : { source: 'pexels', downloadUrl: photo.src.large, previewUrl: photo.src.medium, credit: photo.photographer }
+    );
+  }, []);
+
+  const handleSelectPixabay = useCallback((image: PixabayImage) => {
+    setSelectedImage(prev =>
+      prev?.source === 'pixabay' && prev.downloadUrl === image.largeImageURL
+        ? null
+        : { source: 'pixabay', downloadUrl: image.largeImageURL, previewUrl: image.webformatURL, credit: image.user }
+    );
+  }, []);
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -277,7 +406,7 @@ const CreateFormWizard: React.FC = () => {
       {/* Header bar */}
       <header className="flex items-center h-14 px-6 border-b border-border shrink-0">
         <button
-          onClick={() => step === 'choice' ? navigate('/forms') : setStep('choice')}
+          onClick={handleBack}
           className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -418,7 +547,199 @@ const CreateFormWizard: React.FC = () => {
           </div>
         )}
 
-        {/* ── Step 2B: Template Browser ──────────────────────────────────── */}
+        {/* ── Step 2B: Appearance ────────────────────────────────────────── */}
+        {step === 'appearance' && (
+          <div className="w-full max-w-5xl">
+            {/* Heading */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-1">
+                <Palette className="h-5 w-5 text-primary" />
+                <h1 className="text-2xl font-bold text-foreground">{t('appearance.heading')}</h1>
+              </div>
+              <p className="text-sm text-muted-foreground">{t('appearance.subheading')}</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
+
+              {/* ── Layout picker ─────────────────────────────────────── */}
+              <div>
+                <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-1.5">
+                  <LayoutIcon className="h-4 w-4 text-muted-foreground" />
+                  {t('appearance.layoutLabel')}
+                </h2>
+                <LayoutThumbnails
+                  currentLayoutCode={selectedLayoutCode}
+                  onLayoutSelect={setSelectedLayoutCode}
+                  scrollAreaClassName="h-auto"
+                />
+              </div>
+
+              {/* ── Image picker ──────────────────────────────────────── */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                    <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                    {t('appearance.imageLabel')}
+                  </h2>
+                  <span className="text-xs text-muted-foreground">{t('appearance.optional')}</span>
+                </div>
+
+                {/* Source tabs */}
+                <div className="flex gap-0 mb-3 border-b border-border">
+                  {(['pexels', 'pixabay'] as const).map(tab => (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => setImageTab(tab)}
+                      className={cn(
+                        'px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px capitalize',
+                        imageTab === tab
+                          ? 'border-primary text-primary'
+                          : 'border-transparent text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      {tab === 'pexels' ? 'Pexels' : 'Pixabay'}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Pexels images */}
+                {imageTab === 'pexels' && (
+                  <div>
+                    {pexelsLoading ? (
+                      <div className="flex items-center justify-center h-44">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : pexelsImages.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-12 text-center">{t('appearance.noImages')}</p>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-3 gap-2">
+                          {pexelsImages.map(photo => {
+                            const isSelected = selectedImage?.source === 'pexels' && selectedImage.downloadUrl === photo.src.large;
+                            return (
+                              <button
+                                key={photo.id}
+                                type="button"
+                                onClick={() => handleSelectPexels(photo)}
+                                className={cn(
+                                  'relative overflow-hidden rounded-lg aspect-video border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                                  isSelected
+                                    ? 'border-primary shadow-md'
+                                    : 'border-transparent hover:border-primary/50'
+                                )}
+                              >
+                                <img
+                                  src={photo.src.medium}
+                                  alt={photo.alt || photo.photographer}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                />
+                                {isSelected && (
+                                  <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                                    <CheckCircle2 className="h-6 w-6 text-white drop-shadow" />
+                                  </div>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-2">
+                          Photos provided by{' '}
+                          <a
+                            href="https://www.pexels.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline hover:text-foreground"
+                          >
+                            Pexels
+                          </a>
+                        </p>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* Pixabay images */}
+                {imageTab === 'pixabay' && (
+                  <div>
+                    {pixabayLoading ? (
+                      <div className="flex items-center justify-center h-44">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : pixabayImages.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-12 text-center">{t('appearance.noImages')}</p>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-2">
+                        {pixabayImages.map(image => {
+                          const isSelected = selectedImage?.source === 'pixabay' && selectedImage.downloadUrl === image.largeImageURL;
+                          return (
+                            <button
+                              key={image.id}
+                              type="button"
+                              onClick={() => handleSelectPixabay(image)}
+                              className={cn(
+                                'relative overflow-hidden rounded-lg aspect-video border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                                isSelected
+                                  ? 'border-primary shadow-md'
+                                  : 'border-transparent hover:border-primary/50'
+                              )}
+                            >
+                              <img
+                                src={image.webformatURL}
+                                alt={image.tags}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                              />
+                              {isSelected && (
+                                <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                                  <CheckCircle2 className="h-6 w-6 text-white drop-shadow" />
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer: status + create button */}
+            <div className="mt-8 flex items-center justify-between pt-4 border-t border-border">
+              <div className="text-sm text-muted-foreground">
+                {selectedImage ? (
+                  <span className="flex items-center gap-1.5 text-primary">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    {t('appearance.imageSelected')}
+                    {selectedImage.credit && (
+                      <span className="text-muted-foreground font-normal">
+                        {' '}— {selectedImage.credit}
+                      </span>
+                    )}
+                  </span>
+                ) : (
+                  t('appearance.noImageSelected')
+                )}
+              </div>
+              <Button
+                onClick={handleCreateFormWithAppearance}
+                disabled={isCreatingForm}
+                className="h-11 px-8 text-base font-medium"
+                size="lg"
+              >
+                {isCreatingForm ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('appearance.creating')}</>
+                ) : (
+                  <><Sparkles className="mr-2 h-4 w-4" />{t('appearance.create')}</>
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Step 3: Template Browser ───────────────────────────────────── */}
         {step === 'template' && (
           <div className="w-full max-w-5xl">
             {/* Heading row */}

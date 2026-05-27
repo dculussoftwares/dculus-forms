@@ -1,5 +1,5 @@
-import React, { useEffect, useCallback, useMemo, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
 import { useAuthContext } from '../contexts/AuthContext';
 import { AlertTriangle, X } from 'lucide-react';
@@ -56,6 +56,8 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
 }) => {
   const { formId, tab } = useParams<{ formId: string; tab?: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const pendingBgApplied = useRef(false);
   const { t } = useTranslation('collaborativeFormBuilder');
   const { user } = useAuthContext();
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
@@ -210,6 +212,17 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   useEffect(() => {
     autoSelectFirstPage();
   }, [autoSelectFirstPage]);
+
+  // Apply background image key passed from the creation wizard via navigation state.
+  // Wait for pages.length > 0 as a signal that the YJS document has fully hydrated
+  // from Hocuspocus — writing before hydration loses to the server's initial sync.
+  useEffect(() => {
+    const pendingKey = (location.state as any)?.pendingBackgroundKey as string | undefined;
+    if (!pendingKey || !isConnected || pages.length === 0 || pendingBgApplied.current) return;
+    pendingBgApplied.current = true;
+    updateLayout({ backgroundImageKey: pendingKey });
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [isConnected, pages.length, location.state, location.pathname, updateLayout, navigate]);
 
   // P2-16: Reset layout and selection state when unmounting the builder
   useEffect(() => {

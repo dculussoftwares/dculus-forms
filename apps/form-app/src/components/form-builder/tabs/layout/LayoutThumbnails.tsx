@@ -160,16 +160,18 @@ interface LayoutThumbnailsProps {
   currentLayoutCode: LayoutCode;
   onLayoutSelect: (layoutCode: LayoutCode) => void;
   disabled?: boolean;
+  scrollAreaClassName?: string;
 }
 
 export const LayoutThumbnails: React.FC<LayoutThumbnailsProps> = ({
   currentLayoutCode,
   onLayoutSelect,
-  disabled = false
+  disabled = false,
+  scrollAreaClassName = 'h-40',
 }) => {
   const { t } = useTranslation('layoutThumbnails');
   return (
-    <ScrollArea className="h-40">
+    <ScrollArea className={scrollAreaClassName}>
       <div className="grid grid-cols-2 gap-2 pr-2">
         {LAYOUT_TEMPLATES.map((template) => (
           <Button

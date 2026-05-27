@@ -237,6 +237,13 @@ variable "sentry_dsn" {
   default     = ""
 }
 
+variable "pexels_api_key" {
+  description = "Pexels API key for background image search (server-side proxy)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "run_seed" {
   description = "Whether to run database seeding on container startup"
   type        = bool
