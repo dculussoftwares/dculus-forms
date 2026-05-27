@@ -328,6 +328,10 @@ async function startServer() {
   });
 
   // GraphQL real-time subscriptions (graphql-ws) — separate path from Hocuspocus
+  // NOTE: graphqlLimiter (Express middleware) does not apply to WebSocket connections.
+  // The per-org AI token budget in checkAITokenBudget() provides the primary abuse guard
+  // for aiChatStream subscriptions. A per-connection rate limit should be added before
+  // high-traffic production use.
   const gqlWss = new WebSocketServer({ server: httpServer, path: '/graphql' });
   ({ dispose: disposeGqlWs } = useServer(
     {

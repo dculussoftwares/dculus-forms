@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Sparkles, Send, Loader2, Plus, Trash2, ChevronDown } from 'lucide-react';
+import { Sparkles, Send, Loader2, Plus, Trash2, ChevronDown, X } from 'lucide-react';
 import { cn } from '@dculus/utils';
 import {
   Button,
@@ -111,7 +111,7 @@ function TypingIndicator() {
   );
 }
 
-const AIEditDrawer: React.FC<AIEditDrawerProps> = ({ formId, organizationId, isOpen, onClose: _onClose }) => {
+const AIEditDrawer: React.FC<AIEditDrawerProps> = ({ formId, organizationId, isOpen, onClose }) => {
   const { t } = useTranslation('aiEditDrawer');
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -221,6 +221,14 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({ formId, organizationId, isO
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <button
+          onClick={onClose}
+          aria-label="Close AI assistant"
+          className="ml-1 flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
 
       {/* Messages */}

@@ -188,6 +188,8 @@ export function useAIChat({
   }, [formId, organizationId, createConvMutation, refetchConversations]);
 
   const selectConversation = useCallback((id: string) => {
+    setIsStreaming(false);
+    setStreamingMessage(null);
     setActiveConversationId(id);
   }, []);
 
