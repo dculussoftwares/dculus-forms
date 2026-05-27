@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useMutation } from '@apollo/client';
-import { Sparkles, Send, Loader2 } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react';
+import AIIcon from '../icons/AIIcon';
 import { cn } from '@dculus/utils';
 import { toastSuccess, toastError } from '@dculus/ui';
 import { FieldType } from '@dculus/types';
@@ -153,7 +154,7 @@ const AIFormBar: React.FC<AIFormBarProps> = ({ organizationId, className }) => {
         className
       )}
     >
-      <Sparkles className="h-4 w-4 text-primary shrink-0 mb-2" />
+      <AIIcon className="h-4 w-4 text-primary shrink-0 mb-2" />
       <textarea
         ref={inputRef}
         value={prompt}

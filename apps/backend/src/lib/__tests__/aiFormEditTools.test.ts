@@ -25,6 +25,9 @@ vi.mock('../../lib/prisma.js', () => ({
     form: {
       findUnique: vi.fn(),
     },
+    collaborativeDocument: {
+      findFirst: vi.fn().mockResolvedValue(null), // No collab doc → falls back to form.formSchema
+    },
   },
 }));
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PencilLine, Database, LineChart, Settings, ArrowRight, Plug, Sparkles } from 'lucide-react';
+import { PencilLine, Database, LineChart, Settings, ArrowRight, Plug } from 'lucide-react';
+import AIIcon from '../icons/AIIcon';
 import { Button } from '@dculus/ui';
 import { useTranslation } from '../../hooks/useTranslation';
 
@@ -45,7 +46,7 @@ const ActionCard: React.FC<ActionCardProps> = ({
           className="absolute top-2.5 right-2.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold leading-none"
           style={{ backgroundColor: 'rgba(59,130,246,0.12)', color: 'rgb(37,99,235)' }}
         >
-          <Sparkles className="w-2.5 h-2.5" />
+          <AIIcon className="w-2.5 h-2.5" />
           {badge}
         </span>
       )}
