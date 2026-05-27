@@ -88,7 +88,24 @@ aiChatRouter.post('/chat', async (req, res) => {
     const operations: FormOperation[] = [];
     let fullText = '';
 
+    const TOOL_STATUS_MAP: Record<string, string> = {
+      listFields: 'Reading form structure...',
+      getField: 'Checking field details...',
+      addField: 'Adding field...',
+      updateField: 'Updating field...',
+      removeField: 'Removing field...',
+      reorderFields: 'Reordering fields...',
+      updateLayout: 'Updating layout...',
+      renamePage: 'Renaming page...',
+      reorderPages: 'Reordering pages...',
+    };
+
     for await (const part of stream.fullStream) {
+      if (part.type === 'tool-call') {
+        const toolName = (part as any).toolName as string;
+        write({ type: 'status', text: TOOL_STATUS_MAP[toolName] ?? 'Working...' });
+      }
+
       if (part.type === 'text-delta') {
         const delta: string = (part as any).textDelta ?? (part as any).text ?? '';
         fullText += delta;
@@ -96,7 +113,7 @@ aiChatRouter.post('/chat', async (req, res) => {
       }
 
       if (part.type === 'tool-result') {
-        const MUTATION_OP_TYPES = new Set(['ADD_FIELD', 'UPDATE_FIELD', 'REMOVE_FIELD', 'REORDER_FIELDS', 'UPDATE_LAYOUT']);
+        const MUTATION_OP_TYPES = new Set(['ADD_FIELD', 'UPDATE_FIELD', 'REMOVE_FIELD', 'REORDER_FIELDS', 'UPDATE_LAYOUT', 'RENAME_PAGE', 'REORDER_PAGES']);
         const op = (part as any).output as (FormOperation & { type?: string }) | undefined;
         if (op && op.type && MUTATION_OP_TYPES.has(op.type)) {
           operations.push(op);
