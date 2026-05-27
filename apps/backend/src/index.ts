@@ -315,13 +315,13 @@ async function startServer() {
   // Create Hocuspocus Server for collaborative editing
   const hocuspocusServer = createHocuspocusServer();
 
-  // Create WebSocket Server and integrate with Hocuspocus
+  // Use noServer:true on both WebSocket servers and route upgrades manually.
+  // If both servers share httpServer with path options, ws v8 calls abortHandshake(400)
+  // on every path mismatch — which corrupts already-upgraded sockets and causes
+  // "Invalid frame header" errors on the client side.
   const { WebSocketServer } = await import('ws');
-  const wss = new WebSocketServer({
-    server: httpServer,
-    path: '/collaboration',
-  });
 
+  const wss = new WebSocketServer({ noServer: true });
   wss.on('connection', (ws, request) => {
     logger.info('🔌 WebSocket connection established');
     hocuspocusServer.handleConnection(ws, request);
@@ -332,7 +332,7 @@ async function startServer() {
   // The per-org AI token budget in checkAITokenBudget() provides the primary abuse guard
   // for aiChatStream subscriptions. A per-connection rate limit should be added before
   // high-traffic production use.
-  const gqlWss = new WebSocketServer({ server: httpServer, path: '/graphql' });
+  const gqlWss = new WebSocketServer({ noServer: true });
   ({ dispose: disposeGqlWs } = useServer(
     {
       schema,
@@ -360,6 +360,18 @@ async function startServer() {
     gqlWss
   ));
   logger.info('🔌 graphql-ws subscription server listening at /graphql');
+
+  // Single upgrade router — prevents ws v8 abortHandshake from corrupting sockets
+  httpServer.on('upgrade', (req, socket, head) => {
+    const pathname = req.url?.split('?')[0];
+    if (pathname === '/collaboration') {
+      wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, req));
+    } else if (pathname === '/graphql') {
+      gqlWss.handleUpgrade(req, socket, head, (ws) => gqlWss.emit('connection', ws, req));
+    } else {
+      socket.destroy();
+    }
+  });
 
   httpServer.listen(PORT, () => {
     logger.info(`🚀 Server running on http://localhost:${PORT}`);

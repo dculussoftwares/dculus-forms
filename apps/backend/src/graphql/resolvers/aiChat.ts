@@ -52,7 +52,8 @@ export const aiChatResolvers = {
     ) => {
       requireAuth(context.auth);
       await requireOrganizationMembership(context.auth, organizationId);
-      return createConversation(formId, organizationId, context.auth.user!.id);
+      const conv = await createConversation(formId, organizationId, context.auth.user!.id);
+      return { ...conv, messageCount: 0, messages: [] };
     },
 
     deleteAIChatConversation: async (
@@ -74,7 +75,7 @@ export const aiChatResolvers = {
       await requireOrganizationMembership(context.auth, organizationId);
       const updated = await renameConversation(id, context.auth.user!.id, title);
       if (!updated) throw createGraphQLError('Conversation not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
-      return updated;
+      return { ...updated, messageCount: 0, messages: [] };
     },
 
     sendAIChatUserMessage: async (
@@ -137,9 +138,12 @@ export const aiChatResolvers = {
             }
 
             if (part.type === 'tool-result') {
-              const op = (part as any).result as object;
-              operations.push(op);
-              yield { aiChatStream: { type: 'operation', operation: op } };
+              // AI SDK v6: result is on `output`, not `result`
+              const op = (part as any).output as object;
+              if (op) {
+                operations.push(op);
+                yield { aiChatStream: { type: 'operation', operation: op } };
+              }
             }
 
             if (part.type === 'finish') {
@@ -150,7 +154,8 @@ export const aiChatResolvers = {
             }
           }
         } catch (err) {
-          logger.error({ err, conversationId }, 'AI chat stream failed');
+          const errMsg = err instanceof Error ? err.message : String(err);
+          logger.error({ errMsg, conversationId }, 'AI chat stream failed');
           yield { aiChatStream: { type: 'error', error: 'AI processing failed. Please try again.' } };
         }
       },
