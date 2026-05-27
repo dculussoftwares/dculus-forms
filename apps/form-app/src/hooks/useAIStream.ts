@@ -55,7 +55,7 @@ export function useAIStream(organizationId: string, callbacks: AIStreamCallbacks
             try {
               const chunk = JSON.parse(line) as { type: string; delta?: string; op?: unknown; messageId?: string; error?: string };
               if (chunk.type === 'text') callbacksRef.current.onTextDelta(chunk.delta ?? '');
-              if (chunk.type === 'operation') callbacksRef.current.onOperation(chunk.op);
+              if (chunk.type === 'operation' && chunk.op !== undefined) callbacksRef.current.onOperation(chunk.op);
               if (chunk.type === 'done') callbacksRef.current.onDone(chunk.messageId ?? '');
               if (chunk.type === 'error') callbacksRef.current.onError(chunk.error ?? 'Unknown error');
             } catch {
