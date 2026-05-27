@@ -21,5 +21,10 @@
   "undo": "Undo",
   "undoTitle": "Undo AI changes",
   "cancel": "Cancel",
-  "closeAriaLabel": "Close AI assistant"
+  "closeAriaLabel": "Close AI assistant",
+  "chips": {
+    "analyseForm": "Analyse form",
+    "listAllFields": "List all fields",
+    "makeAllRequired": "Make all required"
+  }
 }

@@ -21,5 +21,10 @@
   "undo": "செயல் தவிர்",
   "undoTitle": "AI மாற்றங்களை செயல் தவிர்",
   "cancel": "ரத்து செய்",
-  "closeAriaLabel": "AI உதவியாளரை மூடு"
+  "closeAriaLabel": "AI உதவியாளரை மூடு",
+  "chips": {
+    "analyseForm": "படிவத்தை பகுப்பாய்",
+    "listAllFields": "அனைத்து புலங்களையும் பட்டியலிடு",
+    "makeAllRequired": "அனைத்தையும் கட்டாயமாக்கு"
+  }
 }
