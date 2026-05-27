@@ -40,6 +40,7 @@
     "@aws-sdk/s3-request-presigner": "3.872.0",
     "@dculus/types": "workspace:*",
     "@dculus/utils": "workspace:*",
+    "@graphql-tools/schema": "10.0.33",
     "@hocuspocus/extension-database": "^3.2.3",
     "@hocuspocus/server": "^3.2.3",
     "@maxmind/geoip2-node": "6.1.0",

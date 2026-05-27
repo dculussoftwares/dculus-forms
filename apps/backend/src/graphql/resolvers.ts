@@ -14,6 +14,7 @@ import { pluginsResolvers } from './resolvers/plugins.js';
 import { subscriptionResolvers } from './resolvers/subscriptions.js';
 import { tagResolvers } from './resolvers/tags.js';
 import { aiResolvers } from './resolvers/ai.js';
+import { aiChatResolvers } from './resolvers/aiChat.js';
 import { GraphQLJSON } from 'graphql-type-json';
 
 export const resolvers = {
@@ -25,6 +26,7 @@ export const resolvers = {
     ...subscriptionResolvers.Organization,
   },
   Query: {
+    ...aiChatResolvers.Query,
     ...aiResolvers.Query,
     ...betterAuthResolvers.Query,
     ...formsResolvers.Query,
@@ -42,6 +44,7 @@ export const resolvers = {
     ...tagResolvers.Query,
   },
   Mutation: {
+    ...aiChatResolvers.Mutation,
     ...aiResolvers.Mutation,
     ...betterAuthResolvers.Mutation,
     ...formsResolvers.Mutation,
@@ -75,5 +78,8 @@ export const resolvers = {
   },
   PlanSubscription: {
     ...subscriptionResolvers.Subscription,
+  },
+  Subscription: {
+    ...aiChatResolvers.Subscription,
   },
 };

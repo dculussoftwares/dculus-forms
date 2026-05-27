@@ -17,6 +17,8 @@ import { toNodeHandler } from 'better-auth/node';
 import { auth, DEV_ORIGINS } from './lib/better-auth.js';
 import { typeDefs } from './graphql/schema.js';
 import { resolvers } from './graphql/resolvers.js';
+import { makeExecutableSchema } from '@graphql-tools/schema';
+import { useServer } from 'graphql-ws/use/ws';
 import { healthRouter } from './routes/health.js';
 import { uploadRouter } from './routes/upload.js';
 import { chargebeeWebhookRouter } from './routes/chargebee-webhooks.js';
@@ -214,10 +216,12 @@ const sentryApolloPlugin = {
   },
 };
 
+// Build executable schema — shared between ApolloServer (HTTP) and graphql-ws (WebSocket)
+const schema = makeExecutableSchema({ typeDefs, resolvers });
+
 // GraphQL Server
 const server = new ApolloServer({
-  typeDefs,
-  resolvers,
+  schema,
   introspection: !appConfig.isProduction,
   validationRules: [depthLimit(8)],
   plugins: [
@@ -318,6 +322,35 @@ async function startServer() {
     logger.info('🔌 WebSocket connection established');
     hocuspocusServer.handleConnection(ws, request);
   });
+
+  // GraphQL real-time subscriptions (graphql-ws) — separate path from Hocuspocus
+  const gqlWss = new WebSocketServer({ server: httpServer, path: '/graphql' });
+  useServer(
+    {
+      schema,
+      context: async (ctx: { connectionParams?: Record<string, unknown> }) => {
+        const token = ctx.connectionParams?.token as string | undefined;
+        if (!token) {
+          return { auth: { user: null, session: null, isAuthenticated: false } };
+        }
+        try {
+          const headers = new Headers({ authorization: `Bearer ${token}` });
+          const sessionData = await auth.api.getSession({ headers });
+          return {
+            auth: {
+              user: sessionData?.user ?? null,
+              session: sessionData?.session ?? null,
+              isAuthenticated: !!sessionData?.user,
+            },
+          };
+        } catch {
+          return { auth: { user: null, session: null, isAuthenticated: false } };
+        }
+      },
+    },
+    gqlWss
+  );
+  logger.info('🔌 graphql-ws subscription server listening at /graphql');
 
   httpServer.listen(PORT, () => {
     logger.info(`🚀 Server running on http://localhost:${PORT}`);
