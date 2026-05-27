@@ -198,7 +198,7 @@ app.use(edgeGeolocationMiddleware);
 app.use('/health', healthRouter);
 app.use('/', uploadLimiter, uploadRouter);
 app.use('/api', chargebeeWebhookRouter);
-app.use('/api', aiChatRouter);
+app.use('/api', graphqlLimiter, aiChatRouter);
 app.use('/api', pixabayRouter);
 app.use('/api', pexelsRouter);
 
@@ -334,6 +334,9 @@ async function startServer() {
   // The per-org AI token budget in checkAITokenBudget() provides the primary abuse guard
   // for aiChatStream subscriptions. A per-connection rate limit should be added before
   // high-traffic production use.
+
+  // TODO(ai-redesign): gqlWss is dead code — schema no longer has a Subscription type.
+  // Remove this along with GraphQLWsLink in apolloClient.ts in Task 10.
   const gqlWss = new WebSocketServer({ noServer: true });
   ({ dispose: disposeGqlWs } = useServer(
     {
