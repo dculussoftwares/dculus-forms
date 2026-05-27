@@ -21,6 +21,7 @@ import {
   Layers,
   CheckCircle2,
   Search,
+  Loader2,
 } from 'lucide-react';
 import { GENERATE_FORM_WITH_AI, CREATE_FORM } from '../graphql/mutations';
 import { GET_TEMPLATES } from '../graphql/templates';
@@ -408,7 +409,7 @@ const CreateFormWizard: React.FC = () => {
                 size="lg"
               >
                 {isGenerating ? (
-                  <><LoadingSpinner className="mr-2 h-4 w-4" />{t('ai.generating')}</>
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('ai.generating')}</>
                 ) : (
                   <><Sparkles className="mr-2 h-4 w-4" />{t('ai.generate')}</>
                 )}
@@ -554,7 +555,7 @@ const CreateFormWizard: React.FC = () => {
                     className="h-9 shrink-0"
                   >
                     {isCreatingFromTemplate ? (
-                      <><LoadingSpinner className="mr-2 h-3.5 w-3.5" />{t('template.creating')}</>
+                      <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />{t('template.creating')}</>
                     ) : (
                       <><Layers className="mr-2 h-3.5 w-3.5" />{t('template.confirmCreate')}</>
                     )}
