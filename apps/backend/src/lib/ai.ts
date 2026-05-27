@@ -10,10 +10,6 @@ function buildAzureModel(deployment: string): LanguageModel {
   const azure = createAzure({
     baseURL: `${process.env.AZURE_OPENAI_ENDPOINT}openai`,
     apiKey: process.env.AZURE_OPENAI_API_KEY!,
-    // Azure uses deployment-based URLs and Chat Completions API, not the
-    // new OpenAI Responses API (which Azure doesn't support yet).
-    apiVersion: '2024-08-01-preview',
-    useDeploymentBasedUrls: true,
   });
   return azure.chat(deployment);
 }
