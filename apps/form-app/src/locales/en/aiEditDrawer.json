@@ -1,0 +1,21 @@
+{
+  "title": "AI Assistant",
+  "newChat": "New chat",
+  "rename": "Rename",
+  "delete": "Delete conversation",
+  "deleteConfirm": "Are you sure you want to delete this conversation?",
+  "inputPlaceholder": "Ask AI to edit your form...",
+  "send": "Send",
+  "typing": "AI is thinking...",
+  "operationChips": {
+    "ADD_FIELD": "Added field",
+    "UPDATE_FIELD": "Updated field",
+    "REMOVE_FIELD": "Removed field",
+    "REORDER_FIELDS": "Reordered fields",
+    "UPDATE_LAYOUT": "Updated layout"
+  },
+  "tokenLimitError": "AI token limit reached. Upgrade your plan to continue.",
+  "genericError": "Something went wrong. Please try again.",
+  "emptyState": "Ask AI to help you edit, improve, or rewrite any part of your form.",
+  "openButton": "AI"
+}
