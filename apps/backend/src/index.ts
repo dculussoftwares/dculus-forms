@@ -25,6 +25,7 @@ import { uploadRouter } from './routes/upload.js';
 import { chargebeeWebhookRouter } from './routes/chargebee-webhooks.js';
 import { pixabayRouter } from './routes/pixabay.js';
 import { pexelsRouter } from './routes/pexels.js';
+import { aiChatRouter } from './routes/aiChat.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { edgeGeolocationMiddleware } from './middleware/edge-geolocation.js';
 import { createBetterAuthContext } from './middleware/better-auth-middleware.js';
@@ -197,6 +198,7 @@ app.use(edgeGeolocationMiddleware);
 app.use('/health', healthRouter);
 app.use('/', uploadLimiter, uploadRouter);
 app.use('/api', chargebeeWebhookRouter);
+app.use('/api', aiChatRouter);
 app.use('/api', pixabayRouter);
 app.use('/api', pexelsRouter);
 

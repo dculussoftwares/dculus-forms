@@ -1172,16 +1172,6 @@ export const typeDefs = gql`
     createAIChatConversation(formId: ID!, organizationId: ID!): AIChatConversation!
     deleteAIChatConversation(id: ID!, organizationId: ID!): Boolean!
     renameAIChatConversation(id: ID!, organizationId: ID!, title: String!): AIChatConversation!
-    sendAIChatUserMessage(conversationId: ID!, organizationId: ID!, content: String!): AIChatMessage!
-  }
-
-  # Real-time subscriptions
-  type Subscription {
-    aiChatStream(
-      conversationId: ID!
-      organizationId: ID!
-      currentFormState: JSON
-    ): AIChatChunk!
   }
 
   # AI Types
@@ -1240,14 +1230,6 @@ export const typeDefs = gql`
     content: String!
     operations: [JSON!]
     createdAt: String!
-  }
-
-  type AIChatChunk {
-    type: String!
-    delta: String
-    operation: JSON
-    messageId: String
-    error: String
   }
 
   scalar Upload

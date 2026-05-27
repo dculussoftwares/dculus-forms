@@ -79,7 +79,4 @@ export const resolvers = {
   PlanSubscription: {
     ...subscriptionResolvers.Subscription,
   },
-  Subscription: {
-    ...aiChatResolvers.Subscription,
-  },
 };
