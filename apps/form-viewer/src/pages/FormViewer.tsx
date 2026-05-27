@@ -352,8 +352,10 @@ const FormViewer: React.FC = () => {
 
   const handleSubmitAnother = () => {
     useFormResponseStore.getState().clearAllResponses();
+    isSubmittingRef.current = false;
     setSubmissionState('idle');
     setThankYouData(null);
+    setHasStartedForm(false);
   };
 
   // Show success message after submission
