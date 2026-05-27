@@ -33,7 +33,7 @@ const Header: React.FC = () => {
               {t('navigation.demo')}
             </Button>
             <Button 
-              onClick={() => navigate('/forms/new')}
+              onClick={() => navigate('/forms/create')}
             >
               + {t('navigation.newForm')}
             </Button>

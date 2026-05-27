@@ -52,7 +52,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {/* ── "+ New Form" CTA — mirrors Typeform's "+ Create form" ── */}
         <div className="px-2 pb-3 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
           <Button
-            onClick={() => navigate('/dashboard/templates')}
+            onClick={() => navigate('/forms/create')}
             className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:p-0"
             title={t('navigation.createForm', { defaultValue: 'New form' })}
           >
