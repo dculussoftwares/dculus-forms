@@ -144,7 +144,9 @@ export function useAIChat({
       if (!activeConversationId || streamActive) return;
       clearBatch();
       beginBatch();
-      const currentPageId: string | undefined = (store.pages as any[])[0]?.id;
+      // Use the page the user is currently viewing; fall back to first page
+      const currentPageId: string | undefined =
+        (store as any).selectedPageId ?? (store.pages as any[])[0]?.id;
 
       setStreamingMessage({
         id: 'streaming',

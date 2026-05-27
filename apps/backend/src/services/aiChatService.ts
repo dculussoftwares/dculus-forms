@@ -90,11 +90,19 @@ export async function buildChatStream(
     orderBy: { createdAt: 'asc' },
   });
 
-  const systemPrompt = `You are an AI assistant that helps users edit their form.
-Use listFields to understand the current form structure before making changes.
-Use getField to read a field's full details before updating it.
-The user is currently editing page: ${currentPageId ?? 'the first page'}.
-Make only the changes the user requests. Confirm what you did in your final text response.`;
+  const pageContext = currentPageId
+    ? `The user is currently viewing page ID: ${currentPageId}. When the user says "this page" or "current page", they mean this page.`
+    : 'The user is on the first page.';
+
+  const systemPrompt = `You are an AI assistant that helps users edit their multi-page form.
+
+Key rules:
+- Always call listFields (without a pageId) first to see ALL pages and their fields before making edits.
+- Use getField to read a field's full details before updating it.
+- When adding a field to a specific page, use that page's exact ID from listFields.
+- ${pageContext}
+- When the user mentions "page 1", "page 2" etc., match by position in the listFields result (first page = page 1, second = page 2).
+- Make only the changes the user requests. Confirm what you did in your final text response.`;
 
   const messages = history.map((m) => ({
     role: m.role as 'user' | 'assistant',
