@@ -85,8 +85,11 @@ export const aiChatResolvers = {
       requireAuth(context.auth);
       await requireOrganizationMembership(context.auth, organizationId);
       const message = await saveUserMessage(conversationId, content);
-      // Auto-generate title on every message (fire-and-forget)
-      autoGenerateTitle(conversationId, content);
+      // Auto-generate title from first message only (fire-and-forget)
+      const conv = await getConversation(conversationId, context.auth.user!.id);
+      if (conv && conv.messageCount <= 1) {
+        autoGenerateTitle(conversationId, content);
+      }
       return message;
     },
   },
@@ -128,8 +131,9 @@ export const aiChatResolvers = {
 
           for await (const part of result.fullStream) {
             if (part.type === 'text-delta') {
-              fullText += part.textDelta;
-              yield { aiChatStream: { type: 'text', delta: part.textDelta } };
+              const delta = (part as any).text ?? (part as any).textDelta ?? '';
+              fullText += delta;
+              yield { aiChatStream: { type: 'text', delta } };
             }
 
             if (part.type === 'tool-result') {
@@ -139,7 +143,7 @@ export const aiChatResolvers = {
             }
 
             if (part.type === 'finish') {
-              const tokensUsed = (part as any).usage?.totalTokens ?? 0;
+              const tokensUsed = (part as any).totalUsage?.totalTokens ?? (part as any).usage?.totalTokens ?? 0;
               const saved = await saveAssistantMessage(conversationId, fullText, operations, tokensUsed);
               await recordAITokenUsage(organizationId, tokensUsed);
               yield { aiChatStream: { type: 'done', messageId: saved.id } };

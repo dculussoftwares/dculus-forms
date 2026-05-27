@@ -69,6 +69,7 @@ const wsLink = new GraphQLWsLink(
       token: getBearerToken(),
     }),
     retryAttempts: 3,
+    lazy: true,  // only connect when a subscription is active
   })
 );
 

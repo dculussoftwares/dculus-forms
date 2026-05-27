@@ -13,6 +13,7 @@ import morgan from 'morgan';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import depthLimit from 'graphql-depth-limit';
+import { validate } from 'graphql';
 import { toNodeHandler } from 'better-auth/node';
 import { auth, DEV_ORIGINS } from './lib/better-auth.js';
 import { typeDefs } from './graphql/schema.js';
@@ -40,6 +41,9 @@ import { deriveGraphQLErrorCode } from './lib/graphqlErrors.js';
 const app = express();
 const httpServer = createServer(app);
 const PORT = appConfig.port;
+
+// Holds the graphql-ws dispose function so the shutdown handler can close it cleanly
+let disposeGqlWs: (() => void | Promise<void>) | undefined;
 
 // Middleware
 app.use(
@@ -325,9 +329,10 @@ async function startServer() {
 
   // GraphQL real-time subscriptions (graphql-ws) — separate path from Hocuspocus
   const gqlWss = new WebSocketServer({ server: httpServer, path: '/graphql' });
-  useServer(
+  ({ dispose: disposeGqlWs } = useServer(
     {
       schema,
+      validate: (schema, document) => validate(schema, document, [depthLimit(8)]),
       context: async (ctx: { connectionParams?: Record<string, unknown> }) => {
         const token = ctx.connectionParams?.token as string | undefined;
         if (!token) {
@@ -349,7 +354,7 @@ async function startServer() {
       },
     },
     gqlWss
-  );
+  ));
   logger.info('🔌 graphql-ws subscription server listening at /graphql');
 
   httpServer.listen(PORT, () => {
@@ -374,6 +379,8 @@ startServer().catch((error) => {
 
 const shutdown = async (signal: string) => {
   logger.info(`${signal} received — shutting down gracefully`);
+  // Dispose graphql-ws server before closing HTTP server
+  if (disposeGqlWs) await Promise.resolve(disposeGqlWs()).catch(() => {});
   httpServer.close(async () => {
     try {
       await server.stop();
