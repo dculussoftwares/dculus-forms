@@ -5,6 +5,7 @@ interface PixabayImage {
   id: number;
   webformatURL: string;
   largeImageURL: string;
+  fullHDURL?: string;
   previewURL: string;
   tags: string;
   user: string;

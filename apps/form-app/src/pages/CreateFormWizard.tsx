@@ -385,17 +385,18 @@ const CreateFormWizard: React.FC = () => {
 
   const handleSelectPexels = useCallback((photo: PexelsPhoto) => {
     setSelectedImage(prev =>
-      prev?.source === 'pexels' && prev.downloadUrl === photo.src.large
+      prev?.source === 'pexels' && prev.downloadUrl === photo.src.large2x
         ? null
-        : { source: 'pexels', downloadUrl: photo.src.large, previewUrl: photo.src.medium, credit: photo.photographer }
+        : { source: 'pexels', downloadUrl: photo.src.large2x, previewUrl: photo.src.medium, credit: photo.photographer }
     );
   }, []);
 
   const handleSelectPixabay = useCallback((image: PixabayImage) => {
+    const downloadUrl = image.fullHDURL ?? image.largeImageURL;
     setSelectedImage(prev =>
-      prev?.source === 'pixabay' && prev.downloadUrl === image.largeImageURL
+      prev?.source === 'pixabay' && prev.downloadUrl === downloadUrl
         ? null
-        : { source: 'pixabay', downloadUrl: image.largeImageURL, previewUrl: image.webformatURL, credit: image.user }
+        : { source: 'pixabay', downloadUrl, previewUrl: image.webformatURL, credit: image.user }
     );
   }, []);
 
@@ -616,7 +617,7 @@ const CreateFormWizard: React.FC = () => {
                       <>
                         <div className="grid grid-cols-3 gap-2">
                           {pexelsImages.map(photo => {
-                            const isSelected = selectedImage?.source === 'pexels' && selectedImage.downloadUrl === photo.src.large;
+                            const isSelected = selectedImage?.source === 'pexels' && selectedImage.downloadUrl === photo.src.large2x;
                             return (
                               <button
                                 key={photo.id}
@@ -672,7 +673,7 @@ const CreateFormWizard: React.FC = () => {
                     ) : (
                       <div className="grid grid-cols-3 gap-2">
                         {pixabayImages.map(image => {
-                          const isSelected = selectedImage?.source === 'pixabay' && selectedImage.downloadUrl === image.largeImageURL;
+                          const isSelected = selectedImage?.source === 'pixabay' && selectedImage.downloadUrl === (image.fullHDURL ?? image.largeImageURL);
                           return (
                             <button
                               key={image.id}
