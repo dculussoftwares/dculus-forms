@@ -336,7 +336,9 @@ async function startServer() {
   // high-traffic production use.
 
   // TODO(ai-redesign): gqlWss is dead code — schema no longer has a Subscription type.
-  // Remove this along with GraphQLWsLink in apolloClient.ts in Task 10.
+  // The frontend GraphQLWsLink has been removed. This backend WS server can also be
+  // cleaned up when convenient (requires removing useServer, WebSocketServer, and
+  // the upgrade handler below).
   const gqlWss = new WebSocketServer({ noServer: true });
   ({ dispose: disposeGqlWs } = useServer(
     {

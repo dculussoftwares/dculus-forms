@@ -65,25 +65,3 @@ export const RENAME_AI_CHAT_CONVERSATION = gql`
   }
 `;
 
-export const SEND_AI_CHAT_USER_MESSAGE = gql`
-  mutation SendAIChatUserMessage($conversationId: ID!, $organizationId: ID!, $content: String!) {
-    sendAIChatUserMessage(conversationId: $conversationId, organizationId: $organizationId, content: $content) {
-      id
-      role
-      content
-      createdAt
-    }
-  }
-`;
-
-export const AI_CHAT_STREAM = gql`
-  subscription AIChatStream($conversationId: ID!, $organizationId: ID!, $currentFormState: JSON!) {
-    aiChatStream(conversationId: $conversationId, organizationId: $organizationId, currentFormState: $currentFormState) {
-      type
-      delta
-      operation
-      messageId
-      error
-    }
-  }
-`;
