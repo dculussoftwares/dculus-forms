@@ -149,6 +149,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
           code: "L1" as LayoutCode,
           content: getHtmlContent('contact'),
           customBackGroundColor: "#ffffff",
+          customCTAButtonName: "Send a Message",
           backgroundImageKey: getImageKey(0),
           pageMode: PageModeType.MULTIPAGE
         },
@@ -216,6 +217,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
           code: "L2" as LayoutCode,
           content: getHtmlContent('feedback'),
           customBackGroundColor: "#f8f9fa",
+          customCTAButtonName: "Share Feedback",
           backgroundImageKey: getImageKey(1),
           pageMode: PageModeType.MULTIPAGE
         },
@@ -316,6 +318,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
           code: "L3" as LayoutCode,
           content: getHtmlContent('registration'),
           customBackGroundColor: "#e3f2fd",
+          customCTAButtonName: "Register Now",
           backgroundImageKey: getImageKey(0),
           pageMode: PageModeType.MULTIPAGE
         },
@@ -415,6 +418,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
           code: "L4" as LayoutCode,
           content: getHtmlContent('job'),
           customBackGroundColor: "#fff3e0",
+          customCTAButtonName: "Apply Now",
           backgroundImageKey: getImageKey(1),
           pageMode: PageModeType.MULTIPAGE
         },
@@ -483,6 +487,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
           code: "L5" as LayoutCode,
           content: getHtmlContent('survey'),
           customBackGroundColor: "#f3e5f5",
+          customCTAButtonName: "Start Survey",
           backgroundImageKey: getImageKey(0),
           pageMode: PageModeType.MULTIPAGE
         },
@@ -549,6 +554,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
           code: "L6" as LayoutCode,
           content: getHtmlContent('newsletter'),
           customBackGroundColor: "#e8f5e8",
+          customCTAButtonName: "Subscribe Now",
           backgroundImageKey: getImageKey(1),
           pageMode: PageModeType.MULTIPAGE
         },
@@ -680,6 +686,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
           code: "L1" as LayoutCode,
           content: '<h1><strong>All Fields Showcase</strong></h1><p>This template demonstrates all 9 available form field types with their unique capabilities and validation features.</p>',
           customBackGroundColor: "#f0f4f8",
+          customCTAButtonName: "Get Started",
           backgroundImageKey: getImageKey(0),
           pageMode: PageModeType.MULTIPAGE
         },
