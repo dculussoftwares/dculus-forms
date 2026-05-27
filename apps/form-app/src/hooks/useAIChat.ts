@@ -67,7 +67,7 @@ export function useAIChat({
   const [deleteConvMutation] = useMutation(DELETE_AI_CHAT_CONVERSATION);
   const [renameConvMutation] = useMutation(RENAME_AI_CHAT_CONVERSATION);
 
-  const { isStreaming: streamActive, sendMessage: streamSend, cancel } = useAIStream(
+  const { isStreaming: streamActive, sendMessage: streamSend, cancel: cancelStream } = useAIStream(
     organizationId,
     {
       onTextDelta: (delta) => {
@@ -76,7 +76,6 @@ export function useAIChat({
         );
       },
       onOperation: (op) => {
-        beginBatch();
         applyAIOp(op, store);
         const label = buildOpLabel(op as Record<string, unknown>);
         setStreamingMessage((prev) =>
@@ -99,6 +98,12 @@ export function useAIChat({
       },
     }
   );
+
+  const cancel = useCallback(() => {
+    cancelStream();
+    setIsStreaming(false);
+    setStreamingMessage(null);
+  }, [cancelStream]);
 
   const createConversation = useCallback(async () => {
     const { data } = await createConvMutation({ variables: { formId, organizationId } });
@@ -138,6 +143,7 @@ export function useAIChat({
     async (content: string) => {
       if (!activeConversationId || streamActive) return;
       clearBatch();
+      beginBatch();
       const currentPageId: string | undefined = (store.pages as any[])[0]?.id;
 
       setStreamingMessage({
@@ -153,7 +159,7 @@ export function useAIChat({
 
       await streamSend(activeConversationId, content, currentPageId);
     },
-    [activeConversationId, streamActive, clearBatch, store.pages, streamSend]
+    [activeConversationId, streamActive, clearBatch, beginBatch, store.pages, streamSend]
   );
 
   const conversations = conversationsData?.listAIChatConversations ?? [];
