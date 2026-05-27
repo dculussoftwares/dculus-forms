@@ -48,7 +48,7 @@ describe('createFormEditTools', () => {
 describe('listFields', () => {
   it('returns all pages with field summaries when no pageId given', async () => {
     const tools = createFormEditTools('form-1');
-    const result = await tools.listFields.execute({ pageId: undefined });
+    const result = await tools.listFields.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
     expect(result.pages).toHaveLength(2);
     expect(result.pages[0].fields).toHaveLength(2);
     expect(result.pages[0].fields[0]).toEqual({
@@ -58,7 +58,7 @@ describe('listFields', () => {
 
   it('filters to a specific page when pageId given', async () => {
     const tools = createFormEditTools('form-1');
-    const result = await tools.listFields.execute({ pageId: 'page-2' });
+    const result = await tools.listFields.execute!({ pageId: 'page-2' }, { messages: [], toolCallId: 'test' }) as any;
     expect(result.pages).toHaveLength(1);
     expect(result.pages[0].id).toBe('page-2');
     expect(result.pages[0].fields).toHaveLength(1);
@@ -67,7 +67,7 @@ describe('listFields', () => {
   it('returns error when form not found', async () => {
     (prisma.form.findUnique as any).mockResolvedValue(null);
     const tools = createFormEditTools('bad-id');
-    const result = await tools.listFields.execute({ pageId: undefined });
+    const result = await tools.listFields.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' });
     expect(result).toHaveProperty('error');
   });
 });
@@ -75,7 +75,7 @@ describe('listFields', () => {
 describe('getField', () => {
   it('returns full field details including pageId', async () => {
     const tools = createFormEditTools('form-1');
-    const result = await tools.getField.execute({ fieldId: 'f-2' });
+    const result = await tools.getField.execute!({ fieldId: 'f-2' }, { messages: [], toolCallId: 'test' });
     expect(result).toMatchObject({
       id: 'f-2',
       type: 'SELECT_FIELD',
@@ -89,7 +89,7 @@ describe('getField', () => {
 
   it('returns error for unknown fieldId', async () => {
     const tools = createFormEditTools('form-1');
-    const result = await tools.getField.execute({ fieldId: 'unknown' });
+    const result = await tools.getField.execute!({ fieldId: 'unknown' }, { messages: [], toolCallId: 'test' });
     expect(result).toHaveProperty('error');
   });
 });
@@ -97,7 +97,7 @@ describe('getField', () => {
 describe('addField', () => {
   it('returns ADD_FIELD op with all inputs', async () => {
     const tools = createFormEditTools('form-1');
-    const result = await tools.addField.execute({
+    const result = await tools.addField.execute!({
       pageId: 'page-1',
       insertAfterFieldId: 'f-1',
       fieldType: 'text',
@@ -105,7 +105,7 @@ describe('addField', () => {
       required: false,
       placeholder: null,
       options: null,
-    });
+    }, { messages: [], toolCallId: 'test' });
     expect(result).toEqual({
       type: 'ADD_FIELD',
       pageId: 'page-1',
@@ -122,10 +122,10 @@ describe('addField', () => {
 describe('updateField', () => {
   it('returns UPDATE_FIELD op', async () => {
     const tools = createFormEditTools('form-1');
-    const result = await tools.updateField.execute({
+    const result = await tools.updateField.execute!({
       fieldId: 'f-1',
       updates: { label: 'Full Name', required: true },
-    });
+    }, { messages: [], toolCallId: 'test' });
     expect(result).toEqual({
       type: 'UPDATE_FIELD',
       fieldId: 'f-1',
@@ -137,7 +137,7 @@ describe('updateField', () => {
 describe('removeField', () => {
   it('returns REMOVE_FIELD op', async () => {
     const tools = createFormEditTools('form-1');
-    const result = await tools.removeField.execute({ fieldId: 'f-2' });
+    const result = await tools.removeField.execute!({ fieldId: 'f-2' }, { messages: [], toolCallId: 'test' });
     expect(result).toEqual({ type: 'REMOVE_FIELD', fieldId: 'f-2' });
   });
 });
@@ -145,10 +145,10 @@ describe('removeField', () => {
 describe('reorderFields', () => {
   it('returns REORDER_FIELDS op', async () => {
     const tools = createFormEditTools('form-1');
-    const result = await tools.reorderFields.execute({
+    const result = await tools.reorderFields.execute!({
       pageId: 'page-1',
       fieldIds: ['f-2', 'f-1'],
-    });
+    }, { messages: [], toolCallId: 'test' });
     expect(result).toEqual({
       type: 'REORDER_FIELDS',
       pageId: 'page-1',
@@ -160,10 +160,10 @@ describe('reorderFields', () => {
 describe('updateLayout', () => {
   it('returns UPDATE_LAYOUT op', async () => {
     const tools = createFormEditTools('form-1');
-    const result = await tools.updateLayout.execute({
+    const result = await tools.updateLayout.execute!({
       content: '<h1>Hello</h1>',
       customCTAButtonName: 'Submit',
-    });
+    }, { messages: [], toolCallId: 'test' });
     expect(result).toEqual({
       type: 'UPDATE_LAYOUT',
       content: '<h1>Hello</h1>',

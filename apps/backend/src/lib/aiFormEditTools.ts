@@ -1,6 +1,6 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { prisma } from '../lib/prisma.js';
+import { prisma } from './prisma.js';
 
 export function createFormEditTools(formId: string) {
   async function getFormSchema() {
