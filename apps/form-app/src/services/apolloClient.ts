@@ -1,7 +1,10 @@
-import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
+import { ApolloClient, InMemoryCache, createHttpLink, split } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
-import { getGraphQLUrl } from '../lib/config';
+import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
+import { getMainDefinition } from '@apollo/client/utilities';
+import { createClient } from 'graphql-ws';
+import { getGraphQLUrl, getGraphQLWsUrl } from '../lib/config';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql';
 import { getBearerToken } from '../lib/auth-client';
 
@@ -59,8 +62,27 @@ const errorLink = onError(({ graphQLErrors }) => {
   }
 });
 
+const wsLink = new GraphQLWsLink(
+  createClient({
+    url: getGraphQLWsUrl(),
+    connectionParams: () => ({
+      token: getBearerToken(),
+    }),
+    retryAttempts: 3,
+  })
+);
+
+const splitLink = split(
+  ({ query }) => {
+    const definition = getMainDefinition(query);
+    return definition.kind === 'OperationDefinition' && definition.operation === 'subscription';
+  },
+  wsLink,
+  errorLink.concat(authLink).concat(httpLink),
+);
+
 export const client = new ApolloClient({
-  link: errorLink.concat(authLink).concat(httpLink),
+  link: splitLink,
   cache: new InMemoryCache(),
   credentials: 'include', // Include cookies for authentication
   defaultOptions: {
