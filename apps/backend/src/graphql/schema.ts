@@ -1065,7 +1065,7 @@ export const typeDefs = gql`
 
   type SubscriptionInitResult {
     success: Boolean!
-    subscription: Subscription
+    subscription: PlanSubscription
     message: String
   }
 
