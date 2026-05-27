@@ -11,7 +11,6 @@ import {
 } from '@dculus/ui';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useAIChat, type AIChatMessage } from '../../hooks/useAIChat';
-import { useFormBuilderStore } from '../../store/useFormBuilderStore';
 
 interface AIEditDrawerProps {
   formId: string;
@@ -115,7 +114,6 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({ formId, organizationId, isO
   const { t } = useTranslation('aiEditDrawer');
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const store = useFormBuilderStore();
 
   const {
     conversations,
@@ -143,29 +141,12 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({ formId, organizationId, isO
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, conversations.length]);
 
-  const getFormState = useCallback(() => {
-    try {
-      const pages = store.pages.map((page) => ({
-        id: page.id,
-        fields: ((page as unknown as { fields?: { id: string; type: string; label: string; required: boolean }[] }).fields ?? []).map((f) => ({
-          id: f.id,
-          type: f.type,
-          label: f.label,
-          required: f.required,
-        })),
-      }));
-      return { pages };
-    } catch {
-      return { pages: [] };
-    }
-  }, [store.pages]);
-
   const handleSend = useCallback(() => {
     const trimmed = input.trim();
     if (!trimmed || isStreaming || !activeConversationId) return;
     setInput('');
-    sendMessage(trimmed, getFormState());
-  }, [input, isStreaming, activeConversationId, sendMessage, getFormState]);
+    sendMessage(trimmed);
+  }, [input, isStreaming, activeConversationId, sendMessage]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

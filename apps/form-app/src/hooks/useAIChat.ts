@@ -1,6 +1,6 @@
-import { useState, useCallback, useRef } from 'react';
-import { useMutation, useQuery, useSubscription } from '@apollo/client';
-import { FieldType } from '@dculus/types';
+// apps/form-app/src/hooks/useAIChat.ts
+import { useState, useCallback } from 'react';
+import { useMutation, useQuery } from '@apollo/client';
 import { toastError } from '@dculus/ui';
 import { useFormBuilderStore } from '../store/useFormBuilderStore';
 import {
@@ -9,21 +9,10 @@ import {
   CREATE_AI_CHAT_CONVERSATION,
   DELETE_AI_CHAT_CONVERSATION,
   RENAME_AI_CHAT_CONVERSATION,
-  SEND_AI_CHAT_USER_MESSAGE,
-  AI_CHAT_STREAM,
 } from '../graphql/aiChat';
-
-const AI_TYPE_MAP: Record<string, FieldType> = {
-  text: FieldType.TEXT_INPUT_FIELD,
-  textarea: FieldType.TEXT_AREA_FIELD,
-  email: FieldType.EMAIL_FIELD,
-  number: FieldType.NUMBER_FIELD,
-  date: FieldType.DATE_FIELD,
-  select: FieldType.SELECT_FIELD,
-  radio: FieldType.RADIO_FIELD,
-  checkbox: FieldType.CHECKBOX_FIELD,
-  file: FieldType.FILE_UPLOAD_FIELD,
-};
+import { useAIStream } from './useAIStream';
+import { useYjsUndoManager } from './useYjsUndoManager';
+import { applyAIOp } from '../lib/applyAIOp';
 
 export interface AIChatMessage {
   id: string;
@@ -34,6 +23,17 @@ export interface AIChatMessage {
   isStreaming?: boolean;
   streamingText?: string;
   streamingOps?: { type: string; label: string }[];
+}
+
+export function buildOpLabel(op: Record<string, unknown>): string {
+  switch (op?.type) {
+    case 'ADD_FIELD': return `Added "${(op.label as string) ?? 'field'}"`;
+    case 'UPDATE_FIELD': return 'Updated field';
+    case 'REMOVE_FIELD': return 'Removed field';
+    case 'REORDER_FIELDS': return 'Reordered fields';
+    case 'UPDATE_LAYOUT': return 'Updated layout';
+    default: return 'Changed form';
+  }
 }
 
 export function useAIChat({
@@ -47,7 +47,8 @@ export function useAIChat({
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState<AIChatMessage | null>(null);
-  const currentFormStateRef = useRef<object>({});
+
+  const { canUndo, beginBatch, clearBatch, undo } = useYjsUndoManager();
 
   const { data: conversationsData, refetch: refetchConversations } = useQuery(
     LIST_AI_CHAT_CONVERSATIONS,
@@ -65,117 +66,39 @@ export function useAIChat({
   const [createConvMutation] = useMutation(CREATE_AI_CHAT_CONVERSATION);
   const [deleteConvMutation] = useMutation(DELETE_AI_CHAT_CONVERSATION);
   const [renameConvMutation] = useMutation(RENAME_AI_CHAT_CONVERSATION);
-  const [sendUserMessageMutation] = useMutation(SEND_AI_CHAT_USER_MESSAGE);
 
-  useSubscription(AI_CHAT_STREAM, {
-    variables: {
-      conversationId: activeConversationId!,
-      organizationId,
-      currentFormState: currentFormStateRef.current,
-    },
-    skip: !isStreaming || !activeConversationId,
-    onData: ({ data }) => {
-      const chunk = data.data?.aiChatStream;
-      if (!chunk) return;
-
-      if (chunk.type === 'text') {
+  const { isStreaming: streamActive, sendMessage: streamSend, cancel } = useAIStream(
+    organizationId,
+    {
+      onTextDelta: (delta) => {
         setStreamingMessage((prev) =>
-          prev ? { ...prev, streamingText: (prev.streamingText ?? '') + (chunk.delta ?? '') } : null
+          prev ? { ...prev, streamingText: (prev.streamingText ?? '') + delta } : null
         );
-      }
-
-      if (chunk.type === 'operation' && chunk.operation) {
-        applyOperationToStore(chunk.operation);
-        const label = buildOperationLabel(chunk.operation);
+      },
+      onOperation: (op) => {
+        beginBatch();
+        applyAIOp(op, store);
+        const label = buildOpLabel(op as Record<string, unknown>);
         setStreamingMessage((prev) =>
           prev
-            ? { ...prev, streamingOps: [...(prev.streamingOps ?? []), { type: chunk.operation.type, label }] }
+            ? { ...prev, streamingOps: [...(prev.streamingOps ?? []), { type: (op as any).type, label }] }
             : null
         );
-      }
-
-      if (chunk.type === 'done') {
+      },
+      onDone: (_messageId) => {
         setIsStreaming(false);
         setStreamingMessage(null);
         refetchActiveConversation();
         refetchConversations();
-      }
-
-      if (chunk.type === 'error') {
+      },
+      onError: (error) => {
         setIsStreaming(false);
         setStreamingMessage(null);
-        const isLimit = chunk.error?.includes('token limit');
-        toastError('AI Error', isLimit ? chunk.error : 'AI processing failed. Please try again.');
-      }
-    },
-  });
-
-  function getPageIdForField(fieldId: string): string | null {
-    for (const page of store.pages) {
-      const fields = (page as any).fields ?? [];
-      if (fields.some((f: any) => f.id === fieldId)) return page.id;
+        const isLimit = error.includes('token limit');
+        toastError('AI Error', isLimit ? error : 'AI processing failed. Please try again.');
+      },
     }
-    return null;
-  }
-
-  function applyOperationToStore(op: any) {
-    if (!op?.type) return;
-    switch (op.type) {
-      case 'ADD_FIELD': {
-        const targetPageId = store.pages[0]?.id;
-        if (!targetPageId) return;
-        const fieldType = AI_TYPE_MAP[op.fieldType] ?? FieldType.TEXT_INPUT_FIELD;
-        const isChoice = [FieldType.SELECT_FIELD, FieldType.RADIO_FIELD, FieldType.CHECKBOX_FIELD].includes(fieldType);
-        const fieldData = isChoice
-          ? { label: op.label, required: op.required ?? false, placeholder: op.placeholder ?? '', defaultValue: '', prefix: '', hint: '', options: op.options ?? ['Option 1', 'Option 2'] }
-          : { label: op.label, required: op.required ?? false, placeholder: op.placeholder ?? '', defaultValue: '', prefix: '', hint: '' };
-        store.addField(targetPageId, fieldType, fieldData);
-        break;
-      }
-      case 'UPDATE_FIELD': {
-        const pageId = getPageIdForField(op.fieldId);
-        if (!pageId) return;
-        store.updateField(pageId, op.fieldId, op.updates);
-        break;
-      }
-      case 'REMOVE_FIELD': {
-        const pageId = getPageIdForField(op.fieldId);
-        if (!pageId) return;
-        store.removeField(pageId, op.fieldId);
-        break;
-      }
-      case 'REORDER_FIELDS': {
-        const page = store.pages.find((p) => p.id === op.pageId);
-        if (!page) return;
-        const current = ((page as any).fields ?? []).map((f: any) => f.id) as string[];
-        const desired: string[] = op.fieldIds ?? [];
-        for (let i = 0; i < desired.length; i++) {
-          const fromIdx = current.indexOf(desired[i]);
-          if (fromIdx !== -1 && fromIdx !== i) {
-            store.reorderFields(op.pageId, fromIdx, i);
-            const [moved] = current.splice(fromIdx, 1);
-            current.splice(i, 0, moved);
-          }
-        }
-        break;
-      }
-      case 'UPDATE_LAYOUT': {
-        store.updateLayout(op);
-        break;
-      }
-    }
-  }
-
-  function buildOperationLabel(op: any): string {
-    switch (op?.type) {
-      case 'ADD_FIELD': return `Added "${op.label ?? 'field'}"`;
-      case 'UPDATE_FIELD': return 'Updated field';
-      case 'REMOVE_FIELD': return 'Removed field';
-      case 'REORDER_FIELDS': return 'Reordered fields';
-      case 'UPDATE_LAYOUT': return 'Updated layout';
-      default: return 'Changed form';
-    }
-  }
+  );
 
   const createConversation = useCallback(async () => {
     const { data } = await createConvMutation({ variables: { formId, organizationId } });
@@ -212,13 +135,10 @@ export function useAIChat({
   );
 
   const sendMessage = useCallback(
-    async (content: string, formState: object) => {
-      if (!activeConversationId || isStreaming) return;
-      currentFormStateRef.current = formState;
-
-      await sendUserMessageMutation({
-        variables: { conversationId: activeConversationId, organizationId, content },
-      });
+    async (content: string) => {
+      if (!activeConversationId || streamActive) return;
+      clearBatch();
+      const currentPageId: string | undefined = (store.pages as any[])[0]?.id;
 
       setStreamingMessage({
         id: 'streaming',
@@ -229,10 +149,11 @@ export function useAIChat({
         isStreaming: true,
         createdAt: new Date().toISOString(),
       });
-
       setIsStreaming(true);
+
+      await streamSend(activeConversationId, content, currentPageId);
     },
-    [activeConversationId, organizationId, isStreaming, sendUserMessageMutation]
+    [activeConversationId, streamActive, clearBatch, store.pages, streamSend]
   );
 
   const conversations = conversationsData?.listAIChatConversations ?? [];
@@ -248,6 +169,9 @@ export function useAIChat({
     activeConversation,
     messages,
     isStreaming,
+    canUndo,
+    undo,
+    cancel,
     createConversation,
     selectConversation,
     deleteConversation,
