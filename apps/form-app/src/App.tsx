@@ -29,7 +29,6 @@ const PluginConfiguration = lazy(() => import('./pages/PluginConfiguration'));
 const ResponsesAnalytics = lazy(() => import('./pages/ResponsesAnalytics'));
 const ResponsesIndividual = lazy(() => import('./pages/ResponsesIndividual'));
 const ResponseEdit = lazy(() => import('./pages/ResponseEdit'));
-const FormsList = lazy(() => import('./pages/FormsList'));
 const CreateFormWizard = lazy(() => import('./pages/CreateFormWizard'));
 const FormDashboard = lazy(() => import('./pages/FormDashboard'));
 const Responses = lazy(() => import('./pages/Responses'));
@@ -92,9 +91,6 @@ function App() {
           } />
           <Route path="/settings/:tab?" element={
             <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><Settings /></Suspense></PageErrorBoundary></ProtectedRoute>
-          } />
-          <Route path="/forms" element={
-            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><FormsList /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/forms/create" element={
             <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><CreateFormWizard /></Suspense></PageErrorBoundary></ProtectedRoute>

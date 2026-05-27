@@ -235,7 +235,7 @@ function FormsListDashboard() {
             </div>
 
             <Button
-              onClick={() => navigate('/dashboard/templates')}
+              onClick={() => navigate('/forms/create')}
               className="shrink-0 gap-1.5 h-9 px-3 text-sm"
             >
               <Plus className="h-3.5 w-3.5" />
@@ -311,7 +311,7 @@ function FormsListDashboard() {
             title={t('empty.title')}
             description={t('empty.description')}
             action={
-              <Button onClick={() => navigate('/dashboard/templates')} className="gap-1.5">
+              <Button onClick={() => navigate('/forms/create')} className="gap-1.5">
                 <Plus className="h-3.5 w-3.5" />
                 {t('actions.createPrimary')}
               </Button>
