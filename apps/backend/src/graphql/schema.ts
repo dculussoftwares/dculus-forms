@@ -1051,6 +1051,8 @@ export const typeDefs = gql`
 
     # AI Queries
     aiTokenUsage(organizationId: ID!): AITokenUsage!
+    listAIChatConversations(formId: ID!, organizationId: ID!): [AIChatConversation!]!
+    getAIChatConversation(id: ID!, organizationId: ID!): AIChatConversation!
   }
 
   # Subscription Mutation Response Types
@@ -1167,6 +1169,19 @@ export const typeDefs = gql`
       organizationId: ID!
       mode: AIFormMode = standard
     ): AIGeneratedForm!
+    createAIChatConversation(formId: ID!, organizationId: ID!): AIChatConversation!
+    deleteAIChatConversation(id: ID!, organizationId: ID!): Boolean!
+    renameAIChatConversation(id: ID!, organizationId: ID!, title: String!): AIChatConversation!
+    sendAIChatUserMessage(conversationId: ID!, organizationId: ID!, content: String!): AIChatMessage!
+  }
+
+  # Real-time subscriptions
+  type Subscription {
+    aiChatStream(
+      conversationId: ID!
+      organizationId: ID!
+      currentFormState: JSON!
+    ): AIChatChunk!
   }
 
   # AI Types
@@ -1205,6 +1220,34 @@ export const typeDefs = gql`
     used: Int!
     limit: Int!
     resetAt: String!
+  }
+
+  # AI Chat Types
+  type AIChatConversation {
+    id: ID!
+    formId: ID!
+    title: String!
+    messageCount: Int!
+    createdAt: String!
+    updatedAt: String!
+    messages: [AIChatMessage!]!
+  }
+
+  type AIChatMessage {
+    id: ID!
+    conversationId: ID!
+    role: String!
+    content: String!
+    operations: [JSON!]
+    createdAt: String!
+  }
+
+  type AIChatChunk {
+    type: String!
+    delta: String
+    operation: JSON
+    messageId: String
+    error: String
   }
 
   scalar Upload
