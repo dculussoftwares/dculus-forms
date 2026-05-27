@@ -1,14 +1,64 @@
 import { tool } from 'ai';
 import { z } from 'zod';
+import * as Y from 'yjs';
 import { prisma } from './prisma.js';
+
+/**
+ * Read the live form schema from the Y.js CollaborativeDocument stored by Hocuspocus.
+ * Falls back to Form.formSchema (Prisma) if no collaborative document exists.
+ *
+ * The document name matches the safeDocumentName used by CollaborationManager on the
+ * frontend: formId with all non-alphanumeric characters stripped.
+ */
+async function getFormSchemaFromYjs(formId: string): Promise<{ pages: any[] } | null> {
+  const docName = formId.replace(/[^a-zA-Z0-9_-]/g, '');
+  const collabDoc = await prisma.collaborativeDocument.findFirst({
+    where: { documentName: docName },
+    select: { state: true },
+  });
+
+  if (collabDoc?.state) {
+    try {
+      const ydoc = new Y.Doc();
+      Y.applyUpdate(ydoc, collabDoc.state);
+      const formSchemaMap = ydoc.getMap('formSchema');
+      const pagesArray = formSchemaMap.get('pages') as Y.Array<Y.Map<any>> | undefined;
+      if (!pagesArray) return { pages: [] };
+
+      const pages = pagesArray.toArray().map((pageMap) => {
+        const fieldsArray = pageMap.get('fields') as Y.Array<Y.Map<any>> | undefined;
+        const fields = fieldsArray ? fieldsArray.toArray().map((fieldMap) => {
+          const optionsRaw = fieldMap.get('options');
+          const options = optionsRaw instanceof Y.Array ? optionsRaw.toArray() : (optionsRaw ?? null);
+          return {
+            id: fieldMap.get('id'),
+            type: fieldMap.get('type'),
+            label: fieldMap.get('label'),
+            required: fieldMap.get('validation')?.get?.('required') ?? fieldMap.get('required') ?? false,
+            placeholder: fieldMap.get('placeholder') ?? null,
+            hint: fieldMap.get('hint') ?? null,
+            options,
+          };
+        }) : [];
+        return { id: pageMap.get('id'), title: pageMap.get('title'), fields };
+      });
+      return { pages };
+    } catch {
+      // fall through to Prisma fallback
+    }
+  }
+
+  // Fallback: read from Form.formSchema (may be stale or empty for Y.js-managed forms)
+  const form = await prisma.form.findUnique({
+    where: { id: formId },
+    select: { formSchema: true },
+  });
+  return form ? (form.formSchema as any) : null;
+}
 
 export function createFormEditTools(formId: string) {
   async function getFormSchema() {
-    const form = await prisma.form.findUnique({
-      where: { id: formId },
-      select: { formSchema: true },
-    });
-    return form ? (form.formSchema as any) : null;
+    return getFormSchemaFromYjs(formId);
   }
 
   return {
