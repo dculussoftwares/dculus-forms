@@ -73,7 +73,7 @@ export const resolvers = {
   PluginDelivery: {
     ...pluginsResolvers.PluginDelivery,
   },
-  Subscription: {
+  PlanSubscription: {
     ...subscriptionResolvers.Subscription,
   },
 };

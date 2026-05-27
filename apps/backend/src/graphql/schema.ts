@@ -24,7 +24,7 @@ export const typeDefs = gql`
     createdAt: String!
     updatedAt: String!
     members: [Member!]!
-    subscription: Subscription
+    subscription: PlanSubscription
   }
 
   type Member {
@@ -37,7 +37,7 @@ export const typeDefs = gql`
   }
 
   # Subscription Types
-  type Subscription {
+  type PlanSubscription {
     id: ID!
     organizationId: ID!
     chargebeeCustomerId: String!
