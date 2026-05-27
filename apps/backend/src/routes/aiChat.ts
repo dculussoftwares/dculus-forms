@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import {
   requireAuth,
   requireOrganizationMembership,
@@ -18,7 +18,7 @@ import {
 import { logger } from '../lib/logger.js';
 import type { FormOperation } from '../lib/aiFormEditTools.js';
 
-export const aiChatRouter = Router();
+export const aiChatRouter: ExpressRouter = Router();
 
 aiChatRouter.post('/chat', async (req, res) => {
   const auth = await createBetterAuthContext(req);
