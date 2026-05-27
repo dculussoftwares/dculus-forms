@@ -198,7 +198,7 @@ app.use(edgeGeolocationMiddleware);
 app.use('/health', healthRouter);
 app.use('/', uploadLimiter, uploadRouter);
 app.use('/api', chargebeeWebhookRouter);
-app.use('/api', graphqlLimiter, aiChatRouter);
+app.use('/api/ai', graphqlLimiter, aiChatRouter);
 app.use('/api', pixabayRouter);
 app.use('/api', pexelsRouter);
 
