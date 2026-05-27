@@ -39,6 +39,7 @@ import { useCollisionDetection } from '../hooks/useCollisionDetection';
 import { useFieldCreation } from '../hooks/useFieldCreation';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { UPDATE_FORM } from '../graphql/mutations';
+import AIEditDrawer from '../components/form-builder/AIEditDrawer';
 
 interface CollaborativeFormBuilderProps {
   className?: string;
@@ -61,6 +62,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   const { t } = useTranslation('collaborativeFormBuilder');
   const { user } = useAuthContext();
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
+  const [isAIDrawerOpen, setIsAIDrawerOpen] = useState(false);
 
   const activeTab: BuilderTab = useMemo(() => {
     return tab && VALID_TABS.includes(tab as BuilderTab)
@@ -230,6 +232,17 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
       resetBuilder();
     };
   }, [resetBuilder]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsAIDrawerOpen((prev) => !prev);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const renderDragOverlay = useMemo(() => {
     if (!activeId || !draggedItem) return null;
@@ -418,6 +431,8 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
               onPublish={handlePublish}
               onUnpublish={handleUnpublish}
               updateLoading={updateLoading}
+              isAIDrawerOpen={isAIDrawerOpen}
+              onToggleAIDrawer={() => setIsAIDrawerOpen((prev) => !prev)}
               centerContent={
                 <TabNavigation
                   activeTab={activeTab}
@@ -449,9 +464,17 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
               </div>
             )}
 
-            <div className="flex-1 overflow-hidden relative">
-              {renderTabContent()}
-              <TabKeyboardShortcuts onTabChange={handleKeyboardTabChange} />
+            <div className="flex flex-1 overflow-hidden">
+              <div className="flex-1 overflow-hidden relative">
+                {renderTabContent()}
+                <TabKeyboardShortcuts onTabChange={handleKeyboardTabChange} />
+              </div>
+              <AIEditDrawer
+                formId={formId!}
+                organizationId={formData?.form?.organization?.id ?? ''}
+                isOpen={isAIDrawerOpen}
+                onClose={() => setIsAIDrawerOpen(false)}
+              />
             </div>
           </div>
 
