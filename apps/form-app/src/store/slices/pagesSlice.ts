@@ -100,6 +100,7 @@ export const createPagesSlice: SliceCreator<PagesSlice> = (set, get) => {
         pageMap.set('title', title);
         pageMap.set('fields', fieldsArray);
         pageMap.set('description', '');
+        pageMap.set('order', 0); // corrected by the order rewrite loop below
 
         if (insertAfterPageId) {
           const pages = pagesArray.toArray();

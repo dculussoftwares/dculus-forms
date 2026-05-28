@@ -131,6 +131,8 @@ export function applyAIOp(
 
     case 'REMOVE_PAGE': {
       if ((store.pages as any[]).length <= 1) return;
+      const pageExists = (store.pages as any[]).some((p: any) => p.id === op.pageId);
+      if (!pageExists) return;
       store.removePage(op.pageId);
       break;
     }

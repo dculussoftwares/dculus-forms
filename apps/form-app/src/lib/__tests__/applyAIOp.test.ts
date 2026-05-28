@@ -172,4 +172,10 @@ describe('applyAIOp — REMOVE_PAGE', () => {
     applyAIOp({ type: 'REMOVE_PAGE', pageId: 'page-1' }, store as any);
     expect(store.removePage).not.toHaveBeenCalled();
   });
+
+  it('does nothing when pageId does not exist', () => {
+    const store = makeStore();
+    applyAIOp({ type: 'REMOVE_PAGE', pageId: 'nonexistent' }, store as any);
+    expect(store.removePage).not.toHaveBeenCalled();
+  });
 });
