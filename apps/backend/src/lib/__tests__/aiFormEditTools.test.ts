@@ -39,12 +39,12 @@ beforeEach(() => {
 });
 
 describe('createFormEditTools', () => {
-  it('returns all 9 tools', () => {
+  it('returns all 11 tools', () => {
     const tools = createFormEditTools('form-1');
     expect(Object.keys(tools)).toEqual([
       'listFields', 'getField', 'addField', 'updateField',
       'removeField', 'reorderFields', 'updateLayout',
-      'renamePage', 'reorderPages',
+      'renamePage', 'reorderPages', 'addPage', 'removePage',
     ]);
   });
 });
@@ -243,5 +243,59 @@ describe('reorderPages', () => {
       { messages: [], toolCallId: 'test' }
     );
     expect(result).toEqual({ type: 'REORDER_PAGES', pageIds: ['page-2', 'page-1'] });
+  });
+});
+
+describe('addPage', () => {
+  it('returns ADD_PAGE op with title and null insertAfterPageId', async () => {
+    const tools = createFormEditTools('form-1');
+    const result = await (tools as any).addPage.execute!(
+      { title: 'Step 2', insertAfterPageId: null },
+      { messages: [], toolCallId: 'test' }
+    );
+    expect(result).toEqual({ type: 'ADD_PAGE', title: 'Step 2', insertAfterPageId: null });
+  });
+
+  it('returns ADD_PAGE op with a specific insertAfterPageId', async () => {
+    const tools = createFormEditTools('form-1');
+    const result = await (tools as any).addPage.execute!(
+      { title: 'Middle Page', insertAfterPageId: 'page-1' },
+      { messages: [], toolCallId: 'test' }
+    );
+    expect(result).toEqual({ type: 'ADD_PAGE', title: 'Middle Page', insertAfterPageId: 'page-1' });
+  });
+});
+
+describe('removePage', () => {
+  it('returns REMOVE_PAGE op when multiple pages exist', async () => {
+    const tools = createFormEditTools('form-1');
+    const result = await (tools as any).removePage.execute!(
+      { pageId: 'page-2' },
+      { messages: [], toolCallId: 'test' }
+    );
+    expect(result).toEqual({ type: 'REMOVE_PAGE', pageId: 'page-2' });
+  });
+
+  it('returns error when only one page exists', async () => {
+    (prisma.form.findUnique as any).mockResolvedValue({
+      formSchema: { pages: [mockSchema.pages[0]] },
+    });
+    const tools = createFormEditTools('form-1');
+    const result = await (tools as any).removePage.execute!(
+      { pageId: 'page-1' },
+      { messages: [], toolCallId: 'test' }
+    );
+    expect(result).toHaveProperty('error');
+    expect((result as any).error).toMatch(/last page/i);
+  });
+
+  it('returns error when form not found', async () => {
+    (prisma.form.findUnique as any).mockResolvedValue(null);
+    const tools = createFormEditTools('bad-id');
+    const result = await (tools as any).removePage.execute!(
+      { pageId: 'page-1' },
+      { messages: [], toolCallId: 'test' }
+    );
+    expect(result).toHaveProperty('error');
   });
 });

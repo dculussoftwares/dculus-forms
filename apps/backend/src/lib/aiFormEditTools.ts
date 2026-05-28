@@ -202,6 +202,30 @@ export function createFormEditTools(formId: string) {
       }),
       execute: async (args) => ({ type: 'REORDER_PAGES' as const, ...args }),
     }),
+
+    addPage: tool({
+      description:
+        'Add a new empty page to the form. insertAfterPageId: pass a page ID to insert after that page, or null to append at the end.',
+      inputSchema: z.object({
+        title: z.string().max(50).describe('Title for the new page'),
+        insertAfterPageId: z.string().nullable().describe('Insert after this page ID; null to append at end'),
+      }),
+      execute: async (args) => ({ type: 'ADD_PAGE' as const, ...args }),
+    }),
+
+    removePage: tool({
+      description:
+        'Remove a page and ALL its fields permanently. Cannot remove the last remaining page.',
+      inputSchema: z.object({
+        pageId: z.string().describe('The page ID from listFields'),
+      }),
+      execute: async ({ pageId }) => {
+        const schema = await getFormSchema();
+        if (!schema) return { error: 'Form not found' };
+        if ((schema.pages ?? []).length <= 1) return { error: 'Cannot remove the last page' };
+        return { type: 'REMOVE_PAGE' as const, pageId };
+      },
+    }),
   };
 }
 
@@ -212,4 +236,6 @@ export type FormOperation =
   | { type: 'REORDER_FIELDS'; pageId: string; fieldIds: string[] }
   | { type: 'UPDATE_LAYOUT'; content?: string; customCTAButtonName?: string }
   | { type: 'RENAME_PAGE'; pageId: string; newTitle: string }
-  | { type: 'REORDER_PAGES'; pageIds: string[] };
+  | { type: 'REORDER_PAGES'; pageIds: string[] }
+  | { type: 'ADD_PAGE'; title: string; insertAfterPageId: string | null }
+  | { type: 'REMOVE_PAGE'; pageId: string };
