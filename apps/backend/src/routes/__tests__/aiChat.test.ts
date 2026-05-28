@@ -23,6 +23,7 @@ vi.mock('../../middleware/better-auth-middleware.js', () => ({
 
 import { aiChatRouter } from '../aiChat.js';
 import { buildChatStream, saveAssistantMessage } from '../../services/aiChatService.js';
+import { checkAITokenBudget } from '../../services/aiUsageService.js';
 
 function makeAsyncIterable(parts: object[]): AsyncIterable<object> {
   return { [Symbol.asyncIterator]: async function* () { for (const p of parts) yield p; } };
@@ -36,6 +37,8 @@ describe('POST /chat', () => {
     app.use(express.json());
     app.use('/', aiChatRouter);
     vi.clearAllMocks();
+    // Restore default budget mock after any test that overrides it
+    (checkAITokenBudget as any).mockResolvedValue({ allowed: true, used: 0, limit: 50000 });
   });
 
   it('streams text-delta chunks as NDJSON', async () => {
@@ -99,5 +102,63 @@ describe('POST /chat', () => {
 
     const lines = res.text.trim().split('\n').map((l: string) => JSON.parse(l));
     expect(lines[0].type).toBe('error');
+  });
+
+  it('emits status chunk for addPage tool call', async () => {
+    (buildChatStream as any).mockResolvedValue({
+      fullStream: makeAsyncIterable([
+        { type: 'tool-call', toolName: 'addPage' },
+        { type: 'finish', totalUsage: { totalTokens: 10 } },
+      ]),
+    });
+    const res = await request(app)
+      .post('/chat')
+      .send({ conversationId: 'conv-1', organizationId: 'org-1', content: 'Add a page' });
+    const lines = res.text.trim().split('\n').map((l: string) => JSON.parse(l));
+    expect(lines[0]).toEqual({ type: 'status', text: 'Adding page...' });
+  });
+
+  it('emits status chunk for removePage tool call', async () => {
+    (buildChatStream as any).mockResolvedValue({
+      fullStream: makeAsyncIterable([
+        { type: 'tool-call', toolName: 'removePage' },
+        { type: 'finish', totalUsage: { totalTokens: 10 } },
+      ]),
+    });
+    const res = await request(app)
+      .post('/chat')
+      .send({ conversationId: 'conv-1', organizationId: 'org-1', content: 'Remove page 2' });
+    const lines = res.text.trim().split('\n').map((l: string) => JSON.parse(l));
+    expect(lines[0]).toEqual({ type: 'status', text: 'Removing page...' });
+  });
+
+  it('streams ADD_PAGE operation chunk', async () => {
+    const op = { type: 'ADD_PAGE', title: 'Step 2', insertAfterPageId: null };
+    (buildChatStream as any).mockResolvedValue({
+      fullStream: makeAsyncIterable([
+        { type: 'tool-result', output: op },
+        { type: 'finish', totalUsage: { totalTokens: 10 } },
+      ]),
+    });
+    const res = await request(app)
+      .post('/chat')
+      .send({ conversationId: 'conv-1', organizationId: 'org-1', content: 'Add a page' });
+    const lines = res.text.trim().split('\n').map((l: string) => JSON.parse(l));
+    expect(lines[0]).toEqual({ type: 'operation', op });
+  });
+
+  it('streams REMOVE_PAGE operation chunk', async () => {
+    const op = { type: 'REMOVE_PAGE', pageId: 'page-2' };
+    (buildChatStream as any).mockResolvedValue({
+      fullStream: makeAsyncIterable([
+        { type: 'tool-result', output: op },
+        { type: 'finish', totalUsage: { totalTokens: 10 } },
+      ]),
+    });
+    const res = await request(app)
+      .post('/chat')
+      .send({ conversationId: 'conv-1', organizationId: 'org-1', content: 'Remove page 2' });
+    const lines = res.text.trim().split('\n').map((l: string) => JSON.parse(l));
+    expect(lines[0]).toEqual({ type: 'operation', op });
   });
 });

@@ -102,7 +102,8 @@ Key rules:
 - When adding a field to a specific page, use that page's exact ID from listFields.
 - ${pageContext}
 - When the user mentions "page 1", "page 2" etc., match by position in the listFields result (first page = page 1, second = page 2).
-- Make only the changes the user requests. Confirm what you did in your final text response.`;
+- Make only the changes the user requests. Confirm what you did in your final text response.
+- You can add pages with addPage (insertAfterPageId: null appends at end) and remove pages with removePage. Never call removePage when there is only one page.`;
 
   const messages = history.map((m) => ({
     role: m.role as 'user' | 'assistant',
