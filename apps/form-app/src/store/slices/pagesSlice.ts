@@ -82,33 +82,40 @@ export const createPagesSlice: SliceCreator<PagesSlice> = (set, get) => {
       const ydoc = _getYDoc();
       const isReady = _isYJSReady();
 
-      if (!ydoc || !isReady) return;
+      if (!ydoc || !isReady) {
+        console.warn('Cannot add page: YJS document not available or not connected');
+        return;
+      }
 
       const formSchemaMap = ydoc.getMap('formSchema');
       const pagesArray = getOrCreatePagesArray(formSchemaMap);
 
       const newPageId = `page-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-      const pageMap = new Y.Map();
-      const fieldsArray = new Y.Array();
 
-      pageMap.set('id', newPageId);
-      pageMap.set('title', title);
-      pageMap.set('fields', fieldsArray);
+      ydoc.transact(() => {
+        const pageMap = new Y.Map();
+        const fieldsArray = new Y.Array();
 
-      if (insertAfterPageId) {
-        const pages = pagesArray.toArray();
-        const idx = pages.findIndex((p: Y.Map<any>) => p.get('id') === insertAfterPageId);
-        if (idx !== -1) {
-          pagesArray.insert(idx + 1, [pageMap]);
+        pageMap.set('id', newPageId);
+        pageMap.set('title', title);
+        pageMap.set('fields', fieldsArray);
+        pageMap.set('description', '');
+
+        if (insertAfterPageId) {
+          const pages = pagesArray.toArray();
+          const idx = pages.findIndex((p: Y.Map<any>) => p.get('id') === insertAfterPageId);
+          if (idx !== -1) {
+            pagesArray.insert(idx + 1, [pageMap]);
+          } else {
+            pagesArray.push([pageMap]);
+          }
         } else {
           pagesArray.push([pageMap]);
         }
-      } else {
-        pagesArray.push([pageMap]);
-      }
 
-      pagesArray.toArray().forEach((pMap: Y.Map<any>, index: number) => {
-        pMap.set('order', index);
+        pagesArray.toArray().forEach((pMap: Y.Map<any>, index: number) => {
+          pMap.set('order', index);
+        });
       });
 
       return newPageId;
