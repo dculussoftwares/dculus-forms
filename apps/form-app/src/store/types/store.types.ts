@@ -49,6 +49,7 @@ export interface PagesSlice {
   // Actions
   setPages: (pages: FormPage[]) => void;
   addEmptyPage: () => string | undefined;
+  addPageAtPosition: (title: string, insertAfterPageId: string | null) => string | undefined;
   removePage: (pageId: string) => void;
   duplicatePage: (pageId: string) => void;
   updatePageTitle: (pageId: string, title: string) => void;

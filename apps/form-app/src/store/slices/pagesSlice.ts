@@ -70,6 +70,51 @@ export const createPagesSlice: SliceCreator<PagesSlice> = (set, get) => {
     },
 
     /**
+     * Add a page at a specific position
+     *
+     * Creates a new page with the given title and inserts it after the specified page.
+     * If insertAfterPageId is null or not found, appends to the end.
+     * Returns the new page ID, or undefined if operation failed.
+     * Does NOT change the UI selection (caller controls that).
+     */
+    addPageAtPosition: (title: string, insertAfterPageId: string | null): string | undefined => {
+      const { _getYDoc, _isYJSReady } = get() as any;
+      const ydoc = _getYDoc();
+      const isReady = _isYJSReady();
+
+      if (!ydoc || !isReady) return;
+
+      const formSchemaMap = ydoc.getMap('formSchema');
+      const pagesArray = getOrCreatePagesArray(formSchemaMap);
+
+      const newPageId = `page-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+      const pageMap = new Y.Map();
+      const fieldsArray = new Y.Array();
+
+      pageMap.set('id', newPageId);
+      pageMap.set('title', title);
+      pageMap.set('fields', fieldsArray);
+
+      if (insertAfterPageId) {
+        const pages = pagesArray.toArray();
+        const idx = pages.findIndex((p: Y.Map<any>) => p.get('id') === insertAfterPageId);
+        if (idx !== -1) {
+          pagesArray.insert(idx + 1, [pageMap]);
+        } else {
+          pagesArray.push([pageMap]);
+        }
+      } else {
+        pagesArray.push([pageMap]);
+      }
+
+      pagesArray.toArray().forEach((pMap: Y.Map<any>, index: number) => {
+        pMap.set('order', index);
+      });
+
+      return newPageId;
+    },
+
+    /**
      * Remove a page
      *
      * Deletes a page and updates remaining page orders.
