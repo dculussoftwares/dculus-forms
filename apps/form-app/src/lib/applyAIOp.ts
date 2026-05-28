@@ -27,7 +27,8 @@ export function applyAIOp(
   store: Pick<
     FormBuilderState,
     'pages' | 'addField' | 'addFieldAtIndex' | 'updateField' | 'removeField' |
-    'reorderFields' | 'updateLayout' | 'updatePageTitle' | 'reorderPages'
+    'reorderFields' | 'updateLayout' | 'updatePageTitle' | 'reorderPages' |
+    'addPageAtPosition' | 'removePage'
   >
 ): void {
   if (!op?.type) return;
@@ -120,6 +121,17 @@ export function applyAIOp(
           current.splice(i, 0, moved);
         }
       }
+      break;
+    }
+
+    case 'ADD_PAGE': {
+      store.addPageAtPosition(op.title, op.insertAfterPageId);
+      break;
+    }
+
+    case 'REMOVE_PAGE': {
+      if ((store.pages as any[]).length <= 1) return;
+      store.removePage(op.pageId);
       break;
     }
   }

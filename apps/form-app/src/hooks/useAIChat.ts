@@ -34,6 +34,8 @@ export function buildOpLabel(op: Record<string, unknown>): string {
     case 'UPDATE_LAYOUT': return 'Updated layout';
     case 'RENAME_PAGE': return `Renamed page "${(op.newTitle as string) ?? 'page'}"`;
     case 'REORDER_PAGES': return 'Reordered pages';
+    case 'ADD_PAGE': return `Added page "${(op.title as string) ?? 'page'}"`;
+    case 'REMOVE_PAGE': return 'Removed page';
     default: return 'Changed form';
   }
 }

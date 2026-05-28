@@ -26,6 +26,8 @@ function makeStore(overrides = {}) {
     updateLayout: jest.fn(),
     updatePageTitle: jest.fn(),
     reorderPages: jest.fn(),
+    addPageAtPosition: jest.fn(),
+    removePage: jest.fn(),
     ...overrides,
   };
 }
@@ -133,5 +135,35 @@ describe('applyAIOp — REORDER_PAGES', () => {
     const store = makeStore();
     applyAIOp({ type: 'REORDER_PAGES', pageIds: ['page-1', 'page-2'] }, store as any);
     expect(store.reorderPages).not.toHaveBeenCalled();
+  });
+});
+
+describe('applyAIOp — ADD_PAGE', () => {
+  it('calls addPageAtPosition with title and null insertAfterPageId', () => {
+    const store = makeStore();
+    applyAIOp({ type: 'ADD_PAGE', title: 'Step 2', insertAfterPageId: null }, store as any);
+    expect(store.addPageAtPosition).toHaveBeenCalledWith('Step 2', null);
+  });
+
+  it('calls addPageAtPosition with insertAfterPageId when provided', () => {
+    const store = makeStore();
+    applyAIOp({ type: 'ADD_PAGE', title: 'Middle', insertAfterPageId: 'page-1' }, store as any);
+    expect(store.addPageAtPosition).toHaveBeenCalledWith('Middle', 'page-1');
+  });
+});
+
+describe('applyAIOp — REMOVE_PAGE', () => {
+  it('calls removePage when multiple pages exist', () => {
+    const store = makeStore();
+    applyAIOp({ type: 'REMOVE_PAGE', pageId: 'page-2' }, store as any);
+    expect(store.removePage).toHaveBeenCalledWith('page-2');
+  });
+
+  it('does nothing when only one page exists', () => {
+    const store = makeStore({
+      pages: [{ id: 'page-1', fields: [] }],
+    });
+    applyAIOp({ type: 'REMOVE_PAGE', pageId: 'page-1' }, store as any);
+    expect(store.removePage).not.toHaveBeenCalled();
   });
 });
