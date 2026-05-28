@@ -22,7 +22,7 @@ vi.mock('../../middleware/better-auth-middleware.js', () => ({
 }));
 
 import { aiChatRouter } from '../aiChat.js';
-import { buildChatStream, saveAssistantMessage } from '../../services/aiChatService.js';
+import { buildChatStream } from '../../services/aiChatService.js';
 import { checkAITokenBudget } from '../../services/aiUsageService.js';
 
 function makeAsyncIterable(parts: object[]): AsyncIterable<object> {

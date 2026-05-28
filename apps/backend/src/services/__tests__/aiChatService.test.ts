@@ -41,9 +41,6 @@ import { prisma } from '../../lib/prisma.js';
 import {
   createConversation,
   listConversations,
-  getConversation,
-  deleteConversation,
-  renameConversation,
   saveUserMessage,
   buildChatStream,
 } from '../aiChatService.js';

@@ -188,7 +188,6 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({ formId, organizationId, isO
     } else if (!activeConversationId && conversations.length > 0) {
       selectConversation(conversations[0].id);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, conversations.length]);
 
   const handleSend = useCallback(() => {
