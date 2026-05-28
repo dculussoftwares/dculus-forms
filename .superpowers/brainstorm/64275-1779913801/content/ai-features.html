@@ -1,0 +1,56 @@
+<h2>What AI feature should we build next?</h2>
+<p class="subtitle">The AI chat drawer already handles field CRUD, page management, quick chips, and streaming. Here are the most impactful next directions.</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Generate Form from Description</h3>
+      <p>User types "Create a job application form with resume upload" and the AI builds the entire form from scratch — pages, fields, labels, validation — in one shot. Replaces blank-canvas friction.</p>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <span style="background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:12px;font-size:11px">High impact</span>
+        <span style="background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:12px;font-size:11px">New tool: generateForm</span>
+        <span style="background:#fef9c3;color:#a16207;padding:2px 8px;border-radius:12px;font-size:11px">Shows on empty canvas</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>AI Response Analyser</h3>
+      <p>After responses come in, the AI reads them and surfaces insights: drop-off fields, most-skipped questions, common free-text themes, completion rate by device. Lives in the Responses / Analytics tab.</p>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <span style="background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:12px;font-size:11px">High value post-launch</span>
+        <span style="background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:12px;font-size:11px">New: AI Insights panel</span>
+        <span style="background:#fef9c3;color:#a16207;padding:2px 8px;border-radius:12px;font-size:11px">Reads response data</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Add / Remove Page Tools</h3>
+      <p>The AI can rename and reorder pages but can't add or delete them. Adding <code>addPage</code> and <code>removePage</code> tools closes this gap — the AI becomes fully capable of restructuring multi-page forms end-to-end.</p>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <span style="background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:12px;font-size:11px">Closes existing gap</span>
+        <span style="background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:12px;font-size:11px">New: addPage / removePage</span>
+        <span style="background:#fef9c3;color:#a16207;padding:2px 8px;border-radius:12px;font-size:11px">Low effort, high leverage</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="d" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>Smart Field Suggestions Sidebar</h3>
+      <p>As the user builds a form, the AI watches the existing fields and proactively suggests the next 3 logical fields to add ("You have Name + Email — add Phone, Company, Message?"). One click to insert.</p>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <span style="background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:12px;font-size:11px">Always-on guidance</span>
+        <span style="background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:12px;font-size:11px">Suggestion panel in builder</span>
+        <span style="background:#fef9c3;color:#a16207;padding:2px 8px;border-radius:12px;font-size:11px">Debounced AI calls</span>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,80 @@
+<h2>Design: Responsibility Map</h2>
+<p class="subtitle">Section 1 of 4 — Who owns what. Each box has one job.</p>
+
+<div class="mockup" style="margin-bottom:24px">
+  <div class="mockup-header">Full System Flow</div>
+  <div class="mockup-body" style="font-family:monospace;font-size:12px;line-height:1.8">
+
+    <div style="display:grid;grid-template-columns:1fr 40px 1fr;gap:0;align-items:start">
+
+      <!-- LEFT: Frontend -->
+      <div style="padding:12px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6366f1;margin-bottom:12px">Frontend (form-app)</div>
+
+        <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px;margin-bottom:8px">
+          <div style="font-weight:700;font-size:12px">AIEditDrawer.tsx</div>
+          <div style="font-size:11px;color:#64748b;margin-top:4px">Pure UI only. No business logic.<br>Renders messages, undo button, streaming chips.<br>Passes currentPageId down to hook.</div>
+        </div>
+
+        <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:10px;margin-bottom:8px">
+          <div style="font-weight:700;font-size:12px">useAIChat hook</div>
+          <div style="font-size:11px;color:#64748b;margin-top:4px">Owns conversation list + CRUD (GraphQL).<br>Wires useAIStream + useUndoStack.<br>Exposes clean API to drawer.</div>
+        </div>
+
+        <div style="background:#fefce8;border:1px solid #fde047;border-radius:8px;padding:10px;margin-bottom:8px">
+          <div style="font-weight:700;font-size:12px">useAIStream hook  ← NEW</div>
+          <div style="font-size:11px;color:#64748b;margin-top:4px">fetch() POST → reads NDJSON stream.<br>On <code>text</code>: update bubble.<br>On <code>operation</code>: call applyAIOp().<br>On <code>done</code>: refetch conversation.</div>
+        </div>
+
+        <div style="background:#fefce8;border:1px solid #fde047;border-radius:8px;padding:10px;margin-bottom:8px">
+          <div style="font-weight:700;font-size:12px">applyAIOp()  ← NEW</div>
+          <div style="font-size:11px;color:#64748b;margin-top:4px">Pure function. Single place for all<br>store mutations triggered by AI.<br>Handles position, multi-page, options.<br>Fully unit-testable.</div>
+        </div>
+
+        <div style="background:#fefce8;border:1px solid #fde047;border-radius:8px;padding:10px">
+          <div style="font-weight:700;font-size:12px">useUndoStack hook  ← NEW</div>
+          <div style="font-size:11px;color:#64748b;margin-top:4px">Snapshots Zustand state before<br>first op in each AI response.<br>undo() restores snapshot.<br>Cleared on next user message.</div>
+        </div>
+      </div>
+
+      <!-- ARROW -->
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding-top:80px;gap:6px">
+        <div style="font-size:11px;color:#94a3b8;writing-mode:vertical-rl;text-align:center">
+          POST /api/ai/chat<br>↑ stream NDJSON
+        </div>
+      </div>
+
+      <!-- RIGHT: Backend -->
+      <div style="padding:12px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#ec4899;margin-bottom:12px">Backend (Express)</div>
+
+        <div style="background:#fdf2f8;border:1px solid #f9a8d4;border-radius:8px;padding:10px;margin-bottom:8px">
+          <div style="font-weight:700;font-size:12px">POST /api/ai/chat  ← NEW ROUTE</div>
+          <div style="font-size:11px;color:#64748b;margin-top:4px">Auth check. Save user message.<br>Call buildChatStream().<br>Pipe NDJSON chunks to response.<br>On finish: save assistant msg + tokens.</div>
+        </div>
+
+        <div style="background:#fff7ed;border:1px solid #fdba74;border-radius:8px;padding:10px;margin-bottom:8px">
+          <div style="font-weight:700;font-size:12px">aiChatService.ts  (simplified)</div>
+          <div style="font-size:11px;color:#64748b;margin-top:4px">buildChatStream(conversationId, userId)<br>No currentFormState arg — AI fetches<br>what it needs via tools.<br>System prompt: short, no form state baked in.</div>
+        </div>
+
+        <div style="background:#fff7ed;border:1px solid #fdba74;border-radius:8px;padding:10px;margin-bottom:8px">
+          <div style="font-weight:700;font-size:12px">aiFormEditTools.ts  (rewritten)</div>
+          <div style="font-size:11px;color:#64748b;margin-top:4px">listFields(pageId?) → live from Prisma<br>getField(fieldId) → full details<br>addField / updateField / removeField<br>reorderFields / updateLayout<br>(no more dummy inspectForm)</div>
+        </div>
+
+        <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:10px">
+          <div style="font-weight:700;font-size:12px">GraphQL (unchanged)</div>
+          <div style="font-size:11px;color:#64748b;margin-top:4px">Conversation CRUD stays GraphQL.<br>Subscription removed entirely.<br>No more AI_CHAT_STREAM in schema.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div style="background:#f1f5f9;border-radius:8px;padding:12px;font-size:12px">
+  <strong>Key rule:</strong> The AI never receives <code>currentFormState</code> from the client. It calls <code>listFields()</code> and <code>getField()</code> to read live data from the DB. The frontend only sends <code>{ conversationId, organizationId, currentPageId }</code>.
+</div>
+
+<p style="margin-top:16px;font-size:13px">Does this responsibility split look right? Reply in the terminal.</p>

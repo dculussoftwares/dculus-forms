@@ -1,0 +1,47 @@
+<h2>3 Approaches: AI Chat Form Builder Rethink</h2>
+<p class="subtitle">Choose the architecture that fits best — or we can mix elements</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Patch & Fix (minimal change)</h3>
+      <p>Keep WebSocket subscriptions. Fix the 8 known bugs: <code>ADD_FIELD</code> position, <code>UPDATE_LAYOUT</code> type clash, <code>inspectForm</code> returning live data, race condition, duplicate <code>buildOpLabel</code>, multi-page awareness. Add an undo stack.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Least code change</li><li>Keeps GraphQL subscription pattern</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>WS lifecycle bugs will resurface</li><li>Fundamental split-brain between form state in DB vs live Zustand store</li><li>Race condition is hard to fully eliminate</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B ★ Recommended</div>
+    <div class="content">
+      <h3>HTTP Stream + Tool Redesign</h3>
+      <p>Replace WS subscription with a single <strong>POST /api/ai/chat</strong> that streams NDJSON back. AI gets a real <code>getField</code> / <code>listFields</code> tool that reads live from the DB. Operations stream in and apply to Zustand with a per-response undo snapshot. Clear responsibility split:</p>
+      <ul style="font-size:13px;margin-top:8px;padding-left:20px">
+        <li><strong>REST endpoint</strong> — owns the AI call, streaming, DB writes</li>
+        <li><strong>useAIStream hook</strong> — owns fetch, parse NDJSON, call applyOp</li>
+        <li><strong>applyOp()</strong> — single function owns all store mutations from AI</li>
+        <li><strong>useUndoStack</strong> — snapshots before first op, exposes undo()</li>
+        <li><strong>AIEditDrawer</strong> — pure UI, no business logic</li>
+      </ul>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Eliminates race condition entirely</li><li>Clear, testable responsibility per unit</li><li>HTTP is debuggable (curl, network tab)</li><li>Live form state from DB tool call</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>New REST endpoint alongside GraphQL</li><li>Some refactoring effort (~2 days)</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Agent Loop + Checkpoint Model</h3>
+      <p>Full agentic redesign: AI runs in a server-side loop, reads the live form from DB each step, writes operations as a plan, then executes them. Frontend polls for status. Each AI response is a "checkpoint" — user can jump back to any checkpoint.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Most powerful — AI can do multi-step reasoning</li><li>Checkpoint history = strong undo</li><li>No frontend state sync complexity</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Large scope — 1-2 weeks</li><li>Polling feels less live than streaming</li><li>Overkill for current needs</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>

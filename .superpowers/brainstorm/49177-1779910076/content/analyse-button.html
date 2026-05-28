@@ -1,0 +1,76 @@
+<h2>Feature 4: "Analyse my form" — where should the button live?</h2>
+<p class="subtitle">A one-click way to ask the AI to review your form and suggest improvements</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:12px;font-size:12px;font-family:sans-serif">
+      <div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+        <div style="background:#f8fafc;padding:8px 10px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b">
+          <span>✦</span><span style="flex:1;font-weight:600">AI Assistant</span>
+          <span style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:2px 8px;cursor:pointer;display:flex;align-items:center;gap:4px">
+            ✦ Analyse
+          </span>
+        </div>
+        <div style="height:80px;background:white;padding:8px;color:#94a3b8;font-size:11px;font-style:italic">Ask AI to edit your form...</div>
+        <div style="background:#f8fafc;padding:6px 10px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end">
+          <div style="background:#6366f1;border-radius:6px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;color:white;font-size:10px">→</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Button in the drawer header (next to conversation picker)</h3>
+      <p>Always visible, easy to reach, doesn't clutter the input area. Feels like a top-level action.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:12px;font-size:12px;font-family:sans-serif">
+      <div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+        <div style="background:#f8fafc;padding:8px 10px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b">
+          <span>✦</span><span style="flex:1;font-weight:600">AI Assistant</span>
+        </div>
+        <div style="height:60px;background:white;padding:8px;color:#94a3b8;font-size:11px;font-style:italic">Ask AI to edit your form...</div>
+        <div style="background:#f8fafc;padding:6px 10px;border-top:1px solid #e2e8f0">
+          <div style="display:flex;gap:6px;margin-bottom:6px">
+            <span style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:16px;padding:3px 10px;font-size:10px;color:#6366f1;cursor:pointer">✦ Analyse form</span>
+            <span style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:16px;padding:3px 10px;font-size:10px;color:#64748b;cursor:pointer">List all fields</span>
+            <span style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:16px;padding:3px 10px;font-size:10px;color:#64748b;cursor:pointer">Make required</span>
+          </div>
+          <div style="display:flex;justify-content:flex-end">
+            <div style="background:#6366f1;border-radius:6px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;color:white;font-size:10px">→</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Quick action chips above the input ★ Recommended</h3>
+      <p>Chips like "Analyse form", "List all fields", "Make required" appear above the input. Discoverable, extensible, and doubles as shortcut prompts.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:12px;font-size:12px;font-family:sans-serif">
+      <div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+        <div style="background:#f8fafc;padding:8px 10px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b">
+          <span>✦</span><span style="flex:1;font-weight:600">AI Assistant</span>
+        </div>
+        <div style="height:60px;background:white;padding:8px;color:#94a3b8;font-size:11px;font-style:italic">Ask AI to edit your form...</div>
+        <div style="background:#f8fafc;padding:6px 10px;border-top:1px solid #e2e8f0;display:flex;align-items:center;gap:6px">
+          <div style="background:#eef2ff;border-radius:6px;padding:4px 8px;font-size:10px;color:#6366f1;cursor:pointer;display:flex;align-items:center;gap:4px">
+            ✦ Analyse
+          </div>
+          <div style="flex:1"></div>
+          <div style="background:#6366f1;border-radius:6px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;color:white;font-size:10px">→</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Small button left of the Send button</h3>
+      <p>Compact, always visible in the input bar. Simple but doesn't scale if you add more quick actions.</p>
+    </div>
+  </div>
+
+</div>
+
+<p style="margin-top:16px;font-size:13px">Click your preference, then reply in the terminal.</p>
