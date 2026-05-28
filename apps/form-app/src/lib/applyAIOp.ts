@@ -125,7 +125,7 @@ export function applyAIOp(
     }
 
     case 'ADD_PAGE': {
-      store.addPageAtPosition(op.title, op.insertAfterPageId);
+      store.addPageAtPosition(op.title ?? 'New Page', op.insertAfterPageId ?? null);
       break;
     }
 

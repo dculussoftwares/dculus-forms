@@ -150,6 +150,12 @@ describe('applyAIOp — ADD_PAGE', () => {
     applyAIOp({ type: 'ADD_PAGE', title: 'Middle', insertAfterPageId: 'page-1' }, store as any);
     expect(store.addPageAtPosition).toHaveBeenCalledWith('Middle', 'page-1');
   });
+
+  it('falls back to "New Page" when title is undefined', () => {
+    const store = makeStore();
+    applyAIOp({ type: 'ADD_PAGE', title: undefined, insertAfterPageId: null }, store as any);
+    expect(store.addPageAtPosition).toHaveBeenCalledWith('New Page', null);
+  });
 });
 
 describe('applyAIOp — REMOVE_PAGE', () => {
