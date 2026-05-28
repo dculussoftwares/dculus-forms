@@ -81,7 +81,6 @@ describe('POST /chat', () => {
   });
 
   it('returns error chunk when token budget exceeded', async () => {
-    const { checkAITokenBudget } = await import('../../services/aiUsageService.js');
     (checkAITokenBudget as any).mockResolvedValue({ allowed: false, used: 50000, limit: 50000 });
 
     const res = await request(app)

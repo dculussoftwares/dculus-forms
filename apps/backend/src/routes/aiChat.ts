@@ -18,6 +18,8 @@ import {
 import { logger } from '../lib/logger.js';
 import type { FormOperation } from '../lib/aiFormEditTools.js';
 
+const MUTATION_OP_TYPES = new Set(['ADD_FIELD', 'UPDATE_FIELD', 'REMOVE_FIELD', 'REORDER_FIELDS', 'UPDATE_LAYOUT', 'RENAME_PAGE', 'REORDER_PAGES', 'ADD_PAGE', 'REMOVE_PAGE']);
+
 export const aiChatRouter: ExpressRouter = Router();
 
 aiChatRouter.post('/chat', async (req, res) => {
@@ -96,7 +98,6 @@ aiChatRouter.post('/chat', async (req, res) => {
       removeField: 'Removing field...',
       reorderFields: 'Reordering fields...',
       updateLayout: 'Updating layout...',
-      // Added preemptively — tools implemented in aiFormEditTools.ts (Task 4)
       renamePage: 'Renaming page...',
       reorderPages: 'Reordering pages...',
       addPage: 'Adding page...',
@@ -116,8 +117,6 @@ aiChatRouter.post('/chat', async (req, res) => {
       }
 
       if (part.type === 'tool-result') {
-        // RENAME_PAGE + REORDER_PAGES added preemptively for Task 4
-        const MUTATION_OP_TYPES = new Set(['ADD_FIELD', 'UPDATE_FIELD', 'REMOVE_FIELD', 'REORDER_FIELDS', 'UPDATE_LAYOUT', 'RENAME_PAGE', 'REORDER_PAGES', 'ADD_PAGE', 'REMOVE_PAGE']);
         const op = (part as any).output as (FormOperation & { type?: string }) | undefined;
         if (op && op.type && MUTATION_OP_TYPES.has(op.type)) {
           operations.push(op);
