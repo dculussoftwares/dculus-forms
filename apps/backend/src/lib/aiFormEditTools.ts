@@ -205,7 +205,7 @@ export function createFormEditTools(formId: string) {
 
     addPage: tool({
       description:
-        'Add a new empty page to the form. insertAfterPageId: pass a page ID to insert after that page, or null to append at the end.',
+        'Add a new empty page to the form. insertAfterPageId: pass a page ID to insert after that page, or null to append at the end. If the page ID is not found, the page is appended at the end.',
       inputSchema: z.object({
         title: z.string().max(50).describe('Title for the new page'),
         insertAfterPageId: z.string().nullable().describe('Insert after this page ID; null to append at end'),
