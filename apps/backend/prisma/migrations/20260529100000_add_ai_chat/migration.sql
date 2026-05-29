@@ -31,15 +31,23 @@ CREATE INDEX IF NOT EXISTS "ai_chat_conversation_formId_userId_idx" ON "ai_chat_
 -- CreateIndex
 CREATE INDEX IF NOT EXISTS "ai_chat_message_conversationId_idx" ON "ai_chat_message"("conversationId");
 
--- AddForeignKey
-ALTER TABLE "ai_chat_conversation" ADD CONSTRAINT "ai_chat_conversation_formId_fkey"
+-- AddForeignKey (idempotent — silently skips if constraint already exists)
+DO $$ BEGIN
+  ALTER TABLE "ai_chat_conversation" ADD CONSTRAINT "ai_chat_conversation_formId_fkey"
     FOREIGN KEY ("formId") REFERENCES "form"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-ALTER TABLE "ai_chat_conversation" ADD CONSTRAINT "ai_chat_conversation_organizationId_fkey"
+DO $$ BEGIN
+  ALTER TABLE "ai_chat_conversation" ADD CONSTRAINT "ai_chat_conversation_organizationId_fkey"
     FOREIGN KEY ("organizationId") REFERENCES "organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-ALTER TABLE "ai_chat_conversation" ADD CONSTRAINT "ai_chat_conversation_userId_fkey"
+DO $$ BEGIN
+  ALTER TABLE "ai_chat_conversation" ADD CONSTRAINT "ai_chat_conversation_userId_fkey"
     FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-ALTER TABLE "ai_chat_message" ADD CONSTRAINT "ai_chat_message_conversationId_fkey"
+DO $$ BEGIN
+  ALTER TABLE "ai_chat_message" ADD CONSTRAINT "ai_chat_message_conversationId_fkey"
     FOREIGN KEY ("conversationId") REFERENCES "ai_chat_conversation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
