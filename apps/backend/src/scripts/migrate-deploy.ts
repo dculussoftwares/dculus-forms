@@ -1,4 +1,7 @@
 import { execSync } from 'child_process';
+import { readdirSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { PrismaClient } from '@prisma/client';
 
 /**
@@ -8,16 +11,23 @@ import { PrismaClient } from '@prisma/client';
  *
  * 1. Existing database (was previously managed by `db:push`, no migration
  *    history) — detects this by checking for the `_prisma_migrations` table.
- *    Resolves the baseline migration as "already applied" so Prisma does not
- *    try to re-create tables that already exist, then runs `migrate deploy`
- *    to apply any new migrations.
+ *    Resolves ALL known migrations as "already applied" so Prisma does not
+ *    try to re-create tables/indexes that already exist, then runs
+ *    `migrate deploy` to apply only genuinely new migrations.
  *
  * 2. Fresh database — `_prisma_migrations` table is absent AND no schema
  *    exists yet. Runs `migrate deploy` directly so all migrations are applied
  *    from scratch.
  */
 
-const BASELINE_MIGRATION = '20250519000000_init';
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const MIGRATIONS_DIR = join(__dirname, '..', '..', 'prisma', 'migrations');
+
+function getAllMigrationNames(): string[] {
+  return readdirSync(MIGRATIONS_DIR)
+    .filter(name => name !== 'migration_lock.toml' && !name.startsWith('.'))
+    .sort();
+}
 
 async function main() {
   const prisma = new PrismaClient();
@@ -41,9 +51,14 @@ async function main() {
       `;
 
       if (has_schema) {
-        console.log('Existing database detected (no migration history). Resolving baseline...');
-        execSync(`npx prisma migrate resolve --applied ${BASELINE_MIGRATION}`, { stdio: 'inherit' });
-        console.log('Baseline resolved.');
+        // Existing database with full schema but no migration history.
+        // Resolve ALL migrations as already applied so none are re-run.
+        const migrations = getAllMigrationNames();
+        console.log(`Existing database detected (no migration history). Resolving ${migrations.length} migrations as baseline...`);
+        for (const migration of migrations) {
+          execSync(`npx prisma migrate resolve --applied ${migration}`, { stdio: 'inherit' });
+        }
+        console.log('All migrations resolved as baseline.');
       } else {
         console.log('Fresh database detected. Migrations will be applied from scratch.');
       }
@@ -51,8 +66,7 @@ async function main() {
       console.log('Migration history found. Applying any pending migrations...');
 
       // Detect migrations that started but never finished (P3009 failure state).
-      // Resolve each as rolled-back so migrate deploy can re-apply them with the
-      // current (idempotent) SQL file content.
+      // Resolve each as rolled-back so migrate deploy can re-apply them.
       const failedMigrations = await prisma.$queryRaw<Array<{ migration_name: string }>>`
         SELECT migration_name FROM _prisma_migrations
         WHERE started_at IS NOT NULL
