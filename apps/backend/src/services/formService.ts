@@ -180,22 +180,14 @@ export const duplicateForm = async (formId: string, userId: string): Promise<For
 
   const newFormId = generateId();
 
-  // If form has background image, copy it for the new form
+  // Copy background image file in R2 (if present) — do this before form creation to get the
+  // new S3 key. The FormFile DB record must be created AFTER the form row exists (FK constraint).
+  let copiedFileAsset: { key: string; type: string; originalName: string; url: string; size: number; mimeType: string } | null = null;
   if (schemaClone?.layout?.backgroundImageKey) {
     try {
       const copiedFile = await copyFileForForm(schemaClone.layout.backgroundImageKey, newFormId);
       schemaClone.layout.backgroundImageKey = copiedFile.key;
-
-      await formRepository.createFormAsset({
-        id: randomUUID(),
-        key: copiedFile.key,
-        type: 'FormBackground',
-        formId: newFormId,
-        originalName: copiedFile.originalName,
-        url: copiedFile.url,
-        size: copiedFile.size,
-        mimeType: copiedFile.mimeType,
-      });
+      copiedFileAsset = copiedFile;
     } catch (error) {
       logger.error(`❌ Failed to copy background image for duplicated form ${formId}:`, error);
       if (schemaClone?.layout) {
@@ -221,6 +213,24 @@ export const duplicateForm = async (formId: string, userId: string): Promise<For
     },
     schemaClone
   );
+
+  // Now that the form row exists, create the FormFile record for the copied background image
+  if (copiedFileAsset) {
+    try {
+      await formRepository.createFormAsset({
+        id: randomUUID(),
+        key: copiedFileAsset.key,
+        type: 'FormBackground',
+        formId: newFormId,
+        originalName: copiedFileAsset.originalName,
+        url: copiedFileAsset.url,
+        size: copiedFileAsset.size,
+        mimeType: copiedFileAsset.mimeType,
+      });
+    } catch (error) {
+      logger.error(`❌ Failed to create FormFile record for duplicated form ${newFormId}:`, error);
+    }
+  }
 
   return {
     ...newForm,
