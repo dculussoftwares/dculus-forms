@@ -151,6 +151,18 @@ jobs:
       - name: Generate Prisma client
         run: pnpm db:generate
 
+      - name: Check schema/migration drift
+        working-directory: apps/backend
+        run: |
+          npx prisma migrate diff \
+            --from-migrations prisma/migrations \
+            --to-schema-datamodel prisma/schema.prisma \
+            --exit-code || \
+          (echo "" && \
+           echo "❌ schema.prisma has changes not covered by a migration file." && \
+           echo "   Run 'pnpm db:migrate:dev' locally, commit the generated migration file, then push." && \
+           exit 1)
+
       - name: Run linting
         run: pnpm lint
 
