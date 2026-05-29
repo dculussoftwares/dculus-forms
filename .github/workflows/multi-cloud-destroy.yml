@@ -119,8 +119,6 @@ jobs:
             echo "  ⏭️ Cloudflare R2 & CDN (Skipped)"
           fi
 
-          fi
-
           if [ "${{ github.event.inputs.destroy_neon }}" = "true" ]; then
             echo "  ⚠️⚠️⚠️ NeonDB Postgres (PERMANENT DATA LOSS)"
           else
@@ -270,8 +268,6 @@ jobs:
             echo "✅ Container created: $CLOUDFLARE_PAGES_VIEWER_CONTAINER"
           else
             echo "✅ Container exists: $CLOUDFLARE_PAGES_VIEWER_CONTAINER"
-          fi
-
           fi
 
           # Create NeonDB container
@@ -843,8 +839,6 @@ jobs:
             echo "| Cloudflare R2 | ❌ No | ⏭️ Skipped | - |" >> $GITHUB_STEP_SUMMARY
           fi
 
-          fi
-
           # NeonDB Status
           if [ "${{ github.event.inputs.destroy_neon }}" = "true" ]; then
             NEON_STATUS="${{ needs.terraform-neon-destroy.result == 'success' && '✅ Destroyed' || '❌ Failed' }}"
@@ -903,7 +897,7 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
 
-          fi\n\n          if [ "${{ needs.terraform-neon-destroy.result }}" = "success" ]; then
+          if [ "${{ needs.terraform-neon-destroy.result }}" = "success" ]; then
             echo "## 🟢 NeonDB Database Destroyed" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "- **Project**: \`dculus-forms-${{ github.event.inputs.environment }}\` - DELETED" >> $GITHUB_STEP_SUMMARY

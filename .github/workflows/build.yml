@@ -8,6 +8,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 permissions:
   id-token: write
   contents: write
@@ -38,27 +42,14 @@ jobs:
         with:
           fetch-depth: 0  # Fetch full history for comprehensive scanning
 
-      - name: Run TruffleHog secret scan
-        run: |
-          # Create exclude file for TruffleHog
-          cat > /tmp/trufflehog-exclude.txt << EOF
-          docker-compose.yml
-          .github/workflows/ci.yml
-          .env.example
-          EOF
-          
-          docker run --rm -v "${{ github.workspace }}:/tmp" -w /tmp \
-            -v /tmp/trufflehog-exclude.txt:/exclude.txt \
-            ghcr.io/trufflesecurity/trufflehog:latest \
-            filesystem /tmp \
-            --exclude-paths=/exclude.txt \
-            --no-verification || echo "✅ Security scan completed - development credentials excluded"
-
-      - name: Security scan results
-        if: always()
-        run: |
-          echo "✅ TruffleHog security scan completed"
-          echo "Note: MongoDB connection strings are excluded as they are development credentials"
+      - name: TruffleHog secret scan
+        uses: trufflesecurity/trufflehog-actions-scan@v1
+        with:
+          path: ./
+          base: ${{ github.event.before || '' }}
+          head: HEAD
+          extra_args: --exclude-paths=.github/workflows/ci.yml,docker-compose.yml,.env.example --no-verification
+        continue-on-error: true
 
 
   build-shared-packages:
@@ -147,13 +138,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build core packages for pipeline
-        run: |
-          pnpm db:generate
-          pnpm --filter @dculus/types build
-          pnpm --filter @dculus/utils build
-          pnpm --filter @dculus/ui build
-          pnpm --filter backend build
+      - name: Generate Prisma client
+        run: pnpm db:generate
 
       - name: Run linting
         run: pnpm lint
@@ -202,23 +188,7 @@ jobs:
       - name: Type check backend
         run: pnpm --filter backend type-check
 
-      - name: Run unit tests
-        env:
-          NODE_ENV: test
-          # Phase 2 security fix removed the fallback from requireEnv('BETTER_AUTH_SECRET').
-          # Unit tests don't hit a real auth server, so a deterministic test value is fine here.
-          # Production deployments must set this from Azure Key Vault / GitHub Secrets.
-          BETTER_AUTH_SECRET: test-only-secret-for-unit-tests-not-used-in-production
-          # Stub out S3 env vars so env.ts module loads cleanly in the test environment
-          PUBLIC_S3_ENDPOINT: http://localhost:9000
-          PUBLIC_S3_ACCESS_KEY: test-access-key
-          PUBLIC_S3_SECRET_KEY: test-secret-key
-          PUBLIC_S3_BUCKET_NAME: test-public-bucket
-          PRIVATE_S3_BUCKET_NAME: test-private-bucket
-          PUBLIC_S3_CDN_URL: http://localhost:9000
-        run: pnpm --filter backend test
-
-      - name: Check test coverage threshold
+      - name: Run unit tests with coverage
         env:
           NODE_ENV: test
           BETTER_AUTH_SECRET: test-only-secret-for-unit-tests-not-used-in-production
@@ -233,6 +203,13 @@ jobs:
 
       - name: Build backend
         run: pnpm --filter backend build
+
+      - name: Upload backend dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-dist-${{ github.sha }}
+          path: apps/backend/dist
+          retention-days: 1
 
   integration-tests:
     name: Integration Tests
@@ -404,6 +381,13 @@ jobs:
           VITE_FORM_VIEWER_URL: ${{ env.FORM_VIEWER_URL }}
         run: pnpm --filter form-app build
 
+      - name: Upload form-app dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: form-app-dist-${{ github.sha }}
+          path: apps/form-app/dist
+          retention-days: 1
+
   build-form-viewer:
     name: Build Form Viewer
     runs-on: ubuntu-latest
@@ -443,6 +427,13 @@ jobs:
 
       - name: Build form-viewer
         run: pnpm --filter form-viewer build
+
+      - name: Upload form-viewer dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: form-viewer-dist-${{ github.sha }}
+          path: apps/form-viewer/dist
+          retention-days: 1
 
   build-admin-app:
     name: Build Admin App
@@ -486,6 +477,13 @@ jobs:
           VITE_API_URL: ${{ env.BACKEND_URL }}
           VITE_GRAPHQL_URL: ${{ env.BACKEND_URL }}/graphql
         run: pnpm --filter admin-app build
+
+      - name: Upload admin-app dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-app-dist-${{ github.sha }}
+          path: apps/admin-app/dist
+          retention-days: 1
 
   e2e-local:
     name: E2E Tests (Local Runner)
@@ -655,7 +653,7 @@ jobs:
   create-release-artifacts:
     name: Create Release Artifacts
     runs-on: ubuntu-latest
-    needs: [build-form-app, build-form-viewer, build-admin-app]
+    needs: [build-form-app, build-form-viewer, build-admin-app, build-backend]
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - name: Checkout code
@@ -671,47 +669,36 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - name: Restore built packages cache
-        uses: actions/cache@v4
+      - name: Download form-app dist
+        uses: actions/download-artifact@v4
         with:
-          path: |
-            packages/types/dist
-            packages/utils/dist
-            packages/ui/dist
-            node_modules/.pnpm
-          key: built-packages-${{ github.sha }}
+          name: form-app-dist-${{ github.sha }}
+          path: apps/form-app/dist
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Download form-viewer dist
+        uses: actions/download-artifact@v4
+        with:
+          name: form-viewer-dist-${{ github.sha }}
+          path: apps/form-viewer/dist
 
-      - name: Build form-app for release
-        run: |
-          echo "Building form-app without hardcoded secrets..."
-          echo "Users will configure environment variables in their hosting provider"
-          pnpm --filter form-app build
+      - name: Download admin-app dist
+        uses: actions/download-artifact@v4
+        with:
+          name: admin-app-dist-${{ github.sha }}
+          path: apps/admin-app/dist
 
-      - name: Build form-viewer for release
-        run: |
-          echo "Building form-viewer..."
-          pnpm --filter form-viewer build
-
-      - name: Build admin-app for release
-        run: |
-          echo "Building admin-app without hardcoded secrets..."
-          echo "Users will configure environment variables in their hosting provider"
-          pnpm --filter admin-app build
+      - name: Download backend dist
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-dist-${{ github.sha }}
+          path: apps/backend/dist
 
       - name: Extract version from tag
         id: version
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Building release artifacts for version: $VERSION"
-
-      - name: Build backend for release
-        run: |
-          echo "Building backend..."
-          pnpm --filter backend build
+          echo "Packaging release artifacts for version: $VERSION"
 
       - name: Create backend release directory
         run: |
