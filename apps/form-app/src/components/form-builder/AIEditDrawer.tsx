@@ -272,12 +272,14 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({ formId, organizationId, isO
         {messages.length === 0 && !isStreaming && (
           <p className="px-4 pt-8 text-center text-xs text-muted-foreground">{t('emptyState')}</p>
         )}
-        {messages.map((msg) =>
-          msg.role === 'user'
-            ? <UserBubble key={msg.id} message={msg} />
-            : <AssistantBubble key={msg.id} message={msg} />
-        )}
-        {isStreaming && !messages.some((m) => m.isStreaming) && <StatusIndicator text={statusText} />}
+        {messages
+          .filter((m) => !(m.isStreaming && !(m.streamingText) && !(m.streamingOps?.length)))
+          .map((msg) =>
+            msg.role === 'user'
+              ? <UserBubble key={msg.id} message={msg} />
+              : <AssistantBubble key={msg.id} message={msg} />
+          )}
+        {isStreaming && !messages.some((m) => m.isStreaming && ((m.streamingText?.length ?? 0) > 0 || (m.streamingOps?.length ?? 0) > 0)) && <StatusIndicator text={statusText} />}
         <div ref={messagesEndRef} />
       </div>
 
