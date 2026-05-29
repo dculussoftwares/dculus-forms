@@ -223,6 +223,8 @@ export const formSharingResolvers = {
         }
       }
 
+      whereCondition = { ...whereCondition, deletedAt: null };
+
       // Get total count for pagination
       const totalCount = await prisma.form.count({
         where: whereCondition
