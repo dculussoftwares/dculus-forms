@@ -39,6 +39,8 @@ on:
       - completed
     branches:
       - main
+    tags:
+      - 'v*'
 
 permissions:
   id-token: write # Required for OIDC authentication with Azure
@@ -108,6 +110,15 @@ jobs:
               echo "deploy_cloudflare=true" >> $GITHUB_OUTPUT
               echo "deploy_azure=true" >> $GITHUB_OUTPUT
               echo "release_tag=sha-${HEAD_SHA}" >> $GITHUB_OUTPUT
+              echo "release_commit=${HEAD_SHA}" >> $GITHUB_OUTPUT
+            elif [[ "$HEAD_BRANCH" =~ ^v[0-9]+\.[0-9]+ ]]; then
+              # For version tags (v*), auto-deploy to production
+              echo "🚀 Version tag detected: $HEAD_BRANCH — deploying to production"
+              echo "environment=production" >> $GITHUB_OUTPUT
+              echo "should_deploy=true" >> $GITHUB_OUTPUT
+              echo "deploy_cloudflare=true" >> $GITHUB_OUTPUT
+              echo "deploy_azure=true" >> $GITHUB_OUTPUT
+              echo "release_tag=${HEAD_BRANCH}" >> $GITHUB_OUTPUT
               echo "release_commit=${HEAD_SHA}" >> $GITHUB_OUTPUT
             else
                echo "⚠️ Triggered by non-main branch: $HEAD_BRANCH. Skipping auto-deployment."
