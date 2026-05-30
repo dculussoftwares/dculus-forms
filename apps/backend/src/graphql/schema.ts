@@ -152,6 +152,9 @@ export const typeDefs = gql`
     responsesToday: Int!
     responsesThisWeek: Int!
     responsesThisMonth: Int!
+    trendResponsesToday: Float # % change today vs yesterday; null = no data
+    trendThisWeek: Float # % change this week vs last week; null = no data
+    trendResponseRate: Float # percentage-point delta this week vs last week; null = <10 views
   }
 
   # Form Sharing Types
