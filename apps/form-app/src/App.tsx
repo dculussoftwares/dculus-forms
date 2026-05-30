@@ -89,7 +89,7 @@ function App() {
           <Route path="/dashboard/form/:formId/integrations/:pluginId/edit" element={
             <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><PluginConfiguration /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
-          <Route path="/settings/:tab?" element={
+          <Route path="/settings/:section?" element={
             <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><Settings /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/forms/create" element={
