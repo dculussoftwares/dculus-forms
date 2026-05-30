@@ -120,7 +120,7 @@ const Integrations: React.FC = () => {
       ]}
     >
       {/* ── Two-column layout: sticky sidebar + integration content ── */}
-      <div className="flex gap-6 items-start -mt-1">
+      <div className="flex gap-6 items-start -mt-1 max-w-5xl mx-auto w-full">
 
         {/* ── LEFT SIDEBAR ── */}
         <aside className="w-64 shrink-0 self-start sticky top-0">

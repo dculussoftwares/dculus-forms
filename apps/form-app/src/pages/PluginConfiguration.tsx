@@ -176,7 +176,7 @@ const PluginConfiguration: React.FC = () => {
         { label: mode === 'edit' ? t('layout.breadcrumbs.edit') : t('layout.breadcrumbs.configure'), href: '#' },
       ]}
     >
-      <div className="max-w-3xl">{renderPluginConfig()}</div>
+      <div className="max-w-3xl mx-auto w-full">{renderPluginConfig()}</div>
     </MainLayout>
   );
 };
