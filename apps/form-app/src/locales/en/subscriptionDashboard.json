@@ -56,5 +56,14 @@
     "title": "Compare Plans",
     "show": "Show Plan Comparison",
     "hide": "Hide Plan Comparison"
+  },
+  "aiTokens": {
+    "title": "AI Assistant Usage",
+    "resetsOn": "Resets {{date}}",
+    "used": "{{used}} / {{limit}} tokens",
+    "percentageUsed": "{{percentage}}% of monthly tokens used",
+    "limitReached": "Monthly AI token limit reached. Upgrade to continue using AI features.",
+    "upgradePlan": "Upgrade Plan",
+    "loading": "Loading AI usage..."
   }
 }
