@@ -97,3 +97,14 @@ export const INITIALIZE_ORGANIZATION_SUBSCRIPTION = gql`
     }
   }
 `;
+
+// Get AI token usage for organization
+export const GET_AI_TOKEN_USAGE = gql`
+  query GetAITokenUsage($organizationId: ID!) {
+    aiTokenUsage(organizationId: $organizationId) {
+      used
+      limit
+      resetAt
+    }
+  }
+`;
