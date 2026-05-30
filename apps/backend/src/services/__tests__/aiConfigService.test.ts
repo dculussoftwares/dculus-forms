@@ -111,9 +111,9 @@ describe('seedDefaults', () => {
 });
 
 describe('SUPPORTED_MODELS', () => {
-  it('includes gpt-4o and Phi-4', () => {
+  it('includes gpt-4o and gpt-4.1', () => {
     const ids = SUPPORTED_MODELS.map(m => m.id);
     expect(ids).toContain('gpt-4o');
-    expect(ids).toContain('Phi-4');
+    expect(ids).toContain('gpt-4.1');
   });
 });
