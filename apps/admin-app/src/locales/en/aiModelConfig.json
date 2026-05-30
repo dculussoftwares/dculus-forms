@@ -1,0 +1,19 @@
+{
+  "title": "AI Model Configuration",
+  "subtitle": "Assign AI models per subscription plan. Changes take effect on the next request.",
+  "columns": {
+    "plan": "Plan",
+    "primaryModel": "Primary Model",
+    "fastModel": "Fast Model"
+  },
+  "plans": {
+    "free": "Free",
+    "starter": "Starter",
+    "advanced": "Advanced"
+  },
+  "save": "Save Changes",
+  "saving": "Saving...",
+  "success": "AI model configuration updated successfully.",
+  "error": "Failed to update AI model configuration.",
+  "noChanges": "No changes to save."
+}

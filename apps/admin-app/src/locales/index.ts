@@ -6,6 +6,7 @@ import enTemplates from './en/templates.json';
 import enLayout from './en/layout.json';
 import enLogin from './en/login.json';
 import enApp from './en/app.json';
+import enAiModelConfig from './en/aiModelConfig.json';
 
 export const translations = {
   en: {
@@ -17,6 +18,7 @@ export const translations = {
     layout: enLayout,
     login: enLogin,
     app: enApp,
+    aiModelConfig: enAiModelConfig,
   },
 } as const;
 
