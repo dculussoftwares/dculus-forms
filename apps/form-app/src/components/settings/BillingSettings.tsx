@@ -20,16 +20,18 @@ function getBarColor(pct: number | null | undefined): string {
   return 'bg-primary';
 }
 
-function safeOpen(url: string, onError: (msg: string) => void) {
+function safeOpen(url: string, onError: (msg: string) => void): boolean {
   try {
     const parsed = new URL(url);
     if (parsed.protocol !== 'https:' || !parsed.hostname.endsWith('chargebee.com')) {
       onError('Invalid redirect URL');
-      return;
+      return false;
     }
     window.open(url, '_blank');
+    return true;
   } catch {
     onError('Malformed redirect URL');
+    return false;
   }
 }
 
@@ -105,10 +107,12 @@ export function BillingSettings() {
     try {
       const { data } = await createPortalSession();
       if (data?.createPortalSession?.url) {
-        safeOpen(data.createPortalSession.url, (msg) =>
+        const opened = safeOpen(data.createPortalSession.url, (msg) =>
           toastError(t('billing.portalError'), msg)
         );
-        toastSuccess(t('billing.portalOpening'), t('billing.portalOpeningDesc'));
+        if (opened) {
+          toastSuccess(t('billing.portalOpening'), t('billing.portalOpeningDesc'));
+        }
       }
     } catch (error: any) {
       toastError(t('billing.portalError'), error.message);
@@ -319,7 +323,7 @@ export function BillingSettings() {
         </p>
         <div className="grid grid-cols-3 divide-x divide-[rgba(81,76,84,0.1)] overflow-hidden rounded-xl border border-[rgba(81,76,84,0.12)] bg-white">
           {allPlans.map((plan) => {
-            const isCurrent = plan.id === planId || (plan.id === 'free' && planId === 'free');
+            const isCurrent = plan.id === planId;
             const views = plan.id === 'free' ? '10,000' : plan.id === 'starter' ? 'Unlimited' : 'Unlimited';
             const subs = plan.id === 'free' ? '1,000' : plan.id === 'starter' ? '10,000' : '100,000';
             const tokens = plan.id === 'free' ? '50k' : plan.id === 'starter' ? '500k' : '5M';
