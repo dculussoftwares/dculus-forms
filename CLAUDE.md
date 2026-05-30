@@ -405,3 +405,6 @@ See each app's `.env.example` for the full list.
 - `PGBOUNCER-MIGRATION.md` — PgBouncer connection pooling setup notes
 - `.github/workflows/` — CI/CD: `build.yml`, `codeql.yml`, `multi-cloud-deployment.yml`
 - `docker-compose.yml` — local Postgres (:5433) + pgAdmin (:5050)
+
+> **IMPORTANT ** : Use gh and azure cli for read and debug purpose, don't create resource using azure cli, create resource using terrafrom
+---
