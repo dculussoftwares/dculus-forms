@@ -42,8 +42,9 @@ export function AITokenUsageCard({ organizationId, currentPlan }: AITokenUsageCa
 
   const { used, limit, resetAt } = data.aiTokenUsage;
   const percentage = limit > 0 ? Math.min((used / limit) * 100, 100) : 0;
-  const limitReached = used >= limit;
-  const resetDate = new Date(resetAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+  const limitReached = limit > 0 && used >= limit;
+  const d = new Date(resetAt);
+  const resetDate = isNaN(d.getTime()) ? '–' : d.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
 
   return (
     <Card className="p-6">
@@ -80,9 +81,8 @@ export function AITokenUsageCard({ organizationId, currentPlan }: AITokenUsageCa
 
         {/* Token count */}
         <div>
-          <div className="flex items-end justify-between mb-2">
-            <span className="text-2xl font-bold">{used.toLocaleString()}</span>
-            <span className="text-sm text-muted-foreground">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-muted-foreground">
               {t('aiTokens.used', {
                 values: {
                   used: used.toLocaleString(),
