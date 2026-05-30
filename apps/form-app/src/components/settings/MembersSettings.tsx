@@ -12,7 +12,7 @@ import { extractGraphQLErrorCode } from '../../utils/graphqlErrors';
 
 export function MembersSettings() {
   const { t } = useTranslation('settings');
-  const { activeOrganization, user, refetchOrganization } = useAuthContext();
+  const { activeOrganization, user, refetchOrganization, isLoading } = useAuthContext();
 
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
@@ -90,17 +90,27 @@ export function MembersSettings() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="max-w-2xl animate-pulse space-y-4 pt-2">
+        <div className="h-7 w-56 rounded bg-[#e5e7eb]" />
+        <div className="h-4 w-80 rounded bg-[#e5e7eb]" />
+        <div className="h-32 rounded-xl bg-[#e5e7eb]" />
+      </div>
+    );
+  }
   if (!activeOrganization) return null;
 
   return (
     <div className="space-y-4">
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-[#3c323e]">{t('membersPage.title')}</h1>
-          <p className="text-sm text-[#655d67]">{t('membersPage.subtitle')}</p>
+          <h1 className="text-2xl font-semibold text-[#262627]">{t('membersPage.title')}</h1>
+          <p className="mt-1 text-sm text-[#655d67]">{t('membersPage.subtitle')}</p>
         </div>
-        <Button size="sm" onClick={() => setIsInviteDialogOpen(true)}>
-          <UserPlus className="mr-2 h-3.5 w-3.5" />
+        <Button onClick={() => setIsInviteDialogOpen(true)}
+          className="bg-[#3c323e] hover:bg-[#2e2530] text-white">
+          <UserPlus className="mr-2 h-4 w-4" />
           {t('membersPage.inviteButton')}
         </Button>
       </div>
@@ -159,24 +169,14 @@ export function MembersSettings() {
         </Card>
       )}
 
-      {/* Members list */}
-      <Card className="overflow-hidden p-0">
-        <div className="border-b border-[rgba(81,76,84,0.08)] px-5 py-3.5">
-          <h2 className="text-sm font-semibold text-[#3c323e]">
-            {t('members.title')}
-            <span className="ml-2 font-normal text-[#655d67]">
-              {activeOrganization.members?.length ?? 0}
-            </span>
-          </h2>
-        </div>
-        <div className="p-5">
-          <MembersList
-            organization={activeOrganization as any}
-            currentUserId={user?.id ?? ''}
-            currentUserRole={currentUserRole}
-            onMemberChange={refetchOrganization}
-          />
-        </div>
+      {/* Members list — MembersList renders its own title/count */}
+      <Card className="p-5">
+        <MembersList
+          organization={activeOrganization as any}
+          currentUserId={user?.id ?? ''}
+          currentUserRole={currentUserRole}
+          onMemberChange={refetchOrganization}
+        />
       </Card>
 
       {/* Pending invitations */}

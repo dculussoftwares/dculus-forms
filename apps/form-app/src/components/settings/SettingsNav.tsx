@@ -15,39 +15,39 @@ export function SettingsNav() {
 
   const resolvedSection = section ? (REDIRECT_MAP[section] ?? section) : 'profile';
 
-  function NavItem({ to, icon, label }: { to: string; icon: string; label: string }) {
+  function NavItem({ to, label }: { to: string; label: string }) {
+    const isActive = resolvedSection === to;
     return (
       <button
         onClick={() => navigate(`/settings/${to}`)}
         className={cn(
-          'flex w-full items-center gap-2 rounded-lg px-3 py-[7px] text-sm transition-colors',
-          resolvedSection === to
-            ? 'bg-[rgba(87,84,91,0.07)] font-medium text-[#3c323e]'
-            : 'text-[#655d67] hover:bg-[rgba(87,84,91,0.05)] hover:text-[#4c414e]'
+          'flex w-full items-center rounded-lg px-3 py-2 text-sm transition-colors text-left',
+          isActive
+            ? 'bg-[rgba(87,84,91,0.06)] text-[#3c323e]'
+            : 'text-[#655d67] hover:bg-[rgba(87,84,91,0.04)] hover:text-[#4c414e]'
         )}
       >
-        <span className="w-[18px] text-center text-base leading-none">{icon}</span>
         {label}
       </button>
     );
   }
 
   return (
-    <nav className="w-[200px] shrink-0 px-3 py-6">
-      <div className="mb-2">
-        <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-widest text-[#655d67]">
-          {t('nav.sectionAccount')}
-        </p>
-        <NavItem to="profile" icon="👤" label={t('nav.profile')} />
-      </div>
-      <div className="my-3 border-t border-[rgba(81,76,84,0.08)]" />
-      <div>
-        <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-widest text-[#655d67]">
-          {t('nav.sectionOrganization')}
-        </p>
-        <NavItem to="members" icon="👥" label={t('nav.members')} />
-        <NavItem to="billing" icon="💳" label={t('nav.billing')} />
-      </div>
+    <nav className="w-[220px] shrink-0 px-4 py-6">
+      {/* Account section */}
+      <p className="mb-1 px-3 text-sm font-medium text-[#3c323e]">
+        {t('nav.sectionAccount')}
+      </p>
+      <NavItem to="profile" label={t('nav.profile')} />
+
+      <div className="my-4 border-t border-[rgba(81,76,84,0.08)]" />
+
+      {/* Organization section */}
+      <p className="mb-1 px-3 text-sm font-medium text-[#3c323e]">
+        {t('nav.sectionOrganization')}
+      </p>
+      <NavItem to="members" label={t('nav.members')} />
+      <NavItem to="billing" label={t('nav.billing')} />
     </nav>
   );
 }

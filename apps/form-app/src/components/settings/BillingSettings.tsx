@@ -1,24 +1,16 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { ChevronDown, CreditCard, ExternalLink, TrendingUp, AlertTriangle } from 'lucide-react';
+import { ChevronDown, AlertTriangle, Eye, FileText, Sparkles } from 'lucide-react';
 import { Card, Button, toastSuccess, toastError } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import {
   GET_SUBSCRIPTION,
-  GET_AVAILABLE_PLANS,
   GET_AI_TOKEN_USAGE,
   CREATE_PORTAL_SESSION,
 } from '../../graphql/subscription';
 import { UpgradeModal } from '../subscription/UpgradeModal';
 import { UsageChart } from '../subscription/UsageChart';
 import { useTranslation } from '../../hooks/useTranslation';
-
-function getBarColor(pct: number | null | undefined): string {
-  if (!pct) return 'bg-primary';
-  if (pct >= 100) return 'bg-red-500';
-  if (pct >= 80) return 'bg-orange-500';
-  return 'bg-primary';
-}
 
 function safeOpen(url: string, onError: (msg: string) => void): boolean {
   try {
@@ -35,52 +27,47 @@ function safeOpen(url: string, onError: (msg: string) => void): boolean {
   }
 }
 
-function PlanPrice({ plan }: { plan: any }) {
-  if (plan.id === 'free') return <span className="text-xs text-[#655d67]">$0 / month</span>;
-  const usdMonthly = plan.prices?.find((p: any) => p.currency === 'USD' && p.period === 'month');
-  if (!usdMonthly) return null;
-  return (
-    <span className="text-xs text-[#655d67]">
-      from ${Math.round(usdMonthly.amount / 100)} / month
-    </span>
-  );
-}
-
-function UsageTile({
-  icon, label, used, limit, unlimited, percentage, resetLabel,
+function UsageRow({
+  icon,
+  label,
+  used,
+  limit,
+  unlimited,
+  percentage,
+  resetDate,
 }: {
-  icon: React.ReactNode; label: string; used: number; limit: number | null;
-  unlimited: boolean; percentage: number | null; resetLabel?: string;
+  icon: React.ReactNode;
+  label: string;
+  used: number;
+  limit: number | null;
+  unlimited: boolean;
+  percentage: number | null;
+  resetDate?: string;
 }) {
+  const pct = Math.min(percentage ?? 0, 100);
+  const barColor =
+    pct >= 100 ? 'bg-red-500' : pct >= 80 ? 'bg-orange-500' : 'bg-[#3c323e]';
+
   return (
-    <div className="rounded-lg bg-[#f7f7f8] p-3">
-      <div className="mb-1 flex items-center gap-1.5 text-xs text-[#655d67]">
-        {icon}
-        {label}
+    <div>
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center gap-2 text-sm text-[#3c323e]">
+          <span className="text-[#655d67]">{icon}</span>
+          {label}
+        </div>
+        <span className="text-sm text-[#655d67]">
+          {unlimited
+            ? `${used.toLocaleString()} / Unlimited`
+            : `${used.toLocaleString()} / ${limit?.toLocaleString() ?? '–'} this month`}
+        </span>
       </div>
-      <div className="text-base font-semibold text-[#3c323e]">
-        {used.toLocaleString()}
-        {!unlimited && limit && (
-          <span className="ml-1 text-xs font-normal text-[#655d67]">
-            / {limit.toLocaleString()}
-          </span>
-        )}
-      </div>
-      {unlimited ? (
-        <p className="mt-1 text-xs text-[#177767]">Unlimited</p>
-      ) : (
-        <>
-          <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-[#e5e7eb]">
-            <div
-              className={cn('h-full rounded-full transition-all', getBarColor(percentage))}
-              style={{ width: `${Math.min(percentage ?? 0, 100)}%` }}
-            />
-          </div>
-          <p className="mt-1 text-[10px] text-[#b0a8b2]">
-            {(percentage ?? 0).toFixed(1)}%
-            {resetLabel && ` · ${resetLabel}`}
-          </p>
-        </>
+      {!unlimited && (
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#e5e7eb]">
+          <div className={cn('h-full rounded-full transition-all', barColor)} style={{ width: `${pct}%` }} />
+        </div>
+      )}
+      {resetDate && (
+        <p className="mt-1 text-xs text-[#b0a8b2]">{resetDate}</p>
       )}
     </div>
   );
@@ -92,7 +79,6 @@ export function BillingSettings() {
   const [showChart, setShowChart] = useState(false);
 
   const { data: subData, loading: subLoading } = useQuery(GET_SUBSCRIPTION);
-  const { data: plansData } = useQuery(GET_AVAILABLE_PLANS);
   const [createPortalSession, { loading: portalLoading }] = useMutation(CREATE_PORTAL_SESSION);
 
   const subscription = subData?.activeOrganization?.subscription;
@@ -123,10 +109,10 @@ export function BillingSettings() {
     return (
       <div className="space-y-4">
         <div className="mb-6">
-          <h1 className="text-lg font-semibold text-[#3c323e]">{t('billing.title')}</h1>
-          <p className="text-sm text-[#655d67]">{t('billing.subtitle')}</p>
+          <h1 className="text-2xl font-semibold text-[#262627]">{t('billing.title')}</h1>
+          <p className="mt-1 text-sm text-[#655d67]">{t('billing.subtitle')}</p>
         </div>
-        <Card className="p-5 animate-pulse">
+        <Card className="animate-pulse p-6">
           <div className="h-5 w-40 rounded bg-[#e5e7eb] mb-3" />
           <div className="h-4 w-64 rounded bg-[#e5e7eb]" />
         </Card>
@@ -138,8 +124,8 @@ export function BillingSettings() {
     return (
       <div className="space-y-4">
         <div className="mb-6">
-          <h1 className="text-lg font-semibold text-[#3c323e]">{t('billing.title')}</h1>
-          <p className="text-sm text-[#655d67]">{t('billing.subtitle')}</p>
+          <h1 className="text-2xl font-semibold text-[#262627]">{t('billing.title')}</h1>
+          <p className="mt-1 text-sm text-[#655d67]">{t('billing.subtitle')}</p>
         </div>
         <Card className="p-8 text-center">
           <AlertTriangle className="mx-auto mb-3 h-8 w-8 text-orange-400" />
@@ -152,16 +138,12 @@ export function BillingSettings() {
   const { planId, status, usage, currentPeriodStart, currentPeriodEnd } = subscription;
   const planName = planId.charAt(0).toUpperCase() + planId.slice(1);
 
-  const periodStart = new Date(Number(currentPeriodStart)).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric',
+  const resetDateFormatted = new Date(Number(currentPeriodEnd)).toLocaleDateString('en-US', {
+    month: 'long', day: 'numeric', year: 'numeric',
   });
-  const periodEnd = new Date(Number(currentPeriodEnd)).toLocaleDateString('en-US', {
+  const resetDateShort = new Date(Number(currentPeriodEnd)).toLocaleDateString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric',
   });
-  const daysRemaining = Math.max(
-    0,
-    Math.ceil((Number(currentPeriodEnd) - Date.now()) / 86_400_000)
-  );
 
   const tokenUsage = tokenData?.aiTokenUsage;
   const tokenPct = tokenUsage && tokenUsage.limit > 0
@@ -170,38 +152,21 @@ export function BillingSettings() {
   const tokenResetDate = tokenUsage
     ? (() => {
         const d = new Date(tokenUsage.resetAt);
-        return isNaN(d.getTime()) ? '' : `resets ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+        return isNaN(d.getTime())
+          ? ''
+          : `Your tokens reset on ${d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
       })()
     : '';
-
-  const plans: any[] = plansData?.availablePlans ?? [];
-  const freePlan = { id: 'free', name: 'Free', prices: [], features: { views: 10000, submissions: 1000 } };
-  const allPlans = [freePlan, ...plans];
 
   const limitExceeded = usage.views.exceeded || usage.submissions.exceeded;
 
   return (
-    <div className="space-y-4">
+    <div className="max-w-2xl space-y-4">
+      {/* Page title */}
       <div className="mb-6">
-        <h1 className="text-lg font-semibold text-[#3c323e]">{t('billing.title')}</h1>
-        <p className="text-sm text-[#655d67]">{t('billing.subtitle')}</p>
+        <h1 className="text-2xl font-semibold text-[#262627]">{t('billing.title')}</h1>
+        <p className="mt-1 text-sm text-[#655d67]">{t('billing.subtitle')}</p>
       </div>
-
-      {/* Past due alert */}
-      {status === 'past_due' && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 flex items-start gap-3">
-          <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
-          <div className="flex-1 text-sm text-red-700">
-            Payment failed — please update your payment method.
-          </div>
-          <Button size="sm" variant="outline" onClick={handleManageBilling} disabled={portalLoading}
-            className="shrink-0 border-red-300 text-red-700 hover:bg-red-100">
-            <CreditCard className="mr-1.5 h-3 w-3" />
-            Manage billing
-            <ExternalLink className="ml-1.5 h-3 w-3" />
-          </Button>
-        </div>
-      )}
 
       {/* Limit exceeded alert */}
       {limitExceeded && (
@@ -212,98 +177,67 @@ export function BillingSettings() {
           </div>
           <Button size="sm" onClick={() => setShowUpgradeModal(true)}
             className="shrink-0 bg-[#ce5d55] hover:bg-[#b94f47] text-white">
-            <TrendingUp className="mr-1.5 h-3 w-3" />
-            Upgrade Plan
+            Upgrade
           </Button>
         </div>
       )}
 
-      {/* Plan header card */}
-      <Card className="p-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <span className="text-xl font-bold text-[#3c323e]">{planName} Plan</span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(81,76,84,0.15)] bg-white px-2.5 py-0.5 text-xs font-medium text-[#4c414e]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#177767]" />
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-              </span>
-            </div>
-            <p className="mt-1 text-xs text-[#655d67]">
-              {periodStart} – {periodEnd} · {daysRemaining} days remaining
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleManageBilling} disabled={portalLoading}
-              className="gap-1.5 text-[#655d67]">
-              <CreditCard className="h-3.5 w-3.5" />
-              {t('billing.manageBilling')}
-              <ExternalLink className="h-3 w-3" />
-            </Button>
-            {planId !== 'advanced' && (
-              <Button size="sm" onClick={() => setShowUpgradeModal(true)}
-                className="bg-[#177767] hover:bg-[#145f54] text-white">
-                <TrendingUp className="mr-1.5 h-3.5 w-3.5" />
-                {t('billing.upgradePlan')}
-              </Button>
-            )}
-          </div>
+      {/* Past due alert */}
+      {status === 'past_due' && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 flex items-start gap-3">
+          <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+          <p className="flex-1 text-sm text-red-700">
+            Payment failed — please update your payment method.
+          </p>
         </div>
-      </Card>
+      )}
 
-      {/* Usage card */}
-      <Card className="p-5">
-        <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-[#655d67]">
-          {t('billing.sectionUsage')}
+      {/* Current plan card — mirrors Typeform's plan card */}
+      <Card className="p-6">
+        <div className="mb-1 text-lg font-bold text-[#262627]">
+          Dculus <span className="font-bold">{planName}</span>
+        </div>
+        <p className="mb-5 text-sm text-[#655d67]">
+          {planId === 'free'
+            ? 'Build and share forms with your audience.'
+            : `All the power of the ${planName} plan.`}
         </p>
-        <div className="grid grid-cols-3 gap-3">
-          <UsageTile
-            icon={<span>👁</span>}
-            label="Form Views"
+
+        <div className="space-y-4">
+          {/* Form Views row */}
+          <UsageRow
+            icon={<Eye className="h-4 w-4" />}
+            label="Form views"
             used={usage.views.used}
             limit={usage.views.limit}
             unlimited={usage.views.unlimited}
             percentage={usage.views.percentage}
+            resetDate={`Your views reset on ${resetDateFormatted}`}
           />
-          <UsageTile
-            icon={<span>📄</span>}
+
+          {/* Submissions row */}
+          <UsageRow
+            icon={<FileText className="h-4 w-4" />}
             label="Submissions"
             used={usage.submissions.used}
             limit={usage.submissions.limit}
             unlimited={usage.submissions.unlimited}
             percentage={usage.submissions.percentage}
+            resetDate={`Your submissions reset on ${resetDateFormatted}`}
           />
-          {tokenUsage ? (
-            <UsageTile
-              icon={<span>✨</span>}
-              label="AI Tokens"
-              used={tokenUsage.used}
-              limit={tokenUsage.limit}
-              unlimited={false}
-              percentage={tokenPct}
-              resetLabel={tokenResetDate}
-            />
-          ) : (
-            <div className="rounded-lg bg-[#f7f7f8] p-3">
-              <div className="mb-1 flex items-center gap-1.5 text-xs text-[#655d67]">
-                <span>✨</span> AI Tokens
-              </div>
-              <div className="text-sm text-[#b0a8b2]">– / –</div>
-            </div>
-          )}
         </div>
 
-        {/* Collapsible chart */}
+        {/* View trends toggle */}
         <button
           onClick={() => setShowChart((v) => !v)}
-          className="mt-3 flex w-full items-center justify-center gap-1.5 border-t border-[rgba(81,76,84,0.08)] pt-3 text-xs font-medium text-[#655d67] hover:text-[#3c323e] transition-colors"
+          className="mt-4 flex items-center gap-1 text-xs text-[#655d67] hover:text-[#3c323e] transition-colors"
         >
           {showChart ? t('billing.hideTrends') : t('billing.viewTrends')}
           <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', showChart && 'rotate-180')} />
         </button>
 
         {showChart && (
-          <div className="mt-3">
+          <div className="mt-4 border-t border-[rgba(81,76,84,0.08)] pt-4">
             <UsageChart
               viewsUsed={usage.views.used}
               submissionsUsed={usage.submissions.used}
@@ -314,50 +248,54 @@ export function BillingSettings() {
             />
           </div>
         )}
+
+        <div className="mt-6 flex items-center gap-3">
+          {planId !== 'advanced' && (
+            <Button
+              onClick={() => setShowUpgradeModal(true)}
+              className="bg-[#3c323e] hover:bg-[#2e2530] text-white"
+            >
+              Upgrade
+            </Button>
+          )}
+        </div>
       </Card>
 
-      {/* Plan comparison strip */}
-      <div>
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[#655d67]">
-          {t('billing.sectionPlans')}
+      {/* AI assistant usage card */}
+      {tokenUsage && (
+        <Card className="p-6">
+          <div className="mb-1 text-base font-semibold text-[#262627]">AI assistant usage</div>
+          <p className="mb-5 text-sm text-[#655d67]">
+            Tokens used for AI-powered form editing this month.
+          </p>
+          <UsageRow
+            icon={<Sparkles className="h-4 w-4" />}
+            label="AI tokens"
+            used={tokenUsage.used}
+            limit={tokenUsage.limit}
+            unlimited={false}
+            percentage={tokenPct}
+            resetDate={tokenResetDate}
+          />
+        </Card>
+      )}
+
+      {/* Billing details card */}
+      <Card className="p-6">
+        <div className="mb-1 text-base font-semibold text-[#262627]">Billing details</div>
+        <p className="mb-4 text-sm text-[#655d67]">
+          Manage your billing information and download invoices.
         </p>
-        <div className="grid grid-cols-3 divide-x divide-[rgba(81,76,84,0.1)] overflow-hidden rounded-xl border border-[rgba(81,76,84,0.12)] bg-white">
-          {allPlans.map((plan) => {
-            const isCurrent = plan.id === planId;
-            const views = plan.id === 'free' ? '10,000' : plan.id === 'starter' ? 'Unlimited' : 'Unlimited';
-            const subs = plan.id === 'free' ? '1,000' : plan.id === 'starter' ? '10,000' : '100,000';
-            const tokens = plan.id === 'free' ? '50k' : plan.id === 'starter' ? '500k' : '5M';
-            return (
-              <div
-                key={plan.id}
-                className={cn('p-4', isCurrent && 'bg-[rgba(87,84,91,0.03)]')}
-              >
-                <div className="mb-0.5 text-sm font-semibold text-[#3c323e]">
-                  {plan.name ?? (plan.id === 'free' ? 'Free' : plan.id)}
-                </div>
-                <PlanPrice plan={plan} />
-                <ul className="mt-2 space-y-0.5 text-xs text-[#655d67]">
-                  <li>{views} views</li>
-                  <li>{subs} submissions</li>
-                  <li>{tokens} AI tokens</li>
-                </ul>
-                {isCurrent ? (
-                  <span className="mt-3 inline-block rounded bg-[rgba(23,119,103,0.1)] px-2 py-0.5 text-[10px] font-semibold text-[#177767]">
-                    {t('billing.currentPlan')}
-                  </span>
-                ) : (
-                  <button
-                    onClick={() => setShowUpgradeModal(true)}
-                    className="mt-3 text-xs font-medium text-[#177767] hover:underline"
-                  >
-                    {t('billing.upgradeArrow')}
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleManageBilling}
+          disabled={portalLoading}
+          className="text-[#3c323e] border-[rgba(81,76,84,0.2)]"
+        >
+          {portalLoading ? 'Opening…' : 'Edit billing details'}
+        </Button>
+      </Card>
 
       {showUpgradeModal && (
         <UpgradeModal onClose={() => setShowUpgradeModal(false)} currentPlan={planId} />
