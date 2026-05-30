@@ -62,7 +62,7 @@ export const AccountSettings: React.FC = () => {
   };
 
   return (
-    <div className="max-w-xl">
+    <div>
       <Card className="overflow-hidden">
         {/* Profile picture row */}
         <div className="p-6">

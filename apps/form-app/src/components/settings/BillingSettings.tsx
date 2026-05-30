@@ -158,7 +158,7 @@ export function BillingSettings() {
   const limitExceeded = usage.views.exceeded || usage.submissions.exceeded;
 
   return (
-    <div className="max-w-2xl space-y-4">
+    <div className="space-y-4">
       {/* Page title */}
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-[#262627]">{t('billing.title')}</h1>
