@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { UpgradeModal } from './UpgradeModal';
 import { UsageChart } from './UsageChart';
 import { useTranslation } from '../../hooks/useTranslation';
+import { AITokenUsageCard } from './AITokenUsageCard';
 
 export const SubscriptionDashboard = () => {
   const { t } = useTranslation('subscriptionDashboard');
@@ -14,6 +15,7 @@ export const SubscriptionDashboard = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const subscription = data?.activeOrganization?.subscription;
+  const organizationId = data?.activeOrganization?.id ?? '';
 
   const safeOpen = (url: string) => {
     try {
@@ -378,6 +380,14 @@ export const SubscriptionDashboard = () => {
         currentPeriodStart={currentPeriodStart}
         currentPeriodEnd={currentPeriodEnd}
       />
+
+      {/* AI Token Usage */}
+      {organizationId && (
+        <AITokenUsageCard
+          organizationId={organizationId}
+          currentPlan={planId}
+        />
+      )}
 
       {/* Upgrade Modal */}
       {showUpgradeModal && (
