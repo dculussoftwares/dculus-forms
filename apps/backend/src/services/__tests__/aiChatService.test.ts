@@ -17,8 +17,7 @@ vi.mock('../../lib/prisma.js', () => ({
 }));
 
 vi.mock('../../lib/ai.js', () => ({
-  getPrimaryModel: vi.fn(() => 'mock-model'),
-  getFastModel: vi.fn(() => 'mock-fast-model'),
+  getModelForPlan: vi.fn().mockResolvedValue('mock-model'),
 }));
 
 vi.mock('../../lib/aiFormEditTools.js', () => ({
@@ -90,7 +89,7 @@ describe('buildChatStream', () => {
       id: 'conv_1', title: 'Test', userId: 'user_1', formId: 'form_1',
     });
     (prisma.aIChatMessage.findMany as any).mockResolvedValue([]);
-    const result = await buildChatStream('conv_1', 'user_1');
+    const result = await buildChatStream('conv_1', 'user_1', undefined, 'free');
     expect(result).toHaveProperty('fullStream');
     expect(typeof result.fullStream[Symbol.asyncIterator]).toBe('function');
   });
@@ -100,12 +99,12 @@ describe('buildChatStream', () => {
       id: 'conv_1', title: 'Test', userId: 'user_1', formId: 'form_1',
     });
     (prisma.aIChatMessage.findMany as any).mockResolvedValue([]);
-    const result = await buildChatStream('conv_1', 'user_1', 'page_2');
+    const result = await buildChatStream('conv_1', 'user_1', 'page_2', 'free');
     expect(result).toHaveProperty('fullStream');
   });
 
   it('throws if conversation not found', async () => {
     (prisma.aIChatConversation.findFirst as any).mockResolvedValue(null);
-    await expect(buildChatStream('missing', 'user_1')).rejects.toThrow('Conversation not found');
+    await expect(buildChatStream('missing', 'user_1', undefined, 'free')).rejects.toThrow('Conversation not found');
   });
 });
