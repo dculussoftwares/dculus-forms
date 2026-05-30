@@ -1,0 +1,101 @@
+<h2>Usage Chart — Keep, Collapse, or Remove?</h2>
+<p class="subtitle">The current page has a recharts area chart showing daily views & submissions. In the new clean layout (option C), what should happen to it?</p>
+
+<style>
+  body { font-family: system-ui, sans-serif; }
+  .mock-section { background:#f7f7f8; border-radius:10px; padding:14px; height:180px; overflow:hidden; }
+  .stat-label { font-size:11px; color:#655d67; }
+  .mini-bar { background:#e5e7eb; border-radius:3px; height:4px; margin-top:3px; }
+  .fill-blue { background:#3b82f6; height:4px; border-radius:3px; width:0%; }
+  .fill-amber { background:#f59e0b; height:4px; border-radius:3px; width:6%; }
+  .section-lbl { font-size:11px; font-weight:600; color:#655d67; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px; }
+  .white-card { background:#fff; border-radius:8px; border:1px solid rgba(81,76,84,0.12); padding:12px; }
+</style>
+
+<div class="options">
+
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Remove it entirely</h3>
+      <p>The chart adds visual noise for most users. Usage numbers in the tile cards are enough. Clean, focused — exactly what Typeform does on their /plan page. Remove <code>UsageChart.tsx</code> from the billing page.</p>
+      <div class="mock-section" style="margin-top:10px;">
+        <div class="section-lbl">Usage this period</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+          <div class="white-card">
+            <div class="stat-label">Form Views</div>
+            <div style="font-size:16px; font-weight:700; color:#3c323e;">0</div>
+            <div style="font-size:11px; color:#655d67;">of 10,000</div>
+            <div class="mini-bar"><div class="fill-blue"></div></div>
+          </div>
+          <div class="white-card">
+            <div class="stat-label">Submissions</div>
+            <div style="font-size:16px; font-weight:700; color:#3c323e;">0</div>
+            <div style="font-size:11px; color:#655d67;">of 1,000</div>
+            <div class="mini-bar"><div class="fill-blue"></div></div>
+          </div>
+          <div class="white-card">
+            <div class="stat-label">AI Tokens</div>
+            <div style="font-size:16px; font-weight:700; color:#3c323e;">3,168</div>
+            <div style="font-size:11px; color:#655d67;">of 50,000</div>
+            <div class="mini-bar"><div class="fill-amber"></div></div>
+          </div>
+        </div>
+        <div style="text-align:center; margin-top:14px; font-size:11px; color:#b0a8b2; font-style:italic;">No chart below — page ends here</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Collapsible "View trends" toggle</h3>
+      <p>Chart is hidden by default. A subtle "View trends ▾" link at the bottom of the usage card expands it inline. Power users who want daily trends can see it; everyone else sees the clean layout.</p>
+      <div class="mock-section" style="margin-top:10px;">
+        <div class="white-card" style="padding:14px;">
+          <div class="section-lbl">Usage this period</div>
+          <div style="display:flex; gap:16px; margin-bottom:10px;">
+            <div><div class="stat-label">Form Views</div><div style="font-weight:700; color:#3c323e;">0 <span style="color:#655d67; font-weight:400; font-size:11px;">/ 10k</span></div><div class="mini-bar"><div class="fill-blue"></div></div></div>
+            <div><div class="stat-label">Submissions</div><div style="font-weight:700; color:#3c323e;">0 <span style="color:#655d67; font-weight:400; font-size:11px;">/ 1k</span></div><div class="mini-bar"><div class="fill-blue"></div></div></div>
+            <div><div class="stat-label">AI Tokens</div><div style="font-weight:700; color:#3c323e;">3,168 <span style="color:#655d67; font-weight:400; font-size:11px;">/ 50k</span></div><div class="mini-bar"><div class="fill-amber"></div></div></div>
+          </div>
+          <div style="border-top:1px solid rgba(81,76,84,0.08); padding-top:8px; display:flex; align-items:center; justify-content:center; gap:4px; cursor:pointer;">
+            <span style="font-size:12px; color:#655d67; font-weight:500;">View daily trends</span>
+            <span style="font-size:11px; color:#655d67;">▾</span>
+          </div>
+          <div style="height:50px; background:#f7f7f8; border-radius:6px; margin-top:8px; display:flex; align-items:center; justify-content:center;">
+            <span style="font-size:10px; color:#b0a8b2; font-style:italic;">Area chart expands here</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Keep chart, move to bottom</h3>
+      <p>Keep the recharts area chart but push it below the plan comparison strip so it doesn't dominate. Users who scroll get the detail; it doesn't clutter the top of the page.</p>
+      <div class="mock-section" style="margin-top:10px;">
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <div class="white-card" style="padding:10px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:13px; font-weight:600; color:#3c323e;">Free Plan</span>
+            <div style="display:flex; gap:5px;">
+              <div style="background:#f7f7f8; border-radius:5px; padding:4px 8px; font-size:11px; color:#655d67;">Manage ↗</div>
+              <div style="background:#177767; border-radius:5px; padding:4px 8px; font-size:11px; color:#fff;">Upgrade</div>
+            </div>
+          </div>
+          <div class="white-card" style="padding:10px; display:flex; gap:12px;">
+            <div><div class="stat-label">Views</div><div style="font-weight:600; font-size:12px; color:#3c323e;">0/10k</div><div class="mini-bar"><div class="fill-blue"></div></div></div>
+            <div><div class="stat-label">Submissions</div><div style="font-weight:600; font-size:12px; color:#3c323e;">0/1k</div><div class="mini-bar"><div class="fill-blue"></div></div></div>
+            <div><div class="stat-label">AI Tokens</div><div style="font-weight:600; font-size:12px; color:#3c323e;">3.2k/50k</div><div class="mini-bar"><div class="fill-amber"></div></div></div>
+          </div>
+          <div class="white-card" style="padding:10px; height:60px; display:flex; align-items:center; justify-content:center;">
+            <span style="font-size:10px; color:#b0a8b2; font-style:italic;">Usage Trends chart scrolls into view below ↓</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

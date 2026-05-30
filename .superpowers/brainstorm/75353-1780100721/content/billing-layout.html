@@ -1,0 +1,182 @@
+<h2>Billing & Plans — Content Layout</h2>
+<p class="subtitle">How should the billing page content be structured? All options use the Typeform color palette.</p>
+
+<style>
+  .mock-billing { font-family: system-ui, sans-serif; background: #f7f7f8; border-radius: 10px; padding: 20px; height: 320px; overflow: hidden; }
+  .plan-badge { display:inline-flex; align-items:center; gap:5px; background:#fff; border:1px solid rgba(81,76,84,0.15); border-radius:20px; padding:3px 10px; font-size:11px; font-weight:500; color:#4c414e; }
+  .status-dot { width:6px; height:6px; border-radius:50%; background:#177767; }
+  .usage-bar { background:#e5e7eb; border-radius:3px; height:4px; margin-top:4px; overflow:hidden; }
+  .usage-fill-amber { background:#f59e0b; height:4px; border-radius:3px; width:6%; }
+  .usage-fill-blue { background:#3b82f6; height:4px; border-radius:3px; width:0%; }
+  .section-label { font-size:11px; font-weight:600; color:#655d67; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px; }
+  .cta-btn { background:#177767; color:#fff; border:none; border-radius:7px; padding:6px 14px; font-size:12px; font-weight:500; cursor:pointer; }
+  .ghost-btn { background:#fff; color:#655d67; border:1px solid rgba(81,76,84,0.15); border-radius:7px; padding:6px 14px; font-size:12px; font-weight:500; cursor:pointer; }
+  .stat-label { font-size:11px; color:#655d67; margin-bottom:2px; }
+  .stat-val { font-size:13px; font-weight:600; color:#3c323e; }
+</style>
+
+<div class="cards">
+
+  <!-- Option A: Typeform-style clean plan hero + usage row -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mock-billing">
+        <!-- Plan hero card -->
+        <div style="background:#fff; border-radius:10px; border:1px solid rgba(81,76,84,0.12); padding:16px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <div style="font-size:18px; font-weight:700; color:#3c323e; margin-bottom:6px;">Free Plan</div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="plan-badge"><span class="status-dot"></span> Active</span>
+              <span style="font-size:12px; color:#655d67;">Resets 29 Jun 2026</span>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="ghost-btn">Manage billing ↗</button>
+            <button class="cta-btn">Upgrade Plan</button>
+          </div>
+        </div>
+        <!-- Usage row -->
+        <div style="font-size:11px; font-weight:600; color:#655d67; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px;">Usage this period</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+          <div style="background:#fff; border-radius:8px; border:1px solid rgba(81,76,84,0.12); padding:12px;">
+            <div class="stat-label">Form Views</div>
+            <div class="stat-val">0 <span style="color:#655d67; font-weight:400;">/ 10,000</span></div>
+            <div class="usage-bar"><div class="usage-fill-blue"></div></div>
+          </div>
+          <div style="background:#fff; border-radius:8px; border:1px solid rgba(81,76,84,0.12); padding:12px;">
+            <div class="stat-label">Submissions</div>
+            <div class="stat-val">0 <span style="color:#655d67; font-weight:400;">/ 1,000</span></div>
+            <div class="usage-bar"><div class="usage-fill-blue"></div></div>
+          </div>
+          <div style="background:#fff; border-radius:8px; border:1px solid rgba(81,76,84,0.12); padding:12px;">
+            <div class="stat-label">AI Tokens</div>
+            <div class="stat-val">3,168 <span style="color:#655d67; font-weight:400;">/ 50k</span></div>
+            <div class="usage-bar"><div class="usage-fill-amber"></div></div>
+            <div style="font-size:10px; color:#655d67; margin-top:3px;">Resets 31 May</div>
+          </div>
+        </div>
+        <!-- No chart — clean -->
+        <div style="text-align:center; margin-top:10px; font-size:11px; color:#b0a8b2;">No usage chart · Clean and minimal</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Plan hero + usage row</h3>
+      <p>Prominent plan card at top. Three usage tiles below. No chart. Closest to Typeform's /plan page — very clean.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Two-column -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mock-billing" style="padding:16px;">
+        <div style="display:grid; grid-template-columns:1.1fr 0.9fr; gap:12px; height:100%;">
+          <!-- Left: plan + billing -->
+          <div>
+            <div class="section-label">Your Plan</div>
+            <div style="background:#fff; border-radius:8px; border:1px solid rgba(81,76,84,0.12); padding:14px; margin-bottom:10px;">
+              <div style="font-size:16px; font-weight:700; color:#3c323e; margin-bottom:4px;">Free Plan</div>
+              <div style="font-size:12px; color:#655d67; margin-bottom:10px;">Active · Resets 29 Jun</div>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <button class="cta-btn" style="width:100%; text-align:center;">Upgrade Plan</button>
+                <button class="ghost-btn" style="width:100%; text-align:center;">Manage billing ↗</button>
+              </div>
+            </div>
+            <div style="background:#fff; border-radius:8px; border:1px solid rgba(81,76,84,0.12); padding:12px;">
+              <div style="font-size:11px; color:#655d67; margin-bottom:6px;">Billing period</div>
+              <div style="font-size:13px; font-weight:500; color:#3c323e;">29 May – 29 Jun 2026</div>
+              <div style="font-size:12px; color:#177767; margin-top:3px;">31 days remaining</div>
+            </div>
+          </div>
+          <!-- Right: usage meters stacked -->
+          <div>
+            <div class="section-label">Usage</div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="background:#fff; border-radius:8px; border:1px solid rgba(81,76,84,0.12); padding:10px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span class="stat-label">Form Views</span><span style="font-size:11px; color:#3c323e;">0 / 10,000</span></div>
+                <div class="usage-bar"><div class="usage-fill-blue"></div></div>
+              </div>
+              <div style="background:#fff; border-radius:8px; border:1px solid rgba(81,76,84,0.12); padding:10px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span class="stat-label">Submissions</span><span style="font-size:11px; color:#3c323e;">0 / 1,000</span></div>
+                <div class="usage-bar"><div class="usage-fill-blue"></div></div>
+              </div>
+              <div style="background:#fff; border-radius:8px; border:1px solid rgba(81,76,84,0.12); padding:10px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span class="stat-label">AI Tokens</span><span style="font-size:11px; color:#3c323e;">3,168 / 50k</span></div>
+                <div class="usage-bar"><div class="usage-fill-amber"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Two-column: plan left, usage right</h3>
+      <p>Plan details and actions on the left, stacked usage meters on the right. Good for scanning — you see plan and usage at a glance without scrolling.</p>
+    </div>
+  </div>
+
+  <!-- Option C: Typeform-exact with plan comparison below -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mock-billing" style="padding:16px;">
+        <!-- Slim plan header -->
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="font-size:16px; font-weight:700; color:#3c323e;">Free Plan</div>
+            <span class="plan-badge"><span class="status-dot"></span> Active</span>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="ghost-btn" style="font-size:11px; padding:5px 10px;">Manage ↗</button>
+            <button class="cta-btn" style="font-size:11px; padding:5px 10px;">Upgrade</button>
+          </div>
+        </div>
+        <!-- Usage section -->
+        <div style="background:#fff; border-radius:10px; border:1px solid rgba(81,76,84,0.12); padding:14px; margin-bottom:10px;">
+          <div class="section-label">Usage this period</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+            <div>
+              <div class="stat-label">Form Views</div>
+              <div style="font-size:15px; font-weight:600; color:#3c323e;">0</div>
+              <div style="font-size:11px; color:#655d67;">of 10,000</div>
+              <div class="usage-bar"><div class="usage-fill-blue"></div></div>
+            </div>
+            <div>
+              <div class="stat-label">Submissions</div>
+              <div style="font-size:15px; font-weight:600; color:#3c323e;">0</div>
+              <div style="font-size:11px; color:#655d67;">of 1,000</div>
+              <div class="usage-bar"><div class="usage-fill-blue"></div></div>
+            </div>
+            <div>
+              <div class="stat-label">AI Tokens</div>
+              <div style="font-size:15px; font-weight:600; color:#3c323e;">3,168</div>
+              <div style="font-size:11px; color:#655d67;">of 50,000</div>
+              <div class="usage-bar"><div class="usage-fill-amber"></div></div>
+            </div>
+          </div>
+        </div>
+        <!-- Plan comparison strip -->
+        <div style="background:#fff; border-radius:10px; border:1px solid rgba(81,76,84,0.12); padding:12px; display:flex; gap:0; overflow:hidden;">
+          <div style="flex:1; padding:8px 12px; background:rgba(87,84,91,0.04); border-right:1px solid rgba(81,76,84,0.1);">
+            <div style="font-size:12px; font-weight:600; color:#3c323e;">Free</div>
+            <div style="font-size:11px; color:#655d67;">10k views · 1k sub</div>
+            <div style="font-size:10px; color:#177767; margin-top:3px;">Current</div>
+          </div>
+          <div style="flex:1; padding:8px 12px; border-right:1px solid rgba(81,76,84,0.1);">
+            <div style="font-size:12px; font-weight:600; color:#3c323e;">Starter</div>
+            <div style="font-size:11px; color:#655d67;">∞ views · 10k sub</div>
+            <div style="font-size:10px; color:#655d67; margin-top:3px;">from $X/mo</div>
+          </div>
+          <div style="flex:1; padding:8px 12px;">
+            <div style="font-size:12px; font-weight:600; color:#3c323e;">Advanced</div>
+            <div style="font-size:11px; color:#655d67;">∞ views · 100k sub</div>
+            <div style="font-size:10px; color:#655d67; margin-top:3px;">from $X/mo</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Slim header + usage card + plan strip</h3>
+      <p>Minimal plan header. All usage in one grouped card. Inline plan comparison strip at the bottom replaces the popup UpgradeModal. Everything visible without scrolling.</p>
+    </div>
+  </div>
+
+</div>

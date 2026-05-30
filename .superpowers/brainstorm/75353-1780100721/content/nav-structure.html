@@ -1,0 +1,115 @@
+<h2>Settings Navigation Structure</h2>
+<p class="subtitle">The current page nests tabs inside tabs (Account → Organization → Team/Subscription). Which structure should replace it?</p>
+
+<div class="cards">
+
+  <!-- Option A -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f7f7f8; padding:16px; font-family: system-ui, sans-serif;">
+      <div style="display:flex; gap:12px; height:220px;">
+        <!-- Sidebar -->
+        <div style="width:160px; background:#fff; border-radius:8px; border:1px solid rgba(81,76,84,0.12); padding:12px; flex-shrink:0;">
+          <div style="font-size:11px; font-weight:600; color:#655d67; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px; padding:0 4px;">Settings</div>
+          <div style="padding:7px 8px; border-radius:6px; background:rgba(87,84,91,0.06); color:#4c414e; font-size:13px; font-weight:500; margin-bottom:2px;">👤 Profile</div>
+          <div style="padding:7px 8px; border-radius:6px; color:#655d67; font-size:13px; margin-bottom:2px;">👥 Members</div>
+          <div style="padding:7px 8px; border-radius:6px; color:#655d67; font-size:13px; background:rgba(23,119,103,0.06); border:1px solid rgba(23,119,103,0.15); font-weight:500;">💳 Billing & Plans</div>
+        </div>
+        <!-- Content -->
+        <div style="flex:1; background:#fff; border-radius:8px; border:1px solid rgba(81,76,84,0.12); padding:16px;">
+          <div style="font-size:15px; font-weight:600; color:#3c323e; margin-bottom:4px;">Billing & Plans</div>
+          <div style="font-size:12px; color:#655d67; margin-bottom:12px;">Manage your subscription and usage</div>
+          <div style="background:#f7f7f8; border-radius:6px; padding:10px; margin-bottom:8px;">
+            <div style="font-size:11px; color:#655d67;">Current plan</div>
+            <div style="font-size:14px; font-weight:600; color:#3c323e;">Free Plan</div>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <div style="flex:1; background:#f7f7f8; border-radius:6px; padding:8px; font-size:11px; color:#655d67;">Form Views<br><span style="color:#3c323e; font-weight:600; font-size:13px;">0 / 10,000</span></div>
+            <div style="flex:1; background:#f7f7f8; border-radius:6px; padding:8px; font-size:11px; color:#655d67;">Submissions<br><span style="color:#3c323e; font-weight:600; font-size:13px;">0 / 1,000</span></div>
+            <div style="flex:1; background:#f7f7f8; border-radius:6px; padding:8px; font-size:11px; color:#655d67;">AI Tokens<br><span style="color:#3c323e; font-weight:600; font-size:13px;">3.2k / 50k</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Left sidebar nav</h3>
+      <p>Profile · Members · Billing & Plans as sidebar items. Persistent navigation, each section is its own dedicated view. Closest to Typeform's settings structure.</p>
+    </div>
+  </div>
+
+  <!-- Option B -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f7f7f8; padding:16px; font-family: system-ui, sans-serif;">
+      <div style="height:220px; background:#fff; border-radius:8px; border:1px solid rgba(81,76,84,0.12); padding:16px;">
+        <!-- Top nav tabs -->
+        <div style="display:flex; gap:4px; border-bottom:1px solid rgba(81,76,84,0.1); padding-bottom:0; margin-bottom:16px;">
+          <div style="padding:6px 14px; font-size:13px; color:#655d67; cursor:pointer;">Profile</div>
+          <div style="padding:6px 14px; font-size:13px; color:#655d67; cursor:pointer;">Members</div>
+          <div style="padding:6px 14px; font-size:13px; color:#4c414e; font-weight:500; border-bottom:2px solid #3c323e; margin-bottom:-1px;">Billing</div>
+        </div>
+        <!-- Content -->
+        <div style="font-size:14px; font-weight:600; color:#3c323e; margin-bottom:12px;">Billing & Plans</div>
+        <div style="display:flex; gap:8px; margin-bottom:8px;">
+          <div style="flex:1; background:#f7f7f8; border-radius:6px; padding:10px;">
+            <div style="font-size:11px; color:#655d67;">Plan</div>
+            <div style="font-weight:600; color:#3c323e; font-size:13px;">Free</div>
+          </div>
+          <div style="flex:1; background:#f7f7f8; border-radius:6px; padding:10px;">
+            <div style="font-size:11px; color:#655d67;">Views</div>
+            <div style="font-weight:600; color:#3c323e; font-size:13px;">0 / 10k</div>
+          </div>
+          <div style="flex:1; background:#f7f7f8; border-radius:6px; padding:10px;">
+            <div style="font-size:11px; color:#655d67;">Submissions</div>
+            <div style="font-weight:600; color:#3c323e; font-size:13px;">0 / 1k</div>
+          </div>
+        </div>
+        <div style="background:#f7f7f8; border-radius:6px; padding:10px;">
+          <div style="font-size:11px; color:#655d67; margin-bottom:4px;">AI Tokens</div>
+          <div style="background:#e5e7eb; border-radius:4px; height:4px;"><div style="background:#f59e0b; height:4px; border-radius:4px; width:6%;"></div></div>
+          <div style="font-size:11px; color:#655d67; margin-top:3px;">3,168 / 50,000</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Horizontal tabs, restructured</h3>
+      <p>Single flat row: Profile · Members · Billing. Removes the double-nested tab problem. Simple and familiar. Works well on wider screens.</p>
+    </div>
+  </div>
+
+  <!-- Option C -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f7f7f8; padding:16px; font-family: system-ui, sans-serif;">
+      <div style="display:flex; gap:12px; height:220px;">
+        <!-- Sidebar with sections -->
+        <div style="width:160px; background:#fff; border-radius:8px; border:1px solid rgba(81,76,84,0.12); padding:12px; flex-shrink:0;">
+          <div style="font-size:11px; font-weight:600; color:#655d67; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; padding:0 4px;">Account</div>
+          <div style="padding:7px 8px; border-radius:6px; color:#655d67; font-size:12px; margin-bottom:2px;">Profile</div>
+          <div style="height:1px; background:rgba(81,76,84,0.08); margin:8px 0;"></div>
+          <div style="font-size:11px; font-weight:600; color:#655d67; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; padding:0 4px;">Organization</div>
+          <div style="padding:7px 8px; border-radius:6px; color:#655d67; font-size:12px; margin-bottom:2px;">Members</div>
+          <div style="padding:7px 8px; border-radius:6px; background:rgba(23,119,103,0.06); border:1px solid rgba(23,119,103,0.15); color:#177767; font-size:12px; font-weight:500;">Billing & Plans</div>
+        </div>
+        <!-- Content -->
+        <div style="flex:1; background:#fff; border-radius:8px; border:1px solid rgba(81,76,84,0.12); padding:16px; overflow:hidden;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <div>
+              <div style="font-size:15px; font-weight:600; color:#3c323e;">Billing & Plans</div>
+              <div style="font-size:12px; color:#655d67;">Free Plan · Active</div>
+            </div>
+            <div style="background:#177767; color:#fff; font-size:11px; font-weight:500; padding:5px 10px; border-radius:6px;">Upgrade</div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+            <div style="background:#f7f7f8; border-radius:6px; padding:8px; font-size:11px;"><div style="color:#655d67;">Form Views</div><div style="color:#3c323e; font-weight:600;">0 / 10,000</div><div style="background:#e5e7eb; height:3px; border-radius:2px; margin-top:4px;"></div></div>
+            <div style="background:#f7f7f8; border-radius:6px; padding:8px; font-size:11px;"><div style="color:#655d67;">Submissions</div><div style="color:#3c323e; font-weight:600;">0 / 1,000</div><div style="background:#e5e7eb; height:3px; border-radius:2px; margin-top:4px;"></div></div>
+            <div style="background:#f7f7f8; border-radius:6px; padding:8px; font-size:11px;"><div style="color:#655d67;">AI Tokens</div><div style="color:#3c323e; font-weight:600;">3.2k / 50k</div><div style="background:#e5e7eb; height:3px; border-radius:2px; margin-top:4px;"><div style="background:#f59e0b; height:3px; width:6%; border-radius:2px;"></div></div></div>
+            <div style="background:#f7f7f8; border-radius:6px; padding:8px; font-size:11px;"><div style="color:#655d67;">Billing Period</div><div style="color:#3c323e; font-weight:600;">31 days left</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Grouped left sidebar</h3>
+      <p>Sidebar with section headers: Account (Profile) and Organization (Members, Billing). More scalable — easy to add new sections later. My recommendation.</p>
+    </div>
+  </div>
+
+</div>
