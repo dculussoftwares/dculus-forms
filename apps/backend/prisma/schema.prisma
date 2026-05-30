@@ -559,3 +559,14 @@ model AIChatMessage {
   @@index([conversationId])
   @@map("ai_chat_message")
 }
+
+model AIModelConfig {
+  id           String   @id @default(cuid())
+  plan         String   @unique
+  primaryModel String
+  fastModel    String
+  updatedAt    DateTime @updatedAt
+  updatedBy    String?
+
+  @@map("ai_model_config")
+}
