@@ -220,5 +220,43 @@
         }
       }
     }
+  },
+  "nav": {
+    "sectionAccount": "Account",
+    "sectionOrganization": "Organization",
+    "profile": "Profile",
+    "members": "Members",
+    "billing": "Billing & Plans"
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Update your personal details and avatar"
+  },
+  "billing": {
+    "title": "Billing & Plans",
+    "subtitle": "Manage your subscription, usage, and plan",
+    "manageBilling": "Manage billing",
+    "upgradePlan": "Upgrade Plan",
+    "billingPeriod": "{{start}} – {{end}} · {{days}} days remaining",
+    "sectionUsage": "Usage this period",
+    "viewTrends": "View daily trends",
+    "hideTrends": "Hide daily trends",
+    "sectionPlans": "Plans",
+    "currentPlan": "Current plan",
+    "upgradeArrow": "Upgrade →",
+    "perMonth": "from ${{price}} / month",
+    "free": "$0 / month",
+    "loadingSubscription": "Loading subscription…",
+    "noSubscription": "No active subscription",
+    "portalOpening": "Opening billing portal",
+    "portalOpeningDesc": "Manage your subscription in the new tab",
+    "portalError": "Failed to open portal"
+  },
+  "membersPage": {
+    "title": "Members",
+    "subtitle": "Manage team access to your organization",
+    "inviteButton": "Invite member",
+    "orgNameLabel": "Organization name",
+    "orgNameSave": "Save"
   }
 }
