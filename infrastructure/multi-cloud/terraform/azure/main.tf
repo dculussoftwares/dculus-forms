@@ -238,7 +238,7 @@ resource "azurerm_container_app" "backend" {
 
       env {
         name  = "AZURE_OPENAI_ENDPOINT"
-        value = azurerm_cognitive_account.ai.endpoint
+        value = "https://${azurerm_cognitive_account.ai.custom_subdomain_name}.services.ai.azure.com/"
       }
 
       env {
