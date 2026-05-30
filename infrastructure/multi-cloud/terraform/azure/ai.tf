@@ -1,25 +1,18 @@
 // Azure AI Foundry resource
-// kind = "AIServices" is the Foundry resource type — a superset of the old "OpenAI" kind.
-// It preserves the existing OpenAI endpoint, API key, and all existing deployments while
-// unlocking the broader model catalog (DeepSeek, Meta, Mistral, xAI), Agent service,
-// and Foundry Tools. Requires managed identity, custom_subdomain_name, and
-// project_management_enabled = true (maps to allowProjectManagement in ARM/Bicep).
+// kind = "AIServices" unlocks the full model catalog (Phi-4, Llama, Mistral, OpenAI)
+// via a single OpenAI-compatible endpoint. No explicit deployment resources needed —
+// models are addressed by name through the Foundry MaaS API.
 
 resource "azurerm_cognitive_account" "ai" {
   name                = "${local.app_name}-ai"
   resource_group_name = azurerm_resource_group.main.name
-  // Azure AI Foundry is not available in all regions — East US has broadest model availability
   location            = coalesce(var.ai_location, var.location)
   kind                = "AIServices"
   sku_name            = "S0"
 
-  // Required for Foundry: enables project management and the broader model catalog
   project_management_enabled = true
+  custom_subdomain_name      = "${local.app_name}-ai"
 
-  // Required for the Foundry API endpoint (*.services.ai.azure.com) and Entra ID auth
-  custom_subdomain_name = "${local.app_name}-ai"
-
-  // Required for Foundry upgrade: managed identity is used during the upgrade operation
   identity {
     type = "SystemAssigned"
   }
@@ -28,49 +21,23 @@ resource "azurerm_cognitive_account" "ai" {
   tags                          = var.tags
 }
 
-resource "azurerm_cognitive_deployment" "gpt4o" {
-  name                 = var.azure_openai_primary_deployment
-  cognitive_account_id = azurerm_cognitive_account.ai.id
-
-  model {
-    format  = "OpenAI"
-    name    = "gpt-4o"
-    version = "2024-11-20"
-  }
-
-  sku {
-    name     = "GlobalStandard"
-    capacity = var.ai_primary_tpm
-  }
-}
-
-resource "azurerm_cognitive_deployment" "gpt4o_mini" {
-  name                 = var.azure_openai_fast_deployment
-  cognitive_account_id = azurerm_cognitive_account.ai.id
-
-  model {
-    format  = "OpenAI"
-    name    = "gpt-4o-mini"
-    version = "2024-07-18"
-  }
-
-  sku {
-    name     = "GlobalStandard"
-    capacity = var.ai_fast_tpm
-  }
-}
-
 output "ai_endpoint" {
-  description = "Azure OpenAI-compatible endpoint — set as AZURE_OPENAI_ENDPOINT in Container App (preserved after Foundry upgrade)"
+  description = "Azure OpenAI-compatible endpoint (legacy, preserved for reference)"
   value       = azurerm_cognitive_account.ai.endpoint
 }
 
 output "ai_foundry_endpoint" {
-  description = "Azure AI Foundry endpoint — use this for non-OpenAI Foundry models and Agent service"
+  description = "Azure AI Foundry unified endpoint — supports all models (OpenAI + non-OpenAI)"
   value       = "https://${azurerm_cognitive_account.ai.custom_subdomain_name}.services.ai.azure.com/"
 }
 
+output "ai_api_key" {
+  description = "Azure AI Foundry API key"
+  value       = azurerm_cognitive_account.ai.primary_access_key
+  sensitive   = true
+}
+
 output "ai_resource_name" {
-  description = "Azure AI Foundry resource name — set as AZURE_OPENAI_RESOURCE_NAME in Container App"
+  description = "Azure AI Foundry resource name"
   value       = azurerm_cognitive_account.ai.name
 }
