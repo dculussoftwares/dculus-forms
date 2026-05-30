@@ -61,6 +61,63 @@ resource "azurerm_cognitive_deployment" "gpt4o_mini" {
   }
 }
 
+// Non-OpenAI model deployments — same GlobalStandard SKU, different model formats.
+// These enable runtime model switching via the admin AI Model Config page.
+
+resource "azurerm_cognitive_deployment" "phi4" {
+  name                 = "Phi-4"
+  cognitive_account_id = azurerm_cognitive_account.ai.id
+
+  model {
+    format  = "Microsoft"
+    name    = "Phi-4"
+    version = "7"
+  }
+
+  sku {
+    name     = "GlobalStandard"
+    capacity = 1
+  }
+
+  depends_on = [azurerm_cognitive_deployment.gpt4o_mini]
+}
+
+resource "azurerm_cognitive_deployment" "llama33_70b" {
+  name                 = "Meta-Llama-3.3-70B-Instruct"
+  cognitive_account_id = azurerm_cognitive_account.ai.id
+
+  model {
+    format  = "Meta"
+    name    = "Llama-3.3-70B-Instruct"
+    version = "1"
+  }
+
+  sku {
+    name     = "GlobalStandard"
+    capacity = 1
+  }
+
+  depends_on = [azurerm_cognitive_deployment.phi4]
+}
+
+resource "azurerm_cognitive_deployment" "mistral_small" {
+  name                 = "Mistral-Small"
+  cognitive_account_id = azurerm_cognitive_account.ai.id
+
+  model {
+    format  = "Mistral AI"
+    name    = "mistral-small-2503"
+    version = "1"
+  }
+
+  sku {
+    name     = "GlobalStandard"
+    capacity = 1
+  }
+
+  depends_on = [azurerm_cognitive_deployment.llama33_70b]
+}
+
 output "ai_endpoint" {
   description = "Azure OpenAI-compatible endpoint (legacy, preserved for reference)"
   value       = azurerm_cognitive_account.ai.endpoint

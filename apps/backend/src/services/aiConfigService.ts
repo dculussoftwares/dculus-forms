@@ -1,15 +1,20 @@
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 
-// Only OpenAI models deployed on the Foundry resource are listed here.
-// Non-OpenAI models (Phi-4, Llama, Mistral) require separate serverless
-// deployments with their own endpoints — add them here once deployed.
+// Model IDs must match the deployment name in Terraform (ai.tf).
+// The Foundry /v1/ endpoint routes by the name in the request body,
+// which must match an existing deployment on the resource.
 export const SUPPORTED_MODELS = [
-  { id: 'gpt-4o',       label: 'GPT-4o' },
-  { id: 'gpt-4o-mini',  label: 'GPT-4o Mini' },
-  { id: 'gpt-4.1',      label: 'GPT-4.1' },
-  { id: 'gpt-4.1-mini', label: 'GPT-4.1 Mini' },
-  { id: 'gpt-4.1-nano', label: 'GPT-4.1 Nano' },
+  // OpenAI models
+  { id: 'gpt-4o',                      label: 'GPT-4o' },
+  { id: 'gpt-4o-mini',                 label: 'GPT-4o Mini' },
+  { id: 'gpt-4.1',                     label: 'GPT-4.1' },
+  { id: 'gpt-4.1-mini',                label: 'GPT-4.1 Mini' },
+  { id: 'gpt-4.1-nano',                label: 'GPT-4.1 Nano' },
+  // Non-OpenAI models (deployed via Terraform)
+  { id: 'Phi-4',                       label: 'Phi-4' },
+  { id: 'Meta-Llama-3.3-70B-Instruct', label: 'Llama 3.3 70B' },
+  { id: 'Mistral-Small',               label: 'Mistral Small' },
 ] as const;
 
 const DEFAULTS: Record<string, { primaryModel: string; fastModel: string }> = {
