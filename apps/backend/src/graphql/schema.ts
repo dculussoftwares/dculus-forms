@@ -154,7 +154,7 @@ export const typeDefs = gql`
     responsesThisMonth: Int!
     trendResponsesToday: Float # % change today vs yesterday; null = no data
     trendThisWeek: Float # % change this week vs last week; null = no data
-    trendResponseRate: Float # percentage-point delta this week vs last week; null = <10 views
+    trendResponseRate: Float # pp delta (rateThisWeek - rateLastWeek); unlike the other trend fields this is percentage POINTS not percent change; null = <10 views in either window
   }
 
   # Form Sharing Types

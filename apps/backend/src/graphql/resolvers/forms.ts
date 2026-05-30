@@ -151,18 +151,18 @@ export const formsResolvers = {
         viewsThisWeek,
         viewsLastWeek,
       ] = await Promise.all([
-        prisma.response.count({ where: { formId, submittedAt: { gte: today } } }),
-        prisma.response.count({ where: { formId, submittedAt: { gte: weekAgo } } }),
-        prisma.response.count({ where: { formId, submittedAt: { gte: monthAgo } } }),
-        prisma.response.count({ where: { formId } }),
+        prisma.response.count({ where: { formId, deletedAt: null, submittedAt: { gte: today } } }),
+        prisma.response.count({ where: { formId, deletedAt: null, submittedAt: { gte: weekAgo } } }),
+        prisma.response.count({ where: { formId, deletedAt: null, submittedAt: { gte: monthAgo } } }),
+        prisma.response.count({ where: { formId, deletedAt: null } }),
         prisma.formViewAnalytics.count({ where: { formId } }),
         // Direct formId filter — FormSubmissionAnalytics has an indexed formId column
         prisma.formSubmissionAnalytics.findMany({
           where: { formId },
           select: { completionTimeSeconds: true },
         }),
-        prisma.response.count({ where: { formId, submittedAt: { gte: yesterday, lt: today } } }),
-        prisma.response.count({ where: { formId, submittedAt: { gte: twoWeeksAgo, lt: weekAgo } } }),
+        prisma.response.count({ where: { formId, deletedAt: null, submittedAt: { gte: yesterday, lt: today } } }),
+        prisma.response.count({ where: { formId, deletedAt: null, submittedAt: { gte: twoWeeksAgo, lt: weekAgo } } }),
         prisma.formViewAnalytics.count({ where: { formId, viewedAt: { gte: weekAgo } } }),
         prisma.formViewAnalytics.count({ where: { formId, viewedAt: { gte: twoWeeksAgo, lt: weekAgo } } }),
       ]);
