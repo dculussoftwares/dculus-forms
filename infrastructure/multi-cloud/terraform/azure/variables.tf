@@ -275,14 +275,36 @@ variable "ai_location" {
   default     = "eastus"
 }
 
+variable "ai_provider" {
+  description = "AI provider to use: azure or openai"
+  type        = string
+  default     = "azure"
+  validation {
+    condition     = contains(["azure", "openai"], var.ai_provider)
+    error_message = "ai_provider must be 'azure' or 'openai'."
+  }
+}
+
+variable "azure_openai_primary_deployment" {
+  description = "Azure OpenAI deployment name for the primary model (gpt-4o)"
+  type        = string
+  default     = "gpt-4o"
+}
+
+variable "azure_openai_fast_deployment" {
+  description = "Azure OpenAI deployment name for the fast model (gpt-4o-mini)"
+  type        = string
+  default     = "gpt-4o-mini"
+}
+
 variable "ai_primary_tpm" {
-  description = "Tokens per minute capacity (thousands) for the primary model deployment (gpt-4o)"
+  description = "Tokens per minute capacity for the primary model (in thousands)"
   type        = number
   default     = 10
 }
 
 variable "ai_fast_tpm" {
-  description = "Tokens per minute capacity (thousands) for the fast model deployment (gpt-4o-mini)"
+  description = "Tokens per minute capacity for the fast model (in thousands)"
   type        = number
   default     = 30
 }

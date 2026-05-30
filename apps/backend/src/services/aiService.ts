@@ -1,6 +1,6 @@
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
-import { getModelForPlan } from '../lib/ai.js';
+import { getPrimaryModel } from '../lib/ai.js';
 import { logger } from '../lib/logger.js';
 
 export type AIFormMode = 'quick' | 'standard' | 'professional';
@@ -90,13 +90,12 @@ ${LAYOUT_PROMPT}`,
 
 export async function generateFormWithAI(
   prompt: string,
-  mode: AIFormMode = 'standard',
-  userPlan: string = 'free'
+  mode: AIFormMode = 'standard'
 ): Promise<AIGeneratedForm> {
   logger.info({ prompt, mode }, 'Generating form with AI');
 
   const { output, usage } = await generateText({
-    model: await getModelForPlan(userPlan, 'primary'),
+    model: getPrimaryModel(),
     output: Output.object({ schema: AIFormSchema }),
     system: MODE_SYSTEM_PROMPTS[mode],
     prompt: `Create a form for: ${prompt}`,

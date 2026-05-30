@@ -232,13 +232,28 @@ resource "azurerm_container_app" "backend" {
       }
 
       env {
-        name  = "AZURE_AI_FOUNDRY_ENDPOINT"
-        value = "https://${azurerm_cognitive_account.ai.custom_subdomain_name}.services.ai.azure.com/"
+        name  = "AI_PROVIDER"
+        value = var.ai_provider
       }
 
       env {
-        name  = "AZURE_AI_API_KEY"
+        name  = "AZURE_OPENAI_ENDPOINT"
+        value = azurerm_cognitive_account.ai.endpoint
+      }
+
+      env {
+        name  = "AZURE_OPENAI_API_KEY"
         value = azurerm_cognitive_account.ai.primary_access_key
+      }
+
+      env {
+        name  = "AZURE_OPENAI_PRIMARY_DEPLOYMENT"
+        value = var.azure_openai_primary_deployment
+      }
+
+      env {
+        name  = "AZURE_OPENAI_FAST_DEPLOYMENT"
+        value = var.azure_openai_fast_deployment
       }
 
       env {

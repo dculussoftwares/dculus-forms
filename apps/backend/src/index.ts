@@ -34,7 +34,6 @@ import { createHocuspocusServer } from './services/hocuspocus.js';
 import { appConfig } from './lib/env.js';
 import { initializePluginSystem } from './plugins/index.js';
 import { initializeSubscriptionSystem } from './subscriptions/index.js';
-import { seedDefaults as seedAIModelDefaults } from './services/aiConfigService.js';
 import { startPeriodicCleanup } from './services/temporaryFileService.js';
 import { cleanupOldAnalytics } from './services/analyticsService.js';
 import { logger } from './lib/logger.js';
@@ -279,9 +278,6 @@ async function startServer() {
   logger.info('💳 Initializing subscription system...');
   initializeSubscriptionSystem();
   logger.info('✅ Subscription system initialized');
-
-  // Seed default AI model config (no-op if rows already exist)
-  await seedAIModelDefaults();
 
   await server.start();
 

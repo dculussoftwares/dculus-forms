@@ -4,7 +4,6 @@ import {
   requireOrganizationMembership,
   createBetterAuthContext,
 } from '../middleware/better-auth-middleware.js';
-import { prisma } from '../lib/prisma.js';
 import {
   saveUserMessage,
   getConversation,
@@ -80,17 +79,13 @@ aiChatRouter.post('/chat', async (req, res) => {
     // 3. Now safe to save user message
     await saveUserMessage(conversationId, content);
 
-    // 4a. Resolve subscription plan for model selection
-    const subscription = await prisma.subscription.findUnique({ where: { organizationId } });
-    const userPlan = subscription?.planId ?? 'free';
-
     // 4. Auto-title on first message (fire-and-forget)
     if (conv.messageCount <= 1) {
-      autoGenerateTitle(conversationId, content, userPlan);
+      autoGenerateTitle(conversationId, content);
     }
 
     // 5. Build stream
-    const stream = await buildChatStream(conversationId, auth.user!.id, currentPageId, userPlan);
+    const stream = await buildChatStream(conversationId, auth.user!.id, currentPageId);
 
     const operations: FormOperation[] = [];
     let fullText = '';

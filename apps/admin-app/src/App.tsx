@@ -9,7 +9,6 @@ import { OrganizationDetailPage } from './pages/organizations/OrganizationDetail
 import { UsersPage } from './pages/users/UsersPage';
 import { UserDetailPage } from './pages/users/UserDetailPage';
 import TemplatesPage from './pages/TemplatesPage';
-import AIModelSettings from './pages/AIModelSettings';
 import { LoadingSpinner } from '@dculus/ui';
 
 class AdminErrorBoundary extends React.Component<
@@ -61,7 +60,6 @@ function App() {
         <Route path="/users" element={<UsersPage />} />
         <Route path="/users/:userId" element={<UserDetailPage />} />
         <Route path="/templates" element={<TemplatesPage />} />
-        <Route path="/settings/ai-models" element={<AIModelSettings />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </AdminLayout>

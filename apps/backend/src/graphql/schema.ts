@@ -1030,10 +1030,6 @@ export const typeDefs = gql`
     adminUserById(id: String!): AdminUserDetail!
     adminOrganizationById(id: String!): AdminOrganizationDetail!
 
-    # Admin: AI Model Config Queries
-    aiModelConfigs: [AIModelConfig!]!
-    aiSupportedModels: [AIModelOption!]!
-
     # Analytics Queries
     formAnalytics(formId: ID!, timeRange: TimeRangeInput): FormAnalytics!
     formSubmissionAnalytics(
@@ -1167,9 +1163,6 @@ export const typeDefs = gql`
     deleteFormPlugin(id: ID!): PluginMutationResponse!
     testFormPlugin(id: ID!): PluginMutationResponse!
 
-    # Admin: AI Model Config Mutations
-    updateAIModelConfig(plan: String!, primaryModel: String!, fastModel: String!): AIModelConfig!
-
     # AI Mutations
     generateFormWithAI(
       prompt: String!
@@ -1179,20 +1172,6 @@ export const typeDefs = gql`
     createAIChatConversation(formId: ID!, organizationId: ID!): AIChatConversation!
     deleteAIChatConversation(id: ID!, organizationId: ID!): Boolean!
     renameAIChatConversation(id: ID!, organizationId: ID!, title: String!): AIChatConversation!
-  }
-
-  type AIModelConfig {
-    id: ID!
-    plan: String!
-    primaryModel: String!
-    fastModel: String!
-    updatedAt: String!
-    updatedBy: String
-  }
-
-  type AIModelOption {
-    id: String!
-    label: String!
   }
 
   # AI Types

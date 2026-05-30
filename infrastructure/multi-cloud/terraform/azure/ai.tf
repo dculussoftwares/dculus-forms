@@ -1,20 +1,25 @@
 // Azure AI Foundry resource
-// kind = "AIServices" unlocks the full model catalog (Phi-4, Llama, Mistral, OpenAI)
-// via a single OpenAI-compatible /openai/v1/ endpoint (no deployment ID in URL path).
-// Explicit deployments below provide reserved capacity for the default GPT-4o models.
-// Admins can switch to any model at runtime via the AI Model Config admin page without
-// changing infrastructure — the Foundry endpoint routes by model name in the request body.
+// kind = "AIServices" is the Foundry resource type — a superset of the old "OpenAI" kind.
+// It preserves the existing OpenAI endpoint, API key, and all existing deployments while
+// unlocking the broader model catalog (DeepSeek, Meta, Mistral, xAI), Agent service,
+// and Foundry Tools. Requires managed identity, custom_subdomain_name, and
+// project_management_enabled = true (maps to allowProjectManagement in ARM/Bicep).
 
 resource "azurerm_cognitive_account" "ai" {
   name                = "${local.app_name}-ai"
   resource_group_name = azurerm_resource_group.main.name
+  // Azure AI Foundry is not available in all regions — East US has broadest model availability
   location            = coalesce(var.ai_location, var.location)
   kind                = "AIServices"
   sku_name            = "S0"
 
+  // Required for Foundry: enables project management and the broader model catalog
   project_management_enabled = true
-  custom_subdomain_name      = "${local.app_name}-ai"
 
+  // Required for the Foundry API endpoint (*.services.ai.azure.com) and Entra ID auth
+  custom_subdomain_name = "${local.app_name}-ai"
+
+  // Required for Foundry upgrade: managed identity is used during the upgrade operation
   identity {
     type = "SystemAssigned"
   }
@@ -23,14 +28,8 @@ resource "azurerm_cognitive_account" "ai" {
   tags                          = var.tags
 }
 
-// Default model deployments — provide reserved GlobalStandard capacity.
-// The backend routes all AI calls through the Foundry /v1/ endpoint, so the
-// model name in the request body selects the model, not the deployment name.
-// These deployments ensure gpt-4o and gpt-4o-mini are always available without
-// depending on serverless/MaaS availability in the target region.
-
 resource "azurerm_cognitive_deployment" "gpt4o" {
-  name                 = "gpt-4o"
+  name                 = var.azure_openai_primary_deployment
   cognitive_account_id = azurerm_cognitive_account.ai.id
 
   model {
@@ -46,7 +45,7 @@ resource "azurerm_cognitive_deployment" "gpt4o" {
 }
 
 resource "azurerm_cognitive_deployment" "gpt4o_mini" {
-  name                 = "gpt-4o-mini"
+  name                 = var.azure_openai_fast_deployment
   cognitive_account_id = azurerm_cognitive_account.ai.id
 
   model {
@@ -61,66 +60,17 @@ resource "azurerm_cognitive_deployment" "gpt4o_mini" {
   }
 }
 
-// Non-OpenAI model deployments — same GlobalStandard SKU, different model formats.
-// These enable runtime model switching via the admin AI Model Config page.
-
-resource "azurerm_cognitive_deployment" "phi4" {
-  name                 = "Phi-4"
-  cognitive_account_id = azurerm_cognitive_account.ai.id
-
-  model {
-    format  = "Microsoft"
-    name    = "Phi-4"
-    version = "7"
-  }
-
-  sku {
-    name     = "GlobalStandard"
-    capacity = 1
-  }
-
-  depends_on = [azurerm_cognitive_deployment.gpt4o_mini]
-}
-
-resource "azurerm_cognitive_deployment" "llama33_70b" {
-  name                 = "Meta-Llama-3.3-70B-Instruct"
-  cognitive_account_id = azurerm_cognitive_account.ai.id
-
-  model {
-    format  = "Meta"
-    name    = "Llama-3.3-70B-Instruct"
-    version = "1"
-  }
-
-  sku {
-    name     = "GlobalStandard"
-    capacity = 1
-  }
-
-  depends_on = [azurerm_cognitive_deployment.phi4]
-}
-
-// Mistral models (third-party marketplace) require marketplace purchase eligibility
-// on the Azure subscription. Enable marketplace purchases on the subscription first,
-// then add the Mistral deployment here.
-
 output "ai_endpoint" {
-  description = "Azure OpenAI-compatible endpoint (legacy, preserved for reference)"
+  description = "Azure OpenAI-compatible endpoint — set as AZURE_OPENAI_ENDPOINT in Container App (preserved after Foundry upgrade)"
   value       = azurerm_cognitive_account.ai.endpoint
 }
 
 output "ai_foundry_endpoint" {
-  description = "Azure AI Foundry unified endpoint — supports all models (OpenAI + non-OpenAI)"
+  description = "Azure AI Foundry endpoint — use this for non-OpenAI Foundry models and Agent service"
   value       = "https://${azurerm_cognitive_account.ai.custom_subdomain_name}.services.ai.azure.com/"
 }
 
-output "ai_api_key" {
-  description = "Azure AI Foundry API key"
-  value       = azurerm_cognitive_account.ai.primary_access_key
-  sensitive   = true
-}
-
 output "ai_resource_name" {
-  description = "Azure AI Foundry resource name"
+  description = "Azure AI Foundry resource name — set as AZURE_OPENAI_RESOURCE_NAME in Container App"
   value       = azurerm_cognitive_account.ai.name
 }

@@ -1,6 +1,6 @@
 import { generateText, streamText, stepCountIs } from 'ai';
 import { prisma } from '../lib/prisma.js';
-import { getModelForPlan } from '../lib/ai.js';
+import { getPrimaryModel, getFastModel } from '../lib/ai.js';
 import { createFormEditTools } from '../lib/aiFormEditTools.js';
 import { logger } from '../lib/logger.js';
 
@@ -78,8 +78,7 @@ export async function saveAssistantMessage(
 export async function buildChatStream(
   conversationId: string,
   userId: string,
-  currentPageId: string | undefined,
-  userPlan: string,
+  currentPageId?: string,
 ) {
   const conv = await prisma.aIChatConversation.findFirst({
     where: { id: conversationId, userId },
@@ -113,11 +112,9 @@ Key rules:
 
   const tools = createFormEditTools(conv.formId);
 
-  const model = await getModelForPlan(userPlan, 'primary');
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const stream = streamText({
-    model,
+    model: getPrimaryModel(),
     system: systemPrompt,
     messages,
     tools,
@@ -128,14 +125,11 @@ Key rules:
 }
 
 // Fire-and-forget: generates a short title from the first user message
-export function autoGenerateTitle(conversationId: string, firstMessage: string, userPlan: string): void {
-  getModelForPlan(userPlan, 'fast')
-    .then((model) =>
-      generateText({
-        model,
-        prompt: `Generate a short title (max 7 words, no quotes) for a form editing conversation that starts with: "${firstMessage.slice(0, 200)}"`,
-      })
-    )
+export function autoGenerateTitle(conversationId: string, firstMessage: string): void {
+  generateText({
+    model: getFastModel(),
+    prompt: `Generate a short title (max 7 words, no quotes) for a form editing conversation that starts with: "${firstMessage.slice(0, 200)}"`,
+  })
     .then(({ text }) => {
       const title = text.trim().slice(0, 60);
       return prisma.aIChatConversation.update({ where: { id: conversationId }, data: { title } });

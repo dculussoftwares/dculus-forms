@@ -8,8 +8,7 @@
     "organizations": "Organizations",
     "users": "Users",
     "templates": "Templates",
-    "settings": "Settings",
-    "aiModels": "AI Models"
+    "settings": "Settings"
   },
   "userMenu": {
     "signOut": "Sign Out",
