@@ -94,7 +94,7 @@ const FormAnalytics: React.FC = () => {
         { label: t('layout.breadcrumbAnalytics') },
       ]}
     >
-      <div className="space-y-5 max-w-5xl mx-auto w-full">
+      <div className="space-y-5">
 
         {/* ── Top toolbar: tabs + time range + view form ── */}
         <div className="flex items-center justify-between gap-4">

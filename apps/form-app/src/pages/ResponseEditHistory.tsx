@@ -120,7 +120,7 @@ export const ResponseEditHistory: React.FC = () => {
         { label: t('layout.breadcrumbs.editHistory'), href: `/dashboard/form/${formId}/responses/${responseId}/history` },
       ]}
     >
-      <div className="flex flex-col h-full max-w-4xl mx-auto w-full overflow-x-hidden">
+      <div className="flex flex-col h-full w-full overflow-x-hidden">
         {/* Header */}
         <div className="flex items-center gap-3 pb-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--tf-border-medium)' }}>
           <Button
