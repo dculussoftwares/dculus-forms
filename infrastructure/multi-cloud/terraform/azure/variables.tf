@@ -275,4 +275,14 @@ variable "ai_location" {
   default     = "eastus"
 }
 
+variable "ai_primary_tpm" {
+  description = "Tokens per minute capacity (thousands) for the primary model deployment (gpt-4o)"
+  type        = number
+  default     = 10
+}
 
+variable "ai_fast_tpm" {
+  description = "Tokens per minute capacity (thousands) for the fast model deployment (gpt-4o-mini)"
+  type        = number
+  default     = 30
+}
