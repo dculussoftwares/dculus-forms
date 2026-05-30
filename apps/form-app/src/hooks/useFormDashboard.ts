@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { DELETE_FORM, UPDATE_FORM } from '../graphql/mutations';
-import { useAppConfig } from '@/hooks';
 import { getFormViewerUrl } from '@/lib/config';
 import { toastError } from '@dculus/ui';
 
@@ -18,7 +17,6 @@ interface DashboardStats {
 
 export const useFormDashboard = (formId: string | undefined) => {
   const navigate = useNavigate();
-  const { organizationId } = useAppConfig();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showUnpublishDialog, setShowUnpublishDialog] = useState(false);
   const [showCollectResponsesDialog, setShowCollectResponsesDialog] = useState(false);
@@ -36,59 +34,9 @@ export const useFormDashboard = (formId: string | undefined) => {
 
   const [deleteForm, { loading: deleteLoading }] = useMutation(DELETE_FORM, {
     update: (cache, { data }) => {
-      if (!data?.deleteForm || !organizationId || !formId) {
-        return;
-      }
-
-      cache.modify({
-        fields: {
-          forms(existing = {}, options: any) {
-            const args = options?.args as { category?: string; organizationId?: string; limit?: number } | undefined;
-            const readField = options?.readField as (<T>(fieldName: string, from: any) => T) | undefined;
-            const category = args?.category;
-
-            if (
-              !existing ||
-              !existing.forms ||
-              !Array.isArray(existing.forms) ||
-              !args ||
-              args.organizationId !== organizationId ||
-              !category ||
-              !['OWNER', 'ALL'].includes(category)
-            ) {
-              return existing;
-            }
-
-            const filteredForms = existing.forms.filter((formRef: any) => {
-              const cachedId = readField ? readField('id', formRef) : formRef?.id;
-              return cachedId !== formId;
-            });
-
-            if (filteredForms.length === existing.forms.length) {
-              return existing;
-            }
-
-            const baseTotalCount =
-              existing.totalCount ?? filteredForms.length + 1;
-            const nextTotalCount = Math.max(0, baseTotalCount - 1);
-            const limit = existing.limit ?? args?.limit ?? 1;
-            const page = existing.page ?? 1;
-            const nextTotalPages =
-              nextTotalCount === 0
-                ? 0
-                : Math.ceil(nextTotalCount / Math.max(limit, 1));
-
-            return {
-              ...existing,
-              forms: filteredForms,
-              totalCount: nextTotalCount,
-              totalPages: nextTotalPages,
-              hasNextPage: page < nextTotalPages,
-              hasPreviousPage: page > 1,
-            };
-          },
-        },
-      });
+      if (!data?.deleteForm || !formId) return;
+      cache.evict({ id: cache.identify({ __typename: 'Form', id: formId }) });
+      cache.gc();
     },
     onCompleted: () => {
       setShowDeleteDialog(false);
