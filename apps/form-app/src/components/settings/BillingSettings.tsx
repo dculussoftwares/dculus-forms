@@ -27,7 +27,7 @@ function safeOpen(url: string, onError: (msg: string) => void): boolean {
   }
 }
 
-function UsageRow({
+function UsageCard({
   icon,
   label,
   used,
@@ -49,25 +49,31 @@ function UsageRow({
     pct >= 100 ? 'bg-red-500' : pct >= 80 ? 'bg-orange-500' : 'bg-[#3c323e]';
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-1.5">
-        <div className="flex items-center gap-2 text-sm text-[#3c323e]">
-          <span className="text-[#655d67]">{icon}</span>
-          {label}
-        </div>
-        <span className="text-sm text-[#655d67]">
-          {unlimited
-            ? `${used.toLocaleString()} / Unlimited`
-            : `${used.toLocaleString()} / ${limit?.toLocaleString() ?? '–'} this month`}
-        </span>
+    <div className="rounded-lg border border-[rgba(81,76,84,0.1)] bg-[#f7f7f8] p-4">
+      <div className="mb-2 flex items-center gap-1.5 text-xs text-[#655d67]">
+        <span className="text-[#655d67]">{icon}</span>
+        {label}
       </div>
-      {!unlimited && (
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#e5e7eb]">
-          <div className={cn('h-full rounded-full transition-all', barColor)} style={{ width: `${pct}%` }} />
-        </div>
+      <div className="mb-1 text-xl font-bold text-[#262627]">
+        {used.toLocaleString()}
+        {!unlimited && limit != null && (
+          <span className="ml-1 text-sm font-normal text-[#655d67]">
+            / {limit.toLocaleString()}
+          </span>
+        )}
+      </div>
+      {unlimited ? (
+        <p className="mb-2 text-xs text-[#177767]">Unlimited</p>
+      ) : (
+        <>
+          <div className="mb-1 h-1 w-full overflow-hidden rounded-full bg-[#e5e7eb]">
+            <div className={cn('h-full rounded-full transition-all', barColor)} style={{ width: `${pct}%` }} />
+          </div>
+          <p className="text-[10px] text-[#b0a8b2]">{pct.toFixed(1)}%</p>
+        </>
       )}
       {resetDate && (
-        <p className="mt-1 text-xs text-[#b0a8b2]">{resetDate}</p>
+        <p className="mt-1 text-[10px] text-[#b0a8b2]">{resetDate}</p>
       )}
     </div>
   );
@@ -200,27 +206,33 @@ export function BillingSettings() {
             : `All the power of the ${planName} plan.`}
         </p>
 
-        <div className="space-y-4">
-          {/* Form Views row */}
-          <UsageRow
+        <div className="grid grid-cols-3 gap-4">
+          <UsageCard
             icon={<Eye className="h-4 w-4" />}
             label="Form views"
             used={usage.views.used}
             limit={usage.views.limit}
             unlimited={usage.views.unlimited}
             percentage={usage.views.percentage}
-            resetDate={`Your views reset on ${resetDateFormatted}`}
+            resetDate={`Resets ${resetDateFormatted}`}
           />
-
-          {/* Submissions row */}
-          <UsageRow
+          <UsageCard
             icon={<FileText className="h-4 w-4" />}
             label="Submissions"
             used={usage.submissions.used}
             limit={usage.submissions.limit}
             unlimited={usage.submissions.unlimited}
             percentage={usage.submissions.percentage}
-            resetDate={`Your submissions reset on ${resetDateFormatted}`}
+            resetDate={`Resets ${resetDateFormatted}`}
+          />
+          <UsageCard
+            icon={<Sparkles className="h-4 w-4" />}
+            label="AI tokens"
+            used={tokenUsage?.used ?? 0}
+            limit={tokenUsage?.limit ?? null}
+            unlimited={false}
+            percentage={tokenPct}
+            resetDate={tokenResetDate}
           />
         </div>
 
@@ -257,25 +269,6 @@ export function BillingSettings() {
           )}
         </div>
       </Card>
-
-      {/* AI assistant usage card */}
-      {tokenUsage && (
-        <Card className="p-6">
-          <div className="mb-1 text-base font-semibold text-[#262627]">AI assistant usage</div>
-          <p className="mb-5 text-sm text-[#655d67]">
-            Tokens used for AI-powered form editing this month.
-          </p>
-          <UsageRow
-            icon={<Sparkles className="h-4 w-4" />}
-            label="AI tokens"
-            used={tokenUsage.used}
-            limit={tokenUsage.limit}
-            unlimited={false}
-            percentage={tokenPct}
-            resetDate={tokenResetDate}
-          />
-        </Card>
-      )}
 
       {/* Billing details card */}
       <Card className="p-6">
