@@ -168,7 +168,7 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
       <div className="flex flex-1">
 
         {/* Plan cards */}
-        <div className="flex-1 px-8 py-8">
+        <div className="flex-1 px-8 py-8 flex flex-col">
           {loading ? (
             <div className="grid grid-cols-3 gap-5">
               {[1, 2, 3].map((i) => (
@@ -176,7 +176,7 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-5 max-w-3xl">
+            <div className="grid grid-cols-3 gap-5 h-full">
               {/* All plans from API — includes free if returned, skip unknowns */}
               {plans.map((plan: any) => {
                 const meta = PLAN_META[plan.id];
