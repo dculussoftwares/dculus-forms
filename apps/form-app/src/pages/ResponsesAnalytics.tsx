@@ -77,7 +77,7 @@ const ResponsesAnalytics: React.FC = () => {
         { label: t('layout.breadcrumbs.analytics') },
       ]}
     >
-      <div className="space-y-5">
+      <div className="space-y-5 max-w-5xl mx-auto w-full">
         {/* Back button */}
         <Button
           variant="ghost"

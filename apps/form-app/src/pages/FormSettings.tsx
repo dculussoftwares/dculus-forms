@@ -214,7 +214,7 @@ const FormSettings: React.FC = () => {
         { label: t('layout.breadcrumbSettings'), href: `/dashboard/form/${formId}/settings` },
       ]}
     >
-      <div className="space-y-5">
+      <div className="space-y-5 max-w-3xl mx-auto w-full">
         {/* ── Typeform-style page header ── */}
         <div className="flex items-center gap-3 pb-4" style={{ borderBottom: '1px solid var(--tf-border-medium)' }}>
           <Button

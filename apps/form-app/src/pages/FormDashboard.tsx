@@ -208,7 +208,7 @@ const FormDashboard: React.FC = () => {
       ]}
     >
       <>
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-5xl mx-auto w-full">
           {/* Header Section */}
           <FormHeader
             form={form}
