@@ -141,9 +141,6 @@ export function BillingSettings() {
   const resetDateFormatted = new Date(Number(currentPeriodEnd)).toLocaleDateString('en-US', {
     month: 'long', day: 'numeric', year: 'numeric',
   });
-  const resetDateShort = new Date(Number(currentPeriodEnd)).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-  });
 
   const tokenUsage = tokenData?.aiTokenUsage;
   const tokenPct = tokenUsage && tokenUsage.limit > 0

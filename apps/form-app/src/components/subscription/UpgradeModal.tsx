@@ -1,15 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import {
-  Button,
-  Card,
-  Badge,
-  toastSuccess,
-  toastError,
-} from '@dculus/ui';
-import { X, Check, TrendingUp, Zap, Sparkles } from 'lucide-react';
+import { X, Check } from 'lucide-react';
+import { cn } from '@dculus/utils';
+import { toastSuccess, toastError } from '@dculus/ui';
 import { GET_AVAILABLE_PLANS, CREATE_CHECKOUT_SESSION } from '../../graphql/subscription';
-import { useTranslation } from '../../hooks/useTranslation';
 
 interface UpgradeModalProps {
   onClose: () => void;
@@ -19,315 +13,352 @@ interface UpgradeModalProps {
 type BillingCycle = 'monthly' | 'yearly';
 type Currency = 'USD' | 'INR';
 
+const PLAN_META: Record<string, { tagline: string; planSize: string[]; benefits: string[] }> = {
+  free: {
+    tagline: 'Build and share forms for free, forever',
+    planSize: ['10,000 form views / month', '1,000 submissions / month', '50k AI tokens / month'],
+    benefits: ['Unlimited forms', 'Real-time collaboration', 'Basic analytics'],
+  },
+  starter: {
+    tagline: 'More responses, more power',
+    planSize: ['Unlimited form views', '10,000 submissions / month', '500k AI tokens / month'],
+    benefits: ['Everything in Free', 'Advanced analytics', 'Email support', 'API access (coming soon)'],
+  },
+  advanced: {
+    tagline: 'For teams that need scale',
+    planSize: ['Unlimited form views', '100,000 submissions / month', '5M AI tokens / month'],
+    benefits: ['Everything in Starter', 'Priority support', 'Analytics export', 'White-label (coming soon)'],
+  },
+};
+
+function safeRedirect(url: string, onError: (msg: string) => void) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:' || !parsed.hostname.endsWith('chargebee.com')) {
+      onError('Invalid redirect URL');
+      return;
+    }
+    window.location.href = url;
+  } catch {
+    onError('Malformed redirect URL');
+  }
+}
+
 export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
-  const { t } = useTranslation('upgradeModal');
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
   const [currency, setCurrency] = useState<Currency>('USD');
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(
+    currentPlan === 'free' ? 'starter' : currentPlan === 'starter' ? 'advanced' : null
+  );
 
   const { data, loading } = useQuery(GET_AVAILABLE_PLANS);
   const [createCheckoutSession, { loading: checkoutLoading }] = useMutation(CREATE_CHECKOUT_SESSION);
 
-  const plans = data?.availablePlans || [];
+  const plans: any[] = data?.availablePlans || [];
 
-  // Plan configurations
-  const planConfig: Record<string, {
-    icon: any;
-    color: string;
-    gradient: string;
-    features: string[];
-    recommended?: boolean;
-  }> = {
-    free: {
-      icon: Zap,
-      color: 'gray',
-      gradient: 'from-gray-500 to-gray-600',
-        features: [
-          t('plans.features.free.formViews'),
-          t('plans.features.free.submissions'), 
-          t('plans.features.free.unlimitedForms'),
-          t('plans.features.free.collaboration'),
-          t('plans.features.free.analytics'),
-          t('plans.features.free.support')
-        ],
-    },
-    starter: {
-      icon: TrendingUp,
-      color: 'blue',
-      gradient: 'from-blue-500 to-blue-600',
-        features: [
-          t('plans.features.starter.formViews'),
-          t('plans.features.starter.submissions'),
-          t('plans.features.starter.unlimitedForms'),
-          t('plans.features.starter.collaboration'),
-          t('plans.features.starter.analytics'),
-          t('plans.features.starter.support'),
-          t('plans.features.starter.customDomain'),
-          t('plans.features.starter.apiAccess')
-        ],
-      recommended: true,
-    },
-    advanced: {
-      icon: Sparkles,
-      color: 'purple',
-      gradient: 'from-purple-500 to-purple-600',
-        features: [
-          t('plans.features.advanced.formViews'),
-          t('plans.features.advanced.submissions'),
-          t('plans.features.advanced.unlimitedForms'),
-          t('plans.features.advanced.collaboration'),
-          t('plans.features.advanced.analytics'),
-          t('plans.features.advanced.support'),
-          t('plans.features.advanced.customDomain'),
-          t('plans.features.advanced.apiAccess'),
-          t('plans.features.advanced.whiteLabel')
-        ],
-    },
-  };
-
-  const getPriceForPlan = (planId: string) => {
+  const getPrice = (planId: string) => {
     const plan = plans.find((p: any) => p.id === planId);
     if (!plan) return null;
-
     const period = billingCycle === 'monthly' ? 'month' : 'year';
-    const price = plan.prices.find(
-      (p: any) => p.currency === currency && p.period === period
-    );
-
-    return price;
+    return plan.prices?.find((p: any) => p.currency === currency && p.period === period) ?? null;
   };
 
-  const formatPrice = (amount: number, curr: string) => {
-    const symbol = curr === 'USD' ? '$' : '₹';
+  const formatAmount = (price: any): string => {
+    if (!price) return '—';
+    const symbol = currency === 'USD' ? '$' : '₹';
+    const amount = billingCycle === 'yearly'
+      ? Math.round(price.amount / 12)
+      : price.amount;
     return `${symbol}${amount}`;
   };
 
-  const getMonthlyEquivalent = (amount: number, period: string) => {
-    if (period === 'month') return amount;
-    return (amount / 12).toFixed(2);
-  };
-
-  const safeRedirect = (url: string) => {
-    try {
-      const parsed = new URL(url);
-      if (parsed.protocol !== 'https:' || !parsed.hostname.endsWith('chargebee.com')) {
-        toastError(t('messages.checkoutError.title'), 'Invalid redirect URL');
-        return;
-      }
-      window.location.href = url;
-    } catch {
-      toastError(t('messages.checkoutError.title'), 'Malformed redirect URL');
-    }
-  };
-
-  const handleUpgrade = async (planId: string) => {
-    const price = getPriceForPlan(planId);
+  const handleCheckout = async () => {
+    if (!selectedPlanId) return;
+    const price = getPrice(selectedPlanId);
     if (!price) {
-      toastError(t('messages.priceNotFound.title'), t('messages.priceNotFound.message'));
+      toastError('Price not found', 'Unable to find pricing for the selected plan');
       return;
     }
-
     try {
-      const { data } = await createCheckoutSession({
-        variables: { itemPriceId: price.id },
-      });
-
+      const { data } = await createCheckoutSession({ variables: { itemPriceId: price.id } });
       if (data?.createCheckoutSession?.url) {
-        toastSuccess(t('messages.checkoutSuccess.title'), t('messages.checkoutSuccess.message'));
-        safeRedirect(data.createCheckoutSession.url);
+        toastSuccess('Redirecting to checkout', 'Please complete payment to upgrade');
+        safeRedirect(data.createCheckoutSession.url, (msg) =>
+          toastError('Checkout failed', msg)
+        );
       }
     } catch (error: any) {
-      toastError(t('messages.checkoutError.title'), error.message);
+      toastError('Checkout failed', error.message);
     }
   };
 
+  const selectedPrice = selectedPlanId ? getPrice(selectedPlanId) : null;
+  const selectedPlanMeta = selectedPlanId ? PLAN_META[selectedPlanId] : null;
+  const selectedPlanData = selectedPlanId ? plans.find((p: any) => p.id === selectedPlanId) : null;
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-[var(--tf-border-medium)] dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
-          <div>
-            <h2 className="text-2xl font-bold">{t('header.title')}</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              {t('header.subtitle')}
-            </p>
+    <div className="fixed inset-0 z-50 flex flex-col bg-[#f7f7f8] overflow-y-auto">
+
+      {/* Header */}
+      <div className="sticky top-0 z-10 border-b border-[rgba(81,76,84,0.1)] bg-white px-8 py-4 flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-[#262627]">Plans that power your forms</h1>
+        <div className="flex items-center gap-4">
+          {/* Billing cycle toggle */}
+          <div className="flex items-center rounded-full border border-[rgba(81,76,84,0.15)] bg-white p-0.5 text-sm">
+            <button
+              onClick={() => setBillingCycle('monthly')}
+              className={cn(
+                'rounded-full px-4 py-1.5 transition-colors',
+                billingCycle === 'monthly'
+                  ? 'bg-[#3c323e] text-white'
+                  : 'text-[#655d67] hover:text-[#3c323e]'
+              )}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBillingCycle('yearly')}
+              className={cn(
+                'flex items-center gap-1.5 rounded-full px-4 py-1.5 transition-colors',
+                billingCycle === 'yearly'
+                  ? 'bg-[#3c323e] text-white'
+                  : 'text-[#655d67] hover:text-[#3c323e]'
+              )}
+            >
+              Yearly
+              <span className={cn(
+                'rounded-full px-1.5 py-0.5 text-[10px] font-semibold',
+                billingCycle === 'yearly'
+                  ? 'bg-[#177767] text-white'
+                  : 'bg-[rgba(23,119,103,0.12)] text-[#177767]'
+              )}>
+                Save 30%
+              </span>
+            </button>
           </div>
-          <Button variant="ghost" onClick={onClose} className="h-8 w-8 p-0">
+
+          {/* Currency toggle */}
+          <div className="flex items-center rounded-full border border-[rgba(81,76,84,0.15)] bg-white p-0.5 text-sm">
+            {(['USD', 'INR'] as Currency[]).map((c) => (
+              <button
+                key={c}
+                onClick={() => setCurrency(c)}
+                className={cn(
+                  'rounded-full px-3 py-1.5 transition-colors',
+                  currency === c
+                    ? 'bg-[#3c323e] text-white'
+                    : 'text-[#655d67] hover:text-[#3c323e]'
+                )}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-[#655d67] hover:bg-[rgba(87,84,91,0.08)] hover:text-[#3c323e] transition-colors"
+          >
             <X className="h-5 w-5" />
-          </Button>
+          </button>
         </div>
+      </div>
 
-        <div className="p-6">
-          {/* Controls */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            {/* Billing Cycle Toggle */}
-            <div className="flex items-center gap-2 bg-background dark:bg-gray-800 rounded-lg p-1">
-              <Button
-                variant={billingCycle === 'monthly' ? 'default' : 'ghost'}
-                onClick={() => setBillingCycle('monthly')}
-                className="flex-1"
-              >
-                {t('billing.monthly')}
-              </Button>
-              <Button
-                variant={billingCycle === 'yearly' ? 'default' : 'ghost'}
-                onClick={() => setBillingCycle('yearly')}
-                className="flex-1 relative"
-              >
-                {t('billing.yearly')}
-                <Badge className="ml-2 bg-primary text-white text-xs">
-                  {t('billing.save')}
-                </Badge>
-              </Button>
-            </div>
+      {/* Content */}
+      <div className="flex flex-1">
 
-            {/* Currency Toggle */}
-            <div className="flex items-center gap-2 bg-background dark:bg-gray-800 rounded-lg p-1">
-              <Button
-                variant={currency === 'USD' ? 'default' : 'ghost'}
-                onClick={() => setCurrency('USD')}
-                className="flex-1"
-              >
-                {t('billing.usd')}
-              </Button>
-              <Button
-                variant={currency === 'INR' ? 'default' : 'ghost'}
-                onClick={() => setCurrency('INR')}
-                className="flex-1"
-              >
-                {t('billing.inr')}
-              </Button>
-            </div>
-          </div>
-
-          {/* Plans Grid */}
+        {/* Plan cards */}
+        <div className="flex-1 px-8 py-8">
           {loading ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">{t('loading.plans')}</p>
+            <div className="grid grid-cols-3 gap-5">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-80 animate-pulse rounded-xl bg-white border border-[rgba(81,76,84,0.12)]" />
+              ))}
             </div>
           ) : (
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-3 gap-5 max-w-3xl">
+              {/* All plans from API — includes free if returned, skip unknowns */}
               {plans.map((plan: any) => {
-                const config = planConfig[plan.id];
-                if (!config) return null;
-
-                const price = getPriceForPlan(plan.id);
-                const Icon = config.icon;
-                const isCurrentPlan = currentPlan === plan.id;
-                const isRecommended = config.recommended;
-
+                const meta = PLAN_META[plan.id];
+                if (!meta) return null;
+                const isPlanCurrent = currentPlan === plan.id;
+                const isSelected = selectedPlanId === plan.id;
                 return (
-                  <Card
+                  <PlanCard
                     key={plan.id}
-                    className={`relative p-6 transition-all hover:shadow-lg ${
-                      isCurrentPlan ? 'opacity-75' : ''
-                    }`}
-                  >
-                    {/* Recommended Badge */}
-                    {isRecommended && !isCurrentPlan && (
-                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                        <Badge className="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-3 py-1">
-                          {t('plans.recommended')}
-                        </Badge>
-                      </div>
-                    )}
-
-                    {/* Current Plan Badge */}
-                    {isCurrentPlan && (
-                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                        <Badge className="bg-gradient-to-r from-gray-600 to-gray-500 text-white px-3 py-1">
-                          {t('plans.currentPlan')}
-                        </Badge>
-                      </div>
-                    )}
-
-                    {/* Plan Header */}
-                    <div className="flex items-center gap-3 mb-4">
-                      <div
-                        className={`h-12 w-12 rounded-lg bg-gradient-to-br ${config.gradient} flex items-center justify-center`}
-                      >
-                        <Icon className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold">{plan.name}</h3>
-                      </div>
-                    </div>
-
-                    {/* Pricing */}
-                    {plan.id === 'free' ? (
-                      <div className="mb-6">
-                        <div className="text-4xl font-bold">{t('plans.free')}</div>
-                        <div className="text-sm text-muted-foreground">{t('plans.forever')}</div>
-                      </div>
-                    ) : price ? (
-                      <div className="mb-6">
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-4xl font-bold">
-                            {formatPrice(price.amount, currency)}
-                          </span>
-                          <span className="text-muted-foreground">
-                            {billingCycle === 'monthly' ? t('billing.perMonth') : t('billing.perYear')}
-                          </span>
-                        </div>
-                        {billingCycle === 'yearly' && (
-                          <div className="text-sm text-muted-foreground mt-1">
-                            {currency === 'USD' ? '$' : '₹'}{getMonthlyEquivalent(price.amount, 'year')}{t('billing.billedAnnually')}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="mb-6">
-                        <div className="text-lg text-muted-foreground">
-                          {t('plans.priceNotAvailable')}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Features */}
-                    <div className="space-y-3 mb-6">
-                      {config.features.map((feature, index) => (
-                        <div key={index} className="flex items-start gap-2">
-                          <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                          <span className="text-sm text-foreground dark:text-gray-300">
-                            {feature}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Action Button */}
-                    {isCurrentPlan ? (
-                      <Button disabled variant="outline" className="w-full">
-                        {t('buttons.currentPlan')}
-                      </Button>
-                    ) : plan.id === 'free' ? (
-                      <Button disabled variant="outline" className="w-full">
-                        {t('buttons.downgradeNotAvailable')}
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={() => handleUpgrade(plan.id)}
-                        disabled={checkoutLoading || !price}
-                        className="w-full"
-                      >
-                        {checkoutLoading ? t('buttons.processing') : t('buttons.upgradeTo', { values: { planName: plan.name } })}
-                      </Button>
-                    )}
-                  </Card>
+                    planId={plan.id}
+                    name={plan.name}
+                    meta={meta}
+                    price={getPrice(plan.id)}
+                    formatAmount={formatAmount}
+                    billingCycle={billingCycle}
+                    isCurrentPlan={isPlanCurrent}
+                    isSelected={isSelected}
+                    onSelect={() => !isPlanCurrent && setSelectedPlanId(plan.id)}
+                  />
                 );
               })}
             </div>
           )}
-
-          {/* Footer Note */}
-          <div className="mt-8 p-4 bg-background dark:bg-gray-800 rounded-lg">
-            <p className="text-sm text-foreground dark:text-gray-400 text-center">
-              {t('footer.note')}
-              <br />
-              {t('footer.flexibility')}
-            </p>
-          </div>
         </div>
+
+        {/* Order summary panel */}
+        <div className="w-[300px] shrink-0 border-l border-[rgba(81,76,84,0.1)] bg-white px-6 py-8">
+          {selectedPlanId && selectedPlanData ? (
+            <div className="space-y-5">
+              <div>
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#655d67]">
+                  Your new plan
+                </p>
+                <p className="text-lg font-bold text-[#262627]">{selectedPlanData.name}</p>
+                {selectedPlanMeta && (
+                  <p className="text-sm text-[#655d67]">{selectedPlanMeta.tagline}</p>
+                )}
+              </div>
+
+              {selectedPrice && (
+                <div className="rounded-lg border border-[rgba(81,76,84,0.12)] p-4">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-bold text-[#262627]">
+                      {formatAmount(selectedPrice)}
+                    </span>
+                    <span className="text-sm text-[#655d67]">/ mo</span>
+                  </div>
+                  {billingCycle === 'yearly' && (
+                    <p className="mt-0.5 text-xs text-[#655d67]">Billed yearly</p>
+                  )}
+                </div>
+              )}
+
+              <div className="border-t border-[rgba(81,76,84,0.08)] pt-5">
+                <button
+                  onClick={handleCheckout}
+                  disabled={checkoutLoading || !selectedPrice}
+                  className={cn(
+                    'w-full rounded-lg py-3 text-sm font-medium text-white transition-colors',
+                    checkoutLoading || !selectedPrice
+                      ? 'bg-[rgba(60,50,62,0.4)] cursor-not-allowed'
+                      : 'bg-[#3c323e] hover:bg-[#2e2530]'
+                  )}
+                >
+                  {checkoutLoading ? 'Redirecting…' : 'Continue to checkout'}
+                </button>
+              </div>
+
+              <ul className="space-y-1.5 text-xs text-[#655d67]">
+                <li>• You can cancel anytime before the renewal date.</li>
+                <li>• All prices exclude applicable taxes.</li>
+              </ul>
+            </div>
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-center text-sm text-[#b0a8b2]">
+                Select a plan to continue
+              </p>
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );
 };
+
+function PlanCard({
+  planId, name, meta, price, formatAmount, billingCycle,
+  isCurrentPlan, isSelected, onSelect,
+}: {
+  planId: string;
+  name: string;
+  meta: typeof PLAN_META[string];
+  price: any;
+  formatAmount: (price: any) => string;
+  billingCycle: BillingCycle;
+  isCurrentPlan: boolean;
+  isSelected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <div
+      onClick={onSelect}
+      className={cn(
+        'flex flex-col rounded-xl border bg-white p-6 transition-all',
+        isSelected
+          ? 'border-2 border-[#177767] shadow-sm'
+          : isCurrentPlan
+          ? 'border border-[rgba(81,76,84,0.12)] opacity-60'
+          : 'cursor-pointer border border-[rgba(81,76,84,0.12)] hover:shadow-md hover:border-[rgba(81,76,84,0.25)]'
+      )}
+    >
+      {/* Plan name + tagline */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-[#262627]">{name}</h3>
+          {isCurrentPlan && (
+            <span className="rounded-full bg-[rgba(87,84,91,0.08)] px-2.5 py-0.5 text-[11px] font-medium text-[#655d67]">
+              Current
+            </span>
+          )}
+          {isSelected && !isCurrentPlan && (
+            <span className="rounded-full bg-[rgba(23,119,103,0.1)] px-2.5 py-0.5 text-[11px] font-medium text-[#177767]">
+              Selected
+            </span>
+          )}
+        </div>
+        <p className="mt-0.5 text-xs text-[#655d67]">{meta.tagline}</p>
+      </div>
+
+      {/* Price */}
+      <div className="mb-5">
+        {planId === 'free' ? (
+          <>
+            <div className="text-2xl font-bold text-[#262627]">Free</div>
+            <div className="text-xs text-[#655d67]">Forever</div>
+          </>
+        ) : price ? (
+          <>
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-2xl font-bold text-[#262627]">{formatAmount(price)}</span>
+              <span className="text-xs text-[#655d67]"> / mo</span>
+            </div>
+            {billingCycle === 'yearly' && (
+              <div className="text-xs text-[#655d67]">Billed yearly</div>
+            )}
+          </>
+        ) : (
+          <div className="text-sm text-[#b0a8b2]">—</div>
+        )}
+      </div>
+
+      {/* Plan size */}
+      <div className="border-t border-[rgba(81,76,84,0.08)] pt-4 pb-3">
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[#655d67]">
+          Plan size
+        </p>
+        <ul className="space-y-1.5">
+          {meta.planSize.map((f, i) => (
+            <li key={i} className="flex items-start gap-1.5 text-xs text-[#4c414e]">
+              <Check className="h-3.5 w-3.5 shrink-0 text-[#177767] mt-0.5" />
+              {f}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Key benefits */}
+      <div className="border-t border-[rgba(81,76,84,0.08)] pt-4 flex-1">
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[#655d67]">
+          Key benefits
+        </p>
+        <ul className="space-y-1.5">
+          {meta.benefits.map((b, i) => (
+            <li key={i} className="flex items-start gap-1.5 text-xs text-[#4c414e]">
+              <Check className="h-3.5 w-3.5 shrink-0 text-[#177767] mt-0.5" />
+              {b}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
