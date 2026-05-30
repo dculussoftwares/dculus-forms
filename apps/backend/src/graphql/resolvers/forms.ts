@@ -134,7 +134,9 @@ export const formsResolvers = {
 
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const yesterday = new Date(today.getTime() - 1 * 24 * 60 * 60 * 1000);
       const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const twoWeeksAgo = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000);
       const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
 
       const [
@@ -144,6 +146,10 @@ export const formsResolvers = {
         totalResponses,
         totalViews,
         submissionAnalytics,
+        responsesYesterday,
+        responsesLastWeek,
+        viewsThisWeek,
+        viewsLastWeek,
       ] = await Promise.all([
         prisma.response.count({ where: { formId, submittedAt: { gte: today } } }),
         prisma.response.count({ where: { formId, submittedAt: { gte: weekAgo } } }),
@@ -155,6 +161,10 @@ export const formsResolvers = {
           where: { formId },
           select: { completionTimeSeconds: true },
         }),
+        prisma.response.count({ where: { formId, submittedAt: { gte: yesterday, lt: today } } }),
+        prisma.response.count({ where: { formId, submittedAt: { gte: twoWeeksAgo, lt: weekAgo } } }),
+        prisma.formViewAnalytics.count({ where: { formId, viewedAt: { gte: weekAgo } } }),
+        prisma.formViewAnalytics.count({ where: { formId, viewedAt: { gte: twoWeeksAgo, lt: weekAgo } } }),
       ]);
 
       const validCompletionTimes = submissionAnalytics
@@ -168,12 +178,32 @@ export const formsResolvers = {
 
       const responseRate = totalViews > 0 ? (totalResponses / totalViews) * 100 : 0;
 
+      const trendResponsesToday =
+        responsesYesterday === 0
+          ? null
+          : ((responsesToday - responsesYesterday) / responsesYesterday) * 100;
+
+      const trendThisWeek =
+        responsesLastWeek === 0
+          ? null
+          : ((responsesThisWeek - responsesLastWeek) / responsesLastWeek) * 100;
+
+      const rateThisWeek = viewsThisWeek > 0 ? (responsesThisWeek / viewsThisWeek) * 100 : 0;
+      const rateLastWeek = viewsLastWeek > 0 ? (responsesLastWeek / viewsLastWeek) * 100 : 0;
+      const trendResponseRate =
+        viewsThisWeek < 10 || viewsLastWeek < 10
+          ? null
+          : rateThisWeek - rateLastWeek;
+
       return {
         averageCompletionTime,
         responseRate,
         responsesToday,
         responsesThisWeek,
         responsesThisMonth,
+        trendResponsesToday,
+        trendThisWeek,
+        trendResponseRate,
       };
     },
   },

@@ -331,17 +331,17 @@ describe('Forms Resolvers', () => {
   describe('Form: dashboardStats', () => {
     it('should return dashboard statistics', async () => {
       vi.mocked(prisma.response.count)
-        .mockResolvedValueOnce(5)  // today
-        .mockResolvedValueOnce(20) // this week
-        .mockResolvedValueOnce(50) // this month
-        .mockResolvedValueOnce(100); // total
+        .mockResolvedValueOnce(5)   // today
+        .mockResolvedValueOnce(20)  // this week
+        .mockResolvedValueOnce(50)  // this month
+        .mockResolvedValueOnce(100) // total
+        .mockResolvedValueOnce(4)   // yesterday  → trendResponsesToday = (5-4)/4*100 = 25
+        .mockResolvedValueOnce(16); // last week  → trendThisWeek = (20-16)/16*100 = 25
 
+      // mockResolvedValue (no Once) returns 200 for all three formViewAnalytics.count calls:
+      // totalViews=200, viewsThisWeek=200, viewsLastWeek=200
+      // rateThisWeek=(20/200)*100=10, rateLastWeek=(16/200)*100=8 → trendResponseRate=2
       vi.mocked(prisma.formViewAnalytics.count).mockResolvedValue(200);
-
-      vi.mocked(prisma.response.findMany).mockResolvedValue([
-        { id: 'resp-1' },
-        { id: 'resp-2' },
-      ] as any);
 
       vi.mocked(prisma.formSubmissionAnalytics.findMany).mockResolvedValue([
         { completionTimeSeconds: 120 },
@@ -357,23 +357,84 @@ describe('Forms Resolvers', () => {
         responsesToday: 5,
         responsesThisWeek: 20,
         responsesThisMonth: 50,
+        trendResponsesToday: 25,
+        trendThisWeek: 25,
+        trendResponseRate: 2,
       });
     });
 
     it('should handle null completion times', async () => {
       vi.mocked(prisma.response.count)
-        .mockResolvedValueOnce(5)
-        .mockResolvedValueOnce(20)
-        .mockResolvedValueOnce(50)
-        .mockResolvedValueOnce(100);
+        .mockResolvedValueOnce(5)   // today
+        .mockResolvedValueOnce(20)  // this week
+        .mockResolvedValueOnce(50)  // this month
+        .mockResolvedValueOnce(100) // total
+        .mockResolvedValueOnce(4)   // yesterday
+        .mockResolvedValueOnce(16); // last week
 
       vi.mocked(prisma.formViewAnalytics.count).mockResolvedValue(200);
-      vi.mocked(prisma.response.findMany).mockResolvedValue([]);
       vi.mocked(prisma.formSubmissionAnalytics.findMany).mockResolvedValue([]);
 
       const result = await formsResolvers.Form.dashboardStats({ id: 'form-123' });
 
       expect(result.averageCompletionTime).toBeNull();
+    });
+
+    it('should return null trendResponsesToday when no responses yesterday', async () => {
+      vi.mocked(prisma.response.count)
+        .mockResolvedValueOnce(5)   // today
+        .mockResolvedValueOnce(20)  // this week
+        .mockResolvedValueOnce(50)  // this month
+        .mockResolvedValueOnce(100) // total
+        .mockResolvedValueOnce(0)   // yesterday → trendResponsesToday = null
+        .mockResolvedValueOnce(16); // last week
+
+      vi.mocked(prisma.formViewAnalytics.count).mockResolvedValue(200);
+      vi.mocked(prisma.formSubmissionAnalytics.findMany).mockResolvedValue([]);
+
+      const result = await formsResolvers.Form.dashboardStats({ id: 'form-123' });
+
+      expect(result.trendResponsesToday).toBeNull();
+      expect(result.trendThisWeek).toBe(25);
+    });
+
+    it('should return null trendThisWeek when no responses last week', async () => {
+      vi.mocked(prisma.response.count)
+        .mockResolvedValueOnce(5)   // today
+        .mockResolvedValueOnce(20)  // this week
+        .mockResolvedValueOnce(50)  // this month
+        .mockResolvedValueOnce(100) // total
+        .mockResolvedValueOnce(4)   // yesterday
+        .mockResolvedValueOnce(0);  // last week → trendThisWeek = null
+
+      vi.mocked(prisma.formViewAnalytics.count).mockResolvedValue(200);
+      vi.mocked(prisma.formSubmissionAnalytics.findMany).mockResolvedValue([]);
+
+      const result = await formsResolvers.Form.dashboardStats({ id: 'form-123' });
+
+      expect(result.trendThisWeek).toBeNull();
+      expect(result.trendResponsesToday).toBe(25);
+    });
+
+    it('should return null trendResponseRate when either week has fewer than 10 views', async () => {
+      vi.mocked(prisma.response.count)
+        .mockResolvedValueOnce(5)
+        .mockResolvedValueOnce(20)
+        .mockResolvedValueOnce(50)
+        .mockResolvedValueOnce(100)
+        .mockResolvedValueOnce(4)
+        .mockResolvedValueOnce(16);
+
+      vi.mocked(prisma.formViewAnalytics.count)
+        .mockResolvedValueOnce(200) // totalViews
+        .mockResolvedValueOnce(5)   // viewsThisWeek — below threshold
+        .mockResolvedValueOnce(200); // viewsLastWeek
+
+      vi.mocked(prisma.formSubmissionAnalytics.findMany).mockResolvedValue([]);
+
+      const result = await formsResolvers.Form.dashboardStats({ id: 'form-123' });
+
+      expect(result.trendResponseRate).toBeNull();
     });
   });
 
