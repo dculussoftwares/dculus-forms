@@ -14,7 +14,7 @@ export const SUPPORTED_MODELS = [
   // Non-OpenAI models (deployed via Terraform)
   { id: 'Phi-4',                       label: 'Phi-4' },
   { id: 'Meta-Llama-3.3-70B-Instruct', label: 'Llama 3.3 70B' },
-  { id: 'Mistral-Small',               label: 'Mistral Small' },
+  // Mistral requires marketplace purchase eligibility on the Azure subscription
 ] as const;
 
 const DEFAULTS: Record<string, { primaryModel: string; fastModel: string }> = {

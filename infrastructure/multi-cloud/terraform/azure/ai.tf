@@ -64,18 +64,6 @@ resource "azurerm_cognitive_deployment" "gpt4o_mini" {
 // Non-OpenAI model deployments — same GlobalStandard SKU, different model formats.
 // These enable runtime model switching via the admin AI Model Config page.
 
-// Import blocks: adopt any deployments that already exist in Azure into Terraform state.
-// Required when a deployment was created outside Terraform (e.g. during manual testing).
-import {
-  to = azurerm_cognitive_deployment.phi4
-  id = "/subscriptions/${var.subscription_id}/resourceGroups/${local.resource_group_name}/providers/Microsoft.CognitiveServices/accounts/${local.app_name}-ai/deployments/Phi-4"
-}
-
-import {
-  to = azurerm_cognitive_deployment.llama33_70b
-  id = "/subscriptions/${var.subscription_id}/resourceGroups/${local.resource_group_name}/providers/Microsoft.CognitiveServices/accounts/${local.app_name}-ai/deployments/Meta-Llama-3.3-70B-Instruct"
-}
-
 resource "azurerm_cognitive_deployment" "phi4" {
   name                 = "Phi-4"
   cognitive_account_id = azurerm_cognitive_account.ai.id
@@ -112,23 +100,9 @@ resource "azurerm_cognitive_deployment" "llama33_70b" {
   depends_on = [azurerm_cognitive_deployment.phi4]
 }
 
-resource "azurerm_cognitive_deployment" "mistral_small" {
-  name                 = "Mistral-Small"
-  cognitive_account_id = azurerm_cognitive_account.ai.id
-
-  model {
-    format  = "Mistral AI"
-    name    = "mistral-small-2503"
-    version = "1"
-  }
-
-  sku {
-    name     = "GlobalStandard"
-    capacity = 1
-  }
-
-  depends_on = [azurerm_cognitive_deployment.llama33_70b]
-}
+// Mistral models (third-party marketplace) require marketplace purchase eligibility
+// on the Azure subscription. Enable marketplace purchases on the subscription first,
+// then add the Mistral deployment here.
 
 output "ai_endpoint" {
   description = "Azure OpenAI-compatible endpoint (legacy, preserved for reference)"
