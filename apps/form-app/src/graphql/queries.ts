@@ -128,6 +128,9 @@ export const GET_FORM_BY_ID = gql`
         responsesToday
         responsesThisWeek
         responsesThisMonth
+        trendResponsesToday
+        trendThisWeek
+        trendResponseRate
       }
     }
   }
