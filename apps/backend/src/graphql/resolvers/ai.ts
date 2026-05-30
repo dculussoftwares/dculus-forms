@@ -4,6 +4,7 @@ import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { generateFormWithAI, type AIFormMode } from '../../services/aiService.js';
 import { checkAITokenBudget, recordAITokenUsage, getAITokenUsage } from '../../services/aiUsageService.js';
 import { logger } from '../../lib/logger.js';
+import { prisma } from '../../lib/prisma.js';
 
 export const aiResolvers = {
   Query: {
@@ -43,7 +44,9 @@ export const aiResolvers = {
       }
 
       try {
-        const result = await generateFormWithAI(prompt.trim(), mode);
+        const subscription = await prisma.subscription.findUnique({ where: { organizationId } });
+        const userPlan = subscription?.planId ?? 'free';
+        const result = await generateFormWithAI(prompt.trim(), mode, userPlan);
         await recordAITokenUsage(organizationId, result.tokensUsed);
         return result;
       } catch (error) {
