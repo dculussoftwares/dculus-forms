@@ -28,14 +28,14 @@ resource "azurerm_cognitive_account" "ai" {
   tags                          = var.tags
 }
 
-resource "azurerm_cognitive_deployment" "gpt4o" {
+resource "azurerm_cognitive_deployment" "gpt54mini" {
   name                 = var.azure_openai_primary_deployment
   cognitive_account_id = azurerm_cognitive_account.ai.id
 
   model {
     format  = "OpenAI"
-    name    = "gpt-4o"
-    version = "2024-11-20"
+    name    = "gpt-5.4-mini"
+    version = "2026-03-17"
   }
 
   sku {
@@ -44,14 +44,14 @@ resource "azurerm_cognitive_deployment" "gpt4o" {
   }
 }
 
-resource "azurerm_cognitive_deployment" "gpt4o_mini" {
+resource "azurerm_cognitive_deployment" "gpt54nano" {
   name                 = var.azure_openai_fast_deployment
   cognitive_account_id = azurerm_cognitive_account.ai.id
 
   model {
     format  = "OpenAI"
-    name    = "gpt-4o-mini"
-    version = "2024-07-18"
+    name    = "gpt-5.4-nano"
+    version = "2026-03-17"
   }
 
   sku {

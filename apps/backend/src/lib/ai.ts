@@ -19,20 +19,20 @@ function buildOpenAIModel(model: string): LanguageModel {
   return openai(model) as LanguageModel;
 }
 
-// Primary model — used for form generation (structured output)
+// Primary model — form editing chat (streaming + tool calls) and form generation (structured output)
 export function getPrimaryModel(): LanguageModel {
-  if (provider === 'openai') return buildOpenAIModel(process.env.OPENAI_PRIMARY_MODEL ?? 'gpt-4o');
-  return buildAzureModel(process.env.AZURE_OPENAI_PRIMARY_DEPLOYMENT ?? 'gpt-4o');
+  if (provider === 'openai') return buildOpenAIModel(process.env.OPENAI_PRIMARY_MODEL ?? 'gpt-5.4-mini');
+  return buildAzureModel(process.env.AZURE_OPENAI_PRIMARY_DEPLOYMENT ?? 'gpt-5.4-mini');
 }
 
-// Fast model — used for lightweight tasks (suggestions, etc.)
+// Fast model — lightweight fire-and-forget tasks (auto-title generation, etc.)
 export function getFastModel(): LanguageModel {
-  if (provider === 'openai') return buildOpenAIModel(process.env.OPENAI_FAST_MODEL ?? 'gpt-4o-mini');
-  return buildAzureModel(process.env.AZURE_OPENAI_FAST_DEPLOYMENT ?? 'gpt-4o-mini');
+  if (provider === 'openai') return buildOpenAIModel(process.env.OPENAI_FAST_MODEL ?? 'gpt-5.4-nano');
+  return buildAzureModel(process.env.AZURE_OPENAI_FAST_DEPLOYMENT ?? 'gpt-5.4-nano');
 }
 
 export const AI_TOKEN_LIMITS: Record<string, number> = {
-  free: 50_000,
-  starter: 500_000,
-  advanced: 5_000_000,
+  free: 200_000,
+  starter: 2_000_000,
+  advanced: 20_000_000,
 };

@@ -286,15 +286,15 @@ variable "ai_provider" {
 }
 
 variable "azure_openai_primary_deployment" {
-  description = "Azure OpenAI deployment name for the primary model (gpt-4o)"
+  description = "Azure OpenAI deployment name for the primary model (gpt-5.4-mini)"
   type        = string
-  default     = "gpt-4o"
+  default     = "gpt-5.4-mini"
 }
 
 variable "azure_openai_fast_deployment" {
-  description = "Azure OpenAI deployment name for the fast model (gpt-4o-mini)"
+  description = "Azure OpenAI deployment name for the fast model (gpt-5.4-nano)"
   type        = string
-  default     = "gpt-4o-mini"
+  default     = "gpt-5.4-nano"
 }
 
 variable "ai_primary_tpm" {
