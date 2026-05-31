@@ -104,7 +104,8 @@ aiChatRouter.post('/chat', async (req, res) => {
     currentPageId?: string;
   };
 
-  if (!conversationId || !organizationId || !message?.content?.trim()) {
+  const messageText = (message as any)?.content ?? (message?.parts as any[])?.find((p: any) => p.type === 'text')?.text ?? '';
+  if (!conversationId || !organizationId || !messageText.trim()) {
     res.status(400).json({ error: 'conversationId, organizationId, and message are required' });
     return;
   }
@@ -137,7 +138,7 @@ aiChatRouter.post('/chat', async (req, res) => {
 
   // Auto-title on first message (fire-and-forget)
   if (previous.length === 0) {
-    autoGenerateTitle(conversationId, message.content);
+    autoGenerateTitle(conversationId, messageText);
   }
 
   // Build full message list with new user message

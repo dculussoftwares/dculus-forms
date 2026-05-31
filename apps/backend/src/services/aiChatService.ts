@@ -64,7 +64,7 @@ export async function loadConversationMessages(conversationId: string): Promise<
     orderBy: { createdAt: 'asc' },
     select: { data: true },
   });
-  return messages.map((m) => m.data as UIMessage);
+  return messages.map((m) => m.data as unknown as UIMessage);
 }
 
 export async function saveConversationMessages(
