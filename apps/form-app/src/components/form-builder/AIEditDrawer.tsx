@@ -181,8 +181,10 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
 
   const {
     conversations,
+    conversationsLoading,
     activeConversationId,
     activeConversation,
+    activeConvLoading,
     messages,
     isStreaming,
     canUndo,
@@ -199,13 +201,13 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
   }, [messages]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || conversationsLoading) return;
     if (conversations.length === 0) {
       createConversation();
     } else if (!activeConversationId && conversations.length > 0) {
       selectConversation(conversations[0].id);
     }
-  }, [isOpen, conversations.length]);
+  }, [isOpen, conversationsLoading, conversations.length]);
 
   const handleSend = useCallback(() => {
     const trimmed = input.trim();
@@ -304,7 +306,16 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
 
       {/* Messages */}
       <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3">
-        {typedMessages.length === 0 && !isStreaming && (
+        {(conversationsLoading || activeConvLoading) && typedMessages.length === 0 && (
+          <div className="flex items-center justify-center pt-8">
+            <div className="flex gap-1">
+              {[0, 1, 2].map((i) => (
+                <span key={i} className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/40" style={{ animationDelay: `${i * 150}ms` }} />
+              ))}
+            </div>
+          </div>
+        )}
+        {typedMessages.length === 0 && !isStreaming && !conversationsLoading && !activeConvLoading && (
           <p className="px-4 pt-8 text-center text-xs text-muted-foreground">
             {t('emptyState')}
           </p>

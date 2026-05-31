@@ -47,12 +47,12 @@ export function useAIChat({
   const currentPageIdRef = useRef<string | undefined>(undefined);
 
   // ── Conversation management (Apollo) ─────────────────────────────────────
-  const { data: conversationsData, refetch: refetchConversations } = useQuery(
+  const { data: conversationsData, loading: conversationsLoading, refetch: refetchConversations } = useQuery(
     LIST_AI_CHAT_CONVERSATIONS,
     { variables: { formId, organizationId }, skip: !formId }
   );
 
-  const { data: activeConvData } = useQuery(GET_AI_CHAT_CONVERSATION, {
+  const { data: activeConvData, loading: activeConvLoading } = useQuery(GET_AI_CHAT_CONVERSATION, {
     variables: { id: activeConversationId!, organizationId },
     skip: !activeConversationId,
   });
@@ -88,8 +88,14 @@ export function useAIChat({
     [activeConversationId, organizationId]
   );
 
+  // Only activate useChat with a real conversation ID once Apollo has loaded the
+  // conversation's messages. This prevents useChat seeding with [] and never
+  // picking up the historical messages that arrive afterwards.
+  const chatConversationId =
+    activeConversationId && !activeConvLoading ? activeConversationId : null;
+
   const { messages: rawMessages, sendMessage, status, stop } = useChat({
-    id: activeConversationId ?? '__no_conversation__',
+    id: chatConversationId ?? '__no_conversation__',
     messages: initialMessages as any,
     transport,
     onError: (error) => {
@@ -172,8 +178,10 @@ export function useAIChat({
 
   return {
     conversations,
+    conversationsLoading,
     activeConversationId,
     activeConversation,
+    activeConvLoading,
     messages,
     isStreaming,
     status,
