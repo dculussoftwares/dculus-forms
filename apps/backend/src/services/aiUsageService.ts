@@ -38,25 +38,11 @@ export async function recordAITokenUsage(
 
   try {
     await prisma.aIUsage.upsert({
-      where: {
-        // Use a composite approach — find existing period record
-        id: (
-          await prisma.aIUsage.findFirst({
-            where: { organizationId, periodStart: start },
-            select: { id: true },
-          })
-        )?.id ?? '__create__',
-      },
+      where: { organizationId_periodStart: { organizationId, periodStart: start } },
       update: { tokensUsed: { increment: tokensUsed } },
-      create: {
-        organizationId,
-        tokensUsed,
-        periodStart: start,
-        periodEnd: end,
-      },
+      create: { organizationId, tokensUsed, periodStart: start, periodEnd: end },
     });
   } catch {
-    // Non-fatal — usage tracking failure should not break the AI call
     logger.warn({ organizationId, tokensUsed }, 'Failed to record AI token usage');
   }
 }
