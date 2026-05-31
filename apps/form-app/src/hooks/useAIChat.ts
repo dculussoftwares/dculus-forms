@@ -65,7 +65,6 @@ export function useAIChat({
   const apolloMessages = activeConvData?.getAIChatConversation?.messages;
   const initialMessages = useMemo<FormEditAgentUIMessage[]>(
     () => (apolloMessages ?? []).map((m: { data: unknown }) => m.data as FormEditAgentUIMessage),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [apolloMessages]
   );
 
@@ -86,7 +85,6 @@ export function useAIChat({
         },
       }),
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [activeConversationId, organizationId]
   );
 

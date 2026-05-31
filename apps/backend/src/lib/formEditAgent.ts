@@ -12,13 +12,4 @@ export function createFormEditAgent(schema: { pages: any[] }, instructions?: str
   });
 }
 
-// Type-level only — never called at runtime. Provides InferAgentUIMessage inference.
-function _getProtoAgent() {
-  return new ToolLoopAgent({
-    model: getPrimaryModel(),
-    stopWhen: stepCountIs(8),
-    tools: createFormEditTools({ pages: [] }),
-  });
-}
-
-export type FormEditAgentUIMessage = InferAgentUIMessage<ReturnType<typeof _getProtoAgent>>;
+export type FormEditAgentUIMessage = InferAgentUIMessage<ReturnType<typeof createFormEditAgent>>;
