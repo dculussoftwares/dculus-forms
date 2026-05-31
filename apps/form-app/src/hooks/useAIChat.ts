@@ -1,5 +1,5 @@
 // apps/form-app/src/hooks/useAIChat.ts
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useMutation, useQuery } from '@apollo/client';
@@ -44,6 +44,7 @@ export function useAIChat({
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const { canUndo, beginBatch, clearBatch, undo } = useYjsUndoManager();
   const appliedToolCallIds = useRef(new Set<string>());
+  const currentPageIdRef = useRef<string | undefined>(undefined);
 
   // ── Conversation management (Apollo) ─────────────────────────────────────
   const { data: conversationsData, refetch: refetchConversations } = useQuery(
@@ -61,19 +62,19 @@ export function useAIChat({
   const [renameConvMutation] = useMutation(RENAME_AI_CHAT_CONVERSATION);
 
   // ── Build initialMessages from Apollo conversation data ───────────────────
-  const initialMessages: FormEditAgentUIMessage[] =
-    (activeConvData?.getAIChatConversation?.messages ?? []).map(
-      (m: { data: unknown }) => m.data as FormEditAgentUIMessage
-    );
+  const apolloMessages = activeConvData?.getAIChatConversation?.messages;
+  const initialMessages = useMemo<FormEditAgentUIMessage[]>(
+    () => (apolloMessages ?? []).map((m: { data: unknown }) => m.data as FormEditAgentUIMessage),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [apolloMessages]
+  );
 
   // ── useChat — streaming + message state ───────────────────────────────────
-  const currentPageId: string | undefined =
-    (store as any).selectedPageId ?? (store.pages as any[])[0]?.id;
+  // Keep a ref so the transport closure always reads the latest page ID at send-time
+  currentPageIdRef.current = (store as any).selectedPageId ?? (store.pages as any[])[0]?.id;
 
-  const { messages: rawMessages, sendMessage, status, stop } = useChat({
-    id: activeConversationId ?? '__no_conversation__',
-    messages: initialMessages as any,
-    transport: new DefaultChatTransport({
+  const transport = useMemo(
+    () => new DefaultChatTransport({
       api: `${API_URL}/api/ai/chat`,
       credentials: 'include',
       prepareSendMessagesRequest: ({ messages: allMsgs }) => ({
@@ -81,10 +82,18 @@ export function useAIChat({
           message: allMsgs[allMsgs.length - 1],
           conversationId: activeConversationId,
           organizationId,
-          currentPageId,
+          currentPageId: currentPageIdRef.current,
         },
       }),
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeConversationId, organizationId]
+  );
+
+  const { messages: rawMessages, sendMessage, status, stop } = useChat({
+    id: activeConversationId ?? '__no_conversation__',
+    messages: initialMessages as any,
+    transport,
     onError: (error) => {
       const msg = error.message ?? String(error);
       const isLimit = msg.includes('token limit');
