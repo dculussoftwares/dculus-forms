@@ -59,8 +59,10 @@ export async function renameConversation(id: string, userId: string, title: stri
 }
 
 export async function saveUserMessage(conversationId: string, content: string) {
+  // TODO(Task 4): Replace with full UIMessage storage
+  const data = { role: 'user', content, parts: [{ type: 'text', text: content }] };
   return prisma.aIChatMessage.create({
-    data: { conversationId, role: 'user', content },
+    data: { conversationId, role: 'user', content, data },
   });
 }
 
@@ -70,8 +72,10 @@ export async function saveAssistantMessage(
   operations: object[],
   tokensUsed: number
 ) {
+  // TODO(Task 4): Replace with full UIMessage storage (operations embedded in parts)
+  const data = { role: 'assistant', content, parts: [{ type: 'text', text: content }] };
   return prisma.aIChatMessage.create({
-    data: { conversationId, role: 'assistant', content, operations, tokensUsed },
+    data: { conversationId, role: 'assistant', content, tokensUsed, data },
   });
 }
 

@@ -1275,7 +1275,8 @@ export const typeDefs = gql`
     conversationId: ID!
     role: String!
     content: String!
-    operations: [JSON!]
+    data: JSON!
+    tokensUsed: Int!
     createdAt: String!
   }
 

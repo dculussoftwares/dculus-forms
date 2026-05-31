@@ -524,7 +524,7 @@ model AIUsage {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  @@index([organizationId, periodStart])
+  @@unique([organizationId, periodStart])
   @@map("ai_usage")
 }
 
@@ -551,7 +551,7 @@ model AIChatMessage {
   conversationId String
   role           String
   content        String   @db.Text
-  operations     Json?
+  data           Json
   tokensUsed     Int      @default(0)
   createdAt      DateTime @default(now())
 
