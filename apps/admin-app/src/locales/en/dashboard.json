@@ -14,19 +14,26 @@
     "files": "files",
     "tables": "tables"
   },
+  "plans": {
+    "title": "Plan Distribution",
+    "free": "Free",
+    "starter": "Starter",
+    "advanced": "Advanced",
+    "orgs": "orgs"
+  },
+  "usageAlerts": {
+    "title": "{{count}} organization(s) are at ≥80% of their submission limit",
+    "viewAll": "View"
+  },
   "recentActivity": {
     "recentOrganizations": "Recent Organizations",
-    "noOrganizations": "No organizations data available yet",
-    "connectBackend": "Connect your GraphQL backend to see real data"
+    "noOrganizations": "No organizations yet"
   },
   "systemHealth": {
     "title": "System Health",
-    "database": "Database",
-    "graphqlApi": "GraphQL API",
-    "authentication": "Authentication",
-    "connected": "Connected",
-    "online": "Online",
-    "working": "Working"
+    "ok": "OK",
+    "degraded": "Degraded",
+    "error": "Error"
   },
   "error": {
     "unableToLoad": "Unable to load dashboard",
