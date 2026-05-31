@@ -24,7 +24,7 @@ export const GET_AI_CHAT_CONVERSATION = gql`
         id
         role
         content
-        operations
+        data
         createdAt
       }
     }
@@ -43,7 +43,7 @@ export const CREATE_AI_CHAT_CONVERSATION = gql`
         id
         role
         content
-        operations
+        data
         createdAt
       }
     }

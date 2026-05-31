@@ -16,6 +16,7 @@
     "test:coverage:open": "pnpm test:coverage && open coverage/lcov-report/index.html"
   },
   "dependencies": {
+    "@ai-sdk/react": "3.0.195",
     "@apollo/client": "^3.13.8",
     "@dculus/plugins": "workspace:*",
     "@dculus/types": "workspace:*",
@@ -32,6 +33,7 @@
     "@radix-ui/react-select": "2.2.5",
     "@radix-ui/react-slot": "1.2.3",
     "@sentry/react": "10.53.1",
+    "ai": "6.0.191",
     "apollo-upload-client": "18.0.1",
     "better-auth": "1.4.17",
     "canvas-confetti": "1.9.3",
