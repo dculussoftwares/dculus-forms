@@ -517,6 +517,7 @@ export const adminResolvers = {
                 sharingScope: true,
               },
             },
+            subscription: true,
           },
         });
 
@@ -538,19 +539,33 @@ export const adminResolvers = {
           name: organization.name,
           slug: organization.slug,
           logo: organization.logo,
-          createdAt: organization.createdAt.toISOString(),
+          createdAt: serializeDate(organization.createdAt)!,
           members: organization.members.map(m => ({
             userId: m.user.id,
             userName: m.user.name,
             userEmail: m.user.email,
             userImage: m.user.image,
             role: m.role,
-            createdAt: m.createdAt.toISOString(),
+            createdAt: serializeDate(m.createdAt)!,
           })),
           stats: {
             totalForms: organization.forms.length,
             totalResponses,
           },
+          subscription: organization.subscription
+            ? {
+                planId: organization.subscription.planId,
+                status: organization.subscription.status,
+                viewsUsed: organization.subscription.viewsUsed,
+                submissionsUsed: organization.subscription.submissionsUsed,
+                viewsLimit: organization.subscription.viewsLimit,
+                submissionsLimit: organization.subscription.submissionsLimit,
+                currentPeriodStart: serializeDate(organization.subscription.currentPeriodStart)!,
+                currentPeriodEnd: serializeDate(organization.subscription.currentPeriodEnd)!,
+                chargebeeCustomerId: organization.subscription.chargebeeCustomerId,
+                chargebeeSubscriptionId: organization.subscription.chargebeeSubscriptionId,
+              }
+            : null,
         };
       } catch (error) {
         logger.error('Error fetching admin organization by id:', error);

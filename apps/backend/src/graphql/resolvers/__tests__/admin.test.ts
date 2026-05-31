@@ -834,6 +834,7 @@ describe('Admin Resolvers', () => {
           organizationId: 'org-123',
         },
       ],
+      subscription: null,
     };
 
     it('should return organization details with stats', async () => {
@@ -872,6 +873,7 @@ describe('Admin Resolvers', () => {
               sharingScope: true,
             },
           },
+          subscription: true,
         },
       });
 
@@ -903,6 +905,7 @@ describe('Admin Resolvers', () => {
           totalForms: 1,
           totalResponses: 50,
         },
+        subscription: null,
       });
     });
 
@@ -935,6 +938,32 @@ describe('Admin Resolvers', () => {
       await expect(
         adminResolvers.Query.adminOrganizationById({}, { id: 'org-123' }, mockAdminContext)
       ).rejects.toThrow('Failed to fetch organization');
+    });
+
+    it('should include subscription data in adminOrganizationById', async () => {
+      const org = {
+        id: 'org-1', name: 'Acme', slug: 'acme', logo: null,
+        createdAt: new Date('2026-01-01'),
+        members: [],
+        forms: [],
+        subscription: {
+          planId: 'starter', status: 'active',
+          viewsUsed: 0, submissionsUsed: 500,
+          viewsLimit: null, submissionsLimit: 10000,
+          currentPeriodStart: new Date('2026-05-01'),
+          currentPeriodEnd: new Date('2026-05-31'),
+          chargebeeCustomerId: 'org_org-1',
+          chargebeeSubscriptionId: 'sub_abc123',
+        },
+      };
+      vi.mocked(prisma.organization.findUnique).mockResolvedValue(org as any);
+      vi.mocked(prisma.response.count).mockResolvedValue(5);
+
+      const result = await adminResolvers.Query.adminOrganizationById({}, { id: 'org-1' }, mockAdminContext);
+
+      expect(result.subscription?.planId).toBe('starter');
+      expect(result.subscription?.currentPeriodStart).toBe('2026-05-01T00:00:00.000Z');
+      expect(result.subscription?.chargebeeCustomerId).toBe('org_org-1');
     });
   });
 
@@ -1017,6 +1046,7 @@ describe('Admin Resolvers', () => {
         createdAt: new Date('2024-01-01'),
         members: [] as any[],
         forms: [] as any[],
+        subscription: null,
       };
 
       vi.mocked(prisma.organization.findUnique).mockResolvedValue(mockDetailedOrganization as any);
