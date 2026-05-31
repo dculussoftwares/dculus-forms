@@ -8,6 +8,9 @@ interface DashboardStats {
   averageCompletionTime: string;
   responsesToday: number;
   responsesThisWeek: number;
+  trendResponsesToday: number | null;
+  trendThisWeek: number | null;
+  trendResponseRate: number | null;
 }
 
 interface StatsGridProps {
@@ -50,7 +53,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon, iconB
               ? <ArrowUp className="w-3 h-3" />
               : <ArrowDown className="w-3 h-3" />
             }
-            {trend.label ?? `${Math.abs(trend.value)}%`}
+            {`${Math.round(Math.abs(trend.value))}%`}
           </div>
         )}
       </div>
@@ -71,11 +74,8 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon, iconB
 export const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
   const { t } = useTranslation('formDashboard');
 
-  const positiveTrend = (value: number) => ({
-    value,
-    isPositive: true,
-    label: t('statsTrend.positive', { values: { value: Math.abs(value) } }),
-  });
+  const makeTrend = (value: number | null) =>
+    value == null ? undefined : { value, isPositive: value >= 0 };
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -87,7 +87,7 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
         icon={<FileText className="w-4 h-4" />}
         iconBg="var(--tf-icon-salmon)"
         iconColor="var(--tf-dark)"
-        trend={stats.responsesToday > 0 ? positiveTrend(12) : undefined}
+        trend={makeTrend(stats.trendResponsesToday)}
       />
 
       {/* Response Rate — teal icon */}
@@ -98,7 +98,7 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
         icon={<TrendingUp className="w-4 h-4" />}
         iconBg="var(--tf-icon-teal)"
         iconColor="var(--tf-green)"
-        trend={positiveTrend(8)}
+        trend={makeTrend(stats.trendResponseRate)}
       />
 
       {/* Avg Completion Time — lavender icon */}
@@ -119,7 +119,7 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
         icon={<Calendar className="w-4 h-4" />}
         iconBg="var(--tf-icon-gray)"
         iconColor="var(--tf-text)"
-        trend={positiveTrend(15)}
+        trend={makeTrend(stats.trendThisWeek)}
       />
     </div>
   );
