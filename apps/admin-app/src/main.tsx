@@ -6,6 +6,7 @@ import App from './App.tsx';
 import { AuthProvider } from './hooks/useAuth';
 import { LocaleProvider } from './contexts/LocaleContext';
 import { client } from './services/apolloClient';
+import { Toaster } from '@dculus/ui';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -15,6 +16,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <AuthProvider>
           <BrowserRouter>
             <App />
+            <Toaster />
           </BrowserRouter>
         </AuthProvider>
       </ApolloProvider>

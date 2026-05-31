@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
 export const ADMIN_ORGANIZATIONS_QUERY = gql`
-  query AdminOrganizations($limit: Int, $offset: Int) {
-    adminOrganizations(limit: $limit, offset: $offset) {
+  query AdminOrganizations($limit: Int, $offset: Int, $search: String) {
+    adminOrganizations(limit: $limit, offset: $offset, search: $search) {
       organizations {
         id
         name
@@ -12,6 +12,10 @@ export const ADMIN_ORGANIZATIONS_QUERY = gql`
         updatedAt
         memberCount
         formCount
+        planId
+        subscriptionStatus
+        submissionsUsed
+        submissionsLimit
       }
       total
       hasMore
@@ -61,6 +65,16 @@ export const ADMIN_STATS_QUERY = gql`
       fileCount
       postgresDbSize
       postgresTableCount
+      freePlanCount
+      starterPlanCount
+      advancedPlanCount
+      orgsNearLimit {
+        orgId
+        orgName
+        submissionsUsed
+        submissionsLimit
+        usagePercent
+      }
     }
   }
 `;
