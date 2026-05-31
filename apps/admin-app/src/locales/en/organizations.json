@@ -5,6 +5,15 @@
   "forms": "forms",
   "created": "Created",
   "viewDetails": "View Details",
+  "search": {
+    "placeholder": "Search organizations by name or slug..."
+  },
+  "plan": {
+    "columnHeader": "Plan",
+    "free": "Free",
+    "starter": "Starter",
+    "advanced": "Advanced"
+  },
   "error": {
     "unableToLoad": "Unable to load organizations",
     "checkConnection": "Please check your connection and try again."
