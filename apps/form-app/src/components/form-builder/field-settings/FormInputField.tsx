@@ -1,13 +1,13 @@
 import React from 'react';
-import { Controller, Control } from 'react-hook-form';
+import { Controller, Control, FieldValues, FieldPath } from 'react-hook-form';
 import { Input, Label, Textarea } from '@dculus/ui';
 import { ErrorMessage } from './ErrorMessage';
 import { useFieldSettingsConstants } from './useFieldSettingsConstants';
 import { FieldValidationError } from './types';
 
-interface FormInputFieldProps {
+interface FormInputFieldProps<T extends FieldValues = FieldValues> {
   /** Field name for form control */
-  name: string;
+  name: FieldPath<T>;
   /** Display label for the field */
   label: string;
   /** Input placeholder text */
@@ -23,7 +23,7 @@ interface FormInputFieldProps {
   /** Maximum value for number inputs */
   max?: string | number;
   /** React Hook Form control */
-  control: Control<any>;
+  control: Control<T>;
   /** Form validation errors */
   error?: FieldValidationError;
   /** Whether the input is disabled */
@@ -41,7 +41,7 @@ interface FormInputFieldProps {
  * Reusable form input field component with consistent styling and error handling
  * Reduces duplication across field settings components
  */
-export const FormInputField: React.FC<FormInputFieldProps> = ({
+export function FormInputField<T extends FieldValues = FieldValues>({
   name,
   label,
   placeholder,
@@ -55,7 +55,7 @@ export const FormInputField: React.FC<FormInputFieldProps> = ({
   disabled = false,
   className = '',
   transform,
-}) => {
+}: FormInputFieldProps<T>) {
   const constants = useFieldSettingsConstants();
   const hasError = Boolean(error);
   const inputClassName = `${constants.CSS_CLASSES.TEXT_SMALL} ${
@@ -119,4 +119,4 @@ export const FormInputField: React.FC<FormInputFieldProps> = ({
       <ErrorMessage error={error} />
     </div>
   );
-};
+}

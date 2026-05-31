@@ -24,7 +24,7 @@ export interface FormPublishedEmailData {
 export interface SendOTPEmailOptions {
   to: string;
   otp: string;
-  type: 'sign-in' | 'sign-up' | 'email-verification' | 'forget-password';
+  type: 'sign-in' | 'sign-up' | 'email-verification' | 'forget-password' | 'change-email';
 }
 
 export interface SendResetPasswordEmailOptions {

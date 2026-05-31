@@ -131,7 +131,6 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
     .map((country) => ({
       country: getCountryCode(country.code),
       value: country.count,
-      name: country.name,
     }))
     .filter((item) => item.country); // Filter out countries we couldn't map
 

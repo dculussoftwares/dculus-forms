@@ -60,12 +60,12 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
     // Resolve session once — used by all type-specific auth checks below.
     // form-app sends cookies (credentials: 'include'); public form viewer sends nothing.
-    let callerUser: { id: string; role?: string } | null = null;
+    let callerUser: { id: string; role?: string | null } | null = null;
     try {
       const sessionData = await auth.api.getSession({
         headers: fromNodeHeaders(req.headers),
       });
-      callerUser = sessionData?.user ?? null;
+      callerUser = sessionData?.user ? { id: sessionData.user.id, role: sessionData.user.role } : null;
     } catch {
       // Non-fatal: unauthenticated callers are handled per-type below
     }

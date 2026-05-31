@@ -1,16 +1,15 @@
-import React from 'react';
-import { Controller, Control } from 'react-hook-form';
+import { Controller, Control, FieldValues, FieldPath } from 'react-hook-form';
 import { DatePicker, Label } from '@dculus/ui';
 import { ErrorMessage } from './ErrorMessage';
 import { useFieldSettingsConstants } from './useFieldSettingsConstants';
 import { FieldValidationError } from './types';
 import { parseLocalDate, formatLocalDate } from '@dculus/utils';
 
-interface FormDatePickerFieldProps {
-  name: string;
+interface FormDatePickerFieldProps<T extends FieldValues = FieldValues> {
+  name: FieldPath<T>;
   label: string;
   placeholder?: string;
-  control: Control<any>;
+  control: Control<T>;
   error?: FieldValidationError;
   disabled?: boolean;
   className?: string;
@@ -25,7 +24,7 @@ interface FormDatePickerFieldProps {
  * for the picker. Uses parseLocalDate / formatLocalDate instead of new Date(string)
  * / toISOString() to prevent the off-by-one timezone bug.
  */
-export const FormDatePickerField: React.FC<FormDatePickerFieldProps> = ({
+export function FormDatePickerField<T extends FieldValues = FieldValues>({
   name,
   label,
   placeholder,
@@ -35,7 +34,7 @@ export const FormDatePickerField: React.FC<FormDatePickerFieldProps> = ({
   className = '',
   minDate,
   maxDate,
-}) => {
+}: FormDatePickerFieldProps<T>) {
   const constants = useFieldSettingsConstants();
   const hasError = Boolean(error);
   const inputId = `field-${name}`;
@@ -75,4 +74,4 @@ export const FormDatePickerField: React.FC<FormDatePickerFieldProps> = ({
       <ErrorMessage error={error} />
     </div>
   );
-};
+}

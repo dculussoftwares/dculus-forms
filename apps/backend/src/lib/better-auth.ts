@@ -31,7 +31,7 @@ const getTrustedOrigins = (): string[] => {
   return allOrigins;
 };
 
-export const auth: ReturnType<typeof betterAuth> = betterAuth({
+export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
   }),

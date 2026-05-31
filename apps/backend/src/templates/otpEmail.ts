@@ -1,6 +1,6 @@
 export interface OTPEmailData {
   otp: string;
-  type: 'sign-in' | 'sign-up' | 'email-verification' | 'forget-password';
+  type: 'sign-in' | 'sign-up' | 'email-verification' | 'forget-password' | 'change-email';
   expiresInMinutes?: number;
 }
 
