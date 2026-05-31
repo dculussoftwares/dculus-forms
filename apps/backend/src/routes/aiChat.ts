@@ -73,15 +73,25 @@ function buildSystemPrompt(currentPageId: string | undefined, schema: { pages: a
     ? `The user is currently viewing page ID: ${currentPageId}. When the user says "this page" or "current page", they mean this page.`
     : 'The user is on the first page.';
 
-  const schemaContext = schema.pages.length > 0
-    ? `\nCurrent form structure (use this before calling listFields for simple edits):\n${JSON.stringify(schema, null, 2)}`
+  const totalPages = schema.pages.length;
+  const schemaContext = totalPages > 0
+    ? `\nCurrent form has ${totalPages} page${totalPages !== 1 ? 's' : ''}. Structure:\n${JSON.stringify(
+        schema.pages.map((p: any, i: number) => ({
+          pageNumber: i + 1,
+          id: p.id,
+          title: p.title ?? `Page ${i + 1}`,
+          fieldCount: (p.fields ?? []).length,
+        })),
+        null, 2
+      )}`
     : '';
 
   return `You are an AI assistant that helps users edit their multi-page form.
 ${pageContext}
 - Call listFields only when the above schema is insufficient or the user asks about all fields.
 - Use getField to read a field's full details before updating it.
-- When the user mentions "page 1", "page 2" etc., match by position (first page = page 1).
+- When the user mentions "page 1", "page 2" etc., match by position using the page numbers shown above.
+- IMPORTANT: If the user references a page number that does not exist (e.g. "page 3" when there are only 2 pages), immediately tell them how many pages the form has and ask which page they meant. Never silently add to a different page.
 - Make only the changes the user requests. Confirm what you did in your final text response.
 - You can add pages with addPage and remove pages with removePage. Never call removePage when there is only one page.
 ${schemaContext}`;

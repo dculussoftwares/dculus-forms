@@ -32,19 +32,23 @@ describe('createFormEditTools', () => {
 });
 
 describe('listFields', () => {
-  it('returns all pages with field summaries when no pageId given', async () => {
+  it('returns all pages with field summaries, page numbers, and titles when no pageId given', async () => {
     const tools = createFormEditTools(mockSchema);
     const result = await tools.listFields.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.totalPages).toBe(2);
     expect(result.pages).toHaveLength(2);
+    expect(result.pages[0].pageNumber).toBe(1);
+    expect(result.pages[1].pageNumber).toBe(2);
     expect(result.pages[0].fields).toHaveLength(2);
     expect(result.pages[0].fields[0]).toEqual({ id: 'f-1', type: 'TEXT_INPUT_FIELD', label: 'Name', required: true });
   });
 
-  it('filters to a specific page when pageId given', async () => {
+  it('filters to a specific page when pageId given and returns pageNumber', async () => {
     const tools = createFormEditTools(mockSchema);
     const result = await tools.listFields.execute!({ pageId: 'page-2' }, { messages: [], toolCallId: 'test' }) as any;
     expect(result.pages).toHaveLength(1);
     expect(result.pages[0].id).toBe('page-2');
+    expect(result.pages[0].pageNumber).toBe(2);
   });
 
   it('returns empty pages array for empty schema', async () => {

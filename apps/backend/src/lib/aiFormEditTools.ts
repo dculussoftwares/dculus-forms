@@ -13,8 +13,11 @@ export function createFormEditTools(schema: { pages: any[] }) {
         const pages: any[] = schema.pages ?? [];
         const filtered = pageId ? pages.filter((p: any) => p.id === pageId) : pages;
         return {
+          totalPages: pages.length,
           pages: filtered.map((p: any) => ({
+            pageNumber: pages.indexOf(p) + 1,
             id: p.id,
+            title: p.title ?? `Page ${pages.indexOf(p) + 1}`,
             fields: (p.fields ?? []).map((f: any) => ({
               id: f.id,
               type: f.type,
@@ -55,7 +58,7 @@ export function createFormEditTools(schema: { pages: any[] }) {
 
     addField: tool({
       description:
-        'Add a new field to a page. Use insertAfterFieldId to control position; pass null to append at the end.',
+        'Add a new field to a page. Use the pageId from listFields (match by pageNumber for user-facing page numbers). Use insertAfterFieldId to control position; pass null to append at the end.',
       inputSchema: z.object({
         pageId: z.string().describe('ID of the page to add the field to'),
         insertAfterFieldId: z.string().nullable().describe('Insert after this field ID; null to append'),
