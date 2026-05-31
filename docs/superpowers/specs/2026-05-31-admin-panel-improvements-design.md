@@ -38,10 +38,17 @@ Covered in Section 2 below.
 
 ## Section 2: Dashboard Improvements
 
-### 2.1 Top Loading Bar
-**Library:** `nprogress` (already widely used, ~1.5 KB).
+### 2.1 Dashboard Loading States
+Use the existing patterns from `@dculus/ui` and the current codebase — no new libraries:
 
-**Integration:** Custom Apollo Link (`NProgressLink`) that calls `NProgress.start()` on each operation start and `NProgress.done()` on completion/error. Registered in the Apollo Client chain in `apps/admin-app/src/lib/apollo.ts`. Import NProgress CSS in `main.tsx`. No changes to individual page components.
+- **Stat cards** (organizations, users, forms, responses): already use `animate-pulse` skeleton divs while `loading === true`. Extend the same pattern to all new sections added to the dashboard.
+- **Plan distribution chips**: render 3 `animate-pulse rounded-full h-6 w-20` skeleton pills while loading.
+- **Usage alerts strip**: render an `animate-pulse rounded-xl h-12` skeleton bar while loading.
+- **Recent Organizations table**: render 5 `animate-pulse rounded-xl h-10` skeleton rows while loading.
+- **System Health**: render 4 `animate-pulse rounded-full h-5 w-24` skeleton badges while `adminSystemHealth` query is in-flight.
+- **Page-level / section-level full loading**: use `<LoadingSpinner />` from `@dculus/ui` (already imported in `App.tsx`, `OrganizationsPage`, `TemplatesPage`). Use `<LoadingSpinner className="mr-2 h-4 w-4" />` inline inside action buttons during mutations.
+
+No Apollo Link changes. No new dependencies. Consistent with every other loading state in the admin app.
 
 ```typescript
 // NProgressLink wires into Apollo Client link chain
