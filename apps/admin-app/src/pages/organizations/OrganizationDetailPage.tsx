@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Card, CardContent, LoadingSpinner, toastSuccess, toastError } from '@dculus/ui';
 import {
   ArrowLeft, Building2, Users, FileText, BarChart3,
-  Calendar, Mail, ExternalLink, AlertTriangle, CreditCard, RefreshCw,
+  Calendar, Mail, ExternalLink, AlertTriangle, CreditCard, RefreshCw, Loader2,
 } from 'lucide-react';
 import {
   ADMIN_ORGANIZATION_BY_ID_QUERY,
@@ -384,7 +384,7 @@ export const OrganizationDetailPage = () => {
                     size="sm"
                   >
                     {changingPlan
-                      ? <><LoadingSpinner className="mr-2 h-4 w-4" />Changing...</>
+                      ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Changing...</>
                       : 'Change Plan'
                     }
                   </Button>
@@ -407,7 +407,7 @@ export const OrganizationDetailPage = () => {
                       </div>
                       <Button variant="outline" size="sm" onClick={() => setConfirmModal('resetUsage')} disabled={resettingUsage}>
                         {resettingUsage
-                          ? <><LoadingSpinner className="mr-2 h-4 w-4" />Resetting...</>
+                          ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Resetting...</>
                           : <><RefreshCw className="h-3.5 w-3.5 mr-1" />Reset</>
                         }
                       </Button>
@@ -495,7 +495,7 @@ export const OrganizationDetailPage = () => {
                 onClick={() => resetUsage({ variables: { orgId } })}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
-                {resettingUsage ? <><LoadingSpinner className="mr-2 h-4 w-4" />Resetting...</> : 'Reset'}
+                {resettingUsage ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Resetting...</> : 'Reset'}
               </Button>
             </div>
           </div>

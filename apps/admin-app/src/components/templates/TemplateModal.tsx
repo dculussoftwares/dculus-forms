@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQuery } from '@apollo/client';
 import { Button, Input, Label, Textarea, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, LoadingSpinner } from '@dculus/ui';
-import { X, FileText, Layout, Code } from 'lucide-react';
+import { X, FileText, Layout, Code, Loader2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { FormSchema } from '@dculus/types';
 import { CREATE_TEMPLATE, UPDATE_TEMPLATE, GET_TEMPLATE, GET_TEMPLATE_CATEGORIES } from '../../graphql/templates';
@@ -532,7 +532,7 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
                 >
                   {isLoading ? (
                     <>
-                      <LoadingSpinner className="mr-2 h-4 w-4" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       {mode === 'create' ? 'Creating...' : 'Saving...'}
                     </>
                   ) : (
