@@ -21,33 +21,21 @@ vi.mock('../../lib/ai.js', () => ({
   getFastModel: vi.fn(() => 'mock-fast-model'),
 }));
 
-vi.mock('../../lib/aiFormEditTools.js', () => ({
-  createFormEditTools: vi.fn(() => ({})),
-}));
-
 vi.mock('ai', () => ({
   generateText: vi.fn().mockResolvedValue({ text: 'Short title' }),
   stepCountIs: vi.fn((n: number) => ({ type: 'stepCount', count: n })),
-  streamText: vi.fn().mockReturnValue({
-    fullStream: (async function* () {
-      yield { type: 'text-delta', textDelta: 'Hello ' };
-      yield { type: 'text-delta', textDelta: 'world' };
-      yield { type: 'finish', finishReason: 'stop', usage: { totalTokens: 50 } };
-    })(),
-  }),
 }));
 
 import { prisma } from '../../lib/prisma.js';
 import {
   createConversation,
   listConversations,
-  saveUserMessage,
-  buildChatStream,
+  loadConversationMessages,
+  saveConversationMessages,
+  autoGenerateTitle,
 } from '../aiChatService.js';
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+beforeEach(() => vi.clearAllMocks());
 
 describe('createConversation', () => {
   it('calls prisma.aIChatConversation.create with correct fields', async () => {
@@ -73,39 +61,72 @@ describe('listConversations', () => {
   });
 });
 
-describe('saveUserMessage', () => {
-  it('creates a message with role=user', async () => {
-    (prisma.aIChatMessage.create as any).mockResolvedValue({ id: 'msg_1', role: 'user', content: 'Hello' });
-    const result = await saveUserMessage('conv_1', 'Hello');
-    expect(prisma.aIChatMessage.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ conversationId: 'conv_1', role: 'user', content: 'Hello' }),
-    });
-    expect(result.role).toBe('user');
+describe('loadConversationMessages', () => {
+  it('returns UIMessage[] from data column', async () => {
+    const uiMsg = { id: 'msg-1', role: 'user', content: 'Hello', parts: [{ type: 'text', text: 'Hello' }] };
+    (prisma.aIChatMessage.findMany as any).mockResolvedValue([{ data: uiMsg }]);
+    const result = await loadConversationMessages('conv_1');
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual(uiMsg);
+  });
+
+  it('returns empty array when no messages', async () => {
+    (prisma.aIChatMessage.findMany as any).mockResolvedValue([]);
+    const result = await loadConversationMessages('conv_1');
+    expect(result).toEqual([]);
   });
 });
 
-describe('buildChatStream', () => {
-  it('returns an object with fullStream AsyncIterable', async () => {
-    (prisma.aIChatConversation.findFirst as any).mockResolvedValue({
-      id: 'conv_1', title: 'Test', userId: 'user_1', formId: 'form_1',
+describe('saveConversationMessages', () => {
+  it('creates a DB row for each message', async () => {
+    (prisma.aIChatMessage.create as any).mockResolvedValue({});
+    (prisma.aIChatConversation.update as any).mockResolvedValue({});
+
+    const messages = [
+      { id: 'u1', role: 'user', content: 'Hi', parts: [{ type: 'text', text: 'Hi' }] },
+      { id: 'a1', role: 'assistant', content: 'Hello!', parts: [{ type: 'text', text: 'Hello!' }] },
+    ];
+
+    await saveConversationMessages('conv_1', messages as any, 42);
+
+    expect(prisma.aIChatMessage.create).toHaveBeenCalledTimes(2);
+    // tokensUsed on last (assistant) message
+    expect(prisma.aIChatMessage.create).toHaveBeenLastCalledWith({
+      data: expect.objectContaining({ role: 'assistant', tokensUsed: 42 }),
     });
-    (prisma.aIChatMessage.findMany as any).mockResolvedValue([]);
-    const result = await buildChatStream('conv_1', 'user_1');
-    expect(result).toHaveProperty('fullStream');
-    expect(typeof result.fullStream[Symbol.asyncIterator]).toBe('function');
+    expect(prisma.aIChatConversation.update).toHaveBeenCalledWith({
+      where: { id: 'conv_1' },
+      data: { updatedAt: expect.any(Date) },
+    });
   });
 
-  it('accepts an optional currentPageId', async () => {
-    (prisma.aIChatConversation.findFirst as any).mockResolvedValue({
-      id: 'conv_1', title: 'Test', userId: 'user_1', formId: 'form_1',
-    });
-    (prisma.aIChatMessage.findMany as any).mockResolvedValue([]);
-    const result = await buildChatStream('conv_1', 'user_1', 'page_2');
-    expect(result).toHaveProperty('fullStream');
-  });
+  it('sets tokensUsed=0 for user messages', async () => {
+    (prisma.aIChatMessage.create as any).mockResolvedValue({});
+    (prisma.aIChatConversation.update as any).mockResolvedValue({});
 
-  it('throws if conversation not found', async () => {
-    (prisma.aIChatConversation.findFirst as any).mockResolvedValue(null);
-    await expect(buildChatStream('missing', 'user_1')).rejects.toThrow('Conversation not found');
+    const messages = [
+      { id: 'u1', role: 'user', content: 'Hi', parts: [{ type: 'text', text: 'Hi' }] },
+    ];
+    await saveConversationMessages('conv_1', messages as any, 100);
+
+    expect(prisma.aIChatMessage.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ role: 'user', tokensUsed: 0 }),
+    });
+  });
+});
+
+describe('autoGenerateTitle', () => {
+  it('calls generateText and updates conversation title', async () => {
+    const { generateText } = await import('ai');
+    (generateText as any).mockResolvedValue({ text: 'My Form Title' });
+    (prisma.aIChatConversation.update as any).mockResolvedValue({});
+
+    autoGenerateTitle('conv_1', 'Help me build a contact form');
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    expect(prisma.aIChatConversation.update).toHaveBeenCalledWith({
+      where: { id: 'conv_1' },
+      data: { title: 'My Form Title' },
+    });
   });
 });

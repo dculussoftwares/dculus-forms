@@ -1,7 +1,7 @@
-import { generateText, streamText, stepCountIs } from 'ai';
+import { generateText } from 'ai';
+import type { UIMessage } from 'ai';
 import { prisma } from '../lib/prisma.js';
-import { getPrimaryModel, getFastModel } from '../lib/ai.js';
-import { createFormEditTools } from '../lib/aiFormEditTools.js';
+import { getFastModel } from '../lib/ai.js';
 import { logger } from '../lib/logger.js';
 
 export async function createConversation(
@@ -58,74 +58,39 @@ export async function renameConversation(id: string, userId: string, title: stri
   return prisma.aIChatConversation.update({ where: { id }, data: { title: safeTitle } });
 }
 
-export async function saveUserMessage(conversationId: string, content: string) {
-  // TODO(Task 4): Replace with full UIMessage storage
-  const data = { role: 'user', content, parts: [{ type: 'text', text: content }] };
-  return prisma.aIChatMessage.create({
-    data: { conversationId, role: 'user', content, data },
-  });
-}
-
-export async function saveAssistantMessage(
-  conversationId: string,
-  content: string,
-  operations: object[],
-  tokensUsed: number
-) {
-  // TODO(Task 4): Replace with full UIMessage storage (operations embedded in parts)
-  const data = { role: 'assistant', content, parts: [{ type: 'text', text: content }] };
-  return prisma.aIChatMessage.create({
-    data: { conversationId, role: 'assistant', content, tokensUsed, data },
-  });
-}
-
-export async function buildChatStream(
-  conversationId: string,
-  userId: string,
-  currentPageId?: string,
-) {
-  const conv = await prisma.aIChatConversation.findFirst({
-    where: { id: conversationId, userId },
-  });
-  if (!conv) throw new Error('Conversation not found');
-
-  const history = await prisma.aIChatMessage.findMany({
+export async function loadConversationMessages(conversationId: string): Promise<UIMessage[]> {
+  const messages = await prisma.aIChatMessage.findMany({
     where: { conversationId },
     orderBy: { createdAt: 'asc' },
+    select: { data: true },
   });
+  return messages.map((m) => m.data as UIMessage);
+}
 
-  const pageContext = currentPageId
-    ? `The user is currently viewing page ID: ${currentPageId}. When the user says "this page" or "current page", they mean this page.`
-    : 'The user is on the first page.';
-
-  const systemPrompt = `You are an AI assistant that helps users edit their multi-page form.
-
-Key rules:
-- Always call listFields (without a pageId) first to see ALL pages and their fields before making edits.
-- Use getField to read a field's full details before updating it.
-- When adding a field to a specific page, use that page's exact ID from listFields.
-- ${pageContext}
-- When the user mentions "page 1", "page 2" etc., match by position in the listFields result (first page = page 1, second = page 2).
-- Make only the changes the user requests. Confirm what you did in your final text response.
-- You can add pages with addPage (insertAfterPageId: null appends at end) and remove pages with removePage. Never call removePage when there is only one page.`;
-
-  const messages = history.map((m) => ({
-    role: m.role as 'user' | 'assistant',
-    content: m.content,
-  }));
-
-  const tools = createFormEditTools(conv.formId);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const stream = streamText({
-    model: getPrimaryModel(),
-    system: systemPrompt,
-    messages,
-    tools,
-    stopWhen: stepCountIs(8), // allows listFields + getField + up to 6 mutation calls per turn
-  }) as unknown as { fullStream: AsyncIterable<any>; text: Promise<string>; usage: Promise<{ totalTokens: number }> };
-
-  return stream;
+export async function saveConversationMessages(
+  conversationId: string,
+  messages: UIMessage[],
+  tokensUsed: number
+): Promise<void> {
+  const savePromises = messages.map((msg, i) => {
+    const isLast = i === messages.length - 1;
+    const textPart = (msg.parts as any[])?.find((p: any) => p.type === 'text');
+    const textContent = textPart?.text ?? (msg as any).content ?? '';
+    return prisma.aIChatMessage.create({
+      data: {
+        conversationId,
+        role: msg.role,
+        content: textContent,
+        data: msg as any,
+        tokensUsed: isLast && msg.role === 'assistant' ? tokensUsed : 0,
+      },
+    });
+  });
+  await Promise.all(savePromises);
+  await prisma.aIChatConversation.update({
+    where: { id: conversationId },
+    data: { updatedAt: new Date() },
+  });
 }
 
 // Fire-and-forget: generates a short title from the first user message
