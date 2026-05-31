@@ -13,6 +13,9 @@ interface DashboardStats {
   responseRate: string;
   responsesToday: number;
   responsesThisWeek: number;
+  trendResponsesToday: number | null;
+  trendThisWeek: number | null;
+  trendResponseRate: number | null;
 }
 
 export const useFormDashboard = (formId: string | undefined) => {
@@ -69,6 +72,9 @@ export const useFormDashboard = (formId: string | undefined) => {
         responseRate: '0%',
         responsesToday: 0,
         responsesThisWeek: 0,
+        trendResponsesToday: null,
+        trendThisWeek: null,
+        trendResponseRate: null,
       };
     }
 
@@ -97,6 +103,9 @@ export const useFormDashboard = (formId: string | undefined) => {
       responseRate: formatResponseRate(formDashboardStats?.responseRate),
       responsesToday: formDashboardStats?.responsesToday || 0,
       responsesThisWeek: formDashboardStats?.responsesThisWeek || 0,
+      trendResponsesToday: formDashboardStats?.trendResponsesToday ?? null,
+      trendThisWeek: formDashboardStats?.trendThisWeek ?? null,
+      trendResponseRate: formDashboardStats?.trendResponseRate ?? null,
     };
   }, [formData]);
 
