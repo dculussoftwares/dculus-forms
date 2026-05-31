@@ -21,6 +21,7 @@
     "db:migrate:deploy": "tsx src/scripts/migrate-deploy.ts",
     "db:studio": "prisma studio",
     "db:seed": "tsx src/scripts/seed.ts",
+    "db:dedupe-templates": "tsx src/scripts/dedupe-templates.ts",
     "db:migrate-layout": "tsx src/scripts/migrate-form-layout.ts",
     "db:migrate-bg-images": "tsx src/scripts/migrate-background-images.ts",
     "auth:generate": "pnpm dlx @better-auth/cli generate",
