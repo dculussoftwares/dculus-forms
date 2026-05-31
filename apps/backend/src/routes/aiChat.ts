@@ -1,26 +1,91 @@
+import { Readable } from 'stream';
 import { Router, type Router as ExpressRouter } from 'express';
+import { validateUIMessages, convertToModelMessages } from 'ai';
+import type { UIMessage } from 'ai';
+import * as Y from 'yjs';
 import {
   requireAuth,
   requireOrganizationMembership,
   createBetterAuthContext,
 } from '../middleware/better-auth-middleware.js';
 import {
-  saveUserMessage,
   getConversation,
-  buildChatStream,
-  saveAssistantMessage,
+  loadConversationMessages,
+  saveConversationMessages,
   autoGenerateTitle,
 } from '../services/aiChatService.js';
 import {
   checkAITokenBudget,
   recordAITokenUsage,
 } from '../services/aiUsageService.js';
+import { createFormEditAgent } from '../lib/formEditAgent.js';
+import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
-import type { FormOperation } from '../lib/aiFormEditTools.js';
-
-const MUTATION_OP_TYPES = new Set(['ADD_FIELD', 'UPDATE_FIELD', 'REMOVE_FIELD', 'REORDER_FIELDS', 'UPDATE_LAYOUT', 'RENAME_PAGE', 'REORDER_PAGES', 'ADD_PAGE', 'REMOVE_PAGE']);
 
 export const aiChatRouter: ExpressRouter = Router();
+
+async function getFormSchemaFromYjs(formId: string): Promise<{ pages: any[] } | null> {
+  const docName = formId.replace(/[^a-zA-Z0-9_-]/g, '');
+  const collabDoc = await prisma.collaborativeDocument.findFirst({
+    where: { documentName: docName },
+    select: { state: true },
+  });
+
+  if (collabDoc?.state) {
+    try {
+      const ydoc = new Y.Doc();
+      Y.applyUpdate(ydoc, collabDoc.state as Uint8Array);
+      const formSchemaMap = ydoc.getMap('formSchema');
+      const pagesArray = formSchemaMap.get('pages') as Y.Array<Y.Map<any>> | undefined;
+      if (!pagesArray) return { pages: [] };
+      const pages = pagesArray.toArray().map((pageMap) => {
+        const fieldsArray = pageMap.get('fields') as Y.Array<Y.Map<any>> | undefined;
+        const fields = fieldsArray ? fieldsArray.toArray().map((fieldMap) => {
+          const optionsRaw = fieldMap.get('options');
+          const options = optionsRaw instanceof Y.Array ? optionsRaw.toArray() : (optionsRaw ?? null);
+          return {
+            id: fieldMap.get('id'),
+            type: fieldMap.get('type'),
+            label: fieldMap.get('label'),
+            required: fieldMap.get('validation')?.get?.('required') ?? fieldMap.get('required') ?? false,
+            placeholder: fieldMap.get('placeholder') ?? null,
+            hint: fieldMap.get('hint') ?? null,
+            options,
+          };
+        }) : [];
+        return { id: pageMap.get('id'), title: pageMap.get('title'), fields };
+      });
+      return { pages };
+    } catch {
+      // fall through to Prisma fallback
+    }
+  }
+
+  const form = await prisma.form.findUnique({
+    where: { id: formId },
+    select: { formSchema: true },
+  });
+  return form ? (form.formSchema as any) : null;
+}
+
+function buildSystemPrompt(currentPageId: string | undefined, schema: { pages: any[] }): string {
+  const pageContext = currentPageId
+    ? `The user is currently viewing page ID: ${currentPageId}. When the user says "this page" or "current page", they mean this page.`
+    : 'The user is on the first page.';
+
+  const schemaContext = schema.pages.length > 0
+    ? `\nCurrent form structure (use this before calling listFields for simple edits):\n${JSON.stringify(schema, null, 2)}`
+    : '';
+
+  return `You are an AI assistant that helps users edit their multi-page form.
+${pageContext}
+- Call listFields only when the above schema is insufficient or the user asks about all fields.
+- Use getField to read a field's full details before updating it.
+- When the user mentions "page 1", "page 2" etc., match by position (first page = page 1).
+- Make only the changes the user requests. Confirm what you did in your final text response.
+- You can add pages with addPage and remove pages with removePage. Never call removePage when there is only one page.
+${schemaContext}`;
+}
 
 aiChatRouter.post('/chat', async (req, res) => {
   const auth = await createBetterAuthContext(req);
@@ -32,15 +97,15 @@ aiChatRouter.post('/chat', async (req, res) => {
     return;
   }
 
-  const { conversationId, organizationId, content, currentPageId } = req.body as {
+  const { message, conversationId, organizationId, currentPageId } = req.body as {
+    message: UIMessage;
     conversationId: string;
     organizationId: string;
-    content: string;
     currentPageId?: string;
   };
 
-  if (!conversationId || !organizationId || !content?.trim()) {
-    res.status(400).json({ error: 'conversationId, organizationId, and content are required' });
+  if (!conversationId || !organizationId || !message?.content?.trim()) {
+    res.status(400).json({ error: 'conversationId, organizationId, and message are required' });
     return;
   }
 
@@ -51,101 +116,80 @@ aiChatRouter.post('/chat', async (req, res) => {
     return;
   }
 
-  res.setHeader('Content-Type', 'application/x-ndjson');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('X-Accel-Buffering', 'no');
-
-  function write(chunk: object) {
-    res.write(JSON.stringify(chunk) + '\n');
+  // Check token budget
+  const budget = await checkAITokenBudget(organizationId);
+  if (!budget.allowed) {
+    res.status(402).json({
+      error: `AI token limit reached (${budget.used.toLocaleString()} / ${budget.limit.toLocaleString()} used). Upgrade your plan to continue.`,
+    });
+    return;
   }
 
+  // Verify conversation ownership
+  const conv = await getConversation(conversationId, auth.user!.id);
+  if (!conv) {
+    res.status(404).json({ error: 'Conversation not found' });
+    return;
+  }
+
+  // Load history from DB
+  const previous = await loadConversationMessages(conversationId);
+
+  // Auto-title on first message (fire-and-forget)
+  if (previous.length === 0) {
+    autoGenerateTitle(conversationId, message.content);
+  }
+
+  // Build full message list with new user message
+  const allMessages = [...previous, message];
+
+  // Read Y.js schema once
+  const schema = await getFormSchemaFromYjs(conv.formId) ?? { pages: [] };
+  const systemPrompt = buildSystemPrompt(currentPageId, schema);
+
+  // Validate messages (handles tool call/result shapes in history)
+  let validated: UIMessage[];
   try {
-    // 1. Check token budget
-    const budget = await checkAITokenBudget(organizationId);
-    if (!budget.allowed) {
-      write({ type: 'error', error: `AI token limit reached (${budget.used.toLocaleString()} / ${budget.limit.toLocaleString()} used). Upgrade your plan to continue.` });
-      res.end();
-      return;
-    }
+    const tools = createFormEditAgent(schema).tools as Record<string, any>;
+    validated = await validateUIMessages({ messages: allMessages, tools }) as UIMessage[];
+  } catch {
+    logger.warn({ conversationId }, 'validateUIMessages failed — falling back to unvalidated messages');
+    validated = allMessages;
+  }
 
-    // 2. Verify conversation ownership BEFORE writing to DB
-    const conv = await getConversation(conversationId, auth.user!.id);
-    if (!conv) {
-      write({ type: 'error', error: 'Conversation not found' });
-      res.end();
-      return;
-    }
+  const agent = createFormEditAgent(schema, systemPrompt);
 
-    // 3. Now safe to save user message
-    await saveUserMessage(conversationId, content);
+  try {
+    const modelMessages = await convertToModelMessages(validated);
+    const result = await agent.stream({ messages: modelMessages });
 
-    // 4. Auto-title on first message (fire-and-forget)
-    if (conv.messageCount <= 1) {
-      autoGenerateTitle(conversationId, content);
-    }
+    // Ensure onFinish fires even if client disconnects
+    result.consumeStream();
 
-    // 5. Build stream
-    const stream = await buildChatStream(conversationId, auth.user!.id, currentPageId);
-
-    const operations: FormOperation[] = [];
-    let fullText = '';
-
-    const TOOL_STATUS_MAP: Record<string, string> = {
-      listFields: 'Reading form structure...',
-      getField: 'Checking field details...',
-      addField: 'Adding field...',
-      updateField: 'Updating field...',
-      removeField: 'Removing field...',
-      reorderFields: 'Reordering fields...',
-      updateLayout: 'Updating layout...',
-      renamePage: 'Renaming page...',
-      reorderPages: 'Reordering pages...',
-      addPage: 'Adding page...',
-      removePage: 'Removing page...',
-    };
-
-    for await (const part of stream.fullStream) {
-      if (part.type === 'tool-call') {
-        const toolName = (part as any).toolName as string;
-        write({ type: 'status', text: TOOL_STATUS_MAP[toolName] ?? 'Working...' });
-      }
-
-      if (part.type === 'text-delta') {
-        const delta: string = (part as any).textDelta ?? (part as any).text ?? '';
-        fullText += delta;
-        write({ type: 'text', delta });
-      }
-
-      if (part.type === 'tool-result') {
-        const op = (part as any).output as (FormOperation & { type?: string }) | undefined;
-        if (op && op.type && MUTATION_OP_TYPES.has(op.type)) {
-          operations.push(op);
-          write({ type: 'operation', op });
-        }
-      }
-
-      if (part.type === 'finish') {
-        const tokensUsed: number =
-          (part as any).totalUsage?.totalTokens ??
-          (part as any).usage?.totalTokens ?? 0;
-        const saved = await saveAssistantMessage(conversationId, fullText, operations, tokensUsed);
+    const webResponse = result.toUIMessageStreamResponse({
+      originalMessages: validated as any,
+      onFinish: async ({ messages: finalMessages }: { messages: UIMessage[] }) => {
+        const newMessages = finalMessages.slice(previous.length);
+        // Get usage from the resolved promise
+        const usage = await result.totalUsage;
+        const tokensUsed = usage?.totalTokens ?? 0;
+        await saveConversationMessages(conversationId, newMessages, tokensUsed);
         await recordAITokenUsage(organizationId, tokensUsed);
-        write({ type: 'done', messageId: saved.id });
-        res.end();
-      }
-    }
+      },
+    });
 
-    // Guard: finish may not have fired (model abort/timeout)
-    if (!res.writableEnded) {
-      const saved = await saveAssistantMessage(conversationId, fullText, operations, 0);
-      await recordAITokenUsage(organizationId, 0);
-      write({ type: 'done', messageId: saved.id });
-      res.end();
+    // Bridge Web API Response → Express response
+    res.status(webResponse.status);
+    for (const [k, v] of webResponse.headers.entries()) {
+      res.setHeader(k, v);
     }
+    Readable.fromWeb(webResponse.body as any).pipe(res);
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
     logger.error({ errMsg, conversationId }, 'AI chat stream failed');
-    write({ type: 'error', error: 'AI processing failed. Please try again.' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'AI processing failed. Please try again.' });
+    }
     res.end();
   }
 });
