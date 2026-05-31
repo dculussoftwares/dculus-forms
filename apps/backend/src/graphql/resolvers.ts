@@ -25,6 +25,12 @@ export const resolvers = {
   Organization: {
     ...subscriptionResolvers.Organization,
   },
+  FormTemplate: {
+    createdAt: (parent: { createdAt: Date | string }) =>
+      parent.createdAt instanceof Date ? parent.createdAt.toISOString() : parent.createdAt,
+    updatedAt: (parent: { updatedAt: Date | string }) =>
+      parent.updatedAt instanceof Date ? parent.updatedAt.toISOString() : parent.updatedAt,
+  },
   Query: {
     ...aiChatResolvers.Query,
     ...aiResolvers.Query,
