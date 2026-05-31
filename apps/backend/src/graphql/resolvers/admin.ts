@@ -135,6 +135,10 @@ async function getPostgresStats(): Promise<{ postgresDbSize: string; postgresTab
   }
 }
 
+function serializeDate(d: Date | null | undefined): string | null {
+  return d ? d.toISOString() : null;
+}
+
 export const adminResolvers = {
   Query: {
     adminOrganizations: async (_: any, args: AdminOrganizationsArgs, context: { auth: BetterAuthContext }) => {
@@ -186,9 +190,19 @@ export const adminResolvers = {
 
         return {
           organizations: organizations.map(org => ({
-            ...org,
+            id: org.id,
+            name: org.name,
+            slug: org.slug,
+            logo: org.logo,
+            createdAt: serializeDate(org.createdAt)!,
+            updatedAt: serializeDate(org.updatedAt)!,
             memberCount: org._count.members,
             formCount: org._count.forms,
+            members: org.members,
+            forms: org.forms.map(f => ({
+              ...f,
+              createdAt: serializeDate(f.createdAt)!,
+            })),
           })),
           total,
           hasMore: offset + limit < total,
@@ -244,8 +258,14 @@ export const adminResolvers = {
 
         return {
           ...organization,
+          createdAt: serializeDate(organization.createdAt)!,
+          updatedAt: serializeDate(organization.updatedAt)!,
           memberCount: organization._count.members,
           formCount: organization._count.forms,
+          forms: organization.forms.map(f => ({
+            ...f,
+            createdAt: serializeDate(f.createdAt)!,
+          })),
         };
       } catch (error) {
         logger.error('Error fetching admin organization:', error);

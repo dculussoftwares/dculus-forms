@@ -246,9 +246,23 @@ describe('Admin Resolvers', () => {
       expect(result).toEqual({
         organizations: [
           {
-            ...mockOrganization,
+            id: mockOrganization.id,
+            name: mockOrganization.name,
+            slug: mockOrganization.slug,
+            logo: mockOrganization.logo,
+            createdAt: '2024-01-01T00:00:00.000Z',
+            updatedAt: null,
             memberCount: 1,
             formCount: 1,
+            members: mockOrganization.members,
+            forms: [
+              {
+                id: 'form-123',
+                title: 'Test Form',
+                isPublished: true,
+                createdAt: '2024-01-01T00:00:00.000Z',
+              },
+            ],
           },
         ],
         total: 1,
@@ -310,6 +324,23 @@ describe('Admin Resolvers', () => {
         adminResolvers.Query.adminOrganizations({}, {}, mockAdminContext)
       ).rejects.toThrow('Failed to fetch organizations');
     });
+
+    it('should return createdAt as ISO string not locale string', async () => {
+      const org = {
+        id: 'org-123', name: 'Test Org', slug: 'test', logo: null,
+        createdAt: new Date('2026-01-15T10:00:00.000Z'),
+        updatedAt: new Date('2026-01-15T10:00:00.000Z'),
+        members: [], forms: [],
+        _count: { members: 0, forms: 0 },
+      };
+      vi.mocked(prisma.organization.findMany).mockResolvedValue([org] as any);
+      vi.mocked(prisma.organization.count).mockResolvedValue(1);
+
+      const result = await adminResolvers.Query.adminOrganizations({}, { limit: 10, offset: 0 }, mockAdminContext);
+
+      expect(result.organizations[0].createdAt).toBe('2026-01-15T10:00:00.000Z');
+      expect(new Date(result.organizations[0].createdAt).toString()).not.toBe('Invalid Date');
+    });
   });
 
   describe('Query: adminOrganization', () => {
@@ -358,8 +389,18 @@ describe('Admin Resolvers', () => {
 
       expect(result).toEqual({
         ...mockOrganization,
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: null,
         memberCount: 1,
         formCount: 1,
+        forms: [
+          {
+            id: 'form-123',
+            title: 'Test Form',
+            isPublished: true,
+            createdAt: '2024-01-01T00:00:00.000Z',
+          },
+        ],
       });
     });
 
