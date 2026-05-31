@@ -31,6 +31,7 @@ vi.mock('../../../lib/prisma.js', () => ({
     auditLog: {
       create: vi.fn(),
     },
+    $queryRaw: vi.fn().mockResolvedValue([{ '?column?': 1 }]),
   },
 }));
 
@@ -934,6 +935,32 @@ describe('Admin Resolvers', () => {
       await expect(
         adminResolvers.Query.adminOrganizationById({}, { id: 'org-123' }, mockAdminContext)
       ).rejects.toThrow('Failed to fetch organization');
+    });
+  });
+
+  describe('adminSystemHealth', () => {
+    it('should return 4 health check items', async () => {
+      vi.mocked(prisma.$queryRaw as any).mockResolvedValue([{ '?column?': 1 }]);
+
+      const result = await adminResolvers.Query.adminSystemHealth({}, {}, mockAdminContext);
+
+      expect(result).toHaveLength(4);
+      expect(result.map((r: any) => r.label)).toEqual(['Database', 'Chargebee', 'S3 Storage', 'Email']);
+    });
+
+    it('should return error status when database query fails', async () => {
+      vi.mocked(prisma.$queryRaw as any).mockRejectedValue(new Error('Connection refused'));
+
+      const result = await adminResolvers.Query.adminSystemHealth({}, {}, mockAdminContext);
+      const dbCheck = result.find((r: any) => r.label === 'Database');
+
+      expect(dbCheck?.status).toBe('error');
+    });
+
+    it('should require admin role', async () => {
+      await expect(
+        adminResolvers.Query.adminSystemHealth({}, {}, mockUserContext)
+      ).rejects.toThrow();
     });
   });
 

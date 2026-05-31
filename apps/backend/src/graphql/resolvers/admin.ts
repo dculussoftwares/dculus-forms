@@ -449,6 +449,40 @@ export const adminResolvers = {
       }
     },
 
+    adminSystemHealth: async (_: any, __: any, context: { auth: BetterAuthContext }) => {
+      requireAdminRole(context);
+
+      const checks = await Promise.allSettled([
+        // Database
+        (async () => {
+          const start = Date.now();
+          await prisma.$queryRaw`SELECT 1`;
+          return { label: 'Database', status: 'ok', latencyMs: Date.now() - start, detail: null };
+        })(),
+        // Chargebee
+        (async () => {
+          const ok = !!(process.env.CHARGEBEE_API_KEY && process.env.CHARGEBEE_SITE);
+          return { label: 'Chargebee', status: ok ? 'ok' : 'degraded', latencyMs: null, detail: ok ? null : 'API key or site not configured' };
+        })(),
+        // S3 Storage
+        (async () => {
+          const ok = !!(process.env.PUBLIC_S3_ACCESS_KEY && process.env.PUBLIC_S3_ENDPOINT);
+          return { label: 'S3 Storage', status: ok ? 'ok' : 'degraded', latencyMs: null, detail: ok ? null : 'S3 credentials not configured' };
+        })(),
+        // Email
+        (async () => {
+          const ok = !!(process.env.EMAIL_HOST && process.env.EMAIL_USER);
+          return { label: 'Email', status: ok ? 'ok' : 'degraded', latencyMs: null, detail: ok ? null : 'SMTP not configured' };
+        })(),
+      ]);
+
+      return checks.map((result, i) => {
+        const labels = ['Database', 'Chargebee', 'S3 Storage', 'Email'];
+        if (result.status === 'fulfilled') return result.value;
+        return { label: labels[i], status: 'error', latencyMs: null, detail: String((result as PromiseRejectedResult).reason) };
+      });
+    },
+
     adminOrganizationById: async (_: any, args: AdminOrganizationByIdArgs, context: { auth: BetterAuthContext }) => {
       // Check admin privileges
       requireAdminRole(context);
