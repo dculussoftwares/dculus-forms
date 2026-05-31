@@ -77,7 +77,7 @@ export const createPagesSlice: SliceCreator<PagesSlice> = (set, get) => {
      * Returns the new page ID, or undefined if operation failed.
      * Does NOT change the UI selection (caller controls that).
      */
-    addPageAtPosition: (title: string, insertAfterPageId: string | null): string | undefined => {
+    addPageAtPosition: (title: string, insertAfterPageId: string | null, pageId?: string): string | undefined => {
       const { _getYDoc, _isYJSReady } = get() as any;
       const ydoc = _getYDoc();
       const isReady = _isYJSReady();
@@ -90,7 +90,7 @@ export const createPagesSlice: SliceCreator<PagesSlice> = (set, get) => {
       const formSchemaMap = ydoc.getMap('formSchema');
       const pagesArray = getOrCreatePagesArray(formSchemaMap);
 
-      const newPageId = `page-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+      const newPageId = pageId ?? `page-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 
       ydoc.transact(() => {
         const pageMap = new Y.Map();

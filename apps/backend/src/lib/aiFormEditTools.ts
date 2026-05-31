@@ -142,12 +142,17 @@ export function createFormEditTools(schema: { pages: any[] }) {
 
     addPage: tool({
       description:
-        'Add a new empty page to the form. insertAfterPageId: pass a page ID to insert after that page, or null to append at the end.',
+        'Add a new empty page to the form. insertAfterPageId: pass a page ID to insert after that page, or null to append at the end. The returned pageId is the ID of the new page — use it immediately as the pageId when calling addField on this new page.',
       inputSchema: z.object({
         title: z.string().max(50).describe('Title for the new page'),
         insertAfterPageId: z.string().nullable().describe('Insert after this page ID; null to append at end'),
       }),
-      execute: async (args) => ({ type: 'ADD_PAGE' as const, ...args }),
+      execute: async (args) => ({
+        type: 'ADD_PAGE' as const,
+        // Generate the page ID here so the AI can reference it in subsequent addField calls
+        pageId: `page-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+        ...args,
+      }),
     }),
 
     removePage: tool({
@@ -172,5 +177,5 @@ export type FormOperation =
   | { type: 'UPDATE_LAYOUT'; content?: string; customCTAButtonName?: string }
   | { type: 'RENAME_PAGE'; pageId: string; newTitle: string }
   | { type: 'REORDER_PAGES'; pageIds: string[] }
-  | { type: 'ADD_PAGE'; title: string; insertAfterPageId: string | null }
+  | { type: 'ADD_PAGE'; pageId: string; title: string; insertAfterPageId: string | null }
   | { type: 'REMOVE_PAGE'; pageId: string };

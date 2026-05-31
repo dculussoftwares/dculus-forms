@@ -35,9 +35,11 @@ export function applyAIOp(
 
   switch (op.type) {
     case 'ADD_FIELD': {
-      const targetPageId: string = (store.pages as any[]).find((p: any) => p.id === op.pageId)?.id
-        ?? (store.pages as any[])[0]?.id;
-      if (!targetPageId) return;
+      const targetPageId: string | undefined = (store.pages as any[]).find((p: any) => p.id === op.pageId)?.id;
+      if (!targetPageId) {
+        console.warn('[applyAIOp] ADD_FIELD: pageId not found in store, skipping', op.pageId);
+        return;
+      }
 
       const fieldType = AI_TYPE_MAP[op.fieldType] ?? FieldType.TEXT_INPUT_FIELD;
       const isChoice = CHOICE_TYPES.has(fieldType);
@@ -125,7 +127,9 @@ export function applyAIOp(
     }
 
     case 'ADD_PAGE': {
-      store.addPageAtPosition(op.title ?? 'New Page', op.insertAfterPageId ?? null);
+      // Pass the pre-generated pageId from the backend so subsequent ADD_FIELD ops
+      // can reference the new page by the same ID the AI already knows.
+      store.addPageAtPosition(op.title ?? 'New Page', op.insertAfterPageId ?? null, op.pageId);
       break;
     }
 

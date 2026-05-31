@@ -147,7 +147,9 @@ describe('addPage', () => {
   it('returns ADD_PAGE op', async () => {
     const tools = createFormEditTools(mockSchema);
     const result = await (tools as any).addPage.execute!({ title: 'Step 2', insertAfterPageId: null }, { messages: [], toolCallId: 'test' });
-    expect(result).toEqual({ type: 'ADD_PAGE', title: 'Step 2', insertAfterPageId: null });
+    expect(result).toMatchObject({ type: 'ADD_PAGE', title: 'Step 2', insertAfterPageId: null });
+    expect(typeof (result as any).pageId).toBe('string');
+    expect((result as any).pageId).toMatch(/^page-/);
   });
 });
 

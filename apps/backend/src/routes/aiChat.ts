@@ -95,6 +95,7 @@ ${pageContext}
   • If the requested page number is exactly one more than the current total (e.g. "page 5" when there are 4 pages), assume the user wants a new page — use addPage to create it first, then proceed with the requested action on that new page. Do not ask for confirmation; just do it and explain what you did.
   • If the requested page number is more than one beyond the current total (e.g. "page 10" when there are 4 pages), tell the user the form has ${totalPages} page${totalPages !== 1 ? 's' : ''} and ask which page they meant. Never silently use a different page.
 - Make only the changes the user requests. Confirm what you did in your final text response.
+- When you call addPage, the result contains a pageId field. Use that exact pageId value as the pageId argument for any subsequent addField calls on that new page. Never guess or invent a page ID.
 - You can add pages with addPage and remove pages with removePage. Never call removePage when there is only one page.
 ${schemaContext}`;
 }
