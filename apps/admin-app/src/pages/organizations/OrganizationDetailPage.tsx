@@ -403,7 +403,7 @@ export const OrganizationDetailPage = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-primary">Reset Usage Counters</p>
-                        <p className="text-xs text-muted-foreground">Resets views and submissions to zero immediately.</p>
+                        <p className="text-xs text-muted-foreground">Resets views, submissions, and AI token usage to zero immediately.</p>
                       </div>
                       <Button variant="outline" size="sm" onClick={() => setConfirmModal('resetUsage')} disabled={resettingUsage}>
                         {resettingUsage
@@ -472,29 +472,30 @@ export const OrganizationDetailPage = () => {
 
       {confirmModal === 'resetUsage' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="fixed inset-0 bg-black/50" onClick={() => setConfirmModal(null)} />
+          <div className="fixed inset-0 bg-black/50" onClick={() => !resettingUsage && setConfirmModal(null)} />
           <div className="relative bg-white rounded-xl p-6 max-w-sm w-full mx-4 space-y-4" style={{ border: '1px solid var(--tf-border-medium)' }}>
             <h3 className="text-base font-semibold text-primary">Reset Usage Counters</h3>
             <p className="text-sm text-muted-foreground">
-              Type <strong>{org.name}</strong> to confirm resetting all usage counters to zero.
+              Resets views, submissions, and AI token usage to zero. Type <strong>{org.name}</strong> to confirm.
             </p>
             <input
               className="w-full border rounded px-3 py-2 text-sm"
               placeholder={org.name}
               value={resetConfirmText}
               onChange={e => setResetConfirmText(e.target.value)}
+              disabled={resettingUsage}
             />
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" size="sm" onClick={() => { setConfirmModal(null); setResetConfirmText(''); }}>
+              <Button variant="outline" size="sm" onClick={() => { setConfirmModal(null); setResetConfirmText(''); }} disabled={resettingUsage}>
                 Cancel
               </Button>
               <Button
                 size="sm"
-                disabled={resetConfirmText !== org.name}
+                disabled={resetConfirmText !== org.name || resettingUsage}
                 onClick={() => resetUsage({ variables: { orgId } })}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
-                Reset
+                {resettingUsage ? <><LoadingSpinner className="mr-2 h-4 w-4" />Resetting...</> : 'Reset'}
               </Button>
             </div>
           </div>

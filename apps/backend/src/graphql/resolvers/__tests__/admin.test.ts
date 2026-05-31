@@ -33,6 +33,10 @@ vi.mock('../../../lib/prisma.js', () => ({
     auditLog: {
       create: vi.fn(),
     },
+    aIUsage: {
+      aggregate: vi.fn().mockResolvedValue({ _sum: { tokensUsed: 0 } }),
+      updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+    },
     $queryRaw: vi.fn().mockResolvedValue([{ '?column?': 1 }]),
   },
 }));
@@ -1173,7 +1177,7 @@ describe('Admin Resolvers', () => {
   });
 
   describe('Mutation: adminResetUsage', () => {
-    it('should reset usage counters and write audit log', async () => {
+    it('should reset usage counters, AI token usage, and write audit log', async () => {
       const periodStart = new Date('2026-05-01');
       const periodEnd = new Date('2026-05-31');
       vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
@@ -1182,13 +1186,24 @@ describe('Admin Resolvers', () => {
       } as any);
       vi.mocked(prisma.subscription.update).mockResolvedValue({} as any);
       vi.mocked(prisma.auditLog.create).mockResolvedValue({} as any);
+      vi.mocked(prisma.aIUsage.aggregate).mockResolvedValue({ _sum: { tokensUsed: 1500 } } as any);
+      vi.mocked(prisma.aIUsage.updateMany).mockResolvedValue({ count: 1 } as any);
 
       const result = await adminResolvers.Mutation.adminResetUsage({}, { orgId: 'org-1' }, mockAdminContext);
 
       expect(result).toBe(true);
       expect(vi.mocked(resetUsageCounters)).toHaveBeenCalledWith('org-1', periodStart, periodEnd);
+      expect(vi.mocked(prisma.aIUsage.updateMany)).toHaveBeenCalledWith({
+        where: { organizationId: 'org-1' },
+        data: { tokensUsed: 0 },
+      });
       expect(vi.mocked(prisma.auditLog.create)).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ action: 'usage_reset' }) })
+        expect.objectContaining({
+          data: expect.objectContaining({
+            action: 'usage_reset',
+            metadata: expect.objectContaining({ previousTokensUsed: 1500 }),
+          }),
+        })
       );
     });
 

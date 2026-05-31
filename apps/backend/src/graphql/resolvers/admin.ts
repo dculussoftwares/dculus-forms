@@ -632,7 +632,18 @@ export const adminResolvers = {
         throw createGraphQLError('Subscription not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
       }
 
-      await resetUsageCounters(orgId, subscription.currentPeriodStart, subscription.currentPeriodEnd);
+      const previousTokensUsed = await prisma.aIUsage.aggregate({
+        where: { organizationId: orgId },
+        _sum: { tokensUsed: true },
+      });
+
+      await Promise.all([
+        resetUsageCounters(orgId, subscription.currentPeriodStart, subscription.currentPeriodEnd),
+        prisma.aIUsage.updateMany({
+          where: { organizationId: orgId },
+          data: { tokensUsed: 0 },
+        }),
+      ]);
 
       await prisma.auditLog.create({
         data: {
@@ -644,6 +655,7 @@ export const adminResolvers = {
             resetBy: admin.email,
             previousSubmissionsUsed: subscription.submissionsUsed,
             previousViewsUsed: subscription.viewsUsed,
+            previousTokensUsed: previousTokensUsed._sum.tokensUsed ?? 0,
           },
         },
       });
