@@ -439,6 +439,10 @@ export const typeDefs = gql`
     formCount: Int!
     members: [Member!]!
     forms: [Form!]!
+    planId: String
+    subscriptionStatus: String
+    submissionsUsed: Int
+    submissionsLimit: Int
   }
 
   type AdminOrganizationsResult {
@@ -456,6 +460,18 @@ export const typeDefs = gql`
     fileCount: Int!
     postgresDbSize: String!
     postgresTableCount: Int!
+    freePlanCount: Int!
+    starterPlanCount: Int!
+    advancedPlanCount: Int!
+    orgsNearLimit: [OrgNearLimit!]!
+  }
+
+  type OrgNearLimit {
+    orgId: String!
+    orgName: String!
+    submissionsUsed: Int!
+    submissionsLimit: Int!
+    usagePercent: Int!
   }
 
   # Admin Users Types
@@ -493,6 +509,7 @@ export const typeDefs = gql`
     createdAt: String!
     members: [OrganizationMember!]!
     stats: OrganizationStats!
+    subscription: OrgSubscription
   }
 
   type OrganizationMember {
@@ -507,6 +524,26 @@ export const typeDefs = gql`
   type OrganizationStats {
     totalForms: Int!
     totalResponses: Int!
+  }
+
+  type OrgSubscription {
+    planId: String!
+    status: String!
+    viewsUsed: Int!
+    submissionsUsed: Int!
+    viewsLimit: Int
+    submissionsLimit: Int
+    currentPeriodStart: String!
+    currentPeriodEnd: String!
+    chargebeeCustomerId: String!
+    chargebeeSubscriptionId: String
+  }
+
+  type SystemHealthItem {
+    label: String!
+    status: String!
+    latencyMs: Int
+    detail: String
   }
 
   # Analytics Types
@@ -1026,12 +1063,13 @@ export const typeDefs = gql`
     getResponseFileDownloadUrl(key: String!): String!
 
     # Admin Queries
-    adminOrganizations(limit: Int, offset: Int): AdminOrganizationsResult!
+    adminOrganizations(limit: Int, offset: Int, search: String): AdminOrganizationsResult!
     adminOrganization(id: ID!): AdminOrganization!
     adminStats: AdminStats!
     adminUsers(page: Int, limit: Int, search: String): AdminUsersResponse!
     adminUserById(id: String!): AdminUserDetail!
     adminOrganizationById(id: String!): AdminOrganizationDetail!
+    adminSystemHealth: [SystemHealthItem!]!
 
     # Analytics Queries
     formAnalytics(formId: ID!, timeRange: TimeRangeInput): FormAnalytics!
@@ -1175,6 +1213,12 @@ export const typeDefs = gql`
     createAIChatConversation(formId: ID!, organizationId: ID!): AIChatConversation!
     deleteAIChatConversation(id: ID!, organizationId: ID!): Boolean!
     renameAIChatConversation(id: ID!, organizationId: ID!, title: String!): AIChatConversation!
+
+    # Admin Mutations
+    adminChangePlan(orgId: ID!, planId: String!): Boolean!
+    adminResetUsage(orgId: ID!): Boolean!
+    adminCancelSubscription(orgId: ID!): Boolean!
+    adminReactivateSubscription(orgId: ID!): Boolean!
   }
 
   # AI Types
