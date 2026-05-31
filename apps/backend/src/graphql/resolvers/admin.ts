@@ -278,6 +278,10 @@ export const adminResolvers = {
           responseCount,
           s3Stats,
           pgStats,
+          freePlanCount,
+          starterPlanCount,
+          advancedPlanCount,
+          subscriptionsWithLimits,
         ] = await Promise.all([
           prisma.organization.count(),
           prisma.user.count(),
@@ -285,7 +289,24 @@ export const adminResolvers = {
           prisma.response.count(),
           getS3StorageStats(),
           getPostgresStats(),
+          prisma.subscription.count({ where: { planId: 'free' } }),
+          prisma.subscription.count({ where: { planId: 'starter' } }),
+          prisma.subscription.count({ where: { planId: 'advanced' } }),
+          prisma.subscription.findMany({
+            where: { submissionsLimit: { not: null } },
+            include: { organization: { select: { id: true, name: true } } },
+          }),
         ]);
+
+        const orgsNearLimit = (subscriptionsWithLimits as any[])
+          .filter(s => s.submissionsLimit && s.submissionsUsed / s.submissionsLimit >= 0.8)
+          .map(s => ({
+            orgId: s.organization.id,
+            orgName: s.organization.name,
+            submissionsUsed: s.submissionsUsed,
+            submissionsLimit: s.submissionsLimit,
+            usagePercent: Math.round((s.submissionsUsed / s.submissionsLimit) * 100),
+          }));
 
         return {
           organizationCount,
@@ -296,6 +317,10 @@ export const adminResolvers = {
           fileCount: s3Stats.fileCount,
           postgresDbSize: pgStats.postgresDbSize,
           postgresTableCount: pgStats.postgresTableCount,
+          freePlanCount,
+          starterPlanCount,
+          advancedPlanCount,
+          orgsNearLimit,
         };
       } catch (error) {
         logger.error('Error fetching admin stats:', error);

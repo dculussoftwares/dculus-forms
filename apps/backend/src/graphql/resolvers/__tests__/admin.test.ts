@@ -147,6 +147,8 @@ describe('Admin Resolvers', () => {
       vi.mocked(prisma.user.count).mockResolvedValue(0);
       vi.mocked(prisma.form.count).mockResolvedValue(0);
       vi.mocked(prisma.response.count).mockResolvedValue(0);
+      vi.mocked(prisma.subscription.count).mockResolvedValue(0);
+      vi.mocked(prisma.subscription.findMany).mockResolvedValue([]);
 
       // Mock S3 client
       mockS3Send.mockResolvedValue({
@@ -164,6 +166,8 @@ describe('Admin Resolvers', () => {
       vi.mocked(prisma.user.count).mockResolvedValue(0);
       vi.mocked(prisma.form.count).mockResolvedValue(0);
       vi.mocked(prisma.response.count).mockResolvedValue(0);
+      vi.mocked(prisma.subscription.count).mockResolvedValue(0);
+      vi.mocked(prisma.subscription.findMany).mockResolvedValue([]);
 
       mockS3Send.mockResolvedValue({
         Contents: [],
@@ -467,6 +471,8 @@ describe('Admin Resolvers', () => {
       vi.mocked(prisma.user.count).mockResolvedValue(50);
       vi.mocked(prisma.form.count).mockResolvedValue(25);
       vi.mocked(prisma.response.count).mockResolvedValue(100);
+      vi.mocked(prisma.subscription.count).mockResolvedValue(0);
+      vi.mocked(prisma.subscription.findMany).mockResolvedValue([]);
 
       // Mock S3 errors (S3 mocking is complex, just test error handling)
       mockS3Send.mockRejectedValue(new Error('S3 not available'));
@@ -484,6 +490,10 @@ describe('Admin Resolvers', () => {
         fileCount: 0, // S3 error returns default
         postgresDbSize: expect.any(String),
         postgresTableCount: expect.any(Number),
+        freePlanCount: expect.any(Number),
+        starterPlanCount: expect.any(Number),
+        advancedPlanCount: expect.any(Number),
+        orgsNearLimit: expect.any(Array),
       });
     });
 
@@ -493,6 +503,8 @@ describe('Admin Resolvers', () => {
       vi.mocked(prisma.user.count).mockResolvedValue(0);
       vi.mocked(prisma.form.count).mockResolvedValue(0);
       vi.mocked(prisma.response.count).mockResolvedValue(0);
+      vi.mocked(prisma.subscription.count).mockResolvedValue(0);
+      vi.mocked(prisma.subscription.findMany).mockResolvedValue([]);
 
       const result = await adminResolvers.Query.adminStats({}, {}, mockAdminContext);
 
@@ -506,6 +518,8 @@ describe('Admin Resolvers', () => {
       vi.mocked(prisma.user.count).mockResolvedValue(0);
       vi.mocked(prisma.form.count).mockResolvedValue(0);
       vi.mocked(prisma.response.count).mockResolvedValue(0);
+      vi.mocked(prisma.subscription.count).mockResolvedValue(0);
+      vi.mocked(prisma.subscription.findMany).mockResolvedValue([]);
 
       const result = await adminResolvers.Query.adminStats({}, {}, mockAdminContext);
 
@@ -519,6 +533,8 @@ describe('Admin Resolvers', () => {
       vi.mocked(prisma.user.count).mockResolvedValue(0);
       vi.mocked(prisma.form.count).mockResolvedValue(0);
       vi.mocked(prisma.response.count).mockResolvedValue(0);
+      vi.mocked(prisma.subscription.count).mockResolvedValue(0);
+      vi.mocked(prisma.subscription.findMany).mockResolvedValue([]);
 
       const result = await adminResolvers.Query.adminStats({}, {}, mockAdminContext);
 
@@ -541,12 +557,55 @@ describe('Admin Resolvers', () => {
       vi.mocked(prisma.user.count).mockResolvedValue(0);
       vi.mocked(prisma.form.count).mockResolvedValue(0);
       vi.mocked(prisma.response.count).mockResolvedValue(0);
+      vi.mocked(prisma.subscription.count).mockResolvedValue(0);
+      vi.mocked(prisma.subscription.findMany).mockResolvedValue([]);
 
       const result = await adminResolvers.Query.adminStats({}, {}, mockAdminContext);
 
       expect(result.storageUsed).toBe('7 KB');
       expect(result.fileCount).toBe(3);
       expect(mockS3Send).toHaveBeenCalledTimes(2);
+    });
+
+    it('should return plan distribution counts', async () => {
+      vi.mocked(prisma.organization.count).mockResolvedValue(3);
+      vi.mocked(prisma.user.count).mockResolvedValue(5);
+      vi.mocked(prisma.form.count).mockResolvedValue(10);
+      vi.mocked(prisma.response.count).mockResolvedValue(20);
+      mockS3Send.mockRejectedValue(new Error('S3 error'));
+      vi.mocked(prisma.subscription.count)
+        .mockResolvedValueOnce(2)   // free
+        .mockResolvedValueOnce(1)   // starter
+        .mockResolvedValueOnce(0);  // advanced
+      vi.mocked(prisma.subscription.findMany).mockResolvedValue([]);
+
+      const result = await adminResolvers.Query.adminStats({}, {}, mockAdminContext);
+
+      expect(result.freePlanCount).toBe(2);
+      expect(result.starterPlanCount).toBe(1);
+      expect(result.advancedPlanCount).toBe(0);
+      expect(result.orgsNearLimit).toEqual([]);
+    });
+
+    it('should include orgs at >=80% usage in orgsNearLimit', async () => {
+      vi.mocked(prisma.organization.count).mockResolvedValue(1);
+      vi.mocked(prisma.user.count).mockResolvedValue(1);
+      vi.mocked(prisma.form.count).mockResolvedValue(1);
+      vi.mocked(prisma.response.count).mockResolvedValue(1);
+      mockS3Send.mockRejectedValue(new Error('S3 error'));
+      vi.mocked(prisma.subscription.count).mockResolvedValue(0);
+      vi.mocked(prisma.subscription.findMany).mockResolvedValue([
+        {
+          submissionsUsed: 850, submissionsLimit: 1000,
+          organization: { id: 'org-1', name: 'Acme' },
+        } as any,
+      ]);
+
+      const result = await adminResolvers.Query.adminStats({}, {}, mockAdminContext);
+
+      expect(result.orgsNearLimit).toHaveLength(1);
+      expect(result.orgsNearLimit[0].usagePercent).toBe(85);
+      expect(result.orgsNearLimit[0].orgName).toBe('Acme');
     });
 
     it('should throw error when user is not admin', async () => {
@@ -955,6 +1014,8 @@ describe('Admin Resolvers', () => {
       vi.mocked(prisma.user.count).mockResolvedValue(0);
       vi.mocked(prisma.form.count).mockResolvedValue(0);
       vi.mocked(prisma.response.count).mockResolvedValue(0);
+      vi.mocked(prisma.subscription.count).mockResolvedValue(0);
+      vi.mocked(prisma.subscription.findMany).mockResolvedValue([]);
 
       const result = await adminResolvers.Query.adminStats({}, {}, mockAdminContext);
 
@@ -972,6 +1033,8 @@ describe('Admin Resolvers', () => {
       vi.mocked(prisma.user.count).mockResolvedValue(0);
       vi.mocked(prisma.form.count).mockResolvedValue(0);
       vi.mocked(prisma.response.count).mockResolvedValue(0);
+      vi.mocked(prisma.subscription.count).mockResolvedValue(0);
+      vi.mocked(prisma.subscription.findMany).mockResolvedValue([]);
 
       const result = await adminResolvers.Query.adminStats({}, {}, mockAdminContext);
 
