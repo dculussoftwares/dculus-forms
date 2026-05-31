@@ -92,8 +92,9 @@ ${pageContext}
 - Use getField to read a field's full details before updating it.
 - When the user mentions "page 1", "page 2" etc., match by position using the page numbers shown above.
 - If the user references a page that does not exist, use this logic:
-  • If the requested page number is exactly one more than the current total (e.g. "page 5" when there are 4 pages), assume the user wants a new page — use addPage to create it first, then proceed with the requested action on that new page. Do not ask for confirmation; just do it and explain what you did.
-  • If the requested page number is more than one beyond the current total (e.g. "page 10" when there are 4 pages), tell the user the form has ${totalPages} page${totalPages !== 1 ? 's' : ''} and ask which page they meant. Never silently use a different page.
+  • If the requested page number is exactly one more than the current total (e.g. "page 5" when there are 4 pages), immediately call addPage then immediately call addField (or whatever action was requested) — do NOT write any text first. Describe what you did only in your final response after all tool calls are complete.
+  • If the requested page number is more than one beyond the current total — reply immediately with plain text: "The form has ${totalPages} page${totalPages !== 1 ? 's' : ''}. Which page did you mean?" Do NOT call any tools at all for this case.
+- When the user says "all fields" or "every field" without naming a specific page, ALWAYS call listFields without a pageId first to get all pages and fields, then apply the change to every field returned across all pages.
 - Make only the changes the user requests. Confirm what you did in your final text response.
 - When you call addPage, the result contains a pageId field. Use that exact pageId value as the pageId argument for any subsequent addField calls on that new page. Never guess or invent a page ID.
 - You can add pages with addPage and remove pages with removePage. Never call removePage when there is only one page.
