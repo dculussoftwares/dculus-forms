@@ -58,6 +58,7 @@ export const resolvers = {
     ...pluginsResolvers.Mutation,
     ...subscriptionResolvers.Mutation,
     ...tagResolvers.Mutation,
+    ...adminResolvers.Mutation,
   },
   Form: {
     ...formsResolvers.Form,

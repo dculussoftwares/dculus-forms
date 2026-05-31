@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { adminResolvers, _clearStatsCacheForTests } from '../admin.js';
 import { GraphQLError } from '#graphql-errors';
 import { prisma } from '../../../lib/prisma.js';
+import { cancelChargebeeSubscription, reactivateChargebeeSubscription } from '../../../services/chargebeeService.js';
+import { resetUsageCounters } from '../../../subscriptions/usageService.js';
 
 // Mock all dependencies
 vi.mock('../../../lib/prisma.js', () => ({
@@ -63,6 +65,15 @@ vi.mock('../../../lib/env.js', () => ({
     secretKey: 'test-secret-key',
     publicBucketName: 'test-bucket',
   },
+}));
+
+vi.mock('../../../services/chargebeeService.js', () => ({
+  cancelChargebeeSubscription: vi.fn().mockResolvedValue(undefined),
+  reactivateChargebeeSubscription: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('../../../subscriptions/usageService.js', () => ({
+  resetUsageCounters: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe('Admin Resolvers', () => {
@@ -1113,6 +1124,154 @@ describe('Admin Resolvers', () => {
 
       expect(result.organizations).toEqual([]);
       expect(result.hasMore).toBe(false);
+    });
+  });
+
+  describe('Mutation: adminChangePlan', () => {
+    it('should update planId and limits for a valid plan', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        organizationId: 'org-1', planId: 'free', status: 'active',
+        chargebeeSubscriptionId: null, viewsUsed: 0, submissionsUsed: 0,
+        currentPeriodStart: new Date(), currentPeriodEnd: new Date(),
+      } as any);
+      vi.mocked(prisma.subscription.update).mockResolvedValue({} as any);
+      vi.mocked(prisma.auditLog.create).mockResolvedValue({} as any);
+
+      const result = await adminResolvers.Mutation.adminChangePlan(
+        {}, { orgId: 'org-1', planId: 'starter' }, mockAdminContext
+      );
+
+      expect(result).toBe(true);
+      expect(vi.mocked(prisma.subscription.update)).toHaveBeenCalledWith({
+        where: { organizationId: 'org-1' },
+        data: { planId: 'starter', viewsLimit: null, submissionsLimit: 10000, status: 'active' },
+      });
+      expect(vi.mocked(prisma.auditLog.create)).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ action: 'plan_changed' }) })
+      );
+    });
+
+    it('should reject invalid plan IDs', async () => {
+      await expect(
+        adminResolvers.Mutation.adminChangePlan({}, { orgId: 'org-1', planId: 'enterprise' }, mockAdminContext)
+      ).rejects.toThrow();
+    });
+
+    it('should require admin role', async () => {
+      await expect(
+        adminResolvers.Mutation.adminChangePlan({}, { orgId: 'org-1', planId: 'starter' }, mockUserContext)
+      ).rejects.toThrow();
+    });
+
+    it('should throw NOT_FOUND when subscription does not exist', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
+
+      await expect(
+        adminResolvers.Mutation.adminChangePlan({}, { orgId: 'org-1', planId: 'starter' }, mockAdminContext)
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('Mutation: adminResetUsage', () => {
+    it('should reset usage counters and write audit log', async () => {
+      const periodStart = new Date('2026-05-01');
+      const periodEnd = new Date('2026-05-31');
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        organizationId: 'org-1', viewsUsed: 500, submissionsUsed: 200,
+        currentPeriodStart: periodStart, currentPeriodEnd: periodEnd,
+      } as any);
+      vi.mocked(prisma.subscription.update).mockResolvedValue({} as any);
+      vi.mocked(prisma.auditLog.create).mockResolvedValue({} as any);
+
+      const result = await adminResolvers.Mutation.adminResetUsage({}, { orgId: 'org-1' }, mockAdminContext);
+
+      expect(result).toBe(true);
+      expect(vi.mocked(resetUsageCounters)).toHaveBeenCalledWith('org-1', periodStart, periodEnd);
+      expect(vi.mocked(prisma.auditLog.create)).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ action: 'usage_reset' }) })
+      );
+    });
+
+    it('should throw NOT_FOUND when subscription does not exist', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
+
+      await expect(
+        adminResolvers.Mutation.adminResetUsage({}, { orgId: 'org-1' }, mockAdminContext)
+      ).rejects.toThrow();
+    });
+
+    it('should require admin role', async () => {
+      await expect(
+        adminResolvers.Mutation.adminResetUsage({}, { orgId: 'org-1' }, mockUserContext)
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('Mutation: adminCancelSubscription', () => {
+    it('should cancel a Chargebee subscription and update status', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        organizationId: 'org-1', chargebeeSubscriptionId: 'sub_abc123', status: 'active',
+      } as any);
+      vi.mocked(prisma.subscription.update).mockResolvedValue({} as any);
+
+      const result = await adminResolvers.Mutation.adminCancelSubscription({}, { orgId: 'org-1' }, mockAdminContext);
+
+      expect(result).toBe(true);
+      expect(vi.mocked(cancelChargebeeSubscription)).toHaveBeenCalledWith('sub_abc123', true);
+      expect(vi.mocked(prisma.subscription.update)).toHaveBeenCalledWith({
+        where: { organizationId: 'org-1' },
+        data: { status: 'cancelled' },
+      });
+    });
+
+    it('should throw BAD_USER_INPUT when no Chargebee subscription ID (free plan)', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        organizationId: 'org-1', chargebeeSubscriptionId: null, status: 'active',
+      } as any);
+
+      await expect(
+        adminResolvers.Mutation.adminCancelSubscription({}, { orgId: 'org-1' }, mockAdminContext)
+      ).rejects.toThrow();
+    });
+
+    it('should require admin role', async () => {
+      await expect(
+        adminResolvers.Mutation.adminCancelSubscription({}, { orgId: 'org-1' }, mockUserContext)
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('Mutation: adminReactivateSubscription', () => {
+    it('should reactivate a Chargebee subscription and update status', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        organizationId: 'org-1', chargebeeSubscriptionId: 'sub_abc123', status: 'cancelled',
+      } as any);
+      vi.mocked(prisma.subscription.update).mockResolvedValue({} as any);
+
+      const result = await adminResolvers.Mutation.adminReactivateSubscription({}, { orgId: 'org-1' }, mockAdminContext);
+
+      expect(result).toBe(true);
+      expect(vi.mocked(reactivateChargebeeSubscription)).toHaveBeenCalledWith('sub_abc123');
+      expect(vi.mocked(prisma.subscription.update)).toHaveBeenCalledWith({
+        where: { organizationId: 'org-1' },
+        data: { status: 'active' },
+      });
+    });
+
+    it('should throw BAD_USER_INPUT when no Chargebee subscription ID', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        organizationId: 'org-1', chargebeeSubscriptionId: null, status: 'cancelled',
+      } as any);
+
+      await expect(
+        adminResolvers.Mutation.adminReactivateSubscription({}, { orgId: 'org-1' }, mockAdminContext)
+      ).rejects.toThrow();
+    });
+
+    it('should require admin role', async () => {
+      await expect(
+        adminResolvers.Mutation.adminReactivateSubscription({}, { orgId: 'org-1' }, mockUserContext)
+      ).rejects.toThrow();
     });
   });
 });

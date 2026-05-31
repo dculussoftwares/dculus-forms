@@ -4,6 +4,8 @@ import { prisma } from '../../lib/prisma.js';
 import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { s3Config } from '../../lib/env.js';
 import { logger } from '../../lib/logger.js';
+import { cancelChargebeeSubscription, reactivateChargebeeSubscription } from '../../services/chargebeeService.js';
+import { resetUsageCounters } from '../../subscriptions/usageService.js';
 import { type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 
 export interface AdminOrganizationsArgs {
@@ -29,6 +31,12 @@ export interface AdminUserByIdArgs {
 export interface AdminOrganizationByIdArgs {
   id: string;
 }
+
+const PLAN_LIMITS: Record<string, { views: number | null; submissions: number | null }> = {
+  free: { views: 10000, submissions: 1000 },
+  starter: { views: null, submissions: 10000 },
+  advanced: { views: null, submissions: 100000 },
+};
 
 // P2-06: In-memory cache for S3 storage stats (expensive operation — paginates all objects)
 let statsCache: { data: { storageUsed: string; fileCount: number }; timestamp: number } | null = null;
@@ -571,6 +579,119 @@ export const adminResolvers = {
         logger.error('Error fetching admin organization by id:', error);
         throw createGraphQLError('Failed to fetch organization', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
+    },
+  },
+
+  Mutation: {
+    adminChangePlan: async (_: any, args: { orgId: string; planId: string }, context: { auth: BetterAuthContext }) => {
+      const admin = requireAdminRole(context);
+      const { orgId, planId } = args;
+
+      if (!['free', 'starter', 'advanced'].includes(planId)) {
+        throw createGraphQLError('Invalid plan ID', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+
+      const subscription = await prisma.subscription.findUnique({ where: { organizationId: orgId } });
+      if (!subscription) {
+        throw createGraphQLError('Subscription not found for this organization', GRAPHQL_ERROR_CODES.NOT_FOUND);
+      }
+
+      const limits = PLAN_LIMITS[planId];
+      const previousPlan = subscription.planId;
+
+      await prisma.subscription.update({
+        where: { organizationId: orgId },
+        data: {
+          planId,
+          viewsLimit: limits.views,
+          submissionsLimit: limits.submissions,
+          status: 'active',
+        },
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          action: 'plan_changed',
+          actorId: admin.id,
+          resourceType: 'Organization',
+          resourceId: orgId,
+          metadata: { from: previousPlan, to: planId, changedBy: admin.email },
+        },
+      });
+
+      logger.info(`[Admin] Plan changed for org ${orgId}: ${previousPlan} -> ${planId} by ${admin.email}`);
+      return true;
+    },
+
+    adminResetUsage: async (_: any, args: { orgId: string }, context: { auth: BetterAuthContext }) => {
+      const admin = requireAdminRole(context);
+      const { orgId } = args;
+
+      const subscription = await prisma.subscription.findUnique({ where: { organizationId: orgId } });
+      if (!subscription) {
+        throw createGraphQLError('Subscription not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
+      }
+
+      await resetUsageCounters(orgId, subscription.currentPeriodStart, subscription.currentPeriodEnd);
+
+      await prisma.auditLog.create({
+        data: {
+          action: 'usage_reset',
+          actorId: admin.id,
+          resourceType: 'Organization',
+          resourceId: orgId,
+          metadata: {
+            resetBy: admin.email,
+            previousSubmissionsUsed: subscription.submissionsUsed,
+            previousViewsUsed: subscription.viewsUsed,
+          },
+        },
+      });
+
+      logger.info(`[Admin] Usage reset for org ${orgId} by ${admin.email}`);
+      return true;
+    },
+
+    adminCancelSubscription: async (_: any, args: { orgId: string }, context: { auth: BetterAuthContext }) => {
+      requireAdminRole(context);
+      const { orgId } = args;
+
+      const subscription = await prisma.subscription.findUnique({ where: { organizationId: orgId } });
+      if (!subscription) {
+        throw createGraphQLError('Subscription not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
+      }
+      if (!subscription.chargebeeSubscriptionId) {
+        throw createGraphQLError('No Chargebee subscription to cancel (free plan)', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+
+      await cancelChargebeeSubscription(subscription.chargebeeSubscriptionId, true);
+      await prisma.subscription.update({
+        where: { organizationId: orgId },
+        data: { status: 'cancelled' },
+      });
+
+      return true;
+    },
+
+    adminReactivateSubscription: async (_: any, args: { orgId: string }, context: { auth: BetterAuthContext }) => {
+      requireAdminRole(context);
+      const { orgId } = args;
+
+      const subscription = await prisma.subscription.findUnique({ where: { organizationId: orgId } });
+      if (!subscription) {
+        throw createGraphQLError('Subscription not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
+      }
+      if (!subscription.chargebeeSubscriptionId) {
+        throw createGraphQLError('No Chargebee subscription to reactivate', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+
+      await reactivateChargebeeSubscription(subscription.chargebeeSubscriptionId);
+      await prisma.subscription.update({
+        where: { organizationId: orgId },
+        data: { status: 'active' },
+      });
+
+      return true;
     },
   },
 };
