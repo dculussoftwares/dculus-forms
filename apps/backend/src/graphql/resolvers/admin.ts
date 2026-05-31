@@ -9,6 +9,7 @@ import { type BetterAuthContext } from '../../middleware/better-auth-middleware.
 export interface AdminOrganizationsArgs {
   limit?: number;
   offset?: number;
+  search?: string;
 }
 
 export interface AdminOrganizationArgs {
@@ -148,45 +149,36 @@ export const adminResolvers = {
         const limit = Math.min(Math.max(1, args.limit ?? 50), 100);
         const offset = Math.max(0, args.offset ?? 0);
 
+        const whereClause = args.search
+          ? {
+              OR: [
+                { name: { contains: args.search, mode: 'insensitive' as const } },
+                { slug: { contains: args.search, mode: 'insensitive' as const } },
+              ],
+            }
+          : {};
+
         const organizations = await prisma.organization.findMany({
           skip: offset,
           take: limit,
+          where: whereClause,
           include: {
             members: {
               include: {
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                  },
-                },
+                user: { select: { id: true, name: true, email: true } },
               },
             },
             forms: {
-              select: {
-                id: true,
-                title: true,
-                isPublished: true,
-                createdAt: true,
-              },
-              orderBy: {
-                createdAt: 'desc',
-              },
+              select: { id: true, title: true, isPublished: true, createdAt: true },
+              orderBy: { createdAt: 'desc' },
             },
-            _count: {
-              select: {
-                members: true,
-                forms: true,
-              },
-            },
+            subscription: true,
+            _count: { select: { members: true, forms: true } },
           },
-          orderBy: {
-            createdAt: 'desc',
-          },
+          orderBy: { createdAt: 'desc' },
         });
 
-        const total = await prisma.organization.count();
+        const total = await prisma.organization.count({ where: whereClause });
 
         return {
           organizations: organizations.map(org => ({
@@ -199,10 +191,11 @@ export const adminResolvers = {
             memberCount: org._count.members,
             formCount: org._count.forms,
             members: org.members,
-            forms: org.forms.map(f => ({
-              ...f,
-              createdAt: serializeDate(f.createdAt)!,
-            })),
+            forms: org.forms.map(f => ({ ...f, createdAt: serializeDate(f.createdAt)! })),
+            planId: org.subscription?.planId ?? null,
+            subscriptionStatus: org.subscription?.status ?? null,
+            submissionsUsed: org.subscription?.submissionsUsed ?? null,
+            submissionsLimit: org.subscription?.submissionsLimit ?? null,
           })),
           total,
           hasMore: offset + limit < total,

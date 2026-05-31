@@ -22,6 +22,15 @@ vi.mock('../../../lib/prisma.js', () => ({
     response: {
       count: vi.fn(),
     },
+    subscription: {
+      count: vi.fn(),
+      findMany: vi.fn(),
+      update: vi.fn(),
+      findUnique: vi.fn(),
+    },
+    auditLog: {
+      create: vi.fn(),
+    },
   },
 }));
 
@@ -95,6 +104,7 @@ describe('Admin Resolvers', () => {
       members: 1,
       forms: 1,
     },
+    subscription: null,
   };
 
   const mockUser = {
@@ -208,39 +218,21 @@ describe('Admin Resolvers', () => {
       expect(prisma.organization.findMany).toHaveBeenCalledWith({
         skip: 0,
         take: 50,
+        where: {},
         include: {
           members: {
             include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                },
-              },
+              user: { select: { id: true, name: true, email: true } },
             },
           },
           forms: {
-            select: {
-              id: true,
-              title: true,
-              isPublished: true,
-              createdAt: true,
-            },
-            orderBy: {
-              createdAt: 'desc',
-            },
+            select: { id: true, title: true, isPublished: true, createdAt: true },
+            orderBy: { createdAt: 'desc' },
           },
-          _count: {
-            select: {
-              members: true,
-              forms: true,
-            },
-          },
+          subscription: true,
+          _count: { select: { members: true, forms: true } },
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
+        orderBy: { createdAt: 'desc' },
       });
 
       expect(result).toEqual({
@@ -263,6 +255,10 @@ describe('Admin Resolvers', () => {
                 createdAt: '2024-01-01T00:00:00.000Z',
               },
             ],
+            planId: null,
+            subscriptionStatus: null,
+            submissionsUsed: null,
+            submissionsLimit: null,
           },
         ],
         total: 1,
@@ -332,6 +328,7 @@ describe('Admin Resolvers', () => {
         updatedAt: new Date('2026-01-15T10:00:00.000Z'),
         members: [], forms: [],
         _count: { members: 0, forms: 0 },
+        subscription: null,
       };
       vi.mocked(prisma.organization.findMany).mockResolvedValue([org] as any);
       vi.mocked(prisma.organization.count).mockResolvedValue(1);
@@ -340,6 +337,42 @@ describe('Admin Resolvers', () => {
 
       expect(result.organizations[0].createdAt).toBe('2026-01-15T10:00:00.000Z');
       expect(new Date(result.organizations[0].createdAt).toString()).not.toBe('Invalid Date');
+    });
+
+    it('should filter organizations by search term', async () => {
+      vi.mocked(prisma.organization.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.organization.count).mockResolvedValue(0);
+
+      await adminResolvers.Query.adminOrganizations(
+        {}, { limit: 10, offset: 0, search: 'acme' }, mockAdminContext
+      );
+
+      expect(vi.mocked(prisma.organization.findMany)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            OR: [
+              { name: { contains: 'acme', mode: 'insensitive' } },
+              { slug: { contains: 'acme', mode: 'insensitive' } },
+            ],
+          },
+        })
+      );
+    });
+
+    it('should include planId from subscription in org list', async () => {
+      const org = {
+        id: 'org-1', name: 'Acme', slug: 'acme', logo: null,
+        createdAt: new Date('2026-01-01'), updatedAt: new Date('2026-01-01'),
+        members: [], forms: [], _count: { members: 0, forms: 0 },
+        subscription: { planId: 'starter', status: 'active', submissionsUsed: 100, submissionsLimit: 10000 },
+      };
+      vi.mocked(prisma.organization.findMany).mockResolvedValue([org] as any);
+      vi.mocked(prisma.organization.count).mockResolvedValue(1);
+
+      const result = await adminResolvers.Query.adminOrganizations({}, {}, mockAdminContext);
+
+      expect(result.organizations[0].planId).toBe('starter');
+      expect(result.organizations[0].submissionsUsed).toBe(100);
     });
   });
 
