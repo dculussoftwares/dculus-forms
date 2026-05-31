@@ -92,12 +92,12 @@ export function NavUser() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => navigate('/settings/account')}>
-              <UserCircle strokeWidth={1.5} />
+              <UserCircle className="mr-2 h-4 w-4" />
               {t('menu.account')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
-              <LogOut strokeWidth={1.5} />
+              <LogOut className="mr-2 h-4 w-4" />
               {t('menu.logout')}
             </DropdownMenuItem>
           </DropdownMenuContent>

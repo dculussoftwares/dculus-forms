@@ -3,7 +3,6 @@ import { LayoutDashboard, Settings, Layers, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { NavMain } from './nav-main';
-import { NavUser } from './nav-user';
 import { NavLocale } from './nav-locale';
 import { TeamSwitcher } from './team-switcher';
 import {
@@ -67,7 +66,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
       <SidebarFooter className="border-t border-[var(--tf-border-medium)] dark:border-white/10">
         <NavLocale />
-        <NavUser />
       </SidebarFooter>
 
       <SidebarRail />
