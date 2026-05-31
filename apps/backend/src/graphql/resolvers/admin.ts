@@ -118,22 +118,20 @@ async function getS3StorageStats(): Promise<{ storageUsed: string; fileCount: nu
   }
 }
 
-// Helper function to get PostgreSQL storage statistics
-async function getMongoStorageStats(): Promise<{ mongoDbSize: string; mongoCollectionCount: number }> {
+
+async function getPostgresStats(): Promise<{ postgresDbSize: string; postgresTableCount: number }> {
   try {
-    // For PostgreSQL, we'll return approximate stats
-    // In a production environment, you might want to use pg admin functions
-    // For now, return basic metrics
+    const [sizeResult, tableResult] = await Promise.all([
+      prisma.$queryRaw<[{ size: string }]>`SELECT pg_size_pretty(pg_database_size(current_database())) AS size`,
+      prisma.$queryRaw<[{ count: bigint }]>`SELECT COUNT(*) AS count FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`,
+    ]);
     return {
-      mongoDbSize: 'N/A (PostgreSQL)',
-      mongoCollectionCount: 21, // Number of tables in schema
+      postgresDbSize: sizeResult[0]?.size ?? '0 B',
+      postgresTableCount: Number(tableResult[0]?.count ?? 0),
     };
   } catch (error) {
-    logger.error('Error fetching PostgreSQL storage stats:', error);
-    return {
-      mongoDbSize: '0 B',
-      mongoCollectionCount: 0,
-    };
+    logger.error('Error fetching PostgreSQL stats:', error);
+    return { postgresDbSize: '0 B', postgresTableCount: 0 };
   }
 }
 
@@ -266,14 +264,14 @@ export const adminResolvers = {
           formCount,
           responseCount,
           s3Stats,
-          mongoStats
+          pgStats,
         ] = await Promise.all([
           prisma.organization.count(),
           prisma.user.count(),
           prisma.form.count(),
           prisma.response.count(),
           getS3StorageStats(),
-          getMongoStorageStats(),
+          getPostgresStats(),
         ]);
 
         return {
@@ -283,8 +281,8 @@ export const adminResolvers = {
           responseCount,
           storageUsed: s3Stats.storageUsed,
           fileCount: s3Stats.fileCount,
-          mongoDbSize: mongoStats.mongoDbSize,
-          mongoCollectionCount: mongoStats.mongoCollectionCount,
+          postgresDbSize: pgStats.postgresDbSize,
+          postgresTableCount: pgStats.postgresTableCount,
         };
       } catch (error) {
         logger.error('Error fetching admin stats:', error);

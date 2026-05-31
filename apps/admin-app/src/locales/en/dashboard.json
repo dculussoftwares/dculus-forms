@@ -10,9 +10,9 @@
   "storage": {
     "title": "Storage Overview",
     "s3Storage": "S3 Storage",
-    "mongoDB": "MongoDB",
+    "postgresDB": "PostgreSQL",
     "files": "files",
-    "collections": "collections"
+    "tables": "tables"
   },
   "recentActivity": {
     "recentOrganizations": "Recent Organizations",

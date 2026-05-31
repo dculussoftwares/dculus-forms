@@ -401,15 +401,15 @@ describe('Admin Resolvers', () => {
 
       const result = await adminResolvers.Query.adminStats({}, {}, mockAdminContext);
 
-      expect(result).toEqual({
+      expect(result).toMatchObject({
         organizationCount: 10,
         userCount: 50,
         formCount: 25,
         responseCount: 100,
         storageUsed: '0 B', // S3 error returns default
         fileCount: 0, // S3 error returns default
-        mongoDbSize: 'N/A (PostgreSQL)',
-        mongoCollectionCount: 21,
+        postgresDbSize: expect.any(String),
+        postgresTableCount: expect.any(Number),
       });
     });
 
@@ -448,9 +448,8 @@ describe('Admin Resolvers', () => {
 
       const result = await adminResolvers.Query.adminStats({}, {}, mockAdminContext);
 
-      // PostgreSQL returns fixed value
-      expect(result.mongoDbSize).toBe('N/A (PostgreSQL)');
-      expect(result.mongoCollectionCount).toBe(21);
+      expect(result.storageUsed).toBe('0 B');
+      expect(result.fileCount).toBe(0);
     });
 
     it('should aggregate paginated S3 responses', async () => {
@@ -890,7 +889,7 @@ describe('Admin Resolvers', () => {
       expect(result.fileCount).toBe(0);
     });
 
-    it('should return PostgreSQL fixed values', async () => {
+    it('should return storage stats from S3 and PostgreSQL', async () => {
       mockS3Send.mockResolvedValue({
         Contents: [],
         IsTruncated: false,
@@ -902,8 +901,10 @@ describe('Admin Resolvers', () => {
 
       const result = await adminResolvers.Query.adminStats({}, {}, mockAdminContext);
 
-      expect(result.mongoDbSize).toBe('N/A (PostgreSQL)');
-      expect(result.mongoCollectionCount).toBe(21);
+      expect(result.storageUsed).toBeDefined();
+      expect(result.fileCount).toBeDefined();
+      expect(result.postgresDbSize).toBeDefined();
+      expect(result.postgresTableCount).toBeDefined();
     });
 
     it('should handle large pagination offset', async () => {

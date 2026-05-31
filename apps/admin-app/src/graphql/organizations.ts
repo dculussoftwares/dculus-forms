@@ -59,8 +59,8 @@ export const ADMIN_STATS_QUERY = gql`
       responseCount
       storageUsed
       fileCount
-      mongoDbSize
-      mongoCollectionCount
+      postgresDbSize
+      postgresTableCount
     }
   }
 `;

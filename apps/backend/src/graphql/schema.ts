@@ -454,8 +454,8 @@ export const typeDefs = gql`
     responseCount: Int!
     storageUsed: String!
     fileCount: Int!
-    mongoDbSize: String!
-    mongoCollectionCount: Int!
+    postgresDbSize: String!
+    postgresTableCount: Int!
   }
 
   # Admin Users Types

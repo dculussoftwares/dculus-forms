@@ -13,8 +13,8 @@ const STAT_COLORS = [
 ];
 
 const STORAGE_COLORS = [
-  { iconBg: 'var(--tf-icon-gray)', iconColor: 'var(--tf-text)' },  // S3 — gray
-  { iconBg: '#c4e3ba', iconColor: '#2d6236' },  // MongoDB — green
+  { iconBg: 'var(--tf-icon-gray)', iconColor: 'var(--tf-text)' },   // S3 — gray
+  { iconBg: 'var(--tf-icon-teal)', iconColor: 'var(--tf-green)' },  // Postgres — teal
 ];
 
 /* Reusable stat card */
@@ -47,8 +47,8 @@ export default function DashboardPage() {
   ];
 
   const storageStats = [
-    { name: t('storage.s3Storage'), value: data?.adminStats?.storageUsed || '0 B', subtitle: `${data?.adminStats?.fileCount || 0} ${t('storage.files')}`, icon: HardDrive, ...STORAGE_COLORS[0] },
-    { name: t('storage.mongoDB'),   value: data?.adminStats?.mongoDbSize || '0 B', subtitle: `${data?.adminStats?.mongoCollectionCount || 0} ${t('storage.collections')}`, icon: Database, ...STORAGE_COLORS[1] },
+    { name: t('storage.s3Storage'),   value: data?.adminStats?.storageUsed || '0 B',    subtitle: `${data?.adminStats?.fileCount || 0} ${t('storage.files')}`,           icon: HardDrive, ...STORAGE_COLORS[0] },
+    { name: t('storage.postgresDB'),  value: data?.adminStats?.postgresDbSize || '0 B', subtitle: `${data?.adminStats?.postgresTableCount || 0} ${t('storage.tables')}`, icon: Database,  ...STORAGE_COLORS[1] },
   ];
 
   if (error) {
