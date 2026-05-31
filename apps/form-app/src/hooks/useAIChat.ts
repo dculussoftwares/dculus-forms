@@ -1,5 +1,7 @@
 // apps/form-app/src/hooks/useAIChat.ts
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 import { useMutation, useQuery } from '@apollo/client';
 import { toastError } from '@dculus/ui';
 import { useFormBuilderStore } from '../store/useFormBuilderStore';
@@ -10,20 +12,11 @@ import {
   DELETE_AI_CHAT_CONVERSATION,
   RENAME_AI_CHAT_CONVERSATION,
 } from '../graphql/aiChat';
-import { useAIStream } from './useAIStream';
-import { useYjsUndoManager } from './useYjsUndoManager';
 import { applyAIOp } from '../lib/applyAIOp';
+import { useYjsUndoManager } from './useYjsUndoManager';
+import { MUTATION_TOOL_NAMES, type FormEditAgentUIMessage } from '../lib/aiAgentTypes';
 
-export interface AIChatMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  operations?: object[] | null;
-  createdAt: string;
-  isStreaming?: boolean;
-  streamingText?: string;
-  streamingOps?: { type: string; label: string }[];
-}
+const API_URL = import.meta.env.VITE_API_URL as string;
 
 export function buildOpLabel(op: Record<string, unknown>): string {
   switch (op?.type) {
@@ -49,71 +42,82 @@ export function useAIChat({
 }) {
   const store = useFormBuilderStore();
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [streamingMessage, setStreamingMessage] = useState<AIChatMessage | null>(null);
-  const [statusText, setStatusText] = useState('');
-
   const { canUndo, beginBatch, clearBatch, undo } = useYjsUndoManager();
+  const appliedToolCallIds = useRef(new Set<string>());
 
+  // ── Conversation management (Apollo) ─────────────────────────────────────
   const { data: conversationsData, refetch: refetchConversations } = useQuery(
     LIST_AI_CHAT_CONVERSATIONS,
     { variables: { formId, organizationId }, skip: !formId }
   );
 
-  const { data: activeConvData, refetch: refetchActiveConversation } = useQuery(
-    GET_AI_CHAT_CONVERSATION,
-    {
-      variables: { id: activeConversationId!, organizationId },
-      skip: !activeConversationId,
-    }
-  );
+  const { data: activeConvData } = useQuery(GET_AI_CHAT_CONVERSATION, {
+    variables: { id: activeConversationId!, organizationId },
+    skip: !activeConversationId,
+  });
 
   const [createConvMutation] = useMutation(CREATE_AI_CHAT_CONVERSATION);
   const [deleteConvMutation] = useMutation(DELETE_AI_CHAT_CONVERSATION);
   const [renameConvMutation] = useMutation(RENAME_AI_CHAT_CONVERSATION);
 
-  const { isStreaming: streamActive, sendMessage: streamSend, cancel: cancelStream } = useAIStream(
-    organizationId,
-    {
-      onTextDelta: (delta) => {
-        setStreamingMessage((prev) =>
-          prev ? { ...prev, streamingText: (prev.streamingText ?? '') + delta } : null
-        );
-      },
-      onOperation: (op) => {
-        applyAIOp(op, store);
-        const label = buildOpLabel(op as Record<string, unknown>);
-        setStreamingMessage((prev) =>
-          prev
-            ? { ...prev, streamingOps: [...(prev.streamingOps ?? []), { type: (op as any).type, label }] }
-            : null
-        );
-      },
-      onStatus: (text) => setStatusText(text),
-      onDone: (_messageId) => {
-        setStatusText('');
-        setIsStreaming(false);
-        setStreamingMessage(null);
-        refetchActiveConversation();
-        refetchConversations();
-      },
-      onError: (error) => {
-        setStatusText('');
-        setIsStreaming(false);
-        setStreamingMessage(null);
-        const isLimit = error.includes('token limit');
-        toastError('AI Error', isLimit ? error : 'AI processing failed. Please try again.');
-      },
+  // ── Build initialMessages from Apollo conversation data ───────────────────
+  const initialMessages: FormEditAgentUIMessage[] =
+    (activeConvData?.getAIChatConversation?.messages ?? []).map(
+      (m: { data: unknown }) => m.data as FormEditAgentUIMessage
+    );
+
+  // ── useChat — streaming + message state ───────────────────────────────────
+  const currentPageId: string | undefined =
+    (store as any).selectedPageId ?? (store.pages as any[])[0]?.id;
+
+  const { messages: rawMessages, sendMessage, status, stop } = useChat({
+    id: activeConversationId ?? '__no_conversation__',
+    messages: initialMessages as any,
+    transport: new DefaultChatTransport({
+      api: `${API_URL}/api/ai/chat`,
+      credentials: 'include',
+      prepareSendMessagesRequest: ({ messages: allMsgs }) => ({
+        body: {
+          message: allMsgs[allMsgs.length - 1],
+          conversationId: activeConversationId,
+          organizationId,
+          currentPageId,
+        },
+      }),
+    }),
+    onError: (error) => {
+      const msg = error.message ?? String(error);
+      const isLimit = msg.includes('token limit');
+      toastError('AI Error', isLimit ? msg : 'AI processing failed. Please try again.');
+    },
+  });
+
+  const messages = rawMessages as unknown as FormEditAgentUIMessage[];
+
+  // ── Apply mutation ops to Y.js store as tool results arrive ──────────────
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== 'assistant') return;
+
+    for (const part of last.parts ?? []) {
+      if (
+        part.type.startsWith('tool-') &&
+        MUTATION_TOOL_NAMES.has(part.type.slice(5)) &&
+        (part as any).state === 'output-available' &&
+        !appliedToolCallIds.current.has((part as any).toolCallId)
+      ) {
+        appliedToolCallIds.current.add((part as any).toolCallId);
+        applyAIOp((part as any).output, store);
+      }
     }
-  );
+  }, [messages]);
 
-  const cancel = useCallback(() => {
-    cancelStream();
-    setStatusText('');
-    setIsStreaming(false);
-    setStreamingMessage(null);
-  }, [cancelStream]);
+  // Clear applied tool call IDs when conversation switches
+  useEffect(() => {
+    appliedToolCallIds.current.clear();
+  }, [activeConversationId]);
 
+  // ── Conversation CRUD ─────────────────────────────────────────────────────
   const createConversation = useCallback(async () => {
     const { data } = await createConvMutation({ variables: { formId, organizationId } });
     const conv = data?.createAIChatConversation;
@@ -125,9 +129,6 @@ export function useAIChat({
   }, [formId, organizationId, createConvMutation, refetchConversations]);
 
   const selectConversation = useCallback((id: string) => {
-    setIsStreaming(false);
-    setStreamingMessage(null);
-    setStatusText('');
     setActiveConversationId(id);
   }, []);
 
@@ -144,42 +145,23 @@ export function useAIChat({
     async (id: string, title: string) => {
       await renameConvMutation({ variables: { id, organizationId, title } });
       refetchConversations();
-      if (id === activeConversationId) refetchActiveConversation();
     },
-    [organizationId, activeConversationId, renameConvMutation, refetchConversations, refetchActiveConversation]
+    [organizationId, renameConvMutation, refetchConversations]
   );
 
-  const sendMessage = useCallback(
+  const handleSendMessage = useCallback(
     async (content: string) => {
-      if (!activeConversationId || streamActive) return;
+      if (!activeConversationId || status !== 'ready') return;
       clearBatch();
       beginBatch();
-      // Use the page the user is currently viewing; fall back to first page
-      const currentPageId: string | undefined =
-        (store as any).selectedPageId ?? (store.pages as any[])[0]?.id;
-
-      setStreamingMessage({
-        id: 'streaming',
-        role: 'assistant',
-        content: '',
-        streamingText: '',
-        streamingOps: [],
-        isStreaming: true,
-        createdAt: new Date().toISOString(),
-      });
-      setIsStreaming(true);
-
-      await streamSend(activeConversationId, content, currentPageId);
+      sendMessage({ text: content });
     },
-    [activeConversationId, streamActive, clearBatch, beginBatch, store.pages, streamSend]
+    [activeConversationId, status, clearBatch, beginBatch, sendMessage]
   );
 
   const conversations = conversationsData?.listAIChatConversations ?? [];
   const activeConversation = activeConvData?.getAIChatConversation ?? null;
-  const messages: AIChatMessage[] = [
-    ...(activeConversation?.messages ?? []),
-    ...(streamingMessage ? [streamingMessage] : []),
-  ];
+  const isStreaming = status !== 'ready';
 
   return {
     conversations,
@@ -187,14 +169,14 @@ export function useAIChat({
     activeConversation,
     messages,
     isStreaming,
-    statusText,
+    status,
     canUndo,
     undo,
-    cancel,
+    cancel: stop,
     createConversation,
     selectConversation,
     deleteConversation,
     renameConversation,
-    sendMessage,
+    sendMessage: handleSendMessage,
   };
 }
