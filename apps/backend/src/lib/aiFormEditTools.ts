@@ -1,66 +1,7 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import * as Y from 'yjs';
-import { prisma } from './prisma.js';
 
-/**
- * Read the live form schema from the Y.js CollaborativeDocument stored by Hocuspocus.
- * Falls back to Form.formSchema (Prisma) if no collaborative document exists.
- *
- * The document name matches the safeDocumentName used by CollaborationManager on the
- * frontend: formId with all non-alphanumeric characters stripped.
- */
-async function getFormSchemaFromYjs(formId: string): Promise<{ pages: any[] } | null> {
-  const docName = formId.replace(/[^a-zA-Z0-9_-]/g, '');
-  const collabDoc = await prisma.collaborativeDocument.findFirst({
-    where: { documentName: docName },
-    select: { state: true },
-  });
-
-  if (collabDoc?.state) {
-    try {
-      const ydoc = new Y.Doc();
-      Y.applyUpdate(ydoc, collabDoc.state);
-      const formSchemaMap = ydoc.getMap('formSchema');
-      const pagesArray = formSchemaMap.get('pages') as Y.Array<Y.Map<any>> | undefined;
-      if (!pagesArray) return { pages: [] };
-
-      const pages = pagesArray.toArray().map((pageMap) => {
-        const fieldsArray = pageMap.get('fields') as Y.Array<Y.Map<any>> | undefined;
-        const fields = fieldsArray ? fieldsArray.toArray().map((fieldMap) => {
-          const optionsRaw = fieldMap.get('options');
-          const options = optionsRaw instanceof Y.Array ? optionsRaw.toArray() : (optionsRaw ?? null);
-          return {
-            id: fieldMap.get('id'),
-            type: fieldMap.get('type'),
-            label: fieldMap.get('label'),
-            required: fieldMap.get('validation')?.get?.('required') ?? fieldMap.get('required') ?? false,
-            placeholder: fieldMap.get('placeholder') ?? null,
-            hint: fieldMap.get('hint') ?? null,
-            options,
-          };
-        }) : [];
-        return { id: pageMap.get('id'), title: pageMap.get('title'), fields };
-      });
-      return { pages };
-    } catch {
-      // fall through to Prisma fallback
-    }
-  }
-
-  // Fallback: read from Form.formSchema (may be stale or empty for Y.js-managed forms)
-  const form = await prisma.form.findUnique({
-    where: { id: formId },
-    select: { formSchema: true },
-  });
-  return form ? (form.formSchema as any) : null;
-}
-
-export function createFormEditTools(formId: string) {
-  async function getFormSchema() {
-    return getFormSchemaFromYjs(formId);
-  }
-
+export function createFormEditTools(schema: { pages: any[] }) {
   return {
     listFields: tool({
       description:
@@ -69,8 +10,6 @@ export function createFormEditTools(formId: string) {
         pageId: z.string().optional().describe('Filter to this page; omit to list all pages'),
       }),
       execute: async ({ pageId }) => {
-        const schema = await getFormSchema();
-        if (!schema) return { error: 'Form not found' };
         const pages: any[] = schema.pages ?? [];
         const filtered = pageId ? pages.filter((p: any) => p.id === pageId) : pages;
         return {
@@ -94,8 +33,6 @@ export function createFormEditTools(formId: string) {
         fieldId: z.string().describe('The field ID from listFields'),
       }),
       execute: async ({ fieldId }) => {
-        const schema = await getFormSchema();
-        if (!schema) return { error: 'Form not found' };
         for (const page of (schema.pages ?? []) as any[]) {
           const field = (page.fields ?? []).find((f: any) => f.id === fieldId);
           if (field) {
@@ -141,18 +78,15 @@ export function createFormEditTools(formId: string) {
           placeholder: z.string().optional(),
           hint: z.string().optional(),
           options: z.array(z.string()).optional(),
-          // Validation rules — stored in the Y.js validation Y.Map
           validation: z.object({
             required: z.boolean().optional(),
-            minLength: z.number().nullable().optional(),     // text / textarea
-            maxLength: z.number().nullable().optional(),     // text / textarea
-            minSelections: z.number().nullable().optional(), // checkbox
-            maxSelections: z.number().nullable().optional(), // checkbox
-          }).optional().describe('For text/textarea use minLength/maxLength. For checkbox use minSelections/maxSelections.'),
-          // Number field — field-level properties (not in validation Y.Map)
+            minLength: z.number().nullable().optional(),
+            maxLength: z.number().nullable().optional(),
+            minSelections: z.number().nullable().optional(),
+            maxSelections: z.number().nullable().optional(),
+          }).optional(),
           min: z.number().nullable().optional(),
           max: z.number().nullable().optional(),
-          // Date field — field-level properties (ISO date string e.g. "2024-01-31")
           minDate: z.string().nullable().optional(),
           maxDate: z.string().nullable().optional(),
         }),
@@ -205,7 +139,7 @@ export function createFormEditTools(formId: string) {
 
     addPage: tool({
       description:
-        'Add a new empty page to the form. insertAfterPageId: pass a page ID to insert after that page, or null to append at the end. If the page ID is not found, the page is appended at the end.',
+        'Add a new empty page to the form. insertAfterPageId: pass a page ID to insert after that page, or null to append at the end.',
       inputSchema: z.object({
         title: z.string().max(50).describe('Title for the new page'),
         insertAfterPageId: z.string().nullable().describe('Insert after this page ID; null to append at end'),
@@ -220,8 +154,6 @@ export function createFormEditTools(formId: string) {
         pageId: z.string().describe('The page ID from listFields'),
       }),
       execute: async ({ pageId }) => {
-        const schema = await getFormSchema();
-        if (!schema) return { error: 'Form not found' };
         if ((schema.pages ?? []).length <= 1) return { error: 'Cannot remove the last page' };
         return { type: 'REMOVE_PAGE' as const, pageId };
       },
