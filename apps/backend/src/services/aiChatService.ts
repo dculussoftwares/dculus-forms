@@ -4,6 +4,8 @@ import { prisma } from '../lib/prisma.js';
 import { getFastModel } from '../lib/ai.js';
 import { logger } from '../lib/logger.js';
 
+const MAX_HISTORY_MESSAGES = 20;
+
 export async function createConversation(
   formId: string,
   organizationId: string,
@@ -61,10 +63,11 @@ export async function renameConversation(id: string, userId: string, title: stri
 export async function loadConversationMessages(conversationId: string): Promise<UIMessage[]> {
   const messages = await prisma.aIChatMessage.findMany({
     where: { conversationId },
-    orderBy: { createdAt: 'asc' },
+    orderBy: { createdAt: 'desc' },
+    take: MAX_HISTORY_MESSAGES,
     select: { data: true },
   });
-  return messages.map((m) => m.data as unknown as UIMessage);
+  return messages.reverse().map((m) => m.data as unknown as UIMessage);
 }
 
 export async function saveConversationMessages(
