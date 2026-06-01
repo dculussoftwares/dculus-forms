@@ -786,5 +786,30 @@ describe('Quiz Grading Handler', () => {
         })
       );
     });
+
+    it('should handle quiz with no fields (totalMarks = 0) without dividing by zero', async () => {
+      const config: QuizGradingPluginConfig = {
+        type: 'quiz-grading',
+        passThreshold: 60,
+        quizFields: [],
+      };
+
+      const mockResponse = {
+        id: 'response-123',
+        formId: 'form-123',
+        data: {},
+        metadata: null,
+      };
+
+      vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
+      mockPrisma.response.update.mockResolvedValue(mockResponse);
+
+      await quizGradingHandler({ id: TEST_PLUGIN_ID, config }, mockEvent, mockContext);
+
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Quiz graded successfully',
+        expect.objectContaining({ percentage: '0.0%' })
+      );
+    });
   });
 });

@@ -373,5 +373,135 @@ describe('Upload Routes', () => {
         type: 'UserAvatar',
       });
     });
+
+    it('returns 401 for unauthenticated UserAvatar upload', async () => {
+      vi.mocked(auth.api.getSession).mockResolvedValue(null as any);
+      const res = await request(app)
+        .post('/api/upload/upload')
+        .field('type', 'UserAvatar')
+        .attach('file', Buffer.from('img'), 'avatar.png');
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe('FormTemplate auth', () => {
+    it('returns 401 for unauthenticated FormTemplate upload', async () => {
+      vi.mocked(auth.api.getSession).mockResolvedValue(null as any);
+      const res = await request(app)
+        .post('/api/upload/upload')
+        .field('type', 'FormTemplate')
+        .attach('file', Buffer.from('tmpl'), 'tmpl.json');
+      expect(res.status).toBe(401);
+    });
+
+    it('returns 403 for non-admin FormTemplate upload', async () => {
+      vi.mocked(auth.api.getSession).mockResolvedValue({ user: { id: 'u1', role: 'user' }, session: {} } as any);
+      const res = await request(app)
+        .post('/api/upload/upload')
+        .field('type', 'FormTemplate')
+        .attach('file', Buffer.from('tmpl'), 'tmpl.json');
+      expect(res.status).toBe(403);
+    });
+  });
+
+  describe('FormBackground auth', () => {
+    it('returns 400 when formId missing for FormBackground', async () => {
+      const res = await request(app)
+        .post('/api/upload/upload')
+        .field('type', 'FormBackground')
+        .attach('file', Buffer.from('bg'), 'bg.png');
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 401 for unauthenticated FormBackground upload', async () => {
+      vi.mocked(auth.api.getSession).mockResolvedValue(null as any);
+      const res = await request(app)
+        .post('/api/upload/upload')
+        .field('type', 'FormBackground')
+        .field('formId', 'form-1')
+        .attach('file', Buffer.from('bg'), 'bg.png');
+      expect(res.status).toBe(401);
+    });
+
+    it('returns 403 when user has no editor access to FormBackground', async () => {
+      vi.mocked(formSharing.checkFormAccess).mockResolvedValue({ hasAccess: false } as any);
+      const res = await request(app)
+        .post('/api/upload/upload')
+        .field('type', 'FormBackground')
+        .field('formId', 'form-1')
+        .attach('file', Buffer.from('bg'), 'bg.png');
+      expect(res.status).toBe(403);
+    });
+  });
+
+  describe('OrganizationLogo auth', () => {
+    it('returns 400 when organizationId missing', async () => {
+      const res = await request(app)
+        .post('/api/upload/upload')
+        .field('type', 'OrganizationLogo')
+        .attach('file', Buffer.from('logo'), 'logo.png');
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 401 for unauthenticated OrganizationLogo upload', async () => {
+      vi.mocked(auth.api.getSession).mockResolvedValue(null as any);
+      const res = await request(app)
+        .post('/api/upload/upload')
+        .field('type', 'OrganizationLogo')
+        .field('organizationId', 'org-1')
+        .attach('file', Buffer.from('logo'), 'logo.png');
+      expect(res.status).toBe(401);
+    });
+
+    it('returns 403 when user is not org member', async () => {
+      vi.mocked(prisma.member.findFirst).mockResolvedValue(null);
+      const res = await request(app)
+        .post('/api/upload/upload')
+        .field('type', 'OrganizationLogo')
+        .field('organizationId', 'org-1')
+        .attach('file', Buffer.from('logo'), 'logo.png');
+      expect(res.status).toBe(403);
+    });
+
+    it('returns 403 when user is not org owner', async () => {
+      vi.mocked(prisma.member.findFirst).mockResolvedValue({ role: 'member' } as any);
+      const res = await request(app)
+        .post('/api/upload/upload')
+        .field('type', 'OrganizationLogo')
+        .field('organizationId', 'org-1')
+        .attach('file', Buffer.from('logo'), 'logo.png');
+      expect(res.status).toBe(403);
+    });
+  });
+
+  describe('FormResponse auth', () => {
+    it('returns 400 when formId missing for FormResponse', async () => {
+      const res = await request(app)
+        .post('/api/upload/upload')
+        .field('type', 'FormResponse')
+        .attach('file', Buffer.from('doc'), 'doc.pdf');
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 404 when form not found for FormResponse', async () => {
+      vi.mocked(prisma.form.findUnique).mockResolvedValue(null);
+      const res = await request(app)
+        .post('/api/upload/upload')
+        .field('type', 'FormResponse')
+        .field('formId', 'bad-form')
+        .attach('file', Buffer.from('doc'), 'doc.pdf');
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 403 for unauthenticated upload to unpublished form', async () => {
+      vi.mocked(auth.api.getSession).mockResolvedValue(null as any);
+      vi.mocked(prisma.form.findUnique).mockResolvedValue({ id: 'f1', isPublished: false, createdById: 'other', organizationId: 'org-1' } as any);
+      const res = await request(app)
+        .post('/api/upload/upload')
+        .field('type', 'FormResponse')
+        .field('formId', 'f1')
+        .attach('file', Buffer.from('doc'), 'doc.pdf');
+      expect(res.status).toBe(403);
+    });
   });
 });

@@ -6,6 +6,7 @@ import {
   getActivePluginExports,
   hasPluginExport,
   getPluginTypesWithData,
+  pluginTypeFromMetadataKey,
 } from '../exportRegistry.js';
 import { logger } from '../../../lib/logger.js';
 import type { PluginExportColumn } from '../exportRegistry.js';
@@ -623,5 +624,14 @@ describe('exportRegistry', () => {
       pluginTypes = getPluginTypesWithData(responses);
       expect(pluginTypes).toEqual(['new-plugin']);
     });
+  });
+});
+
+describe('pluginTypeFromMetadataKey', () => {
+  it('extracts plugin type before the colon', () => {
+    expect(pluginTypeFromMetadataKey('quiz-grading:score')).toBe('quiz-grading');
+  });
+  it('returns the full key when no colon present', () => {
+    expect(pluginTypeFromMetadataKey('nocolon')).toBe('nocolon');
   });
 });

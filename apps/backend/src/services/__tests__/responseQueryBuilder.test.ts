@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildPostgreSQLFilter } from '../responseQueryBuilder.js';
+import { buildPostgreSQLFilter, buildRawSQLCondition, canFilterAtDatabase } from '../responseQueryBuilder.js';
 
 describe('Response Query Builder', () => {
   describe('Security - SQL Injection Protection', () => {
@@ -485,6 +485,243 @@ describe('Response Query Builder', () => {
       expect(result.conditions[0]).toContain('!=');
       expect(result.conditions[0]).toContain('LOWER');
       expect(result.params).toContain('draft');
+    });
+  });
+});
+
+describe('canFilterAtDatabase', () => {
+  it('always returns true', () => {
+    expect(canFilterAtDatabase()).toBe(true);
+    expect(canFilterAtDatabase([])).toBe(true);
+  });
+});
+
+describe('buildRawSQLCondition', () => {
+  // __submittedAt field — delegates to buildSubmittedAtCondition
+  describe('__submittedAt filters', () => {
+    it('DATE_EQUALS with value', () => {
+      const r = buildRawSQLCondition({ fieldId: '__submittedAt', operator: 'DATE_EQUALS', value: '2026-06-01' }, 1);
+      expect(r.sql).toContain('DATE(');
+      expect(r.values).toEqual(['2026-06-01']);
+    });
+    it('DATE_EQUALS without value', () => {
+      const r = buildRawSQLCondition({ fieldId: '__submittedAt', operator: 'DATE_EQUALS' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('DATE_BEFORE with value', () => {
+      const r = buildRawSQLCondition({ fieldId: '__submittedAt', operator: 'DATE_BEFORE', value: '2026-06-01' }, 1);
+      expect(r.sql).toContain('<');
+    });
+    it('DATE_BEFORE without value', () => {
+      const r = buildRawSQLCondition({ fieldId: '__submittedAt', operator: 'DATE_BEFORE' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('DATE_AFTER with value', () => {
+      const r = buildRawSQLCondition({ fieldId: '__submittedAt', operator: 'DATE_AFTER', value: '2026-06-01' }, 1);
+      expect(r.sql).toContain('>');
+    });
+    it('DATE_AFTER without value', () => {
+      const r = buildRawSQLCondition({ fieldId: '__submittedAt', operator: 'DATE_AFTER' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('DATE_BETWEEN with from and to', () => {
+      const r = buildRawSQLCondition({ fieldId: '__submittedAt', operator: 'DATE_BETWEEN', dateRange: { from: '2026-01-01', to: '2026-06-01' } }, 1);
+      expect(r.sql).toContain('>=');
+      expect(r.sql).toContain('<=');
+    });
+    it('DATE_BETWEEN with from only', () => {
+      const r = buildRawSQLCondition({ fieldId: '__submittedAt', operator: 'DATE_BETWEEN', dateRange: { from: '2026-01-01' } }, 1);
+      expect(r.sql).toContain('>=');
+    });
+    it('DATE_BETWEEN without dateRange', () => {
+      const r = buildRawSQLCondition({ fieldId: '__submittedAt', operator: 'DATE_BETWEEN' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('DATE_TODAY', () => {
+      const r = buildRawSQLCondition({ fieldId: '__submittedAt', operator: 'DATE_TODAY' }, 1);
+      expect(r.sql).toContain('CURRENT_DATE');
+    });
+    it('DATE_LAST_N_DAYS with value', () => {
+      const r = buildRawSQLCondition({ fieldId: '__submittedAt', operator: 'DATE_LAST_N_DAYS', value: '14' }, 1);
+      expect(r.sql).toContain('days');
+    });
+    it('unknown submittedAt operator returns empty', () => {
+      const r = buildRawSQLCondition({ fieldId: '__submittedAt', operator: 'UNKNOWN' as any }, 1);
+      expect(r.sql).toBe('');
+    });
+  });
+
+  // __tags field
+  describe('__tags filters', () => {
+    it('returns empty when values are missing', () => {
+      const r = buildRawSQLCondition({ fieldId: '__tags', operator: 'EQUALS' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('returns empty for empty values array', () => {
+      const r = buildRawSQLCondition({ fieldId: '__tags', operator: 'EQUALS', values: [] }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('returns tag EXISTS query for provided tag IDs', () => {
+      const r = buildRawSQLCondition({ fieldId: '__tags', operator: 'EQUALS', values: ['tag-1', 'tag-2'] }, 1);
+      expect(r.sql).toContain('EXISTS');
+      expect(r.values).toEqual(['tag-1', 'tag-2']);
+    });
+  });
+
+  // field-level operators
+  describe('field operators', () => {
+    it('IS_EMPTY', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-1', operator: 'IS_EMPTY' }, 1);
+      expect(r.sql).toContain('IS NULL');
+      expect(r.values).toEqual([]);
+    });
+    it('IS_NOT_EMPTY', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-1', operator: 'IS_NOT_EMPTY' }, 1);
+      expect(r.sql).toContain('IS NOT NULL');
+    });
+    it('EQUALS with single value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-1', operator: 'EQUALS', value: 'hello' }, 1);
+      expect(r.sql).toContain('LOWER');
+      expect(r.values).toContain('hello');
+    });
+    it('EQUALS with multiple values', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-1', operator: 'EQUALS', values: ['a', 'b'] }, 1);
+      expect(r.sql).toContain('jsonb_array_length');
+      expect(r.values).toEqual(['a', 'b']);
+    });
+    it('EQUALS with no value or values', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-1', operator: 'EQUALS' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('NOT_EQUALS with value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-1', operator: 'NOT_EQUALS', value: 'x' }, 1);
+      expect(r.sql).toContain('!=');
+    });
+    it('NOT_EQUALS without value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-1', operator: 'NOT_EQUALS' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('CONTAINS with value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-1', operator: 'CONTAINS', value: 'foo' }, 1);
+      expect(r.sql).toContain('ILIKE');
+    });
+    it('CONTAINS without value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-1', operator: 'CONTAINS' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('DATE_TODAY for a field', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-date', operator: 'DATE_TODAY' }, 1);
+      expect(r.sql).toContain('CURRENT_DATE');
+    });
+    it('DATE_LAST_N_DAYS with valid days', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-date', operator: 'DATE_LAST_N_DAYS', value: '30' }, 1);
+      expect(r.values).toEqual([30]);
+    });
+    it('DATE_LAST_N_DAYS with invalid value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-date', operator: 'DATE_LAST_N_DAYS', value: 'abc' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('DATE_LAST_N_DAYS with empty value falls back to 7', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-date', operator: 'DATE_LAST_N_DAYS', value: '' }, 1);
+      expect(r.values).toEqual([7]);
+    });
+    it('unknown operator returns empty', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-1', operator: 'UNKNOWN' as any }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('NOT_CONTAINS with value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-1', operator: 'NOT_CONTAINS', value: 'bar' }, 1);
+      expect(r.sql).toContain('NOT ILIKE');
+    });
+    it('NOT_CONTAINS without value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-1', operator: 'NOT_CONTAINS' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('STARTS_WITH with value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-1', operator: 'STARTS_WITH', value: 'foo' }, 1);
+      expect(r.sql).toContain('ILIKE');
+      expect(r.values[0]).toMatch(/^foo/);
+    });
+    it('STARTS_WITH without value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-1', operator: 'STARTS_WITH' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('ENDS_WITH with value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-1', operator: 'ENDS_WITH', value: 'baz' }, 1);
+      expect(r.sql).toContain('ILIKE');
+      expect(r.values[0]).toMatch(/baz$/);
+    });
+    it('ENDS_WITH without value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-1', operator: 'ENDS_WITH' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('GREATER_THAN with value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-n', operator: 'GREATER_THAN', value: '10' }, 1);
+      expect(r.sql).toContain('>');
+    });
+    it('GREATER_THAN without value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-n', operator: 'GREATER_THAN' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('GREATER_THAN_OR_EQUAL with value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-n', operator: 'GREATER_THAN_OR_EQUAL', value: '5' }, 1);
+      expect(r.sql).toContain('>=');
+    });
+    it('GREATER_THAN_OR_EQUAL without value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-n', operator: 'GREATER_THAN_OR_EQUAL' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('LESS_THAN with value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-n', operator: 'LESS_THAN', value: '100' }, 1);
+      expect(r.sql).toContain('<');
+    });
+    it('LESS_THAN without value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-n', operator: 'LESS_THAN' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('LESS_THAN_OR_EQUAL with value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-n', operator: 'LESS_THAN_OR_EQUAL', value: '50' }, 1);
+      expect(r.sql).toContain('<=');
+    });
+    it('LESS_THAN_OR_EQUAL without value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-n', operator: 'LESS_THAN_OR_EQUAL' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('DATE_EQUALS for a field with value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-date', operator: 'DATE_EQUALS', value: '2026-06-01' }, 1);
+      expect(r.sql).toContain('date');
+    });
+    it('DATE_EQUALS for a field without value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-date', operator: 'DATE_EQUALS' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('DATE_BEFORE for a field with value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-date', operator: 'DATE_BEFORE', value: '2026-06-01' }, 1);
+      expect(r.sql).not.toBe('');
+    });
+    it('DATE_BEFORE for a field without value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-date', operator: 'DATE_BEFORE' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('DATE_AFTER for a field with value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-date', operator: 'DATE_AFTER', value: '2026-01-01' }, 1);
+      expect(r.sql).not.toBe('');
+    });
+    it('DATE_AFTER for a field without value', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-date', operator: 'DATE_AFTER' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('DATE_BETWEEN for a field with from+to', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-date', operator: 'DATE_BETWEEN', dateRange: { from: '2026-01-01', to: '2026-06-01' } }, 1);
+      expect(r.sql).not.toBe('');
+    });
+    it('DATE_BETWEEN for a field without dateRange', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-date', operator: 'DATE_BETWEEN' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('DATE_LAST_N_DAYS for field with negative days (invalid)', () => {
+      const r = buildRawSQLCondition({ fieldId: 'field-date', operator: 'DATE_LAST_N_DAYS', value: '-5' }, 1);
+      expect(r.sql).toBe('');
     });
   });
 });

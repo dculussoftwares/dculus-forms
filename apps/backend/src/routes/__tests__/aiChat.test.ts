@@ -17,6 +17,45 @@ describe('schema cache', () => {
     expect(s1).toBe(s2); // same reference = cache hit
     expect(vi.mocked(prisma.form.findUnique)).toHaveBeenCalledTimes(1); // cache prevented second call
   });
+
+  it('returns empty pages when Y.js doc has no pages array', async () => {
+    vi.mocked(prisma.collaborativeDocument.findFirst).mockResolvedValueOnce({
+      state: new Uint8Array([0]) as any,
+    } as any);
+
+    const { getFormSchema } = await import('../aiChat.js');
+    // Use a distinct formId to bypass TTL cache from previous test
+    const schema = await getFormSchema('form-yjs-no-pages');
+    expect(schema.pages).toEqual([]);
+  });
+
+  it('returns pages from Prisma when Y.js doc has no state', async () => {
+    vi.mocked(prisma.collaborativeDocument.findFirst).mockResolvedValueOnce(null);
+    vi.mocked(prisma.form.findUnique).mockResolvedValueOnce({
+      formSchema: { pages: [{ id: 'p1', title: 'P1', fields: [] }] },
+    } as any);
+
+    const { getFormSchema } = await import('../aiChat.js');
+    const schema = await getFormSchema('form-no-collab-doc');
+    expect(schema.pages).toHaveLength(1);
+  });
+
+  it('falls back to Prisma when Y.js parse throws', async () => {
+    vi.mocked(prisma.collaborativeDocument.findFirst).mockResolvedValueOnce({
+      state: new Uint8Array([255, 255]) as any, // invalid Y.js state
+    } as any);
+    vi.mocked(prisma.form.findUnique).mockResolvedValueOnce({
+      formSchema: { pages: [{ id: 'p1', title: 'Page 1', fields: [] }] },
+    } as any);
+
+    // Force applyUpdate to throw to exercise the catch/fallback
+    const { applyUpdate } = await import('yjs');
+    vi.mocked(applyUpdate).mockImplementationOnce(() => { throw new Error('bad ydoc'); });
+
+    const { getFormSchema } = await import('../aiChat.js');
+    const schema = await getFormSchema('form-yjs-throw');
+    expect(schema.pages).toHaveLength(1);
+  });
 });
 
 vi.mock('../../services/aiChatService.js', () => ({
@@ -72,10 +111,11 @@ vi.mock('../../lib/prisma.js', () => ({
 }));
 
 import { aiChatRouter, getFormSchema, buildSystemPrompt } from '../aiChat.js';
-import { checkAITokenBudget } from '../../services/aiUsageService.js';
+import { checkAITokenBudget, recordAITokenUsage } from '../../services/aiUsageService.js';
 import { createFormEditAgent } from '../../lib/formEditAgent.js';
-import { getConversation } from '../../services/aiChatService.js';
-import { pruneMessages } from 'ai';
+import { getConversation, saveConversationMessages } from '../../services/aiChatService.js';
+import { pruneMessages, validateUIMessages } from 'ai';
+import { requireOrganizationMembership } from '../../middleware/better-auth-middleware.js';
 
 function makeUIMessageStreamResponse(chunks: string[]) {
   const encoder = new TextEncoder();
@@ -119,6 +159,17 @@ describe('POST /chat', () => {
     expect(res.status).toBe(400);
   });
 
+  it('returns 403 when org membership check fails', async () => {
+    vi.mocked(requireOrganizationMembership).mockRejectedValueOnce(new Error('Not a member'));
+
+    const res = await request(app).post('/chat').send({
+      message: { id: 'm1', role: 'user', content: 'Hi', parts: [{ type: 'text', text: 'Hi' }] },
+      conversationId: 'conv-1',
+      organizationId: 'wrong-org',
+    });
+    expect(res.status).toBe(403);
+  });
+
   it('returns 402 when token budget exceeded', async () => {
     (checkAITokenBudget as any).mockResolvedValue({ allowed: false, used: 50000, limit: 50000 });
 
@@ -160,6 +211,68 @@ describe('POST /chat', () => {
 
     expect(res.status).toBe(200);
     expect(mockAgent.stream).toHaveBeenCalled();
+  });
+
+  it('returns 500 when agent stream throws', async () => {
+    (createFormEditAgent as any).mockReturnValue({
+      stream: vi.fn().mockRejectedValue(new Error('stream exploded')),
+    });
+
+    const res = await request(app).post('/chat').send({
+      message: { id: 'm1', role: 'user', content: 'Hi', parts: [{ type: 'text', text: 'Hi' }] },
+      conversationId: 'conv-1',
+      organizationId: 'org-1',
+    });
+
+    expect(res.status).toBe(500);
+    expect(res.body.error).toMatch(/AI processing failed/i);
+  });
+
+  it('falls back to unvalidated messages when validateUIMessages throws', async () => {
+    vi.mocked(validateUIMessages).mockRejectedValueOnce(new Error('invalid shape'));
+    const streamData = 'data: {"type":"text","value":"hello"}\n\n';
+    (createFormEditAgent as any).mockReturnValue({
+      stream: vi.fn().mockResolvedValue({
+        consumeStream: vi.fn(),
+        toUIMessageStreamResponse: vi.fn().mockReturnValue(makeUIMessageStreamResponse([streamData])),
+      }),
+    });
+
+    const res = await request(app).post('/chat').send({
+      message: { id: 'm1', role: 'user', content: 'Hi', parts: [{ type: 'text', text: 'Hi' }] },
+      conversationId: 'conv-1',
+      organizationId: 'org-1',
+    });
+
+    expect(res.status).toBe(200);
+  });
+
+  it('invokes onFinish to save messages and record usage', async () => {
+    let capturedOnFinish: ((args: { messages: any[] }) => Promise<void>) | undefined;
+    const totalUsage = Promise.resolve({ totalTokens: 42 });
+
+    (createFormEditAgent as any).mockReturnValue({
+      stream: vi.fn().mockResolvedValue({
+        consumeStream: vi.fn(),
+        totalUsage,
+        toUIMessageStreamResponse: vi.fn().mockImplementation(({ onFinish }: any) => {
+          capturedOnFinish = onFinish;
+          return makeUIMessageStreamResponse([]);
+        }),
+      }),
+    });
+
+    await request(app).post('/chat').send({
+      message: { id: 'm1', role: 'user', content: 'Hi', parts: [{ type: 'text', text: 'Hi' }] },
+      conversationId: 'conv-1',
+      organizationId: 'org-1',
+    });
+
+    expect(capturedOnFinish).toBeDefined();
+    await capturedOnFinish!({ messages: [{ id: 'a1', role: 'assistant', content: 'Hi', parts: [] }] });
+
+    expect(vi.mocked(saveConversationMessages)).toHaveBeenCalled();
+    expect(vi.mocked(recordAITokenUsage)).toHaveBeenCalledWith('org-1', 42);
   });
 });
 
@@ -269,5 +382,17 @@ describe('buildSystemPrompt', () => {
   it('returns empty schema context when form has no pages', () => {
     const prompt = buildSystemPrompt(undefined, { pages: [] });
     expect(prompt).not.toContain('Form structure');
+  });
+
+  it('uses singular "page" when form has exactly 1 page', () => {
+    const schema = { pages: [{ id: 'p1', title: 'Only Page', fields: [] }] };
+    const prompt = buildSystemPrompt(undefined, schema);
+    expect(prompt).toMatch(/The form has 1 page[^s]/);
+  });
+
+  it('includes currentPageId context when provided', () => {
+    const schema = { pages: [{ id: 'page-abc', title: 'Page 1', fields: [] }] };
+    const prompt = buildSystemPrompt('page-abc', schema);
+    expect(prompt).toContain('page-abc');
   });
 });

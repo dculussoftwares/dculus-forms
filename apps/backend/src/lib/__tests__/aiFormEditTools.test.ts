@@ -69,6 +69,26 @@ describe('listFields', () => {
     const result = await tools.listFields.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
     expect(result.pages[0]).toContain('(empty)');
   });
+
+  it('uses singular "page" when schema has exactly 1 page', async () => {
+    const tools = createFormEditTools({ pages: [{ id: 'p1', title: 'Only', fields: [] }] });
+    const result = await tools.listFields.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.summary).toBe('1 page total');
+  });
+
+  it('falls back to "Page N" when page title is null', async () => {
+    const tools = createFormEditTools({ pages: [{ id: 'p1', title: null, fields: [] }] });
+    const result = await tools.listFields.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.pages[0]).toContain('Page 1');
+  });
+
+  it('falls back to raw type when field type is not in TYPE_MAP', async () => {
+    const tools = createFormEditTools({ pages: [{ id: 'p1', title: 'T', fields: [
+      { id: 'fx', type: 'unknown_custom_field', label: 'X', required: false },
+    ] }] });
+    const result = await tools.listFields.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.pages[0]).toContain('unknown_custom_field');
+  });
 });
 
 describe('getField', () => {
@@ -76,6 +96,19 @@ describe('getField', () => {
     const tools = createFormEditTools(mockSchema);
     const result = await tools.getField.execute!({ fieldId: 'f-2' }, { messages: [], toolCallId: 'test' });
     expect(result).toMatchObject({ id: 'f-2', type: 'SELECT_FIELD', label: 'Country', pageId: 'page-1', options: ['USA', 'UK'] });
+  });
+
+  it('returns null fallbacks for optional field properties', async () => {
+    const tools = createFormEditTools({ pages: [{
+      id: 'px', title: 'X',
+      fields: [{ id: 'fy', type: 'text', label: 'Y' }],
+    }] });
+    const result = await tools.getField.execute!({ fieldId: 'fy' }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.required).toBe(false);
+    expect(result.placeholder).toBeNull();
+    expect(result.hint).toBeNull();
+    expect(result.options).toBeNull();
+    expect(result.validation).toBeNull();
   });
 
   it('returns error for unknown fieldId', async () => {
@@ -121,6 +154,14 @@ describe('removeField', () => {
     const tools = createFormEditTools(mockSchema);
     const result = await tools.removeField.execute!({ fieldId: 'f-2' }, { messages: [], toolCallId: 'test' });
     expect(result).toEqual({ type: 'REMOVE_FIELD', fieldId: 'f-2' });
+  });
+});
+
+describe('bulkRemoveFields', () => {
+  it('returns BULK_REMOVE_FIELDS op with field ID list', async () => {
+    const tools = createFormEditTools(mockSchema);
+    const result = await (tools as any).bulkRemoveFields.execute!({ fieldIds: ['f-1', 'f-2', 'f-3'] }, { messages: [], toolCallId: 'test' });
+    expect(result).toEqual({ type: 'BULK_REMOVE_FIELDS', fieldIds: ['f-1', 'f-2', 'f-3'] });
   });
 });
 

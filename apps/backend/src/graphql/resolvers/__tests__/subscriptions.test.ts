@@ -264,6 +264,16 @@ describe('Subscription Resolvers', () => {
         )
       ).rejects.toThrow('Failed to create checkout session: Payment gateway error');
     });
+
+    it('throws when itemPriceId is empty or invalid', async () => {
+      await expect(
+        subscriptionResolvers.Mutation.createCheckoutSession(
+          {},
+          { itemPriceId: '' },
+          mockContext
+        )
+      ).rejects.toThrow('Invalid item price ID format');
+    });
   });
 
   describe('Mutation: createPortalSession', () => {
@@ -493,6 +503,24 @@ describe('Subscription Resolvers', () => {
       expect(result.subscription).toBeNull();
       expect(result.message).toBe('Only organization owner can initialize subscription');
     });
+
+    it('uses fallback message when error has no message property', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.organization.findUnique).mockResolvedValue(mockOrganization as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(mockMember as any);
+      vi.mocked(chargebeeService.createFreeSubscription).mockRejectedValue({ code: 'ERR' });
+
+      const result = await subscriptionResolvers.Mutation.initializeOrganizationSubscription(
+        {},
+        { organizationId: 'org-123' },
+        mockContext
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('Failed to initialize subscription');
+    });
+
 
     it('should return error when organization owner not found', async () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);

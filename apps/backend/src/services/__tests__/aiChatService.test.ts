@@ -30,6 +30,9 @@ import { prisma } from '../../lib/prisma.js';
 import {
   createConversation,
   listConversations,
+  getConversation,
+  deleteConversation,
+  renameConversation,
   loadConversationMessages,
   saveConversationMessages,
   autoGenerateTitle,
@@ -57,6 +60,65 @@ describe('listConversations', () => {
         where: { formId: 'form_1', organizationId: 'org_1', userId: 'user_1' },
         orderBy: { updatedAt: 'desc' },
       })
+    );
+  });
+});
+
+describe('getConversation', () => {
+  it('returns null when conversation not found', async () => {
+    (prisma.aIChatConversation.findFirst as any).mockResolvedValue(null);
+    const result = await getConversation('missing', 'user_1');
+    expect(result).toBeNull();
+  });
+
+  it('returns conversation with messageCount when found', async () => {
+    (prisma.aIChatConversation.findFirst as any).mockResolvedValue({
+      id: 'conv_1', title: 'Test', _count: { messages: 3 },
+    });
+    const result = await getConversation('conv_1', 'user_1');
+    expect(result?.messageCount).toBe(3);
+  });
+});
+
+describe('deleteConversation', () => {
+  it('returns false when conversation not found', async () => {
+    (prisma.aIChatConversation.findFirst as any).mockResolvedValue(null);
+    const result = await deleteConversation('missing', 'user_1');
+    expect(result).toBe(false);
+  });
+
+  it('deletes and returns true when found', async () => {
+    (prisma.aIChatConversation.findFirst as any).mockResolvedValue({ id: 'conv_1' });
+    (prisma.aIChatConversation.delete as any).mockResolvedValue({});
+    const result = await deleteConversation('conv_1', 'user_1');
+    expect(result).toBe(true);
+    expect(prisma.aIChatConversation.delete).toHaveBeenCalledWith({ where: { id: 'conv_1' } });
+  });
+});
+
+describe('renameConversation', () => {
+  it('returns null when conversation not found', async () => {
+    (prisma.aIChatConversation.findFirst as any).mockResolvedValue(null);
+    const result = await renameConversation('missing', 'user_1', 'New Title');
+    expect(result).toBeNull();
+  });
+
+  it('renames with given title when found', async () => {
+    (prisma.aIChatConversation.findFirst as any).mockResolvedValue({ id: 'conv_1' });
+    (prisma.aIChatConversation.update as any).mockResolvedValue({ id: 'conv_1', title: 'New Title' });
+    const result = await renameConversation('conv_1', 'user_1', 'New Title');
+    expect((result as any).title).toBe('New Title');
+    expect(prisma.aIChatConversation.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { title: 'New Title' } })
+    );
+  });
+
+  it('falls back to "Untitled conversation" when title is blank', async () => {
+    (prisma.aIChatConversation.findFirst as any).mockResolvedValue({ id: 'conv_1' });
+    (prisma.aIChatConversation.update as any).mockResolvedValue({ id: 'conv_1', title: 'Untitled conversation' });
+    await renameConversation('conv_1', 'user_1', '   ');
+    expect(prisma.aIChatConversation.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { title: 'Untitled conversation' } })
     );
   });
 });
@@ -130,6 +192,18 @@ describe('saveConversationMessages', () => {
       where: { id: 'conv_1' },
       data: { updatedAt: expect.any(Date) },
     });
+  });
+
+  it('falls back to msg.content when no text part exists', async () => {
+    (prisma.aIChatMessage.create as any).mockResolvedValue({});
+    (prisma.aIChatConversation.update as any).mockResolvedValue({});
+    const messages = [
+      { id: 'u1', role: 'user', content: 'fallback content', parts: [] },
+    ];
+    await saveConversationMessages('conv_1', messages as any, 10);
+    expect(prisma.aIChatMessage.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ role: 'user' }) })
+    );
   });
 
   it('sets tokensUsed=0 for user messages', async () => {

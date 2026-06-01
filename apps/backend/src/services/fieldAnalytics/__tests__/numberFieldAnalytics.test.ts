@@ -152,6 +152,11 @@ describe('fieldAnalytics/numberFieldAnalytics', () => {
       expect(result.trend[2].date).toBe('2024-01-03');
     });
 
+    it('sets responseRate to 0 when totalFormResponses is 0', () => {
+      const result = processNumberFieldAnalytics([], 'field-1', 'Score', 0);
+      expect(result.responseRate).toBe(0);
+    });
+
     it('should return zeroed analytics for empty responses', () => {
       const result = processNumberFieldAnalytics([], 'field-1', 'Score', 5);
 

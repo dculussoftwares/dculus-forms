@@ -257,6 +257,17 @@ describe('Email Service', () => {
       );
       loggerInfo.mockRestore();
     });
+
+    it('uses default subject for unknown OTP type', async () => {
+      await sendOTPEmail({
+        to: 'user@example.com',
+        otp: '999999',
+        type: 'custom-type' as any,
+      });
+      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({ subject: expect.stringContaining('verification code') })
+      );
+    });
   });
 
   describe('sendResetPasswordEmail', () => {

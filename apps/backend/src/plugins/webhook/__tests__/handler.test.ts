@@ -656,4 +656,19 @@ describe('Webhook Handler', () => {
       expect(signature1).not.toBe(signature2);
     });
   });
+
+  describe('error handling', () => {
+    it('uses "Unknown error" fallback when thrown error has no message', async () => {
+      const config: ValidatedWebhookConfig = {
+        type: 'webhook',
+        url: 'https://example.com/hook',
+        secret: '',
+      };
+      // Throw a non-Error object with no .message property
+      mockFetch.mockRejectedValue({ code: 'NETWORK_FAIL' });
+
+      const result = await webhookHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
+      expect((result as any).error).toBe('Unknown error');
+    });
+  });
 });

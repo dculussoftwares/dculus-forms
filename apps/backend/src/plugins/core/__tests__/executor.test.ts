@@ -493,5 +493,18 @@ describe('executor', () => {
         })
       );
     });
+
+    it('uses "Unknown error" when plugin rejects without a message', async () => {
+      const mockPlugins = [
+        { id: 'plugin-1', name: 'Plugin 1', type: 'webhook', enabled: true, events: ['form.submitted'], config: {} },
+      ];
+
+      vi.mocked(prisma.formPlugin.findMany).mockResolvedValue(mockPlugins as any);
+      // Reject with a non-Error object (no .message property)
+      vi.mocked(prisma.formPlugin.findUnique).mockRejectedValue({ code: 'ERR_UNKNOWN' });
+
+      const result = await executePluginsForForm('form-123', mockEvent);
+      expect(result).toEqual({ total: 1, succeeded: 0, failed: 1 });
+    });
   });
 });

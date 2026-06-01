@@ -16,6 +16,7 @@ const mockPrisma = {
     groupBy: vi.fn(),
     findMany: vi.fn(),
   },
+  $queryRaw: vi.fn(),
 };
 
 describe('Form View Analytics Repository', () => {
@@ -144,6 +145,39 @@ describe('Form View Analytics Repository', () => {
       expect(result).toEqual(mockAnalytics);
     });
   });
+
+  describe('countDistinctSessions', () => {
+    it('returns count without timeRange', async () => {
+      (mockPrisma.$queryRaw as any).mockResolvedValue([{ count: BigInt(4) }]);
+      const result = await repository.countDistinctSessions('form-1');
+      expect(result).toBe(4);
+    });
+
+    it('returns count with timeRange', async () => {
+      (mockPrisma.$queryRaw as any).mockResolvedValue([{ count: BigInt(2) }]);
+      const timeRange = { start: new Date('2026-01-01'), end: new Date('2026-06-01') };
+      const result = await repository.countDistinctSessions('form-1', timeRange);
+      expect(result).toBe(2);
+    });
+  });
+
+  describe('getDailyViewStats', () => {
+    it('returns daily stats without timeRange', async () => {
+      (mockPrisma.$queryRaw as any).mockResolvedValue([
+        { date: new Date('2026-05-15'), views: BigInt(20), sessions: BigInt(15) },
+      ]);
+      const result = await repository.getDailyViewStats('form-1');
+      expect(result[0].date).toBe('2026-05-15');
+      expect(result[0].views).toBe(20);
+    });
+
+    it('returns daily stats with timeRange', async () => {
+      (mockPrisma.$queryRaw as any).mockResolvedValue([]);
+      const timeRange = { start: new Date('2026-01-01'), end: new Date('2026-06-01') };
+      const result = await repository.getDailyViewStats('form-1', timeRange);
+      expect(result).toEqual([]);
+    });
+  });
 });
 
 describe('Form Submission Analytics Repository', () => {
@@ -239,6 +273,39 @@ describe('Form Submission Analytics Repository', () => {
       });
 
       expect(result).toEqual(analyticsData);
+    });
+  });
+
+  describe('countDistinctSessions', () => {
+    it('returns count without timeRange', async () => {
+      (mockPrisma.$queryRaw as any).mockResolvedValue([{ count: BigInt(7) }]);
+      const result = await repository.countDistinctSessions('form-1');
+      expect(result).toBe(7);
+    });
+
+    it('returns count with timeRange', async () => {
+      (mockPrisma.$queryRaw as any).mockResolvedValue([{ count: BigInt(3) }]);
+      const timeRange = { start: new Date('2026-01-01'), end: new Date('2026-06-01') };
+      const result = await repository.countDistinctSessions('form-1', timeRange);
+      expect(result).toBe(3);
+    });
+  });
+
+  describe('getDailySubmissionStats', () => {
+    it('returns daily stats without timeRange', async () => {
+      (mockPrisma.$queryRaw as any).mockResolvedValue([
+        { date: new Date('2026-05-01'), submissions: BigInt(10), sessions: BigInt(8) },
+      ]);
+      const result = await repository.getDailySubmissionStats('form-1');
+      expect(result[0].date).toBe('2026-05-01');
+      expect(result[0].submissions).toBe(10);
+    });
+
+    it('returns daily stats with timeRange', async () => {
+      (mockPrisma.$queryRaw as any).mockResolvedValue([]);
+      const timeRange = { start: new Date('2026-01-01'), end: new Date('2026-06-01') };
+      const result = await repository.getDailySubmissionStats('form-1', timeRange);
+      expect(result).toEqual([]);
     });
   });
 });
