@@ -223,7 +223,7 @@ aiChatRouter.post('/chat', async (req, res) => {
 
 aiChatRouter.post('/invalidate-schema', async (req, res) => {
   const auth = await createBetterAuthContext(req);
-  try { requireAuth(auth); } catch { res.status(401).end(); return; }
+  try { requireAuth(auth); } catch { res.status(401).json({ error: 'Authentication required' }); return; }
   const { formId } = req.body as { formId?: string };
   if (formId) schemaCache.delete(formId);
   res.status(204).end();

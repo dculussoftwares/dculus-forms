@@ -1,8 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import express from 'express';
 import request from 'supertest';
+import { prisma } from '../../lib/prisma.js';
 
 describe('schema cache', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('returns cached schema on second call within TTL', async () => {
     const { getFormSchema } = await import('../aiChat.js');
     // first call
@@ -10,6 +15,7 @@ describe('schema cache', () => {
     // second call — prisma.form.findUnique should NOT be called again
     const s2 = await getFormSchema('form-1');
     expect(s1).toBe(s2); // same reference = cache hit
+    expect(vi.mocked(prisma.form.findUnique)).toHaveBeenCalledTimes(1); // cache prevented second call
   });
 });
 
@@ -64,7 +70,7 @@ vi.mock('../../lib/prisma.js', () => ({
   },
 }));
 
-import { aiChatRouter } from '../aiChat.js';
+import { aiChatRouter, getFormSchema } from '../aiChat.js';
 import { checkAITokenBudget } from '../../services/aiUsageService.js';
 import { createFormEditAgent } from '../../lib/formEditAgent.js';
 import { getConversation } from '../../services/aiChatService.js';
@@ -152,5 +158,45 @@ describe('POST /chat', () => {
 
     expect(res.status).toBe(200);
     expect(mockAgent.stream).toHaveBeenCalled();
+  });
+});
+
+describe('POST /invalidate-schema', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns 204 and evicts the cache entry when authenticated', async () => {
+    const app = express();
+    app.use(express.json());
+    app.use('/api/ai', aiChatRouter);
+
+    // prime the cache first
+    await getFormSchema('form-evict-me');
+
+    const res = await request(app)
+      .post('/api/ai/invalidate-schema')
+      .send({ formId: 'form-evict-me' });
+
+    expect(res.status).toBe(204);
+    // cache was cleared — next getFormSchema call goes to Prisma again
+    const callsBefore = vi.mocked(prisma.form.findUnique).mock.calls.length;
+    await getFormSchema('form-evict-me');
+    expect(vi.mocked(prisma.form.findUnique).mock.calls.length).toBeGreaterThan(callsBefore);
+  });
+
+  it('returns 401 when unauthenticated', async () => {
+    const { requireAuth } = await import('../../middleware/better-auth-middleware.js');
+    vi.mocked(requireAuth).mockImplementationOnce(() => { throw new Error('Unauthorized'); });
+
+    const app = express();
+    app.use(express.json());
+    app.use('/api/ai', aiChatRouter);
+
+    const res = await request(app)
+      .post('/api/ai/invalidate-schema')
+      .send({ formId: 'form-1' });
+
+    expect(res.status).toBe(401);
   });
 });
