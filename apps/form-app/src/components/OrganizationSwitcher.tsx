@@ -122,7 +122,7 @@ export const OrganizationSwitcher: React.FC = () => {
           <div className="flex items-center gap-2 min-w-0">
             <Avatar className="h-6 w-6">
               <AvatarImage src={activeOrganization?.logo || undefined} alt={activeOrganization?.name} />
-              <AvatarFallback className="text-xs">
+              <AvatarFallback className="text-xs bg-[#f7cdd8] text-[#3d333f] font-semibold">
                 {activeOrganization ? getOrganizationInitials(activeOrganization.name) : 'ORG'}
               </AvatarFallback>
             </Avatar>
@@ -153,7 +153,7 @@ export const OrganizationSwitcher: React.FC = () => {
           >
             <Avatar className="h-6 w-6">
               <AvatarImage src={org.logo || undefined} alt={org.name} />
-              <AvatarFallback className="text-xs">
+              <AvatarFallback className="text-xs bg-[#f7cdd8] text-[#3d333f] font-semibold">
                 {getOrganizationInitials(org.name)}
               </AvatarFallback>
             </Avatar>

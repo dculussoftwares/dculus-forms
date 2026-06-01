@@ -20,7 +20,7 @@ const AITokenMeter: React.FC<Props> = ({ organizationId }) => {
   const usage = data?.aiTokenUsage;
   if (!usage) return null;
 
-  const pct = Math.min(100, Math.round((usage.used / usage.limit) * 100));
+  const pct = usage.limit > 0 ? Math.min(100, Math.round((usage.used / usage.limit) * 100)) : 100;
   const resetDate = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(
     new Date(usage.resetAt)
   );

@@ -183,6 +183,15 @@ describe('proposeValidation', () => {
   });
 });
 
+describe('navigateToPage', () => {
+  it('returns NAVIGATE_TO_PAGE with pageId', async () => {
+    const tools = createFormEditTools({ pages: [] });
+    const result = await (tools as any).navigateToPage.execute({ pageId: 'p1' });
+    expect((result as any).type).toBe('NAVIGATE_TO_PAGE');
+    expect((result as any).pageId).toBe('p1');
+  });
+});
+
 describe('bulkUpdateFields', () => {
   it('returns BULK_UPDATE_FIELDS with fieldIds and updates', async () => {
     const tools = createFormEditTools({ pages: [] });

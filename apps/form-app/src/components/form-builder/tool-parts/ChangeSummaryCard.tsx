@@ -10,6 +10,7 @@ type OpColor = 'green' | 'blue' | 'red';
 const MUTATION_OUTPUT_TYPES = new Set([
   'ADD_FIELD', 'UPDATE_FIELD', 'REMOVE_FIELD', 'REORDER_FIELDS',
   'UPDATE_LAYOUT', 'RENAME_PAGE', 'REORDER_PAGES', 'ADD_PAGE', 'REMOVE_PAGE',
+  'BULK_UPDATE_FIELDS',
 ]);
 
 const ADD_OPS = new Set(['ADD_FIELD', 'ADD_PAGE']);

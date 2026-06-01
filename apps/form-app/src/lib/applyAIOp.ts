@@ -1,10 +1,9 @@
 import { FieldType } from '@dculus/types';
 import type { FormBuilderState } from '../store/types/store.types';
 
-const API_URL = import.meta.env.VITE_API_URL as string;
-
 function invalidateSchema(formId: string): void {
-  fetch(`${API_URL}/api/ai/invalidate-schema`, {
+  const apiUrl = import.meta.env.VITE_API_URL as string;
+  fetch(`${apiUrl}/api/ai/invalidate-schema`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
