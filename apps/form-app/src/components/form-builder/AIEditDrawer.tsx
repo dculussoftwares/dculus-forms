@@ -13,6 +13,7 @@ import {
 } from '@dculus/ui';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useAIChat } from '../../hooks/useAIChat';
+import { useAIChips } from '../../hooks/useAIChips';
 import type { FormEditAgentUIMessage, FormEditToolPart } from '../../lib/aiAgentTypes';
 import { MUTATION_TOOL_NAMES } from '../../lib/aiAgentTypes';
 import MutationToolPart from './tool-parts/MutationToolPart';
@@ -151,45 +152,6 @@ function StatusIndicator({ text }: { text?: string }) {
   );
 }
 
-const QUICK_CHIP_PROMPTS = {
-  analyseForm: `Please analyse this form. Use listFields to read all pages and fields first, then give structured feedback on: (1) field order and logical flow, (2) missing fields for this type of form, (3) unclear or confusing labels, (4) fields that should be required but aren't. Be concise and actionable.`,
-  listAllFields: `List all fields across every page of this form.`,
-  makeAllRequired: `Make every field on every page required.`,
-} as const;
-
-function QuickChips({
-  onChipClick,
-  disabled,
-}: {
-  onChipClick: (prompt: string) => void;
-  disabled: boolean;
-}) {
-  const { t } = useTranslation('aiEditDrawer');
-  const chips = [
-    { key: 'analyseForm' as const, icon: true },
-    { key: 'listAllFields' as const, icon: false },
-    { key: 'makeAllRequired' as const, icon: false },
-  ];
-  return (
-    <div className="mb-2 flex flex-wrap gap-1.5">
-      {chips.map(({ key, icon }) => (
-        <button
-          key={key}
-          onClick={() => onChipClick(QUICK_CHIP_PROMPTS[key])}
-          disabled={disabled}
-          className={cn(
-            'inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-xs text-muted-foreground',
-            'transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-foreground',
-            'disabled:cursor-not-allowed disabled:opacity-40'
-          )}
-        >
-          {icon && <Sparkles className="h-3 w-3" />}
-          {t(`chips.${key}`)}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
   formId,
@@ -200,6 +162,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
   const { t } = useTranslation('aiEditDrawer');
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chips = useAIChips();
 
   const {
     conversations,
@@ -363,11 +326,31 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
 
       {/* Input */}
       <div className="border-t border-border p-3">
-        {!isStreaming && activeConversationId && (
-          <QuickChips
-            onChipClick={(prompt) => sendMessage(prompt)}
-            disabled={isStreaming}
-          />
+        {!isStreaming && activeConversationId && chips.length > 0 && (
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {chips.map((chip) => (
+              <button
+                key={chip.key}
+                onClick={() => {
+                  if (chip.key === 'remixForm') {
+                    setInput(chip.prompt);
+                  } else {
+                    sendMessage(chip.prompt);
+                  }
+                }}
+                className={cn(
+                  'inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-xs text-muted-foreground',
+                  'transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-foreground',
+                  'disabled:cursor-not-allowed disabled:opacity-40'
+                )}
+              >
+                {['analyseForm', 'generateFields', 'suggestValidation', 'remixForm'].includes(chip.key) && (
+                  <Sparkles className="h-3 w-3" />
+                )}
+                {chip.label}
+              </button>
+            ))}
+          </div>
         )}
         <div
           className={cn(
