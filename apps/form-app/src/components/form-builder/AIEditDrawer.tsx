@@ -18,6 +18,7 @@ import { MUTATION_TOOL_NAMES } from '../../lib/aiAgentTypes';
 import MutationToolPart from './tool-parts/MutationToolPart';
 import ListFieldsToolPart from './tool-parts/ListFieldsToolPart';
 import GetFieldToolPart from './tool-parts/GetFieldToolPart';
+import ChangeSummaryCard from './tool-parts/ChangeSummaryCard';
 
 interface AIEditDrawerProps {
   formId: string;
@@ -71,8 +72,8 @@ function toolStatusLabel(part: FormEditToolPart, t: (key: string) => string): st
 function AssistantMessage({
   message,
   isStreaming,
-  onUndo: _onUndo,
-  canUndo: _canUndo,
+  onUndo,
+  canUndo,
 }: {
   message: FormEditAgentUIMessage;
   isStreaming: boolean;
@@ -110,6 +111,13 @@ function AssistantMessage({
               return null;
             })}
           </div>
+          {!isStreaming && (
+            <ChangeSummaryCard
+              message={message}
+              onUndo={onUndo}
+              canUndo={canUndo}
+            />
+          )}
         </div>
       </div>
     </div>
