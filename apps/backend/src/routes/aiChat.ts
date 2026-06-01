@@ -68,6 +68,18 @@ async function getFormSchemaFromYjs(formId: string): Promise<{ pages: any[] } | 
   return form ? (form.formSchema as any) : null;
 }
 
+// ── Schema cache ──────────────────────────────────────────────────────────────
+const schemaCache = new Map<string, { schema: { pages: any[] }; cachedAt: number }>();
+const SCHEMA_CACHE_TTL_MS = 10_000;
+
+export async function getFormSchema(formId: string): Promise<{ pages: any[] }> {
+  const hit = schemaCache.get(formId);
+  if (hit && Date.now() - hit.cachedAt < SCHEMA_CACHE_TTL_MS) return hit.schema;
+  const schema = (await getFormSchemaFromYjs(formId)) ?? { pages: [] };
+  schemaCache.set(formId, { schema, cachedAt: Date.now() });
+  return schema;
+}
+
 function buildSystemPrompt(currentPageId: string | undefined, schema: { pages: any[] }): string {
   const pageContext = currentPageId
     ? `The user is currently viewing page ID: ${currentPageId}. When the user says "this page" or "current page", they mean this page.`
@@ -158,8 +170,8 @@ aiChatRouter.post('/chat', async (req, res) => {
   // Build full message list with new user message
   const allMessages = [...previous, message];
 
-  // Read Y.js schema once
-  const schema = await getFormSchemaFromYjs(conv.formId) ?? { pages: [] };
+  // Read Y.js schema once (cached for 10 s)
+  const schema = await getFormSchema(conv.formId);
   const systemPrompt = buildSystemPrompt(currentPageId, schema);
 
   // Validate messages (handles tool call/result shapes in history)
@@ -207,4 +219,12 @@ aiChatRouter.post('/chat', async (req, res) => {
     }
     res.end();
   }
+});
+
+aiChatRouter.post('/invalidate-schema', async (req, res) => {
+  const auth = await createBetterAuthContext(req);
+  try { requireAuth(auth); } catch { res.status(401).end(); return; }
+  const { formId } = req.body as { formId?: string };
+  if (formId) schemaCache.delete(formId);
+  res.status(204).end();
 });

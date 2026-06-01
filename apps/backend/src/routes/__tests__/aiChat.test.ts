@@ -2,6 +2,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 
+describe('schema cache', () => {
+  it('returns cached schema on second call within TTL', async () => {
+    const { getFormSchema } = await import('../aiChat.js');
+    // first call
+    const s1 = await getFormSchema('form-1');
+    // second call — prisma.form.findUnique should NOT be called again
+    const s2 = await getFormSchema('form-1');
+    expect(s1).toBe(s2); // same reference = cache hit
+  });
+});
+
 vi.mock('../../services/aiChatService.js', () => ({
   getConversation: vi.fn().mockResolvedValue({ id: 'conv-1', formId: 'form-1', messageCount: 2 }),
   loadConversationMessages: vi.fn().mockResolvedValue([]),
