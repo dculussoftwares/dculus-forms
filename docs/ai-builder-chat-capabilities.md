@@ -62,12 +62,21 @@
 | R1 | `"Remove the Phone Number field"` | Deletes the field. Change is immediate; cannot be reversed except via Undo. |
 | R2 | `"Delete all optional fields"` | Reads all fields via `listFields`, removes each optional field one by one. |
 
-### 2d. Reorder Fields
+### 2d. Reorder Fields (within the same page)
 
 | # | Prompt | Expected behaviour |
 |---|--------|-------------------|
 | O1 | `"Move Email before Full Name"` | Reorders fields on the page so Email appears first. |
 | O2 | `"Put the file upload at the top of page 2"` | Navigates to page 2, reorders so file is first. |
+
+### 2e. Move / Copy — NOT supported by AI
+
+| # | Prompt | Expected behaviour |
+|---|--------|-------------------|
+| M1 | `"Move the Phone field from page 1 to page 2"` | ❌ No `moveField` tool exists. AI may attempt a workaround: `getField` → `addField` on target → `removeField` on source. This loses the original field ID and is unreliable — do not rely on it. |
+| M2 | `"Copy the Email field to page 3"` | ❌ No `copyField` tool exists. Same caveat as above. |
+
+> **Note:** `moveFieldBetweenPages` and `copyFieldToPage` exist in the Zustand store but are not exposed through any AI tool. Move and copy between pages must be done manually in the builder UI.
 
 ---
 
@@ -187,6 +196,8 @@ Maximum 3 chips shown at a time.
 | S2 | Publish or unpublish a form | Publishing is a separate UI action. |
 | S3 | Edit response data | Responses are read-only. |
 | S4 | Upload or change form background/logo | File uploads are not exposed via chat tools. |
+| S4b | Move field between pages | `moveFieldBetweenPages` exists in the store but no AI tool wraps it. Use the builder UI. |
+| S4c | Copy field to another page | `copyFieldToPage` exists in the store but no AI tool wraps it. Use the builder UI. |
 | S5 | Change field type after creation | No `changeFieldType` tool. Must remove and re-add. |
 | S6 | Rich text field content editing | `rich_text_field` is non-fillable; no edit tool exposed. |
 | S7 | Apply validation without user confirmation | `proposeValidation` always shows accept/dismiss — never auto-applies. |
