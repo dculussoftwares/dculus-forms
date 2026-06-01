@@ -24,26 +24,35 @@ export function createFormEditTools(schema: { pages: any[] }) {
   return {
     listFields: tool({
       description:
-        'List all fields in the form with their id, type, label, and required flag. Filter to a specific page with pageId. Call this before making edits to understand the current structure.',
+        'List form fields in compact format: p1 "Title" [id:pageId]: fieldId|type|"label"|req/opt. Omit pageId to list all pages.',
       inputSchema: z.object({
         pageId: z.string().optional().describe('Filter to this page; omit to list all pages'),
       }),
       execute: async ({ pageId }) => {
         const pages: any[] = schema.pages ?? [];
         const filtered = pageId ? pages.filter((p: any) => p.id === pageId) : pages;
+
+        const TYPE_MAP: Record<string, string> = {
+          text_input_field: 'text',  TEXT_INPUT_FIELD: 'text',
+          text_area_field: 'ta',     TEXT_AREA_FIELD: 'ta',
+          email_field: 'email',      EMAIL_FIELD: 'email',
+          number_field: 'num',       NUMBER_FIELD: 'num',
+          date_field: 'date',        DATE_FIELD: 'date',
+          select_field: 'select',    SELECT_FIELD: 'select',
+          radio_field: 'radio',      RADIO_FIELD: 'radio',
+          checkbox_field: 'check',   CHECKBOX_FIELD: 'check',
+          file_upload_field: 'file', FILE_UPLOAD_FIELD: 'file',
+        };
+
         return {
-          totalPages: pages.length,
-          pages: filtered.map((p: any) => ({
-            pageNumber: pages.indexOf(p) + 1,
-            id: p.id,
-            title: p.title ?? `Page ${pages.indexOf(p) + 1}`,
-            fields: (p.fields ?? []).map((f: any) => ({
-              id: f.id,
-              type: f.type,
-              label: f.label,
-              required: f.required ?? false,
-            })),
-          })),
+          summary: `${pages.length} page${pages.length !== 1 ? 's' : ''} total`,
+          pages: filtered.map((p: any) => {
+            const pi = pages.indexOf(p) + 1;
+            const fields = (p.fields ?? [])
+              .map((f: any) => `${f.id}|${TYPE_MAP[f.type] ?? f.type}|"${f.label}"|${(f.required ?? false) ? 'req' : 'opt'}`)
+              .join(', ');
+            return `p${pi} "${p.title ?? `Page ${pi}`}" [id:${p.id}]: ${fields || '(empty)'}`;
+          }),
         };
       },
     }),

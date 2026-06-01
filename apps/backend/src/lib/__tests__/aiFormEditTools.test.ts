@@ -33,29 +33,40 @@ describe('createFormEditTools', () => {
 });
 
 describe('listFields', () => {
-  it('returns all pages with field summaries, page numbers, and titles when no pageId given', async () => {
+  it('returns summary and compact page strings for all pages', async () => {
     const tools = createFormEditTools(mockSchema);
     const result = await tools.listFields.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
-    expect(result.totalPages).toBe(2);
+    expect(result.summary).toBe('2 pages total');
     expect(result.pages).toHaveLength(2);
-    expect(result.pages[0].pageNumber).toBe(1);
-    expect(result.pages[1].pageNumber).toBe(2);
-    expect(result.pages[0].fields).toHaveLength(2);
-    expect(result.pages[0].fields[0]).toEqual({ id: 'f-1', type: 'TEXT_INPUT_FIELD', label: 'Name', required: true });
+    // p1 line includes page number, id, and both fields
+    expect(result.pages[0]).toMatch(/^p1 "Page 1" \[id:page-1\]:/);
+    expect(result.pages[0]).toContain('f-1|text|"Name"|req');
+    expect(result.pages[0]).toContain('f-2|select|"Country"|opt');
+    // p2 line
+    expect(result.pages[1]).toMatch(/^p2 "Page 2" \[id:page-2\]:/);
+    expect(result.pages[1]).toContain('f-3|email|"Email"|req');
   });
 
-  it('filters to a specific page when pageId given and returns pageNumber', async () => {
+  it('filters to a specific page and preserves correct page number', async () => {
     const tools = createFormEditTools(mockSchema);
     const result = await tools.listFields.execute!({ pageId: 'page-2' }, { messages: [], toolCallId: 'test' }) as any;
     expect(result.pages).toHaveLength(1);
-    expect(result.pages[0].id).toBe('page-2');
-    expect(result.pages[0].pageNumber).toBe(2);
+    // still shows p2 (absolute position) even when filtered
+    expect(result.pages[0]).toMatch(/^p2 "Page 2" \[id:page-2\]:/);
+    expect(result.pages[0]).toContain('f-3|email|"Email"|req');
   });
 
-  it('returns empty pages array for empty schema', async () => {
+  it('returns empty summary for empty schema', async () => {
     const tools = createFormEditTools({ pages: [] });
     const result = await tools.listFields.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.summary).toBe('0 pages total');
     expect(result.pages).toHaveLength(0);
+  });
+
+  it('marks page as (empty) when it has no fields', async () => {
+    const tools = createFormEditTools({ pages: [{ id: 'p1', title: 'Blank', fields: [] }] });
+    const result = await tools.listFields.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.pages[0]).toContain('(empty)');
   });
 });
 
