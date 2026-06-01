@@ -21,13 +21,14 @@ const mockSchema = {
 };
 
 describe('createFormEditTools', () => {
-  it('returns all 14 tools', () => {
+  it('returns all 16 tools', () => {
     const tools = createFormEditTools(mockSchema);
     expect(Object.keys(tools)).toEqual([
       'listFields', 'getField', 'addField', 'updateField',
       'removeField', 'reorderFields', 'updateLayout',
       'renamePage', 'reorderPages', 'addPage', 'removePage',
       'navigateToPage', 'bulkUpdateFields', 'proposeValidation',
+      'moveField', 'copyField',
     ]);
   });
 });
@@ -216,6 +217,42 @@ describe('bulkUpdateFields', () => {
   });
 });
 
+describe('moveField', () => {
+  it('returns MOVE_FIELD op with null insertAfterFieldId', async () => {
+    const tools = createFormEditTools(mockSchema);
+    const result = await tools.moveField.execute!(
+      { fieldId: 'f-1', targetPageId: 'page-2', insertAfterFieldId: null },
+      { messages: [], toolCallId: 'test' }
+    ) as any;
+    expect(result.type).toBe('MOVE_FIELD');
+    expect(result.fieldId).toBe('f-1');
+    expect(result.targetPageId).toBe('page-2');
+    expect(result.insertAfterFieldId).toBeNull();
+  });
+
+  it('returns MOVE_FIELD op with insertAfterFieldId', async () => {
+    const tools = createFormEditTools(mockSchema);
+    const result = await tools.moveField.execute!(
+      { fieldId: 'f-1', targetPageId: 'page-2', insertAfterFieldId: 'f-3' },
+      { messages: [], toolCallId: 'test' }
+    ) as any;
+    expect(result.insertAfterFieldId).toBe('f-3');
+  });
+});
+
+describe('copyField', () => {
+  it('returns COPY_FIELD op', async () => {
+    const tools = createFormEditTools(mockSchema);
+    const result = await tools.copyField.execute!(
+      { fieldId: 'f-2', targetPageId: 'page-2', insertAfterFieldId: 'f-3' },
+      { messages: [], toolCallId: 'test' }
+    ) as any;
+    expect(result.type).toBe('COPY_FIELD');
+    expect(result.fieldId).toBe('f-2');
+    expect(result.insertAfterFieldId).toBe('f-3');
+  });
+});
+
 describe('tool description lengths', () => {
   const tools = createFormEditTools({ pages: [] });
 
@@ -234,6 +271,8 @@ describe('tool description lengths', () => {
     navigateToPage:    135,
     bulkUpdateFields:  100,
     proposeValidation: 140,
+    moveField:         140,
+    copyField:         155,
   };
 
   for (const [name, limit] of Object.entries(LIMITS)) {

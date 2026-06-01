@@ -223,6 +223,28 @@ export function createFormEditTools(schema: { pages: any[] }) {
       }),
       execute: async (args) => ({ type: 'PROPOSE_VALIDATION' as const, ...args }),
     }),
+
+    moveField: tool({
+      description:
+        'Move a field to a different page. Use listFields to get target page field IDs for insertAfterFieldId positioning; null to append at end.',
+      inputSchema: z.object({
+        fieldId: z.string().describe('The field ID to move — get it from listFields'),
+        targetPageId: z.string().describe('Destination page ID — get it from listFields'),
+        insertAfterFieldId: z.string().nullable().describe('Insert after this field ID on the target page; null to append at end'),
+      }),
+      execute: async (args) => ({ type: 'MOVE_FIELD' as const, ...args }),
+    }),
+
+    copyField: tool({
+      description:
+        'Copy a field to another page as a duplicate. Preserves label, required, placeholder, hint, options. Use listFields for insertAfterFieldId; null to append.',
+      inputSchema: z.object({
+        fieldId: z.string().describe('Source field ID — get it from listFields'),
+        targetPageId: z.string().describe('Destination page ID — get it from listFields'),
+        insertAfterFieldId: z.string().nullable().describe('Insert after this field ID on the target page; null to append at end'),
+      }),
+      execute: async (args) => ({ type: 'COPY_FIELD' as const, ...args }),
+    }),
   };
 }
 
@@ -238,4 +260,6 @@ export type FormOperation =
   | { type: 'REMOVE_PAGE'; pageId: string }
   | { type: 'NAVIGATE_TO_PAGE'; pageId: string }
   | { type: 'PROPOSE_VALIDATION'; suggestions: Array<{ fieldId: string; fieldLabel: string; fieldType: string; validation?: { minLength?: number | null; maxLength?: number | null; minSelections?: number | null; maxSelections?: number | null }; min?: number | null; max?: number | null; required?: boolean }>; rationale: string }
-  | { type: 'BULK_UPDATE_FIELDS'; fieldIds: string[]; updates: Record<string, unknown> };
+  | { type: 'BULK_UPDATE_FIELDS'; fieldIds: string[]; updates: Record<string, unknown> }
+  | { type: 'MOVE_FIELD'; fieldId: string; targetPageId: string; insertAfterFieldId: string | null }
+  | { type: 'COPY_FIELD'; fieldId: string; targetPageId: string; insertAfterFieldId: string | null };
