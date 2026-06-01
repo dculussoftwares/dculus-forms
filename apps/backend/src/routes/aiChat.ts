@@ -1,6 +1,6 @@
 import { Readable } from 'stream';
 import { Router, type Router as ExpressRouter } from 'express';
-import { validateUIMessages, convertToModelMessages } from 'ai';
+import { validateUIMessages, convertToModelMessages, pruneMessages } from 'ai';
 import type { UIMessage } from 'ai';
 import * as Y from 'yjs';
 import {
@@ -188,7 +188,13 @@ aiChatRouter.post('/chat', async (req, res) => {
 
   try {
     const modelMessages = await convertToModelMessages(validated);
-    const result = await agent.stream({ messages: modelMessages });
+    const prunedModelMessages = pruneMessages({
+      messages: modelMessages,
+      reasoning: 'all',
+      toolCalls: 'before-last-3-messages',
+      emptyMessages: 'remove',
+    });
+    const result = await agent.stream({ messages: prunedModelMessages });
 
     // Ensure onFinish fires even if client disconnects
     result.consumeStream();

@@ -56,7 +56,8 @@ vi.mock('yjs', () => ({
 
 vi.mock('ai', () => ({
   validateUIMessages: vi.fn().mockImplementation(({ messages }) => Promise.resolve(messages)),
-  convertToModelMessages: vi.fn().mockResolvedValue([]),
+  convertToModelMessages: vi.fn().mockResolvedValue([{ role: 'user', content: 'hi' }]),
+  pruneMessages: vi.fn().mockImplementation(({ messages }) => messages), // pass-through
 }));
 
 vi.mock('../../lib/prisma.js', () => ({
@@ -74,6 +75,7 @@ import { aiChatRouter, getFormSchema } from '../aiChat.js';
 import { checkAITokenBudget } from '../../services/aiUsageService.js';
 import { createFormEditAgent } from '../../lib/formEditAgent.js';
 import { getConversation } from '../../services/aiChatService.js';
+import { pruneMessages } from 'ai';
 
 function makeUIMessageStreamResponse(chunks: string[]) {
   const encoder = new TextEncoder();
@@ -158,6 +160,46 @@ describe('POST /chat', () => {
 
     expect(res.status).toBe(200);
     expect(mockAgent.stream).toHaveBeenCalled();
+  });
+});
+
+describe('context pruning', () => {
+  let app: express.Express;
+
+  beforeEach(() => {
+    app = express();
+    app.use(express.json());
+    app.use('/', aiChatRouter);
+    vi.clearAllMocks();
+    (checkAITokenBudget as any).mockResolvedValue({ allowed: true, used: 0, limit: 50000 });
+    (getConversation as any).mockResolvedValue({ id: 'conv-1', formId: 'form-1', messageCount: 2 });
+  });
+
+  it('calls pruneMessages on converted model messages', async () => {
+    const streamData = 'data: {"type":"text","value":"hello"}\n\n';
+    const mockAgent = {
+      stream: vi.fn().mockResolvedValue({
+        consumeStream: vi.fn(),
+        toUIMessageStreamResponse: vi.fn().mockReturnValue(
+          makeUIMessageStreamResponse([streamData])
+        ),
+      }),
+    };
+    (createFormEditAgent as any).mockReturnValue(mockAgent);
+
+    await request(app).post('/chat').send({
+      message: { id: 'm1', role: 'user', content: 'Hi', parts: [{ type: 'text', text: 'Hi' }] },
+      conversationId: 'conv-1',
+      organizationId: 'org-1',
+    });
+
+    expect(pruneMessages).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reasoning: 'all',
+        toolCalls: 'before-last-3-messages',
+        emptyMessages: 'remove',
+      })
+    );
   });
 });
 
