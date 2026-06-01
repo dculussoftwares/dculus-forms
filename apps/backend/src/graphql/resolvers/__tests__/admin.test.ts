@@ -1001,6 +1001,25 @@ describe('Admin Resolvers', () => {
       expect(dbCheck?.status).toBe('error');
     });
 
+    it('should report degraded when optional service env vars are absent', async () => {
+      // Save and clear optional service env vars to cover 'degraded' branches
+      const saved: Record<string, string | undefined> = {};
+      const keys = ['CHARGEBEE_API_KEY', 'CHARGEBEE_SITE', 'PUBLIC_S3_ACCESS_KEY', 'PUBLIC_S3_ENDPOINT', 'EMAIL_HOST', 'EMAIL_USER'];
+      keys.forEach(k => { saved[k] = process.env[k]; delete process.env[k]; });
+
+      vi.mocked(prisma.$queryRaw as any).mockResolvedValue([{ '?column?': 1 }]);
+      const result = await adminResolvers.Query.adminSystemHealth({}, {}, mockAdminContext);
+
+      keys.forEach(k => { if (saved[k] !== undefined) process.env[k] = saved[k]; });
+
+      const chargebee = result.find((r: any) => r.label === 'Chargebee');
+      expect(chargebee?.status).toBe('degraded');
+      const s3 = result.find((r: any) => r.label === 'S3 Storage');
+      expect(s3?.status).toBe('degraded');
+      const email = result.find((r: any) => r.label === 'Email');
+      expect(email?.status).toBe('degraded');
+    });
+
     it('should require admin role', async () => {
       await expect(
         adminResolvers.Query.adminSystemHealth({}, {}, mockUserContext)
@@ -1239,6 +1258,14 @@ describe('Admin Resolvers', () => {
       });
     });
 
+    it('should throw NOT_FOUND when subscription does not exist', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
+
+      await expect(
+        adminResolvers.Mutation.adminCancelSubscription({}, { orgId: 'org-1' }, mockAdminContext)
+      ).rejects.toThrow();
+    });
+
     it('should throw BAD_USER_INPUT when no Chargebee subscription ID (free plan)', async () => {
       vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
         organizationId: 'org-1', chargebeeSubscriptionId: null, status: 'active',
@@ -1271,6 +1298,14 @@ describe('Admin Resolvers', () => {
         where: { organizationId: 'org-1' },
         data: { status: 'active' },
       });
+    });
+
+    it('should throw NOT_FOUND when subscription does not exist', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
+
+      await expect(
+        adminResolvers.Mutation.adminReactivateSubscription({}, { orgId: 'org-1' }, mockAdminContext)
+      ).rejects.toThrow();
     });
 
     it('should throw BAD_USER_INPUT when no Chargebee subscription ID', async () => {

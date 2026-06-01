@@ -194,6 +194,16 @@ describe('saveConversationMessages', () => {
     });
   });
 
+  it('falls back to empty string when msg has no parts and no content', async () => {
+    (prisma.aIChatMessage.create as any).mockResolvedValue({});
+    (prisma.aIChatConversation.update as any).mockResolvedValue({});
+    const messages = [
+      { id: 'u1', role: 'user', parts: [], content: null },
+    ];
+    await saveConversationMessages('conv_1', messages as any, 0);
+    expect(prisma.aIChatMessage.create).toHaveBeenCalled();
+  });
+
   it('falls back to msg.content when no text part exists', async () => {
     (prisma.aIChatMessage.create as any).mockResolvedValue({});
     (prisma.aIChatConversation.update as any).mockResolvedValue({});
