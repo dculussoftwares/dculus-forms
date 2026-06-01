@@ -59,7 +59,7 @@ export function createFormEditTools(schema: { pages: any[] }) {
 
     getField: tool({
       description:
-        'Get full details of a specific field: placeholder, hint, options, validation, and which page it belongs to. Use before updating a field to see its current values.',
+        'Get field details (placeholder, hint, options, validation, pageId). Call before updating to see current values.',
       inputSchema: z.object({
         fieldId: z.string().describe('The field ID from listFields'),
       }),
@@ -86,7 +86,7 @@ export function createFormEditTools(schema: { pages: any[] }) {
 
     addField: tool({
       description:
-        'Add a new field to a page. Use the pageId from listFields (match by pageNumber for user-facing page numbers). Use insertAfterFieldId to control position; pass null to append at the end.',
+        'Add a field to a page. pageId from listFields. insertAfterFieldId for position; null to append at end.',
       inputSchema: z.object({
         pageId: z.string().describe('ID of the page to add the field to'),
         insertAfterFieldId: z.string().nullable().describe('Insert after this field ID; null to append'),
@@ -100,7 +100,7 @@ export function createFormEditTools(schema: { pages: any[] }) {
     }),
 
     updateField: tool({
-      description: 'Update one or more properties of an existing field. Only include properties you want to change. For text/textarea fields use updates.validation.minLength/maxLength. For number fields use updates.min/updates.max. For date fields use updates.minDate/updates.maxDate. For checkbox fields use updates.validation.minSelections/maxSelections.',
+      description: 'Update field properties. text: validation.min/maxLength. number: min/max. date: minDate/maxDate. checkbox: minSelections/maxSelections.',
       inputSchema: z.object({
         fieldId: z.string().describe('The field ID from listFields'),
         updates: updatesSchema,
@@ -144,7 +144,7 @@ export function createFormEditTools(schema: { pages: any[] }) {
     }),
 
     reorderPages: tool({
-      description: 'Reorder pages. Provide ALL page IDs in the desired new order.',
+      description: 'Reorder pages. Provide all page IDs in desired new order.',
       inputSchema: z.object({
         pageIds: z.array(z.string()).describe('All page IDs in the desired order'),
       }),
@@ -153,7 +153,7 @@ export function createFormEditTools(schema: { pages: any[] }) {
 
     addPage: tool({
       description:
-        'Add a new empty page to the form. insertAfterPageId: pass a page ID to insert after that page, or null to append at the end. The returned pageId is the ID of the new page — use it immediately as the pageId when calling addField on this new page.',
+        'Add a page. insertAfterPageId to position it, null to append. Use the returned pageId immediately as the pageId for addField on this page.',
       inputSchema: z.object({
         title: z.string().max(50).describe('Title for the new page'),
         insertAfterPageId: z.string().nullable().describe('Insert after this page ID; null to append at end'),
@@ -189,7 +189,7 @@ export function createFormEditTools(schema: { pages: any[] }) {
 
     bulkUpdateFields: tool({
       description:
-        'Apply the same update to multiple fields at once. Use instead of multiple updateField calls when applying the same change to 3 or more fields.',
+        'Apply the same update to 3+ fields at once. Always prefer this over multiple updateField calls.',
       inputSchema: z.object({
         fieldIds: z.array(z.string()).min(2).describe('IDs of all fields to update'),
         updates: updatesSchema,
@@ -199,7 +199,7 @@ export function createFormEditTools(schema: { pages: any[] }) {
 
     proposeValidation: tool({
       description:
-        'Propose validation rules for fields based on their label and type. Use instead of updateField when suggesting validation — the user reviews before applying. Never call updateField for validation without explicit user confirmation.',
+        'Propose validation rules for user review. Use instead of updateField for validation — never apply validation without user confirmation.',
       inputSchema: z.object({
         suggestions: z.array(
           z.object({

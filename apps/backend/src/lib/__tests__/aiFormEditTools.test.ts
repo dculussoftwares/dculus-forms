@@ -215,3 +215,31 @@ describe('bulkUpdateFields', () => {
     expect((result as any).updates.required).toBe(true);
   });
 });
+
+describe('tool description lengths', () => {
+  const tools = createFormEditTools({ pages: [] });
+
+  const LIMITS: Record<string, number> = {
+    listFields:        130,
+    getField:          120,
+    addField:          115,
+    updateField:       175,
+    removeField:        40,
+    reorderFields:      90,
+    updateLayout:       70,
+    renamePage:         55,
+    reorderPages:       60,
+    addPage:           145,
+    removePage:         90,
+    navigateToPage:    135,
+    bulkUpdateFields:  100,
+    proposeValidation: 140,
+  };
+
+  for (const [name, limit] of Object.entries(LIMITS)) {
+    it(`${name} description is under ${limit} chars`, () => {
+      const desc = (tools as any)[name].description as string;
+      expect(desc.length).toBeLessThanOrEqual(limit);
+    });
+  }
+});
