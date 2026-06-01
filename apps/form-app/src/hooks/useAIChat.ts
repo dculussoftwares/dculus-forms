@@ -120,7 +120,7 @@ export function useAIChat({
         !appliedToolCallIds.current.has((part as any).toolCallId)
       ) {
         appliedToolCallIds.current.add((part as any).toolCallId);
-        applyAIOp((part as any).output, store);
+        applyAIOp((part as any).output, store, formId);
       }
     }
   }, [messages]);

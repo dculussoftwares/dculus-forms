@@ -1,6 +1,17 @@
 import { FieldType } from '@dculus/types';
 import type { FormBuilderState } from '../store/types/store.types';
 
+const API_URL = import.meta.env.VITE_API_URL as string;
+
+function invalidateSchema(formId: string): void {
+  fetch(`${API_URL}/api/ai/invalidate-schema`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ formId }),
+  }).catch(() => { /* fire-and-forget, ignore failures */ });
+}
+
 const AI_TYPE_MAP: Record<string, FieldType> = {
   text: FieldType.TEXT_INPUT_FIELD,
   textarea: FieldType.TEXT_AREA_FIELD,
@@ -26,10 +37,11 @@ export function applyAIOp(
   op: any,
   store: Pick<
     FormBuilderState,
-    'pages' | 'addField' | 'addFieldAtIndex' | 'updateField' | 'removeField' |
-    'reorderFields' | 'updateLayout' | 'updatePageTitle' | 'reorderPages' |
-    'addPageAtPosition' | 'removePage'
-  >
+    | 'pages' | 'addField' | 'addFieldAtIndex' | 'updateField' | 'removeField'
+    | 'reorderFields' | 'updateLayout' | 'updatePageTitle' | 'reorderPages'
+    | 'addPageAtPosition' | 'removePage'
+  >,
+  formId?: string
 ): void {
   if (!op?.type) return;
 
@@ -141,4 +153,7 @@ export function applyAIOp(
       break;
     }
   }
+
+  // Invalidate backend schema cache after any mutation
+  if (formId) invalidateSchema(formId);
 }
