@@ -4,9 +4,9 @@
 > system-prompt behaviour. Use this as a manual test checklist or to scope new AI features.
 
 **Backend entry point:** `POST /api/ai/chat` → `ToolLoopAgent` (max 15 steps)  
-**Tools available:** 14 (`listFields`, `getField`, `addField`, `updateField`, `removeField`,
+**Tools available:** 16 (`listFields`, `getField`, `addField`, `updateField`, `removeField`,
 `reorderFields`, `updateLayout`, `renamePage`, `reorderPages`, `addPage`, `removePage`,
-`navigateToPage`, `bulkUpdateFields`, `proposeValidation`)  
+`navigateToPage`, `bulkUpdateFields`, `proposeValidation`, `moveField`, `copyField`)  
 **Token budget:** free 200k · starter 2M · advanced 20M (monthly, per org)
 
 ---
