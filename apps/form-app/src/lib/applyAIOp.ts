@@ -113,23 +113,25 @@ export function applyAIOp(
       break;
     }
 
-    case 'UPDATE_FIELD': {
-      const pageId = findPageForField(store.pages, op.fieldId);
-      if (!pageId) return;
-      store.updateField(pageId, op.fieldId, op.updates);
-      store.setAIHighlightedFieldId(op.fieldId);
-      setTimeout(() => store.setAIHighlightedFieldId(null), 2000);
+    case 'UPDATE_FIELDS': {
+      const fieldIds: string[] = op.fieldIds ?? [];
+      let lastUpdatedId: string | null = null;
+      for (const fieldId of fieldIds) {
+        const pageId = findPageForField(store.pages, fieldId);
+        if (pageId) {
+          store.updateField(pageId, fieldId, op.updates);
+          lastUpdatedId = fieldId;
+        }
+      }
+      // Highlight the last successfully updated field (single edit = 1-elem array)
+      if (lastUpdatedId) {
+        store.setAIHighlightedFieldId(lastUpdatedId);
+        setTimeout(() => store.setAIHighlightedFieldId(null), 2000);
+      }
       break;
     }
 
-    case 'REMOVE_FIELD': {
-      const pageId = findPageForField(store.pages, op.fieldId);
-      if (!pageId) return;
-      store.removeField(pageId, op.fieldId);
-      break;
-    }
-
-    case 'BULK_REMOVE_FIELDS': {
+    case 'REMOVE_FIELDS': {
       for (const fieldId of (op.fieldIds ?? [])) {
         const pageId = findPageForField(store.pages, fieldId);
         if (pageId) store.removeField(pageId, fieldId);
@@ -137,17 +139,31 @@ export function applyAIOp(
       break;
     }
 
-    case 'REORDER_FIELDS': {
-      const page = (store.pages as any[]).find((p: any) => p.id === op.pageId);
-      if (!page) return;
-      const current: string[] = (page.fields ?? []).map((f: any) => f.id);
-      const desired: string[] = op.fieldIds ?? [];
-      for (let i = 0; i < desired.length; i++) {
-        const fromIdx = current.indexOf(desired[i]);
-        if (fromIdx !== -1 && fromIdx !== i) {
-          store.reorderFields(op.pageId, fromIdx, i);
-          const [moved] = current.splice(fromIdx, 1);
-          current.splice(i, 0, moved);
+    case 'REORDER': {
+      if (op.scope === 'pages') {
+        const desired: string[] = op.ids ?? [];
+        const current: string[] = (store.pages as any[]).map((p: any) => p.id);
+        for (let i = 0; i < desired.length; i++) {
+          const fromIdx = current.indexOf(desired[i]);
+          if (fromIdx !== -1 && fromIdx !== i) {
+            store.reorderPages(fromIdx, i);
+            const [moved] = current.splice(fromIdx, 1);
+            current.splice(i, 0, moved);
+          }
+        }
+      } else {
+        // scope === 'fields'
+        const page = (store.pages as any[]).find((p: any) => p.id === op.pageId);
+        if (!page) break;
+        const current: string[] = (page.fields ?? []).map((f: any) => f.id);
+        const desired: string[] = op.ids ?? [];
+        for (let i = 0; i < desired.length; i++) {
+          const fromIdx = current.indexOf(desired[i]);
+          if (fromIdx !== -1 && fromIdx !== i) {
+            store.reorderFields(op.pageId, fromIdx, i);
+            const [moved] = current.splice(fromIdx, 1);
+            current.splice(i, 0, moved);
+          }
         }
       }
       break;
@@ -170,20 +186,6 @@ export function applyAIOp(
       break;
     }
 
-    case 'REORDER_PAGES': {
-      const desired: string[] = op.pageIds ?? [];
-      const current: string[] = (store.pages as any[]).map((p: any) => p.id);
-      for (let i = 0; i < desired.length; i++) {
-        const fromIdx = current.indexOf(desired[i]);
-        if (fromIdx !== -1 && fromIdx !== i) {
-          store.reorderPages(fromIdx, i);
-          const [moved] = current.splice(fromIdx, 1);
-          current.splice(i, 0, moved);
-        }
-      }
-      break;
-    }
-
     case 'ADD_PAGE': {
       // Pass the pre-generated pageId from the backend so subsequent ADD_FIELD ops
       // can reference the new page by the same ID the AI already knows.
@@ -199,7 +201,43 @@ export function applyAIOp(
       break;
     }
 
-    case 'MOVE_FIELD': {
+    case 'RELOCATE_FIELD': {
+      if (op.mode === 'copy') {
+        // Reconstruct fieldData from source field and add a copy on the target page.
+        let sourceField: any = null;
+        for (const page of store.pages as any[]) {
+          sourceField = (page.fields ?? []).find((f: any) => f.id === op.fieldId) ?? null;
+          if (sourceField) break;
+        }
+        if (!sourceField) break;
+
+        const targetPage = (store.pages as any[]).find((p: any) => p.id === op.targetPageId);
+        if (!targetPage) break;
+
+        const fieldType = AI_TYPE_MAP[sourceField.type] ?? FieldType.TEXT_INPUT_FIELD;
+        const isChoice = CHOICE_TYPES.has(fieldType);
+        const fieldData = {
+          label: sourceField.label,
+          required: sourceField.required ?? false,
+          placeholder: sourceField.placeholder ?? '',
+          defaultValue: '',
+          prefix: '',
+          hint: sourceField.hint ?? '',
+          ...(isChoice && { options: sourceField.options ?? [] }),
+        };
+
+        if (op.insertAfterFieldId) {
+          const idx = (targetPage.fields ?? []).findIndex((f: any) => f.id === op.insertAfterFieldId);
+          if (idx !== -1) {
+            store.addFieldAtIndex(op.targetPageId, fieldType, fieldData, idx + 1);
+            break;
+          }
+        }
+        store.addField(op.targetPageId, fieldType, fieldData);
+        break;
+      }
+
+      // mode === 'move'
       const sourcePageId = findPageForField(store.pages, op.fieldId);
       if (!sourcePageId) break;
 
@@ -216,40 +254,6 @@ export function applyAIOp(
       break;
     }
 
-    case 'COPY_FIELD': {
-      let sourceField: any = null;
-      for (const page of store.pages as any[]) {
-        sourceField = (page.fields ?? []).find((f: any) => f.id === op.fieldId) ?? null;
-        if (sourceField) break;
-      }
-      if (!sourceField) break;
-
-      const targetPage = (store.pages as any[]).find((p: any) => p.id === op.targetPageId);
-      if (!targetPage) break;
-
-      const fieldType = AI_TYPE_MAP[sourceField.type] ?? FieldType.TEXT_INPUT_FIELD;
-      const isChoice = CHOICE_TYPES.has(fieldType);
-      const fieldData = {
-        label: sourceField.label,
-        required: sourceField.required ?? false,
-        placeholder: sourceField.placeholder ?? '',
-        defaultValue: '',
-        prefix: '',
-        hint: sourceField.hint ?? '',
-        ...(isChoice && { options: sourceField.options ?? [] }),
-      };
-
-      if (op.insertAfterFieldId) {
-        const idx = (targetPage.fields ?? []).findIndex((f: any) => f.id === op.insertAfterFieldId);
-        if (idx !== -1) {
-          store.addFieldAtIndex(op.targetPageId, fieldType, fieldData, idx + 1);
-          break;
-        }
-      }
-      store.addField(op.targetPageId, fieldType, fieldData);
-      break;
-    }
-
     case 'NAVIGATE_TO_PAGE': {
       const pageExists = (store.pages as any[]).some((p: any) => p.id === op.pageId);
       if (pageExists) store.setSelectedPage(op.pageId);
@@ -261,11 +265,9 @@ export function applyAIOp(
       break;
     }
 
-    case 'BULK_UPDATE_FIELDS': {
-      for (const fieldId of op.fieldIds ?? []) {
-        const pageId = findPageForField(store.pages, fieldId);
-        if (pageId) store.updateField(pageId, fieldId, op.updates);
-      }
+    default: {
+      // Defensive no-op: legacy op types from old conversations are never
+      // re-applied (applyAIOp only runs on live tool calls), but guard anyway.
       break;
     }
   }

@@ -20,8 +20,13 @@ const updatesSchema = z.object({
   maxDate: z.string().nullable().optional(),
 });
 
-export function createFormEditTools(schema: { pages: any[] }) {
-  return {
+export function createFormEditTools(
+  schema: { pages: any[] },
+  opts?: { includeReadTools?: boolean }
+) {
+  const includeReadTools = opts?.includeReadTools !== false;
+
+  const readTools = {
     listFields: tool({
       description:
         'List form fields in compact format: p1 "Title" [id:pageId]: fieldId|type|"label"|req/opt. Omit pageId to list all pages.',
@@ -83,7 +88,9 @@ export function createFormEditTools(schema: { pages: any[] }) {
         return { error: `Field ${fieldId} not found` };
       },
     }),
+  };
 
+  const mutationTools = {
     addField: tool({
       description:
         'Add a field to a page. pageId from listFields. insertAfterFieldId for position; null to append at end.',
@@ -99,30 +106,51 @@ export function createFormEditTools(schema: { pages: any[] }) {
       execute: async (args) => ({ type: 'ADD_FIELD' as const, ...args }),
     }),
 
-    updateField: tool({
-      description: 'Update field properties. text: validation.min/maxLength. number: min/max. date: minDate/maxDate. checkbox: minSelections/maxSelections.',
+    updateFields: tool({
+      description:
+        'Update one or more fields with the same changes. Single edit = 1-elem fieldIds. text: validation.min/maxLength. number: min/max. date: minDate/maxDate.',
       inputSchema: z.object({
-        fieldId: z.string().describe('The field ID from listFields'),
+        fieldIds: z.array(z.string()).min(1).describe('IDs of all fields to update (min 1)'),
         updates: updatesSchema,
       }),
-      execute: async (args) => ({ type: 'UPDATE_FIELD' as const, ...args }),
+      execute: async (args) => ({ type: 'UPDATE_FIELDS' as const, ...args }),
     }),
 
-    removeField: tool({
-      description: 'Remove a field from the form.',
+    removeFields: tool({
+      description:
+        'Remove one or more fields from the form. Single removal = 1-elem fieldIds. Call listFields first to get the IDs.',
       inputSchema: z.object({
-        fieldId: z.string().describe('The field ID from listFields'),
+        fieldIds: z.array(z.string()).min(1).describe('IDs of all fields to remove (min 1)'),
       }),
-      execute: async (args) => ({ type: 'REMOVE_FIELD' as const, ...args }),
+      execute: async (args) => ({ type: 'REMOVE_FIELDS' as const, ...args }),
     }),
 
-    reorderFields: tool({
-      description: 'Reorder fields on a page (same page only). Pass all field IDs in the new desired order.',
+    relocateField: tool({
+      description:
+        'Move or copy a field to another page. mode "move" relocates; "copy" duplicates. insertAfterFieldId positions it; null to append.',
       inputSchema: z.object({
-        pageId: z.string(),
-        fieldIds: z.array(z.string()).describe('All field IDs in the new desired order'),
+        fieldId: z.string().describe('The field ID — get it from listFields'),
+        targetPageId: z.string().describe('Destination page ID — get it from listFields'),
+        insertAfterFieldId: z.string().nullable().describe('Insert after this field ID on the target page; null to append'),
+        mode: z.enum(['move', 'copy']).describe('"move" relocates the field; "copy" duplicates it'),
       }),
-      execute: async (args) => ({ type: 'REORDER_FIELDS' as const, ...args }),
+      execute: async (args) => ({ type: 'RELOCATE_FIELD' as const, ...args }),
+    }),
+
+    reorder: tool({
+      description:
+        'Reorder fields (scope "fields", pageId required) or pages (scope "pages"). Pass all ids in the new desired order.',
+      inputSchema: z.object({
+        scope: z.enum(['fields', 'pages']).describe('"fields" reorders fields on a page; "pages" reorders pages'),
+        ids: z.array(z.string()).describe('All IDs in the new desired order'),
+        pageId: z.string().optional().describe('Required when scope="fields": the page whose fields are reordered'),
+      }),
+      execute: async (args) => {
+        if (args.scope === 'fields' && !args.pageId) {
+          return { error: 'pageId is required when scope is "fields"' };
+        }
+        return { type: 'REORDER' as const, ...args };
+      },
     }),
 
     updateLayout: tool({
@@ -141,14 +169,6 @@ export function createFormEditTools(schema: { pages: any[] }) {
         newTitle: z.string().max(50).describe('New title for the page'),
       }),
       execute: async (args) => ({ type: 'RENAME_PAGE' as const, ...args }),
-    }),
-
-    reorderPages: tool({
-      description: 'Reorder pages. Provide all page IDs in desired new order.',
-      inputSchema: z.object({
-        pageIds: z.array(z.string()).describe('All page IDs in the desired order'),
-      }),
-      execute: async (args) => ({ type: 'REORDER_PAGES' as const, ...args }),
     }),
 
     addPage: tool({
@@ -187,19 +207,9 @@ export function createFormEditTools(schema: { pages: any[] }) {
       execute: async ({ pageId }) => ({ type: 'NAVIGATE_TO_PAGE' as const, pageId }),
     }),
 
-    bulkUpdateFields: tool({
-      description:
-        'Apply the same update to 3+ fields at once. Always prefer this over multiple updateField calls.',
-      inputSchema: z.object({
-        fieldIds: z.array(z.string()).min(2).describe('IDs of all fields to update'),
-        updates: updatesSchema,
-      }),
-      execute: async (args) => ({ type: 'BULK_UPDATE_FIELDS' as const, ...args }),
-    }),
-
     proposeValidation: tool({
       description:
-        'Propose validation rules for user review. Use instead of updateField for validation — never apply validation without user confirmation.',
+        'Propose validation rules for user review. Use instead of updateFields for validation — never apply validation without user confirmation.',
       inputSchema: z.object({
         suggestions: z.array(
           z.object({
@@ -223,53 +233,23 @@ export function createFormEditTools(schema: { pages: any[] }) {
       }),
       execute: async (args) => ({ type: 'PROPOSE_VALIDATION' as const, ...args }),
     }),
+  };
 
-    bulkRemoveFields: tool({
-      description:
-        'Remove multiple fields at once (3+). Use instead of multiple removeField calls. Call listFields first to get the field IDs to remove.',
-      inputSchema: z.object({
-        fieldIds: z.array(z.string()).min(1).describe('IDs of all fields to remove'),
-      }),
-      execute: async (args) => ({ type: 'BULK_REMOVE_FIELDS' as const, ...args }),
-    }),
-
-    moveField: tool({
-      description:
-        'Move a field to a different page. Not for same-page reordering (use reorderFields). Use listFields for insertAfterFieldId; null to append.',
-      inputSchema: z.object({
-        fieldId: z.string().describe('The field ID to move — get it from listFields'),
-        targetPageId: z.string().describe('Destination page ID — get it from listFields'),
-        insertAfterFieldId: z.string().nullable().describe('Insert after this field ID on the target page; null to append at end'),
-      }),
-      execute: async (args) => ({ type: 'MOVE_FIELD' as const, ...args }),
-    }),
-
-    copyField: tool({
-      description:
-        'Copy a field to another page as a duplicate. Preserves label, required, placeholder, hint, options. Use listFields for insertAfterFieldId; null to append.',
-      inputSchema: z.object({
-        fieldId: z.string().describe('Source field ID — get it from listFields'),
-        targetPageId: z.string().describe('Destination page ID — get it from listFields'),
-        insertAfterFieldId: z.string().nullable().describe('Insert after this field ID on the target page; null to append at end'),
-      }),
-      execute: async (args) => ({ type: 'COPY_FIELD' as const, ...args }),
-    }),
+  return {
+    ...(includeReadTools ? readTools : {}),
+    ...mutationTools,
   };
 }
 
 export type FormOperation =
   | { type: 'ADD_FIELD'; pageId: string; insertAfterFieldId: string | null; fieldType: string; label: string; required: boolean; placeholder: string | null; options: string[] | null }
-  | { type: 'UPDATE_FIELD'; fieldId: string; updates: { label?: string; required?: boolean; placeholder?: string; hint?: string; options?: string[]; validation?: { required?: boolean; minLength?: number | null; maxLength?: number | null; minSelections?: number | null; maxSelections?: number | null }; min?: number | null; max?: number | null; minDate?: string | null; maxDate?: string | null } }
-  | { type: 'REMOVE_FIELD'; fieldId: string }
-  | { type: 'REORDER_FIELDS'; pageId: string; fieldIds: string[] }
+  | { type: 'UPDATE_FIELDS'; fieldIds: string[]; updates: Record<string, unknown> }
+  | { type: 'REMOVE_FIELDS'; fieldIds: string[] }
+  | { type: 'RELOCATE_FIELD'; fieldId: string; targetPageId: string; insertAfterFieldId: string | null; mode: 'move' | 'copy' }
+  | { type: 'REORDER'; scope: 'fields' | 'pages'; ids: string[]; pageId?: string }
   | { type: 'UPDATE_LAYOUT'; content?: string; customCTAButtonName?: string }
   | { type: 'RENAME_PAGE'; pageId: string; newTitle: string }
-  | { type: 'REORDER_PAGES'; pageIds: string[] }
   | { type: 'ADD_PAGE'; pageId: string; title: string; insertAfterPageId: string | null }
   | { type: 'REMOVE_PAGE'; pageId: string }
   | { type: 'NAVIGATE_TO_PAGE'; pageId: string }
-  | { type: 'PROPOSE_VALIDATION'; suggestions: Array<{ fieldId: string; fieldLabel: string; fieldType: string; validation?: { minLength?: number | null; maxLength?: number | null; minSelections?: number | null; maxSelections?: number | null }; min?: number | null; max?: number | null; required?: boolean }>; rationale: string }
-  | { type: 'BULK_UPDATE_FIELDS'; fieldIds: string[]; updates: Record<string, unknown> }
-  | { type: 'BULK_REMOVE_FIELDS'; fieldIds: string[] }
-  | { type: 'MOVE_FIELD'; fieldId: string; targetPageId: string; insertAfterFieldId: string | null }
-  | { type: 'COPY_FIELD'; fieldId: string; targetPageId: string; insertAfterFieldId: string | null };
+  | { type: 'PROPOSE_VALIDATION'; suggestions: Array<{ fieldId: string; fieldLabel: string; fieldType: string; validation?: { minLength?: number | null; maxLength?: number | null; minSelections?: number | null; maxSelections?: number | null }; min?: number | null; max?: number | null; required?: boolean }>; rationale: string };

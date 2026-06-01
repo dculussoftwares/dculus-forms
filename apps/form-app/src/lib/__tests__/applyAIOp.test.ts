@@ -59,33 +59,47 @@ describe('applyAIOp — ADD_FIELD', () => {
   });
 });
 
-describe('applyAIOp — UPDATE_FIELD', () => {
-  it('finds the page by fieldId and calls updateField', () => {
+describe('applyAIOp — UPDATE_FIELDS', () => {
+  it('finds the page by fieldId and calls updateField (single)', () => {
     const store = makeStore();
-    applyAIOp({ type: 'UPDATE_FIELD', fieldId: 'f-3', updates: { label: 'Work Email' } }, store as any);
+    applyAIOp({ type: 'UPDATE_FIELDS', fieldIds: ['f-3'], updates: { label: 'Work Email' } }, store as any);
     expect(store.updateField).toHaveBeenCalledWith('page-2', 'f-3', { label: 'Work Email' });
   });
 
-  it('does nothing when fieldId not found', () => {
+  it('loops over all fieldIds (bulk)', () => {
     const store = makeStore();
-    applyAIOp({ type: 'UPDATE_FIELD', fieldId: 'unknown', updates: { label: 'X' } }, store as any);
+    applyAIOp({ type: 'UPDATE_FIELDS', fieldIds: ['f-1', 'f-3'], updates: { required: true } }, store as any);
+    expect(store.updateField).toHaveBeenCalledWith('page-1', 'f-1', { required: true });
+    expect(store.updateField).toHaveBeenCalledWith('page-2', 'f-3', { required: true });
+  });
+
+  it('skips fieldIds that are not found', () => {
+    const store = makeStore();
+    applyAIOp({ type: 'UPDATE_FIELDS', fieldIds: ['unknown'], updates: { label: 'X' } }, store as any);
     expect(store.updateField).not.toHaveBeenCalled();
   });
 });
 
-describe('applyAIOp — REMOVE_FIELD', () => {
-  it('finds the page and removes the field', () => {
+describe('applyAIOp — REMOVE_FIELDS', () => {
+  it('finds the page and removes the field (single)', () => {
     const store = makeStore();
-    applyAIOp({ type: 'REMOVE_FIELD', fieldId: 'f-2' }, store as any);
+    applyAIOp({ type: 'REMOVE_FIELDS', fieldIds: ['f-2'] }, store as any);
     expect(store.removeField).toHaveBeenCalledWith('page-1', 'f-2');
+  });
+
+  it('loops over all fieldIds (bulk)', () => {
+    const store = makeStore();
+    applyAIOp({ type: 'REMOVE_FIELDS', fieldIds: ['f-1', 'f-3'] }, store as any);
+    expect(store.removeField).toHaveBeenCalledWith('page-1', 'f-1');
+    expect(store.removeField).toHaveBeenCalledWith('page-2', 'f-3');
   });
 });
 
-describe('applyAIOp — REORDER_FIELDS', () => {
+describe('applyAIOp — REORDER (fields)', () => {
   it('calls reorderFields to move each field to its target index', () => {
     const store = makeStore();
     // Desired: f-2 first, then f-1
-    applyAIOp({ type: 'REORDER_FIELDS', pageId: 'page-1', fieldIds: ['f-2', 'f-1'] }, store as any);
+    applyAIOp({ type: 'REORDER', scope: 'fields', pageId: 'page-1', ids: ['f-2', 'f-1'] }, store as any);
     // f-2 is at index 1 and needs to move to index 0
     expect(store.reorderFields).toHaveBeenCalledWith('page-1', 1, 0);
   });
@@ -123,38 +137,38 @@ describe('applyAIOp — RENAME_PAGE', () => {
   });
 });
 
-describe('applyAIOp — REORDER_PAGES', () => {
+describe('applyAIOp — REORDER (pages)', () => {
   it('calls reorderPages to move page to target index', () => {
     const store = makeStore();
     // Desired: page-2 first, then page-1
-    applyAIOp({ type: 'REORDER_PAGES', pageIds: ['page-2', 'page-1'] }, store as any);
+    applyAIOp({ type: 'REORDER', scope: 'pages', ids: ['page-2', 'page-1'] }, store as any);
     expect(store.reorderPages).toHaveBeenCalledWith(1, 0);
   });
 
   it('does nothing when order is already correct', () => {
     const store = makeStore();
-    applyAIOp({ type: 'REORDER_PAGES', pageIds: ['page-1', 'page-2'] }, store as any);
+    applyAIOp({ type: 'REORDER', scope: 'pages', ids: ['page-1', 'page-2'] }, store as any);
     expect(store.reorderPages).not.toHaveBeenCalled();
   });
 });
 
 describe('applyAIOp — ADD_PAGE', () => {
-  it('calls addPageAtPosition with title and null insertAfterPageId', () => {
+  it('calls addPageAtPosition with title, null insertAfterPageId and pre-generated pageId', () => {
     const store = makeStore();
-    applyAIOp({ type: 'ADD_PAGE', title: 'Step 2', insertAfterPageId: null }, store as any);
-    expect(store.addPageAtPosition).toHaveBeenCalledWith('Step 2', null);
+    applyAIOp({ type: 'ADD_PAGE', pageId: 'page-new', title: 'Step 2', insertAfterPageId: null }, store as any);
+    expect(store.addPageAtPosition).toHaveBeenCalledWith('Step 2', null, 'page-new');
   });
 
   it('calls addPageAtPosition with insertAfterPageId when provided', () => {
     const store = makeStore();
-    applyAIOp({ type: 'ADD_PAGE', title: 'Middle', insertAfterPageId: 'page-1' }, store as any);
-    expect(store.addPageAtPosition).toHaveBeenCalledWith('Middle', 'page-1');
+    applyAIOp({ type: 'ADD_PAGE', pageId: 'page-new', title: 'Middle', insertAfterPageId: 'page-1' }, store as any);
+    expect(store.addPageAtPosition).toHaveBeenCalledWith('Middle', 'page-1', 'page-new');
   });
 
   it('falls back to "New Page" when title is undefined', () => {
     const store = makeStore();
-    applyAIOp({ type: 'ADD_PAGE', title: undefined, insertAfterPageId: null }, store as any);
-    expect(store.addPageAtPosition).toHaveBeenCalledWith('New Page', null);
+    applyAIOp({ type: 'ADD_PAGE', pageId: 'page-new', title: undefined, insertAfterPageId: null }, store as any);
+    expect(store.addPageAtPosition).toHaveBeenCalledWith('New Page', null, 'page-new');
   });
 });
 

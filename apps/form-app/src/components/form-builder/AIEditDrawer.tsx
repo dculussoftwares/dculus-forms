@@ -15,7 +15,6 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { useAIChat } from '../../hooks/useAIChat';
 import { useAIChips } from '../../hooks/useAIChips';
 import type { FormEditAgentUIMessage, FormEditToolPart } from '../../lib/aiAgentTypes';
-import { MUTATION_TOOL_NAMES } from '../../lib/aiAgentTypes';
 import MutationToolPart from './tool-parts/MutationToolPart';
 import ListFieldsToolPart from './tool-parts/ListFieldsToolPart';
 import GetFieldToolPart from './tool-parts/GetFieldToolPart';
@@ -113,14 +112,17 @@ function AssistantMessage({
               const key = (part as any).toolCallId ?? `${part.type}-${i}`;
               if (part.type === 'tool-listFields') return <ListFieldsToolPart key={key} part={part as any} />;
               if (part.type === 'tool-getField') return <GetFieldToolPart key={key} part={part as any} />;
-              if (part.type === 'tool-proposeValidation' && (part as any).state === 'output-available') {
+              if (part.type === 'tool-proposeValidation') {
+                if ((part as any).state !== 'output-available') return null;
                 return (
                   <span key={key} className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
                     ✦ {t('validation.title')}
                   </span>
                 );
               }
-              if (MUTATION_TOOL_NAMES.has(part.type.slice(5))) return <MutationToolPart key={key} part={part as any} />;
+              // Route any other tool-* part (including legacy mutation parts from
+              // old conversations) to MutationToolPart for back-compat rendering.
+              if (part.type.startsWith('tool-')) return <MutationToolPart key={key} part={part as any} />;
               return null;
             })}
           </div>

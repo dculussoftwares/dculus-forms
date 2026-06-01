@@ -11,19 +11,18 @@ interface Props {
 function getActionLabel(part: MutationToolPart): string {
   switch (part.type) {
     case 'tool-addField': return 'Adding field…';
-    case 'tool-updateField': return 'Updating field…';
-    case 'tool-removeField': return 'Removing field…';
-    case 'tool-reorderFields': return 'Reordering fields…';
+    case 'tool-updateFields': return 'Updating fields…';
+    case 'tool-removeFields': return 'Removing fields…';
+    case 'tool-relocateField': return 'Moving field…';
+    case 'tool-reorder': return 'Reordering…';
     case 'tool-updateLayout': return 'Updating layout…';
     case 'tool-renamePage': return 'Renaming page…';
-    case 'tool-reorderPages': return 'Reordering pages…';
     case 'tool-addPage': return 'Adding page…';
     case 'tool-removePage': return 'Removing page…';
     case 'tool-navigateToPage': return 'Navigating to page…';
-    case 'tool-bulkUpdateFields': return 'Updating fields…';
-    case 'tool-bulkRemoveFields': return 'Removing fields…';
-    case 'tool-moveField': return 'Moving field…';
-    case 'tool-copyField': return 'Copying field…';
+    // Default covers legacy mutation parts from old conversations
+    // (e.g. tool-updateField, tool-moveField, tool-reorderFields).
+    default: return 'Working…';
   }
 }
 

@@ -8,13 +8,12 @@ import { buildOpLabel } from '../../../hooks/useAIChat';
 type OpColor = 'green' | 'blue' | 'red';
 
 const MUTATION_OUTPUT_TYPES = new Set([
-  'ADD_FIELD', 'UPDATE_FIELD', 'REMOVE_FIELD', 'REORDER_FIELDS',
-  'UPDATE_LAYOUT', 'RENAME_PAGE', 'REORDER_PAGES', 'ADD_PAGE', 'REMOVE_PAGE',
-  'BULK_UPDATE_FIELDS',
+  'ADD_FIELD', 'UPDATE_FIELDS', 'REMOVE_FIELDS', 'RELOCATE_FIELD', 'REORDER',
+  'UPDATE_LAYOUT', 'RENAME_PAGE', 'ADD_PAGE', 'REMOVE_PAGE',
 ]);
 
 const ADD_OPS = new Set(['ADD_FIELD', 'ADD_PAGE']);
-const REMOVE_OPS = new Set(['REMOVE_FIELD', 'REMOVE_PAGE']);
+const REMOVE_OPS = new Set(['REMOVE_FIELDS', 'REMOVE_PAGE']);
 
 function opColor(opType: string): OpColor {
   if (ADD_OPS.has(opType)) return 'green';

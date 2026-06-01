@@ -28,28 +28,36 @@ export interface AddFieldToolPart {
   output?: { type: 'ADD_FIELD'; pageId: string; insertAfterFieldId: string | null; fieldType: string; label: string; required: boolean; placeholder: string | null; options: string[] | null };
 }
 
-export interface UpdateFieldToolPart {
-  type: 'tool-updateField';
+export interface UpdateFieldsToolPart {
+  type: 'tool-updateFields';
   toolCallId: string;
   state: ToolState;
-  input?: { fieldId: string; updates: Record<string, unknown> };
-  output?: { type: 'UPDATE_FIELD'; fieldId: string; updates: Record<string, unknown> };
+  input?: { fieldIds: string[]; updates: Record<string, unknown> };
+  output?: { type: 'UPDATE_FIELDS'; fieldIds: string[]; updates: Record<string, unknown> };
 }
 
-export interface RemoveFieldToolPart {
-  type: 'tool-removeField';
+export interface RemoveFieldsToolPart {
+  type: 'tool-removeFields';
   toolCallId: string;
   state: ToolState;
-  input?: { fieldId: string };
-  output?: { type: 'REMOVE_FIELD'; fieldId: string };
+  input?: { fieldIds: string[] };
+  output?: { type: 'REMOVE_FIELDS'; fieldIds: string[] };
 }
 
-export interface ReorderFieldsToolPart {
-  type: 'tool-reorderFields';
+export interface RelocateFieldToolPart {
+  type: 'tool-relocateField';
   toolCallId: string;
   state: ToolState;
-  input?: { pageId: string; fieldIds: string[] };
-  output?: { type: 'REORDER_FIELDS'; pageId: string; fieldIds: string[] };
+  input?: { fieldId: string; targetPageId: string; insertAfterFieldId: string | null; mode: 'move' | 'copy' };
+  output?: { type: 'RELOCATE_FIELD'; fieldId: string; targetPageId: string; insertAfterFieldId: string | null; mode: 'move' | 'copy' };
+}
+
+export interface ReorderToolPart {
+  type: 'tool-reorder';
+  toolCallId: string;
+  state: ToolState;
+  input?: { scope: 'fields' | 'pages'; ids: string[]; pageId?: string };
+  output?: { type: 'REORDER'; scope: 'fields' | 'pages'; ids: string[]; pageId?: string };
 }
 
 export interface UpdateLayoutToolPart {
@@ -68,20 +76,12 @@ export interface RenamePageToolPart {
   output?: { type: 'RENAME_PAGE'; pageId: string; newTitle: string };
 }
 
-export interface ReorderPagesToolPart {
-  type: 'tool-reorderPages';
-  toolCallId: string;
-  state: ToolState;
-  input?: { pageIds: string[] };
-  output?: { type: 'REORDER_PAGES'; pageIds: string[] };
-}
-
 export interface AddPageToolPart {
   type: 'tool-addPage';
   toolCallId: string;
   state: ToolState;
   input?: { title: string; insertAfterPageId: string | null };
-  output?: { type: 'ADD_PAGE'; title: string; insertAfterPageId: string | null };
+  output?: { type: 'ADD_PAGE'; pageId: string; title: string; insertAfterPageId: string | null };
 }
 
 export interface RemovePageToolPart {
@@ -108,56 +108,20 @@ export interface ProposeValidationToolPart {
   output?: { type: 'PROPOSE_VALIDATION'; suggestions: any[]; rationale: string };
 }
 
-export interface BulkUpdateFieldsToolPart {
-  type: 'tool-bulkUpdateFields';
-  toolCallId: string;
-  state: ToolState;
-  input?: { fieldIds: string[]; updates: Record<string, unknown> };
-  output?: { type: 'BULK_UPDATE_FIELDS'; fieldIds: string[]; updates: Record<string, unknown> };
-}
-
-export interface BulkRemoveFieldsToolPart {
-  type: 'tool-bulkRemoveFields';
-  toolCallId: string;
-  state: ToolState;
-  input?: { fieldIds: string[] };
-  output?: { type: 'BULK_REMOVE_FIELDS'; fieldIds: string[] };
-}
-
-export interface MoveFieldToolPart {
-  type: 'tool-moveField';
-  toolCallId: string;
-  state: ToolState;
-  input?: { fieldId: string; targetPageId: string; insertAfterFieldId: string | null };
-  output?: { type: 'MOVE_FIELD'; fieldId: string; targetPageId: string; insertAfterFieldId: string | null };
-}
-
-export interface CopyFieldToolPart {
-  type: 'tool-copyField';
-  toolCallId: string;
-  state: ToolState;
-  input?: { fieldId: string; targetPageId: string; insertAfterFieldId: string | null };
-  output?: { type: 'COPY_FIELD'; fieldId: string; targetPageId: string; insertAfterFieldId: string | null };
-}
-
 export type FormEditToolPart =
   | ListFieldsToolPart
   | GetFieldToolPart
   | AddFieldToolPart
-  | UpdateFieldToolPart
-  | RemoveFieldToolPart
-  | ReorderFieldsToolPart
+  | UpdateFieldsToolPart
+  | RemoveFieldsToolPart
+  | RelocateFieldToolPart
+  | ReorderToolPart
   | UpdateLayoutToolPart
   | RenamePageToolPart
-  | ReorderPagesToolPart
   | AddPageToolPart
   | RemovePageToolPart
   | NavigateToPageToolPart
-  | ProposeValidationToolPart
-  | BulkUpdateFieldsToolPart
-  | BulkRemoveFieldsToolPart
-  | MoveFieldToolPart
-  | CopyFieldToolPart;
+  | ProposeValidationToolPart;
 
 export type FormEditAgentUIMessage = Omit<UIMessage, 'parts'> & {
   parts: Array<
@@ -169,22 +133,17 @@ export type FormEditAgentUIMessage = Omit<UIMessage, 'parts'> & {
 
 export type MutationToolPart =
   | AddFieldToolPart
-  | UpdateFieldToolPart
-  | RemoveFieldToolPart
-  | ReorderFieldsToolPart
+  | UpdateFieldsToolPart
+  | RemoveFieldsToolPart
+  | RelocateFieldToolPart
+  | ReorderToolPart
   | UpdateLayoutToolPart
   | RenamePageToolPart
-  | ReorderPagesToolPart
   | AddPageToolPart
   | RemovePageToolPart
-  | NavigateToPageToolPart
-  | BulkUpdateFieldsToolPart
-  | BulkRemoveFieldsToolPart
-  | MoveFieldToolPart
-  | CopyFieldToolPart;
+  | NavigateToPageToolPart;
 
 export const MUTATION_TOOL_NAMES = new Set([
-  'addField', 'updateField', 'removeField', 'reorderFields',
-  'updateLayout', 'renamePage', 'reorderPages', 'addPage', 'removePage',
-  'navigateToPage', 'bulkUpdateFields', 'bulkRemoveFields', 'moveField', 'copyField',
+  'addField', 'updateFields', 'removeFields', 'relocateField', 'reorder',
+  'updateLayout', 'renamePage', 'addPage', 'removePage', 'navigateToPage',
 ]);
