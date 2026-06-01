@@ -209,7 +209,6 @@ jobs:
           PRIVATE_S3_BUCKET_NAME: test-private-bucket
           PUBLIC_S3_CDN_URL: http://localhost:9000
         run: pnpm --filter backend test:coverage
-        continue-on-error: true  # Report but don't block yet — set threshold violation as blocking once stable
 
       - name: Build backend
         run: pnpm --filter backend build

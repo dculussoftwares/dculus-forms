@@ -544,6 +544,7 @@ describe('FormSharing Resolvers', () => {
           where: {
             organizationId: 'org-123',
             createdById: 'user-123',
+            deletedAt: null,
           },
         });
         expect(result.forms).toEqual(ownerForms);
@@ -565,6 +566,7 @@ describe('FormSharing Resolvers', () => {
           where: {
             organizationId: 'org-123',
             createdById: { not: 'user-123' },
+            deletedAt: null,
             AND: [
               {
                 OR: [
@@ -656,6 +658,7 @@ describe('FormSharing Resolvers', () => {
           where: {
             organizationId: 'org-123',
             createdById: 'user-123',
+            deletedAt: null,
             AND: [
               {
                 OR: [
@@ -682,6 +685,7 @@ describe('FormSharing Resolvers', () => {
           where: {
             organizationId: 'org-123',
             createdById: { not: 'user-123' },
+            deletedAt: null,
             AND: [
               {
                 OR: [
