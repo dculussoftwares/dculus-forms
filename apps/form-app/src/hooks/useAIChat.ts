@@ -175,8 +175,8 @@ export function useAIChat({
   const handleSendMessage = useCallback(
     async (content: string) => {
       if (!activeConversationId || status !== 'ready') return;
-      undoDepthBeforeRef.current = getUndoStackDepth();
       clearBatch();
+      undoDepthBeforeRef.current = getUndoStackDepth(); // always 0 after clear = correct baseline
       beginBatch();
       sendMessage({ text: content });
     },
