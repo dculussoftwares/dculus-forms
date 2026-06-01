@@ -65,3 +65,13 @@ export const RENAME_AI_CHAT_CONVERSATION = gql`
   }
 `;
 
+export const AI_TOKEN_USAGE = gql`
+  query AITokenUsage($organizationId: ID!) {
+    aiTokenUsage(organizationId: $organizationId) {
+      used
+      limit
+      resetAt
+    }
+  }
+`;
+

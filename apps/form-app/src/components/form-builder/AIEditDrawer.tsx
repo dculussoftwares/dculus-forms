@@ -20,6 +20,7 @@ import MutationToolPart from './tool-parts/MutationToolPart';
 import ListFieldsToolPart from './tool-parts/ListFieldsToolPart';
 import GetFieldToolPart from './tool-parts/GetFieldToolPart';
 import ChangeSummaryCard from './tool-parts/ChangeSummaryCard';
+import AITokenMeter from './AITokenMeter';
 
 interface AIEditDrawerProps {
   formId: string;
@@ -323,6 +324,8 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
         {showStatusIndicator && <StatusIndicator />}
         <div ref={messagesEndRef} />
       </div>
+
+      <AITokenMeter organizationId={organizationId} />
 
       {/* Input */}
       <div className="border-t border-border p-3">
