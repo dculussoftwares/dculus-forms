@@ -30,6 +30,8 @@ export function buildOpLabel(op: Record<string, unknown>): string {
     case 'ADD_PAGE': return `Added page "${(op.title as string) ?? 'page'}"`;
     case 'REMOVE_PAGE': return 'Removed page';
     case 'BULK_UPDATE_FIELDS': return 'Updated fields';
+    case 'MOVE_FIELD': return 'Moved field';
+    case 'COPY_FIELD': return 'Copied field';
     default: return 'Changed form';
   }
 }

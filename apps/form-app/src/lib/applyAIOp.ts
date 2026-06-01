@@ -40,6 +40,7 @@ export function applyAIOp(
     | 'reorderFields' | 'updateLayout' | 'updatePageTitle' | 'reorderPages'
     | 'addPageAtPosition' | 'removePage' | 'setSelectedPage'
     | 'setAIHighlightedFieldId' | 'setPendingValidationSuggestions'
+    | 'moveFieldBetweenPages'
   >,
   formId?: string
 ): void {
@@ -167,6 +168,57 @@ export function applyAIOp(
       const pageExists = (store.pages as any[]).some((p: any) => p.id === op.pageId);
       if (!pageExists) return;
       store.removePage(op.pageId);
+      break;
+    }
+
+    case 'MOVE_FIELD': {
+      const sourcePageId = findPageForField(store.pages, op.fieldId);
+      if (!sourcePageId) break;
+
+      const targetPage = (store.pages as any[]).find((p: any) => p.id === op.targetPageId);
+      if (!targetPage) break;
+
+      let insertIndex: number | undefined;
+      if (op.insertAfterFieldId) {
+        const idx = (targetPage.fields ?? []).findIndex((f: any) => f.id === op.insertAfterFieldId);
+        if (idx !== -1) insertIndex = idx + 1;
+      }
+
+      store.moveFieldBetweenPages(sourcePageId, op.targetPageId, op.fieldId, insertIndex);
+      break;
+    }
+
+    case 'COPY_FIELD': {
+      let sourceField: any = null;
+      for (const page of store.pages as any[]) {
+        sourceField = (page.fields ?? []).find((f: any) => f.id === op.fieldId) ?? null;
+        if (sourceField) break;
+      }
+      if (!sourceField) break;
+
+      const targetPage = (store.pages as any[]).find((p: any) => p.id === op.targetPageId);
+      if (!targetPage) break;
+
+      const fieldType = AI_TYPE_MAP[sourceField.type] ?? FieldType.TEXT_INPUT_FIELD;
+      const isChoice = CHOICE_TYPES.has(fieldType);
+      const fieldData = {
+        label: sourceField.label,
+        required: sourceField.required ?? false,
+        placeholder: sourceField.placeholder ?? '',
+        defaultValue: '',
+        prefix: '',
+        hint: sourceField.hint ?? '',
+        ...(isChoice && { options: sourceField.options ?? [] }),
+      };
+
+      if (op.insertAfterFieldId) {
+        const idx = (targetPage.fields ?? []).findIndex((f: any) => f.id === op.insertAfterFieldId);
+        if (idx !== -1) {
+          store.addFieldAtIndex(op.targetPageId, fieldType, fieldData, idx + 1);
+          break;
+        }
+      }
+      store.addField(op.targetPageId, fieldType, fieldData);
       break;
     }
 

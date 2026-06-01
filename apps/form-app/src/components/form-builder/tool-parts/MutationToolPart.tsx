@@ -21,6 +21,8 @@ function getActionLabel(part: MutationToolPart): string {
     case 'tool-removePage': return 'Removing page…';
     case 'tool-navigateToPage': return 'Navigating to page…';
     case 'tool-bulkUpdateFields': return 'Updating fields…';
+    case 'tool-moveField': return 'Moving field…';
+    case 'tool-copyField': return 'Copying field…';
   }
 }
 

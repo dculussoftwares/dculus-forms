@@ -116,6 +116,22 @@ export interface BulkUpdateFieldsToolPart {
   output?: { type: 'BULK_UPDATE_FIELDS'; fieldIds: string[]; updates: Record<string, unknown> };
 }
 
+export interface MoveFieldToolPart {
+  type: 'tool-moveField';
+  toolCallId: string;
+  state: ToolState;
+  input?: { fieldId: string; targetPageId: string; insertAfterFieldId: string | null };
+  output?: { type: 'MOVE_FIELD'; fieldId: string; targetPageId: string; insertAfterFieldId: string | null };
+}
+
+export interface CopyFieldToolPart {
+  type: 'tool-copyField';
+  toolCallId: string;
+  state: ToolState;
+  input?: { fieldId: string; targetPageId: string; insertAfterFieldId: string | null };
+  output?: { type: 'COPY_FIELD'; fieldId: string; targetPageId: string; insertAfterFieldId: string | null };
+}
+
 export type FormEditToolPart =
   | ListFieldsToolPart
   | GetFieldToolPart
@@ -130,7 +146,9 @@ export type FormEditToolPart =
   | RemovePageToolPart
   | NavigateToPageToolPart
   | ProposeValidationToolPart
-  | BulkUpdateFieldsToolPart;
+  | BulkUpdateFieldsToolPart
+  | MoveFieldToolPart
+  | CopyFieldToolPart;
 
 export type FormEditAgentUIMessage = Omit<UIMessage, 'parts'> & {
   parts: Array<
@@ -151,10 +169,12 @@ export type MutationToolPart =
   | AddPageToolPart
   | RemovePageToolPart
   | NavigateToPageToolPart
-  | BulkUpdateFieldsToolPart;
+  | BulkUpdateFieldsToolPart
+  | MoveFieldToolPart
+  | CopyFieldToolPart;
 
 export const MUTATION_TOOL_NAMES = new Set([
   'addField', 'updateField', 'removeField', 'reorderFields',
   'updateLayout', 'renamePage', 'reorderPages', 'addPage', 'removePage',
-  'navigateToPage', 'bulkUpdateFields',
+  'navigateToPage', 'bulkUpdateFields', 'moveField', 'copyField',
 ]);

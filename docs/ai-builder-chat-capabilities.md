@@ -69,14 +69,14 @@
 | O1 | `"Move Email before Full Name"` | Reorders fields on the page so Email appears first. |
 | O2 | `"Put the file upload at the top of page 2"` | Navigates to page 2, reorders so file is first. |
 
-### 2e. Move / Copy — NOT supported by AI
+### 2e. Move / Copy Field Between Pages
 
 | # | Prompt | Expected behaviour |
 |---|--------|-------------------|
-| M1 | `"Move the Phone field from page 1 to page 2"` | ❌ No `moveField` tool exists. AI may attempt a workaround: `getField` → `addField` on target → `removeField` on source. This loses the original field ID and is unreliable — do not rely on it. |
-| M2 | `"Copy the Email field to page 3"` | ❌ No `copyField` tool exists. Same caveat as above. |
-
-> **Note:** `moveFieldBetweenPages` and `copyFieldToPage` exist in the Zustand store but are not exposed through any AI tool. Move and copy between pages must be done manually in the builder UI.
+| M1 | `"Move the Phone field from page 1 to page 2"` | AI calls listFields to get page IDs, then moveField. Field removed from page 1, appended to page 2. |
+| M2 | `"Move Email to page 2 after Full Name"` | Moves Email, inserts it immediately after Full Name on page 2. |
+| M3 | `"Copy the Address field to page 3"` | Copies field to page 3 (appended). New field gets a new ID; all properties preserved. |
+| M4 | `"Copy Email to page 2 before Phone"` | Copies Email, inserts before Phone on page 2. |
 
 ---
 
@@ -196,8 +196,6 @@ Maximum 3 chips shown at a time.
 | S2 | Publish or unpublish a form | Publishing is a separate UI action. |
 | S3 | Edit response data | Responses are read-only. |
 | S4 | Upload or change form background/logo | File uploads are not exposed via chat tools. |
-| S4b | Move field between pages | `moveFieldBetweenPages` exists in the store but no AI tool wraps it. Use the builder UI. |
-| S4c | Copy field to another page | `copyFieldToPage` exists in the store but no AI tool wraps it. Use the builder UI. |
 | S5 | Change field type after creation | No `changeFieldType` tool. Must remove and re-add. |
 | S6 | Rich text field content editing | `rich_text_field` is non-fillable; no edit tool exposed. |
 | S7 | Apply validation without user confirmation | `proposeValidation` always shows accept/dismiss — never auto-applies. |
