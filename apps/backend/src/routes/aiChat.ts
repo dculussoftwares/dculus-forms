@@ -112,6 +112,7 @@ ${pageContext}
 - Use navigateToPage before editing fields on a page the user isn't currently viewing.
 - When asked to suggest or review validation rules, call proposeValidation with all affected fields at once. Never call updateField for validation without explicit user confirmation.
 - Use bulkUpdateFields instead of multiple updateField calls when applying the same change to 3 or more fields.
+- When asked to 'remix', 'transform', or 'convert' the form for a different purpose: (1) call listFields to read the full current structure across all pages, (2) remove fields that clearly don't fit the new purpose using removeField, (3) add fields that belong using addField, (4) preserve fields that work for both purposes and update their labels if needed via updateField, (5) call updateLayout to update the title and CTA button. Do not remove the last field on a page before adding new ones — add first, then remove.
 ${schemaContext}`;
 }
 
