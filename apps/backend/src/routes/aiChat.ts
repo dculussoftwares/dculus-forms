@@ -1,4 +1,3 @@
-import { Readable } from 'stream';
 import { Router, type Router as ExpressRouter } from 'express';
 import { validateUIMessages, convertToModelMessages, pruneMessages } from 'ai';
 import type { UIMessage } from 'ai';
@@ -216,7 +215,13 @@ aiChatRouter.post('/chat', async (req, res) => {
     for (const [k, v] of webResponse.headers.entries()) {
       res.setHeader(k, v);
     }
-    Readable.fromWeb(webResponse.body as any).pipe(res);
+    try {
+      for await (const chunk of webResponse.body as any) {
+        res.write(chunk);
+      }
+    } finally {
+      res.end();
+    }
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
     logger.error({ errMsg, conversationId }, 'AI chat stream failed');

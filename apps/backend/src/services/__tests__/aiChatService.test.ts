@@ -129,4 +129,16 @@ describe('autoGenerateTitle', () => {
       data: { title: 'My Form Title' },
     });
   });
+
+  it('does not throw when the conversation is deleted before title saves', async () => {
+    vi.mocked(prisma.aIChatConversation.update).mockRejectedValueOnce(
+      new Error('Record not found')
+    );
+    await expect(
+      new Promise<void>((resolve) => {
+        autoGenerateTitle('conv-deleted', 'Hello world');
+        setTimeout(resolve, 50);
+      })
+    ).resolves.toBeUndefined();
+  });
 });

@@ -99,9 +99,13 @@ export function autoGenerateTitle(conversationId: string, firstMessage: string):
     model: getFastModel(),
     prompt: `Generate a short title (max 7 words, no quotes) for a form editing conversation that starts with: "${firstMessage.slice(0, 200)}"`,
   })
-    .then(({ text }) => {
-      const title = text.trim().slice(0, 60);
-      return prisma.aIChatConversation.update({ where: { id: conversationId }, data: { title } });
+    .then(async ({ text }) => {
+      try {
+        const title = text.trim().slice(0, 60);
+        await prisma.aIChatConversation.update({ where: { id: conversationId }, data: { title } });
+      } catch (err) {
+        logger.warn({ err, conversationId }, 'Failed to save auto-generated title');
+      }
     })
     .catch((err) => logger.warn({ err, conversationId }, 'Failed to auto-generate conversation title'));
 }
