@@ -175,6 +175,33 @@ export function createFormEditTools(schema: { pages: any[] }) {
       }),
       execute: async ({ pageId }) => ({ type: 'NAVIGATE_TO_PAGE' as const, pageId }),
     }),
+
+    proposeValidation: tool({
+      description:
+        'Propose validation rules for fields based on their label and type. Use instead of updateField when suggesting validation — the user reviews before applying. Never call updateField for validation without explicit user confirmation.',
+      inputSchema: z.object({
+        suggestions: z.array(
+          z.object({
+            fieldId: z.string(),
+            fieldLabel: z.string(),
+            fieldType: z.string(),
+            validation: z
+              .object({
+                minLength: z.number().nullable().optional(),
+                maxLength: z.number().nullable().optional(),
+                minSelections: z.number().nullable().optional(),
+                maxSelections: z.number().nullable().optional(),
+              })
+              .optional(),
+            min: z.number().nullable().optional(),
+            max: z.number().nullable().optional(),
+            required: z.boolean().optional(),
+          })
+        ),
+        rationale: z.string().describe('Brief explanation of why these rules were chosen'),
+      }),
+      execute: async (args) => ({ type: 'PROPOSE_VALIDATION' as const, ...args }),
+    }),
   };
 }
 
@@ -188,4 +215,5 @@ export type FormOperation =
   | { type: 'REORDER_PAGES'; pageIds: string[] }
   | { type: 'ADD_PAGE'; pageId: string; title: string; insertAfterPageId: string | null }
   | { type: 'REMOVE_PAGE'; pageId: string }
-  | { type: 'NAVIGATE_TO_PAGE'; pageId: string };
+  | { type: 'NAVIGATE_TO_PAGE'; pageId: string }
+  | { type: 'PROPOSE_VALIDATION'; suggestions: Array<{ fieldId: string; fieldLabel: string; fieldType: string; validation?: { minLength?: number | null; maxLength?: number | null; minSelections?: number | null; maxSelections?: number | null }; min?: number | null; max?: number | null; required?: boolean }>; rationale: string };

@@ -21,12 +21,13 @@ const mockSchema = {
 };
 
 describe('createFormEditTools', () => {
-  it('returns all 11 tools', () => {
+  it('returns all 12 tools', () => {
     const tools = createFormEditTools(mockSchema);
     expect(Object.keys(tools)).toEqual([
       'listFields', 'getField', 'addField', 'updateField',
       'removeField', 'reorderFields', 'updateLayout',
       'renamePage', 'reorderPages', 'addPage', 'removePage',
+      'navigateToPage', 'proposeValidation',
     ]);
   });
 });
@@ -165,5 +166,19 @@ describe('removePage', () => {
     const result = await (tools as any).removePage.execute!({ pageId: 'page-1' }, { messages: [], toolCallId: 'test' });
     expect(result).toHaveProperty('error');
     expect((result as any).error).toMatch(/last page/i);
+  });
+});
+
+describe('proposeValidation', () => {
+  it('returns PROPOSE_VALIDATION op with suggestions', async () => {
+    const tools = createFormEditTools({ pages: [] });
+    const result = await (tools as any).proposeValidation.execute({
+      suggestions: [
+        { fieldId: 'f1', fieldLabel: 'Age', fieldType: 'number', min: 0, max: 120 },
+      ],
+      rationale: 'Age should be between 0 and 120',
+    });
+    expect((result as any).type).toBe('PROPOSE_VALIDATION');
+    expect((result as any).suggestions[0].fieldId).toBe('f1');
   });
 });
