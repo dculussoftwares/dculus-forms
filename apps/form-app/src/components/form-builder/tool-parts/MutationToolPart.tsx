@@ -19,6 +19,7 @@ function getActionLabel(part: MutationToolPart): string {
     case 'tool-reorderPages': return 'Reordering pages…';
     case 'tool-addPage': return 'Adding page…';
     case 'tool-removePage': return 'Removing page…';
+    case 'tool-navigateToPage': return 'Navigating to page…';
   }
 }
 

@@ -166,6 +166,15 @@ export function createFormEditTools(schema: { pages: any[] }) {
         return { type: 'REMOVE_PAGE' as const, pageId };
       },
     }),
+
+    navigateToPage: tool({
+      description:
+        'Navigate the form builder canvas to a specific page. Call this before editing fields on a page the user is not currently viewing.',
+      inputSchema: z.object({
+        pageId: z.string().describe('The page ID to navigate to — get it from listFields'),
+      }),
+      execute: async ({ pageId }) => ({ type: 'NAVIGATE_TO_PAGE' as const, pageId }),
+    }),
   };
 }
 
@@ -178,4 +187,5 @@ export type FormOperation =
   | { type: 'RENAME_PAGE'; pageId: string; newTitle: string }
   | { type: 'REORDER_PAGES'; pageIds: string[] }
   | { type: 'ADD_PAGE'; pageId: string; title: string; insertAfterPageId: string | null }
-  | { type: 'REMOVE_PAGE'; pageId: string };
+  | { type: 'REMOVE_PAGE'; pageId: string }
+  | { type: 'NAVIGATE_TO_PAGE'; pageId: string };

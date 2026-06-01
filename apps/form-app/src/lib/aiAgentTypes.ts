@@ -92,6 +92,14 @@ export interface RemovePageToolPart {
   output?: { type: 'REMOVE_PAGE'; pageId: string };
 }
 
+export interface NavigateToPageToolPart {
+  type: 'tool-navigateToPage';
+  toolCallId: string;
+  state: ToolState;
+  input?: { pageId: string };
+  output?: { type: 'NAVIGATE_TO_PAGE'; pageId: string };
+}
+
 export type FormEditToolPart =
   | ListFieldsToolPart
   | GetFieldToolPart
@@ -103,7 +111,8 @@ export type FormEditToolPart =
   | RenamePageToolPart
   | ReorderPagesToolPart
   | AddPageToolPart
-  | RemovePageToolPart;
+  | RemovePageToolPart
+  | NavigateToPageToolPart;
 
 export type FormEditAgentUIMessage = Omit<UIMessage, 'parts'> & {
   parts: Array<
@@ -122,9 +131,11 @@ export type MutationToolPart =
   | RenamePageToolPart
   | ReorderPagesToolPart
   | AddPageToolPart
-  | RemovePageToolPart;
+  | RemovePageToolPart
+  | NavigateToPageToolPart;
 
 export const MUTATION_TOOL_NAMES = new Set([
   'addField', 'updateField', 'removeField', 'reorderFields',
   'updateLayout', 'renamePage', 'reorderPages', 'addPage', 'removePage',
+  'navigateToPage',
 ]);

@@ -109,6 +109,7 @@ ${pageContext}
 - Make only the changes the user requests. Confirm what you did in your final text response.
 - When you call addPage, the result contains a pageId field. Use that exact pageId value as the pageId argument for any subsequent addField calls on that new page. Never guess or invent a page ID.
 - You can add pages with addPage and remove pages with removePage. Never call removePage when there is only one page.
+- Use navigateToPage before editing fields on a page the user isn't currently viewing.
 ${schemaContext}`;
 }
 

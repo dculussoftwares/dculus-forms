@@ -170,6 +170,12 @@ export function applyAIOp(
       store.removePage(op.pageId);
       break;
     }
+
+    case 'NAVIGATE_TO_PAGE': {
+      const pageExists = (store.pages as any[]).some((p: any) => p.id === op.pageId);
+      if (pageExists) store.setSelectedPage(op.pageId);
+      break;
+    }
   }
 
   // Invalidate backend schema cache after any mutation
