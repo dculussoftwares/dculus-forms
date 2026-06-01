@@ -129,6 +129,35 @@ export interface SelectionSlice {
 }
 
 /**
+ * AI Slice
+ *
+ * Manages AI-driven field highlighting and pending validation suggestions
+ */
+export interface ValidationSuggestion {
+  fieldId: string;
+  fieldLabel: string;
+  fieldType: string;
+  validation?: {
+    minLength?: number | null;
+    maxLength?: number | null;
+    minSelections?: number | null;
+    maxSelections?: number | null;
+  };
+  min?: number | null;
+  max?: number | null;
+  required?: boolean;
+}
+
+export interface AISlice {
+  aiHighlightedFieldId: string | null;
+  setAIHighlightedFieldId: (id: string | null) => void;
+  pendingValidationSuggestions: ValidationSuggestion[];
+  setPendingValidationSuggestions: (suggestions: ValidationSuggestion[]) => void;
+  acceptValidationSuggestion: (fieldId: string) => ValidationSuggestion | null;
+  dismissValidationSuggestion: (fieldId: string) => void;
+}
+
+/**
  * Reset Slice
  *
  * Provides a cross-slice reset action for cleaning up transient builder state
@@ -148,6 +177,7 @@ export type FormBuilderState = CollaborationSlice &
   FieldsSlice &
   LayoutSlice &
   SelectionSlice &
+  AISlice &
   ResetSlice;
 
 /**
