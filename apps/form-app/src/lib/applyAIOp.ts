@@ -70,7 +70,7 @@ export function applyAIOp(
         const idx = (page?.fields ?? []).findIndex((f: any) => f.id === op.insertAfterFieldId);
         if (idx !== -1) {
           store.addFieldAtIndex(targetPageId, fieldType, fieldData, idx + 1);
-          return;
+          break;
         }
       }
       store.addField(targetPageId, fieldType, fieldData);
