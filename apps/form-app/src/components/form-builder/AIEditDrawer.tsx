@@ -13,7 +13,8 @@ import {
 } from '@dculus/ui';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useAIChat } from '../../hooks/useAIChat';
-import type { FormEditAgentUIMessage } from '../../lib/aiAgentTypes';
+import type { FormEditAgentUIMessage, FormEditToolPart } from '../../lib/aiAgentTypes';
+import { MUTATION_TOOL_NAMES } from '../../lib/aiAgentTypes';
 import MutationToolPart from './tool-parts/MutationToolPart';
 import ListFieldsToolPart from './tool-parts/ListFieldsToolPart';
 import GetFieldToolPart from './tool-parts/GetFieldToolPart';
@@ -60,9 +61,34 @@ function TextBubble({ text, isStreaming }: { text: string; isStreaming?: boolean
   );
 }
 
-function AssistantMessage({ message, isStreaming }: { message: FormEditAgentUIMessage; isStreaming: boolean }) {
+function toolStatusLabel(part: FormEditToolPart, t: (key: string) => string): string {
+  const toolName = part.type.replace('tool-', '');
+  const key = `toolStatus.${toolName}`;
+  const label = t(key);
+  return label !== key ? label : t('toolStatus.default');
+}
+
+function AssistantMessage({
+  message,
+  isStreaming,
+  onUndo: _onUndo,
+  canUndo: _canUndo,
+}: {
+  message: FormEditAgentUIMessage;
+  isStreaming: boolean;
+  onUndo?: () => void;
+  canUndo?: boolean;
+}) {
+  const { t } = useTranslation('aiEditDrawer');
   const textParts = message.parts.filter((p) => p.type === 'text') as { type: 'text'; text: string }[];
   const combinedText = textParts.map((p) => p.text).join('');
+
+  // Find any tool part currently in-flight (not yet output-available)
+  const inFlightPart = isStreaming
+    ? (message.parts as FormEditToolPart[]).find(
+        (p) => p.type.startsWith('tool-') && (p as any).state !== 'output-available'
+      )
+    : undefined;
 
   return (
     <div className="flex justify-start">
@@ -71,28 +97,16 @@ function AssistantMessage({ message, isStreaming }: { message: FormEditAgentUIMe
           <Sparkles className="h-3 w-3 text-primary" />
         </div>
         <div className="space-y-1.5">
-          <TextBubble text={combinedText} isStreaming={isStreaming} />
+          {combinedText && <TextBubble text={combinedText} isStreaming={isStreaming && !inFlightPart} />}
+          {inFlightPart && (
+            <StatusIndicator text={toolStatusLabel(inFlightPart, t)} />
+          )}
+          {!inFlightPart && !combinedText && isStreaming && <StatusIndicator />}
           <div className="flex flex-wrap gap-1.5">
             {message.parts.map((part, i) => {
-              if (part.type === 'tool-listFields') {
-                return <ListFieldsToolPart key={i} part={part as any} />;
-              }
-              if (part.type === 'tool-getField') {
-                return <GetFieldToolPart key={i} part={part as any} />;
-              }
-              if (
-                part.type === 'tool-addField' ||
-                part.type === 'tool-updateField' ||
-                part.type === 'tool-removeField' ||
-                part.type === 'tool-reorderFields' ||
-                part.type === 'tool-updateLayout' ||
-                part.type === 'tool-renamePage' ||
-                part.type === 'tool-reorderPages' ||
-                part.type === 'tool-addPage' ||
-                part.type === 'tool-removePage'
-              ) {
-                return <MutationToolPart key={i} part={part as any} />;
-              }
+              if (part.type === 'tool-listFields') return <ListFieldsToolPart key={i} part={part as any} />;
+              if (part.type === 'tool-getField') return <GetFieldToolPart key={i} part={part as any} />;
+              if (MUTATION_TOOL_NAMES.has(part.type.slice(5))) return <MutationToolPart key={i} part={part as any} />;
               return null;
             })}
           </div>
@@ -230,10 +244,10 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
 
   const typedMessages = messages as unknown as FormEditAgentUIMessage[];
   const lastMsg = typedMessages[typedMessages.length - 1];
-  // Show the global status indicator only when streaming but no assistant message with content yet
+  // Show the global status indicator only when streaming but no assistant message exists yet
   const showStatusIndicator =
     isStreaming &&
-    (!lastMsg || lastMsg.role !== 'assistant' || lastMsg.parts.length === 0);
+    (!lastMsg || lastMsg.role !== 'assistant');
 
   return (
     <div className="flex h-full w-[380px] shrink-0 flex-col border-l border-border bg-background">
@@ -328,6 +342,8 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
               key={msg.id}
               message={msg}
               isStreaming={isStreaming && msg === lastMsg}
+              onUndo={undefined}
+              canUndo={false}
             />
           )
         )}

@@ -22,9 +22,52 @@
   "undoTitle": "Undo AI changes",
   "cancel": "Cancel",
   "closeAriaLabel": "Close AI assistant",
+  "toolStatus": {
+    "listFields": "Reading form structure…",
+    "getField": "Reading field details…",
+    "addField": "Adding field…",
+    "updateField": "Updating field…",
+    "removeField": "Removing field…",
+    "reorderFields": "Reordering fields…",
+    "updateLayout": "Updating layout…",
+    "addPage": "Adding page…",
+    "removePage": "Removing page…",
+    "renamePage": "Renaming page…",
+    "reorderPages": "Reordering pages…",
+    "navigateToPage": "Navigating to page…",
+    "bulkUpdateFields": "Updating fields…",
+    "proposeValidation": "Analysing validation rules…",
+    "default": "Working…"
+  },
+  "changeSummary": {
+    "title": "Changes made",
+    "added": "Added",
+    "updated": "Updated",
+    "removed": "Removed",
+    "bulkUpdated": "Updated {{count}} fields",
+    "undoThis": "Undo this"
+  },
+  "tokenMeter": {
+    "label": "AI usage this month",
+    "used": "{{percent}}% used",
+    "resets": "Resets {{date}}",
+    "limitReached": "Token limit reached.",
+    "upgrade": "Upgrade plan"
+  },
   "chips": {
     "analyseForm": "Analyse form",
     "listAllFields": "List all fields",
-    "makeAllRequired": "Make all required"
+    "makeAllRequired": "Make all required",
+    "generateFields": "Generate fields",
+    "reorganisePages": "Reorganise pages",
+    "suggestValidation": "Suggest validation",
+    "remixForm": "Remix this form"
+  },
+  "validation": {
+    "title": "Suggested validation rules",
+    "rationale": "Rationale",
+    "accept": "Accept",
+    "skip": "Skip",
+    "acceptAll": "Accept all"
   }
 }
