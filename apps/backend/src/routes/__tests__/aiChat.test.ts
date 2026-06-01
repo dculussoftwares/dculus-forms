@@ -71,7 +71,7 @@ vi.mock('../../lib/prisma.js', () => ({
   },
 }));
 
-import { aiChatRouter, getFormSchema } from '../aiChat.js';
+import { aiChatRouter, getFormSchema, buildSystemPrompt } from '../aiChat.js';
 import { checkAITokenBudget } from '../../services/aiUsageService.js';
 import { createFormEditAgent } from '../../lib/formEditAgent.js';
 import { getConversation } from '../../services/aiChatService.js';
@@ -240,5 +240,34 @@ describe('POST /invalidate-schema', () => {
       .send({ formId: 'form-1' });
 
     expect(res.status).toBe(401);
+  });
+});
+
+describe('buildSystemPrompt', () => {
+  it('emits compact schema line instead of JSON block', () => {
+    const schema = {
+      pages: [
+        { id: 'p1', title: 'Personal Info', fields: [{}, {}, {}, {}, {}] },
+        { id: 'p2', title: 'Contact',       fields: [{}, {}, {}, {}, {}, {}, {}, {}] },
+      ],
+    };
+    const prompt = buildSystemPrompt(undefined, schema);
+    // compact format present
+    expect(prompt).toMatch(/p1:"Personal Info"\(5f,id:p1\)/);
+    expect(prompt).toMatch(/p2:"Contact"\(8f,id:p2\)/);
+    // old JSON format absent
+    expect(prompt).not.toContain('"pageNumber"');
+    expect(prompt).not.toContain('JSON');
+  });
+
+  it('handles pages with no title using fallback', () => {
+    const schema = { pages: [{ id: 'p9', title: null, fields: [] }] };
+    const prompt = buildSystemPrompt(undefined, schema);
+    expect(prompt).toMatch(/p1:"Page 1"\(0f,id:p9\)/);
+  });
+
+  it('returns empty schema context when form has no pages', () => {
+    const prompt = buildSystemPrompt(undefined, { pages: [] });
+    expect(prompt).not.toContain('Form structure');
   });
 });

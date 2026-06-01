@@ -79,22 +79,18 @@ export async function getFormSchema(formId: string): Promise<{ pages: any[] }> {
   return schema;
 }
 
-function buildSystemPrompt(currentPageId: string | undefined, schema: { pages: any[] }): string {
+export function buildSystemPrompt(currentPageId: string | undefined, schema: { pages: any[] }): string {
   const pageContext = currentPageId
     ? `The user is currently viewing page ID: ${currentPageId}. When the user says "this page" or "current page", they mean this page.`
     : 'The user is on the first page.';
 
   const totalPages = schema.pages.length;
   const schemaContext = totalPages > 0
-    ? `\nCurrent form has ${totalPages} page${totalPages !== 1 ? 's' : ''}. Structure:\n${JSON.stringify(
-        schema.pages.map((p: any, i: number) => ({
-          pageNumber: i + 1,
-          id: p.id,
-          title: p.title ?? `Page ${i + 1}`,
-          fieldCount: (p.fields ?? []).length,
-        })),
-        null, 2
-      )}`
+    ? `\nForm structure: ${schema.pages
+        .map((p: any, i: number) =>
+          `p${i + 1}:"${p.title ?? `Page ${i + 1}`}"(${(p.fields ?? []).length}f,id:${p.id})`
+        )
+        .join(' | ')}`
     : '';
 
   return `You are an AI assistant that helps users edit their multi-page form.
