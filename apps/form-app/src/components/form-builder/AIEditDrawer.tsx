@@ -20,6 +20,7 @@ import MutationToolPart from './tool-parts/MutationToolPart';
 import ListFieldsToolPart from './tool-parts/ListFieldsToolPart';
 import GetFieldToolPart from './tool-parts/GetFieldToolPart';
 import ChangeSummaryCard from './tool-parts/ChangeSummaryCard';
+import ValidationSuggestionCard from './tool-parts/ValidationSuggestionCard';
 import AITokenMeter from './AITokenMeter';
 
 interface AIEditDrawerProps {
@@ -109,6 +110,13 @@ function AssistantMessage({
             {message.parts.map((part, i) => {
               if (part.type === 'tool-listFields') return <ListFieldsToolPart key={i} part={part as any} />;
               if (part.type === 'tool-getField') return <GetFieldToolPart key={i} part={part as any} />;
+              if (part.type === 'tool-proposeValidation' && (part as any).state === 'output-available') {
+                return (
+                  <span key={i} className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
+                    ✦ {t('validation.title')}
+                  </span>
+                );
+              }
               if (MUTATION_TOOL_NAMES.has(part.type.slice(5))) return <MutationToolPart key={i} part={part as any} />;
               return null;
             })}
@@ -322,6 +330,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
           )
         )}
         {showStatusIndicator && <StatusIndicator />}
+        <ValidationSuggestionCard />
         <div ref={messagesEndRef} />
       </div>
 

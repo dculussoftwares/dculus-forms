@@ -132,6 +132,18 @@ export function useAIChat({
       const depth = getUndoStackDepth() - undoDepthBeforeRef.current;
       if (depth > 0) messageUndoDepths.current.set(last.id, depth);
     }
+
+    // Handle propose-validation parts separately (not a mutation, sets pending state)
+    for (const part of last.parts ?? []) {
+      if (
+        part.type === 'tool-proposeValidation' &&
+        (part as any).state === 'output-available' &&
+        !appliedToolCallIds.current.has((part as any).toolCallId)
+      ) {
+        appliedToolCallIds.current.add((part as any).toolCallId);
+        applyAIOp((part as any).output, store, formId);
+      }
+    }
   }, [messages]);
 
   // Clear applied tool call IDs and undo depth map when conversation switches

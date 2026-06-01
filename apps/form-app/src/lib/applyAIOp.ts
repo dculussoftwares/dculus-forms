@@ -176,8 +176,14 @@ export function applyAIOp(
       if (pageExists) store.setSelectedPage(op.pageId);
       break;
     }
+
+    case 'PROPOSE_VALIDATION': {
+      store.setPendingValidationSuggestions(op.suggestions ?? []);
+      break;
+    }
   }
 
   // Invalidate backend schema cache after any mutation
-  if (formId) invalidateSchema(formId);
+  // PROPOSE_VALIDATION does not mutate the form, so skip invalidation for it
+  if (formId && op.type !== 'PROPOSE_VALIDATION') invalidateSchema(formId);
 }

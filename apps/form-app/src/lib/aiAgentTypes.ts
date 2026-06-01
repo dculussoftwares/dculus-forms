@@ -100,6 +100,14 @@ export interface NavigateToPageToolPart {
   output?: { type: 'NAVIGATE_TO_PAGE'; pageId: string };
 }
 
+export interface ProposeValidationToolPart {
+  type: 'tool-proposeValidation';
+  toolCallId: string;
+  state: ToolState;
+  input?: { suggestions: any[]; rationale: string };
+  output?: { type: 'PROPOSE_VALIDATION'; suggestions: any[]; rationale: string };
+}
+
 export type FormEditToolPart =
   | ListFieldsToolPart
   | GetFieldToolPart
@@ -112,7 +120,8 @@ export type FormEditToolPart =
   | ReorderPagesToolPart
   | AddPageToolPart
   | RemovePageToolPart
-  | NavigateToPageToolPart;
+  | NavigateToPageToolPart
+  | ProposeValidationToolPart;
 
 export type FormEditAgentUIMessage = Omit<UIMessage, 'parts'> & {
   parts: Array<
