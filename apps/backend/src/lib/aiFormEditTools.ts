@@ -1,6 +1,25 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 
+const updatesSchema = z.object({
+  label: z.string().optional(),
+  required: z.boolean().optional(),
+  placeholder: z.string().optional(),
+  hint: z.string().optional(),
+  options: z.array(z.string()).optional(),
+  validation: z.object({
+    required: z.boolean().optional(),
+    minLength: z.number().nullable().optional(),
+    maxLength: z.number().nullable().optional(),
+    minSelections: z.number().nullable().optional(),
+    maxSelections: z.number().nullable().optional(),
+  }).optional(),
+  min: z.number().nullable().optional(),
+  max: z.number().nullable().optional(),
+  minDate: z.string().nullable().optional(),
+  maxDate: z.string().nullable().optional(),
+});
+
 export function createFormEditTools(schema: { pages: any[] }) {
   return {
     listFields: tool({
@@ -75,24 +94,7 @@ export function createFormEditTools(schema: { pages: any[] }) {
       description: 'Update one or more properties of an existing field. Only include properties you want to change. For text/textarea fields use updates.validation.minLength/maxLength. For number fields use updates.min/updates.max. For date fields use updates.minDate/updates.maxDate. For checkbox fields use updates.validation.minSelections/maxSelections.',
       inputSchema: z.object({
         fieldId: z.string().describe('The field ID from listFields'),
-        updates: z.object({
-          label: z.string().optional(),
-          required: z.boolean().optional(),
-          placeholder: z.string().optional(),
-          hint: z.string().optional(),
-          options: z.array(z.string()).optional(),
-          validation: z.object({
-            required: z.boolean().optional(),
-            minLength: z.number().nullable().optional(),
-            maxLength: z.number().nullable().optional(),
-            minSelections: z.number().nullable().optional(),
-            maxSelections: z.number().nullable().optional(),
-          }).optional(),
-          min: z.number().nullable().optional(),
-          max: z.number().nullable().optional(),
-          minDate: z.string().nullable().optional(),
-          maxDate: z.string().nullable().optional(),
-        }),
+        updates: updatesSchema,
       }),
       execute: async (args) => ({ type: 'UPDATE_FIELD' as const, ...args }),
     }),
@@ -176,6 +178,16 @@ export function createFormEditTools(schema: { pages: any[] }) {
       execute: async ({ pageId }) => ({ type: 'NAVIGATE_TO_PAGE' as const, pageId }),
     }),
 
+    bulkUpdateFields: tool({
+      description:
+        'Apply the same update to multiple fields at once. Use instead of multiple updateField calls when applying the same change to 3 or more fields.',
+      inputSchema: z.object({
+        fieldIds: z.array(z.string()).min(2).describe('IDs of all fields to update'),
+        updates: updatesSchema,
+      }),
+      execute: async (args) => ({ type: 'BULK_UPDATE_FIELDS' as const, ...args }),
+    }),
+
     proposeValidation: tool({
       description:
         'Propose validation rules for fields based on their label and type. Use instead of updateField when suggesting validation — the user reviews before applying. Never call updateField for validation without explicit user confirmation.',
@@ -216,4 +228,5 @@ export type FormOperation =
   | { type: 'ADD_PAGE'; pageId: string; title: string; insertAfterPageId: string | null }
   | { type: 'REMOVE_PAGE'; pageId: string }
   | { type: 'NAVIGATE_TO_PAGE'; pageId: string }
-  | { type: 'PROPOSE_VALIDATION'; suggestions: Array<{ fieldId: string; fieldLabel: string; fieldType: string; validation?: { minLength?: number | null; maxLength?: number | null; minSelections?: number | null; maxSelections?: number | null }; min?: number | null; max?: number | null; required?: boolean }>; rationale: string };
+  | { type: 'PROPOSE_VALIDATION'; suggestions: Array<{ fieldId: string; fieldLabel: string; fieldType: string; validation?: { minLength?: number | null; maxLength?: number | null; minSelections?: number | null; maxSelections?: number | null }; min?: number | null; max?: number | null; required?: boolean }>; rationale: string }
+  | { type: 'BULK_UPDATE_FIELDS'; fieldIds: string[]; updates: Record<string, unknown> };

@@ -20,6 +20,7 @@ function getActionLabel(part: MutationToolPart): string {
     case 'tool-addPage': return 'Adding page…';
     case 'tool-removePage': return 'Removing page…';
     case 'tool-navigateToPage': return 'Navigating to page…';
+    case 'tool-bulkUpdateFields': return 'Updating fields…';
   }
 }
 

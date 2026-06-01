@@ -21,13 +21,13 @@ const mockSchema = {
 };
 
 describe('createFormEditTools', () => {
-  it('returns all 12 tools', () => {
+  it('returns all 14 tools', () => {
     const tools = createFormEditTools(mockSchema);
     expect(Object.keys(tools)).toEqual([
       'listFields', 'getField', 'addField', 'updateField',
       'removeField', 'reorderFields', 'updateLayout',
       'renamePage', 'reorderPages', 'addPage', 'removePage',
-      'navigateToPage', 'proposeValidation',
+      'navigateToPage', 'bulkUpdateFields', 'proposeValidation',
     ]);
   });
 });
@@ -180,5 +180,18 @@ describe('proposeValidation', () => {
     });
     expect((result as any).type).toBe('PROPOSE_VALIDATION');
     expect((result as any).suggestions[0].fieldId).toBe('f1');
+  });
+});
+
+describe('bulkUpdateFields', () => {
+  it('returns BULK_UPDATE_FIELDS with fieldIds and updates', async () => {
+    const tools = createFormEditTools({ pages: [] });
+    const result = await (tools as any).bulkUpdateFields.execute({
+      fieldIds: ['f1', 'f2'],
+      updates: { required: true },
+    });
+    expect((result as any).type).toBe('BULK_UPDATE_FIELDS');
+    expect((result as any).fieldIds).toEqual(['f1', 'f2']);
+    expect((result as any).updates.required).toBe(true);
   });
 });

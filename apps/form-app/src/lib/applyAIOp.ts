@@ -181,6 +181,14 @@ export function applyAIOp(
       store.setPendingValidationSuggestions(op.suggestions ?? []);
       break;
     }
+
+    case 'BULK_UPDATE_FIELDS': {
+      for (const fieldId of op.fieldIds ?? []) {
+        const pageId = findPageForField(store.pages, fieldId);
+        if (pageId) store.updateField(pageId, fieldId, op.updates);
+      }
+      break;
+    }
   }
 
   // Invalidate backend schema cache after any mutation

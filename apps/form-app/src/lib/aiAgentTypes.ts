@@ -108,6 +108,14 @@ export interface ProposeValidationToolPart {
   output?: { type: 'PROPOSE_VALIDATION'; suggestions: any[]; rationale: string };
 }
 
+export interface BulkUpdateFieldsToolPart {
+  type: 'tool-bulkUpdateFields';
+  toolCallId: string;
+  state: ToolState;
+  input?: { fieldIds: string[]; updates: Record<string, unknown> };
+  output?: { type: 'BULK_UPDATE_FIELDS'; fieldIds: string[]; updates: Record<string, unknown> };
+}
+
 export type FormEditToolPart =
   | ListFieldsToolPart
   | GetFieldToolPart
@@ -121,7 +129,8 @@ export type FormEditToolPart =
   | AddPageToolPart
   | RemovePageToolPart
   | NavigateToPageToolPart
-  | ProposeValidationToolPart;
+  | ProposeValidationToolPart
+  | BulkUpdateFieldsToolPart;
 
 export type FormEditAgentUIMessage = Omit<UIMessage, 'parts'> & {
   parts: Array<
@@ -141,10 +150,11 @@ export type MutationToolPart =
   | ReorderPagesToolPart
   | AddPageToolPart
   | RemovePageToolPart
-  | NavigateToPageToolPart;
+  | NavigateToPageToolPart
+  | BulkUpdateFieldsToolPart;
 
 export const MUTATION_TOOL_NAMES = new Set([
   'addField', 'updateField', 'removeField', 'reorderFields',
   'updateLayout', 'renamePage', 'reorderPages', 'addPage', 'removePage',
-  'navigateToPage',
+  'navigateToPage', 'bulkUpdateFields',
 ]);
