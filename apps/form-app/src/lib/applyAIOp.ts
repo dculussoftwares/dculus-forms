@@ -39,7 +39,8 @@ export function applyAIOp(
     FormBuilderState,
     | 'pages' | 'addField' | 'addFieldAtIndex' | 'updateField' | 'removeField'
     | 'reorderFields' | 'updateLayout' | 'updatePageTitle' | 'reorderPages'
-    | 'addPageAtPosition' | 'removePage'
+    | 'addPageAtPosition' | 'removePage' | 'setSelectedPage'
+    | 'setAIHighlightedFieldId' | 'setPendingValidationSuggestions'
   >,
   formId?: string
 ): void {
@@ -50,7 +51,7 @@ export function applyAIOp(
       const targetPageId: string | undefined = (store.pages as any[]).find((p: any) => p.id === op.pageId)?.id;
       if (!targetPageId) {
         console.warn('[applyAIOp] ADD_FIELD: pageId not found in store, skipping', op.pageId);
-        return;
+        break;
       }
 
       const fieldType = AI_TYPE_MAP[op.fieldType] ?? FieldType.TEXT_INPUT_FIELD;
@@ -70,10 +71,25 @@ export function applyAIOp(
         const idx = (page?.fields ?? []).findIndex((f: any) => f.id === op.insertAfterFieldId);
         if (idx !== -1) {
           store.addFieldAtIndex(targetPageId, fieldType, fieldData, idx + 1);
+          // highlight the newly inserted field (now at idx+1)
+          const updatedPage = (store.pages as any[]).find((p: any) => p.id === targetPageId);
+          const newFieldId = updatedPage?.fields?.[idx + 1]?.id;
+          if (newFieldId) {
+            store.setAIHighlightedFieldId(newFieldId);
+            setTimeout(() => store.setAIHighlightedFieldId(null), 2000);
+          }
           break;
         }
       }
       store.addField(targetPageId, fieldType, fieldData);
+      // highlight the last field on the page (the one just added)
+      const updatedPage = (store.pages as any[]).find((p: any) => p.id === targetPageId);
+      const fields = updatedPage?.fields ?? [];
+      const newFieldId = fields[fields.length - 1]?.id;
+      if (newFieldId) {
+        store.setAIHighlightedFieldId(newFieldId);
+        setTimeout(() => store.setAIHighlightedFieldId(null), 2000);
+      }
       break;
     }
 
@@ -81,6 +97,8 @@ export function applyAIOp(
       const pageId = findPageForField(store.pages, op.fieldId);
       if (!pageId) return;
       store.updateField(pageId, op.fieldId, op.updates);
+      store.setAIHighlightedFieldId(op.fieldId);
+      setTimeout(() => store.setAIHighlightedFieldId(null), 2000);
       break;
     }
 

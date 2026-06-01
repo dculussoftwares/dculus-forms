@@ -142,8 +142,20 @@ export const FieldCard: React.FC<{
   // Show compact view when any drag is active OR during expansion delay
   const shouldShowCompact = isAnyDragActive || isDelayingExpansion;
 
+  // AI highlight ring + auto-scroll
+  const aiHighlightedFieldId = useFormBuilderStore((s) => s.aiHighlightedFieldId);
+  const isAIHighlighted = aiHighlightedFieldId === field.id;
+  const cardRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (isAIHighlighted && cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [isAIHighlighted]);
+
   return (
     <div
+      ref={cardRef}
       onClick={onClick}
       className={`
         px-4 py-3.5 bg-white dark:bg-card rounded-xl transition-all duration-150 group
@@ -156,6 +168,7 @@ export const FieldCard: React.FC<{
                 ? ''
                 : 'cursor-pointer hover:shadow-sm'
         }
+        ${isAIHighlighted ? 'ring-2 ring-primary ring-offset-2 transition-all duration-300' : ''}
       `}
       style={{
         border: isDragging
