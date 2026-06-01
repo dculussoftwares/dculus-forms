@@ -21,14 +21,14 @@ const mockSchema = {
 };
 
 describe('createFormEditTools', () => {
-  it('returns all 16 tools', () => {
+  it('returns all 17 tools', () => {
     const tools = createFormEditTools(mockSchema);
     expect(Object.keys(tools)).toEqual([
       'listFields', 'getField', 'addField', 'updateField',
       'removeField', 'reorderFields', 'updateLayout',
       'renamePage', 'reorderPages', 'addPage', 'removePage',
       'navigateToPage', 'bulkUpdateFields', 'proposeValidation',
-      'moveField', 'copyField',
+      'bulkRemoveFields', 'moveField', 'copyField',
     ]);
   });
 });
@@ -271,6 +271,7 @@ describe('tool description lengths', () => {
     navigateToPage:    135,
     bulkUpdateFields:  100,
     proposeValidation: 140,
+    bulkRemoveFields:  145,
     moveField:         140,
     copyField:         155,
   };

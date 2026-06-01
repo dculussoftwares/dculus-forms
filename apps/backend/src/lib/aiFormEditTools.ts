@@ -117,7 +117,7 @@ export function createFormEditTools(schema: { pages: any[] }) {
     }),
 
     reorderFields: tool({
-      description: 'Reorder fields within the same page (no page change). Provide ALL field IDs for that page in the new desired order.',
+      description: 'Reorder fields on a page (same page only). Pass all field IDs in the new desired order.',
       inputSchema: z.object({
         pageId: z.string(),
         fieldIds: z.array(z.string()).describe('All field IDs in the new desired order'),
@@ -226,7 +226,7 @@ export function createFormEditTools(schema: { pages: any[] }) {
 
     bulkRemoveFields: tool({
       description:
-        'Remove multiple fields at once. Use instead of multiple removeField calls when deleting 3 or more fields (e.g. "delete all optional fields"). Call listFields first to identify the field IDs to remove.',
+        'Remove multiple fields at once (3+). Use instead of multiple removeField calls. Call listFields first to get the field IDs to remove.',
       inputSchema: z.object({
         fieldIds: z.array(z.string()).min(1).describe('IDs of all fields to remove'),
       }),
@@ -235,7 +235,7 @@ export function createFormEditTools(schema: { pages: any[] }) {
 
     moveField: tool({
       description:
-        'Move a field from one page to a DIFFERENT page. Do NOT use this for reordering within the same page — use reorderFields instead. Use listFields to get target page field IDs for insertAfterFieldId positioning; null to append at end.',
+        'Move a field to a different page. Not for same-page reordering (use reorderFields). Use listFields for insertAfterFieldId; null to append.',
       inputSchema: z.object({
         fieldId: z.string().describe('The field ID to move — get it from listFields'),
         targetPageId: z.string().describe('Destination page ID — get it from listFields'),

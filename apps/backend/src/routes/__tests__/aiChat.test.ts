@@ -196,7 +196,7 @@ describe('context pruning', () => {
     expect(pruneMessages).toHaveBeenCalledWith(
       expect.objectContaining({
         reasoning: 'all',
-        toolCalls: 'before-last-3-messages',
+        toolCalls: 'before-last-5-messages',
         emptyMessages: 'remove',
       })
     );
