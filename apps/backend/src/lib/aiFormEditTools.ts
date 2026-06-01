@@ -117,7 +117,7 @@ export function createFormEditTools(schema: { pages: any[] }) {
     }),
 
     reorderFields: tool({
-      description: 'Reorder fields on a page. Provide all field IDs for that page in the desired order.',
+      description: 'Reorder fields within the same page (no page change). Provide ALL field IDs for that page in the new desired order.',
       inputSchema: z.object({
         pageId: z.string(),
         fieldIds: z.array(z.string()).describe('All field IDs in the new desired order'),
@@ -224,9 +224,18 @@ export function createFormEditTools(schema: { pages: any[] }) {
       execute: async (args) => ({ type: 'PROPOSE_VALIDATION' as const, ...args }),
     }),
 
+    bulkRemoveFields: tool({
+      description:
+        'Remove multiple fields at once. Use instead of multiple removeField calls when deleting 3 or more fields (e.g. "delete all optional fields"). Call listFields first to identify the field IDs to remove.',
+      inputSchema: z.object({
+        fieldIds: z.array(z.string()).min(1).describe('IDs of all fields to remove'),
+      }),
+      execute: async (args) => ({ type: 'BULK_REMOVE_FIELDS' as const, ...args }),
+    }),
+
     moveField: tool({
       description:
-        'Move a field to a different page. Use listFields to get target page field IDs for insertAfterFieldId positioning; null to append at end.',
+        'Move a field from one page to a DIFFERENT page. Do NOT use this for reordering within the same page — use reorderFields instead. Use listFields to get target page field IDs for insertAfterFieldId positioning; null to append at end.',
       inputSchema: z.object({
         fieldId: z.string().describe('The field ID to move — get it from listFields'),
         targetPageId: z.string().describe('Destination page ID — get it from listFields'),
@@ -261,5 +270,6 @@ export type FormOperation =
   | { type: 'NAVIGATE_TO_PAGE'; pageId: string }
   | { type: 'PROPOSE_VALIDATION'; suggestions: Array<{ fieldId: string; fieldLabel: string; fieldType: string; validation?: { minLength?: number | null; maxLength?: number | null; minSelections?: number | null; maxSelections?: number | null }; min?: number | null; max?: number | null; required?: boolean }>; rationale: string }
   | { type: 'BULK_UPDATE_FIELDS'; fieldIds: string[]; updates: Record<string, unknown> }
+  | { type: 'BULK_REMOVE_FIELDS'; fieldIds: string[] }
   | { type: 'MOVE_FIELD'; fieldId: string; targetPageId: string; insertAfterFieldId: string | null }
   | { type: 'COPY_FIELD'; fieldId: string; targetPageId: string; insertAfterFieldId: string | null };

@@ -8,7 +8,7 @@ export interface ListFieldsToolPart {
   toolCallId: string;
   state: ToolState;
   input?: { pageId?: string };
-  output?: { pages: { id: string; fields: { id: string; type: string; label: string; required: boolean }[] }[] };
+  output?: { summary: string; pages: string[] };
 }
 
 export interface GetFieldToolPart {
@@ -116,6 +116,14 @@ export interface BulkUpdateFieldsToolPart {
   output?: { type: 'BULK_UPDATE_FIELDS'; fieldIds: string[]; updates: Record<string, unknown> };
 }
 
+export interface BulkRemoveFieldsToolPart {
+  type: 'tool-bulkRemoveFields';
+  toolCallId: string;
+  state: ToolState;
+  input?: { fieldIds: string[] };
+  output?: { type: 'BULK_REMOVE_FIELDS'; fieldIds: string[] };
+}
+
 export interface MoveFieldToolPart {
   type: 'tool-moveField';
   toolCallId: string;
@@ -147,6 +155,7 @@ export type FormEditToolPart =
   | NavigateToPageToolPart
   | ProposeValidationToolPart
   | BulkUpdateFieldsToolPart
+  | BulkRemoveFieldsToolPart
   | MoveFieldToolPart
   | CopyFieldToolPart;
 
@@ -170,11 +179,12 @@ export type MutationToolPart =
   | RemovePageToolPart
   | NavigateToPageToolPart
   | BulkUpdateFieldsToolPart
+  | BulkRemoveFieldsToolPart
   | MoveFieldToolPart
   | CopyFieldToolPart;
 
 export const MUTATION_TOOL_NAMES = new Set([
   'addField', 'updateField', 'removeField', 'reorderFields',
   'updateLayout', 'renamePage', 'reorderPages', 'addPage', 'removePage',
-  'navigateToPage', 'bulkUpdateFields', 'moveField', 'copyField',
+  'navigateToPage', 'bulkUpdateFields', 'bulkRemoveFields', 'moveField', 'copyField',
 ]);

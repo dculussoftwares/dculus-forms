@@ -12,6 +12,7 @@ function invalidateSchema(formId: string): void {
 }
 
 const AI_TYPE_MAP: Record<string, FieldType> = {
+  // Short forms used by addField tool
   text: FieldType.TEXT_INPUT_FIELD,
   textarea: FieldType.TEXT_AREA_FIELD,
   email: FieldType.EMAIL_FIELD,
@@ -21,6 +22,25 @@ const AI_TYPE_MAP: Record<string, FieldType> = {
   radio: FieldType.RADIO_FIELD,
   checkbox: FieldType.CHECKBOX_FIELD,
   file: FieldType.FILE_UPLOAD_FIELD,
+  // Full store type names used by copyField (sourceField.type from Y.js)
+  text_input_field: FieldType.TEXT_INPUT_FIELD,
+  TEXT_INPUT_FIELD: FieldType.TEXT_INPUT_FIELD,
+  text_area_field: FieldType.TEXT_AREA_FIELD,
+  TEXT_AREA_FIELD: FieldType.TEXT_AREA_FIELD,
+  email_field: FieldType.EMAIL_FIELD,
+  EMAIL_FIELD: FieldType.EMAIL_FIELD,
+  number_field: FieldType.NUMBER_FIELD,
+  NUMBER_FIELD: FieldType.NUMBER_FIELD,
+  date_field: FieldType.DATE_FIELD,
+  DATE_FIELD: FieldType.DATE_FIELD,
+  select_field: FieldType.SELECT_FIELD,
+  SELECT_FIELD: FieldType.SELECT_FIELD,
+  radio_field: FieldType.RADIO_FIELD,
+  RADIO_FIELD: FieldType.RADIO_FIELD,
+  checkbox_field: FieldType.CHECKBOX_FIELD,
+  CHECKBOX_FIELD: FieldType.CHECKBOX_FIELD,
+  file_upload_field: FieldType.FILE_UPLOAD_FIELD,
+  FILE_UPLOAD_FIELD: FieldType.FILE_UPLOAD_FIELD,
 };
 
 const CHOICE_TYPES = new Set([FieldType.SELECT_FIELD, FieldType.RADIO_FIELD, FieldType.CHECKBOX_FIELD]);
@@ -106,6 +126,14 @@ export function applyAIOp(
       const pageId = findPageForField(store.pages, op.fieldId);
       if (!pageId) return;
       store.removeField(pageId, op.fieldId);
+      break;
+    }
+
+    case 'BULK_REMOVE_FIELDS': {
+      for (const fieldId of (op.fieldIds ?? [])) {
+        const pageId = findPageForField(store.pages, fieldId);
+        if (pageId) store.removeField(pageId, fieldId);
+      }
       break;
     }
 

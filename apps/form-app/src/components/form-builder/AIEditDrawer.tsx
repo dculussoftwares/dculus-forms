@@ -108,16 +108,19 @@ function AssistantMessage({
           {!inFlightPart && !combinedText && isStreaming && <StatusIndicator />}
           <div className="flex flex-wrap gap-1.5">
             {message.parts.map((part, i) => {
-              if (part.type === 'tool-listFields') return <ListFieldsToolPart key={i} part={part as any} />;
-              if (part.type === 'tool-getField') return <GetFieldToolPart key={i} part={part as any} />;
+              // Stable key: toolCallId is unique per tool invocation; fall back to type+index
+              // for non-tool parts so index shifts during streaming don't produce duplicate keys.
+              const key = (part as any).toolCallId ?? `${part.type}-${i}`;
+              if (part.type === 'tool-listFields') return <ListFieldsToolPart key={key} part={part as any} />;
+              if (part.type === 'tool-getField') return <GetFieldToolPart key={key} part={part as any} />;
               if (part.type === 'tool-proposeValidation' && (part as any).state === 'output-available') {
                 return (
-                  <span key={i} className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
+                  <span key={key} className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
                     ✦ {t('validation.title')}
                   </span>
                 );
               }
-              if (MUTATION_TOOL_NAMES.has(part.type.slice(5))) return <MutationToolPart key={i} part={part as any} />;
+              if (MUTATION_TOOL_NAMES.has(part.type.slice(5))) return <MutationToolPart key={key} part={part as any} />;
               return null;
             })}
           </div>
