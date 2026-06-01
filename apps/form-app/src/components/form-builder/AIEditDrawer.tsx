@@ -216,6 +216,8 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
     selectConversation,
     deleteConversation,
     sendMessage,
+    lastMutatingMessageId,
+    undoMessage,
   } = useAIChat({ formId, organizationId });
 
   useEffect(() => {
@@ -350,8 +352,8 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
               key={msg.id}
               message={msg}
               isStreaming={isStreaming && msg === lastMsg}
-              onUndo={undefined}
-              canUndo={false}
+              onUndo={() => undoMessage(msg.id)}
+              canUndo={msg.id === lastMutatingMessageId && !isStreaming}
             />
           )
         )}

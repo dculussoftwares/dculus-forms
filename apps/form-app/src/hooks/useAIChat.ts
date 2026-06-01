@@ -42,8 +42,10 @@ export function useAIChat({
 }) {
   const store = useFormBuilderStore();
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
-  const { canUndo, beginBatch, clearBatch, undo } = useYjsUndoManager();
+  const { canUndo, beginBatch, clearBatch, undo, getUndoStackDepth } = useYjsUndoManager();
   const appliedToolCallIds = useRef(new Set<string>());
+  const undoDepthBeforeRef = useRef<number>(0);
+  const messageUndoDepths = useRef(new Map<string, number>());
   const currentPageIdRef = useRef<string | undefined>(undefined);
 
   // ── Conversation management (Apollo) ─────────────────────────────────────
@@ -112,6 +114,7 @@ export function useAIChat({
     const last = messages[messages.length - 1];
     if (!last || last.role !== 'assistant') return;
 
+    let mutationApplied = false;
     for (const part of last.parts ?? []) {
       if (
         part.type.startsWith('tool-') &&
@@ -121,13 +124,20 @@ export function useAIChat({
       ) {
         appliedToolCallIds.current.add((part as any).toolCallId);
         applyAIOp((part as any).output, store, formId);
+        mutationApplied = true;
       }
+    }
+
+    if (mutationApplied && last?.id) {
+      const depth = getUndoStackDepth() - undoDepthBeforeRef.current;
+      if (depth > 0) messageUndoDepths.current.set(last.id, depth);
     }
   }, [messages]);
 
-  // Clear applied tool call IDs when conversation switches
+  // Clear applied tool call IDs and undo depth map when conversation switches
   useEffect(() => {
     appliedToolCallIds.current.clear();
+    messageUndoDepths.current.clear();
   }, [activeConversationId]);
 
   // ── Conversation CRUD ─────────────────────────────────────────────────────
@@ -165,16 +175,28 @@ export function useAIChat({
   const handleSendMessage = useCallback(
     async (content: string) => {
       if (!activeConversationId || status !== 'ready') return;
+      undoDepthBeforeRef.current = getUndoStackDepth();
       clearBatch();
       beginBatch();
       sendMessage({ text: content });
     },
-    [activeConversationId, status, clearBatch, beginBatch, sendMessage]
+    [activeConversationId, status, clearBatch, beginBatch, sendMessage, getUndoStackDepth]
   );
 
   const conversations = conversationsData?.listAIChatConversations ?? [];
   const activeConversation = activeConvData?.getAIChatConversation ?? null;
   const isStreaming = status !== 'ready';
+
+  const lastMutatingMessageId = Array.from(messageUndoDepths.current.keys()).at(-1) ?? null;
+
+  const undoMessage = useCallback(
+    (messageId: string) => {
+      const depth = messageUndoDepths.current.get(messageId) ?? 0;
+      for (let i = 0; i < depth; i++) undo();
+      messageUndoDepths.current.delete(messageId);
+    },
+    [undo]
+  );
 
   return {
     conversations,
@@ -193,5 +215,7 @@ export function useAIChat({
     deleteConversation,
     renameConversation,
     sendMessage: handleSendMessage,
+    lastMutatingMessageId,
+    undoMessage,
   };
 }

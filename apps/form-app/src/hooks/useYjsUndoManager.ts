@@ -48,5 +48,10 @@ export function useYjsUndoManager() {
     setCanUndo((undoManagerRef.current?.undoStack.length ?? 0) > 0);
   }, []);
 
-  return { canUndo, beginBatch, clearBatch, undo };
+  const getUndoStackDepth = useCallback(
+    () => undoManagerRef.current?.undoStack.length ?? 0,
+    []
+  );
+
+  return { canUndo, beginBatch, clearBatch, undo, getUndoStackDepth };
 }
