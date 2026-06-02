@@ -346,6 +346,87 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
     },
 
     /**
+     * Convert a field to a different type.
+     *
+     * Implemented as delete-old + create-new at the same index. The new field gets a NEW id
+     * (via createFormField) — keeping the old id would leave responses, analytics, table, and
+     * exports holding values of the old type's shape under that id. Label/required/placeholder/
+     * hint always carry over; type-specific properties (options, min/max, date bounds) carry over
+     * only when BOTH the old and new types support them (e.g. dropdown→checkbox keeps options).
+     * Done in one transaction so collaborators never see a half-converted state.
+     */
+    convertFieldType: (pageId: string, fieldId: string, newType: FieldType) => {
+      const { _getYDoc, _isYJSReady } = get() as any;
+      const ydoc = _getYDoc();
+      const isReady = _isYJSReady();
+
+      if (!ydoc || !isReady) {
+        toastError('Connection lost', 'Please wait — reconnecting to the collaboration server.');
+        return;
+      }
+
+      const formSchemaMap = ydoc.getMap('formSchema');
+      const pagesArray = formSchemaMap.get('pages') as Y.Array<Y.Map<any>>;
+      if (!pagesArray) return;
+
+      const pageIndex = pagesArray
+        .toArray()
+        .findIndex((pageMap) => pageMap.get('id') === pageId);
+      if (pageIndex === -1) return;
+
+      const pageMap = pagesArray.get(pageIndex);
+      const fieldsArray = pageMap.get('fields') as Y.Array<Y.Map<any>>;
+      if (!fieldsArray) return;
+
+      const fieldIndex = fieldsArray
+        .toArray()
+        .findIndex((fieldMap) => fieldMap.get('id') === fieldId);
+      if (fieldIndex === -1) return;
+
+      // Capture compatible properties from the existing field before removing it.
+      const oldFieldMap = fieldsArray.get(fieldIndex);
+      const oldData = extractFieldData(oldFieldMap);
+      const oldType = oldData.type;
+
+      const CHOICE_TYPES = [FieldType.SELECT_FIELD, FieldType.RADIO_FIELD, FieldType.CHECKBOX_FIELD];
+      const isChoice = (t: FieldType) => CHOICE_TYPES.includes(t);
+
+      const carriedData: Partial<FieldData> = {
+        label: oldData.label,
+        hint: oldData.hint,
+        placeholder: oldData.placeholder,
+        required: oldData.validation?.required ?? false,
+      };
+
+      // Carry options when converting between choice types (dropdown ↔ radio ↔ checkbox).
+      if (isChoice(oldType) && isChoice(newType) && Array.isArray(oldData.options) && oldData.options.length > 0) {
+        carriedData.options = oldData.options;
+      }
+      // Carry numeric bounds between number fields.
+      if (oldType === FieldType.NUMBER_FIELD && newType === FieldType.NUMBER_FIELD) {
+        if (oldData.min != null) carriedData.min = oldData.min;
+        if (oldData.max != null) carriedData.max = oldData.max;
+      }
+      // Carry date bounds between date fields.
+      if (oldType === FieldType.DATE_FIELD && newType === FieldType.DATE_FIELD) {
+        if (oldData.minDate != null) carriedData.minDate = oldData.minDate;
+        if (oldData.maxDate != null) carriedData.maxDate = oldData.maxDate;
+      }
+
+      const newField = createFormField(newType, carriedData);
+      const newFieldMap = serializeFieldToYMap(newField);
+
+      ydoc.transact(() => {
+        fieldsArray.delete(fieldIndex, 1);
+        if (fieldIndex >= fieldsArray.length) {
+          fieldsArray.push([newFieldMap]);
+        } else {
+          fieldsArray.insert(fieldIndex, [newFieldMap]);
+        }
+      });
+    },
+
+    /**
      * Reorder fields within a page
      *
      * Moves a field from one position to another within the same page.

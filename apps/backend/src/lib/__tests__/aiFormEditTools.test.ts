@@ -21,33 +21,33 @@ const mockSchema = {
 };
 
 describe('createFormEditTools', () => {
-  it('returns all 13 tools by default (read tools included)', () => {
+  it('returns all 14 tools by default (read tools included)', () => {
     const tools = createFormEditTools(mockSchema);
     expect(Object.keys(tools)).toEqual([
       'listFields', 'getField', 'addField', 'updateFields',
       'removeFields', 'relocateField', 'reorder', 'updateLayout',
       'renamePage', 'addPage', 'removePage', 'navigateToPage',
-      'proposeValidation',
+      'proposeValidation', 'proposeFieldTypeChange',
     ]);
   });
 
-  it('returns 13 tools when includeReadTools is explicitly true', () => {
+  it('returns 14 tools when includeReadTools is explicitly true', () => {
     const tools = createFormEditTools(mockSchema, { includeReadTools: true });
-    expect(Object.keys(tools)).toHaveLength(13);
+    expect(Object.keys(tools)).toHaveLength(14);
     expect(Object.keys(tools)).toContain('listFields');
     expect(Object.keys(tools)).toContain('getField');
   });
 
-  it('omits listFields and getField when includeReadTools is false (11 tools)', () => {
+  it('omits listFields and getField when includeReadTools is false (12 tools)', () => {
     const tools = createFormEditTools(mockSchema, { includeReadTools: false });
     const keys = Object.keys(tools);
-    expect(keys).toHaveLength(11);
+    expect(keys).toHaveLength(12);
     expect(keys).not.toContain('listFields');
     expect(keys).not.toContain('getField');
     expect(keys).toEqual([
       'addField', 'updateFields', 'removeFields', 'relocateField',
       'reorder', 'updateLayout', 'renamePage', 'addPage',
-      'removePage', 'navigateToPage', 'proposeValidation',
+      'removePage', 'navigateToPage', 'proposeValidation', 'proposeFieldTypeChange',
     ]);
   });
 });
@@ -174,17 +174,22 @@ describe('updateFields', () => {
   });
 });
 
-describe('removeFields', () => {
-  it('returns REMOVE_FIELDS op for a single field (1-elem array)', async () => {
+describe('removeFields (propose, no immediate delete)', () => {
+  it('returns PROPOSE_DELETE_FIELDS with label resolved from schema and 0 count when no formId', async () => {
     const tools = createFormEditTools(mockSchema);
-    const result = await tools.removeFields.execute!({ fieldIds: ['f-2'] }, { messages: [], toolCallId: 'test' });
-    expect(result).toEqual({ type: 'REMOVE_FIELDS', fieldIds: ['f-2'] });
+    const result = await tools.removeFields.execute!({ fieldIds: ['f-2'] }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.type).toBe('PROPOSE_DELETE_FIELDS');
+    expect(result.fields).toEqual([{ fieldId: 'f-2', label: 'Country', responseCount: 0 }]);
   });
 
-  it('returns REMOVE_FIELDS op for multiple fields', async () => {
+  it('returns one entry per fieldId, falling back to the id when the field is unknown', async () => {
     const tools = createFormEditTools(mockSchema);
-    const result = await tools.removeFields.execute!({ fieldIds: ['f-1', 'f-2', 'f-3'] }, { messages: [], toolCallId: 'test' });
-    expect(result).toEqual({ type: 'REMOVE_FIELDS', fieldIds: ['f-1', 'f-2', 'f-3'] });
+    const result = await tools.removeFields.execute!({ fieldIds: ['f-1', 'missing'] }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.type).toBe('PROPOSE_DELETE_FIELDS');
+    expect(result.fields).toEqual([
+      { fieldId: 'f-1', label: 'Name', responseCount: 0 },
+      { fieldId: 'missing', label: 'missing', responseCount: 0 },
+    ]);
   });
 });
 
@@ -256,11 +261,18 @@ describe('addPage', () => {
   });
 });
 
-describe('removePage', () => {
-  it('returns REMOVE_PAGE op when multiple pages exist', async () => {
+describe('removePage (propose, no immediate delete)', () => {
+  it('returns PROPOSE_DELETE_PAGE with title, field count, and 0 responses when no formId', async () => {
     const tools = createFormEditTools(mockSchema);
-    const result = await tools.removePage.execute!({ pageId: 'page-2' }, { messages: [], toolCallId: 'test' });
-    expect(result).toEqual({ type: 'REMOVE_PAGE', pageId: 'page-2' });
+    const result = await tools.removePage.execute!({ pageId: 'page-2' }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result).toMatchObject({
+      type: 'PROPOSE_DELETE_PAGE',
+      pageId: 'page-2',
+      fieldCount: 1,
+      responseCount: 0,
+    });
+    // page-2 has no title in mockSchema → fallback
+    expect(typeof result.pageTitle).toBe('string');
   });
 
   it('returns error when only one page exists (last-page guard)', async () => {
@@ -268,6 +280,52 @@ describe('removePage', () => {
     const result = await tools.removePage.execute!({ pageId: 'page-1' }, { messages: [], toolCallId: 'test' }) as any;
     expect(result).toHaveProperty('error');
     expect(result.error).toMatch(/last page/i);
+  });
+
+  it('returns error when the page does not exist', async () => {
+    const tools = createFormEditTools(mockSchema);
+    const result = await tools.removePage.execute!({ pageId: 'nope' }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result).toHaveProperty('error');
+    expect(result.error).toMatch(/not found/i);
+  });
+});
+
+describe('proposeFieldTypeChange (propose, no immediate change)', () => {
+  it('returns PROPOSE_FIELD_TYPE_CHANGE with normalized current type and label', async () => {
+    const tools = createFormEditTools(mockSchema);
+    const result = await tools.proposeFieldTypeChange.execute!(
+      { fieldId: 'f-1', newFieldType: 'select' },
+      { messages: [], toolCallId: 'test' }
+    ) as any;
+    expect(result).toMatchObject({
+      type: 'PROPOSE_FIELD_TYPE_CHANGE',
+      fieldId: 'f-1',
+      label: 'Name',
+      currentType: 'text',       // normalized from TEXT_INPUT_FIELD
+      newFieldType: 'select',
+      responseCount: 0,
+    });
+  });
+
+  it('errors when the field does not exist', async () => {
+    const tools = createFormEditTools(mockSchema);
+    const result = await tools.proposeFieldTypeChange.execute!(
+      { fieldId: 'missing', newFieldType: 'email' },
+      { messages: [], toolCallId: 'test' }
+    ) as any;
+    expect(result).toHaveProperty('error');
+    expect(result.error).toMatch(/not found/i);
+  });
+
+  it('errors when converting to the same type', async () => {
+    const tools = createFormEditTools(mockSchema);
+    // f-2 is SELECT_FIELD → normalized 'select'
+    const result = await tools.proposeFieldTypeChange.execute!(
+      { fieldId: 'f-2', newFieldType: 'select' },
+      { messages: [], toolCallId: 'test' }
+    ) as any;
+    expect(result).toHaveProperty('error');
+    expect(result.error).toMatch(/already/i);
   });
 });
 
@@ -298,19 +356,20 @@ describe('tool description lengths', () => {
   const tools = createFormEditTools({ pages: [] });
 
   const LIMITS: Record<string, number> = {
-    listFields:        130,
-    getField:          120,
-    addField:          115,
-    updateFields:      160,
-    removeFields:      125,
-    relocateField:     140,
-    reorder:           125,
-    updateLayout:       70,
-    renamePage:         55,
-    addPage:           145,
-    removePage:         90,
-    navigateToPage:    135,
-    proposeValidation: 145,
+    listFields:             130,
+    getField:               120,
+    addField:               115,
+    updateFields:           160,
+    removeFields:           185,
+    relocateField:          140,
+    reorder:                125,
+    updateLayout:            70,
+    renamePage:             55,
+    addPage:                145,
+    removePage:             160,
+    navigateToPage:         135,
+    proposeValidation:      145,
+    proposeFieldTypeChange: 230,
   };
 
   for (const [name, limit] of Object.entries(LIMITS)) {

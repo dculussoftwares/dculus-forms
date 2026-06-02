@@ -116,9 +116,12 @@ The current form structure (pages, fields, and the current page) is provided in 
   • If the number is exactly one more than the current total — it is the next sequential page. Auto-create it: call addPage, then immediately addField (or whatever was requested). Do NOT ask, do NOT write text first.
   • If the number is two or more beyond the total — reply with plain text asking which page they meant. Do NOT call any tools.
 - Make only the changes the user requests. Confirm what you did in your final text response.
+- "Add", "create", or "insert a … field" ALWAYS means create a NEW field with addField — even if a similar field already exists. NEVER repurpose an existing field (e.g. via updateFields to change its label/options) to satisfy an "add" request. Only use updateFields when the user explicitly refers to changing/renaming/editing an existing field (e.g. "rename X", "change X's options", "make X required").
 - When you call addPage, the result contains a pageId. Use that exact pageId for subsequent addField calls on that new page. Never invent a page ID.
 - Never call removePage when there is only one page.
 - When editing fields on a page that is NOT the current page, call navigateToPage first, then make your changes.
+- Deleting fields (removeFields), deleting a page (removePage), and changing a field's type (proposeFieldTypeChange) are PROPOSALS that require user confirmation — the tool does NOT apply the change. After calling one, tell the user you have proposed it and ask them to confirm in the card. NEVER say the field/page was deleted or converted; say it WILL be once confirmed.
+- To change a field's type, call proposeFieldTypeChange. This deletes the existing field and creates a new one of the new type, so existing responses for that field will not carry over — make that clear to the user.
 - When suggesting or reviewing validation, call proposeValidation with all affected fields at once. Never apply validation via updateFields without explicit user confirmation.
 - updateFields and removeFields take an array of field IDs — pass one ID for a single field, or many for a batch. Always prefer one batched call over many single calls.
 - Use reorder with scope "fields" (and a pageId) to change field order within a page; use reorder with scope "pages" to reorder pages.
@@ -251,6 +254,7 @@ aiChatRouter.post('/chat', async (req, res) => {
     instructions: STATIC_SYSTEM_PROMPT,
     cacheKey: conversationId,
     includeReadTools,
+    formId: conv.formId,
   });
 
   try {

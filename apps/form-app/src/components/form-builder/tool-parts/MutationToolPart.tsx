@@ -12,16 +12,15 @@ function getActionLabel(part: MutationToolPart): string {
   switch (part.type) {
     case 'tool-addField': return 'Adding field…';
     case 'tool-updateFields': return 'Updating fields…';
-    case 'tool-removeFields': return 'Removing fields…';
     case 'tool-relocateField': return 'Moving field…';
     case 'tool-reorder': return 'Reordering…';
     case 'tool-updateLayout': return 'Updating layout…';
     case 'tool-renamePage': return 'Renaming page…';
     case 'tool-addPage': return 'Adding page…';
-    case 'tool-removePage': return 'Removing page…';
     case 'tool-navigateToPage': return 'Navigating to page…';
     // Default covers legacy mutation parts from old conversations
-    // (e.g. tool-updateField, tool-moveField, tool-reorderFields).
+    // (e.g. tool-updateField, tool-moveField, tool-reorderFields, and the
+    // old immediate tool-removeFields/tool-removePage before they became proposals).
     default: return 'Working…';
   }
 }

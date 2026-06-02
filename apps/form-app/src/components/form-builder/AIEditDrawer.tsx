@@ -20,6 +20,7 @@ import ListFieldsToolPart from './tool-parts/ListFieldsToolPart';
 import GetFieldToolPart from './tool-parts/GetFieldToolPart';
 import ChangeSummaryCard from './tool-parts/ChangeSummaryCard';
 import ValidationSuggestionCard from './tool-parts/ValidationSuggestionCard';
+import DestructiveActionCard from './tool-parts/DestructiveActionCard';
 import AITokenMeter from './AITokenMeter';
 
 interface AIEditDrawerProps {
@@ -117,6 +118,20 @@ function AssistantMessage({
                 return (
                   <span key={key} className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
                     ✦ {t('validation.title')}
+                  </span>
+                );
+              }
+              // Destructive proposals render as an "awaiting confirmation" chip, not a done pill —
+              // the actual delete/convert happens only when the user confirms in DestructiveActionCard.
+              if (
+                part.type === 'tool-removeFields' ||
+                part.type === 'tool-removePage' ||
+                part.type === 'tool-proposeFieldTypeChange'
+              ) {
+                if ((part as any).state !== 'output-available') return null;
+                return (
+                  <span key={key} className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs text-red-700">
+                    ⚠ {t('destructive.awaitingConfirmation')}
                   </span>
                 );
               }
@@ -321,21 +336,26 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
             {t('emptyState')}
           </p>
         )}
-        {typedMessages.map((msg) =>
-          msg.role === 'user' ? (
-            <UserBubble key={msg.id} message={msg} />
+        {typedMessages.map((msg, i) => {
+          // Persisted messages can have a null/undefined id (older saves didn't set one).
+          // Falling back to the index keeps keys unique so React doesn't drop colliding
+          // children — which previously blanked the chat when several ids were null.
+          const key = msg.id ?? `msg-${i}`;
+          return msg.role === 'user' ? (
+            <UserBubble key={key} message={msg} />
           ) : (
             <AssistantMessage
-              key={msg.id}
+              key={key}
               message={msg}
               isStreaming={isStreaming && msg === lastMsg}
               onUndo={() => undoMessage(msg.id)}
               canUndo={msg.id === lastMutatingMessageId && !isStreaming}
             />
-          )
-        )}
+          );
+        })}
         {showStatusIndicator && <StatusIndicator />}
         <ValidationSuggestionCard />
+        <DestructiveActionCard />
         <div ref={messagesEndRef} />
       </div>
 

@@ -1,5 +1,33 @@
 import { tool } from 'ai';
 import { z } from 'zod';
+import { countResponsesPerField, countResponsesReferencingAnyField } from '../services/responseService.js';
+
+// Field type tokens the AI uses (kept in sync with addField's fieldType enum).
+const FIELD_TYPE_TOKENS = ['text', 'textarea', 'email', 'number', 'date', 'select', 'radio', 'checkbox', 'file'] as const;
+
+// Normalize a stored field type (e.g. 'text_input_field' / 'TEXT_INPUT_FIELD') to the short token.
+const STORED_TYPE_TO_TOKEN: Record<string, string> = {
+  text_input_field: 'text',  TEXT_INPUT_FIELD: 'text',
+  text_area_field: 'textarea', TEXT_AREA_FIELD: 'textarea',
+  email_field: 'email',      EMAIL_FIELD: 'email',
+  number_field: 'number',    NUMBER_FIELD: 'number',
+  date_field: 'date',        DATE_FIELD: 'date',
+  select_field: 'select',    SELECT_FIELD: 'select',
+  radio_field: 'radio',      RADIO_FIELD: 'radio',
+  checkbox_field: 'checkbox', CHECKBOX_FIELD: 'checkbox',
+  file_upload_field: 'file', FILE_UPLOAD_FIELD: 'file',
+};
+
+function findFieldInSchema(
+  schema: { pages: any[] },
+  fieldId: string
+): { pageId: string; field: any } | null {
+  for (const page of (schema.pages ?? []) as any[]) {
+    const field = (page.fields ?? []).find((f: any) => f.id === fieldId);
+    if (field) return { pageId: page.id, field };
+  }
+  return null;
+}
 
 const updatesSchema = z.object({
   label: z.string().optional(),
@@ -22,9 +50,17 @@ const updatesSchema = z.object({
 
 export function createFormEditTools(
   schema: { pages: any[] },
-  opts?: { includeReadTools?: boolean }
+  opts?: { includeReadTools?: boolean; formId?: string }
 ) {
   const includeReadTools = opts?.includeReadTools !== false;
+  const formId = opts?.formId;
+
+  // Per-field response count for delete/convert warnings (0 when formId is unavailable).
+  const responseCountFor = async (fieldId: string): Promise<number> => {
+    if (!formId) return 0;
+    const counts = await countResponsesPerField(formId, [fieldId]);
+    return counts[fieldId] ?? 0;
+  };
 
   const readTools = {
     listFields: tool({
@@ -118,11 +154,22 @@ export function createFormEditTools(
 
     removeFields: tool({
       description:
-        'Remove one or more fields from the form. Single removal = 1-elem fieldIds. Call listFields first to get the IDs.',
+        'Propose removing one or more fields. Does NOT delete immediately — the user must confirm in a card. Single removal = 1-elem fieldIds. Call listFields first to get the IDs.',
       inputSchema: z.object({
         fieldIds: z.array(z.string()).min(1).describe('IDs of all fields to remove (min 1)'),
       }),
-      execute: async (args) => ({ type: 'REMOVE_FIELDS' as const, ...args }),
+      execute: async ({ fieldIds }) => {
+        const counts = formId ? await countResponsesPerField(formId, fieldIds) : {};
+        const fields = fieldIds.map((fieldId) => {
+          const found = findFieldInSchema(schema, fieldId);
+          return {
+            fieldId,
+            label: found?.field?.label ?? fieldId,
+            responseCount: counts[fieldId] ?? 0,
+          };
+        });
+        return { type: 'PROPOSE_DELETE_FIELDS' as const, fields };
+      },
     }),
 
     relocateField: tool({
@@ -188,13 +235,26 @@ export function createFormEditTools(
 
     removePage: tool({
       description:
-        'Remove a page and ALL its fields permanently. Cannot remove the last remaining page.',
+        'Propose removing a page and ALL its fields. Does NOT delete immediately — the user must confirm in a card. Cannot remove the last remaining page.',
       inputSchema: z.object({
         pageId: z.string().describe('The page ID from listFields'),
       }),
       execute: async ({ pageId }) => {
-        if ((schema.pages ?? []).length <= 1) return { error: 'Cannot remove the last page' };
-        return { type: 'REMOVE_PAGE' as const, pageId };
+        const pages = (schema.pages ?? []) as any[];
+        if (pages.length <= 1) return { error: 'Cannot remove the last page' };
+        const page = pages.find((p) => p.id === pageId);
+        if (!page) return { error: `Page ${pageId} not found` };
+        const fieldIds = (page.fields ?? []).map((f: any) => f.id);
+        const responseCount = formId
+          ? await countResponsesReferencingAnyField(formId, fieldIds)
+          : 0;
+        return {
+          type: 'PROPOSE_DELETE_PAGE' as const,
+          pageId,
+          pageTitle: page.title ?? 'Untitled page',
+          fieldCount: fieldIds.length,
+          responseCount,
+        };
       },
     }),
 
@@ -233,6 +293,31 @@ export function createFormEditTools(
       }),
       execute: async (args) => ({ type: 'PROPOSE_VALIDATION' as const, ...args }),
     }),
+
+    proposeFieldTypeChange: tool({
+      description:
+        'Propose changing a field to a different type. Does NOT change immediately — the user must confirm. Converting DELETES the field and creates a new one of the new type; existing responses for it will NOT carry over.',
+      inputSchema: z.object({
+        fieldId: z.string().describe('The field ID to convert — get it from listFields'),
+        newFieldType: z.enum(FIELD_TYPE_TOKENS).describe('The target field type'),
+      }),
+      execute: async ({ fieldId, newFieldType }) => {
+        const found = findFieldInSchema(schema, fieldId);
+        if (!found) return { error: `Field ${fieldId} not found` };
+        const currentType = STORED_TYPE_TO_TOKEN[found.field.type] ?? found.field.type;
+        if (currentType === newFieldType) {
+          return { error: `Field is already a ${newFieldType} field` };
+        }
+        return {
+          type: 'PROPOSE_FIELD_TYPE_CHANGE' as const,
+          fieldId,
+          label: found.field.label ?? fieldId,
+          currentType,
+          newFieldType,
+          responseCount: await responseCountFor(fieldId),
+        };
+      },
+    }),
   };
 
   return {
@@ -244,12 +329,13 @@ export function createFormEditTools(
 export type FormOperation =
   | { type: 'ADD_FIELD'; pageId: string; insertAfterFieldId: string | null; fieldType: string; label: string; required: boolean; placeholder: string | null; options: string[] | null }
   | { type: 'UPDATE_FIELDS'; fieldIds: string[]; updates: Record<string, unknown> }
-  | { type: 'REMOVE_FIELDS'; fieldIds: string[] }
   | { type: 'RELOCATE_FIELD'; fieldId: string; targetPageId: string; insertAfterFieldId: string | null; mode: 'move' | 'copy' }
   | { type: 'REORDER'; scope: 'fields' | 'pages'; ids: string[]; pageId?: string }
   | { type: 'UPDATE_LAYOUT'; content?: string; customCTAButtonName?: string }
   | { type: 'RENAME_PAGE'; pageId: string; newTitle: string }
   | { type: 'ADD_PAGE'; pageId: string; title: string; insertAfterPageId: string | null }
-  | { type: 'REMOVE_PAGE'; pageId: string }
   | { type: 'NAVIGATE_TO_PAGE'; pageId: string }
-  | { type: 'PROPOSE_VALIDATION'; suggestions: Array<{ fieldId: string; fieldLabel: string; fieldType: string; validation?: { minLength?: number | null; maxLength?: number | null; minSelections?: number | null; maxSelections?: number | null }; min?: number | null; max?: number | null; required?: boolean }>; rationale: string };
+  | { type: 'PROPOSE_VALIDATION'; suggestions: Array<{ fieldId: string; fieldLabel: string; fieldType: string; validation?: { minLength?: number | null; maxLength?: number | null; minSelections?: number | null; maxSelections?: number | null }; min?: number | null; max?: number | null; required?: boolean }>; rationale: string }
+  | { type: 'PROPOSE_DELETE_FIELDS'; fields: Array<{ fieldId: string; label: string; responseCount: number }> }
+  | { type: 'PROPOSE_DELETE_PAGE'; pageId: string; pageTitle: string; fieldCount: number; responseCount: number }
+  | { type: 'PROPOSE_FIELD_TYPE_CHANGE'; fieldId: string; label: string; currentType: string; newFieldType: string; responseCount: number };

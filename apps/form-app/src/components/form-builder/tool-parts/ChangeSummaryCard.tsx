@@ -7,9 +7,12 @@ import { buildOpLabel } from '../../../hooks/useAIChat';
 
 type OpColor = 'green' | 'blue' | 'red';
 
+// Deletions/conversions are proposals confirmed via DestructiveActionCard, so they are NOT
+// summarized here as completed changes. (REMOVE_FIELDS/REMOVE_PAGE remain in REMOVE_OPS only for
+// coloring legacy summaries from old conversations.)
 const MUTATION_OUTPUT_TYPES = new Set([
-  'ADD_FIELD', 'UPDATE_FIELDS', 'REMOVE_FIELDS', 'RELOCATE_FIELD', 'REORDER',
-  'UPDATE_LAYOUT', 'RENAME_PAGE', 'ADD_PAGE', 'REMOVE_PAGE',
+  'ADD_FIELD', 'UPDATE_FIELDS', 'RELOCATE_FIELD', 'REORDER',
+  'UPDATE_LAYOUT', 'RENAME_PAGE', 'ADD_PAGE',
 ]);
 
 const ADD_OPS = new Set(['ADD_FIELD', 'ADD_PAGE']);

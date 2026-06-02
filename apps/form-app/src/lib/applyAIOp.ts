@@ -1,9 +1,9 @@
 import { FieldType } from '@dculus/types';
 import type { FormBuilderState } from '../store/types/store.types';
+import { getApiBaseUrl } from './config';
 
 function invalidateSchema(formId: string): void {
-  const apiUrl = import.meta.env.VITE_API_URL as string;
-  fetch(`${apiUrl}/api/ai/invalidate-schema`, {
+  fetch(`${getApiBaseUrl()}/api/ai/invalidate-schema`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -60,9 +60,10 @@ export function applyAIOp(
     | 'reorderFields' | 'updateLayout' | 'updatePageTitle' | 'reorderPages'
     | 'addPageAtPosition' | 'removePage' | 'setSelectedPage'
     | 'setAIHighlightedFieldId' | 'setPendingValidationSuggestions'
-    | 'moveFieldBetweenPages'
+    | 'moveFieldBetweenPages' | 'addPendingDestructiveAction'
   >,
-  formId?: string
+  formId?: string,
+  toolCallId?: string
 ): void {
   if (!op?.type) return;
 
@@ -131,11 +132,43 @@ export function applyAIOp(
       break;
     }
 
-    case 'REMOVE_FIELDS': {
-      for (const fieldId of (op.fieldIds ?? [])) {
-        const pageId = findPageForField(store.pages, fieldId);
-        if (pageId) store.removeField(pageId, fieldId);
-      }
+    // ── Destructive proposals: DO NOT mutate. Enqueue for user confirmation. ──
+    case 'PROPOSE_DELETE_FIELDS': {
+      const fields = (op.fields ?? []).filter((f: any) => findPageForField(store.pages, f.fieldId));
+      if (fields.length === 0) break;
+      const id = toolCallId ?? `delete-fields-${fields.map((f: any) => f.fieldId).join(',')}`;
+      store.addPendingDestructiveAction({ id, kind: 'delete-fields', fields });
+      break; // no schema invalidation — nothing changed yet
+    }
+
+    case 'PROPOSE_DELETE_PAGE': {
+      const exists = (store.pages as any[]).some((p: any) => p.id === op.pageId);
+      if (!exists) break;
+      const id = toolCallId ?? `delete-page-${op.pageId}`;
+      store.addPendingDestructiveAction({
+        id,
+        kind: 'delete-page',
+        pageId: op.pageId,
+        pageTitle: op.pageTitle ?? 'Untitled page',
+        fieldCount: op.fieldCount ?? 0,
+        responseCount: op.responseCount ?? 0,
+      });
+      break;
+    }
+
+    case 'PROPOSE_FIELD_TYPE_CHANGE': {
+      const pageId = findPageForField(store.pages, op.fieldId);
+      if (!pageId) break;
+      const id = toolCallId ?? `convert-${op.fieldId}-${op.newFieldType}`;
+      store.addPendingDestructiveAction({
+        id,
+        kind: 'convert',
+        fieldId: op.fieldId,
+        label: op.label ?? op.fieldId,
+        currentType: op.currentType ?? '',
+        newFieldType: op.newFieldType,
+        responseCount: op.responseCount ?? 0,
+      });
       break;
     }
 
@@ -190,14 +223,6 @@ export function applyAIOp(
       // Pass the pre-generated pageId from the backend so subsequent ADD_FIELD ops
       // can reference the new page by the same ID the AI already knows.
       store.addPageAtPosition(op.title ?? 'New Page', op.insertAfterPageId ?? null, op.pageId);
-      break;
-    }
-
-    case 'REMOVE_PAGE': {
-      if ((store.pages as any[]).length <= 1) return;
-      const pageExists = (store.pages as any[]).some((p: any) => p.id === op.pageId);
-      if (!pageExists) return;
-      store.removePage(op.pageId);
       break;
     }
 
@@ -272,7 +297,14 @@ export function applyAIOp(
     }
   }
 
-  // Invalidate backend schema cache after any mutation
-  // PROPOSE_VALIDATION does not mutate the form, so skip invalidation for it
-  if (formId && op.type !== 'PROPOSE_VALIDATION') invalidateSchema(formId);
+  // Invalidate backend schema cache after any mutation. Proposal ops (validation + destructive
+  // confirmations) do not mutate the form yet, so they skip invalidation — the real mutation
+  // happens on Accept (DestructiveActionCard / ValidationSuggestionCard) which invalidates then.
+  const PROPOSAL_OPS = new Set([
+    'PROPOSE_VALIDATION',
+    'PROPOSE_DELETE_FIELDS',
+    'PROPOSE_DELETE_PAGE',
+    'PROPOSE_FIELD_TYPE_CHANGE',
+  ]);
+  if (formId && !PROPOSAL_OPS.has(op.type)) invalidateSchema(formId);
 }

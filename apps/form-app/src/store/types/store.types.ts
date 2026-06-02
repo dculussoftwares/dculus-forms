@@ -87,6 +87,13 @@ export interface FieldsSlice {
     insertIndex?: number
   ) => void;
   copyFieldToPage: (sourcePageId: string, targetPageId: string, fieldId: string) => void;
+  /**
+   * Convert a field to a different type by deleting it and creating a new field of the new type
+   * at the same position with a NEW id. Label/required/placeholder/hint carry over where
+   * compatible. The new id keeps response analytics/exports consistent (old responses for the
+   * old id remain as immutable history and do not carry over).
+   */
+  convertFieldType: (pageId: string, fieldId: string, newType: FieldType) => void;
 
   // Internal helpers
   _findFieldInPages: (fieldId: string) => { page: FormPage; field: FormField } | null;
@@ -148,6 +155,35 @@ export interface ValidationSuggestion {
   required?: boolean;
 }
 
+/**
+ * A destructive AI action awaiting explicit user confirmation. Mirrors the validation-suggestion
+ * pattern: the AI proposes; the store holds it pending; the UI shows a warning + Accept/Dismiss;
+ * only Accept applies the real mutation. Each carries a stable `id` so Accept/Dismiss target one.
+ */
+export type DestructiveAction =
+  | {
+      id: string;
+      kind: 'delete-fields';
+      fields: Array<{ fieldId: string; label: string; responseCount: number }>;
+    }
+  | {
+      id: string;
+      kind: 'delete-page';
+      pageId: string;
+      pageTitle: string;
+      fieldCount: number;
+      responseCount: number;
+    }
+  | {
+      id: string;
+      kind: 'convert';
+      fieldId: string;
+      label: string;
+      currentType: string;
+      newFieldType: string;
+      responseCount: number;
+    };
+
 export interface AISlice {
   aiHighlightedFieldId: string | null;
   setAIHighlightedFieldId: (id: string | null) => void;
@@ -155,6 +191,12 @@ export interface AISlice {
   setPendingValidationSuggestions: (suggestions: ValidationSuggestion[]) => void;
   acceptValidationSuggestion: (fieldId: string) => ValidationSuggestion | null;
   dismissValidationSuggestion: (fieldId: string) => void;
+
+  // Destructive-action confirmations (deletes + field-type conversion)
+  pendingDestructiveActions: DestructiveAction[];
+  addPendingDestructiveAction: (action: DestructiveAction) => void;
+  acceptDestructiveAction: (id: string) => DestructiveAction | null;
+  dismissDestructiveAction: (id: string) => void;
 }
 
 /**
