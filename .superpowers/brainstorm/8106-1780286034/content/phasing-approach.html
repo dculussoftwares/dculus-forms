@@ -1,0 +1,75 @@
+<h2>How should we phase the work?</h2>
+<p class="subtitle">Three sequencing strategies — each makes a different trade-off between risk, speed, and value delivery.</p>
+
+<div class="options">
+
+  <div class="option" data-choice="stability-first" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Stability → UX → Capabilities <span style="font-size:0.75rem;opacity:0.6;font-weight:400">(Recommended)</span></h3>
+      <p style="margin-bottom:0.75rem">Fix the foundation before building on top of it. Three clean phases:</p>
+      <div style="display:grid;gap:0.4rem">
+        <div style="padding:0.5rem 0.75rem;background:#f0fdf4;border-left:3px solid #22c55e;border-radius:4px;font-size:0.8rem">
+          <strong>Phase 1 — Stability</strong> · Schema caching, stream reliability, token meter, message history cap, better error recovery
+        </div>
+        <div style="padding:0.5rem 0.75rem;background:#eff6ff;border-left:3px solid #3b82f6;border-radius:4px;font-size:0.8rem">
+          <strong>Phase 2 — UX & Feedback</strong> · Live tool-call status, change summary card, per-message undo, context-aware chips, field highlight, page-switch
+        </div>
+        <div style="padding:0.5rem 0.75rem;background:#faf5ff;border-left:3px solid #a855f7;border-radius:4px;font-size:0.8rem">
+          <strong>Phase 3 — New AI Capabilities</strong> · Validation suggestions, bulk field ops, Remix this form
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top:0.75rem">
+        <div class="pros"><h4>Pros</h4><ul><li>Each phase ships independently</li><li>No rework if foundation changes</li><li>Lowest total risk</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>New features come last</li><li>Phase 1 is invisible to users</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="ux-first" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>UX & Features → Stability hardening</h3>
+      <p style="margin-bottom:0.75rem">Ship visible improvements fast, then clean up internals.</p>
+      <div style="display:grid;gap:0.4rem">
+        <div style="padding:0.5rem 0.75rem;background:#eff6ff;border-left:3px solid #3b82f6;border-radius:4px;font-size:0.8rem">
+          <strong>Phase 1</strong> · Live status, token meter, change summary, field highlight, chips — pure frontend, no backend changes
+        </div>
+        <div style="padding:0.5rem 0.75rem;background:#faf5ff;border-left:3px solid #a855f7;border-radius:4px;font-size:0.8rem">
+          <strong>Phase 2</strong> · New tools: validation suggestions, bulk ops, remix
+        </div>
+        <div style="padding:0.5rem 0.75rem;background:#f0fdf4;border-left:3px solid #22c55e;border-radius:4px;font-size:0.8rem">
+          <strong>Phase 3</strong> · Schema caching, stream hardening, history cap
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top:0.75rem">
+        <div class="pros"><h4>Pros</h4><ul><li>Visible wins immediately</li><li>Frontend work is low risk</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Building on unstable foundation</li><li>Phase 2 may need rework after Phase 3</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="parallel" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Parallel tracks (backend + frontend simultaneously)</h3>
+      <p style="margin-bottom:0.75rem">Run backend stability and frontend UX work in parallel, merge in Phase 2.</p>
+      <div style="display:grid;gap:0.4rem">
+        <div style="padding:0.5rem 0.75rem;background:#f0fdf4;border-left:3px solid #22c55e;border-radius:4px;font-size:0.8rem">
+          <strong>Phase 1A (backend)</strong> · Schema cache, stream reliability, history cap
+        </div>
+        <div style="padding:0.5rem 0.75rem;background:#eff6ff;border-left:3px solid #3b82f6;border-radius:4px;font-size:0.8rem">
+          <strong>Phase 1B (frontend)</strong> · Token meter, live status, chips, field highlight
+        </div>
+        <div style="padding:0.5rem 0.75rem;background:#faf5ff;border-left:3px solid #a855f7;border-radius:4px;font-size:0.8rem">
+          <strong>Phase 2</strong> · New capabilities: validation, bulk ops, remix, page-switch, undo badge
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top:0.75rem">
+        <div class="pros"><h4>Pros</h4><ul><li>Fastest overall delivery</li><li>Good for teams with separate backend/frontend devs</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Coordination overhead</li><li>Merge conflicts if one track blocks the other</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>

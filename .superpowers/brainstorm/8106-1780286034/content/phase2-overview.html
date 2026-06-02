@@ -1,0 +1,155 @@
+<h2>Phase 2 — UX & Feedback Design</h2>
+<p class="subtitle">Six features across the chat drawer and the form canvas. Each is scoped below.</p>
+
+<div style="display:grid;gap:1rem;margin-top:1rem">
+
+  <!-- Feature 1 -->
+  <div style="border:1px solid var(--color-border,#e2e8f0);border-radius:10px;overflow:hidden">
+    <div style="background:#f0fdf4;padding:0.6rem 1rem;display:flex;align-items:center;gap:0.5rem">
+      <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#16a34a;letter-spacing:.05em">Feature 1</span>
+      <span style="font-weight:600;font-size:0.9rem">Live tool-call status labels</span>
+      <span style="margin-left:auto;font-size:0.75rem;color:#64748b">Frontend only · AIEditDrawer.tsx</span>
+    </div>
+    <div style="padding:0.75rem 1rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div>
+        <p class="label">Before (current)</p>
+        <div class="mockup" style="padding:0.5rem">
+          <div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.6rem;background:#f1f5f9;border-radius:8px;width:fit-content">
+            <div style="display:flex;gap:3px">${[0,1,2].map(i=>`<span style="width:6px;height:6px;border-radius:50%;background:#94a3b8;opacity:${0.4+i*0.2}"></span>`).join('')}</div>
+            <span style="font-size:0.75rem;color:#64748b;font-style:italic">Generic dots…</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="label">After (proposed)</p>
+        <div class="mockup" style="padding:0.5rem;display:grid;gap:0.3rem">
+          <div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.6rem;background:#f1f5f9;border-radius:8px;width:fit-content;font-size:0.75rem;color:#334155">✦ Reading form structure…</div>
+          <div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.6rem;background:#f1f5f9;border-radius:8px;width:fit-content;font-size:0.75rem;color:#334155">✦ Adding field "Email"…</div>
+          <div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.6rem;background:#f1f5f9;border-radius:8px;width:fit-content;font-size:0.75rem;color:#334155">✦ Updating layout…</div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:0.5rem 1rem 0.75rem;font-size:0.8rem;color:#475569">
+      <strong>How:</strong> In <code>AssistantMessage</code>, detect parts with <code>state === 'input-streaming'</code> or <code>'input-available'</code> and render a <code>StatusIndicator</code> with a label derived from the tool name + its streaming input (e.g. <code>addField</code> + <code>input.label</code> → "Adding field 'Email'…").
+    </div>
+  </div>
+
+  <!-- Feature 2 -->
+  <div style="border:1px solid var(--color-border,#e2e8f0);border-radius:10px;overflow:hidden">
+    <div style="background:#eff6ff;padding:0.6rem 1rem;display:flex;align-items:center;gap:0.5rem">
+      <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#2563eb;letter-spacing:.05em">Feature 2</span>
+      <span style="font-weight:600;font-size:0.9rem">Change summary card</span>
+      <span style="margin-left:auto;font-size:0.75rem;color:#64748b">Frontend only · new ChangeSummaryCard.tsx</span>
+    </div>
+    <div style="padding:0.75rem 1rem">
+      <p class="label">Appears below assistant text bubble after each turn with mutations</p>
+      <div class="mockup" style="padding:0.75rem;max-width:300px">
+        <div style="font-size:0.7rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:0.4rem">Changes made</div>
+        <div style="display:grid;gap:0.25rem;font-size:0.8rem">
+          <div style="color:#16a34a">+ Added "Email address"</div>
+          <div style="color:#16a34a">+ Added "Phone number"</div>
+          <div style="color:#2563eb">~ Updated "Full name" (required)</div>
+          <div style="color:#dc2626">− Removed "Middle name"</div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:0.5rem 1rem 0.75rem;font-size:0.8rem;color:#475569">
+      <strong>How:</strong> Collect all mutation parts with <code>state === 'output-available'</code> from the message, map through <code>buildOpLabel()</code> (already exists in useAIChat.ts), colour-code by operation type, render inline below the text bubble.
+    </div>
+  </div>
+
+  <!-- Feature 3 -->
+  <div style="border:1px solid var(--color-border,#e2e8f0);border-radius:10px;overflow:hidden">
+    <div style="background:#faf5ff;padding:0.6rem 1rem;display:flex;align-items:center;gap:0.5rem">
+      <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#9333ea;letter-spacing:.05em">Feature 3</span>
+      <span style="font-weight:600;font-size:0.9rem">Per-message undo badge</span>
+      <span style="margin-left:auto;font-size:0.75rem;color:#64748b">Frontend · AIEditDrawer + useAIChat</span>
+    </div>
+    <div style="padding:0.75rem 1rem">
+      <p class="label">Inline "Undo this" on the last assistant message with mutations</p>
+      <div class="mockup" style="padding:0.75rem;max-width:300px">
+        <div style="background:#f1f5f9;border-radius:8px;padding:0.5rem 0.75rem;font-size:0.8rem;margin-bottom:0.4rem">Done! Added 3 fields to page 1.</div>
+        <div style="display:flex;gap:0.5rem;align-items:center">
+          <div style="font-size:0.7rem;color:#16a34a">+ Added "Email address"</div>
+          <button style="margin-left:auto;font-size:0.7rem;border:1px solid #e2e8f0;padding:0.2rem 0.5rem;border-radius:4px;background:#fff;color:#64748b;cursor:pointer">↩ Undo this</button>
+        </div>
+      </div>
+    </div>
+    <div style="padding:0.5rem 1rem 0.75rem;font-size:0.8rem;color:#475569">
+      <strong>How:</strong> Track Y.js undo-stack depth before/after each message send. Badge renders only on the most recent assistant message with mutations (LIFO constraint). Clicking pops (depth_after − depth_before) entries from the Y.js undo stack. Disabled on older messages.
+    </div>
+  </div>
+
+  <!-- Feature 4 -->
+  <div style="border:1px solid var(--color-border,#e2e8f0);border-radius:10px;overflow:hidden">
+    <div style="background:#fff7ed;padding:0.6rem 1rem;display:flex;align-items:center;gap:0.5rem">
+      <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#ea580c;letter-spacing:.05em">Feature 4</span>
+      <span style="font-weight:600;font-size:0.9rem">Context-aware quick chips</span>
+      <span style="margin-left:auto;font-size:0.75rem;color:#64748b">Frontend only · new useAIChips hook</span>
+    </div>
+    <div style="padding:0.75rem 1rem">
+      <p class="label">Chips change based on form state</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+        <div>
+          <div style="font-size:0.72rem;font-weight:600;color:#64748b;margin-bottom:0.3rem">Empty form</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.3rem">
+            <div style="font-size:0.72rem;border:1px solid #e2e8f0;padding:0.2rem 0.5rem;border-radius:999px;background:#fff">✦ Generate from description</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:0.72rem;font-weight:600;color:#64748b;margin-bottom:0.3rem">Has fields, optional ones exist</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.3rem">
+            <div style="font-size:0.72rem;border:1px solid #e2e8f0;padding:0.2rem 0.5rem;border-radius:999px;background:#fff">✦ Analyse & improve</div>
+            <div style="font-size:0.72rem;border:1px solid #e2e8f0;padding:0.2rem 0.5rem;border-radius:999px;background:#fff">Make all required</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:0.72rem;font-weight:600;color:#64748b;margin-bottom:0.3rem">Multi-page form</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.3rem">
+            <div style="font-size:0.72rem;border:1px solid #e2e8f0;padding:0.2rem 0.5rem;border-radius:999px;background:#fff">Reorganise pages</div>
+            <div style="font-size:0.72rem;border:1px solid #e2e8f0;padding:0.2rem 0.5rem;border-radius:999px;background:#fff">List all fields</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:0.72rem;font-weight:600;color:#64748b;margin-bottom:0.3rem">Fields with no validation</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.3rem">
+            <div style="font-size:0.72rem;border:1px solid #e2e8f0;padding:0.2rem 0.5rem;border-radius:999px;background:#fff">✦ Suggest validation</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:0.5rem 1rem 0.75rem;font-size:0.8rem;color:#475569">
+      <strong>How:</strong> New <code>useAIChips()</code> hook reads from <code>useFormBuilderStore</code> — derives chips from page count, total field count, required ratio. Returns max 3 chips to avoid clutter. Replaces the hardcoded <code>QUICK_CHIP_PROMPTS</code> constant.
+    </div>
+  </div>
+
+  <!-- Feature 5 -->
+  <div style="border:1px solid var(--color-border,#e2e8f0);border-radius:10px;overflow:hidden">
+    <div style="background:#fef9c3;padding:0.6rem 1rem;display:flex;align-items:center;gap:0.5rem">
+      <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#ca8a04;letter-spacing:.05em">Feature 5</span>
+      <span style="font-weight:600;font-size:0.9rem">Field highlight on add/edit</span>
+      <span style="margin-left:auto;font-size:0.75rem;color:#64748b">Frontend · Zustand slice + canvas</span>
+    </div>
+    <div style="padding:0.75rem 1rem;font-size:0.8rem;color:#475569">
+      <strong>How:</strong> Add <code>aiHighlightedFieldId: string | null</code> to <code>selectionSlice.ts</code>. In <code>applyAIOp.ts</code>, after applying <code>ADD_FIELD</code> or <code>UPDATE_FIELD</code>, call <code>store.setAIHighlightedFieldId(fieldId)</code> then clear it with <code>setTimeout(..., 2000)</code>. In the field card component, when <code>fieldId === aiHighlightedFieldId</code>, add a <code>ring-2 ring-primary animate-pulse</code> class and call <code>scrollIntoView({ behavior: 'smooth', block: 'center' })</code>. No backend changes needed.
+    </div>
+  </div>
+
+  <!-- Feature 6 -->
+  <div style="border:1px solid var(--color-border,#e2e8f0);border-radius:10px;overflow:hidden">
+    <div style="background:#f0f9ff;padding:0.6rem 1rem;display:flex;align-items:center;gap:0.5rem">
+      <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#0284c7;letter-spacing:.05em">Feature 6</span>
+      <span style="font-weight:600;font-size:0.9rem">Page-switch command (new tool)</span>
+      <span style="margin-left:auto;font-size:0.75rem;color:#64748b">Backend + Frontend</span>
+    </div>
+    <div style="padding:0.75rem 1rem;font-size:0.8rem;color:#475569">
+      <strong>Backend:</strong> Add <code>navigateToPage</code> tool in <code>aiFormEditTools.ts</code> — takes <code>pageId</code>, returns <code>{ type: 'NAVIGATE_TO_PAGE', pageId }</code>. Add it to the system prompt: "Use navigateToPage before editing fields on a page the user isn't currently viewing."<br><br>
+      <strong>Frontend:</strong> Add <code>'navigateToPage'</code> to <code>MUTATION_TOOL_NAMES</code> in <code>aiAgentTypes.ts</code>. Handle <code>NAVIGATE_TO_PAGE</code> in <code>applyAIOp.ts</code> by calling <code>store.setSelectedPageId(pageId)</code>.
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:1rem;padding:0.75rem 1rem;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;font-size:0.8rem;color:#475569">
+  <strong>Files touched in Phase 2:</strong> AIEditDrawer.tsx, useAIChat.ts, applyAIOp.ts, aiAgentTypes.ts, selectionSlice.ts, aiFormEditTools.ts, buildSystemPrompt (aiChat.ts) — plus 2 new files: <code>ChangeSummaryCard.tsx</code>, <code>useAIChips.ts</code>
+</div>

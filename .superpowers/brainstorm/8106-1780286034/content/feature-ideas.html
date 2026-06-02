@@ -1,0 +1,91 @@
+<h2>Proposed AI Chat Feature Ideas</h2>
+<p class="subtitle">Select all that interest you — we'll prioritise and design the ones you pick. Add your own ideas in the terminal.</p>
+
+<div class="options" data-multiselect>
+
+  <div class="option" data-choice="field-highlight" onclick="toggleSelect(this)">
+    <div class="letter">1</div>
+    <div class="content">
+      <h3>Field highlight on add/edit</h3>
+      <p>When the AI adds or modifies a field, the canvas auto-scrolls and highlights that field with a pulse ring — so you can see exactly what changed without hunting for it.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="streaming-tool-status" onclick="toggleSelect(this)">
+    <div class="letter">2</div>
+    <div class="content">
+      <h3>Live tool-call status in chat</h3>
+      <p>Instead of a generic spinner, show real-time inline labels: "Reading form structure…", "Adding field…", "Updating layout…". Users know exactly what step the AI is on.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="token-meter" onclick="toggleSelect(this)">
+    <div class="letter">3</div>
+    <div class="content">
+      <h3>Token usage meter</h3>
+      <p>A small progress bar in the drawer header showing % of monthly AI quota used. Clicking it opens a tooltip with the exact count and plan limit. Prevents surprise 402 errors.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="smart-chips" onclick="toggleSelect(this)">
+    <div class="letter">4</div>
+    <div class="content">
+      <h3>Context-aware quick chips</h3>
+      <p>Quick-action chips that change based on form state — empty form gets "Generate from description", filled form gets "Analyse & suggest improvements", multi-page form gets "Reorganise pages".</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="ai-suggest-validation" onclick="toggleSelect(this)">
+    <div class="letter">5</div>
+    <div class="content">
+      <h3>AI-suggested field validation</h3>
+      <p>New tool: the AI can read a field label and suggest sensible validation rules (e.g. "Phone number" → maxLength 15, "Age" → min 0 max 120). Shown as a chip the user can accept or dismiss.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="undo-per-message" onclick="toggleSelect(this)">
+    <div class="letter">6</div>
+    <div class="content">
+      <h3>Per-message undo badge</h3>
+      <p>Each assistant message that made mutations shows an inline "Undo this" badge. Clicking it reverses exactly the changes from that turn, not all Y.js history.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="form-diff-summary" onclick="toggleSelect(this)">
+    <div class="letter">7</div>
+    <div class="content">
+      <h3>Change summary card</h3>
+      <p>After each AI response that modifies the form, show a compact diff card listing "+ Added", "~ Updated", "− Removed" fields — so the user has a changelog without reading the full message.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="multi-page-awareness" onclick="toggleSelect(this)">
+    <div class="letter">8</div>
+    <div class="content">
+      <h3>Page-switch command</h3>
+      <p>The AI can navigate the builder to a different page mid-conversation. "Go to page 2" switches the canvas view — useful when the AI is editing a page the user isn't currently on.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="ai-duplicate" onclick="toggleSelect(this)">
+    <div class="letter">9</div>
+    <div class="content">
+      <h3>"Remix this form" command</h3>
+      <p>Say "Make this a job application form instead" — the AI analyses the current structure and transforms field types/labels to fit the new purpose, reusing as much structure as possible.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="bulk-ops" onclick="toggleSelect(this)">
+    <div class="letter">10</div>
+    <div class="content">
+      <h3>Bulk field operations</h3>
+      <p>New tool: AI can apply changes across all fields matching a pattern — "Add a hint to every text field", "Make all date fields optional", "Rename all labels to sentence case".</p>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:1.5rem;padding:1rem;background:var(--color-surface,#f9f9f9);border-radius:8px;border:1px dashed var(--color-border,#ddd)">
+  <p class="label">Your own ideas?</p>
+  <p class="subtitle" style="margin:0">Type them in the terminal — I'll fold them into the design.</p>
+</div>

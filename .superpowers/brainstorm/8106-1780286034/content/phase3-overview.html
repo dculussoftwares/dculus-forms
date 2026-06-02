@@ -1,0 +1,188 @@
+<h2>Phase 3 — New AI Capabilities</h2>
+<p class="subtitle">Four additions: one pure-frontend widget, two new backend tools, one system prompt + chip enhancement.</p>
+
+<div style="display:grid;gap:1rem;margin-top:1rem">
+
+  <!-- Feature 1: Token meter -->
+  <div style="border:1px solid var(--color-border,#e2e8f0);border-radius:10px;overflow:hidden">
+    <div style="background:#f0fdf4;padding:0.6rem 1rem;display:flex;align-items:center;gap:0.5rem">
+      <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#16a34a;letter-spacing:.05em">Feature 1</span>
+      <span style="font-weight:600;font-size:0.9rem">Token usage meter</span>
+      <span style="margin-left:auto;font-size:0.75rem;color:#64748b">Frontend only · aiTokenUsage query already exists</span>
+    </div>
+    <div style="padding:0.75rem 1rem">
+      <p class="label">Drawer footer — always visible</p>
+      <div class="mockup" style="padding:0.75rem;max-width:340px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.35rem">
+          <span style="font-size:0.7rem;color:#64748b">AI usage this month</span>
+          <span style="font-size:0.7rem;font-weight:600;color:#334155">142k / 200k tokens</span>
+        </div>
+        <div style="height:5px;background:#e2e8f0;border-radius:999px;overflow:hidden">
+          <div style="width:71%;height:100%;background:#22c55e;border-radius:999px;transition:width 0.3s"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:0.3rem">
+          <span style="font-size:0.65rem;color:#94a3b8">71% used</span>
+          <span style="font-size:0.65rem;color:#94a3b8">Resets Jul 1</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-top:0.75rem">
+        <div style="padding:0.5rem;background:#f8fafc;border-radius:6px;text-align:center;font-size:0.72rem">
+          <div style="color:#22c55e;font-weight:700;font-size:0.9rem">●</div>
+          <div style="color:#475569">0–79%</div>
+          <div style="color:#16a34a;font-weight:600">Green</div>
+        </div>
+        <div style="padding:0.5rem;background:#f8fafc;border-radius:6px;text-align:center;font-size:0.72rem">
+          <div style="color:#f59e0b;font-weight:700;font-size:0.9rem">●</div>
+          <div style="color:#475569">80–99%</div>
+          <div style="color:#d97706;font-weight:600">Amber</div>
+        </div>
+        <div style="padding:0.5rem;background:#f8fafc;border-radius:6px;text-align:center;font-size:0.72rem">
+          <div style="color:#dc2626;font-weight:700;font-size:0.9rem">●</div>
+          <div style="color:#475569">100%</div>
+          <div style="color:#dc2626;font-weight:600">Red + CTA</div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:0.5rem 1rem 0.75rem;font-size:0.8rem;color:#475569">
+      <strong>How:</strong> New <code>AITokenMeter.tsx</code> component polls <code>aiTokenUsage(organizationId)</code> on drawer open (30s poll interval). Renders a coloured progress bar in the drawer footer. At 80%+ shows amber warning. At 100% disables the input and shows "Upgrade plan" link. Uses existing <code>getAITokenUsage</code> resolver — no backend changes.
+    </div>
+  </div>
+
+  <!-- Feature 2: proposeValidation -->
+  <div style="border:1px solid var(--color-border,#e2e8f0);border-radius:10px;overflow:hidden">
+    <div style="background:#eff6ff;padding:0.6rem 1rem;display:flex;align-items:center;gap:0.5rem">
+      <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#2563eb;letter-spacing:.05em">Feature 2</span>
+      <span style="font-weight:600;font-size:0.9rem">AI validation suggestions (<code>proposeValidation</code> tool)</span>
+      <span style="margin-left:auto;font-size:0.75rem;color:#64748b">Backend + Frontend</span>
+    </div>
+    <div style="padding:0.75rem 1rem">
+      <p class="label">AI proposes, user accepts or dismisses per field</p>
+      <div class="mockup" style="padding:0.75rem;max-width:360px">
+        <div style="font-size:0.78rem;color:#334155;margin-bottom:0.5rem">Here are suggested validation rules based on your field labels:</div>
+        <div style="display:grid;gap:0.4rem">
+          <div style="border:1px solid #bfdbfe;border-radius:8px;padding:0.5rem 0.75rem;background:#eff6ff">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-size:0.78rem;font-weight:600;color:#1e40af">"Phone number" (text)</div>
+                <div style="font-size:0.72rem;color:#3b82f6;margin-top:0.15rem">maxLength: 15 · pattern: digits only</div>
+              </div>
+              <div style="display:flex;gap:0.35rem">
+                <button style="font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:4px;background:#2563eb;color:#fff;border:none;cursor:pointer">Accept</button>
+                <button style="font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:4px;background:#fff;color:#64748b;border:1px solid #e2e8f0;cursor:pointer">Skip</button>
+              </div>
+            </div>
+          </div>
+          <div style="border:1px solid #bfdbfe;border-radius:8px;padding:0.5rem 0.75rem;background:#eff6ff">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-size:0.78rem;font-weight:600;color:#1e40af">"Age" (number)</div>
+                <div style="font-size:0.72rem;color:#3b82f6;margin-top:0.15rem">min: 0 · max: 120</div>
+              </div>
+              <div style="display:flex;gap:0.35rem">
+                <button style="font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:4px;background:#2563eb;color:#fff;border:none;cursor:pointer">Accept</button>
+                <button style="font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:4px;background:#fff;color:#64748b;border:1px solid #e2e8f0;cursor:pointer">Skip</button>
+              </div>
+            </div>
+          </div>
+          <button style="font-size:0.72rem;padding:0.3rem 0.6rem;border-radius:6px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;cursor:pointer;width:fit-content">Accept all remaining</button>
+        </div>
+      </div>
+    </div>
+    <div style="padding:0.5rem 1rem 0.75rem;font-size:0.8rem;color:#475569">
+      <strong>Backend:</strong> New read-only <code>proposeValidation</code> tool — takes an array of <code>{ fieldId, label, type }</code>, returns <code>{ type: 'PROPOSE_VALIDATION', suggestions: [...] }</code>. Execute function is pure JS (no DB call — uses schema passed at agent creation time). System prompt updated: "Use proposeValidation when asked to suggest or review validation rules, never call updateField directly for validation without user confirmation."<br><br>
+      <strong>Frontend:</strong> New <code>ValidationSuggestionCard.tsx</code> tool-part component. <code>applyAIOp</code> does NOT auto-apply <code>PROPOSE_VALIDATION</code> — it sets <code>pendingValidationSuggestions</code> in a new Zustand slice. Accept dispatches <code>UPDATE_FIELD</code> per field; Skip removes it from pending.
+    </div>
+  </div>
+
+  <!-- Feature 3: bulkUpdateFields -->
+  <div style="border:1px solid var(--color-border,#e2e8f0);border-radius:10px;overflow:hidden">
+    <div style="background:#faf5ff;padding:0.6rem 1rem;display:flex;align-items:center;gap:0.5rem">
+      <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#9333ea;letter-spacing:.05em">Feature 3</span>
+      <span style="font-weight:600;font-size:0.9rem">Bulk field operations (<code>bulkUpdateFields</code> tool)</span>
+      <span style="margin-left:auto;font-size:0.75rem;color:#64748b">Backend + Frontend · replaces N updateField calls</span>
+    </div>
+    <div style="padding:0.75rem 1rem">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div>
+          <p class="label">Before — "Make all fields required"</p>
+          <div class="mockup" style="padding:0.5rem;font-size:0.72rem;color:#475569">
+            Step 1: listFields → 8 field IDs<br>
+            Step 2: updateField(f1)<br>
+            Step 3: updateField(f2)<br>
+            Step 4: updateField(f3)<br>
+            <span style="color:#94a3b8">... 5 more steps</span><br>
+            <span style="color:#dc2626;font-weight:600">Total: 9 tool calls</span>
+          </div>
+        </div>
+        <div>
+          <p class="label">After — with bulkUpdateFields</p>
+          <div class="mockup" style="padding:0.5rem;font-size:0.72rem;color:#475569">
+            Step 1: listFields → 8 field IDs<br>
+            Step 2: bulkUpdateFields(<br>
+            &nbsp;&nbsp;fieldIds: [f1..f8],<br>
+            &nbsp;&nbsp;updates: { required: true }<br>
+            )<br>
+            <span style="color:#16a34a;font-weight:600">Total: 2 tool calls</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:0.5rem 1rem 0.75rem;font-size:0.8rem;color:#475569">
+      <strong>Backend:</strong> New <code>bulkUpdateFields</code> tool — takes <code>{ fieldIds: string[], updates: UpdatesSchema }</code> (same <code>updates</code> schema as <code>updateField</code>), returns <code>{ type: 'BULK_UPDATE_FIELDS', fieldIds, updates }</code>. System prompt updated: "Use bulkUpdateFields instead of multiple updateField calls when applying the same change to 3 or more fields."<br><br>
+      <strong>Frontend:</strong> Handle <code>BULK_UPDATE_FIELDS</code> in <code>applyAIOp.ts</code> — iterate <code>fieldIds</code>, apply <code>UPDATE_FIELD</code> for each within the existing Y.js batch. <code>ChangeSummaryCard</code> renders it as "~ Updated N fields (required)".
+    </div>
+  </div>
+
+  <!-- Feature 4: Remix form -->
+  <div style="border:1px solid var(--color-border,#e2e8f0);border-radius:10px;overflow:hidden">
+    <div style="background:#fff7ed;padding:0.6rem 1rem;display:flex;align-items:center;gap:0.5rem">
+      <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#ea580c;letter-spacing:.05em">Feature 4</span>
+      <span style="font-weight:600;font-size:0.9rem">"Remix this form" command</span>
+      <span style="margin-left:auto;font-size:0.75rem;color:#64748b">System prompt + chip · no new tool needed</span>
+    </div>
+    <div style="padding:0.75rem 1rem">
+      <p class="label">AI orchestrates existing tools to transform the form's purpose</p>
+      <div class="mockup" style="padding:0.75rem;max-width:360px">
+        <div style="margin-bottom:0.5rem">
+          <div style="background:#1e293b;color:#f8fafc;border-radius:8px 8px 8px 2px;padding:0.4rem 0.6rem;font-size:0.78rem;width:fit-content">Make this a job application form instead</div>
+        </div>
+        <div style="background:#f1f5f9;border-radius:8px 8px 2px 8px;padding:0.5rem 0.75rem;font-size:0.78rem;color:#334155">
+          <div style="margin-bottom:0.4rem">I'll transform the current contact form into a job application form. Let me restructure the fields:</div>
+          <div style="font-size:0.72rem;color:#475569">
+            <div style="color:#dc2626">− Removed "Message" (textarea)</div>
+            <div style="color:#dc2626">− Removed "Subject" (text)</div>
+            <div style="color:#16a34a">+ Added "Position applied for" (select)</div>
+            <div style="color:#16a34a">+ Added "Years of experience" (number)</div>
+            <div style="color:#16a34a">+ Added "Cover letter" (textarea)</div>
+            <div style="color:#16a34a">+ Added "Resume / CV" (file)</div>
+            <div style="color:#2563eb">~ Updated layout title → "Job Application"</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:0.5rem 1rem 0.75rem;font-size:0.8rem;color:#475569">
+      <strong>No new tool:</strong> Remix orchestrates <code>listFields</code> → <code>removeField</code> → <code>addField</code> → <code>updateLayout</code> using existing tools. The change summary card (Phase 2) makes the diff visible. Per-message undo (Phase 2) lets the user revert instantly.<br><br>
+      <strong>System prompt addition:</strong> "When asked to 'remix', 'transform', or 'convert' the form for a different purpose: (1) call listFields to understand existing structure, (2) remove fields that don't fit the new purpose, (3) add fields that belong, (4) update the layout title and CTA. Preserve fields that work for both purposes."<br><br>
+      <strong>New context chip (useAIChips):</strong> When the form has &gt; 2 fields, add "✦ Remix this form" chip that sends the prompt above pre-filled with a textarea asking for the new purpose.
+    </div>
+  </div>
+
+</div>
+
+<!-- Summary table -->
+<div style="margin-top:1rem;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
+  <div style="background:#f8fafc;padding:0.6rem 1rem;font-weight:600;font-size:0.85rem;border-bottom:1px solid #e2e8f0">Phase 3 — Files Changed</div>
+  <table style="width:100%;font-size:0.78rem;border-collapse:collapse">
+    <thead><tr style="background:#f1f5f9;text-align:left">
+      <th style="padding:0.4rem 0.75rem;border-bottom:1px solid #e2e8f0">Feature</th>
+      <th style="padding:0.4rem 0.75rem;border-bottom:1px solid #e2e8f0">Backend</th>
+      <th style="padding:0.4rem 0.75rem;border-bottom:1px solid #e2e8f0">Frontend</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:0.4rem 0.75rem;color:#334155">Token meter</td><td style="padding:0.4rem 0.75rem;color:#94a3b8">None</td><td style="padding:0.4rem 0.75rem;color:#475569">New <code>AITokenMeter.tsx</code></td></tr>
+      <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:0.4rem 0.75rem;color:#334155">proposeValidation</td><td style="padding:0.4rem 0.75rem;color:#475569"><code>aiFormEditTools.ts</code>, system prompt</td><td style="padding:0.4rem 0.75rem;color:#475569">New <code>ValidationSuggestionCard.tsx</code>, new Zustand state</td></tr>
+      <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:0.4rem 0.75rem;color:#334155">bulkUpdateFields</td><td style="padding:0.4rem 0.75rem;color:#475569"><code>aiFormEditTools.ts</code>, system prompt</td><td style="padding:0.4rem 0.75rem;color:#475569"><code>applyAIOp.ts</code>, <code>aiAgentTypes.ts</code></td></tr>
+      <tr><td style="padding:0.4rem 0.75rem;color:#334155">Remix form</td><td style="padding:0.4rem 0.75rem;color:#475569">System prompt only</td><td style="padding:0.4rem 0.75rem;color:#475569"><code>useAIChips.ts</code> (new chip)</td></tr>
+    </tbody>
+  </table>
+</div>
