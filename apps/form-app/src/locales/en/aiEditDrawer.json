@@ -17,6 +17,7 @@
   "tokenLimitError": "AI token limit reached. Upgrade your plan to continue.",
   "genericError": "Something went wrong. Please try again.",
   "emptyState": "Ask AI to help you edit, improve, or rewrite any part of your form.",
+  "emptyTitle": "Ask the AI anything",
   "openButton": "AI",
   "undo": "Undo",
   "undoTitle": "Undo AI changes",

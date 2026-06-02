@@ -1,9 +1,11 @@
 // apps/form-app/src/components/form-builder/AITokenMeter.tsx
 import React from 'react';
 import { useQuery } from '@apollo/client';
+import { motion } from 'framer-motion';
 import { cn } from '@dculus/utils';
 import { AI_TOKEN_USAGE } from '../../graphql/aiChat';
 import { useTranslation } from '../../hooks/useTranslation';
+import { tokenMeterTransition } from './aiChatMotion';
 
 interface Props {
   organizationId: string;
@@ -39,9 +41,11 @@ const AITokenMeter: React.FC<Props> = ({ organizationId }) => {
         </span>
       </div>
       <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-        <div
-          className={cn('h-full rounded-full transition-all duration-500', barColor)}
-          style={{ width: `${pct}%` }}
+        <motion.div
+          className={cn('h-full rounded-full', barColor)}
+          initial={{ width: '0%' }}
+          animate={{ width: `${pct}%` }}
+          transition={tokenMeterTransition}
         />
       </div>
       <div className="mt-1 flex items-center justify-between">

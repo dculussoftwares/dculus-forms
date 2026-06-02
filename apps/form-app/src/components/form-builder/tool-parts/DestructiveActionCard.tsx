@@ -1,6 +1,8 @@
 // apps/form-app/src/components/form-builder/tool-parts/DestructiveActionCard.tsx
 import React from 'react';
+import { motion } from 'framer-motion';
 import { Button } from '@dculus/ui';
+import { msgVariants, easeOut } from '../aiChatMotion';
 import { FieldType } from '@dculus/types';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useTranslation } from '../../../hooks/useTranslation';
@@ -118,7 +120,13 @@ const DestructiveActionCard: React.FC = () => {
   };
 
   return (
-    <div className="mt-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm">
+    <motion.div
+      className="mt-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm"
+      variants={msgVariants}
+      initial="hidden"
+      animate="visible"
+      transition={easeOut}
+    >
       <p className="mb-2 font-medium text-red-800">⚠ {t('destructive.title')}</p>
       <div className="space-y-2">
         {pendingDestructiveActions.map((action) => (
@@ -148,7 +156,7 @@ const DestructiveActionCard: React.FC = () => {
           </div>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
