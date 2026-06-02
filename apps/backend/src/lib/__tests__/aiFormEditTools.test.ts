@@ -21,14 +21,33 @@ const mockSchema = {
 };
 
 describe('createFormEditTools', () => {
-  it('returns all 17 tools', () => {
+  it('returns all 13 tools by default (read tools included)', () => {
     const tools = createFormEditTools(mockSchema);
     expect(Object.keys(tools)).toEqual([
-      'listFields', 'getField', 'addField', 'updateField',
-      'removeField', 'reorderFields', 'updateLayout',
-      'renamePage', 'reorderPages', 'addPage', 'removePage',
-      'navigateToPage', 'bulkUpdateFields', 'proposeValidation',
-      'bulkRemoveFields', 'moveField', 'copyField',
+      'listFields', 'getField', 'addField', 'updateFields',
+      'removeFields', 'relocateField', 'reorder', 'updateLayout',
+      'renamePage', 'addPage', 'removePage', 'navigateToPage',
+      'proposeValidation',
+    ]);
+  });
+
+  it('returns 13 tools when includeReadTools is explicitly true', () => {
+    const tools = createFormEditTools(mockSchema, { includeReadTools: true });
+    expect(Object.keys(tools)).toHaveLength(13);
+    expect(Object.keys(tools)).toContain('listFields');
+    expect(Object.keys(tools)).toContain('getField');
+  });
+
+  it('omits listFields and getField when includeReadTools is false (11 tools)', () => {
+    const tools = createFormEditTools(mockSchema, { includeReadTools: false });
+    const keys = Object.keys(tools);
+    expect(keys).toHaveLength(11);
+    expect(keys).not.toContain('listFields');
+    expect(keys).not.toContain('getField');
+    expect(keys).toEqual([
+      'addField', 'updateFields', 'removeFields', 'relocateField',
+      'reorder', 'updateLayout', 'renamePage', 'addPage',
+      'removePage', 'navigateToPage', 'proposeValidation',
     ]);
   });
 });
@@ -36,7 +55,7 @@ describe('createFormEditTools', () => {
 describe('listFields', () => {
   it('returns summary and compact page strings for all pages', async () => {
     const tools = createFormEditTools(mockSchema);
-    const result = await tools.listFields.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
+    const result = await tools.listFields!.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
     expect(result.summary).toBe('2 pages total');
     expect(result.pages).toHaveLength(2);
     // p1 line includes page number, id, and both fields
@@ -50,7 +69,7 @@ describe('listFields', () => {
 
   it('filters to a specific page and preserves correct page number', async () => {
     const tools = createFormEditTools(mockSchema);
-    const result = await tools.listFields.execute!({ pageId: 'page-2' }, { messages: [], toolCallId: 'test' }) as any;
+    const result = await tools.listFields!.execute!({ pageId: 'page-2' }, { messages: [], toolCallId: 'test' }) as any;
     expect(result.pages).toHaveLength(1);
     // still shows p2 (absolute position) even when filtered
     expect(result.pages[0]).toMatch(/^p2 "Page 2" \[id:page-2\]:/);
@@ -59,26 +78,26 @@ describe('listFields', () => {
 
   it('returns empty summary for empty schema', async () => {
     const tools = createFormEditTools({ pages: [] });
-    const result = await tools.listFields.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
+    const result = await tools.listFields!.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
     expect(result.summary).toBe('0 pages total');
     expect(result.pages).toHaveLength(0);
   });
 
   it('marks page as (empty) when it has no fields', async () => {
     const tools = createFormEditTools({ pages: [{ id: 'p1', title: 'Blank', fields: [] }] });
-    const result = await tools.listFields.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
+    const result = await tools.listFields!.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
     expect(result.pages[0]).toContain('(empty)');
   });
 
   it('uses singular "page" when schema has exactly 1 page', async () => {
     const tools = createFormEditTools({ pages: [{ id: 'p1', title: 'Only', fields: [] }] });
-    const result = await tools.listFields.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
+    const result = await tools.listFields!.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
     expect(result.summary).toBe('1 page total');
   });
 
   it('falls back to "Page N" when page title is null', async () => {
     const tools = createFormEditTools({ pages: [{ id: 'p1', title: null, fields: [] }] });
-    const result = await tools.listFields.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
+    const result = await tools.listFields!.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
     expect(result.pages[0]).toContain('Page 1');
   });
 
@@ -86,7 +105,7 @@ describe('listFields', () => {
     const tools = createFormEditTools({ pages: [{ id: 'p1', title: 'T', fields: [
       { id: 'fx', type: 'unknown_custom_field', label: 'X', required: false },
     ] }] });
-    const result = await tools.listFields.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
+    const result = await tools.listFields!.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
     expect(result.pages[0]).toContain('unknown_custom_field');
   });
 });
@@ -94,7 +113,7 @@ describe('listFields', () => {
 describe('getField', () => {
   it('returns full field details including pageId', async () => {
     const tools = createFormEditTools(mockSchema);
-    const result = await tools.getField.execute!({ fieldId: 'f-2' }, { messages: [], toolCallId: 'test' });
+    const result = await tools.getField!.execute!({ fieldId: 'f-2' }, { messages: [], toolCallId: 'test' });
     expect(result).toMatchObject({ id: 'f-2', type: 'SELECT_FIELD', label: 'Country', pageId: 'page-1', options: ['USA', 'UK'] });
   });
 
@@ -103,7 +122,7 @@ describe('getField', () => {
       id: 'px', title: 'X',
       fields: [{ id: 'fy', type: 'text', label: 'Y' }],
     }] });
-    const result = await tools.getField.execute!({ fieldId: 'fy' }, { messages: [], toolCallId: 'test' }) as any;
+    const result = await tools.getField!.execute!({ fieldId: 'fy' }, { messages: [], toolCallId: 'test' }) as any;
     expect(result.required).toBe(false);
     expect(result.placeholder).toBeNull();
     expect(result.hint).toBeNull();
@@ -113,7 +132,7 @@ describe('getField', () => {
 
   it('returns error for unknown fieldId', async () => {
     const tools = createFormEditTools(mockSchema);
-    const result = await tools.getField.execute!({ fieldId: 'unknown' }, { messages: [], toolCallId: 'test' });
+    const result = await tools.getField!.execute!({ fieldId: 'unknown' }, { messages: [], toolCallId: 'test' });
     expect(result).toHaveProperty('error');
   });
 });
@@ -129,47 +148,84 @@ describe('addField', () => {
   });
 });
 
-describe('updateField', () => {
-  it('returns UPDATE_FIELD op', async () => {
+describe('updateFields', () => {
+  it('returns UPDATE_FIELDS op for a single field (1-elem array)', async () => {
     const tools = createFormEditTools(mockSchema);
-    const result = await tools.updateField.execute!({ fieldId: 'f-1', updates: { label: 'Full Name', required: true } }, { messages: [], toolCallId: 'test' });
-    expect(result).toEqual({ type: 'UPDATE_FIELD', fieldId: 'f-1', updates: { label: 'Full Name', required: true } });
+    const result = await tools.updateFields.execute!({ fieldIds: ['f-1'], updates: { label: 'Full Name', required: true } }, { messages: [], toolCallId: 'test' });
+    expect(result).toEqual({ type: 'UPDATE_FIELDS', fieldIds: ['f-1'], updates: { label: 'Full Name', required: true } });
   });
 
-  it('returns UPDATE_FIELD op with validation object', async () => {
+  it('returns UPDATE_FIELDS op for multiple fields', async () => {
     const tools = createFormEditTools(mockSchema);
-    const result = await tools.updateField.execute!({ fieldId: 'f-1', updates: { validation: { minLength: 2, maxLength: 50 } } }, { messages: [], toolCallId: 'test' });
-    expect(result).toEqual({ type: 'UPDATE_FIELD', fieldId: 'f-1', updates: { validation: { minLength: 2, maxLength: 50 } } });
+    const result = await tools.updateFields.execute!({ fieldIds: ['f-1', 'f-2', 'f-3'], updates: { required: true } }, { messages: [], toolCallId: 'test' });
+    expect(result).toEqual({ type: 'UPDATE_FIELDS', fieldIds: ['f-1', 'f-2', 'f-3'], updates: { required: true } });
   });
 
-  it('returns UPDATE_FIELD op with min/max for number field', async () => {
+  it('returns UPDATE_FIELDS op with validation object', async () => {
     const tools = createFormEditTools(mockSchema);
-    const result = await tools.updateField.execute!({ fieldId: 'f-1', updates: { min: 0, max: 100 } }, { messages: [], toolCallId: 'test' });
-    expect(result).toEqual({ type: 'UPDATE_FIELD', fieldId: 'f-1', updates: { min: 0, max: 100 } });
+    const result = await tools.updateFields.execute!({ fieldIds: ['f-1'], updates: { validation: { minLength: 2, maxLength: 50 } } }, { messages: [], toolCallId: 'test' });
+    expect(result).toEqual({ type: 'UPDATE_FIELDS', fieldIds: ['f-1'], updates: { validation: { minLength: 2, maxLength: 50 } } });
   });
-});
 
-describe('removeField', () => {
-  it('returns REMOVE_FIELD op', async () => {
+  it('returns UPDATE_FIELDS op with min/max for number field', async () => {
     const tools = createFormEditTools(mockSchema);
-    const result = await tools.removeField.execute!({ fieldId: 'f-2' }, { messages: [], toolCallId: 'test' });
-    expect(result).toEqual({ type: 'REMOVE_FIELD', fieldId: 'f-2' });
+    const result = await tools.updateFields.execute!({ fieldIds: ['f-1'], updates: { min: 0, max: 100 } }, { messages: [], toolCallId: 'test' });
+    expect(result).toEqual({ type: 'UPDATE_FIELDS', fieldIds: ['f-1'], updates: { min: 0, max: 100 } });
   });
 });
 
-describe('bulkRemoveFields', () => {
-  it('returns BULK_REMOVE_FIELDS op with field ID list', async () => {
+describe('removeFields', () => {
+  it('returns REMOVE_FIELDS op for a single field (1-elem array)', async () => {
     const tools = createFormEditTools(mockSchema);
-    const result = await (tools as any).bulkRemoveFields.execute!({ fieldIds: ['f-1', 'f-2', 'f-3'] }, { messages: [], toolCallId: 'test' });
-    expect(result).toEqual({ type: 'BULK_REMOVE_FIELDS', fieldIds: ['f-1', 'f-2', 'f-3'] });
+    const result = await tools.removeFields.execute!({ fieldIds: ['f-2'] }, { messages: [], toolCallId: 'test' });
+    expect(result).toEqual({ type: 'REMOVE_FIELDS', fieldIds: ['f-2'] });
+  });
+
+  it('returns REMOVE_FIELDS op for multiple fields', async () => {
+    const tools = createFormEditTools(mockSchema);
+    const result = await tools.removeFields.execute!({ fieldIds: ['f-1', 'f-2', 'f-3'] }, { messages: [], toolCallId: 'test' });
+    expect(result).toEqual({ type: 'REMOVE_FIELDS', fieldIds: ['f-1', 'f-2', 'f-3'] });
   });
 });
 
-describe('reorderFields', () => {
-  it('returns REORDER_FIELDS op', async () => {
+describe('relocateField', () => {
+  it('returns RELOCATE_FIELD op with mode="move" and null insertAfterFieldId', async () => {
     const tools = createFormEditTools(mockSchema);
-    const result = await tools.reorderFields.execute!({ pageId: 'page-1', fieldIds: ['f-2', 'f-1'] }, { messages: [], toolCallId: 'test' });
-    expect(result).toEqual({ type: 'REORDER_FIELDS', pageId: 'page-1', fieldIds: ['f-2', 'f-1'] });
+    const result = await tools.relocateField.execute!(
+      { fieldId: 'f-1', targetPageId: 'page-2', insertAfterFieldId: null, mode: 'move' },
+      { messages: [], toolCallId: 'test' }
+    ) as any;
+    expect(result).toEqual({ type: 'RELOCATE_FIELD', fieldId: 'f-1', targetPageId: 'page-2', insertAfterFieldId: null, mode: 'move' });
+  });
+
+  it('returns RELOCATE_FIELD op with mode="copy" and insertAfterFieldId', async () => {
+    const tools = createFormEditTools(mockSchema);
+    const result = await tools.relocateField.execute!(
+      { fieldId: 'f-2', targetPageId: 'page-2', insertAfterFieldId: 'f-3', mode: 'copy' },
+      { messages: [], toolCallId: 'test' }
+    ) as any;
+    expect(result).toEqual({ type: 'RELOCATE_FIELD', fieldId: 'f-2', targetPageId: 'page-2', insertAfterFieldId: 'f-3', mode: 'copy' });
+  });
+});
+
+describe('reorder', () => {
+  it('returns REORDER op for scope="fields" with pageId', async () => {
+    const tools = createFormEditTools(mockSchema);
+    const result = await tools.reorder.execute!({ scope: 'fields', ids: ['f-2', 'f-1'], pageId: 'page-1' }, { messages: [], toolCallId: 'test' });
+    expect(result).toEqual({ type: 'REORDER', scope: 'fields', ids: ['f-2', 'f-1'], pageId: 'page-1' });
+  });
+
+  it('returns REORDER op for scope="pages"', async () => {
+    const tools = createFormEditTools(mockSchema);
+    const result = await tools.reorder.execute!({ scope: 'pages', ids: ['page-2', 'page-1'] }, { messages: [], toolCallId: 'test' });
+    expect(result).toEqual({ type: 'REORDER', scope: 'pages', ids: ['page-2', 'page-1'] });
+  });
+
+  it('returns error when scope="fields" but pageId is missing', async () => {
+    const tools = createFormEditTools(mockSchema);
+    const result = await tools.reorder.execute!({ scope: 'fields', ids: ['f-2', 'f-1'] }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result).toHaveProperty('error');
+    expect(result.error).toMatch(/pageId/i);
   });
 });
 
@@ -189,108 +245,52 @@ describe('renamePage', () => {
   });
 });
 
-describe('reorderPages', () => {
-  it('returns REORDER_PAGES op', async () => {
-    const tools = createFormEditTools(mockSchema);
-    const result = await tools.reorderPages.execute!({ pageIds: ['page-2', 'page-1'] }, { messages: [], toolCallId: 'test' });
-    expect(result).toEqual({ type: 'REORDER_PAGES', pageIds: ['page-2', 'page-1'] });
-  });
-});
-
 describe('addPage', () => {
-  it('returns ADD_PAGE op', async () => {
+  it('returns ADD_PAGE op with a generated non-empty pageId', async () => {
     const tools = createFormEditTools(mockSchema);
-    const result = await (tools as any).addPage.execute!({ title: 'Step 2', insertAfterPageId: null }, { messages: [], toolCallId: 'test' });
+    const result = await tools.addPage.execute!({ title: 'Step 2', insertAfterPageId: null }, { messages: [], toolCallId: 'test' }) as any;
     expect(result).toMatchObject({ type: 'ADD_PAGE', title: 'Step 2', insertAfterPageId: null });
-    expect(typeof (result as any).pageId).toBe('string');
-    expect((result as any).pageId).toMatch(/^page-/);
+    expect(typeof result.pageId).toBe('string');
+    expect(result.pageId.length).toBeGreaterThan(0);
+    expect(result.pageId).toMatch(/^page-/);
   });
 });
 
 describe('removePage', () => {
   it('returns REMOVE_PAGE op when multiple pages exist', async () => {
     const tools = createFormEditTools(mockSchema);
-    const result = await (tools as any).removePage.execute!({ pageId: 'page-2' }, { messages: [], toolCallId: 'test' });
+    const result = await tools.removePage.execute!({ pageId: 'page-2' }, { messages: [], toolCallId: 'test' });
     expect(result).toEqual({ type: 'REMOVE_PAGE', pageId: 'page-2' });
   });
 
-  it('returns error when only one page exists', async () => {
+  it('returns error when only one page exists (last-page guard)', async () => {
     const tools = createFormEditTools({ pages: [mockSchema.pages[0]] });
-    const result = await (tools as any).removePage.execute!({ pageId: 'page-1' }, { messages: [], toolCallId: 'test' });
+    const result = await tools.removePage.execute!({ pageId: 'page-1' }, { messages: [], toolCallId: 'test' }) as any;
     expect(result).toHaveProperty('error');
-    expect((result as any).error).toMatch(/last page/i);
-  });
-});
-
-describe('proposeValidation', () => {
-  it('returns PROPOSE_VALIDATION op with suggestions', async () => {
-    const tools = createFormEditTools({ pages: [] });
-    const result = await (tools as any).proposeValidation.execute({
-      suggestions: [
-        { fieldId: 'f1', fieldLabel: 'Age', fieldType: 'number', min: 0, max: 120 },
-      ],
-      rationale: 'Age should be between 0 and 120',
-    });
-    expect((result as any).type).toBe('PROPOSE_VALIDATION');
-    expect((result as any).suggestions[0].fieldId).toBe('f1');
+    expect(result.error).toMatch(/last page/i);
   });
 });
 
 describe('navigateToPage', () => {
   it('returns NAVIGATE_TO_PAGE with pageId', async () => {
     const tools = createFormEditTools({ pages: [] });
-    const result = await (tools as any).navigateToPage.execute({ pageId: 'p1' });
-    expect((result as any).type).toBe('NAVIGATE_TO_PAGE');
-    expect((result as any).pageId).toBe('p1');
+    const result = await tools.navigateToPage.execute!({ pageId: 'p1' }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.type).toBe('NAVIGATE_TO_PAGE');
+    expect(result.pageId).toBe('p1');
   });
 });
 
-describe('bulkUpdateFields', () => {
-  it('returns BULK_UPDATE_FIELDS with fieldIds and updates', async () => {
+describe('proposeValidation', () => {
+  it('returns PROPOSE_VALIDATION op with suggestions', async () => {
     const tools = createFormEditTools({ pages: [] });
-    const result = await (tools as any).bulkUpdateFields.execute({
-      fieldIds: ['f1', 'f2'],
-      updates: { required: true },
-    });
-    expect((result as any).type).toBe('BULK_UPDATE_FIELDS');
-    expect((result as any).fieldIds).toEqual(['f1', 'f2']);
-    expect((result as any).updates.required).toBe(true);
-  });
-});
-
-describe('moveField', () => {
-  it('returns MOVE_FIELD op with null insertAfterFieldId', async () => {
-    const tools = createFormEditTools(mockSchema);
-    const result = await tools.moveField.execute!(
-      { fieldId: 'f-1', targetPageId: 'page-2', insertAfterFieldId: null },
-      { messages: [], toolCallId: 'test' }
-    ) as any;
-    expect(result.type).toBe('MOVE_FIELD');
-    expect(result.fieldId).toBe('f-1');
-    expect(result.targetPageId).toBe('page-2');
-    expect(result.insertAfterFieldId).toBeNull();
-  });
-
-  it('returns MOVE_FIELD op with insertAfterFieldId', async () => {
-    const tools = createFormEditTools(mockSchema);
-    const result = await tools.moveField.execute!(
-      { fieldId: 'f-1', targetPageId: 'page-2', insertAfterFieldId: 'f-3' },
-      { messages: [], toolCallId: 'test' }
-    ) as any;
-    expect(result.insertAfterFieldId).toBe('f-3');
-  });
-});
-
-describe('copyField', () => {
-  it('returns COPY_FIELD op', async () => {
-    const tools = createFormEditTools(mockSchema);
-    const result = await tools.copyField.execute!(
-      { fieldId: 'f-2', targetPageId: 'page-2', insertAfterFieldId: 'f-3' },
-      { messages: [], toolCallId: 'test' }
-    ) as any;
-    expect(result.type).toBe('COPY_FIELD');
-    expect(result.fieldId).toBe('f-2');
-    expect(result.insertAfterFieldId).toBe('f-3');
+    const result = await tools.proposeValidation.execute!({
+      suggestions: [
+        { fieldId: 'f1', fieldLabel: 'Age', fieldType: 'number', min: 0, max: 120 },
+      ],
+      rationale: 'Age should be between 0 and 120',
+    }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.type).toBe('PROPOSE_VALIDATION');
+    expect(result.suggestions[0].fieldId).toBe('f1');
   });
 });
 
@@ -301,20 +301,16 @@ describe('tool description lengths', () => {
     listFields:        130,
     getField:          120,
     addField:          115,
-    updateField:       175,
-    removeField:        40,
-    reorderFields:      90,
+    updateFields:      160,
+    removeFields:      125,
+    relocateField:     140,
+    reorder:           125,
     updateLayout:       70,
     renamePage:         55,
-    reorderPages:       60,
     addPage:           145,
     removePage:         90,
     navigateToPage:    135,
-    bulkUpdateFields:  100,
-    proposeValidation: 140,
-    bulkRemoveFields:  145,
-    moveField:         140,
-    copyField:         155,
+    proposeValidation: 145,
   };
 
   for (const [name, limit] of Object.entries(LIMITS)) {

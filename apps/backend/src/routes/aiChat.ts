@@ -1,6 +1,6 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { validateUIMessages, convertToModelMessages, pruneMessages } from 'ai';
-import type { UIMessage } from 'ai';
+import type { UIMessage, ModelMessage } from 'ai';
 import * as Y from 'yjs';
 import {
   requireAuth,
@@ -18,6 +18,8 @@ import {
   recordAITokenUsage,
 } from '../services/aiUsageService.js';
 import { createFormEditAgent } from '../lib/formEditAgent.js';
+import { getPrimaryModelId } from '../lib/ai.js';
+import { extractUsageStats, recordTurnTelemetry } from '../services/aiTelemetry.js';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 
@@ -79,40 +81,94 @@ export async function getFormSchema(formId: string): Promise<{ pages: any[] }> {
   return schema;
 }
 
-export function buildSystemPrompt(currentPageId: string | undefined, schema: { pages: any[] }): string {
-  const pageContext = currentPageId
-    ? `The user is currently viewing page ID: ${currentPageId}. When the user says "this page" or "current page", they mean this page.`
+// Forms with more fields than this skip the inline snapshot and rely on read tools instead,
+// keeping the (uncached) ephemeral tail small.
+export const SNAPSHOT_FIELD_THRESHOLD = 40;
+
+const TYPE_MAP: Record<string, string> = {
+  text_input_field: 'text',  TEXT_INPUT_FIELD: 'text',
+  text_area_field: 'ta',     TEXT_AREA_FIELD: 'ta',
+  email_field: 'email',      EMAIL_FIELD: 'email',
+  number_field: 'num',       NUMBER_FIELD: 'num',
+  date_field: 'date',        DATE_FIELD: 'date',
+  select_field: 'select',    SELECT_FIELD: 'select',
+  radio_field: 'radio',      RADIO_FIELD: 'radio',
+  checkbox_field: 'check',   CHECKBOX_FIELD: 'check',
+  file_upload_field: 'file', FILE_UPLOAD_FIELD: 'file',
+};
+
+export function countFields(schema: { pages: any[] }): number {
+  return (schema.pages ?? []).reduce((n, p) => n + (p.fields?.length ?? 0), 0);
+}
+
+/**
+ * STATIC system prompt. Contains NO per-turn data (no current page, no form structure) so it is
+ * byte-identical on every request — this is what lets Azure/OpenAI prefix caching hit. All
+ * dynamic context is delivered separately via buildEphemeralContext (the trailing tail).
+ */
+export const STATIC_SYSTEM_PROMPT = `You are an AI assistant that helps users edit their multi-page form.
+
+The current form structure (pages, fields, and the current page) is provided in a <current_context> block at the end of each message. Read it before acting — it is authoritative.
+
+- Identify fields by their label and id from <current_context>. If the snapshot is omitted (large forms), call listFields (no pageId) to search across all pages, then getField for full details before updating.
+- When the user mentions "page 1", "page 2", match by position using the page numbers in <current_context>.
+- If the user references a page that does not exist:
+  • If the number is exactly one more than the current total — it is the next sequential page. Auto-create it: call addPage, then immediately addField (or whatever was requested). Do NOT ask, do NOT write text first.
+  • If the number is two or more beyond the total — reply with plain text asking which page they meant. Do NOT call any tools.
+- Make only the changes the user requests. Confirm what you did in your final text response.
+- When you call addPage, the result contains a pageId. Use that exact pageId for subsequent addField calls on that new page. Never invent a page ID.
+- Never call removePage when there is only one page.
+- When editing fields on a page that is NOT the current page, call navigateToPage first, then make your changes.
+- When suggesting or reviewing validation, call proposeValidation with all affected fields at once. Never apply validation via updateFields without explicit user confirmation.
+- updateFields and removeFields take an array of field IDs — pass one ID for a single field, or many for a batch. Always prefer one batched call over many single calls.
+- Use reorder with scope "fields" (and a pageId) to change field order within a page; use reorder with scope "pages" to reorder pages.
+- Use relocateField with mode "move" to move a field to a different page, or mode "copy" to duplicate it onto another page (the copy gets a new ID; all other properties are preserved). Not for same-page reordering.
+- When asked to "remix", "transform", or "convert" the form: read the current structure, remove fields that don't fit (removeFields), add fields that belong (addField), keep fields that work for both and relabel via updateFields, then updateLayout for the title and CTA. Add new fields before removing the last field on a page.`;
+
+/**
+ * The per-turn dynamic context, delivered as a trailing user message placed AFTER conversation
+ * history so the cacheable prefix (system + tools + history) stays byte-stable. This message is
+ * EPHEMERAL — it must never be persisted to conversation history (see onFinish slice logic).
+ *
+ * Small forms get a full compact snapshot (so the model can act without read round-trips); large
+ * forms get only a page-level summary and rely on listFields/getField.
+ */
+export function buildEphemeralContext(
+  currentPageId: string | undefined,
+  schema: { pages: any[] }
+): string {
+  const pages = schema.pages ?? [];
+  const totalPages = pages.length;
+  const fieldCount = countFields(schema);
+
+  const pageLine = currentPageId
+    ? `Current page id: ${currentPageId} (this is "this page" / "the current page").`
     : 'The user is on the first page.';
 
-  const totalPages = schema.pages.length;
-  const schemaContext = totalPages > 0
-    ? `\nForm structure: ${schema.pages
-        .map((p: any, i: number) =>
-          `p${i + 1}:"${p.title ?? `Page ${i + 1}`}"(${(p.fields ?? []).length}f,id:${p.id})`
-        )
-        .join(' | ')}`
-    : '';
+  const totalsLine = `Form has ${totalPages} page${totalPages !== 1 ? 's' : ''} and ${fieldCount} field${fieldCount !== 1 ? 's' : ''}.`;
 
-  return `You are an AI assistant that helps users edit their multi-page form.
-${pageContext}
-- When the user refers to a field by name (e.g. "Full Name", "Email"), ALWAYS call listFields without a pageId first to search across all pages, then use getField to read that field's full details before updating it. Never assume a named field is on the current page only.
-- When the user mentions "page 1", "page 2" etc., match by position using the page numbers shown above.
-- If the user references a page that does not exist, use this logic:
-  • If the requested page number is exactly one more than the current total (e.g. "page 6" when there are 5 pages, or "page 4" when there are 3 pages) — this is the next sequential page. ALWAYS auto-create it: immediately call addPage then immediately call addField (or whatever action was requested). Do NOT ask for clarification, do NOT write any text first.
-  • If the requested page number is two or more beyond the current total — reply immediately with plain text: "The form has ${totalPages} page${totalPages !== 1 ? 's' : ''}. Which page did you mean?" Do NOT call any tools at all for this case.
-- Call listFields without pageId when acting on "all fields", "every field", or searching by field name. Call listFields with a pageId only when you already know the target page.
-- Make only the changes the user requests. Confirm what you did in your final text response.
-- When you call addPage, the result contains a pageId field. Use that exact pageId value as the pageId argument for any subsequent addField calls on that new page. Never guess or invent a page ID.
-- You can add pages with addPage and remove pages with removePage. Never call removePage when there is only one page.
-- When adding or editing fields on a page that is NOT the current page, ALWAYS call navigateToPage first so the canvas switches to that page, then make your field changes.
-- When asked to suggest or review validation rules, call proposeValidation with all affected fields at once. Never call updateField for validation without explicit user confirmation.
-- Use bulkUpdateFields instead of multiple updateField calls when applying the same change to 3 or more fields.
-- Use bulkRemoveFields instead of multiple removeField calls when deleting 3 or more fields (e.g. "delete all optional fields", "remove these fields"). Call listFields first to identify the field IDs.
-- Use reorderFields to change field order within the same page. Use moveField only to move a field to a DIFFERENT page. Never use moveField for same-page reordering.
-- When asked to 'remix', 'transform', or 'convert' the form for a different purpose: (1) call listFields to read the full current structure across all pages, (2) remove fields that clearly don't fit the new purpose using removeField, (3) add fields that belong using addField, (4) preserve fields that work for both purposes and update their labels if needed via updateField, (5) call updateLayout to update the title and CTA button. Do not remove the last field on a page before adding new ones — add first, then remove.
-- Use moveField to move a field to a different page. Call listFields first to get the target page's field IDs if you need to position it with insertAfterFieldId.
-- Use copyField to duplicate a field onto a different page. The copy gets a new ID; all other properties are preserved.
-${schemaContext}`;
+  let structure: string;
+  if (totalPages === 0) {
+    structure = 'The form is empty (no pages).';
+  } else if (fieldCount <= SNAPSHOT_FIELD_THRESHOLD) {
+    // Full compact snapshot: page header + each field as id|type|"label"|req/opt
+    structure = pages
+      .map((p: any, i: number) => {
+        const fields = (p.fields ?? [])
+          .map((f: any) => `${f.id}|${TYPE_MAP[f.type] ?? f.type}|"${f.label}"|${(f.required ?? false) ? 'req' : 'opt'}`)
+          .join(', ');
+        return `p${i + 1} "${p.title ?? `Page ${i + 1}`}" [id:${p.id}]: ${fields || '(empty)'}`;
+      })
+      .join('\n');
+  } else {
+    // Large form: page summary only; the model uses listFields/getField for detail.
+    structure =
+      pages
+        .map((p: any, i: number) => `p${i + 1}:"${p.title ?? `Page ${i + 1}`}"(${(p.fields ?? []).length}f,id:${p.id})`)
+        .join(' | ') + '\n(Large form — call listFields/getField for field details.)';
+  }
+
+  return `<current_context>\n${pageLine}\n${totalsLine}\n${structure}\n</current_context>`;
 }
 
 aiChatRouter.post('/chat', async (req, res) => {
@@ -174,9 +230,12 @@ aiChatRouter.post('/chat', async (req, res) => {
 
   // Read Y.js schema once (cached for 10 s)
   const schema = await getFormSchema(conv.formId);
-  const systemPrompt = buildSystemPrompt(currentPageId, schema);
+  const fieldCount = countFields(schema);
+  // Small forms get the full snapshot inline (no read tools needed); large forms keep read tools.
+  const includeReadTools = fieldCount > SNAPSHOT_FIELD_THRESHOLD;
 
-  // Validate messages (handles tool call/result shapes in history)
+  // Validate messages (handles tool call/result shapes in history). Use the full tool set
+  // (read + mutation) so historical tool calls validate regardless of form size.
   let validated: UIMessage[];
   try {
     const tools = createFormEditAgent(schema).tools as Record<string, any>;
@@ -186,7 +245,13 @@ aiChatRouter.post('/chat', async (req, res) => {
     validated = allMessages;
   }
 
-  const agent = createFormEditAgent(schema, systemPrompt);
+  // Static system prompt + stable per-conversation cache key keep the prefix byte-stable so
+  // Azure/OpenAI prefix caching hits on every step and across turns.
+  const agent = createFormEditAgent(schema, {
+    instructions: STATIC_SYSTEM_PROMPT,
+    cacheKey: conversationId,
+    includeReadTools,
+  });
 
   try {
     const modelMessages = await convertToModelMessages(validated);
@@ -196,7 +261,17 @@ aiChatRouter.post('/chat', async (req, res) => {
       toolCalls: 'before-last-5-messages',
       emptyMessages: 'remove',
     });
-    const result = await agent.stream({ messages: prunedModelMessages });
+
+    // EPHEMERAL tail: dynamic per-turn context appended AFTER history as a trailing user
+    // message. It is NOT part of `validated`/UIMessages, so it is never persisted and never
+    // disturbs the cacheable prefix. Added after pruning so pruning can't drop it.
+    const ephemeralContext: ModelMessage = {
+      role: 'user',
+      content: buildEphemeralContext(currentPageId, schema),
+    };
+    const result = await agent.stream({
+      messages: [...prunedModelMessages, ephemeralContext],
+    });
 
     // Ensure onFinish fires even if client disconnects
     result.consumeStream();
@@ -204,12 +279,22 @@ aiChatRouter.post('/chat', async (req, res) => {
     const webResponse = result.toUIMessageStreamResponse({
       originalMessages: validated as any,
       onFinish: async ({ messages: finalMessages }: { messages: UIMessage[] }) => {
+        // The ephemeral context is not in originalMessages, so the new messages are exactly
+        // the user turn + assistant response — no snapshot leaks into persisted history.
         const newMessages = finalMessages.slice(previous.length);
-        // Get usage from the resolved promise
         const usage = await result.totalUsage;
         const tokensUsed = usage?.totalTokens ?? 0;
         await saveConversationMessages(conversationId, newMessages, tokensUsed);
         await recordAITokenUsage(organizationId, tokensUsed);
+
+        const stats = extractUsageStats(usage);
+        recordTurnTelemetry({
+          conversationId,
+          formId: conv.formId,
+          formFieldCount: fieldCount,
+          model: getPrimaryModelId(),
+          ...stats,
+        });
       },
     });
 

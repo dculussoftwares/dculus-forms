@@ -21,17 +21,20 @@ const API_URL = import.meta.env.VITE_API_URL as string;
 export function buildOpLabel(op: Record<string, unknown>): string {
   switch (op?.type) {
     case 'ADD_FIELD': return `Added "${(op.label as string) ?? 'field'}"`;
-    case 'UPDATE_FIELD': return 'Updated field';
-    case 'REMOVE_FIELD': return 'Removed field';
-    case 'REORDER_FIELDS': return 'Reordered fields';
+    case 'UPDATE_FIELDS': {
+      const count = Array.isArray(op.fieldIds) ? (op.fieldIds as unknown[]).length : 0;
+      return count > 1 ? `Updated ${count} fields` : 'Updated field';
+    }
+    case 'REMOVE_FIELDS': {
+      const count = Array.isArray(op.fieldIds) ? (op.fieldIds as unknown[]).length : 0;
+      return count > 1 ? `Removed ${count} fields` : 'Removed field';
+    }
+    case 'RELOCATE_FIELD': return op.mode === 'copy' ? 'Copied field' : 'Moved field';
+    case 'REORDER': return op.scope === 'pages' ? 'Reordered pages' : 'Reordered fields';
     case 'UPDATE_LAYOUT': return 'Updated layout';
     case 'RENAME_PAGE': return `Renamed page "${(op.newTitle as string) ?? 'page'}"`;
-    case 'REORDER_PAGES': return 'Reordered pages';
     case 'ADD_PAGE': return `Added page "${(op.title as string) ?? 'page'}"`;
     case 'REMOVE_PAGE': return 'Removed page';
-    case 'BULK_UPDATE_FIELDS': return 'Updated fields';
-    case 'MOVE_FIELD': return 'Moved field';
-    case 'COPY_FIELD': return 'Copied field';
     default: return 'Changed form';
   }
 }

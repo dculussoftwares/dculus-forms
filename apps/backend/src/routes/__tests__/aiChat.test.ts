@@ -83,6 +83,7 @@ vi.mock('../../lib/aiFormEditTools.js', () => ({
 vi.mock('../../lib/formEditAgent.js', () => ({
   createFormEditAgent: vi.fn().mockReturnValue({
     stream: vi.fn(),
+    tools: {},
   }),
 }));
 
@@ -110,7 +111,14 @@ vi.mock('../../lib/prisma.js', () => ({
   },
 }));
 
-import { aiChatRouter, getFormSchema, buildSystemPrompt } from '../aiChat.js';
+import {
+  aiChatRouter,
+  getFormSchema,
+  buildEphemeralContext,
+  countFields,
+  STATIC_SYSTEM_PROMPT,
+  SNAPSHOT_FIELD_THRESHOLD,
+} from '../aiChat.js';
 import { checkAITokenBudget, recordAITokenUsage } from '../../services/aiUsageService.js';
 import { createFormEditAgent } from '../../lib/formEditAgent.js';
 import { getConversation, saveConversationMessages } from '../../services/aiChatService.js';
@@ -356,43 +364,92 @@ describe('POST /invalidate-schema', () => {
   });
 });
 
-describe('buildSystemPrompt', () => {
-  it('emits compact schema line instead of JSON block', () => {
+describe('STATIC_SYSTEM_PROMPT', () => {
+  it('is byte-stable — contains NO per-turn data (no page id, no form structure)', () => {
+    // The whole point of the cache rework: the system prompt must not embed dynamic content.
+    expect(STATIC_SYSTEM_PROMPT).not.toMatch(/id:p\d/);
+    expect(STATIC_SYSTEM_PROMPT).not.toMatch(/\(\d+f,/);
+    expect(STATIC_SYSTEM_PROMPT).not.toContain('Current page id:');
+    // It references the consolidated tools, not the old ones.
+    expect(STATIC_SYSTEM_PROMPT).toContain('updateFields');
+    expect(STATIC_SYSTEM_PROMPT).toContain('removeFields');
+    expect(STATIC_SYSTEM_PROMPT).toContain('relocateField');
+    expect(STATIC_SYSTEM_PROMPT).toContain('reorder');
+    // Legacy tool names must be gone (note: "removeFields" legitimately contains "moveField"
+    // as a substring, so assert on the legacy-only tokens instead).
+    expect(STATIC_SYSTEM_PROMPT).not.toContain('bulkUpdateFields');
+    expect(STATIC_SYSTEM_PROMPT).not.toContain('bulkRemoveFields');
+    expect(STATIC_SYSTEM_PROMPT).not.toContain('copyField');
+    expect(STATIC_SYSTEM_PROMPT).toContain('<current_context>');
+  });
+});
+
+describe('countFields', () => {
+  it('sums fields across all pages', () => {
     const schema = {
       pages: [
-        { id: 'p1', title: 'Personal Info', fields: [{}, {}, {}, {}, {}] },
-        { id: 'p2', title: 'Contact',       fields: [{}, {}, {}, {}, {}, {}, {}, {}] },
+        { id: 'p1', fields: [{}, {}, {}] },
+        { id: 'p2', fields: [{}, {}] },
+        { id: 'p3', fields: [] },
       ],
     };
-    const prompt = buildSystemPrompt(undefined, schema);
-    // compact format present
-    expect(prompt).toMatch(/p1:"Personal Info"\(5f,id:p1\)/);
-    expect(prompt).toMatch(/p2:"Contact"\(8f,id:p2\)/);
-    // old JSON format absent
-    expect(prompt).not.toContain('"pageNumber"');
-    expect(prompt).not.toContain('JSON');
+    expect(countFields(schema)).toBe(5);
   });
 
-  it('handles pages with no title using fallback', () => {
-    const schema = { pages: [{ id: 'p9', title: null, fields: [] }] };
-    const prompt = buildSystemPrompt(undefined, schema);
-    expect(prompt).toMatch(/p1:"Page 1"\(0f,id:p9\)/);
+  it('returns 0 for an empty form', () => {
+    expect(countFields({ pages: [] })).toBe(0);
+  });
+});
+
+describe('buildEphemeralContext', () => {
+  it('emits a full compact snapshot for small forms', () => {
+    const schema = {
+      pages: [
+        { id: 'p1', title: 'Personal Info', fields: [
+          { id: 'f1', type: 'text_input_field', label: 'Full Name', required: true },
+          { id: 'f2', type: 'email_field', label: 'Email', required: false },
+        ] },
+        { id: 'p2', title: 'Contact', fields: [] },
+      ],
+    };
+    const ctx = buildEphemeralContext('p1', schema);
+    expect(ctx).toContain('<current_context>');
+    expect(ctx).toContain('</current_context>');
+    expect(ctx).toContain('Current page id: p1');
+    expect(ctx).toContain('Form has 2 pages and 2 fields.');
+    // compact per-field rows present
+    expect(ctx).toContain('f1|text|"Full Name"|req');
+    expect(ctx).toContain('f2|email|"Email"|opt');
+    expect(ctx).toContain('p2 "Contact" [id:p2]: (empty)');
+    // not the large-form hint
+    expect(ctx).not.toContain('Large form');
   });
 
-  it('returns empty schema context when form has no pages', () => {
-    const prompt = buildSystemPrompt(undefined, { pages: [] });
-    expect(prompt).not.toContain('Form structure');
+  it('falls back to a page summary (no per-field rows) for large forms', () => {
+    const pages = [
+      {
+        id: 'p1',
+        title: 'Big',
+        fields: Array.from({ length: SNAPSHOT_FIELD_THRESHOLD + 1 }, (_, i) => ({
+          id: `f${i}`, type: 'text_input_field', label: `Field ${i}`, required: false,
+        })),
+      },
+    ];
+    const ctx = buildEphemeralContext('p1', { pages });
+    expect(ctx).toContain('Large form');
+    expect(ctx).toMatch(/p1:"Big"\(\d+f,id:p1\)/);
+    // no per-field pipe rows
+    expect(ctx).not.toContain('|text|"Field 0"|');
   });
 
-  it('uses singular "page" when form has exactly 1 page', () => {
-    const schema = { pages: [{ id: 'p1', title: 'Only Page', fields: [] }] };
-    const prompt = buildSystemPrompt(undefined, schema);
-    expect(prompt).toMatch(/The form has 1 page[^s]/);
-  });
+  it('handles an empty form and a null page title and singular counts', () => {
+    expect(buildEphemeralContext(undefined, { pages: [] })).toContain('The form is empty');
 
-  it('includes currentPageId context when provided', () => {
-    const schema = { pages: [{ id: 'page-abc', title: 'Page 1', fields: [] }] };
-    const prompt = buildSystemPrompt('page-abc', schema);
-    expect(prompt).toContain('page-abc');
+    const ctx = buildEphemeralContext(undefined, {
+      pages: [{ id: 'p9', title: null, fields: [{ id: 'f1', type: 'text_input_field', label: 'X', required: false }] }],
+    });
+    expect(ctx).toContain('The user is on the first page.');
+    expect(ctx).toContain('Form has 1 page and 1 field.');
+    expect(ctx).toContain('p1 "Page 1" [id:p9]');
   });
 });
