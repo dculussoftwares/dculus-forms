@@ -1,4 +1,10 @@
 import { FieldType } from '@dculus/types';
+
+// Mock config so the test never evaluates import.meta.env (Jest can't parse it).
+jest.mock('../config', () => ({ getApiBaseUrl: () => 'http://localhost:4000' }));
+// fetch is called fire-and-forget on real mutations; stub it.
+(global as any).fetch = jest.fn(() => Promise.resolve({ ok: true }));
+
 import { applyAIOp } from '../applyAIOp';
 
 function makeStore(overrides = {}) {
@@ -28,6 +34,11 @@ function makeStore(overrides = {}) {
     reorderPages: jest.fn(),
     addPageAtPosition: jest.fn(),
     removePage: jest.fn(),
+    moveFieldBetweenPages: jest.fn(),
+    convertFieldType: jest.fn(),
+    setAIHighlightedFieldId: jest.fn(),
+    setPendingValidationSuggestions: jest.fn(),
+    addPendingDestructiveAction: jest.fn(),
     ...overrides,
   };
 }
@@ -46,10 +57,11 @@ describe('applyAIOp — ADD_FIELD', () => {
     expect(store.addFieldAtIndex).toHaveBeenCalledWith('page-1', FieldType.EMAIL_FIELD, expect.objectContaining({ label: 'Email' }), 1);
   });
 
-  it('falls back to pages[0] when pageId not found', () => {
+  it('skips (does not add) when pageId is not found', () => {
     const store = makeStore();
     applyAIOp({ type: 'ADD_FIELD', pageId: 'nonexistent', insertAfterFieldId: null, fieldType: 'text', label: 'X', required: false, placeholder: null, options: null }, store as any);
-    expect(store.addField).toHaveBeenCalledWith('page-1', FieldType.TEXT_INPUT_FIELD, expect.anything());
+    expect(store.addField).not.toHaveBeenCalled();
+    expect(store.addFieldAtIndex).not.toHaveBeenCalled();
   });
 
   it('passes options for choice fields', () => {
@@ -80,18 +92,72 @@ describe('applyAIOp — UPDATE_FIELDS', () => {
   });
 });
 
-describe('applyAIOp — REMOVE_FIELDS', () => {
-  it('finds the page and removes the field (single)', () => {
+describe('applyAIOp — PROPOSE_DELETE_FIELDS (no immediate delete)', () => {
+  it('enqueues a delete-fields confirmation and does NOT remove anything', () => {
     const store = makeStore();
-    applyAIOp({ type: 'REMOVE_FIELDS', fieldIds: ['f-2'] }, store as any);
-    expect(store.removeField).toHaveBeenCalledWith('page-1', 'f-2');
+    applyAIOp(
+      { type: 'PROPOSE_DELETE_FIELDS', fields: [{ fieldId: 'f-2', label: 'Country', responseCount: 3 }] },
+      store as any,
+      undefined,
+      'call-1'
+    );
+    expect(store.removeField).not.toHaveBeenCalled();
+    expect(store.addPendingDestructiveAction).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'call-1', kind: 'delete-fields' })
+    );
   });
 
-  it('loops over all fieldIds (bulk)', () => {
+  it('drops fields that no longer exist before enqueuing', () => {
     const store = makeStore();
-    applyAIOp({ type: 'REMOVE_FIELDS', fieldIds: ['f-1', 'f-3'] }, store as any);
-    expect(store.removeField).toHaveBeenCalledWith('page-1', 'f-1');
-    expect(store.removeField).toHaveBeenCalledWith('page-2', 'f-3');
+    applyAIOp(
+      { type: 'PROPOSE_DELETE_FIELDS', fields: [
+        { fieldId: 'f-1', label: 'Name', responseCount: 0 },
+        { fieldId: 'gone', label: 'Gone', responseCount: 0 },
+      ] },
+      store as any,
+      undefined,
+      'call-2'
+    );
+    const action = (store.addPendingDestructiveAction as jest.Mock).mock.calls[0][0];
+    expect(action.fields.map((f: any) => f.fieldId)).toEqual(['f-1']);
+  });
+
+  it('does not enqueue when no proposed field exists', () => {
+    const store = makeStore();
+    applyAIOp(
+      { type: 'PROPOSE_DELETE_FIELDS', fields: [{ fieldId: 'gone', label: 'Gone', responseCount: 0 }] },
+      store as any,
+      undefined,
+      'call-3'
+    );
+    expect(store.addPendingDestructiveAction).not.toHaveBeenCalled();
+  });
+});
+
+describe('applyAIOp — PROPOSE_FIELD_TYPE_CHANGE (no immediate change)', () => {
+  it('enqueues a convert confirmation and does NOT convert', () => {
+    const store = makeStore();
+    applyAIOp(
+      { type: 'PROPOSE_FIELD_TYPE_CHANGE', fieldId: 'f-1', label: 'Name', currentType: 'text', newFieldType: 'select', responseCount: 2 },
+      store as any,
+      undefined,
+      'call-4'
+    );
+    expect(store.convertFieldType).not.toHaveBeenCalled();
+    expect(store.addPendingDestructiveAction).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'call-4', kind: 'convert', fieldId: 'f-1', newFieldType: 'select' })
+    );
+  });
+
+  it('does nothing when the field does not exist', () => {
+    const store = makeStore();
+    applyAIOp(
+      { type: 'PROPOSE_FIELD_TYPE_CHANGE', fieldId: 'gone', label: 'X', currentType: 'text', newFieldType: 'email', responseCount: 0 },
+      store as any,
+      undefined,
+      'call-5'
+    );
+    expect(store.addPendingDestructiveAction).not.toHaveBeenCalled();
   });
 });
 
@@ -172,24 +238,29 @@ describe('applyAIOp — ADD_PAGE', () => {
   });
 });
 
-describe('applyAIOp — REMOVE_PAGE', () => {
-  it('calls removePage when multiple pages exist', () => {
+describe('applyAIOp — PROPOSE_DELETE_PAGE (no immediate delete)', () => {
+  it('enqueues a delete-page confirmation and does NOT remove the page', () => {
     const store = makeStore();
-    applyAIOp({ type: 'REMOVE_PAGE', pageId: 'page-2' }, store as any);
-    expect(store.removePage).toHaveBeenCalledWith('page-2');
+    applyAIOp(
+      { type: 'PROPOSE_DELETE_PAGE', pageId: 'page-2', pageTitle: 'Contact', fieldCount: 1, responseCount: 4 },
+      store as any,
+      undefined,
+      'call-6'
+    );
+    expect(store.removePage).not.toHaveBeenCalled();
+    expect(store.addPendingDestructiveAction).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'call-6', kind: 'delete-page', pageId: 'page-2', fieldCount: 1, responseCount: 4 })
+    );
   });
 
-  it('does nothing when only one page exists', () => {
-    const store = makeStore({
-      pages: [{ id: 'page-1', fields: [] }],
-    });
-    applyAIOp({ type: 'REMOVE_PAGE', pageId: 'page-1' }, store as any);
-    expect(store.removePage).not.toHaveBeenCalled();
-  });
-
-  it('does nothing when pageId does not exist', () => {
+  it('does nothing when the page does not exist', () => {
     const store = makeStore();
-    applyAIOp({ type: 'REMOVE_PAGE', pageId: 'nonexistent' }, store as any);
-    expect(store.removePage).not.toHaveBeenCalled();
+    applyAIOp(
+      { type: 'PROPOSE_DELETE_PAGE', pageId: 'nonexistent', pageTitle: 'X', fieldCount: 0, responseCount: 0 },
+      store as any,
+      undefined,
+      'call-7'
+    );
+    expect(store.addPendingDestructiveAction).not.toHaveBeenCalled();
   });
 });

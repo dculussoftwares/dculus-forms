@@ -14,7 +14,7 @@ import {
 } from '../graphql/aiChat';
 import { applyAIOp } from '../lib/applyAIOp';
 import { useYjsUndoManager } from './useYjsUndoManager';
-import { MUTATION_TOOL_NAMES, type FormEditAgentUIMessage } from '../lib/aiAgentTypes';
+import { MUTATION_TOOL_NAMES, PROPOSAL_TOOL_NAMES, type FormEditAgentUIMessage } from '../lib/aiAgentTypes';
 
 const API_URL = import.meta.env.VITE_API_URL as string;
 
@@ -129,7 +129,7 @@ export function useAIChat({
         !appliedToolCallIds.current.has((part as any).toolCallId)
       ) {
         appliedToolCallIds.current.add((part as any).toolCallId);
-        applyAIOp((part as any).output, store, formId);
+        applyAIOp((part as any).output, store, formId, (part as any).toolCallId);
         mutationApplied = true;
       }
     }
@@ -139,15 +139,18 @@ export function useAIChat({
       if (depth > 0) messageUndoDepths.current.set(last.id, depth);
     }
 
-    // Handle propose-validation parts separately (not a mutation, sets pending state)
+    // Handle proposal parts separately — these do NOT mutate the form; they enqueue a
+    // confirmation (validation suggestions, or destructive delete/convert actions). The real
+    // mutation happens when the user clicks Accept in the corresponding card.
     for (const part of last.parts ?? []) {
       if (
-        part.type === 'tool-proposeValidation' &&
+        PROPOSAL_TOOL_NAMES.has(part.type.replace('tool-', '')) &&
+        part.type.startsWith('tool-') &&
         (part as any).state === 'output-available' &&
         !appliedToolCallIds.current.has((part as any).toolCallId)
       ) {
         appliedToolCallIds.current.add((part as any).toolCallId);
-        applyAIOp((part as any).output, store, formId);
+        applyAIOp((part as any).output, store, formId, (part as any).toolCallId);
       }
     }
   }, [messages]);

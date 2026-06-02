@@ -36,12 +36,13 @@ export interface UpdateFieldsToolPart {
   output?: { type: 'UPDATE_FIELDS'; fieldIds: string[]; updates: Record<string, unknown> };
 }
 
+// removeFields is a PROPOSAL: it returns a confirmation op, not an immediate delete.
 export interface RemoveFieldsToolPart {
   type: 'tool-removeFields';
   toolCallId: string;
   state: ToolState;
   input?: { fieldIds: string[] };
-  output?: { type: 'REMOVE_FIELDS'; fieldIds: string[] };
+  output?: { type: 'PROPOSE_DELETE_FIELDS'; fields: Array<{ fieldId: string; label: string; responseCount: number }> };
 }
 
 export interface RelocateFieldToolPart {
@@ -84,12 +85,13 @@ export interface AddPageToolPart {
   output?: { type: 'ADD_PAGE'; pageId: string; title: string; insertAfterPageId: string | null };
 }
 
+// removePage is a PROPOSAL: it returns a confirmation op, not an immediate delete.
 export interface RemovePageToolPart {
   type: 'tool-removePage';
   toolCallId: string;
   state: ToolState;
   input?: { pageId: string };
-  output?: { type: 'REMOVE_PAGE'; pageId: string };
+  output?: { type: 'PROPOSE_DELETE_PAGE'; pageId: string; pageTitle: string; fieldCount: number; responseCount: number };
 }
 
 export interface NavigateToPageToolPart {
@@ -108,6 +110,14 @@ export interface ProposeValidationToolPart {
   output?: { type: 'PROPOSE_VALIDATION'; suggestions: any[]; rationale: string };
 }
 
+export interface ProposeFieldTypeChangeToolPart {
+  type: 'tool-proposeFieldTypeChange';
+  toolCallId: string;
+  state: ToolState;
+  input?: { fieldId: string; newFieldType: string };
+  output?: { type: 'PROPOSE_FIELD_TYPE_CHANGE'; fieldId: string; label: string; currentType: string; newFieldType: string; responseCount: number };
+}
+
 export type FormEditToolPart =
   | ListFieldsToolPart
   | GetFieldToolPart
@@ -121,7 +131,8 @@ export type FormEditToolPart =
   | AddPageToolPart
   | RemovePageToolPart
   | NavigateToPageToolPart
-  | ProposeValidationToolPart;
+  | ProposeValidationToolPart
+  | ProposeFieldTypeChangeToolPart;
 
 export type FormEditAgentUIMessage = Omit<UIMessage, 'parts'> & {
   parts: Array<
@@ -131,19 +142,25 @@ export type FormEditAgentUIMessage = Omit<UIMessage, 'parts'> & {
   >;
 };
 
+// Tools whose output mutates the form immediately (applied via applyAIOp as they stream).
+// removeFields/removePage are NO LONGER here — they are proposals requiring confirmation.
 export type MutationToolPart =
   | AddFieldToolPart
   | UpdateFieldsToolPart
-  | RemoveFieldsToolPart
   | RelocateFieldToolPart
   | ReorderToolPart
   | UpdateLayoutToolPart
   | RenamePageToolPart
   | AddPageToolPart
-  | RemovePageToolPart
   | NavigateToPageToolPart;
 
 export const MUTATION_TOOL_NAMES = new Set([
-  'addField', 'updateFields', 'removeFields', 'relocateField', 'reorder',
-  'updateLayout', 'renamePage', 'addPage', 'removePage', 'navigateToPage',
+  'addField', 'updateFields', 'relocateField', 'reorder',
+  'updateLayout', 'renamePage', 'addPage', 'navigateToPage',
+]);
+
+// Tools that propose a change requiring explicit user confirmation (no immediate mutation):
+// validation suggestions, field/page deletion, and field-type conversion.
+export const PROPOSAL_TOOL_NAMES = new Set([
+  'proposeValidation', 'removeFields', 'removePage', 'proposeFieldTypeChange',
 ]);

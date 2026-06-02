@@ -346,6 +346,67 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
     },
 
     /**
+     * Convert a field to a different type.
+     *
+     * Implemented as delete-old + create-new at the same index. The new field gets a NEW id
+     * (via createFormField) — keeping the old id would leave responses, analytics, table, and
+     * exports holding values of the old type's shape under that id. Label/required/placeholder/
+     * hint carry over; type-specific properties (options, min/max, validation class) are reset
+     * by createFormField for the new type. Done in one transaction so collaborators never see a
+     * half-converted state.
+     */
+    convertFieldType: (pageId: string, fieldId: string, newType: FieldType) => {
+      const { _getYDoc, _isYJSReady } = get() as any;
+      const ydoc = _getYDoc();
+      const isReady = _isYJSReady();
+
+      if (!ydoc || !isReady) {
+        toastError('Connection lost', 'Please wait — reconnecting to the collaboration server.');
+        return;
+      }
+
+      const formSchemaMap = ydoc.getMap('formSchema');
+      const pagesArray = formSchemaMap.get('pages') as Y.Array<Y.Map<any>>;
+      if (!pagesArray) return;
+
+      const pageIndex = pagesArray
+        .toArray()
+        .findIndex((pageMap) => pageMap.get('id') === pageId);
+      if (pageIndex === -1) return;
+
+      const pageMap = pagesArray.get(pageIndex);
+      const fieldsArray = pageMap.get('fields') as Y.Array<Y.Map<any>>;
+      if (!fieldsArray) return;
+
+      const fieldIndex = fieldsArray
+        .toArray()
+        .findIndex((fieldMap) => fieldMap.get('id') === fieldId);
+      if (fieldIndex === -1) return;
+
+      // Capture compatible properties from the existing field before removing it.
+      const oldFieldMap = fieldsArray.get(fieldIndex);
+      const oldData = extractFieldData(oldFieldMap);
+      const carriedData: Partial<FieldData> = {
+        label: oldData.label,
+        hint: oldData.hint,
+        placeholder: oldData.placeholder,
+        required: oldData.validation?.required ?? false,
+      };
+
+      const newField = createFormField(newType, carriedData);
+      const newFieldMap = serializeFieldToYMap(newField);
+
+      ydoc.transact(() => {
+        fieldsArray.delete(fieldIndex, 1);
+        if (fieldIndex >= fieldsArray.length) {
+          fieldsArray.push([newFieldMap]);
+        } else {
+          fieldsArray.insert(fieldIndex, [newFieldMap]);
+        }
+      });
+    },
+
+    /**
      * Reorder fields within a page
      *
      * Moves a field from one position to another within the same page.

@@ -4,15 +4,19 @@
 > system-prompt behaviour. Use this as a manual test checklist or to scope new AI features.
 
 **Backend entry point:** `POST /api/ai/chat` → `ToolLoopAgent` (max 15 steps)  
-**Tools available:** 13 (`listFields`, `getField`, `addField`, `updateFields`, `removeFields`,
+**Tools available:** 14 (`listFields`, `getField`, `addField`, `updateFields`, `removeFields`,
 `reorder`, `updateLayout`, `renamePage`, `addPage`, `removePage`, `navigateToPage`,
-`proposeValidation`, `relocateField`)  
+`proposeValidation`, `relocateField`, `proposeFieldTypeChange`)  
 **Conditional read tools:** `listFields`/`getField` are included only for large forms
 (> 40 fields). Small forms receive a full compact form snapshot inline (in the per-turn
 `<current_context>` block), so the model edits without read round-trips.  
 **Consolidated tools:** `updateFields`/`removeFields` take an array of field IDs (one ID = single
 edit, many = batch); `relocateField` takes `mode: 'move' | 'copy'`; `reorder` takes
 `scope: 'fields' | 'pages'`.  
+**Confirmation-gated (destructive) tools:** `removeFields`, `removePage`, and
+`proposeFieldTypeChange` do NOT apply immediately. They return a *proposal* with a per-field
+response-count warning; the change is applied only when the user clicks **Confirm** in the
+destructive-action card. Same pattern as `proposeValidation`.  
 **Prompt caching:** the system prompt + tool definitions + history form a byte-stable prefix
 cached by Azure/OpenAI (`promptCacheKey` = conversation id); per-turn dynamic context lives in
 a trailing ephemeral message that is never persisted.  
@@ -64,12 +68,25 @@ a trailing ephemeral message that is never persisted.
 | U8 | `"Set min date of today on the Appointment field"` | Sets `minDate` on a `date` field. |
 | U9 | `"Set minimum 2 selections on the Interests checkbox"` | Sets `validation.minSelections: 2` on a `checkbox` field. |
 
+### 2b-2. Convert Field Type
+
+| # | Prompt | Expected behaviour |
+|---|--------|-------------------|
+| CT1 | `"Change the Country field to a dropdown"` | Calls `proposeFieldTypeChange`. Confirmation card warns this deletes the field and creates a new one, with how many responses won't carry over. On **Confirm**: the field is deleted and recreated as the new type **with a new id** (label/required/placeholder/hint preserved), in the same position. |
+| CT2 | `"Make the Comments field a long text area"` | Same flow (`text` → `textarea`). |
+| CT3 | `"Convert Email to the same email type"` | No-op — the tool errors "already a … field"; no card shown. |
+
+> **Why a new id?** Responses are keyed by field id. Keeping the id while changing the type would
+> leave existing responses holding values of the old type's shape under that id, breaking response
+> analytics, the responses table, and exports. So conversion is delete-old + create-new — old
+> responses remain as immutable history and do not carry over.
+
 ### 2c. Remove Field
 
 | # | Prompt | Expected behaviour |
 |---|--------|-------------------|
-| R1 | `"Remove the Phone Number field"` | Deletes the field via `removeFields` (1-element array). Change is immediate; cannot be reversed except via Undo. |
-| R2 | `"Delete all optional fields"` | Identifies optional fields from the snapshot (or `listFields` on large forms), removes them in one `removeFields` call. |
+| R1 | `"Remove the Phone Number field"` | Proposes deletion via `removeFields` (1-element array). Shows a confirmation card with how many responses use the field; deletes only after the user clicks **Confirm**. |
+| R2 | `"Delete all optional fields"` | Identifies optional fields from the snapshot (or `listFields` on large forms), proposes them in one `removeFields` call; the card lists each field + its response count for confirmation. |
 
 ### 2d. Reorder Fields (within the same page)
 
@@ -107,9 +124,9 @@ a trailing ephemeral message that is never persisted.
 | P1 | `"Add a new page called Summary"` | Creates page appended at the end. |
 | P2 | `"Add a page after page 1 called Contact Info"` | Creates page inserted after page 1. |
 | P3 | `"Rename page 2 to Membership Details"` | Updates page title. |
-| P4 | `"Delete page 3"` | Removes page and all its fields. Refuses if only 1 page remains. |
+| P4 | `"Delete page 3"` | Proposes page deletion via `removePage`. Confirmation card warns how many fields and responses are affected; removes only after **Confirm**. Refuses if only 1 page remains. |
 | P5 | `"Move page 3 before page 1"` | `reorder` (scope `pages`). |
-| P6 | `"Delete the last page"` (only 1 page) | Refuses — returns error message. |
+| P6 | `"Delete the last page"` (only 1 page) | Refuses — returns error message (no card shown). |
 
 ---
 
@@ -205,7 +222,7 @@ Maximum 3 chips shown at a time.
 | S2 | Publish or unpublish a form | Publishing is a separate UI action. |
 | S3 | Edit response data | Responses are read-only. |
 | S4 | Upload or change form background/logo | File uploads are not exposed via chat tools. |
-| S5 | Change field type after creation | No `changeFieldType` tool. Must remove and re-add. |
+| S5 | ~~Change field type after creation~~ | **Now supported** via `proposeFieldTypeChange` (confirm-gated; deletes + recreates with a new id). See §2b-2. |
 | S6 | Rich text field content editing | `rich_text_field` is non-fillable; no edit tool exposed. |
 | S7 | Apply validation without user confirmation | `proposeValidation` always shows accept/dismiss — never auto-applies. |
 | S8 | Reference fields by index (e.g. "the 3rd field") | AI uses field labels and IDs, not positional indices. |

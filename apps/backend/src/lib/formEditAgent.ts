@@ -12,14 +12,16 @@ export interface FormEditAgentOptions {
   cacheKey?: string;
   /** Omit read tools (listFields/getField) when the form snapshot is already in context. */
   includeReadTools?: boolean;
+  /** Form id — lets delete/convert tools query response counts for confirmation warnings. */
+  formId?: string;
 }
 
 export function createFormEditAgent(
   schema: { pages: any[] },
   options: FormEditAgentOptions = {}
 ) {
-  const { instructions, cacheKey, includeReadTools = true } = options;
-  const tools = createFormEditTools(schema, { includeReadTools });
+  const { instructions, cacheKey, includeReadTools = true, formId } = options;
+  const tools = createFormEditTools(schema, { includeReadTools, formId });
   const providerOptions = buildPromptCacheOptions(cacheKey);
 
   return new ToolLoopAgent({

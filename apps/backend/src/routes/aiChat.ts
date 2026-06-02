@@ -119,6 +119,8 @@ The current form structure (pages, fields, and the current page) is provided in 
 - When you call addPage, the result contains a pageId. Use that exact pageId for subsequent addField calls on that new page. Never invent a page ID.
 - Never call removePage when there is only one page.
 - When editing fields on a page that is NOT the current page, call navigateToPage first, then make your changes.
+- Deleting fields (removeFields), deleting a page (removePage), and changing a field's type (proposeFieldTypeChange) are PROPOSALS that require user confirmation — the tool does NOT apply the change. After calling one, tell the user you have proposed it and ask them to confirm in the card. NEVER say the field/page was deleted or converted; say it WILL be once confirmed.
+- To change a field's type, call proposeFieldTypeChange. This deletes the existing field and creates a new one of the new type, so existing responses for that field will not carry over — make that clear to the user.
 - When suggesting or reviewing validation, call proposeValidation with all affected fields at once. Never apply validation via updateFields without explicit user confirmation.
 - updateFields and removeFields take an array of field IDs — pass one ID for a single field, or many for a batch. Always prefer one batched call over many single calls.
 - Use reorder with scope "fields" (and a pageId) to change field order within a page; use reorder with scope "pages" to reorder pages.
@@ -251,6 +253,7 @@ aiChatRouter.post('/chat', async (req, res) => {
     instructions: STATIC_SYSTEM_PROMPT,
     cacheKey: conversationId,
     includeReadTools,
+    formId: conv.formId,
   });
 
   try {

@@ -44,6 +44,76 @@ export const getAllResponses = async (organizationId?: string): Promise<FormResp
   }));
 };
 
+/**
+ * Count, per fieldId, how many non-deleted responses hold a non-empty value for that field.
+ *
+ * Used by the AI delete/convert confirmation cards to warn "used in N responses". A field's
+ * answer is stored at `data[fieldId]`; we count rows where that key exists and is not null and
+ * (for scalar string values) not the empty string. Array/object answers (e.g. checkbox/select)
+ * count as present as long as the key exists and is non-null.
+ *
+ * Returns a map of fieldId → count. Field ids with no responses are included with 0.
+ */
+export const countResponsesPerField = async (
+  formId: string,
+  fieldIds: string[]
+): Promise<Record<string, number>> => {
+  const result: Record<string, number> = {};
+  for (const id of fieldIds) result[id] = 0;
+  if (fieldIds.length === 0) return result;
+
+  try {
+    // One indexed scan over the form's live responses; count per requested key.
+    const rows = await prisma.$queryRaw<Array<{ field_id: string; count: bigint }>>`
+      SELECT key AS field_id, COUNT(*)::bigint AS count
+      FROM "response", LATERAL jsonb_each("data") AS entry(key, value)
+      WHERE "formId" = ${formId}
+        AND "deletedAt" IS NULL
+        AND key = ANY(${fieldIds})
+        AND value IS NOT NULL
+        AND value <> 'null'::jsonb
+        AND value <> '""'::jsonb
+      GROUP BY key
+    `;
+    for (const row of rows) {
+      result[row.field_id] = Number(row.count);
+    }
+  } catch (error) {
+    logger.error('Error counting responses per field:', error);
+  }
+  return result;
+};
+
+/**
+ * Count distinct non-deleted responses that hold a non-empty value for ANY of the given fields.
+ * Used by the page-delete confirmation card (a page delete removes all its fields at once).
+ */
+export const countResponsesReferencingAnyField = async (
+  formId: string,
+  fieldIds: string[]
+): Promise<number> => {
+  if (fieldIds.length === 0) return 0;
+  try {
+    const rows = await prisma.$queryRaw<Array<{ count: bigint }>>`
+      SELECT COUNT(*)::bigint AS count
+      FROM "response" r
+      WHERE r."formId" = ${formId}
+        AND r."deletedAt" IS NULL
+        AND EXISTS (
+          SELECT 1 FROM jsonb_each(r."data") AS entry(key, value)
+          WHERE key = ANY(${fieldIds})
+            AND value IS NOT NULL
+            AND value <> 'null'::jsonb
+            AND value <> '""'::jsonb
+        )
+    `;
+    return rows.length > 0 ? Number(rows[0].count) : 0;
+  } catch (error) {
+    logger.error('Error counting responses referencing fields:', error);
+    return 0;
+  }
+};
+
 export const getResponseById = async (id: string): Promise<FormResponse | null> => {
   try {
     const response = await responseRepository.findFirst({
