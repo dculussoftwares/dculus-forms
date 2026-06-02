@@ -124,18 +124,10 @@ const DestructiveActionCard: React.FC = () => {
         {pendingDestructiveActions.map((action) => (
           <div
             key={action.id}
-            className="flex items-start justify-between gap-2 rounded border border-red-100 bg-white p-2"
+            className="rounded border border-red-100 bg-white p-2"
           >
             <div className="min-w-0">{renderBody(action)}</div>
-            <div className="flex gap-1 shrink-0">
-              <Button
-                size="sm"
-                variant="destructive"
-                className="h-6 px-2 text-xs"
-                onClick={() => handleConfirm(action.id)}
-              >
-                {t('destructive.confirm')}
-              </Button>
+            <div className="mt-2 flex justify-end gap-1">
               <Button
                 size="sm"
                 variant="outline"
@@ -143,6 +135,14 @@ const DestructiveActionCard: React.FC = () => {
                 onClick={() => dismissDestructiveAction(action.id)}
               >
                 {t('destructive.cancel')}
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="h-6 px-2 text-xs"
+                onClick={() => handleConfirm(action.id)}
+              >
+                {t('destructive.confirm')}
               </Button>
             </div>
           </div>
