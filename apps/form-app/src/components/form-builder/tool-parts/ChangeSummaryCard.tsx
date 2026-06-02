@@ -1,11 +1,9 @@
 // apps/form-app/src/components/form-builder/tool-parts/ChangeSummaryCard.tsx
 import React from 'react';
-import { motion } from 'framer-motion';
 import { cn } from '@dculus/utils';
 import { useTranslation } from '../../../hooks/useTranslation';
 import type { FormEditAgentUIMessage } from '../../../lib/aiAgentTypes';
 import { buildOpLabel } from '../../../hooks/useAIChat';
-import { msgVariants, easeOut } from '../aiChatMotion';
 
 type OpColor = 'green' | 'blue' | 'red';
 
@@ -57,13 +55,7 @@ const ChangeSummaryCard: React.FC<Props> = ({ message, onUndo, canUndo }) => {
   if (mutationParts.length === 0) return null;
 
   return (
-    <motion.div
-      className="mt-1.5 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs"
-      variants={msgVariants}
-      initial="hidden"
-      animate="visible"
-      transition={easeOut}
-    >
+    <div className="mt-1.5 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs">
       <div className="mb-1 flex items-center justify-between">
         <span className="font-medium text-muted-foreground">{t('changeSummary.title')}</span>
         {canUndo && onUndo && (
@@ -86,7 +78,7 @@ const ChangeSummaryCard: React.FC<Props> = ({ message, onUndo, canUndo }) => {
           );
         })}
       </div>
-    </motion.div>
+    </div>
   );
 };
 

@@ -1,16 +1,5 @@
 // apps/form-app/src/components/form-builder/AIEditDrawer.tsx
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import {
-  panelVariants,
-  panelTransition,
-  easeOut,
-  msgVariants,
-  chipsContainerVariants,
-  chipVariants,
-  buttonSwapVariants,
-  buttonSwapTransition,
-} from './aiChatMotion';
 import ReactMarkdown from 'react-markdown';
 import { Sparkles, Send, Plus, Trash2, ChevronDown, X, Undo2 } from 'lucide-react';
 import { cn } from '@dculus/utils';
@@ -44,24 +33,18 @@ interface AIEditDrawerProps {
 function UserBubble({ message }: { message: FormEditAgentUIMessage }) {
   const textPart = message.parts.find((p) => p.type === 'text') as { type: 'text'; text: string } | undefined;
   return (
-    <motion.div
-      className="flex justify-end"
-      variants={msgVariants}
-      initial="hidden"
-      animate="visible"
-      transition={easeOut}
-    >
-      <div className="max-w-[80%] rounded-tl-[14px] rounded-tr-[3px] rounded-br-[14px] rounded-bl-[14px] bg-primary px-3 py-2 text-sm text-primary-foreground">
+    <div className="flex justify-end">
+      <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-primary px-3 py-2 text-sm text-primary-foreground">
         {textPart?.text ?? (message as any).content}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
 function TextBubble({ text, isStreaming }: { text: string; isStreaming?: boolean }) {
   if (!text) return null;
   return (
-    <div className="rounded-tl-[3px] rounded-tr-[14px] rounded-br-[14px] rounded-bl-[14px] bg-muted px-3 py-2 text-sm leading-relaxed text-foreground">
+    <div className="rounded-2xl rounded-tl-sm bg-muted px-3 py-2 text-sm leading-relaxed text-foreground">
       <ReactMarkdown
         components={{
           p: ({ children }) => <p className="mb-1 last:mb-0">{children}</p>,
@@ -76,7 +59,7 @@ function TextBubble({ text, isStreaming }: { text: string; isStreaming?: boolean
         {text}
       </ReactMarkdown>
       {isStreaming && (
-        <span className="ml-0.5 inline-block h-[13px] w-[1.5px] align-middle bg-foreground/50 animate-cursor-blink" />
+        <span className="ml-0.5 inline-block h-3.5 w-0.5 animate-pulse bg-foreground/50 align-text-bottom" />
       )}
     </div>
   );
@@ -112,16 +95,10 @@ function AssistantMessage({
     : undefined;
 
   return (
-    <motion.div
-      className="flex justify-start"
-      variants={msgVariants}
-      initial="hidden"
-      animate="visible"
-      transition={easeOut}
-    >
+    <div className="flex justify-start">
       <div className="flex max-w-[90%] items-start gap-2">
-        <div className="mt-0.5 flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-[6px] border border-border bg-muted">
-          <Sparkles className="h-3 w-3 text-muted-foreground" />
+        <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10">
+          <Sparkles className="h-3 w-3 text-primary" />
         </div>
         <div className="space-y-1.5">
           {combinedText && <TextBubble text={combinedText} isStreaming={isStreaming && !inFlightPart} />}
@@ -173,7 +150,7 @@ function AssistantMessage({
           )}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -181,21 +158,20 @@ function StatusIndicator({ text }: { text?: string }) {
   return (
     <div className="flex justify-start">
       <div className="flex items-center gap-2">
-        <div className="flex h-[22px] w-[22px] items-center justify-center rounded-[6px] border border-border bg-muted">
-          <Sparkles className="h-3 w-3 text-muted-foreground" />
+        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
+          <Sparkles className="h-3 w-3 text-primary" />
         </div>
         {text ? (
-          <div className="rounded-tl-[3px] rounded-tr-[14px] rounded-br-[14px] rounded-bl-[14px] bg-muted px-3 py-2 text-xs italic text-muted-foreground">
+          <div className="rounded-2xl rounded-tl-sm bg-muted px-3 py-2 text-xs italic text-muted-foreground">
             {text}
           </div>
         ) : (
-          <div className="flex gap-1 rounded-tl-[3px] rounded-tr-[14px] rounded-br-[14px] rounded-bl-[14px] bg-muted px-3 py-2.5">
+          <div className="flex gap-1 rounded-2xl rounded-tl-sm bg-muted px-3 py-2.5">
             {[0, 1, 2].map((i) => (
-              <motion.span
+              <span
                 key={i}
-                className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50"
-                animate={{ y: [0, -4, 0] }}
-                transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut', delay: i * 0.15 }}
+                className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/50"
+                style={{ animationDelay: `${i * 150}ms` }}
               />
             ))}
           </div>
@@ -266,6 +242,8 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
     [handleSend]
   );
 
+  if (!isOpen) return null;
+
   const typedMessages = messages as unknown as FormEditAgentUIMessage[];
   const lastMsg = typedMessages[typedMessages.length - 1];
   // Show the global status indicator only when streaming but no assistant message exists yet
@@ -274,29 +252,17 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
     (!lastMsg || lastMsg.role !== 'assistant');
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          key="ai-drawer"
-          variants={panelVariants}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          transition={panelTransition}
-          className="flex h-full w-[380px] shrink-0 flex-col border-l border-border bg-background"
-        >
+    <div className="flex h-full w-[380px] shrink-0 flex-col border-l border-border bg-background">
       {/* Header */}
       <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
-        <div className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[7px] border border-border bg-muted">
-          <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
-        </div>
+        <Sparkles className="h-4 w-4 text-primary" />
         <span className="flex-1 text-sm font-semibold">{t('title')}</span>
 
         {canUndo && (
           <button
             onClick={undo}
             title={t('undoTitle')}
-            className="flex h-7 items-center gap-1 rounded-md border border-border bg-muted px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            className="flex h-7 items-center gap-1 rounded-md px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
           >
             <Undo2 className="h-3.5 w-3.5" />
             {t('undo')}
@@ -305,7 +271,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-7 max-w-[140px] gap-1 border border-border bg-muted px-2 text-xs hover:bg-accent">
+            <Button variant="ghost" size="sm" className="h-7 max-w-[140px] gap-1 px-2 text-xs">
               <span className="truncate">
                 {activeConversation?.title ?? t('newChat')}
               </span>
@@ -366,21 +332,9 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
           </div>
         )}
         {typedMessages.length === 0 && !isStreaming && !conversationsLoading && !activeConvLoading && (
-          <motion.div
-            className="flex flex-col items-center gap-3 px-4 pt-8 text-center"
-            variants={msgVariants}
-            initial="hidden"
-            animate="visible"
-            transition={easeOut}
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted">
-              <Sparkles className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">{t('emptyTitle')}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{t('emptyState')}</p>
-            </div>
-          </motion.div>
+          <p className="px-4 pt-8 text-center text-xs text-muted-foreground">
+            {t('emptyState')}
+          </p>
         )}
         {typedMessages.map((msg, i) => {
           // Persisted messages can have a null/undefined id (older saves didn't set one).
@@ -410,17 +364,10 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
       {/* Input */}
       <div className="border-t border-border p-3">
         {!isStreaming && activeConversationId && chips.length > 0 && (
-          <motion.div
-            className="mb-2 flex flex-wrap gap-1.5"
-            variants={chipsContainerVariants}
-            initial="hidden"
-            animate="visible"
-          >
+          <div className="mb-2 flex flex-wrap gap-1.5">
             {chips.map((chip) => (
-              <motion.button
+              <button
                 key={chip.key}
-                variants={chipVariants}
-                transition={easeOut}
                 onClick={() => {
                   if (chip.key === 'remixForm') {
                     setInput(chip.prompt);
@@ -438,9 +385,9 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
                   <Sparkles className="h-3 w-3" />
                 )}
                 {chip.label}
-              </motion.button>
+              </button>
             ))}
-          </motion.div>
+          </div>
         )}
         <div
           className={cn(
@@ -462,48 +409,32 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
             )}
             style={{ minHeight: '24px' }}
           />
-          <AnimatePresence mode="wait" initial={false}>
-            {isStreaming ? (
-              <motion.button
-                key="cancel-btn"
-                variants={buttonSwapVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={buttonSwapTransition}
-                onClick={cancel}
-                aria-label={t('cancel')}
-                className="mb-0.5 flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[7px] bg-destructive/10 text-destructive transition-colors hover:bg-destructive/20"
-              >
-                <X className="h-3.5 w-3.5" />
-              </motion.button>
-            ) : (
-              <motion.button
-                key="send-btn"
-                variants={buttonSwapVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={buttonSwapTransition}
-                onClick={handleSend}
-                disabled={!input.trim() || !activeConversationId}
-                aria-label={t('send')}
-                className={cn(
-                  'mb-0.5 flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[7px]',
-                  'bg-primary text-primary-foreground',
-                  'transition-colors hover:bg-primary/90',
-                  'disabled:cursor-not-allowed disabled:opacity-40'
-                )}
-              >
-                <Send className="h-3.5 w-3.5" />
-              </motion.button>
-            )}
-          </AnimatePresence>
+          {isStreaming ? (
+            <button
+              onClick={cancel}
+              aria-label={t('cancel')}
+              className="mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive transition-colors hover:bg-destructive/20"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          ) : (
+            <button
+              onClick={handleSend}
+              disabled={!input.trim() || !activeConversationId}
+              aria-label={t('send')}
+              className={cn(
+                'mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg',
+                'bg-primary text-primary-foreground',
+                'transition-colors hover:bg-primary/90',
+                'disabled:cursor-not-allowed disabled:opacity-40'
+              )}
+            >
+              <Send className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    </div>
   );
 };
 

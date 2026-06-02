@@ -1,8 +1,6 @@
 // apps/form-app/src/components/form-builder/tool-parts/ValidationSuggestionCard.tsx
 import React from 'react';
-import { motion } from 'framer-motion';
 import { Button } from '@dculus/ui';
-import { msgVariants, easeOut } from '../aiChatMotion';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useTranslation } from '../../../hooks/useTranslation';
 import type { ValidationSuggestion } from '../../../store/types/store.types';
@@ -48,13 +46,7 @@ const ValidationSuggestionCard: React.FC = () => {
   };
 
   return (
-    <motion.div
-      className="mt-2 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm"
-      variants={msgVariants}
-      initial="hidden"
-      animate="visible"
-      transition={easeOut}
-    >
+    <div className="mt-2 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm">
       <p className="mb-2 font-medium text-blue-800">{t('validation.title')}</p>
       <div className="space-y-2">
         {pendingValidationSuggestions.map((s) => (
@@ -105,7 +97,7 @@ const ValidationSuggestionCard: React.FC = () => {
           {t('validation.acceptAll')}
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
