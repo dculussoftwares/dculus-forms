@@ -229,6 +229,28 @@ describe('saveConversationMessages', () => {
       data: expect.objectContaining({ role: 'user', tokensUsed: 0 }),
     });
   });
+
+  it('stamps strictly increasing createdAt per message so reload order is deterministic', async () => {
+    (prisma.aIChatMessage.create as any).mockResolvedValue({});
+    (prisma.aIChatConversation.update as any).mockResolvedValue({});
+
+    const messages = [
+      { id: 'u1', role: 'user', content: 'Hi', parts: [{ type: 'text', text: 'Hi' }] },
+      { id: 'a1', role: 'assistant', content: 'Hello!', parts: [{ type: 'text', text: 'Hello!' }] },
+    ];
+    await saveConversationMessages('conv_1', messages as any, 42);
+
+    const calls = (prisma.aIChatMessage.create as any).mock.calls;
+    const firstAt = calls[0][0].data.createdAt as Date;
+    const secondAt = calls[1][0].data.createdAt as Date;
+    expect(firstAt).toBeInstanceOf(Date);
+    expect(secondAt).toBeInstanceOf(Date);
+    // The assistant message must sort strictly AFTER the user message (no tie).
+    expect(secondAt.getTime()).toBeGreaterThan(firstAt.getTime());
+    // And the user row is created before the assistant row (sequential, in array order).
+    expect(calls[0][0].data.role).toBe('user');
+    expect(calls[1][0].data.role).toBe('assistant');
+  });
 });
 
 describe('autoGenerateTitle', () => {

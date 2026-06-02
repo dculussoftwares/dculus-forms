@@ -75,21 +75,29 @@ export async function saveConversationMessages(
   messages: UIMessage[],
   tokensUsed: number
 ): Promise<void> {
-  const savePromises = messages.map((msg, i) => {
+  // Messages arrive in correct order (user turn first, then assistant). Persisting them with
+  // Promise.all gave every row of the batch an identical createdAt (Postgres now() = the
+  // transaction start time), so `orderBy createdAt asc` on reload was non-deterministic and could
+  // render the bubbles out of order. Stamp each message with a createdAt staggered by its index so
+  // the saved order is preserved deterministically. Base is captured once so a batch is monotonic
+  // and strictly after any earlier batch.
+  const base = Date.now();
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
     const isLast = i === messages.length - 1;
     const textPart = (msg.parts as any[])?.find((p: any) => p.type === 'text');
     const textContent = textPart?.text ?? (msg as any).content ?? '';
-    return prisma.aIChatMessage.create({
+    await prisma.aIChatMessage.create({
       data: {
         conversationId,
         role: msg.role,
         content: textContent,
         data: msg as any,
         tokensUsed: isLast && msg.role === 'assistant' ? tokensUsed : 0,
+        createdAt: new Date(base + i),
       },
     });
-  });
-  await Promise.all(savePromises);
+  }
   await prisma.aIChatConversation.update({
     where: { id: conversationId },
     data: { updatedAt: new Date() },
