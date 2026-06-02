@@ -336,19 +336,23 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
             {t('emptyState')}
           </p>
         )}
-        {typedMessages.map((msg) =>
-          msg.role === 'user' ? (
-            <UserBubble key={msg.id} message={msg} />
+        {typedMessages.map((msg, i) => {
+          // Persisted messages can have a null/undefined id (older saves didn't set one).
+          // Falling back to the index keeps keys unique so React doesn't drop colliding
+          // children — which previously blanked the chat when several ids were null.
+          const key = msg.id ?? `msg-${i}`;
+          return msg.role === 'user' ? (
+            <UserBubble key={key} message={msg} />
           ) : (
             <AssistantMessage
-              key={msg.id}
+              key={key}
               message={msg}
               isStreaming={isStreaming && msg === lastMsg}
               onUndo={() => undoMessage(msg.id)}
               canUndo={msg.id === lastMutatingMessageId && !isStreaming}
             />
-          )
-        )}
+          );
+        })}
         {showStatusIndicator && <StatusIndicator />}
         <ValidationSuggestionCard />
         <DestructiveActionCard />

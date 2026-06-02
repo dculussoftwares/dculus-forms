@@ -72,7 +72,13 @@ export function useAIChat({
   // ── Build initialMessages from Apollo conversation data ───────────────────
   const apolloMessages = activeConvData?.getAIChatConversation?.messages;
   const initialMessages = useMemo<FormEditAgentUIMessage[]>(
-    () => (apolloMessages ?? []).map((m: { data: unknown }) => m.data as FormEditAgentUIMessage),
+    () =>
+      (apolloMessages ?? []).map((m: { id?: string; data: unknown }, i: number) => {
+        const data = m.data as FormEditAgentUIMessage;
+        // Older persisted messages can lack an `id`. Backfill a stable one (prefer the DB row id)
+        // so React keys and undo lookups don't collide on null ids.
+        return data?.id ? data : ({ ...data, id: m.id ?? `persisted-${i}` } as FormEditAgentUIMessage);
+      }),
     [apolloMessages]
   );
 
