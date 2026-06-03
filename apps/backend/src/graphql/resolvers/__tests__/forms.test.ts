@@ -198,7 +198,7 @@ describe('Forms Resolvers', () => {
 
     it('should throw error when submission time window not yet started', async () => {
       const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + 1);
+      futureDate.setUTCDate(futureDate.getUTCDate() + 2);
       const formWithTimeWindow = {
         ...mockForm,
         settings: {
