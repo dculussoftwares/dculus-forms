@@ -40,7 +40,7 @@ export async function getFieldInsights(
 ): Promise<FieldInsightsResult> {
   const rows = await prisma.aIFieldInsight.findMany({
     where: { formId },
-    orderBy: { generatedAt: 'asc' },
+    orderBy: { generatedAt: 'desc' },
   });
 
   if (rows.length === 0) {
@@ -48,7 +48,7 @@ export async function getFieldInsights(
   }
 
   const schemaStale = rows.some((r) => r.schemaHash !== currentSchemaHash);
-  const earliest = rows[0].generatedAt.toISOString();
+  const mostRecent = rows[0].generatedAt.toISOString();
 
   return {
     insights: rows.map((r) => ({
@@ -59,7 +59,7 @@ export async function getFieldInsights(
       generatedAt: r.generatedAt.toISOString(),
     })),
     schemaStale,
-    generatedAt: earliest,
+    generatedAt: mostRecent,
   };
 }
 
@@ -79,12 +79,19 @@ const InsightsOutputSchema = z.object({
 export async function generateFieldInsights(
   formId: string,
   formTitle: string,
-  schema: { pages: any[] },
-  _totalResponses: number
+  schema: { pages: any[] }
 ): Promise<FieldInsightsResult & { tokensUsed: number }> {
   const allFields = (schema.pages ?? []).flatMap((p: any) => p.fields ?? []);
 
   if (allFields.length === 0) {
+    return { insights: [], schemaStale: false, generatedAt: null, tokensUsed: 0 };
+  }
+
+  const fillableFields = allFields.filter(
+    (f: any) => !['rich_text_field', 'RICH_TEXT_FIELD'].includes(f.type)
+  );
+
+  if (fillableFields.length === 0) {
     return { insights: [], schemaStale: false, generatedAt: null, tokensUsed: 0 };
   }
 
@@ -97,7 +104,7 @@ export async function generateFieldInsights(
   const total = responses.length;
 
   // Build compact stats per field
-  const fieldRows = allFields.map((field: any) => {
+  const fieldRows = fillableFields.map((field: any) => {
     const values = responses
       .map((r) => (r.data as Record<string, any>)[field.id])
       .filter((v) => v !== null && v !== undefined && v !== '');
@@ -160,9 +167,13 @@ export async function generateFieldInsights(
   const schemaHash = computeSchemaHash(schema);
   const now = new Date();
 
+  // Filter out any hallucinated fieldIds before upsert
+  const validFieldIds = new Set(allFields.map((f: any) => f.id));
+  const validInsights = output.insights.filter((ins) => validFieldIds.has(ins.fieldId));
+
   // Upsert all rows
   await Promise.all(
-    output.insights.map((ins) =>
+    validInsights.map((ins) =>
       prisma.aIFieldInsight.upsert({
         where: { formId_fieldId: { formId, fieldId: ins.fieldId } },
         update: {
@@ -185,10 +196,18 @@ export async function generateFieldInsights(
     )
   );
 
-  logger.info({ formId, fieldCount: allFields.length, tokensUsed }, 'AI field insights generated');
+  // Delete orphaned rows for fields no longer in schema
+  await prisma.aIFieldInsight.deleteMany({
+    where: {
+      formId,
+      fieldId: { notIn: allFields.map((f: any) => f.id) },
+    },
+  });
+
+  logger.info({ formId, fieldCount: fillableFields.length, tokensUsed }, 'AI field insights generated');
 
   return {
-    insights: output.insights.map((ins) => ({
+    insights: validInsights.map((ins) => ({
       ...ins,
       generatedAt: now.toISOString(),
     })),
