@@ -203,4 +203,125 @@ describe('AI Tagger Handler', () => {
     expect(mockContext.logger.error).toHaveBeenCalled();
     expect(mockPrisma.responseTagAssignment.upsert).not.toHaveBeenCalled();
   });
+
+  it('returns error when event has no responseId', async () => {
+    const { aiTaggerHandler } = await import('../handler.js');
+    const plugin = {
+      id: TEST_PLUGIN_ID,
+      config: {
+        type: 'ai-tagger',
+        tags: [{ tagId: 'tag-1', name: 'Billing', color: '#3b82f6', definition: 'Payment issue' }],
+      } as AiTaggerPluginConfig,
+    };
+
+    const eventWithoutResponseId: PluginEvent = { ...mockEvent, data: {} };
+    const result = await aiTaggerHandler(plugin, eventWithoutResponseId, mockContext);
+
+    expect(result.success).toBe(false);
+    expect((result as any).error).toBe('No response ID');
+    expect(mockContext.getResponseById).not.toHaveBeenCalled();
+  });
+
+  it('returns error when response is not found', async () => {
+    mockContext.getResponseById = vi.fn().mockResolvedValue(null);
+
+    const { aiTaggerHandler } = await import('../handler.js');
+    const plugin = {
+      id: TEST_PLUGIN_ID,
+      config: {
+        type: 'ai-tagger',
+        tags: [{ tagId: 'tag-1', name: 'Billing', color: '#3b82f6', definition: 'Payment issue' }],
+      } as AiTaggerPluginConfig,
+    };
+
+    const result = await aiTaggerHandler(plugin, mockEvent, mockContext);
+
+    expect(result.success).toBe(false);
+    expect((result as any).error).toBe('Response not found');
+    expect(mockContext.logger.warn).toHaveBeenCalled();
+  });
+
+  it('handles null response.data and null response.metadata gracefully', async () => {
+    const { generateText } = await import('ai');
+    (generateText as any).mockResolvedValue({
+      output: { tagIds: [] },
+      usage: { totalTokens: 50 },
+    });
+
+    mockContext.getResponseById = vi.fn().mockResolvedValue({
+      id: 'response-1',
+      data: null,
+      metadata: null,
+    });
+
+    const { aiTaggerHandler } = await import('../handler.js');
+    const plugin = {
+      id: TEST_PLUGIN_ID,
+      config: {
+        type: 'ai-tagger',
+        tags: [{ tagId: 'tag-1', name: 'Billing', color: '#3b82f6', definition: 'Payment issue' }],
+      } as AiTaggerPluginConfig,
+    };
+
+    const result = await aiTaggerHandler(plugin, mockEvent, mockContext);
+
+    expect(result.success).toBe(true);
+    expect(result.tagsApplied).toHaveLength(0);
+  });
+
+  it('handles null usage from AI response', async () => {
+    const { generateText } = await import('ai');
+    (generateText as any).mockResolvedValue({
+      output: { tagIds: ['tag-1'] },
+      usage: null,
+    });
+
+    mockContext.getResponseById = vi.fn().mockResolvedValue({
+      id: 'response-1',
+      data: { Issue: 'billing problem' },
+      metadata: {},
+    });
+
+    const { aiTaggerHandler } = await import('../handler.js');
+    const plugin = {
+      id: TEST_PLUGIN_ID,
+      config: {
+        type: 'ai-tagger',
+        tags: [{ tagId: 'tag-1', name: 'Billing', color: '#3b82f6', definition: 'Payment issue' }],
+      } as AiTaggerPluginConfig,
+    };
+
+    const result = await aiTaggerHandler(plugin, mockEvent, mockContext);
+
+    expect(result.success).toBe(true);
+    expect(result.tokensUsed).toBe(0);
+  });
+
+  it('handles null output.tagIds from AI response', async () => {
+    const { generateText } = await import('ai');
+    (generateText as any).mockResolvedValue({
+      output: { tagIds: null },
+      usage: { totalTokens: 30 },
+    });
+
+    mockContext.getResponseById = vi.fn().mockResolvedValue({
+      id: 'response-1',
+      data: { Issue: 'test' },
+      metadata: {},
+    });
+
+    const { aiTaggerHandler } = await import('../handler.js');
+    const plugin = {
+      id: TEST_PLUGIN_ID,
+      config: {
+        type: 'ai-tagger',
+        tags: [{ tagId: 'tag-1', name: 'Billing', color: '#3b82f6', definition: 'Payment issue' }],
+      } as AiTaggerPluginConfig,
+    };
+
+    const result = await aiTaggerHandler(plugin, mockEvent, mockContext);
+
+    expect(result.success).toBe(true);
+    expect(result.tagsApplied).toHaveLength(0);
+  });
 });
