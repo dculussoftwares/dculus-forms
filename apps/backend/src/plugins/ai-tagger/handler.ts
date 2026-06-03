@@ -1,6 +1,8 @@
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
+import { createFieldLabelsMap } from '@dculus/utils';
 import { getFastModel } from '../../lib/ai.js';
+import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 import type { PluginHandler } from '../core/types.js';
 import type { AiTaggerPluginConfig } from './types.js';
 import { aiTaggerMetadataKey } from './types.js';
@@ -37,8 +39,26 @@ export const aiTaggerHandler: PluginHandler = async (plugin, event, context) => 
       .map((t) => `- ID: "${t.tagId}" | Name: "${t.name}" | Definition: "${t.definition}"`)
       .join('\n');
 
+    // Resolve field IDs to human-readable labels so the AI has context.
+    // Form fields live in Hocuspocus (Y.js), not in Form.formSchema.
+    let fieldLabelMap: Record<string, string> = {};
+    try {
+      const schema = await getFormSchemaFromHocuspocus(event.formId);
+      if (schema) {
+        fieldLabelMap = createFieldLabelsMap(schema);
+      }
+    } catch {
+      // Fall back to raw field IDs if schema resolution fails
+    }
+
+    const SKIP_KEYS = new Set(['responseId', 'submittedAt']);
     const responseFields = Object.entries((response.data as Record<string, any>) ?? {})
-      .map(([key, value]) => `[${key}]: ${value ?? '(no answer)'}`)
+      .filter(([key]) => !SKIP_KEYS.has(key))
+      .map(([key, value]) => {
+        const label = fieldLabelMap[key] ?? key;
+        const displayValue = Array.isArray(value) ? value.join(', ') : (value ?? '(no answer)');
+        return `[${label}]: ${displayValue}`;
+      })
       .join('\n');
 
     const { output, usage } = await generateText({
