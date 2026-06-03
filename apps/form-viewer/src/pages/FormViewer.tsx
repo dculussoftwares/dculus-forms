@@ -1,7 +1,7 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
-import { Button, FormRenderer, useFormResponseStore } from '@dculus/ui';
+import { Button, FormRenderer, useFormResponseStore, LoadingSpinner } from '@dculus/ui';
 import { deserializeFormSchema, FieldType } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { GET_FORM_BY_SHORT_URL, SUBMIT_RESPONSE } from '../graphql/queries';
@@ -236,13 +236,10 @@ const FormViewer: React.FC = () => {
   if (loading) {
     return (
       <div
-        className="h-screen w-full flex items-center justify-center"
+        className="h-screen w-full"
         data-testid="form-viewer-loading"
       >
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading form...</p>
-        </div>
+        <LoadingSpinner fullScreen size="md" />
       </div>
     );
   }
@@ -430,8 +427,8 @@ const FormViewer: React.FC = () => {
       {submissionState === 'submitting' && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-card rounded-lg p-6 max-w-sm mx-4">
-            <div className="flex items-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-3"></div>
+            <div className="flex items-center gap-3">
+              <LoadingSpinner fullScreen={false} size="sm" />
               <div>
                 <p className="text-lg font-medium text-foreground">
                   Submitting...
