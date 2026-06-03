@@ -7,7 +7,7 @@ import { FormFieldRenderer } from './FormFieldRenderer';
 import { createPageSchema } from '../utils/zodSchemaBuilder';
 import { FormValidationState } from '../types/validation';
 import { useFormInitialization, useFormValidation, useStoreSync, useFormSubmission } from '../hooks';
-import { ValidationErrorSummary, FormControls, PageHeader } from '../components';
+import { ValidationErrorSummary, FormControls } from '../components';
 import { DEFAULT_LAYOUT_STYLES, FORM_CONSTANTS } from '../constants/formStyles';
 import { useFormResponseStore } from '../stores/useFormResponseStore';
 
@@ -119,8 +119,6 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
   return (
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(handleFormSubmit)} className={`space-y-4 ${className}`}>
-        <PageHeader title={page.title} />
-
         <div className="space-y-4">
           {page.fields.map((field) => (
             <FormFieldRenderer
