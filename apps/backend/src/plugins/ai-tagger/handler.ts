@@ -39,13 +39,21 @@ export const aiTaggerHandler: PluginHandler = async (plugin, event, context) => 
       .map((t) => `- ID: "${t.tagId}" | Name: "${t.name}" | Definition: "${t.definition}"`)
       .join('\n');
 
-    // Resolve field IDs to human-readable labels so the AI has context.
+    // Resolve field IDs to human-readable labels + options so the AI has full context.
     // Form fields live in Hocuspocus (Y.js), not in Form.formSchema.
     let fieldLabelMap: Record<string, string> = {};
+    const fieldOptionsMap: Record<string, string[]> = {};
     try {
       const schema = await getFormSchemaFromHocuspocus(event.formId);
       if (schema) {
         fieldLabelMap = createFieldLabelsMap(schema);
+        for (const page of schema.pages ?? []) {
+          for (const field of page.fields ?? []) {
+            if (field?.id && Array.isArray((field as any).options) && (field as any).options.length > 0) {
+              fieldOptionsMap[field.id] = (field as any).options as string[];
+            }
+          }
+        }
       }
     } catch {
       // Fall back to raw field IDs if schema resolution fails
@@ -57,7 +65,9 @@ export const aiTaggerHandler: PluginHandler = async (plugin, event, context) => 
       .map(([key, value]) => {
         const label = fieldLabelMap[key] ?? key;
         const displayValue = Array.isArray(value) ? value.join(', ') : (value ?? '(no answer)');
-        return `[${label}]: ${displayValue}`;
+        const options = fieldOptionsMap[key];
+        const optionsHint = options ? ` [all options: ${options.join(' | ')}]` : '';
+        return `[${label}]${optionsHint}: ${displayValue}`;
       })
       .join('\n');
 
@@ -65,9 +75,13 @@ export const aiTaggerHandler: PluginHandler = async (plugin, event, context) => 
       model: getFastModel(),
       output: Output.object({ schema: TagIdsSchema }),
       system: `You are a response classifier for a form submission system.
-Given a form response and a list of tags with definitions, return the IDs of all tags that apply.
-Only apply a tag if the response clearly matches its definition.
-Return an empty array if none match.`,
+Given a form response and a list of tags with definitions, return the IDs of the tags that apply.
+
+Rules:
+- For choice fields (radio, select), the "[all options: ...]" hint lists every option for that field. Use the full list to understand relative meaning. For example, if options are "Weekly | Bi-weekly | Monthly | Only major updates", then Weekly/Bi-weekly represent frequent contact and Monthly/Only major updates represent infrequent contact.
+- Apply your best interpretation of each tag definition, even if the wording is imperfect or informal.
+- When two tags have similar definitions, pick the single best-fitting one based on the response. Apply both only if the response independently satisfies each definition.
+- Return an empty array only if no tag has any reasonable match.`,
       prompt: `Tags to consider:\n${tagList}\n\nForm response:\n${responseFields}`,
     });
 
