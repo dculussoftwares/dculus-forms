@@ -126,6 +126,12 @@ export function useAIChat({
     const last = messages[messages.length - 1];
     if (!last || last.role !== 'assistant') return;
 
+    // Skip historical messages loaded from the persisted conversation on reload.
+    // Their mutations are already reflected in Y.js; their proposals (e.g. validation
+    // suggestions) were already accepted or dismissed by the user.
+    const isHistorical = initialMessages.some((m) => m.id === last.id);
+    if (isHistorical) return;
+
     let mutationApplied = false;
     for (const part of last.parts ?? []) {
       if (
