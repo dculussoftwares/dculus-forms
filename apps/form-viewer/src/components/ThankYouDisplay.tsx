@@ -63,8 +63,8 @@ const ThankYouDisplay: React.FC<ThankYouDisplayProps> = ({
           />
         </svg>
       </div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-2" data-testid="thank-you-default-title">Success!</h1>
-      <p className="text-gray-600 mb-6" data-testid="thank-you-default-message">{message}</p>
+      <h1 className="text-2xl font-bold text-foreground mb-2" data-testid="thank-you-default-title">Success!</h1>
+      <p className="text-muted-foreground mb-6" data-testid="thank-you-default-message">{message}</p>
     </div>
   );
 };

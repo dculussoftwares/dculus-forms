@@ -240,8 +240,8 @@ const FormViewer: React.FC = () => {
         data-testid="form-viewer-loading"
       >
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading form...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading form...</p>
         </div>
       </div>
     );
@@ -257,11 +257,11 @@ const FormViewer: React.FC = () => {
         data-testid="form-viewer-error"
       >
         <div className="text-center p-8">
-          <h1 className="text-2xl font-bold text-red-600 mb-2">
+          <h1 className="text-2xl font-bold text-destructive mb-2">
             {limitError ? 'Form Unavailable' : 'Form Not Found'}
           </h1>
           <p
-            className="text-gray-600 mb-4"
+            className="text-muted-foreground mb-4"
             data-testid="form-viewer-error-message"
           >
             {getFormErrorMessage(errorCode)}
@@ -275,10 +275,10 @@ const FormViewer: React.FC = () => {
     return (
       <div className="h-screen w-full flex items-center justify-center">
         <div className="text-center p-8">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">
+          <h1 className="text-2xl font-bold text-foreground mb-2">
             Form Not Found
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             The form you're looking for doesn't exist.
           </p>
         </div>
@@ -293,10 +293,10 @@ const FormViewer: React.FC = () => {
     return (
       <div className="h-screen w-full flex items-center justify-center">
         <div className="text-center p-8">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">
+          <h1 className="text-2xl font-bold text-foreground mb-2">
             Form Not Ready
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             This form is not yet configured. Please try again later.
           </p>
         </div>
@@ -317,8 +317,8 @@ const FormViewer: React.FC = () => {
         return (
           <div className="h-screen w-full flex items-center justify-center">
             <div className="text-center p-8">
-              <h1 className="text-2xl font-bold text-orange-600 mb-2">Not Yet Open</h1>
-              <p className="text-gray-600">This form is not yet open for submissions. Please check back later.</p>
+              <h1 className="text-2xl font-bold text-foreground mb-2">Not Yet Open</h1>
+              <p className="text-muted-foreground">This form is not yet open for submissions. Please check back later.</p>
             </div>
           </div>
         );
@@ -330,8 +330,8 @@ const FormViewer: React.FC = () => {
         return (
           <div className="h-screen w-full flex items-center justify-center">
             <div className="text-center p-8">
-              <h1 className="text-2xl font-bold text-red-600 mb-2">Submissions Closed</h1>
-              <p className="text-gray-600">The submission period for this form has ended.</p>
+              <h1 className="text-2xl font-bold text-destructive mb-2">Submissions Closed</h1>
+              <p className="text-muted-foreground">The submission period for this form has ended.</p>
             </div>
           </div>
         );
@@ -374,11 +374,11 @@ const FormViewer: React.FC = () => {
     <div className="h-screen w-full" data-testid="form-viewer-renderer">
       {/* Submission error message */}
       {submissionState === 'error' && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 m-4">
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 m-4">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <svg
-                className="h-5 w-5 text-red-400"
+                className="h-5 w-5 text-destructive"
                 viewBox="0 0 20 20"
                 fill="currentColor"
               >
@@ -390,13 +390,13 @@ const FormViewer: React.FC = () => {
               </svg>
             </div>
             <div className="ml-3">
-              <p className="text-sm text-red-800">{submissionMessage}</p>
+              <p className="text-sm text-destructive">{submissionMessage}</p>
             </div>
             <div className="ml-auto">
               <Button
                 onClick={() => setSubmissionState('idle')}
                 variant="ghost"
-                className="text-red-800 hover:text-red-900 h-auto p-0"
+                className="text-destructive hover:text-destructive/80 h-auto p-0"
                 aria-label="Dismiss"
               >
                 <svg
@@ -428,15 +428,15 @@ const FormViewer: React.FC = () => {
 
       {/* Loading overlay during submission */}
       {submissionState === 'submitting' && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-sm mx-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-card rounded-lg p-6 max-w-sm mx-4">
             <div className="flex items-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-3"></div>
               <div>
-                <p className="text-lg font-medium text-gray-900">
+                <p className="text-lg font-medium text-foreground">
                   Submitting...
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   Please wait while we save your response.
                 </p>
               </div>
