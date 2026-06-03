@@ -8,7 +8,7 @@
 import React, { useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
-import { Card, CardContent, Button } from '@dculus/ui';
+import { Card, CardContent, Button, toastError } from '@dculus/ui';
 import { useFieldAnalyticsManager } from '@/hooks/useFieldAnalytics.ts';
 import { usePerformanceMonitor, useMemoryTracker } from '@/hooks/usePerformanceMonitor.ts';
 import { useTranslation } from '../../../hooks/useTranslation';
@@ -82,7 +82,12 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
     variables: { formId, organizationId },
     onCompleted: () => refetchInsights(),
     onError: (err) => {
-      console.error('Field insights generation failed:', err);
+      const msg = err.graphQLErrors?.[0]?.message ?? err.message ?? 'AI field insights generation failed.';
+      const isLimit = msg.toLowerCase().includes('token limit');
+      toastError(
+        isLimit ? 'AI Token Limit Reached' : 'Analysis Failed',
+        isLimit ? msg : 'Could not generate field insights. Please try again.'
+      );
     },
   });
 
@@ -94,9 +99,8 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
   const schemaStale = insightsData?.fieldInsights?.schemaStale ?? false;
   const hasInsights = (insightsData?.fieldInsights?.insights?.length ?? 0) > 0;
 
-  // Show error in console for debugging; UI degrades gracefully (analyze button stays visible)
   if (insightsError) {
-    console.error('Field insights query failed:', insightsError);
+    console.error('Field insights query failed:', insightsError.message);
   }
 
   const handleFixWithAI = React.useCallback((prompt: string) => {

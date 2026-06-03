@@ -113,9 +113,21 @@ export function useAIChat({
     messages: initialMessages as any,
     transport,
     onError: (error) => {
-      const msg = error.message ?? String(error);
-      const isLimit = msg.includes('token limit');
-      toastError('AI Error', isLimit ? msg : 'AI processing failed. Please try again.');
+      const raw = error.message ?? String(error);
+      // The streaming endpoint returns JSON on errors (e.g. 402 token limit).
+      // Parse it so we show the human-readable message, not a raw JSON string.
+      let displayMsg = raw;
+      try {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed?.error === 'string') displayMsg = parsed.error;
+      } catch {
+        // raw was plain text — use as-is
+      }
+      const isLimit = displayMsg.toLowerCase().includes('token limit');
+      toastError(
+        isLimit ? 'AI Token Limit Reached' : 'AI Error',
+        isLimit ? displayMsg : 'AI processing failed. Please try again.'
+      );
     },
   });
 
