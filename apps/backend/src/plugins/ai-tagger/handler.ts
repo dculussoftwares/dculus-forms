@@ -37,7 +37,7 @@ export const aiTaggerHandler: PluginHandler = async (plugin, event, context) => 
       .map((t) => `- ID: "${t.tagId}" | Name: "${t.name}" | Definition: "${t.definition}"`)
       .join('\n');
 
-    const responseFields = Object.entries(response.data as Record<string, any>)
+    const responseFields = Object.entries((response.data as Record<string, any>) ?? {})
       .map(([key, value]) => `[${key}]: ${value ?? '(no answer)'}`)
       .join('\n');
 
