@@ -168,6 +168,7 @@ model Form {
   plugins              FormPlugin[]
   tags                 ResponseTag[]
   aiChatConversations  AIChatConversation[]
+  aiFieldInsights      AIFieldInsight[]
 
   @@index([organizationId])
   @@index([organizationId, createdById])
@@ -559,4 +560,21 @@ model AIChatMessage {
 
   @@index([conversationId])
   @@map("ai_chat_message")
+}
+
+model AIFieldInsight {
+  id           String   @id @default(cuid())
+  formId       String
+  fieldId      String
+  tip          String   @db.Text
+  fixPrompt    String   @db.Text
+  severity     String
+  schemaHash   String
+  generatedAt  DateTime @default(now())
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@unique([formId, fieldId])
+  @@index([formId])
+  @@map("ai_field_insight")
 }
