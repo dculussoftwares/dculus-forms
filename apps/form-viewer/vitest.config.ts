@@ -8,11 +8,12 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
-    // Use a single fork to avoid timeout when running in parallel with other
-    // vitest instances (e.g. backend tests in the pre-push hook)
-    pool: 'forks',
+    // Use a single vmThread (worker thread, no child process) to avoid fork
+    // startup timeouts when running alongside other vitest instances in the
+    // pre-push hook (backend tests + type-check run in parallel).
+    pool: 'vmThreads',
     poolOptions: {
-      forks: { singleFork: true },
+      vmThreads: { singleThread: true },
     },
   },
 });
