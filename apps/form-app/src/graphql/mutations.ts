@@ -201,3 +201,19 @@ export const GENERATE_FORM_WITH_AI = gql`
     }
   }
 `;
+
+export const GENERATE_FIELD_INSIGHTS = gql`
+  mutation GenerateFieldInsights($formId: ID!, $organizationId: ID!) {
+    generateFieldInsights(formId: $formId, organizationId: $organizationId) {
+      insights {
+        fieldId
+        tip
+        fixPrompt
+        severity
+        generatedAt
+      }
+      schemaStale
+      generatedAt
+    }
+  }
+`;

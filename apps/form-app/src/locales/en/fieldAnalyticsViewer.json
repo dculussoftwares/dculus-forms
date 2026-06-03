@@ -117,5 +117,15 @@
   },
   "loading": {
     "fieldAnalytics": "Loading field analytics..."
+  },
+  "aiInsights": {
+    "analyzeButton": "Analyze all fields",
+    "reanalyzeLink": "Re-analyze",
+    "insightLabel": "AI INSIGHT",
+    "fixButton": "Fix with AI",
+    "staleBanner": "Form changed since last analysis",
+    "reanalyzeButton": "Re-analyze",
+    "loading": "Analyzing fields...",
+    "generatedAgo": "Analyzed {{time}} ago"
   }
 }

@@ -431,3 +431,19 @@ export const GET_RESPONSE_WITH_EDIT_INFO = gql`
     }
   }
 `;
+
+export const GET_FIELD_INSIGHTS = gql`
+  query GetFieldInsights($formId: ID!, $organizationId: ID!) {
+    fieldInsights(formId: $formId, organizationId: $organizationId) {
+      insights {
+        fieldId
+        tip
+        fixPrompt
+        severity
+        generatedAt
+      }
+      schemaStale
+      generatedAt
+    }
+  }
+`;
