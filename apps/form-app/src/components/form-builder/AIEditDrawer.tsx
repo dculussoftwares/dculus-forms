@@ -28,6 +28,7 @@ interface AIEditDrawerProps {
   organizationId: string;
   isOpen: boolean;
   onClose: () => void;
+  initialMessage?: string;
 }
 
 function UserBubble({ message }: { message: FormEditAgentUIMessage }) {
@@ -187,6 +188,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
   organizationId,
   isOpen,
   onClose,
+  initialMessage,
 }) => {
   const { t } = useTranslation('aiEditDrawer');
   const [input, setInput] = useState('');
@@ -241,6 +243,19 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
     },
     [handleSend]
   );
+
+  const initialMessageSentRef = useRef(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      initialMessageSentRef.current = false;
+      return;
+    }
+    if (!initialMessage || initialMessageSentRef.current) return;
+    if (!activeConversationId || isStreaming) return;
+    initialMessageSentRef.current = true;
+    sendMessage(initialMessage);
+  }, [isOpen, initialMessage, activeConversationId, isStreaming, sendMessage]);
 
   if (!isOpen) return null;
 
