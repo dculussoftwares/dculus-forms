@@ -434,6 +434,9 @@ jobs:
       - name: Type check form-viewer
         run: pnpm --filter form-viewer type-check
 
+      - name: Run unit tests (form-viewer)
+        run: pnpm --filter form-viewer test:unit
+
       - name: Build form-viewer
         run: pnpm --filter form-viewer build
 
