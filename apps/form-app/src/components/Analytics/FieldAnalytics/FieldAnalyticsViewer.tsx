@@ -29,6 +29,13 @@ import AIEditDrawer from '../../form-builder/AIEditDrawer';
 import { GET_FIELD_INSIGHTS } from '../../../graphql/queries';
 import { GENERATE_FIELD_INSIGHTS } from '../../../graphql/mutations';
 
+interface FieldInsight {
+  fieldId: string;
+  tip: string;
+  fixPrompt: string;
+  severity: string;
+}
+
 interface FieldAnalyticsViewerProps {
   formId: string;
   organizationId: string;
@@ -70,7 +77,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
   const [aiDrawerOpen, setAIDrawerOpen] = React.useState(false);
   const [aiInitialMessage, setAIInitialMessage] = React.useState<string | undefined>();
 
-  const { data: insightsData, refetch: refetchInsights } = useQuery(GET_FIELD_INSIGHTS, {
+  const { data: insightsData, refetch: refetchInsights, error: insightsError } = useQuery(GET_FIELD_INSIGHTS, {
     variables: { formId, organizationId },
     skip: !formId || !organizationId,
   });
@@ -78,21 +85,32 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
   const [generateInsights, { loading: generatingInsights }] = useMutation(GENERATE_FIELD_INSIGHTS, {
     variables: { formId, organizationId },
     onCompleted: () => refetchInsights(),
+    onError: (err) => {
+      console.error('Field insights generation failed:', err);
+    },
   });
 
-  const insightsMap: Record<string, { fieldId: string; tip: string; fixPrompt: string; severity: string }> =
-    React.useMemo(() => {
-      const list = insightsData?.fieldInsights?.insights ?? [];
-      return Object.fromEntries(list.map((ins: any) => [ins.fieldId, ins]));
-    }, [insightsData]);
+  const insightsMap: Record<string, FieldInsight> = React.useMemo(() => {
+    const list: FieldInsight[] = insightsData?.fieldInsights?.insights ?? [];
+    return Object.fromEntries(list.map((ins) => [ins.fieldId, ins]));
+  }, [insightsData]);
 
   const schemaStale = insightsData?.fieldInsights?.schemaStale ?? false;
   const hasInsights = (insightsData?.fieldInsights?.insights?.length ?? 0) > 0;
+
+  // Show error in console for debugging; UI degrades gracefully (analyze button stays visible)
+  if (insightsError) {
+    console.error('Field insights query failed:', insightsError);
+  }
 
   const handleFixWithAI = React.useCallback((prompt: string) => {
     setAIInitialMessage(prompt);
     setAIDrawerOpen(true);
   }, []);
+
+  const handleGenerateInsights = React.useCallback(() => {
+    generateInsights();
+  }, [generateInsights]);
 
   // Field URL helpers - convert between fieldId and URL-friendly parameter
   const getFieldUrlParam = (fieldId: string) => {
@@ -322,7 +340,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
             <Button
               size="sm"
               variant="outline"
-              onClick={() => generateInsights()}
+              onClick={handleGenerateInsights}
               disabled={generatingInsights}
               className="gap-1.5"
             >
@@ -332,7 +350,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
           )}
           {view === 'grid' && hasInsights && (
             <button
-              onClick={() => generateInsights()}
+              onClick={handleGenerateInsights}
               disabled={generatingInsights}
               className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 disabled:opacity-50"
             >
@@ -357,7 +375,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
             size="sm"
             variant="outline"
             className="h-7 border-yellow-400 text-yellow-800 hover:bg-yellow-100"
-            onClick={() => generateInsights()}
+            onClick={handleGenerateInsights}
             disabled={generatingInsights}
           >
             {t('aiInsights.reanalyzeButton')}
@@ -476,7 +494,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
         </Card>
       )}
 
-      {/* AI Edit Drawer — always mounted, visibility controlled by isOpen */}
+      {/* AI Edit Drawer — rendered in tree; initialMessage resets on close */}
       <AIEditDrawer
         formId={formId}
         organizationId={organizationId}
