@@ -7,6 +7,7 @@
 
 import React, { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useQuery, useMutation } from '@apollo/client';
 import { Card, CardContent, Button } from '@dculus/ui';
 import { useFieldAnalyticsManager } from '@/hooks/useFieldAnalytics.ts';
 import { usePerformanceMonitor, useMemoryTracker } from '@/hooks/usePerformanceMonitor.ts';
@@ -19,18 +20,27 @@ import {
   Eye,
   ChevronLeft,
   ChevronRight,
-  ArrowLeft
+  ArrowLeft,
+  Sparkles,
 } from 'lucide-react';
 import { FieldSelectionGrid } from './FieldSelectionGrid';
 import { FieldAnalyticsPanel } from './FieldAnalyticsPanel';
+import AIEditDrawer from '../../form-builder/AIEditDrawer';
+import { GET_FIELD_INSIGHTS } from '../../../graphql/queries';
+import { GENERATE_FIELD_INSIGHTS } from '../../../graphql/mutations';
 
 interface FieldAnalyticsViewerProps {
   formId: string;
+  organizationId: string;
   initialSelectedFieldId?: string | null;
 }
 
 // Main Component
-export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ formId, initialSelectedFieldId }) => {
+export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
+  formId,
+  organizationId,
+  initialSelectedFieldId,
+}) => {
   const { t } = useTranslation('fieldAnalyticsViewer');
   const [searchParams, setSearchParams] = useSearchParams();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
@@ -55,6 +65,34 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
     refreshAll,
     loading
   } = useFieldAnalyticsManager(formId);
+
+  // AI Insights state
+  const [aiDrawerOpen, setAIDrawerOpen] = React.useState(false);
+  const [aiInitialMessage, setAIInitialMessage] = React.useState<string | undefined>();
+
+  const { data: insightsData, refetch: refetchInsights } = useQuery(GET_FIELD_INSIGHTS, {
+    variables: { formId, organizationId },
+    skip: !formId || !organizationId,
+  });
+
+  const [generateInsights, { loading: generatingInsights }] = useMutation(GENERATE_FIELD_INSIGHTS, {
+    variables: { formId, organizationId },
+    onCompleted: () => refetchInsights(),
+  });
+
+  const insightsMap: Record<string, { fieldId: string; tip: string; fixPrompt: string; severity: string }> =
+    React.useMemo(() => {
+      const list = insightsData?.fieldInsights?.insights ?? [];
+      return Object.fromEntries(list.map((ins: any) => [ins.fieldId, ins]));
+    }, [insightsData]);
+
+  const schemaStale = insightsData?.fieldInsights?.schemaStale ?? false;
+  const hasInsights = (insightsData?.fieldInsights?.insights?.length ?? 0) > 0;
+
+  const handleFixWithAI = React.useCallback((prompt: string) => {
+    setAIInitialMessage(prompt);
+    setAIDrawerOpen(true);
+  }, []);
 
   // Field URL helpers - convert between fieldId and URL-friendly parameter
   const getFieldUrlParam = (fieldId: string) => {
@@ -279,6 +317,29 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
             {t('buttons.refresh')}
           </Button>
 
+          {/* AI analyze controls — grid view only */}
+          {view === 'grid' && !hasInsights && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => generateInsights()}
+              disabled={generatingInsights}
+              className="gap-1.5"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              {generatingInsights ? t('aiInsights.loading') : t('aiInsights.analyzeButton')}
+            </Button>
+          )}
+          {view === 'grid' && hasInsights && (
+            <button
+              onClick={() => generateInsights()}
+              disabled={generatingInsights}
+              className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 disabled:opacity-50"
+            >
+              {generatingInsights ? t('aiInsights.loading') : t('aiInsights.reanalyzeLink')}
+            </button>
+          )}
+
           {totalResponses > 0 && (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm">
               <Eye className="h-4 w-4" />
@@ -287,6 +348,22 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
           )}
         </div>
       </div>
+
+      {/* Stale schema banner — grid view only */}
+      {view === 'grid' && schemaStale && (
+        <div className="flex items-center justify-between rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-sm text-yellow-800">
+          <span>{t('aiInsights.staleBanner')}</span>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 border-yellow-400 text-yellow-800 hover:bg-yellow-100"
+            onClick={() => generateInsights()}
+            disabled={generatingInsights}
+          >
+            {t('aiInsights.reanalyzeButton')}
+          </Button>
+        </div>
+      )}
 
       {/* Content */}
       {view === 'grid' ? (
@@ -363,6 +440,8 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
             onFieldSelect={handleFieldSelect}
             totalFormResponses={totalResponses}
             t={t}
+            insights={insightsMap}
+            onFixWithAI={handleFixWithAI}
           />
         </>
       ) : selectedField ? (
@@ -396,6 +475,18 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({ form
           </CardContent>
         </Card>
       )}
+
+      {/* AI Edit Drawer — always mounted, visibility controlled by isOpen */}
+      <AIEditDrawer
+        formId={formId}
+        organizationId={organizationId}
+        isOpen={aiDrawerOpen}
+        onClose={() => {
+          setAIDrawerOpen(false);
+          setAIInitialMessage(undefined);
+        }}
+        initialMessage={aiInitialMessage}
+      />
     </div>
   );
 };
