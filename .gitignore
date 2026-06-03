@@ -170,3 +170,4 @@ test/e2e/.auth/
 
 .agents/
 skills-lock.json
+/.superpowers/brainstorm/*
