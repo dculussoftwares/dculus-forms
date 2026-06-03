@@ -1,0 +1,19 @@
+# pre-commit: fast — only lint staged files (auto-fixable, ~2-4s)
+pre-commit:
+  commands:
+    lint:
+      run: pnpm lint-staged
+
+# pre-push: catches what would break CI — runs in parallel (~20-30s)
+pre-push:
+  parallel: true
+  commands:
+    type-check:
+      name: Type check (all packages)
+      run: pnpm type-check
+    test-backend:
+      name: Backend unit tests
+      run: pnpm --filter backend test
+    test-form-viewer:
+      name: Form-viewer unit tests
+      run: pnpm --filter form-viewer test:unit
