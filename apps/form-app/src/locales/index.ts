@@ -231,6 +231,8 @@ import enCreateFormWizard from './en/createFormWizard.json';
 import taCreateFormWizard from './ta/createFormWizard.json';
 import enAIEditDrawer from './en/aiEditDrawer.json';
 import taAIEditDrawer from './ta/aiEditDrawer.json';
+import enAiTaggerPluginConfig from './en/aiTaggerPluginConfig.json';
+import taAiTaggerPluginConfig from './ta/aiTaggerPluginConfig.json';
 
 const enTranslations = {
   common: enCommon,
@@ -350,6 +352,7 @@ const enTranslations = {
   aiFormBar: enAIFormBar,
   createFormWizard: enCreateFormWizard,
   aiEditDrawer: enAIEditDrawer,
+  aiTaggerPluginConfig: enAiTaggerPluginConfig,
 } as const;
 
 const taTranslations = {
@@ -470,6 +473,7 @@ const taTranslations = {
   aiFormBar: taAIFormBar,
   createFormWizard: taCreateFormWizard,
   aiEditDrawer: taAIEditDrawer,
+  aiTaggerPluginConfig: taAiTaggerPluginConfig,
 } as const;
 
 export const translations = {

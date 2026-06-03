@@ -1,0 +1,27 @@
+{
+  "title": "AI Auto-Tagger",
+  "description": "Automatically tag responses using AI based on definitions you provide",
+  "basicSettings": {
+    "title": "Basic Settings",
+    "pluginName": "Plugin Name",
+    "pluginNamePlaceholder": "e.g., AI Auto-Tagger"
+  },
+  "tagDefinitions": {
+    "title": "Tag Definitions",
+    "description": "Add a definition for each tag to tell the AI when to apply it",
+    "hint": "Only tags with a definition will be considered by the AI. Tags without definitions are skipped.",
+    "loading": "Loading tags...",
+    "noTags": "No tags found for this form. Create tags in the Responses table first, then come back to add definitions.",
+    "definitionLabel": "When should AI apply this tag?",
+    "definitionPlaceholder": "e.g., Response mentions a billing issue, payment problem, or invoice query"
+  },
+  "validation": {
+    "nameRequired": "Plugin name is required"
+  },
+  "actions": {
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "create": "Create Plugin",
+    "update": "Update Plugin"
+  }
+}
