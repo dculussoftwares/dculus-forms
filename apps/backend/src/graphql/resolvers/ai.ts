@@ -28,6 +28,14 @@ export const aiResolvers = {
       requireAuth(context.auth);
       await requireOrganizationMembership(context.auth, organizationId);
 
+      const form = await prisma.form.findUnique({
+        where: { id: formId, organizationId },
+        select: { id: true },
+      });
+      if (!form) {
+        throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
+      }
+
       const schema = await getFormSchema(formId);
       const currentHash = computeSchemaHash(schema);
       return getFieldInsights(formId, currentHash);
@@ -88,7 +96,7 @@ export const aiResolvers = {
       }
 
       const form = await prisma.form.findUnique({
-        where: { id: formId },
+        where: { id: formId, organizationId },
         select: { title: true },
       });
       if (!form) {

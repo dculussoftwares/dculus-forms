@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
 import { useAuthContext } from '../contexts/AuthContext';
 import { AlertTriangle, X } from 'lucide-react';
@@ -58,11 +58,17 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   const { formId, tab } = useParams<{ formId: string; tab?: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const pendingBgApplied = useRef(false);
   const { t } = useTranslation('collaborativeFormBuilder');
   const { user } = useAuthContext();
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
   const [isAIDrawerOpen, setIsAIDrawerOpen] = useState(false);
+
+  const aiMessageParam = searchParams.get('aiMessage');
+  const [aiInitialMessage, setAIInitialMessage] = useState<string | undefined>(
+    aiMessageParam ? decodeURIComponent(aiMessageParam) : undefined
+  );
 
   const activeTab: BuilderTab = useMemo(() => {
     return tab && VALID_TABS.includes(tab as BuilderTab)
@@ -242,6 +248,15 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Auto-open the AI drawer when navigated here with an aiMessage query param
+  // (e.g. from "Fix with AI" in FieldAnalyticsViewer).
+  // Empty deps array is intentional: we only want this to fire once on mount.
+  useEffect(() => {
+    if (aiMessageParam) {
+      setIsAIDrawerOpen(true);
+    }
   }, []);
 
   const renderDragOverlay = useMemo(() => {
@@ -473,7 +488,11 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
                 formId={formId!}
                 organizationId={formData?.form?.organization?.id ?? ''}
                 isOpen={isAIDrawerOpen}
-                onClose={() => setIsAIDrawerOpen(false)}
+                onClose={() => {
+                  setIsAIDrawerOpen(false);
+                  setAIInitialMessage(undefined);
+                }}
+                initialMessage={aiInitialMessage}
               />
             </div>
           </div>

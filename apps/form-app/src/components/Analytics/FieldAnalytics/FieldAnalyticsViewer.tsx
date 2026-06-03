@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
 import { Card, CardContent, Button } from '@dculus/ui';
 import { useFieldAnalyticsManager } from '@/hooks/useFieldAnalytics.ts';
@@ -25,7 +25,6 @@ import {
 } from 'lucide-react';
 import { FieldSelectionGrid } from './FieldSelectionGrid';
 import { FieldAnalyticsPanel } from './FieldAnalyticsPanel';
-import AIEditDrawer from '../../form-builder/AIEditDrawer';
 import { GET_FIELD_INSIGHTS } from '../../../graphql/queries';
 import { GENERATE_FIELD_INSIGHTS } from '../../../graphql/mutations';
 
@@ -50,6 +49,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
 }) => {
   const { t } = useTranslation('fieldAnalyticsViewer');
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   // Get selected field from URL parameters
@@ -72,10 +72,6 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
     refreshAll,
     loading
   } = useFieldAnalyticsManager(formId);
-
-  // AI Insights state
-  const [aiDrawerOpen, setAIDrawerOpen] = React.useState(false);
-  const [aiInitialMessage, setAIInitialMessage] = React.useState<string | undefined>();
 
   const { data: insightsData, refetch: refetchInsights, error: insightsError } = useQuery(GET_FIELD_INSIGHTS, {
     variables: { formId, organizationId },
@@ -104,9 +100,8 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
   }
 
   const handleFixWithAI = React.useCallback((prompt: string) => {
-    setAIInitialMessage(prompt);
-    setAIDrawerOpen(true);
-  }, []);
+    navigate(`/dashboard/form/${formId}/builder/page-builder?aiMessage=${encodeURIComponent(prompt)}`);
+  }, [formId, navigate]);
 
   const handleGenerateInsights = React.useCallback(() => {
     generateInsights();
@@ -494,17 +489,6 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
         </Card>
       )}
 
-      {/* AI Edit Drawer — rendered in tree; initialMessage resets on close */}
-      <AIEditDrawer
-        formId={formId}
-        organizationId={organizationId}
-        isOpen={aiDrawerOpen}
-        onClose={() => {
-          setAIDrawerOpen(false);
-          setAIInitialMessage(undefined);
-        }}
-        initialMessage={aiInitialMessage}
-      />
     </div>
   );
 };
