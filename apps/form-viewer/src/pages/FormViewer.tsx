@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
 import { Button, FormRenderer, useFormResponseStore } from '@dculus/ui';
@@ -9,9 +9,12 @@ import ThankYouDisplay from '../components/ThankYouDisplay';
 import { useFormAnalytics } from '../hooks/useFormAnalytics';
 import { useFormSubmissionAnalytics } from '../hooks/useFormSubmissionAnalytics';
 import { getCdnEndpoint, getUploadUrl } from '../lib/config';
+import { buildCompletionTimeInput } from '../lib/completionTime';
+import { getFormErrorMessage, isSubmissionLimitError } from '../lib/formError';
 
 const SUBMISSION_TIMEOUT_MS = 30_000;
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB — matches backend multer limit
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 function validateFiles(
   responses: Record<string, unknown>,
@@ -110,6 +113,13 @@ const FormViewer: React.FC = () => {
     enabled: !!data?.formByShortUrl?.id,
   });
 
+  // Memoized deserialization — placed here (before any early returns) to satisfy Rules of Hooks
+  const rawSchema = data?.formByShortUrl?.formSchema;
+  const formSchema = useMemo(
+    () => (rawSchema ? deserializeFormSchema(rawSchema) : null),
+    [rawSchema]
+  );
+
   // Handle first form interaction to track start time
   const handleFirstFormInteraction = () => {
     if (!hasStartedForm) {
@@ -130,7 +140,7 @@ const FormViewer: React.FC = () => {
 
     try {
       // Validate files client-side before uploading to give immediate feedback
-      if (formSchema) {
+      if (formSchema != null) {
         const fileError = validateFiles(responses, formSchema);
         if (fileError) {
           setSubmissionState('error');
@@ -195,7 +205,7 @@ const FormViewer: React.FC = () => {
                 userAgent: analyticsData.userAgent,
                 timezone: analyticsData.timezone,
                 language: analyticsData.language,
-                ...(completionTimeSeconds && { completionTimeSeconds }),
+                ...buildCompletionTimeInput(completionTimeSeconds),
               }),
             },
           },
@@ -238,11 +248,8 @@ const FormViewer: React.FC = () => {
   }
 
   if (error) {
-    // Handle submission limit errors specifically
-    const isSubmissionLimitError =
-      error.message.includes('maximum response limit') ||
-      error.message.includes('not yet open') ||
-      error.message.includes('submission period has ended');
+    const errorCode = error.graphQLErrors?.[0]?.extensions?.code as string | undefined;
+    const limitError = isSubmissionLimitError(errorCode);
 
     return (
       <div
@@ -251,23 +258,14 @@ const FormViewer: React.FC = () => {
       >
         <div className="text-center p-8">
           <h1 className="text-2xl font-bold text-red-600 mb-2">
-            {isSubmissionLimitError ? 'Form Unavailable' : 'Form Not Found'}
+            {limitError ? 'Form Unavailable' : 'Form Not Found'}
           </h1>
           <p
             className="text-gray-600 mb-4"
             data-testid="form-viewer-error-message"
           >
-            {error.message === 'Form is not published'
-              ? 'This form is not yet published.'
-              : error.message.includes('maximum response limit')
-                ? 'This form has reached its maximum number of responses and is no longer accepting submissions.'
-                : error.message.includes('not yet open')
-                  ? 'This form is not yet open for submissions. Please check back later.'
-                  : error.message.includes('submission period has ended')
-                    ? 'The submission period for this form has ended.'
-                    : "The form you're looking for doesn't exist or has been removed."}
+            {getFormErrorMessage(errorCode)}
           </p>
-          <p className="text-sm text-gray-500">Error: {error.message}</p>
         </div>
       </div>
     );
@@ -306,14 +304,9 @@ const FormViewer: React.FC = () => {
     );
   }
 
-  // Deserialize the form schema from the backend
-  const formSchema = deserializeFormSchema(form.formSchema);
-
   // Client-side time-window pre-validation — gives immediate feedback instead of
   // waiting for the server to reject the submission after filling out the form.
-  const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-  const settings = form.settings as Record<string, unknown> | null | undefined;
-  const timeWindow = (settings?.submissionLimits as Record<string, unknown> | undefined)?.timeWindow as
+  const timeWindow = form.settings?.submissionLimits?.timeWindow as
     | { enabled?: boolean; startDate?: string; endDate?: string }
     | undefined;
   if (timeWindow?.enabled) {
@@ -344,10 +337,6 @@ const FormViewer: React.FC = () => {
         );
       }
     }
-  }
-
-  if (!cdnEndpoint) {
-    console.warn('No CDN endpoint found. Images may not load properly.');
   }
 
   const handleSubmitAnother = () => {
@@ -429,7 +418,7 @@ const FormViewer: React.FC = () => {
 
       <FormRenderer
         cdnEndpoint={cdnEndpoint}
-        formSchema={formSchema}
+        formSchema={formSchema!}
         mode={RendererMode.SUBMISSION}
         className="h-full w-full"
         formId={form.id}

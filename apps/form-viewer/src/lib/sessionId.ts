@@ -21,7 +21,10 @@ export function getOrCreateSessionId(): string {
     localStorage.setItem(SESSION_EXPIRY_KEY, String(Date.now() + SESSION_TTL_MS));
     return sessionId;
   } catch {
-    // localStorage may be unavailable (private browsing on some browsers)
-    return crypto.randomUUID();
+    // localStorage or crypto.randomUUID may be unavailable (private browsing, HTTP origins)
+    if (typeof crypto?.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
   }
 }

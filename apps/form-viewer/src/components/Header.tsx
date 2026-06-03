@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Button } from '@dculus/ui';
 
 const Header: React.FC = () => {
   const location = useLocation();
@@ -33,11 +32,7 @@ const Header: React.FC = () => {
             </nav>
           </div>
           
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">
-              Settings
-            </Button>
-          </div>
+          <div className="flex items-center space-x-2" />
         </div>
       </div>
     </header>

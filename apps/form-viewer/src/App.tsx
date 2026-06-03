@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ApolloProvider } from '@apollo/client';
+import { Button } from '@dculus/ui';
 import { client } from './services/apolloClient';
 import Header from './components/Header';
 import Home from './pages/Home';
@@ -19,11 +20,9 @@ class FormViewerErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', gap: '16px', fontFamily: 'sans-serif' }}>
-          <p style={{ color: '#6b7280' }}>Something went wrong loading this form.</p>
-          <button onClick={() => window.location.reload()} style={{ padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
-            Reload page
-          </button>
+        <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+          <p className="text-muted-foreground">Something went wrong loading this form.</p>
+          <Button onClick={() => window.location.reload()}>Reload page</Button>
         </div>
       );
     }
