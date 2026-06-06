@@ -215,31 +215,15 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
 
   if (allFieldsLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-primary">{t('header.title')}</h1>
-            <p className="text-foreground">{t('header.loading')}</p>
-          </div>
+      <div className="space-y-4">
+        <div>
+          <h1 className="text-2xl font-bold text-primary">{t('header.title')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t('header.loading')}</p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-4">
-                <div className="animate-pulse">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-10 h-10 bg-[#ebe9ec] rounded-lg"></div>
-                    <div>
-                      <div className="h-4 bg-[#ebe9ec] rounded w-24 mb-1"></div>
-                      <div className="h-3 bg-[#ebe9ec] rounded w-16"></div>
-                    </div>
-                  </div>
-                  <div className="h-16 bg-[#ebe9ec] rounded"></div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        {/* Indeterminate loading bar using design system tokens */}
+        <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-black/[0.07]">
+          <div className="absolute inset-y-0 left-0 w-2/5 bg-primary rounded-full animate-indeterminate" />
         </div>
       </div>
     );
