@@ -56,8 +56,8 @@ const AnalyticsLoadingSkeleton: React.FC<{ message?: string }> = ({ message }) =
     <div className="space-y-6 animate-pulse">
       {/* Header skeleton */}
       <div className="flex items-center gap-4 mb-6">
-        <div className="h-8 w-48 bg-gray-200 rounded"></div>
-        <div className="h-6 w-32 bg-gray-200 rounded"></div>
+        <div className="h-8 w-48 bg-[#ebe9ec] rounded"></div>
+        <div className="h-6 w-32 bg-[#ebe9ec] rounded"></div>
       </div>
 
       {/* Stats cards skeleton */}
@@ -65,7 +65,7 @@ const AnalyticsLoadingSkeleton: React.FC<{ message?: string }> = ({ message }) =
         {[1, 2, 3].map((i) => (
           <Card key={i}>
             <CardContent className="pt-6">
-              <div className="h-16 bg-gray-200 rounded"></div>
+              <div className="h-16 bg-[#ebe9ec] rounded"></div>
             </CardContent>
           </Card>
         ))}
@@ -76,10 +76,10 @@ const AnalyticsLoadingSkeleton: React.FC<{ message?: string }> = ({ message }) =
         {[1, 2].map((i) => (
           <Card key={i}>
             <CardHeader>
-              <div className="h-6 w-40 bg-gray-200 rounded"></div>
+              <div className="h-6 w-40 bg-[#ebe9ec] rounded"></div>
             </CardHeader>
             <CardContent>
-              <div className="h-64 bg-gray-200 rounded"></div>
+              <div className="h-64 bg-[#ebe9ec] rounded"></div>
             </CardContent>
           </Card>
         ))}
