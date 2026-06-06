@@ -89,15 +89,19 @@ const HelpTooltip: React.FC<HelpTooltipProps> = ({ title, description }) => {
 const CustomTooltip = ({ active, payload, label, formatter }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white p-3 border rounded-lg shadow-lg border-[var(--tf-border-medium)]">
-        <p className="font-medium text-primary mb-2">{label}</p>
+      <div className="bg-card px-3 py-2.5 border border-[var(--tf-border-medium)] rounded-xl shadow-[var(--shadow-md)] text-sm min-w-[140px]">
+        {label && (
+          <p className="font-semibold text-xs uppercase tracking-wide text-muted-foreground mb-1.5">
+            {label}
+          </p>
+        )}
         {payload.map((entry: any, index: number) => (
-          <div key={index} className="flex items-center gap-2 text-sm">
+          <div key={index} className="flex items-center gap-2">
             <div
-              className="w-3 h-3 rounded-full"
+              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
               style={{ backgroundColor: entry.color }}
             />
-            <span className="text-foreground">
+            <span className="text-foreground font-medium">
               {entry.name}:{' '}
               {(() => {
                 try {
@@ -427,11 +431,14 @@ export const EnhancedBarChart: React.FC<EnhancedBarChartProps> = ({
             layout={horizontal ? 'horizontal' : 'vertical'}
             margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
           >
-            {showGrid && <CartesianGrid strokeDasharray="3 3" />}
+            {showGrid && <CartesianGrid stroke="rgba(81,76,84,0.06)" strokeDasharray="0" vertical={false} />}
             {horizontal ? (
               <>
                 <XAxis
                   type="number"
+                  tick={{ fill: '#a09aa2', fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
                   label={
                     xAxisLabel
                       ? {
@@ -446,7 +453,9 @@ export const EnhancedBarChart: React.FC<EnhancedBarChartProps> = ({
                   dataKey="name"
                   type="category"
                   width={120}
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 11, fill: '#a09aa2' }}
+                  axisLine={false}
+                  tickLine={false}
                   interval={0}
                 />
               </>
@@ -454,6 +463,9 @@ export const EnhancedBarChart: React.FC<EnhancedBarChartProps> = ({
               <>
                 <XAxis
                   dataKey="name"
+                  tick={{ fill: '#a09aa2', fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
                   label={
                     xAxisLabel
                       ? {
@@ -465,6 +477,9 @@ export const EnhancedBarChart: React.FC<EnhancedBarChartProps> = ({
                   }
                 />
                 <YAxis
+                  tick={{ fill: '#a09aa2', fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
                   label={
                     yAxisLabel
                       ? {
@@ -560,9 +575,12 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
             data={data}
             margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
           >
-            {showGrid && <CartesianGrid strokeDasharray="3 3" />}
+            {showGrid && <CartesianGrid stroke="rgba(81,76,84,0.06)" strokeDasharray="0" vertical={false} />}
             <XAxis
               dataKey="name"
+              tick={{ fill: '#a09aa2', fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
               label={
                 xAxisLabel
                   ? { value: xAxisLabel, position: 'insideBottom', offset: -10 }
@@ -570,6 +588,9 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
               }
             />
             <YAxis
+              tick={{ fill: '#a09aa2', fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
               label={
                 yAxisLabel
                   ? { value: yAxisLabel, angle: -90, position: 'insideLeft' }
@@ -668,9 +689,9 @@ export const Histogram: React.FC<HistogramProps> = ({
             data={data}
             margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
           >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="range" />
-            <YAxis />
+            <CartesianGrid stroke="rgba(81,76,84,0.06)" strokeDasharray="0" vertical={false} />
+            <XAxis dataKey="range" tick={{ fill: '#a09aa2', fontSize: 11 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: '#a09aa2', fontSize: 11 }} axisLine={false} tickLine={false} />
             <Tooltip content={<CustomTooltip formatter={tooltipFormatter} />} />
             <Bar dataKey="count" fill={color} radius={[4, 4, 0, 0]} />
           </BarChart>
@@ -744,9 +765,9 @@ export const MultiBarChart: React.FC<MultiBarChartProps> = ({
             data={data}
             margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
           >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
+            <CartesianGrid stroke="rgba(81,76,84,0.06)" strokeDasharray="0" vertical={false} />
+            <XAxis dataKey="name" tick={{ fill: '#a09aa2', fontSize: 11 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: '#a09aa2', fontSize: 11 }} axisLine={false} tickLine={false} />
             <Tooltip content={<CustomTooltip />} />
             {series.map((s, index) => (
               <Bar
