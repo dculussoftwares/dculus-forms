@@ -18,27 +18,27 @@ import { cn } from '@dculus/utils';
 import { HelpCircle } from 'lucide-react';
 import { useTranslation } from '../../../hooks/useTranslation';
 
-// Color palettes for different chart types
+// Color palettes for different chart types — Typeform design system aligned
 export const CHART_COLORS = {
   primary: [
-    '#3b82f6',
-    '#8b5cf6',
-    '#06d6a0',
-    '#f59e0b',
-    '#ef4444',
-    '#10b981',
-    '#f97316',
-    '#8b5a2b',
+    '#7C3AAE', // Violet  (matches --chart-1 hue)
+    '#0E8C70', // Emerald (matches --chart-2 hue)
+    '#2563EB', // Blue    (matches --chart-3 hue)
+    '#D97706', // Amber
+    '#E85D4A', // Coral   (matches --chart-5 hue)
+    '#9B5CB5', // Soft violet
+    '#1D7A64', // Deep emerald
+    '#1E50C8', // Deep blue
   ],
   secondary: [
-    '#dbeafe',
-    '#e7d3ff',
-    '#ccfbf1',
-    '#fef3c7',
-    '#fecaca',
-    '#d1fae5',
-    '#fed7aa',
-    '#e7e5e4',
+    '#f0ebff', // Light violet
+    '#e6f7f4', // Light emerald
+    '#e8f0fe', // Light blue
+    '#fef3e2', // Light amber
+    '#fdecea', // Light coral
+    '#ede9fe', // Soft violet
+    '#d1fae5', // Soft emerald
+    '#dbeafe', // Soft blue
   ],
   gradient: [
     '#667eea',
@@ -147,11 +147,11 @@ export const StatCard: React.FC<StatCardProps> = ({
         <CardContent className="p-6">
           <div className="animate-pulse">
             <div className="flex items-center justify-between mb-2">
-              <div className="h-4 bg-gray-200 rounded w-20"></div>
-              {icon && <div className="h-8 w-8 bg-gray-200 rounded"></div>}
+              <div className="h-4 bg-[#ebe9ec] rounded w-20"></div>
+              {icon && <div className="h-8 w-8 bg-[#ebe9ec] rounded"></div>}
             </div>
-            <div className="h-8 bg-gray-200 rounded w-16 mb-2"></div>
-            {subtitle && <div className="h-3 bg-gray-200 rounded w-24"></div>}
+            <div className="h-8 bg-[#ebe9ec] rounded w-16 mb-2"></div>
+            {subtitle && <div className="h-3 bg-[#ebe9ec] rounded w-24"></div>}
           </div>
         </CardContent>
       </Card>
@@ -202,7 +202,7 @@ export const FieldAnalyticsLoader: React.FC<{ statCount?: number; chartCount?: n
     </div>
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {Array.from({ length: chartCount }).map((_, i) => (
-        <div key={i} className="animate-pulse h-96 bg-gray-200 rounded" />
+        <div key={i} className="animate-pulse h-96 bg-[#ebe9ec] rounded-xl" />
       ))}
     </div>
   </div>
@@ -218,7 +218,7 @@ export const FieldAnalyticsEmpty: React.FC<FieldAnalyticsEmptyProps> = ({ icon, 
   <Card className="w-full">
     <CardContent className="p-8">
       <div className="text-center">
-        <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
+        <div className="mx-auto flex items-center justify-center h-14 w-14 rounded-2xl bg-[#f0ebff] mb-4">
           {icon}
         </div>
         <h3 className="text-lg font-semibold text-primary mb-2">{title}</h3>
@@ -246,7 +246,7 @@ export const MetricItem: React.FC<MetricItemProps> = ({
       <div className="text-lg font-bold text-primary">{value}</div>
       <div className="text-sm text-foreground">{label}</div>
       {progress !== undefined && (
-        <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+        <div className="w-full bg-[#ebe9ec] rounded-full h-2 mt-2">
           <div
             className={cn('h-2 rounded-full transition-all duration-500', progressColor)}
             style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
@@ -290,7 +290,7 @@ export const EnhancedPieChart: React.FC<EnhancedPieChartProps> = ({
         </CardHeader>
         <CardContent>
           <div className="animate-pulse">
-            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-64 bg-[#ebe9ec] rounded-xl"></div>
           </div>
         </CardContent>
       </Card>
@@ -393,7 +393,7 @@ export const EnhancedBarChart: React.FC<EnhancedBarChartProps> = ({
         </CardHeader>
         <CardContent>
           <div className="animate-pulse">
-            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-64 bg-[#ebe9ec] rounded-xl"></div>
           </div>
         </CardContent>
       </Card>
@@ -527,7 +527,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
         </CardHeader>
         <CardContent>
           <div className="animate-pulse">
-            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-64 bg-[#ebe9ec] rounded-xl"></div>
           </div>
         </CardContent>
       </Card>
@@ -623,7 +623,7 @@ export const Histogram: React.FC<HistogramProps> = ({
         </CardHeader>
         <CardContent>
           <div className="animate-pulse">
-            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-64 bg-[#ebe9ec] rounded-xl"></div>
           </div>
         </CardContent>
       </Card>
@@ -711,7 +711,7 @@ export const MultiBarChart: React.FC<MultiBarChartProps> = ({
         </CardHeader>
         <CardContent>
           <div className="animate-pulse">
-            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-64 bg-[#ebe9ec] rounded-xl"></div>
           </div>
         </CardContent>
       </Card>
