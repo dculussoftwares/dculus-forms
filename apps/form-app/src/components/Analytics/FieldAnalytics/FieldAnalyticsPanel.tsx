@@ -11,6 +11,20 @@ import { getFieldTypeDisplayName } from '@dculus/utils';
 import { FieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
 import { getAnalyticsComponent, getAnalyticsDataKey, getAnalyticsIcon } from './registry';
 
+const FIELD_ICON_THEME: Record<string, { bg: string; color: string }> = {
+  text_input_field:  { bg: '#e6f7f4', color: '#0E8C70' },
+  text_area_field:   { bg: '#e6f7f4', color: '#0E8C70' },
+  number_field:      { bg: '#fef3e2', color: '#D97706' },
+  select_field:      { bg: '#f0ebff', color: '#7C3AAE' },
+  radio_field:       { bg: '#f0ebff', color: '#7C3AAE' },
+  checkbox_field:    { bg: '#e8f0fe', color: '#2563EB' },
+  date_field:        { bg: '#fdecea', color: '#E85D4A' },
+  email_field:       { bg: '#e8f0fe', color: '#2563EB' },
+  file_upload_field: { bg: '#e6f7f4', color: '#0E8C70' },
+};
+
+const DEFAULT_ICON_THEME = { bg: '#f0ebff', color: '#7C3AAE' };
+
 interface FieldAnalyticsPanelProps {
   field: FieldAnalyticsData;
   totalFormResponses: number;
@@ -80,8 +94,14 @@ export const FieldAnalyticsPanel: React.FC<FieldAnalyticsPanelProps> = ({
       {/* Field Header */}
       <div className="mb-6 pb-4 border-b border-[var(--tf-border-medium)]">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
-            <Icon className="h-6 w-6" />
+          <div
+            className="p-2 rounded-xl flex-shrink-0"
+            style={{ backgroundColor: (FIELD_ICON_THEME[field.fieldType] ?? DEFAULT_ICON_THEME).bg }}
+          >
+            <Icon
+              className="h-5 w-5"
+              style={{ color: (FIELD_ICON_THEME[field.fieldType] ?? DEFAULT_ICON_THEME).color }}
+            />
           </div>
           <div>
             <h2 className="text-xl font-bold text-primary">
