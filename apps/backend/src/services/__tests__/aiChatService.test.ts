@@ -307,7 +307,7 @@ describe('truncateToolResults', () => {
         ],
       },
     ] as any[];
-    const out = truncateToolResults(msgs);
+    const out = truncateToolResults(msgs) as any[];
     expect(out[0].parts[0].toolInvocation.result).toBe(shortResult);
   });
 
@@ -320,8 +320,8 @@ describe('truncateToolResults', () => {
         ],
       },
     ] as any[];
-    const out = truncateToolResults(msgs);
-    const result = out[0].parts[0].toolInvocation.result as string;
+    const out = truncateToolResults(msgs) as any[];
+    const result: string = out[0].parts[0].toolInvocation.result;
     expect(result.length).toBeLessThanOrEqual(MAX_TOOL_RESULT_CHARS + 20); // budget + truncation suffix
     expect(result).toContain('[truncated]');
     expect(result.startsWith('x'.repeat(MAX_TOOL_RESULT_CHARS))).toBe(true);
@@ -340,11 +340,11 @@ describe('truncateToolResults', () => {
 
     if (serialized.length <= MAX_TOOL_RESULT_CHARS) {
       // Object is small — no truncation expected, just verify pass-through
-      const out = truncateToolResults(msgs);
+      const out = truncateToolResults(msgs) as any[];
       expect(out[0].parts[0].toolInvocation.result).toStrictEqual(bigObj);
     } else {
-      const out = truncateToolResults(msgs);
-      const result = out[0].parts[0].toolInvocation.result as string;
+      const out = truncateToolResults(msgs) as any[];
+      const result: string = out[0].parts[0].toolInvocation.result;
       expect(typeof result).toBe('string');
       expect(result).toContain('[truncated]');
     }
@@ -358,7 +358,7 @@ describe('truncateToolResults', () => {
         ],
       },
     ] as any[];
-    const out = truncateToolResults(msgs);
+    const out = truncateToolResults(msgs) as any[];
     expect(out[0].parts[0].toolInvocation.state).toBe('call');
     expect(out[0].parts[0].toolInvocation.result).toBeUndefined();
   });
@@ -373,8 +373,9 @@ describe('truncateToolResults', () => {
         ],
       },
     ] as any[];
-    const out = truncateToolResults(msgs);
+    const out = truncateToolResults(msgs) as any[];
     expect(out[0].parts[1]).toStrictEqual({ type: 'text', text: 'Here are the fields.' });
-    expect((out[0].parts[0].toolInvocation.result as string)).toContain('[truncated]');
+    const truncated: string = out[0].parts[0].toolInvocation.result;
+    expect(truncated).toContain('[truncated]');
   });
 });
